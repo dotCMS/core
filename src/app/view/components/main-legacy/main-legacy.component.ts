@@ -1,3 +1,4 @@
+import { DotDialogService } from '../../../api/services/dot-dialog/dot-dialog.service';
 import { Component, OnInit, ViewEncapsulation, HostListener } from '@angular/core';
 import { DotEventsService } from '../../../api/services/dot-events/dot-events.service';
 import { Router } from '@angular/router';
@@ -13,7 +14,7 @@ export class MainComponentLegacyComponent implements OnInit {
     isMenuCollapsed = false;
     isTablet = false;
 
-    constructor(private dotEventsService: DotEventsService, private router: Router) {}
+    constructor(private dotEventsService: DotEventsService, private router: Router,  public dotDialotService: DotDialogService) {}
 
     /**
      * Set isTablet when resizing the window size

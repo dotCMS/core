@@ -23,7 +23,8 @@
                     color: $gray;
                 }
         
-                &:hover {
+                &:hover,
+                &:focus {
                     background-color: rgba($gray, 0.1);
         
                     .ui-button-text {

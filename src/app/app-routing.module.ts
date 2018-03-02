@@ -64,10 +64,6 @@ const PORTLETS_ANGULAR = [
         loadChildren: 'app/portlets/dot-edit-page/dot-edit-page.module#DotEditPageModule'
     },
     {
-        path: 'edit-content',
-        loadChildren: 'app/portlets/dot-edit-content/dot-edit-content.module#DotEditContentModule'
-    },
-    {
         canActivate: [MenuGuardService],
         path: '',
         children: []

@@ -21,7 +21,6 @@ describe('ValuesPropertyComponent', () => {
     let comp: ValuesPropertyComponent;
     let fixture: ComponentFixture<ValuesPropertyComponent>;
     let de: DebugElement;
-    let el: HTMLElement;
     const messageServiceMock = new MockDotMessageService({
         'Validation-RegEx': 'Validation-RegEx'
     });
@@ -37,7 +36,6 @@ describe('ValuesPropertyComponent', () => {
             fixture = DOTTestBed.createComponent(ValuesPropertyComponent);
             comp = fixture.componentInstance;
             de = fixture.debugElement;
-            el = de.nativeElement;
 
             comp.group = new FormGroup({
                 values: new FormControl('')
@@ -62,7 +60,6 @@ describe('ValuesPropertyComponent', () => {
     it('should have a field-message', () => {
         fixture.detectChanges();
 
-        const divForm: DebugElement = fixture.debugElement.query(By.css('div'));
         const fieldValidationmessage: DebugElement = fixture.debugElement.query(By.css('dot-field-validation-message'));
 
         expect(fieldValidationmessage).not.toBeNull();

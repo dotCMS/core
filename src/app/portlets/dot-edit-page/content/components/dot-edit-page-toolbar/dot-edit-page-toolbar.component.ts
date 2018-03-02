@@ -1,26 +1,25 @@
-import { DotConfirmationService } from './../../../../api/services/dot-confirmation/dot-confirmation.service';
-import { PageMode } from './../../shared/page-mode.enum';
-import { Component, OnInit, Input, EventEmitter, Output, ViewChild, ElementRef } from '@angular/core';
-import { DotMessageService } from '../../../../api/services/dot-messages-service';
-import { SelectItem, MenuItem, InputSwitch } from 'primeng/primeng';
-import { Workflow } from '../../../../shared/models/workflow/workflow.model';
-import { DotRenderedPage } from '../../../dot-edit-page/shared/models/dot-rendered-page.model';
-import { DotEditPageState } from '../../../../shared/models/dot-edit-page-state/dot-edit-page-state.model';
-import { DotGlobalMessageService } from '../../../../view/components/_common/dot-global-message/dot-global-message.service';
+import { DotDialogService } from '../../../../../api/services/dot-dialog/dot-dialog.service';
+import { Component, OnInit, Input, EventEmitter, Output, ViewChild, ElementRef, SimpleChanges, OnChanges } from '@angular/core';
+import { SelectItem, InputSwitch, MenuItem } from 'primeng/primeng';
+import { Workflow } from '../../../../../shared/models/workflow/workflow.model';
+import { DotRenderedPage } from '../../../shared/models/dot-rendered-page.model';
+import { DotEditPageState } from '../../../../../shared/models/dot-edit-page-state/dot-edit-page-state.model';
+import { DotMessageService } from '../../../../../api/services/dot-messages-service';
+import { DotGlobalMessageService } from '../../../../../view/components/_common/dot-global-message/dot-global-message.service';
+import { PageMode } from '../../shared/page-mode.enum';
 
 @Component({
     selector: 'dot-edit-page-toolbar',
     templateUrl: './dot-edit-page-toolbar.component.html',
     styleUrls: ['./dot-edit-page-toolbar.component.scss']
 })
-export class DotEditPageToolbarComponent implements OnInit {
+export class DotEditPageToolbarComponent implements OnInit, OnChanges {
     @ViewChild('locker') locker: InputSwitch;
     @ViewChild('lockedPageMessage') lockedPageMessage: ElementRef;
 
     @Input() canSave: boolean;
     @Input() pageWorkflows: Workflow[] = [];
     @Input() page: DotRenderedPage;
-    @Input() mode: PageMode;
 
     @Output() changeState = new EventEmitter<DotEditPageState>();
     @Output() save = new EventEmitter<MouseEvent>();
@@ -28,11 +27,12 @@ export class DotEditPageToolbarComponent implements OnInit {
     states: SelectItem[] = [];
     workflowsActions: MenuItem[] = [];
     lockerModel: boolean;
+    mode: PageMode;
 
     constructor(
         public dotMessageService: DotMessageService,
         private dotGlobalMessageService: DotGlobalMessageService,
-        private dotConfirmationService: DotConfirmationService
+        private dotDialogService: DotDialogService
     ) {}
 
     ngOnInit() {
@@ -45,23 +45,19 @@ export class DotEditPageToolbarComponent implements OnInit {
                 'editpage.toolbar.page.locked.by.user',
                 'editpage.toolbar.primary.workflow.actions',
                 'dot.common.message.pageurl.copied.clipboard',
-                'dot.common.message.pageurl.copied.clipboard.error'
+                'dot.common.message.pageurl.copied.clipboard.error',
+                'editpage.toolbar.page.cant.edit'
             ])
             .subscribe((res) => {
-                this.states = [
-                    {
-                        label: res['editpage.toolbar.edit.page'],
-                        value: PageMode.EDIT,
-                        styleClass: !this.page.canLock ? 'edit-page-toolbar__state-selector-item--disabled' : ''
-                    },
-                    { label: res['editpage.toolbar.preview.page'], value: PageMode.PREVIEW },
-                    { label: res['editpage.toolbar.live.page'], value: PageMode.LIVE }
-                ];
+                this.workflowsActions = this.getWorkflowOptions();
+                this.setFieldsModels(this.page);
             });
+    }
 
-        this.workflowsActions = this.getWorkflowOptions();
-
-        this.lockerModel = this.page.lockedByAnotherUser && this.page.canLock ? false : this.page.locked;
+    ngOnChanges(changes: SimpleChanges): void {
+        if (changes.page && !changes.page.firstChange) {
+            this.setFieldsModels(changes.page.currentValue);
+        }
     }
 
     /**
@@ -110,8 +106,8 @@ export class DotEditPageToolbarComponent implements OnInit {
      * @param {any} $event
      * @memberof DotEditPageToolbarComponent
      */
-    onLockerClick($event): void {
-        const blinkClass = 'edit-page-toolbar__cant-lock-message--blink';
+    onLockerClick(_$event): void {
+        const blinkClass = 'edit-page-toolbar__locked-by-message--blink';
 
         if (this.locker.disabled) {
             this.lockedPageMessage.nativeElement.classList.add(blinkClass);
@@ -129,7 +125,7 @@ export class DotEditPageToolbarComponent implements OnInit {
      */
     lockPageHandler(_event): void {
         if (this.shouldConfirmToLock()) {
-            this.dotConfirmationService.confirm({
+            this.dotDialogService.confirm({
                 accept: () => {
                     this.setLockerState();
                 },
@@ -137,8 +133,7 @@ export class DotEditPageToolbarComponent implements OnInit {
                     this.lockerModel = false;
                 },
                 header: this.dotMessageService.get('editpage.content.steal.lock.confirmation_message.header'),
-                message: this.dotMessageService.get('editpage.content.steal.lock.confirmation_message.message'),
-                footerLabel: {}
+                message: this.dotMessageService.get('editpage.content.steal.lock.confirmation_message.message')
             });
         } else {
             this.setLockerState();
@@ -153,7 +148,7 @@ export class DotEditPageToolbarComponent implements OnInit {
      */
     stateSelectorHandler(pageState: PageMode): void {
         if (this.shouldConfirmToLock()) {
-            this.dotConfirmationService.confirm({
+            this.dotDialogService.confirm({
                 accept: () => {
                     this.setSelectorState(pageState);
                 },
@@ -211,6 +206,24 @@ export class DotEditPageToolbarComponent implements OnInit {
         }
 
         this.changeState.emit(state);
+    }
+
+    private setFieldsModels(page: DotRenderedPage): void {
+        this.lockerModel = page.mode === PageMode.EDIT;
+        this.mode = page.mode;
+        this.states = this.getStateModeOptions(page);
+    }
+
+    private getStateModeOptions(page: DotRenderedPage): SelectItem[] {
+        return [
+            {
+                label: this.dotMessageService.get('editpage.toolbar.edit.page'),
+                value: PageMode.EDIT,
+                styleClass: !page.canEdit ? 'edit-page-toolbar__state-selector-item--disabled' : ''
+            },
+            { label: this.dotMessageService.get('editpage.toolbar.preview.page'), value: PageMode.PREVIEW },
+            { label: this.dotMessageService.get('editpage.toolbar.live.page'), value: PageMode.LIVE }
+        ];
     }
 
     private shouldConfirmToLock(): boolean {

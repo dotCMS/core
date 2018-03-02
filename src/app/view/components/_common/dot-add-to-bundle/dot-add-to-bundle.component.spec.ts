@@ -1,9 +1,8 @@
 import { ComponentFixture } from '@angular/core/testing';
-import { DebugElement, Component, Input } from '@angular/core';
+import { DebugElement, Component } from '@angular/core';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { By } from '@angular/platform-browser';
-import { FormGroup, FormBuilder } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { Observable } from 'rxjs/Observable';
 import { DotMessageService } from '../../../../api/services/dot-messages-service';
@@ -16,7 +15,7 @@ class AddToBundleServiceMock {
         return Observable.of([]);
     }
 
-    addToBundle(contentTypeId: string, formValue: any): Observable<any> {
+    addToBundle(): Observable<any> {
         return Observable.of([]);
     }
 }
@@ -33,7 +32,6 @@ describe('DotAddToBundleComponent', () => {
     let comp: DotAddToBundleComponent;
     let fixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
-    let el: HTMLElement;
     let addToBundleServiceMock: AddToBundleServiceMock;
 
     const messageServiceMock = new MockDotMessageService({
@@ -60,7 +58,6 @@ describe('DotAddToBundleComponent', () => {
         fixture = DOTTestBed.createComponent(TestHostComponent);
         de = fixture.debugElement.query(By.css('dot-add-to-bundle'));
         comp = de.componentInstance;
-        el = de.nativeElement;
     });
 
     it('should have a form', () => {

@@ -12,7 +12,6 @@ describe('DataTypePropertyComponent', () => {
     let comp: DataTypePropertyComponent;
     let fixture: ComponentFixture<DataTypePropertyComponent>;
     let de: DebugElement;
-    let el: HTMLElement;
     const messageServiceMock = new MockDotMessageService({
         'contenttypes.field.properties.data_type.label': 'Data-Type',
         'contenttypes.field.properties.data_type.values.binary': 'Binary',
@@ -36,7 +35,6 @@ describe('DataTypePropertyComponent', () => {
             fixture = DOTTestBed.createComponent(DataTypePropertyComponent);
             comp = fixture.componentInstance;
             de = fixture.debugElement;
-            el = de.nativeElement;
 
             this.group = new FormGroup({
                 name: new FormControl('')
@@ -65,7 +63,6 @@ describe('DataTypePropertyComponent', () => {
     it('should have 4 values for Radio Field', () => {
         fixture.detectChanges();
 
-        const divForm: DebugElement = fixture.debugElement.query(By.css('div'));
         const pRadioButtons = fixture.debugElement.queryAll(By.css('p-radioButton'));
 
         expect(4).toEqual(pRadioButtons.length);
@@ -83,7 +80,6 @@ describe('DataTypePropertyComponent', () => {
         comp.property.field.clazz = 'com.dotcms.contenttype.model.field.ImmutableSelectField';
         fixture.detectChanges();
 
-        const divForm: DebugElement = fixture.debugElement.query(By.css('div'));
         const pRadioButtons = fixture.debugElement.queryAll(By.css('p-radioButton'));
 
         expect(4).toEqual(pRadioButtons.length);
@@ -101,7 +97,6 @@ describe('DataTypePropertyComponent', () => {
         comp.property.field.clazz = 'com.dotcms.contenttype.model.field.ImmutableTextField';
         fixture.detectChanges();
 
-        const divForm: DebugElement = fixture.debugElement.query(By.css('div'));
         const pRadioButtons = fixture.debugElement.queryAll(By.css('p-radioButton'));
 
         expect(3).toEqual(pRadioButtons.length);

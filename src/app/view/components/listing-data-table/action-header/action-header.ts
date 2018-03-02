@@ -1,4 +1,4 @@
-import { DotConfirmationService } from './../../../../api/services/dot-confirmation/dot-confirmation.service';
+import { DotDialogService } from '../../../../api/services/dot-dialog/dot-dialog.service';
 import { Component, Input, SimpleChanges, ViewEncapsulation, OnChanges } from '@angular/core';
 
 import { BaseComponent } from '../../_common/_base/base-component';
@@ -16,7 +16,7 @@ export class ActionHeaderComponent extends BaseComponent implements OnChanges {
     @Input() options: ActionHeaderOptions;
     public dynamicOverflow = 'visible';
 
-    constructor(dotMessageService: DotMessageService, private dotConfirmationService: DotConfirmationService) {
+    constructor(dotMessageService: DotMessageService, private dotDialogService: DotDialogService) {
         super(['selected', 'contenttypes.action.delete', 'contenttypes.action.cancel'], dotMessageService);
     }
 
@@ -38,15 +38,15 @@ export class ActionHeaderComponent extends BaseComponent implements OnChanges {
                     model.command = ($event) => {
                         const originalEvent = $event;
 
-                        this.dotConfirmationService.confirm({
+                        this.dotDialogService.confirm({
                             accept: () => {
                                 callback(originalEvent);
                             },
                             header: model.deleteOptions.confirmHeader,
                             message: model.deleteOptions.confirmMessage,
                             footerLabel: {
-                                acceptLabel: this.i18nMessages['contenttypes.action.delete'],
-                                rejectLabel: this.i18nMessages['contenttypes.action.cancel']
+                                accept: this.i18nMessages['contenttypes.action.delete'],
+                                reject: this.i18nMessages['contenttypes.action.cancel']
                             }
                         });
                     };

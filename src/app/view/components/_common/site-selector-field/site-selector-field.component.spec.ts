@@ -1,13 +1,12 @@
 import { By } from '@angular/platform-browser';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
-import { DebugElement, OnInit, Component } from '@angular/core';
+import { DebugElement, Component } from '@angular/core';
 import { SiteSelectorFieldComponent } from './site-selector-field.component';
 import { SiteSelectorModule } from '../site-selector/site-selector.module';
 import { SiteService } from 'dotcms-js/dotcms-js';
 import { SiteServiceMock } from '../../../../test/site-service.mock';
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormGroup, FormBuilder } from '@angular/forms';
-import { PaginatorService } from '../../../../api/services/paginator/index';
 import { SiteSelectorFieldModule } from './site-selector-field.module';
 
 @Component({

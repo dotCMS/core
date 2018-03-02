@@ -46,7 +46,7 @@ class TestContentTypesRelationshipListingComponent {}
 
 @Injectable()
 export class MockDotMenuService {
-    getDotMenuId(portletId: string): Observable<string> {
+    getDotMenuId(): Observable<string> {
         return Observable.of('1234');
     }
 }
@@ -56,12 +56,9 @@ class FieldDragDropServiceMock {
 }
 
 describe('ContentTypesLayoutComponent', () => {
-    let comp: ContentTypesLayoutComponent;
     let fixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
-    let el: HTMLElement;
 
-    const mockDotMenuService: MockDotMenuService = new MockDotMenuService();
 
     beforeEach(() => {
         const messageServiceMock = new MockDotMessageService({
@@ -92,8 +89,6 @@ describe('ContentTypesLayoutComponent', () => {
 
         fixture = DOTTestBed.createComponent(TestHostComponent);
         de = fixture.debugElement.query(By.css('dot-content-type-layout'));
-        comp = de.componentInstance;
-        el = de.nativeElement;
     });
 
     it('should has a tab-view', () => {
@@ -104,7 +99,6 @@ describe('ContentTypesLayoutComponent', () => {
     });
 
     it('should has just one tab', () => {
-        const contentType = fixture.debugElement.query(By.css('.content-type'));
         const pTabPanels = fixture.debugElement.queryAll(By.css('p-tabPanel'));
         expect(pTabPanels.length).toBe(1);
     });
@@ -140,7 +134,6 @@ describe('ContentTypesLayoutComponent', () => {
         });
 
         it('should has a field types list', () => {
-            const contentTypeFieldsSideBar = this.pTabPanel.query(By.css('.content-type__fields-sidebar'));
             const fieldTitle = this.pTabPanel.query(By.css('.content-type__fields-sidebar-title'));
             const contentTypesFieldsList = this.pTabPanel.query(By.css('dot-content-types-fields-list'));
 
@@ -149,7 +142,6 @@ describe('ContentTypesLayoutComponent', () => {
         });
 
         it('should has a field row list', () => {
-            const contentTypeFieldsSideBar = this.pTabPanel.query(By.css('.content-type__fields-sidebar'));
             const layoutTitle = this.pTabPanel.queryAll(By.css('.content-type__fields-sidebar-title'))[1];
             const fieldRowList = this.pTabPanel.query(By.css('dot-content-type-fields-row-list'));
 

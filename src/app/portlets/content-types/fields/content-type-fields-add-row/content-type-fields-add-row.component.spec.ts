@@ -7,7 +7,7 @@ import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { HotkeysService, Hotkey } from 'angular2-hotkeys';
-import { TestHotkeysMock } from './../../../../test/hotkeys-service.mock';
+import { TestHotkeysMock } from '../../../../test/hotkeys-service.mock';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 
 describe('ContentTypeFieldsAddRowComponent', () => {

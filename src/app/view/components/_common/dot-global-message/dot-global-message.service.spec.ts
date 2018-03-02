@@ -1,4 +1,4 @@
-import { TestBed, inject } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 
 import { DotGlobalMessageService } from './dot-global-message.service';
 import { DotMessageService } from '../../../../api/services/dot-messages-service';
@@ -9,7 +9,6 @@ import { Observable } from 'rxjs/Observable';
 
 describe('DotGlobalMessageService', () => {
     let dotGlobalMessageService: DotGlobalMessageService;
-    let dotMessageService: DotMessageService;
     let dotEventsService: DotEventsService;
     let listenerDotGlobalMessage: Observable<DotEvent>;
 
@@ -29,7 +28,6 @@ describe('DotGlobalMessageService', () => {
             ]
         });
 
-        dotMessageService = TestBed.get(DotMessageService);
         dotGlobalMessageService = TestBed.get(DotGlobalMessageService);
         dotEventsService = TestBed.get(DotEventsService);
 

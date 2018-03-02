@@ -1,8 +1,7 @@
 import { DOTTestBed } from '../../../../../../test/dot-test-bed';
 import { DotLayoutPropertiesItemComponent } from './dot-layout-properties-item.component';
-import { ReactiveFormsModule, FormGroup, FormControl } from '@angular/forms';
-import { OverlayPanelModule, ButtonModule } from 'primeng/primeng';
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { FormGroup, FormControl } from '@angular/forms';
+import { ComponentFixture } from '@angular/core/testing';
 import { DebugElement, Component } from '@angular/core';
 import { By } from '@angular/platform-browser';
 

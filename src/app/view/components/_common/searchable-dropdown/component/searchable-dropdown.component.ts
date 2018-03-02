@@ -1,4 +1,4 @@
-import { DotContainer } from './../../../../../shared/models/container/dot-container.model';
+import { DotContainer } from '../../../../../shared/models/container/dot-container.model';
 import {
     Component,
     ElementRef,

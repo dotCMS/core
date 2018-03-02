@@ -1,12 +1,8 @@
-import { Component, DebugElement, Type, SimpleChange, ViewContainerRef, ComponentFactoryResolver } from '@angular/core';
-import { ComponentFixture } from '@angular/core/testing';
-import { DOTTestBed } from '../../../../../../test/dot-test-bed';
+import { Component, Type, SimpleChange, ViewContainerRef, ComponentFactoryResolver } from '@angular/core';
 import { DynamicFieldPropertyDirective } from './dynamic-field-property.directive';
 import { FieldPropertyService } from '../../../service';
 import { FieldProperty } from '../field-properties.model';
 import { FormGroup } from '@angular/forms';
-import { ContentTypeField } from '../../../';
-import { By } from '@angular/platform-browser';
 
 @Component({
     selector: 'dot-test',
@@ -18,23 +14,22 @@ class TestComponent {
 }
 
 class TestFieldPropertyService {
-    getComponent(propertyName: string): Type<any> {
+    getComponent(_propertyName: string): Type<any> {
         return null;
     }
 }
 
 class TestComponentFactoryResolver {
-    resolveComponentFactory<T>(component: Type<T>): any {}
+    resolveComponentFactory<T>(_component: Type<T>): any {}
 }
 
 class TestViewContainerRef {
-    // tslint:disable-next-line:max-line-length
-    createComponent<C>(
-        componentFactory: any,
-        index?: number,
-        injector?: any,
-        projectableNodes?: any[][],
-        ngModule?: any
+    createComponent(
+        _componentFactory: any,
+        _index?: number,
+        _injector?: any,
+        _projectableNodes?: any[][],
+        _ngModule?: any
     ): any {}
 }
 

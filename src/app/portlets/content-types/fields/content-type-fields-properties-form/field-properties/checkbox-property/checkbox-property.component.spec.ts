@@ -57,7 +57,6 @@ describe('CheckboxPropertyComponent', () => {
 
         fixture.detectChanges();
 
-        const divForm: DebugElement = fixture.debugElement.query(By.css('div'));
         const pCheckbox: DebugElement = fixture.debugElement.query(By.css('p-checkbox'));
 
         expect(pCheckbox).not.toBeNull();

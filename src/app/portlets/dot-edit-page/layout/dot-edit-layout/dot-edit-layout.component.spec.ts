@@ -9,7 +9,6 @@ import { DotEditLayoutDesignerModule } from '../dot-edit-layout-designer/dot-edi
 import { fakePageView } from '../../../../test/page-view.mock';
 import { LoginService } from 'dotcms-js/dotcms-js';
 import { LoginServiceMock } from '../../../../test/login-service.mock';
-import { FormatDateService } from '../../../../api/services/format-date-service';
 import { RouterTestingModule } from '@angular/router/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DebugElement } from '@angular/core';
@@ -33,18 +32,13 @@ const getTestingModule = (pageView?: DotPageView) => {
             {
                 provide: ActivatedRoute,
                 useValue: {
-                    parent: {
-                        parent: {
-                            data: Observable.of({ pageView: pageView || fakePageView })
-                        }
-                    }
+                    data: Observable.of({ content: pageView || fakePageView })
                 }
             }
         ]
     };
 };
 
-let component: DotEditLayoutComponent;
 let fixture: ComponentFixture<DotEditLayoutComponent>;
 
 describe('DotEditLayoutComponent with Layout Designer', () => {
@@ -56,7 +50,6 @@ describe('DotEditLayoutComponent with Layout Designer', () => {
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotEditLayoutComponent);
-        component = fixture.componentInstance;
         fixture.detectChanges();
     });
 
@@ -88,7 +81,6 @@ describe('DotEditLayoutComponent with Edit Advanced Layout', () => {
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotEditLayoutComponent);
-        component = fixture.componentInstance;
         fixture.detectChanges();
     });
 

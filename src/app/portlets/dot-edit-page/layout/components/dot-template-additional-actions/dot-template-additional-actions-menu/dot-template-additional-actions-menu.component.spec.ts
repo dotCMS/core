@@ -1,4 +1,4 @@
-import { ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../../../test/dot-test-bed';
 import { Component, Input } from '@angular/core';
 import { MockDotMessageService } from '../../../../../../test/dot-message-service.mock';

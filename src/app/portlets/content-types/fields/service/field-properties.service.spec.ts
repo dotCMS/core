@@ -1,4 +1,3 @@
-import { PROPERTY_INFO } from './field-property-info';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { FieldPropertyService } from './field-properties.service';
 import {
@@ -9,8 +8,6 @@ import {
 import { FieldService } from './field.service';
 import { Validators } from '@angular/forms';
 import { validateDateDefaultValue } from './validators';
-import { ConnectionBackend, ResponseOptions } from '@angular/http';
-import { MockBackend } from '@angular/http/testing';
 import { FieldType } from '../';
 import { Observable } from 'rxjs/Observable';
 

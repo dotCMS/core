@@ -8,9 +8,8 @@ import { ContentTypeField, FieldRow, FieldColumn } from '../';
 import { DragulaModule } from 'ng2-dragula';
 import { IconButtonTooltipModule } from '../../../../view/components/_common/icon-button-tooltip/icon-button-tooltip.module';
 import { DotMessageService } from '../../../../api/services/dot-messages-service';
-import { ConfirmDialogModule } from 'primeng/primeng';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
-import { DotConfirmationService } from '../../../../api/services/dot-confirmation';
+import { DotDialogService } from '../../../../api/services/dot-dialog';
 
 @Component({
     selector: 'dot-content-type-field-dragabble-item',
@@ -26,7 +25,6 @@ describe('ContentTypeFieldsRowComponent', () => {
     let comp: ContentTypeFieldsRowComponent;
     let fixture: ComponentFixture<ContentTypeFieldsRowComponent>;
     let de: DebugElement;
-    let el: HTMLElement;
 
     const messageServiceMock = new MockDotMessageService({
         'contenttypes.dropzone.rows.empty.message': 'Add fields here',
@@ -34,18 +32,18 @@ describe('ContentTypeFieldsRowComponent', () => {
         'message.structure.delete.structure': 'Are you sure you want to delete this',
         'message.structure.delete.content': 'and all the content associated with it?',
         'message.structure.delete.notice': '(This operation can not be undone)',
-        'contenttypes.action.yes': 'Yes',
-        'contenttypes.action.no': 'No'
+        'dot.common.dialog.accept': 'Yes',
+        'dot.common.dialog.reject': 'No'
     });
 
     beforeEach(
         async(() => {
             DOTTestBed.configureTestingModule({
                 declarations: [ContentTypeFieldsRowComponent, TestContentTypeFieldDraggableItemComponent],
-                imports: [DragulaModule, IconButtonTooltipModule, ConfirmDialogModule],
+                imports: [DragulaModule, IconButtonTooltipModule],
                 providers: [
                     FieldDragDropService,
-                    DotConfirmationService,
+                    DotDialogService,
                     { provide: DotMessageService, useValue: messageServiceMock }
                 ]
             });
@@ -53,7 +51,6 @@ describe('ContentTypeFieldsRowComponent', () => {
             fixture = DOTTestBed.createComponent(ContentTypeFieldsRowComponent);
             comp = fixture.componentInstance;
             de = fixture.debugElement;
-            el = de.nativeElement;
         })
     );
 
@@ -137,9 +134,9 @@ describe('ContentTypeFieldsRowComponent', () => {
                 const column = de.query(By.css('.row-columns__item'));
                 const dragableItem = column.query(By.css('dot-content-type-field-dragabble-item'));
 
-                const dotConfirmationService = fixture.debugElement.injector.get(DotConfirmationService);
+                const dotDialogService = fixture.debugElement.injector.get(DotDialogService);
 
-                spyOn(dotConfirmationService, 'confirm').and.callFake((conf) => {
+                spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
                     conf.accept();
                 });
 

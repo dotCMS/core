@@ -1,10 +1,9 @@
 import { Observable } from 'rxjs/Observable';
-import { CrudService } from './../../../api/services/crud/crud.service';
-import { ContentType } from './../shared/content-type.model';
+import { CrudService } from '../../../api/services/crud/crud.service';
+import { ContentType } from '../shared/content-type.model';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { ListingDataTableModule } from './../../../view/components/listing-data-table/listing-data-table.module';
-import { DotConfirmationService } from './../../../api/services/dot-confirmation/dot-confirmation.service';
-import { MenuItem } from 'primeng/primeng';
+import { ListingDataTableModule } from '../../../view/components/listing-data-table/listing-data-table.module';
+import { DotDialogService } from '../../../api/services/dot-dialog/dot-dialog.service';
 import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture } from '@angular/core/testing';
@@ -70,7 +69,7 @@ describe('ContentTypesPortletComponent', () => {
             'contenttypes.fieldname.entries': 'Entries',
             'contenttypes.fieldname.structure.name': 'Content Type Name',
             'contenttypes.content.variable': 'Variable Name',
-            mod_date: 'Last Edit Date',
+            'mod_date': 'Last Edit Date',
             'contenttypes.action.delete': 'Delete',
             'contenttypes.content.push_publish': 'Push Publish',
             'contenttypes.content.add_to_bundle': 'Add to bundle'
@@ -88,7 +87,7 @@ describe('ContentTypesPortletComponent', () => {
             providers: [
                 ContentTypesInfoService,
                 CrudService,
-                DotConfirmationService,
+                DotDialogService,
                 FormatDateService,
                 { provide: DotContentletService, useClass: MockDotContentletService },
                 { provide: DotMessageService, useValue: messageServiceMock },
@@ -147,13 +146,6 @@ describe('ContentTypesPortletComponent', () => {
 
     it('should remove the content type on click command function', () => {
         fixture.detectChanges();
-        const fakeActions: MenuItem[] = [
-            {
-                icon: 'fa-trash',
-                label: 'Remove',
-                command: () => {}
-            }
-        ];
 
         const mockContentType: ContentType = {
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
@@ -168,8 +160,8 @@ describe('ContentTypesPortletComponent', () => {
             system: false
         };
 
-        const dotConfirmationService = fixture.debugElement.injector.get(DotConfirmationService);
-        spyOn(dotConfirmationService, 'confirm').and.callFake((conf) => {
+        const dotDialogService = fixture.debugElement.injector.get(DotDialogService);
+        spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
             conf.accept();
         });
 

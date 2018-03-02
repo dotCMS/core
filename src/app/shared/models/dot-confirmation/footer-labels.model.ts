@@ -1,4 +1,4 @@
 export interface FooterLabels {
-    acceptLabel?: string;
-    rejectLabel?: string;
+    accept?: string;
+    reject?: string;
 }

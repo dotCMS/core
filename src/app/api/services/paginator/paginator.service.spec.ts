@@ -1,4 +1,3 @@
-import { fakeAsync, tick } from '@angular/core/testing';
 import { Response, ResponseOptions, ConnectionBackend, Headers } from '@angular/http';
 import { MockBackend } from '@angular/http/testing';
 import { PaginatorService, OrderDirection } from './';

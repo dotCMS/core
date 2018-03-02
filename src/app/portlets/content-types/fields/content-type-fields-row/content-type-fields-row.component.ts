@@ -3,7 +3,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { ContentTypeField, FieldRow } from '../shared';
 import { BaseComponent } from '../../../../view/components/_common/_base/base-component';
 import { DotMessageService } from '../../../../api/services/dot-messages-service';
-import { DotConfirmationService } from '../../../../api/services/dot-confirmation';
+import { DotDialogService } from '../../../../api/services/dot-dialog';
 
 /**
  * Display all the Field Types
@@ -23,14 +23,13 @@ export class ContentTypeFieldsRowComponent extends BaseComponent {
     @Output() removeField: EventEmitter<ContentTypeField> = new EventEmitter();
     @Output() removeRow: EventEmitter<FieldRow> = new EventEmitter();
 
-    constructor(dotMessageService: DotMessageService, private dotConfirmationService: DotConfirmationService) {
+    constructor(dotMessageService: DotMessageService, private dotDialogService: DotDialogService) {
         super(
             [
                 'contenttypes.dropzone.rows.empty.message',
                 'contenttypes.action.delete',
-                'contenttypes.confirm.message.delete',
-                'contenttypes.confirm.message.delete.content',
-                'contenttypes.confirm.message.delete.warning',
+                'contenttypes.confirm.message.delete.field',
+                'contenttypes.confirm.message.delete.row',
                 'contenttypes.content.field',
                 'contenttypes.content.row',
                 'contenttypes.action.cancel'
@@ -44,22 +43,16 @@ export class ContentTypeFieldsRowComponent extends BaseComponent {
      * @param field field to remove
      */
     onRemoveField(field: ContentTypeField): void {
-        this.dotConfirmationService.confirm({
+        this.dotDialogService.confirm({
             accept: () => {
                 this.getField(field);
                 this.removeField.emit(field);
             },
-            header: `${this.i18nMessages['contenttypes.action.delete']} ${
-                this.i18nMessages['contenttypes.content.field']
-            }`,
-            message: `${this.i18nMessages['contenttypes.confirm.message.delete']} ${
-                this.i18nMessages['contenttypes.content.field']
-            }
-                        '${field.name}'?
-                        <span>${this.i18nMessages['contenttypes.confirm.message.delete.warning']}</span>`,
+            header: `${this.i18nMessages['contenttypes.action.delete']} ${this.i18nMessages['contenttypes.content.field']}`,
+            message: this.dotMessageService.get('contenttypes.confirm.message.delete.field', field.name),
             footerLabel: {
-                acceptLabel: this.i18nMessages['contenttypes.action.delete'],
-                rejectLabel: this.i18nMessages['contenttypes.action.cancel']
+                accept: this.i18nMessages['contenttypes.action.delete'],
+                reject: this.i18nMessages['contenttypes.action.cancel']
             }
         });
     }
@@ -78,21 +71,15 @@ export class ContentTypeFieldsRowComponent extends BaseComponent {
      * Tigger the removeRow event whit the current FieldRow
      */
     onRemoveFieldRow(): void {
-        this.dotConfirmationService.confirm({
+        this.dotDialogService.confirm({
             accept: () => {
                 this.removeRow.emit(this.fieldRow);
             },
-            header: `${this.i18nMessages['contenttypes.action.delete']} ${
-                this.i18nMessages['contenttypes.content.row']
-            }`,
-            message: `${this.i18nMessages['contenttypes.confirm.message.delete']} ${
-                this.i18nMessages['contenttypes.content.row']
-            }
-                        ${this.i18nMessages['contenttypes.confirm.message.delete.content']}
-                        <span>${this.i18nMessages['contenttypes.confirm.message.delete.warning']}</span>`,
+            header: `${this.i18nMessages['contenttypes.action.delete']} ${this.i18nMessages['contenttypes.content.row']}`,
+            message: this.dotMessageService.get('contenttypes.confirm.message.delete.row'),
             footerLabel: {
-                acceptLabel: this.i18nMessages['contenttypes.action.delete'],
-                rejectLabel: this.i18nMessages['contenttypes.action.cancel']
+                accept: this.i18nMessages['contenttypes.action.delete'],
+                reject: this.i18nMessages['contenttypes.action.cancel']
             }
         });
     }

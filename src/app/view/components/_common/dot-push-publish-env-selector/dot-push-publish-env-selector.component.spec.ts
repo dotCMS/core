@@ -13,7 +13,7 @@ import { DotMessageService } from '../../../../api/services/dot-messages-service
 class PushPublishServiceMock {
     _lastEnvironmentPushed: string[];
 
-    pushPublishContent(contentTypeId: string, formValue: any): Observable<any> {
+    pushPublishContent(): Observable<any> {
         return Observable.of([]);
     }
 

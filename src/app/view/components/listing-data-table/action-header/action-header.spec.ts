@@ -1,4 +1,4 @@
-import { DotConfirmationService } from './../../../../api/services/dot-confirmation/dot-confirmation.service';
+import { DotDialogService } from '../../../../api/services/dot-dialog/dot-dialog.service';
 import { DotActionButtonModule } from '../../_common/dot-action-button/dot-action-button.module';
 import { ActionHeaderComponent } from './action-header';
 import { By } from '@angular/platform-browser';
@@ -33,7 +33,7 @@ describe('ActionHeaderComponent', () => {
                         }
                     ])
                 ],
-                providers: [{ provide: DotMessageService, useValue: messageServiceMock }, DotConfirmationService]
+                providers: [{ provide: DotMessageService, useValue: messageServiceMock }, DotDialogService]
             });
 
             fixture = DOTTestBed.createComponent(ActionHeaderComponent);

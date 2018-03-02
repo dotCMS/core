@@ -1,8 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { DotPageView } from '../../shared/models/dot-page-view.model';
 import { ActivatedRoute } from '@angular/router';
-import { getTemplateType } from '../../main/dot-edit-page-main/dot-edit-page-main.component';
 import { Observable } from 'rxjs/Observable';
+import { getTemplateTypeFlag } from '../../../../api/util/lib';
 
 @Component({
     selector: 'dot-edit-layout',
@@ -16,7 +16,7 @@ export class DotEditLayoutComponent implements OnInit {
     constructor(private route: ActivatedRoute) {}
 
     ngOnInit() {
-        this.isAdvancedTemplate = this.route.parent.parent.data.let(getTemplateType);
-        this.pageView = this.route.parent.parent.data.pluck('pageView');
+        this.pageView = this.route.data.pluck('content');
+        this.isAdvancedTemplate = this.pageView.let(getTemplateTypeFlag);
     }
 }

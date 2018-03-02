@@ -40,11 +40,10 @@ export class DotNavigationService {
 
         this.loginService.auth$
             .filter((auth: Auth) => !!(auth.loginAsUser || auth.user))
-            .mergeMap((auth: Auth) =>
-                this.reloadNavigation()
-                    .filter((isPortletInMenu: boolean) => !isPortletInMenu && !this.dotRouterService.previousSavedURL)
+            .mergeMap(() =>
+                this.reloadNavigation().filter((isPortletInMenu: boolean) => !isPortletInMenu && !this.dotRouterService.previousSavedURL)
             )
-            .subscribe((goToFirstPortlet: boolean) => {
+            .subscribe(() => {
                 this.goToFirstPortlet();
             });
     }
@@ -99,7 +98,7 @@ export class DotNavigationService {
             .do((menu: DotMenu[]) => {
                 this.setMenu(menu);
             })
-            .mergeMap((menu: DotMenu[]) =>
+            .mergeMap(() =>
                 this.dotMenuService.isPortletInMenu(
                     this.dotRouterService.currentPortlet.id || this.dotRouterService.getPortletId(this.location.hash)
                 )

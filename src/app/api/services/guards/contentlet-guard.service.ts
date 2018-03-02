@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { CanActivateChild, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { Observable } from 'rxjs/Observable';
-import { DotContentletService } from './../dot-contentlet.service';
+import { DotContentletService } from '../dot-contentlet.service';
 import { DotNavigationService } from '../../../view/components/dot-navigation/dot-navigation.service';
 
 /**

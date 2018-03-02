@@ -1,10 +1,9 @@
-import { async, ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
+import { async, ComponentFixture } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DebugElement } from '@angular/core';
 import { ContentTypesFieldsListComponent } from './content-types-fields-list.component';
 import { By } from '@angular/platform-browser';
 import { FieldService, FieldDragDropService } from '../service';
-import { ContentTypeField } from '../shared';
 
 import { DragulaModule } from 'ng2-dragula';
 import { DragulaService } from 'ng2-dragula';
@@ -14,7 +13,6 @@ describe('ContentTypesFieldsListComponent', () => {
     let comp: ContentTypesFieldsListComponent;
     let fixture: ComponentFixture<ContentTypesFieldsListComponent>;
     let de: DebugElement;
-    let el: HTMLElement;
 
     beforeEach(
         async(() => {
@@ -27,7 +25,6 @@ describe('ContentTypesFieldsListComponent', () => {
             fixture = DOTTestBed.createComponent(ContentTypesFieldsListComponent);
             comp = fixture.componentInstance;
             de = fixture.debugElement;
-            el = de.nativeElement;
         })
     );
 

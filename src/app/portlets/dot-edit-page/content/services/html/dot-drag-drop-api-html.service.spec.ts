@@ -12,11 +12,11 @@ let lastAppendChildCallElementParam;
 export class MockDotDOMHtmlUtilService {
     createInlineScriptElementLastCallTextParam;
 
-    createLinkElement(href: string): any {
+    createLinkElement(): any {
         return null;
     }
 
-    creatExternalScriptElement(src: string, onLoadCallback?: () => void): any {
+    creatExternalScriptElement(): any {
         return null;
     }
 
@@ -37,7 +37,7 @@ describe('DotDragDropAPIHtmlService', () => {
         contentWindow: {
             document: {
                 head: {
-                    appendChild(element: any): any {
+                    appendChild(): any {
                         return null;
                     }
                 },
@@ -67,7 +67,7 @@ describe('DotDragDropAPIHtmlService', () => {
             spyOn(dotDOMHtmlUtilService, 'createLinkElement').and.returnValue(cssElement);
             spyOn(iframe.contentWindow.document.head, 'appendChild');
 
-            spyOn(dotDOMHtmlUtilService, 'creatExternalScriptElement').and.callFake((src, callback) => {
+            spyOn(dotDOMHtmlUtilService, 'creatExternalScriptElement').and.callFake((_src, callback) => {
                 callbackFunc = callback;
             });
         })

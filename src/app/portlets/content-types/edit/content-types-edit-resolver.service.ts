@@ -1,10 +1,11 @@
+import { DotHttpErrorManagerService } from '../../../api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { Injectable } from '@angular/core';
 import { Resolve, ActivatedRouteSnapshot } from '@angular/router';
 import { Observable } from 'rxjs/Observable';
 import { CrudService } from '../../../api/services/crud';
 import { ContentType } from '../shared/content-type.model';
 import { ContentTypesInfoService } from '../../../api/services/content-types-info';
-import { LoginService } from 'dotcms-js/dotcms-js';
+import { LoginService, ResponseView } from 'dotcms-js/dotcms-js';
 import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
 
 /**
@@ -19,8 +20,9 @@ export class ContentTypeEditResolver implements Resolve<ContentType> {
     constructor(
         private contentTypesInfoService: ContentTypesInfoService,
         private crudService: CrudService,
-        private loginService: LoginService,
-        private dotRouterService: DotRouterService
+        private dotHttpErrorManagerService: DotHttpErrorManagerService,
+        private dotRouterService: DotRouterService,
+        private loginService: LoginService
     ) {}
 
     resolve(route: ActivatedRouteSnapshot): Observable<ContentType> {
@@ -35,16 +37,12 @@ export class ContentTypeEditResolver implements Resolve<ContentType> {
         return this.crudService
             .getDataById('v1/contenttype', id)
             .take(1)
-            .map((contentType: ContentType) => {
-                if (contentType) {
-                    return contentType;
-                } else {
-                    this.dotRouterService.gotoPortlet('/content-types-angular');
-                    return null;
-                }
-            })
-            .catch(() => {
-                this.dotRouterService.gotoPortlet('/content-types-angular', true);
+            .catch((err: ResponseView) => {
+                this.dotHttpErrorManagerService.handle(err).subscribe((res: any) => {
+                    if (!res.redirected) {
+                        this.dotRouterService.gotoPortlet('/content-types-angular', true);
+                    }
+                });
                 return Observable.of(null);
             });
     }

@@ -1,6 +1,5 @@
 import { TemplateContainersCacheService } from './template-containers-cache.service';
 import { TestBed } from '@angular/core/testing';
-import { DotContainer } from '../../shared/models/container/dot-container.model';
 
 describe('TemplateContainersCacheService', () => {
     let service: TemplateContainersCacheService;

@@ -1,11 +1,10 @@
 import { ComponentFixture } from '@angular/core/testing';
-import { DebugElement, Component, Input } from '@angular/core';
+import { DebugElement, Component } from '@angular/core';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { PushPublishEnvSelectorModule } from '../dot-push-publish-env-selector/dot-push-publish-env-selector.module';
 import { PushPublishContentTypesDialogComponent } from './push-publish-dialog.component';
 import { By } from '@angular/platform-browser';
-import { FormGroup, FormBuilder } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { Observable } from 'rxjs/Observable';
 import { DotMessageService } from '../../../../api/services/dot-messages-service';
@@ -13,7 +12,7 @@ import { PushPublishService } from '../../../../api/services/push-publish/push-p
 import { FieldValidationMessageModule } from '../field-validation-message/file-validation-message.module';
 
 class PushPublishServiceMock {
-    pushPublishContent(contentTypeId: string, formValue: any): Observable<any> {
+    pushPublishContent(): Observable<any> {
         return Observable.of([]);
     }
 

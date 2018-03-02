@@ -2,7 +2,7 @@ import { ConnectionBackend, RequestOptions, BaseRequestOptions, Http } from '@an
 import { Logger } from 'angular2-logger/core';
 import { MockBackend } from '@angular/http/testing';
 import { TestBed, TestModuleMetadata, ComponentFixture } from '@angular/core/testing';
-import { Type, Provider, Injector, ReflectiveInjector, Component, LOCALE_ID } from '@angular/core';
+import { Type, Provider, Injector, ReflectiveInjector, LOCALE_ID } from '@angular/core';
 import {
     ApiRoot,
     BrowserUtil,
@@ -15,7 +15,6 @@ import {
     StringUtils,
     UserModel
 } from 'dotcms-js/dotcms-js';
-import { ConfirmDialogModule } from 'primeng/components/confirmdialog/confirmdialog';
 import { ConfirmationService } from 'primeng/primeng';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NGFACES_MODULES } from '../modules';
@@ -24,14 +23,7 @@ import { DotEventsService } from '../api/services/dot-events/dot-events.service'
 import { DotGlobalMessageService } from '../view/components/_common/dot-global-message/dot-global-message.service';
 import { DotMessageService } from '../api/services/dot-messages-service';
 import { FormatDateService } from '../api/services/format-date-service';
-import { DotConfirmationService } from '../api/services/dot-confirmation';
-
-@Component({
-    // tslint:disable-next-line:component-selector
-    selector: 'p-confirmDialog',
-    template: ''
-})
-class FakeConfirmDialogComponent {}
+import { DotDialogService } from '../api/services/dot-dialog';
 
 export class DOTTestBed {
     private static DEFAULT_CONFIG = {
@@ -45,7 +37,7 @@ export class DOTTestBed {
             Config,
             ConfirmationService,
             CoreWebService,
-            DotConfirmationService,
+            DotDialogService,
             DotEventsService,
             DotGlobalMessageService,
             DotMessageService,
@@ -74,13 +66,6 @@ export class DOTTestBed {
         }
 
         TestBed.configureTestingModule(config);
-
-        TestBed.overrideModule(ConfirmDialogModule, {
-            set: {
-                declarations: [FakeConfirmDialogComponent],
-                exports: [FakeConfirmDialogComponent]
-            }
-        });
         TestBed.compileComponents();
 
         return TestBed;

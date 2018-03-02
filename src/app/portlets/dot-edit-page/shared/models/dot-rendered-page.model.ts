@@ -1,3 +1,4 @@
+import { PageMode } from './../../content/shared/page-mode.enum';
 export interface DotRenderedPage {
     canEdit: boolean;
     canLock: boolean;
@@ -10,6 +11,7 @@ export interface DotRenderedPage {
     lockedByAnotherUser?: boolean;
     lockedByName?: string;
     lockedOn?: Date;
+    mode: PageMode;
     pageURI: string;
     render: string;
     shortyLive: string;

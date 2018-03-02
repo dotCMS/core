@@ -1,14 +1,7 @@
+import { PageViewService } from '../../../../api/services/page-view/page-view.service';
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-
 import { Observable } from 'rxjs/Observable';
-import { pluck, map } from 'rxjs/operators';
-// tslint:disable-next-line:import-blacklist
-import { pipe } from 'rxjs';
-
-export const getDrawed = pluck('pageView', 'template', 'drawed');
-export const isAdvanced = map((isDrawed: boolean) => !isDrawed);
-export const getTemplateType = pipe(getDrawed, isAdvanced);
 
 @Component({
     selector: 'dot-edit-page-main',
@@ -18,9 +11,11 @@ export const getTemplateType = pipe(getDrawed, isAdvanced);
 export class DotEditPageMainComponent implements OnInit {
     isAdvancedTemplate: Observable<boolean>;
 
-    constructor(private route: ActivatedRoute) {}
+    constructor(private route: ActivatedRoute, private pageViewService: PageViewService) {}
 
     ngOnInit() {
-        this.isAdvancedTemplate = this.route.data.let(getTemplateType);
+        this.isAdvancedTemplate = this.route.queryParams
+            .pluck('url')
+            .mergeMap((url: string) => this.pageViewService.isTemplateAdvanced(url));
     }
 }

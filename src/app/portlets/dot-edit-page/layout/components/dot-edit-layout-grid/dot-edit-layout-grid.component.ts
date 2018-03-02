@@ -1,7 +1,7 @@
 import { Component, OnInit, forwardRef, ViewChild } from '@angular/core';
 import { NgGrid, NgGridConfig, NgGridItemConfig } from 'angular2-grid';
 import * as _ from 'lodash';
-import { DotConfirmationService } from '../../../../../api/services/dot-confirmation/dot-confirmation.service';
+import { DotDialogService } from '../../../../../api/services/dot-dialog/dot-dialog.service';
 import { DotMessageService } from '../../../../../api/services/dot-messages-service';
 import { DotLayoutGridBox } from '../../../shared/models/dot-layout-grid-box.model';
 import {
@@ -70,7 +70,7 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
     ];
 
     constructor(
-        private dotConfirmationService: DotConfirmationService,
+        private dotDialogService: DotDialogService,
         private dotEditLayoutService: DotEditLayoutService,
         public dotMessageService: DotMessageService,
         private dotEventsService: DotEventsService
@@ -129,7 +129,7 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
      */
     onRemoveContainer(index: number): void {
         if (this.grid[index].containers.length) {
-            this.dotConfirmationService.confirm({
+            this.dotDialogService.confirm({
                 accept: () => {
                     this.removeContainer(index);
                 },
@@ -138,8 +138,8 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
                     'editpage.confirm.message.delete'
                 )} <span>${this.dotMessageService.get('editpage.confirm.message.delete.warning')}</span>`,
                 footerLabel: {
-                    acceptLabel: this.dotMessageService.get('editpage.action.delete'),
-                    rejectLabel: this.dotMessageService.get('editpage.action.cancel')
+                    accept: this.dotMessageService.get('editpage.action.delete'),
+                    reject: this.dotMessageService.get('editpage.action.cancel')
                 }
             });
         } else {

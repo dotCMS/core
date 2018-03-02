@@ -1,7 +1,6 @@
 <dot-edit-page-toolbar
     (changeState)="statePageHandler($event)"
     (save)="saveContent()"
-    [mode]="pageMode"
     [page]="page"
     [canSave]="isModelUpdated"
     [pageWorkflows]="pageWorkFlows | async"

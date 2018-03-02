@@ -1,5 +1,5 @@
 import { ComponentFixture, async } from '@angular/core/testing';
-import { DebugElement, ElementRef } from '@angular/core';
+import { DebugElement } from '@angular/core';
 import { SiteSelectorComponent } from './site-selector.component';
 import { By } from '@angular/platform-browser';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
@@ -7,7 +7,7 @@ import { SearchableDropDownModule } from '../searchable-dropdown/searchable-drop
 import { DotMessageService } from '../../../../api/services/dot-messages-service';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { SiteServiceMock } from '../../../../test/site-service.mock';
-import { SiteService, DotcmsConfig } from 'dotcms-js/dotcms-js';
+import { SiteService } from 'dotcms-js/dotcms-js';
 import { Observable } from 'rxjs/Observable';
 import { SearchableDropdownComponent } from '../searchable-dropdown/component/searchable-dropdown.component';
 import { fakeAsync, tick } from '@angular/core/testing';
@@ -19,7 +19,6 @@ describe('SiteSelectorComponent', () => {
     let comp: SiteSelectorComponent;
     let fixture: ComponentFixture<SiteSelectorComponent>;
     let de: DebugElement;
-    let el: HTMLElement;
 
     beforeEach(
         async(() => {
@@ -43,7 +42,6 @@ describe('SiteSelectorComponent', () => {
             fixture = DOTTestBed.createComponent(SiteSelectorComponent);
             comp = fixture.componentInstance;
             de = fixture.debugElement;
-            el = de.nativeElement;
         })
     );
 
@@ -155,7 +153,6 @@ describe('SiteSelectorComponent', () => {
         'should paginate when the filter change',
         fakeAsync(() => {
             const filter = 'filter';
-            const first = 2;
 
             const paginatorService: PaginatorService = de.injector.get(PaginatorService);
             paginatorService.totalRecords = 2;

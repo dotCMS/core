@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { async, ComponentFixture } from '@angular/core/testing';
 import { Observable } from 'rxjs/Observable';
 import { RouterTestingModule } from '@angular/router/testing';
 
@@ -10,14 +10,14 @@ import { DotMenuService } from '../../../../api/services/dot-menu.service';
 import { IFrameModule } from '../../../../view/components/_common/iframe';
 import { LoginServiceMock } from '../../../../test/login-service.mock';
 import { By } from '@angular/platform-browser';
-import { DebugElement, ElementRef } from '@angular/core';
+import { DebugElement } from '@angular/core';
 import { IframeComponent } from '../../../../view/components/_common/iframe/iframe-component';
 import { DotGlobalMessageService } from '../../../../view/components/_common/dot-global-message/dot-global-message.service';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { DotMessageService } from '../../../../api/services/dot-messages-service';
 
 class DotMenuServiceMock {
-    getDotMenuId(id: string): Observable<string> {
+    getDotMenuId(): Observable<string> {
         return Observable.of('123');
     }
 }

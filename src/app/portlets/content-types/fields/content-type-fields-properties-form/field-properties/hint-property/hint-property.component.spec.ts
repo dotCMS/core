@@ -11,7 +11,6 @@ describe('HintPropertyComponent', () => {
     let comp: HintPropertyComponent;
     let fixture: ComponentFixture<HintPropertyComponent>;
     let de: DebugElement;
-    let el: HTMLElement;
     const messageServiceMock = new MockDotMessageService({
         Hint: 'Hint'
     });
@@ -27,7 +26,6 @@ describe('HintPropertyComponent', () => {
             fixture = DOTTestBed.createComponent(HintPropertyComponent);
             comp = fixture.componentInstance;
             de = fixture.debugElement;
-            el = de.nativeElement;
         })
     );
 
@@ -52,7 +50,6 @@ describe('HintPropertyComponent', () => {
 
         fixture.detectChanges();
 
-        const divForm: DebugElement = fixture.debugElement.query(By.css('div'));
         const pInput: DebugElement = fixture.debugElement.query(By.css('input[type="text"]'));
 
         expect(pInput).not.toBeNull();

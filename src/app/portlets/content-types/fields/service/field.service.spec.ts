@@ -3,7 +3,6 @@ import { Response, ResponseOptions, ConnectionBackend } from '@angular/http';
 import { MockBackend } from '@angular/http/testing';
 import { FieldService } from './';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
-import { ContentTypeField } from '../shared/field.model';
 
 describe('FieldService', () => {
     beforeEach(() => {

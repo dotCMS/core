@@ -20,7 +20,7 @@ describe('NamePropertyComponent', () => {
     let comp: NamePropertyComponent;
     let fixture: ComponentFixture<NamePropertyComponent>;
     let de: DebugElement;
-    let el: HTMLElement;
+
     const messageServiceMock = new MockDotMessageService({
         'Default-Value': 'Default-Value'
     });
@@ -36,7 +36,6 @@ describe('NamePropertyComponent', () => {
             fixture = DOTTestBed.createComponent(NamePropertyComponent);
             comp = fixture.componentInstance;
             de = fixture.debugElement;
-            el = de.nativeElement;
         })
     );
 
@@ -61,7 +60,6 @@ describe('NamePropertyComponent', () => {
 
         fixture.detectChanges();
 
-        const divForm: DebugElement = fixture.debugElement.query(By.css('div'));
         const pInput: DebugElement = fixture.debugElement.query(By.css('input[type="text"]'));
 
         expect(pInput).not.toBeNull();
@@ -79,7 +77,6 @@ describe('NamePropertyComponent', () => {
 
         fixture.detectChanges();
 
-        const divForm: DebugElement = fixture.debugElement.query(By.css('div'));
         const fieldValidationmessage: DebugElement = fixture.debugElement.query(By.css('dot-field-validation-message'));
 
         expect(fieldValidationmessage).not.toBeNull();

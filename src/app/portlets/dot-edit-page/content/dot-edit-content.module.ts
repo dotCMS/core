@@ -11,10 +11,10 @@ import { DotEditContentComponent } from './dot-edit-content.component';
 import { DotEditContentHtmlService } from './services/dot-edit-content-html.service';
 import { DotEditContentToolbarHtmlService } from './services/html/dot-edit-content-toolbar-html.service';
 import { DotEditPageToolbarModule } from './components/dot-edit-page-toolbar/dot-edit-page-toolbar.module';
-import { EditPageService } from '../../api/services/edit-page/edit-page.service';
-import { DotLoadingIndicatorModule } from '../../view/components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
-import { WorkflowService } from '../../api/services/workflow/workflow.service';
-import { DotDirectivesModule } from '../../shared/dot-directives.module';
+import { EditPageService } from '../../../api/services/edit-page/edit-page.service';
+import { DotLoadingIndicatorModule } from '../../../view/components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
+import { WorkflowService } from '../../../api/services/workflow/workflow.service';
+import { DotDirectivesModule } from '../../../shared/dot-directives.module';
 
 const routes: Routes = [
     {

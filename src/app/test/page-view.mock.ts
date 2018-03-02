@@ -1,3 +1,4 @@
+import { Observable } from 'rxjs/Observable';
 import { DotPageView } from '../portlets/dot-edit-page/shared/models/dot-page-view.model';
 
 export const fakePageView: DotPageView = {
@@ -66,3 +67,13 @@ export const fakePageView: DotPageView = {
         drawed: true
     }
 };
+
+export class PageViewServiceMock {
+    get() {
+        return Observable.of(fakePageView);
+    }
+
+    isTemplateAdvanced() {
+        return Observable.of(true);
+    }
+}

@@ -4,14 +4,14 @@ import { DotEditContentToolbarHtmlService } from './html/dot-edit-content-toolba
 import { DotContainerContentletService } from './dot-container-contentlet.service';
 import { DotDragDropAPIHtmlService } from './html/dot-drag-drop-api-html.service';
 import { DotDOMHtmlUtilService } from './html/dot-dom-html-util.service';
-import { DotMessageService } from '../../../api/services/dot-messages-service';
-import { MockDotMessageService } from '../../../test/dot-message-service.mock';
+import { DotMessageService } from '../../../../api/services/dot-messages-service';
+import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { LoggerService, StringUtils } from 'dotcms-js/dotcms-js';
 import { Config } from 'dotcms-js/core/config.service';
 import { Logger } from 'angular2-logger/core';
-import { DOTTestBed } from '../../../test/dot-test-bed';
-import { DotConfirmationService } from '../../../api/services/dot-confirmation/dot-confirmation.service';
-import { DotPageContent } from '../../dot-edit-page/shared/models/dot-page-content.model';
+import { DOTTestBed } from '../../../../test/dot-test-bed';
+import { DotDialogService } from '../../../../api/services/dot-dialog/dot-dialog.service';
+import { DotPageContent } from '../../../dot-edit-page/shared/models/dot-page-content.model';
 import { Observable } from 'rxjs/Observable';
 
 describe('DotEditContentHtmlService', () => {
@@ -62,7 +62,7 @@ describe('DotEditContentHtmlService', () => {
             Config,
             Logger,
             StringUtils,
-            DotConfirmationService,
+            DotDialogService,
             { provide: DotMessageService, useValue: messageServiceMock }
         ]);
         this.dotEditContentHtmlService = this.injector.get(DotEditContentHtmlService);
@@ -210,8 +210,8 @@ describe('DotEditContentHtmlService', () => {
             Observable.of('<i>testing</i>')
         );
 
-        const dotConfirmationService = this.injector.get(DotConfirmationService);
-        spyOn(dotConfirmationService, 'alert');
+        const dotDialogService = this.injector.get(DotDialogService);
+        spyOn(dotDialogService, 'alert');
 
         const contentlet: DotPageContent = {
             identifier: '456',
@@ -227,7 +227,7 @@ describe('DotEditContentHtmlService', () => {
         expect(dotEditContentToolbarHtmlService.getContentletToContainer).not.toHaveBeenCalled();
         expect(this.dotEditContentHtmlService.currentContainer).toBeNull('The current container must be null');
         expect(currentModel).toBeNull('should not tigger model change event');
-        expect(dotConfirmationService.alert).toHaveBeenCalled();
+        expect(dotDialogService.alert).toHaveBeenCalled();
     });
 
     it('should render edit contentlet', () => {

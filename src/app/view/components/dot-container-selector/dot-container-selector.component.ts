@@ -1,6 +1,6 @@
 import { DotContainer } from '../../../shared/models/container/dot-container.model';
 import { DotMessageService } from '../../../api/services/dot-messages-service';
-import { PaginatorService } from './../../../api/services/paginator/paginator.service';
+import { PaginatorService } from '../../../api/services/paginator/paginator.service';
 import { Component, OnInit, Output, EventEmitter, Input, ViewEncapsulation } from '@angular/core';
 import { DotContainerColumnBox } from '../../../portlets/dot-edit-page/shared/models/dot-container-column-box.model';
 

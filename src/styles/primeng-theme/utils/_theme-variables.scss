@@ -198,7 +198,7 @@ $menu-link-color: $black;
 
 // DIALOG
 $dialog-padding: $basic-padding * 3;
-$dialog-padding-footer: $basic-padding $dialog-padding;
+$dialog-padding-footer: $basic-padding $basic-padding * 2;
 $dialog-title-font-size: $font-size-large;
 $dialog-message-line-height: 18px;
 $dialog-message-warning-color: $red;

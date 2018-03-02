@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Routes } from '@angular/router';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { PatternLibraryComponent } from './pattern-library.component';
-import { NGFACES_MODULES } from './../../../../modules';
+import { NGFACES_MODULES } from '../../../../modules';
 // CUSTOM MDOULES
 import { DotActionButtonModule } from '../dot-action-button/dot-action-button.module';
 import { ListingDataTableModule } from '../../listing-data-table/listing-data-table.module';

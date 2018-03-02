@@ -2,7 +2,7 @@ import { MockBackend } from '@angular/http/testing';
 import { ConnectionBackend, Response, ResponseOptions } from '@angular/http';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { PageViewService } from './page-view.service';
-import { DOTTestBed } from './../../../test/dot-test-bed';
+import { DOTTestBed } from '../../../test/dot-test-bed';
 
 describe('PageViewService', () => {
     beforeEach(() => {

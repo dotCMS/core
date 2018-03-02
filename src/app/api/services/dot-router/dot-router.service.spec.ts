@@ -46,7 +46,7 @@ describe('DotRouterService', () => {
             service.previousSavedURL = 'test/fake';
 
             spyOn(router, 'navigate').and.callFake(() => {
-                return new Promise((resolve, reject) => {
+                return new Promise((resolve) => {
                     resolve(true);
                 });
             });

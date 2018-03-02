@@ -1,4 +1,4 @@
-import { FormGroup, FormControl, NgControl } from '@angular/forms';
+import { FormGroup, FormControl } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -13,7 +13,6 @@ describe('RegexCheckPropertyComponent', () => {
     let comp: RegexCheckPropertyComponent;
     let fixture: ComponentFixture<RegexCheckPropertyComponent>;
     let de: DebugElement;
-    let el: HTMLElement;
     const messageServiceMock = new MockDotMessageService({
         'contenttypes.field.properties.validation_regex.label': 'Validation-RegEx',
         'contenttypes.field.properties.validation_regex.values.select': 'Select',
@@ -38,7 +37,6 @@ describe('RegexCheckPropertyComponent', () => {
             fixture = DOTTestBed.createComponent(RegexCheckPropertyComponent);
             comp = fixture.componentInstance;
             de = fixture.debugElement;
-            el = de.nativeElement;
 
             comp.group = new FormGroup({
                 regexCheck: new FormControl('')
@@ -63,31 +61,25 @@ describe('RegexCheckPropertyComponent', () => {
     it('should have a input', () => {
         fixture.detectChanges();
 
-        const divForm: DebugElement = fixture.debugElement.query(By.css('div'));
         const pInput: DebugElement = fixture.debugElement.query(By.css('input[type="text"]'));
-
         expect(pInput).not.toBeNull();
     });
 
     it('should have a dropDown', () => {
         fixture.detectChanges();
 
-        const divForm: DebugElement = fixture.debugElement.query(By.css('div'));
         const pDropDown: DebugElement = fixture.debugElement.query(By.css('p-dropdown'));
-
         expect(pDropDown).not.toBeNull();
         expect(comp.regexCheckTempletes).toBe(pDropDown.componentInstance.options);
     });
 
     it('should change the input value', () => {
-        const divForm: DebugElement = fixture.debugElement.query(By.css('div'));
         const pDropDown: DebugElement = fixture.debugElement.query(By.css('p-dropdown'));
 
         pDropDown.triggerEventHandler('onChange', {
             value: '^([a-zA-Z0-9]+[a-zA-Z0-9._%+-]*@(?:[a-zA-Z0-9-]+.)+[a-zA-Z]{2,4})$'
         });
 
-        const pInput: DebugElement = fixture.debugElement.query(By.css('input[type="text"]'));
         expect('^([a-zA-Z0-9]+[a-zA-Z0-9._%+-]*@(?:[a-zA-Z0-9-]+.)+[a-zA-Z]{2,4})$').toBe(
             comp.group.get('regexCheck').value
         );

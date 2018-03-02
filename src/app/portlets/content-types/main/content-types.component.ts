@@ -1,6 +1,6 @@
-import { ListingDataTableComponent } from './../../../view/components/listing-data-table/listing-data-table.component';
-import { DotConfirmationService } from './../../../api/services/dot-confirmation/dot-confirmation.service';
-import { CrudService } from './../../../api/services/crud';
+import { ListingDataTableComponent } from '../../../view/components/listing-data-table/listing-data-table.component';
+import { DotDialogService } from '../../../api/services/dot-dialog/dot-dialog.service';
+import { CrudService } from '../../../api/services/crud';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Component, OnInit, ViewChild } from '@angular/core';
 
@@ -53,9 +53,7 @@ export class ContentTypesPortletComponent implements OnInit {
         'contenttypes.content.key_value',
         'contenttypes.content.vanity_url',
         'contenttypes.content.form',
-        'contenttypes.confirm.message.delete',
-        'contenttypes.confirm.message.delete.content',
-        'contenttypes.confirm.message.delete.warning',
+        'contenttypes.confirm.message.delete.type',
         'contenttypes.action.delete',
         'contenttypes.action.cancel',
         'contenttypes.content.push_publish',
@@ -66,7 +64,7 @@ export class ContentTypesPortletComponent implements OnInit {
     constructor(
         private contentTypesInfoService: ContentTypesInfoService,
         private crudService: CrudService,
-        private dotConfirmationService: DotConfirmationService,
+        private dotDialogService: DotDialogService,
         private dotContentletService: DotContentletService,
         private dotcmsConfig: DotcmsConfig,
         private route: ActivatedRoute,
@@ -218,19 +216,15 @@ export class ContentTypesPortletComponent implements OnInit {
     }
 
     private removeConfirmation(item: any): void {
-        this.dotConfirmationService.confirm({
+        this.dotDialogService.confirm({
             accept: () => {
                 this.removeContentType(item);
             },
             header: this.dotMessageService.get('message.structure.cantdelete'),
-            message: `${this.dotMessageService.get('contenttypes.confirm.message.delete')} ${this.dotMessageService.get(
-                'Content-Type'
-            )}
-                        ${this.dotMessageService.get('contenttypes.confirm.message.delete.content')}
-                        <span>${this.dotMessageService.get('contenttypes.confirm.message.delete.warning')}</span>`,
+            message: this.dotMessageService.get('contenttypes.confirm.message.delete.type', item.name),
             footerLabel: {
-                acceptLabel: this.dotMessageService.get('contenttypes.action.delete'),
-                rejectLabel: this.dotMessageService.get('contenttypes.action.cancel')
+                accept: this.dotMessageService.get('contenttypes.action.delete'),
+                reject: this.dotMessageService.get('contenttypes.action.cancel')
             }
         });
     }

@@ -10,7 +10,7 @@ class MockDragulaService {
     name: string;
     options: any;
 
-    find(name: string): any {
+    find(): any {
         return null;
     }
 
@@ -42,8 +42,6 @@ describe('FieldDragDropService', () => {
         });
 
         it('should set shouldCopy', () => {
-            const findSpy = spyOn(this.dragulaService, 'find').and.returnValue(null);
-
             this.fieldDragDropService.setFieldBagOptions();
 
             const copyFunc = this.dragulaService.options.copy;
@@ -60,9 +58,8 @@ describe('FieldDragDropService', () => {
         });
 
         it('should set shouldAccepts', () => {
-            const findSpy = spyOn(this.dragulaService, 'find').and.returnValue(null);
-
             this.fieldDragDropService.setFieldBagOptions();
+
             const acceptsFunc = this.dragulaService.options.accepts;
             const source = {
                 dataset: {
@@ -88,8 +85,6 @@ describe('FieldDragDropService', () => {
         });
 
         it('should set shouldCopy', () => {
-            const findSpy = spyOn(this.dragulaService, 'find').and.returnValue(null);
-
             this.fieldDragDropService.setFieldRowBagOptions();
 
             const copyFunc = this.dragulaService.options.copy;

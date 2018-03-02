@@ -1,7 +1,6 @@
 import { DotDOMHtmlUtilService } from './dot-dom-html-util.service';
 import { async } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
-import { window } from 'rxjs/operator/window';
 
 describe('DotDOMHtmlUtilService', () => {
     let dotDOMHtmlUtilService: DotDOMHtmlUtilService;

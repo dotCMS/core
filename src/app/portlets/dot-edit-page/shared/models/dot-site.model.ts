@@ -1,4 +1,4 @@
-import { ContentType } from './../../../content-types/shared/content-type.model';
+import { ContentType } from '../../../content-types/shared/content-type.model';
 
 export interface DotSite {
     archived?: string;

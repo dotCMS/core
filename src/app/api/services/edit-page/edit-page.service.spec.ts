@@ -1,16 +1,15 @@
+import { LoginServiceMock } from '../../../test/login-service.mock';
+import { LoginService } from 'dotcms-js/dotcms-js';
+import { DotRouterService } from '../dot-router/dot-router.service';
 import { MockBackend } from '@angular/http/testing';
 import { ConnectionBackend, Response, ResponseOptions } from '@angular/http';
-import { fakeAsync, tick } from '@angular/core/testing';
-import { DOTTestBed } from './../../../test/dot-test-bed';
+import { DOTTestBed } from '../../../test/dot-test-bed';
 import { EditPageService } from './edit-page.service';
 import { DotRenderedPage } from '../../../portlets/dot-edit-page/shared/models/dot-rendered-page.model';
-import { edit } from 'brace';
 import { DotEditPageState } from '../../../shared/models/dot-edit-page-state/dot-edit-page-state.model';
 import { DotRenderedPageState } from '../../../portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
-import { TestBed } from '@angular/core/testing';
-import { LoginService, CoreWebService } from 'dotcms-js/dotcms-js';
-import { Router } from '@angular/router';
-import { PageMode } from '../../../portlets/dot-edit-content/shared/page-mode.enum';
+import { RouterTestingModule } from '@angular/router/testing';
+import { PageMode } from '../../../portlets/dot-edit-page/content/shared/page-mode.enum';
 
 const mockDotRenderPage: DotRenderedPage = {
     canEdit: true,
@@ -21,9 +20,10 @@ const mockDotRenderPage: DotRenderedPage = {
     lockMessage: '',
     locked: true,
     lockedBy: 'someone',
-    lockedByAnotherUser: false,
+    lockedByAnotherUser: true,
     lockedByName: 'Some One',
     lockedOn: new Date(1517330917295),
+    mode: PageMode.PREVIEW,
     pageURI: '',
     render: '<html><</html>',
     shortyLive: '',
@@ -32,29 +32,26 @@ const mockDotRenderPage: DotRenderedPage = {
     workingInode: ''
 };
 
-class LoginServiceMock {
-    auth = {
-        user: {
-            userId: 'someone'
-        }
-    };
-}
-
 describe('EditPageService', () => {
     let editPageService: EditPageService;
     let backend: MockBackend;
     let lastConnection;
+    let injector;
 
     beforeEach(() => {
         lastConnection = [];
 
-        this.injector = DOTTestBed.resolveAndCreate([
-            EditPageService,
-            {provide: LoginService, useClass: LoginServiceMock}
-        ]);
+        injector = DOTTestBed.configureTestingModule({
+            providers: [EditPageService, DotRouterService, {
+                provide: LoginService,
+                useClass: LoginServiceMock
+            }],
+            imports: [RouterTestingModule]
+        });
 
-        editPageService = this.injector.get(EditPageService);
-        backend = this.injector.get(ConnectionBackend) as MockBackend;
+        editPageService = injector.get(EditPageService);
+
+        backend = injector.get(ConnectionBackend) as MockBackend;
         backend.connections.subscribe((connection: any) => {
             lastConnection.push(connection);
         });
@@ -99,68 +96,6 @@ describe('EditPageService', () => {
         })));
         expect(lastConnection[0].request.url).toContain('/api/v1/page/renderHTML/about-us?mode=LIVE');
         expect(result).toEqual(mockDotRenderPage);
-    });
-
-    it('should set object locked by another user and locked', () => {
-        const mockedData: DotRenderedPage = {
-            ...mockDotRenderPage,
-            lockedBy: 'another-user',
-            canLock: false
-        };
-
-        let result: DotRenderedPage;
-        editPageService.getPreview('about-us').subscribe((renderedPage: DotRenderedPage) => result = renderedPage);
-
-        lastConnection[0].mockRespond(new Response(new ResponseOptions({
-            body: mockedData
-        })));
-        expect(result).toEqual({
-            ...mockedData,
-            lockedByAnotherUser: true,
-            locked: true
-        });
-    });
-
-    it('should set object NOT locked by another user and unlocked', () => {
-        const mockedData: DotRenderedPage = {
-            ...mockDotRenderPage,
-            canLock: true
-        };
-        delete mockedData.lockedBy;
-
-        let result: DotRenderedPage;
-        editPageService.getPreview('about-us').subscribe((renderedPage: DotRenderedPage) => result = renderedPage);
-
-        lastConnection[0].mockRespond(new Response(new ResponseOptions({
-            body: mockedData
-        })));
-        expect(result).toEqual({
-            ...mockedData,
-            lockedByAnotherUser: false,
-            locked: false
-        });
-    });
-
-    it('should set object locked by another user and unlocked', () => {
-        const mockedData: DotRenderedPage = {
-            ...mockDotRenderPage,
-            lockedBy: 'another-user',
-            canLock: true
-        };
-
-        let result: DotRenderedPage;
-        editPageService.getPreview('about-us').subscribe((renderedPage: DotRenderedPage) => {
-            result = renderedPage;
-        });
-
-        lastConnection[0].mockRespond(new Response(new ResponseOptions({
-            body: mockedData
-        })));
-        expect(result).toEqual({
-            ...mockedData,
-            lockedByAnotherUser: true,
-            locked: true
-        });
     });
 
     it('should lock a content asset', () => {
@@ -306,14 +241,123 @@ describe('EditPageService', () => {
                 })
             )
         );
-
-        expect(editPageService.getLive).toHaveBeenCalledTimes(1);
         expect(result).toEqual({
             dotRenderedPage: mockDotRenderPage
-        });
+        }, 'here');
+        expect(editPageService.getLive).toHaveBeenCalledTimes(1);
         expect(editPageService.unlock).not.toHaveBeenCalled();
         expect(editPageService.lock).not.toHaveBeenCalled();
         expect(editPageService.getPreview).not.toHaveBeenCalled();
         expect(editPageService.getEdit).not.toHaveBeenCalled();
+    });
+
+    describe('extra custom properties', () => {
+        let result: DotRenderedPage;
+
+        const mockResponse = (extras, remove) => {
+            const mockedData = {
+                ...mockDotRenderPage,
+                ...extras
+            };
+
+            if (remove) {
+                delete mockedData[remove];
+            }
+
+            lastConnection[0].mockRespond(new Response(new ResponseOptions({
+                body: mockedData
+            })));
+
+            return mockedData;
+        };
+
+        beforeEach(() => {
+            editPageService.getPreview('about-us').subscribe((renderedPage: DotRenderedPage) => {
+                result = renderedPage;
+            });
+        });
+
+        describe('mode', () => {
+            it('should set page mode in preview because is locked by another user', () => {
+                const mockedData = mockResponse({
+                    lockedBy: 'another-user',
+                    canLock: true
+                }, false);
+
+                expect(result).toEqual({
+                    ...mockedData,
+                    lockedByAnotherUser: true,
+                    locked: true,
+                    mode: PageMode.PREVIEW
+                });
+            });
+
+            it('should set page mode in preview because is locked and user can\'t lock', () => {
+                const mockedData = mockResponse({
+                    lockedBy: '123',
+                    canLock: false
+                }, false);
+
+                expect(result).toEqual({
+                    ...mockedData,
+                    lockedByAnotherUser: false,
+                    locked: true,
+                    mode: PageMode.PREVIEW
+                });
+            });
+
+            it('should set page mode in edit because is locked and user can lock and page is locked', () => {
+                const mockedData = mockResponse({
+                    lockedBy: '123',
+                    locked: true,
+                    canLock: true
+                }, false);
+
+                expect(result).toEqual({
+                    ...mockedData,
+                    lockedByAnotherUser: false,
+                    locked: true,
+                    mode: PageMode.EDIT
+                });
+            });
+        });
+
+        describe('locked and locked by another user', () => {
+            it('should set object locked by another user and locked', () => {
+                const mockedData = mockResponse({
+                    lockedBy: 'another-user',
+                    canLock: false
+                }, false);
+                expect(result).toEqual({
+                    ...mockedData,
+                    lockedByAnotherUser: true,
+                    locked: true
+                });
+            });
+
+            it('should set object NOT locked by another user and unlocked', () => {
+                const mockedData = mockResponse({
+                    canLock: true
+                }, 'lockedBy');
+
+                expect(result).toEqual({
+                    ...mockedData,
+                    lockedByAnotherUser: false,
+                    locked: false
+                });
+            });
+
+            it('should set page locked by another user and unlocked', () => {
+                const mockedData = mockResponse({
+                    lockedBy: 'another-user',
+                    canLock: true
+                }, false);
+                expect(result).toEqual({
+                    ...mockedData,
+                    lockedByAnotherUser: true,
+                    locked: true
+                });
+            });
+        });
     });
 });

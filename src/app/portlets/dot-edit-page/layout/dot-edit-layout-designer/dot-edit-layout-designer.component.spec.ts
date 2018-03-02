@@ -4,7 +4,7 @@ import { By } from '@angular/platform-browser';
 import { ComponentFixture } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DebugElement } from '@angular/core/src/debug/debug_node';
-import { DotConfirmationService } from '../../../../api/services/dot-confirmation';
+import { DotDialogService } from '../../../../api/services/dot-dialog';
 import { DotEditLayoutDesignerComponent } from './dot-edit-layout-designer.component';
 import { DotEditLayoutGridModule } from '../components/dot-edit-layout-grid/dot-edit-layout-grid.module';
 import { LoginService, SocketFactory } from 'dotcms-js/dotcms-js';
@@ -21,7 +21,6 @@ import { Component, Input } from '@angular/core';
 import { TemplateContainersCacheService } from '../../template-containers-cache.service';
 import { DotSidebarPropertiesModule } from '../components/dot-sidebar-properties/dot-sidebar-properties.module';
 import { FieldValidationMessageModule } from '../../../../view/components/_common/field-validation-message/file-validation-message.module';
-import { DotPageView } from '../../shared/models/dot-page-view.model';
 import { fakePageView } from '../../../../test/page-view.mock';
 
 @Component({
@@ -66,7 +65,7 @@ const testConfigObject = {
         FieldValidationMessageModule
     ],
     providers: [
-        DotConfirmationService,
+        DotDialogService,
         LoginService,
         PageViewService,
         PaginatorService,
@@ -303,7 +302,6 @@ describe('DotEditLayoutDesignerComponent - Layout (anonymous = true)', () => {
 
     it('should not have name set', () => {
         fixture.detectChanges();
-        const form: DebugElement = fixture.debugElement.query(By.css('form'));
         expect(component.form.value.title).toBeNull();
     });
 
@@ -312,7 +310,6 @@ describe('DotEditLayoutDesignerComponent - Layout (anonymous = true)', () => {
         fakePageView.template.anonymous = false;
         fixture.detectChanges();
 
-        const form: DebugElement = fixture.debugElement.query(By.css('form'));
         expect(component.form.value.title).toEqual(fakePageView.template.title);
     });
 

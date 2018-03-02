@@ -61,7 +61,6 @@ describe('DefaultValuePropertyComponent', () => {
 
         fixture.detectChanges();
 
-        const divForm: DebugElement = fixture.debugElement.query(By.css('div'));
         const pInput: DebugElement = fixture.debugElement.query(By.css('input[type="text"]'));
 
         expect(pInput).not.toBeNull();
@@ -79,7 +78,6 @@ describe('DefaultValuePropertyComponent', () => {
 
         fixture.detectChanges();
 
-        const divForm: DebugElement = fixture.debugElement.query(By.css('div'));
         const fieldValidationmessage: DebugElement = fixture.debugElement.query(By.css('dot-field-validation-message'));
 
         expect(fieldValidationmessage).not.toBeNull();

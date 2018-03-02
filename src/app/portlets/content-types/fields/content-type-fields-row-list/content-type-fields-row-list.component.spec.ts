@@ -1,18 +1,15 @@
-import { async, ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
+import { async, ComponentFixture } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DebugElement } from '@angular/core';
 import { ContentTypeFieldsRowListComponent } from './';
 import { By } from '@angular/platform-browser';
 import { FieldDragDropService } from '../service';
-import { ContentTypeField } from '../';
 import { DragulaModule } from 'ng2-dragula';
-import { Observable } from 'rxjs/Observable';
 
 describe('ContentTypesFieldDragabbleItemComponent', () => {
     let comp: ContentTypeFieldsRowListComponent;
     let fixture: ComponentFixture<ContentTypeFieldsRowListComponent>;
     let de: DebugElement;
-    let el: HTMLElement;
 
     beforeEach(
         async(() => {
@@ -25,7 +22,6 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
             fixture = DOTTestBed.createComponent(ContentTypeFieldsRowListComponent);
             comp = fixture.componentInstance;
             de = fixture.debugElement;
-            el = de.nativeElement;
         })
     );
 

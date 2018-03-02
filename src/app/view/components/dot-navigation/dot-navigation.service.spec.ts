@@ -1,19 +1,15 @@
-import { Auth, User } from 'dotcms-js/core/login.service';
+import { Auth } from 'dotcms-js/core/login.service';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DotMenu } from '../../../shared/models/navigation';
 import { DotMenuService } from '../../../api/services/dot-menu.service';
 import { DotNavigationService } from './dot-navigation.service';
 import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
-import { DotcmsEventsService, LoginService, CoreWebService } from 'dotcms-js/dotcms-js';
+import { DotcmsEventsService, LoginService } from 'dotcms-js/dotcms-js';
 import { LoginServiceMock } from '../../../test/login-service.mock';
 import { Observable } from 'rxjs/Observable';
-import { ReflectiveInjector } from '@angular/core';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
-import { TestBed } from '@angular/core/testing';
-import { async, tick } from '@angular/core/testing';
-import { fakeAsync } from '@angular/core/testing';
-import { noUndefined } from '@angular/compiler/src/util';
+import { async } from '@angular/core/testing';
 
 const mockMenu: DotMenu[] = [
     {

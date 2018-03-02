@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { DotMessageService } from '../../../../api/services/dot-messages-service';
+import { DotMessageService } from '../../../../../api/services/dot-messages-service';
 import { DotDOMHtmlUtilService } from './dot-dom-html-util.service';
 
 /**

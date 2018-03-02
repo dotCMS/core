@@ -1,12 +1,12 @@
-import { DotConfirmationService } from './../../../api/services/dot-confirmation/dot-confirmation.service';
-import { IconButtonTooltipModule } from './../_common/icon-button-tooltip/icon-button-tooltip.module';
-import { ActionMenuButtonComponent } from './../_common/action-menu-button/action-menu-button.component';
+import { DotDialogService } from '../../../api/services/dot-dialog/dot-dialog.service';
+import { IconButtonTooltipModule } from '../_common/icon-button-tooltip/icon-button-tooltip.module';
+import { ActionMenuButtonComponent } from '../_common/action-menu-button/action-menu-button.component';
 import { DotActionButtonComponent } from '../_common/dot-action-button/dot-action-button.component';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture } from '@angular/core/testing';
 import { CrudService } from '../../../api/services/crud/crud.service';
 import { DOTTestBed } from '../../../test/dot-test-bed';
-import { DataTableModule, SharedModule, MenuModule, MenuItem } from 'primeng/primeng';
+import { DataTableModule, SharedModule, MenuModule} from 'primeng/primeng';
 import { DebugElement, SimpleChange } from '@angular/core';
 import { FormatDateService } from '../../../api/services/format-date-service';
 import { ListingDataTableComponent } from './listing-data-table.component';
@@ -48,7 +48,7 @@ describe('ListingDataTableComponent', () => {
                 CrudService,
                 FormatDateService,
                 PaginatorService,
-                DotConfirmationService
+                DotDialogService
             ]
         });
 
@@ -115,7 +115,7 @@ describe('ListingDataTableComponent', () => {
         const headers = rows[0].querySelectorAll('th');
         expect(5).toEqual(headers.length);
 
-        comp.columns.forEach((col, index) =>
+        comp.columns.forEach((_col, index) =>
             expect(!index ? '' : comp.columns[index - 1].header).toEqual(
                 headers[index].querySelector('span').textContent
             )
@@ -126,7 +126,7 @@ describe('ListingDataTableComponent', () => {
                 const cells = row.querySelectorAll('td');
                 const item = this.items[rowIndex - 1];
 
-                cells.forEach((cell, cellIndex) => {
+                cells.forEach((_cell, cellIndex) => {
                     if (cellIndex && cellIndex < 5) {
                         expect(cells[cellIndex].querySelector('span').textContent).toContain(
                             item[comp.columns[cellIndex - 1].fieldName]
@@ -171,7 +171,7 @@ describe('ListingDataTableComponent', () => {
         const headers = rows[0].querySelectorAll('th');
         expect(5).toEqual(headers.length, 'th');
 
-        comp.columns.forEach((col, index) =>
+        comp.columns.forEach((_col, index) =>
             expect(!index ? '' : comp.columns[index - 1].header).toEqual(
                 headers[index].querySelector('span').textContent
             )
@@ -182,7 +182,7 @@ describe('ListingDataTableComponent', () => {
                 const cells = row.querySelectorAll('td');
                 const item = this.items[rowIndex - 1];
 
-                cells.forEach((cell, cellIndex) => {
+                cells.forEach((_cell, cellIndex) => {
                     if (cellIndex && cellIndex < 5) {
                         const textContent = cells[cellIndex].querySelector('span').textContent;
                         const itemCOntent = item[comp.columns[cellIndex - 1].fieldName];
@@ -286,7 +286,6 @@ describe('ListingDataTableComponent', () => {
         });
 
         fixture.detectChanges();
-        const rows = el.querySelectorAll('tr');
         const actionButton = de.query(By.css('dot-action-menu-button'));
 
         const spy = spyOn(fakeActions[0].menuItem, 'command');
