@@ -11,12 +11,15 @@ import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
+import java.util.Map;
+
 /**
  * Encapsulate helper method for the {@link com.dotcms.rest.ContentResource}
  * @author jsanca
  */
-class ContentHelper {
+public class ContentHelper {
 
+    private final MapToContentletPopulator mapToContentletPopulator;
     private final IdentifierAPI identifierAPI;
 
     private static class SingletonHolder {
@@ -28,14 +31,29 @@ class ContentHelper {
     }
 
     private ContentHelper() {
-        this(  APILocator.getIdentifierAPI() );
+        this(  APILocator.getIdentifierAPI(),
+                MapToContentletPopulator.INSTANCE);
     }
 
     @VisibleForTesting
-    protected ContentHelper(final IdentifierAPI identifierAPI) {
-        this.identifierAPI = identifierAPI;
+    protected ContentHelper(final IdentifierAPI identifierAPI,
+                            final MapToContentletPopulator mapToContentletPopulator) {
+
+        this.identifierAPI            = identifierAPI;
+        this.mapToContentletPopulator = mapToContentletPopulator;
     }
 
+    /**
+     * Populate the contentlet from the map will all logic inside.
+     * @param contentlet      {@link Contentlet}
+     * @param stringObjectMap Map
+     * @return Contentlet
+     */
+    public Contentlet populateContentletFromMap(final Contentlet contentlet,
+                                                final Map<String, Object> stringObjectMap) {
+
+        return this.mapToContentletPopulator.populate(contentlet, stringObjectMap);
+    }
     /**
      * Adds needed things that are not coming by default from the api to the contentlet.
      * If there is anything new to add, returns copy with the new attributes inside, otherwise returns the same instance.

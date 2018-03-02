@@ -57,16 +57,11 @@
 
 	List<WorkflowAction> availableActions= new ArrayList();
 	if(currentStep != null){
-		WorkflowStep step = new WorkflowStep();
+
+	    final WorkflowStep step = new WorkflowStep();
 		step.setId(currentStep);
 
-		List<WorkflowAction>  myActions = wapi.findActions(step, user);
-		for(WorkflowAction a : myActions){
-			if(!a.requiresCheckout()){
-				availableActions.add(a);
-			}
-
-		}
+		availableActions = wapi.findActions(step, user);
 		if(availableActions.size() ==0){
 			singleStep=false;
 		}

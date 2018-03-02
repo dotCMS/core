@@ -252,7 +252,6 @@
 					<%} %>
 
 					<%for(WorkflowAction a : actions){ %>
-						<%if(a.requiresCheckout())continue; %>
 
 						<% List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(a); %>
 						<% boolean hasPushPublishActionlet = false; %>

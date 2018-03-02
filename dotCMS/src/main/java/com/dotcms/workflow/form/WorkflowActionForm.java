@@ -163,6 +163,8 @@ public class WorkflowActionForm extends Validated {
         private boolean       actionAssignable;
         @JsonProperty(required = true)
         private boolean       actionCommentable;
+
+        @Deprecated
         @JsonProperty(required = true)
         private boolean       requiresCheckout;
         @JsonProperty(required = true)
@@ -223,6 +225,7 @@ public class WorkflowActionForm extends Validated {
             return this;
         }
 
+        @Deprecated
         public Builder requiresCheckout(boolean requiresCheckout) {
             this.requiresCheckout = requiresCheckout;
             return this;
