@@ -8,6 +8,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.Constants;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -32,6 +33,7 @@ public class DotParse extends DotDirective {
   private final String EDIT_ICON =
       "<div class='dot_parseIcon'><a href='javascript:window.top.document.getElementById(\"detailFrame\").contentWindow.editFile(\"${_dotParseInode}\");' title='${_dotParsePath}'><span class='editIcon'></span></a></div>";
 
+  private final UserAPI userAPI = APILocator.getUserAPI();
 
   @Override
   public final String getName() {
@@ -99,20 +101,22 @@ public class DotParse extends DotDirective {
         String errorMessage = String.format("Not found %s version of [%s]",  params.mode, templatePath);
         throw new ResourceNotFoundException(errorMessage);
       }
-      boolean respectFrontEndRolesForVTL = (params.mode.respectAnonPerms) ? Config.getBooleanProperty("RESPECT_FRONTEND_ROLES_FOR_DOTPARSE", true) : params.mode.respectAnonPerms;
 
-      Contentlet c = APILocator.getContentletAPI().find(inode, params.user, respectFrontEndRolesForVTL);
-      FileAsset asset = APILocator.getFileAssetAPI().fromContentlet(c);
+      final boolean respectFrontEndRolesForVTL = (params.mode.respectAnonPerms) ? Config.getBooleanProperty("RESPECT_FRONTEND_ROLES_FOR_DOTPARSE", true) : params.mode.respectAnonPerms;
+
+      final Contentlet contentlet = APILocator.getContentletAPI().find(inode, userAPI.getSystemUser(), respectFrontEndRolesForVTL);
+      final FileAsset asset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
       
       
       // add the edit control if we have run through a page render
-      if (!context.containsKey("dontShowIcon") && PageMode.EDIT_MODE == params.mode &&  (request.getAttribute(
-              Constants.CMS_FILTER_URI_OVERRIDE)!=null)) {
-        if (APILocator.getPermissionAPI().doesUserHavePermission(c, PermissionAPI.PERMISSION_READ, user)) {
-          String editIcon = new String(EDIT_ICON).replace("${_dotParseInode}", c.getInode()).replace("${_dotParsePath}",
+      if (!context.containsKey("dontShowIcon") &&
+              PageMode.EDIT_MODE == params.mode &&
+              (request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE)!=null) &&
+              APILocator.getPermissionAPI().doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user)) {
+
+          final String editIcon = EDIT_ICON.replace("${_dotParseInode}", contentlet.getInode()).replace("${_dotParsePath}",
               id.getURI());
           writer.append(editIcon);
-        }
       }
 
 

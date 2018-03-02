@@ -192,7 +192,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			contentletMap.put(ESMappingConstants.BASE_TYPE + TEXT, Integer.toString(st.getStructureType()));
 			contentletMap.put(ESMappingConstants.TYPE, ESMappingConstants.CONTENT);
 			contentletMap.put(ESMappingConstants.INODE, con.getInode());
-			contentletMap.put(ESMappingConstants.MOD_DATE, con.getModDate());
+			contentletMap.put(ESMappingConstants.MOD_DATE, elasticSearchDateTimeFormat.format(con.getModDate()));
 			contentletMap.put(ESMappingConstants.MOD_DATE + TEXT, datetimeFormat.format(con.getModDate()));
 			contentletMap.put(ESMappingConstants.OWNER, con.getOwner()==null ? "0" : con.getOwner());
 			contentletMap.put(ESMappingConstants.MOD_USER, con.getModUser());
@@ -220,7 +220,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					contentletMap.put(ESMappingConstants.WORKFLOW_CREATED_BY, task.getCreatedBy());
 					contentletMap.put(ESMappingConstants.WORKFLOW_ASSIGN, task.getAssignedTo());
 					contentletMap.put(ESMappingConstants.WORKFLOW_STEP, task.getStatus());
-					contentletMap.put(ESMappingConstants.WORKFLOW_MOD_DATE, task.getModDate());
+					contentletMap.put(ESMappingConstants.WORKFLOW_MOD_DATE, elasticSearchDateTimeFormat.format(task.getModDate()));
 					contentletMap.put(ESMappingConstants.WORKFLOW_MOD_DATE + TEXT, datetimeFormat.format(task.getModDate()));
 				}
 			}
@@ -229,25 +229,25 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			}
 
 			if(UtilMethods.isSet(ident.getSysPublishDate())) {
-				contentletMap.put(ESMappingConstants.PUBLISH_DATE, ident.getSysPublishDate());
+				contentletMap.put(ESMappingConstants.PUBLISH_DATE, elasticSearchDateTimeFormat.format(ident.getSysPublishDate()));
 				contentletMap.put(ESMappingConstants.PUBLISH_DATE + TEXT,
 						datetimeFormat.format(ident.getSysPublishDate()));
 			}else {
-				contentletMap.put(ESMappingConstants.PUBLISH_DATE,cvi.getVersionTs());
+				contentletMap.put(ESMappingConstants.PUBLISH_DATE, elasticSearchDateTimeFormat.format(cvi.getVersionTs()));
 				contentletMap.put(ESMappingConstants.PUBLISH_DATE + TEXT,
 						datetimeFormat.format(cvi.getVersionTs()));
 			}
 
 			if(UtilMethods.isSet(ident.getSysExpireDate())) {
-				contentletMap.put(ESMappingConstants.EXPIRE_DATE, ident.getSysExpireDate());
+				contentletMap.put(ESMappingConstants.EXPIRE_DATE, elasticSearchDateTimeFormat.format(ident.getSysExpireDate()));
 				contentletMap.put(ESMappingConstants.EXPIRE_DATE + TEXT,
 						datetimeFormat.format(ident.getSysExpireDate()));
 			}else {
-				contentletMap.put(ESMappingConstants.EXPIRE_DATE, new Date(Long.MAX_VALUE));
+				contentletMap.put(ESMappingConstants.EXPIRE_DATE, elasticSearchDateTimeFormat.format(29990101000000L));
 				contentletMap.put(ESMappingConstants.EXPIRE_DATE + TEXT, "29990101000000");
 			}
 
-			contentletMap.put(ESMappingConstants.VERSION_TS, cvi.getVersionTs());
+			contentletMap.put(ESMappingConstants.VERSION_TS, elasticSearchDateTimeFormat.format(cvi.getVersionTs()));
 			contentletMap.put(ESMappingConstants.VERSION_TS + TEXT, datetimeFormat.format(cvi.getVersionTs()));
 
 			String urlMap = null;
@@ -385,7 +385,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	public static final FastDateFormat dateFormat = FastDateFormat.getInstance("yyyyMMdd");
 	public static final FastDateFormat datetimeFormat = FastDateFormat.getInstance("yyyyMMddHHmmss");
 
-	public static final String elasticSearchDateTimeFormatPattern="yyyy-MM-dd'T'HH:mm:ss'Z'";
+	public static final String elasticSearchDateTimeFormatPattern="yyyy-MM-dd'T'HH:mm:ss";
 	public static final FastDateFormat elasticSearchDateTimeFormat = FastDateFormat.getInstance(elasticSearchDateTimeFormatPattern);
 
 	public static final FastDateFormat timeFormat = FastDateFormat.getInstance("HHmmss");
@@ -449,20 +449,22 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				else if (f.getFieldType().equals(ESMappingConstants.FIELD_ELASTIC_TYPE_DATE)) {
 					try {
 						String dateString = dateFormat.format(valueObj);
-						m.put(keyName, valueObj);
+						m.put(keyName, elasticSearchDateTimeFormat.format(valueObj));
 						m.put(keyNameText, dateString);
 					}
 					catch(Exception ex) {
-						m.put(keyName, "");
+						m.put(keyName, null);
+						m.put(keyNameText, null);
 					}
 				} else if(f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_DATE_TIME)) {
 					try {
 						String datetimeString = datetimeFormat.format(valueObj);
-						m.put(keyName, valueObj);
+						m.put(keyName, elasticSearchDateTimeFormat.format(valueObj));
 						m.put(keyNameText, datetimeString);
 					}
 					catch(Exception ex) {
-						m.put(keyName, "");
+						m.put(keyName, null);
+						m.put(keyNameText, null);
 					}
 				} else if (f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_CATEGORY)) {
 					// moved the logic to loadCategories

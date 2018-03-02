@@ -30,7 +30,11 @@ public class Sidebar extends ContainerHolder implements Serializable{
         this.location = location;
         this.widthPercent = widthPercent;
 
-        this.width = SidebarWidthValue.fromString(width);
+        if (width != null) {
+            this.width = SidebarWidthValue.fromString(width);
+        } else {
+            this.width = this.getWidthFromWidthPercent();
+        }
 
     }
 
@@ -43,7 +47,12 @@ public class Sidebar extends ContainerHolder implements Serializable{
     }
 
     public String getWidth() {
-        return width != null ? width.name().toLowerCase() : null;
+        return width.name().toLowerCase();
+    }
+
+    private SidebarWidthValue getWidthFromWidthPercent() {
+        return (widthPercent <= 20 ? SidebarWidthValue.SMALL :
+                widthPercent <= 30 ? SidebarWidthValue.MEDIUM : SidebarWidthValue.LARGE);
     }
 
     @Override

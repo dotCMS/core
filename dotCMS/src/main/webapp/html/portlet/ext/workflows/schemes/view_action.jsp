@@ -221,12 +221,6 @@
 					<dl class="vertical">
 						<dt></dt>
 						<dd>
-							<div class="checkbox">
-								<input type="checkbox" name="actionRequiresCheckout"
-									   id="actionRequiresCheckout" dojoType="dijit.form.CheckBox" value="true"
-									<%=(action.requiresCheckout()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()">
-								<label for=""><%=LanguageUtil.get(pageContext, "Requires-Checkout")%></label>
-							</div>
 
 							<div class="checkbox">
 								<input type="checkbox" name="actionCommentable"

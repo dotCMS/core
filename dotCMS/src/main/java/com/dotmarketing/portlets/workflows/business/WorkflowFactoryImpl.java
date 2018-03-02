@@ -3,10 +3,8 @@ package com.dotmarketing.portlets.workflows.business;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.util.ConversionUtils;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.common.db.DotConnect;
@@ -17,36 +15,19 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.workflows.model.WorkFlowTaskFiles;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
-import com.dotmarketing.portlets.workflows.model.WorkflowComment;
-import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
-import com.dotmarketing.portlets.workflows.model.WorkflowStatus;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
-import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
+import com.liferay.portal.model.User;
+import org.apache.commons.beanutils.BeanUtils;
 
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
-
-import org.apache.commons.beanutils.BeanUtils;
-
-import com.google.common.collect.ImmutableList;
-import com.liferay.portal.model.User;
 
 
 /**
@@ -60,6 +41,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	private final WorkflowCache cache;
 	private final WorkflowSQL   sql;
+
 
 	/**
 	 * Creates an instance of the {@link WorkFlowFactory}.
@@ -649,6 +631,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		List<WorkflowScheme> schemes = new ArrayList<>();
 		if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
 			schemes.add(this.findDefaultScheme());
+			schemes.add(this.findSystemWorkflow());
 			return schemes;
 		}
 
@@ -674,6 +657,10 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		cache.addForStructure(structId, schemes);
 		return schemes;
 
+	}
+
+	private WorkflowScheme findSystemWorkflow() throws DotDataException {
+		return this.findScheme(WorkFlowFactory.SYSTEM_WORKFLOW_ID);
 	}
 
 	@Override

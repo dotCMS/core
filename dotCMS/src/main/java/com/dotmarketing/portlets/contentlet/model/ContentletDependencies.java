@@ -13,7 +13,7 @@ public class ContentletDependencies {
     private final String                  workflowActionId;
     private final String                  workflowActionComments;
     private final String                  workflowAssignKey;
-    private final List<Category> categories;
+    private final List<Category>          categories;
     private final boolean                 respectAnonymousPermissions;
     private final boolean                 generateSystemEvent;
 
