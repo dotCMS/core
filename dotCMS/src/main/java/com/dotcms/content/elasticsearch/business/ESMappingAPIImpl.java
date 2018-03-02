@@ -534,8 +534,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 						}
 					}
 
-					m.put(new StringBuilder(st.getVelocityVarName()).append(".")
-							.append(ESMappingConstants.TAGS).toString(), tagg);
+					m.put(keyName, tagg);
 					m.put(ESMappingConstants.TAGS, tagg);
 
 					if ( Structure.STRUCTURE_TYPE_PERSONA != con.getStructure().getStructureType() ) {
