@@ -2193,33 +2193,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
             }
         }
 
-    /**
-     * Determines whether or not a date has any time values.
-     * @param date The date.
-     * @return true iff the date is not null and any of the date's hour, minute,
-     * seconds or millisecond values are greater than zero.
-     */
-    private static boolean hasTime(Date date) {
-        if (date == null) {
-            return false;
-        }
-        Calendar c = Calendar.getInstance();
-        c.setTime(date);
-        if (c.get(Calendar.HOUR_OF_DAY) > 0) {
-            return true;
-        }
-        if (c.get(Calendar.MINUTE) > 0) {
-            return true;
-        }
-        if (c.get(Calendar.SECOND) > 0) {
-            return true;
-        }
-        if (c.get(Calendar.MILLISECOND) > 0) {
-            return true;
-        }
-        return false;
-    }
-
         /**
          *
          */
