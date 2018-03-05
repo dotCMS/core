@@ -99,7 +99,8 @@ import org.springframework.util.NumberUtils;
  */
 public class ESContentFactoryImpl extends ContentletFactory {
 
-    public static final String LUCENE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
+    public static final String LUCENE_DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
+    public static final String LUCENE_DATE_FORMAT = "yyyy-MM-dd";
     private ContentletCache cc ;
 	private ESClient client;
 	private LanguageAPI langAPI;
@@ -2071,7 +2072,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     if (UtilMethods.isSet(dateFormat))
                         luceneDate = toLuceneDateWithFormat(originalDate, dateFormat);
                     else
-                        luceneDate = toLuceneDateTime(originalDate);
+                        luceneDate = toLuceneDateWithFormat(originalDate, LUCENE_DATE_TIME_FORMAT);
 
                     newQuery.append(query.substring(begin, regExMatch.getBegin()) + luceneDate);
                     begin = regExMatch.getEnd();
@@ -2098,7 +2099,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
                 SimpleDateFormat sdf = new SimpleDateFormat(format);
                 Date date = sdf.parse(dateString);
-                String returnValue = toLuceneDate(date);
+                String returnValue = toLuceneDateTime(date);
 
                 return returnValue;
             } catch (Exception ex) {
@@ -2114,8 +2115,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
          */
         private static String toLuceneDate(Date date) {
             try {
-                SimpleDateFormat df = new SimpleDateFormat(
-                        LUCENE_FORMAT);
+                SimpleDateFormat df = new SimpleDateFormat(LUCENE_DATE_FORMAT);
+
                 String returnValue = df.format(date);
                 return returnValue;
             } catch (Exception ex) {
@@ -2126,17 +2127,19 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         /**
          *
-         * @param dateString
+         * @param date
          * @return
          */
-        private static String toLuceneDateTime(String dateString) {
-            String format = "MM/dd/yyyy'T'HH:mm:ss";
-            String result = toLuceneDateWithFormat(dateString, format);
-            if (result.equals(ERROR_DATE)) {
-                format = "MM/dd/yyyy'T'HH:mm";
-                result = toLuceneDateWithFormat(dateString, format);
+        private static String toLuceneDateTime(Date date) {
+            try {
+                SimpleDateFormat df = new SimpleDateFormat(LUCENE_DATE_TIME_FORMAT);
+
+                String returnValue = df.format(date);
+                return returnValue;
+            } catch (Exception ex) {
+                Logger.error(ESContentFactoryImpl.class, ex.toString());
+                return ERROR_DATE;
             }
-            return result;
         }
 
         /**
@@ -2175,25 +2178,47 @@ public class ESContentFactoryImpl extends ContentletFactory {
          * @return
          */
         private static String toLuceneDate(String dateString) {
-            String format = "MM/dd/yyyy";
-            return toLuceneDateWithFormat(dateString, format);
-        }
 
-        /**
-         *
-         * @param time
-         * @return
-         */
-        private static String toLuceneTime(Date time) {
-            try {
-                SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss");
-                String returnValue = df.format(time);
+            try{
+                String format = "MM/dd/yyyy";
+
+                SimpleDateFormat sdf = new SimpleDateFormat(format);
+                Date date = sdf.parse(dateString);
+                String returnValue = toLuceneDate(date);
+
                 return returnValue;
             } catch (Exception ex) {
                 Logger.error(ESContentFactoryImpl.class, ex.toString());
                 return ERROR_DATE;
             }
         }
+
+    /**
+     * Determines whether or not a date has any time values.
+     * @param date The date.
+     * @return true iff the date is not null and any of the date's hour, minute,
+     * seconds or millisecond values are greater than zero.
+     */
+    private static boolean hasTime(Date date) {
+        if (date == null) {
+            return false;
+        }
+        Calendar c = Calendar.getInstance();
+        c.setTime(date);
+        if (c.get(Calendar.HOUR_OF_DAY) > 0) {
+            return true;
+        }
+        if (c.get(Calendar.MINUTE) > 0) {
+            return true;
+        }
+        if (c.get(Calendar.SECOND) > 0) {
+            return true;
+        }
+        if (c.get(Calendar.MILLISECOND) > 0) {
+            return true;
+        }
+        return false;
+    }
 
         /**
          *
