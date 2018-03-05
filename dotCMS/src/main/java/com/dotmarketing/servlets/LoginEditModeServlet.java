@@ -39,23 +39,23 @@ public class LoginEditModeServlet extends HttpServlet {
 
 
 			try{
-				Clickstream clickstream = (Clickstream) request.getSession().getAttribute("clickstream");
+				final Clickstream clickstream = (Clickstream) request.getSession().getAttribute("clickstream");
 
 				if (clickstream != null) {
-					Language lang = WebAPILocator.getLanguageWebAPI().getLanguage(request);
+					final Language lang = WebAPILocator.getLanguageWebAPI().getLanguage(request);
 					String pageUrl = null;
 
 					try {//Check if is a URL MAP Content Page
-						ClickstreamRequest click =  clickstream.getClickstreamRequests().get(clickstream.getClickstreamRequests().size()-1);
+						final ClickstreamRequest click =  clickstream.getClickstreamRequests().get(clickstream.getClickstreamRequests().size()-1);
 						if(click.getAssociatedIdentifier()!=null) {
-							Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifier(click.getAssociatedIdentifier(), false, lang.getId(), APILocator.getUserAPI().getSystemUser(), false);
-							String pageDetailIdentifier = contentlet.getContentType().detailPage();
+							final Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifier(click.getAssociatedIdentifier(), false, lang.getId(), APILocator.getUserAPI().getSystemUser(), false);
+							final String pageDetailIdentifier = contentlet.getContentType().detailPage();
 							if(UtilMethods.isSet(pageDetailIdentifier)){
-								Contentlet pageDetail = APILocator.getContentletAPI()
+								final Contentlet pageDetail = APILocator.getContentletAPI()
 										.findContentletByIdentifier(pageDetailIdentifier, false,
 												lang.getId(), APILocator.getUserAPI().getSystemUser(),
 												false);
-								HTMLPageAsset pageDetailAsset = APILocator.getHTMLPageAssetAPI().fromContentlet(pageDetail);
+								final HTMLPageAsset pageDetailAsset = APILocator.getHTMLPageAssetAPI().fromContentlet(pageDetail);
 								pageUrl = APILocator.getIdentifierAPI().find(pageDetail.getIdentifier()).getParentPath() + pageDetailAsset.getPageUrl() + "?urlMap=" + contentlet.getIdentifier();
 							}
 						}
@@ -63,11 +63,11 @@ public class LoginEditModeServlet extends HttpServlet {
 						Logger.error(this.getClass(), "unable to urlmap content page: "  + e);
 					}
 					if(pageUrl==null) {
-						Contentlet con = APILocator.getContentletAPI()
+						final Contentlet con = APILocator.getContentletAPI()
 								.findContentletByIdentifier(clickstream.getLastPageId(), false,
 										lang.getId(), APILocator.getUserAPI().getSystemUser(),
 										false);
-						HTMLPageAsset asset = APILocator.getHTMLPageAssetAPI().fromContentlet(con);
+						final HTMLPageAsset asset = APILocator.getHTMLPageAssetAPI().fromContentlet(con);
 						pageUrl = APILocator.getIdentifierAPI().find(con.getIdentifier()).getParentPath() + asset.getPageUrl();
 					}
 					request.getSession().setAttribute(WebKeys.LOGIN_TO_EDIT_MODE, pageUrl);
