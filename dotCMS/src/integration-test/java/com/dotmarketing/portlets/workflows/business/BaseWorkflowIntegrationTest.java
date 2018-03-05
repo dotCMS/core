@@ -114,7 +114,7 @@ public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
         action.setSchemeId(schemeId);
         action.setNextStep(nextStep);
         action.setShowOn(WorkflowAPI.DEFAULT_SHOW_ON);
-        action.setRequiresCheckout(true);
+        action.setRequiresCheckout(false);
         action.setCondition("");
         action.setNextAssign(APILocator.getRoleAPI().loadCMSAnonymousRole().getId());
         workflowAPI.saveAction(action, null);

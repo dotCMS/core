@@ -501,12 +501,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
     @CloseDBIfOpened
     public List<WorkflowAction> findActions(final WorkflowStep step, final User user, final Permissionable permissionable) throws DotDataException,
             DotSecurityException {
-		if(null == step){
+
+		if(null == step) {
 			return Collections.emptyList();
 		}
-        List<WorkflowAction> actions = workFlowFactory.findActions(step);
-        actions = filterActionsCollection(actions, user, true, permissionable);
-        return actions;
+        final List<WorkflowAction> actions = workFlowFactory.findActions(step);
+        return filterActionsCollection(actions, user, true, permissionable);
     }
 
 	@CloseDBIfOpened
@@ -569,8 +569,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		try {
 
-			isLocked     = APILocator.getVersionableAPI().isLocked(contentlet);
 			canLock      = APILocator.getContentletAPI().canLock(contentlet, user);
+			isLocked     = APILocator.getVersionableAPI().isLocked(contentlet);
 		} catch(Exception e) {
 
 		}
@@ -1219,9 +1219,18 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@Override
 	public Contentlet fireContentWorkflow(final Contentlet contentlet, final ContentletDependencies dependencies) throws DotDataException {
 
-		if(!UtilMethods.isSet(contentlet.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY))){
+		if(UtilMethods.isSet(dependencies.getWorkflowActionId())){
 			contentlet.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, dependencies.getWorkflowActionId());
 		}
+
+		if(UtilMethods.isSet(dependencies.getWorkflowActionComments())){
+			contentlet.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY, dependencies.getWorkflowActionComments());
+		}
+
+		if(UtilMethods.isSet(dependencies.getWorkflowAssignKey())){
+			contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, dependencies.getWorkflowAssignKey());
+		}
+
 		final WorkflowProcessor processor = this.fireWorkflowPreCheckin(contentlet, dependencies.getModUser());
 
 		processor.setContentletDependencies(dependencies);

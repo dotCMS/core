@@ -1234,7 +1234,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             action.setOwner(whoCanUse.getId());
             action.setOrder(order);
             action.setNextStep(nextStep);
-            action.setRequiresCheckout(requiresCheckout);
+            action.setRequiresCheckout(false);
             action.setStepId(stepId);
             action.setNextAssign(whoCanUse.getId());
             action.setCommentable(true);
