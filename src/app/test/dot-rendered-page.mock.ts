@@ -5,7 +5,7 @@ export const mockDotRenderPage: DotRenderedPage = {
     canLock: true,
     identifier: '123',
     languageId: 1,
-    liveInode: '999',
+    liveInode: '',
     lockMessage: '',
     lockedBy: 'someone',
     lockedByName: 'Some One',
@@ -15,5 +15,5 @@ export const mockDotRenderPage: DotRenderedPage = {
     shortyLive: '',
     shortyWorking: '',
     title: 'A title',
-    workingInode: ''
+    workingInode: '999'
 };

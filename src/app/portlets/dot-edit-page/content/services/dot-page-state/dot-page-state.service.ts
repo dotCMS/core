@@ -24,7 +24,7 @@ export class DotPageStateService {
      * @memberof DotRenderHTMLService
      */
     set(page: DotRenderedPage, state: DotPageState): Observable<DotRenderedPageState> {
-        const lockUnlock$: Observable<string> = this.getLockMode(page.liveInode, state.locked);
+        const lockUnlock$: Observable<string> = this.getLockMode(page.workingInode, state.locked);
         const pageMode$: Observable<DotRenderedPage> =
             state.mode !== undefined ? this.getPageModeMethod(state.mode)(page.pageURI) : Observable.of(null);
 
@@ -46,11 +46,11 @@ export class DotPageStateService {
             .map((page: DotRenderedPage) => new DotRenderedPageState(page, null, this.loginService.auth.user));
     }
 
-    private getLockMode(liveInode: string, lock: boolean): Observable<string> {
+    private getLockMode(workingInode: string, lock: boolean): Observable<string> {
         if (lock === true) {
-            return this.dotContentletLockerService.lock(liveInode).pluck('message');
+            return this.dotContentletLockerService.lock(workingInode).pluck('message');
         } else if (lock === false) {
-            return this.dotContentletLockerService.unlock(liveInode).pluck('message');
+            return this.dotContentletLockerService.unlock(workingInode).pluck('message');
         }
 
         return Observable.of(null);
