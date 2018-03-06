@@ -172,17 +172,10 @@ export class DotEditLayoutDesignerComponent implements OnInit {
                 body: this.dotEditLayoutService.cleanupDotLayoutBody(this.pageView.layout.body) || {},
                 header: this.pageView.layout.header,
                 footer: this.pageView.layout.footer,
-                sidebar: this.fb.group(
-                    this.pageView.layout.sidebar || {
-                        location: '',
-                        containers: [],
-                        width: 'small',
-                        widthPercent: '',
-                        preview: false
-                    }
-                )
+                sidebar: this.createSidebarForm()
             })
         });
+
         this.initialFormValue = _.cloneDeep(this.form.value);
         this.isModelUpdated = false;
         this.form.valueChanges.subscribe(() => {
@@ -193,5 +186,21 @@ export class DotEditLayoutDesignerComponent implements OnInit {
 
     private showTemplateLayoutDialog(): void {
         this.showTemplateLayoutSelectionDialog = true;
+    }
+
+    private createSidebarForm() {
+        if (this.pageView.layout.sidebar) {
+            return this.fb.group({
+                location: this.pageView.layout.sidebar.location,
+                containers: this.fb.array(this.pageView.layout.sidebar.containers || []),
+                width: this.pageView.layout.sidebar.width
+            });
+        } else {
+            return  this.fb.group({
+                location: '',
+                containers: [],
+                width: 'small'
+            });
+        }
     }
 }

@@ -49,7 +49,13 @@ export const fakePageView: DotPageView = {
         footer: false,
         sidebar: {
             location: 'left',
-            width: 'small'
+            width: 'small',
+            containers: [
+                {
+                    identifier: 'fc193c82-8c32-4abe-ba8a-49522328c93e',
+                    uuid: 'LEGACY_RELATION_TYPE'
+                }
+            ]
         },
         body: {
             rows: []
