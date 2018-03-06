@@ -1,5 +1,6 @@
 package com.dotmarketing.util;
 
+import com.dotcms.rendering.velocity.viewtools.StringsWebApi;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.util.CollectionsUtils;
@@ -13,6 +14,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.StringWriter;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -309,7 +311,8 @@ public class OSGIUtil {
     }
 
     /**
-     * Returns the packages inside the <strong>osgi-extra.conf</strong> file, those packages are the value
+     * Returns the packages inside the <strong>osgi-extra.conf</strong> and the osgi-extra-generate.conf files
+     * If neither of those files are there, it will generate the osgi-extra-generate.conf based off the classpath
      * for the OSGI configuration property <strong>org.osgi.framework.system.packages.extra</strong>.
      * <br/><br/>
      * The property <strong>org.osgi.framework.system.packages.extra</strong> is use to set the list of packages the
@@ -319,10 +322,12 @@ public class OSGIUtil {
      * @throws IOException Any IOException
      */
     public String getExtraOSGIPackages() throws IOException {
-        String extraPackages;
 
-        File f = new File(FELIX_EXTRA_PACKAGES_FILE);
-        if (!f.exists()) {
+
+        final File[] felixExtras = {new File(FELIX_EXTRA_PACKAGES_FILE), new File(FELIX_EXTRA_PACKAGES_FILE_GENERATED)};
+        
+        // if neither exist, we generate a FELIX_EXTRA_PACKAGES_FILE_GENERATED
+        if (!(felixExtras[0].exists() || felixExtras[1].exists())) {
             StringBuilder bob = new StringBuilder();
             final Collection<String> list = ResourceCollectorUtil.getResources(dotCMSJarPrefixes);
             for (final String name : list) {
@@ -367,26 +372,19 @@ public class OSGIUtil {
             }
         }
 
-        //Reading the file with the extra packages
-        InputStream inputStream;
-        if (f.exists()) {
-            inputStream = Files.newInputStream(Paths.get(FELIX_EXTRA_PACKAGES_FILE));
-        } else {
-            inputStream = Files.newInputStream(Paths.get(FELIX_EXTRA_PACKAGES_FILE_GENERATED));
+        final StringWriter sw = new StringWriter();
+        for(File f: felixExtras) {
+            if(f.exists()) {
+                try(InputStream inputStream = Files.newInputStream(f.toPath())){
+                    sw.append(IOUtils.toString(inputStream));
+                }
+            }
         }
 
-        try {
-            extraPackages = IOUtils.toString(inputStream);
-        } finally {
-            inputStream.close();
-        }
 
         //Clean up the properties, it is better to keep it simple and in a standard format
-        extraPackages = extraPackages.replaceAll("\\\n", "");
-        extraPackages = extraPackages.replaceAll("\\\r", "");
-        extraPackages = extraPackages.replaceAll("\\\\", "");
+        return sw.toString().replaceAll("\\\n", "").replaceAll("\\\r", "").replaceAll("\\\\", "");
 
-        return extraPackages;
     }
 
     /**
