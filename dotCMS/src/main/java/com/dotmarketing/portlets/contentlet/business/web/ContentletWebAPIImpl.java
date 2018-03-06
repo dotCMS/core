@@ -514,30 +514,40 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			throw ve;
 		}
 
-		currentContentlet.setStringProperty("wfActionComments", (String) contentletFormData.get("wfActionComments"));
-		currentContentlet.setStringProperty("wfActionAssign",   (String) contentletFormData.get("wfActionAssign"));
+		/*
+		We can not expect to always have a contentlet after executing a Workflow Action as
+		for example if we run the delete actionlet we will have no contentlet to process at this point
+		 */
+		if (null != currentContentlet) {
 
-		contentletFormData.put(WebKeys.CONTENTLET_EDIT,      currentContentlet);
-		contentletFormData.put(WebKeys.CONTENTLET_FORM_EDIT, currentContentlet);
+			currentContentlet.setStringProperty("wfActionComments",
+					(String) contentletFormData.get("wfActionComments"));
+			currentContentlet.setStringProperty("wfActionAssign",
+					(String) contentletFormData.get("wfActionAssign"));
 
-		if (Config.getBooleanProperty("CONTENT_CHANGE_NOTIFICATIONS", false) && !isNew && !isAutoSave) {
+			contentletFormData.put(WebKeys.CONTENTLET_EDIT, currentContentlet);
+			contentletFormData.put(WebKeys.CONTENTLET_FORM_EDIT, currentContentlet);
 
-			_sendContentletPublishNotification(currentContentlet, request);
-		}
+			if (Config.getBooleanProperty("CONTENT_CHANGE_NOTIFICATIONS", false) && !isNew
+					&& !isAutoSave) {
 
-		if(!isAutoSave) {
-
-			SessionMessages.add(request, "message", "message.contentlet.save");
-		}
-
-        if ((subCommand != null) && com.dotmarketing.util.Constants.PUBLISH.equals(subCommand)) {
-
-            APILocator.getVersionableAPI().setLive(currentContentlet);
-            if(!isAutoSave) {
-
-				SessionMessages.add(request, "message", "message.contentlet.published");
+				_sendContentletPublishNotification(currentContentlet, request);
 			}
-        }
+
+			if (!isAutoSave) {
+
+				SessionMessages.add(request, "message", "message.contentlet.save");
+			}
+
+			if ((subCommand != null) && Constants.PUBLISH.equals(subCommand)) {
+
+				APILocator.getVersionableAPI().setLive(currentContentlet);
+				if (!isAutoSave) {
+
+					SessionMessages.add(request, "message", "message.contentlet.published");
+				}
+			}
+		}
 	}
 
 	/**
