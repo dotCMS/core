@@ -103,7 +103,8 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 					REST_CLASSES.add(ActionletsResource.class);
 					REST_CLASSES.add(I18NResource.class);
 					REST_CLASSES.add(LanguagesResource.class);
-					
+					REST_CLASSES.add(com.dotcms.rest.api.v2.languages.LanguagesResource.class);
+
 					REST_CLASSES.add(MenuResource.class);
 
 					REST_CLASSES.add(AuthenticationResource.class);
