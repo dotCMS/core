@@ -686,6 +686,8 @@ public class UtilMethods {
      * Formats date text from short format (MM/dd/yyyy) to Lucene format
      * @param d date text on short format
      * @return date text on Lucene format
+     * @deprecated When a query contains a date with format MM/dd/yyyy, it is not necessary to format dates,
+     * Lucene accepts this format as well
      */
     public static final String shortDateToLuceneDate(String d) {
         java.util.Date rDate = null;
