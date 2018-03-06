@@ -12,7 +12,9 @@ import { SplitButton } from 'primeng/primeng';
 import { DotGlobalMessageService } from '../../../../../view/components/_common/dot-global-message/dot-global-message.service';
 import { DotEventsService } from '../../../../../api/services/dot-events/dot-events.service';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
-import { PageMode } from '../../../../dot-edit-page/content/shared/page-mode.enum';
+import { PageMode } from '../../../shared/models/page-mode.enum';
+import { DotRenderedPageState } from '../../../shared/models/dot-rendered-page-state.model';
+import { mockUser } from '../../../../../test/login-service.mock';
 
 describe('DotEditPageToolbarComponent', () => {
     let component: DotEditPageToolbarComponent;
@@ -79,21 +81,24 @@ describe('DotEditPageToolbarComponent', () => {
         fixture = testbed.createComponent(DotEditPageToolbarComponent);
         component = fixture.componentInstance;
         de = fixture.debugElement;
-        component.page = {
+        component.pageState = new DotRenderedPageState({
             canEdit: true,
             canLock: true,
             identifier: '123',
             languageId: 1,
             liveInode: '456',
-            locked: false,
-            mode: PageMode.PREVIEW,
             title: '',
             pageURI: '',
             render: '',
             shortyLive: '',
             shortyWorking: '',
             workingInode: ''
-        };
+        }, {
+            locked: false,
+            mode: PageMode.PREVIEW,
+        }, mockUser);
+
+
 
         dotGlobalMessageService = de.injector.get(DotGlobalMessageService);
         dotDialogService = de.injector.get(DotDialogService);
@@ -104,7 +109,7 @@ describe('DotEditPageToolbarComponent', () => {
     });
 
     it('should set page title', () => {
-        component.page.title = 'Hello World';
+        component.pageState.page.title = 'Hello World';
         const pageTitleEl: HTMLElement = de.query(By.css('.edit-page-toolbar__page-title')).nativeElement;
         fixture.detectChanges();
 
@@ -112,7 +117,7 @@ describe('DotEditPageToolbarComponent', () => {
     });
 
     it('should set page url', () => {
-        component.page.pageURI = '/test/test';
+        component.pageState.page.pageURI = '/test/test';
         const pageUrlEl: HTMLElement = de.query(By.css('.edit-page-toolbar__page-url')).nativeElement;
         fixture.detectChanges();
 
@@ -120,8 +125,8 @@ describe('DotEditPageToolbarComponent', () => {
     });
 
     it('should have a save button in edit mode', () => {
-        component.page.locked = true;
-        component.page.mode = PageMode.EDIT;
+        component.pageState.state.locked = true;
+        component.pageState.state.mode = PageMode.EDIT;
 
         fixture.detectChanges();
         const primaryAction: DebugElement = de.query(By.css('.edit-page-toolbar__save'));
@@ -139,7 +144,7 @@ describe('DotEditPageToolbarComponent', () => {
     });
 
     it('should hide the save button in live mode', () => {
-        component.page.mode = PageMode.LIVE;
+        component.pageState.state.mode = PageMode.LIVE;
 
         fixture.detectChanges();
         const primaryAction: DebugElement = de.query(By.css('.edit-page-toolbar__save'));
@@ -155,7 +160,7 @@ describe('DotEditPageToolbarComponent', () => {
     });
 
     it('should warn class in the locker', () => {
-        component.page.lockedByAnotherUser = true;
+        component.pageState.state.lockedByAnotherUser = true;
         fixture.detectChanges();
 
         const lockSwitch: DebugElement = de.query(By.css('.edit-page-toolbar__locker'));
@@ -170,27 +175,32 @@ describe('DotEditPageToolbarComponent', () => {
     });
 
     it('should have locker disabled', () => {
-        component.page.canLock = false;
+        component.pageState.page.canLock = false;
         fixture.detectChanges();
         const lockSwitch: DebugElement = de.query(By.css('.edit-page-toolbar__locker'));
 
         expect(lockSwitch.componentInstance.disabled).toBe(true);
     });
 
-    it('should have page is locked by message', () => {
-        component.page.lockedByAnotherUser = true;
+    it('should have page is locked by another user message and disabled edit button', () => {
+        component.pageState.state.lockedByAnotherUser = true;
         fixture.detectChanges();
 
         const lockedMessage: DebugElement = de.query(By.css('.edit-page-toolbar__locked-by-message'));
         expect(lockedMessage.nativeElement.textContent).toContain('Page is locked');
+
+        const editStateModel = component.states.find(state => state.label === 'Edit');
+        expect(editStateModel.styleClass).toEqual('edit-page-toolbar__state-selector-item--disabled');
     });
 
-    it('should have page is can\'t edit message', () => {
-        component.page.canEdit = false;
+    it('should have page can\'t edit message and disabled edit button', () => {
+        component.pageState.page.canEdit = false;
         fixture.detectChanges();
 
         const lockedMessage: DebugElement = de.query(By.css('.edit-page-toolbar__cant-edit-message'));
         expect(lockedMessage.nativeElement.textContent).toContain('You dont have permissions');
+        const editStateModel = component.states.find(state => state.label === 'Edit');
+        expect(editStateModel.styleClass).toEqual('edit-page-toolbar__state-selector-item--disabled');
     });
 
     it('should not have have any locked messages', () => {
@@ -203,21 +213,12 @@ describe('DotEditPageToolbarComponent', () => {
 
     it('should blink page is locked message', () => {
         spyOn(component, 'onLockerClick');
-        component.page.canLock = false;
+        component.pageState.page.canLock = false;
         fixture.detectChanges();
 
         const lockSwitch: DebugElement = de.query(By.css('.edit-page-toolbar__locker'));
         lockSwitch.nativeElement.click();
         expect(component.onLockerClick).toHaveBeenCalledTimes(1);
-    });
-
-    it('should have edit button disabled', () => {
-        component.page.canEdit = false;
-        fixture.detectChanges();
-
-        const editStateModel = component.states.find(state => state.label === 'Edit');
-
-        expect(editStateModel.styleClass).toEqual('edit-page-toolbar__state-selector-item--disabled');
     });
 
     it('should NOT have an action split button', () => {
@@ -243,8 +244,8 @@ describe('DotEditPageToolbarComponent', () => {
     });
 
     it('should emit save event on primary action button click', () => {
-        component.page.mode = PageMode.EDIT;
-        component.page.locked = true;
+        component.pageState.state.mode = PageMode.EDIT;
+        component.pageState.state.locked = true;
         component.canSave = true;
 
         fixture.detectChanges();
@@ -261,8 +262,8 @@ describe('DotEditPageToolbarComponent', () => {
     });
 
     it('should disabled save button', () => {
-        component.page.mode = PageMode.EDIT;
-        component.page.locked = true;
+        component.pageState.state.mode = PageMode.EDIT;
+        component.pageState.state.locked = true;
         component.canSave = false;
 
         fixture.detectChanges();
@@ -272,8 +273,8 @@ describe('DotEditPageToolbarComponent', () => {
     });
 
     it('should enabled save button', () => {
-        component.page.mode = PageMode.EDIT;
-        component.page.locked = true;
+        component.pageState.state.mode = PageMode.EDIT;
+        component.pageState.state.locked = true;
         component.canSave = true;
 
         fixture.detectChanges();
@@ -297,7 +298,7 @@ describe('DotEditPageToolbarComponent', () => {
     });
 
     it('should go to preview if user unlock the page while is in edit', () => {
-        component.page.mode = PageMode.PREVIEW;
+        component.pageState.state.mode = PageMode.PREVIEW;
         fixture.detectChanges();
 
         // Set the page locked and in edit mode
@@ -309,7 +310,7 @@ describe('DotEditPageToolbarComponent', () => {
     });
 
     it('should go to edit if user lock the while is in preview', () => {
-        component.page.mode = PageMode.PREVIEW;
+        component.pageState.state.mode = PageMode.PREVIEW;
         fixture.detectChanges();
 
         clickLocker();
@@ -336,7 +337,7 @@ describe('DotEditPageToolbarComponent', () => {
         // expect(dotGlobalMessageService.display).toHaveBeenCalledWith('Copied to clipboard');
     });
 
-    describe('update page states', () => {
+    describe('emit page state', () => {
         let pageStateResult;
 
         beforeEach(() => {
@@ -347,29 +348,15 @@ describe('DotEditPageToolbarComponent', () => {
             });
         });
 
-        it('should emit page state and lock in true', () => {
-            component.page.mode = PageMode.PREVIEW;
+        it('should emit preview page state and lock in true', () => {
+            component.pageState.state.mode = PageMode.PREVIEW;
             fixture.detectChanges();
 
             clickLocker();
             expect(pageStateResult).toEqual(
                 {
-                    mode: PageMode.EDIT,
-                    locked: true
-                },
-                'emit correct state'
-            );
-        });
-
-        it('should emit only lock in true', () => {
-            component.page.locked = false;
-            component.page.mode = PageMode.LIVE;
-            fixture.detectChanges();
-
-            clickLocker();
-            expect(pageStateResult).toEqual(
-                {
-                    locked: true
+                    locked: true,
+                    mode: PageMode.PREVIEW
                 },
                 'emit correct state'
             );
@@ -377,9 +364,9 @@ describe('DotEditPageToolbarComponent', () => {
 
         it('should call confirmation service on lock attemp when page is locked by another user', () => {
             spyOn(dotDialogService, 'confirm');
-            component.page.locked = false;
-            component.page.lockedByAnotherUser = true;
-            component.page.mode = PageMode.LIVE;
+            component.pageState.state.locked = false;
+            component.pageState.state.lockedByAnotherUser = true;
+            component.pageState.state.mode = PageMode.LIVE;
 
             fixture.detectChanges();
 
@@ -392,8 +379,8 @@ describe('DotEditPageToolbarComponent', () => {
                 conf.accept();
             });
 
-            component.page.lockedByAnotherUser = true;
-            component.page.mode = PageMode.LIVE;
+            component.pageState.state.lockedByAnotherUser = true;
+            component.pageState.state.mode = PageMode.LIVE;
 
             fixture.detectChanges();
 
@@ -401,7 +388,8 @@ describe('DotEditPageToolbarComponent', () => {
 
             expect(pageStateResult).toEqual(
                 {
-                    locked: true
+                    locked: true,
+                    mode: PageMode.LIVE
                 },
                 'emit correct state'
             );
@@ -412,8 +400,8 @@ describe('DotEditPageToolbarComponent', () => {
                 conf.reject();
             });
 
-            component.page.lockedByAnotherUser = true;
-            component.page.mode = PageMode.LIVE;
+            component.pageState.state.lockedByAnotherUser = true;
+            component.pageState.state.mode = PageMode.LIVE;
 
             fixture.detectChanges();
 
@@ -423,23 +411,10 @@ describe('DotEditPageToolbarComponent', () => {
             expect(pageStateResult).toEqual(undefined, 'doesn\'t emit state');
         });
 
-        it('should emit only page state', () => {
-            component.page.mode = PageMode.LIVE;
-            fixture.detectChanges();
-
-            clickStateButton('preview');
-            expect(pageStateResult).toEqual(
-                {
-                    mode: PageMode.PREVIEW
-                },
-                'emit correct state'
-            );
-        });
-
         it('should call confirmation service on edit attemp when page is locked by another user', () => {
             spyOn(dotDialogService, 'confirm');
-            component.page.lockedByAnotherUser = true;
-            component.page.mode = PageMode.PREVIEW;
+            component.pageState.state.lockedByAnotherUser = true;
+            component.pageState.state.mode = PageMode.PREVIEW;
 
             fixture.detectChanges();
 
@@ -452,8 +427,8 @@ describe('DotEditPageToolbarComponent', () => {
                 conf.accept();
             });
 
-            component.page.lockedByAnotherUser = true;
-            component.page.mode = PageMode.PREVIEW;
+            component.pageState.state.lockedByAnotherUser = true;
+            component.pageState.state.mode = PageMode.PREVIEW;
 
             fixture.detectChanges();
 
@@ -468,13 +443,13 @@ describe('DotEditPageToolbarComponent', () => {
             );
         });
 
-        it('should not emit state on edit attemp when confirmation accept', () => {
+        it('should not emit state on edit attemp when confirmation reject', () => {
             spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
                 conf.reject();
             });
 
-            component.page.lockedByAnotherUser = true;
-            component.page.mode = PageMode.PREVIEW;
+            component.pageState.state.lockedByAnotherUser = true;
+            component.pageState.state.mode = PageMode.PREVIEW;
 
             fixture.detectChanges();
 
@@ -484,50 +459,31 @@ describe('DotEditPageToolbarComponent', () => {
             expect(component.lockerModel).toBe(false);
         });
 
-        it('should keep the locker true from preview to edit', () => {
-            component.page.mode = PageMode.PREVIEW;
-            component.page.locked = false;
+        it('should set the locker true from preview to edit', () => {
+            component.pageState.state.mode = PageMode.PREVIEW;
+            component.pageState.state.locked = false;
             fixture.detectChanges();
 
             clickStateButton('edit');
             expect(component.lockerModel).toBe(true, 'page locked after click in edit');
-            expect(pageStateResult).toEqual(
-                {
-                    mode: PageMode.EDIT,
-                    locked: true
-                },
-                'emit state'
-            );
         });
 
         it('should keep the locker true from edit to live', () => {
-            component.page.mode = PageMode.EDIT;
-            component.page.locked = true;
+            component.pageState.state.mode = PageMode.EDIT;
+            component.pageState.state.locked = true;
             fixture.detectChanges();
 
             clickStateButton('live');
             expect(component.lockerModel).toBe(true, 'page locked after click in preview');
-            expect(pageStateResult).toEqual(
-                {
-                    mode: PageMode.LIVE
-                },
-                'emit state'
-            );
         });
 
         it('should keep the locker true from edit to preview', () => {
-            component.page.mode = PageMode.EDIT;
-            component.page.locked = true;
+            component.pageState.state.mode = PageMode.EDIT;
+            component.pageState.state.locked = true;
             fixture.detectChanges();
 
             clickStateButton('preview');
             expect(component.lockerModel).toBe(true, 'page locked after click in preview');
-            expect(pageStateResult).toEqual(
-                {
-                    mode: PageMode.PREVIEW
-                },
-                'emit state'
-            );
         });
     });
 });

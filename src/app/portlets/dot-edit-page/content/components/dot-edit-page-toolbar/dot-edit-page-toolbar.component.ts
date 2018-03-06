@@ -6,7 +6,8 @@ import { DotRenderedPage } from '../../../shared/models/dot-rendered-page.model'
 import { DotEditPageState } from '../../../../../shared/models/dot-edit-page-state/dot-edit-page-state.model';
 import { DotMessageService } from '../../../../../api/services/dot-messages-service';
 import { DotGlobalMessageService } from '../../../../../view/components/_common/dot-global-message/dot-global-message.service';
-import { PageMode } from '../../shared/page-mode.enum';
+import { DotRenderedPageState } from '../../../shared/models/dot-rendered-page-state.model';
+import { PageMode } from '../../../shared/models/page-mode.enum';
 
 @Component({
     selector: 'dot-edit-page-toolbar',
@@ -19,7 +20,7 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
 
     @Input() canSave: boolean;
     @Input() pageWorkflows: Workflow[] = [];
-    @Input() page: DotRenderedPage;
+    @Input() pageState: DotRenderedPageState;
 
     @Output() changeState = new EventEmitter<DotEditPageState>();
     @Output() save = new EventEmitter<MouseEvent>();
@@ -48,9 +49,9 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
                 'dot.common.message.pageurl.copied.clipboard.error',
                 'editpage.toolbar.page.cant.edit'
             ])
-            .subscribe((res) => {
+            .subscribe(() => {
                 this.workflowsActions = this.getWorkflowOptions();
-                this.setFieldsModels(this.page);
+                this.setFieldsModels(this.pageState);
             });
     }
 
@@ -77,7 +78,7 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
         txtArea.style.top = '0';
         txtArea.style.left = '0';
         txtArea.style.opacity = '0';
-        txtArea.value = this.page.pageURI;
+        txtArea.value = this.pageState.page.pageURI;
         document.body.appendChild(txtArea);
         txtArea.select();
 
@@ -86,14 +87,10 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
         try {
             result = document.execCommand('copy');
             if (result) {
-                this.dotGlobalMessageService.display(
-                    this.dotMessageService.get('dot.common.message.pageurl.copied.clipboard')
-                );
+                this.dotGlobalMessageService.display(this.dotMessageService.get('dot.common.message.pageurl.copied.clipboard'));
             }
         } catch (err) {
-            this.dotGlobalMessageService.error(
-                this.dotMessageService.get('dot.common.message.pageurl.copied.clipboard.error')
-            );
+            this.dotGlobalMessageService.error(this.dotMessageService.get('dot.common.message.pageurl.copied.clipboard.error'));
         }
         document.body.removeChild(txtArea);
 
@@ -165,15 +162,6 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
         }
     }
 
-    private getAutoUpdatedMode(): PageMode {
-        if (this.shouldGoToPreview()) {
-            return PageMode.PREVIEW;
-        }
-        if (this.shouldGoToEdit()) {
-            return PageMode.EDIT;
-        }
-    }
-
     private getWorkflowOptions(): MenuItem[] {
         return this.pageWorkflows.map((workflow: Workflow) => {
             return {
@@ -183,43 +171,40 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
     }
 
     private setLockerState() {
-        const state: DotEditPageState = {
+        if (!this.lockerModel && this.mode === PageMode.EDIT) {
+            this.mode = PageMode.PREVIEW;
+        }
+
+        this.changeState.emit({
+            locked: this.lockerModel,
+            mode: this.mode
+        });
+    }
+
+    private setSelectorState(pageMode: PageMode) {
+        if (pageMode === PageMode.EDIT) {
+            this.lockerModel = true;
+        }
+
+        this.changeState.emit({
+            mode: pageMode,
             locked: this.lockerModel
-        };
-
-        if (this.mode !== PageMode.LIVE) {
-            this.mode = this.getAutoUpdatedMode();
-            state.mode = this.mode;
-        }
-
-        this.changeState.emit(state);
+        });
     }
 
-    private setSelectorState(pageState: PageMode) {
-        const state: DotEditPageState = {
-            mode: pageState
-        };
-
-        if (!this.lockerModel && pageState === PageMode.EDIT) {
-            this.lockerModel = pageState === PageMode.EDIT;
-            state.locked = this.lockerModel;
-        }
-
-        this.changeState.emit(state);
+    private setFieldsModels(pageState: DotRenderedPageState): void {
+        this.lockerModel = pageState.state.mode === PageMode.EDIT;
+        this.mode = pageState.state.mode;
+        this.states = this.getStateModeOptions(pageState);
     }
 
-    private setFieldsModels(page: DotRenderedPage): void {
-        this.lockerModel = page.mode === PageMode.EDIT;
-        this.mode = page.mode;
-        this.states = this.getStateModeOptions(page);
-    }
-
-    private getStateModeOptions(page: DotRenderedPage): SelectItem[] {
+    private getStateModeOptions(pageState: DotRenderedPageState): SelectItem[] {
         return [
             {
                 label: this.dotMessageService.get('editpage.toolbar.edit.page'),
                 value: PageMode.EDIT,
-                styleClass: !page.canEdit ? 'edit-page-toolbar__state-selector-item--disabled' : ''
+                styleClass:
+                    !pageState.page.canEdit || pageState.state.lockedByAnotherUser ? 'edit-page-toolbar__state-selector-item--disabled' : ''
             },
             { label: this.dotMessageService.get('editpage.toolbar.preview.page'), value: PageMode.PREVIEW },
             { label: this.dotMessageService.get('editpage.toolbar.live.page'), value: PageMode.LIVE }
@@ -227,14 +212,6 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
     }
 
     private shouldConfirmToLock(): boolean {
-        return (this.lockerModel || this.mode === PageMode.EDIT) && this.page.lockedByAnotherUser;
-    }
-
-    private shouldGoToEdit(): boolean {
-        return this.lockerModel && this.mode === PageMode.PREVIEW;
-    }
-
-    private shouldGoToPreview(): boolean {
-        return !this.lockerModel && this.mode === PageMode.EDIT;
+        return (this.lockerModel || this.mode === PageMode.EDIT) && this.pageState.state.lockedByAnotherUser;
     }
 }

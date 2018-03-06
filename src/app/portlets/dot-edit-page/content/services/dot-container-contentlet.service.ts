@@ -9,6 +9,14 @@ import { DotPageContent } from '../../shared/models/dot-page-content.model';
 export class DotContainerContentletService {
     constructor(private coreWebService: CoreWebService) {}
 
+    /**
+     * Get the HTML of a contentlet inside a container
+     *
+     * @param {DotPageContainer} container
+     * @param {DotPageContent} content
+     * @returns {Observable<string>}
+     * @memberof DotContainerContentletService
+     */
     getContentletToContainer(container: DotPageContainer, content: DotPageContent): Observable<string> {
         return this.coreWebService
             .requestView({
@@ -16,20 +24,5 @@ export class DotContainerContentletService {
                 url: `v1/containers/${container.identifier}/uuid/${container.uuid}/content/${content.identifier}`
             })
             .pluck('bodyJsonObject', 'render');
-    }
-
-    /**
-     * Save a page's content
-     * @param pageId Page's ID
-     * @param model content model
-     */
-    saveContentlet(pageId: string, content: DotPageContainer[]): Observable<string> {
-        return this.coreWebService
-            .requestView({
-                method: RequestMethod.Post,
-                body: content,
-                url: `v1/page/${pageId}/content`
-            })
-            .pluck('entity');
     }
 }

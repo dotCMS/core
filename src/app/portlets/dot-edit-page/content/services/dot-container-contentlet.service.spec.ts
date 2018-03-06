@@ -49,33 +49,4 @@ describe('DotContainerContentletService', () => {
             );
         })
     );
-
-    it(
-        'should do a request for save content',
-        fakeAsync(() => {
-            const pageId = '1';
-            const model: DotPageContainer[] = [
-                {
-                    identifier: '1',
-                    uuid: '2',
-                    contentletsId: ['3', '4']
-                },
-                {
-                    identifier: '5',
-                    uuid: '6',
-                    contentletsId: ['7', '8']
-                }
-            ];
-
-            let response;
-
-            dotContainerContentletService.saveContentlet(pageId, model).subscribe((resp) => (response = resp));
-
-            tick();
-
-            expect(lastConnection.request.url).toContain(`/v1/page/${pageId}/content`);
-            expect(lastConnection.request.method).toEqual(1);
-            expect(lastConnection.request._body).toEqual(JSON.stringify(model));
-        })
-    );
 });

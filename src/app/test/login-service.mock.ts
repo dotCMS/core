@@ -2,7 +2,7 @@ import { User, Auth } from 'dotcms-js/dotcms-js';
 import { Observable } from 'rxjs/Observable';
 import { Subject } from 'rxjs/Subject';
 
-const mockUser: User = {
+export const mockUser: User = {
     emailAddress: 'admin@dotcms.com',
     firstName: 'Admin',
     lastName: 'Admin',

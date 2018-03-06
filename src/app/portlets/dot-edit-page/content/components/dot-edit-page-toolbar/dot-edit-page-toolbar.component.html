@@ -2,19 +2,19 @@
     <div class="ui-toolbar-group-left">
         <div class="edit-page-toolbar__header">
             <div class="edit-page-toolbar__page-url-wrapper">
-                <h2 class="edit-page-toolbar__page-url">{{ page.pageURI }}</h2>
+                <h2 class="edit-page-toolbar__page-url">{{ pageState.page.pageURI }}</h2>
                 <button pButton icon="fa-clone" class="edit-page-toolbar__copy-url" (click)="copyUrlToClipboard($event)"></button>
             </div>
             <h3 class="edit-page-toolbar__page-title">
-                {{page.title}}
-                <ng-template [ngIf]="page.lockedByAnotherUser && page.canEdit">
+                {{pageState.page.title}}
+                <ng-template [ngIf]="pageState.state.lockedByAnotherUser && pageState.page.canEdit">
                     <span class="edit-page-toolbar__message-separator">•</span>
                     <span #lockedPageMessage class="edit-page-toolbar__locked-by-message">
-                        {{ dotMessageService.get('editpage.toolbar.page.locked.by.user', page.lockedByName) }}
+                        {{ dotMessageService.get('editpage.toolbar.page.locked.by.user', pageState.page.lockedByName) }}
                     </span>
                 </ng-template>
 
-                <ng-template [ngIf]="!page.canEdit">
+                <ng-template [ngIf]="!pageState.page.canEdit">
                     <span class="edit-page-toolbar__message-separator">•</span>
                     <span class="edit-page-toolbar__cant-edit-message">
                         {{ dotMessageService.get('editpage.toolbar.page.cant.edit') }}                            
@@ -25,7 +25,7 @@
     </div>
 
     <div class="ui-toolbar-group-center">
-        <p-inputSwitch #locker class="edit-page-toolbar__locker" [class.warn]="page.canLock && page.lockedByAnotherUser" [disabled]="!page.canLock" [(ngModel)]="lockerModel" (onChange)="lockPageHandler($event)" (click)="onLockerClick($event)"></p-inputSwitch>
+        <p-inputSwitch #locker class="edit-page-toolbar__locker" [class.warn]="pageState.page.canLock && pageState.state.lockedByAnotherUser" [disabled]="!pageState.page.canLock" [(ngModel)]="lockerModel" (onChange)="lockPageHandler($event)" (click)="onLockerClick($event)"></p-inputSwitch>
         <p-selectButton flat class="edit-page-toolbar__state-selector" [(ngModel)]="mode" (onChange)="stateSelectorHandler($event.value)" [options]="states"></p-selectButton>
     </div>
 

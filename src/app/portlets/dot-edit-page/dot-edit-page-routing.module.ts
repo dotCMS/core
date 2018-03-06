@@ -6,7 +6,7 @@ import {
     DotLegacyTemplateAdditionalActionsComponent
 } from './layout/components/dot-template-additional-actions/dot-legacy-template-additional-actions-iframe/dot-legacy-template-additional-actions-iframe.component';
 import { EditLayoutResolver } from './layout/services/dot-edit-layout-resolver/dot-edit-layout-resolver.service';
-import { EditContentResolver } from './content/services/dot-edit-content-resolver.service';
+import { DotEditContentResolver } from './content/services/dot-edit-content-resolver.service';
 
 const dotEditPage: Routes = [
     {
@@ -21,7 +21,7 @@ const dotEditPage: Routes = [
                 loadChildren: 'app/portlets/dot-edit-page/content/dot-edit-content.module#DotEditContentModule',
                 path: 'content',
                 resolve: {
-                    content: EditContentResolver
+                    content: DotEditContentResolver
                 },
 
             },
