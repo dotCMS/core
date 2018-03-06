@@ -9,6 +9,7 @@ import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.uuid.shorty.ShortyId;
+import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
@@ -30,6 +31,8 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.personas.model.IPersona;
+import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -45,10 +48,7 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.velocity.context.Context;
@@ -128,6 +128,12 @@ public class PageResourceHelper implements Serializable {
 
         multiTreeAPI.saveMultiTree(multiTree);
     }
+
+    public IPersona getCurrentPersona(final HttpServletRequest request) {
+        final Optional<Visitor> visitor = APILocator.getVisitorAPI().getVisitor(request);
+        return visitor.isPresent() && visitor.get().getPersona() != null ? visitor.get().getPersona() : null;
+    }
+
 
     /**
      * Provides a singleton instance of the {@link PageResourceHelper}

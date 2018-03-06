@@ -55,6 +55,9 @@ public class LanguagesResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    /**
+     * @deprecated use {@link LanguagesResource#getMessages(HttpServletRequest, I18NForm)} instead
+     */
     public Map<String, RestLanguage> list(@Context HttpServletRequest request) {
 
         webResource.init(true, request, true);
@@ -72,6 +75,9 @@ public class LanguagesResource {
     @Path("/i18n")
     @InitRequestRequired
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    /**
+     * @deprecated use {@link LanguagesResource#getMessages(HttpServletRequest, I18NForm)} instead
+     */
     public Response getMessages(@Context HttpServletRequest request,
                                 final I18NForm i18NForm) {
 
