@@ -99,15 +99,21 @@ import org.springframework.util.NumberUtils;
  */
 public class ESContentFactoryImpl extends ContentletFactory {
 
-    public static final String LUCENE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
+    public static final String LUCENE_DATE_TIME_PATTERN = "yyyy-MM-dd'T'HH:mm:ss";
+    public static final String LUCENE_DATE_PATTERN = "yyyy-MM-dd";
     private ContentletCache cc ;
 	private ESClient client;
 	private LanguageAPI langAPI;
 
 	private static final Contentlet cache404Content= new Contentlet();
 	public static final String CACHE_404_CONTENTLET="CACHE_404_CONTENTLET";
+    public static final SimpleDateFormat LUCENE_DATE_FORMAT = new SimpleDateFormat(
+            LUCENE_DATE_PATTERN);
+    public static final SimpleDateFormat LUCENE_DATE_TIME_FORMAT = new SimpleDateFormat(
+            LUCENE_DATE_TIME_PATTERN);
+    public static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("MM/dd/yyyy");
 
-	/**
+    /**
 	 * Default factory constructor that initializes the connection with the
 	 * Elastic index.
 	 */
@@ -2071,7 +2077,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     if (UtilMethods.isSet(dateFormat))
                         luceneDate = toLuceneDateWithFormat(originalDate, dateFormat);
                     else
-                        luceneDate = toLuceneDateTime(originalDate);
+                        luceneDate = toLuceneDateWithFormat(originalDate, LUCENE_DATE_TIME_PATTERN);
 
                     newQuery.append(query.substring(begin, regExMatch.getBegin()) + luceneDate);
                     begin = regExMatch.getEnd();
@@ -2098,7 +2104,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
                 SimpleDateFormat sdf = new SimpleDateFormat(format);
                 Date date = sdf.parse(dateString);
-                String returnValue = toLuceneDate(date);
+                String returnValue = toLuceneDateTime(date);
 
                 return returnValue;
             } catch (Exception ex) {
@@ -2114,9 +2120,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
          */
         private static String toLuceneDate(Date date) {
             try {
-                SimpleDateFormat df = new SimpleDateFormat(
-                        LUCENE_FORMAT);
-                String returnValue = df.format(date);
+
+                String returnValue = LUCENE_DATE_FORMAT.format(date);
                 return returnValue;
             } catch (Exception ex) {
                 Logger.error(ESContentFactoryImpl.class, ex.toString());
@@ -2126,17 +2131,18 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         /**
          *
-         * @param dateString
+         * @param date
          * @return
          */
-        private static String toLuceneDateTime(String dateString) {
-            String format = "MM/dd/yyyy'T'HH:mm:ss";
-            String result = toLuceneDateWithFormat(dateString, format);
-            if (result.equals(ERROR_DATE)) {
-                format = "MM/dd/yyyy'T'HH:mm";
-                result = toLuceneDateWithFormat(dateString, format);
+        private static String toLuceneDateTime(Date date) {
+            try {
+
+                String returnValue = LUCENE_DATE_TIME_FORMAT.format(date);
+                return returnValue;
+            } catch (Exception ex) {
+                Logger.error(ESContentFactoryImpl.class, ex.toString());
+                return ERROR_DATE;
             }
-            return result;
         }
 
         /**
@@ -2175,19 +2181,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
          * @return
          */
         private static String toLuceneDate(String dateString) {
-            String format = "MM/dd/yyyy";
-            return toLuceneDateWithFormat(dateString, format);
-        }
 
-        /**
-         *
-         * @param time
-         * @return
-         */
-        private static String toLuceneTime(Date time) {
-            try {
-                SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss");
-                String returnValue = df.format(time);
+            try{
+                Date date = SIMPLE_DATE_FORMAT.parse(dateString);
+                String returnValue = toLuceneDate(date);
+
                 return returnValue;
             } catch (Exception ex) {
                 Logger.error(ESContentFactoryImpl.class, ex.toString());
