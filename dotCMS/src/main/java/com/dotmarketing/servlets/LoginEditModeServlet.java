@@ -1,5 +1,8 @@
 package com.dotmarketing.servlets;
 
+import com.dotmarketing.beans.ClickstreamRequest;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.liferay.portal.util.WebKeys;
 import java.io.IOException;
 
 import javax.servlet.ServletException;
@@ -33,37 +36,50 @@ public class LoginEditModeServlet extends HttpServlet {
 	protected void service(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		if(request.getRequestURI().indexOf("edit") > -1){
-			
-			Identifier _edit_mode_id = new Identifier();
-			_edit_mode_id.setURI("/"); 
+
+
 			try{
-				Clickstream clickstream = (Clickstream) request.getSession().getAttribute("clickstream");
+				final Clickstream clickstream = (Clickstream) request.getSession().getAttribute("clickstream");
 
 				if (clickstream != null) {
-					String pageId = clickstream.getLastPageId();
-					_edit_mode_id = APILocator.getIdentifierAPI().find(pageId);
+					final Language lang = WebAPILocator.getLanguageWebAPI().getLanguage(request);
+					String pageUrl = null;
 
-					if ("contentlet".equals(_edit_mode_id.getAssetType())) {
-						com.dotmarketing.portlets.contentlet.model.Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier(_edit_mode_id.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
-						
-						String pageURI = findAssetURI(cont);
-						    
-						_edit_mode_id.setURI(pageURI);
+					try {//Check if is a URL MAP Content Page
+						final ClickstreamRequest click =  clickstream.getClickstreamRequests().get(clickstream.getClickstreamRequests().size()-1);
+						if(click.getAssociatedIdentifier()!=null) {
+							final Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifier(click.getAssociatedIdentifier(), false, lang.getId(), APILocator.getUserAPI().getSystemUser(), false);
+							final String pageDetailIdentifier = contentlet.getContentType().detailPage();
+							if(UtilMethods.isSet(pageDetailIdentifier)){
+								final Contentlet pageDetail = APILocator.getContentletAPI()
+										.findContentletByIdentifier(pageDetailIdentifier, false,
+												lang.getId(), APILocator.getUserAPI().getSystemUser(),
+												false);
+								final HTMLPageAsset pageDetailAsset = APILocator.getHTMLPageAssetAPI().fromContentlet(pageDetail);
+								pageUrl = APILocator.getIdentifierAPI().find(pageDetail.getIdentifier()).getParentPath() + pageDetailAsset.getPageUrl() + "?urlMap=" + contentlet.getIdentifier();
+							}
+						}
+					}catch(Exception e){
+						Logger.error(this.getClass(), "unable to urlmap content page: "  + e);
 					}
-				}else{
-					Logger.info(LoginEditModeServlet.class,
-							"The edit mode don't work when the ENABLE_CLICKSTREAM_TRACKING is off");
+					if(pageUrl==null) {
+						final Contentlet con = APILocator.getContentletAPI()
+								.findContentletByIdentifier(clickstream.getLastPageId(), false,
+										lang.getId(), APILocator.getUserAPI().getSystemUser(),
+										false);
+						final HTMLPageAsset asset = APILocator.getHTMLPageAssetAPI().fromContentlet(con);
+						pageUrl = APILocator.getIdentifierAPI().find(con.getIdentifier()).getParentPath() + asset.getPageUrl();
+					}
+					request.getSession().setAttribute(WebKeys.LOGIN_TO_EDIT_MODE, pageUrl);
 				}
 			}
 			catch(Exception e){
 				Logger.error(this.getClass(), "unable to get last page: "  + e);
 			}
-			
-			// this is used by the PortalRequestProcessort.java to set you up in edit mode
-			request.getSession().setAttribute("LOGIN_TO_EDIT_MODE", _edit_mode_id);
+
 		}
 		else{
-			request.getSession().removeAttribute("LOGIN_TO_EDIT_MODE");
+			request.getSession().removeAttribute(WebKeys.LOGIN_TO_EDIT_MODE);
 			
 		}
 		HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
