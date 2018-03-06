@@ -324,52 +324,43 @@ public class OSGIUtil {
     public String getExtraOSGIPackages() throws IOException {
 
 
-        final File[] felixExtras = {new File(FELIX_EXTRA_PACKAGES_FILE), new File(FELIX_EXTRA_PACKAGES_FILE_GENERATED)};
-        
-        // if neither exist, we generate a FELIX_EXTRA_PACKAGES_FILE_GENERATED
-        if (!(felixExtras[0].exists() || felixExtras[1].exists())) {
-            StringBuilder bob = new StringBuilder();
-            final Collection<String> list = ResourceCollectorUtil.getResources(dotCMSJarPrefixes);
-            for (final String name : list) {
-                if(name.startsWith("/")) continue;
-                if(name.contains(":")) continue;
+		final File[] felixExtras = { new File(FELIX_EXTRA_PACKAGES_FILE),
+				new File(FELIX_EXTRA_PACKAGES_FILE_GENERATED) };
 
-                if (File.separator.equals( "/" )) {
-                    bob.append(name.replace(File.separator, ".") + "," + "\n");
-                } else {
-                    //Zip entries have '/' as separator on all platforms
-                    bob.append((name.replace( File.separator, "." ).replace( "/", "." )) + "," + "\n");
-                }
-            }
+		// if neither exist, we generate a FELIX_EXTRA_PACKAGES_FILE_GENERATED
+		if (!(felixExtras[0].exists() || felixExtras[1].exists())) {
+			StringBuilder bob = new StringBuilder();
+			final Collection<String> list = ResourceCollectorUtil.getResources(dotCMSJarPrefixes);
+			for (final String name : list) {
+				if (name.startsWith("/"))
+					continue;
+				if (name.contains(":"))
+					continue;
 
-            bob.append(
-                "org.osgi.framework," +
-                    "org.osgi.framework.wiring," +
-                    "org.osgi.service.packageadmin," +
-                    "org.osgi.framework.startlevel," +
-                    "org.osgi.service.startlevel," +
-                    "org.osgi.service.url," +
-                    "org.osgi.util.tracker," +
-                    "javax.inject.Qualifier," +
-                    "javax.servlet.resources," +
-                    "javax.servlet;javax.servlet.http;version=3.1.0"
+				if (File.separator.equals("/")) {
+					bob.append(name.replace(File.separator, ".") + "," + "\n");
+				} else {
+					// Zip entries have '/' as separator on all platforms
+					bob.append((name.replace(File.separator, ".").replace("/", ".")) + "," + "\n");
+				}
+			}
+
+        	bob.append("org.osgi.framework,\n")
+            .append( "org.osgi.framework.wiring,\n" )
+            .append( "org.osgi.service.packageadmin,\n" )
+            .append( "org.osgi.framework.startlevel,\n")
+            .append( "org.osgi.service.startlevel,\n" )
+            .append( "org.osgi.service.url,\n" )
+			.append( "org.osgi.util.tracker,\n" )
+			.append( "javax.inject.Qualifier,\n")
+			.append( "javax.servlet.resources,\n" )
+			.append( "javax.servlet;javax.servlet.http;version=3.1.0\n"
             );
 
-            BufferedWriter writer = null;
-            try {
-                writer = new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(Paths.get(FELIX_EXTRA_PACKAGES_FILE_GENERATED)), "utf-8"));
-                writer.write(bob.toString());
-            } catch (IOException ex) {
-                Logger.error(this, ex.getMessage(), ex);
-            } finally {
-                try {
-                    if (writer != null) {
-                        writer.close();
-                    }
-                } catch (Exception ex) {
-                    Logger.error(this, ex.getMessage(), ex);
-                }
-            }
+			try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(
+					Files.newOutputStream(Paths.get(FELIX_EXTRA_PACKAGES_FILE_GENERATED)), "utf-8"))) {
+				writer.write(bob.toString());
+			}
         }
 
         final StringWriter sw = new StringWriter();
