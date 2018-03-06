@@ -9,6 +9,7 @@ import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeseri
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
@@ -44,7 +45,7 @@ class PageForm {
      * @return Layout's title
      */
     public String getTitle() {
-        return title;
+        return title != null ? title : Template.ANONYMOUS_PREFIX + System.currentTimeMillis();
     }
 
     /**
