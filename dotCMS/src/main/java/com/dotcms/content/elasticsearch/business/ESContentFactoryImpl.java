@@ -912,14 +912,19 @@ public class ESContentFactoryImpl extends ContentletFactory {
             return result;
         }
 
-        final String hql = "select {contentlet.*} from contentlet join inode contentlet_1_ " +
-                "on contentlet_1_.inode = contentlet.inode and contentlet_1_.type = 'contentlet' where  contentlet.inode in ('";
+        final StringBuilder hql = new StringBuilder();
+
+        hql.append("select {contentlet.*} from contentlet join inode contentlet_1_ ")
+                .append("on contentlet_1_.inode = contentlet.inode and contentlet_1_.type = 'contentlet' where  contentlet.inode in ('");
 
         for(int init=0; init < inodesNotFound.size(); init+=200) {
             int end = Math.min(init + 200, inodesNotFound.size());
 
             HibernateUtil hu = new HibernateUtil(com.dotmarketing.portlets.contentlet.business.Contentlet.class);
-            hu.setSQLQuery( hql + StringUtils.join(inodesNotFound.subList(init, end), "','") + "')");
+            hql.append(StringUtils.join(inodesNotFound.subList(init, end), "','"))
+                    .append("') order by contentlet.mod_date DESC");
+
+            hu.setSQLQuery(hql.toString());
 
             List<com.dotmarketing.portlets.contentlet.business.Contentlet> fatties =  hu.list();
             for (com.dotmarketing.portlets.contentlet.business.Contentlet fatty : fatties) {
@@ -1396,6 +1401,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 					}
             	}
+            }else{
+                srb.addSort("moddate", SortOrder.DESC);
             }
 
 
