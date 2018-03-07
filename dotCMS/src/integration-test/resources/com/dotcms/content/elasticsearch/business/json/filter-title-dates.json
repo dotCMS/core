@@ -1,0 +1,20 @@
+{
+   "query": {
+      "bool": {
+           "must": {
+                "query_string" : {
+                   "query" : "+news.title:retirement"
+                }
+            },
+            "filter": {
+                "range" : {
+                    "news.sysPublishDate" : {
+                        "gte": "01/01/2015",
+                        "lte": "2016",
+                        "format": "MM/dd/yyyy||yyyy"
+                    }
+                }
+            }
+        }
+    }
+}

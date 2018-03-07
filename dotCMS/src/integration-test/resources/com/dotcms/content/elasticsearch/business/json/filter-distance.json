@@ -1,0 +1,18 @@
+{
+  "query": {
+    "bool": {
+      "must": {
+        "match_all": {}
+      },
+      "filter": {
+        "geo_distance": {
+          "distance": "2000km",
+          "news.latlong": {
+            "lat": 37.776,
+            "lon": -122.41
+          }
+        }
+      }
+    }
+  }
+}
