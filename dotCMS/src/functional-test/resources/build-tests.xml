@@ -28,8 +28,11 @@
                 testurl="http://localhost:8080/dotAdmin/"
                 starttarget="tomcat-start"
                 stoptarget="tomcat-stop"
-                testtarget="test-all-junits"
+                testtarget="empty-target"
                 timeout="900000"/>
+    </target>
+    
+    <target name="empty-target">
     </target>
 
     <!-- Hit the tests servlet to run all the unit tests of the application -->
