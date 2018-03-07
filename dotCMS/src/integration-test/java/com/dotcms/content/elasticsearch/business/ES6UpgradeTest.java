@@ -19,7 +19,7 @@ import org.junit.Test;
 
 public class ES6UpgradeTest extends IntegrationTestBase {
 
-    private final String RESOURCE_DIR = "com/dotcms/content/elasticsearch/business/json";
+    private final static String RESOURCE_DIR = "com/dotcms/content/elasticsearch/business/json";
 
     private static User systemUser;
 
