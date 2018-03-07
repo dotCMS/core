@@ -68,6 +68,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	private final RoleAPI roleAPI = APILocator.getRoleAPI();
 
+	private final WorkflowStateFilter workflowStatusFilter =
+			new WorkflowStateFilter();
+
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public WorkflowAPIImpl() {
 
@@ -566,11 +569,15 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		final boolean isNew  = !UtilMethods.isSet(contentlet.getInode());
 		boolean canLock      = false;
 		boolean isLocked     = false;
+		boolean isPublish    = false;
+		boolean isArchived   = false;
 
 		try {
 
 			canLock      = APILocator.getContentletAPI().canLock(contentlet, user);
-			isLocked     = APILocator.getVersionableAPI().isLocked(contentlet);
+			isLocked     = isNew? true :  APILocator.getVersionableAPI().isLocked(contentlet);
+			isPublish    = isNew? false:  APILocator.getVersionableAPI().isLive(contentlet);
+			isArchived   = isNew? false:  APILocator.getVersionableAPI().isDeleted(contentlet);
 		} catch(Exception e) {
 
 		}
@@ -582,31 +589,32 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 								+ ", canLock: "        + canLock + ", isLocked: " + isLocked);
 
 
-		return isNew? this.doFilterActions(actions, canLock, true, findActions(steps, user, contentlet.getContentType())):
-				this.doFilterActions(actions, canLock, isLocked, findActions(steps, user, contentlet));
+		return isNew? this.doFilterActions(actions, true, false, false, canLock, isLocked, findActions(steps, user, contentlet.getContentType())):
+				this.doFilterActions(actions, false, isPublish, isArchived, canLock, isLocked, findActions(steps, user, contentlet));
 	}
 
+
 	private List<WorkflowAction> doFilterActions(final ImmutableList.Builder<WorkflowAction> actions,
+								 final boolean isNew,
+								 final boolean isPublish,
+								 final boolean isArchived,
 								 final boolean canLock,
 								 final boolean isLocked,
 								 final List<WorkflowAction> unfilteredActions) {
 
-		for (WorkflowAction workflowAction : unfilteredActions) {
+		for (final WorkflowAction workflowAction : unfilteredActions) {
 
-            if (!isLocked && workflowAction.shouldShowOnUnlock()) { // unlocked
+			if (workflowStatusFilter.filter(workflowAction,
+					new ContentletStateOptions(isNew, isPublish, isArchived, canLock, isLocked))) {
 
-                actions.add(workflowAction);
-            } else {
-
-                if (canLock && isLocked && workflowAction.shouldShowOnLock()) {
-
-                    actions.add(workflowAction);
-                }
+            	actions.add(workflowAction);
             }
         }
 
         return actions.build();
 	}
+
+
 
 	/**
 	 * This is a legacy method for reorder
@@ -715,7 +723,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 	}
 
-	private boolean isValidShowOn(final Set<WorkflowStatus> showOn) {
+	private boolean isValidShowOn(final Set<WorkflowState> showOn) {
 		return null != showOn && !showOn.isEmpty();
 	}
 
