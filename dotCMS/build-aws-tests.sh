@@ -141,23 +141,23 @@ mkdir tests
 mkdir tests/logs
 
 # Run Functional tests
-ant -f build-tests.xml test-dotcms
-if [ ! -d "dotserver/tomcat/webapps/ROOT/dotsecure/logs/test" ]; then
-	echo 'Functional tests could not be run'
+#ant -f build-tests.xml test-dotcms
+#if [ ! -d "dotserver/tomcat/webapps/ROOT/dotsecure/logs/test" ]; then
+#	echo 'Functional tests could not be run'
 
-	exit 1;
-fi
+#	exit 1;
+#fi
 
 # Copy results and logs of tests
-cp dotserver/tomcat/webapps/ROOT/dotsecure/logs/test/*.xml tests
-cp dotserver/tomcat/webapps/ROOT/dotsecure/logs/*.log tests/logs
-cp dotserver/tomcat/logs/* tests/logs
+#cp dotserver/tomcat/webapps/ROOT/dotsecure/logs/test/*.xml tests
+#cp dotserver/tomcat/webapps/ROOT/dotsecure/logs/*.log tests/logs
+#cp dotserver/tomcat/logs/* tests/logs
 
-# DONT Run Integration tests
+# Run Integration tests
 cd core/dotCMS
-# ./gradlew integrationTest -PdatabaseType=$DB_TYPE --no-daemon || true
-# cd ../..
-# cp core/dotCMS/build/test-results/integrationTest/*.xml tests
+./gradlew integrationTest -PdatabaseType=$DB_TYPE --no-daemon || true
+cd ../..
+cp core/dotCMS/build/test-results/integrationTest/*.xml tests
 
 
 # Create output zip file
