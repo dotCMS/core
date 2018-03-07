@@ -153,11 +153,11 @@ cp dotserver/tomcat/webapps/ROOT/dotsecure/logs/test/*.xml tests
 cp dotserver/tomcat/webapps/ROOT/dotsecure/logs/*.log tests/logs
 cp dotserver/tomcat/logs/* tests/logs
 
-# Run Integration tests
+# DONT Run Integration tests
 cd core/dotCMS
-./gradlew integrationTest -PdatabaseType=$DB_TYPE --no-daemon || true
-cd ../..
-cp core/dotCMS/build/test-results/integrationTest/*.xml tests
+# ./gradlew integrationTest -PdatabaseType=$DB_TYPE --no-daemon || true
+# cd ../..
+# cp core/dotCMS/build/test-results/integrationTest/*.xml tests
 
 
 # Create output zip file
