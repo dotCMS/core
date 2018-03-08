@@ -76,6 +76,11 @@ public class ESClient {
                     if(!new File(esPathHome).isAbsolute()){
                         esPathHome = FileUtil.getRealPath(esPathHome);
                     }
+
+                    Logger.info(this, "***PATH HOME: " + esPathHome);
+                    Logger.info(this, "***PATH DATA: " + Config.getStringProperty(DATA_PATH));
+                    Logger.info(this, "***PATH REPO: " + Config.getStringProperty(REPO_PATH));
+
                     try{
                         _nodeInstance = new Node(
                             Settings.builder().
