@@ -551,7 +551,7 @@ public class BrowserAjax {
 			result.put("status", "error");
 			try {
 				result.put("message",
-						UtilMethods.escapeSingleQuotes(LanguageUtil.get(user, "Workflow-action-execution-error") + e.getMessage()));
+						UtilMethods.escapeSingleQuotes(LanguageUtil.get(user, "Workflow-action-execution-error")+" "+ e.getMessage()));
 			}catch(LanguageException le){
 				Logger.error(BrowserAjax.class, le.getMessage(), le);
 			}
