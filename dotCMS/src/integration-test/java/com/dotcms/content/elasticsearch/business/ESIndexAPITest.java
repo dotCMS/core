@@ -189,10 +189,17 @@ public class ESIndexAPITest {
 	@Test(expected = ElasticsearchException.class)
 	public void uploadSnapshotTest_noSnapshotFound() throws IOException, InterruptedException, ExecutionException{
 		String path = ConfigTestHelper.getPathToTestResource("failing-test.zip");
-		ZipFile file = new ZipFile(path);
 		String pathToRepo = Config.getStringProperty("es.path.repo","test-resources");
+
+		//Copy index.zip resource to repo
 		File tempDir = new File(pathToRepo);
-		esIndexAPI.uploadSnapshot(file, tempDir.getAbsolutePath(),true);
+		File resourceFile = new File(path);
+		FileUtils.copyFileToDirectory(resourceFile, tempDir);
+
+		//Read failing-test.zip file
+		ZipFile failingFile = new ZipFile(pathToRepo + "/failing-test.zip");
+
+		esIndexAPI.uploadSnapshot(failingFile, tempDir.getAbsolutePath(),true);
 	}
 
 	/**
