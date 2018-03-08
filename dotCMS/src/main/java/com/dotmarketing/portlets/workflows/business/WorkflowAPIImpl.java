@@ -596,7 +596,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	private List<WorkflowAction> doFilterActions(final ImmutableList.Builder<WorkflowAction> actions,
 								 final boolean isNew,
-								 final boolean isPublish,
+								 final boolean isPublished,
 								 final boolean isArchived,
 								 final boolean canLock,
 								 final boolean isLocked,
@@ -605,7 +605,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		for (final WorkflowAction workflowAction : unfilteredActions) {
 
 			if (workflowStatusFilter.filter(workflowAction,
-					new ContentletStateOptions(isNew, isPublish, isArchived, canLock, isLocked))) {
+					new ContentletStateOptions(isNew, isPublished, isArchived, canLock, isLocked))) {
 
             	actions.add(workflowAction);
             }
