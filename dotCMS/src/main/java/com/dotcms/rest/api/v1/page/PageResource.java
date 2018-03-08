@@ -246,7 +246,7 @@ public class PageResource {
                     (HTMLPageAsset) APILocator.getHTMLPageAssetAPI().findPage(uri, user, mode.respectAnonPerms) :
                     this.pageResourceHelper.getPage(request, user, uri, mode);
 
-            final Template template = this.templateAPI.findWorkingTemplate(page.getTemplateId(), user, false);
+            final Template template = this.templateAPI.findWorkingTemplate(page.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false);
 
             final ContentletVersionInfo info = APILocator.getVersionableAPI().getContentletVersionInfo(page.getIdentifier(), page.getLanguageId());
             final Builder<String, Object> pageMapBuilder = ImmutableMap.builder();
@@ -269,10 +269,8 @@ public class PageResource {
             pageMapBuilder.putAll(pageMap);
             pageMapBuilder.putAll(getLockMap(user, page, info));
 
-            final boolean editPermission = this.permissionAPI.doesUserHavePermission(page, PermissionLevel.EDIT.getType(), user);
-
             final ImmutableMap<Object, Object> templateMap = ImmutableMap.builder().put("drawed", template.isDrawed())
-                    .put("canEdit", editPermission)
+                    .put("canEdit", this.permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(), user))
                     .put("id", templateIdentifier)
                     .build();
 

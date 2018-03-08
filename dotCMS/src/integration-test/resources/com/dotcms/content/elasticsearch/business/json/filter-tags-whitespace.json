@@ -1,0 +1,18 @@
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "term": {
+            "contenttype": "news"
+          }
+        },
+        {
+          "term": {
+            "news.tags": "home prices"
+          }
+        }
+      ]
+    }
+  }
+}
