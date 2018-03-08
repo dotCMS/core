@@ -3145,7 +3145,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                             String velocityVarNm = field.getVelocityVarName();
                             File incomingFile = contentletRaw.getBinary(velocityVarNm);
-                            if(validateEmptyFile!=false && incomingFile!=null && incomingFile.length()==0 && !Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false)){
+                            if(validateEmptyFile && incomingFile!=null && incomingFile.length()==0 && !Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false)){
                                throw new DotContentletStateException("Cannot checkin 0 length file: " + incomingFile );
                             }
                             File binaryFieldFolder = new File(newDir.getAbsolutePath() + File.separator + velocityVarNm);
