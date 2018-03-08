@@ -669,7 +669,7 @@ public class ESIndexAPI {
             .startObject("analysis")
              .startObject("analyzer")
               .startObject("default")
-               .field("type", "Whitespace")
+               .field("type", "whitespace")
               .endObject()
              .endObject()
             .endObject()

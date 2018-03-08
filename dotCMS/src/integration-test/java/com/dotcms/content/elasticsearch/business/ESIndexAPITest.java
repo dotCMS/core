@@ -4,6 +4,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
@@ -141,18 +142,40 @@ public class ESIndexAPITest {
 	 * @throws ExecutionException
 	 */
 	@Test
-	public void uploadSnapshotTest() throws IOException, InterruptedException, ExecutionException{
-		String currentLiveIndex = getLiveIndex();
-		esIndexAPI.closeIndex(currentLiveIndex);
+	public void uploadSnapshotTest() throws DotDataException, IOException, InterruptedException, ExecutionException{
+
 		String path = ConfigTestHelper.getPathToTestResource("index.zip");
-		ZipFile file = new ZipFile(path);
 		String pathToRepo = Config.getStringProperty("es.path.repo","test-resources");
+
+		//Copy index.zip resource to repo
 		File tempDir = new File(pathToRepo);
-		boolean response = esIndexAPI.uploadSnapshot(file, tempDir.getAbsolutePath(),true);
+		File resourceFile = new File(path);
+		FileUtils.copyFileToDirectory(resourceFile, tempDir);
+
+		//Read index.zip file
+		ZipFile indexFile = new ZipFile(pathToRepo + "/index.zip");
+
+
+		//Create a new Index name corresponding to the Snapshot to Upload
+		final String indexName = "live_20161011212551";
+		esIndexAPI.createIndex(indexName);
+
+		//Create a snapshot and close the index (becuase the upload needs the index to be closed)
+		esIndexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", indexName);
+		esIndexAPI.closeIndex(indexName);
+
+		//Upload the snapshot
+		boolean response = esIndexAPI.uploadSnapshot(indexFile, tempDir.getAbsolutePath(),true);
 		assertTrue(response);
-		esIndexAPI.closeIndex("live_20161011212551");
-		esIndexAPI.openIndex(currentLiveIndex);
-		esIndexAPI.delete("live_20161011212551");
+
+		//Clean up
+		esIndexAPI.closeIndex(indexName);
+		esIndexAPI.delete(indexName);
+	}
+
+	private void copyFile(String filePath, File directory) throws IOException {
+		//Copy file resource , to avoid getting the resource from being deleted by esIndexAPI
+
 	}
 
 	/**
