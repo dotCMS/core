@@ -302,6 +302,8 @@ public class DotWebdavHelper {
 		url = stripMapping(url);
 		String hostName = getHostname(url);
 		url = getPath(url);
+		Contentlet cont = null;
+		Identifier id = null;
 
 		Host host;
 		try {
@@ -316,10 +318,10 @@ public class DotWebdavHelper {
 
 		IFileAsset f =null;
 		try {
-    		Identifier id  = APILocator.getIdentifierAPI().find(host, url);
+    		 id = APILocator.getIdentifierAPI().find(host, url);
     		if(id!=null && InodeUtils.isSet(id.getId())) {
     		    if(id.getAssetType().equals("contentlet")){
-    		        Contentlet cont = conAPI.findContentletByIdentifier(id.getId(), false, defaultLang, user, false);
+    		        cont = conAPI.findContentletByIdentifier(id.getId(), false, defaultLang, user, false);
     	            if(cont!=null && InodeUtils.isSet(cont.getIdentifier()) && !APILocator.getVersionableAPI().isDeleted(cont)){
     	                f = APILocator.getFileAssetAPI().fromContentlet(cont);
     	            }
