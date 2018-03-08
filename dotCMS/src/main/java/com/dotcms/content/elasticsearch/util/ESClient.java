@@ -91,8 +91,8 @@ public class ESClient {
                                 put( "cluster.name", Config.getStringProperty("es.cluster.name")).
                                 put( "node.name", node_id ).
                                 put("path.home", esPathHome).
-                                put("path.data", Config.getStringProperty(DATA_PATH)).
-                                    put("path.repo", Config.getStringProperty(REPO_PATH)).build()
+                                put("path.data", esData).
+                                    put("path.repo", esRepo).build()
                         ).start();
                     } catch (NodeValidationException e){
                         Logger.error(this, "Error validating ES node at start.", e);
