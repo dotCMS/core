@@ -24,8 +24,10 @@ import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -43,12 +45,18 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
+
+import java.io.BufferedReader;
+import java.io.CharArrayReader;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.velocity.context.Context;
@@ -223,13 +231,16 @@ public class PageResourceHelper implements Serializable {
         final String pageUri = URLUtils.addSlashIfNeeded(uri);
         final HTMLPageAsset page = (HTMLPageAsset) this.htmlPageAssetAPI.getPageByPath(pageUri,
                 site, this.languageAPI.getDefaultLanguage().getId(), mode.respectAnonPerms);
-        final boolean doesUserHavePermission = this.permissionAPI.doesUserHavePermission(page, PermissionLevel.READ.getType(),
-                user, false);
 
-        if (!doesUserHavePermission){
-            final String message = String.format("User: %s does not have permissions %s for object %s", user,
-                    PermissionLevel.READ, page);
-            throw new DotSecurityException(message);
+        if (page != null) {
+            final boolean doesUserHavePermission = this.permissionAPI.doesUserHavePermission(page, PermissionLevel.READ.getType(),
+                    user, false);
+
+            if (!doesUserHavePermission) {
+                final String message = String.format("User: %s does not have permissions %s for object %s", user,
+                        PermissionLevel.READ, page);
+                throw new DotSecurityException(message);
+            }
         }
 
         return page;
@@ -260,8 +271,6 @@ public class PageResourceHelper implements Serializable {
                 (HTMLPageAsset) this.htmlPageAssetAPI.findPage(pageUri, user, mode.respectAnonPerms) :
                 (HTMLPageAsset) this.htmlPageAssetAPI.getPageByPath(pageUri, site, this.languageAPI.getDefaultLanguage().getId(), mode.showLive);
 
-        this.permissionAPI.checkPermission(page, PermissionLevel.READ, user);
-
         TemplateLayout layout = null;
         Template template = null;
 
@@ -282,9 +291,7 @@ public class PageResourceHelper implements Serializable {
 
         }
 
-        final boolean canEditTemplate = this.permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(),
-                user, false);
-        return new PageView(site, template, mappedContainers, page, layout, canEditTemplate);
+        return new PageView(site, template, mappedContainers, page, layout);
     }
 
 
@@ -308,7 +315,7 @@ public class PageResourceHelper implements Serializable {
 
 
 
-    private Map<String, ContainerView> getMappedContainers(final Template template)
+    public Map<String, ContainerView> getMappedContainers(final Template template)
             throws DotSecurityException, DotDataException {
         final User systemUser = this.userAPI.getSystemUser();
         final List<Container> templateContainers = this.templateAPI.getContainersInTemplate(template, systemUser, false);
@@ -329,11 +336,25 @@ public class PageResourceHelper implements Serializable {
      * @return The JSON representation of the {@link PageView}.
      * @throws JsonProcessingException An error occurred when generating the JSON data.
      */
-    public String asJson(final PageView pageView) throws JsonProcessingException {
+    public String asJson(final Object pageView) throws JsonProcessingException {
         final ObjectWriter objectWriter = JsonMapper.mapper.writer().withDefaultPrettyPrinter();
         return objectWriter.writeValueAsString(pageView);
     }
 
+    public Map<Object, Object> asMap(final Object object)  {
+        final ObjectWriter objectWriter = JsonMapper.mapper.writer().withDefaultPrettyPrinter();
+
+        try {
+            String json = objectWriter.writeValueAsString(object);
+            Map map = JsonMapper.mapper.readValue(new CharArrayReader(json.toCharArray()), Map.class);
+            map.values().removeIf(Objects::isNull);
+            return map;
+        } catch (JsonProcessingException e) {
+            throw new DotRuntimeException(e);
+        } catch (IOException e) {
+            throw new DotRuntimeException(e);
+        }
+    }
 
     public Template saveTemplate(final User user, IHTMLPage htmlPageAsset, final PageForm pageForm)
 
@@ -452,7 +473,56 @@ public class PageResourceHelper implements Serializable {
                 .checkPermission(container, PermissionLevel.EDIT, user);
     }
 
+    public Map<Object, Object> getPageMap(HTMLPageAsset page, User user) throws DotDataException {
+        final ContentletVersionInfo info = APILocator.getVersionableAPI().getContentletVersionInfo(page.getIdentifier(), page.getLanguageId());
+        ImmutableMap.Builder<Object, Object> pageMapBuilder = ImmutableMap.builder()
+                .putAll(page.getMap())
+                .put("workingInode", info.getWorkingInode())
+                .put("shortyWorking", APILocator.getShortyAPI().shortify(info.getWorkingInode()))
+                .put("canEdit", this.permissionAPI.doesUserHavePermission(page, PermissionLevel.EDIT.getType(), user))
+                .putAll(getLockMap(user, page, info));
 
+        if(info.getLiveInode()!=null) {
+            pageMapBuilder.put("liveInode", info.getLiveInode())
+                    .put("shortyLive", APILocator.getShortyAPI().shortify(info.getLiveInode()));
+        }
+
+        return pageMapBuilder.build();
+    }
+
+    @NotNull
+    private Map<String, Object> getLockMap(final User user, final HTMLPageAsset page, final ContentletVersionInfo info)
+            throws DotDataException {
+
+        final ImmutableMap.Builder<String, Object> lockMap = ImmutableMap.builder();
+        final boolean canLock  = canLock(user, page);
+        final String lockedBy= (info.getLockedBy()!=null)  ? info.getLockedBy() : null;
+        String lockedUserName = null;
+
+        try {
+            lockedUserName = (info.getLockedBy()!=null)  ? APILocator.getUserAPI().loadUserById(info.getLockedBy()).getFullName() : null;
+        } catch (DotSecurityException e) {
+            e.printStackTrace();
+        }
+
+        lockMap.put("canLock", canLock);
+
+        if(lockedBy!=null) {
+            lockMap.put("lockedOn", info.getLockedOn())
+                    .put("lockedBy", lockedBy)
+                    .put("lockedByName", lockedUserName);
+        }
+        return lockMap.build();
+    }
+
+    private boolean canLock(final User user, final HTMLPageAsset page)  {
+        try {
+            APILocator.getContentletAPI().canLock(page, user);
+            return true;
+        } catch (DotLockException e) {
+            return false;
+        }
+    }
     
     private Host resolveSite(HttpServletRequest request, User user) throws DotDataException, DotSecurityException {
         PageMode mode = PageMode.get(request);

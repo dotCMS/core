@@ -169,7 +169,7 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
 
                 editWrapperDiv.append("WIDGET,FORM");
                 editWrapperDiv.append("\"");
-                editWrapperDiv.append(" data-dot-can-edit=\"$containerAPI.doesUserHasPermission($containerInode, 2, true)\"");
+                editWrapperDiv.append(" data-dot-can-edit=\"$containerAPI.doesUserHasPermission($containerInode, 2, false)\"");
                 editWrapperDiv.append(">");
 
                 sb.append("#if($" +  SHOW_PRE_POST_LOOP + ")");
@@ -241,7 +241,7 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
                     .append(" data-dot-title=")
                     .append("\"$UtilMethods.javaScriptify($ContentletTitle)\"")
                     .append(" data-dot-can-edit=")
-                    .append("\"$contents.doesUserHasPermission($CONTENT_INODE, 2, true)\"")
+                    .append("\"$contents.doesUserHasPermission($CONTENT_INODE, 2, false)\"")
                     .append(">");
 
 
