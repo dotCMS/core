@@ -149,9 +149,9 @@ if [ ! -d "dotserver/tomcat/webapps/ROOT/dotsecure/logs/test" ]; then
 fi
 
 # Copy results and logs of tests
-cp dotserver/tomcat/webapps/ROOT/dotsecure/logs/test/*.xml tests
-cp dotserver/tomcat/webapps/ROOT/dotsecure/logs/*.log tests/logs
-cp dotserver/tomcat/logs/* tests/logs
+# cp dotserver/tomcat/webapps/ROOT/dotsecure/logs/test/*.xml tests
+# cp dotserver/tomcat/webapps/ROOT/dotsecure/logs/*.log tests/logs
+# cp dotserver/tomcat/logs/* tests/logs
 
 # Run Integration tests
 cd core/dotCMS

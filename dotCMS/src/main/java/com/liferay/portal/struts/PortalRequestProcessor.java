@@ -518,10 +518,10 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 
 
 
-		if(req.getSession().getAttribute("LOGIN_TO_EDIT_MODE") != null){
+		if(req.getSession().getAttribute(WebKeys.LOGIN_TO_EDIT_MODE) != null){
 			try{
-				Identifier sendMeTo =(Identifier) req.getSession().getAttribute("LOGIN_TO_EDIT_MODE") ;
-				req.getSession().removeAttribute("LOGIN_TO_EDIT_MODE");
+				String sendMeTo =(String) req.getSession().getAttribute(WebKeys.LOGIN_TO_EDIT_MODE) ;
+				req.getSession().removeAttribute(WebKeys.LOGIN_TO_EDIT_MODE);
 				Layout layout = null;
 				List<Layout> userLayouts;
 
@@ -539,8 +539,8 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 
 				PageMode.setPageMode(req, PageMode.PREVIEW_MODE);
 
-				if(host != null || sendMeTo.getHostId().equals(host.getInode())){
-					res.sendRedirect(SecurityUtils.stripReferer(req, sendMeTo.getURI() + "?host_id=" +host.getIdentifier() +"&r="  +System.currentTimeMillis()));
+				if(host != null){
+					res.sendRedirect(SecurityUtils.stripReferer(req, sendMeTo + "?host_id=" +host.getIdentifier() +"&r="  +System.currentTimeMillis()));
 					return null;
 				}
 

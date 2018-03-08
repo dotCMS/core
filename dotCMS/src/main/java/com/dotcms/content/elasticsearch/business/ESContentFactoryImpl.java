@@ -55,8 +55,14 @@ import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
+
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.io.Serializable;
 import java.io.StringWriter;
+import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -70,12 +76,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsResponse;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.cluster.metadata.MappingMetaData;
+import org.elasticsearch.common.collect.ImmutableOpenMap;
+import org.elasticsearch.common.io.stream.DataOutputStreamOutput;
+import org.elasticsearch.common.io.stream.OutputStreamStreamOutput;
+import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
@@ -112,6 +126,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
     public static final SimpleDateFormat LUCENE_DATE_TIME_FORMAT = new SimpleDateFormat(
             LUCENE_DATE_TIME_PATTERN);
     public static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("MM/dd/yyyy");
+    public static int counter = 1;
 
     /**
 	 * Default factory constructor that initializes the connection with the
@@ -897,14 +912,19 @@ public class ESContentFactoryImpl extends ContentletFactory {
             return result;
         }
 
-        final String hql = "select {contentlet.*} from contentlet join inode contentlet_1_ " +
-                "on contentlet_1_.inode = contentlet.inode and contentlet_1_.type = 'contentlet' where  contentlet.inode in ('";
+        final StringBuilder hql = new StringBuilder();
+
+        hql.append("select {contentlet.*} from contentlet join inode contentlet_1_ ")
+                .append("on contentlet_1_.inode = contentlet.inode and contentlet_1_.type = 'contentlet' where  contentlet.inode in ('");
 
         for(int init=0; init < inodesNotFound.size(); init+=200) {
             int end = Math.min(init + 200, inodesNotFound.size());
 
             HibernateUtil hu = new HibernateUtil(com.dotmarketing.portlets.contentlet.business.Contentlet.class);
-            hu.setSQLQuery( hql + StringUtils.join(inodesNotFound.subList(init, end), "','") + "')");
+            hql.append(StringUtils.join(inodesNotFound.subList(init, end), "','"))
+                    .append("') order by contentlet.mod_date DESC");
+
+            hu.setSQLQuery(hql.toString());
 
             List<com.dotmarketing.portlets.contentlet.business.Contentlet> fatties =  hu.list();
             for (com.dotmarketing.portlets.contentlet.business.Contentlet fatty : fatties) {
@@ -1283,6 +1303,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 	@Override
 	protected SearchHits indexSearch(String query, int limit, int offset, String sortBy) {
+
 	    String qq=findAndReplaceQueryDates(translateQuery(query, sortBy).getQuery());
 
 	    // we check the query to figure out wich indexes to hit
@@ -1301,7 +1322,21 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	        indexToHit=info.working;
 
 	    Client client=new ESClient().getClient();
-	    SearchResponse resp = null;
+
+	    // TODO : delete this IF 
+	    if(counter==1) {
+            GetMappingsResponse response = client.admin().indices()
+                .prepareGetMappings(indexToHit)
+                .execute().actionGet();
+            ImmutableOpenMap<String, ImmutableOpenMap<String, MappingMetaData>> mappings = response.mappings();
+            Logger.info(this, "mapppings:" + mappings);
+            ImmutableOpenMap<String, MappingMetaData> mappingMeta = mappings.get(indexToHit);
+            MappingMetaData mappingMetaData = mappingMeta.get("content");
+            MapUtils.debugPrint(System.out, "mappingsMap", mappingMetaData.getSourceAsMap());
+            counter++;
+        }
+
+        SearchResponse resp = null;
         try {
 
         	SearchRequestBuilder srb = createRequest(client, qq, sortBy);
@@ -1366,6 +1401,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 					}
             	}
+            }else{
+                srb.addSort("moddate", SortOrder.DESC);
             }
 
 
