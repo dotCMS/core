@@ -1,0 +1,16 @@
+{
+  "query": {
+    "query_string": {
+      "query": "+contenttype:news"
+    }
+  },
+  "aggs" : {
+    "tag" : {
+      "terms" : {
+        "field": "tags",
+        "size" : 20
+      }
+    }
+  },
+  "size":0
+}
