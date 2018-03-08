@@ -1,0 +1,11 @@
+{
+  "query": {
+    "bool": {
+      "must": {
+        "query_string" : {
+          "query" : "+contentType:Blog +Blog.body:pass~2"
+        }
+      }
+    }
+  }
+}
