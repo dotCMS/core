@@ -40,6 +40,7 @@ public class ESClient {
 	private String DATA_PATH = "es.path.data";
 	private String WORK_PATH = "es.path.work";
 	private String REPO_PATH = "es.path.repo";
+	private String HOME_PATH = "es.path.home";
 
 	public Client getClient() {
 
@@ -71,15 +72,18 @@ public class ESClient {
 
                     shutDownNode();
 
-                    String node_id = ConfigUtils.getServerId();
-                    String esPathHome = Config.getStringProperty("es.path.home", "WEB-INF/elastic_search");
-                    if(!new File(esPathHome).isAbsolute()){
-                        esPathHome = FileUtil.getRealPath(esPathHome);
-                    }
+                    final String node_id = ConfigUtils.getServerId();
+                    String esPathHome = Config.getStringProperty(HOME_PATH, "WEB-INF/elastic_search");
+                    String esData = Config.getStringProperty(DATA_PATH, "dotsecure/esdata");
+                    String esRepo = Config.getStringProperty(REPO_PATH, "dotsecure/essnapshot/snapshots");
+
+                    esPathHome = !new File(esPathHome).isAbsolute() ? FileUtil.getRealPath(esPathHome) : esPathHome;
+                    esData = !new File(esData).isAbsolute() ? FileUtil.getRealPath(esData) : esData;
+                    esRepo = !new File(esRepo).isAbsolute() ? FileUtil.getRealPath(esRepo) : esRepo;
 
                     Logger.info(this, "***PATH HOME: " + esPathHome);
-                    Logger.info(this, "***PATH DATA: " + Config.getStringProperty(DATA_PATH));
-                    Logger.info(this, "***PATH REPO: " + Config.getStringProperty(REPO_PATH));
+                    Logger.info(this, "***PATH DATA: " + esData);
+                    Logger.info(this, "***PATH REPO: " + esRepo);
 
                     try{
                         _nodeInstance = new Node(
@@ -87,8 +91,8 @@ public class ESClient {
                                 put( "cluster.name", Config.getStringProperty("es.cluster.name")).
                                 put( "node.name", node_id ).
                                 put("path.home", esPathHome).
-                                put("path.data", Config.getStringProperty(DATA_PATH)).
-                                    put("path.repo", Config.getStringProperty(REPO_PATH)).build()
+                                put("path.data", esData).
+                                    put("path.repo", esRepo).build()
                         ).start();
                     } catch (NodeValidationException e){
                         Logger.error(this, "Error validating ES node at start.", e);
