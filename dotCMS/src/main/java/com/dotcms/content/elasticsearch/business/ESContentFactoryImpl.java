@@ -2175,7 +2175,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             try {
 
                 String returnValue = LUCENE_DATE_TIME_FORMAT.format(date);
-                return returnValue;
+                return returnValue.replaceAll(":", "\\\\:");
             } catch (Exception ex) {
                 Logger.error(ESContentFactoryImpl.class, ex.toString());
                 return ERROR_DATE;
