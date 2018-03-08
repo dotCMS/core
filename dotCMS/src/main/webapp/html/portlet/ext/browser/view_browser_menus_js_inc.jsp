@@ -1118,8 +1118,15 @@
     });
 
     function fileActionCallback (response) {
-    	reloadContent();
-    	showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Workflow-executed")) %>');
+        if (response.status == "success") {
+            setTimeout("reloadContent()", 1000);
+            showDotCMSSystemMessage(response.message);
+            return;
+        }
+
+        // An error happened
+        reloadContent();
+        showDotCMSErrorMessage(response.message);
 	}
 
     var contentAdmin ;
