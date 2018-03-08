@@ -1,0 +1,11 @@
+{
+  "query": {
+    "bool": {
+      "must": {
+        "term": {
+          "catchall": "gas"
+        }
+      }
+    }
+  }
+}

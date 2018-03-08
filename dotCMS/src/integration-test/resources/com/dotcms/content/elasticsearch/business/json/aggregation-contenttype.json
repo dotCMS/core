@@ -1,0 +1,20 @@
+{
+  "query": {
+    "bool": {
+      "must": {
+        "term": {
+          "conHost": "48190c8c-42c4-46af-8d1a-0cd5db894797"
+        }
+      }
+    }
+  },
+  "aggs" : {
+    "tag" : {
+      "terms" : {
+        "field" : "contentType_dotraw",
+        "size" : 100
+      }
+    }
+  },
+  "size":0
+}
