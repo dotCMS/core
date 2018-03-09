@@ -586,6 +586,7 @@ public class ESIndexAPI {
 			settings = getDefaultIndexSettings(shards);
 		}
 		Map map = new ObjectMapper().readValue(settings, LinkedHashMap.class);
+		map.put("number_of_shards", shards);
 
 		if (ClusterUtils.isESAutoWireReplicas()){
 			int serverCount;
