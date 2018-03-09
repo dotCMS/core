@@ -44,6 +44,7 @@ import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -1415,60 +1416,83 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return permissionables;
 	}
 
-    /**
-     * Return true if the action has one of the workflow action roles and if the user has  any of
-     * those permission over the content or content type
-     * @param user User to validate
-     * @param respectFrontEndRoles indicates if should respect frontend roles
-     * @param permissionable ContentType or contentlet to validate special workflow roles
-     * @param action The action to validate
-     * @return true if the user has one of the special workflow action role permissions, false if not
-     * @throws DotDataException
-     */
-    @CloseDBIfOpened
-    private boolean hasSpecialWorkflowPermission(User user, boolean respectFrontEndRoles,
-            Permissionable permissionable, WorkflowAction action) throws DotDataException {
+	/**
+	 * Return true if the action has one of the workflow action roles and if the user has  any of
+	 * those permission over the content or content type
+	 * @param user User to validate
+	 * @param respectFrontEndRoles indicates if should respect frontend roles
+	 * @param permissionable ContentType or contentlet to validate special workflow roles
+	 * @param action The action to validate
+	 * @return true if the user has one of the special workflow action role permissions, false if not
+	 * @throws DotDataException
+	 */
+	@CloseDBIfOpened
+	private boolean hasSpecialWorkflowPermission(User user, boolean respectFrontEndRoles,
+			Permissionable permissionable, WorkflowAction action) throws DotDataException {
 
-        Role anyWhoCanViewContent = roleAPI.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_VIEW_ROLE_KEY);
-        Role anyWhoCanEditContent = roleAPI.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_ROLE_KEY);
-        Role anyWhoCanPublishContent = roleAPI.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_PUBLISH_ROLE_KEY);
-        Role anyWhoCanEditPermisionsContent = roleAPI.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_PERMISSIONS_ROLE_KEY);
+		Role anyWhoCanViewContent = roleAPI
+				.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_VIEW_ROLE_KEY);
+		Role anyWhoCanEditContent = roleAPI
+				.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_ROLE_KEY);
+		Role anyWhoCanPublishContent = roleAPI
+				.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_PUBLISH_ROLE_KEY);
+		Role anyWhoCanEditPermisionsContent = roleAPI
+				.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_PERMISSIONS_ROLE_KEY);
 
-    	if (permissionAPI
-                .doesRoleHavePermission(action, PermissionAPI.PERMISSION_USE,
-                        anyWhoCanViewContent)) {
-            if (permissionAPI
-                    .doesUserHavePermission(permissionable, PermissionAPI.PERMISSION_READ,
-                            user, respectFrontEndRoles)) {
-                return true;
-            }
-        }
-        if (permissionAPI
-                .doesRoleHavePermission(action, PermissionAPI.PERMISSION_USE,
-                        anyWhoCanEditContent)) {
-            if (permissionAPI.doesUserHavePermission(permissionable,
-                    PermissionAPI.PERMISSION_WRITE, user, respectFrontEndRoles)) {
-                return true;
-            }
-        }
-        if (permissionAPI
-                .doesRoleHavePermission(action, PermissionAPI.PERMISSION_USE,
-                        anyWhoCanPublishContent)) {
-            if (permissionAPI.doesUserHavePermission(permissionable,
-                    PermissionAPI.PERMISSION_PUBLISH, user, respectFrontEndRoles)) {
-                return true;
-            }
-        }
-        if (permissionAPI
-                .doesRoleHavePermission(action, PermissionAPI.PERMISSION_USE,
-                        anyWhoCanEditPermisionsContent)) {
-            if (permissionAPI.doesUserHavePermission(permissionable,
-                    PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user, respectFrontEndRoles)) {
-                return true;
-            }
-        }
-        return false;
-    }
+		if (permissionAPI
+				.doesRoleHavePermission(action, PermissionAPI.PERMISSION_USE,
+						anyWhoCanViewContent)) {
+			return validateUserPermissionsOnPermissionable(permissionable,
+					PermissionAPI.PERMISSION_READ, user, respectFrontEndRoles);
+		}
+		if (permissionAPI
+				.doesRoleHavePermission(action, PermissionAPI.PERMISSION_USE,
+						anyWhoCanEditContent)) {
+			return validateUserPermissionsOnPermissionable(permissionable,
+					PermissionAPI.PERMISSION_WRITE, user, respectFrontEndRoles);
+		}
+		if (permissionAPI
+				.doesRoleHavePermission(action, PermissionAPI.PERMISSION_USE,
+						anyWhoCanPublishContent)) {
+			return validateUserPermissionsOnPermissionable(permissionable,
+					PermissionAPI.PERMISSION_PUBLISH, user, respectFrontEndRoles);
+		}
+		if (permissionAPI
+				.doesRoleHavePermission(action, PermissionAPI.PERMISSION_USE,
+						anyWhoCanEditPermisionsContent)) {
+			return validateUserPermissionsOnPermissionable(permissionable,
+					PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user, respectFrontEndRoles);
+		}
+		return false;
+	}
+
+	/**
+	 * Return true if the user have over the permissionable the specified
+	 * permission.
+	 * @param permissionable the ContentType or contentlet to validate
+	 * @param permissiontype The type of permission to validate
+	 * @param user           The User over who the permissions are going to be validate
+	 * @param respectFrontEndRoles boolean indicating if the frontend roles should be repected
+	 * @return true if the user have permissions, false if not
+	 * @throws DotDataException
+	 */
+	@CloseDBIfOpened
+	private boolean validateUserPermissionsOnPermissionable(Permissionable permissionable,
+			int permissiontype, User user, boolean respectFrontEndRoles) throws DotDataException {
+		if (permissionable instanceof Contentlet && !InodeUtils
+				.isSet(permissionable.getPermissionId())) {
+			if (permissionAPI.doesUserHavePermission(((Contentlet) permissionable).getContentType(),
+					permissiontype, user, respectFrontEndRoles)) {
+				return true;
+			}
+		} else {
+			if (permissionAPI.doesUserHavePermission(permissionable, permissiontype, user,
+					respectFrontEndRoles)) {
+				return true;
+			}
+		}
+		return false;
+	}
 
     @CloseDBIfOpened
     public WorkflowAction findActionRespectingPermissions(final String id, final Permissionable permissionable,
