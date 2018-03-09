@@ -327,23 +327,21 @@ public class OSGIUtil {
 		final File[] felixExtras = { new File(FELIX_EXTRA_PACKAGES_FILE),
 				new File(FELIX_EXTRA_PACKAGES_FILE_GENERATED) };
 
-		// if neither exist, we generate a FELIX_EXTRA_PACKAGES_FILE_GENERATED
-		if (!(felixExtras[0].exists() || felixExtras[1].exists())) {
-			StringBuilder bob = new StringBuilder();
-			final Collection<String> list = ResourceCollectorUtil.getResources(dotCMSJarPrefixes);
-			for (final String name : list) {
-				if (name.startsWith("/"))
-					continue;
-				if (name.contains(":"))
-					continue;
-
-				if (File.separator.equals("/")) {
-					bob.append(name.replace(File.separator, ".") + "," + "\n");
-				} else {
-					// Zip entries have '/' as separator on all platforms
-					bob.append((name.replace(File.separator, ".").replace("/", ".")) + "," + "\n");
-				}
-			}
+    // if neither exist, we generate a FELIX_EXTRA_PACKAGES_FILE_GENERATED
+    if (!(felixExtras[0].exists() || felixExtras[1].exists())) {
+      StringBuilder bob = new StringBuilder();
+      final Collection<String> list = ResourceCollectorUtil.getResources(dotCMSJarPrefixes);
+      for (final String name : list) {
+        if (name.charAt(0) == '/' || name.contains(":")) {
+          continue;
+        }
+        if (File.separator.equals("/")) {
+          bob.append(name.replace(File.separator, ".") + "," + "\n");
+        } else {
+          // Zip entries have '/' as separator on all platforms
+          bob.append((name.replace(File.separator, ".").replace("/", ".")) + "," + "\n");
+        }
+      }
 
         	bob.append("org.osgi.framework,\n")
             .append( "org.osgi.framework.wiring,\n" )
