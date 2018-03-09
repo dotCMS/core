@@ -416,10 +416,12 @@ public class PageResourceHelper implements Serializable {
     private Template getTemplate(IHTMLPage page, User user, PageForm form) throws DotDataException, DotSecurityException {
 
         final Template oldTemplate = this.templateAPI.findWorkingTemplate(page.getTemplateId(), user, false);
-        Template saveTemplate = new Template();
+        Template saveTemplate;
 
         if (UtilMethods.isSet(oldTemplate) && (!form.isAnonymousLayout() || oldTemplate.isAnonymous())) {
             saveTemplate = oldTemplate;
+        } else {
+            saveTemplate = new Template();
         }
 
         saveTemplate.setTitle(form.getTitle());
