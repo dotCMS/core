@@ -32,6 +32,7 @@ public class ESIndexHelper implements Serializable{
 	private final String INDEX = "index";
 	private final String ALIAS = "alias";
 	private final String SNAPSHOT_PREFIX = "snapshot-";
+	private final String SNAPSHOT_PREFIX_SHORT = "snap-";
 
 	private ESIndexHelper() {
 		this.siteSearchAPI = APILocator.getSiteSearchAPI();
@@ -116,7 +117,8 @@ public class ESIndexHelper implements Serializable{
 
 				@Override
 				public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-					if (file.getFileName().toString().startsWith(SNAPSHOT_PREFIX)) {
+					if (file.getFileName().toString().startsWith(SNAPSHOT_PREFIX) ||
+						file.getFileName().toString().startsWith(SNAPSHOT_PREFIX_SHORT)) {
 						fileName = file.getFileName().toString();
 						return FileVisitResult.TERMINATE;
 					}
@@ -135,6 +137,7 @@ public class ESIndexHelper implements Serializable{
 			String fullName = snapshotVisitor.getFileName();
 			if (fullName != null) {
 				name = fullName.replaceFirst(SNAPSHOT_PREFIX, "");
+				name = name.replaceFirst(SNAPSHOT_PREFIX_SHORT, "");
 			}
 		}
 		return name;
