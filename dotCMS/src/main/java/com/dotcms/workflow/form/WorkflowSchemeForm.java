@@ -1,0 +1,70 @@
+package com.dotcms.workflow.form;
+
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
+import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.dotcms.repackage.javax.validation.constraints.NotNull;
+import com.dotcms.repackage.javax.validation.constraints.Size;
+import com.dotcms.rest.api.Validated;
+
+@JsonDeserialize(builder = WorkflowSchemeForm.Builder.class)
+public class WorkflowSchemeForm extends Validated {
+
+    @NotNull
+    @Size(min = 2, max = 100)
+    private final String schemeName;
+
+    private final String schemeDescription;
+
+    private final boolean schemeArchived;
+
+    public WorkflowSchemeForm(final WorkflowSchemeForm.Builder builder) {
+        this.schemeName = builder.schemeName;
+        this.schemeDescription = builder.schemeDescription;
+        this.schemeArchived = builder.schemeArchived;
+        this.checkValid();
+    }
+
+    public String getSchemeName() {
+        return schemeName;
+    }
+
+    public String getSchemeDescription() {
+        return schemeDescription;
+    }
+
+    public boolean isSchemeArchived() {
+        return schemeArchived;
+    }
+
+    public static final class Builder {
+
+        @JsonProperty
+        private String schemeName;
+
+        @JsonProperty
+        private String schemeDescription;
+
+        @JsonProperty
+        private boolean schemeArchived;
+
+        public Builder schemeName(String schemeName) {
+            this.schemeName = schemeName;
+            return this;
+        }
+
+        public Builder schemeDescription(String schemeDescription) {
+            this.schemeDescription = schemeDescription;
+            return this;
+        }
+
+        public Builder schemeArchived(boolean schemeArchived) {
+            this.schemeArchived = schemeArchived;
+            return this;
+        }
+
+        public WorkflowSchemeForm build() {
+            return new WorkflowSchemeForm(this);
+        }
+
+    }
+}
