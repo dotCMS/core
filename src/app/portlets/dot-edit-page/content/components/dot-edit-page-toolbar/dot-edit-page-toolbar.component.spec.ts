@@ -15,6 +15,7 @@ import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { PageMode } from '../../../shared/models/page-mode.enum';
 import { DotRenderedPageState } from '../../../shared/models/dot-rendered-page-state.model';
 import { mockUser } from '../../../../../test/login-service.mock';
+import { mockDotPage, mockDotLayout } from '../../../../../test/dot-rendered-page.mock';
 
 describe('DotEditPageToolbarComponent', () => {
     let component: DotEditPageToolbarComponent;
@@ -82,17 +83,22 @@ describe('DotEditPageToolbarComponent', () => {
         component = fixture.componentInstance;
         de = fixture.debugElement;
         component.pageState = new DotRenderedPageState({
-            canEdit: true,
-            canLock: true,
-            identifier: '123',
-            languageId: 1,
-            liveInode: '456',
-            title: '',
-            pageURI: '',
-            render: '',
-            shortyLive: '',
-            shortyWorking: '',
-            workingInode: ''
+            page: {
+                ...mockDotPage,
+                canEdit: true,
+                canLock: true,
+                identifier: '123',
+                languageId: 1,
+                liveInode: '456',
+                title: '',
+                pageURI: '',
+                shortyLive: '',
+                shortyWorking: '',
+                workingInode: ''
+            },
+            html: '',
+            layout: mockDotLayout,
+            canCreateTemplate: true
         }, {
             locked: false,
             mode: PageMode.PREVIEW,

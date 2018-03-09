@@ -1,3 +1,5 @@
+import { mockUser } from './../../../../test/login-service.mock';
+import { mockDotRenderedPage } from './../../../../test/dot-rendered-page.mock';
 import { PageViewService } from '../../../../api/services/page-view/page-view.service';
 import { async, ComponentFixture } from '@angular/core/testing';
 
@@ -12,6 +14,7 @@ import { Observable } from 'rxjs/Observable';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DotEditPageNavComponent } from '../dot-edit-page-nav/dot-edit-page-nav.component';
 import { PageViewServiceMock } from '../../../../test/page-view.mock';
+import { DotRenderedPageState } from '../../shared/models/dot-rendered-page-state.model';
 
 describe('DotEditPageMainComponent', () => {
     let component: DotEditPageMainComponent;
@@ -22,6 +25,8 @@ describe('DotEditPageMainComponent', () => {
         'editpage.toolbar.nav.content': 'Content',
         'editpage.toolbar.nav.layout': 'Layout'
     });
+
+    const mockDotRenderedPageState: DotRenderedPageState = new DotRenderedPageState(mockDotRenderedPage, null, mockUser);
 
     beforeEach(
         async(() => {
@@ -48,11 +53,7 @@ describe('DotEditPageMainComponent', () => {
         fixture = DOTTestBed.createComponent(DotEditPageMainComponent);
         route = fixture.debugElement.injector.get(ActivatedRoute);
         route.data = Observable.of({
-            content: {
-                template: {
-                    drawed: false
-                }
-            }
+            content: mockDotRenderedPageState
         });
         component = fixture.componentInstance;
         fixture.detectChanges();
@@ -68,6 +69,6 @@ describe('DotEditPageMainComponent', () => {
 
     it('should bind correctly advancedTemplate param', () => {
         const nav: DotEditPageNavComponent = fixture.debugElement.query(By.css('dot-edit-page-nav')).componentInstance;
-        expect(nav.advancedTemplate).toBe(true);
+        expect(nav.pageState).toEqual(mockDotRenderedPageState);
     });
 });

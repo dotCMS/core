@@ -20,6 +20,7 @@
     <p [innerHTML]="dotDialogService.alertModel.message"></p>
 
     <p-footer>
-        <button type="button" pButton (click)="dotDialogService.clearAlert()" [label]="dotDialogService.alertModel.footerLabel.accept"></button>
+        <button *ngIf="dotDialogService.alertModel.footerLabel.reject" type="button" pButton (click)="dotDialogService.alertReject($event)" [label]="dotDialogService.alertModel.footerLabel.reject"></button>
+        <button type="button" pButton (click)="dotDialogService.alertAccept($event)" [label]="dotDialogService.alertModel.footerLabel.accept"></button>
     </p-footer>
 </p-dialog>

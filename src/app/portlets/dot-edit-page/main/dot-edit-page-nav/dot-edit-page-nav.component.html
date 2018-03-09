@@ -1,14 +1,8 @@
 <ul class="edit-page-nav">
-    <li>
-        <a class="edit-page-nav__item" routerLinkActive="edit-page-nav__item--active" [routerLink]="['./content']" [queryParams]="route.queryParams | async">
-            <i class="fa fa-file-text"></i>
-            <span class="edit-page-nav__item-text">{{ dotMessageService.get('editpage.toolbar.nav.content') }}</span>
-        </a>
-    </li>
-    <li>
-        <a class="edit-page-nav__item" routerLinkActive="edit-page-nav__item--active" [routerLink]="['./layout']" [queryParams]="route.queryParams | async">
-            <i class="fa" [ngClass]="{'fa-th-large': !advancedTemplate, 'fa-code': advancedTemplate}"></i>
-            <span class="edit-page-nav__item-text">{{ dotMessageService.get(advancedTemplate ? 'editpage.toolbar.nav.code' : 'editpage.toolbar.nav.layout') }}</span>
+    <li *ngFor="let item of model | async">
+        <a class="edit-page-nav__item" [class.edit-page-nav__item--disabled]="item.disabled" routerLinkActive="edit-page-nav__item--active" [routerLink]="item.link" [queryParams]="route.queryParams | async">
+            <i class="{{ item.icon }}"></i>
+            <span class="edit-page-nav__item-text">{{ item.label }}</span>
         </a>
     </li>
 </ul>

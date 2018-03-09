@@ -35,7 +35,7 @@ describe('DotLegacyAdditionalActionsMenuComponent', () => {
 
         fixture = DOTTestBed.createComponent(DotTemplateAdditionalActionsMenuComponent);
         component = fixture.componentInstance;
-        component.templateId = '1';
+        component.inode = '1';
     });
 
     it('should has a p-menu', () => {

@@ -53,11 +53,26 @@ export class DotDialogService {
     }
 
     /**
-     * clear alert dialog object
+     * Call the alert accept action and clear the model
      *
      * @memberof DotDialogService
      */
-    clearAlert(): void {
+    alertAccept($event): void {
+        if (this.alertModel.accept) {
+            this.alertModel.accept($event);
+        }
+        this.alertModel = null;
+    }
+
+    /**
+     * Call the alert reject action and clear the model
+     *
+     * @memberof DotDialogService
+     */
+    alertReject($event): void {
+        if (this.alertModel.reject) {
+            this.alertModel.reject($event);
+        }
         this.alertModel = null;
     }
 

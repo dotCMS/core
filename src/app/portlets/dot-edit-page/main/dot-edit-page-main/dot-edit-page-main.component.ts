@@ -1,7 +1,7 @@
-import { PageViewService } from '../../../../api/services/page-view/page-view.service';
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Observable } from 'rxjs/Observable';
+import { DotRenderedPageState } from '../../shared/models/dot-rendered-page-state.model';
 
 @Component({
     selector: 'dot-edit-page-main',
@@ -9,13 +9,11 @@ import { Observable } from 'rxjs/Observable';
     styleUrls: ['./dot-edit-page-main.component.scss']
 })
 export class DotEditPageMainComponent implements OnInit {
-    isAdvancedTemplate: Observable<boolean>;
+    pageState: Observable<DotRenderedPageState>;
 
-    constructor(private route: ActivatedRoute, private pageViewService: PageViewService) {}
+    constructor(private route: ActivatedRoute) {}
 
     ngOnInit() {
-        this.isAdvancedTemplate = this.route.queryParams
-            .pluck('url')
-            .mergeMap((url: string) => this.pageViewService.isTemplateAdvanced(url));
+        this.pageState = this.route.data.pluck('content');
     }
 }

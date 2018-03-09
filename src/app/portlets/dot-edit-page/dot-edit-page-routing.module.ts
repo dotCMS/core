@@ -2,16 +2,18 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
 import { DotEditPageMainComponent } from './main/dot-edit-page-main/dot-edit-page-main.component';
-import {
-    DotLegacyTemplateAdditionalActionsComponent
-} from './layout/components/dot-template-additional-actions/dot-legacy-template-additional-actions-iframe/dot-legacy-template-additional-actions-iframe.component';
-import { EditLayoutResolver } from './layout/services/dot-edit-layout-resolver/dot-edit-layout-resolver.service';
+// tslint:disable-next-line:max-line-length
+import { DotLegacyTemplateAdditionalActionsComponent } from './layout/components/dot-template-additional-actions/dot-legacy-template-additional-actions-iframe/dot-legacy-template-additional-actions-iframe.component';
 import { DotEditContentResolver } from './content/services/dot-edit-content-resolver.service';
+import { DotEditLayoutGuardService } from './shared/services/dot-edit-layout-guard/dot-edit-layout-guard.service';
 
 const dotEditPage: Routes = [
     {
         component: DotEditPageMainComponent,
         path: '',
+        resolve: {
+            content: DotEditContentResolver
+        },
         children: [
             {
                 path: '',
@@ -19,18 +21,13 @@ const dotEditPage: Routes = [
             },
             {
                 loadChildren: 'app/portlets/dot-edit-page/content/dot-edit-content.module#DotEditContentModule',
-                path: 'content',
-                resolve: {
-                    content: DotEditContentResolver
-                },
+                path: 'content'
 
             },
             {
                 loadChildren: 'app/portlets/dot-edit-page/layout/dot-edit-layout.module#DotEditLayoutModule',
                 path: 'layout',
-                resolve: {
-                    content: EditLayoutResolver
-                },
+                canActivate: [DotEditLayoutGuardService]
             }
         ]
     },

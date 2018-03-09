@@ -139,14 +139,19 @@ export const EDIT_PAGE_CSS = `
         opacity: 1;
     }
 
-     .dotedit-contentlet__toolbar button {
+    .dotedit-contentlet__toolbar button {
         margin-right: 8px;
         background-color: ${white};
-     }
+    }
 
-     .dotedit-contentlet__toolbar button:last-child {
+    .dotedit-contentlet__toolbar .dotedit-contentlet__disabled {
+        pointer-events: none;
+        opacity: 0.25
+    }
+
+    .dotedit-contentlet__toolbar button:last-child {
         margin-right: 0;
-     }
+    }
 
     .dotedit-container__add,
     .dotedit-contentlet__drag,
@@ -164,72 +169,72 @@ export const EDIT_PAGE_CSS = `
         background-color: #0E80CB;
     }
 
-     .dotedit-container__add:hover {
+    .dotedit-container__add:hover {
         background-color: #0b629b;
-     }
+    }
 
-     .dotedit-container__add:focus {
+    .dotedit-container__add:focus {
         background-color: #0b629b
-     }
+    }
 
-     .dotedit-container__add:active {
+    .dotedit-container__add:active {
         background-color: #07446c;
-     }
+    }
 
-     .dotedit-contentlet__drag {
+    .dotedit-contentlet__drag {
         touch-action: none;
         cursor: move;
         background-image: url(data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjNDQ0NDQ0IiBoZWlnaHQ9IjE4IiB2aWV3Qm94PSIwIDAgMjQgMjQiIHdpZHRoPSIxOCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+ICAgIDxkZWZzPiAgICAgICAgPHBhdGggZD0iTTAgMGgyNHYyNEgwVjB6IiBpZD0iYSIvPiAgICA8L2RlZnM+ICAgIDxjbGlwUGF0aCBpZD0iYiI+ICAgICAgICA8dXNlIG92ZXJmbG93PSJ2aXNpYmxlIiB4bGluazpocmVmPSIjYSIvPiAgICA8L2NsaXBQYXRoPiAgICA8cGF0aCBjbGlwLXBhdGg9InVybCgjYikiIGQ9Ik0yMCA5SDR2MmgxNlY5ek00IDE1aDE2di0ySDR2MnoiLz48L3N2Zz4=);
     }
 
-     .dotedit-contentlet__edit {
+    .dotedit-contentlet__edit {
         background-image: url(data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjNDQ0NDQ0IiBoZWlnaHQ9IjE4IiB2aWV3Qm94PSIwIDAgMjQgMjQiIHdpZHRoPSIxOCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4gICAgPHBhdGggZD0iTTMgMTcuMjVWMjFoMy43NUwxNy44MSA5Ljk0bC0zLjc1LTMuNzVMMyAxNy4yNXpNMjAuNzEgNy4wNGMuMzktLjM5LjM5LTEuMDIgMC0xLjQxbC0yLjM0LTIuMzRjLS4zOS0uMzktMS4wMi0uMzktMS40MSAwbC0xLjgzIDEuODMgMy43NSAzLjc1IDEuODMtMS44M3oiLz4gICAgPHBhdGggZD0iTTAgMGgyNHYyNEgweiIgZmlsbD0ibm9uZSIvPjwvc3ZnPg==);
-     }
+    }
 
-     .dotedit-contentlet__remove {
+    .dotedit-contentlet__remove {
         background-image: url(data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjNDQ0NDQ0IiBoZWlnaHQ9IjE4IiB2aWV3Qm94PSIwIDAgMjQgMjQiIHdpZHRoPSIxOCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4gICAgPHBhdGggZD0iTTE5IDYuNDFMMTcuNTkgNSAxMiAxMC41OSA2LjQxIDUgNSA2LjQxIDEwLjU5IDEyIDUgMTcuNTkgNi40MSAxOSAxMiAxMy40MSAxNy41OSAxOSAxOSAxNy41OSAxMy40MSAxMnoiLz4gICAgPHBhdGggZD0iTTAgMGgyNHYyNEgweiIgZmlsbD0ibm9uZSIvPjwvc3ZnPg==);
-     }
+    }
 
-     .dotedit-container__menu {
-          width: 100px;
-          background-color: #ffffff;
-          box-shadow: ${mdShadow1};
-          font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
-          font-size: 13px;
-          position: absolute;
-          z-index:1;
-          visibility: hidden;
-          opacity: 0;
-          transition: opacity ${animation};
-          right: 0;
-     }
+    .dotedit-container__menu {
+        width: 100px;
+        background-color: #ffffff;
+        box-shadow: ${mdShadow1};
+        font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+        font-size: 13px;
+        position: absolute;
+        z-index:1;
+        visibility: hidden;
+        opacity: 0;
+        transition: opacity ${animation};
+        right: 0;
+    }
 
-     .dotedit-container__toolbar.active .dotedit-container__menu {
+    .dotedit-container__toolbar.active .dotedit-container__menu {
         visibility: visible;
         opacity: 1;
-     }
+    }
 
-     .dotedit-container__menu ul {
+    .dotedit-container__menu ul {
         list-style: none;
         margin: 0;
         padding: 0;
         min-width: 100px;
         padding: 8px 0;
-     }
+    }
 
-     .dotedit-container__menu-item a {
+    .dotedit-container__menu-item a {
         padding: 8px;
         line-height: 16px;
         display: block;
         cursor: pointer;
-     }
+    }
 
-     .dotedit-container__menu-item a:hover {
+    .dotedit-container__menu-item a:hover {
         background-color: #e7e7e7;
-     }
+    }
 
-     .dotedit-container__menu-item a, .dotedit-container__menu-item a:visited {
+    .dotedit-container__menu-item a, .dotedit-container__menu-item a:visited {
         color: inherit;
         text-decoration: none;
-     }
+    }
 `;

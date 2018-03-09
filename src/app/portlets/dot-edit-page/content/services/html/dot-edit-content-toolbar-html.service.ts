@@ -113,7 +113,8 @@ export class DotEditContentToolbarHtmlService {
 
                                 contentletToolbar.innerHTML = this.getContentButton(
                                     contentlet.dataset.dotIdentifier,
-                                    contentlet.dataset.dotInode
+                                    contentlet.dataset.dotInode,
+                                    contentlet.dataset.dotCanEdit === 'true'
                                 );
 
                                 const contentletContent = document.createElement('div');
@@ -136,14 +137,16 @@ export class DotEditContentToolbarHtmlService {
         });
     }
 
-    public getContentButton(identifier, inode): string {
+    public getContentButton(identifier: string, inode: string, canEdit?: boolean): string {
         const dataset = {
             'dot-identifier': identifier,
             'dot-inode': inode
         };
 
+        const editButtonClass = canEdit ? 'dotedit-contentlet__edit' : 'dotedit-contentlet__edit dotedit-contentlet__disabled';
+
         return `${this.dotDOMHtmlUtilService.getButtomHTML(this.dragLabel, 'dotedit-contentlet__drag', dataset)}
-            ${this.dotDOMHtmlUtilService.getButtomHTML(this.editLabel, 'dotedit-contentlet__edit', dataset)}
+            ${this.dotDOMHtmlUtilService.getButtomHTML(this.editLabel, editButtonClass, dataset)}
             ${this.dotDOMHtmlUtilService.getButtomHTML(this.removeLabel, 'dotedit-contentlet__remove', dataset)}`;
     }
 }

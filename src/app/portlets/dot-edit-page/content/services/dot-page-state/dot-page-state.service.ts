@@ -1,3 +1,4 @@
+import { DotPage } from './../../../shared/models/dot-page.model';
 import { LoginService } from 'dotcms-js/dotcms-js';
 import { DotRenderedPageState, DotPageState } from '../../../shared/models/dot-rendered-page-state.model';
 import { DotRenderHTMLService } from '../../../../../api/services/dot-render-html/dot-render-html.service';
@@ -23,7 +24,7 @@ export class DotPageStateService {
      * @returns {Observable<any>}
      * @memberof DotRenderHTMLService
      */
-    set(page: DotRenderedPage, state: DotPageState): Observable<DotRenderedPageState> {
+    set(page: DotPage, state: DotPageState): Observable<DotRenderedPageState> {
         const lockUnlock$: Observable<string> = this.getLockMode(page.workingInode, state.locked);
         const pageMode$: Observable<DotRenderedPage> =
             state.mode !== undefined ? this.getPageModeMethod(state.mode)(page.pageURI) : Observable.of(null);

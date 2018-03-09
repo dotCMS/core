@@ -91,7 +91,7 @@ export class DotEditContentComponent implements OnInit {
 
         this.dotLoadingIndicatorService.show();
 
-        this.route.data.pluck('content').subscribe((pageState: DotRenderedPageState) => {
+        this.route.parent.parent.data.pluck('content').subscribe((pageState: DotRenderedPageState) => {
             this.setPageState(pageState);
             this.pageWorkFlows = this.workflowsService.getPageWorkflows(pageState.page.identifier);
         });
@@ -260,9 +260,9 @@ export class DotEditContentComponent implements OnInit {
 
     private renderPage(pageState: DotRenderedPageState): void {
         if (pageState.state.mode === PageMode.EDIT && !pageState.state.lockedByAnotherUser) {
-            this.dotEditContentHtmlService.initEditMode(pageState.page.render, this.iframe);
+            this.dotEditContentHtmlService.initEditMode(pageState.html, this.iframe);
         } else {
-            this.dotEditContentHtmlService.renderPage(pageState.page.render, this.iframe);
+            this.dotEditContentHtmlService.renderPage(pageState.html, this.iframe);
         }
     }
 

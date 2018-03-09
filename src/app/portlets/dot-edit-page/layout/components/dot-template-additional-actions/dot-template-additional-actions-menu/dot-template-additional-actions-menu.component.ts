@@ -7,7 +7,7 @@ import { DotMessageService } from '../../../../../../api/services/dot-messages-s
     templateUrl: './dot-template-additional-actions-menu.component.html'
 })
 export class DotTemplateAdditionalActionsMenuComponent implements OnInit {
-    @Input() templateId: string;
+    @Input() inode: string;
     items: MenuItem[];
 
     constructor(private dotMessageService: DotMessageService) {}
@@ -23,15 +23,15 @@ export class DotTemplateAdditionalActionsMenuComponent implements OnInit {
             this.items = [
                 {
                     label: messages['template.action.additional.properties'],
-                    routerLink: `template/${this.templateId}/properties`
+                    routerLink: `template/${this.inode}/properties`
                 },
                 {
                     label: messages['template.action.additional.permissions'],
-                    routerLink: `template/${this.templateId}/permissions`
+                    routerLink: `template/${this.inode}/permissions`
                 },
                 {
                     label: messages['template.action.additional.history'],
-                    routerLink: `template/${this.templateId}/history`
+                    routerLink: `template/${this.inode}/history`
                 }
             ];
         });

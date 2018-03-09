@@ -1,4 +1,5 @@
 export interface DotTemplate {
+    anonymous: boolean;
     archived?: boolean;
     body?: string;
     categoryId?: string;
@@ -11,6 +12,7 @@ export interface DotTemplate {
     iDate?: Date;
     identifier: string;
     image?: string;
+    inode: string;
     locked?: boolean;
     modDate?: Date;
     name: string;
@@ -22,6 +24,9 @@ export interface DotTemplate {
     title?: string;
     type: string;
     versionType: string;
-    anonymous: boolean;
-    inode: string;
+}
+
+// Extra properties from renderHTML
+export interface DotTemplate {
+    canEdit: boolean;
 }

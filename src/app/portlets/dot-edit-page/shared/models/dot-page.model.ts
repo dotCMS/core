@@ -53,3 +53,19 @@ export interface DotPage {
     versionType: string;
     working?: boolean;
 }
+
+// Extra properties from renderHTML
+export interface DotPage {
+    canEdit: boolean;
+    canLock: boolean;
+    identifier: string;
+    liveInode: string;
+    lockMessage?: string;
+    lockedBy?: string;
+    lockedByName?: string;
+    lockedOn?: Date;
+    pageURI: string;
+    shortyLive: string;
+    shortyWorking: string;
+    workingInode: string;
+}

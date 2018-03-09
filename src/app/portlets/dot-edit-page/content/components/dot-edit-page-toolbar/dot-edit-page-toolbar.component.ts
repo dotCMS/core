@@ -2,7 +2,6 @@ import { DotDialogService } from '../../../../../api/services/dot-dialog/dot-dia
 import { Component, OnInit, Input, EventEmitter, Output, ViewChild, ElementRef, SimpleChanges, OnChanges } from '@angular/core';
 import { SelectItem, InputSwitch, MenuItem } from 'primeng/primeng';
 import { Workflow } from '../../../../../shared/models/workflow/workflow.model';
-import { DotRenderedPage } from '../../../shared/models/dot-rendered-page.model';
 import { DotEditPageState } from '../../../../../shared/models/dot-edit-page-state/dot-edit-page-state.model';
 import { DotMessageService } from '../../../../../api/services/dot-messages-service';
 import { DotGlobalMessageService } from '../../../../../view/components/_common/dot-global-message/dot-global-message.service';
@@ -204,7 +203,7 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
                 label: this.dotMessageService.get('editpage.toolbar.edit.page'),
                 value: PageMode.EDIT,
                 styleClass:
-                    !pageState.page.canEdit || pageState.state.lockedByAnotherUser ? 'edit-page-toolbar__state-selector-item--disabled' : ''
+                    !pageState.page.canEdit || !pageState.page.canLock ? 'edit-page-toolbar__state-selector-item--disabled' : ''
             },
             { label: this.dotMessageService.get('editpage.toolbar.preview.page'), value: PageMode.PREVIEW },
             { label: this.dotMessageService.get('editpage.toolbar.live.page'), value: PageMode.LIVE }

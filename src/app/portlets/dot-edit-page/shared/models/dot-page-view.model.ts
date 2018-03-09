@@ -8,4 +8,5 @@ export interface DotPageView {
     containers?: any;
     site?: any;
     template?: DotTemplate;
+    canEditTemplate: boolean;
 }

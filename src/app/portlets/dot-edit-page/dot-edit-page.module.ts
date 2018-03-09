@@ -1,5 +1,5 @@
+import { DotEditLayoutGuardService } from './shared/services/dot-edit-layout-guard/dot-edit-layout-guard.service';
 import { DotContentletLockerService } from '../../api/services/dot-contentlet-locker/dot-contentlet-locker.service';
-import { EditLayoutResolver } from './layout/services/dot-edit-layout-resolver/dot-edit-layout-resolver.service';
 import { PageViewService } from '../../api/services/page-view/page-view.service';
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -28,9 +28,9 @@ import { DotPageStateService } from './content/services/dot-page-state/dot-page-
     providers: [
         DotContentletLockerService,
         DotEditContentResolver,
+        DotEditLayoutGuardService,
         DotPageStateService,
         DotRenderHTMLService,
-        EditLayoutResolver,
         PageViewService,
         TemplateContainersCacheService
     ]
