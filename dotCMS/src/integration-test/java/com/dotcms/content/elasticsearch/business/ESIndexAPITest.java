@@ -144,16 +144,16 @@ public class ESIndexAPITest {
 	@Test
 	public void uploadSnapshotTest() throws DotDataException, IOException, InterruptedException, ExecutionException{
 
-		String path = ConfigTestHelper.getPathToTestResource("index.zip");
-		String pathToRepo = Config.getStringProperty("es.path.repo","test-resources");
+		final String path = ConfigTestHelper.getPathToTestResource("index.zip");
+		final String pathToRepo = Config.getStringProperty("es.path.repo","test-resources");
 
 		//Copy index.zip resource to repo
-		File tempDir = new File(pathToRepo);
-		File resourceFile = new File(path);
+		final File tempDir = new File(pathToRepo);
+		final File resourceFile = new File(path);
 		FileUtils.copyFileToDirectory(resourceFile, tempDir);
 
 		//Read index.zip file
-		ZipFile indexFile = new ZipFile(pathToRepo + "/index.zip");
+		final ZipFile indexFile = new ZipFile(pathToRepo + "/index.zip");
 
 
 		//Create a new Index name corresponding to the Snapshot to Upload
@@ -165,17 +165,12 @@ public class ESIndexAPITest {
 		esIndexAPI.closeIndex(indexName);
 
 		//Upload the snapshot
-		boolean response = esIndexAPI.uploadSnapshot(indexFile, tempDir.getAbsolutePath(),true);
+		final boolean response = esIndexAPI.uploadSnapshot(indexFile, tempDir.getAbsolutePath(),true);
 		assertTrue(response);
 
 		//Clean up
 		esIndexAPI.closeIndex(indexName);
 		esIndexAPI.delete(indexName);
-	}
-
-	private void copyFile(String filePath, File directory) throws IOException {
-		//Copy file resource , to avoid getting the resource from being deleted by esIndexAPI
-
 	}
 
 	/**
@@ -188,16 +183,16 @@ public class ESIndexAPITest {
 
 	@Test(expected = ElasticsearchException.class)
 	public void uploadSnapshotTest_noSnapshotFound() throws IOException, InterruptedException, ExecutionException{
-		String path = ConfigTestHelper.getPathToTestResource("failing-test.zip");
-		String pathToRepo = Config.getStringProperty("es.path.repo","test-resources");
+		final String path = ConfigTestHelper.getPathToTestResource("failing-test.zip");
+		final String pathToRepo = Config.getStringProperty("es.path.repo","test-resources");
 
 		//Copy index.zip resource to repo
-		File tempDir = new File(pathToRepo);
-		File resourceFile = new File(path);
+		final File tempDir = new File(pathToRepo);
+		final File resourceFile = new File(path);
 		FileUtils.copyFileToDirectory(resourceFile, tempDir);
 
 		//Read failing-test.zip file
-		ZipFile failingFile = new ZipFile(pathToRepo + "/failing-test.zip");
+		final ZipFile failingFile = new ZipFile(pathToRepo + "/failing-test.zip");
 
 		esIndexAPI.uploadSnapshot(failingFile, tempDir.getAbsolutePath(),true);
 	}

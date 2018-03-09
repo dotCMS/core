@@ -27,12 +27,12 @@ public class ESIndexHelper implements Serializable{
 	private final SiteSearchAPI siteSearchAPI;
 	private final LicenseService licenseService;
 
-	private final String EXTENSION_PATTERN = "\\.[zZ][iI][pP]$";
-	private final String FILE_PATTERN = ".*" + EXTENSION_PATTERN;
-	private final String INDEX = "index";
-	private final String ALIAS = "alias";
-	private final String SNAPSHOT_PREFIX = "snapshot-";
-	private final String SNAPSHOT_PREFIX_SHORT = "snap-";
+	private final static String EXTENSION_PATTERN = "\\.[zZ][iI][pP]$";
+	private final static String FILE_PATTERN = ".*" + EXTENSION_PATTERN;
+	private final static String INDEX = "index";
+	private final static String ALIAS = "alias";
+	private final static String SNAPSHOT_PREFIX = "snapshot-";
+	private final static String SNAPSHOT_PREFIX_SHORT = "snap-";
 
 	private ESIndexHelper() {
 		this.siteSearchAPI = APILocator.getSiteSearchAPI();
