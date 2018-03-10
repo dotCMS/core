@@ -788,7 +788,7 @@ public class WorkflowHelper {
         final WorkflowScheme newScheme = new WorkflowScheme();
         if (null != schemeId) {
             try {
-                WorkflowScheme origScheme = this.workflowAPI.findScheme(schemeId);
+                final WorkflowScheme origScheme = this.workflowAPI.findScheme(schemeId);
                 BeanUtils.copyProperties(newScheme, origScheme);
             } catch (Exception e) {
                 Logger.debug(this.getClass(), "Unable to find scheme" + schemeId);
