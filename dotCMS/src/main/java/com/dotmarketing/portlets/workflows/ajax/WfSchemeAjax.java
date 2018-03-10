@@ -1,53 +1,36 @@
 package com.dotmarketing.portlets.workflows.ajax;
 
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotcms.workflow.form.WorkflowSchemeForm;
+import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import java.io.IOException;
+
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.commons.beanutils.BeanUtils;
+import java.io.IOException;
 
 public class WfSchemeAjax extends WfBaseAction {
-	 public void action(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException{};
+    public void action(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    }
 
-	public void save(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		WorkflowAPI wapi = APILocator.getWorkflowAPI();
+    public void save(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
+        final String schemeName = request.getParameter("schemeName");
+        final String schemeId = request.getParameter("schemeId");
+        final String schemeDescription = request.getParameter("schemeDescription");
+        final boolean schemeArchived = (request.getParameter("schemeArchived") != null);
+        final WorkflowSchemeForm schemeForm = new WorkflowSchemeForm.Builder().schemeName(schemeName).schemeDescription(schemeDescription).schemeArchived(schemeArchived).build();
 
-		String schemeName = request.getParameter("schemeName");
-		String schemeId = request.getParameter("schemeId");
-		String schemeDescription = request.getParameter("schemeDescription");
-		boolean schemeArchived = (request.getParameter("schemeArchived") != null);
+        try {
+            final WorkflowHelper helper = WorkflowHelper.getInstance();
+            helper.saveOrUpdate(schemeId, schemeForm, getUser());
+            response.getWriter().println("SUCCESS");
+        } catch (Exception e) {
+            Logger.error(this.getClass(), e.getMessage(), e);
+            writeError(response, e.getMessage());
+        }
 
-		WorkflowScheme newScheme = new WorkflowScheme();
-
-		try {
-
-			WorkflowScheme origScheme = APILocator.getWorkflowAPI().findScheme(schemeId);
-			BeanUtils.copyProperties(newScheme, origScheme);
-		} catch (Exception e) {
-			Logger.debug(this.getClass(), "Unable to find scheme" + schemeId);
-		}
-
-		newScheme.setArchived(schemeArchived);
-		newScheme.setDescription(schemeDescription);
-		newScheme.setName(schemeName);
-
-		try {
-			wapi.saveScheme(newScheme);
-			response.getWriter().println("SUCCESS");
-		} catch (Exception e) {
-			Logger.error(this.getClass(), e.getMessage(), e);
-			writeError(response, e.getMessage());
-		}
-
-
-
-	}
+    }
 
 
 }

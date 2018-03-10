@@ -47,17 +47,17 @@ public class WorkflowSchemeForm extends Validated {
         @JsonProperty
         private boolean schemeArchived;
 
-        public Builder schemeName(String schemeName) {
+        public Builder schemeName(final String schemeName) {
             this.schemeName = schemeName;
             return this;
         }
 
-        public Builder schemeDescription(String schemeDescription) {
+        public Builder schemeDescription(final String schemeDescription) {
             this.schemeDescription = schemeDescription;
             return this;
         }
 
-        public Builder schemeArchived(boolean schemeArchived) {
+        public Builder schemeArchived(final boolean schemeArchived) {
             this.schemeArchived = schemeArchived;
             return this;
         }

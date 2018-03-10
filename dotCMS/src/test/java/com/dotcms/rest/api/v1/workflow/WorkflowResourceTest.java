@@ -48,7 +48,7 @@ public class WorkflowResourceTest extends UnitTestBase {
     }
 
     @SuppressWarnings("unchecked")
-    private WorkflowResource mockWorkflowResource(boolean throwWorkflowAPIException) throws Exception{
+    private WorkflowResource mockWorkflowResource(final boolean throwWorkflowAPIException) throws Exception{
         final WorkflowAPI workflowAPI = mock(WorkflowAPI.class);
         if(!throwWorkflowAPIException){
           when(workflowAPI.findScheme(anyString())).thenReturn(new WorkflowScheme ());
@@ -64,7 +64,7 @@ public class WorkflowResourceTest extends UnitTestBase {
         final ContentHelper contentHelper = mock(ContentHelper.class) ;
         final WebResource webResource = mock(WebResource.class);
 
-        InitDataObject dataObject = mock(InitDataObject.class);
+        final InitDataObject dataObject = mock(InitDataObject.class);
         when(dataObject.getUser()).thenReturn(new User());
         when(webResource.init(anyString(), anyBoolean(), any(HttpServletRequest.class), anyBoolean(), anyString())).thenReturn(dataObject);
 
@@ -81,9 +81,9 @@ public class WorkflowResourceTest extends UnitTestBase {
         final WorkflowResource workflowResource = mockWorkflowResource(false);
         final WorkflowSchemeForm workflowSchemeForm = new WorkflowSchemeForm.Builder().schemeArchived(false).schemeDescription(anyDesc).schemeName(uniqueSchemaName).build();
         final Response response = workflowResource.save(request, workflowSchemeForm);
-        ResponseEntityView entityView = ResponseEntityView.class.cast(response.getEntity());
+        final ResponseEntityView entityView = ResponseEntityView.class.cast(response.getEntity());
         assertNotNull(entityView);
-        WorkflowScheme scheme = WorkflowScheme.class.cast(entityView.getEntity());
+        final WorkflowScheme scheme = WorkflowScheme.class.cast(entityView.getEntity());
         assertNotNull(scheme);
         assertEquals(scheme.getName(),uniqueSchemaName);
     }
@@ -97,9 +97,9 @@ public class WorkflowResourceTest extends UnitTestBase {
         final WorkflowResource workflowResource = mockWorkflowResource(false);
         final WorkflowSchemeForm workflowSchemeForm = new WorkflowSchemeForm.Builder().schemeArchived(true).schemeDescription(anyDesc).schemeName(uniqueSchemaName).build();
         final Response response = workflowResource.update(request, anyRandomSchemeId, workflowSchemeForm);
-        ResponseEntityView entityView = ResponseEntityView.class.cast(response.getEntity());
+        final ResponseEntityView entityView = ResponseEntityView.class.cast(response.getEntity());
         assertNotNull(entityView);
-        WorkflowScheme scheme = WorkflowScheme.class.cast(entityView.getEntity());
+        final WorkflowScheme scheme = WorkflowScheme.class.cast(entityView.getEntity());
         assertNotNull(scheme);
         assertEquals(scheme.getName(),uniqueSchemaName);
         assertEquals(scheme.getDescription(),anyDesc);
