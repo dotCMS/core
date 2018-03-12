@@ -90,7 +90,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
     public void testScore () {
 
         //+++++++++++++++++++++++++++
-        //Executing a simple query filtering by score
+        //Executing a simple query sorting by score
         SearchHits searchHits = instance.indexSearch("+contenttype:blog", 20, 0, "score");
 
 
@@ -100,9 +100,10 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
 
         SearchHit[] hits = searchHits.getHits();
         float maxScore = hits[0].getScore();
-        //With this query all the results must have the same score
+        //With this query all the results must be sorted by score descending
         for ( SearchHit searchHit : hits ) {
-            assertTrue(searchHit.getScore() == maxScore);
+            assertTrue(searchHit.getScore() <= maxScore);
+            maxScore = searchHit.getScore();
         }
 
         //+++++++++++++++++++++++++++
