@@ -4,7 +4,7 @@ import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.Validated;
-import com.dotmarketing.portlets.workflows.model.WorkflowStatus;
+import com.dotmarketing.portlets.workflows.model.WorkflowState;
 
 import java.util.Collections;
 import java.util.List;
@@ -32,7 +32,7 @@ public class WorkflowActionForm extends Validated {
     @NotNull
     private final boolean       requiresCheckout;
     @NotNull
-    private final Set<WorkflowStatus> showOn;
+    private final Set<WorkflowState> showOn;
     @NotNull
     private final boolean       actionRoleHierarchyForAssign;
     private final boolean       roleHierarchyForAssign;
@@ -77,7 +77,7 @@ public class WorkflowActionForm extends Validated {
         return requiresCheckout;
     }
 
-    public Set<WorkflowStatus> getShowOn() {
+    public Set<WorkflowState> getShowOn() {
         return Collections.unmodifiableSet(showOn);
     }
 
@@ -177,10 +177,10 @@ public class WorkflowActionForm extends Validated {
         private String        actionCondition;
 
         @JsonProperty(required = true)
-        private Set<WorkflowStatus> showOn;
+        private Set<WorkflowState> showOn;
 
 
-       public Builder showOn(Set<WorkflowStatus> showOn) {
+       public Builder showOn(Set<WorkflowState> showOn) {
            this.showOn = showOn;
            return this;
        }

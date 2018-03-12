@@ -44,17 +44,50 @@ public class WorkflowAction implements Permissionable, Serializable{
 	private boolean assignable;
 	private boolean commentable;
 	private int order;
-	private Set<WorkflowStatus> showOn = Collections.emptySet();
+	private Set<WorkflowState> showOn = Collections.emptySet();
 
 	public WorkflowAction() {
 	}
+
+	/**
+	 * True if the action should be show on archived status.
+	 * @return boolean
+	 */
+	public boolean shouldShowOnArchived () {
+		return this.showOn.contains(WorkflowState.ARCHIVED);
+	}
+
+	/**
+	 * True if the action should be show on new status.
+	 * @return boolean
+	 */
+	public boolean shouldShowOnNew () {
+		return this.showOn.contains(WorkflowState.NEW);
+	}
+
+	/**
+	 * True if the action should be show on publish status.
+	 * @return boolean
+	 */
+	public boolean shouldShowOnPublished () {
+		return this.showOn.contains(WorkflowState.PUBLISHED);
+	}
+
+	/**
+	 * True if the action should be show on unpublish status.
+	 * @return boolean
+	 */
+	public boolean shouldShowOnUnpublished () {
+		return this.showOn.contains(WorkflowState.UNPUBLISHED);
+	}
+
 
 	/**
 	 * True if the action should be show on locked status.
 	 * @return boolean
 	 */
 	public boolean shouldShowOnLock () {
-		return this.showOn.contains(WorkflowStatus.LOCKED);
+		return this.showOn.contains(WorkflowState.LOCKED);
 	}
 
 	/**
@@ -62,22 +95,22 @@ public class WorkflowAction implements Permissionable, Serializable{
 	 * @return boolean
 	 */
 	public boolean shouldShowOnUnlock () {
-		return this.showOn.contains(WorkflowStatus.UNLOCKED);
+		return this.showOn.contains(WorkflowState.UNLOCKED);
 	}
 
 	/**
 	 * Returns the set of the status to show the action.
-	 * @return Set of {@link WorkflowStatus}
+	 * @return Set of {@link WorkflowState}
 	 */
-	public Set<WorkflowStatus> getShowOn() {
+	public Set<WorkflowState> getShowOn() {
 		return showOn;
 	}
 
 	/**
 	 * Set the set set of the status to show the action.
-	 * @param showOn {@link Set} of {@link WorkflowStatus}
+	 * @param showOn {@link Set} of {@link WorkflowState}
 	 */
-	public void setShowOn(final Set<WorkflowStatus> showOn) {
+	public void setShowOn(final Set<WorkflowState> showOn) {
 		if (null != showOn) {
 			this.showOn = showOn;
 		}

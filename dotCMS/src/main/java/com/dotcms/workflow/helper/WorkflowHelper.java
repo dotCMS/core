@@ -11,11 +11,9 @@ import com.dotcms.rest.api.v1.workflow.WorkflowDefaultActionView;
 import com.dotcms.workflow.form.WorkflowActionForm;
 import com.dotcms.workflow.form.WorkflowActionStepBean;
 import com.dotcms.workflow.form.WorkflowReorderBean;
+import com.dotcms.workflow.form.WorkflowSchemeForm;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -30,6 +28,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
@@ -65,7 +64,7 @@ public class WorkflowHelper {
 
 
     @VisibleForTesting
-    protected WorkflowHelper(final WorkflowAPI workflowAPI,
+    public WorkflowHelper(final WorkflowAPI workflowAPI,
                              final RoleAPI     roleAPI,
                              final ContentletAPI contentletAPI) {
 
@@ -782,6 +781,29 @@ public class WorkflowHelper {
 
         return results.build();
     } // findInitialAvailableActionsByContentType.
+
+
+    @WrapInTransaction
+    public WorkflowScheme saveOrUpdate(final String schemeId, final WorkflowSchemeForm workflowSchemeForm, final User user) throws AlreadyExistException, DotDataException, DotSecurityException {
+
+        final WorkflowScheme newScheme = new WorkflowScheme();
+        if (StringUtils.isSet(schemeId)) {
+            try {
+                final WorkflowScheme origScheme = this.workflowAPI.findScheme(schemeId);
+                BeanUtils.copyProperties(newScheme, origScheme);
+            } catch (Exception e) {
+                Logger.debug(this.getClass(), "Unable to find scheme" + schemeId);
+                throw new DoesNotExistException(e.getMessage(), e);
+            }
+        }
+
+        newScheme.setArchived(workflowSchemeForm.isSchemeArchived());
+        newScheme.setDescription(workflowSchemeForm.getSchemeDescription());
+        newScheme.setName(workflowSchemeForm.getSchemeName());
+
+        this.workflowAPI.saveScheme(newScheme);
+        return newScheme;
+    }
 
 
 } // E:O:F:WorkflowHelper.

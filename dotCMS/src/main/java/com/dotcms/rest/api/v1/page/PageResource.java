@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.page;
 
 
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.DefaultValue;
@@ -31,6 +32,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
@@ -62,6 +64,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 import com.liferay.portal.model.User;
 import org.jetbrains.annotations.NotNull;
+
+import static java.awt.SystemColor.info;
 
 /**
  * Provides different methods to access information about HTML Pages in dotCMS. For example,
@@ -246,43 +250,40 @@ public class PageResource {
                     (HTMLPageAsset) APILocator.getHTMLPageAssetAPI().findPage(uri, user, mode.respectAnonPerms) :
                     this.pageResourceHelper.getPage(request, user, uri, mode);
 
-            final Template template = this.templateAPI.findWorkingTemplate(page.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false);
+            if (page == null) {
+                Logger.error(this.getClass(),
+                        "Page does not exists on PageResource, page uri: " + uri);
+                return ExceptionMapperUtil.createResponse(Response.Status.NOT_FOUND);
+            }
 
-            final ContentletVersionInfo info = APILocator.getVersionableAPI().getContentletVersionInfo(page.getIdentifier(), page.getLanguageId());
-            final Builder<String, Object> pageMapBuilder = ImmutableMap.builder();
+            final Builder<String, Object> responseMapBuilder = ImmutableMap.builder();
 
             final Host host = APILocator.getHostAPI().find(page.getHost(), user, mode.respectAnonPerms);
-            
             request.setAttribute(WebKeys.CURRENT_HOST, host);
             request.getSession().setAttribute(WebKeys.CURRENT_HOST, host);
-            final String html = this.pageResourceHelper.getPageRendered(page, request, response, user, mode);
 
-            pageMapBuilder.put("render",html )
-                .put("workingInode", info.getWorkingInode())
-                .put("shortyWorking", APILocator.getShortyAPI().shortify(info.getWorkingInode()))
-                .put("canEdit", this.permissionAPI.doesUserHavePermission(page, PermissionLevel.EDIT.getType(), user));
+            final Template template = this.templateAPI.findWorkingTemplate(page.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false);
 
-            final Map<String, Object> pageMap = new HashMap(page.getMap());
-            final String templateIdentifier = (String) pageMap.get(HTMLPageAssetAPI.TEMPLATE_FIELD);
-            pageMap.remove(HTMLPageAssetAPI.TEMPLATE_FIELD);
+            responseMapBuilder
+                    .put("html", this.pageResourceHelper.getPageRendered(page, request, response, user, mode))
+                    .put("page", this.pageResourceHelper.getPageMap(page, user))
+                    .put("containers", this.pageResourceHelper.getMappedContainers(template))
+                    .put("viewAs", createViewAsMap(request))
+                    .put("canCreateTemplate", APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("templates", user));
 
-            pageMapBuilder.putAll(pageMap);
-            pageMapBuilder.putAll(getLockMap(user, page, info));
-
-            final ImmutableMap<Object, Object> templateMap = ImmutableMap.builder().put("drawed", template.isDrawed())
-                    .put("canEdit", this.permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(), user))
-                    .put("id", templateIdentifier)
-                    .build();
-
-            pageMapBuilder.put("template", templateMap);
-            pageMapBuilder.put("viewAs", createViewAsMap(request));
-
-            if(info.getLiveInode()!=null) {
-                pageMapBuilder.put("liveInode", info.getLiveInode())
-                .put("shortyLive", APILocator.getShortyAPI().shortify(info.getLiveInode()));
+            if (template.isDrawed()) {
+                responseMapBuilder.put("layout", DotTemplateTool.themeLayout(template.getInode()));
             }
-            final Response.ResponseBuilder responseBuilder = Response.ok(pageMapBuilder.build());
-            responseBuilder.header("Access-Control-Expose-Headers", "Authorization");
+
+            if (this.permissionAPI.doesUserHavePermission(template, PermissionLevel.READ.getType(), user, false)) {
+                responseMapBuilder.put("template",
+                    ImmutableMap.builder()
+                        .put("canEdit", this.permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(), user))
+                        .putAll(this.pageResourceHelper.asMap(template))
+                        .build());
+            }
+
+            final Response.ResponseBuilder responseBuilder = Response.ok(responseMapBuilder.build());
             responseBuilder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, " +
                     "Content-Type, " + "Accept, Authorization");
             res = responseBuilder.build();
@@ -318,34 +319,6 @@ public class PageResource {
 
         builder.put("language", WebAPILocator.getLanguageWebAPI().getLanguage(request));
         return builder.build();
-    }
-
-    @NotNull
-    private Map<String, Object> getLockMap(final User user, final HTMLPageAsset page, final ContentletVersionInfo info)
-            throws DotDataException, DotSecurityException {
-
-        final Builder<String, Object> lockMap = ImmutableMap.builder();
-        final boolean canLock  = canLock(user, page);
-        final String lockedBy= (info.getLockedBy()!=null)  ? info.getLockedBy() : null;
-        final String lockedUserName = (info.getLockedBy()!=null)  ? APILocator.getUserAPI().loadUserById(info.getLockedBy()).getFullName() : null;
-
-        lockMap.put("canLock", canLock);
-
-        if(lockedBy!=null) {
-            lockMap.put("lockedOn", info.getLockedOn())
-                .put("lockedBy", lockedBy)
-                .put("lockedByName", lockedUserName);
-        }
-        return lockMap.build();
-    }
-
-    private boolean canLock(final User user, final HTMLPageAsset page)  {
-        try {
-            APILocator.getContentletAPI().canLock(page, user);
-            return true;
-        } catch (DotLockException e) {
-            return false;
-        }
     }
 
     /**
