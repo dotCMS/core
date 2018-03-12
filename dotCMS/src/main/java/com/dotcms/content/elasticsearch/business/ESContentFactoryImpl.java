@@ -55,14 +55,8 @@ import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
-
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
 import java.io.Serializable;
 import java.io.StringWriter;
-import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -76,7 +70,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
-
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.ElasticsearchException;
@@ -87,9 +80,6 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.cluster.metadata.MappingMetaData;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
-import org.elasticsearch.common.io.stream.DataOutputStreamOutput;
-import org.elasticsearch.common.io.stream.OutputStreamStreamOutput;
-import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
@@ -2050,6 +2040,25 @@ public class ESContentFactoryImpl extends ContentletFactory {
                         // Format MM/dd/yyyy
                         replace = replaceDateWithFormat(replace, "\\\"?(\\d{1,2}/\\d{1,2}/\\d{4})\\\"?");
 
+                        // Format hh:mm:ssa
+                        replace = replaceTimeWithFormat(replace, "\\\"?(\\d{1,2}:\\d{1,2}:\\d{1,2}(?:AM|PM|am|pm))\\\"?", "hh:mm:ssa");
+
+                        // Format hh:mm:ss a
+                        replace = replaceTimeWithFormat(replace, "\\\"?(\\d{1,2}:\\d{1,2}:\\d{1,2}\\s+(?:AM|PM|am|pm))\\\"?", "hh:mm:ss a");
+
+                        // Format HH:mm:ss
+                        replace = replaceTimeWithFormat(replace, "\\\"?(\\d{1,2}:\\d{1,2}:\\d{1,2})\\\"?", "HH:mm:ss");
+
+                        // Format hh:mma
+                        replace = replaceTimeWithFormat(replace, "\\\"?(\\d{1,2}:\\d{1,2}(?:AM|PM|am|pm))\\\"?", "hh:mma");
+
+                        // Format hh:mm a
+                        replace = replaceTimeWithFormat(replace, "\\\"?(\\d{1,2}:\\d{1,2}\\s+(?:AM|PM|am|pm))\\\"?", "hh:mm a");
+
+                        // Format HH:mm
+                        replace = replaceTimeWithFormat(replace, "\\\"?(\\d{1,2}:\\d{1,2})\\\"?", "HH:mm");
+
+
                         query = query.replace(clause, replace);
 
                         break;
@@ -2210,6 +2219,57 @@ public class ESContentFactoryImpl extends ContentletFactory {
             }
 
             return query;
+        }
+
+        /**
+         *
+         * @param query
+         * @param regExp
+         * @param timeFormat
+         * @return
+         */
+        private static String replaceTimeWithFormat(String query, String regExp, String timeFormat) {
+            List<RegExMatch> matches = RegEX.find(query, regExp);
+            String originalDate;
+            String luceneDate;
+            StringBuilder newQuery;
+            int begin;
+            if ((matches != null) && (0 < matches.size())) {
+                newQuery = new StringBuilder(query.length() * 2);
+                begin = 0;
+                for (RegExMatch regExMatch : matches) {
+                    originalDate = regExMatch.getMatch();
+
+                    luceneDate = toLuceneTimeWithFormat(originalDate, timeFormat);
+
+                    newQuery.append(query.substring(begin, regExMatch.getBegin()) + luceneDate);
+                    begin = regExMatch.getEnd();
+                }
+
+                return newQuery.append(query.substring(begin)).toString();
+            }
+
+            return query;
+        }
+
+        /**
+         *
+         * @param dateString
+         * @param format
+         * @return
+         */
+        private static String toLuceneTimeWithFormat(String dateString, String format) {
+            try {
+                if (!UtilMethods.isSet(dateString))
+                    return "";
+
+                SimpleDateFormat sdf = new SimpleDateFormat(format);
+                Date time = sdf.parse(dateString);
+                return toLuceneDateTime(time);
+            } catch (Exception ex) {
+                Logger.error(ESContentFactoryImpl.class, ex.toString());
+                return ERROR_DATE;
+            }
         }
 
         /**
