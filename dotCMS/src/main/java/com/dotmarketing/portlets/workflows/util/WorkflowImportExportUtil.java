@@ -90,15 +90,15 @@ public class WorkflowImportExportUtil {
 					((String) stringWriter.toString(), WorkflowSchemeImportExportObject.class);
 
 			for (WorkflowScheme scheme : importer.getSchemes()) {
-				workflowAPI.saveScheme(scheme);
+				workflowAPI.saveScheme(scheme, APILocator.systemUser());
 			}
 
 			for (WorkflowStep step : importer.getSteps()) {
-				workflowAPI.saveStep(step);
+				workflowAPI.saveStep(step, APILocator.systemUser());
 			}
 
 			for (WorkflowAction action : importer.getActions()) {
-				workflowAPI.saveAction(action, null);
+				workflowAPI.saveAction(action, null, APILocator.systemUser());
 			}
 
 			for(Map<String, String> actionStepMap : importer.getActionSteps()){
@@ -110,10 +110,10 @@ public class WorkflowImportExportUtil {
 			}
 
 			for (WorkflowActionClass actionClass : importer.getActionClasses()) {
-				workflowAPI.saveActionClass(actionClass);
+				workflowAPI.saveActionClass(actionClass, APILocator.systemUser());
 			}
 
-			for(Map<String, String> map : importer.getWorkflowStructures()){
+			for(final Map<String, String> map : importer.getWorkflowStructures()){
 				DotConnect dc = new DotConnect();
 				dc.setSQL("delete from workflow_scheme_x_structure where id=?");
 				dc.addParam(map.get("id"));
@@ -125,7 +125,7 @@ public class WorkflowImportExportUtil {
 				dc.loadResult();
 			}
 
-			workflowAPI.saveWorkflowActionClassParameters(importer.getActionClassParams());
+			workflowAPI.saveWorkflowActionClassParameters(importer.getActionClassParams(), APILocator.systemUser());
 
 		} catch (Exception e) {// Catch exception if any
 			Logger.error(this.getClass(), "Error: " + e.getMessage(), e);

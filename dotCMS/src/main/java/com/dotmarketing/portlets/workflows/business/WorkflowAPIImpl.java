@@ -18,30 +18,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.CheckURLAccessibilityActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.CheckoutContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.CommentOnWorkflowActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.CopyActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.DeleteContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.EmailActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.FourEyeApproverActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.MultipleApproverActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.NotifyUsersActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.PushNowActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.ResetTaskActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.SetValueActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.TranslationActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.TwitterActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.*;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -52,6 +29,7 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import org.osgi.framework.BundleContext;
+
 import java.util.*;
 import java.util.stream.IntStream;
 
@@ -114,6 +92,18 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			} else {
 				Logger.error(this, "Bundle Context is null, WorkflowAPIOsgiService has been not registered");
 			}
+		}
+	}
+
+	private void isUserAllowToModifiedWorkflow (final User user) {
+
+		try {
+			DotPreconditions.isTrue(
+                    (LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level) &&
+                            APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("workflow-schemes",user),
+                    ()-> "User " + user + " cannot access workflows ", NotAllowedUserWorkflowException.class);
+		} catch (DotDataException e) {
+			throw new NotAllowedUserWorkflowException(e);
 		}
 	}
 
@@ -205,17 +195,23 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@WrapInTransaction
-	public void saveSchemesForStruct(final Structure struc, final List<WorkflowScheme> schemes) throws DotDataException {
+	public void saveSchemesForStruct(final Structure contentType,
+									 final List<WorkflowScheme> schemes) throws DotDataException {
+
 
 		try {
-			workFlowFactory.saveSchemesForStruct(struc.getInode(), schemes);
+
+			this.workFlowFactory.saveSchemesForStruct(contentType.getInode(), schemes);
 		} catch(DotDataException e){
 			throw e;
 		}
 	}
 
 	@WrapInTransaction
-	public void saveSchemeIdsForContentType(final ContentType contentType, List<String> schemesIds) throws DotDataException {
+	public void saveSchemeIdsForContentType(final ContentType contentType,
+											final List<String> schemesIds) throws DotDataException {
+
+
 		try {
 			Logger.info(WorkflowAPIImpl.class, String.format("Saving Schemas: %s for Content type %s",
 					String.join(",", schemesIds), contentType.inode()));
@@ -281,7 +277,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@WrapInTransaction
-	public void saveScheme(final WorkflowScheme scheme) throws DotDataException, AlreadyExistException {
+	public void saveScheme(final WorkflowScheme scheme, final User user) throws DotDataException, AlreadyExistException {
+
+		this.isUserAllowToModifiedWorkflow(user);
 
 		if (null != scheme && SYSTEM_WORKFLOW_ID.equals(scheme.getId())
 				&& scheme.isArchived()) {
@@ -294,15 +292,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	}
 
-	public void deleteScheme(WorkflowScheme scheme) throws DotDataException {
-
-	}
-
-	public void activateScheme(WorkflowScheme scheme) throws DotDataException {
-
-	}
-
-	public void deactivateScheme(WorkflowScheme scheme) throws DotDataException {
+	@WrapInTransaction
+	public void deleteScheme(final WorkflowScheme scheme, final User user) throws DotDataException {
 
 	}
 
@@ -312,7 +303,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@WrapInTransaction
-	public void saveStep(final WorkflowStep step) throws DotDataException, AlreadyExistException {
+	public void saveStep(final WorkflowStep step, final User user) throws DotDataException, AlreadyExistException {
+
+		this.isUserAllowToModifiedWorkflow(user);
 
 		DotPreconditions.isTrue(UtilMethods.isSet(step.getName()) && UtilMethods.isSet(step.getSchemeId()),
 				()-> "Step name and Scheme are required", DotStateException.class);
@@ -321,7 +314,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@WrapInTransaction
-	public void deleteStep(final WorkflowStep step) throws DotDataException {
+	public void deleteStep(final WorkflowStep step, final User user) throws DotDataException {
+
+		this.isUserAllowToModifiedWorkflow(user);
 
 		try {
 
@@ -363,7 +358,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@WrapInTransaction
 	@Override
-	public void reorderStep(final WorkflowStep step, final int order) throws DotDataException, AlreadyExistException {
+	public void reorderStep(final WorkflowStep step, final int order, final User user) throws DotDataException, AlreadyExistException {
+
+		this.isUserAllowToModifiedWorkflow(user);
 
 		final List<WorkflowStep> steps;
 		final WorkflowScheme scheme = this.findScheme(step.getSchemeId());
@@ -387,13 +384,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		int i = 0;
 		for(final WorkflowStep stepp : steps) {
 			stepp.setMyOrder(i++);
-			this.saveStep(stepp);
+			this.saveStep(stepp, user);
 		}
 	}
 
 	@WrapInTransaction
-	public void deleteComment(WorkflowComment comment) throws DotDataException {
-		workFlowFactory.deleteComment(comment);
+	public void deleteComment(final WorkflowComment comment) throws DotDataException {
+
+		this.workFlowFactory.deleteComment(comment);
 	}
 
 	@CloseDBIfOpened
@@ -402,9 +400,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@WrapInTransaction
-	public void saveComment(WorkflowComment comment) throws DotDataException {
-		if(UtilMethods.isSet(comment.getComment())){
-			workFlowFactory.saveComment(comment);
+	public void saveComment(final WorkflowComment comment) throws DotDataException {
+
+		if(UtilMethods.isSet(comment.getComment())) {
+
+			this.workFlowFactory.saveComment(comment);
 		}
 	}
 
@@ -414,18 +414,21 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@WrapInTransaction
-	public void deleteWorkflowHistory(WorkflowHistory history) throws DotDataException {
-		workFlowFactory.deleteWorkflowHistory(history);
+	public void deleteWorkflowHistory(final WorkflowHistory history) throws DotDataException {
+
+		this.workFlowFactory.deleteWorkflowHistory(history);
 	}
 
 	@WrapInTransaction
-	public void saveWorkflowHistory(WorkflowHistory history) throws DotDataException {
-		workFlowFactory.saveWorkflowHistory(history);
+	public void saveWorkflowHistory(final WorkflowHistory history) throws DotDataException {
+
+		this.workFlowFactory.saveWorkflowHistory(history);
 	}
 
 	@WrapInTransaction
-	public void deleteWorkflowTask(WorkflowTask task) throws DotDataException {
-		workFlowFactory.deleteWorkflowTask(task);
+	public void deleteWorkflowTask(final WorkflowTask task, final User user) throws DotDataException {
+
+		this.workFlowFactory.deleteWorkflowTask(task);
 	}
 
 	@CloseDBIfOpened
@@ -440,7 +443,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@WrapInTransaction
-	public void saveWorkflowTask(WorkflowTask task) throws DotDataException {
+	public void saveWorkflowTask(final WorkflowTask task) throws DotDataException {
 
 		if (task.getLanguageId() <= 0) {
 
@@ -454,7 +457,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@WrapInTransaction
 	public void saveWorkflowTask(WorkflowTask task, WorkflowProcessor processor) throws DotDataException {
-		saveWorkflowTask(task);
+		this.saveWorkflowTask(task);
 		WorkflowHistory history = new WorkflowHistory();
 		history.setWorkflowtaskId(task.getId());
 		history.setActionId(processor.getAction().getId());
@@ -479,6 +482,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			Logger.error(WorkflowAPIImpl.class,e.getMessage());
 			Logger.debug(WorkflowAPIImpl.class,e.getMessage(),e);
 		}
+
 		saveWorkflowHistory(history);
 	}
 
@@ -634,6 +638,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		List<WorkflowAction> actions = null;
 		final List<WorkflowAction> newActions = new ArrayList<WorkflowAction>();
 
+		this.isUserAllowToModifiedWorkflow(user);
+
 		try {
 			actions = findActions(step, user);
 		} catch (Exception e) {
@@ -689,7 +695,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@WrapInTransaction
 	public void saveAction(final WorkflowAction action,
-						   final List<Permission> permissions) throws DotDataException {
+						   final List<Permission> permissions,
+						   final User user) throws DotDataException {
 
 		DotPreconditions.isTrue(UtilMethods.isSet(action.getSchemeId()) && this.existsScheme(action.getSchemeId()),
 				()-> "Workflow-does-not-exists-scheme",
@@ -697,7 +704,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		try {
 
-			this.saveAction(action);
+			this.saveAction(action, user);
 
 			permissionAPI.removePermissions(action);
 			if(permissions != null){
@@ -739,6 +746,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		WorkflowAction workflowAction = null;
 		WorkflowStep   workflowStep   = null;
+
+		this.isUserAllowToModifiedWorkflow(user);
 
 		try {
 
@@ -795,8 +804,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	} // saveAction.
 
 	@WrapInTransaction
-	private void saveAction(final WorkflowAction action) throws DotDataException, AlreadyExistException {
+	private void saveAction(final WorkflowAction action, final User user) throws DotDataException, AlreadyExistException {
 
+		this.isUserAllowToModifiedWorkflow(user);
 		DotPreconditions.isTrue(UtilMethods.isSet(action.getSchemeId()) && this.existsScheme(action.getSchemeId()),
 				()-> "Workflow-does-not-exists-scheme", DoesNotExistException.class);
 
@@ -815,8 +825,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@WrapInTransaction
-	public void deleteAction(final WorkflowAction action) throws DotDataException, AlreadyExistException {
+	public void deleteAction(final WorkflowAction action, final User user) throws DotDataException, AlreadyExistException {
 
+		this.isUserAllowToModifiedWorkflow(user);
 		Logger.debug(this, "Removing the WorkflowAction: " + action.getId());
 
 		final List<WorkflowActionClass> workflowActionClasses =
@@ -826,7 +837,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		if(workflowActionClasses != null && workflowActionClasses.size() > 0) {
 			for(WorkflowActionClass actionClass : workflowActionClasses) {
-				this.deleteActionClass(actionClass);
+				this.deleteActionClass(actionClass, user);
 			}
 		}
 
@@ -837,8 +848,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@WrapInTransaction
 	public void deleteAction(final WorkflowAction action,
-							 final WorkflowStep step) throws DotDataException, AlreadyExistException {
+							 final WorkflowStep step, User user) throws DotDataException, AlreadyExistException {
 
+		this.isUserAllowToModifiedWorkflow(user);
 		Logger.debug(this, "Deleting the action: " + action.getId() +
 					", from the step: " + step.getId());
 
@@ -942,7 +954,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@WrapInTransaction
-	public void deleteActionClass(WorkflowActionClass actionClass) throws DotDataException, AlreadyExistException {
+	public void deleteActionClass(final WorkflowActionClass actionClass, final User user) throws DotDataException, AlreadyExistException {
+
+		this.isUserAllowToModifiedWorkflow(user);
+
 		try {
 			// Delete action class
 			final int orderOfActionClassToDelete = actionClass.getOrder();
@@ -964,7 +979,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 						// Subtract by 1 for those that are higher than the
 						// action class deleted
 						action.setOrder(action.getOrder()-1);
-						saveActionClass(action);
+						saveActionClass(action, user);
 					}
 				}
 			}
@@ -974,12 +989,19 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@WrapInTransaction
-	public void saveActionClass(WorkflowActionClass actionClass) throws DotDataException, AlreadyExistException {
-		workFlowFactory.saveActionClass(actionClass);
+	public void saveActionClass(final WorkflowActionClass actionClass, final User user) throws DotDataException, AlreadyExistException {
+
+		this.isUserAllowToModifiedWorkflow(user);
+		this.workFlowFactory.saveActionClass(actionClass);
 	}
 
 	@WrapInTransaction
-	public void reorderActionClass(WorkflowActionClass actionClass, int order) throws DotDataException {
+	public void reorderActionClass(final WorkflowActionClass actionClass,
+								   final int order,
+								   final User user) throws DotDataException {
+
+		this.isUserAllowToModifiedWorkflow(user);
+
 		try {
 			List<WorkflowActionClass> actionClasses = null;
 			try {
@@ -1028,7 +1050,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 						}
 					}
 				}
-				saveActionClass(action);
+				saveActionClass(action, user);
 			}
 		} catch (Exception e) {
 			throw new DotWorkflowException(e.getMessage(),e);
@@ -1040,19 +1062,27 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return workFlowFactory.findParamsForActionClass(actionClass);
 	}
 
-	public void saveWorkflowActionClassParameters(List<WorkflowActionClassParameter> params) throws DotDataException{
+	public void saveWorkflowActionClassParameters(final List<WorkflowActionClassParameter> params,
+												  final User user) throws DotDataException{
 
 		if(params ==null || params.size() ==0){
 			return;
 		}
 
-		boolean localTransaction=false;
+		this.isUserAllowToModifiedWorkflow(user);
+
+		boolean localTransaction = false;
+		boolean isNewConnection  = false;
+
 		try {
-			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
+
+			isNewConnection    = !DbConnectionFactory.connectionExists();
+			localTransaction   = HibernateUtil.startLocalTransactionIfNeeded();
 
 			for(WorkflowActionClassParameter param : params){
 				workFlowFactory.saveWorkflowActionClassParameter(param);
 			}
+
 			if(localTransaction){
 				HibernateUtil.closeAndCommitTransaction();
 			}
@@ -1063,7 +1093,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				HibernateUtil.rollbackTransaction();
 			}
 		} finally {
-			if(localTransaction) {
+			if(isNewConnection) {
 				HibernateUtil.closeSessionSilently();
 			}
 		}
