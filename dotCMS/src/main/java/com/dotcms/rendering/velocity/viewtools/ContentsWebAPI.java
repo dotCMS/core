@@ -1141,7 +1141,7 @@ public class ContentsWebAPI implements ViewTool {
 	 */
 	public boolean doesUserHasPermission (String contentInode, int permission, boolean editMode) throws DotDataException {
 		if(editMode)
-			return doesUserHasPermission(contentInode, permission, backuser, true);
+			return doesUserHasPermission(contentInode, permission, backuser, false);
 		return doesUserHasPermission(contentInode, permission, user, true);
 	}
 
