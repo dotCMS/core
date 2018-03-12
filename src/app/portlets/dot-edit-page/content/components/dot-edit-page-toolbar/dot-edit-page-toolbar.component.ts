@@ -46,7 +46,9 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
                 'editpage.toolbar.primary.workflow.actions',
                 'dot.common.message.pageurl.copied.clipboard',
                 'dot.common.message.pageurl.copied.clipboard.error',
-                'editpage.toolbar.page.cant.edit'
+                'editpage.toolbar.page.cant.edit',
+                'editpage.content.steal.lock.confirmation.message.header',
+                'editpage.content.steal.lock.confirmation.message'
             ])
             .subscribe(() => {
                 this.workflowsActions = this.getWorkflowOptions();
@@ -128,8 +130,8 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
                 reject: () => {
                     this.lockerModel = false;
                 },
-                header: this.dotMessageService.get('editpage.content.steal.lock.confirmation_message.header'),
-                message: this.dotMessageService.get('editpage.content.steal.lock.confirmation_message.message')
+                header: this.dotMessageService.get('editpage.content.steal.lock.confirmation.message.header'),
+                message: this.dotMessageService.get('editpage.content.steal.lock.confirmation.message')
             });
         } else {
             this.setLockerState();
