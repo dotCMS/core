@@ -516,18 +516,19 @@ public class BrowserAjax {
 		}
 	}
 
-	public void saveFileAction(String selectedItem,String wfActionAssign,String wfActionId,String wfActionComments, String wfConId, String wfPublishDate,
+	public Map<String, Object> saveFileAction(String selectedItem,String wfActionAssign,String wfActionId,String wfActionComments, String wfConId, String wfPublishDate,
 			String wfPublishTime, String wfExpireDate, String wfExpireTime, String wfNeverExpire, String whereToSend, String forcePush) throws  DotSecurityException, ServletException{
 		WebContext ctx = WebContextFactory.get();
-        User usr = getUser(ctx.getHttpServletRequest());
+        User user = getUser(ctx.getHttpServletRequest());
 		Contentlet c = null;
+		Map<String, Object> result = new HashMap<String, Object>();
 		WorkflowAPI wapi = APILocator.getWorkflowAPI();
 		try {
-			WorkflowAction action = wapi.findAction(wfActionId, usr);
+			WorkflowAction action = wapi.findAction(wfActionId, user);
 			if (action == null) {
 				throw new ServletException("No such workflow action");
 			}
-			c = APILocator.getContentletAPI().find(wfConId, usr, false);
+			c = APILocator.getContentletAPI().find(wfConId, user, false);
 			c.setStringProperty("wfActionId", action.getId());
 			c.setStringProperty("wfActionComments", wfActionComments);
 			c.setStringProperty("wfActionAssign", wfActionAssign);
@@ -540,12 +541,22 @@ public class BrowserAjax {
 			c.setStringProperty("whereToSend", whereToSend);
 			c.setStringProperty("forcePush", forcePush);
 
-			wapi.fireWorkflowNoCheckin(c, usr);
+			wapi.fireWorkflowNoCheckin(c, user);
+
+			result.put("status", "success");
+			result.put("message", UtilMethods.escapeSingleQuotes(LanguageUtil.get(user, "Workflow-executed")));
 
 		} catch (Exception e) {
 			Logger.error(BrowserAjax.class, e.getMessage(), e);
-			throw new ServletException(e.getMessage(),e);
+			result.put("status", "error");
+			try {
+				result.put("message",
+						UtilMethods.escapeSingleQuotes(LanguageUtil.get(user, "Workflow-action-execution-error")+" "+ e.getMessage()));
+			}catch(LanguageException le){
+				Logger.error(BrowserAjax.class, le.getMessage(), le);
+			}
 		}
+		return result;
 	}
 
 	public Map<String, Object> getFileInfo(String fileId, long languageId) throws DotDataException, DotSecurityException, PortalException, SystemException {
@@ -946,7 +957,7 @@ public class BrowserAjax {
      * This method verify if the user has write permissions of the file asset
      * @param host
      * @param parent
-     * @param page
+     * @param id
      * @param user
      * @return true if has permissions otherwise false
      */
