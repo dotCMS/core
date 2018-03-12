@@ -802,7 +802,7 @@ public class WorkflowHelper {
         newScheme.setDescription(workflowSchemeForm.getSchemeDescription());
         newScheme.setName(workflowSchemeForm.getSchemeName());
 
-        this.workflowAPI.saveScheme(newScheme);
+        this.workflowAPI.saveScheme(newScheme, user);
         return newScheme;
     }
 
