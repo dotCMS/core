@@ -353,11 +353,11 @@ public class FiltersTest {
     }
 
     private MockResponseWrapper getMockResponse() throws IOException {
-        HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+        final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
 
         Mockito.when(response.getOutputStream()).thenReturn(Mockito.mock(ServletOutputStream.class));
 
-        MockResponseWrapper wrapper = new MockResponseWrapper(response);
+        final MockResponseWrapper wrapper = new MockResponseWrapper(response);
         return wrapper;
     }
     private HttpServletRequest getMockRequest(String hostName, String uri) {
