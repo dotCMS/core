@@ -250,43 +250,43 @@ public class PageResource {
                     (HTMLPageAsset) APILocator.getHTMLPageAssetAPI().findPage(uri, user, mode.respectAnonPerms) :
                     this.pageResourceHelper.getPage(request, user, uri, mode);
 
-            if (page != null) {
-                final Builder<String, Object> responseMapBuilder = ImmutableMap.builder();
-
-                final Host host = APILocator.getHostAPI().find(page.getHost(), user, mode.respectAnonPerms);
-                request.setAttribute(WebKeys.CURRENT_HOST, host);
-                request.getSession().setAttribute(WebKeys.CURRENT_HOST, host);
-
-                final Template template = this.templateAPI.findWorkingTemplate(page.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false);
-
-                responseMapBuilder
-                        .put("html", this.pageResourceHelper.getPageRendered(page, request, response, user, mode))
-                        .put("page", this.pageResourceHelper.getPageMap(page, user))
-                        .put("containers", this.pageResourceHelper.getMappedContainers(template))
-                        .put("viewAs", createViewAsMap(request))
-                        .put("canCreateTemplate", APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("templates", user));
-
-                if (template.isDrawed()) {
-                    responseMapBuilder.put("layout", DotTemplateTool.themeLayout(template.getInode()));
-                } 
-
-                if (this.permissionAPI.doesUserHavePermission(template, PermissionLevel.READ.getType(), user, false)) {
-                    responseMapBuilder.put("template",
-                        ImmutableMap.builder()
-                            .put("canEdit", this.permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(), user))
-                            .putAll(this.pageResourceHelper.asMap(template))
-                            .build());
-                }
-
-                final Response.ResponseBuilder responseBuilder = Response.ok(responseMapBuilder.build());
-                responseBuilder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, " +
-                        "Content-Type, " + "Accept, Authorization");
-                res = responseBuilder.build();
-            } else {
+            if (page == null) {
                 Logger.error(this.getClass(),
                         "Page does not exists on PageResource, page uri: " + uri);
-                res = ExceptionMapperUtil.createResponse(Response.Status.NOT_FOUND);
+                return ExceptionMapperUtil.createResponse(Response.Status.NOT_FOUND);
             }
+
+            final Builder<String, Object> responseMapBuilder = ImmutableMap.builder();
+
+            final Host host = APILocator.getHostAPI().find(page.getHost(), user, mode.respectAnonPerms);
+            request.setAttribute(WebKeys.CURRENT_HOST, host);
+            request.getSession().setAttribute(WebKeys.CURRENT_HOST, host);
+
+            final Template template = this.templateAPI.findWorkingTemplate(page.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false);
+
+            responseMapBuilder
+                    .put("html", this.pageResourceHelper.getPageRendered(page, request, response, user, mode))
+                    .put("page", this.pageResourceHelper.getPageMap(page, user))
+                    .put("containers", this.pageResourceHelper.getMappedContainers(template))
+                    .put("viewAs", createViewAsMap(request))
+                    .put("canCreateTemplate", APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("templates", user));
+
+            if (template.isDrawed()) {
+                responseMapBuilder.put("layout", DotTemplateTool.themeLayout(template.getInode()));
+            }
+
+            if (this.permissionAPI.doesUserHavePermission(template, PermissionLevel.READ.getType(), user, false)) {
+                responseMapBuilder.put("template",
+                    ImmutableMap.builder()
+                        .put("canEdit", this.permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(), user))
+                        .putAll(this.pageResourceHelper.asMap(template))
+                        .build());
+            }
+
+            final Response.ResponseBuilder responseBuilder = Response.ok(responseMapBuilder.build());
+            responseBuilder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, " +
+                    "Content-Type, " + "Accept, Authorization");
+            res = responseBuilder.build();
         } catch (JsonProcessingException e) {
             final String errorMsg = "An error occurred when generating the JSON response (" + e.getMessage() + ")";
             Logger.error(this, e.getMessage(), e);
