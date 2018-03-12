@@ -87,7 +87,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		row.put("nextAssign", row.get("next_assign"));
 		row.put("order", row.get("my_order"));
 		row.put("requiresCheckout", row.get("requires_checkout"));
-		row.put("showOn", WorkflowStatus.toSet(row.get("show_on")));
+		row.put("showOn", WorkflowState.toSet(row.get("show_on")));
 		row.put("roleHierarchyForAssign", row.get("use_role_hierarchy_assign"));
 
 		BeanUtils.copyProperties(action, row);
@@ -1116,7 +1116,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.addParam(action.getIcon());
 			db.addParam(action.isRoleHierarchyForAssign());
 			db.addParam(action.isRequiresCheckout());
-			db.addParam(WorkflowStatus.toCommaSeparatedString(action.getShowOn()));
+			db.addParam(WorkflowState.toCommaSeparatedString(action.getShowOn()));
 			db.loadResult();
 		} else {
 			db.setSQL(sql.UPDATE_ACTION);
@@ -1131,7 +1131,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.addParam(action.getIcon());
 			db.addParam(action.isRoleHierarchyForAssign());
 			db.addParam(action.isRequiresCheckout());
-			db.addParam(WorkflowStatus.toCommaSeparatedString(action.getShowOn()));
+			db.addParam(WorkflowState.toCommaSeparatedString(action.getShowOn()));
 			db.addParam(action.getId());
 			db.loadResult();
 		}

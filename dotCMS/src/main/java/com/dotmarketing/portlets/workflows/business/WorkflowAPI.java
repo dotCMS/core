@@ -13,17 +13,8 @@ import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
-import com.dotmarketing.portlets.workflows.model.WorkflowComment;
-import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
-import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
-import com.dotmarketing.portlets.workflows.model.WorkflowStatus;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
-import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.workflows.model.*;
+import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.liferay.portal.model.User;
 import java.util.EnumSet;
 import java.util.List;
@@ -33,7 +24,7 @@ import java.util.Set;
 public interface WorkflowAPI {
 
 	public static final String SYSTEM_WORKFLOW_ID           = WorkFlowFactory.SYSTEM_WORKFLOW_ID;
-	public static final Set<WorkflowStatus> DEFAULT_SHOW_ON = EnumSet.of(WorkflowStatus.LOCKED, WorkflowStatus.UNLOCKED);
+	public static final Set<WorkflowState> DEFAULT_SHOW_ON = EnumSet.of(WorkflowState.LOCKED, WorkflowState.UNLOCKED);
 
     public void registerBundleService ();
 
