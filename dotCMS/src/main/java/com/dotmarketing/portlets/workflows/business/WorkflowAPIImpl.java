@@ -845,7 +845,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		Logger.debug(this, "Removing the WorkflowActionClass, for action: " + action.getId());
 
 		if(workflowActionClasses != null && workflowActionClasses.size() > 0) {
-			for(WorkflowActionClass actionClass : workflowActionClasses) {
+			for(final WorkflowActionClass actionClass : workflowActionClasses) {
 				this.deleteActionClass(actionClass, user);
 			}
 		}
@@ -979,7 +979,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			baseAction.setId(actionClass.getActionId());
 			
 			// Reorder the action classes in the database
-			List<WorkflowActionClass> actionClasses = findActionClasses(baseAction);
+			final List<WorkflowActionClass> actionClasses = findActionClasses(baseAction);
 			if((actionClasses.size() > 1) && (actionClasses.size() != orderOfActionClassToDelete)) {
 				// Only update when there are action classes in the database and when the user is NOT deleting
 				// the last action class

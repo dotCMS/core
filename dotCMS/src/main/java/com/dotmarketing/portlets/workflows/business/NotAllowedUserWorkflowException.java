@@ -8,15 +8,15 @@ import com.dotmarketing.exception.DotRuntimeException;
  * @author jsanca
  */
 public class NotAllowedUserWorkflowException extends DotRuntimeException {
-    public NotAllowedUserWorkflowException(String x) {
-        super(x);
+    public NotAllowedUserWorkflowException(final String message) {
+        super(message);
     }
 
-    public NotAllowedUserWorkflowException(Throwable x) {
-        super(x);
+    public NotAllowedUserWorkflowException(final Throwable throwable) {
+        super(throwable);
     }
 
-    public NotAllowedUserWorkflowException(String x, Throwable e) {
-        super(x, e);
+    public NotAllowedUserWorkflowException(final String message, final Throwable e) {
+        super(message, e);
     }
 }
