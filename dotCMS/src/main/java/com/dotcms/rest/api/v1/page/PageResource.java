@@ -279,7 +279,6 @@ public class PageResource {
                 }
 
                 final Response.ResponseBuilder responseBuilder = Response.ok(responseMapBuilder.build());
-                responseBuilder.header("Access-Control-Expose-Headers", "Authorization");
                 responseBuilder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, " +
                         "Content-Type, " + "Accept, Authorization");
                 res = responseBuilder.build();
