@@ -783,7 +783,6 @@ public class WorkflowHelper {
     } // findInitialAvailableActionsByContentType.
 
 
-    @WrapInTransaction
     public WorkflowScheme saveOrUpdate(final String schemeId, final WorkflowSchemeForm workflowSchemeForm, final User user) throws AlreadyExistException, DotDataException, DotSecurityException {
 
         final WorkflowScheme newScheme = new WorkflowScheme();
