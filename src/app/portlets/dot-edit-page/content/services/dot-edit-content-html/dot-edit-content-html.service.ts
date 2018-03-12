@@ -1,17 +1,17 @@
 import { LoggerService } from 'dotcms-js/dotcms-js';
 import { Injectable, ElementRef } from '@angular/core';
-import { EDIT_PAGE_CSS } from '../shared/iframe-edit-mode.css';
-import { DotContainerContentletService } from './dot-container-contentlet.service';
-import { DotDragDropAPIHtmlService } from './html/dot-drag-drop-api-html.service';
-import { GOOGLE_FONTS } from './html/iframe-edit-mode.js';
-import { DotEditContentToolbarHtmlService } from './html/dot-edit-content-toolbar-html.service';
-import { DotDOMHtmlUtilService } from './html/dot-dom-html-util.service';
-import { MODEL_VAR_NAME } from './html/iframe-edit-mode.js';
+import { EDIT_PAGE_CSS } from '../../shared/iframe-edit-mode.css';
+import { DotContainerContentletService } from '../dot-container-contentlet.service';
+import { DotDragDropAPIHtmlService } from '../html/dot-drag-drop-api-html.service';
+import { GOOGLE_FONTS } from '../html/iframe-edit-mode.js';
+import { DotEditContentToolbarHtmlService } from '../html/dot-edit-content-toolbar-html.service';
+import { DotDOMHtmlUtilService } from '../html/dot-dom-html-util.service';
+import { MODEL_VAR_NAME } from '../html/iframe-edit-mode.js';
 import { Subject } from 'rxjs/Subject';
-import { DotPageContainer } from '../../shared/models/dot-page-container.model';
-import { DotPageContent } from '../../shared/models/dot-page-content.model';
-import { DotDialogService } from '../../../../api/services/dot-dialog/dot-dialog.service';
-import { DotMessageService } from '../../../../api/services/dot-messages-service';
+import { DotPageContainer } from '../../../shared/models/dot-page-container.model';
+import { DotPageContent } from '../../../shared/models/dot-page-content.model';
+import { DotDialogService } from '../../../../../api/services/dot-dialog/dot-dialog.service';
+import { DotMessageService } from '../../../../../api/services/dot-messages-service';
 
 enum Action {
     EDIT,
@@ -20,6 +20,7 @@ enum Action {
 @Injectable()
 export class DotEditContentHtmlService {
     contentletEvents: Subject<any> = new Subject();
+    iframeActions: Subject<any> = new Subject();
     iframe: ElementRef;
 
     pageModelChange: Subject<any> = new Subject();
@@ -38,23 +39,7 @@ export class DotEditContentHtmlService {
         private dotMessageService: DotMessageService
     ) {
         this.contentletEvents.subscribe((contentletEvent: any) => {
-            switch (contentletEvent.name) {
-                case 'save':
-                    if (this.currentAction === Action.ADD) {
-                        this.renderAddedContentlet(contentletEvent.data);
-                    } else if (this.currentAction === Action.EDIT) {
-                        this.renderEditedContentlet(contentletEvent.data);
-                    }
-                    break;
-                case 'select':
-                    this.renderAddedContentlet(contentletEvent.data);
-                    break;
-                case 'relocate':
-                    this.renderRelocatedContentlet(contentletEvent.data);
-                    break;
-                default:
-                    break;
-            }
+            this.handlerContentletEvents(contentletEvent.name)(contentletEvent);
         });
 
         this.dotMessageService
@@ -161,7 +146,9 @@ export class DotEditContentHtmlService {
             }"][data-dot-uuid="${this.currentContainer.uuid}"]`
         );
 
-        if (!this.isContentExistInContainer(contentlet, containerEl)) {
+        if (this.isContentExistInContainer(contentlet, containerEl)) {
+            this.showContentAlreadyAddedError();
+        } else {
             const contentletEl: HTMLElement = this.createNewContentlet(contentlet);
             containerEl.insertAdjacentElement('beforeend', contentletEl);
             this.dotContainerContentletService
@@ -170,8 +157,6 @@ export class DotEditContentHtmlService {
                     this.renderHTMLToContentlet(contentletEl, contentletHtml);
                     this.currentContainer = null;
                 });
-        } else {
-            this.showContentAlreadyAddedError();
         }
     }
 
@@ -285,7 +270,7 @@ export class DotEditContentHtmlService {
             const target = <HTMLElement>$event.target;
             const container = <HTMLElement>target.closest('div[data-dot-object="container"]');
 
-            this.contentletEvents.next({
+            this.iframeActions.next({
                 name: type,
                 dataset: target.dataset,
                 contentletEvents: this.contentletEvents,
@@ -357,6 +342,7 @@ export class DotEditContentHtmlService {
         dotEditContentletEl.dataset.dotInode = contentlet.inode;
         dotEditContentletEl.dataset.dotType = contentlet.type;
         dotEditContentletEl.dataset.dotBasetype = contentlet.baseType;
+        dotEditContentletEl.dataset.dotCanEdit = 'true';
 
         /*
             TODO: we have the method: DotEditContentToolbarHtmlService.addContentletMarkup that does this, we need
@@ -364,7 +350,8 @@ export class DotEditContentHtmlService {
         */
         const contenToolbarButtons = this.dotEditContentToolbarHtmlService.getContentButton(
             contentlet.identifier,
-            contentlet.inode
+            contentlet.inode,
+            dotEditContentletEl.dataset.dotCanEdit === 'true'
         );
 
         dotEditContentletEl.innerHTML = `<div class="dotedit-contentlet__toolbar">
@@ -383,6 +370,35 @@ export class DotEditContentHtmlService {
 
     private getEditPageDocument(): any {
         return this.getEditPageIframe().contentDocument || this.getEditPageIframe().contentWindow.document;
+    }
+
+    private handlerContentletEvents(event: string): (contentletEvent: any) => void {
+        const contentletEventsMap = {
+            // When an user create or edit a contentlet from the jsp
+            save: (contentletEvent: any) => {
+                if (this.currentAction === Action.ADD) {
+                    this.renderAddedContentlet(contentletEvent.data);
+                } else if (this.currentAction === Action.EDIT) {
+                    this.renderEditedContentlet(contentletEvent.data);
+                }
+                this.iframeActions.next({
+                    name: 'close'
+                });
+            },
+            // When a user select a content from the search jsp
+            select: (contentletEvent: any) => {
+                this.renderAddedContentlet(contentletEvent.data);
+                this.iframeActions.next({
+                    name: 'close'
+                });
+            },
+            // When a user drang and drop a contentlet in the iframe
+            relocate: (contentletEvent: any) => {
+                this.renderRelocatedContentlet(contentletEvent.data);
+            }
+        };
+
+        return contentletEventsMap[event];
     }
 
     private loadCodeIntoIframe(editPageHTML: string): void {
@@ -415,6 +431,7 @@ export class DotEditContentHtmlService {
         // Removing the loading indicator
         contentletContentEl.innerHTML = '';
         this.appendNewContentlets(contentletContentEl, contentletHtml);
+
         // Update the model with the recently added contentlet
         this.pageModelChange.next(this.getContentModel());
     }

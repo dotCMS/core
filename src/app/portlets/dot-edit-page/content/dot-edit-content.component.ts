@@ -8,7 +8,7 @@ import { Component, OnInit, ViewChild, ElementRef, NgZone } from '@angular/core'
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Subject } from 'rxjs/Subject';
 import { ActivatedRoute } from '@angular/router';
-import { DotEditContentHtmlService } from './services/dot-edit-content-html.service';
+import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
 import { DotDialogService } from '../../../api/services/dot-dialog';
 import { DotLoadingIndicatorService } from '../../../view/components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
 import { DotMessageService } from '../../../api/services/dot-messages-service';
@@ -73,9 +73,9 @@ export class DotEditContentComponent implements OnInit {
             ])
             .subscribe();
 
-        this.dotEditContentHtmlService.contentletEvents.subscribe((contentletEvent: any) => {
+        this.dotEditContentHtmlService.iframeActions.subscribe((contentletEvent: any) => {
             this.ngZone.run(() => {
-                this.contentletEventsHandler(contentletEvent.name)(contentletEvent);
+                this.iframeActionsHandler(contentletEvent.name)(contentletEvent);
             });
         });
 
@@ -190,13 +190,13 @@ export class DotEditContentComponent implements OnInit {
         });
     }
 
-    private contentletEventsHandler(event: any): Function {
+    private iframeActionsHandler(event: any): Function {
         const eventsHandlerMap = {
             edit: this.editContentlet.bind(this),
             add: this.addContentlet.bind(this),
             remove: this.removeContentlet.bind(this),
-            select: this.closeDialog.bind(this),
-            cancel: () => {},
+            cancel: this.closeDialog.bind(this),
+            close: this.closeDialog.bind(this),
             save: () => {}
         };
 

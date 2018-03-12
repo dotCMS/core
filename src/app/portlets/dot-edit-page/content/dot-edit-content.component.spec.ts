@@ -18,7 +18,7 @@ import { DotDOMHtmlUtilService } from './services/html/dot-dom-html-util.service
 import { DotDialogService } from '../../../api/services/dot-dialog/index';
 import { DotDragDropAPIHtmlService } from './services/html/dot-drag-drop-api-html.service';
 import { DotEditContentComponent } from './dot-edit-content.component';
-import { DotEditContentHtmlService } from './services/dot-edit-content-html.service';
+import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
 import { DotEditContentToolbarHtmlService } from './services/html/dot-edit-content-toolbar-html.service';
 import { DotEditPageService } from '../../../api/services/dot-edit-page/dot-edit-page.service';
 import { DotEditPageToolbarModule } from './components/dot-edit-page-toolbar/dot-edit-page-toolbar.module';

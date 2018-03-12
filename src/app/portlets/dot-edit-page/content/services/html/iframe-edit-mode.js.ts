@@ -32,32 +32,29 @@ export const EDIT_PAGE_JS = `
         return model;
     }
 
-    function checkIfContentletTypeIsAcepted(el, target){
+    function checkIfContentletTypeIsAccepted(el, target) {
         return el.dataset.dotBasetype === 'WIDGET' ||
                el.dataset.dotBasetype === 'FORM' ||
                target.dataset.dotAcceptTypes.indexOf(el.dataset.dotType) > -1;
     }
 
-    function checkIfMaxLimitNotReached(target){
+    function checkIfMaxLimitNotReached(target) {
         return target.children.length < parseInt(target.dataset.maxContentlets, 10)
     }
 
-    function checkIfContentletIsUnique(el, target){
-        return !Array.from(target.querySelectorAll("div[data-dot-object='contentlet']"))
-            .filter(node => {
-                return (node.dataset.dotInode === el.dataset.dotInode ||
-                        node.dataset.dotIdentifier === el.dataset.dotIdentifier)
-                }).length;
+    function checkIfContentletIsUnique(el, target) {
+        return Array.from(target.querySelectorAll("div[data-dot-object='contentlet']:not(.gu-transit)"))
+            .map(node => node.dataset.dotInode).indexOf(el.dataset.dotInode) === -1;
     }
 
     var drake = dragula(
         getContainers(), {
         accepts: function (el, target, source, sibling) {
             var canDrop = false;
-            if (target.dataset.dotObject === 'container'){
-                canDrop =  checkIfContentletTypeIsAcepted(el, target)
-                               && checkIfMaxLimitNotReached(target)
-                               && checkIfContentletIsUnique(el, target);
+            if (target.dataset.dotObject === 'container') {
+                canDrop = checkIfContentletTypeIsAccepted(el, target)
+                            && checkIfMaxLimitNotReached(target)
+                            && checkIfContentletIsUnique(el, target);
                 if (!canDrop && target !== source) {
                     forbiddenTarget = target;
                     forbiddenTarget.classList.add('no')
