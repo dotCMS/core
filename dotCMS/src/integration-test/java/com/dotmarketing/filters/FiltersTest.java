@@ -352,6 +352,14 @@ public class FiltersTest {
         }
     }
 
+    private MockResponseWrapper getMockResponse() throws IOException {
+        HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+
+        Mockito.when(response.getOutputStream()).thenReturn(Mockito.mock(ServletOutputStream.class));
+
+        MockResponseWrapper wrapper = new MockResponseWrapper(response);
+        return wrapper;
+    }
     private HttpServletRequest getMockRequest(String hostName, String uri) {
 
         HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
@@ -518,7 +526,8 @@ public class FiltersTest {
         Logger.info(this.getClass(),
                 "/home/ should forward to /products/" + CMSFilter.CMS_INDEX_PAGE);
         request = getMockRequest("demo.dotcms.com", "/products/");
-        response = new MockResponseWrapper(Mockito.mock(HttpServletResponse.class));
+        response = getMockResponse();
+
         try {
             new CMSFilter().doFilter(request, response, chain);
             Logger.info(this.getClass(),
