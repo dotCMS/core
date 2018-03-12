@@ -4,6 +4,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
@@ -141,18 +142,35 @@ public class ESIndexAPITest {
 	 * @throws ExecutionException
 	 */
 	@Test
-	public void uploadSnapshotTest() throws IOException, InterruptedException, ExecutionException{
-		String currentLiveIndex = getLiveIndex();
-		esIndexAPI.closeIndex(currentLiveIndex);
-		String path = ConfigTestHelper.getPathToTestResource("index.zip");
-		ZipFile file = new ZipFile(path);
-		String pathToRepo = Config.getStringProperty("es.path.repo","test-resources");
-		File tempDir = new File(pathToRepo);
-		boolean response = esIndexAPI.uploadSnapshot(file, tempDir.getAbsolutePath(),true);
+	public void uploadSnapshotTest() throws DotDataException, IOException, InterruptedException, ExecutionException{
+
+		final String path = ConfigTestHelper.getPathToTestResource("index.zip");
+		final String pathToRepo = Config.getStringProperty("es.path.repo","test-resources");
+
+		//Copy index.zip resource to repo
+		final File tempDir = new File(pathToRepo);
+		final File resourceFile = new File(path);
+		FileUtils.copyFileToDirectory(resourceFile, tempDir);
+
+		//Read index.zip file
+		final ZipFile indexFile = new ZipFile(pathToRepo + "/index.zip");
+
+
+		//Create a new Index name corresponding to the Snapshot to Upload
+		final String indexName = "live_20161011212551";
+		esIndexAPI.createIndex(indexName);
+
+		//Create a snapshot and close the index (becuase the upload needs the index to be closed)
+		esIndexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", indexName);
+		esIndexAPI.closeIndex(indexName);
+
+		//Upload the snapshot
+		final boolean response = esIndexAPI.uploadSnapshot(indexFile, tempDir.getAbsolutePath(),true);
 		assertTrue(response);
-		esIndexAPI.closeIndex("live_20161011212551");
-		esIndexAPI.openIndex(currentLiveIndex);
-		esIndexAPI.delete("live_20161011212551");
+
+		//Clean up
+		esIndexAPI.closeIndex(indexName);
+		esIndexAPI.delete(indexName);
 	}
 
 	/**
@@ -165,11 +183,18 @@ public class ESIndexAPITest {
 
 	@Test(expected = ElasticsearchException.class)
 	public void uploadSnapshotTest_noSnapshotFound() throws IOException, InterruptedException, ExecutionException{
-		String path = ConfigTestHelper.getPathToTestResource("failing-test.zip");
-		ZipFile file = new ZipFile(path);
-		String pathToRepo = Config.getStringProperty("es.path.repo","test-resources");
-		File tempDir = new File(pathToRepo);
-		esIndexAPI.uploadSnapshot(file, tempDir.getAbsolutePath(),true);
+		final String path = ConfigTestHelper.getPathToTestResource("failing-test.zip");
+		final String pathToRepo = Config.getStringProperty("es.path.repo","test-resources");
+
+		//Copy index.zip resource to repo
+		final File tempDir = new File(pathToRepo);
+		final File resourceFile = new File(path);
+		FileUtils.copyFileToDirectory(resourceFile, tempDir);
+
+		//Read failing-test.zip file
+		final ZipFile failingFile = new ZipFile(pathToRepo + "/failing-test.zip");
+
+		esIndexAPI.uploadSnapshot(failingFile, tempDir.getAbsolutePath(),true);
 	}
 
 	/**

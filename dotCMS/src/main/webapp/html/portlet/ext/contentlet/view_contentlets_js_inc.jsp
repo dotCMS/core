@@ -2709,9 +2709,16 @@
     });
 
     function fileActionCallback (response) {
-    	refreshFakeJax();
-    	showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Workflow-executed")) %>');
-	}
+        if (response.status == "success") {
+            setTimeout("refreshFakeJax()", 1000);
+            showDotCMSSystemMessage(response.message);
+            return;
+        }
+
+        // An error happened
+        refreshFakeJax();
+        showDotCMSErrorMessage(response.message);
+    }
 
 
 	function _unpublishAsset (inode) {

@@ -902,16 +902,18 @@ public class ESContentFactoryImpl extends ContentletFactory {
             return result;
         }
 
-        final StringBuilder hql = new StringBuilder();
 
-        hql.append("select {contentlet.*} from contentlet join inode contentlet_1_ ")
-                .append("on contentlet_1_.inode = contentlet.inode and contentlet_1_.type = 'contentlet' where  contentlet.inode in ('");
+
+        final String contentletBase = "select {contentlet.*} from contentlet join inode contentlet_1_ "
+                + "on contentlet_1_.inode = contentlet.inode and contentlet_1_.type = 'contentlet' where  contentlet.inode in ('";
 
         for(int init=0; init < inodesNotFound.size(); init+=200) {
             int end = Math.min(init + 200, inodesNotFound.size());
 
             HibernateUtil hu = new HibernateUtil(com.dotmarketing.portlets.contentlet.business.Contentlet.class);
-            hql.append(StringUtils.join(inodesNotFound.subList(init, end), "','"))
+            final StringBuilder hql = new StringBuilder()
+                    .append(contentletBase)
+                    .append(StringUtils.join(inodesNotFound.subList(init, end), "','"))
                     .append("') order by contentlet.mod_date DESC");
 
             hu.setSQLQuery(hql.toString());

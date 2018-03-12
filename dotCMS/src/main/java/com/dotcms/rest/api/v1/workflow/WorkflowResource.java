@@ -23,6 +23,7 @@ import com.dotcms.workflow.form.*;
 import com.dotcms.workflow.helper.WorkflowHelper;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -989,5 +990,70 @@ public class WorkflowResource {
 
         return response;
     } // findInitialAvailableActionsByContentType.
+
+    /**
+     * Creates a new scheme
+     *
+     * @param request
+     * @param workflowSchemeForm
+     * @return
+     */
+    @POST
+    @Path("/schemes")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response save(@Context final HttpServletRequest request,
+                               final WorkflowSchemeForm workflowSchemeForm) {
+        final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
+        Logger.debug(this, "Saving scheme named: " + workflowSchemeForm.getSchemeName());
+        Response response = null;
+        try {
+            final WorkflowScheme scheme = this.workflowHelper.saveOrUpdate(null, workflowSchemeForm, initDataObject.getUser());
+            response  = Response.ok(new ResponseEntityView(scheme)).build(); // 200
+        } catch ( AlreadyExistException e) {
+            response = ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
+        } catch (Exception e) {
+            Logger.error(this.getClass(), "Exception on save, schema named: " + workflowSchemeForm.getSchemeName() + ", exception message: " + e.getMessage(), e);
+            response = (e.getCause() instanceof SecurityException)?
+                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+        return response;
+    }
+
+
+    /**
+     * Updates an existing scheme
+     *
+     * @param request
+     * @param workflowSchemeForm
+     * @return
+     */
+    @PUT
+    @Path("/schemes/{schemeId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response update(@Context final HttpServletRequest request,
+                                 @PathParam("schemeId") final String schemeId,
+                                 final WorkflowSchemeForm workflowSchemeForm) {
+        final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
+        Logger.debug(this, "Updating scheme with id: " + schemeId);
+        Response response = null;
+        try {
+            final WorkflowScheme scheme = this.workflowHelper.saveOrUpdate(schemeId, workflowSchemeForm, initDataObject.getUser());
+            response = Response.ok(new ResponseEntityView(scheme)).build(); // 200
+        } catch ( DoesNotExistException e) {
+            Logger.error(this.getClass(), "Exception attempting to update a nonexistent schema identified by : " +schemeId + ", exception message: " + e.getMessage(), e);
+            response = ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
+        } catch (Exception e) {
+            Logger.error(this.getClass(), "Exception attempting to update schema identified by : " +schemeId + ", exception message: " + e.getMessage(), e);
+            response = (e.getCause() instanceof SecurityException)?
+                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+        return response;
+    }
 
 } // E:O:F:WorkflowResource.

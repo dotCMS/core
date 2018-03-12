@@ -1,0 +1,28 @@
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "term": {
+            "contenttype": "news"
+          }
+        },
+        {
+          "term": {
+            "categories": "investing"
+          }
+        },
+        {
+          "term": {
+            "news.tags": "gas"
+          }
+        },
+        {
+          "term": {
+            "news.byline": "jean"
+          }
+        }
+      ]
+    }
+  }
+}
