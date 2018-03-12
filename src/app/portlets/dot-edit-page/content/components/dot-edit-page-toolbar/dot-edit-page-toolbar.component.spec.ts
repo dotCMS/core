@@ -104,8 +104,6 @@ describe('DotEditPageToolbarComponent', () => {
             mode: PageMode.PREVIEW,
         }, mockUser);
 
-
-
         dotGlobalMessageService = de.injector.get(DotGlobalMessageService);
         dotDialogService = de.injector.get(DotDialogService);
     });
@@ -190,6 +188,7 @@ describe('DotEditPageToolbarComponent', () => {
 
     it('should have page is locked by another user message and disabled edit button', () => {
         component.pageState.state.lockedByAnotherUser = true;
+        component.pageState.page.canLock = false;
         fixture.detectChanges();
 
         const lockedMessage: DebugElement = de.query(By.css('.edit-page-toolbar__locked-by-message'));

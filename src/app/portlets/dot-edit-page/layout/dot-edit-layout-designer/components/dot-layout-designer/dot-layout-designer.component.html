@@ -1,0 +1,22 @@
+<div class="dot-layout-designer" [formGroup]="group">
+    <div class="dot-layout-designer__header" *ngIf="group.get('header').value">HEADER</div>
+    <div class="dot-layout-designer__main">
+        <div class="dot-layout-designer__sidebar--left" [ngClass]="'dot-layout-designer__sidebar--' + group.get('sidebar.width').value"
+            *ngIf="group.get('sidebar.location').value === 'left'">
+            SIDEBAR
+            <dot-sidebar-properties [group]="group.get('sidebar')" class="dot-layout-designer__sidebar-properties"></dot-sidebar-properties>
+        </div>
+        <div class="dot-layout-designer__body">
+            <dot-action-button (click)="addGridBox()" class="dot-layout-designer__toolbar-add"></dot-action-button>
+            <div class="dot-layout-designer__grid-guides">
+                <dot-edit-layout-grid #editLayoutGrid formControlName="body"></dot-edit-layout-grid>
+            </div>
+        </div>
+        <div class="dot-layout-designer__sidebar--right" [ngClass]="'dot-layout-designer__sidebar--' + group.get('sidebar.width').value"
+            *ngIf="group.get('sidebar.location').value === 'right'">
+            SIDEBAR
+            <dot-sidebar-properties [group]="group.get('sidebar')" class="dot-layout-designer__sidebar-properties"></dot-sidebar-properties>
+        </div>
+    </div>
+    <div class="dot-layout-designer__footer" *ngIf="group.get('footer').value">FOOTER</div>
+</div>

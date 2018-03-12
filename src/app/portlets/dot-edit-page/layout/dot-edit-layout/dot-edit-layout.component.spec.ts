@@ -1,21 +1,21 @@
+import { DotRenderedPage } from './../../shared/models/dot-rendered-page.model';
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { Observable } from 'rxjs/Observable';
-
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DotEditLayoutAdvancedModule } from '../dot-edit-layout-advanced/dot-edit-layout-advanced.module';
 import { DotEditLayoutComponent } from './dot-edit-layout.component';
 import { DotEditLayoutDesignerModule } from '../dot-edit-layout-designer/dot-edit-layout-designer.module';
-import { fakePageView } from '../../../../test/page-view.mock';
 import { LoginService } from 'dotcms-js/dotcms-js';
 import { LoginServiceMock } from '../../../../test/login-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
-import { DotPageView } from '../../shared/models/dot-page-view.model';
+import { mockDotRenderedPage } from '../../../../test/dot-rendered-page.mock';
+import { mockDotPageState } from '../../content/dot-edit-content.component.spec';
 
-const getTestingModule = (pageView?: DotPageView) => {
+const getTestingModule = (dotRenderedPage?: DotRenderedPage) => {
     return {
         declarations: [DotEditLayoutComponent],
         imports: [
@@ -32,7 +32,16 @@ const getTestingModule = (pageView?: DotPageView) => {
             {
                 provide: ActivatedRoute,
                 useValue: {
-                    data: Observable.of({ content: pageView || fakePageView })
+                    parent: {
+                        parent: {
+                            data: Observable.of({
+                                content: {
+                                    ...dotRenderedPage || mockDotRenderedPage,
+                                    state: mockDotPageState
+                                }
+                            })
+                        }
+                    }
                 }
             }
         ]
@@ -60,14 +69,17 @@ describe('DotEditLayoutComponent with Layout Designer', () => {
 
     it('should pass pageView to the dot-edit-layout-designer', () => {
         const layoutDesigner: DebugElement = fixture.debugElement.query(By.css('dot-edit-layout-designer'));
-        expect(layoutDesigner.componentInstance.pageView).toEqual(fakePageView);
+        expect(layoutDesigner.componentInstance.pageState).toEqual({
+            ...mockDotRenderedPage,
+            state: mockDotPageState
+        });
     });
 });
 
-const advancedTemplateFakePageView: DotPageView = {
-    ...fakePageView,
+const advancedTemplateMockDotRenderedPage: DotRenderedPage = {
+    ...mockDotRenderedPage,
     template: {
-        ...fakePageView.template,
+        ...mockDotRenderedPage.template,
         drawed: false
     }
 };
@@ -75,7 +87,7 @@ const advancedTemplateFakePageView: DotPageView = {
 describe('DotEditLayoutComponent with Edit Advanced Layout', () => {
     beforeEach(
         async(() => {
-            DOTTestBed.configureTestingModule(getTestingModule(advancedTemplateFakePageView));
+            DOTTestBed.configureTestingModule(getTestingModule(advancedTemplateMockDotRenderedPage));
         })
     );
 

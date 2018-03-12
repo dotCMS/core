@@ -8,7 +8,7 @@ import { DotContentletLockerService } from '../../../../../api/services/dot-cont
 import { DotPageStateService } from './dot-page-state.service';
 import { DotRenderHTMLService } from '../../../../../api/services/dot-render-html/dot-render-html.service';
 import { DotRenderedPageState } from '../../../shared/models/dot-rendered-page-state.model';
-import { LoginServiceMock, mockUser } from '../../../../../test/login-service.mock';
+import { LoginServiceMock } from '../../../../../test/login-service.mock';
 import { PageMode } from '../../../shared/models/page-mode.enum';
 import { mockDotRenderedPage, mockDotPage } from '../../../../../test/dot-rendered-page.mock';
 
@@ -128,11 +128,12 @@ describe('DotPageStateService', () => {
                     lockedByAnotherUser: false
                 });
             });
-
             lastConnection[0].mockRespond(
                 new Response(
                     new ResponseOptions({
-                        body: noLockedByPage
+                        body: {
+                            page: noLockedByPage
+                        }
                     })
                 )
             );

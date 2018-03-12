@@ -36,12 +36,12 @@ export const mockDotPage: DotPage = {
     systemHost: false,
     type: '',
     uri: '',
-    versionType: '',
+    versionType: ''
 };
 
 export const mockDotLayout: DotLayout = {
     title: '',
-    header: true,
+    header: false,
     footer: false,
     sidebar: {
         location: 'left',
@@ -78,16 +78,22 @@ export const mockDotContainers: any = {
 };
 
 export const mockDotTemplate: DotTemplate = {
-    anonymous: true,
+    anonymous: false,
     friendlyName: '',
     identifier: '',
     inode: '123',
     name: '',
-    title: 'anonymous_layout_1511798005268',
+    title: 'Template Name',
     type: '',
     versionType: '',
     drawed: true,
     canEdit: true
+};
+
+export const mockDotTemplateLayout: DotTemplate = {
+    ...mockDotTemplate,
+    anonymous: false,
+    title: 'anonymous_layout_1511798005268'
 };
 
 export const mockDotRenderedPage: DotRenderedPage = {

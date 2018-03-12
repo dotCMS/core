@@ -67,7 +67,7 @@ describe('DotEditPageMainComponent', () => {
         expect(fixture.debugElement.query(By.css('dot-edit-page-nav'))).not.toBeNull();
     });
 
-    it('should bind correctly advancedTemplate param', () => {
+    it('should bind correctly pageState param', () => {
         const nav: DotEditPageNavComponent = fixture.debugElement.query(By.css('dot-edit-page-nav')).componentInstance;
         expect(nav.pageState).toEqual(mockDotRenderedPageState);
     });

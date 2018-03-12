@@ -13,9 +13,10 @@ import { DotSidebarPropertiesModule } from '../components/dot-sidebar-properties
 import { DotTemplateAdditionalActionsModule } from '../components/dot-template-additional-actions/dot-template-additional-actions.module';
 import { TemplateContainersCacheService } from '../../template-containers-cache.service';
 import { PageViewService } from '../../../../api/services/page-view/page-view.service';
+import { DotLayoutDesignerComponent } from './components/dot-layout-designer/dot-layout-designer.component';
 
 @NgModule({
-    declarations: [DotEditLayoutDesignerComponent],
+    declarations: [DotEditLayoutDesignerComponent, DotLayoutDesignerComponent],
     imports: [
         ButtonModule,
         CheckboxModule,
