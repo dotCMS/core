@@ -28,6 +28,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
@@ -786,7 +787,7 @@ public class WorkflowHelper {
     public WorkflowScheme saveOrUpdate(final String schemeId, final WorkflowSchemeForm workflowSchemeForm, final User user) throws AlreadyExistException, DotDataException, DotSecurityException {
 
         final WorkflowScheme newScheme = new WorkflowScheme();
-        if (null != schemeId) {
+        if (StringUtils.isSet(schemeId)) {
             try {
                 final WorkflowScheme origScheme = this.workflowAPI.findScheme(schemeId);
                 BeanUtils.copyProperties(newScheme, origScheme);
