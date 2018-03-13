@@ -712,4 +712,7 @@ public final class WebKeys {
 
     //User validations
     public static final String DOTCMS_USE_REGEX_TO_VALIDATE_EMAILS = "dotcms.use.regex.to.validate.emails";
+
+
+    public static final String CURRENT_DEVICE = "previewAsDeviceId";
 }

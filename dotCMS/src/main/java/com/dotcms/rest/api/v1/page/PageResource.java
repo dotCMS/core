@@ -232,7 +232,8 @@ public class PageResource {
                                    @PathParam("uri") final String uri,
                                    @QueryParam("mode") @DefaultValue("LIVE_ADMIN") final String modeStr,
                                    @QueryParam(WebKeys.CMS_PERSONA_PARAMETER) final String personaId,
-                                   @QueryParam("language_id") @DefaultValue("LIVE_ADMIN") final String languageId) {
+                                   @QueryParam("language_id") @DefaultValue("LIVE_ADMIN") final String languageId,
+                                   @QueryParam("device_id") final String deviceId) {
 
         Logger.debug(this, String.format("Rendering page: uri -> %s mode-> %s language -> persona ->", uri, modeStr,
                 languageId, personaId));
@@ -245,6 +246,9 @@ public class PageResource {
         final PageMode mode = PageMode.get(modeStr);
         PageMode.setPageMode(request, mode);
         try {
+            if (deviceId != null) {
+                request.getSession().setAttribute(WebKeys.CURRENT_DEVICE, deviceId);
+            }
 
             final HTMLPageAsset page = (UUIDUtil.isUUID(uri)) ?
                     (HTMLPageAsset) APILocator.getHTMLPageAssetAPI().findPage(uri, user, mode.respectAnonPerms) :
