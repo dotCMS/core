@@ -8,10 +8,7 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.api.v1.workflow.WorkflowDefaultActionView;
-import com.dotcms.workflow.form.WorkflowActionForm;
-import com.dotcms.workflow.form.WorkflowActionStepBean;
-import com.dotcms.workflow.form.WorkflowReorderBean;
-import com.dotcms.workflow.form.WorkflowSchemeForm;
+import com.dotcms.workflow.form.*;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.*;
 import com.dotmarketing.exception.AlreadyExistException;
@@ -184,21 +181,17 @@ public class WorkflowHelper {
 
     /**
      *
-     * @param schemeId
      * @param stepId
      * @param workflowStepForm
      * @throws DotDataException
      * @throws AlreadyExistException
      */
-    public WorkflowStep updateStep(final String schemeId, final String stepId, final WorkflowStepForm workflowStepForm, final User user) throws DotDataException, AlreadyExistException {
+    public WorkflowStep updateStep(final String stepId, final WorkflowStepForm workflowStepForm, final User user) throws DotDataException, AlreadyExistException {
         final WorkflowStep step;
         try {
             step = workflowAPI.findStep(stepId);
         } catch (DotDataException dde) {
             throw new DoesNotExistException(dde);
-        }
-        if(!step.getSchemeId().equals(schemeId)){
-            throw new DotWorkflowException("scheme id does Not match stepId's schema!");
         }
         return updateStep(step, workflowStepForm, user);
     }
@@ -228,9 +221,9 @@ public class WorkflowHelper {
         step.setResolved(workflowStepForm.isStepResolved());
         int order = (null != workflowStepForm.getStepOrder() ? workflowStepForm.getStepOrder() : step.getMyOrder());
         try {
-            workflowAPI.reorderStep(step, order);
+            workflowAPI.reorderStep(step, order, user);
         } catch (Exception e1) {
-            workflowAPI.saveStep(step);
+            workflowAPI.saveStep(step, user);
         }
         return step;
     }

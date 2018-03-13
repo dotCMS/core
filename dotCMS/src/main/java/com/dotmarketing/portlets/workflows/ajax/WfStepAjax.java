@@ -56,7 +56,7 @@ public class WfStepAjax extends WfBaseAction {
 		try {
 			final WorkflowStepForm from = new WorkflowStepForm.Builder().stepName(stepName).enableEscalation(enableEscalation).escalationAction(escalationAction).escalationTime(escalationTime).stepResolved(stepResolved).stepOrder(stepOrder).build();
 			final WorkflowStep step = workflowAPI.findStep(stepId);
-            workflowHelper.updateStep(step, from, getUser());
+            workflowHelper.updateStep(step, from, user);
 		} catch (Exception e) {
 			Logger.error(this.getClass(), e.getMessage());
 			Logger.debug(this.getClass(), e.getMessage(), e);

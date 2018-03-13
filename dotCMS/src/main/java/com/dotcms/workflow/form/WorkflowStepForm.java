@@ -82,6 +82,7 @@ public class WorkflowStepForm extends Validated {
         @JsonProperty
         private boolean stepResolved;
 
+
         public Builder stepOrder(final Integer stepOrder) {
             this.stepOrder = stepOrder;
             return this;

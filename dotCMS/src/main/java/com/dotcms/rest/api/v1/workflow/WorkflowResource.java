@@ -2,30 +2,24 @@ package com.dotcms.rest.api.v1.workflow;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
-import com.dotcms.repackage.javax.ws.rs.DELETE;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.POST;
-import com.dotcms.repackage.javax.ws.rs.PUT;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.Produces;
-import com.dotcms.repackage.javax.ws.rs.QueryParam;
+import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
-import com.dotcms.rest.*;
+import com.dotcms.rest.ContentHelper;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.workflow.form.*;
 import com.dotcms.workflow.helper.WorkflowHelper;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -38,19 +32,17 @@ import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject;
 import com.dotmarketing.util.Logger;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-
-import javax.servlet.http.HttpServletRequest;
-
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.Beta;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.LocaleUtil;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
 
 @SuppressWarnings("serial")
 @Beta /* Non Official released */
@@ -734,23 +726,27 @@ public class WorkflowResource {
 
 
     @PUT
-    @Path("/schemes/{schemeId}/step/{stepId}")
+    @Path("/steps/{stepId}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response updateStep(@Context final HttpServletRequest request,
-                                     @NotNull @PathParam("schemeId")   final String schemeId,
-                                     @NotNull @PathParam("stepId")   final String stepId,
+                                     @NotNull @PathParam("stepId") final String stepId,
                                      final WorkflowStepForm stepForm) {
         final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
-        Logger.debug(this, "updating step for scheme "+schemeId+ " with id: " + stepId);
+        Logger.debug(this, "updating step for scheme with stepId: " + stepId);
         Response response;
         try {
-            final WorkflowStep step = this.workflowHelper.updateStep(schemeId, stepId, stepForm, initDataObject.getUser());
+            final WorkflowStep step = this.workflowHelper.updateStep(stepId, stepForm, initDataObject.getUser());
             response = Response.ok(new ResponseEntityView(step)).build();
+        } catch (NotAllowedUserWorkflowException e) {
+                Logger.error(this.getClass(),
+                        "NotAllowedUserWorkflowException on updateStep, stepId: " + stepId +
+                                ", exception message: " + e.getMessage(), e);
+                throw new ForbiddenException(e);
         } catch (DoesNotExistException e){
             Logger.error(this.getClass(),
-                    "DoesNotExistException on updateStep, schemeId: "+schemeId+", stepId: " + stepId +
+                    "DoesNotExistException on updateStep, stepId: " + stepId +
                             ", exception message: " + e.getMessage(), e);
             response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
         } catch (Exception e) {

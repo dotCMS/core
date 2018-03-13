@@ -5,6 +5,7 @@ import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Logger;
+import com.liferay.portal.model.User;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -28,8 +29,9 @@ public class WfSchemeAjax extends WfBaseAction {
         final WorkflowSchemeForm schemeForm = new WorkflowSchemeForm.Builder().schemeName(schemeName).schemeDescription(schemeDescription).schemeArchived(schemeArchived).build();
 
         try {
+            final User user = this.userWebAPI.getUser(request);
             final WorkflowHelper helper = WorkflowHelper.getInstance();
-            helper.saveOrUpdate(schemeId, schemeForm, getUser());
+            helper.saveOrUpdate(schemeId, schemeForm, user);
             response.getWriter().println("SUCCESS");
         } catch (Exception e) {
             Logger.error(this.getClass(), e.getMessage(), e);
