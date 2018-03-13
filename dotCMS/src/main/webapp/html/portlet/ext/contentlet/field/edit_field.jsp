@@ -650,7 +650,7 @@
     } else if (field.getFieldType().equals(Field.FieldType.RADIO.toString())) {
 
         String radio = field.getFieldContentlet();
-        String[] pairs = fieldValues.split("\r\n");
+        String[] pairs = fieldValues.indexOf("\r\n") != -1 ? fieldValues.split("\r\n") : fieldValues.split("\n");
         for (int j = 0; j < pairs.length; j++) {
             String pair = pairs[j];
             String[] tokens = pair.split("\\|");
@@ -681,7 +681,7 @@
 %>
     <select dojoType="dijit.form.FilteringSelect" autocomplete="true" id="<%=field.getVelocityVarName()%>" name="<%=field.getFieldContentlet()%>" <%=field.isReadOnly()?"readonly=\"\"":""%>>
         <%
-            String[] pairs = fieldValues.split("\r\n");
+            String[] pairs = fieldValues.indexOf("\r\n") != -1 ? fieldValues.split("\r\n") : fieldValues.split("\n");
             for (int j = 0; j < pairs.length; j++)
             {
                 String pair = pairs[j];
@@ -713,7 +713,7 @@
 
     } else if (field.getFieldType().equals(Field.FieldType.MULTI_SELECT.toString())) {
 
-        String[] pairs = fieldValues.split("\r\n");
+        String[] pairs = fieldValues.indexOf("\r\n") != -1 ? fieldValues.split("\r\n") : fieldValues.split("\n");
     %>
     <select multiple="multiple" size="scrollable"
             name="<%=field.getFieldContentlet()%>MultiSelect"
@@ -768,7 +768,7 @@
     } else if (field.getFieldType().equals(Field.FieldType.CHECKBOX.toString())) {
 
         String fieldName = field.getFieldContentlet();
-        String[] pairs = fieldValues.split("\r\n");
+        String[] pairs = fieldValues.indexOf("\r\n") != -1 ? fieldValues.split("\r\n") : fieldValues.split("\n");
         for (int j = 0; j < pairs.length; j++) {
             String pair = pairs[j];
             String[] tokens = pair.split("\\|");
