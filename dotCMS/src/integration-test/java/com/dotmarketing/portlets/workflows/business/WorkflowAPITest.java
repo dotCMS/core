@@ -1064,7 +1064,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
 		    /*
 		     * Validate correct deletion of step1
 		     */
-            workflowAPI.deleteStep(step, user1);
+            workflowAPI.deleteStep(step1, user);
 
 		    /*
 		     * Validate that the step 1 was deleted from the scheme
