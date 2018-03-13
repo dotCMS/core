@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.workflows.ajax;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.DeserializationFeature;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.workflow.form.WorkflowActionStepBean;
+import com.dotcms.workflow.form.WorkflowStepForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
@@ -31,57 +32,36 @@ public class WfStepAjax extends WfBaseAction {
 	public void action(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException{};
 	
 	/**
+	 * Even though this method is named 'reorder'. It really provides an 'update' functionality
 	 * @param request
 	 * @param response
 	 * @throws ServletException
 	 * @throws IOException
 	 */
 	public void reorder(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		String stepId = request.getParameter("stepId");
-		String o = request.getParameter("stepOrder");
-		String stepName = request.getParameter("stepName");
-		boolean enableEscalation=request.getParameter("enableEscalation")!=null;
-		String escalationAction = request.getParameter("escalationAction");
-		String escalationTime = request.getParameter("escalationTime");
-		WorkflowAPI wapi = APILocator.getWorkflowAPI();
-		boolean stepResolved = request.getParameter("stepResolved") != null;
-		int order = 0;
+		final String stepId = request.getParameter("stepId");
+		final String o = request.getParameter("stepOrder");
+		final String stepName = request.getParameter("stepName");
+		final boolean enableEscalation = request.getParameter("enableEscalation") != null;
+		final String escalationAction = request.getParameter("escalationAction");
+		final String escalationTime = request.getParameter("escalationTime");
+		final boolean stepResolved = request.getParameter("stepResolved") != null;
+		Integer stepOrder = null;
 		try {
-			WorkflowStep step = wapi.findStep(stepId);
-			if(step.isNew()){
-				writeError(response, "Cannot-edit-step");
-				return;
-			}
-			if(enableEscalation) {
-			    step.setEnableEscalation(true);
-			    step.setEscalationAction(escalationAction);
-			    step.setEscalationTime(Integer.parseInt(escalationTime));
-			}
-			else {
-			    step.setEnableEscalation(false);
-			    step.setEscalationAction(null);
-			    step.setEscalationTime(0);
-			}
-			step.setName(stepName);
-			step.setResolved(stepResolved);
-			order = step.getMyOrder();
-			try{
-				order = Integer.parseInt(o);
-				wapi.reorderStep(step, order );
-			}
-			catch(Exception e1){
-				wapi.saveStep(step);
-			}
-
-			
+			stepOrder = Integer.parseInt(o);
+		} catch (NumberFormatException nfe) {
+			//order param is not present
 		}
-		catch(Exception e){
-			Logger.error(this.getClass(),e.getMessage());
-			Logger.debug(this.getClass(),e.getMessage(),e);
+		try {
+			final WorkflowStepForm from = new WorkflowStepForm.Builder().stepName(stepName).enableEscalation(enableEscalation).escalationAction(escalationAction).escalationTime(escalationTime).stepResolved(stepResolved).stepOrder(stepOrder).build();
+			final WorkflowStep step = workflowAPI.findStep(stepId);
+            workflowHelper.updateStep(step, from, getUser());
+		} catch (Exception e) {
+			Logger.error(this.getClass(), e.getMessage());
+			Logger.debug(this.getClass(), e.getMessage(), e);
 			writeError(response, e.getMessage());
-			return;
 		}
-			
+
 	}
 
 	public void delete(final HttpServletRequest request,

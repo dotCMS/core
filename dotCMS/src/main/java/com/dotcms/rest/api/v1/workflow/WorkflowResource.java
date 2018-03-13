@@ -25,6 +25,7 @@ import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -700,6 +701,40 @@ public class WorkflowResource {
         }
         return response;
     } // reorderStep
+
+
+    @PUT
+    @Path("/schemes/{schemeId}/step/{stepId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response updateStep(@Context final HttpServletRequest request,
+                                     @NotNull @PathParam("schemeId")   final String schemeId,
+                                     @NotNull @PathParam("stepId")   final String stepId,
+                                     final WorkflowStepForm stepForm) {
+        final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
+        Logger.debug(this, "updating step for scheme "+schemeId+ " with id: " + stepId);
+        Response response;
+        try {
+            final WorkflowStep step = this.workflowHelper.updateStep(schemeId, stepId, stepForm, initDataObject.getUser());
+            response = Response.ok(new ResponseEntityView(step)).build();
+        } catch (DoesNotExistException e){
+            Logger.error(this.getClass(),
+                    "DoesNotExistException on updateStep, schemeId: "+schemeId+", stepId: " + stepId +
+                            ", exception message: " + e.getMessage(), e);
+            response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+        } catch (Exception e) {
+
+        Logger.error(this.getClass(),
+                "Exception on updateStep, stepId: " + stepId +
+                        ", exception message: " + e.getMessage(), e);
+        response = (e.getCause() instanceof SecurityException)?
+                ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+    }
+        return response;
+    } // reorderStep
+
 
     @PUT
     @Path("/fire/actions/{actionId}")

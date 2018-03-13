@@ -8,10 +8,7 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.api.v1.workflow.WorkflowDefaultActionView;
-import com.dotcms.workflow.form.WorkflowActionForm;
-import com.dotcms.workflow.form.WorkflowActionStepBean;
-import com.dotcms.workflow.form.WorkflowReorderBean;
-import com.dotcms.workflow.form.WorkflowSchemeForm;
+import com.dotcms.workflow.form.*;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.*;
 import com.dotmarketing.exception.AlreadyExistException;
@@ -179,6 +176,59 @@ public class WorkflowHelper {
         }
     }  // reorderAction.
 
+
+    /**
+     *
+     * @param schemeId
+     * @param stepId
+     * @param workflowStepForm
+     * @throws DotDataException
+     * @throws AlreadyExistException
+     */
+    public WorkflowStep updateStep(final String schemeId, final String stepId, final WorkflowStepForm workflowStepForm, final User user) throws DotDataException, AlreadyExistException {
+        final WorkflowStep step;
+        try {
+            step = workflowAPI.findStep(stepId);
+        } catch (DotDataException dde) {
+            throw new DoesNotExistException(dde);
+        }
+        if(!step.getSchemeId().equals(schemeId)){
+            throw new DotWorkflowException("scheme id does Not match stepId's schema!");
+        }
+        return updateStep(step, workflowStepForm, user);
+    }
+
+    /**
+     *
+     * @param step
+     * @param workflowStepForm
+     * @throws DotDataException
+     * @throws AlreadyExistException
+     */
+    @WrapInTransaction
+    public WorkflowStep updateStep(final WorkflowStep step, final WorkflowStepForm workflowStepForm, final User user) throws DotDataException, AlreadyExistException {
+        if (step.isNew()) {
+            throw new DotWorkflowException("Can not edit step (Step marked as new)");
+        }
+        if (workflowStepForm.isEnableEscalation()) {
+            step.setEnableEscalation(true);
+            step.setEscalationAction(workflowStepForm.getEscalationAction());
+            step.setEscalationTime(Integer.parseInt(workflowStepForm.getEscalationTime()));
+        } else {
+            step.setEnableEscalation(false);
+            step.setEscalationAction(null);
+            step.setEscalationTime(0);
+        }
+        step.setName(workflowStepForm.getStepName());
+        step.setResolved(workflowStepForm.isStepResolved());
+        int order = (null != workflowStepForm.getStepOrder() ? workflowStepForm.getStepOrder() : step.getMyOrder());
+        try {
+            workflowAPI.reorderStep(step, order);
+        } catch (Exception e1) {
+            workflowAPI.saveStep(step);
+        }
+        return step;
+    }
 
     /**
      * Deletes the step
@@ -784,7 +834,7 @@ public class WorkflowHelper {
 
 
     @WrapInTransaction
-    public WorkflowScheme saveOrUpdate(final String schemeId, final WorkflowSchemeForm workflowSchemeForm, final User user) throws AlreadyExistException, DotDataException, DotSecurityException {
+    public WorkflowScheme saveOrUpdate(final String schemeId, final WorkflowSchemeForm workflowSchemeForm, final User user) throws AlreadyExistException, DotDataException {
 
         final WorkflowScheme newScheme = new WorkflowScheme();
         if (StringUtils.isSet(schemeId)) {
