@@ -2,6 +2,8 @@ package com.dotmarketing.portlets.workflows.ajax;
 
 import com.dotcms.workflow.form.WorkflowSchemeForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
+import com.dotmarketing.business.web.UserWebAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Logger;
 
 import javax.servlet.ServletException;
@@ -10,6 +12,10 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 public class WfSchemeAjax extends WfBaseAction {
+
+	private final UserWebAPI userWebAPI     = WebAPILocator.getUserWebAPI();
+
+
     public void action(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
     }
 
@@ -31,6 +37,5 @@ public class WfSchemeAjax extends WfBaseAction {
         }
 
     }
-
 
 }

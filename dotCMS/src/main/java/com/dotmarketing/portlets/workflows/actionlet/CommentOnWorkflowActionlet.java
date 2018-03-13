@@ -38,17 +38,17 @@ public class CommentOnWorkflowActionlet extends WorkFlowActionlet {
 	}
 
 	public void executeAction(WorkflowProcessor processor,Map<String,WorkflowActionClassParameter>  params) throws WorkflowActionFailureException {
-		WorkflowActionClassParameter commentParam =  params.get("comment");
-		WorkflowComment comment = new WorkflowComment();
+		final WorkflowActionClassParameter commentParam =  params.get("comment");
+		final WorkflowComment comment = new WorkflowComment();
 		comment.setPostedBy(processor.getUser().getUserId());
 		comment.setComment(commentParam.getValue());
 		comment.setWorkflowtaskId(processor.getTask().getId());
+
 		try {
 			APILocator.getWorkflowAPI().saveComment(comment);
 		} catch (DotDataException e) {
 			Logger.error(CommentOnWorkflowActionlet.class,e.getMessage(),e);
 		}
-
 	}
 
 	public WorkflowStep getNextStep() {

@@ -47,6 +47,7 @@ public class WfStepAjax extends WfBaseAction {
 		boolean stepResolved = request.getParameter("stepResolved") != null;
 		int order = 0;
 		try {
+			final User user = this.userWebAPI.getUser(request);
 			WorkflowStep step = wapi.findStep(stepId);
 			if(step.isNew()){
 				writeError(response, "Cannot-edit-step");
@@ -67,10 +68,10 @@ public class WfStepAjax extends WfBaseAction {
 			order = step.getMyOrder();
 			try{
 				order = Integer.parseInt(o);
-				wapi.reorderStep(step, order );
+				wapi.reorderStep(step, order, user);
 			}
 			catch(Exception e1){
-				wapi.saveStep(step);
+				wapi.saveStep(step, user);
 			}
 
 			
@@ -162,7 +163,7 @@ public class WfStepAjax extends WfBaseAction {
 			step.setName(stepName);
 			step.setSchemeId(schemeId);
 			step.setResolved(stepResolved);
-			wapi.saveStep(step);
+			wapi.saveStep(step, this.userWebAPI.getUser(request));
 			
 		} catch (DotDataException e) {
 			Logger.error(this.getClass(),e.getMessage());
