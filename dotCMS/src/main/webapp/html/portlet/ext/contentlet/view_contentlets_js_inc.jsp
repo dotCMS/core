@@ -2326,7 +2326,6 @@
                             "<ul><li><%= LanguageUtil.get(pageContext, "message.contentlet.hint2") %> " +
                             "</li><li><%= LanguageUtil.get(pageContext, "message.contentlet.hint3") %> " +
                             "</li><li><%= LanguageUtil.get(pageContext, "message.contentlet.hint4") %> " +
-                            "<li><%= LanguageUtil.get(pageContext, "message.contentlet.hint5") %></li>"+
                             "<li><%= LanguageUtil.get(pageContext, "message.contentlet.hint6")%></li>"+
                             "<li><%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "message.contentlet.note1")) %></li>"+
                             "</ul></div>";

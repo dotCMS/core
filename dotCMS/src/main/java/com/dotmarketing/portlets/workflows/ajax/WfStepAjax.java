@@ -47,6 +47,7 @@ public class WfStepAjax extends WfBaseAction {
 		final String escalationTime = request.getParameter("escalationTime");
 		final boolean stepResolved = request.getParameter("stepResolved") != null;
 		Integer stepOrder = null;
+        final User user = this.userWebAPI.getUser(request);
 		try {
 			stepOrder = Integer.parseInt(o);
 		} catch (NumberFormatException nfe) {
@@ -142,7 +143,7 @@ public class WfStepAjax extends WfBaseAction {
 			step.setName(stepName);
 			step.setSchemeId(schemeId);
 			step.setResolved(stepResolved);
-			wapi.saveStep(step);
+			wapi.saveStep(step, this.userWebAPI.getUser(request));
 			
 		} catch (DotDataException e) {
 			Logger.error(this.getClass(),e.getMessage());

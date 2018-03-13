@@ -51,6 +51,10 @@ import java.io.StringWriter;
 import java.sql.Date;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -388,7 +392,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	public static final String elasticSearchDateTimeFormatPattern="yyyy-MM-dd'T'HH:mm:ss";
 	public static final FastDateFormat elasticSearchDateTimeFormat = FastDateFormat.getInstance(elasticSearchDateTimeFormatPattern);
 
-	public static final FastDateFormat timeFormat = FastDateFormat.getInstance("HHmmss");
+	public static final FastDateFormat timeFormat = FastDateFormat.getInstance("HH:mm:ss");
 
 	protected void loadFields(Contentlet con, Map<String, Object> m) throws DotDataException {
 
@@ -439,11 +443,12 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				else if(f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_TIME)) {
 					try{
 						String timeStr=timeFormat.format(valueObj);
-						m.put(keyName, valueObj);
+						m.put(keyName, elasticSearchDateTimeFormat.format(valueObj));
 						m.put(keyNameText, timeStr);
 					}
 					catch(Exception e){
-						m.put(keyName, "");
+						m.put(keyName, null);
+						m.put(keyNameText, null);
 					}
 				}
 				else if (f.getFieldType().equals(ESMappingConstants.FIELD_ELASTIC_TYPE_DATE)) {

@@ -2,6 +2,13 @@ package com.dotmarketing.util;
 
 import com.dotcms.UnitTestBase;
 import com.dotcms.rest.RestUtilTest;
+import com.dotcms.unittest.TestUtil;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import org.junit.Test;
 
 import javax.servlet.ServletContext;
@@ -10,6 +17,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.*;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
@@ -19,7 +27,91 @@ import static org.mockito.Mockito.when;
  * Unit test for {@link DateUtil}
  * @author jsanca
  */
+@RunWith(DataProviderRunner.class)
 public class DateUtilTest extends UnitTestBase {
+
+    @DataProvider
+    public static Object[][] dateTimeCases() {
+
+        List<TestCase> data = new ArrayList<>();
+
+        LocalDateTime now =LocalDateTime.now();
+
+        data.add(new TestCase(now.format(DateTimeFormatter.ofPattern("MM/dd/yyyy hh:mm:ssa")),
+                "\\\"?(\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{1,2}:\\d{1,2}(?:AM|PM|am|pm))\\\"?",
+                "MM/dd/yyyy hh:mm:ssa"));
+
+        data.add(new TestCase(now.format(DateTimeFormatter.ofPattern("MM/dd/yyyy hh:mm:ss a")),
+                "\\\"?(\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{1,2}:\\d{1,2}\\s+(?:AM|PM|am|pm))\\\"?",
+                "MM/dd/yyyy hh:mm:ss a"));
+
+        data.add(new TestCase(now.format(DateTimeFormatter.ofPattern("MM/dd/yyyy hh:mm a")),
+                "\\\"?(\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{1,2}\\s+(?:AM|PM|am|pm))\\\"?",
+                "MM/dd/yyyy hh:mm a"));
+
+        data.add(new TestCase(now.format(DateTimeFormatter.ofPattern("MM/dd/yyyy hh:mma")),
+                "\\\"?(\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{1,2}(?:AM|PM|am|pm))\\\"?",
+                "MM/dd/yyyy hh:mma"));
+
+        data.add(new TestCase(now.format(DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm:ss")),
+                "\\\"?(\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{1,2}:\\d{1,2})\\\"?",
+                "MM/dd/yyyy HH:mm:ss"));
+
+        data.add(new TestCase(now.format(DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm")),
+                "\\\"?(\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{1,2})\\\"?",
+                "MM/dd/yyyy HH:mm"));
+
+        data.add(new TestCase(now.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")),
+                "\\\"?(\\d{1,2}\\d{1,2}\\d{4}\\d{1,2}\\d{1,2}\\d{1,2})\\\"?",
+                "yyyyMMddHHmmss"));
+
+        return TestUtil.toCaseArray(data);
+    }
+
+    @DataProvider
+    public static Object[][] timeCases() {
+
+        List<TestCase> data = new ArrayList<>();
+
+        LocalDateTime now =LocalDateTime.now();
+
+        data.add(new TestCase(now.format(DateTimeFormatter.ofPattern("hh:mm:ssa")),
+                "\\\"?(\\d{1,2}:\\d{1,2}:\\d{1,2}(?:AM|PM|am|pm))\\\"?",
+                "hh:mm:ssa"));
+
+        data.add(new TestCase(now.format(DateTimeFormatter.ofPattern("hh:mm:ss a")),
+                "\\\"?(\\d{1,2}:\\d{1,2}:\\d{1,2}\\s+(?:AM|PM|am|pm))\\\"?",
+                "hh:mm:ss a"));
+
+        data.add(new TestCase(now.format(DateTimeFormatter.ofPattern("HH:mm:ss")),
+                "\\\"?(\\d{1,2}:\\d{1,2}:\\d{1,2})\\\"?","HH:mm:ss"));
+
+        data.add(new TestCase(now.format(DateTimeFormatter.ofPattern("hh:mma")),
+                "\\\"?(\\d{1,2}:\\d{1,2}(?:AM|PM|am|pm))\\\"?","hh:mma"));
+
+        data.add(new TestCase(now.format(DateTimeFormatter.ofPattern("hh:mm a")),
+                "\\\"?(\\d{1,2}:\\d{1,2}\\s+(?:AM|PM|am|pm))\\\"?",
+                "hh:mm a"));
+
+        data.add(new TestCase(now.format(DateTimeFormatter.ofPattern("HH:mm")),
+                "\\\"?(\\d{1,2}:\\d{1,2})\\\"?",
+                "HH:mm"));
+
+        return TestUtil.toCaseArray(data);
+    }
+
+    private static class TestCase{
+
+        private String dateValue;
+        private String regex;
+        private String pattern;
+        public TestCase(String dateValue, String regex, String pattern){
+            this.dateValue = dateValue;
+            this.pattern   = pattern;
+            this.regex     = regex;
+        }
+    }
+
 
     @Test
     public void testaddDate () throws ParseException {
@@ -191,5 +283,69 @@ public class DateUtilTest extends UnitTestBase {
         assertNotNull(prettyDate);
         assertEquals("yesterday", prettyDate);
 
+    }
+
+    @Test
+    @UseDataProvider("dateTimeCases")
+    public void testReplaceDateTimeWithFormatSuccess(TestCase test) throws Exception{
+
+        String result = DateUtil.replaceDateTimeWithFormat(test.dateValue, test.regex, test.pattern);
+
+        assertNotNull(result);
+        assertFalse(result.contains(DateUtil.ERROR_DATE));
+        assertNotNull(LocalDateTime.parse(result.replaceAll("\\\\:", ":"),
+                DateTimeFormatter.ofPattern(DateUtil.LUCENE_DATE_TIME_PATTERN)));
+
+    }
+
+    @Test
+    public void testReplaceDateTimeWithFormatWithError(){
+        String result = DateUtil.replaceDateTimeWithFormat("12-20-2005 05:37",
+                "\\\"?(\\d{1,2}-\\d{1,2}-\\d{4}\\s+\\d{1,2}:\\d{1,2})\\\"?",
+                "MM/dd/yyyy HH:mm");
+
+        assertNotNull(result);
+        assertTrue(result.contains(DateUtil.ERROR_DATE));
+    }
+
+    @Test
+    public void testReplaceDateWithFormatSuccess(){
+        String result = DateUtil.replaceDateWithFormat("12/20/2005",
+                "\\\"?(\\d{1,2}/\\d{1,2}/\\d{4})\\\"?");
+
+        assertNotNull(result);
+        assertFalse(result.contains(DateUtil.ERROR_DATE));
+        assertNotNull(LocalDate.parse(result,
+                DateTimeFormatter.ofPattern(DateUtil.LUCENE_DATE_PATTERN)));
+    }
+
+    @Test
+    public void testReplaceDateWithFormatWithError(){
+        String result = DateUtil.replaceDateWithFormat("12-20-2005",
+                "\\\"?(\\d{1,2}-\\d{1,2}-\\d{4})\\\"?");
+
+        assertNotNull(result);
+        assertTrue(result.contains(DateUtil.ERROR_DATE));
+    }
+
+    @Test
+    @UseDataProvider("timeCases")
+    public void testReplaceTimeWithFormatSuccess(TestCase test) throws Exception{
+
+        String result = DateUtil.replaceTimeWithFormat(test.dateValue, test.regex, test.pattern);
+
+        assertNotNull(result);
+        assertFalse(result.contains(DateUtil.ERROR_DATE));
+        assertNotNull(LocalDateTime.parse(result.replaceAll("\\\\:", ":"),
+                DateTimeFormatter.ofPattern(DateUtil.LUCENE_DATE_TIME_PATTERN)));
+
+    }
+
+    @Test
+    public void testReplaceTimeWithFormatWithError(){
+        String result = DateUtil.replaceTimeWithFormat("051015","\\d{6}","HH:mm");
+
+        assertNotNull(result);
+        assertTrue(result.contains(DateUtil.ERROR_DATE));
     }
 }
