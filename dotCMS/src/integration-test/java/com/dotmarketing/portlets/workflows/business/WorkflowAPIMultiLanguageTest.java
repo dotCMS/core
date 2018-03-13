@@ -84,7 +84,7 @@ public class WorkflowAPIMultiLanguageTest extends BaseWorkflowIntegrationTest {
 
         // set the next step to step2 for the action 1
         WorkflowAPIMultiLanguageTest.schemeStepActionResult1.getAction().setNextStep(WorkflowAPIMultiLanguageTest.workflowStep2.getId());
-        workflowAPI.saveAction(WorkflowAPIMultiLanguageTest.schemeStepActionResult1.getAction(), null);
+        workflowAPI.saveAction(WorkflowAPIMultiLanguageTest.schemeStepActionResult1.getAction(), null, APILocator.systemUser());
 
         // creates action 2, for the step 1, the next step will be step3
         WorkflowAPIMultiLanguageTest.workflowAction2 =
