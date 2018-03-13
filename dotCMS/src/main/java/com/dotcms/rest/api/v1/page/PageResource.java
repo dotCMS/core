@@ -268,7 +268,7 @@ public class PageResource {
                     .put("html", this.pageResourceHelper.getPageRendered(page, request, response, user, mode))
                     .put("page", this.pageResourceHelper.getPageMap(page, user))
                     .put("containers", this.pageResourceHelper.getMappedContainers(template))
-                    .put("viewAs", createViewAsMap(request))
+                    .put("viewAs", createViewAsMap(request, user))
                     .put("canCreateTemplate", APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("templates", user));
 
             if (template.isDrawed()) {
@@ -308,7 +308,7 @@ public class PageResource {
         return res;
     }
 
-    private ImmutableMap<Object, Object> createViewAsMap(final HttpServletRequest request) {
+    private ImmutableMap<Object, Object> createViewAsMap(final HttpServletRequest request, User user) throws DotDataException {
         final Builder<Object, Object> builder = ImmutableMap.builder();
 
         final Persona currentPersona = (Persona) this.pageResourceHelper.getCurrentPersona(request);
@@ -318,6 +318,14 @@ public class PageResource {
         }
 
         builder.put("language", WebAPILocator.getLanguageWebAPI().getLanguage(request));
+
+        try {
+            builder.put("device", APILocator.getContentletAPI().find(
+                    (String) request.getSession().getAttribute("previewAsDeviceId"), user, false));
+        } catch (DotSecurityException e) {
+            //In this case don't responce with the device attribute
+        }
+
         return builder.build();
     }
 
