@@ -324,8 +324,11 @@ public class PageResource {
         builder.put("language", WebAPILocator.getLanguageWebAPI().getLanguage(request));
 
         try {
-            builder.put("device", APILocator.getContentletAPI().find(
-                    (String) request.getSession().getAttribute("previewAsDeviceId"), user, false));
+            String previewAsDeviceId = (String) request.getSession().getAttribute("previewAsDeviceId");
+
+            if (previewAsDeviceId != null) {
+                builder.put("device", APILocator.getContentletAPI().find(previewAsDeviceId, user, false));
+            }
         } catch (DotSecurityException e) {
             //In this case don't responce with the device attribute
         }
