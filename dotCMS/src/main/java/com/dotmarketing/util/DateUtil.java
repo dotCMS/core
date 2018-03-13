@@ -6,6 +6,7 @@ import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
+import com.liferay.util.StringPool;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -423,14 +424,14 @@ public class DateUtil {
 	 * @param dateFormat
 	 * @return
 	 */
-	public static String replaceDateTimeWithFormat(String query, String regExp,
+	public static String replaceDateTimeWithFormat(final String query, final String regExp,
 			String dateFormat) {
 		List<RegExMatch> matches = RegEX.find(query, regExp);
 		String originalDate;
 		String luceneDate;
 		StringBuilder newQuery;
 		int begin;
-		if ((matches != null) && (0 < matches.size())) {
+		if (UtilMethods.isSet(matches)) {
 			newQuery = new StringBuilder(query.length() * 2);
 			begin = 0;
 			for (RegExMatch regExMatch : matches) {
@@ -457,10 +458,10 @@ public class DateUtil {
 	 * @param format
 	 * @return
 	 */
-	public static String toLuceneDateWithFormat(String dateString, String format) {
+	public static String toLuceneDateWithFormat(final String dateString, final String format) {
 		try {
 			if (!UtilMethods.isSet(dateString))
-				return "";
+				return StringPool.BLANK;
 
 			SimpleDateFormat sdf = new SimpleDateFormat(format);
 			Date date = sdf.parse(dateString);
@@ -478,7 +479,7 @@ public class DateUtil {
 	 * @param date
 	 * @return
 	 */
-	public static String toLuceneDate(Date date) {
+	public static String toLuceneDate(final Date date) {
 		try {
 
 			String returnValue = LUCENE_DATE_FORMAT.format(date);
@@ -494,11 +495,11 @@ public class DateUtil {
 	 * @param date
 	 * @return
 	 */
-	public static String toLuceneDateTime(Date date) {
+	public static String toLuceneDateTime(final Date date) {
 		try {
 
 			String returnValue = LUCENE_DATE_TIME_FORMAT.format(date);
-			return returnValue.replaceAll(":", "\\\\:");
+			return returnValue.replaceAll(StringPool.COLON, "\\\\:");
 		} catch (Exception ex) {
 			Logger.error(ESContentFactoryImpl.class, ex.toString());
 			return ERROR_DATE;
@@ -511,13 +512,13 @@ public class DateUtil {
 	 * @param regExp
 	 * @return
 	 */
-	public static String replaceDateWithFormat(String query, String regExp) {
+	public static String replaceDateWithFormat(final String query, final String regExp) {
 		List<RegExMatch> matches = RegEX.find(query, regExp);
 		String originalDate;
 		String luceneDate;
 		StringBuilder newQuery;
 		int begin;
-		if ((matches != null) && (0 < matches.size())) {
+		if (UtilMethods.isSet(matches)) {
 			newQuery = new StringBuilder(query.length() * 2);
 			begin = 0;
 			for (RegExMatch regExMatch : matches) {
@@ -542,13 +543,13 @@ public class DateUtil {
 	 * @param timeFormat
 	 * @return
 	 */
-	public static String replaceTimeWithFormat(String query, String regExp, String timeFormat) {
+	public static String replaceTimeWithFormat(final String query, final String regExp, final String timeFormat) {
 		List<RegExMatch> matches = RegEX.find(query, regExp);
 		String originalDate;
 		String luceneDate;
 		StringBuilder newQuery;
 		int begin;
-		if ((matches != null) && (0 < matches.size())) {
+		if (UtilMethods.isSet(matches)) {
 			newQuery = new StringBuilder(query.length() * 2);
 			begin = 0;
 			for (RegExMatch regExMatch : matches) {
@@ -572,10 +573,10 @@ public class DateUtil {
 	 * @param format
 	 * @return
 	 */
-	public static String toLuceneTimeWithFormat(String dateString, String format) {
+	public static String toLuceneTimeWithFormat(final String dateString, final String format) {
 		try {
 			if (!UtilMethods.isSet(dateString))
-				return "";
+				return StringPool.BLANK;
 
 			SimpleDateFormat sdf = new SimpleDateFormat(format);
 			Date time = sdf.parse(dateString);
@@ -591,7 +592,7 @@ public class DateUtil {
 	 * @param dateString
 	 * @return
 	 */
-	public static String toLuceneDate(String dateString) {
+	public static String toLuceneDate(final String dateString) {
 
 		try{
 			Date date = SIMPLE_DATE_FORMAT.parse(dateString);
