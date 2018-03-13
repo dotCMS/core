@@ -10,6 +10,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.UserWebAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
@@ -17,19 +19,26 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.util.Logger;
+import com.liferay.portal.model.User;
 
 public class WfActionClassAjax extends WfBaseAction {
-	 public void action(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException{};
-	public void reorder(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		String actionClassId = request.getParameter("actionClassId");
-		String o = request.getParameter("order");
-		WorkflowAPI wapi = APILocator.getWorkflowAPI();
+
+	private final UserWebAPI  userWebAPI     = WebAPILocator.getUserWebAPI();
+	private final WorkflowAPI workflowAPI    = APILocator.getWorkflowAPI();
+
+	public void action(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException{};
+
+	public void reorder(final HttpServletRequest request, final HttpServletResponse response) throws ServletException, IOException {
+		final String actionClassId = request.getParameter("actionClassId");
+		final String o = request.getParameter("order");
 
 		try {
-			int order = Integer.parseInt(o);
-			WorkflowActionClass actionClass = wapi.findActionClass(actionClassId);
+			final User user  = this.userWebAPI.getUser(request);
+			final int  order = Integer.parseInt(o);
+			final WorkflowActionClass actionClass = this.workflowAPI.findActionClass(actionClassId);
+
 			if(actionClass.getOrder() != order) { // Reorder ONLY when position changed
-				wapi.reorderActionClass(actionClass, order);
+				this.workflowAPI.reorderActionClass(actionClass, order, user);
 			}
 		} catch (Exception e) {
 			
@@ -37,86 +46,89 @@ public class WfActionClassAjax extends WfBaseAction {
 			//Logger.error(this.getClass(), e.getMessage(), e);
 			//writeError(response, e.getMessage());
 		}
-
 	}
 
-	public void delete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		String actionClassId = request.getParameter("actionClassId");
+	public void delete(final HttpServletRequest request, final HttpServletResponse response) throws ServletException, IOException {
 
-		WorkflowAPI wapi = APILocator.getWorkflowAPI();
+		final String actionClassId = request.getParameter("actionClassId");
 
 		try {
 
-			WorkflowActionClass actionClass = wapi.findActionClass(actionClassId);
-			wapi.deleteActionClass(actionClass);
+			final User   user     				  = this.userWebAPI.getUser(request);
+			final WorkflowActionClass actionClass = this.workflowAPI.findActionClass(actionClassId);
+			this.workflowAPI.deleteActionClass(actionClass, user);
 		} catch (Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
 			writeError(response, e.getMessage());
 		}
-
 	}
 
-	public void add(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		WorkflowAPI wapi = APILocator.getWorkflowAPI();
+	public void add(final HttpServletRequest request,
+					final HttpServletResponse response) throws ServletException, IOException {
 
-		String actionId = request.getParameter("actionId");
-		String actionName = request.getParameter("actionletName");
-		String clazz = request.getParameter("actionletClass");
-		WorkflowActionClass wac = new WorkflowActionClass();
+		final User   user     						  = this.userWebAPI.getUser(request);
+		final String actionId						  = request.getParameter("actionId");
+		final String actionName   					  = request.getParameter("actionletName");
+		final String clazz 							  = request.getParameter("actionletClass");
+		final WorkflowActionClass workflowActionClass = new WorkflowActionClass();
 
 		try {
 			// We don't need to get "complete" action object from the database 
 			// to retrieve all action classes from him. So, we can create simple action object
 			// with the "action id" contain in actionClass parameter.
-			WorkflowAction action = new WorkflowAction();
+			final WorkflowAction action = new WorkflowAction();
 			action.setId(actionId);
 			
-			List<WorkflowActionClass> classes = wapi.findActionClasses(action);
+			final List<WorkflowActionClass> classes = this.workflowAPI.findActionClasses(action);
 			if (classes != null) {
-				wac.setOrder(classes.size());
+				workflowActionClass.setOrder(classes.size());
 			}
-			wac.setClazz(clazz);
-			wac.setName(actionName);
-			wac.setActionId(actionId);
-			wapi.saveActionClass(wac);
+			workflowActionClass.setClazz(clazz);
+			workflowActionClass.setName(actionName);
+			workflowActionClass.setActionId(actionId);
+			this.workflowAPI.saveActionClass(workflowActionClass, user);
 
-			response.getWriter().println(wac.getId() + ":" + wac.getName());
+			response.getWriter().println(workflowActionClass.getId() + ":" + workflowActionClass.getName());
 		} catch (Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
 			writeError(response, e.getMessage());
 		}
 	}
 
-	public void save(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		WorkflowAPI wapi = APILocator.getWorkflowAPI();
+	public void save(final HttpServletRequest request, final HttpServletResponse response) throws ServletException, IOException {
 
 		try {
-			String actionClassId = request.getParameter("actionClassId");
-			WorkflowActionClass wac = wapi.findActionClass(actionClassId);
-			WorkFlowActionlet actionlet = wapi.findActionlet(wac.getClazz());
-			List<WorkflowActionletParameter> params = actionlet.getParameters();
-			Map<String, WorkflowActionClassParameter> enteredParams = wapi.findParamsForActionClass(wac);
-			List<WorkflowActionClassParameter> newParams = new ArrayList<WorkflowActionClassParameter>();			
+
+			final User user      										  = this.userWebAPI.getUser(request);
+			final String actionClassId									  = request.getParameter("actionClassId");
+			final WorkflowActionClass workflowActionClass  				  = this.workflowAPI.findActionClass(actionClassId);
+			final WorkFlowActionlet actionlet 							  = this.workflowAPI.findActionlet(workflowActionClass.getClazz());
+			final List<WorkflowActionletParameter> params				  = actionlet.getParameters();
+			final Map<String, WorkflowActionClassParameter> enteredParams = this.workflowAPI.findParamsForActionClass(workflowActionClass);
+			final List<WorkflowActionClassParameter> newParams 			  = new ArrayList<WorkflowActionClassParameter>();
 			String userIds = null;
-			for (WorkflowActionletParameter expectedParam : params) {				
+
+			for (final WorkflowActionletParameter expectedParam : params) {
+
 				WorkflowActionClassParameter enteredParam = enteredParams.get(expectedParam.getKey());
 				if (enteredParam == null) {
 					enteredParam = new WorkflowActionClassParameter();
 				}
-				enteredParam.setActionClassId(wac.getId());
+				enteredParam.setActionClassId(workflowActionClass.getId());
 				enteredParam.setKey(expectedParam.getKey());
 				enteredParam.setValue(request.getParameter("acp-" + expectedParam.getKey()));
 				newParams.add(enteredParam);
 				userIds = enteredParam.getValue();
 				//Validate userIds or emails
-				String errors = expectedParam.hasError(userIds);
+				final String errors = expectedParam.hasError(userIds);
 				if(errors != null){
 					writeError(response, errors);
 					return;
 				}		
-			}			
-			wapi.saveWorkflowActionClassParameters(newParams);
-			response.getWriter().println(wac.getId() + ":" + wac.getName());
+			}
+
+			this.workflowAPI.saveWorkflowActionClassParameters(newParams, user);
+			response.getWriter().println(workflowActionClass.getId() + ":" + workflowActionClass.getName());
 		} catch (Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
 			writeError(response, e.getMessage());
