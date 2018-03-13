@@ -251,7 +251,7 @@ public class UserAPITest extends IntegrationTestBase {
 		WorkflowScheme newScheme = new WorkflowScheme();
 		newScheme.setName(schemeName);
 		newScheme.setArchived(false);
-		workflowAPI.saveScheme(newScheme);
+		workflowAPI.saveScheme(newScheme, systemUser);
 
 		WorkflowScheme ws = workflowAPI.findSchemeByName(schemeName);
 		Assert.assertTrue(UtilMethods.isSet(ws));
@@ -264,7 +264,7 @@ public class UserAPITest extends IntegrationTestBase {
 		workflowStep1.setName("Edit");
 		workflowStep1.setSchemeId(ws.getId());
 		workflowStep1.setResolved(false);
-		workflowAPI.saveStep(workflowStep1);
+		workflowAPI.saveStep(workflowStep1, systemUser);
 
 		List<WorkflowStep> steps = workflowAPI.findSteps(ws);
 		Assert.assertTrue(steps.size()==1);
@@ -278,7 +278,7 @@ public class UserAPITest extends IntegrationTestBase {
 		workflowStep2.setName("Publish");
 		workflowStep2.setSchemeId(ws.getId());
 		workflowStep2.setResolved(false);
-		workflowAPI.saveStep(workflowStep2);
+		workflowAPI.saveStep(workflowStep2, systemUser);
 
 		steps = workflowAPI.findSteps(ws);
 		Assert.assertTrue(steps.size()==2);
@@ -302,7 +302,7 @@ public class UserAPITest extends IntegrationTestBase {
 		List<Permission> permissionsNewAction = new ArrayList<>();
 		permissionsNewAction.add(new Permission( newAction.getId(), newRole.getId(), PermissionAPI.PERMISSION_USE ));
 
-		workflowAPI.saveAction(newAction, permissionsNewAction);
+		workflowAPI.saveAction(newAction, permissionsNewAction, systemUser);
 		workflowAPI.saveAction(newAction.getId(), workflowStep1.getId(), systemUser);
 
 		List<WorkflowAction> actions1= workflowAPI.findActions(workflowStep1, systemUser);
@@ -327,7 +327,7 @@ public class UserAPITest extends IntegrationTestBase {
 		List<Permission> permissionsNewAction2 = new ArrayList<>();
 		permissionsNewAction2.add(new Permission( newAction2.getId(), newRole.getId(), PermissionAPI.PERMISSION_USE ));
 
-		workflowAPI.saveAction(newAction2, permissionsNewAction2);
+		workflowAPI.saveAction(newAction2, permissionsNewAction2, systemUser);
 		workflowAPI.saveAction(newAction2.getId(), workflowStep2.getId(), systemUser);
 
 		List<WorkflowAction> actions2= workflowAPI.findActions(workflowStep2, systemUser);

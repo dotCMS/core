@@ -37,7 +37,7 @@ public class ResetTaskActionlet extends WorkFlowActionlet {
 		WorkflowTask task = processor.getTask();
 		task.setStatus(null);
 		try {
-			APILocator.getWorkflowAPI().deleteWorkflowTask(task);
+			APILocator.getWorkflowAPI().deleteWorkflowTask(task, APILocator.systemUser());
 
 			processor.setTask(null);
 		} catch (DotDataException e) {

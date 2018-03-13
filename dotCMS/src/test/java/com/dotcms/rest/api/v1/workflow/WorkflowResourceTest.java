@@ -49,12 +49,13 @@ public class WorkflowResourceTest extends UnitTestBase {
 
     @SuppressWarnings("unchecked")
     private WorkflowResource mockWorkflowResource(final boolean throwWorkflowAPIException) throws Exception{
+        final User user = new User();
         final WorkflowAPI workflowAPI = mock(WorkflowAPI.class);
         if(!throwWorkflowAPIException){
           when(workflowAPI.findScheme(anyString())).thenReturn(new WorkflowScheme ());
         } else {
             when(workflowAPI.findScheme(anyString())).thenThrow(DoesNotExistException.class);
-            doThrow(new AlreadyExistException("Error Saving workflow")).when(workflowAPI).saveScheme(any(WorkflowScheme.class));
+            doThrow(new AlreadyExistException("Error Saving workflow")).when(workflowAPI).saveScheme(any(WorkflowScheme.class), eq(user));
         }
 
         final RoleAPI roleAPI = mock(RoleAPI.class);
@@ -65,7 +66,7 @@ public class WorkflowResourceTest extends UnitTestBase {
         final WebResource webResource = mock(WebResource.class);
 
         final InitDataObject dataObject = mock(InitDataObject.class);
-        when(dataObject.getUser()).thenReturn(new User());
+        when(dataObject.getUser()).thenReturn(user);
         when(webResource.init(anyString(), anyBoolean(), any(HttpServletRequest.class), anyBoolean(), anyString())).thenReturn(dataObject);
 
         final ResponseUtil responseUtil = mock(ResponseUtil.class);
