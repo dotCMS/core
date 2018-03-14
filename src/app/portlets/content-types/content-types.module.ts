@@ -55,7 +55,7 @@ import {
 import { IFrameModule } from '../../view/components/_common/iframe';
 import { DotTextareaContentModule } from '../../view/components/_common/dot-textarea-content/dot-textarea-content.module';
 import { SearchableDropDownModule } from '../../view/components/_common/searchable-dropdown';
-import { WorkflowService } from '../../api/services/workflow/workflow.service';
+import { DotWorkflowService } from '../../api/services/dot-workflow/dot-workflow.service';
 import { PushPublishContentTypesDialogModule } from '../../view/components/_common/push-publish-dialog/push-publish-dialog.module';
 import { DotAddToBundleModule } from '../../view/components/_common/dot-add-to-bundle/dot-add-to-bundle.module';
 import { DotDirectivesModule } from '../../shared/dot-directives.module';
@@ -130,7 +130,7 @@ import { DotDirectivesModule } from '../../shared/dot-directives.module';
         FieldService,
         FormatDateService,
         ContentTypeEditResolver,
-        WorkflowService
+        DotWorkflowService
     ]
 })
 export class ContentTypesModule {}

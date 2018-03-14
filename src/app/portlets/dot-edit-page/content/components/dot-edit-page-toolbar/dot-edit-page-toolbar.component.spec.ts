@@ -2,7 +2,8 @@ import { DotDialogService } from '../../../../../api/services/dot-dialog/dot-dia
 import { async, ComponentFixture } from '@angular/core/testing';
 import { DotEditPageToolbarComponent } from './dot-edit-page-toolbar.component';
 import { DotEditPageToolbarModule } from './dot-edit-page-toolbar.module';
-import { DebugElement } from '@angular/core';
+import { DotEditPageWorkflowsActionsModule } from '../dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
+import { DebugElement, Component, Input } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { DotMessageService } from '../../../../../api/services/dot-messages-service';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
@@ -15,7 +16,20 @@ import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { PageMode } from '../../../shared/models/page-mode.enum';
 import { DotRenderedPageState } from '../../../shared/models/dot-rendered-page-state.model';
 import { mockUser } from '../../../../../test/login-service.mock';
+import { DotWorkflowServiceMock } from '../../../../../test/dot-workflow-service.mock';
+import { Observable } from 'rxjs/Observable';
+import { DotWorkflowAction } from '../../../../../shared/models/dot-workflow-action/dot-workflow-action.model';
+import { DotWorkflowService } from '../../../../../api/services/dot-workflow/dot-workflow.service';
 import { mockDotPage, mockDotLayout } from '../../../../../test/dot-rendered-page.mock';
+
+@Component({
+    selector: 'dot-edit-page-workflows-actions',
+    template: ''
+})
+class MockWorkflowActionsComponent {
+    @Input() inode = '';
+    @Input() label = 'Acciones';
+}
 
 describe('DotEditPageToolbarComponent', () => {
     let component: DotEditPageToolbarComponent;
@@ -59,8 +73,12 @@ describe('DotEditPageToolbarComponent', () => {
     beforeEach(
         async(() => {
             testbed = DOTTestBed.configureTestingModule({
+                declarations: [
+                    MockWorkflowActionsComponent
+                ],
                 imports: [
                     DotEditPageToolbarModule,
+                    DotEditPageWorkflowsActionsModule,
                     RouterTestingModule.withRoutes([
                         {
                             component: DotEditPageToolbarComponent,
@@ -73,6 +91,10 @@ describe('DotEditPageToolbarComponent', () => {
                     { provide: DotMessageService, useValue: messageServiceMock },
                     DotGlobalMessageService,
                     DotEventsService,
+                    {
+                        provide: DotWorkflowService,
+                        useClass: DotWorkflowServiceMock
+                    },
                 ]
             });
         })
@@ -226,26 +248,18 @@ describe('DotEditPageToolbarComponent', () => {
         expect(component.onLockerClick).toHaveBeenCalledTimes(1);
     });
 
-    it('should NOT have an action split button', () => {
-        const primaryAction: DebugElement = de.query(By.css('.edit-page-toolbar__actions'));
-        expect(primaryAction).toBeFalsy();
-    });
-
     it('should have an action split button', () => {
-        component.pageWorkflows = [{ name: 'Workflow 1', id: 'one' }, { name: 'Workflow 2', id: 'two' }];
-        fixture.detectChanges();
-        const primaryAction: DebugElement = de.query(By.css('.edit-page-toolbar__actions'));
-        expect(primaryAction).toBeTruthy();
-        expect(primaryAction.name).toEqual('p-splitButton', 'is a splitbutton');
+        const primaryAction: DebugElement = de.query(By.css('dot-edit-page-workflows-actions'));
+        expect(primaryAction === null).toBe(false);
     });
 
-    it('should set action split buttons params', () => {
-        component.pageWorkflows = [{ name: 'Workflow 1', id: 'one' }, { name: 'Workflow 2', id: 'two' }];
+    it('should have right inputs in WorkflowActions component', () => {
+        const mtest: DebugElement = fixture.debugElement.query(By.css('dot-edit-page-workflows-actions'));
+        component.pageState.page.workingInode = 'cc2cdf9c-a20d-4862-9454-2a76c1132123';
         fixture.detectChanges();
-        const actionsButton: SplitButton = de.query(By.css('.edit-page-toolbar__actions')).componentInstance;
 
-        expect(actionsButton.label).toEqual('Acciones', 'actions label is set');
-        expect(actionsButton.model).toEqual([{ label: 'Workflow 1' }, { label: 'Workflow 2' }]);
+        expect(mtest.componentInstance.label).toEqual(messageServiceMock.get('editpage.toolbar.primary.workflow.actions'));
+        expect(mtest.componentInstance.inode).toEqual(component.pageState.page.workingInode);
     });
 
     it('should emit save event on primary action button click', () => {

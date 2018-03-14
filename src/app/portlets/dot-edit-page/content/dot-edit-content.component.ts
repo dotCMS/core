@@ -16,9 +16,9 @@ import { DotGlobalMessageService } from '../../../view/components/_common/dot-gl
 import { DotMenuService } from '../../../api/services/dot-menu.service';
 import { DotPageContainer } from '../shared/models/dot-page-container.model';
 import { DotPageContent } from '../shared/models/dot-page-content.model';
-import { Workflow } from '../../../shared/models/workflow/workflow.model';
+import { DotWorkflowAction } from '../../../shared/models/dot-workflow-action/dot-workflow-action.model';
 import { Observable } from 'rxjs/Observable';
-import { WorkflowService } from '../../../api/services/workflow/workflow.service';
+import { DotWorkflowService } from '../../../api/services/dot-workflow/dot-workflow.service';
 import { DotEditPageToolbarComponent } from './components/dot-edit-page-toolbar/dot-edit-page-toolbar.component';
 import { DotPageState, DotRenderedPageState } from '../shared/models/dot-rendered-page-state.model';
 import { PageMode } from '../shared/models/page-mode.enum';
@@ -41,7 +41,7 @@ export class DotEditContentComponent implements OnInit {
     dialogTitle: string;
     isModelUpdated = false;
     pageState: DotRenderedPageState;
-    pageWorkFlows: Observable<Workflow[]>;
+    pageWorkFlows: Observable<DotWorkflowAction[]>;
 
     private originalValue: any;
 
@@ -55,7 +55,7 @@ export class DotEditContentComponent implements OnInit {
         private ngZone: NgZone,
         private route: ActivatedRoute,
         private sanitizer: DomSanitizer,
-        private workflowsService: WorkflowService,
+        private workflowsService: DotWorkflowService,
         private dotPageStateService: DotPageStateService,
         public dotEditContentHtmlService: DotEditContentHtmlService,
         public dotLoadingIndicatorService: DotLoadingIndicatorService,
@@ -93,7 +93,7 @@ export class DotEditContentComponent implements OnInit {
 
         this.route.parent.parent.data.pluck('content').subscribe((pageState: DotRenderedPageState) => {
             this.setPageState(pageState);
-            this.pageWorkFlows = this.workflowsService.getPageWorkflows(pageState.page.identifier);
+            this.pageWorkFlows = this.workflowsService.getContentWorkflowActions(pageState.page.identifier);
         });
 
         this.setDialogSize();

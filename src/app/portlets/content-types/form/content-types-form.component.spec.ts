@@ -18,7 +18,7 @@ import { ContentTypesInfoService } from '../../../api/services/content-types-inf
 import { SiteSelectorFieldModule } from '../../../view/components/_common/site-selector-field/site-selector-field.module';
 import { SiteService } from 'dotcms-js/dotcms-js';
 import { SiteServiceMock } from '../../../test/site-service.mock';
-import { WorkflowService } from '../../../api/services/workflow/workflow.service';
+import { DotWorkflowService } from '../../../api/services/dot-workflow/dot-workflow.service';
 import { RouterTestingModule } from '@angular/router/testing';
 import { MdInputTextModule } from '../../../view/directives/md-inputtext/md-input-text.module';
 
@@ -86,7 +86,7 @@ describe('ContentTypesFormComponent', () => {
                     { provide: SiteService, useValue: siteServiceMock },
                     DotcmsConfig,
                     ContentTypesInfoService,
-                    WorkflowService
+                    DotWorkflowService
                 ]
             });
 
@@ -397,18 +397,18 @@ describe('ContentTypesFormComponent', () => {
     });
 
     it('should call the WorkFlow endpoint if the license community its false', () => {
-        const workflowService: WorkflowService = fixture.debugElement.injector.get(WorkflowService);
+        const DotWorkflow: DotWorkflowService = fixture.debugElement.injector.get(DotWorkflowService);
         spyOn(dotcmsConfig, 'getConfig').and.returnValue(
             Observable.of({
                 license: { isCommunity: false }
             })
         );
-        spyOn(workflowService, 'get').and.returnValue(Observable.of([{ id: '123' }]));
+        spyOn(DotWorkflow, 'get').and.returnValue(Observable.of([{ id: '123' }]));
         comp.data = {
             baseType: 'CONTENT'
         };
         fixture.detectChanges();
-        expect(workflowService.get).toHaveBeenCalled();
+        expect(DotWorkflow.get).toHaveBeenCalled();
     });
 
     it('should render disabled dates fields and hint when date fields are not passed', () => {

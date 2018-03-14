@@ -9,8 +9,8 @@ import { SelectItem } from 'primeng/primeng';
 
 import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { SiteSelectorComponent } from '../../../view/components/_common/site-selector/site-selector.component';
-import { Workflow } from '../../../shared/models/workflow/workflow.model';
-import { WorkflowService } from '../../../api/services/workflow/workflow.service';
+import { DotWorkflow } from '../../../shared/models/dot-workflow/dot-workflow.model';
+import { DotWorkflowService } from '../../../api/services/dot-workflow/dot-workflow.service';
 
 // TODO: move this to models
 import { ContentTypeField } from '../fields';
@@ -46,7 +46,7 @@ export class ContentTypesFormComponent implements OnInit {
     constructor(
         private dotcmsConfig: DotcmsConfig,
         private fb: FormBuilder,
-        private workflowService: WorkflowService,
+        private DotWorkflowService: DotWorkflowService,
         public dotMessageService: DotMessageService
     ) {
         dotMessageService
@@ -198,14 +198,14 @@ export class ContentTypesFormComponent implements OnInit {
     }
 
     private fillWorkflowFieldOptions(): void {
-        this.workflowOptions = this.workflowService
+        this.workflowOptions = this.DotWorkflowService
             .get()
-            .flatMap((workflows: Workflow[]) => workflows)
-            .map((workflow: Workflow) => this.getWorkflowFieldOption(workflow))
+            .flatMap((workflows: DotWorkflow[]) => workflows)
+            .map((workflow: DotWorkflow) => this.getWorkflowFieldOption(workflow))
             .toArray();
     }
 
-    private getWorkflowFieldOption(workflow: Workflow): SelectItem {
+    private getWorkflowFieldOption(workflow: DotWorkflow): SelectItem {
         return {
             label: workflow.name,
             value: workflow.id

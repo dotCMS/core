@@ -14,7 +14,7 @@ import { DotEditContentToolbarHtmlService } from './services/html/dot-edit-conte
 import { DotEditPageToolbarModule } from './components/dot-edit-page-toolbar/dot-edit-page-toolbar.module';
 import { DotLoadingIndicatorModule } from '../../../view/components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
 import { DotRenderHTMLService } from '../../../api/services/dot-render-html/dot-render-html.service';
-import { WorkflowService } from '../../../api/services/workflow/workflow.service';
+import { DotWorkflowService } from '../../../api/services/dot-workflow/dot-workflow.service';
 import { DotEditPageService } from '../../../api/services/dot-edit-page/dot-edit-page.service';
 
 const routes: Routes = [
@@ -43,7 +43,7 @@ const routes: Routes = [
         DotEditContentToolbarHtmlService,
         DotEditPageService,
         DotRenderHTMLService,
-        WorkflowService
+        DotWorkflowService
     ]
 })
 export class DotEditContentModule {}
