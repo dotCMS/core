@@ -566,9 +566,9 @@ public class ContentletAPITest extends ContentletBaseTest {
         
         copy = contentletAPI.findContentletByIdentifier(copyIdent.getId(), false, defLang, user, false);
         
-        assertEquals("hello20.txt",copyIdent.getAssetName());
-        assertEquals("hello20.txt",copy.getStringProperty(FileAssetAPI.FILE_NAME_FIELD));
-        assertEquals("hello20.txt",copy.getBinary(FileAssetAPI.BINARY_FIELD).getName());
+        assertEquals("hello20_copy.txt",copyIdent.getAssetName());
+        assertEquals("hello20_copy.txt",copy.getStringProperty(FileAssetAPI.FILE_NAME_FIELD));
+        assertEquals("hello20_copy.txt",copy.getBinary(FileAssetAPI.BINARY_FIELD).getName());
         assertEquals("this is the content of the file", FileUtils.readFileToString(copy.getBinary(FileAssetAPI.BINARY_FIELD)));
         
     }
