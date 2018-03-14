@@ -28,6 +28,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
@@ -155,10 +156,12 @@ public class WorkflowHelper {
      * Reorder the action associated to the scheme.
      * @param stepId  String step id
      * @param order   int    order for the step
+     * @param user   User    user that wants the reorder
      */
     @WrapInTransaction
     public void reorderStep(final String stepId,
-                            final int order)  {
+                            final int order,
+                            final User user)  {
 
         final WorkflowStep       step;
 
@@ -169,7 +172,7 @@ public class WorkflowHelper {
 
             Logger.debug(this, "Reordering the stepId: "  + stepId +
                             ", order: " + order);
-            this.workflowAPI.reorderStep(step, order);
+            this.workflowAPI.reorderStep(step, order, user);
         } catch (DotDataException | AlreadyExistException e) {
 
             Logger.error(this, e.getMessage());
@@ -203,7 +206,7 @@ public class WorkflowHelper {
             try {
 
                 Logger.debug(this, "deleting step: " + stepId);
-                this.workflowAPI.deleteStep(workflowStep);
+                this.workflowAPI.deleteStep(workflowStep, APILocator.systemUser());
             } catch (DotDataException e) {
                 Logger.error(this, e.getMessage());
                 Logger.debug(this, e.getMessage(), e);
@@ -243,7 +246,7 @@ public class WorkflowHelper {
             try {
 
                 Logger.debug(this, "Deleting the action: " + actionId);
-                this.workflowAPI.deleteAction(action);
+                this.workflowAPI.deleteAction(action, user);
             } catch (DotDataException | AlreadyExistException e) {
 
                 Logger.error(this, e.getMessage());
@@ -292,7 +295,7 @@ public class WorkflowHelper {
             Logger.debug(this, "Deleting the action: " + actionId
                     + " for the stepId: " + stepId);
 
-            this.workflowAPI.deleteAction(action, step);
+            this.workflowAPI.deleteAction(action, step, user);
         } catch (DotDataException | DotSecurityException | AlreadyExistException e) {
 
             Logger.error(this, e.getMessage());
@@ -581,7 +584,7 @@ public class WorkflowHelper {
             }
 
             Logger.debug(this, "Saving new Action: " + newAction.getName());
-            this.workflowAPI.saveAction(newAction, permissions);
+            this.workflowAPI.saveAction(newAction, permissions,user);
 
             if(isNew) {
 
@@ -604,7 +607,7 @@ public class WorkflowHelper {
                     try {
                         workflowActionClass.setName(NotifyAssigneeActionlet.class.newInstance().getName());
                         workflowActionClass.setOrder(0);
-                        this.workflowAPI.saveActionClass(workflowActionClass);
+                        this.workflowAPI.saveActionClass(workflowActionClass, user);
                     } catch (Exception e) {
                         Logger.error(this.getClass(), e.getMessage());
                         Logger.debug(this, e.getMessage(), e);
@@ -782,11 +785,10 @@ public class WorkflowHelper {
     } // findInitialAvailableActionsByContentType.
 
 
-    @WrapInTransaction
     public WorkflowScheme saveOrUpdate(final String schemeId, final WorkflowSchemeForm workflowSchemeForm, final User user) throws AlreadyExistException, DotDataException, DotSecurityException {
 
         final WorkflowScheme newScheme = new WorkflowScheme();
-        if (null != schemeId) {
+        if (StringUtils.isSet(schemeId)) {
             try {
                 final WorkflowScheme origScheme = this.workflowAPI.findScheme(schemeId);
                 BeanUtils.copyProperties(newScheme, origScheme);
@@ -800,7 +802,7 @@ public class WorkflowHelper {
         newScheme.setDescription(workflowSchemeForm.getSchemeDescription());
         newScheme.setName(workflowSchemeForm.getSchemeName());
 
-        this.workflowAPI.saveScheme(newScheme);
+        this.workflowAPI.saveScheme(newScheme, user);
         return newScheme;
     }
 

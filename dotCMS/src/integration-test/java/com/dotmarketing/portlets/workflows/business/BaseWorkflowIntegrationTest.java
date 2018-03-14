@@ -55,7 +55,7 @@ public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
         scheme.setModDate(new Date());
         scheme.setCreationDate(new Date());
         scheme.setDefaultScheme(false);
-        workflowAPI.saveScheme(scheme);
+        workflowAPI.saveScheme(scheme, APILocator.systemUser());
 
         final WorkflowStep step = createNewWorkflowStep(stepName, scheme.getId());
         final CreateSchemeStepActionResult result =
@@ -74,7 +74,7 @@ public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
         step.setResolved(false);
         step.setCreationDate(new Date());
         step.setSchemeId(schemeId);
-        workflowAPI.saveStep(step);
+        workflowAPI.saveStep(step, APILocator.systemUser());
         return step;
     }
 
@@ -117,7 +117,7 @@ public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
         action.setRequiresCheckout(false);
         action.setCondition("");
         action.setNextAssign(APILocator.getRoleAPI().loadCMSAnonymousRole().getId());
-        workflowAPI.saveAction(action, null);
+        workflowAPI.saveAction(action, null, APILocator.systemUser());
 
         workflowAPI.saveAction(action.getId(),
                 stepId, APILocator.systemUser());
@@ -129,7 +129,7 @@ public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
             workflowActionClass
                     .setName(WorkFlowActionlet.class.cast(actionClass.newInstance()).getName());
             workflowActionClass.setOrder(0);
-            workflowAPI.saveActionClass(workflowActionClass);
+            workflowAPI.saveActionClass(workflowActionClass, APILocator.systemUser());
         } catch (Exception e) {
             Logger.error(BaseWorkflowIntegrationTest.class, e.getMessage());
             Logger.debug(BaseWorkflowIntegrationTest.class, e.getMessage(), e);
@@ -157,18 +157,18 @@ public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
 
         for (final WorkflowAction action : schemeActions) {
 
-            workflowAPI.deleteAction(action);
+            workflowAPI.deleteAction(action, APILocator.systemUser());
         }
 
         final List<WorkflowStep> workflowSteps = workflowAPI.findSteps(scheme);
         for (final WorkflowStep step : workflowSteps) {
 
-            workflowAPI.deleteStep(step);
+            workflowAPI.deleteStep(step, APILocator.systemUser());
         }
 
         scheme.setArchived(true);
-        workflowAPI.saveScheme(scheme);
-        workflowAPI.deleteScheme(scheme);
+        workflowAPI.saveScheme(scheme, APILocator.systemUser());
+        workflowAPI.deleteScheme(scheme, APILocator.systemUser());
     }
 
     protected long getEnglishLanguageId() {
@@ -201,7 +201,7 @@ public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
                     PermissionAPI.PERMISSION_USE);
             permissions.add(permission);
         }
-        workflowAPI.saveAction(action, permissions);
+        workflowAPI.saveAction(action, permissions, APILocator.systemUser());
     }
 
     /**
@@ -224,7 +224,7 @@ public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
         wac.setClazz(actionletClass.getName());
         wac.setName(WorkFlowActionlet.class.cast(actionletClass.newInstance()).getName());
         wac.setOrder(order);
-        workflowAPI.saveActionClass(wac);
+        workflowAPI.saveActionClass(wac, APILocator.systemUser());
     }
 
     /**
@@ -261,7 +261,8 @@ public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
             actionletParam.setValue(paramValues.get(i));
             newParameters.add(actionletParam);
         }
-        workflowAPI.saveWorkflowActionClassParameters(newParameters);
+
+        workflowAPI.saveWorkflowActionClassParameters(newParameters, APILocator.systemUser());
     }
 
     /**
