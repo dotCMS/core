@@ -52,6 +52,7 @@ public class WfStepAjax extends WfBaseAction {
 			stepOrder = Integer.parseInt(o);
 		} catch (NumberFormatException nfe) {
 			//order param is not present
+			Logger.error(this.getClass(),"param stepOrder is invalid or ");
 		}
 		try {
 			final WorkflowStepForm from = new WorkflowStepForm.Builder().stepName(stepName).enableEscalation(enableEscalation).escalationAction(escalationAction).escalationTime(escalationTime).stepResolved(stepResolved).stepOrder(stepOrder).build();

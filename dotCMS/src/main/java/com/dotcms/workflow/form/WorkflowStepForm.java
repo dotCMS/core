@@ -28,7 +28,7 @@ public class WorkflowStepForm extends Validated {
     @NotNull
     private final boolean stepResolved;
 
-    public WorkflowStepForm(WorkflowStepForm.Builder builder) {
+    public WorkflowStepForm(final WorkflowStepForm.Builder builder) {
         this.stepOrder = builder.stepOrder;
         this.stepName = builder.stepName;
         this.enableEscalation = builder.enableEscalation;

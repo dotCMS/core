@@ -219,7 +219,7 @@ public class WorkflowHelper {
         }
         step.setName(workflowStepForm.getStepName());
         step.setResolved(workflowStepForm.isStepResolved());
-        int order = (null != workflowStepForm.getStepOrder() ? workflowStepForm.getStepOrder() : step.getMyOrder());
+        final int order = (null != workflowStepForm.getStepOrder() ? workflowStepForm.getStepOrder() : step.getMyOrder());
         try {
             workflowAPI.reorderStep(step, order, user);
         } catch (Exception e1) {
