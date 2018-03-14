@@ -295,7 +295,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
                 try {
                     OSGIProxyServlet.bundleContext.getBundle();
-                } catch ( IllegalStateException e ) {
+                } catch (IllegalStateException e ) {
 
                     Bundle[] bundles = context.getBundles();
                     for ( Bundle bundle : bundles ) {
