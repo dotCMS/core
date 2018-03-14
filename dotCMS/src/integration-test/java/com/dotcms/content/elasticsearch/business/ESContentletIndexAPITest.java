@@ -571,23 +571,18 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
 
             //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             //++++++++++++++++++++++++OTHER TESTS+++++++++++++++++++++++
-            //Testing the search
-            siteSearchResults = siteSearchAPI.search( indexName, "engli*", 0, 100 );
+            //Testing the search by existing word with wildcard
+            siteSearchResults = siteSearchAPI.search( indexName, "illustrati*", 0, 100 );
             //Validations
             assertTrue( siteSearchResults.getError() == null || siteSearchResults.getError().isEmpty() );
             assertTrue( siteSearchResults.getTotalResults() > 0 );
 
-            //Testing the search
-            siteSearchResults = siteSearchAPI.search( indexName, "*engli", 0, 100 );
+            //Testing the search: existing incomplete word with no wildcard
+            siteSearchResults = siteSearchAPI.search( indexName, "llustrat", 0, 100 );
             //Validations
             assertTrue( siteSearchResults.getError() == null || siteSearchResults.getError().isEmpty() );
             assertEquals( siteSearchResults.getTotalResults(), 0 );
 
-            //Testing the search
-            siteSearchResults = siteSearchAPI.search( indexName, "e", 0, 100 );
-            //Validations
-            assertTrue( siteSearchResults.getError() == null || siteSearchResults.getError().isEmpty() );
-            assertEquals( siteSearchResults.getTotalResults(), 0 );
 
             //Testing the search with a non existing word
             siteSearchResults = siteSearchAPI.search( indexName, "weird", 0, 100 );
