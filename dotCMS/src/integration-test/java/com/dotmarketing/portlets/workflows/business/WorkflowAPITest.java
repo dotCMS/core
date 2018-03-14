@@ -1053,7 +1053,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
 		     * Validate that step2 could not be deleted
 		     */
             try {
-                workflowAPI.deleteStep(step2);
+                workflowAPI.deleteStep(step2, user);
             } catch (Exception e) {
 			/*
 			 * Should enter here with this exception
@@ -1064,7 +1064,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
 		    /*
 		     * Validate correct deletion of step1
 		     */
-            workflowAPI.deleteStep(step1);
+            workflowAPI.deleteStep(step1, user);
 
 		    /*
 		     * Validate that the step 1 was deleted from the scheme
@@ -1077,7 +1077,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
 		     * Validate that step2 could not be deleted
 		     */
             try {
-                workflowAPI.deleteStep(step2);
+                workflowAPI.deleteStep(step2, user);
             } catch (Exception e) {
 			/*
 			 * Should enter here with this exception
@@ -1101,8 +1101,8 @@ public class WorkflowAPITest extends IntegrationTestBase {
 		     */
             APILocator.getContentletAPI().delete(contentlet1, user, false);
             contentTypeAPI.delete(st);
-            workflowAPI.deleteStep(step2);
-            workflowAPI.deleteScheme(ws);
+            workflowAPI.deleteStep(step2, user);
+            workflowAPI.deleteScheme(ws, user);
         }
     }
 
@@ -1171,7 +1171,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             scheme.setName(schemeName);
             scheme.setDescription("testing workflows " + schemeName);
             scheme.setCreationDate(new Date());
-            workflowAPI.saveScheme(scheme);
+            workflowAPI.saveScheme(scheme, APILocator.systemUser());
         } catch (AlreadyExistException e) {
             //scheme already exist
         }
@@ -1202,7 +1202,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             step.setName(name);
             step.setResolved(resolved);
             step.setSchemeId(schemeId);
-            workflowAPI.saveStep(step);
+            workflowAPI.saveStep(step, user);
         } catch (AlreadyExistException e) {
             //scheme already exist
         }
@@ -1243,7 +1243,8 @@ public class WorkflowAPITest extends IntegrationTestBase {
                     Arrays.asList(new Permission[]{
                             new Permission(action.getId(),
                                     whoCanUse.getId(),
-                                    PermissionAPI.PERMISSION_USE)}));
+                                    PermissionAPI.PERMISSION_USE)}),
+                    APILocator.systemUser());
 
             workflowAPI.saveAction(action.getId(), stepId, APILocator.systemUser());
         } catch (AlreadyExistException e) {
@@ -1270,7 +1271,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             actionClass.setClazz(actionClassToUse.getCanonicalName());
             actionClass.setName(name);
             actionClass.setOrder(order);
-            workflowAPI.saveActionClass(actionClass);
+            workflowAPI.saveActionClass(actionClass, APILocator.systemUser());
         } catch (AlreadyExistException e) {
             //scheme already exist
         }
@@ -1288,72 +1289,72 @@ public class WorkflowAPITest extends IntegrationTestBase {
         contentTypeAPI.delete(contentType3);
         try {
             //Deleting workflow 1
-            workflowAPI.deleteAction(workflowScheme1Step1Action1);
-            workflowAPI.deleteAction(workflowScheme1Step2Action1);
+            workflowAPI.deleteAction(workflowScheme1Step1Action1, user);
+            workflowAPI.deleteAction(workflowScheme1Step2Action1, user);
 
-            workflowAPI.deleteStep(workflowScheme1Step1);
-            workflowAPI.deleteStep(workflowScheme1Step2);
+            workflowAPI.deleteStep(workflowScheme1Step1, user);
+            workflowAPI.deleteStep(workflowScheme1Step2, user);
 
             workflowScheme1.setArchived(true);
-            workflowAPI.saveScheme(workflowScheme1);
-            workflowAPI.deleteScheme(workflowScheme1);
+            workflowAPI.saveScheme(workflowScheme1, user);
+            workflowAPI.deleteScheme(workflowScheme1, user);
 
             //Deleting workflow 2
-            workflowAPI.deleteAction(workflowScheme2Step1Action1);
-            workflowAPI.deleteAction(workflowScheme2Step2Action1);
-            workflowAPI.deleteStep(workflowScheme2Step1);
-            workflowAPI.deleteStep(workflowScheme2Step2);
+            workflowAPI.deleteAction(workflowScheme2Step1Action1, user);
+            workflowAPI.deleteAction(workflowScheme2Step2Action1, user);
+            workflowAPI.deleteStep(workflowScheme2Step1, user);
+            workflowAPI.deleteStep(workflowScheme2Step2, user);
 
             workflowScheme2.setArchived(true);
-            workflowAPI.saveScheme(workflowScheme2);
-            workflowAPI.deleteScheme(workflowScheme2);
+            workflowAPI.saveScheme(workflowScheme2, user);
+            workflowAPI.deleteScheme(workflowScheme2, user);
 
             //Deleting workflow 3
-            workflowAPI.deleteAction(workflowScheme3Step1Action1);
-            workflowAPI.deleteAction(workflowScheme3Step2Action1);
-            workflowAPI.deleteAction(workflowScheme3Step2Action2);
+            workflowAPI.deleteAction(workflowScheme3Step1Action1, user);
+            workflowAPI.deleteAction(workflowScheme3Step2Action1, user);
+            workflowAPI.deleteAction(workflowScheme3Step2Action2, user);
 
-            workflowAPI.deleteStep(workflowScheme3Step1);
-            workflowAPI.deleteStep(workflowScheme3Step2);
+            workflowAPI.deleteStep(workflowScheme3Step1, user);
+            workflowAPI.deleteStep(workflowScheme3Step2, user);
 
             workflowScheme3.setArchived(true);
-            workflowAPI.saveScheme(workflowScheme3);
-            workflowAPI.deleteScheme(workflowScheme3);
+            workflowAPI.saveScheme(workflowScheme3, user);
+            workflowAPI.deleteScheme(workflowScheme3, user);
 
             //Deleting workflow 4
-            workflowAPI.deleteAction(workflowScheme4Step1ActionContributor);
-            workflowAPI.deleteAction(workflowScheme4Step1ActionEdit);
-            workflowAPI.deleteAction(workflowScheme4Step1ActionEditPermissions);
-            workflowAPI.deleteAction(workflowScheme4Step1ActionPublish);
-            workflowAPI.deleteAction(workflowScheme4Step1ActionView);
+            workflowAPI.deleteAction(workflowScheme4Step1ActionContributor, user);
+            workflowAPI.deleteAction(workflowScheme4Step1ActionEdit, user);
+            workflowAPI.deleteAction(workflowScheme4Step1ActionEditPermissions, user);
+            workflowAPI.deleteAction(workflowScheme4Step1ActionPublish, user);
+            workflowAPI.deleteAction(workflowScheme4Step1ActionView, user);
 
-            workflowAPI.deleteAction(workflowScheme4Step2ActionReviewer);
-            workflowAPI.deleteAction(workflowScheme4Step2ActionEdit);
-            workflowAPI.deleteAction(workflowScheme4Step2ActionEditPermissions);
-            workflowAPI.deleteAction(workflowScheme4Step2ActionPublish);
-            workflowAPI.deleteAction(workflowScheme4Step2ActionView);
+            workflowAPI.deleteAction(workflowScheme4Step2ActionReviewer, user);
+            workflowAPI.deleteAction(workflowScheme4Step2ActionEdit, user);
+            workflowAPI.deleteAction(workflowScheme4Step2ActionEditPermissions, user);
+            workflowAPI.deleteAction(workflowScheme4Step2ActionPublish, user);
+            workflowAPI.deleteAction(workflowScheme4Step2ActionView, user);
 
-            workflowAPI.deleteAction(workflowScheme4Step3ActionPublisher);
-            workflowAPI.deleteAction(workflowScheme4Step3ActionEdit);
-            workflowAPI.deleteAction(workflowScheme4Step3ActionEditPermissions);
-            workflowAPI.deleteAction(workflowScheme4Step3ActionPublish);
-            workflowAPI.deleteAction(workflowScheme4Step3ActionView);
+            workflowAPI.deleteAction(workflowScheme4Step3ActionPublisher, user);
+            workflowAPI.deleteAction(workflowScheme4Step3ActionEdit, user);
+            workflowAPI.deleteAction(workflowScheme4Step3ActionEditPermissions, user);
+            workflowAPI.deleteAction(workflowScheme4Step3ActionPublish, user);
+            workflowAPI.deleteAction(workflowScheme4Step3ActionView, user);
 
-            workflowAPI.deleteStep(workflowScheme4Step1);
-            workflowAPI.deleteStep(workflowScheme4Step2);
-            workflowAPI.deleteStep(workflowScheme4Step3);
+            workflowAPI.deleteStep(workflowScheme4Step1, user);
+            workflowAPI.deleteStep(workflowScheme4Step2, user);
+            workflowAPI.deleteStep(workflowScheme4Step3, user);
 
             workflowScheme4.setArchived(true);
-            workflowAPI.saveScheme(workflowScheme4);
-            workflowAPI.deleteScheme(workflowScheme4);
+            workflowAPI.saveScheme(workflowScheme4, user);
+            workflowAPI.deleteScheme(workflowScheme4, user);
 
             //Deleting workflow 5
-            workflowAPI.deleteAction(workflowScheme5Step1Action1);
-            workflowAPI.deleteStep(workflowScheme5Step1);
+            workflowAPI.deleteAction(workflowScheme5Step1Action1, user);
+            workflowAPI.deleteStep(workflowScheme5Step1, user);
 
             workflowScheme5.setArchived(true);
-            workflowAPI.saveScheme(workflowScheme5);
-            workflowAPI.deleteScheme(workflowScheme5);
+            workflowAPI.saveScheme(workflowScheme5, user);
+            workflowAPI.deleteScheme(workflowScheme5, user);
 
         }catch (AlreadyExistException e){
 

@@ -503,7 +503,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 			List<Map<String,Object>> tasksToDelete=db.loadResults();
 			for(Map<String,Object> task : tasksToDelete) {
 			    WorkflowTask wft = APILocator.getWorkflowAPI().findTaskById((String)task.get("id"));
-			    APILocator.getWorkflowAPI().deleteWorkflowTask(wft);
+			    APILocator.getWorkflowAPI().deleteWorkflowTask(wft, APILocator.systemUser());
 			}
 			db.setSQL("delete from " + Inode.Type.valueOf(ident.getAssetType().toUpperCase()).getTableName() + " where identifier = ?");
 			db.addParam(ident.getId());
