@@ -176,6 +176,7 @@ public class WorkflowAction implements Permissionable, Serializable{
 	/**
 	 * @return boolean
 	 */
+	@JsonIgnore
 	@Deprecated
 	public boolean requiresCheckout() {
 		return requiresCheckout;
@@ -184,6 +185,7 @@ public class WorkflowAction implements Permissionable, Serializable{
 	/**
 	 * @return boolean
 	 */
+	@JsonIgnore
 	@Deprecated
 	public boolean isRequiresCheckout() {
 		return requiresCheckout;
@@ -236,6 +238,7 @@ public class WorkflowAction implements Permissionable, Serializable{
 	 * Reflects the old relation between Action and step
 	 * @deprecated this is keep just by legacy reason, new apps should not use it
 	 */
+	@JsonIgnore
 	@Deprecated
 	public String getStepId() {
 		return stepId;
