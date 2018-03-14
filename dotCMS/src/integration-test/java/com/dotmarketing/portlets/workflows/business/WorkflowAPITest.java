@@ -24,11 +24,7 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
-import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.io.IOException;
@@ -1239,6 +1235,9 @@ public class WorkflowAPITest extends IntegrationTestBase {
             action.setNextAssign(whoCanUse.getId());
             action.setCommentable(true);
             action.setAssignable(false);
+            action.setShowOn(WorkflowState.LOCKED, WorkflowState.UNLOCKED, WorkflowState.NEW,
+                    WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED, WorkflowState.ARCHIVED);
+
             workflowAPI.saveAction(action,
                     Arrays.asList(new Permission[]{
                             new Permission(action.getId(),

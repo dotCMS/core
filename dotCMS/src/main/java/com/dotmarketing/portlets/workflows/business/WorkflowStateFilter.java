@@ -10,6 +10,9 @@ public class WorkflowStateFilter {
 
     /**
      * Determine if the content state is valid to the workflow action state's
+     *
+     * (lock or unlock) and (new or ( publish or (unpublish or non-archived) or archived )
+     *
      * @param contentletStatusOptions ContentletStateOptions
      * @return boolean
      */
@@ -34,10 +37,13 @@ public class WorkflowStateFilter {
     private boolean filterAction (final WorkflowAction workflowAction,
                                   final ContentletStateOptions contentletStatusOptions) {
 
-        return  (contentletStatusOptions.isNew()      && workflowAction.shouldShowOnNew())         ||
-                (contentletStatusOptions.isPublish()  && workflowAction.shouldShowOnPublished())   ||
-                (!contentletStatusOptions.isPublish() && !contentletStatusOptions.isArchived()
-                                                      && workflowAction.shouldShowOnUnpublished()) ||
-                (contentletStatusOptions.isArchived() && workflowAction.shouldShowOnArchived());
+        final boolean unpublish =
+                !contentletStatusOptions.isPublish() && !contentletStatusOptions.isArchived();
+
+        return  contentletStatusOptions.isNew()?
+                    workflowAction.shouldShowOnNew():
+                    (contentletStatusOptions.isPublish()  && workflowAction.shouldShowOnPublished())   ||
+                    (unpublish                            && workflowAction.shouldShowOnUnpublished()) ||
+                    (contentletStatusOptions.isArchived() && workflowAction.shouldShowOnArchived());
     } // filterAction.
 } // WorkflowStateFilter.
