@@ -1,5 +1,6 @@
 package com.dotmarketing.util;
 
+import com.dotcms.rendering.velocity.viewtools.StringsWebApi;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.util.CollectionsUtils;
@@ -13,6 +14,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.StringWriter;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -208,17 +210,19 @@ public class OSGIUtil {
      * Stops the OSGi framework
      */
     public void stopFramework() {
-        try {
-            BundleContext bundleContext = HostActivator.instance().getBundleContext();
 
+        try {
             //Closing tracker associated to the HttpServlet
             DispatcherTracker tracker = OSGIProxyServlet.tracker;
-            if (tracker != null) {
+            if (null != tracker) {
                 tracker.close();
                 OSGIProxyServlet.tracker = null;
             }
 
             if (null != felixFramework) {
+
+                BundleContext bundleContext = HostActivator.instance().getBundleContext();
+
                 //Unregistering ToolBox services
                 ServiceReference toolBoxService = getBundleContext().getServiceReference(PrimitiveToolboxManager.class.getName());
                 if (toolBoxService != null) {
@@ -252,7 +256,7 @@ public class OSGIUtil {
     }
 
     public Boolean isInitialized() {
-        return null != felixFramework;
+        return null != felixFramework && felixFramework.getState() == Bundle.ACTIVE;
     }
 
     /**
@@ -309,7 +313,8 @@ public class OSGIUtil {
     }
 
     /**
-     * Returns the packages inside the <strong>osgi-extra.conf</strong> file, those packages are the value
+     * Returns the packages inside the <strong>osgi-extra.conf</strong> and the osgi-extra-generate.conf files
+     * If neither of those files are there, it will generate the osgi-extra-generate.conf based off the classpath
      * for the OSGI configuration property <strong>org.osgi.framework.system.packages.extra</strong>.
      * <br/><br/>
      * The property <strong>org.osgi.framework.system.packages.extra</strong> is use to set the list of packages the
@@ -319,74 +324,58 @@ public class OSGIUtil {
      * @throws IOException Any IOException
      */
     public String getExtraOSGIPackages() throws IOException {
-        String extraPackages;
 
-        File f = new File(FELIX_EXTRA_PACKAGES_FILE);
-        if (!f.exists()) {
-            StringBuilder bob = new StringBuilder();
-            final Collection<String> list = ResourceCollectorUtil.getResources(dotCMSJarPrefixes);
-            for (final String name : list) {
-                if(name.startsWith("/")) continue;
-                if(name.contains(":")) continue;
 
-                if (File.separator.equals( "/" )) {
-                    bob.append(name.replace(File.separator, ".") + "," + "\n");
-                } else {
-                    //Zip entries have '/' as separator on all platforms
-                    bob.append((name.replace( File.separator, "." ).replace( "/", "." )) + "," + "\n");
-                }
-            }
+		final File[] felixExtras = { new File(FELIX_EXTRA_PACKAGES_FILE),
+				new File(FELIX_EXTRA_PACKAGES_FILE_GENERATED) };
 
-            bob.append(
-                "org.osgi.framework," +
-                    "org.osgi.framework.wiring," +
-                    "org.osgi.service.packageadmin," +
-                    "org.osgi.framework.startlevel," +
-                    "org.osgi.service.startlevel," +
-                    "org.osgi.service.url," +
-                    "org.osgi.util.tracker," +
-                    "javax.inject.Qualifier," +
-                    "javax.servlet.resources," +
-                    "javax.servlet;javax.servlet.http;version=3.1.0"
+    // if neither exist, we generate a FELIX_EXTRA_PACKAGES_FILE_GENERATED
+    if (!(felixExtras[0].exists() || felixExtras[1].exists())) {
+      StringBuilder bob = new StringBuilder();
+      final Collection<String> list = ResourceCollectorUtil.getResources(dotCMSJarPrefixes);
+      for (final String name : list) {
+        if (name.charAt(0) == '/' || name.contains(":")) {
+          continue;
+        }
+        if (File.separator.equals("/")) {
+          bob.append(name.replace(File.separator, ".") + "," + "\n");
+        } else {
+          // Zip entries have '/' as separator on all platforms
+          bob.append((name.replace(File.separator, ".").replace("/", ".")) + "," + "\n");
+        }
+      }
+
+        	bob.append("org.osgi.framework,\n")
+            .append( "org.osgi.framework.wiring,\n" )
+            .append( "org.osgi.service.packageadmin,\n" )
+            .append( "org.osgi.framework.startlevel,\n")
+            .append( "org.osgi.service.startlevel,\n" )
+            .append( "org.osgi.service.url,\n" )
+			.append( "org.osgi.util.tracker,\n" )
+			.append( "javax.inject.Qualifier,\n")
+			.append( "javax.servlet.resources,\n" )
+			.append( "javax.servlet;javax.servlet.http;version=3.1.0\n"
             );
 
-            BufferedWriter writer = null;
-            try {
-                writer = new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(Paths.get(FELIX_EXTRA_PACKAGES_FILE_GENERATED)), "utf-8"));
-                writer.write(bob.toString());
-            } catch (IOException ex) {
-                Logger.error(this, ex.getMessage(), ex);
-            } finally {
-                try {
-                    if (writer != null) {
-                        writer.close();
-                    }
-                } catch (Exception ex) {
-                    Logger.error(this, ex.getMessage(), ex);
+			try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(
+					Files.newOutputStream(Paths.get(FELIX_EXTRA_PACKAGES_FILE_GENERATED)), "utf-8"))) {
+				writer.write(bob.toString());
+			}
+        }
+
+        final StringWriter sw = new StringWriter();
+        for(File f: felixExtras) {
+            if(f.exists()) {
+                try(InputStream inputStream = Files.newInputStream(f.toPath())){
+                    sw.append(IOUtils.toString(inputStream));
                 }
             }
         }
 
-        //Reading the file with the extra packages
-        InputStream inputStream;
-        if (f.exists()) {
-            inputStream = Files.newInputStream(Paths.get(FELIX_EXTRA_PACKAGES_FILE));
-        } else {
-            inputStream = Files.newInputStream(Paths.get(FELIX_EXTRA_PACKAGES_FILE_GENERATED));
-        }
-
-        try {
-            extraPackages = IOUtils.toString(inputStream);
-        } finally {
-            inputStream.close();
-        }
 
         //Clean up the properties, it is better to keep it simple and in a standard format
-        extraPackages = extraPackages.replaceAll("\\\n", "");
-        extraPackages = extraPackages.replaceAll("\\\r", "");
-        extraPackages = extraPackages.replaceAll("\\\\", "");
+        return sw.toString().replaceAll("\\\n", "").replaceAll("\\\r", "").replaceAll("\\\\", "");
 
-        return extraPackages;
     }
 
     /**
