@@ -732,7 +732,7 @@ public class WorkflowResource {
     } // reorderStep
 
     @PUT
-    @Path("/fire/actions/{actionId}")
+    @Path("/actions/{actionId}/fire")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
