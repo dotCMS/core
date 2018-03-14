@@ -3,18 +3,7 @@ package com.dotmarketing.portlets.rules.conditionlet;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
-import java.util.Map;
-
-import javax.servlet.ServletContextEvent;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.mockito.Mockito;
-
 import com.dotcms.LicenseTestUtil;
-import org.osgi.framework.BundleContext;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.osgi.GenericBundleActivator;
@@ -24,7 +13,14 @@ import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.OSGIUtil;
-
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.mockito.Mockito;
+import org.osgi.framework.BundleContext;
 
 public class ConditionletOSGIFTest {
 
@@ -35,6 +31,12 @@ public class ConditionletOSGIFTest {
         LicenseTestUtil.getLicense();
         Mockito.when(Config.CONTEXT.getRealPath("/WEB-INF/felix")).thenReturn(Config.getStringProperty("context.path.felix","/WEB-INF/felix"));
         OSGIUtil.getInstance().initializeFramework(Config.CONTEXT);
+    }
+
+    @AfterClass
+    public static void cleanUp() throws Exception {
+        //Stopping the OSGI framework
+        OSGIUtil.getInstance().stopFramework();
     }
 
     @Test

@@ -42,7 +42,6 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.business.TagAPI;
-import com.dotmarketing.util.OSGIUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
@@ -198,12 +197,6 @@ public class ContentletBaseTest extends IntegrationTestBase {
         contentlets.add( newContentlet );
         
         IntegrationTestInitService.getInstance().mockStrutsActionModule();
-
-        /*
-        Make sure OSGI is not initialized, otherwise we will try to use the OSGI tika bundle
-        and we are not testing OSGI here.
-         */
-        OSGIUtil.getInstance().stopFramework();
     }
 
     //@AfterClass
