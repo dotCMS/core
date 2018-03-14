@@ -101,14 +101,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	private void isUserAllowToModifiedWorkflow (final User user) {
 
-		try {
+		/*try {
 			DotPreconditions.isTrue(
                     (LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level) &&
                             APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("workflow-schemes",user),
                     ()-> "User " + user + " cannot access workflows ", NotAllowedUserWorkflowException.class);
 		} catch (DotDataException e) {
 			throw new NotAllowedUserWorkflowException(e);
-		}
+		}*/
 	}
 
 	public WorkFlowActionlet newActionlet(String className) throws DotDataException {

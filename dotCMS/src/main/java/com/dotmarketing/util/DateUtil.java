@@ -2,9 +2,11 @@ package com.dotmarketing.util;
 
 import static com.dotcms.util.DotPreconditions.checkNotNull;
 
+import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
+import com.liferay.util.StringPool;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -15,6 +17,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,6 +43,14 @@ public class DateUtil {
 	public static final String DIFF_DAYS = "diffDays";
 	public static final String DIFF_HOURS = "diffHours";
 	public static final String DIFF_MINUTES = "diffMinutes";
+	public static final String LUCENE_DATE_TIME_PATTERN = "yyyy-MM-dd'T'HH:mm:ss";
+	public static final SimpleDateFormat LUCENE_DATE_TIME_FORMAT = new SimpleDateFormat(
+            LUCENE_DATE_TIME_PATTERN);
+	public static final String LUCENE_DATE_PATTERN = "yyyy-MM-dd";
+	public static final SimpleDateFormat LUCENE_DATE_FORMAT = new SimpleDateFormat(
+            LUCENE_DATE_PATTERN);
+	public static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("MM/dd/yyyy");
+	public final static String ERROR_DATE = "error date";
 
 	private static Map<String, DateTimeFormatter> formatterMap = new ConcurrentHashMap<>();
 
@@ -404,5 +415,193 @@ public class DateUtil {
 			dateString = StringUtils.EMPTY;
 		}
 		return dateString;
+	}
+
+	/**
+	 *
+	 * @param query
+	 * @param regExp
+	 * @param dateFormat
+	 * @return
+	 */
+	public static String replaceDateTimeWithFormat(final String query, final String regExp,
+			String dateFormat) {
+		List<RegExMatch> matches = RegEX.find(query, regExp);
+		String originalDate;
+		String luceneDate;
+		StringBuilder newQuery;
+		int begin;
+		if (UtilMethods.isSet(matches)) {
+			newQuery = new StringBuilder(query.length() * 2);
+			begin = 0;
+			for (RegExMatch regExMatch : matches) {
+				originalDate = regExMatch.getMatch();
+
+				if (UtilMethods.isSet(dateFormat))
+					luceneDate = toLuceneDateWithFormat(originalDate, dateFormat);
+				else
+					luceneDate = toLuceneDateWithFormat(originalDate, LUCENE_DATE_TIME_PATTERN);
+
+				newQuery.append(query.substring(begin, regExMatch.getBegin()) + luceneDate);
+				begin = regExMatch.getEnd();
+			}
+
+			return newQuery.append(query.substring(begin)).toString();
+		}
+
+		return query;
+	}
+
+	/**
+	 *
+	 * @param dateString
+	 * @param format
+	 * @return
+	 */
+	public static String toLuceneDateWithFormat(final String dateString, final String format) {
+		try {
+			if (!UtilMethods.isSet(dateString))
+				return StringPool.BLANK;
+
+			SimpleDateFormat sdf = new SimpleDateFormat(format);
+			Date date = sdf.parse(dateString);
+			String returnValue = toLuceneDateTime(date);
+
+			return returnValue;
+		} catch (Exception ex) {
+			Logger.error(ESContentFactoryImpl.class, ex.toString());
+			return ERROR_DATE;
+		}
+	}
+
+	/**
+	 *
+	 * @param date
+	 * @return
+	 */
+	public static String toLuceneDate(final Date date) {
+		try {
+
+			String returnValue = LUCENE_DATE_FORMAT.format(date);
+			return returnValue;
+		} catch (Exception ex) {
+			Logger.error(ESContentFactoryImpl.class, ex.toString());
+			return ERROR_DATE;
+		}
+	}
+
+	/**
+	 *
+	 * @param date
+	 * @return
+	 */
+	public static String toLuceneDateTime(final Date date) {
+		try {
+
+			String returnValue = LUCENE_DATE_TIME_FORMAT.format(date);
+			return returnValue.replaceAll(StringPool.COLON, "\\\\:");
+		} catch (Exception ex) {
+			Logger.error(ESContentFactoryImpl.class, ex.toString());
+			return ERROR_DATE;
+		}
+	}
+
+	/**
+	 *
+	 * @param query
+	 * @param regExp
+	 * @return
+	 */
+	public static String replaceDateWithFormat(final String query, final String regExp) {
+		List<RegExMatch> matches = RegEX.find(query, regExp);
+		String originalDate;
+		String luceneDate;
+		StringBuilder newQuery;
+		int begin;
+		if (UtilMethods.isSet(matches)) {
+			newQuery = new StringBuilder(query.length() * 2);
+			begin = 0;
+			for (RegExMatch regExMatch : matches) {
+				originalDate = regExMatch.getMatch();
+
+				luceneDate = toLuceneDate(originalDate);
+
+				newQuery.append(query.substring(begin, regExMatch.getBegin()) + luceneDate);
+				begin = regExMatch.getEnd();
+			}
+
+			return newQuery.append(query.substring(begin)).toString();
+		}
+
+		return query;
+	}
+
+	/**
+	 *
+	 * @param query
+	 * @param regExp
+	 * @param timeFormat
+	 * @return
+	 */
+	public static String replaceTimeWithFormat(final String query, final String regExp, final String timeFormat) {
+		List<RegExMatch> matches = RegEX.find(query, regExp);
+		String originalDate;
+		String luceneDate;
+		StringBuilder newQuery;
+		int begin;
+		if (UtilMethods.isSet(matches)) {
+			newQuery = new StringBuilder(query.length() * 2);
+			begin = 0;
+			for (RegExMatch regExMatch : matches) {
+				originalDate = regExMatch.getMatch();
+
+				luceneDate = toLuceneTimeWithFormat(originalDate, timeFormat);
+
+				newQuery.append(query.substring(begin, regExMatch.getBegin()) + luceneDate);
+				begin = regExMatch.getEnd();
+			}
+
+			return newQuery.append(query.substring(begin)).toString();
+		}
+
+		return query;
+	}
+
+	/**
+	 *
+	 * @param dateString
+	 * @param format
+	 * @return
+	 */
+	public static String toLuceneTimeWithFormat(final String dateString, final String format) {
+		try {
+			if (!UtilMethods.isSet(dateString))
+				return StringPool.BLANK;
+
+			SimpleDateFormat sdf = new SimpleDateFormat(format);
+			Date time = sdf.parse(dateString);
+			return toLuceneDateTime(time);
+		} catch (Exception ex) {
+			Logger.error(ESContentFactoryImpl.class, ex.toString());
+			return ERROR_DATE;
+		}
+	}
+
+	/**
+	 *
+	 * @param dateString
+	 * @return
+	 */
+	public static String toLuceneDate(final String dateString) {
+
+		try{
+			Date date = SIMPLE_DATE_FORMAT.parse(dateString);
+			String returnValue = toLuceneDate(date);
+
+			return returnValue;
+		} catch (Exception ex) {
+			Logger.error(ESContentFactoryImpl.class, ex.toString());
+			return ERROR_DATE;
+		}
 	}
 }
