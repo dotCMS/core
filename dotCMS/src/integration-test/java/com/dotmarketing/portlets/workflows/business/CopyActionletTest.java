@@ -164,7 +164,7 @@ public class CopyActionletTest extends BaseWorkflowIntegrationTest {
         CopyActionletTest.workflowAPI.fireWorkflowPostCheckin(processor);
 
         Assert.assertNotNull(contentletCopy);
-        Assert.assertNotNull(contentletCopy.getIdentifier());U
+        Assert.assertNotNull(contentletCopy.getIdentifier());
         Assert.assertNotNull(contentletCopy.getInode());
         contentletAPI.isInodeIndexed(contentletCopy.getInode());
 
