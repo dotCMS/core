@@ -7,6 +7,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.Logger;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.junit.AfterClass;
@@ -90,7 +91,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
     public void testScore () {
 
         //+++++++++++++++++++++++++++
-        //Executing a simple query sorting by score
+        //Executing a simple query filtering by score
         SearchHits searchHits = instance.indexSearch("+contenttype:blog", 20, 0, "score");
 
 
@@ -100,10 +101,10 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
 
         SearchHit[] hits = searchHits.getHits();
         float maxScore = hits[0].getScore();
-        //With this query all the results must be sorted by score descending
+        //With this query all the results must have the same score
         for ( SearchHit searchHit : hits ) {
-            assertTrue(searchHit.getScore() <= maxScore);
-            maxScore = searchHit.getScore();
+            Logger.info(this, "Blog - SearchHit Score: " + searchHit.getScore() + " inode: "+ searchHit.getSourceAsMap().get("inode"));
+            assertTrue(searchHit.getScore() == maxScore);
         }
 
         //+++++++++++++++++++++++++++
