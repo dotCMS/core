@@ -73,6 +73,7 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.model.Tag;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDGenerator;
@@ -2092,12 +2093,12 @@ public class ContentletAPITest extends ContentletBaseTest {
         Thread.sleep(2000); // wait a bit for the index
         
         // also it should be in the index update with the new dates
-        FastDateFormat datetimeFormat = ESMappingAPIImpl.datetimeFormat;
         String q="+structureName:"+testStructure.getVelocityVarName()+
                 " +inode:"+c11.getInode()+
-                " +"+testStructure.getVelocityVarName()+"."+fieldPubDate.getVelocityVarName()+":"+datetimeFormat.format(d3)+
-                " +"+testStructure.getVelocityVarName()+"."+fieldExpDate.getVelocityVarName()+":"+datetimeFormat.format(d4);
-        assertEquals(1,APILocator.getContentletAPI().indexCount(q, user, false));
+                " +"+testStructure.getVelocityVarName()+"."+fieldPubDate.getVelocityVarName()+":"+ DateUtil.toLuceneDate(d3)+
+                " +"+testStructure.getVelocityVarName()+"."+fieldExpDate.getVelocityVarName()+":"+ DateUtil.toLuceneDate(d4);
+        final long count = APILocator.getContentletAPI().indexCount(q, user, false);
+        assertEquals(1, count);
     }
 
     private boolean compareDates(Date date1, Date date2) {
