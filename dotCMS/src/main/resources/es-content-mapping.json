@@ -36,20 +36,20 @@
                 }
             },
             {
-                "datemapping": {
-                    "mapping": {
-                        "ignore_malformed": true
-                    },
-                    "match_mapping_type": "date"
-                }
-            },
-            {
                 "strings_as_dates": {
                     "match": "originalstartdate||recurrencestart||recurrenceend",
                     "mapping": {
                         "type": "date",
                         "ignore_malformed": true
                     }
+                }
+            },
+            {
+                "datemapping": {
+                    "mapping": {
+                        "ignore_malformed": true
+                    },
+                    "match_mapping_type": "date"
                 }
             },
             {
