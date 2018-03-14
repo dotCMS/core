@@ -1,30 +1,10 @@
 package com.dotcms.rest;
 
-import com.dotcms.rest.exception.ForbiddenException;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URLDecoder;
-import java.util.*;
-import java.util.Map.Entry;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.Part;
-
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
-
-import com.dotcms.repackage.javax.ws.rs.Consumes;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.POST;
-import com.dotcms.repackage.javax.ws.rs.PUT;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
+import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -38,9 +18,9 @@ import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.BodyPart;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.ContentDisposition;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
@@ -61,7 +41,6 @@ import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.*;
-import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.liferay.portal.model.User;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.converters.Converter;
@@ -71,7 +50,20 @@ import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.DomDriver;
 
-import static com.dotmarketing.util.NumberUtil.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.util.*;
+import java.util.Map.Entry;
+
+import static com.dotmarketing.util.NumberUtil.toInt;
+import static com.dotmarketing.util.NumberUtil.toLong;
 
 @Path("/content")
 public class ContentResource {
@@ -1202,197 +1194,16 @@ public class ContentResource {
         processMap(contentlet, map);
     }
 
-    protected void processMap(Contentlet contentlet, Map<String, Object> map)
+    protected void processMap(final Contentlet contentlet, final Map<String, Object> map)
             throws DotDataException, DotSecurityException {
-        String stInode = (String) map.get(Contentlet.STRUCTURE_INODE_KEY);
-        if (!UtilMethods.isSet(stInode)) {
-            String stName = (String) map.get(Contentlet.STRUCTURE_NAME_KEY);
-            if (UtilMethods.isSet(stName)) {
-                stInode = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(stName)
-                        .getInode();
-            } else {
-                String contentType = (String) map.get(Contentlet.CONTENT_TYPE_KEY);
-                if (UtilMethods.isSet(contentType)) {
-                    stInode = CacheLocator.getContentTypeCache()
-                            .getStructureByVelocityVarName(contentType).getInode();
-                }
-            }
-        }
-        if (UtilMethods.isSet(stInode)) {
-            ContentType type = APILocator.getContentTypeAPI(APILocator.systemUser()).find(stInode);
-            if (type != null && InodeUtils.isSet(type.inode())) {
-                // basic data
-                contentlet.setContentTypeId(type.inode());
-                if (map.containsKey("languageId")) {
-                    contentlet.setLanguageId(Long.parseLong((String) map.get("languageId")));
-                } else {
-                    contentlet.setLanguageId(
-                            APILocator.getLanguageAPI().getDefaultLanguage().getId());
-                }
 
-                // check for existing identifier
-                if (map.containsKey("identifier")) {
-                    contentlet.setIdentifier(String.valueOf(map.get("identifier")));
-                    try {
-                        Contentlet existing = APILocator.getContentletAPI()
-                                .findContentletByIdentifier((String) map.get("identifier"), false,
-                                        contentlet.getLanguageId(),
-                                        APILocator.getUserAPI().getSystemUser(), false);
-                        APILocator.getContentletAPI().copyProperties(contentlet, existing.getMap());
-                        contentlet.setInode("");
-                    } catch (Exception e) {
-                        Logger.debug(this.getClass(),
-                                "can't get existing content for ident " + map.get("identifier")
-                                        + " lang " + contentlet.getLanguageId()
-                                        + " - creating new one");
-                    }
-                }
-
-                // build a field map for easy lookup
-                Map<String, Field> fieldMap = new HashMap<String, Field>();
-                for (Field ff : new LegacyFieldTransformer(type.fields()).asOldFieldList()) {
-                    fieldMap.put(ff.getVelocityVarName(), ff);
-                }
-
-                // look for relationships
-                Map<Relationship, List<Contentlet>> relationships = null;
-                for (Relationship rel : FactoryLocator.getRelationshipFactory()
-                        .byContentType(type)) {
-                    String relname = rel.getRelationTypeValue();
-                    String query = (String) map.get(relname);
-                    if (UtilMethods.isSet(query)) {
-                        try {
-                            List<Contentlet> cons = APILocator.getContentletAPI().search(
-                                    query, 0, 0, null, APILocator.getUserAPI().getSystemUser(),
-                                    false);
-                            if (cons.size() > 0) {
-                                if(relationships==null) {
-                                    relationships = new HashMap<>();
-                                }
-                                relationships.put(rel, cons);
-                            }
-                            Logger.info(this, "got " + cons.size() + " related contents");
-                        } catch (Exception e) {
-                            Logger.warn(this, e.getMessage(), e);
-                        }
-                    }
-                }
-                contentlet.setProperty(RELATIONSHIP_KEY, relationships);
-
-                // fill fields
-                for (Map.Entry<String, Object> entry : map.entrySet()) {
-                    String key = entry.getKey();
-                    Object value = entry.getValue();
-                    Field ff = fieldMap.get(key);
-                    if (ff != null) {
-                        if (ff.getFieldType().equals(FieldType.HOST_OR_FOLDER.toString())) {
-                            // it can be hostId, folderId, hostname, hostname:/folder/path
-                            try {
-                                User sysuser = APILocator.getUserAPI().getSystemUser();
-                                Host hh = APILocator.getHostAPI()
-                                        .find(value.toString(), sysuser, false);
-                                if (hh != null && InodeUtils.isSet(hh.getIdentifier())) {
-                                    contentlet.setHost(hh.getIdentifier());
-                                } else {
-                                    Folder folder = null;
-                                    try {
-                                        folder = APILocator.getFolderAPI()
-                                                .find(value.toString(), sysuser, false);
-                                    } catch (Exception ex) {
-                                    }
-                                    if (folder != null && InodeUtils.isSet(folder.getInode())) {
-                                        contentlet.setFolder(folder.getInode());
-                                        contentlet.setHost(folder.getHostId());
-                                    } else {
-                                        if (value.toString().contains(":")) {
-                                            String[] split = value.toString().split(":");
-                                            hh = APILocator.getHostAPI()
-                                                    .findByName(split[0], sysuser, false);
-                                            if (hh != null && InodeUtils
-                                                    .isSet(hh.getIdentifier())) {
-                                                folder = APILocator.getFolderAPI()
-                                                        .findFolderByPath(split[1], hh, sysuser,
-                                                                false);
-                                                if (folder != null && InodeUtils
-                                                        .isSet(folder.getInode())) {
-                                                    contentlet.setHost(hh.getIdentifier());
-                                                    contentlet.setFolder(folder.getInode());
-                                                    if (BaseContentType.FILEASSET
-                                                            .equals(type.baseType())) {
-                                                        StringBuilder fileUri = new StringBuilder();
-                                                        fileUri.append(
-                                                                split[1].endsWith("/") ? split[1]
-                                                                        : split[1] + "/");
-                                                        fileUri.append(
-                                                                contentlet.getMap().get("fileName")
-                                                                        .toString());
-                                                        Identifier existingIdent = APILocator
-                                                                .getIdentifierAPI()
-                                                                .find(hh, fileUri.toString());
-                                                        if (existingIdent != null && UtilMethods
-                                                                .isSet(existingIdent.getId())
-                                                                && UtilMethods.isSet(contentlet
-                                                                .getIdentifier())) {
-                                                            contentlet.setIdentifier(
-                                                                    existingIdent.getId());
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        } else {
-                                            hh = APILocator.getHostAPI()
-                                                    .findByName(value.toString(), sysuser, false);
-                                            if (hh != null && InodeUtils
-                                                    .isSet(hh.getIdentifier())) {
-                                                contentlet.setHost(hh.getIdentifier());
-                                            }
-                                        }
-                                    }
-                                }
-                            } catch (Exception ex) {
-                                // just pass
-                            }
-                        } else if (ff.getFieldType().equals(FieldType.CATEGORY.toString())) {
-                            contentlet.setStringProperty(ff.getVelocityVarName(), value.toString());
-                        } else if ((ff.getFieldType().equals(FieldType.FILE.toString()) || ff
-                                .getFieldType().equals(FieldType.IMAGE.toString())) &&
-                                value.toString().startsWith("//")) {
-                            boolean found = false;
-                            try {
-                                String str = value.toString().substring(2);
-                                String hostname = str.substring(0, str.indexOf('/'));
-                                String uri = str.substring(str.indexOf('/'));
-                                Host host = APILocator.getHostAPI().findByName(hostname,
-                                        APILocator.getUserAPI().getSystemUser(), false);
-                                if (host != null && InodeUtils.isSet(host.getIdentifier())) {
-                                    Identifier ident = APILocator.getIdentifierAPI()
-                                            .find(host, uri);
-                                    if (ident != null && InodeUtils.isSet(ident.getId())) {
-                                        contentlet.setStringProperty(ff.getVelocityVarName(),
-                                                ident.getId());
-                                        found = true;
-                                    }
-                                }
-                                if (!found) {
-                                    throw new Exception("asset " + value + " not found");
-                                }
-
-                            } catch (Exception ex) {
-                                throw new RuntimeException(ex);
-                            }
-                        } else {
-                            APILocator.getContentletAPI()
-                                    .setContentletProperty(contentlet, ff, value);
-                        }
-                    }
-                }
-            }
-        }
+        this.contentHelper.populateContentletFromMap(contentlet, map);
     }
 
     @SuppressWarnings("unchecked")
-    protected void processJSON(Contentlet contentlet, InputStream input)
+    protected void processJSON(final Contentlet contentlet, final InputStream input)
             throws JSONException, IOException, DotDataException, DotSecurityException {
+
         processMap(contentlet, webResource.processJSON(input));
     }
 

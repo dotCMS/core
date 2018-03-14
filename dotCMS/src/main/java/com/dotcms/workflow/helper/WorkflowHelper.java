@@ -11,11 +11,9 @@ import com.dotcms.rest.api.v1.workflow.WorkflowDefaultActionView;
 import com.dotcms.workflow.form.WorkflowActionForm;
 import com.dotcms.workflow.form.WorkflowActionStepBean;
 import com.dotcms.workflow.form.WorkflowReorderBean;
+import com.dotcms.workflow.form.WorkflowSchemeForm;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -30,6 +28,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
@@ -65,7 +64,7 @@ public class WorkflowHelper {
 
 
     @VisibleForTesting
-    protected WorkflowHelper(final WorkflowAPI workflowAPI,
+    public WorkflowHelper(final WorkflowAPI workflowAPI,
                              final RoleAPI     roleAPI,
                              final ContentletAPI contentletAPI) {
 
@@ -157,10 +156,12 @@ public class WorkflowHelper {
      * Reorder the action associated to the scheme.
      * @param stepId  String step id
      * @param order   int    order for the step
+     * @param user   User    user that wants the reorder
      */
     @WrapInTransaction
     public void reorderStep(final String stepId,
-                            final int order)  {
+                            final int order,
+                            final User user)  {
 
         final WorkflowStep       step;
 
@@ -171,7 +172,7 @@ public class WorkflowHelper {
 
             Logger.debug(this, "Reordering the stepId: "  + stepId +
                             ", order: " + order);
-            this.workflowAPI.reorderStep(step, order);
+            this.workflowAPI.reorderStep(step, order, user);
         } catch (DotDataException | AlreadyExistException e) {
 
             Logger.error(this, e.getMessage());
@@ -205,7 +206,7 @@ public class WorkflowHelper {
             try {
 
                 Logger.debug(this, "deleting step: " + stepId);
-                this.workflowAPI.deleteStep(workflowStep);
+                this.workflowAPI.deleteStep(workflowStep, APILocator.systemUser());
             } catch (DotDataException e) {
                 Logger.error(this, e.getMessage());
                 Logger.debug(this, e.getMessage(), e);
@@ -245,7 +246,7 @@ public class WorkflowHelper {
             try {
 
                 Logger.debug(this, "Deleting the action: " + actionId);
-                this.workflowAPI.deleteAction(action);
+                this.workflowAPI.deleteAction(action, user);
             } catch (DotDataException | AlreadyExistException e) {
 
                 Logger.error(this, e.getMessage());
@@ -294,7 +295,7 @@ public class WorkflowHelper {
             Logger.debug(this, "Deleting the action: " + actionId
                     + " for the stepId: " + stepId);
 
-            this.workflowAPI.deleteAction(action, step);
+            this.workflowAPI.deleteAction(action, step, user);
         } catch (DotDataException | DotSecurityException | AlreadyExistException e) {
 
             Logger.error(this, e.getMessage());
@@ -560,7 +561,7 @@ public class WorkflowHelper {
         newAction.setNextStep   (workflowActionForm.getActionNextStep());
         newAction.setSchemeId   (workflowActionForm.getSchemeId());
         newAction.setCondition  (workflowActionForm.getActionCondition());
-        newAction.setRequiresCheckout(workflowActionForm.isRequiresCheckout());
+        newAction.setRequiresCheckout(false);
         newAction.setShowOn((null != workflowActionForm.getShowOn() && !workflowActionForm.getShowOn().isEmpty())?
                 workflowActionForm.getShowOn():WorkflowAPI.DEFAULT_SHOW_ON);
         newAction.setRoleHierarchyForAssign(workflowActionForm.isRoleHierarchyForAssign());
@@ -583,7 +584,7 @@ public class WorkflowHelper {
             }
 
             Logger.debug(this, "Saving new Action: " + newAction.getName());
-            this.workflowAPI.saveAction(newAction, permissions);
+            this.workflowAPI.saveAction(newAction, permissions,user);
 
             if(isNew) {
 
@@ -606,7 +607,7 @@ public class WorkflowHelper {
                     try {
                         workflowActionClass.setName(NotifyAssigneeActionlet.class.newInstance().getName());
                         workflowActionClass.setOrder(0);
-                        this.workflowAPI.saveActionClass(workflowActionClass);
+                        this.workflowAPI.saveActionClass(workflowActionClass, user);
                     } catch (Exception e) {
                         Logger.error(this.getClass(), e.getMessage());
                         Logger.debug(this, e.getMessage(), e);
@@ -782,6 +783,28 @@ public class WorkflowHelper {
 
         return results.build();
     } // findInitialAvailableActionsByContentType.
+
+
+    public WorkflowScheme saveOrUpdate(final String schemeId, final WorkflowSchemeForm workflowSchemeForm, final User user) throws AlreadyExistException, DotDataException, DotSecurityException {
+
+        final WorkflowScheme newScheme = new WorkflowScheme();
+        if (StringUtils.isSet(schemeId)) {
+            try {
+                final WorkflowScheme origScheme = this.workflowAPI.findScheme(schemeId);
+                BeanUtils.copyProperties(newScheme, origScheme);
+            } catch (Exception e) {
+                Logger.debug(this.getClass(), "Unable to find scheme" + schemeId);
+                throw new DoesNotExistException(e.getMessage(), e);
+            }
+        }
+
+        newScheme.setArchived(workflowSchemeForm.isSchemeArchived());
+        newScheme.setDescription(workflowSchemeForm.getSchemeDescription());
+        newScheme.setName(workflowSchemeForm.getSchemeName());
+
+        this.workflowAPI.saveScheme(newScheme, user);
+        return newScheme;
+    }
 
 
 } // E:O:F:WorkflowHelper.

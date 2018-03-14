@@ -13,17 +13,8 @@ import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
-import com.dotmarketing.portlets.workflows.model.WorkflowComment;
-import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
-import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
-import com.dotmarketing.portlets.workflows.model.WorkflowStatus;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
-import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.workflows.model.*;
+import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.liferay.portal.model.User;
 import java.util.EnumSet;
 import java.util.List;
@@ -32,8 +23,8 @@ import java.util.Set;
 
 public interface WorkflowAPI {
 
-	public static final String SYSTEM_WORKFLOW_ID           = "d61a59e1-a49c-46f2-a929-db2b4bfa88b2";
-	public static final Set<WorkflowStatus> DEFAULT_SHOW_ON = EnumSet.of(WorkflowStatus.LOCKED, WorkflowStatus.UNLOCKED);
+	public static final String SYSTEM_WORKFLOW_ID           = WorkFlowFactory.SYSTEM_WORKFLOW_ID;
+	public static final Set<WorkflowState> DEFAULT_SHOW_ON = EnumSet.of(WorkflowState.LOCKED, WorkflowState.UNLOCKED);
 
     public void registerBundleService ();
 
@@ -102,6 +93,7 @@ public interface WorkflowAPI {
 	 * deletes a specific comment on a workflow item
 	 *
 	 * @param comment
+	 * @param user
 	 * @throws DotDataException
 	 */
 	public void deleteComment(WorkflowComment comment) throws DotDataException;
@@ -119,6 +111,7 @@ public interface WorkflowAPI {
 	 * Saves a new history item for a workflow
 	 *
 	 * @param history
+	 * @param user
 	 * @throws DotDataException
 	 */
 	public void saveWorkflowHistory(WorkflowHistory history) throws DotDataException;
@@ -127,6 +120,7 @@ public interface WorkflowAPI {
 	 * deletes a history item from a workflow
 	 *
 	 * @param history
+	 * @param user
 	 * @throws DotDataException
 	 */
 	public void deleteWorkflowHistory(WorkflowHistory history) throws DotDataException;
@@ -162,9 +156,10 @@ public interface WorkflowAPI {
 	/**
 	 *
 	 * @param task
+	 * @param user
 	 * @throws DotDataException
 	 */
-	public void deleteWorkflowTask(WorkflowTask task) throws DotDataException;
+	public void deleteWorkflowTask(WorkflowTask task, User user) throws DotDataException;
 
 	/**
 	 *
@@ -192,19 +187,15 @@ public interface WorkflowAPI {
 	 */
 	public List<WorkflowScheme> findSchemesForContentType(ContentType contentType) throws DotDataException;
 
-	public void saveScheme(WorkflowScheme scheme) throws DotDataException, AlreadyExistException;
+	public void saveScheme(WorkflowScheme scheme, User user) throws DotDataException, AlreadyExistException;
 
-	public void deleteScheme(WorkflowScheme scheme) throws DotDataException;
-
-	public void activateScheme(WorkflowScheme scheme) throws DotDataException;
-
-	public void deactivateScheme(WorkflowScheme scheme) throws DotDataException;
+	public void deleteScheme(WorkflowScheme scheme, User user) throws DotDataException;
 
 	public List<WorkflowStep> findSteps(WorkflowScheme scheme) throws DotDataException;
 
-	public void saveStep(WorkflowStep step) throws DotDataException, AlreadyExistException;
+	public void saveStep(WorkflowStep step, User user) throws DotDataException, AlreadyExistException;
 
-	public void deleteStep(WorkflowStep step) throws DotDataException;
+	public void deleteStep(WorkflowStep step, User user) throws DotDataException;
 
 	/**
 	 * This method makes the reorder for the step, reordering the rest of the steps too.
@@ -213,7 +204,7 @@ public interface WorkflowAPI {
 	 * @throws DotDataException
 	 * @throws AlreadyExistException
 	 */
-	public void reorderStep(WorkflowStep step, int order) throws DotDataException, AlreadyExistException;
+	public void reorderStep(WorkflowStep step, int order, User user) throws DotDataException, AlreadyExistException;
 
 	/**
 	 * This is a legacy method for reorder
@@ -379,7 +370,8 @@ public interface WorkflowAPI {
 	 * @throws DotDataException
 	 * @throws AlreadyExistException
 	 */
-	public void saveAction(WorkflowAction action, List<Permission> perms) throws DotDataException, AlreadyExistException;
+	public void saveAction(WorkflowAction action, List<Permission> perms,
+						   final User user) throws DotDataException, AlreadyExistException;
 
 	/**
 	 * Save (associated) the action into the step
@@ -406,27 +398,29 @@ public interface WorkflowAPI {
 	/**
 	 * Deletes the action associated to the scheme
 	 * @param action WorkflowAction
+	 * @param user   User
 	 * @throws DotDataException
 	 * @throws AlreadyExistException
 	 */
-	public void deleteAction(WorkflowAction action) throws DotDataException, AlreadyExistException;
+	public void deleteAction(WorkflowAction action, User user) throws DotDataException, AlreadyExistException;
 
 	/**
 	 * Deletes the action reference to the step, but the action associated to the scheme will continue alive.
 	 * @param action WorkflowAction action to delete
 	 * @param step   WorkflowStep   from the step to delete the action
+	 * @param user   User
 	 */
-	void deleteAction(WorkflowAction action, WorkflowStep step) throws DotDataException, AlreadyExistException;
+	void deleteAction(WorkflowAction action, WorkflowStep step, User user) throws DotDataException, AlreadyExistException;
 
 	public List<WorkflowActionClass> findActionClasses(WorkflowAction action) throws DotDataException;
 
 	public WorkflowActionClass findActionClass(String id) throws DotDataException;
 
-	public void deleteActionClass(WorkflowActionClass actionClass) throws DotDataException, AlreadyExistException;
+	public void deleteActionClass(WorkflowActionClass actionClass, User user) throws DotDataException, AlreadyExistException;
 
-	public void saveActionClass(WorkflowActionClass actionClass) throws DotDataException, AlreadyExistException;
+	public void saveActionClass(WorkflowActionClass actionClass, User user) throws DotDataException, AlreadyExistException;
 
-	public void reorderActionClass(WorkflowActionClass actionClass, int order) throws DotDataException, AlreadyExistException;
+	public void reorderActionClass(WorkflowActionClass actionClass, int order, User user) throws DotDataException, AlreadyExistException;
 
 	public Map<String, WorkflowActionClassParameter> findParamsForActionClass(WorkflowActionClass actionClass) throws DotDataException;
 
@@ -434,7 +428,7 @@ public interface WorkflowAPI {
 
 	public WorkFlowActionlet findActionlet(String clazz) throws DotDataException;
 
-	public void saveWorkflowActionClassParameters(List<WorkflowActionClassParameter> params) throws DotDataException;
+	public void saveWorkflowActionClassParameters(List<WorkflowActionClassParameter> params, User user) throws DotDataException;
 
 
 	/***

@@ -18,9 +18,11 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
@@ -33,15 +35,19 @@ import javax.servlet.http.HttpServletRequest;
  * This method takes a contentlet and fires a workflow action on it. It requires
  * the parameters (id | inode) and action optionally, you can pass a language,
  * assign (roleId of the next assignee), and comments
- * 
+ *
+ * @See com.dotcms.rest.api.v1.workflow.WorkflowResource
+ * @Deprecated
  * @author will
  *
  */
+@Deprecated
 @Path("/workflow")
 public class WorkflowResource {
 
     private final WebResource webResource = new WebResource();
 
+    @Deprecated
     @PUT
 	@Path("/fire/{params:.*}")
 	@Produces(MediaType.APPLICATION_JSON)
@@ -160,31 +166,23 @@ public class WorkflowResource {
 		}
 
 		try {
-			if (action.requiresCheckout()) {
 
-				Contentlet c = APILocator.getContentletAPI().checkout(contentlet.getInode(), user, false);
+			contentlet.setStringProperty("wfActionId", action.getId());
+			contentlet.setStringProperty("wfActionComments", wfComments);
+			contentlet.setStringProperty("wfActionAssign", wfAssign);
+			contentlet.setStringProperty("wfPublishDate", wfPublishDate);
+			contentlet.setStringProperty("wfPublishTime", wfPublishTime);
+			contentlet.setStringProperty("wfExpireDate", wfExpireDate);
+			contentlet.setStringProperty("wfExpireTime", wfExpireTime);
+			contentlet.setStringProperty("wfNeverExpire", wfNeverExpire);
+			contentlet.setStringProperty("whereToSend", whereToSend);
+			contentlet.setStringProperty("forcePush", forcePush);
+			contentlet = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet,
+					new ContentletDependencies.Builder()
+							.respectAnonymousPermissions(PageMode.get(request).respectAnonPerms)
+							.modUser(user).build());
 
-				c.setStringProperty("wfActionId", action.getId());
-				c.setStringProperty("wfActionComments", wfComments);
-				c.setStringProperty("wfActionAssign", wfAssign);
 
-				contentlet = APILocator.getContentletAPI().checkin(c, user, false);
-			} else {
-				contentlet.setStringProperty("wfActionId", action.getId());
-				contentlet.setStringProperty("wfActionComments", wfComments);
-				contentlet.setStringProperty("wfActionAssign", wfAssign);
-                /**
-                 * Push Publishing Actionlet
-                 */
-                contentlet.setStringProperty("wfPublishDate", wfPublishDate);
-                contentlet.setStringProperty("wfPublishTime", wfPublishTime);
-                contentlet.setStringProperty("wfExpireDate", wfExpireDate);
-                contentlet.setStringProperty("wfExpireTime", wfExpireTime);
-                contentlet.setStringProperty("wfNeverExpire", wfNeverExpire);
-                contentlet.setStringProperty("whereToSend", whereToSend);
-                contentlet.setStringProperty("forcePush", forcePush);
-				wapi.fireWorkflowNoCheckin(contentlet, user);
-			}
 			if (UtilMethods.isSet(callback)) {
 				jsonResponse.put("callback", callback);
 			}

@@ -14,13 +14,16 @@ import com.dotcms.repackage.com.ibm.icu.text.SimpleDateFormat;
 
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -35,6 +38,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.velocity.context.Context;
 
@@ -52,6 +56,7 @@ public class PageContextBuilder {
     List<Tag> pageFoundTags;
 
     final static String WIDGET_PRE_EXECUTE = "WIDGET_PRE_EXECUTE";
+
     public PageContextBuilder(IHTMLPage htmlPage, User user, PageMode mode, Date timeMachine)
             throws DotSecurityException, DotDataException {
         super();
@@ -71,14 +76,7 @@ public class PageContextBuilder {
     }
 
     private void populateContext() throws DotDataException, DotSecurityException {
-
-
-            ctxMap.put(mode.name(), Boolean.TRUE);
-        
-        
-        
-        
-        
+        ctxMap.put(mode.name(), Boolean.TRUE);
         
         // set the page cache var
         if (htmlPage.getCacheTTL() > 0 && LicenseUtil.getLevel() >= LicenseLevel.COMMUNITY.level) {
@@ -87,10 +85,6 @@ public class PageContextBuilder {
         }
 
         String templateId = htmlPage.getTemplateId();
-        Template template = (mode.showLive) ? (Template) APILocator.getVersionableAPI()
-            .findLiveVersion(templateId, user, false)
-                : (Template) APILocator.getVersionableAPI()
-                    .findWorkingVersion(templateId, user, false);
 
         Identifier pageIdent = APILocator.getIdentifierAPI()
             .find(htmlPage.getIdentifier());
@@ -102,19 +96,23 @@ public class PageContextBuilder {
             pageChannel = st.nextToken();
         }
 
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+        final Template template = (mode.showLive) ?
+                (Template) APILocator.getVersionableAPI().findLiveVersion(templateId, systemUser, false)
+                : (Template) APILocator.getVersionableAPI().findWorkingVersion(templateId, systemUser, false);
+
         // to check user has permission to write on this page
         List<PublishingEndPoint> receivingEndpoints = APILocator.getPublisherEndPointAPI()
             .getReceivingEndPoints();
-        boolean hasAddChildrenPermOverHTMLPage =
+        final boolean hasAddChildrenPermOverHTMLPage =
                 permissionAPI.doesUserHavePermission(htmlPage, PERMISSION_CAN_ADD_CHILDREN, user);
-        boolean hasWritePermOverHTMLPage = permissionAPI.doesUserHavePermission(htmlPage, PERMISSION_WRITE, user);
-        boolean hasPublishPermOverHTMLPage = permissionAPI.doesUserHavePermission(htmlPage, PERMISSION_PUBLISH, user);
-        boolean hasRemotePublishPermOverHTMLPage =
+        final boolean hasWritePermOverHTMLPage = permissionAPI.doesUserHavePermission(htmlPage, PERMISSION_WRITE, user);
+        final boolean hasPublishPermOverHTMLPage = permissionAPI.doesUserHavePermission(htmlPage, PERMISSION_PUBLISH, user);
+        final boolean hasRemotePublishPermOverHTMLPage =
                 hasPublishPermOverHTMLPage && LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level;
-        boolean hasEndPoints = UtilMethods.isSet(receivingEndpoints) && !receivingEndpoints.isEmpty();
-        boolean canUserWriteOnTemplate =
-                permissionAPI.doesUserHavePermission(template, PERMISSION_WRITE, user) && APILocator.getPortletAPI()
-                    .hasTemplateManagerRights(user);
+        final boolean hasEndPoints = UtilMethods.isSet(receivingEndpoints) && !receivingEndpoints.isEmpty();
+        final boolean canUserWriteOnTemplate = permissionAPI.doesUserHavePermission(template, PERMISSION_WRITE, user) && APILocator.getPortletAPI()
+                .hasTemplateManagerRights(user);
 
         ctxMap.put("dotPageMode", mode.name());
 
@@ -138,7 +136,7 @@ public class PageContextBuilder {
         ctxMap.put("HTMLPAGE_IDENTIFIER", htmlPage.getIdentifier());
         ctxMap.put("HTMLPAGE_FRIENDLY_NAME", UtilMethods.espaceForVelocity(htmlPage.getFriendlyName()));
         ctxMap.put("HTMLPAGE_TITLE", UtilMethods.espaceForVelocity(htmlPage.getTitle()));
-        ctxMap.put("TEMPLATE_INODE", template.getIdentifier());
+        ctxMap.put("TEMPLATE_INODE", templateId);
         ctxMap.put("HTMLPAGE_META", UtilMethods.espaceForVelocity(htmlPage.getMetadata()));
         ctxMap.put("HTMLPAGE_DESCRIPTION", UtilMethods.espaceForVelocity(htmlPage.getSeoDescription()));
         ctxMap.put("HTMLPAGE_KEYWORDS", UtilMethods.espaceForVelocity(htmlPage.getSeoKeywords()));
@@ -155,7 +153,6 @@ public class PageContextBuilder {
     }
 
 
-
     private void populateContainers() throws DotDataException, DotSecurityException {
         Table<String, String, Set<String>> pageContents = APILocator.getMultiTreeAPI().getPageMultiTrees(htmlPage, mode.showLive);
 
@@ -165,12 +162,14 @@ public class PageContextBuilder {
             for (final String containerId : pageContents.rowKeySet()) {
                 for (final String uniqueId : pageContents.row(containerId)
                     .keySet()) {
-                    Set<String> cons = pageContents.get(containerId, uniqueId);
+                    final Set<String> cons = pageContents.get(containerId, uniqueId);
 
-                    Container c = (mode.showLive) ? (Container) APILocator.getVersionableAPI()
-                        .findLiveVersion(containerId, user, false)
+                    final User systemUser = APILocator.getUserAPI().getSystemUser();
+                    final Container c = (mode.showLive) ? (Container) APILocator.getVersionableAPI()
+                            .findLiveVersion(containerId, systemUser, false)
                             : (Container) APILocator.getVersionableAPI()
-                                .findWorkingVersion(containerId, user, false);
+                            .findWorkingVersion(containerId, systemUser, false);
+
 
                     boolean hasWritePermissionOnContainer =
                             permissionAPI.doesUserHavePermission(c, PERMISSION_WRITE, user, false) && APILocator.getPortletAPI()
@@ -196,9 +195,8 @@ public class PageContextBuilder {
                     ctxMap.put("ADD_CONTENT_PERMISSION" + c.getIdentifier(), new Boolean(hasWritePermOverTheStructure));
 
                     List<Contentlet> contentlets = APILocator.getContentletAPI()
-                        .findContentletsByIdentifiers(cons.stream()
-                            .toArray(String[]::new), mode.showLive, -1, user, false);
-
+                            .findContentletsByIdentifiers(cons.stream()
+                                    .toArray(String[]::new), mode.showLive, -1, systemUser, false);
                     // get contentlets only for main frame
 
                     if (contentlets != null) {
@@ -249,8 +247,6 @@ public class PageContextBuilder {
             }
         }
     }
-
-
 
     public List<Tag> getPageFoundTags() {
         return pageFoundTags;

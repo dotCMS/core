@@ -587,7 +587,6 @@ public class ESIndexAPI {
 		}
 		Map map = new ObjectMapper().readValue(settings, LinkedHashMap.class);
 		map.put("number_of_shards", shards);
-		map.put("number_of_replicas", Config.getIntProperty("es.index.number_of_replicas", 0));
 
 		if (ClusterUtils.isESAutoWireReplicas()){
 			int serverCount;
@@ -671,7 +670,7 @@ public class ESIndexAPI {
             .startObject("analysis")
              .startObject("analyzer")
               .startObject("default")
-               .field("type", "Whitespace")
+               .field("type", "whitespace")
               .endObject()
              .endObject()
             .endObject()
@@ -929,6 +928,9 @@ public class ESIndexAPI {
 	private boolean restoreSnapshot(String repositoryName, String snapshotName)
 			throws InterruptedException, ExecutionException {
 		Client client = esclient.getClient();
+		if (!isSnapshotExist(repositoryName, snapshotName) && ESIndexAPI.BACKUP_REPOSITORY.equals(repositoryName)) {
+			snapshotName = BACKUP_REPOSITORY; //When restoring a snapshot created straight from a live index, the snapshotName is also: backup
+		}
 		if (isRepositoryExist(repositoryName) && isSnapshotExist(repositoryName, snapshotName)) {
 			GetSnapshotsRequest getSnapshotsRequest = new GetSnapshotsRequest(repositoryName);
 			GetSnapshotsResponse getSnapshotsResponse = client.admin().cluster().getSnapshots(getSnapshotsRequest).get();

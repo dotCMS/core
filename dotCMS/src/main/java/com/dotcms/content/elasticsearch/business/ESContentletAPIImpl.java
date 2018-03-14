@@ -21,7 +21,6 @@ import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.com.google.common.collect.Sets;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import com.dotcms.repackage.org.jboss.util.Strings;
 import com.dotcms.services.VanityUrlServices;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
 import com.dotcms.util.CollectionsUtils;
@@ -122,6 +121,7 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import com.liferay.util.StringPool;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
 import java.io.BufferedOutputStream;
@@ -3145,7 +3145,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                             String velocityVarNm = field.getVelocityVarName();
                             File incomingFile = contentletRaw.getBinary(velocityVarNm);
-                            if(incomingFile!=null && incomingFile.length()==0 && !Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false)){
+                            if(validateEmptyFile && incomingFile!=null && incomingFile.length()==0 && !Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false)){
                                throw new DotContentletStateException("Cannot checkin 0 length file: " + incomingFile );
                             }
                             File binaryFieldFolder = new File(newDir.getAbsolutePath() + File.separator + velocityVarNm);
@@ -5020,10 +5020,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotContentletStateException
      *             The contentlet object could not be saved.
      */
+    @WrapInTransaction
     @Override
     public Contentlet copyContentlet(Contentlet contentletToCopy, Host host, Folder folder, User user, final String copySuffix, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
         Contentlet resultContentlet = new Contentlet();
-        String newIdentifier = Strings.EMPTY;
+        String newIdentifier = StringPool.BLANK;
         ArrayList<Contentlet> versionsToCopy = new ArrayList<Contentlet>();
         List<Contentlet> versionsToMarkWorking = new ArrayList<Contentlet>();
         Map<String, Map<String, Contentlet>> contentletsToCopyRules = Maps.newHashMap();
@@ -5061,8 +5062,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if(contentlet.isWorking())
                 isContentletWorking = true;
 
-            newContentlet.setInode(Strings.EMPTY);
-            newContentlet.setIdentifier(Strings.EMPTY);
+            newContentlet.setInode(StringPool.BLANK);
+            newContentlet.setIdentifier(StringPool.BLANK);
             newContentlet.setHost(host != null?host.getIdentifier(): (folder!=null? folder.getHostId() : contentlet.getHost()));
             newContentlet.setFolder(folder != null?folder.getInode(): null);
             newContentlet.setLowIndexPriority(contentlet.isLowIndexPriority());
@@ -5200,6 +5201,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
             APILocator.getVersionableAPI().setWorking(con);
         }
 
+        if (contentletToCopy.isHTMLPage()) {
+            // If the content is an HTML Page then copy page associated contentlets
+            final List<MultiTree> pageContents = MultiTreeFactory
+                    .getMultiTrees(contentletToCopy.getIdentifier());
+            for (final MultiTree multitree : pageContents) {
+                MultiTree newMultitree = new MultiTree(resultContentlet.getIdentifier(),
+                        multitree.getContainer(),
+                        multitree.getContentlet());
+                MultiTreeFactory.saveMultiTree(newMultitree);
+            }
+        }
+
         // copy the workflow state
         WorkflowTask task = APILocator.getWorkflowAPI().findTaskByContentlet(contentletToCopy);
         if(task!=null) {
@@ -5271,7 +5284,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public Contentlet copyContentlet(Contentlet contentlet, Folder folder, User user, boolean appendCopyToFileName, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
         // Suffix that we need to apply to append in content name
-        final String copySuffix = appendCopyToFileName ? "_copy" : Strings.EMPTY;
+        final String copySuffix = appendCopyToFileName ? "_copy" : StringPool.BLANK;
 
         return copyContentlet(contentlet, null, folder, user, copySuffix, respectFrontendRoles);
     }
@@ -5299,11 +5312,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotSecurityException
      */
     private String generateCopySuffix(Contentlet contentlet, Host host, Folder folder) throws DotDataException, DotStateException, DotSecurityException {
-        String assetNameSuffix = Strings.EMPTY;
+        String assetNameSuffix = StringPool.BLANK;
 
         // if different host we really don't need to
-        if(((host != null && contentlet.getHost() != null) && !contentlet.getHost().equalsIgnoreCase(host.getIdentifier())) ||
-                ((folder != null && contentlet.getHost() != null) && !folder.getHostId().equalsIgnoreCase(contentlet.getHost()))) {
+        if ((!contentlet.isFileAsset() && !contentlet.isHTMLPage()) && (
+                ((host != null && contentlet.getHost() != null) && !contentlet.getHost()
+                        .equalsIgnoreCase(host.getIdentifier()))
+                        || (folder != null && contentlet.getHost() != null) && !folder.getHostId()
+                        .equalsIgnoreCase(contentlet.getHost()))){
             return assetNameSuffix;
         }
 
@@ -5353,19 +5369,25 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         // Create new asset name
         final String contentletIdAssetName = contentletId.getAssetName();
-        final String fileExtension = contentlet.hasAssetNameExtension() ? "." + UtilMethods.getFileExtension(contentletIdAssetName).trim() : Strings.EMPTY;
+        final String fileExtension = contentlet.hasAssetNameExtension() ? "." + UtilMethods.getFileExtension(contentletIdAssetName).trim() : StringPool.BLANK;
         final String futureAssetNameWithSuffix = UtilMethods.getFileName(contentletIdAssetName) + assetNameSuffix + fileExtension;
 
         // Check if page url already exist
         Identifier identifierWithSameUrl = null;
-        if(UtilMethods.isSet(destinationHost) && InodeUtils.isSet(destinationHost.getInode())) { // Hosts
-            identifierWithSameUrl = APILocator.getIdentifierAPI().find(destinationHost, "/" + futureAssetNameWithSuffix);
-        } else if(UtilMethods.isSet(destinationFolder) && InodeUtils.isSet(destinationFolder.getInode())) { // Folders
+        if(UtilMethods.isSet(destinationFolder) && InodeUtils.isSet(destinationFolder.getInode())) { // Folders
             // Create new path
             Identifier folderId = APILocator.getIdentifierAPI().find(destinationFolder);
             final String path = (destinationFolder.getInode().equals(FolderAPI.SYSTEM_FOLDER) ? "/" : folderId.getPath()) + futureAssetNameWithSuffix;
 
-            identifierWithSameUrl = APILocator.getIdentifierAPI().find(APILocator.getHostAPI().find(destinationFolder.getHostId(), APILocator.getUserAPI().getSystemUser(), false), path);
+            final Host host =
+                    destinationFolder.getInode().equals(FolderAPI.SYSTEM_FOLDER) ? destinationHost
+                            : APILocator.getHostAPI()
+                                    .find(destinationFolder.getHostId(),
+                                            APILocator.getUserAPI().getSystemUser(), false);
+            identifierWithSameUrl = APILocator.getIdentifierAPI().find(host, path);
+        } else if(UtilMethods.isSet(destinationHost) && InodeUtils.isSet(destinationHost.getInode())) { // Hosts
+            identifierWithSameUrl = APILocator.getIdentifierAPI()
+                    .find(destinationHost, "/" + futureAssetNameWithSuffix);
         } else {
             // Host or folder object MUST be define
             Logger.error(this, "Host or folder destination are invalid, please check that one of those values are set propertly.");

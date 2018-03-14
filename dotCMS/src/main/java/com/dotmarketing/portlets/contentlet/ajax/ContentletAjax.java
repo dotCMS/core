@@ -4,6 +4,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import java.io.File;
 import java.io.IOException;
@@ -705,10 +706,6 @@ public class ContentletAjax {
 							}
 						}
 						else if( fieldbcontentname.startsWith("date") ){
-							try{
-								// date formatting from short date (dd/MM/yyyy) to Lucene date format
-								fieldValue = UtilMethods.shortDateToLuceneDate(fieldValue);
-							}catch(Exception e){}
 							luceneQuery.append("+" + st.getVelocityVarName() +"."+ fieldVelocityVarName + ":" + fieldValue + " ");
 						} else {
 							if(isStructField==false){
@@ -1104,13 +1101,10 @@ public class ContentletAjax {
 		for (WorkflowAction action : workflowActions) {
 
             boolean hasPushPublishActionlet = false;
-            if (action.requiresCheckout()) {
-				continue;
-			}
 
             final JSONObject wfActionMap = new JSONObject();
             try {
-
+				WorkflowScheme wfScheme = APILocator.getWorkflowAPI().findScheme(action.getSchemeId());
                 wfActionMap.put("name", action.getName());
                 wfActionMap.put("id", action.getId());
                 wfActionMap.put("icon", action.getIcon());
@@ -1133,7 +1127,7 @@ public class ContentletAjax {
 
                 try {
 
-                    wfActionMap.put("wfActionNameStr", LanguageUtil.get(currentUser, action.getName()));
+                    wfActionMap.put("wfActionNameStr", LanguageUtil.get(currentUser, action.getName()) +" ( "+LanguageUtil.get(currentUser,wfScheme.getName())+" )");
                 } catch (LanguageException e) {
                     Logger.error(this, "Could not load language key : " + action.getName());
                 }

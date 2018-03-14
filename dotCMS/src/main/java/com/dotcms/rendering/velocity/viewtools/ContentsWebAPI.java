@@ -1,5 +1,6 @@
 package com.dotcms.rendering.velocity.viewtools;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotmarketing.beans.Identifier;
@@ -1140,7 +1141,7 @@ public class ContentsWebAPI implements ViewTool {
 	 */
 	public boolean doesUserHasPermission (String contentInode, int permission, boolean editMode) throws DotDataException {
 		if(editMode)
-			return doesUserHasPermission(contentInode, permission, backuser, true);
+			return doesUserHasPermission(contentInode, permission, backuser, false);
 		return doesUserHasPermission(contentInode, permission, user, true);
 	}
 

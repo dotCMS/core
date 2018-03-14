@@ -548,7 +548,7 @@ public class ContentResourceTest {
         scheme.setName("Rest Mandatory Workflow "+salt);
         scheme.setDescription("testing rest save content");
         scheme.setCreationDate(new Date());
-        APILocator.getWorkflowAPI().saveScheme(scheme);
+        APILocator.getWorkflowAPI().saveScheme(scheme, user);
 
         WorkflowStep step1=new WorkflowStep();
         step1.setCreationDate(new Date());
@@ -557,7 +557,7 @@ public class ContentResourceTest {
         step1.setName("Step 1");
         step1.setResolved(false);
         step1.setSchemeId(scheme.getId());
-        APILocator.getWorkflowAPI().saveStep(step1);
+        APILocator.getWorkflowAPI().saveStep(step1, user);
 
         WorkflowStep step2=new WorkflowStep();
         step2.setCreationDate(new Date());
@@ -566,7 +566,7 @@ public class ContentResourceTest {
         step2.setName("Step 2");
         step2.setResolved(false);
         step2.setSchemeId(scheme.getId());
-        APILocator.getWorkflowAPI().saveStep(step2);
+        APILocator.getWorkflowAPI().saveStep(step2, user);
 
         WorkflowStep step3=new WorkflowStep();
         step3.setCreationDate(new Date());
@@ -575,7 +575,7 @@ public class ContentResourceTest {
         step3.setName("Step 3");
         step3.setResolved(true);
         step3.setSchemeId(scheme.getId());
-        APILocator.getWorkflowAPI().saveStep(step3);
+        APILocator.getWorkflowAPI().saveStep(step3, user);
 
         // Save as Draft Step1 -> Step1
         WorkflowAction saveDraft=new WorkflowAction();
@@ -584,7 +584,7 @@ public class ContentResourceTest {
         saveDraft.setName("Save as Draft");
         saveDraft.setOrder(1);
         saveDraft.setNextStep(step1.getId());
-        saveDraft.setRequiresCheckout(true);
+        saveDraft.setRequiresCheckout(false);
         saveDraft.setStepId(step1.getId());
         saveDraft.setNextAssign(APILocator.getRoleAPI().loadCMSAnonymousRole().getId());
         APILocator.getWorkflowAPI().saveAction(saveDraft,
@@ -593,7 +593,8 @@ public class ContentResourceTest {
                                 saveDraft.getPermissionType(),
                                 saveDraft.getId(),
                                 APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
-                                PermissionAPI.PERMISSION_USE) }));
+                                PermissionAPI.PERMISSION_USE) }),
+                user);
         APILocator.getWorkflowAPI().saveAction(saveDraft.getId(), step1.getId(),user);
 
         // Save as Draft Step1 -> Step1
@@ -603,7 +604,7 @@ public class ContentResourceTest {
         escalate.setName("Save and Assign");
         escalate.setOrder(2);
         escalate.setNextStep(step1.getId());
-        escalate.setRequiresCheckout(true);
+        escalate.setRequiresCheckout(false);
         escalate.setStepId(step1.getId());
         escalate.setAssignable(true);
         escalate.setCommentable(true);
@@ -614,9 +615,10 @@ public class ContentResourceTest {
                                 escalate.getPermissionType(),
                                 escalate.getId(),
                                 APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
-                                PermissionAPI.PERMISSION_USE) }));
+                                PermissionAPI.PERMISSION_USE) }),
+                user);
         APILocator.getWorkflowAPI().saveAction(escalate.getId(), step1.getId(),user);
-        APILocator.getWorkflowAPI().saveScheme(scheme);
+        APILocator.getWorkflowAPI().saveScheme(scheme, user);
 
         // Send for review Step1 -> Step2
         WorkflowAction sendReview=new WorkflowAction();
@@ -634,7 +636,8 @@ public class ContentResourceTest {
                                 sendReview.getPermissionType(),
                                 sendReview.getId(),
                                 APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
-                                PermissionAPI.PERMISSION_USE) }));
+                                PermissionAPI.PERMISSION_USE) }),
+                user);
         APILocator.getWorkflowAPI().saveAction(sendReview.getId(), step1.getId(),user);
 
         // reject Step2 -> Step1
@@ -653,7 +656,8 @@ public class ContentResourceTest {
                                 reject.getPermissionType(),
                                 reject.getId(),
                                 APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
-                                PermissionAPI.PERMISSION_USE) }));
+                                PermissionAPI.PERMISSION_USE) }),
+                user);
         APILocator.getWorkflowAPI().saveAction(sendReview.getId(), step2.getId(),user);
 
         // publish Step2 -> Step3
@@ -672,7 +676,8 @@ public class ContentResourceTest {
                                 publish.getPermissionType(),
                                 publish.getId(),
                                 APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
-                                PermissionAPI.PERMISSION_USE) }));
+                                PermissionAPI.PERMISSION_USE) }),
+                user);
         APILocator.getWorkflowAPI().saveAction(publish.getId(), step2.getId(),user);
 
         WorkflowActionClass publishlet=new WorkflowActionClass();
@@ -680,7 +685,7 @@ public class ContentResourceTest {
         publishlet.setClazz(com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet.class.getCanonicalName());
         publishlet.setName("publish");
         publishlet.setOrder(1);
-        APILocator.getWorkflowAPI().saveActionClass(publishlet);
+        APILocator.getWorkflowAPI().saveActionClass(publishlet, user);
 
         // a test structure with that scheme
         Structure st=new Structure();
