@@ -174,7 +174,7 @@
 			<%if(UtilMethods.isSet(actionId)) {%>
 			<div class="row">
 				<div class="col-md-12">
-					<p><%=LanguageUtil.get(pageContext, "Action")%> <%=LanguageUtil.get(pageContext, "Id")%>: <strong><%=actionId %></strong></p>
+					<p><%=LanguageUtil.get(pageContext, "Action")%> <%=LanguageUtil.get(pageContext, "Id")%>: <strong><%=APILocator.getShortyAPI().shortify(actionId) %></strong></p>
 				</div>
 			</div>
 			<%} %>
@@ -192,10 +192,10 @@
 					</dl>
 					<dl class="vertical">
 						<dt>
-							<label for=""><%=LanguageUtil.get(pageContext, "Action-Name")%>:</label>
+							<label for=""><%=LanguageUtil.get(pageContext, "Name")%>:</label>
 						</dt>
 						<dd>
-							<input type="text" name="actionName" id="actionName" style="width: 80%;"
+							<input type="text" name="actionName" id="actionName" style="width: 80%;" 
 								   dojoType="dijit.form.ValidationTextBox" required="true"
 								   value="<%=UtilMethods.webifyString(action.getName())%>"
 								   maxlength="255" onkeypress="actionAdmin.doChange()" <%if(action.isNew()){ %>onchange="actionAdmin.saveAction('<%=schemeId %>');"<%} %>>
@@ -207,7 +207,7 @@
 							<label for=""><%=LanguageUtil.get(pageContext, "Next-Step")%>:</label>
 						</dt>
 						<dd>
-							<select name="actionNextStep" id="actionNextStep"  onChange="actionAdmin.doChange()"
+							<select name="actionNextStep" id="actionNextStep"  onChange="actionAdmin.doChange()" style="width: 50%;"  labelType="html"
 									dojoType="dijit.form.FilteringSelect">
 
 								<option value="<%=WorkflowAction.CURRENT_STEP %>"
@@ -225,7 +225,7 @@
 							</select>
 						</dd>
 					</dl>
-					
+					<br> <br> 
 					
 					<dl class="vertical">
 						<fieldset style="width:80%">
