@@ -1270,6 +1270,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, dependencies.getWorkflowAssignKey());
 		}
 
+		this.validateAction (contentlet, dependencies.getModUser());
+
 		final WorkflowProcessor processor = this.fireWorkflowPreCheckin(contentlet, dependencies.getModUser());
 
 		processor.setContentletDependencies(dependencies);
@@ -1277,6 +1279,30 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		return processor.getContentlet();
 	} // fireContentWorkflow
+
+	private void validateAction(final Contentlet contentlet, final User user) throws DotDataException {
+
+		final String actionId = contentlet.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY);
+
+		if (null != actionId) {
+
+			try {
+
+				final WorkflowAction action 	   = this.findAction(actionId, user);
+				final List<WorkflowScheme> schemes = this.findSchemesForContentType(contentlet.getContentType());
+
+				if (null != action && null != schemes) {
+
+					if (!schemes.stream().anyMatch(scheme -> scheme.getId().equals(action.getSchemeId()))) {
+
+						throw new DotDataException("Invalid-Action-Scheme-Error");
+					}
+				}
+			} catch (DotSecurityException e) {
+				throw new DotDataException(e);
+			}
+		}
+	} // validateAction.
 
 
 	public WorkflowProcessor fireWorkflowNoCheckin(Contentlet contentlet, User user) throws DotDataException,DotWorkflowException, DotContentletValidationException{
