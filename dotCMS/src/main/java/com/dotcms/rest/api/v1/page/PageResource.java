@@ -308,8 +308,8 @@ public class PageResource {
         return res;
     }
 
-    private ImmutableMap<Object, Object> createViewAsMap(final HttpServletRequest request, User user, String deviceInode)
-            throws DotDataException {
+    private ImmutableMap<Object, Object> createViewAsMap(final HttpServletRequest request, final User user,
+                                                         final String deviceInode) throws DotDataException {
 
         final Builder<Object, Object> builder = ImmutableMap.builder();
 
@@ -322,12 +322,12 @@ public class PageResource {
         builder.put("language", WebAPILocator.getLanguageWebAPI().getLanguage(request));
 
         try {
-            String currentDeviceId = deviceInode == null ?
+            final String currentDeviceId = deviceInode == null ?
                     (String) request.getSession().getAttribute(WebKeys.CURRENT_DEVICE)
                     : deviceInode;
 
             if (currentDeviceId != null) {
-                Contentlet device = APILocator.getContentletAPI().find(currentDeviceId, user, false);
+                final Contentlet device = APILocator.getContentletAPI().find(currentDeviceId, user, false);
 
                 if (device != null) {
                     builder.put("device", device.getMap());
@@ -337,7 +337,7 @@ public class PageResource {
                 }
             }
         } catch (DotSecurityException e) {
-            //In this case don't responce with the device attribute
+            //In this case don't response with the device attribute
         }
 
         return builder.build();
