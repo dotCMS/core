@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.workflows.model;
 
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonSetter;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionSummary;
 import com.dotmarketing.business.Permissionable;
@@ -9,10 +10,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UtilMethods;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Encapsulate the workflow action information.
@@ -110,9 +108,20 @@ public class WorkflowAction implements Permissionable, Serializable{
 	 * Set the set set of the status to show the action.
 	 * @param showOn {@link Set} of {@link WorkflowState}
 	 */
+	@JsonSetter("showOn")
 	public void setShowOn(final Set<WorkflowState> showOn) {
 		if (null != showOn) {
 			this.showOn = showOn;
+		}
+	}
+
+	/**
+	 * Set the set set of the status to show the action.
+	 * @param showOn Array of {@link WorkflowState}
+	 */
+	public void setShowOn(final WorkflowState... showOn) {
+		if (null != showOn) {
+			this.setShowOn(new HashSet<>(Arrays.asList(showOn)));
 		}
 	}
 
@@ -167,6 +176,7 @@ public class WorkflowAction implements Permissionable, Serializable{
 	/**
 	 * @return boolean
 	 */
+	@JsonIgnore
 	@Deprecated
 	public boolean requiresCheckout() {
 		return requiresCheckout;
@@ -175,6 +185,7 @@ public class WorkflowAction implements Permissionable, Serializable{
 	/**
 	 * @return boolean
 	 */
+	@JsonIgnore
 	@Deprecated
 	public boolean isRequiresCheckout() {
 		return requiresCheckout;
@@ -227,6 +238,7 @@ public class WorkflowAction implements Permissionable, Serializable{
 	 * Reflects the old relation between Action and step
 	 * @deprecated this is keep just by legacy reason, new apps should not use it
 	 */
+	@JsonIgnore
 	@Deprecated
 	public String getStepId() {
 		return stepId;
