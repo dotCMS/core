@@ -11,6 +11,7 @@ import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.ValidationException;
 import com.dotcms.workflow.form.WorkflowSchemeForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
@@ -50,6 +51,7 @@ public class WorkflowResourceTest extends UnitTestBase {
     @SuppressWarnings("unchecked")
     private WorkflowResource mockWorkflowResource(final boolean throwWorkflowAPIException) throws Exception{
         final User user = new User();
+        final PermissionAPI permissionAPI = mock(PermissionAPI.class);
         final WorkflowAPI workflowAPI = mock(WorkflowAPI.class);
         if(!throwWorkflowAPIException){
           when(workflowAPI.findScheme(anyString())).thenReturn(new WorkflowScheme ());
@@ -71,7 +73,7 @@ public class WorkflowResourceTest extends UnitTestBase {
 
         final ResponseUtil responseUtil = mock(ResponseUtil.class);
         final WorkflowImportExportUtil exportUtil = mock(WorkflowImportExportUtil.class);
-        return new WorkflowResource(workflowHelper, contentHelper, workflowAPI, contentletAPI, responseUtil, exportUtil, webResource);
+        return new WorkflowResource(workflowHelper, contentHelper, workflowAPI, contentletAPI, responseUtil, permissionAPI, exportUtil, webResource);
     }
 
     @Test
