@@ -232,7 +232,7 @@ public class PageResource {
                                    @PathParam("uri") final String uri,
                                    @QueryParam("mode") @DefaultValue("LIVE_ADMIN") final String modeStr,
                                    @QueryParam(WebKeys.CMS_PERSONA_PARAMETER) final String personaId,
-                                   @QueryParam("language_id") @DefaultValue("LIVE_ADMIN") final String languageId,
+                                   @QueryParam("language_id") final String languageId,
                                    @QueryParam("device_inode") final String deviceInode) {
 
         Logger.debug(this, String.format("Rendering page: uri -> %s mode-> %s language -> persona ->", uri, modeStr,
