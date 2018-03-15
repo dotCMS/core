@@ -210,17 +210,19 @@ public class OSGIUtil {
      * Stops the OSGi framework
      */
     public void stopFramework() {
-        try {
-            BundleContext bundleContext = HostActivator.instance().getBundleContext();
 
+        try {
             //Closing tracker associated to the HttpServlet
             DispatcherTracker tracker = OSGIProxyServlet.tracker;
-            if (tracker != null) {
+            if (null != tracker) {
                 tracker.close();
                 OSGIProxyServlet.tracker = null;
             }
 
             if (null != felixFramework) {
+
+                BundleContext bundleContext = HostActivator.instance().getBundleContext();
+
                 //Unregistering ToolBox services
                 ServiceReference toolBoxService = getBundleContext().getServiceReference(PrimitiveToolboxManager.class.getName());
                 if (toolBoxService != null) {
@@ -254,7 +256,7 @@ public class OSGIUtil {
     }
 
     public Boolean isInitialized() {
-        return null != felixFramework;
+        return null != felixFramework && felixFramework.getState() == Bundle.ACTIVE;
     }
 
     /**
