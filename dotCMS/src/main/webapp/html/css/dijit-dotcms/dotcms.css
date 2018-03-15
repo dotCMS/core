@@ -10935,7 +10935,6 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .view-actions {
-  height: 800px;
   padding-left: 24px;
 }
 .view-actions .container-fluid, .view-actions .container-fluid > .row:last-child, .view-actions > form, .view-actions .view-actions__permissions, .view-actions .view-actions__sub-actions {
