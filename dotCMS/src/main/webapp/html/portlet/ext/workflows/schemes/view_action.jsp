@@ -171,15 +171,15 @@
 		<input type="hidden" name="actionId"	id="actionId" value="<%=UtilMethods.webifyString(action.getId())%>">
 
 		<div class="container-fluid">
-			<%if(UtilMethods.isSet(actionId)) {%>
+			<%if(UtilMethods.isSet(actionId) && (!"new".equals(actionId))) {%>
 			<div class="row">
 				<div class="col-md-12">
-					<p><%=LanguageUtil.get(pageContext, "Action")%> <%=LanguageUtil.get(pageContext, "Id")%>: <strong><%=actionId %></strong></p>
+					<p><%=LanguageUtil.get(pageContext, "Action")%> <%=LanguageUtil.get(pageContext, "Id")%>: <strong><%=APILocator.getShortyAPI().shortify(actionId) %></strong></p>
 				</div>
 			</div>
 			<%} %>
 
-			<div class="row">
+			<div class="row" >
 				<div class="col-xs-5 view-actions__permissions">
 					<button dojoType="dijit.form.Button" class="view-actions__back-btn" onClick='mainAdmin.show(stepAdmin.baseJsp + "?schemeId=<%=schemeId%>")'>
 						<i class="fa fa-level-up" aria-hidden="true"></i>
@@ -192,105 +192,22 @@
 					</dl>
 					<dl class="vertical">
 						<dt>
-							<label for=""><%=LanguageUtil.get(pageContext, "Action-Name")%>:</label>
+							<label for="actionName"><%=LanguageUtil.get(pageContext, "Name")%>:</label>
 						</dt>
 						<dd>
-							<input type="text" name="actionName" id="actionName" style="width: 80%;"
+							<input type="text" name="actionName" id="actionName" style="width: 80%;" 
 								   dojoType="dijit.form.ValidationTextBox" required="true"
 								   value="<%=UtilMethods.webifyString(action.getName())%>"
 								   maxlength="255" onkeypress="actionAdmin.doChange()" <%if(action.isNew()){ %>onchange="actionAdmin.saveAction('<%=schemeId %>');"<%} %>>
 						</dd>
 					</dl>
+					
 					<dl class="vertical">
 						<dt>
-							<label for=""><%=LanguageUtil.get(pageContext, "Who-can-use-action")%>:</label>
+							<label for="actionNextStep"><%=LanguageUtil.get(pageContext, "Next-Step")%>:</label>
 						</dt>
 						<dd>
-							<input id="actionWhoCanUseSelect"/>
-							<button dojoType="dijit.form.Button"
-									onClick='actionAdmin.addSelectedToWhoCanUse'
-									iconClass="addIcon">
-								<%=LanguageUtil.get(pageContext, "add")%>
-							</button>
-						</dd>
-					</dl>
-					<dl class="vertical">
-						<dt></dt>
-						<dd>
-							<div class="who-can-use view-actions__who-can-use">
-								<table class="who-can-use__list" id="whoCanUseTbl">
-								</table>
-							</div>
-						</dd>
-					</dl>
-					<dl class="vertical">
-						<dt></dt>
-						<dd>
-
-							<div class="checkbox">
-								<input type="checkbox" name="actionCommentable"
-									   id="actionCommentable" dojoType="dijit.form.CheckBox" value="true"
-									<%=(action.isCommentable()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()">
-								<label for=""><%=LanguageUtil.get(pageContext, "Allow-Comments")%></label>
-							</div>
-							<div class="checkbox">
-								<input type="checkbox" name="actionAssignable"
-									   id="actionAssignable" dojoType="dijit.form.CheckBox" value="true"
-									<%=(action.isAssignable()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()">
-								<label for=""><%=LanguageUtil.get(pageContext, "User-Assignable")%></label>
-							</div>
-						</dd>
-					</dl>
-					<dl class="vertical">
-						<dt>
-							<label for=""><%=LanguageUtil.get(pageContext, "show-when")%>:</label>
-						</dt>
-
-						<dd>
-							<input type="checkbox" name="showOn"    value="LOCKED"        onclick="actionAdmin.doChange()"   <%=(showLocked)?     "checked" : "" %>/>
-							<%=LanguageUtil.get(pageContext, "Requires-Checkout-Locked") %>
-
-							<input type="checkbox" name="showOn"    value="UNLOCKED"      onclick="actionAdmin.doChange()"   <%=(showUnLocked)?   "checked" : "" %>/>
-							<%=LanguageUtil.get(pageContext, "Requires-Checkout-Unlocked") %>
-
-							<br/>AND<br/>
-
-							<input type="checkbox" name="showOn"    value="NEW"         onclick="actionAdmin.doChange()"   <%=(showNew)? 		 "checked" : "" %>/>
-							<%=LanguageUtil.get(pageContext, "new") %>
-
-							<input type="checkbox" name="showOn"    value="PUBLISHED"   onclick="actionAdmin.doChange()"   <%=(showPublished)?   "checked" : "" %>/>
-							<%=LanguageUtil.get(pageContext, "Requires-Checkout-Published") %>
-
-							<input type="checkbox" name="showOn"    value="UNPUBLISHED" onclick="actionAdmin.doChange()"   <%=(showUnpublished)? "checked" : "" %>/>
-							<%=LanguageUtil.get(pageContext, "Requires-Checkout-Unpublished") %>
-
-							<input type="checkbox" name="showOn"    value="ARCHIVED"    onclick="actionAdmin.doChange()"   <%=(showArchive)? 	 "checked" : "" %>/>
-							<%=LanguageUtil.get(pageContext, "Archived") %>
-
-							<input type="checkbox" name="showOnAll" value="ALL"         onclick="var check=this.checked; document.getElementsByName('showOn').forEach(function(checkbox) {checkbox.checked=check;}); return true;"   <%=(showAll)? 		 "checked" : "" %>/>
-							<%=LanguageUtil.get(pageContext, "Requires-Checkout-All") %>
-						</dd>
-					</dl>
-					<dl class="vertical">
-						<dt>
-							<label for=""><%=LanguageUtil.get(pageContext, "Assign-To")%>:</label>
-						</dt>
-						<dd>
-							<input id="actionAssignToSelect"  />
-							<%--hideHierarchayControl --%>
-							<div class="checkbox" id="divRoleHierarchyForAssign" style="display:<%=hideHierarchayControl ? "none" : "block" %>;">
-								<input type="checkbox" name="actionRoleHierarchyForAssign" id="actionRoleHierarchyForAssign" dojoType="dijit.form.CheckBox" value="true"
-									<%=(action.isRoleHierarchyForAssign()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()">
-								<label for="actionRoleHierarchyForAssign"><%=LanguageUtil.get(pageContext, "Use-Role-Hierarchy")%></label>
-							</div>
-						</dd>
-					</dl>
-					<dl class="vertical">
-						<dt>
-							<label for=""><%=LanguageUtil.get(pageContext, "Next-Step")%>:</label>
-						</dt>
-						<dd>
-							<select name="actionNextStep" id="actionNextStep"  onChange="actionAdmin.doChange()"
+							<select name="actionNextStep" id="actionNextStep"  onChange="actionAdmin.doChange()" style="width: 50%;"  labelType="html"
 									dojoType="dijit.form.FilteringSelect">
 
 								<option value="<%=WorkflowAction.CURRENT_STEP %>"
@@ -301,13 +218,107 @@
 								<%if(steps !=null){
 
 									for(WorkflowStep s : steps){ %>
-								<option value="<%=s.getId() %>"
+										<option value="<%=s.getId() %>"
 										<%=(action != null && s.getId().equals(action.getNextStep())) ? "selected='true'" : "" %>><%=s.getName() %></option>
 								<%}%>
 								<% }%>
 							</select>
 						</dd>
 					</dl>
+					<br> <br> 
+					
+					<dl class="vertical">
+						<fieldset style="width:80%">
+							<legend><%=LanguageUtil.get(pageContext, "Who-can-use-action")%></legend>
+							<dt></dt>
+							<dd>
+								<input id="actionWhoCanUseSelect"/>
+								<button dojoType="dijit.form.Button"
+										onClick='actionAdmin.addSelectedToWhoCanUse'
+										iconClass="addIcon">
+									<%=LanguageUtil.get(pageContext, "add")%>
+								</button>
+							</dd>
+		
+							<dt></dt>
+							<dd>
+								
+								<table class="who-can-use__list" id="whoCanUseTbl">
+								</table>
+								
+							</dd>
+						
+						</fieldset>
+					</dl>
+					<dl class="vertical">
+						<fieldset style="width:80%">
+							<legend><%=LanguageUtil.get(pageContext, "show-when")%></legend>
+							<div class="checkbox">
+								<input type="checkbox" name="showOn" id="showOnLOCKED" dojoType="dijit.form.CheckBox"   value="LOCKED"        onclick="actionAdmin.doChange()"   <%=(showLocked)?     "checked" : "" %>/>
+								<label for="showOnLOCKED"><%=LanguageUtil.get(pageContext, "Requires-Checkout-Locked") %></label>
+								&nbsp; &nbsp;
+								<input type="checkbox" name="showOn" id="showOnUNLOCKED"  dojoType="dijit.form.CheckBox"   value="UNLOCKED"      onclick="actionAdmin.doChange()"   <%=(showUnLocked)?   "checked" : "" %>/>
+								<label for="showOnUNLOCKED"><%=LanguageUtil.get(pageContext, "Requires-Checkout-Unlocked") %></label>
+							</div>
+								<div style="padding:10px;font-style: italic;">AND</div>
+							<div class="checkbox">
+								<input type="checkbox" name="showOn" id="showOnNEW"   dojoType="dijit.form.CheckBox"   value="NEW"         onclick="actionAdmin.doChange()"   <%=(showNew)? 		 "checked" : "" %>/>
+								<label for="showOnNEW"><%=LanguageUtil.get(pageContext, "new") %></label>
+								&nbsp; &nbsp;
+								<input type="checkbox" name="showOn" id="showOnPUBLISHED"  dojoType="dijit.form.CheckBox"   value="PUBLISHED"   onclick="actionAdmin.doChange()"   <%=(showPublished)?   "checked" : "" %>/>
+								<label for="showOnPUBLISHED"><%=LanguageUtil.get(pageContext, "Published") %></label>
+								&nbsp; &nbsp;
+								<input type="checkbox" name="showOn" id="showOnUNPUBLISHED"  dojoType="dijit.form.CheckBox"   value="UNPUBLISHED" onclick="actionAdmin.doChange()"   <%=(showUnpublished)? "checked" : "" %>/>
+								<label for="showOnUNPUBLISHED"><%=LanguageUtil.get(pageContext, "Unpublished") %></label>
+								&nbsp; &nbsp;
+								<input type="checkbox" name="showOn" id="showOnARCHIVED"  dojoType="dijit.form.CheckBox"   value="ARCHIVED"    onclick="actionAdmin.doChange()"   <%=(showArchive)? 	 "checked" : "" %>/>
+								<label for="showOnARCHIVED"><%=LanguageUtil.get(pageContext, "Archived") %></label>
+								&nbsp; &nbsp;
+								<input type="checkbox" name="showOnAll" id="showOnALL" dojoType="dijit.form.CheckBox"  value="ALL"         onChange="var check=this.checked; document.getElementsByName('showOn').forEach(function(checkbox) {dijit.byId(checkbox.id).set('checked', check);}); return true;"   <%=(showAll)? 		 "checked" : "" %>/>
+								<label for="showOnALL"><%=LanguageUtil.get(pageContext, "All") %></label>
+	
+							</div>
+						</fieldset>
+					</dl>
+					<dl class="vertical">
+						<fieldset style="width:80%">
+							<legend><%=LanguageUtil.get(pageContext, "Comments-and-Assigns")%></legend>
+
+							<dt></dt>
+							<dd>
+	
+								<div class="checkbox">
+									<input type="checkbox" name="actionAssignable"
+										   id="actionAssignable" dojoType="dijit.form.CheckBox" value="true"
+										<%=(action.isAssignable()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()">
+									<label for="actionAssignable"><%=LanguageUtil.get(pageContext, "User-Assignable")%></label>
+									
+									&nbsp; &nbsp; &nbsp;
+									<input type="checkbox" name="actionCommentable"
+										   id="actionCommentable" dojoType="dijit.form.CheckBox" value="true"
+										<%=(action.isCommentable()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()">
+									<label for="actionCommentable"><%=LanguageUtil.get(pageContext, "Allow-Comments")%></label>
+				
+								</div>
+							</dd>
+					
+							<dt>
+								<label for=""><%=LanguageUtil.get(pageContext, "Assign-To")%>:</label>
+							</dt>
+							<dd>
+								<input id="actionAssignToSelect"  />
+								<%--hideHierarchayControl --%>
+								<div class="checkbox" id="divRoleHierarchyForAssign" style="padding:10px;display:<%=hideHierarchayControl ? "none" : "block" %>;">
+									<input type="checkbox" name="actionRoleHierarchyForAssign" id="actionRoleHierarchyForAssign" dojoType="dijit.form.CheckBox" value="true"
+										<%=(action.isRoleHierarchyForAssign()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()">
+									<label for="actionRoleHierarchyForAssign"><%=LanguageUtil.get(pageContext, "Use-Role-Hierarchy")%></label>
+								</div>
+							</dd>
+						</fieldset>
+					</dl>
+					
+
+
 					<dl class="vertical">
 						<dt>
 							<label for=""><%=LanguageUtil.get(pageContext, "Custom-Code")%>:</label>
@@ -369,11 +380,6 @@
 					</div>
 					<div class="content-edit-actions">
 						<div>
-							<%if(action!=null && !action.isNew()) {%>
-							<a id="deleteButtonDiv" class="saveButtonHide" onClick="actionAdmin.deleteAction('<%=action.getId() %>');">
-								<%=LanguageUtil.get(pageContext, "Delete")%>
-							</a>
-							<%} %>
 							<a id="saveButtonDiv" class="saveButtonHide" onClick="actionAdmin.saveAction('<%=schemeId %>');">
 								<%=LanguageUtil.get(pageContext, "Save")%>
 							</a>
