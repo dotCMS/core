@@ -798,7 +798,7 @@ public class WorkflowResource {
             Logger.error(this.getClass(),
                     "Exception on firing, workflow action: " + actionId +
                             ", inode: " + inode, e);
-
+            SecurityLogger.logInfo(this.getClass(), e.getMessage());
             response =
                     ExceptionMapperUtil.createResponse(e, Response.Status.FORBIDDEN);
         } catch (Exception e) {
