@@ -4,6 +4,7 @@ import { ContentTypeField, FieldRow } from '../shared';
 import { BaseComponent } from '../../../../view/components/_common/_base/base-component';
 import { DotMessageService } from '../../../../api/services/dot-messages-service';
 import { DotDialogService } from '../../../../api/services/dot-dialog';
+import { FieldColumn } from '..';
 
 /**
  * Display all the Field Types
@@ -71,17 +72,21 @@ export class ContentTypeFieldsRowComponent extends BaseComponent {
      * Tigger the removeRow event whit the current FieldRow
      */
     onRemoveFieldRow(): void {
-        this.dotDialogService.confirm({
-            accept: () => {
-                this.removeRow.emit(this.fieldRow);
-            },
-            header: `${this.i18nMessages['contenttypes.action.delete']} ${this.i18nMessages['contenttypes.content.row']}`,
-            message: this.dotMessageService.get('contenttypes.confirm.message.delete.row'),
-            footerLabel: {
-                accept: this.i18nMessages['contenttypes.action.delete'],
-                reject: this.i18nMessages['contenttypes.action.cancel']
-            }
-        });
+        if (this.isRowFieldEmpty()) {
+            this.removeRow.emit(this.fieldRow);
+        } else {
+            this.dotDialogService.confirm({
+                accept: () => {
+                    this.removeRow.emit(this.fieldRow);
+                },
+                header: `${this.i18nMessages['contenttypes.action.delete']} ${this.i18nMessages['contenttypes.content.row']}`,
+                message: this.dotMessageService.get('contenttypes.confirm.message.delete.row'),
+                footerLabel: {
+                    accept: this.i18nMessages['contenttypes.action.delete'],
+                    reject: this.i18nMessages['contenttypes.action.cancel']
+                }
+            });
+        }
     }
 
     private getField(field: ContentTypeField): any {
@@ -92,5 +97,9 @@ export class ContentTypeFieldsRowComponent extends BaseComponent {
             }
             return col;
         });
+    }
+
+    private isRowFieldEmpty(): boolean {
+        return this.fieldRow.columns.map((column: FieldColumn) => column.fields.length).every(fieldsNumber => fieldsNumber === 0);
     }
 }

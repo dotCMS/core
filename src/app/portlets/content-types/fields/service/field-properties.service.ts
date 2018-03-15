@@ -27,7 +27,7 @@ export class FieldPropertyService {
      * @memberof FieldPropertyService
      */
     existsComponent(propertyName: string): boolean {
-        return PROPERTY_INFO[propertyName] ? true : false;
+        return !!PROPERTY_INFO[propertyName];
     }
 
     /**
@@ -48,11 +48,7 @@ export class FieldPropertyService {
      * @memberof FieldPropertyService
      */
     getDefaultValue(propertyName: string, fieldTypeClass?: string): any {
-        if (propertyName === 'dataType') {
-            return DATA_TYPE_PROPERTY_INFO[fieldTypeClass] ? DATA_TYPE_PROPERTY_INFO[fieldTypeClass][0].value : null;
-        } else {
-            return PROPERTY_INFO[propertyName] ? PROPERTY_INFO[propertyName].defaultValue : null;
-        }
+        return propertyName === 'dataType' ? this.getDataType(fieldTypeClass) : this.getPropInfo(propertyName);
     }
 
     /**
@@ -115,5 +111,13 @@ export class FieldPropertyService {
      */
     getDataTypeValues(fieldTypeClass: string): string[] {
         return DATA_TYPE_PROPERTY_INFO[fieldTypeClass];
+    }
+
+    private getDataType(fieldTypeClass: string): any {
+        return DATA_TYPE_PROPERTY_INFO[fieldTypeClass] ? DATA_TYPE_PROPERTY_INFO[fieldTypeClass][0].value : null;
+    }
+
+    private getPropInfo(propertyName: string): any {
+        return PROPERTY_INFO[propertyName] ? PROPERTY_INFO[propertyName].defaultValue : null;
     }
 }

@@ -45,6 +45,6 @@
         <button type="button" pButton (click)="fieldPropertiesForm.saveFieldProperties(fieldPropertiesForm.form.value, fieldPropertiesForm.form.valid)" [label]="i18nMessages['contenttypes.dropzone.action.save']"></button>
     </p-footer>
 </p-dialog>
-<p-overlayPanel #fieldHelperOverlay [style]="{'width':'300px'}">
+<p-overlayPanel appendTo="body" #fieldHelperOverlay [style]="{'width':'300px'}">
     <div [innerHTML]="currentFieldType?.helpText" ></div>
 </p-overlayPanel>

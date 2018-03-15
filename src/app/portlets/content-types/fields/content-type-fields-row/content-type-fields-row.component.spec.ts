@@ -1,4 +1,4 @@
-import { async, ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
+import { async, ComponentFixture } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DebugElement, Component, Input, Output, EventEmitter } from '@angular/core';
 import { ContentTypeFieldsRowComponent } from './';
@@ -10,6 +10,29 @@ import { IconButtonTooltipModule } from '../../../../view/components/_common/ico
 import { DotMessageService } from '../../../../api/services/dot-messages-service';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { DotDialogService } from '../../../../api/services/dot-dialog';
+
+const mockFieldRow = new FieldRow();
+mockFieldRow.columns = [
+    new FieldColumn([
+        {
+            clazz: 'text',
+            name: 'field-1'
+        },
+        {
+            clazz: 'image',
+            name: 'field-1'
+        }
+    ]),
+    new FieldColumn([
+        {
+            clazz: 'text',
+            name: 'field-1'
+        }
+    ])
+];
+
+const mockFieldRowFieldEmpty = new FieldRow();
+mockFieldRowFieldEmpty.columns = [new FieldColumn([]), new FieldColumn([])];
 
 @Component({
     selector: 'dot-content-type-field-dragabble-item',
@@ -25,6 +48,7 @@ describe('ContentTypeFieldsRowComponent', () => {
     let comp: ContentTypeFieldsRowComponent;
     let fixture: ComponentFixture<ContentTypeFieldsRowComponent>;
     let de: DebugElement;
+    let dotDialogService: DotDialogService;
 
     const messageServiceMock = new MockDotMessageService({
         'contenttypes.dropzone.rows.empty.message': 'Add fields here',
@@ -41,48 +65,20 @@ describe('ContentTypeFieldsRowComponent', () => {
             DOTTestBed.configureTestingModule({
                 declarations: [ContentTypeFieldsRowComponent, TestContentTypeFieldDraggableItemComponent],
                 imports: [DragulaModule, IconButtonTooltipModule],
-                providers: [
-                    FieldDragDropService,
-                    DotDialogService,
-                    { provide: DotMessageService, useValue: messageServiceMock }
-                ]
+                providers: [FieldDragDropService, DotDialogService, { provide: DotMessageService, useValue: messageServiceMock }]
             });
 
             fixture = DOTTestBed.createComponent(ContentTypeFieldsRowComponent);
             comp = fixture.componentInstance;
             de = fixture.debugElement;
+            dotDialogService = fixture.debugElement.injector.get(DotDialogService);
         })
     );
 
     describe('setting rows and columns', () => {
-        beforeEach(
-            async(() => {
-                this.fieldRow = new FieldRow();
-                this.fieldRow.columns.push(
-                    new FieldColumn([
-                        {
-                            clazz: 'text',
-                            name: 'field-1'
-                        },
-                        {
-                            clazz: 'image',
-                            name: 'field-1'
-                        }
-                    ])
-                );
-
-                this.fieldRow.columns.push(
-                    new FieldColumn([
-                        {
-                            clazz: 'text',
-                            name: 'field-1'
-                        }
-                    ])
-                );
-
-                comp.fieldRow = this.fieldRow;
-            })
-        );
+        beforeEach(() => {
+            comp.fieldRow = mockFieldRow;
+        });
 
         it('should has row and columns', () => {
             fixture.detectChanges();
@@ -95,60 +91,90 @@ describe('ContentTypeFieldsRowComponent', () => {
                 expect('target').toEqual(col.attributes['data-drag-type']);
 
                 const draggableItems = col.queryAll(By.css('dot-content-type-field-dragabble-item'));
-                expect(this.fieldRow.columns[index].fields.length).toEqual(draggableItems.length);
+                expect(mockFieldRow.columns[index].fields.length).toEqual(draggableItems.length);
             });
         });
 
-        it(
-            'should handle edit field event',
-            fakeAsync(() => {
-                let editField;
+        it('should handle edit field event', () => {
+            let editField;
 
-                const field = {
-                    clazz: 'text',
-                    name: 'field-1'
-                };
+            const field = {
+                clazz: 'text',
+                name: 'field-1'
+            };
 
-                fixture.detectChanges();
+            fixture.detectChanges();
 
-                const column = de.query(By.css('.row-columns__item'));
-                const dragableItem = column.query(By.css('dot-content-type-field-dragabble-item'));
+            const column = de.query(By.css('.row-columns__item'));
+            const dragableItem = column.query(By.css('dot-content-type-field-dragabble-item'));
 
-                comp.editField.subscribe((eventField) => (editField = eventField));
-                dragableItem.componentInstance.edit.emit(field);
+            comp.editField.subscribe((eventField) => (editField = eventField));
+            dragableItem.componentInstance.edit.emit(field);
 
-                tick();
+            expect(field).toEqual(editField);
+        });
 
-                expect(field).toEqual(editField);
-            })
-        );
+        it('should handle remove field event', () => {
+            let removeField;
 
-        it(
-            'should handle remove field event',
-            async(() => {
-                let removeField;
+            const field = mockFieldRow.columns[0].fields[0];
+            fixture.detectChanges();
 
-                const field = this.fieldRow.columns[0].fields[0];
-                fixture.detectChanges();
+            const column = de.query(By.css('.row-columns__item'));
+            const dragableItem = column.query(By.css('dot-content-type-field-dragabble-item'));
 
-                const column = de.query(By.css('.row-columns__item'));
-                const dragableItem = column.query(By.css('dot-content-type-field-dragabble-item'));
+            spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
+                conf.accept();
+            });
 
-                const dotDialogService = fixture.debugElement.injector.get(DotDialogService);
+            comp.removeField.subscribe((eventField) => {
+                removeField = eventField;
+            });
+            dragableItem.componentInstance.remove.emit(field);
 
-                spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
-                    conf.accept();
-                });
+            expect(field).toEqual(removeField);
+            const fieldRemoved = mockFieldRow.columns[0].fields.filter((columnField) => columnField === field);
+            expect(fieldRemoved).toEqual([]);
+        });
+    });
 
-                comp.removeField.subscribe((eventField) => {
-                    removeField = eventField;
-                });
-                dragableItem.componentInstance.remove.emit(field);
+    describe('remove rows', () => {
+        it('should emit row remove event after confirmation dialog', () => {
+            comp.fieldRow = mockFieldRow;
+            fixture.detectChanges();
 
-                expect(field).toEqual(removeField);
-                const fieldRemoved = this.fieldRow.columns[0].fields.filter((columnField) => columnField === field);
-                expect(fieldRemoved).toEqual([]);
-            })
-        );
+            spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
+                conf.accept();
+            });
+
+            let result;
+            comp.removeRow.subscribe((rowToRemove: FieldRow) => {
+                result = rowToRemove;
+            });
+
+            const removeRowButon = de.query(By.css('.row-header__remove'));
+            removeRowButon.nativeElement.click();
+
+            expect(comp.fieldRow).toEqual(result);
+            expect(dotDialogService.confirm).toHaveBeenCalledTimes(1);
+        });
+
+        it('should emit row remove event with no confirmation dialog', () => {
+            comp.fieldRow = mockFieldRowFieldEmpty;
+            fixture.detectChanges();
+
+            spyOn(dotDialogService, 'confirm');
+
+            let result;
+            comp.removeRow.subscribe((rowToRemove: FieldRow) => {
+                result = rowToRemove;
+            });
+
+            const removeRowButon = de.query(By.css('.row-header__remove'));
+            removeRowButon.nativeElement.click();
+
+            expect(comp.fieldRow).toEqual(result);
+            expect(dotDialogService.confirm).not.toHaveBeenCalled();
+        });
     });
 });

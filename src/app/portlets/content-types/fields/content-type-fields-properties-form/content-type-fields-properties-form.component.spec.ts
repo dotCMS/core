@@ -1,4 +1,4 @@
-import { DebugElement, ComponentFactoryResolver, SimpleChange, Directive, Input, Injectable } from '@angular/core';
+import { DebugElement, ComponentFactoryResolver, SimpleChange, Directive, Input, Injectable, Component, OnInit } from '@angular/core';
 import { ContentTypeFieldsPropertiesFormComponent } from './content-type-fields-properties-form.component';
 import { ComponentFixture, async } from '@angular/core/testing';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
@@ -7,6 +7,22 @@ import { FormBuilder, FormGroup, ValidationErrors, Validators } from '@angular/f
 import { FieldPropertyService } from '../service';
 import { DotMessageService } from '../../../../api/services/dot-messages-service';
 import { ContentTypeField } from '../index';
+import { By } from '@angular/platform-browser';
+
+const mockDFormFieldData = {
+    clazz: 'field.class',
+    name: 'fieldName'
+};
+
+@Component({
+    selector: 'dot-host-tester',
+    template: '<dot-content-type-fields-properties-form [formFieldData]="mockDFormFieldData"></dot-content-type-fields-properties-form>'
+})
+class DotHostTesterComponent {
+    mockDFormFieldData: ContentTypeField = {};
+
+    constructor() {}
+}
 
 @Directive({
     selector: '[dotDynamicFieldProperty]'
@@ -45,39 +61,66 @@ class TestFieldPropertiesService {
 }
 
 describe('ContentTypeFieldsPropertiesFormComponent', () => {
+    let hostComp: DotHostTesterComponent;
+    let hostFixture: ComponentFixture<DotHostTesterComponent>;
+
     let comp: ContentTypeFieldsPropertiesFormComponent;
-    let fixture: ComponentFixture<ContentTypeFieldsPropertiesFormComponent>;
+    let fixture: DebugElement;
     let de: DebugElement;
-    let el: HTMLElement;
+
+    let mockFieldPropertyService: FieldPropertyService;
+
     const messageServiceMock = new MockDotMessageService({
-        name: 'name',
-        Label: 'Label',
+        'name': 'name',
+        'Label': 'Label',
         'message.field.fieldType': 'message.field.fieldType',
-        categories: 'categories',
+        'categories': 'categories',
         'Data-Type': 'Data-Type',
-        required: 'required',
+        'required': 'required',
         'User-Searchable': 'User-Searchable',
         'System-Indexed': 'System-Indexed',
-        listed: 'listed',
-        Unique: 'Unique',
+        'listed': 'listed',
+        'Unique': 'Unique',
         'Default-Value': 'Default-Value',
-        Hint: 'Hint',
+        'Hint': 'Hint',
         'Validation-RegEx': 'Validation-RegEx',
-        Value: 'Value',
-        Binary: 'Binary',
-        Text: 'Text',
+        'Value': 'Value',
+        'Binary': 'Binary',
+        'Text': 'Text',
         'True-False': 'True-False',
-        Date: 'Date',
-        Decimal: 'Decimal',
+        'Date': 'Date',
+        'Decimal': 'Decimal',
         'Whole-Number': 'Whole-Number',
         'Large-Block-of-Text': 'Large-Block-of-Text',
         'System-Field': 'System-Field'
     });
 
+    const startHostComponent = () => {
+        hostFixture.detectChanges();
+
+        /*
+            This is the way it work in the real life, it triggers the ngOnChange twice, when is added to the DOM
+            and when is passed data, so I'm recreating this.
+
+            TODO: it's should NOT be in the DOM until data is passed, need to refactor that because we're triggering
+            a whole lifecycle events just because.
+        */
+
+        hostComp.mockDFormFieldData = {
+            ...mockDFormFieldData
+        };
+
+        hostFixture.detectChanges();
+    };
+
     beforeEach(
         async(() => {
             DOTTestBed.configureTestingModule({
-                declarations: [ContentTypeFieldsPropertiesFormComponent, TestDynamicFieldPropertyDirective],
+                declarations: [
+                    ContentTypeFieldsPropertiesFormComponent,
+                    DotHostTesterComponent,
+                    TestDynamicFieldPropertyDirective
+                ],
                 imports: [],
                 providers: [
                     FormBuilder,
@@ -88,70 +131,87 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
                 ]
             });
 
-            fixture = DOTTestBed.createComponent(ContentTypeFieldsPropertiesFormComponent);
+            hostFixture = DOTTestBed.createComponent(DotHostTesterComponent);
+            hostComp = hostFixture.componentInstance;
+            de = hostFixture.debugElement;
+
+            fixture = de.query(By.css('dot-content-type-fields-properties-form'));
             comp = fixture.componentInstance;
-            de = fixture.debugElement;
-            el = de.nativeElement;
+
+            mockFieldPropertyService = fixture.injector.get(FieldPropertyService);
         })
     );
 
-    it('should call submit function', () => {});
-
     describe('should init component', () => {
-        beforeEach(
-            async(() => {
-                this.field = {
-                    clazz: 'field.class',
-                    name: 'fieldName'
-                };
+        beforeEach(() => {
+            spyOn(mockFieldPropertyService, 'getProperties').and.returnValue(['property1', 'property2', 'property3']);
+            startHostComponent();
+        });
 
-                comp.formFieldData = this.field;
-            })
-        );
+        it('init form', () => {
+            expect(mockFieldPropertyService.getProperties).toHaveBeenCalledWith('field.class');
+            expect(comp.form.get('clazz').value).toBe('field.class');
 
-        it('should init form right', () => {
-            const mockFieldPropertyService = fixture.debugElement.injector.get(FieldPropertyService);
-            const spyMethod = spyOn(mockFieldPropertyService, 'getProperties').and.returnValue([
-                'property1',
-                'property2',
-                'property3'
-            ]);
-
-            comp.ngOnChanges({
-                formFieldData: new SimpleChange(null, this.field, true)
-            });
-
-            expect(spyMethod).toHaveBeenCalledWith(this.field.clazz);
-            expect(this.field.clazz).toBe(comp.form.get('clazz').value);
-
-            expect('').toBe(comp.form.get('property1').value);
-            expect(true).toBe(comp.form.get('property2').value);
+            expect(comp.form.get('property1').value).toBe('');
+            expect(comp.form.get('property2').value).toBe(true);
             expect(comp.form.get('property3')).toBeNull();
         });
 
-        it('should init field proeprties', () => {
-            comp.ngOnChanges({
-                formFieldData: new SimpleChange(null, this.field, true)
-            });
+        it('init field proeprties', () => {
+            expect(comp.fieldProperties[0]).toBe('property1');
+            expect(comp.fieldProperties[1]).toBe('property2');
+        });
+    });
 
-            expect('property1').toBe(comp.fieldProperties[0]);
-            expect('property2').toBe(comp.fieldProperties[1]);
+    describe('checkboxes interactions', () => {
+        beforeEach(() => {
+            spyOn(mockFieldPropertyService, 'getProperties').and.returnValue(['searchable', 'required', 'unique', 'indexed', 'listed']);
+            spyOn(mockFieldPropertyService, 'existsComponent').and.returnValue(true);
+            startHostComponent();
         });
 
-        xit('should auto select and disable indexed checkbox', () => {
-            // TODO: It needs a real mock of FieldPropertyService
+        it('should set system indexed true when select user searchable', () => {
+            comp.form.get('indexed').setValue(false);
+            comp.form.get('searchable').setValue(true);
+
+            expect(comp.form.get('indexed').value).toBe(true);
+            expect(comp.form.get('indexed').disabled).toBe(true);
         });
 
-        xit('should auto select and disable require checkbox', () => {
-            // TODO: It needs a real mock of FieldPropertyService
+        it('should set system indexed true when you select show in list', () => {
+            comp.form.get('indexed').setValue(false);
+            comp.form.get('listed').setValue(true);
+
+            expect(comp.form.get('indexed').value).toBe(true);
+            expect(comp.form.get('indexed').disabled).toBe(true);
         });
 
-        xit('should save checked and auto checked checkbox', () => {
-            // TODO: It needs a real mock of FieldPropertyService
+        it('should set system indexed and required true when you select unique', () => {
+            comp.form.get('indexed').setValue(false);
+            comp.form.get('required').setValue(false);
+
+            comp.form.get('unique').setValue(true);
+
+            expect(comp.form.get('indexed').value).toBe(true);
+            expect(comp.form.get('required').value).toBe(true);
+
+            expect(comp.form.get('indexed').disabled).toBe(true);
+            expect(comp.form.get('required').disabled).toBe(true);
+        });
+    });
+
+    describe('checkboxes interactions with undefined fields', () => {
+        beforeEach(() => {
+            spyOn(mockFieldPropertyService, 'getProperties').and.returnValue(['searchable', 'unique', 'listed']);
+            spyOn(mockFieldPropertyService, 'existsComponent').and.returnValue(true);
+            startHostComponent();
         });
 
-        xit('should not unchecked indexed checkbox if unique checkbox is checked', () => {
-            // TODO: It needs a real mock of FieldPropertyService
+        it('should set unique and no break when indexed and required doesn\'t exist', () => {
+            comp.form.get('unique').setValue(true);
+
+            expect(comp.form.get('indexed')).toBe(null);
+            expect(comp.form.get('required')).toBe(null);
         });
     });
 });

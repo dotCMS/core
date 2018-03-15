@@ -4,6 +4,7 @@
 .content-type__edit-header {
     margin: $basic-padding * 3 0;
     display: flex;
+    flex-shrink: 0;
 }
 
 .content-type__form-header-left {
