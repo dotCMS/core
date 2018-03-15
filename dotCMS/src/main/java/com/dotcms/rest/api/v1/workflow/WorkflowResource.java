@@ -732,7 +732,7 @@ public class WorkflowResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response updateStep(@Context final HttpServletRequest request,
                                      @NotNull @PathParam("stepId") final String stepId,
-                                     final WorkflowStepForm stepForm) {
+                                     final WorkflowStepUpdateForm stepForm) {
         final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
         Logger.debug(this, "updating step for scheme with stepId: " + stepId);
         Response response;
@@ -740,26 +740,99 @@ public class WorkflowResource {
             final WorkflowStep step = this.workflowHelper.updateStep(stepId, stepForm, initDataObject.getUser());
             response = Response.ok(new ResponseEntityView(step)).build();
         } catch (NotAllowedUserWorkflowException e) {
-                Logger.error(this.getClass(),
-                        "NotAllowedUserWorkflowException on updateStep, stepId: " + stepId +
-                                ", exception message: " + e.getMessage(), e);
-                throw new ForbiddenException(e);
-        } catch (DoesNotExistException e){
+            Logger.error(this.getClass(),
+                    "NotAllowedUserWorkflowException on updateStep, stepId: " + stepId +
+                            ", exception message: " + e.getMessage(), e);
+            throw new ForbiddenException(e);
+        } catch (DoesNotExistException e) {
             Logger.error(this.getClass(),
                     "DoesNotExistException on updateStep, stepId: " + stepId +
                             ", exception message: " + e.getMessage(), e);
             response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
         } catch (Exception e) {
 
-        Logger.error(this.getClass(),
-                "Exception on updateStep, stepId: " + stepId +
-                        ", exception message: " + e.getMessage(), e);
-        response = (e.getCause() instanceof SecurityException)?
-                ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
-                ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-    }
+            Logger.error(this.getClass(),
+                    "Exception on updateStep, stepId: " + stepId +
+                            ", exception message: " + e.getMessage(), e);
+            response = (e.getCause() instanceof SecurityException) ?
+                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
         return response;
     } // reorderStep
+
+    @POST
+    @Path("/steps")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response addStep(@Context final HttpServletRequest request,
+                                  final WorkflowStepAddForm newStepForm) {
+        final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
+        final String schemeId = newStepForm.getSchemeId();
+        Logger.debug(this, "updating step for scheme with schemeId: " + schemeId);
+        Response response;
+        try {
+            final WorkflowStep step = this.workflowHelper.addStep(newStepForm, initDataObject.getUser());
+            response = Response.ok(new ResponseEntityView(step)).build();
+        } catch (NotAllowedUserWorkflowException e) {
+            Logger.error(this.getClass(),
+                    "NotAllowedUserWorkflowException on addStep, stepId: " + schemeId +
+                            ", exception message: " + e.getMessage(), e);
+            throw new ForbiddenException(e);
+        } catch (DoesNotExistException e) {
+            Logger.error(this.getClass(),
+                    "DoesNotExistException on addStep, stepId: " + schemeId +
+                            ", exception message: " + e.getMessage(), e);
+            response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+        } catch (Exception e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on addStep, stepId: " + schemeId +
+                            ", exception message: " + e.getMessage(), e);
+            response = (e.getCause() instanceof SecurityException) ?
+                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+        return response;
+    }
+
+
+    @GET
+    @Path("/steps/{stepId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response findStepById(@Context final HttpServletRequest request,
+                                       @NotNull @PathParam("stepId") final String stepId) {
+        this.webResource.init(null, true, request, true, null);
+
+        Logger.debug(this, "finding step by id stepId: " + stepId);
+        Response response;
+        try {
+            final WorkflowStep step = this.workflowHelper.findStepById(stepId);
+            response = Response.ok(new ResponseEntityView(step)).build();
+        } catch (NotAllowedUserWorkflowException e) {
+            Logger.error(this.getClass(),
+                    "NotAllowedUserWorkflowException on findStepById, stepId: " + stepId +
+                            ", exception message: " + e.getMessage(), e);
+            throw new ForbiddenException(e);
+        } catch (DoesNotExistException e) {
+            Logger.error(this.getClass(),
+                    "DoesNotExistException on findStepById, stepId: " + stepId +
+                            ", exception message: " + e.getMessage(), e);
+            response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+        } catch (Exception e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on addStep, stepId: " + stepId +
+                            ", exception message: " + e.getMessage(), e);
+            response = (e.getCause() instanceof SecurityException) ?
+                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+        return response;
+    }
 
 
     @PUT

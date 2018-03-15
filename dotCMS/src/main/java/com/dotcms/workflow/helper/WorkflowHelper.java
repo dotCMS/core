@@ -30,9 +30,9 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+
+import java.util.*;
+
 import org.apache.commons.beanutils.BeanUtils;
 
 /**
@@ -160,12 +160,12 @@ public class WorkflowHelper {
                             final int order,
                             final User user)  {
 
-        final WorkflowStep       step;
+        final WorkflowStep step;
 
         try {
 
             Logger.debug(this, "Looking for the stepId: " + stepId);
-            step   = this.workflowAPI.findStep  (stepId);
+            step = this.workflowAPI.findStep(stepId);
 
             Logger.debug(this, "Reordering the stepId: "  + stepId +
                             ", order: " + order);
@@ -178,51 +178,106 @@ public class WorkflowHelper {
         }
     }  // reorderAction.
 
+    /**
+     * copy contents from the form into the step
+     * @param step
+     * @param workflowStepUpdateForm
+     * @return
+     */
+    private WorkflowStep populateStep(final WorkflowStep step, final IWorkflowStepForm workflowStepUpdateForm){
+        if (workflowStepUpdateForm.isEnableEscalation()) {
+            step.setEnableEscalation(true);
+            step.setEscalationAction(workflowStepUpdateForm.getEscalationAction());
+            step.setEscalationTime(Integer.parseInt(workflowStepUpdateForm.getEscalationTime()));
+        } else {
+            step.setEnableEscalation(false);
+            step.setEscalationAction(null);
+            step.setEscalationTime(0);
+        }
+        step.setName(workflowStepUpdateForm.getStepName());
+        step.setResolved(workflowStepUpdateForm.isStepResolved());
+        return step;
+    }
+
+    /**
+     * Adds a brand new step to a workflow scheme
+     * @param workflowStepUpdateForm
+     * @param user
+     * @return
+     */
+    public WorkflowStep addStep(final WorkflowStepAddForm workflowStepUpdateForm, final User user) {
+        final String schemeId = workflowStepUpdateForm.getSchemeId();
+        WorkflowStep step = new WorkflowStep();
+        step = populateStep(step, workflowStepUpdateForm);
+        step.setSchemeId(schemeId);
+        try {
+            final List<WorkflowStep> steps = workflowAPI.findSteps(workflowAPI.findScheme(schemeId));
+            final Optional<WorkflowStep> optional = steps.stream().max(Comparator.comparing(WorkflowStep::getMyOrder));
+            step.setMyOrder(
+                    optional.map(workflowStep -> (workflowStep.getMyOrder() + 1)).orElse(0)
+            );
+
+            workflowAPI.saveStep(step, user);
+        } catch (DotDataException | AlreadyExistException e) {
+            Logger.error(this, e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
+            throw new DotWorkflowException(e.getMessage(), e);
+        }
+        return step;
+    }
 
     /**
      *
      * @param stepId
-     * @param workflowStepForm
+     * @return
+     */
+    public WorkflowStep findStepById(final String stepId) {
+        WorkflowStep step;
+        try {
+            step = workflowAPI.findStep(stepId);
+        } catch (DotDataException e) {
+            Logger.error(this, e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
+            throw new DotWorkflowException(e.getMessage(), e);
+        }
+        return step;
+    }
+
+    /**
+     *
+     * @param stepId
+     * @param workflowStepUpdateForm
      * @throws DotDataException
      * @throws AlreadyExistException
      */
-    public WorkflowStep updateStep(final String stepId, final WorkflowStepForm workflowStepForm, final User user) throws DotDataException, AlreadyExistException {
+    public WorkflowStep updateStep(final String stepId, final WorkflowStepUpdateForm workflowStepUpdateForm, final User user) throws DotDataException, AlreadyExistException {
         final WorkflowStep step;
         try {
             step = workflowAPI.findStep(stepId);
         } catch (DotDataException dde) {
             throw new DoesNotExistException(dde);
         }
-        return updateStep(step, workflowStepForm, user);
+        return updateStep(step, workflowStepUpdateForm, user);
     }
 
     /**
      *
      * @param step
-     * @param workflowStepForm
+     * @param workflowStepUpdateForm
      * @throws DotDataException
      * @throws AlreadyExistException
      */
     @WrapInTransaction
-    public WorkflowStep updateStep(final WorkflowStep step, final WorkflowStepForm workflowStepForm, final User user) throws DotDataException, AlreadyExistException {
+    public WorkflowStep updateStep(WorkflowStep step, final WorkflowStepUpdateForm workflowStepUpdateForm, final User user) throws DotDataException, AlreadyExistException {
         if (step.isNew()) {
-            throw new DotWorkflowException("Can not edit step (Step marked as new)");
+            throw new DotWorkflowException("Cannot-edit-step");
         }
-        if (workflowStepForm.isEnableEscalation()) {
-            step.setEnableEscalation(true);
-            step.setEscalationAction(workflowStepForm.getEscalationAction());
-            step.setEscalationTime(Integer.parseInt(workflowStepForm.getEscalationTime()));
-        } else {
-            step.setEnableEscalation(false);
-            step.setEscalationAction(null);
-            step.setEscalationTime(0);
-        }
-        step.setName(workflowStepForm.getStepName());
-        step.setResolved(workflowStepForm.isStepResolved());
-        final int order = (null != workflowStepForm.getStepOrder() ? workflowStepForm.getStepOrder() : step.getMyOrder());
+        final Integer order = workflowStepUpdateForm.getStepOrder();
+        step = populateStep(step, workflowStepUpdateForm);
+        step.setMyOrder(workflowStepUpdateForm.getStepOrder());
         try {
             workflowAPI.reorderStep(step, order, user);
-        } catch (Exception e1) {
+        } catch (Exception e) {
             workflowAPI.saveStep(step, user);
         }
         return step;
@@ -238,7 +293,6 @@ public class WorkflowHelper {
         WorkflowStep workflowStep = null;
 
         try {
-
             Logger.debug(this, "Looking for the stepId: " + stepId);
             workflowStep = this.workflowAPI.findStep(stepId);
         } catch (Exception e) {
@@ -831,6 +885,16 @@ public class WorkflowHelper {
     } // findInitialAvailableActionsByContentType.
 
 
+    /**
+     * Saves an existing sheme or create a new one
+     * @param schemeId a new scheme is created when null is passed otherwise attempts to update one
+     * @param workflowSchemeForm
+     * @param user
+     * @return
+     * @throws AlreadyExistException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     public WorkflowScheme saveOrUpdate(final String schemeId, final WorkflowSchemeForm workflowSchemeForm, final User user) throws AlreadyExistException, DotDataException, DotSecurityException {
 
         final WorkflowScheme newScheme = new WorkflowScheme();

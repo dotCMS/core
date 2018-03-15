@@ -6,11 +6,12 @@ import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.repackage.javax.validation.constraints.Size;
 import com.dotcms.rest.api.Validated;
 
-@JsonDeserialize(builder = WorkflowStepForm.Builder.class)
-public class WorkflowStepForm extends Validated {
+@JsonDeserialize(builder = WorkflowStepAddForm.Builder.class)
+public class WorkflowStepAddForm extends Validated implements IWorkflowStepForm{
 
+    //This param is mandatory when creating a new step, but not when updating
     @NotNull
-    private final Integer stepOrder;
+    private final String schemeId;
 
     @NotNull
     @Size(min = 2, max = 100)
@@ -28,8 +29,8 @@ public class WorkflowStepForm extends Validated {
     @NotNull
     private final boolean stepResolved;
 
-    public WorkflowStepForm(final WorkflowStepForm.Builder builder) {
-        this.stepOrder = builder.stepOrder;
+    public WorkflowStepAddForm(final Builder builder) {
+        this.schemeId = builder.schemeId;
         this.stepName = builder.stepName;
         this.enableEscalation = builder.enableEscalation;
         this.escalationAction = builder.escalationAction;
@@ -38,8 +39,8 @@ public class WorkflowStepForm extends Validated {
         checkValid();
     }
 
-    public Integer getStepOrder() {
-        return stepOrder;
+    public String getSchemeId() {
+        return schemeId;
     }
 
     public String getStepName() {
@@ -65,7 +66,7 @@ public class WorkflowStepForm extends Validated {
     public static final class Builder {
 
         @JsonProperty
-        private Integer stepOrder;
+        private String schemeId;
 
         @JsonProperty
         private String stepName;
@@ -82,9 +83,8 @@ public class WorkflowStepForm extends Validated {
         @JsonProperty
         private boolean stepResolved;
 
-
-        public Builder stepOrder(final Integer stepOrder) {
-            this.stepOrder = stepOrder;
+        public Builder schemeId(final String schemeId) {
+            this.schemeId = schemeId;
             return this;
         }
 
@@ -113,8 +113,9 @@ public class WorkflowStepForm extends Validated {
             return this;
         }
 
-        public WorkflowStepForm build() {
-            return new WorkflowStepForm(this);
+        public WorkflowStepAddForm build() {
+            return new WorkflowStepAddForm(this);
         }
     }
+
 }

@@ -3,13 +3,12 @@ package com.dotmarketing.portlets.workflows.ajax;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.DeserializationFeature;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.workflow.form.WorkflowActionStepBean;
-import com.dotcms.workflow.form.WorkflowStepForm;
+import com.dotcms.workflow.form.WorkflowStepAddForm;
+import com.dotcms.workflow.form.WorkflowStepUpdateForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.exception.AlreadyExistException;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
@@ -40,7 +39,7 @@ public class WfStepAjax extends WfBaseAction {
 	 */
 	public void reorder(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		final String stepId = request.getParameter("stepId");
-		final String o = request.getParameter("stepOrder");
+		final String order = request.getParameter("stepOrder");
 		final String stepName = request.getParameter("stepName");
 		final boolean enableEscalation = request.getParameter("enableEscalation") != null;
 		final String escalationAction = request.getParameter("escalationAction");
@@ -49,13 +48,13 @@ public class WfStepAjax extends WfBaseAction {
 		Integer stepOrder = null;
         final User user = this.userWebAPI.getUser(request);
 		try {
-			stepOrder = Integer.parseInt(o);
+			stepOrder = Integer.parseInt(order);
 		} catch (NumberFormatException nfe) {
 			//order param is not present
-			Logger.error(this.getClass(),"param stepOrder is invalid or ");
+			Logger.error(this.getClass(),"param stepOrder is invalid or null");
 		}
 		try {
-			final WorkflowStepForm from = new WorkflowStepForm.Builder().stepName(stepName).enableEscalation(enableEscalation).escalationAction(escalationAction).escalationTime(escalationTime).stepResolved(stepResolved).stepOrder(stepOrder).build();
+			final WorkflowStepUpdateForm from = new WorkflowStepUpdateForm.Builder().stepName(stepName).enableEscalation(enableEscalation).escalationAction(escalationAction).escalationTime(escalationTime).stepResolved(stepResolved).stepOrder(stepOrder).build();
 			final WorkflowStep step = workflowAPI.findStep(stepId);
             workflowHelper.updateStep(step, from, user);
 		} catch (Exception e) {
@@ -123,39 +122,20 @@ public class WfStepAjax extends WfBaseAction {
 
 	public void add(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
-		String stepName = URLDecoder.decode(request.getParameter("stepName"), "UTF-8");
-		String schemeId = request.getParameter("schemeId");
-		boolean stepResolved = request.getParameter("stepResolved") != null;
-		WorkflowAPI wapi = APILocator.getWorkflowAPI();
-		
-		try {
+		final String stepName = URLDecoder.decode(request.getParameter("stepName"), "UTF-8");
+		final String schemeId = request.getParameter("schemeId");
+		final boolean stepResolved = request.getParameter("stepResolved") != null;
 
-			List<WorkflowStep> steps =wapi.findSteps(wapi.findScheme(schemeId));
-			int maxOrder = 0;
-			for(WorkflowStep step : steps){
-				if(step.getMyOrder() > maxOrder){
-					maxOrder = step.getMyOrder() ;
-				}
-			}
-			WorkflowStep step = new WorkflowStep();
-			if(steps.size() != 0)
-				maxOrder = maxOrder + 1;
-			step.setMyOrder(maxOrder);
-			step.setName(stepName);
-			step.setSchemeId(schemeId);
-			step.setResolved(stepResolved);
-			wapi.saveStep(step, this.userWebAPI.getUser(request));
-			
-		} catch (DotDataException e) {
-			Logger.error(this.getClass(),e.getMessage());
-			Logger.debug(this.getClass(),e.getMessage(),e);
-			writeError(response, e.getMessage());
-		}catch (AlreadyExistException e) {
-			Logger.error(this.getClass(),e.getMessage());
-			Logger.debug(this.getClass(),e.getMessage(),e);
+		try {
+			final User user = this.userWebAPI.getUser(request);
+			//Build with default values to humor the validator.
+			final WorkflowStepAddForm from = new WorkflowStepAddForm.Builder().schemeId(schemeId).stepName(stepName).enableEscalation(false).escalationAction("").escalationTime("").stepResolved(stepResolved).build();
+			workflowHelper.addStep(from, user);
+		} catch (Exception e) {
+			Logger.error(this.getClass(), e.getMessage());
+			Logger.debug(this.getClass(), e.getMessage(), e);
 			writeError(response, e.getMessage());
 		}
-		
 		
 	}
 
