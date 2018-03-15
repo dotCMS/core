@@ -171,7 +171,7 @@
 		<input type="hidden" name="actionId"	id="actionId" value="<%=UtilMethods.webifyString(action.getId())%>">
 
 		<div class="container-fluid">
-			<%if(UtilMethods.isSet(actionId)) {%>
+			<%if(UtilMethods.isSet(actionId) && (!"new".equals(actionId))) {%>
 			<div class="row">
 				<div class="col-md-12">
 					<p><%=LanguageUtil.get(pageContext, "Action")%> <%=LanguageUtil.get(pageContext, "Id")%>: <strong><%=APILocator.getShortyAPI().shortify(actionId) %></strong></p>
@@ -179,7 +179,7 @@
 			</div>
 			<%} %>
 
-			<div class="row">
+			<div class="row" >
 				<div class="col-xs-5 view-actions__permissions">
 					<button dojoType="dijit.form.Button" class="view-actions__back-btn" onClick='mainAdmin.show(stepAdmin.baseJsp + "?schemeId=<%=schemeId%>")'>
 						<i class="fa fa-level-up" aria-hidden="true"></i>
@@ -192,7 +192,7 @@
 					</dl>
 					<dl class="vertical">
 						<dt>
-							<label for=""><%=LanguageUtil.get(pageContext, "Name")%>:</label>
+							<label for="actionName"><%=LanguageUtil.get(pageContext, "Name")%>:</label>
 						</dt>
 						<dd>
 							<input type="text" name="actionName" id="actionName" style="width: 80%;" 
@@ -204,7 +204,7 @@
 					
 					<dl class="vertical">
 						<dt>
-							<label for=""><%=LanguageUtil.get(pageContext, "Next-Step")%>:</label>
+							<label for="actionNextStep"><%=LanguageUtil.get(pageContext, "Next-Step")%>:</label>
 						</dt>
 						<dd>
 							<select name="actionNextStep" id="actionNextStep"  onChange="actionAdmin.doChange()" style="width: 50%;"  labelType="html"
@@ -380,11 +380,6 @@
 					</div>
 					<div class="content-edit-actions">
 						<div>
-							<%if(action!=null && !action.isNew()) {%>
-							<a id="deleteButtonDiv" class="saveButtonHide" onClick="actionAdmin.deleteAction('<%=action.getId() %>');">
-								<%=LanguageUtil.get(pageContext, "Delete")%>
-							</a>
-							<%} %>
 							<a id="saveButtonDiv" class="saveButtonHide" onClick="actionAdmin.saveAction('<%=schemeId %>');">
 								<%=LanguageUtil.get(pageContext, "Save")%>
 							</a>

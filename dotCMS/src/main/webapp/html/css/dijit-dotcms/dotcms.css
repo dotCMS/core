@@ -10938,7 +10938,7 @@ a.category_higlighted, a.tag_higlighted {
   padding-left: 24px;
 }
 .view-actions .container-fluid, .view-actions .container-fluid > .row:last-child, .view-actions > form, .view-actions .view-actions__permissions, .view-actions .view-actions__sub-actions {
-  height: 100%;
+	height:90vh;
 }
 
 .view-actions__back-btn {
@@ -10984,8 +10984,8 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .view-actions__workflow-actions {
-  border-left: 1px solid #ECEDEE;
-  height: 100%;
+	border-left: 1px solid #ECEDEE;
+	height:100%;
 }
 
 .view-actions__arrow-right {
