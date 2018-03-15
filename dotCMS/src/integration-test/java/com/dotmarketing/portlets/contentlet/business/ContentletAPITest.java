@@ -2095,8 +2095,8 @@ public class ContentletAPITest extends ContentletBaseTest {
         // also it should be in the index update with the new dates
         String q="+structureName:"+testStructure.getVelocityVarName()+
                 " +inode:"+c11.getInode()+
-                " +"+testStructure.getVelocityVarName()+"."+fieldPubDate.getVelocityVarName()+":"+ DateUtil.toLuceneDate(d3)+
-                " +"+testStructure.getVelocityVarName()+"."+fieldExpDate.getVelocityVarName()+":"+ DateUtil.toLuceneDate(d4);
+                " +"+testStructure.getVelocityVarName()+"."+fieldPubDate.getVelocityVarName()+":"+ DateUtil.toLuceneDateTime(d3)+
+                " +"+testStructure.getVelocityVarName()+"."+fieldExpDate.getVelocityVarName()+":"+ DateUtil.toLuceneDateTime(d4);
         final long count = APILocator.getContentletAPI().indexCount(q, user, false);
         assertEquals(1, count);
     }
