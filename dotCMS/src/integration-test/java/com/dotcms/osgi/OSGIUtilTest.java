@@ -8,6 +8,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.OSGIUtil;
 import java.io.File;
 import org.apache.commons.io.FileUtils;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -31,6 +32,12 @@ public class OSGIUtilTest {
 
         // Initialize OSGI
         initializeOSGIFramework();
+    }
+
+    @AfterClass
+    public static void cleanUp() throws Exception {
+        //Stopping the OSGI framework
+        OSGIUtil.getInstance().stopFramework();
     }
 
     /**
