@@ -73,7 +73,7 @@ public class WorkflowResource {
     }
 
     @VisibleForTesting
-    protected WorkflowResource(final WorkflowHelper workflowHelper,
+    WorkflowResource(final WorkflowHelper workflowHelper,
                                final ContentHelper    contentHelper,
                                final WorkflowAPI workflowAPI,
                                final ContentletAPI  contentletAPI,
