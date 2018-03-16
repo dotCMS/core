@@ -3887,6 +3887,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         contentlet.setLongProperty(conVariable,value != null ? (Long)value : null);
                     }else if(isFieldTypeBinary(field)){
                         contentlet.setBinary(conVariable,(java.io.File)value);
+                    } else {
+                        contentlet.setProperty(conVariable, value);
                     }
                 }else{
                     Logger.debug(this,"Value " + value + " in map cannot be set to contentlet");

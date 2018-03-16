@@ -3713,6 +3713,26 @@ public class ContentletAPITest extends ContentletBaseTest {
         }
     }
 
+    @Test
+    public void testCopyProperties_TypeWithTagField_shouldCopyTagFieldValue()
+        throws DotSecurityException, DotDataException {
+        Contentlet newsContent = null;
+        try {
+            newsContent = getNewsContent();
+            Map<String, Object> innerMap = new HashMap<>(newsContent.getMap());
+            newsContent = contentletAPI.checkin(newsContent, user,false);
+            Contentlet checkedoutNewsContent = contentletAPI.checkout(newsContent.getInode(), user, false);
+            assertNull(checkedoutNewsContent.getStringProperty("tags"));
+            contentletAPI.copyProperties(checkedoutNewsContent, innerMap);
+            assertEquals(checkedoutNewsContent.getStringProperty("tags"), "test");
+
+        } finally {
+            if(newsContent!=null && UtilMethods.isSet(newsContent.getIdentifier())) {
+                contentletAPI.destroy(newsContent, user, false);
+            }
+        }
+    }
+
     private ContentletRelationships getACoupleOfRelationships(Contentlet contentlet)
         throws DotDataException, DotSecurityException {
         ContentletRelationships relationships = new ContentletRelationships(contentlet);
@@ -3796,6 +3816,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         newsContent.setStringProperty("byline", "byline");
         newsContent.setDateProperty("sysPublishDate", new Date());
         newsContent.setStringProperty("story", "newsStory");
+        newsContent.setStringProperty("tags", "test");
         return newsContent;
     }
 
