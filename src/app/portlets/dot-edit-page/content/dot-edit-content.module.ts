@@ -16,6 +16,7 @@ import { DotLoadingIndicatorModule } from '../../../view/components/_common/ifra
 import { DotRenderHTMLService } from '../../../api/services/dot-render-html/dot-render-html.service';
 import { DotWorkflowService } from '../../../api/services/dot-workflow/dot-workflow.service';
 import { DotEditPageService } from '../../../api/services/dot-edit-page/dot-edit-page.service';
+import { DotEditContentViewAsToolbarModule } from '../../dot-edit-content/components/dot-edit-content-view-as-toolbar/dot-edit-content-view-as-toolbar.module';
 
 const routes: Routes = [
     {
@@ -32,7 +33,8 @@ const routes: Routes = [
         RouterModule.forChild(routes),
         DotEditPageToolbarModule,
         DotLoadingIndicatorModule,
-        DotDirectivesModule
+        DotDirectivesModule,
+        DotEditContentViewAsToolbarModule
     ],
     exports: [DotEditContentComponent],
     providers: [

@@ -2,15 +2,11 @@ import { ActivatedRoute } from '@angular/router';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture } from '@angular/core/testing';
-import { DebugElement } from '@angular/core';
+import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { RouterTestingModule } from '@angular/router/testing';
-
 import { Observable } from 'rxjs/Observable';
-
 import { DialogModule } from 'primeng/primeng';
-
 import { LoginService } from 'dotcms-js/dotcms-js';
-
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DotContainerContentletService } from './services/dot-container-contentlet.service';
 import { DotContentletLockerService } from '../../../api/services/dot-contentlet-locker/dot-contentlet-locker.service';
@@ -27,23 +23,33 @@ import { DotHttpErrorManagerService } from '../../../api/services/dot-http-error
 import { DotLoadingIndicatorModule } from '../../../view/components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
 import { DotMenuService } from '../../../api/services/dot-menu.service';
 import { DotMessageService } from '../../../api/services/dot-messages-service';
-import { DotPageState } from '../shared/models/dot-rendered-page-state.model';
+import { DotPageState, DotRenderedPageState } from '../shared/models/dot-rendered-page-state.model';
 import { DotPageStateService } from './services/dot-page-state/dot-page-state.service';
 import { DotRenderHTMLService } from '../../../api/services/dot-render-html/dot-render-html.service';
 import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
-import { LoginServiceMock } from '../../../test/login-service.mock';
+import { LoginServiceMock, mockUser } from '../../../test/login-service.mock';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { PageMode } from '../shared/models/page-mode.enum';
-import { DotWorkflowAction } from '../../../shared/models/dot-workflow-action/dot-workflow-action.model';
 import { DotWorkflowService } from '../../../api/services/dot-workflow/dot-workflow.service';
 import { DotWorkflowServiceMock } from '../../../test/dot-workflow-service.mock';
 import { mockDotRenderedPage, mockDotPage } from '../../../test/dot-rendered-page.mock';
+import { DotEditPageViewAs } from '../../../shared/models/dot-edit-page-view-as/dot-edit-page-view-as.model';
+import { mockDotDevice } from '../../../test/dot-device.mock';
+import { mockDotEditPageViewAs } from '../../../test/dot-edit-page-view-as.mock';
 
 export const mockDotPageState: DotPageState = {
     mode: PageMode.PREVIEW,
     locked: false
 };
 
+@Component({
+    selector: 'dot-edit-content-view-as-toolbar',
+    template: ''
+})
+class MockDotEditContentViewAsToolbarComponent {
+    @Input() value: DotEditPageViewAs;
+    @Output() changeViewAs = new EventEmitter<DotEditPageViewAs>();
+}
 describe('DotEditContentComponent', () => {
     let component: DotEditContentComponent;
     let de: DebugElement;
@@ -67,7 +73,7 @@ describe('DotEditContentComponent', () => {
         });
 
         DOTTestBed.configureTestingModule({
-            declarations: [DotEditContentComponent],
+            declarations: [DotEditContentComponent, MockDotEditContentViewAsToolbarComponent],
             imports: [
                 DialogModule,
                 BrowserAnimationsModule,
@@ -177,6 +183,44 @@ describe('DotEditContentComponent', () => {
         expect(spyLoadingIndicator).toHaveBeenCalled();
     });
 
+    describe('set new View As configuration', () => {
+        let viewAsToolbar: DebugElement;
+
+        beforeEach(() => {
+            viewAsToolbar = fixture.debugElement.query(By.css('dot-edit-content-view-as-toolbar'));
+            component.pageState = new DotRenderedPageState(mockDotRenderedPage, null, mockUser);
+        });
+
+        it('should have a View As toolbar', () => {
+            expect(viewAsToolbar).not.toBeNull();
+        });
+
+        it('should set set the page wrapper dimensions based on device', () => {
+            const pageWrapper: DebugElement = de.query(By.css('.dot-edit__page-wrapper'));
+            component.pageState.viewAs.device = mockDotDevice;
+            fixture.detectChanges();
+            expect(pageWrapper.styles).toEqual({ width: mockDotDevice.cssWidth, height: mockDotDevice.cssHeight });
+        });
+
+        it('should change the Language/Persona of the page when viewAs configuration changes and set the dev', () => {
+            spyOn(component, 'changeViewAsHandler').and.callThrough();
+            spyOn(dotPageStateService, 'set');
+            viewAsToolbar.componentInstance.changeViewAs.emit(mockDotEditPageViewAs);
+
+            expect(component.changeViewAsHandler).toHaveBeenCalledWith(mockDotEditPageViewAs);
+            expect(dotPageStateService.set).toHaveBeenCalledWith(
+                component.pageState.page,
+                component.pageState.state,
+                mockDotEditPageViewAs
+            );
+        });
+
+        it('should send the ViewAs initial configuration to the toolbar', () => {
+            fixture.detectChanges();
+            expect(viewAsToolbar.componentInstance.value).toEqual(mockDotRenderedPage.viewAs);
+        });
+    });
+
     describe('set default page state', () => {
         beforeEach(() => {
             spyOn(dotEditContentHtmlService, 'renderPage');
@@ -200,7 +244,7 @@ describe('DotEditContentComponent', () => {
                     },
                     state: {
                         locked: true,
-                        mode: PageMode.EDIT,
+                        mode: PageMode.EDIT
                     }
                 }
             });
@@ -233,7 +277,7 @@ describe('DotEditContentComponent', () => {
     });
 
     describe('set page state when toolbar emit new state', () => {
-        const spyStateSet = (val) => {
+        const spyStateSet = val => {
             spyOn(dotPageStateService, 'set').and.returnValue(Observable.of(val));
         };
 
@@ -326,7 +370,7 @@ describe('DotEditContentComponent', () => {
             spyOn(dotEditContentHtmlService, 'contentletEvents').and.returnValue(Observable.of(mockResEvent));
             spyOn(dotEditContentHtmlService, 'removeContentlet').and.callFake(() => {});
 
-            spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
+            spyOn(dotDialogService, 'confirm').and.callFake(conf => {
                 conf.accept();
             });
 

@@ -116,11 +116,12 @@ describe('DotEditPageToolbarComponent', () => {
                 pageURI: '',
                 shortyLive: '',
                 shortyWorking: '',
-                workingInode: ''
+                workingInode: '',
             },
             html: '',
             layout: mockDotLayout,
-            canCreateTemplate: true
+            canCreateTemplate: true,
+            viewAs: null
         }, {
             locked: false,
             mode: PageMode.PREVIEW,

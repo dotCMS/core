@@ -4,6 +4,7 @@ import { Observable } from 'rxjs/Observable';
 import { RequestMethod } from '@angular/http';
 import { DotRenderedPage } from '../../../portlets/dot-edit-page/shared/models/dot-rendered-page.model';
 import { PageMode } from '../../../portlets/dot-edit-page/shared/models/page-mode.enum';
+import { DotEditPageViewAs } from '../../../shared/models/dot-edit-page-view-as/dot-edit-page-view-as.model';
 
 /**
  * Provide util methods to get a edit page html
@@ -18,42 +19,61 @@ export class DotRenderHTMLService {
      * Get the page HTML in edit mode
      *
      * @param {string} url
+     * @param {DotEditPageViewAs} viewAsConfig
      * @returns {Observable<DotRenderedPage>}
      * @memberof DotRenderHTMLService
      */
-    getEdit(url: string): Observable<DotRenderedPage> {
-        return this.get(url, PageMode.EDIT);
+    getEdit(url: string, viewAsConfig?: DotEditPageViewAs): Observable<DotRenderedPage> {
+        return this.get(url, PageMode.EDIT, viewAsConfig);
     }
 
     /**
      * Get the page HTML in preview mode
      *
      * @param {string} url
+     * @param {DotEditPageViewAs} viewAsConfig
      * @returns {Observable<DotRenderedPage>}
      * @memberof DotRenderHTMLService
      */
-    getPreview(url: string): Observable<DotRenderedPage> {
-        return this.get(url, PageMode.PREVIEW);
+    getPreview(url: string, viewAsConfig?: DotEditPageViewAs): Observable<DotRenderedPage> {
+        return this.get(url, PageMode.PREVIEW, viewAsConfig);
     }
 
     /**
      * Get the page HTML in live mode
      *
      * @param {string} url
+     * @param {DotEditPageViewAs} viewAsConfig
      * @returns {Observable<DotRenderedPage>}
      * @memberof DotRenderHTMLService
      */
-    getLive(url: string): Observable<DotRenderedPage> {
-        return this.get(url, PageMode.LIVE);
+    getLive(url: string, viewAsConfig?: DotEditPageViewAs): Observable<DotRenderedPage> {
+        return this.get(url, PageMode.LIVE, viewAsConfig);
     }
 
-    private get(url: string, pageMode: PageMode): Observable<DotRenderedPage> {
+    private get(url: string, pageMode: PageMode, viewAsConfig?: DotEditPageViewAs): Observable<DotRenderedPage> {
+        let params = { mode: this.getPageModeString(pageMode) };
+        if (viewAsConfig) {
+            params = {
+                ...params,
+                ...this.setOptionalViewAsParams(viewAsConfig)
+            };
+        }
         return this.coreWebService
             .requestView({
                 method: RequestMethod.Get,
-                url: `v1/page/renderHTML/${url.replace(/^\//, '')}?mode=${this.getPageModeString(pageMode)}`
+                url: `v1/page/renderHTML/${url.replace(/^\//, '')}`,
+                params: params
             })
             .pluck('bodyJsonObject');
+    }
+
+    private setOptionalViewAsParams(viewAsConfig: DotEditPageViewAs) {
+        return {
+            language_id: viewAsConfig.language.id,
+            ...viewAsConfig.persona ? { 'com.dotmarketing.persona.id': viewAsConfig.persona.identifier } : {},
+            ...viewAsConfig.device ? { 'device_inode': viewAsConfig.device.inode } : {}
+        };
     }
 
     private getPageModeString(pageMode: PageMode): string {

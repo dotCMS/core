@@ -10,8 +10,8 @@
     ::ng-deep {
         .ui-toolbar {
             box-shadow: $md-shadow-1;
-            height: 60px;
             margin-bottom: 2px;
+            height: 48px;
         }
     }
 }
@@ -55,7 +55,7 @@
 }
 
 .edit-page-toolbar__page-title {
-    color: $gray;
+    color: $gray-light;
     font-size: $font-size-medium;
     font-weight: normal;
     margin-top: -3px;
@@ -63,6 +63,11 @@
 
 .edit-page-toolbar__page-url-wrapper {
     display: flex;
+}
+
+.edit-page-toolbar__copy-url {
+    width: 25px;
+    height: 25px;
 }
 
 .ui-toolbar-group-center {

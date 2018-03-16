@@ -91,6 +91,7 @@ p-dropdown {
         .ui-dropdown {
             .ui-dropdown-label {
                 line-height: $dropdown-tiny-height;
+                padding-right: $basic-padding * 4;
             }
         }
     }

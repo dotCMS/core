@@ -4,6 +4,7 @@ import { User } from 'dotcms-js/dotcms-js';
 import { DotPage } from './dot-page.model';
 import { DotLayout } from './dot-layout.model';
 import { DotTemplate } from './dot-template.model';
+import { DotEditPageViewAs } from '../../../../shared/models/dot-edit-page-view-as/dot-edit-page-view-as.model';
 
 export interface DotPageState {
     locked: boolean;
@@ -19,6 +20,7 @@ export class DotRenderedPageState {
     private _page: DotPage;
     private _state: DotPageState;
     private _template?: DotTemplate;
+    private _viewAs?: DotEditPageViewAs;
 
     constructor(dotRenderedPage: DotRenderedPage, state: DotPageState, private user: User) {
         this._page = dotRenderedPage.page;
@@ -27,6 +29,7 @@ export class DotRenderedPageState {
         this._layout = dotRenderedPage.layout;
         this._template = dotRenderedPage.template;
         this._state = state || this.getDefaultState(this._page);
+        this._viewAs = dotRenderedPage.viewAs;
         this._canCreateTemplate = dotRenderedPage.canCreateTemplate;
     }
 
@@ -56,6 +59,10 @@ export class DotRenderedPageState {
 
     get template(): DotTemplate {
         return this._template;
+    }
+
+    get viewAs(): DotEditPageViewAs {
+        return this._viewAs;
     }
 
     private getDefaultState(page: DotPage): DotPageState {

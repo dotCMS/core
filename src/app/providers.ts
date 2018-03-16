@@ -21,6 +21,9 @@ import { NotificationsService } from './api/services/notifications-service';
 import { PaginatorService } from './api/services/paginator';
 import { PublicAuthGuardService } from './api/services/guards/public-auth-guard.service';
 import { StringFormat } from './api/util/stringFormat';
+import { DotDevicesService } from './api/services/dot-devices/dot-devices.service';
+import { DotLanguagesService } from './api/services/dot-languages/dot-languages.service';
+import { DotPersonasService } from './api/services/dot-personas/dot-personas.service';
 
 const PROVIDERS: any[] = [
     AccountService,

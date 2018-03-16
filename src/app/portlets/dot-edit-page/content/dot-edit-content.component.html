@@ -6,8 +6,11 @@
     class="dot-edit__toolbar"
     #toolbar>
 </dot-edit-page-toolbar>
-
-<div class="dot-edit__page-wrapper">
+<dot-edit-content-view-as-toolbar
+    (changeViewAs)="changeViewAsHandler($event)"
+    [value]="pageState.viewAs">
+</dot-edit-content-view-as-toolbar>
+<div class="dot-edit__page-wrapper" [ngStyle]="{'width': pageState.viewAs.device?.cssWidth, 'height': pageState.viewAs.device?.cssHeight}">
     <dot-loading-indicator fullscreen="true"></dot-loading-indicator>
     <iframe #iframe width="100%" height="100%" frameborder="0" class="dot-edit__iframe" (load)="onLoad($event)"></iframe>
 
