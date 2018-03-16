@@ -138,8 +138,10 @@ public class ServletToolboxManager extends XMLToolboxManager
     	if(System.getProperty(WebKeys.OSGI_ENABLED)!=null){
 	        // Register main service
 	        BundleContext context = HostActivator.instance().getBundleContext();
-	        Hashtable<String, String> props = new Hashtable<String, String>();
-	        context.registerService(PrimitiveToolboxManager.class.getName(), this, props);
+	        if (context != null) {
+                Hashtable<String, String> props = new Hashtable<String, String>();
+                context.registerService(PrimitiveToolboxManager.class.getName(), this, props);
+            }
     	}
     }
 

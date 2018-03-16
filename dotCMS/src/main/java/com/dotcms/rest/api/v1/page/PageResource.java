@@ -232,7 +232,8 @@ public class PageResource {
                                    @PathParam("uri") final String uri,
                                    @QueryParam("mode") @DefaultValue("LIVE_ADMIN") final String modeStr,
                                    @QueryParam(WebKeys.CMS_PERSONA_PARAMETER) final String personaId,
-                                   @QueryParam("language_id") @DefaultValue("LIVE_ADMIN") final String languageId) {
+                                   @QueryParam("language_id") final String languageId,
+                                   @QueryParam("device_inode") final String deviceInode) {
 
         Logger.debug(this, String.format("Rendering page: uri -> %s mode-> %s language -> persona ->", uri, modeStr,
                 languageId, personaId));
@@ -245,7 +246,6 @@ public class PageResource {
         final PageMode mode = PageMode.get(modeStr);
         PageMode.setPageMode(request, mode);
         try {
-
             final HTMLPageAsset page = (UUIDUtil.isUUID(uri)) ?
                     (HTMLPageAsset) APILocator.getHTMLPageAssetAPI().findPage(uri, user, mode.respectAnonPerms) :
                     this.pageResourceHelper.getPage(request, user, uri, mode);
@@ -268,7 +268,7 @@ public class PageResource {
                     .put("html", this.pageResourceHelper.getPageRendered(page, request, response, user, mode))
                     .put("page", this.pageResourceHelper.getPageMap(page, user))
                     .put("containers", this.pageResourceHelper.getMappedContainers(template))
-                    .put("viewAs", createViewAsMap(request))
+                    .put("viewAs", createViewAsMap(request, user, deviceInode))
                     .put("canCreateTemplate", APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("templates", user));
 
             if (template.isDrawed()) {
@@ -308,7 +308,9 @@ public class PageResource {
         return res;
     }
 
-    private ImmutableMap<Object, Object> createViewAsMap(final HttpServletRequest request) {
+    private ImmutableMap<Object, Object> createViewAsMap(final HttpServletRequest request, final User user,
+                                                         final String deviceInode) throws DotDataException {
+
         final Builder<Object, Object> builder = ImmutableMap.builder();
 
         final Persona currentPersona = (Persona) this.pageResourceHelper.getCurrentPersona(request);
@@ -318,6 +320,26 @@ public class PageResource {
         }
 
         builder.put("language", WebAPILocator.getLanguageWebAPI().getLanguage(request));
+
+        try {
+            final String currentDeviceId = deviceInode == null ?
+                    (String) request.getSession().getAttribute(WebKeys.CURRENT_DEVICE)
+                    : deviceInode;
+
+            if (currentDeviceId != null) {
+                final Contentlet device = APILocator.getContentletAPI().find(currentDeviceId, user, false);
+
+                if (device != null) {
+                    builder.put("device", device.getMap());
+                    request.getSession().setAttribute(WebKeys.CURRENT_DEVICE, deviceInode);
+                } else {
+                    request.getSession().removeAttribute(WebKeys.CURRENT_DEVICE);
+                }
+            }
+        } catch (DotSecurityException e) {
+            //In this case don't response with the device attribute
+        }
+
         return builder.build();
     }
 

@@ -42,6 +42,7 @@ import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 
 import com.dotcms.repackage.javax.ws.rs.*;
@@ -87,7 +88,7 @@ public class ContentTypeResource implements Serializable {
 			Logger.debug(this, String.format("Saving new content type", form.getRequestJson()));
 
 			final Iterable<ContentTypeForm.ContentTypeFormEntry> typesToSave = form.getIterable();
-			final List<ContentType> retTypes = new ArrayList<>();
+			final List<Map<Object, Object>> retTypes = new ArrayList<>();
 
 			// Validate input
 			for (final ContentTypeForm.ContentTypeFormEntry entry : typesToSave) {
@@ -98,12 +99,18 @@ public class ContentTypeResource implements Serializable {
 					return ExceptionMapperUtil.createResponse(null, "ContentType 'id' if set, should be a uuid");
 				}
 				final ContentType contentTypeSaved = APILocator.getContentTypeAPI(user, true).save(type);
-				retTypes.add(contentTypeSaved);
-				this.workflowHelper.saveSchemesByContentType(contentTypeSaved.inode(), user, workflowsIds);
+				this.workflowHelper.saveSchemesByContentType(contentTypeSaved.id(), user, workflowsIds);
+
+				ImmutableMap<Object, Object> responseMap = ImmutableMap.builder()
+						.putAll(new JsonContentTypeTransformer(contentTypeSaved).mapObject())
+						.put("workflows", this.workflowHelper.findSchemesByContentType(contentTypeSaved.id(), initData.getUser()))
+						.build();
+
+				retTypes.add(responseMap);
 			}
 
 
-			response = Response.ok(new ResponseEntityView(new JsonContentTypeTransformer(retTypes).mapList())).build();
+			response = Response.ok(new ResponseEntityView(retTypes)).build();
 
 		} catch (DotStateException | DotDataException e) {
 
@@ -159,7 +166,13 @@ public class ContentTypeResource implements Serializable {
 
 					final List<String> workflowsIds = form.getWorkflowsIds();
 					workflowHelper.saveSchemesByContentType(id, user, workflowsIds);
-					response = Response.ok(new ResponseEntityView(new JsonContentTypeTransformer(contentType).mapObject())).build();
+
+					ImmutableMap<Object, Object> responseMap = ImmutableMap.builder()
+							.putAll(new JsonContentTypeTransformer(contentType).mapObject())
+							.put("workflows", this.workflowHelper.findSchemesByContentType(id, initData.getUser()))
+							.build();
+
+					response = Response.ok(new ResponseEntityView(responseMap)).build();
 				}
 			}
 		} catch (NotFoundInDbException e) {

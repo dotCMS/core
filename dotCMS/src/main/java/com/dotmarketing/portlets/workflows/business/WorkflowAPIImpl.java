@@ -6,6 +6,8 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.util.DotPreconditions;
+import com.dotcms.util.FriendClass;
+import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.*;
@@ -20,11 +22,7 @@ import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.actionlet.*;
 import com.dotmarketing.portlets.workflows.model.*;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
@@ -49,6 +47,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	private final WorkflowStateFilter workflowStatusFilter =
 			new WorkflowStateFilter();
+
+	// not very fancy, but the WorkflowImport is a friend of WorkflowAPI
+	private volatile FriendClass  friendClass = null;
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public WorkflowAPIImpl() {
@@ -86,6 +87,22 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		registerBundleService();
 	}
 
+	private FriendClass getFriendClass () {
+
+		if (null == this.friendClass) {
+			synchronized (this) {
+
+				if (null == this.friendClass) {
+					this.friendClass =
+							new FriendClass(ReflectionUtils.getClassFor
+									("com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil"));
+				}
+			}
+		}
+
+		return this.friendClass;
+	}
+
 	public void registerBundleService () {
 		if(System.getProperty(WebKeys.OSGI_ENABLED)!=null){
 			// Register main service
@@ -101,14 +118,17 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	private void isUserAllowToModifiedWorkflow (final User user) {
 
-		/*try {
-			DotPreconditions.isTrue(
-                    (LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level) &&
-                            APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("workflow-schemes",user),
-                    ()-> "User " + user + " cannot access workflows ", NotAllowedUserWorkflowException.class);
+		try {
+			// if the class calling the workflow api is not friend, so checks the validation
+			if (!this.getFriendClass().isFriend()) {
+				DotPreconditions.isTrue(
+						(LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level) &&
+								APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("workflow-schemes", user),
+						() -> "User " + user + " cannot access workflows ", NotAllowedUserWorkflowException.class);
+			}
 		} catch (DotDataException e) {
 			throw new NotAllowedUserWorkflowException(e);
-		}*/
+		}
 	}
 
 	public WorkFlowActionlet newActionlet(String className) throws DotDataException {
@@ -609,7 +629,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		for (final WorkflowAction workflowAction : unfilteredActions) {
 
-			if (workflowStatusFilter.filter(workflowAction,
+			if (this.workflowStatusFilter.filter(workflowAction,
 					new ContentletStateOptions(isNew, isPublished, isArchived, canLock, isLocked))) {
 
             	actions.add(workflowAction);
@@ -1270,6 +1290,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, dependencies.getWorkflowAssignKey());
 		}
 
+		this.validateAction (contentlet, dependencies.getModUser());
+
 		final WorkflowProcessor processor = this.fireWorkflowPreCheckin(contentlet, dependencies.getModUser());
 
 		processor.setContentletDependencies(dependencies);
@@ -1277,6 +1299,30 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		return processor.getContentlet();
 	} // fireContentWorkflow
+
+	private void validateAction(final Contentlet contentlet, final User user) throws DotDataException {
+
+		final String actionId = contentlet.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY);
+
+		if (null != actionId) {
+
+			try {
+
+				final WorkflowAction action 	   = this.findAction(actionId, user);
+				final List<WorkflowScheme> schemes = this.findSchemesForContentType(contentlet.getContentType());
+
+				if (null != action && null != schemes) {
+
+					if (!schemes.stream().anyMatch(scheme -> scheme.getId().equals(action.getSchemeId()))) {
+
+						throw new DotDataException("Invalid-Action-Scheme-Error");
+					}
+				}
+			} catch (DotSecurityException e) {
+				throw new DotDataException(e);
+			}
+		}
+	} // validateAction.
 
 
 	public WorkflowProcessor fireWorkflowNoCheckin(Contentlet contentlet, User user) throws DotDataException,DotWorkflowException, DotContentletValidationException{
