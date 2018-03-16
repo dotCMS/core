@@ -26,7 +26,7 @@ export class ContentTypesInfoService {
         {
             clazz: 'com.dotcms.contenttype.model.type.ImmutablePageContentType',
             icon: 'fa-file-text-o',
-            label: 'page'
+            label: 'htmlpage'
         },
         {
             clazz: 'com.dotcms.contenttype.model.type.ImmutablePersonaContentType',
@@ -110,8 +110,8 @@ export class ContentTypesInfoService {
      * @param type
      */
     private getTypeName(type: string): string {
-        if (type === 'HTMLPAGE' || type === 'htmlpage') {
-            type = 'PAGE';
+        if (type === 'htmlpage') {
+            type = 'HTMLPAGE';
         }
         if (type === 'FILE' || type === 'file' || type === 'File') {
             type = 'FILEASSET';

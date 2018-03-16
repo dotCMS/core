@@ -1,7 +1,6 @@
 import { DotDialogService } from '../../../../../api/services/dot-dialog/dot-dialog.service';
 import { Component, OnInit, Input, EventEmitter, Output, ViewChild, ElementRef, SimpleChanges, OnChanges } from '@angular/core';
-import { SelectItem, InputSwitch, MenuItem } from 'primeng/primeng';
-import { DotRenderedPage } from '../../../shared/models/dot-rendered-page.model';
+import { SelectItem, InputSwitch } from 'primeng/primeng';
 import { DotEditPageState } from '../../../../../shared/models/dot-edit-page-state/dot-edit-page-state.model';
 import { DotMessageService } from '../../../../../api/services/dot-messages-service';
 import { DotGlobalMessageService } from '../../../../../view/components/_common/dot-global-message/dot-global-message.service';

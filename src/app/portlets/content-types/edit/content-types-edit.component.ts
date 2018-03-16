@@ -70,7 +70,6 @@ export class ContentTypesEditComponent implements OnInit {
                 'contenttypes.content.persona',
                 'contenttypes.content.vanity_url',
                 'contenttypes.content.variable',
-                'contenttypes.content.variable',
                 'contenttypes.content.widget',
                 'contenttypes.form.identifier'
             ])

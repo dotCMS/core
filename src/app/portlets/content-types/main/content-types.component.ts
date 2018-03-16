@@ -98,9 +98,6 @@ export class ContentTypesPortletComponent implements OnInit {
 
             this.actionHeaderOptions = {
                 primary: {
-                    command: ($event) => {
-                        this.createContentType($event);
-                    },
                     model: this.setContentTypes(baseTypes)
                 }
             };

@@ -4,12 +4,8 @@ import { By } from '@angular/platform-browser';
 import { SplitButton } from 'primeng/primeng';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { DotWorkflowServiceMock } from '../../../../../test/dot-workflow-service.mock';
-import { Observable } from 'rxjs/Observable';
-import { DotWorkflowAction } from '../../../../../shared/models/dot-workflow-action/dot-workflow-action.model';
 import { DotWorkflowService } from '../../../../../api/services/dot-workflow/dot-workflow.service';
 import { DotEditPageWorkflowsActionsComponent } from './dot-edit-page-workflows-actions.component';
-import { CommonModule } from '@angular/common';
-import { SplitButtonModule } from 'primeng/components/splitbutton/splitbutton';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 

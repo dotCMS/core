@@ -1,4 +1,4 @@
-import { DebugElement, ComponentFactoryResolver, SimpleChange, Directive, Input, Injectable, Component, OnInit } from '@angular/core';
+import { DebugElement, ComponentFactoryResolver, Directive, Input, Injectable, Component } from '@angular/core';
 import { ContentTypeFieldsPropertiesFormComponent } from './content-type-fields-properties-form.component';
 import { ComponentFixture, async } from '@angular/core/testing';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';

@@ -8,4 +8,5 @@ export interface DotWorkflow {
     defaultScheme: boolean;
     modDate: Date;
     entryActionId: string;
+    system: boolean;
 }

@@ -1,8 +1,7 @@
-import { DotWorkflowService } from './dot-workflow.service';
 import { DOTTestBed } from '../../../test/dot-test-bed';
+import { DotWorkflowService } from './dot-workflow.service';
 import { MockBackend } from '@angular/http/testing';
 import { ConnectionBackend, ResponseOptions, Response } from '@angular/http';
-import { DotWorkflowAction } from '../../../shared/models/dot-workflow-action/dot-workflow-action.model';
 
 describe('DotWorkflowService', () => {
     beforeEach(() => {

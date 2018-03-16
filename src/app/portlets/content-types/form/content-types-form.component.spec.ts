@@ -2,24 +2,26 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, async } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
-import { ReactiveFormsModule } from '@angular/forms';
+import { ReactiveFormsModule, AbstractControl } from '@angular/forms';
+import { RouterTestingModule } from '@angular/router/testing';
 
 import { Observable } from 'rxjs/Observable';
 
+import { DropdownModule, OverlayPanelModule, ButtonModule, InputTextModule, TabViewModule, MultiSelect } from 'primeng/primeng';
+
+import { DotcmsConfig, LoginService } from 'dotcms-js/dotcms-js';
+import { SiteService } from 'dotcms-js/dotcms-js';
+
 import { ContentTypesFormComponent } from './content-types-form.component';
 import { DOTTestBed } from '../../../test/dot-test-bed';
-import { DotcmsConfig, LoginService } from 'dotcms-js/dotcms-js';
-import { DropdownModule, OverlayPanelModule, ButtonModule, InputTextModule, TabViewModule } from 'primeng/primeng';
 import { FieldValidationMessageModule } from '../../../view/components/_common/field-validation-message/file-validation-message.module';
 import { LoginServiceMock } from '../../../test/login-service.mock';
 import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { ContentTypesInfoService } from '../../../api/services/content-types-info';
 import { SiteSelectorFieldModule } from '../../../view/components/_common/site-selector-field/site-selector-field.module';
-import { SiteService } from 'dotcms-js/dotcms-js';
 import { SiteServiceMock } from '../../../test/site-service.mock';
 import { DotWorkflowService } from '../../../api/services/dot-workflow/dot-workflow.service';
-import { RouterTestingModule } from '@angular/router/testing';
 import { MdInputTextModule } from '../../../view/directives/md-inputtext/md-input-text.module';
 
 describe('ContentTypesFormComponent', () => {
@@ -28,6 +30,7 @@ describe('ContentTypesFormComponent', () => {
     let de: DebugElement;
     let el: HTMLElement;
     let dotcmsConfig: DotcmsConfig;
+    let dotWorkflowService: DotWorkflowService;
 
     beforeEach(
         async(() => {
@@ -96,6 +99,27 @@ describe('ContentTypesFormComponent', () => {
             el = de.nativeElement;
 
             dotcmsConfig = fixture.debugElement.injector.get(DotcmsConfig);
+
+            dotWorkflowService = fixture.debugElement.injector.get(DotWorkflowService);
+            spyOn(dotWorkflowService, 'get').and.returnValue(
+                Observable.of([
+                    {
+                        id: '123',
+                        name: 'Workflow 1',
+                        system: false
+                    },
+                    {
+                        id: '456',
+                        name: 'Workflow 2',
+                        system: false
+                    },
+                    {
+                        id: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2',
+                        name: 'System Workflow',
+                        system: true
+                    }
+                ])
+            );
         })
     );
 
@@ -362,55 +386,6 @@ describe('ContentTypesFormComponent', () => {
         });
     });
 
-    it('should show workflow disabled and with message if the license community its true', () => {
-        spyOn(dotcmsConfig, 'getConfig').and.returnValue(
-            Observable.of({
-                license: { isCommunity: true }
-            })
-        );
-
-        comp.data = {
-            baseType: 'CONTENT'
-        };
-        fixture.detectChanges();
-
-        const workflowMsg = de.query(By.css('#field-workflow-hint'));
-        expect(workflowMsg).toBeTruthy();
-        expect(comp.form.get('workflow').disabled).toBeTruthy();
-    });
-
-    it('should show workflow enable and no message if the license community its false', () => {
-        spyOn(dotcmsConfig, 'getConfig').and.returnValue(
-            Observable.of({
-                license: { isCommunity: false }
-            })
-        );
-
-        comp.data = {
-            baseType: 'CONTENT'
-        };
-        fixture.detectChanges();
-
-        const workflowMsg = de.query(By.css('#field-workflow-hint'));
-        expect(workflowMsg).toBeFalsy();
-        expect(comp.form.get('workflow').disabled).toBeFalsy();
-    });
-
-    it('should call the WorkFlow endpoint if the license community its false', () => {
-        const DotWorkflow: DotWorkflowService = fixture.debugElement.injector.get(DotWorkflowService);
-        spyOn(dotcmsConfig, 'getConfig').and.returnValue(
-            Observable.of({
-                license: { isCommunity: false }
-            })
-        );
-        spyOn(DotWorkflow, 'get').and.returnValue(Observable.of([{ id: '123' }]));
-        comp.data = {
-            baseType: 'CONTENT'
-        };
-        fixture.detectChanges();
-        expect(DotWorkflow.get).toHaveBeenCalled();
-    });
-
     it('should render disabled dates fields and hint when date fields are not passed', () => {
         comp.data = {
             baseType: 'CONTENT',
@@ -425,28 +400,53 @@ describe('ContentTypesFormComponent', () => {
         expect(comp.form.get('expireDateVar').disabled).toBe(true);
     });
 
-    it('should render enabled dates fields when date fields are passed', () => {
-        comp.data = {
-            baseType: 'CONTENT'
-        };
-        comp.fields = [
-            {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableDateTimeField',
-                id: '123',
-                indexed: true,
-                name: 'Date 1'
-            },
-            {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableDateTimeField',
-                id: '456',
-                indexed: true,
-                name: 'Date 2'
-            }
-        ];
-        fixture.detectChanges();
+    describe('fields dates enabled', () => {
+        beforeEach(() => {
+            comp.data = {
+                baseType: 'CONTENT'
+            };
+            comp.fields = [
+                {
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableDateTimeField',
+                    id: '123',
+                    indexed: true,
+                    name: 'Date 1'
+                },
+                {
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableDateTimeField',
+                    id: '456',
+                    indexed: true,
+                    name: 'Date 2'
+                }
+            ];
+            fixture.detectChanges();
+        });
 
-        expect(comp.form.get('publishDateVar').disabled).toBe(false);
-        expect(comp.form.get('expireDateVar').disabled).toBe(false);
+        it('should render enabled dates fields when date fields are passed', () => {
+            expect(comp.form.get('publishDateVar').disabled).toBe(false);
+            expect(comp.form.get('expireDateVar').disabled).toBe(false);
+        });
+
+        it('should patch publishDateVar', () => {
+            const field: AbstractControl = comp.form.get('publishDateVar');
+            field.setValue('123');
+
+            const expireDateVarField = de.query(By.css('#content-type-form-expire-date-field'));
+            expireDateVarField.triggerEventHandler('onChange',  {value: '123'});
+
+            expect(field.value).toBe('');
+        });
+
+        it('should patch expireDateVar', () => {
+            const field: AbstractControl = comp.form.get('expireDateVar');
+
+            field.setValue('123');
+
+            const expireDateVarField = de.query(By.css('#content-type-form-publish-date-field'));
+            expireDateVarField.triggerEventHandler('onChange',  {value: '123'});
+
+            expect(field.value).toBe('');
+        });
     });
 
     it('should not submit form with invalid form', () => {
@@ -466,6 +466,11 @@ describe('ContentTypesFormComponent', () => {
     });
 
     it('should send data with valid form', () => {
+        spyOn(dotcmsConfig, 'getConfig').and.returnValue(
+            Observable.of({
+                license: { isCommunity: true }
+            })
+        );
         comp.data = {
             baseType: 'CONTENT'
         };
@@ -493,7 +498,118 @@ describe('ContentTypesFormComponent', () => {
             defaultType: null,
             fixed: null,
             folder: null,
-            system: null
+            system: null,
+            workflow: ['d61a59e1-a49c-46f2-a929-db2b4bfa88b2']
+        });
+    });
+
+    describe('workflow field', () => {
+        describe('create', () => {
+            beforeEach(() => {
+                comp.data = {
+                    baseType: 'CONTENT'
+                };
+            });
+
+            describe('community license true', () => {
+                beforeEach(() => {
+                    spyOn(dotcmsConfig, 'getConfig').and.returnValue(
+                        Observable.of({
+                            license: { isCommunity: true }
+                        })
+                    );
+                    fixture.detectChanges();
+                });
+
+                it('should show workflow disabled and with message if the license community its true', () => {
+                    const workflowMsg = de.query(By.css('#field-workflow-hint'));
+                    expect(workflowMsg).toBeTruthy();
+                    expect(comp.form.get('workflow').disabled).toBeTruthy();
+                });
+            });
+
+            describe('community license true', () => {
+                beforeEach(() => {
+                    spyOn(dotcmsConfig, 'getConfig').and.returnValue(
+                        Observable.of({
+                            license: { isCommunity: false }
+                        })
+                    );
+                    fixture.detectChanges();
+                });
+
+                it('should show workflow enable and no message if the license community its false', () => {
+                    const workflowMsg = de.query(By.css('#field-workflow-hint'));
+                    expect(workflowMsg).toBeFalsy();
+                    expect(comp.form.get('workflow').disabled).toBeFalsy();
+                });
+
+                it('should call the WorkFlow endpoint if the license community its false', () => {
+                    expect(dotWorkflowService.get).toHaveBeenCalled();
+                });
+
+                it('should pass the workflows selectiems', () => {
+                    const workflowInput: MultiSelect = de.query(By.css('#content-type-form-workflow')).componentInstance;
+                    expect(workflowInput.options).toEqual([
+                        {
+                            value: '123',
+                            label: 'Workflow 1'
+                        },
+                        {
+                            value: '456',
+                            label: 'Workflow 2'
+                        },
+                        {
+                            value: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2',
+                            label: 'System Workflow'
+                        }
+                    ]);
+                });
+
+                it('should set system worflow selected as default when create content', () => {
+                    expect(comp.form.get('workflow').value).toEqual(['d61a59e1-a49c-46f2-a929-db2b4bfa88b2']);
+                });
+            });
+        });
+
+        describe('edit', () => {
+            it('should set values from the server', () => {
+                comp.data = {
+                    baseType: 'CONTENT',
+                    id: '123',
+                    workflows: [
+                        {
+                            id: '123',
+                            name: 'Workflow 1'
+                        },
+                        {
+                            id: '456',
+                            name: 'Workflow 2'
+                        }
+                    ]
+                };
+                spyOn(dotcmsConfig, 'getConfig').and.returnValue(
+                    Observable.of({
+                        license: { isCommunity: false }
+                    })
+                );
+                fixture.detectChanges();
+                expect(comp.form.get('workflow').value).toEqual(['123', '456']);
+            });
+
+            it('should set empty value', () => {
+                comp.data = {
+                    baseType: 'CONTENT',
+                    id: '123'
+                };
+                spyOn(dotcmsConfig, 'getConfig').and.returnValue(
+                    Observable.of({
+                        license: { isCommunity: false }
+                    })
+                );
+                fixture.detectChanges();
+                expect(comp.form.get('workflow').value).toEqual([]);
+            });
         });
     });
 });

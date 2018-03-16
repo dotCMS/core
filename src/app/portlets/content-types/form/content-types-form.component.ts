@@ -46,7 +46,7 @@ export class ContentTypesFormComponent implements OnInit {
     constructor(
         private dotcmsConfig: DotcmsConfig,
         private fb: FormBuilder,
-        private DotWorkflowService: DotWorkflowService,
+        private dotWorkflowService: DotWorkflowService,
         public dotMessageService: DotMessageService
     ) {
         dotMessageService
@@ -57,15 +57,6 @@ export class ContentTypesFormComponent implements OnInit {
                 'contenttypes.action.form.cancel',
                 'contenttypes.action.save',
                 'contenttypes.action.update',
-                'contenttypes.content.content',
-                'contenttypes.content.fileasset',
-                'contenttypes.content.form',
-                'contenttypes.content.htmlpage',
-                'contenttypes.content.key_value',
-                'contenttypes.content.persona',
-                'contenttypes.content.vanity_url',
-                'contenttypes.content.variable',
-                'contenttypes.content.widget',
                 'contenttypes.form.field.detail.page',
                 'contenttypes.form.field.expire.date.field',
                 'contenttypes.form.field.host_folder.label',
@@ -89,6 +80,21 @@ export class ContentTypesFormComponent implements OnInit {
         this.bindActionButtonState();
         this.setNameFieldLabel();
         this.name.nativeElement.focus();
+    }
+
+    /**
+     * Update expireDateVar and publishDateVar fields base on selection
+     *
+     * @param {any} $event
+     * @param {any} field
+     * @memberof ContentTypesFormComponent
+     */
+    handleDateVarChange($event, field): void {
+        if (field === 'publishDateVar') {
+            this.updateExpireDateVar($event.value);
+        } else {
+            this.updatePublishDateVar($event.value);
+        }
     }
 
     /**
@@ -122,7 +128,10 @@ export class ContentTypesFormComponent implements OnInit {
      */
     submitForm(): void {
         if (this.form.valid) {
-            this.submit.emit(this.form.value);
+            this.submit.emit({
+                ...this.form.value,
+                workflow: this.form.getRawValue().workflow
+            });
         }
     }
 
@@ -166,9 +175,7 @@ export class ContentTypesFormComponent implements OnInit {
             host: this.data.host || '',
             name: [this.data.name || '', [Validators.required]],
             publishDateVar: [{ value: this.data.publishDateVar || '', disabled: true }],
-            workflow: [
-                { value: this.data.workflows ? this.data.workflows.map((workflow) => workflow.id) : [], disabled: true }
-            ],
+            workflow: [{ value: this.data.workflows ? this.data.workflows.map((workflow) => workflow.id) : [], disabled: true }],
             defaultType: this.data.defaultType,
             fixed: this.data.fixed,
             folder: this.data.folder,
@@ -198,8 +205,13 @@ export class ContentTypesFormComponent implements OnInit {
     }
 
     private fillWorkflowFieldOptions(): void {
-        this.workflowOptions = this.DotWorkflowService
+        this.workflowOptions = this.dotWorkflowService
             .get()
+            .do((workflows: DotWorkflow[]) => {
+                if (!this.isEditMode()) {
+                    this.setDefaultWorkflow(workflows);
+                }
+            })
             .flatMap((workflows: DotWorkflow[]) => workflows)
             .map((workflow: DotWorkflow) => this.getWorkflowFieldOption(workflow))
             .toArray();
@@ -229,7 +241,7 @@ export class ContentTypesFormComponent implements OnInit {
     }
 
     private setBaseTypeContentSpecificFields(): void {
-        this.form.addControl('detailPage', new FormControl((this.data && this.data.detailPage) || ''));
+        this.form.addControl('detailPage', new FormControl(this.data.detailPage || ''));
         this.form.addControl('urlMapPattern', new FormControl((this.data && this.data.urlMapPattern) || ''));
     }
 
@@ -264,16 +276,42 @@ export class ContentTypesFormComponent implements OnInit {
         this.setSaveState();
     }
 
+    private setDefaultWorkflow(workflows: DotWorkflow[]): void {
+        const defaultValue = workflows
+            .filter((workflow: DotWorkflow) => workflow.system)
+            .map((workflow: DotWorkflow) => workflow.id);
+
+        this.form.get('workflow').setValue(defaultValue);
+    }
+
     private updateWorkflowFormControl(license): void {
+        this.fillWorkflowFieldOptions();
+
         if (!license.isCommunity) {
             const workflowControl = this.form.get('workflow');
-            this.fillWorkflowFieldOptions();
+
             workflowControl.enable();
 
             if (this.originalValue) {
                 this.originalValue.workflow = workflowControl.value;
             }
             this.setSaveState();
+        }
+    }
+
+    private updateExpireDateVar(value: string): void {
+        const expireDateVar = this.form.get('expireDateVar');
+
+        if (expireDateVar.value === value) {
+            expireDateVar.patchValue('');
+        }
+    }
+
+    private updatePublishDateVar(value: string): void {
+        const publishDateVar = this.form.get('publishDateVar');
+
+        if (publishDateVar.value === value) {
+            publishDateVar.patchValue('');
         }
     }
 }

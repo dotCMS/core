@@ -9,7 +9,6 @@ import { DotMessageService } from '../../../../../api/services/dot-messages-serv
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { SplitButton } from 'primeng/primeng';
 import { DotGlobalMessageService } from '../../../../../view/components/_common/dot-global-message/dot-global-message.service';
 import { DotEventsService } from '../../../../../api/services/dot-events/dot-events.service';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
@@ -17,8 +16,6 @@ import { PageMode } from '../../../shared/models/page-mode.enum';
 import { DotRenderedPageState } from '../../../shared/models/dot-rendered-page-state.model';
 import { mockUser } from '../../../../../test/login-service.mock';
 import { DotWorkflowServiceMock } from '../../../../../test/dot-workflow-service.mock';
-import { Observable } from 'rxjs/Observable';
-import { DotWorkflowAction } from '../../../../../shared/models/dot-workflow-action/dot-workflow-action.model';
 import { DotWorkflowService } from '../../../../../api/services/dot-workflow/dot-workflow.service';
 import { mockDotPage, mockDotLayout } from '../../../../../test/dot-rendered-page.mock';
 

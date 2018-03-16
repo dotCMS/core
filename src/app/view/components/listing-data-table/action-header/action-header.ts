@@ -30,6 +30,17 @@ export class ActionHeaderComponent extends BaseComponent implements OnChanges {
         }
     }
 
+    /**
+     * Trigger button primary actions if is defined
+     *
+     * @memberof ActionHeaderComponent
+     */
+    handlePrimaryAction(): void {
+        if (this.options.primary.command) {
+            this.options.primary.command();
+        }
+    }
+
     private setCommandWrapper(options: ButtonAction[]): void {
         options.forEach((actionButton) => {
             actionButton.model.filter((model) => model.deleteOptions).forEach((model) => {

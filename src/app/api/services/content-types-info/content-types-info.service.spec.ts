@@ -13,7 +13,7 @@ describe('ContentTypesInfoService', () => {
     });
 
     it('should return a fa-file-text-o for page', () => {
-        expect(this.iconsService.getIcon('page')).toBe('fa-file-text-o');
+        expect(this.iconsService.getIcon('htmlpage')).toBe('fa-file-text-o');
     });
 
     it('should return a ImmutableWidgetContentType for page', () => {

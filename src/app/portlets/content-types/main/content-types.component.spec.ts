@@ -267,4 +267,9 @@ describe('ContentTypesPortletComponent', () => {
         expect(dotContentletService.getAllContentTypes).toHaveBeenCalled();
         expect(comp.actionHeaderOptions.primary.model.length).toEqual(3);
     });
+
+    it('should not set primary command in the header options', () => {
+        fixture.detectChanges();
+        expect(comp.actionHeaderOptions.primary.command).toBe(undefined);
+    });
 });
