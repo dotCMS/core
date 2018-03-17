@@ -94,10 +94,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 				if (null == this.friendClass) {
 					this.friendClass =
-							new FriendClass(
-									ReflectionUtils.getClassFor("com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil"),
-									ReflectionUtils.getClassFor("com.dotcms.rest.api.v1.workflow.WorkflowResourceIntegrationTest")
-							);
+							new FriendClass(ReflectionUtils.getClassFor
+									("com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil"));
 				}
 			}
 		}
