@@ -1,3 +1,5 @@
+<%@ page import="com.dotmarketing.exception.DotDataException" %>
+
 <%
 	if (portlet == null) {
 	    //Added some debug and error handling code....
@@ -6,7 +8,10 @@
 
 	boolean access = false;
 	try {
-		access = APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(portlet.getPortletId(),user);
+		String accessPortletId = request.getParameter(WebKeys.PORTLET_URL_CURRENT_ANGULAR_PORTLET) != null ?
+				request.getParameter(WebKeys.PORTLET_URL_CURRENT_ANGULAR_PORTLET) :
+				portlet.getPortletId();
+		access = APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(accessPortletId,user);
 	} catch (DotDataException e) {
 		e.printStackTrace();
 	}
@@ -155,7 +160,6 @@ boolean showPortletInactive = portlet.isShowPortletInactive();
 	%>
 		
 <%@page import="com.dotmarketing.business.APILocator"%>
-<%@ page import="com.dotmarketing.exception.DotDataException" %>
 <jsp:include page="/html/portal/portlet_error.jsp"></jsp:include>
 	<%
 		}

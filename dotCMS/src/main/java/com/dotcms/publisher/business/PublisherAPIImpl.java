@@ -1,5 +1,6 @@
 package com.dotcms.publisher.business;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.environment.bean.Environment;
@@ -500,6 +501,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			"FROM publishing_queue p order by bundle_id ";
 
 	@Override
+	@CloseDBIfOpened
 	public List<PublishQueueElement> getQueueElements() throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
@@ -508,14 +510,13 @@ public class PublisherAPIImpl extends PublisherAPI{
 		}catch(Exception e){
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
-		}finally{
-			DbConnectionFactory.closeConnection();
 		}
 	}
 
 	private static final String COUNTENTRIES="select count(*) as count from publishing_queue ";
 
 	@Override
+	@CloseDBIfOpened
 	public Integer countQueueElements() throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
@@ -525,8 +526,6 @@ public class PublisherAPIImpl extends PublisherAPI{
 		}catch(Exception e){
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
-		}finally{
-			DbConnectionFactory.closeConnection();
 		}
 	}
 
@@ -581,6 +580,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 	}
 
 	@Override
+	@CloseDBIfOpened
 	public List<Map<String,Object>> getQueueBundleIds(int limit, int offest) throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
@@ -591,8 +591,6 @@ public class PublisherAPIImpl extends PublisherAPI{
 		}catch(Exception e){
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
-		}finally{
-			DbConnectionFactory.closeConnection();
 		}
 	}
 
@@ -608,6 +606,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			"order by publish_date ASC,operation ASC";
 
 	@Override
+	@CloseDBIfOpened
 	public List<Map<String, Object>> getQueueBundleIdsToProcess() throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
@@ -620,8 +619,6 @@ public class PublisherAPIImpl extends PublisherAPI{
 		}catch(Exception e){
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to get list of bundles to process: " + e.getMessage(), e);
-		}finally{
-			DbConnectionFactory.closeConnection();
 		}
 	}
 
@@ -630,6 +627,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			"FROM publishing_queue p where bundle_id = ? order by asset ";
 
 	@Override
+	@CloseDBIfOpened
 	public List<PublishQueueElement> getQueueElementsByBundleId(String bundleId) throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
@@ -640,8 +638,6 @@ public class PublisherAPIImpl extends PublisherAPI{
 		}catch(Exception e){
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
-		}finally{
-			DbConnectionFactory.closeConnection();
 		}
 	}
 

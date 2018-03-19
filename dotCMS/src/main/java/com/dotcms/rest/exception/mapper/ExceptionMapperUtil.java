@@ -1,11 +1,18 @@
 package com.dotcms.rest.exception.mapper;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
+import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.User;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Map;
@@ -74,7 +81,17 @@ public final class ExceptionMapperUtil {
      */
     public static Response  createResponse(final Exception exception, final Response.Status status){
         //Create the message.
-        final String message = exception.getMessage();
+        String message = exception.getMessage();
+        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        if(null != request){
+            try{
+              final User user = WebAPILocator.getUserWebAPI().getUser(request);
+              message = LanguageUtil.get(user, message);
+            }catch (Exception e){
+                Logger.debug(ExceptionMapperUtil.class,e.getMessage(),e);
+            }
+        }
+
         //Creating the message in JSON format.
         if (ConfigUtils.isDevMode()) {
 
