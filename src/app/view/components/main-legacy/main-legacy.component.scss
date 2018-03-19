@@ -10,6 +10,11 @@ $sidebar-width: 190px;
     width: 100vw;
 }
 
+.layout__toolbar {
+    box-shadow: $md-shadow-1;
+    z-index: 11;
+}
+
 .layout__content {
     display: flex;
     flex-grow: 1;

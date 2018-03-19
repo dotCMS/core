@@ -200,6 +200,7 @@ describe('DotEditContentComponent', () => {
             component.pageState.viewAs.device = mockDotDevice;
             fixture.detectChanges();
             expect(pageWrapper.styles).toEqual({ width: mockDotDevice.cssWidth, height: mockDotDevice.cssHeight });
+            expect(pageWrapper.nativeElement.classList.contains('dot-edit__page-wrapper--deviced')).toBe(true);
         });
 
         it('should change the Language/Persona of the page when viewAs configuration changes and set the dev', () => {
@@ -259,12 +260,13 @@ describe('DotEditContentComponent', () => {
                 content: {
                     page: {
                         ...mockDotRenderedPage,
-                        canLock: true
+                        canLock: true,
                     },
                     state: {
                         locked: true,
                         mode: PageMode.PREVIEW
-                    }
+                    },
+                    viewAs: {}
                 }
             });
             fixture.detectChanges();
