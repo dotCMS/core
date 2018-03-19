@@ -176,7 +176,7 @@
 						<span class="required"></span><%= LanguageUtil.get(pageContext, "Parent-Structure") %>:
 					</dt>
 					<dd>
-						<select dojoType="dijit.form.FilteringSelect" name="parentStructureInode" id="parentStructureInode" onchange="relationNameChanged(); structuresChanged(); "  disabled="<%=disabled%>" value="<%= UtilMethods.isSet(relationshipForm.getParentStructureInode()) ? relationshipForm.getParentStructureInode() : "" %>">
+						<select dojoType="dijit.form.FilteringSelect" name="parentStructureInode" id="parentStructureInode" onchange="relationNameChanged(); structuresChanged(); "  disabled="<%=disabled%>" value="<%=currentContentTypeId%>">
 							<% for (Structure structure: structures) { %>
 							<option value="<%= structure.getInode() %>"><%= structure.getName() %></option>
 							<% } %>

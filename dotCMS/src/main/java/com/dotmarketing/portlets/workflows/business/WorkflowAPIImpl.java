@@ -695,14 +695,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@CloseDBIfOpened
 	public WorkflowAction findAction(final String id, final User user) throws DotDataException, DotSecurityException {
 
-		final WorkflowAction action = workFlowFactory.findAction(id);
-
-		DotPreconditions.isTrue(
-                null != action &&
-                        APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("workflow-schemes",user),
-				()-> "User " + user + " cannot read action " + action.getName(), DotSecurityException.class);
-
-		return action;
+		return this.workFlowFactory.findAction(id);
 	}
 
 	@CloseDBIfOpened
@@ -711,15 +704,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 									 final User user) throws DotDataException, DotSecurityException {
 
 		Logger.debug(this, "Finding the action: " + actionId + " for the step: " + stepId);
-		final WorkflowAction action = this.workFlowFactory.findAction(actionId, stepId);
-		if (null != action) {
-
-			DotPreconditions.isTrue(APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("workflow-schemes",user),
-						()-> "User " + user + " cannot read action " + action.getName(),
-						DotSecurityException.class);
-		}
-
-		return action;
+		return this.workFlowFactory.findAction(actionId, stepId);
 	}
 
 	@WrapInTransaction

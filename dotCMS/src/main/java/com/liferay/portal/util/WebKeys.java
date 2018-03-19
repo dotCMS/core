@@ -256,7 +256,9 @@ public class WebKeys {
 	public static final String PORTLET_URL_RESTORE = "p_p_restore";
 
 	public static final String PORTLET_URL_WINDOW_STATE = "p_p_state";
-	
+
+	public static final String PORTLET_URL_CURRENT_ANGULAR_PORTLET = "angularCurrentPortlet";
+
 	public static final String PORTLET_VIEW_MAP = "PORTLET_VIEW_MAP";
 
 	public static final String PROJ_FIRM = "PROJ_FIRM";
