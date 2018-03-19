@@ -364,6 +364,57 @@ describe('ContentTypesFormComponent', () => {
         expect(comp.form.get('folder')).not.toBeNull();
     });
 
+    it('should set value to the form', () => {
+        spyOn(dotcmsConfig, 'getConfig').and.returnValue(
+            Observable.of({
+                license: { isCommunity: false }
+            })
+        );
+
+        const fakeData = {
+            baseType: 'CONTENT',
+            clazz: 'clazz',
+            defaultType: false,
+            description: 'description',
+            detailPage: 'detail-page',
+            expireDateVar: 'expireDateVar',
+            fixed: false,
+            folder: 'SYSTEM_FOLDER',
+            host: 'host-id',
+            id: '123',
+            name: 'name',
+            publishDateVar: 'publishDateVar',
+            system: false,
+            urlMapPattern: '/url/map',
+            workflows: [{
+                id: 'workflow-id'
+            }]
+        };
+
+        comp.data = fakeData;
+        comp.fields = [
+            {
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableDateTimeField',
+                id: '123',
+                indexed: true,
+                name: 'publishDateVar'
+            },
+            {
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableDateTimeField',
+                id: '456',
+                indexed: true,
+                name: 'expireDateVar'
+            }
+        ];
+
+        fixture.detectChanges();
+
+        const {id, baseType, workflows, ...formValue} = fakeData;
+        formValue['workflow'] = ['workflow-id'];
+
+        expect(comp.form.value).toEqual(formValue);
+    });
+
     it('should render extra fields for content types', () => {
         comp.data = {
             baseType: 'CONTENT'

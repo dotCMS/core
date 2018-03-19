@@ -171,7 +171,7 @@ export class ContentTypesFormComponent implements OnInit {
         this.form = this.fb.group({
             clazz: this.data.clazz || '',
             description: this.data.description || '',
-            expireDateVar: [{ value: this.data.description || '', disabled: true }],
+            expireDateVar: [{ value: this.data.expireDateVar || '', disabled: true }],
             host: this.data.host || '',
             name: [this.data.name || '', [Validators.required]],
             publishDateVar: [{ value: this.data.publishDateVar || '', disabled: true }],
