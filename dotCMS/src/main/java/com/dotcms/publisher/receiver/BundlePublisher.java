@@ -155,7 +155,7 @@ public class BundlePublisher extends Publisher {
             auditAPI.updatePublishAuditStatus(bundleFolder, PublishAuditStatus.Status.PUBLISHING_BUNDLE,
                 currentStatusHistory);
         } catch (Exception e) {
-            Logger.error(BundlePublisher.class, "Unable to update audit table : " + e.getMessage(), e);
+            Logger.error(BundlePublisher.class, "Unable to update audit table for bundle with ID '" + bundleName + "': " + e.getMessage(), e);
         }
 
         File folderOut = new File(bundlePath + bundleFolder);
@@ -193,63 +193,56 @@ public class BundlePublisher extends Publisher {
                 }
             }
         } catch (Exception e) {
-            Logger.error(BundlePublisher.class, "Unable to get assets list from received bundle: " + e.getMessage(), e);
+            Logger.error(BundlePublisher.class, "Unable to get assets list from received bundle with ID '" + bundleName + "': " + e.getMessage(), e);
         }
 
         try {
-            try {
-                HibernateUtil.startTransaction();
-
-                //Execute the handlers
-                for (IHandler handler : handlers) {
-                    Logger.info(this, "Start of Handler: " + handler.getClass().getSimpleName());
-                    handler.handle(folderOut);
-                    Logger.info(this, "End of Handler: " + handler.getClass().getSimpleName());
-
-                }
-
-                HibernateUtil.closeAndCommitTransaction();
-            } catch (Exception e) {
-                bundleSuccess = false;
-                try {
-                    HibernateUtil.rollbackTransaction();
-                } catch (DotHibernateException e1) {
-                    Logger.error(PublisherAPIImpl.class, e.getMessage(), e1);
-                }
-                Logger.error(PublisherAPIImpl.class, "Error Publishing Bundle: " + e.getMessage(), e);
-
-                //Update audit
-                try {
-                    detail.setStatus(PublishAuditStatus.Status.FAILED_TO_PUBLISH.getCode());
-                    detail.setInfo("Failed to publish because an error occurred: " + e.getMessage());
-                    detail.setStackTrace(ExceptionUtils.getStackTrace(e));
-                    String endPointId = (String) currentStatusHistory.getEndpointsMap().keySet().toArray()[0];
-                    currentStatusHistory.addOrUpdateEndpoint(endPointId, endPointId, detail);
-                    currentStatusHistory.setPublishEnd(new Date());
-                    currentStatusHistory.setAssets(assetsDetails);
-
-                    auditAPI.updatePublishAuditStatus(bundleFolder, PublishAuditStatus.Status.FAILED_TO_PUBLISH,
-                            currentStatusHistory);
-                } catch (DotPublisherException e1) {
-                    throw new DotPublishingException("Cannot update audit: ", e);
-                }
-                throw new DotPublishingException("Error Publishing: " + e, e);
+            HibernateUtil.startTransaction();
+            // Execute the handlers
+            for (IHandler handler : handlers) {
+                handler.handle(folderOut);
             }
-
+            HibernateUtil.commitTransaction();
+        } catch (Exception e) {
+            bundleSuccess = false;
             try {
-                //Update audit
-                detail.setStatus(PublishAuditStatus.Status.SUCCESS.getCode());
-                detail.setInfo("Everything ok");
+                HibernateUtil.rollbackTransaction();
+            } catch (DotHibernateException e1) {
+                Logger.error(PublisherAPIImpl.class, e.getMessage(), e1);
+            }
+            Logger.error(PublisherAPIImpl.class, "Error publishing bundle with ID '" + bundleName + "': " + e.getMessage(), e);
+
+            //Update audit
+            try {
+                detail.setStatus(PublishAuditStatus.Status.FAILED_TO_PUBLISH.getCode());
+                detail.setInfo("Failed to publish because an error occurred: " + e.getMessage());
+                detail.setStackTrace(ExceptionUtils.getStackTrace(e));
                 String endPointId = (String) currentStatusHistory.getEndpointsMap().keySet().toArray()[0];
                 currentStatusHistory.addOrUpdateEndpoint(endPointId, endPointId, detail);
                 currentStatusHistory.setPublishEnd(new Date());
                 currentStatusHistory.setAssets(assetsDetails);
-                auditAPI.updatePublishAuditStatus(bundleFolder, PublishAuditStatus.Status.SUCCESS, currentStatusHistory);
-            } catch (Exception e) {
-                Logger.error(BundlePublisher.class, "Unable to update audit table : " + e.getMessage(), e);
+
+                auditAPI.updatePublishAuditStatus(bundleFolder, PublishAuditStatus.Status.FAILED_TO_PUBLISH,
+                        currentStatusHistory);
+            } catch (DotPublisherException e1) {
+                throw new DotPublishingException("Cannot update audit of bundle with ID '" + bundleName + "': ", e);
             }
+            throw new DotPublishingException("Error publishing bundle with ID '" + bundleName + "': " + e, e);
         } finally {
             DbConnectionFactory.closeSilently();
+        }
+
+        try {
+            //Update audit
+            detail.setStatus(PublishAuditStatus.Status.SUCCESS.getCode());
+            detail.setInfo("Everything ok");
+            String endPointId = (String) currentStatusHistory.getEndpointsMap().keySet().toArray()[0];
+            currentStatusHistory.addOrUpdateEndpoint(endPointId, endPointId, detail);
+            currentStatusHistory.setPublishEnd(new Date());
+            currentStatusHistory.setAssets(assetsDetails);
+            auditAPI.updatePublishAuditStatus(bundleFolder, PublishAuditStatus.Status.SUCCESS, currentStatusHistory);
+        } catch (Exception e) {
+            Logger.error(BundlePublisher.class, "Unable to update audit table for bundle with ID '" + bundleName + "': " + e.getMessage(), e);
         }
 
         return config;

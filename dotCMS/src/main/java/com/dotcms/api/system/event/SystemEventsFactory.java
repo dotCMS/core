@@ -126,7 +126,7 @@ public class SystemEventsFactory implements Serializable {
 			}
 
 			boolean localTransaction = false;
-
+			final boolean isNewConnection = !DbConnectionFactory.connectionExists();
 			try {
 
 				if ( forceNewTransaction ) {
@@ -143,7 +143,7 @@ public class SystemEventsFactory implements Serializable {
 
 				//Everything ok..., committing the transaction
 				if ( localTransaction ) {
-					HibernateUtil.closeAndCommitTransaction();
+					HibernateUtil.commitTransaction();
 				}
 			} catch (Exception e) {
 
@@ -161,10 +161,8 @@ public class SystemEventsFactory implements Serializable {
 				Logger.error(this, msg, e);
 				throw new DotDataException(msg, e);
 			} finally {
-
-				if (localTransaction) {
-
-					DbConnectionFactory.closeSilently();
+				if (localTransaction && isNewConnection) {
+					HibernateUtil.closeSessionSilently();
 				}
 			}
 		}
