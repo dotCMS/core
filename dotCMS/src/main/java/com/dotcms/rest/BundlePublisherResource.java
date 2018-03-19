@@ -118,7 +118,7 @@ public class BundlePublisherResource {
 						new Thread(new PublishThread(fileName, groupId, endpointId, status)).start();
 					}
 
-					HibernateUtil.closeAndCommitTransaction();
+					HibernateUtil.commitTransaction();
 
 					return Response.status(HttpStatus.SC_OK).build();
 				} catch (NumberFormatException e) {
