@@ -109,7 +109,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 	private static final Contentlet cache404Content= new Contentlet();
 	public static final String CACHE_404_CONTENTLET="CACHE_404_CONTENTLET";
-    public static int counter = 1;
 
     /**
 	 * Default factory constructor that initializes the connection with the
@@ -1308,19 +1307,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 	    Client client=new ESClient().getClient();
 
-	    // TODO : delete this IF 
-	    if(counter==1) {
-            GetMappingsResponse response = client.admin().indices()
-                .prepareGetMappings(indexToHit)
-                .execute().actionGet();
-            ImmutableOpenMap<String, ImmutableOpenMap<String, MappingMetaData>> mappings = response.mappings();
-            Logger.info(this, "mapppings:" + mappings);
-            ImmutableOpenMap<String, MappingMetaData> mappingMeta = mappings.get(indexToHit);
-            MappingMetaData mappingMetaData = mappingMeta.get("content");
-            MapUtils.debugPrint(System.out, "mappingsMap", mappingMetaData.getSourceAsMap());
-            counter++;
-        }
-
         SearchResponse resp = null;
         try {
 
@@ -2038,7 +2024,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
             for (RegExMatch regExMatch : matches) {
                 query = query.replace("[" + regExMatch.getGroups().get(0).getMatch() + " to "
                         + regExMatch.getGroups().get(2).getMatch() + "]", "["
-                        + regExMatch.getGroups().get(0).getMatch() + " to " + regExMatch.getGroups().get(2).getMatch()
+                        + replaceDateTimeFormatInClause(regExMatch.getGroups().get(0).getMatch())
+                        + " to " + replaceDateTimeFormatInClause(
+                        regExMatch.getGroups().get(2).getMatch())
                         + "]");
             }
 

@@ -82,6 +82,7 @@ public class PortletURLImpl implements PortletURL {
 		_secure = req.isSecure();
 		_action = action;
 		_params = new LinkedHashMap();
+		_angularCurrentPortlet = req.getParameter(WebKeys.PORTLET_URL_CURRENT_ANGULAR_PORTLET);
 	}
 
 	public WindowState getWindowState() {
@@ -241,6 +242,14 @@ public class PortletURLImpl implements PortletURL {
 			sb.append(StringPool.AMPERSAND);
 		}
 
+
+		if (_angularCurrentPortlet != null) {
+			sb.append(WebKeys.PORTLET_URL_CURRENT_ANGULAR_PORTLET);
+			sb.append(StringPool.EQUAL);
+			sb.append(_processValue(key, _angularCurrentPortlet));
+			sb.append(StringPool.AMPERSAND);
+		}
+
 		if (_portletMode != null) {
 			sb.append(WebKeys.PORTLET_URL_PORTLET_MODE);
 			sb.append(StringPool.EQUAL);
@@ -367,5 +376,5 @@ public class PortletURLImpl implements PortletURL {
 	private boolean _secure;
 	private boolean _anchor = true;
 	private boolean _encrypt = false;
-
+	private String _angularCurrentPortlet = null;
 }

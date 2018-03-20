@@ -113,9 +113,9 @@ public class EventFactoryImpl extends EventFactory {
 				for (String keywordToken : keywordTokens) {
 					if (UtilMethods.isSet(keywordToken)) {
 						keywordToken = keywordToken.trim();
-						query.append(" +(" + titleF.getFieldContentlet() + ": " + keywordToken.replaceAll("\"", "").trim() + "* " +
-						descriptionF.getFieldContentlet() + ": " + keywordToken.replaceAll("\"", "").trim() + "* " +
-						tagsF.getFieldContentlet() + ": " + keywordToken.replaceAll("\"", "").trim() + "*)");
+						query.append(" +(" + titleF.getVelocityVarName() + ": " + keywordToken.replaceAll("\"", "").trim() + "* " +
+						descriptionF.getVelocityVarName() + ": " + keywordToken.replaceAll("\"", "").trim() + "* " +
+						tagsF.getVelocityVarName() + ": " + keywordToken.replaceAll("\"", "").trim() + "*)");
 					}
 				}
 			}
@@ -124,7 +124,7 @@ public class EventFactoryImpl extends EventFactory {
 		for(String tag : tags) {
 			tag=tag.trim();
 			if(UtilMethods.isSet(tag)) {
-				query.append(" +(" + tagsF.getFieldContentlet() + ":" + tag.replaceAll("\"", "").replaceAll(":", "").trim() + "*)"); 
+				query.append(" +(" + tagsF.getVelocityVarName() + ":" + tag.replaceAll("\"", "").replaceAll(":", "").trim() + "*)");
 			}
 		}
 		
