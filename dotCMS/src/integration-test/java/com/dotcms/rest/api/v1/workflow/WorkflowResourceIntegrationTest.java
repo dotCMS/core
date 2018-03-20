@@ -155,7 +155,7 @@ public class WorkflowResourceIntegrationTest {
         assertEquals(Response.Status.OK.getStatusCode(), reorderStepResponse.getStatus());
         final ResponseEntityView reorderedStepEntityView = ResponseEntityView.class.cast(reorderStepResponse.getEntity());
         final String ok = String.class.cast(reorderedStepEntityView.getEntity());
-        assertEquals(WorkflowResource.OK,ok);
+        assertEquals(ResponseEntityView.OK,ok);
     }
 
     /**
@@ -366,7 +366,7 @@ public class WorkflowResourceIntegrationTest {
                 new WorkflowActionStepForm.Builder().actionId(firstAction.getId()).build()
         );
         final ResponseEntityView updateResponseEv = ResponseEntityView.class.cast(saveActionToStepResponse.getEntity());
-        assertEquals(WorkflowResource.OK,updateResponseEv.getEntity());
+        assertEquals(ResponseEntityView.OK,updateResponseEv.getEntity());
 
         final HttpServletRequest request2 = mock(HttpServletRequest.class);
         final Response actionsBySchemeResponse = workflowResource.findActionsByScheme(request2, savedScheme.getId());
@@ -415,9 +415,9 @@ public class WorkflowResourceIntegrationTest {
         final Response deleteActionResponse2 = workflowResource.deleteAction(request3,actionsByStep2.get(0).getId());
         final ResponseEntityView deleteActionByResponseEv2 = ResponseEntityView.class.cast(deleteActionResponse2.getEntity());
         final String ok1 = String.class.cast(deleteActionByResponseEv1.getEntity());
-        assertEquals(WorkflowResource.OK,ok1);
+        assertEquals(ResponseEntityView.OK,ok1);
         final String ok2 = String.class.cast(deleteActionByResponseEv2.getEntity());
-        assertEquals(WorkflowResource.OK,ok2);
+        assertEquals(ResponseEntityView.OK,ok2);
 
         final HttpServletRequest request4 = mock(HttpServletRequest.class);
         final Response actionsBySchemeResponse = workflowResource.findActionsByScheme(request4, savedScheme.getId());

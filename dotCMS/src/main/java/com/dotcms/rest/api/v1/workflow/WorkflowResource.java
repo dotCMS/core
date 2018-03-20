@@ -9,6 +9,7 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.InitDataObject;
+import static com.dotcms.rest.ResponseEntityView.OK;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -54,7 +55,6 @@ import java.util.function.Supplier;
 @Path("/v1/workflow")
 public class WorkflowResource {
 
-    public static final String OK = "Ok";
 
     private final WorkflowHelper   workflowHelper;
     private final ContentHelper    contentHelper;
