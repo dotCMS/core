@@ -10,38 +10,44 @@
 <%@page import="java.util.List"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.business.*" %>
+<%@ page import="java.util.Collections" %>
 
 <%
 	WorkflowAPI wapi = APILocator.getWorkflowAPI();
 	String schemeId  = request.getParameter("schemeId");
 	String stepId    = request.getParameter("stepId");
 	String actionId  = request.getParameter("actionId");
-
+    final String NEW_ACTION ="new";
 	WorkflowAction action = new WorkflowAction();
+	List<WorkflowActionClass> subActions = Collections.emptyList();
 	Role nextAssignRole = new Role();
 	boolean hideHierarchayControl = true;
-	try {
-		action = wapi.findAction( actionId, APILocator.getUserAPI().getSystemUser() );
-		nextAssignRole = APILocator.getRoleAPI().loadRoleById( action.getNextAssign() );
-		if ( UtilMethods.isSet( nextAssignRole ) && UtilMethods.isSet( nextAssignRole.getId() ) ) {
-			if ( !nextAssignRole.isUser() && !nextAssignRole.equals( APILocator.getRoleAPI().loadCMSAnonymousRole() ) ) {
-				if ( action.isAssignable() ) {
-					hideHierarchayControl = false;
+	if(UtilMethods.isSet(actionId) && !NEW_ACTION.equals(actionId)) {
+		try {
+			action = wapi.findAction(actionId, APILocator.getUserAPI().getSystemUser());
+			nextAssignRole = APILocator.getRoleAPI().loadRoleById(action.getNextAssign());
+			if (UtilMethods.isSet(nextAssignRole) && UtilMethods.isSet(nextAssignRole.getId())) {
+				if (!nextAssignRole.isUser() && !nextAssignRole
+						.equals(APILocator.getRoleAPI().loadCMSAnonymousRole())) {
+					if (action.isAssignable()) {
+						hideHierarchayControl = false;
+					}
 				}
 			}
+
+			if (schemeId == null) {
+				schemeId = action.getSchemeId();
+			}
+		} catch (Exception e) {
+			Logger.debug(this.getClass(), "can't find action");
 		}
 
-		if ( schemeId == null ) {
-			schemeId = action.getSchemeId();
-		}
-	} catch ( Exception e ) {
-		Logger.debug( this.getClass(), "can't find action" );
+		subActions = wapi.findActionClasses(action);
 	}
 
 	final WorkflowScheme scheme = wapi.findScheme(schemeId);
 
 	List<WorkflowStep> steps = wapi.findSteps(scheme);
-	List<WorkflowActionClass> subActions = wapi.findActionClasses(action);
 
 	boolean showLocked      = false;
 	boolean showUnLocked    = false;
