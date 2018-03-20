@@ -193,11 +193,11 @@ describe('DotEditContentComponent', () => {
             expect(viewAsToolbar).not.toBeNull();
         });
 
-        it('should set set the page wrapper dimensions based on device', () => {
+        it('should set the page wrapper dimensions based on device', () => {
             const pageWrapper: DebugElement = de.query(By.css('.dot-edit__page-wrapper'));
             component.pageState.viewAs.device = mockDotDevice;
             fixture.detectChanges();
-            expect(pageWrapper.styles).toEqual({ width: mockDotDevice.cssWidth, height: mockDotDevice.cssHeight });
+            expect(pageWrapper.styles).toEqual({ width: mockDotDevice.cssWidth + 'px', height: mockDotDevice.cssHeight + 'px'});
             expect(pageWrapper.nativeElement.classList.contains('dot-edit__page-wrapper--deviced')).toBe(true);
         });
 

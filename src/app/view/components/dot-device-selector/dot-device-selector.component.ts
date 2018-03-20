@@ -23,9 +23,6 @@ export class DotDeviceSelectorComponent implements OnInit {
         this.devicesOptions = this.dotMessageService.getMessages(['editpage.viewas.default.device'])
             .mergeMap((messages: string[]) =>
                 this.dotDevicesService.get()
-                    .flatMap((devices: DotDevice[]) => devices)
-                    .map((device: DotDevice) => this.addPixelDimension(device))
-                    .toArray()
                     .map((devices: DotDevice[]) => [
                         {
                             name: messages['editpage.viewas.default.device'],
@@ -44,11 +41,5 @@ export class DotDeviceSelectorComponent implements OnInit {
      */
     change(device: DotDevice) {
         this.selected.emit(device);
-    }
-
-    private addPixelDimension(device: DotDevice): DotDevice {
-        device.cssHeight += 'px';
-        device.cssWidth += 'px';
-        return device;
     }
 }
