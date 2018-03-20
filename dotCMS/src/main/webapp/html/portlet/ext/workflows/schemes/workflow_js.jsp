@@ -226,7 +226,7 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 
 		myCp.attr("href", href);
 
-		myCp.placeAt(body);
+		myCp.placeAt(this.addEditDiv);
 
 		dia.show();
 
