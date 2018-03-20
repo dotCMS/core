@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 import javax.servlet.ServletContext;
 import org.apache.struts.Globals;
 import org.apache.struts.config.ModuleConfig;
+import org.apache.struts.util.MessageResources;
 import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
@@ -32,7 +33,8 @@ public class ConfigTestHelper extends Config {
 
             final ModuleConfig config = Mockito.mock(ModuleConfig.class);
             Mockito.when(context.getAttribute(Globals.MODULE_KEY)).thenReturn(config);
-            Mockito.when(context.getAttribute(Globals.MESSAGES_KEY)).thenReturn("MockMessagesKey");
+            final MessageResources messages = Mockito.mock(MessageResources.class);
+            Mockito.when(context.getAttribute(Globals.MESSAGES_KEY)).thenReturn(messages);
 
             final String topPath = Files.createTempDir().getCanonicalPath();
             Mockito.when(context.getRealPath(Matchers.anyString())).thenAnswer(new Answer<String>() {
