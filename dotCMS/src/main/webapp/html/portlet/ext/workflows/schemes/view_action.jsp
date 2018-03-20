@@ -375,11 +375,6 @@
 					</div>
 					<div class="content-edit-actions">
 						<div>
-							<%if(action!=null && !action.isNew()) {%>
-							<a id="deleteButtonDiv" class="saveButtonHide" onClick="actionAdmin.deleteAction('<%=action.getId() %>');">
-								<%=LanguageUtil.get(pageContext, "Delete")%>
-							</a>
-							<%} %>
 							<a id="saveButtonDiv" class="saveButtonHide" onClick="actionAdmin.saveAction('<%=schemeId %>');">
 								<%=LanguageUtil.get(pageContext, "Save")%>
 							</a>
