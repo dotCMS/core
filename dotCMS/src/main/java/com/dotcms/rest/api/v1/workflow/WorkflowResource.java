@@ -54,6 +54,8 @@ import java.util.function.Supplier;
 @Path("/v1/workflow")
 public class WorkflowResource {
 
+    public static final String OK = "Ok";
+
     private final WorkflowHelper   workflowHelper;
     private final ContentHelper    contentHelper;
     private final WebResource      webResource;
@@ -502,6 +504,43 @@ public class WorkflowResource {
         return response;
     } // save
 
+    @PUT
+    @Path("/actions/{actionId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response updateAction(@Context final HttpServletRequest request,
+                                       @PathParam("actionId") final String actionId,
+                                       final WorkflowActionForm workflowActionForm) {
+
+        final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
+        Response response;
+        try {
+            Logger.debug(this, "Updating action with id: " + actionId);
+            final WorkflowAction workflowAction = this.workflowHelper.save( actionId, workflowActionForm, initDataObject.getUser());
+            response  = Response.ok(new ResponseEntityView(workflowAction)).build(); // 200
+        } catch (NotAllowedUserWorkflowException e) {
+            Logger.error(this.getClass(),
+                    "NotAllowedUserWorkflowException on updateAction, action: " + actionId +
+                            ", exception message: " + e.getMessage(), e);
+            throw new ForbiddenException(e);
+        } catch (DoesNotExistException e) {
+            Logger.error(this.getClass(),
+                    "DoesNotExistException on updateAction, action: " + actionId +
+                            ", exception message: " + e.getMessage(), e);
+            response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+        } catch (Exception e) {
+            Logger.error(this.getClass(),
+                    "Exception on updateAction, action: " + actionId +
+                            ", exception message: " + e.getMessage(), e);
+            response = (e.getCause() instanceof SecurityException)?
+                    this.createUnAuthorizedResponse(e) :
+                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        return response;
+    } // deleteAction
+
     /**
      * Saves an action into a step
      * @param request                   HttpServletRequest
@@ -527,7 +566,7 @@ public class WorkflowResource {
                     + " in to a step: " + stepId);
             this.workflowHelper.saveActionToStep(new WorkflowActionStepBean.Builder().stepId(stepId)
                     .actionId(workflowActionStepForm.getActionId()).build(), initDataObject.getUser());
-            response  = Response.ok(new ResponseEntityView("ok")).build(); // 200
+            response  = Response.ok(new ResponseEntityView(OK)).build(); // 200
         } catch (DotSecurityException | NotAllowedUserWorkflowException e) {
             Logger.error(this.getClass(),
                     "Exception on saveActionToStep, workflowActionForm: " + workflowActionStepForm +
@@ -545,7 +584,6 @@ public class WorkflowResource {
 
         return response;
     } // saveAction
-
 
     /**
      * Deletes a step
@@ -569,7 +607,7 @@ public class WorkflowResource {
 
             Logger.debug(this, "Deleting the step: " + stepId);
             this.workflowHelper.deleteStep(stepId);
-            response  = Response.ok(new ResponseEntityView("ok")).build(); // 200
+            response  = Response.ok(new ResponseEntityView(OK)).build(); // 200
         } catch (NotAllowedUserWorkflowException e) {
             Logger.error(this.getClass(),
                     "NotAllowedUserWorkflowException on deleteStep, stepId: " + stepId +
@@ -617,7 +655,7 @@ public class WorkflowResource {
 
             Logger.debug(this, "Deleting the action: " + actionId + " for the step: " + stepId);
             this.workflowHelper.deleteAction(actionId, stepId, initDataObject.getUser());
-            response  = Response.ok(new ResponseEntityView("ok")).build(); // 200
+            response  = Response.ok(new ResponseEntityView(OK)).build(); // 200
         } catch (NotAllowedUserWorkflowException e) {
             Logger.error(this.getClass(),
                     "NotAllowedUserWorkflowException on deleteAction, action: " + actionId
@@ -667,7 +705,7 @@ public class WorkflowResource {
 
             Logger.debug(this, "Deleting the action: " + actionId);
             this.workflowHelper.deleteAction(actionId, initDataObject.getUser());
-            response  = Response.ok(new ResponseEntityView("ok")).build(); // 200
+            response  = Response.ok(new ResponseEntityView(OK)).build(); // 200
         } catch (NotAllowedUserWorkflowException e) {
             Logger.error(this.getClass(),
                     "NotAllowedUserWorkflowException on deleteAction, action: " + actionId +
@@ -691,7 +729,7 @@ public class WorkflowResource {
 
         return response;
     } // deleteAction
-    
+
     /**
      * Change the order of the steps in a scheme
      * @param request                           HttpServletRequest
@@ -715,7 +753,7 @@ public class WorkflowResource {
 
             Logger.debug(this, "Doing reordering of step: " + stepId + ", order: " + order);
             this.workflowHelper.reorderStep(stepId, order, initDataObject.getUser());
-            response  = Response.ok(new ResponseEntityView("Ok")).build(); // 200
+            response  = Response.ok(new ResponseEntityView(OK)).build(); // 200
         } catch (NotAllowedUserWorkflowException e) {
             Logger.error(this.getClass(),
                     "NotAllowedUserWorkflowException on reorderStep, stepId: " + stepId +
@@ -976,7 +1014,7 @@ public class WorkflowResource {
                     new WorkflowReorderBean.Builder().stepId(stepId).actionId(actionId)
                             .order(workflowReorderActionStepForm.getOrder()).build(),
                     initDataObject.getUser());
-            response  = Response.ok(new ResponseEntityView("Ok")).build(); // 200
+            response  = Response.ok(new ResponseEntityView(OK)).build(); // 200
         } catch (NotAllowedUserWorkflowException e) {
             Logger.error(this.getClass(),
                     "NotAllowedUserWorkflowException on reorderAction, workflowReorderActionStepForm: " + workflowReorderActionStepForm +
