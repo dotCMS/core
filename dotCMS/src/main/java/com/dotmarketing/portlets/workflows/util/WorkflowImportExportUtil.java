@@ -12,7 +12,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.Logger;
-import jnr.ffi.Struct;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
