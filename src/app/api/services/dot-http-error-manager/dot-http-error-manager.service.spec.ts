@@ -26,7 +26,6 @@ describe('DotHttpErrorManagerService', () => {
         const testbed = DOTTestBed.configureTestingModule({
             providers: [
                 DotHttpErrorManagerService,
-                DotRouterService,
                 {
                     provide: LoginService,
                     useValue: {

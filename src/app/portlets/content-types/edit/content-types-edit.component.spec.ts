@@ -86,7 +86,6 @@ const getConfig = (route) => {
             CrudService,
             FieldService,
             ContentTypesInfoService,
-            DotRouterService,
             DotMenuService,
             Location
         ]

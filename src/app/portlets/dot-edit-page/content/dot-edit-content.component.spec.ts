@@ -26,7 +26,6 @@ import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { DotPageState, DotRenderedPageState } from '../shared/models/dot-rendered-page-state.model';
 import { DotPageStateService } from './services/dot-page-state/dot-page-state.service';
 import { DotRenderHTMLService } from '../../../api/services/dot-render-html/dot-render-html.service';
-import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
 import { LoginServiceMock, mockUser } from '../../../test/login-service.mock';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { PageMode } from '../shared/models/page-mode.enum';
@@ -99,7 +98,6 @@ describe('DotEditContentComponent', () => {
                 DotMenuService,
                 DotPageStateService,
                 DotRenderHTMLService,
-                DotRouterService,
                 DotEditPageService,
                 {
                     provide: LoginService,

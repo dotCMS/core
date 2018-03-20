@@ -15,9 +15,6 @@ class CrudServiceMock {
     getDataById() {}
 }
 
-class DotRouterServiceMock {
-    gotoPortlet() {}
-}
 
 const activatedRouteSnapshotMock: any = jasmine.createSpyObj<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
     'toString'
@@ -37,10 +34,6 @@ describe('ContentTypeEditResolver', () => {
                     ContentTypeEditResolver,
                     ContentTypesInfoService,
                     DotHttpErrorManagerService,
-                    {
-                        provide: DotRouterService,
-                        useClass: DotRouterServiceMock
-                    },
                     { provide: CrudService, useClass: CrudServiceMock },
                     { provide: LoginService, useClass: LoginServiceMock },
                     {

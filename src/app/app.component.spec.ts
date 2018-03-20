@@ -8,7 +8,6 @@ import { DOTTestBed } from './test/dot-test-bed';
 import { NotLicensedService } from './api/services/not-licensed-service';
 import { DotMenuService } from './api/services/dot-menu.service';
 import { LoginService, SocketFactory } from 'dotcms-js/dotcms-js';
-import { DotRouterService } from './api/services/dot-router/dot-router.service';
 import { DotDialogService } from './api/services/dot-dialog';
 
 describe('AppComponent', () => {
@@ -17,7 +16,6 @@ describe('AppComponent', () => {
             declarations: [AppComponent],
             imports: [RouterTestingModule.withRoutes([{ path: 'test', component: AppComponent }])],
             providers: [
-                DotRouterService,
                 LoginService,
                 NotLicensedService,
                 DotMenuService,

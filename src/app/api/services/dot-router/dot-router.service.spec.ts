@@ -13,7 +13,6 @@ describe('DotRouterService', () => {
         async(() => {
             const testbed = DOTTestBed.configureTestingModule({
                 providers: [
-                    DotRouterService,
                     {
                         provide: LoginService,
                         useValue: {}

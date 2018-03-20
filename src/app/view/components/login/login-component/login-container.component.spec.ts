@@ -24,7 +24,7 @@ describe('LoginContainerComponent', () => {
             DOTTestBed.configureTestingModule({
                 imports: [MdInputTextModule, RouterTestingModule, BrowserAnimationsModule],
                 declarations: [LoginContainerComponent, LoginComponent, DotLoadingIndicatorComponent],
-                providers: [DotLoadingIndicatorService, DotRouterService, { provide: LoginService, useClass: LoginServiceMock }]
+                providers: [DotLoadingIndicatorService, { provide: LoginService, useClass: LoginServiceMock }]
             }).compileComponents();
         })
     );

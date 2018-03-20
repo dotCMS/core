@@ -24,6 +24,7 @@ import { DotGlobalMessageService } from '../view/components/_common/dot-global-m
 import { DotMessageService } from '../api/services/dot-messages-service';
 import { FormatDateService } from '../api/services/format-date-service';
 import { DotDialogService } from '../api/services/dot-dialog';
+import { DotRouterService } from '../api/services/dot-router/dot-router.service';
 
 export class DOTTestBed {
     private static DEFAULT_CONFIG = {
@@ -49,7 +50,8 @@ export class DOTTestBed {
             LoggerService,
             SocketFactory,
             StringUtils,
-            UserModel
+            UserModel,
+            DotRouterService
         ]
     };
 

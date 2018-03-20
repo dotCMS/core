@@ -32,7 +32,6 @@ describe('DotEditPageResolver', () => {
                 providers: [
                     DotHttpErrorManagerService,
                     DotPageStateService,
-                    DotRouterService,
                     DotEditPageResolver,
                     DotRenderHTMLService,
                     DotContentletLockerService,

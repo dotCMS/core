@@ -16,7 +16,6 @@ import { ActivatedRoute } from '@angular/router';
 import { Observable } from 'rxjs/Observable';
 import { InputTextModule } from 'primeng/primeng';
 import { ReactiveFormsModule } from '@angular/forms';
-import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 
@@ -48,7 +47,6 @@ describe('LoginAsComponent', () => {
                 providers: [
                     { provide: DotMessageService, useValue: messageServiceMock },
                     { provide: LoginService, useValue: {} },
-                    { provide: DotRouterService, useValue: {} },
                     {
                         provide: ActivatedRoute,
                         useValue: { params: Observable.from([{ id: '1234' }]) }

@@ -55,7 +55,6 @@ describe('DotNavigationService', () => {
         async(() => {
             const testbed = DOTTestBed.configureTestingModule({
                 providers: [
-                    DotRouterService,
                     DotNavigationService,
                     DotMenuService,
                     {

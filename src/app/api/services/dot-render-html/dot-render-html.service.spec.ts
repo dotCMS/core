@@ -7,7 +7,6 @@ import { LoginService } from 'dotcms-js/dotcms-js';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DotRenderHTMLService } from './dot-render-html.service';
 import { DotRenderedPage } from '../../../portlets/dot-edit-page/shared/models/dot-rendered-page.model';
-import { DotRouterService } from '../dot-router/dot-router.service';
 import { LoginServiceMock } from '../../../test/login-service.mock';
 import { mockDotRenderedPage } from '../../../test/dot-rendered-page.mock';
 
@@ -21,7 +20,7 @@ describe('DotRenderHTMLService', () => {
         lastConnection = [];
 
         injector = DOTTestBed.configureTestingModule({
-            providers: [DotRenderHTMLService, DotRouterService, {
+            providers: [DotRenderHTMLService, {
                 provide: LoginService,
                 useClass: LoginServiceMock
             }],
