@@ -74,27 +74,21 @@ public class ESClient {
 
                     final String node_id = ConfigUtils.getServerId();
                     String esPathHome = Config.getStringProperty(HOME_PATH, "WEB-INF/elastic_search");
-                    String esData = Config.getStringProperty(DATA_PATH, "dotsecure/esdata");
-                    String esRepo = Config.getStringProperty(REPO_PATH, "dotsecure/essnapshot/snapshots");
 
                     esPathHome = !new File(esPathHome).isAbsolute() ? FileUtil.getRealPath(esPathHome) : esPathHome;
-                    esData = !new File(esData).isAbsolute() ? FileUtil.getRealPath(esData) : esData;
-                    esRepo = !new File(esRepo).isAbsolute() ? FileUtil.getRealPath(esRepo) : esRepo;
 
                     Logger.info(this, "***PATH HOME: " + esPathHome);
-                    Logger.info(this, "***PATH DATA: " + esData);
-                    Logger.info(this, "***PATH REPO: " + esRepo);
+
+                    String yamlPath = getYamlConfiguration(esPathHome);
 
                     try{
                         _nodeInstance = new Node(
                             Settings.builder().
-                                put( "cluster.name", Config.getStringProperty("es.cluster.name")).
+                                loadFromStream(yamlPath, getClass().getResourceAsStream(yamlPath), false).
                                 put( "node.name", node_id ).
-                                put("path.home", esPathHome).
-                                put("path.data", esData).
-                                    put("path.repo", esRepo).build()
+                                put("path.home", esPathHome).build()
                         ).start();
-                    } catch (NodeValidationException e){
+                    } catch (IOException | NodeValidationException e){
                         Logger.error(this, "Error validating ES node at start.", e);
                         //TODO: idk if a throw E is necessary.
                     }
@@ -130,6 +124,15 @@ public class ESClient {
             System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_ES, String.valueOf(System.currentTimeMillis() - start));
         }
         
+    }
+
+    private String getYamlConfiguration(String esPathHome){
+	    String yamlPath = System.getenv("ES_PATH_CONF");
+	    if (UtilMethods.isSet(yamlPath)  && FileUtil.exists(yamlPath)){
+	        return yamlPath;
+        }else{
+	        return esPathHome + "/conf/elasticsearch.yml";
+        }
     }
 
     public void shutDownNode () {
