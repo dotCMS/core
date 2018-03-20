@@ -219,7 +219,8 @@ public class SassCompilerTest {
         
         URL cssURL = new URL(baseURL + "/DOTSASS/" + runId + "/a/b/c/file5.css");
         String response =  IOUtils.toString(cssURL.openStream(),"UTF-8");
-        Assert.assertEquals("someclass{width:30}", response.substring(0,response.lastIndexOf("}")+1).trim());
+        response = response.replaceAll(" ", "").replaceAll("\n", "").replaceAll("\r", "");
+        Assert.assertEquals("someclass{width:30;}", response);
         
     }
     
@@ -271,8 +272,8 @@ public class SassCompilerTest {
 
         URL cssURL = new URL(baseURL + "/DOTSASS/" + runId + "/a/b/c/fabc.css");
         String response =  IOUtils.toString(cssURL.openStream(),"UTF-8");
-        
-        Assert.assertEquals(".a{color:green}.ab{color:black}.abc{color:white}", response.substring(0,response.lastIndexOf("}")+1).trim());
+        response = response.replaceAll(" ", "").replaceAll("\n", "").replaceAll("\r", "");
+        Assert.assertEquals(".a{color:green;}.ab{color:black;}.abc{color:white;}", response);
     }
 
 }
