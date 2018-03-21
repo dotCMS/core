@@ -1,3 +1,5 @@
+<%@page import="java.util.HashSet"%>
+<%@page import="java.util.Set"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowAction"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page
@@ -14,6 +16,16 @@
 	String schemeId  = request.getParameter("schemeId");
 	WorkflowScheme scheme          = wapi.findScheme(schemeId);
 	final List<WorkflowStep> steps = wapi.findSteps(scheme);
+	
+	
+	Set<WorkflowAction> actionz = new HashSet<>();
+	for(WorkflowStep step : steps){
+		for(WorkflowAction action : wapi.findActions(step, APILocator.getUserAPI().getSystemUser())){
+		    actionz.add(action);
+		}
+	}
+
+	
 %>
 
 <script type="text/javascript">
@@ -44,7 +56,7 @@
 			} catch (e) {
 				console.error(e);
 			}
-
+			colorMeNot();
 			stepAdmin.reorderStep(stepID, index);
 		 });
 	
@@ -69,12 +81,38 @@
 		  copySortSource: true,             // elements in copy-source containers can be reordered
 		  
 		}).on('drop', function (ele) {
-
+			colorMeNot();
 			actionAdmin.copyOrReorderAction(ele);
 		 });
 
 
+	function colorMe(clazz) {
+		var x = document.getElementsByClassName(clazz);
+		for (i = 0; i < x.length; i++) {
+			if(x[i].className.indexOf("makeMeBlue")==-1){
+				x[i].className += ' makeMeBlue';
+			}
+		}
+	}
+
+	function colorMeNot() {
+		var x = document.getElementsByClassName("makeMeBlue");
+		
+		for (i = 0; i < x.length; i++) {
+			colorMeNotEle(x[i]);
+		}
+	}
+
+	function colorMeNotEle(ele) {
+		var cName = ele.className;
+		
+		while (cName.indexOf(" makeMeBlue") > -1) {
+			cName = cName.replace(" makeMeBlue", "");
+		}
+		ele.className = cName;
+	}
 </script>
+
 
 
 
@@ -109,7 +147,7 @@
 				<%for(WorkflowStep step : steps){ %>
 					<%List<WorkflowAction> actions = wapi.findActions(step, APILocator.getUserAPI().getSystemUser());%>
 					<div class="list-wrapper wfStepInDrag" id="stepID<%=step.getId()%>">	
-						<div class="list-item">
+						<div class="list-item"  onmouseout="colorMeNot()">
 							<div class="wfStepTitle">
 								<div class="showPointer wfStepTitleDivs handle" onClick="stepAdmin.showStepEdit('<%=step.getId()%>')">
 									<span style="border-bottom:dotted 1px #fff;"><%=step.getName() %></span>
@@ -121,7 +159,7 @@
 							</div>
 							<div class="wfActionList" id="jsNode<%=step.getId()  %>"  data-wfstep-id="<%=step.getId()%>">
 									<%for(WorkflowAction action : actions){ %>
-										<div class="wf-action-wrapper x<%=action.getId()%>" data-wfaction-id="<%=action.getId()%>">
+										<div class="wf-action-wrapper x<%=action.getId()%>" data-wfaction-id="<%=action.getId()%>" onmouseover="colorMe('x<%=action.getId()%>')" onmouseout="colorMeNot('x<%=action.getId()%>')" >
 											<div class="handles"></div>
 											<div class="wf-action showPointer">
 												<div class="pull-right showPointer" onclick="actionAdmin.deleteActionForStep(this)"><span class="deleteIcon"></span></div>
@@ -161,7 +199,3 @@
 		</div>
 	</div>
 </div>
-<script>
-
-
-</script>

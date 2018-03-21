@@ -40,6 +40,8 @@ public class Task04335CreateSystemWorkflow implements StartupTask {
     protected static final String INSERT_ACTION_FOR_STEP   = "insert into workflow_action_step(action_id, step_id, action_order) values (?,?,?)";
     protected static final String INSERT_ACTION_CLASS      = "insert into workflow_action_class (id, action_id, name, my_order, clazz) values (?,?, ?, ?, ?)";
     protected static final String DELIMITER                = ",";
+    protected static final String INSERT_PERMISSION        = "insert into permission(id, permission_type, inode_id, roleid, permission) values (?, ?, ?, ?, ?)";
+    protected static final String SELECT_MAX_PERMISSION    = "select max(id) as max from permission";
 
 
     @Override
@@ -69,6 +71,7 @@ public class Task04335CreateSystemWorkflow implements StartupTask {
                     this.createActions      ((List)systemWorkflowMap.get("actions"));
                     this.createActionSteps  ((List)systemWorkflowMap.get("actionSteps"));
                     this.createActionClasses((List)systemWorkflowMap.get("actionClasses"));
+                    this.addPermissions((List<Map>) systemWorkflowMap.get("permissions"));
                 }
             } else {
                 doesNotHaveSystemWorkflow = true;
@@ -84,6 +87,25 @@ public class Task04335CreateSystemWorkflow implements StartupTask {
         }
     } // executeUpgrade.
 
+    private void addPermissions(final List<Map> permissions) throws DotDataException {
+        if (UtilMethods.isSet(permissions)) {
+
+            Logger.debug(this, "The System Workflow: Adding who can use roles");
+            long maxPermissionId = ConversionUtils.toLong(new DotConnect()
+                    .setSQL(SELECT_MAX_PERMISSION).loadObjectResults().get(0).get("max"), 0l);
+
+            for (final Map permission : permissions) {
+
+                new DotConnect().setSQL(INSERT_PERMISSION)
+                        .addParam(++maxPermissionId)
+                        .addParam(permission.get("type"))
+                        .addParam(permission.get("inode"))
+                        .addParam(permission.get("roleId"))
+                        .addParam(ConversionUtils.toInt(permission.get("permission"), 0))
+                        .loadResult();
+            }
+        }
+    }
 
     private void createActionClasses(final List actionClasses) throws DotDataException  {
 

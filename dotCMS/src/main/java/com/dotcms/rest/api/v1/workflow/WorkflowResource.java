@@ -9,6 +9,7 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.InitDataObject;
+import static com.dotcms.rest.ResponseEntityView.OK;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -17,6 +18,8 @@ import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.workflow.form.*;
 import com.dotcms.workflow.helper.WorkflowHelper;
+
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.AlreadyExistException;
@@ -43,6 +46,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.LocaleUtil;
 
+import static com.dotcms.util.CollectionsUtils.*;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.List;
@@ -53,6 +57,7 @@ import java.util.function.Supplier;
 @Beta /* Non Official released */
 @Path("/v1/workflow")
 public class WorkflowResource {
+
 
     private final WorkflowHelper   workflowHelper;
     private final ContentHelper    contentHelper;
@@ -502,6 +507,43 @@ public class WorkflowResource {
         return response;
     } // save
 
+    @PUT
+    @Path("/actions/{actionId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response updateAction(@Context final HttpServletRequest request,
+                                       @PathParam("actionId") final String actionId,
+                                       final WorkflowActionForm workflowActionForm) {
+
+        final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
+        Response response;
+        try {
+            Logger.debug(this, "Updating action with id: " + actionId);
+            final WorkflowAction workflowAction = this.workflowHelper.save( actionId, workflowActionForm, initDataObject.getUser());
+            response  = Response.ok(new ResponseEntityView(workflowAction)).build(); // 200
+        } catch (NotAllowedUserWorkflowException e) {
+            Logger.error(this.getClass(),
+                    "NotAllowedUserWorkflowException on updateAction, action: " + actionId +
+                            ", exception message: " + e.getMessage(), e);
+            throw new ForbiddenException(e);
+        } catch (DoesNotExistException e) {
+            Logger.error(this.getClass(),
+                    "DoesNotExistException on updateAction, action: " + actionId +
+                            ", exception message: " + e.getMessage(), e);
+            response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+        } catch (Exception e) {
+            Logger.error(this.getClass(),
+                    "Exception on updateAction, action: " + actionId +
+                            ", exception message: " + e.getMessage(), e);
+            response = (e.getCause() instanceof SecurityException)?
+                    this.createUnAuthorizedResponse(e) :
+                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        return response;
+    } // deleteAction
+
     /**
      * Saves an action into a step
      * @param request                   HttpServletRequest
@@ -527,7 +569,7 @@ public class WorkflowResource {
                     + " in to a step: " + stepId);
             this.workflowHelper.saveActionToStep(new WorkflowActionStepBean.Builder().stepId(stepId)
                     .actionId(workflowActionStepForm.getActionId()).build(), initDataObject.getUser());
-            response  = Response.ok(new ResponseEntityView("ok")).build(); // 200
+            response  = Response.ok(new ResponseEntityView(OK)).build(); // 200
         } catch (DotSecurityException | NotAllowedUserWorkflowException e) {
             Logger.error(this.getClass(),
                     "Exception on saveActionToStep, workflowActionForm: " + workflowActionStepForm +
@@ -545,7 +587,6 @@ public class WorkflowResource {
 
         return response;
     } // saveAction
-
 
     /**
      * Deletes a step
@@ -569,7 +610,7 @@ public class WorkflowResource {
 
             Logger.debug(this, "Deleting the step: " + stepId);
             this.workflowHelper.deleteStep(stepId);
-            response  = Response.ok(new ResponseEntityView("ok")).build(); // 200
+            response  = Response.ok(new ResponseEntityView(OK)).build(); // 200
         } catch (NotAllowedUserWorkflowException e) {
             Logger.error(this.getClass(),
                     "NotAllowedUserWorkflowException on deleteStep, stepId: " + stepId +
@@ -617,7 +658,7 @@ public class WorkflowResource {
 
             Logger.debug(this, "Deleting the action: " + actionId + " for the step: " + stepId);
             this.workflowHelper.deleteAction(actionId, stepId, initDataObject.getUser());
-            response  = Response.ok(new ResponseEntityView("ok")).build(); // 200
+            response  = Response.ok(new ResponseEntityView(OK)).build(); // 200
         } catch (NotAllowedUserWorkflowException e) {
             Logger.error(this.getClass(),
                     "NotAllowedUserWorkflowException on deleteAction, action: " + actionId
@@ -667,7 +708,7 @@ public class WorkflowResource {
 
             Logger.debug(this, "Deleting the action: " + actionId);
             this.workflowHelper.deleteAction(actionId, initDataObject.getUser());
-            response  = Response.ok(new ResponseEntityView("ok")).build(); // 200
+            response  = Response.ok(new ResponseEntityView(OK)).build(); // 200
         } catch (NotAllowedUserWorkflowException e) {
             Logger.error(this.getClass(),
                     "NotAllowedUserWorkflowException on deleteAction, action: " + actionId +
@@ -691,7 +732,7 @@ public class WorkflowResource {
 
         return response;
     } // deleteAction
-    
+
     /**
      * Change the order of the steps in a scheme
      * @param request                           HttpServletRequest
@@ -715,7 +756,7 @@ public class WorkflowResource {
 
             Logger.debug(this, "Doing reordering of step: " + stepId + ", order: " + order);
             this.workflowHelper.reorderStep(stepId, order, initDataObject.getUser());
-            response  = Response.ok(new ResponseEntityView("Ok")).build(); // 200
+            response  = Response.ok(new ResponseEntityView(OK)).build(); // 200
         } catch (NotAllowedUserWorkflowException e) {
             Logger.error(this.getClass(),
                     "NotAllowedUserWorkflowException on reorderStep, stepId: " + stepId +
@@ -943,7 +984,7 @@ public class WorkflowResource {
                 throw new DotSecurityException(errorMessageSupplier.get());
             }
         } catch (DotDataException e) {
-            throw new DotSecurityException(errorMessageSupplier.get());
+            throw new DotSecurityException(errorMessageSupplier.get(), e);
         }
 
         return contentlet;
@@ -976,7 +1017,7 @@ public class WorkflowResource {
                     new WorkflowReorderBean.Builder().stepId(stepId).actionId(actionId)
                             .order(workflowReorderActionStepForm.getOrder()).build(),
                     initDataObject.getUser());
-            response  = Response.ok(new ResponseEntityView("Ok")).build(); // 200
+            response  = Response.ok(new ResponseEntityView(OK)).build(); // 200
         } catch (NotAllowedUserWorkflowException e) {
             Logger.error(this.getClass(),
                     "NotAllowedUserWorkflowException on reorderAction, workflowReorderActionStepForm: " + workflowReorderActionStepForm +
@@ -1001,9 +1042,54 @@ public class WorkflowResource {
         return response;
     } // reorderAction
 
+    /**
+     * Do an export of the scheme with all dependencies to rebuild it (such as steps and actions)
+     * in addition the permission (who can use) will be also returned.
+     * @param request  HttpServletRequest
+     * @return Response
+     */
+    @POST
+    @Path("/schemes/import")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response importScheme(@Context final HttpServletRequest request,
+                                       final WorkflowSchemeImportExportObjectForm workflowSchemeImportExportObjectForm) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, true, request, true, null);
+        Response response;
+        Locale                           locale;
+
+        try {
+
+            Logger.debug(this, "Importing the workflow schemes");
+            this.workflowHelper.importScheme (workflowSchemeImportExportObjectForm.getWorkflowExportObject(),
+                            workflowSchemeImportExportObjectForm.getPermissions(),
+                            initDataObject.getUser());
+            response     = Response.ok(new ResponseEntityView("OK")).build(); // 200
+        } catch (DoesNotExistException e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on importScheme, Error importing schemes, some objects could not exists", e);
+            locale   = LocaleUtil.getLocale(request);
+            response = this.responseUtil.getErrorResponse(request, Response.Status.NOT_FOUND,
+                    locale, initDataObject.getUser().getUserId(), "Workflow-import-fail");
+        } catch (Exception e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on importScheme, schemeId, exception message: " + e.getMessage(), e);
+            response = (e.getCause() instanceof SecurityException)?
+                    this.createUnAuthorizedResponse(e) :
+                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        return response;
+    } // importScheme.
 
     /**
-     * Returns a set of actions associated to the schemeId
+     * Do an export of the scheme with all dependencies to rebuild it (such as steps and actions)
+     * in addition the permission (who can use) will be also returned.
      * @param request  HttpServletRequest
      * @param schemeId String
      * @return Response
@@ -1020,6 +1106,7 @@ public class WorkflowResource {
                 (null, true, request, true, null);
         Response response;
         WorkflowSchemeImportExportObject exportObject;
+        List<Permission>                 permissions;
         WorkflowScheme                   scheme;
         Locale                           locale;
 
@@ -1028,7 +1115,10 @@ public class WorkflowResource {
             Logger.debug(this, "Exporting the workflow scheme: " + schemeId);
             scheme       = this.workflowAPI.findScheme(schemeId);
             exportObject = this.workflowImportExportUtil.buildExportObject(Arrays.asList(scheme));
-            response     = Response.ok(new ResponseEntityView(exportObject)).build(); // 200
+            permissions  = this.workflowHelper.getActionsPermissions(exportObject.getActions());
+            response     = Response.ok(new ResponseEntityView(
+                    map("workflowImportObject",exportObject,
+                            "permissions", permissions))).build(); // 200
         } catch (DoesNotExistException e) {
 
             Logger.error(this.getClass(),
@@ -1047,7 +1137,7 @@ public class WorkflowResource {
         }
 
         return response;
-    } // exportScheme.
+    } // exportscheme.
 
     /**
      * Returns all the possible default actions associated to the content type workflow schemes.
