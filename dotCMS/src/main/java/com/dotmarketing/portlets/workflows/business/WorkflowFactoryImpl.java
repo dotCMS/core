@@ -628,6 +628,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	@Override
 	public List<WorkflowScheme> findSchemesForStruct(String structId) throws DotDataException {
+
 		List<WorkflowScheme> schemes = new ArrayList<>();
 		if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
 			schemes.add(this.findDefaultScheme());
@@ -638,7 +639,11 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		schemes = cache.getSchemesByStruct(structId);
 
 		if (schemes != null && !schemes.isEmpty()) {
-			return schemes;
+
+			// checks if any of the schemes has been invalidated (save recently and needs to refresh the schemes for the content type).
+			if (!schemes.stream().filter(scheme -> null == cache.getScheme(scheme.getId())).findFirst().isPresent()) {
+				return schemes;
+			}
 		}
 
 		final DotConnect db = new DotConnect();
@@ -655,6 +660,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		}
 
 		cache.addForStructure(structId, schemes);
+		schemes.stream().forEach(scheme -> cache.add(scheme));
 		return schemes;
 
 	}
