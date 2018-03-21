@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.workflows.model;
 
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonSetter;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionSummary;
@@ -20,6 +21,7 @@ import java.util.*;
  * @version 1.x
  * @since Mar 22, 2012
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class WorkflowAction implements Permissionable, Serializable{
 
 

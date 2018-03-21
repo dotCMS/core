@@ -1,7 +1,5 @@
 package com.dotcms.workflow.helper;
 
-import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -10,7 +8,10 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.api.v1.workflow.WorkflowDefaultActionView;
 import com.dotcms.workflow.form.*;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -24,16 +25,23 @@ import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
+import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.lang.time.StopWatch;
 
+import java.io.IOException;
 import java.util.*;
 
-import org.apache.commons.beanutils.BeanUtils;
+import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
+
 
 /**
  * Helper for Workflow Actions
@@ -44,6 +52,8 @@ public class WorkflowHelper {
     private final WorkflowAPI   workflowAPI;
     private final RoleAPI       roleAPI;
     private final ContentletAPI contentletAPI;
+    private final PermissionAPI permissionAPI;
+    private final WorkflowImportExportUtil workflowImportExportUtil;
 
     private static class SingletonHolder {
         private static final WorkflowHelper INSTANCE = new WorkflowHelper();
@@ -56,19 +66,62 @@ public class WorkflowHelper {
     private WorkflowHelper() {
         this( APILocator.getWorkflowAPI(),
                 APILocator.getRoleAPI(),
-                APILocator.getContentletAPI());
+                APILocator.getContentletAPI(),
+                APILocator.getPermissionAPI(),
+                WorkflowImportExportUtil.getInstance());
     }
 
 
     @VisibleForTesting
-    public WorkflowHelper(final WorkflowAPI workflowAPI,
-                             final RoleAPI     roleAPI,
-                             final ContentletAPI contentletAPI) {
+    public WorkflowHelper(final WorkflowAPI      workflowAPI,
+                             final RoleAPI       roleAPI,
+                             final ContentletAPI contentletAPI,
+                             final PermissionAPI permissionAPI,
+                             final WorkflowImportExportUtil workflowImportExportUtil) {
 
         this.workflowAPI   = workflowAPI;
         this.roleAPI       = roleAPI;
         this.contentletAPI = contentletAPI;
+        this.permissionAPI = permissionAPI;
+        this.workflowImportExportUtil =
+                workflowImportExportUtil;
     }
+
+    @WrapInTransaction
+    public void importScheme(final WorkflowSchemeImportExportObject workflowExportObject,
+                             final List<Permission>                 permissions,
+                             final User                             user) throws IOException, DotSecurityException, DotDataException {
+
+        WorkflowAction action = null;
+
+        final StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
+        Logger.debug(this, () -> "Starting the scheme import");
+
+        this.workflowImportExportUtil.importWorkflowExport(workflowExportObject);
+
+        stopWatch.stop();
+        Logger.debug(this, () -> "Ended the scheme import, in: " + DateUtil.millisToSeconds(stopWatch.getTime()));
+
+        stopWatch.reset();
+        stopWatch.start();
+        Logger.debug(this, () -> "Starting the action permissions import");
+        for (final Permission permission: permissions) {
+
+            action = this.workflowAPI.findAction(permission.getInode(), user);
+            if (null != action) {
+
+                this.permissionAPI.save(permission, action, user, false);
+            } else {
+
+                throw new DoesNotExistException("The action: " + action + " on the permission: "
+                        + permission + ", does not exists");
+            }
+        }
+
+        stopWatch.stop();
+        Logger.debug(this, () -> "Ended the action permissions import, in: " + DateUtil.millisToSeconds(stopWatch.getTime()));
+    } // importScheme.
 
     /**
      * Finds the available actions for an inode and user.
@@ -101,6 +154,24 @@ public class WorkflowHelper {
 
         return actions;
     } // findAvailableActions.
+
+    /**
+     * Get the {@link Permission}'s for the {@link WorkflowAction}'s. This is used by the export
+     * @param workflowActions List of {@link WorkflowAction}
+     * @return List {@link Permission}
+     * @throws DotDataException
+     */
+    public List<Permission> getActionsPermissions (final List<WorkflowAction> workflowActions) throws DotDataException {
+
+        final ImmutableList.Builder permissions =
+                new ImmutableList.Builder();
+
+        for (final WorkflowAction action : workflowActions) {
+            permissions.addAll(this.permissionAPI.getPermissions(action));
+        }
+
+        return permissions.build();
+    }
 
     /**
      * Reorder the action associated to the scheme.
@@ -638,19 +709,19 @@ public class WorkflowHelper {
     /**
      * Save a WorkflowActionForm returning the WorkflowAction created.
      * A WorkflowActionForm can send a stepId in that case the Action will be associated to the Step in the same transaction.
+     * @param actionId When present an update operation takes place otherwise an insert is executed
      * @param workflowActionForm WorkflowActionForm
      * @return WorkflowAction (workflow action created)
      */
     @WrapInTransaction
-    public WorkflowAction save (final WorkflowActionForm workflowActionForm, final User user) {
+    public WorkflowAction save (final String actionId, final WorkflowActionForm workflowActionForm, final User user) {
 
         String actionNextAssign     = workflowActionForm.getActionNextAssign();
         if (actionNextAssign != null && actionNextAssign.startsWith("role-")) {
             actionNextAssign  = actionNextAssign.replaceAll("role-", StringPool.BLANK);
         }
 
-        final WorkflowHelper.IsNewAndCloneItResult isNewAndCloneItResult =
-                this.isNewAndCloneIt(workflowActionForm.getActionId());
+        final WorkflowHelper.IsNewAndCloneItResult isNewAndCloneItResult = this.isNewAndCloneIt(actionId);
         final WorkflowAction newAction = isNewAndCloneItResult.getAction();
         final boolean isNew            = isNewAndCloneItResult.isNew();
 
@@ -724,11 +795,22 @@ public class WorkflowHelper {
         return newAction;
     } // save.
 
+    /**
+     *
+     * @param workflowActionForm
+     * @param user
+     * @return
+     */
+    public WorkflowAction save (final WorkflowActionForm workflowActionForm, final User user) {
+        final String actionId = workflowActionForm.getActionId();
+        return save(actionId, workflowActionForm, user);
+    }
+
     @WrapInTransaction
     public void saveActionToStep(final WorkflowActionStepBean workflowActionStepForm, final User user) throws DotDataException, DotSecurityException {
 
-        WorkflowAction action = this.workflowAPI.findAction(workflowActionStepForm.getActionId(), workflowActionStepForm.getStepId(), user);
-        if(action!=null) {
+        final WorkflowAction action = this.workflowAPI.findAction(workflowActionStepForm.getActionId(), workflowActionStepForm.getStepId(), user);
+        if(action != null) {
             WorkflowReorderBean bean = new WorkflowReorderBean.Builder()
             .actionId(workflowActionStepForm.getActionId()).stepId(workflowActionStepForm.getStepId())
             .order(workflowActionStepForm.getOrder()).build();

@@ -604,6 +604,9 @@ public class ESIndexAPI {
 				map.put("auto_expand_replicas", "false");
 				map.put("number_of_replicas", serverCount - 1);
 			}
+		}else{
+			map.put("auto_expand_replicas", "false");
+			map.put("number_of_replicas", Config.getIntProperty("es.index.number_of_replicas", 0));
 		}
 
 		// create actual index

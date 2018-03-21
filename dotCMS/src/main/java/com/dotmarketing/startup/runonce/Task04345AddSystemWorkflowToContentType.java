@@ -72,6 +72,7 @@ public class Task04345AddSystemWorkflowToContentType implements StartupTask {
             }
         }
 
+
     } // executeUpgrade.
 
 }

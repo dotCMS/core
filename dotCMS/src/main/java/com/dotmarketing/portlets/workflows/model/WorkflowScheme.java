@@ -5,10 +5,12 @@ import java.util.Date;
 
 
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.util.UtilMethods;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class WorkflowScheme implements Serializable {
 
 	private static final long serialVersionUID = 1L;
