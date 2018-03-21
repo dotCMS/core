@@ -12,6 +12,7 @@ import { LoginService, LoggerService } from 'dotcms-js/dotcms-js';
 import { Observable } from 'rxjs/Observable';
 import { DotLoadingIndicatorService } from '../dot-loading-indicator/dot-loading-indicator.service';
 import { IframeOverlayService } from '../service/iframe-overlay.service';
+import { DotIframeService } from '../service/dot-iframe/dot-iframe.service';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
@@ -27,15 +28,11 @@ export class IframeComponent implements OnInit {
 
     showOverlay = false;
 
-    private readonly DEFAULT_LOCATION = {
-        pathname: '',
-        href: ''
-    };
-
     constructor(
         private element: ElementRef,
         private loggerService: LoggerService,
         private loginService: LoginService,
+        private dotIframeService: DotIframeService,
         public dotLoadingIndicatorService: DotLoadingIndicatorService,
         public iframeOverlayService: IframeOverlayService
     ) {}
@@ -43,6 +40,12 @@ export class IframeComponent implements OnInit {
     ngOnInit(): void {
         this.iframeOverlayService.overlay.subscribe((val) => (this.showOverlay = val));
         this.element.nativeElement.style.height = this.getIframeHeight(window.innerHeight);
+
+        this.dotIframeService.reloaded().subscribe(() => {
+            if (this.getIframeWindow()) {
+                this.getIframeLocation().reload();
+            }
+        });
 
         Observable.fromEvent(window, 'resize')
             .debounceTime(250)
@@ -58,20 +61,22 @@ export class IframeComponent implements OnInit {
      * @memberof IframeComponent
      */
     checkSessionExpired(): void {
-        if (this.iframeElement && this.iframeElement.nativeElement.contentWindow) {
-            const currentPath = this.iframeElement.nativeElement.contentWindow.location.pathname;
-
-            if (currentPath.indexOf('/c/portal_public/login') !== -1) {
-                this.loginService.logOutUser().subscribe(
-                    (_data) => {},
-                    (error) => {
-                        this.loggerService.error(error);
-                    }
-                );
-            }
+        if (!!this.getIframeWindow() && this.getIframeLocation().pathname.indexOf('/c/portal_public/login') !== -1) {
+            this.loginService.logOutUser().subscribe(
+                (_data) => {},
+                (error) => {
+                    this.loggerService.error(error);
+                }
+            );
         }
     }
 
+    /**
+     * Called when iframe load event happen.
+     *
+     * @param {any} $event
+     * @memberof IframeComponent
+     */
     onLoad($event): void {
         this.dotLoadingIndicatorService.hide();
 
@@ -80,10 +85,12 @@ export class IframeComponent implements OnInit {
         }
     }
 
-    get location(): any {
-        return this.iframeElement && this.iframeElement.nativeElement.contentWindow
-            ? this.iframeElement.nativeElement.contentWindow.location
-            : this.DEFAULT_LOCATION;
+    private getIframeWindow() {
+        return this.iframeElement && this.iframeElement.nativeElement.contentWindow;
+    }
+
+    private getIframeLocation(): any {
+        return this.iframeElement.nativeElement.contentWindow.location;
     }
 
     private getIframeHeight(height: number): string {

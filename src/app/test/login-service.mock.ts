@@ -15,7 +15,7 @@ const mockUserWithRedirect = {
     editModeUrl: 'redirect/to'
 };
 
-const mockAuth: Auth = {
+export const mockAuth: Auth = {
     loginAsUser: mockUser,
     user: mockUser
 };
@@ -34,6 +34,14 @@ export class LoginServiceMock {
 
     get auth$(): Observable<Auth> {
         return this._auth;
+    }
+
+    loginAs(): Observable<any> {
+        return Observable.of({});
+    }
+
+    logoutAs(): Observable<any> {
+        return Observable.of({});
     }
 
     loginUser(): Observable<User> {

@@ -59,7 +59,6 @@ describe('ContentTypesLayoutComponent', () => {
     let fixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
 
-
     beforeEach(() => {
         const messageServiceMock = new MockDotMessageService({
             'contenttypes.sidebar.components.title': 'Field Title',
@@ -91,14 +90,14 @@ describe('ContentTypesLayoutComponent', () => {
         de = fixture.debugElement.query(By.css('dot-content-type-layout'));
     });
 
-    it('should has a tab-view', () => {
+    it('should have a tab-view', () => {
         const contentType = fixture.debugElement.query(By.css('.content-type'));
         const pTabView = contentType.query(By.css('p-tabView'));
 
         expect(pTabView).not.toBeNull();
     });
 
-    it('should has just one tab', () => {
+    it('should have just one tab', () => {
         const pTabPanels = fixture.debugElement.queryAll(By.css('p-tabPanel'));
         expect(pTabPanels.length).toBe(1);
     });
@@ -111,125 +110,125 @@ describe('ContentTypesLayoutComponent', () => {
         expect(fieldDragDropService.setBagOptions).toHaveBeenCalledTimes(1);
     });
 
-    describe('Fields Tab', () => {
-        beforeEach(() => {
-            fixture.detectChanges();
+    describe('Tabs', () => {
+        let iframe: DebugElement;
 
-            this.pTabPanel = fixture.debugElement.query(By.css('p-tabView .content-type__properties'));
-        });
-
-        it('should has a field panel', () => {
-            expect(this.pTabPanel).not.toBeNull();
-            expect(this.pTabPanel.componentInstance.header).toBe('Fields Header Tab');
-        });
-
-        it('should has a content-type__fields-main', () => {
-            const contentTypeFieldsMain = this.pTabPanel.query(By.css('.content-type__fields-main'));
-            expect(contentTypeFieldsMain).not.toBeNull();
-        });
-
-        it('should has a content-type__fields-sidebar', () => {
-            const contentTypeFieldsSideBar = this.pTabPanel.query(By.css('.content-type__fields-sidebar'));
-            expect(contentTypeFieldsSideBar).not.toBeNull();
-        });
-
-        it('should has a field types list', () => {
-            const fieldTitle = this.pTabPanel.query(By.css('.content-type__fields-sidebar-title'));
-            const contentTypesFieldsList = this.pTabPanel.query(By.css('dot-content-types-fields-list'));
-
-            expect(fieldTitle.nativeElement.textContent).toBe('Field Title');
-            expect(contentTypesFieldsList).not.toBeNull();
-        });
-
-        it('should has a field row list', () => {
-            const layoutTitle = this.pTabPanel.queryAll(By.css('.content-type__fields-sidebar-title'))[1];
-            const fieldRowList = this.pTabPanel.query(By.css('dot-content-type-fields-row-list'));
-
-            expect(layoutTitle.nativeElement.textContent).toBe('Layout Title');
-            expect(fieldRowList).not.toBeNull();
-        });
-    });
-
-    describe('Permission tab', () => {
         beforeEach(() => {
             fixture.componentInstance.contentTypeId = '2';
             fixture.detectChanges();
-
-            this.pTabPanel = fixture.debugElement.query(By.css('p-tabView .content-type__permissions'));
         });
 
-        it('should has a permission panel', () => {
-            expect(this.pTabPanel).not.toBeNull();
-            expect(this.pTabPanel.componentInstance.header).toBe('Permissions Tab');
+        describe('Fields', () => {
+            beforeEach(() => {
+                this.pTabPanel = de.query(By.css('.content-type__properties'));
+                this.pTabPanel.componentInstance.selected = true;
+            });
+
+            it('should have a field panel', () => {
+                expect(this.pTabPanel).not.toBeNull();
+                expect(this.pTabPanel.componentInstance.header).toBe('Fields Header Tab');
+            });
+
+            it('should have a content-type__fields-main', () => {
+                const contentTypeFieldsMain = this.pTabPanel.query(By.css('.content-type__fields-main'));
+                expect(contentTypeFieldsMain).not.toBeNull();
+            });
+
+            it('should have a content-type__fields-sidebar', () => {
+                const contentTypeFieldsSideBar = this.pTabPanel.query(By.css('.content-type__fields-sidebar'));
+                expect(contentTypeFieldsSideBar).not.toBeNull();
+            });
+
+            it('should have a field types list', () => {
+                const fieldTitle = this.pTabPanel.query(By.css('.content-type__fields-sidebar-title'));
+                const contentTypesFieldsList = this.pTabPanel.query(By.css('dot-content-types-fields-list'));
+
+                expect(fieldTitle.nativeElement.textContent).toBe('Field Title');
+                expect(contentTypesFieldsList).not.toBeNull();
+            });
+
+            it('should have a field row list', () => {
+                const layoutTitle = this.pTabPanel.queryAll(By.css('.content-type__fields-sidebar-title'))[1];
+                const fieldRowList = this.pTabPanel.query(By.css('dot-content-type-fields-row-list'));
+
+                expect(layoutTitle.nativeElement.textContent).toBe('Layout Title');
+                expect(fieldRowList).not.toBeNull();
+            });
         });
 
-        it('should has a iframe', () => {
-            const iframe = this.pTabPanel.query(By.css('dot-iframe'));
-            expect(iframe).not.toBeNull();
+        describe('Permission', () => {
+            beforeEach(() => {
+                this.pTabPanel = de.query(By.css('.content-type__permissions'));
+                this.pTabPanel.componentInstance.selected = true;
+
+                fixture.detectChanges();
+                iframe = this.pTabPanel.query(By.css('dot-iframe'));
+            });
+
+            it('should have a permission panel', () => {
+                expect(this.pTabPanel).not.toBeNull();
+                expect(this.pTabPanel.componentInstance.header).toBe('Permissions Tab');
+            });
+
+            it('should have a iframe', () => {
+                expect(iframe).not.toBeNull();
+            });
+
+            it('should set the src attribute', () => {
+                expect(iframe.componentInstance.src).toBe('/html/content_types/permissions.jsp?contentTypeId=2&popup=true');
+            });
         });
 
-        it('should set the src attribute', () => {
-            const iframe = this.pTabPanel.query(By.css('dot-iframe'));
-            expect(iframe.componentInstance.src).toBe('/html/content_types/permissions.jsp?contentTypeId=2&popup=true');
-        });
-    });
+        describe('Push History', () => {
+            beforeEach(() => {
+                this.pTabPanel = de.query(By.css('.content-type__push_history'));
+                this.pTabPanel.componentInstance.selected = true;
 
-    describe('Push History tab', () => {
-        beforeEach(() => {
-            fixture.componentInstance.contentTypeId = '2';
-            fixture.detectChanges();
-            this.pTabPanel = fixture.debugElement.query(By.css('p-tabView .content-type__push_history'));
-        });
+                fixture.detectChanges();
+                iframe = this.pTabPanel.query(By.css('dot-iframe'));
+            });
 
-        it('should has a permission panel', () => {
-            expect(this.pTabPanel).not.toBeNull();
-            expect(this.pTabPanel.componentInstance.header).toBe('Push History');
-        });
+            it('should have a permission panel', () => {
+                expect(this.pTabPanel).not.toBeNull();
+                expect(this.pTabPanel.componentInstance.header).toBe('Push History');
+            });
 
-        it('should has a iframe', () => {
-            const iframe = this.pTabPanel.query(By.css('dot-iframe'));
-            expect(iframe).not.toBeNull();
-        });
+            it('should have a iframe', () => {
+                expect(iframe).not.toBeNull();
+            });
 
-        it('should set the src attribute', () => {
-            const iframe = this.pTabPanel.query(By.css('dot-iframe'));
-
-            expect(iframe.componentInstance.src).toBe('/html/content_types/push_history.jsp?contentTypeId=2&popup=true');
-        });
-    });
-
-    describe('Relationship tab', () => {
-        beforeEach(() => {
-            this.contentType = de.query(By.css('.content-type'));
-            fixture.componentInstance.contentTypeId = '2';
-
-            fixture.detectChanges();
-
-            this.relationshipTab = this.contentType.query(By.css('p-tabView .content-type__relationships'));
+            it('should set the src attribute', () => {
+                expect(iframe.componentInstance.src).toBe('/html/content_types/push_history.jsp?contentTypeId=2&popup=true');
+            });
         });
 
-        it('should has a Relationship tab', () => {
-            expect(this.relationshipTab).toBeDefined();
-        });
+        describe('Relationship', () => {
+            beforeEach(() => {
+                this.pTabPanel = de.query(By.css('.content-type__relationships'));
+                this.pTabPanel.componentInstance.selected = true;
 
-        it('should has a right header', () => {
-            expect(this.relationshipTab.componentInstance.header).toBe('Relationship');
-        });
+                fixture.detectChanges();
+                iframe = this.pTabPanel.query(By.css('dot-iframe'));
+            });
 
-        it('should has a iframe', () => {
-            const iframe = this.relationshipTab.query(By.css('dot-iframe'));
+            it('should have a Relationship tab', () => {
+                expect(this.pTabPanel).toBeDefined();
+            });
 
-            expect(iframe).not.toBeNull();
-        });
+            it('should have a right header', () => {
+                expect(this.pTabPanel.componentInstance.header).toBe('Relationship');
+            });
 
-        it('should set the src attribute', () => {
-            const iframe = this.relationshipTab.query(By.css('dot-iframe'));
+            it('should have a iframe', () => {
+                expect(iframe).not.toBeNull();
+            });
 
-            // tslint:disable-next-line:max-line-length
-            expect(iframe.componentInstance.src).toBe(
-                // tslint:disable-next-line:max-line-length
-                'c/portal/layout?p_l_id=1234&p_p_id=content-types&_content_types_struts_action=%2Fext%2Fstructure%2Fview_relationships&_content_types_structure_id=2'
-            );
+            it('should set the src attribute', () => {
+                expect(iframe.componentInstance.src).toBe(
+                    // tslint:disable-next-line:max-line-length
+                    'c/portal/layout?p_l_id=1234&p_p_id=content-types&_content_types_struts_action=%2Fext%2Fstructure%2Fview_relationships&_content_types_structure_id=2'
+                );
+            });
         });
     });
 });

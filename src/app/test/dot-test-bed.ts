@@ -1,3 +1,4 @@
+import { DotIframeService } from './../view/components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { ConnectionBackend, RequestOptions, BaseRequestOptions, Http } from '@angular/http';
 import { Logger } from 'angular2-logger/core';
 import { MockBackend } from '@angular/http/testing';
@@ -51,7 +52,8 @@ export class DOTTestBed {
             SocketFactory,
             StringUtils,
             UserModel,
-            DotRouterService
+            DotRouterService,
+            DotIframeService
         ]
     };
 

@@ -1,9 +1,10 @@
+import { DotIframeService } from './../_common/iframe/service/dot-iframe/dot-iframe.service';
 import { BaseComponent } from '../_common/_base/base-component';
 import { Component, Output, EventEmitter, Input, ViewEncapsulation, OnInit } from '@angular/core';
 import { LoginService, User } from 'dotcms-js/dotcms-js';
 import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { PaginatorService } from '../../../api/services/paginator';
-import { FormGroup, FormBuilder, FormControl } from '@angular/forms';
+import { FormGroup, FormBuilder, FormControl, Validators } from '@angular/forms';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 
 @Component({
@@ -23,6 +24,7 @@ export class LoginAsComponent extends BaseComponent implements OnInit {
 
     constructor(
         dotMessageService: DotMessageService,
+        private dotIframeService: DotIframeService,
         private fb: FormBuilder,
         private loginService: LoginService,
         public paginationService: PaginatorService,
@@ -36,7 +38,7 @@ export class LoginAsComponent extends BaseComponent implements OnInit {
         this.getUsersList();
 
         this.form = this.fb.group({
-            loginAsUser: new FormControl(),
+            loginAsUser: new FormControl('', Validators.required),
             password: ''
         });
     }
@@ -46,13 +48,6 @@ export class LoginAsComponent extends BaseComponent implements OnInit {
         return false;
     }
 
-    /**
-     * Calls the back-end service that will change the appropriate request and session
-     * attributes in order to impersonate the specified user. If an error occurs, a
-     * message will be displayed to the user indicating so.
-     *
-     * @param options - The parameters required by the back-end service.
-     */
     doLoginAs(): void {
         const password: string = this.form.value.password;
         const user: User = this.form.value.loginAsUser;
@@ -62,6 +57,8 @@ export class LoginAsComponent extends BaseComponent implements OnInit {
                 if (data) {
                     this.close();
                     this.iframeOverlayService.hide();
+
+                    this.dotIframeService.reload();
                 }
             },
             (response) => {

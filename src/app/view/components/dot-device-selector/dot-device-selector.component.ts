@@ -3,8 +3,6 @@ import { DotDevicesService } from '../../../api/services/dot-devices/dot-devices
 import { DotDevice } from '../../../shared/models/dot-device/dot-device.model';
 import { Observable } from 'rxjs/Observable';
 import { DotMessageService } from '../../../api/services/dot-messages-service';
-import {DotPersona} from '../../../shared/models/dot-persona/dot-persona.model';
-import {concat} from 'rxjs/observable/concat';
 
 @Component({
     selector: 'dot-device-selector',
