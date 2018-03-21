@@ -33,7 +33,7 @@ public class DotParse extends DotDirective {
   private final String EDIT_ICON =
       "<div class='dot_parseIcon'><a href='javascript:window.top.document.getElementById(\"detailFrame\").contentWindow.editFile(\"${_dotParseInode}\");' title='${_dotParsePath}'><span class='editIcon'></span></a></div>";
 
-  private final UserAPI userAPI = APILocator.getUserAPI();
+
 
   @Override
   public final String getName() {
@@ -104,7 +104,7 @@ public class DotParse extends DotDirective {
 
       final boolean respectFrontEndRolesForVTL = (params.mode.respectAnonPerms) ? Config.getBooleanProperty("RESPECT_FRONTEND_ROLES_FOR_DOTPARSE", true) : params.mode.respectAnonPerms;
 
-      final Contentlet contentlet = APILocator.getContentletAPI().find(inode, userAPI.getSystemUser(), respectFrontEndRolesForVTL);
+      final Contentlet contentlet = APILocator.getContentletAPI().find(inode, APILocator.getUserAPI().getSystemUser(), respectFrontEndRolesForVTL);
       final FileAsset asset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
       
       

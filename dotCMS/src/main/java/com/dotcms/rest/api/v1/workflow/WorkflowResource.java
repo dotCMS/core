@@ -2,19 +2,16 @@ package com.dotcms.rest.api.v1.workflow;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
-import com.dotcms.repackage.javax.ws.rs.DELETE;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.POST;
-import com.dotcms.repackage.javax.ws.rs.PUT;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.Produces;
-import com.dotcms.repackage.javax.ws.rs.QueryParam;
+import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
-import com.dotcms.rest.*;
+import com.dotcms.rest.ContentHelper;
+import com.dotcms.rest.InitDataObject;
+import static com.dotcms.rest.ResponseEntityView.OK;
+import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.ForbiddenException;
@@ -22,12 +19,17 @@ import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.workflow.form.*;
 import com.dotcms.workflow.helper.WorkflowHelper;
 
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
+import com.dotmarketing.portlets.workflows.business.NotAllowedUserWorkflowException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
@@ -35,24 +37,27 @@ import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject;
 import com.dotmarketing.util.Logger;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-
-import javax.servlet.http.HttpServletRequest;
-
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.Beta;
+import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.LocaleUtil;
+
+import static com.dotcms.util.CollectionsUtils.*;
+import javax.servlet.http.HttpServletRequest;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.function.Supplier;
 
 @SuppressWarnings("serial")
 @Beta /* Non Official released */
 @Path("/v1/workflow")
 public class WorkflowResource {
+
 
     private final WorkflowHelper   workflowHelper;
     private final ContentHelper    contentHelper;
@@ -60,6 +65,7 @@ public class WorkflowResource {
     private final WorkflowAPI      workflowAPI;
     private final ResponseUtil     responseUtil;
     private final ContentletAPI    contentletAPI;
+    private final PermissionAPI    permissionAPI;
     private final WorkflowImportExportUtil workflowImportExportUtil;
 
 
@@ -73,16 +79,18 @@ public class WorkflowResource {
                 APILocator.getWorkflowAPI(),
                 APILocator.getContentletAPI(),
                 ResponseUtil.INSTANCE,
+                APILocator.getPermissionAPI(),
                 WorkflowImportExportUtil.getInstance(),
                 new WebResource());
     }
 
     @VisibleForTesting
-    protected WorkflowResource(final WorkflowHelper workflowHelper,
+        WorkflowResource(final WorkflowHelper workflowHelper,
                                final ContentHelper    contentHelper,
-                               final WorkflowAPI workflowAPI,
-                               final ContentletAPI  contentletAPI,
-                               final ResponseUtil responseUtil,
+                               final WorkflowAPI      workflowAPI,
+                               final ContentletAPI    contentletAPI,
+                               final ResponseUtil     responseUtil,
+                               final PermissionAPI    permissionAPI,
                                final WorkflowImportExportUtil workflowImportExportUtil,
                                final WebResource webResource) {
 
@@ -91,7 +99,8 @@ public class WorkflowResource {
         this.webResource              = webResource;
         this.responseUtil             = responseUtil;
         this.workflowAPI              = workflowAPI;
-        this.contentletAPI            =  contentletAPI;
+        this.permissionAPI            = permissionAPI;
+        this.contentletAPI            = contentletAPI;
         this.workflowImportExportUtil = workflowImportExportUtil;
 
     }
@@ -131,12 +140,18 @@ public class WorkflowResource {
             Logger.error(this.getClass(),
                     "Exception on findSchemes exception message: " + e.getMessage(), e);
             response = (e.getCause() instanceof SecurityException)?
-                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    this.createUnAuthorizedResponse(e) :
                     ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 
         return response;
     } // findSchemes.
+
+    private Response createUnAuthorizedResponse (final Exception e) {
+
+        SecurityLogger.logInfo(this.getClass(), e.getMessage());
+        return ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
+    }
 
     /**
      * Returns all schemes for the content type and include schemes non-archive . 401 if the user does not have permission.
@@ -174,7 +189,7 @@ public class WorkflowResource {
             Logger.error(this.getClass(),
                     "Exception on findSchemes exception message: " + e.getMessage(), e);
             response = (e.getCause() instanceof SecurityException)?
-                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    this.createUnAuthorizedResponse(e) :
                     ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 
@@ -219,7 +234,7 @@ public class WorkflowResource {
                     "Exception on findStepsByScheme, schemeId: " + schemeId +
                             ", exception message: " + e.getMessage(), e);
             response = (e.getCause() instanceof SecurityException)?
-                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    this.createUnAuthorizedResponse(e) :
                     ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 
@@ -264,7 +279,7 @@ public class WorkflowResource {
                     "Exception on findStepsByScheme, contentlet inode: " + inode +
                             ", exception message: " + e.getMessage(), e);
             response = (e.getCause() instanceof SecurityException)?
-                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    this.createUnAuthorizedResponse(e) :
                     ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 
@@ -305,7 +320,7 @@ public class WorkflowResource {
             Logger.error(this.getClass(),
                     "DotSecurityException on findActionByStep, actionId: " + actionId +
                             ", exception message: " + e.getMessage(), e);
-            response = ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
+            response = this.createUnAuthorizedResponse(e);
         } catch (Exception e) {
 
             Logger.error(this.getClass(),
@@ -353,7 +368,7 @@ public class WorkflowResource {
             Logger.error(this.getClass(),
                     "DotSecurityException on findActionByStep, actionId: " + actionId +
                             ", stepId: " + stepId + ", exception message: " + e.getMessage(), e);
-            response = ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
+            response = this.createUnAuthorizedResponse(e);
         } catch (Exception e) {
 
             Logger.error(this.getClass(),
@@ -406,7 +421,7 @@ public class WorkflowResource {
                     "Exception on findActionsByStep, stepId: " + stepId +
                             ", exception message: " + e.getMessage(), e);
             response = (e.getCause() instanceof SecurityException)?
-                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    this.createUnAuthorizedResponse(e) :
                     ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 
@@ -443,7 +458,7 @@ public class WorkflowResource {
                     "Exception on findActionsByScheme, schemeId: " + schemeId +
                             ", exception message: " + e.getMessage(), e);
             response = (e.getCause() instanceof SecurityException)?
-                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    this.createUnAuthorizedResponse(e) :
                     ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 
@@ -474,18 +489,60 @@ public class WorkflowResource {
             Logger.debug(this, "Saving new workflow action: " + workflowActionForm.getActionName());
             newAction = this.workflowHelper.save(workflowActionForm, initDataObject.getUser());
             response  = Response.ok(new ResponseEntityView(newAction)).build(); // 200
-        } catch (Exception e) {
+        } catch (NotAllowedUserWorkflowException e) {
+            Logger.error(this.getClass(),
+                    "Exception on save, workflowActionForm: " + workflowActionForm +
+                            ", exception message: " + e.getMessage(), e);
+            throw new ForbiddenException(e);
+        }  catch (Exception e) {
 
             Logger.error(this.getClass(),
                     "Exception on save, workflowActionForm: " + workflowActionForm +
                             ", exception message: " + e.getMessage(), e);
             response = (e.getCause() instanceof SecurityException)?
-                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    this.createUnAuthorizedResponse(e) :
                     ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 
         return response;
     } // save
+
+    @PUT
+    @Path("/actions/{actionId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response updateAction(@Context final HttpServletRequest request,
+                                       @PathParam("actionId") final String actionId,
+                                       final WorkflowActionForm workflowActionForm) {
+
+        final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
+        Response response;
+        try {
+            Logger.debug(this, "Updating action with id: " + actionId);
+            final WorkflowAction workflowAction = this.workflowHelper.save( actionId, workflowActionForm, initDataObject.getUser());
+            response  = Response.ok(new ResponseEntityView(workflowAction)).build(); // 200
+        } catch (NotAllowedUserWorkflowException e) {
+            Logger.error(this.getClass(),
+                    "NotAllowedUserWorkflowException on updateAction, action: " + actionId +
+                            ", exception message: " + e.getMessage(), e);
+            throw new ForbiddenException(e);
+        } catch (DoesNotExistException e) {
+            Logger.error(this.getClass(),
+                    "DoesNotExistException on updateAction, action: " + actionId +
+                            ", exception message: " + e.getMessage(), e);
+            response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+        } catch (Exception e) {
+            Logger.error(this.getClass(),
+                    "Exception on updateAction, action: " + actionId +
+                            ", exception message: " + e.getMessage(), e);
+            response = (e.getCause() instanceof SecurityException)?
+                    this.createUnAuthorizedResponse(e) :
+                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        return response;
+    } // deleteAction
 
     /**
      * Saves an action into a step
@@ -512,22 +569,24 @@ public class WorkflowResource {
                     + " in to a step: " + stepId);
             this.workflowHelper.saveActionToStep(new WorkflowActionStepBean.Builder().stepId(stepId)
                     .actionId(workflowActionStepForm.getActionId()).build(), initDataObject.getUser());
-            response  = Response.ok(new ResponseEntityView("ok")).build(); // 200
-        } catch (DotSecurityException e) {
+            response  = Response.ok(new ResponseEntityView(OK)).build(); // 200
+        } catch (DotSecurityException | NotAllowedUserWorkflowException e) {
+            Logger.error(this.getClass(),
+                    "Exception on saveActionToStep, workflowActionForm: " + workflowActionStepForm +
+                            ", exception message: " + e.getMessage(), e);
             throw new ForbiddenException(e);
         } catch (Exception e) {
 
             Logger.error(this.getClass(),
-                    "Exception on saveAction, workflowActionForm: " + workflowActionStepForm +
+                    "Exception on saveActionToStep, workflowActionForm: " + workflowActionStepForm +
                             ", exception message: " + e.getMessage(), e);
             response = (e.getCause() instanceof SecurityException)?
-                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    this.createUnAuthorizedResponse(e) :
                     ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 
         return response;
     } // saveAction
-
 
     /**
      * Deletes a step
@@ -551,7 +610,12 @@ public class WorkflowResource {
 
             Logger.debug(this, "Deleting the step: " + stepId);
             this.workflowHelper.deleteStep(stepId);
-            response  = Response.ok(new ResponseEntityView("ok")).build(); // 200
+            response  = Response.ok(new ResponseEntityView(OK)).build(); // 200
+        } catch (NotAllowedUserWorkflowException e) {
+            Logger.error(this.getClass(),
+                    "NotAllowedUserWorkflowException on deleteStep, stepId: " + stepId +
+                            ", exception message: " + e.getMessage(), e);
+            throw new ForbiddenException(e);
         } catch (DoesNotExistException e) {
 
             Logger.error(this.getClass(),
@@ -564,7 +628,7 @@ public class WorkflowResource {
                     "Exception on deleteStep, stepId: " + stepId +
                             ", exception message: " + e.getMessage(), e);
             response = (e.getCause() instanceof SecurityException)?
-                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    this.createUnAuthorizedResponse(e) :
                     ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 
@@ -594,7 +658,13 @@ public class WorkflowResource {
 
             Logger.debug(this, "Deleting the action: " + actionId + " for the step: " + stepId);
             this.workflowHelper.deleteAction(actionId, stepId, initDataObject.getUser());
-            response  = Response.ok(new ResponseEntityView("ok")).build(); // 200
+            response  = Response.ok(new ResponseEntityView(OK)).build(); // 200
+        } catch (NotAllowedUserWorkflowException e) {
+            Logger.error(this.getClass(),
+                    "NotAllowedUserWorkflowException on deleteAction, action: " + actionId
+                            + ", stepId: " + stepId +
+                            ", exception message: " + e.getMessage(), e);
+            throw new ForbiddenException(e);
         } catch (DoesNotExistException e) {
 
             Logger.error(this.getClass(),
@@ -609,7 +679,7 @@ public class WorkflowResource {
                             + " stepId: " + stepId +
                             ", exception message: " + e.getMessage(), e);
             response = (e.getCause() instanceof SecurityException)?
-                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    this.createUnAuthorizedResponse(e) :
                     ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 
@@ -638,7 +708,12 @@ public class WorkflowResource {
 
             Logger.debug(this, "Deleting the action: " + actionId);
             this.workflowHelper.deleteAction(actionId, initDataObject.getUser());
-            response  = Response.ok(new ResponseEntityView("ok")).build(); // 200
+            response  = Response.ok(new ResponseEntityView(OK)).build(); // 200
+        } catch (NotAllowedUserWorkflowException e) {
+            Logger.error(this.getClass(),
+                    "NotAllowedUserWorkflowException on deleteAction, action: " + actionId +
+                            ", exception message: " + e.getMessage(), e);
+            throw new ForbiddenException(e);
         } catch (DoesNotExistException e) {
 
             Logger.error(this.getClass(),
@@ -651,13 +726,13 @@ public class WorkflowResource {
                     "Exception on deleteAction, action: " + actionId +
                             ", exception message: " + e.getMessage(), e);
             response = (e.getCause() instanceof SecurityException)?
-                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    this.createUnAuthorizedResponse(e) :
                     ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 
         return response;
     } // deleteAction
-    
+
     /**
      * Change the order of the steps in a scheme
      * @param request                           HttpServletRequest
@@ -673,15 +748,20 @@ public class WorkflowResource {
     public final Response reorderStep(@Context final HttpServletRequest request,
                                         @PathParam("stepId")   final String stepId, 
                                         @PathParam("order")    final int order) {
-        this.webResource.init
+        final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
         Response response;
 
         try {
 
             Logger.debug(this, "Doing reordering of step: " + stepId + ", order: " + order);
-            this.workflowHelper.reorderStep(stepId, order);
-            response  = Response.ok(new ResponseEntityView("Ok")).build(); // 200
+            this.workflowHelper.reorderStep(stepId, order, initDataObject.getUser());
+            response  = Response.ok(new ResponseEntityView(OK)).build(); // 200
+        } catch (NotAllowedUserWorkflowException e) {
+            Logger.error(this.getClass(),
+                    "NotAllowedUserWorkflowException on reorderStep, stepId: " + stepId +
+                            ", exception message: " + e.getMessage(), e);
+            throw new ForbiddenException(e);
         } catch (DoesNotExistException e) {
 
             Logger.error(this.getClass(),
@@ -694,14 +774,125 @@ public class WorkflowResource {
                     "Exception on reorderStep, stepId: " + stepId +
                             ", exception message: " + e.getMessage(), e);
             response = (e.getCause() instanceof SecurityException)?
+                    this.createUnAuthorizedResponse(e) :
+                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+        return response;
+    } // reorderStep
+
+
+    @PUT
+    @Path("/steps/{stepId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response updateStep(@Context final HttpServletRequest request,
+                                     @NotNull @PathParam("stepId") final String stepId,
+                                     final WorkflowStepUpdateForm stepForm) {
+        final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
+        Logger.debug(this, "updating step for scheme with stepId: " + stepId);
+        Response response;
+        try {
+            final WorkflowStep step = this.workflowHelper.updateStep(stepId, stepForm, initDataObject.getUser());
+            response = Response.ok(new ResponseEntityView(step)).build();
+        } catch (NotAllowedUserWorkflowException e) {
+            Logger.error(this.getClass(),
+                    "NotAllowedUserWorkflowException on updateStep, stepId: " + stepId +
+                            ", exception message: " + e.getMessage(), e);
+            throw new ForbiddenException(e);
+        } catch (DoesNotExistException e) {
+            Logger.error(this.getClass(),
+                    "DoesNotExistException on updateStep, stepId: " + stepId +
+                            ", exception message: " + e.getMessage(), e);
+            response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+        } catch (Exception e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on updateStep, stepId: " + stepId +
+                            ", exception message: " + e.getMessage(), e);
+            response = (e.getCause() instanceof SecurityException) ?
                     ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
                     ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
         return response;
     } // reorderStep
 
+    @POST
+    @Path("/steps")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response addStep(@Context final HttpServletRequest request,
+                                  final WorkflowStepAddForm newStepForm) {
+        final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
+        final String schemeId = newStepForm.getSchemeId();
+        Logger.debug(this, "updating step for scheme with schemeId: " + schemeId);
+        Response response;
+        try {
+            final WorkflowStep step = this.workflowHelper.addStep(newStepForm, initDataObject.getUser());
+            response = Response.ok(new ResponseEntityView(step)).build();
+        } catch (NotAllowedUserWorkflowException e) {
+            Logger.error(this.getClass(),
+                    "NotAllowedUserWorkflowException on addStep, stepId: " + schemeId +
+                            ", exception message: " + e.getMessage(), e);
+            throw new ForbiddenException(e);
+        } catch (DoesNotExistException e) {
+            Logger.error(this.getClass(),
+                    "DoesNotExistException on addStep, stepId: " + schemeId +
+                            ", exception message: " + e.getMessage(), e);
+            response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+        } catch (Exception e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on addStep, stepId: " + schemeId +
+                            ", exception message: " + e.getMessage(), e);
+            response = (e.getCause() instanceof SecurityException) ?
+                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+        return response;
+    }
+
+
+    @GET
+    @Path("/steps/{stepId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response findStepById(@Context final HttpServletRequest request,
+                                       @NotNull @PathParam("stepId") final String stepId) {
+        this.webResource.init(null, true, request, true, null);
+
+        Logger.debug(this, "finding step by id stepId: " + stepId);
+        Response response;
+        try {
+            final WorkflowStep step = this.workflowHelper.findStepById(stepId);
+            response = Response.ok(new ResponseEntityView(step)).build();
+        } catch (NotAllowedUserWorkflowException e) {
+            Logger.error(this.getClass(),
+                    "NotAllowedUserWorkflowException on findStepById, stepId: " + stepId +
+                            ", exception message: " + e.getMessage(), e);
+            throw new ForbiddenException(e);
+        } catch (DoesNotExistException e) {
+            Logger.error(this.getClass(),
+                    "DoesNotExistException on findStepById, stepId: " + stepId +
+                            ", exception message: " + e.getMessage(), e);
+            response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+        } catch (Exception e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on addStep, stepId: " + stepId +
+                            ", exception message: " + e.getMessage(), e);
+            response = (e.getCause() instanceof SecurityException) ?
+                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+        return response;
+    }
+
+
     @PUT
-    @Path("/fire/actions/{actionId}")
+    @Path("/actions/{actionId}/fire")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -721,7 +912,7 @@ public class WorkflowResource {
 
             final Contentlet contentlet = (UtilMethods.isSet(inode))?
                         this.contentletAPI.find(inode, initDataObject.getUser(), false):
-                        this.contentHelper.populateContentletFromMap(new Contentlet(), fireActionForm.getContentletFormData());
+                        this.populateContentlet(fireActionForm, initDataObject.getUser());
 
             if (null != contentlet && null != fireActionForm) {
                 contentlet.setStringProperty("wfPublishDate", fireActionForm.getPublishDate());
@@ -752,7 +943,7 @@ public class WorkflowResource {
             Logger.error(this.getClass(),
                     "Exception on firing, workflow action: " + actionId +
                             ", inode: " + inode, e);
-
+            SecurityLogger.logInfo(this.getClass(), e.getMessage());
             response =
                     ExceptionMapperUtil.createResponse(e, Response.Status.FORBIDDEN);
         } catch (Exception e) {
@@ -762,12 +953,42 @@ public class WorkflowResource {
                             ", inode: " + inode, e);
 
             response = (e.getCause() instanceof SecurityException)?
-                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    this.createUnAuthorizedResponse(e) :
                     ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 
         return response;
     } // fire.
+
+    private Contentlet populateContentlet(final FireActionForm fireActionForm, final User user) throws DotSecurityException {
+
+        final Contentlet contentlet = this.contentHelper.populateContentletFromMap
+                (new Contentlet(), fireActionForm.getContentletFormData());
+
+        final Supplier<String> errorMessageSupplier = () -> {
+
+            String message = "no-permissions-contenttype";
+
+            try {
+                message =LanguageUtil.get(user.getLocale(),
+                        message, user.getUserId(), contentlet.getContentType().id());
+            } catch (LanguageException e) {
+                throw new ForbiddenException(message);
+            }
+
+            return message;
+        };
+
+        try {
+            if (!this.permissionAPI.doesUserHavePermission(contentlet.getContentType(), PermissionAPI.PERMISSION_READ, user, false)) {
+                throw new DotSecurityException(errorMessageSupplier.get());
+            }
+        } catch (DotDataException e) {
+            throw new DotSecurityException(errorMessageSupplier.get(), e);
+        }
+
+        return contentlet;
+    }
 
     /**
      * Change the order of an action associated to the step
@@ -796,7 +1017,12 @@ public class WorkflowResource {
                     new WorkflowReorderBean.Builder().stepId(stepId).actionId(actionId)
                             .order(workflowReorderActionStepForm.getOrder()).build(),
                     initDataObject.getUser());
-            response  = Response.ok(new ResponseEntityView("Ok")).build(); // 200
+            response  = Response.ok(new ResponseEntityView(OK)).build(); // 200
+        } catch (NotAllowedUserWorkflowException e) {
+            Logger.error(this.getClass(),
+                    "NotAllowedUserWorkflowException on reorderAction, workflowReorderActionStepForm: " + workflowReorderActionStepForm +
+                            ", exception message: " + e.getMessage(), e);
+            throw new ForbiddenException(e);
         } catch (DoesNotExistException e) {
 
             Logger.error(this.getClass(),
@@ -809,16 +1035,61 @@ public class WorkflowResource {
                     "Exception on reorderAction, workflowReorderActionStepForm: " + workflowReorderActionStepForm +
                             ", exception message: " + e.getMessage(), e);
             response = (e.getCause() instanceof SecurityException)?
-                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    this.createUnAuthorizedResponse(e) :
                     ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 
         return response;
     } // reorderAction
 
+    /**
+     * Do an export of the scheme with all dependencies to rebuild it (such as steps and actions)
+     * in addition the permission (who can use) will be also returned.
+     * @param request  HttpServletRequest
+     * @return Response
+     */
+    @POST
+    @Path("/schemes/import")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response importScheme(@Context final HttpServletRequest request,
+                                       final WorkflowSchemeImportExportObjectForm workflowSchemeImportExportObjectForm) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, true, request, true, null);
+        Response response;
+        Locale                           locale;
+
+        try {
+
+            Logger.debug(this, "Importing the workflow schemes");
+            this.workflowHelper.importScheme (workflowSchemeImportExportObjectForm.getWorkflowExportObject(),
+                            workflowSchemeImportExportObjectForm.getPermissions(),
+                            initDataObject.getUser());
+            response     = Response.ok(new ResponseEntityView("OK")).build(); // 200
+        } catch (DoesNotExistException e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on importScheme, Error importing schemes, some objects could not exists", e);
+            locale   = LocaleUtil.getLocale(request);
+            response = this.responseUtil.getErrorResponse(request, Response.Status.NOT_FOUND,
+                    locale, initDataObject.getUser().getUserId(), "Workflow-import-fail");
+        } catch (Exception e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on importScheme, schemeId, exception message: " + e.getMessage(), e);
+            response = (e.getCause() instanceof SecurityException)?
+                    this.createUnAuthorizedResponse(e) :
+                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        return response;
+    } // importScheme.
 
     /**
-     * Returns a set of actions associated to the schemeId
+     * Do an export of the scheme with all dependencies to rebuild it (such as steps and actions)
+     * in addition the permission (who can use) will be also returned.
      * @param request  HttpServletRequest
      * @param schemeId String
      * @return Response
@@ -835,6 +1106,7 @@ public class WorkflowResource {
                 (null, true, request, true, null);
         Response response;
         WorkflowSchemeImportExportObject exportObject;
+        List<Permission>                 permissions;
         WorkflowScheme                   scheme;
         Locale                           locale;
 
@@ -843,7 +1115,10 @@ public class WorkflowResource {
             Logger.debug(this, "Exporting the workflow scheme: " + schemeId);
             scheme       = this.workflowAPI.findScheme(schemeId);
             exportObject = this.workflowImportExportUtil.buildExportObject(Arrays.asList(scheme));
-            response     = Response.ok(new ResponseEntityView(exportObject)).build(); // 200
+            permissions  = this.workflowHelper.getActionsPermissions(exportObject.getActions());
+            response     = Response.ok(new ResponseEntityView(
+                    map("workflowImportObject",exportObject,
+                            "permissions", permissions))).build(); // 200
         } catch (DoesNotExistException e) {
 
             Logger.error(this.getClass(),
@@ -857,12 +1132,12 @@ public class WorkflowResource {
                     "Exception on findActionsByScheme, schemeId: " + schemeId +
                             ", exception message: " + e.getMessage(), e);
             response = (e.getCause() instanceof SecurityException)?
-                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    this.createUnAuthorizedResponse(e) :
                     ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 
         return response;
-    } // exportScheme.
+    } // exportscheme.
 
     /**
      * Returns all the possible default actions associated to the content type workflow schemes.
@@ -897,7 +1172,7 @@ public class WorkflowResource {
             Logger.error(this.getClass(),
                     "Exception on find Available Default Actions exception message: " + e.getMessage(), e);
             response = (e.getCause() instanceof SecurityException)?
-                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    this.createUnAuthorizedResponse(e) :
                     ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 
@@ -937,7 +1212,7 @@ public class WorkflowResource {
             Logger.error(this.getClass(),
                     "Exception on find Available Default Actions exception message: " + e.getMessage(), e);
             response = (e.getCause() instanceof SecurityException)?
-                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    this.createUnAuthorizedResponse(e) :
                     ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 
@@ -983,11 +1258,76 @@ public class WorkflowResource {
                     "Exception on findInitialAvailableActionsByContentType, content type id: " + contentTypeId +
                             ", exception message: " + e.getMessage(), e);
             response = (e.getCause() instanceof SecurityException)?
-                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
+                    this.createUnAuthorizedResponse(e) :
                     ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 
         return response;
     } // findInitialAvailableActionsByContentType.
+
+    /**
+     * Creates a new scheme
+     *
+     * @param request
+     * @param workflowSchemeForm
+     * @return
+     */
+    @POST
+    @Path("/schemes")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response save(@Context final HttpServletRequest request,
+                               final WorkflowSchemeForm workflowSchemeForm) {
+        final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
+        Logger.debug(this, "Saving scheme named: " + workflowSchemeForm.getSchemeName());
+        Response response = null;
+        try {
+            final WorkflowScheme scheme = this.workflowHelper.saveOrUpdate(null, workflowSchemeForm, initDataObject.getUser());
+            response  = Response.ok(new ResponseEntityView(scheme)).build(); // 200
+        } catch ( AlreadyExistException e) {
+            response = ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
+        } catch (Exception e) {
+            Logger.error(this.getClass(), "Exception on save, schema named: " + workflowSchemeForm.getSchemeName() + ", exception message: " + e.getMessage(), e);
+            response = (e.getCause() instanceof SecurityException)?
+                    this.createUnAuthorizedResponse(e) :
+                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+        return response;
+    }
+
+
+    /**
+     * Updates an existing scheme
+     *
+     * @param request
+     * @param workflowSchemeForm
+     * @return
+     */
+    @PUT
+    @Path("/schemes/{schemeId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response update(@Context final HttpServletRequest request,
+                                 @PathParam("schemeId") final String schemeId,
+                                 final WorkflowSchemeForm workflowSchemeForm) {
+        final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
+        Logger.debug(this, "Updating scheme with id: " + schemeId);
+        Response response = null;
+        try {
+            final WorkflowScheme scheme = this.workflowHelper.saveOrUpdate(schemeId, workflowSchemeForm, initDataObject.getUser());
+            response = Response.ok(new ResponseEntityView(scheme)).build(); // 200
+        } catch ( DoesNotExistException e) {
+            Logger.error(this.getClass(), "Exception attempting to update a nonexistent schema identified by : " +schemeId + ", exception message: " + e.getMessage(), e);
+            response = ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
+        } catch (Exception e) {
+            Logger.error(this.getClass(), "Exception attempting to update schema identified by : " +schemeId + ", exception message: " + e.getMessage(), e);
+            response = (e.getCause() instanceof SecurityException)?
+                    this.createUnAuthorizedResponse(e) :
+                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+        return response;
+    }
 
 } // E:O:F:WorkflowResource.

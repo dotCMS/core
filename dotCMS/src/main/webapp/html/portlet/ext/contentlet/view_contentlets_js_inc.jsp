@@ -2326,7 +2326,6 @@
                             "<ul><li><%= LanguageUtil.get(pageContext, "message.contentlet.hint2") %> " +
                             "</li><li><%= LanguageUtil.get(pageContext, "message.contentlet.hint3") %> " +
                             "</li><li><%= LanguageUtil.get(pageContext, "message.contentlet.hint4") %> " +
-                            "<li><%= LanguageUtil.get(pageContext, "message.contentlet.hint5") %></li>"+
                             "<li><%= LanguageUtil.get(pageContext, "message.contentlet.hint6")%></li>"+
                             "<li><%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "message.contentlet.note1")) %></li>"+
                             "</ul></div>";
@@ -2710,9 +2709,16 @@
     });
 
     function fileActionCallback (response) {
-    	refreshFakeJax();
-    	showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Workflow-executed")) %>');
-	}
+        if (response.status == "success") {
+            setTimeout("refreshFakeJax()", 1000);
+            showDotCMSSystemMessage(response.message);
+            return;
+        }
+
+        // An error happened
+        refreshFakeJax();
+        showDotCMSErrorMessage(response.message);
+    }
 
 
 	function _unpublishAsset (inode) {

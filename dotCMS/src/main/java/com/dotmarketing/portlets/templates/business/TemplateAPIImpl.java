@@ -141,8 +141,6 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		// Copy permissions
 		permissionAPI.copyPermissions(sourceTemplate, newTemplate);
 
-		save(newTemplate);
-
 		return newTemplate;
 	}
 

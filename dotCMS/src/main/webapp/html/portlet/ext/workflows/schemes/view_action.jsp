@@ -10,90 +10,101 @@
 <%@page import="java.util.List"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.business.*" %>
+<%@ page import="java.util.Collections" %>
 
 <%
 	WorkflowAPI wapi = APILocator.getWorkflowAPI();
 	String schemeId  = request.getParameter("schemeId");
 	String stepId    = request.getParameter("stepId");
 	String actionId  = request.getParameter("actionId");
+    final String NEW_ACTION ="new";
+	WorkflowAction action = new WorkflowAction();
+	List<WorkflowActionClass> subActions = Collections.emptyList();
+	Role nextAssignRole = new Role();
+	boolean hideHierarchayControl = true;
+	if(UtilMethods.isSet(actionId) && !NEW_ACTION.equals(actionId)) {
+		try {
+			action = wapi.findAction(actionId, APILocator.getUserAPI().getSystemUser());
+			nextAssignRole = APILocator.getRoleAPI().loadRoleById(action.getNextAssign());
+			if (UtilMethods.isSet(nextAssignRole) && UtilMethods.isSet(nextAssignRole.getId())) {
+				if (!nextAssignRole.isUser() && !nextAssignRole
+						.equals(APILocator.getRoleAPI().loadCMSAnonymousRole())) {
+					if (action.isAssignable()) {
+						hideHierarchayControl = false;
+					}
+				}
+			}
 
-    WorkflowAction action = new WorkflowAction();
-    Role nextAssignRole = new Role();
-    boolean hideHierarchayControl = true;
-    try {
-        action = wapi.findAction( actionId, APILocator.getUserAPI().getSystemUser() );
-        nextAssignRole = APILocator.getRoleAPI().loadRoleById( action.getNextAssign() );
-        if ( UtilMethods.isSet( nextAssignRole ) && UtilMethods.isSet( nextAssignRole.getId() ) ) {
-            if ( !nextAssignRole.isUser() && !nextAssignRole.equals( APILocator.getRoleAPI().loadCMSAnonymousRole() ) ) {
-                if ( action.isAssignable() ) {
-                    hideHierarchayControl = false;
-                }
-            }
-        }
+			if (schemeId == null) {
+				schemeId = action.getSchemeId();
+			}
+		} catch (Exception e) {
+			Logger.debug(this.getClass(), "can't find action");
+		}
 
-        if ( schemeId == null ) {
-			schemeId = action.getSchemeId();
-        }
-    } catch ( Exception e ) {
-        Logger.debug( this.getClass(), "can't find action" );
-    }
+		subActions = wapi.findActionClasses(action);
+	}
 
 	final WorkflowScheme scheme = wapi.findScheme(schemeId);
 
 	List<WorkflowStep> steps = wapi.findSteps(scheme);
-	List<WorkflowActionClass> subActions = wapi.findActionClasses(action);
 
-	boolean showOnBoth   = true;
-	boolean showLocked   = false;
-	boolean showUnLocked = false;
+	boolean showLocked      = false;
+	boolean showUnLocked    = false;
+	boolean showNew		    = false;
+	boolean showPublished   = false;
+	boolean showUnpublished = false;
+	boolean showArchive		= false;
+
 	if (null != action) {
-		if (action.shouldShowOnLock() && !action.shouldShowOnUnlock()) {
-			showOnBoth   = showUnLocked = false;
-			showLocked   = true;
-		} else if (!action.shouldShowOnLock() && action.shouldShowOnUnlock()) {
-			showOnBoth   = showLocked = false;
-			showUnLocked = true;
-		}
+
+		showLocked      = action.shouldShowOnLock();
+		showUnLocked    = action.shouldShowOnUnlock();
+		showNew 	    = action.shouldShowOnNew();
+		showPublished   = action.shouldShowOnPublished();
+		showUnpublished = action.shouldShowOnUnpublished();
+		showArchive		= action.shouldShowOnArchived();
 	}
 
+	final boolean showAll	= showNew && showPublished && showUnpublished && showArchive;
 %>
 
 
 <script type="text/javascript">
 
-	dojo.ready(function(){
-		
-		
-		actionAdmin.actionlets = new Array();
-		mainAdmin.resetCrumbTrail();
-		mainAdmin.addCrumbtrail("<%=LanguageUtil.get(pageContext, "Workflows")%>", "/html/portlet/ext/workflows/schemes/view_schemes.jsp");
-		mainAdmin.addCrumbtrail("<%=LanguageUtil.get(pageContext, "Scheme")%> : <%=(scheme.isArchived()) ? "<strike>" :""%><%=scheme.getName()%><%=(scheme.isArchived()) ? "</strike>" :""%>", stepAdmin.baseJsp  + "?schemeId=<%=schemeId%>");
-		mainAdmin.addCrumbtrail("<%=LanguageUtil.get(pageContext, "Action")%>", actionAdmin.baseJsp + "?stepId=<%=stepId%>" );
-		mainAdmin.refreshCrumbtrail();
-		
-		var permissionSelect = new dijit.form.FilteringSelect({
-            id: "whoCanUseSelect",
-            name: "whoCanUseSelect",
-            store: myRoleReadStore2,
-            pageSize:30,
-            searchDelay:300,
-			style: "width: 80%",
-            required:false,
-            onClick:function(){
-	            	dijit.byId("whoCanUseSelect").set("displayedValue","");
-	            	dijit.byId("whoCanUseSelect").loadDropDown();            	
+    dojo.ready(function(){
 
-            }
-        },
-        "actionWhoCanUseSelect");
-		
-		   dojo.addOnLoad(function(){
-		       dojo.connect(dijit.byId("whoCanUseSelect"), 'onChange', function(event){ 
-					
-					actionAdmin.addSelectedToWhoCanUse();
-		       });
-		   });
-	    <%
+
+        actionAdmin.actionlets = new Array();
+        mainAdmin.resetCrumbTrail();
+        mainAdmin.addCrumbtrail("<%=LanguageUtil.get(pageContext, "Workflows")%>", "/html/portlet/ext/workflows/schemes/view_schemes.jsp");
+        mainAdmin.addCrumbtrail("<%=LanguageUtil.get(pageContext, "Scheme")%> : <%=(scheme.isArchived()) ? "<strike>" :""%><%=scheme.getName()%><%=(scheme.isArchived()) ? "</strike>" :""%>", stepAdmin.baseJsp  + "?schemeId=<%=schemeId%>");
+        mainAdmin.addCrumbtrail("<%=LanguageUtil.get(pageContext, "Action")%>", actionAdmin.baseJsp + "?stepId=<%=stepId%>" );
+        mainAdmin.refreshCrumbtrail();
+
+        var permissionSelect = new dijit.form.FilteringSelect({
+                id: "whoCanUseSelect",
+                name: "whoCanUseSelect",
+                store: myRoleReadStore2,
+                pageSize:30,
+                searchDelay:300,
+                style: "width: 80%",
+                required:false,
+                onClick:function(){
+                    dijit.byId("whoCanUseSelect").set("displayedValue","");
+                    dijit.byId("whoCanUseSelect").loadDropDown();
+
+                }
+            },
+            "actionWhoCanUseSelect");
+
+        dojo.addOnLoad(function(){
+            dojo.connect(dijit.byId("whoCanUseSelect"), 'onChange', function(event){
+
+                actionAdmin.addSelectedToWhoCanUse();
+            });
+        });
+        <%
             String assignToLabel=null;
             if ( UtilMethods.isSet( nextAssignRole ) && UtilMethods.isSet( nextAssignRole.getId())) {
                 assignToLabel = nextAssignRole.getName();
@@ -101,63 +112,63 @@
                     assignToLabel=LanguageUtil.get(pageContext, "current-user");
                 }
             }
-	    %>
+        %>
 
-		var assignSelect = new dijit.form.FilteringSelect({
-            id: "actionAssignToSelect",
-            name: "actionAssignToSelect",
-            store: myRoleReadStore,
+        var assignSelect = new dijit.form.FilteringSelect({
+                id: "actionAssignToSelect",
+                name: "actionAssignToSelect",
+                store: myRoleReadStore,
 
-            displayedValue : "<%=UtilMethods.webifyString(assignToLabel)%>",
-            searchDelay:300,
-            value:"<%=UtilMethods.webifyString(action.getNextAssign())%>",
-            pageSize:30,
+                displayedValue : "<%=UtilMethods.webifyString(assignToLabel)%>",
+                searchDelay:300,
+                value:"<%=UtilMethods.webifyString(action.getNextAssign())%>",
+                pageSize:30,
 
-            onChange:function(me){
-            	actionAdmin.doChange();
+                onChange:function(me){
+                    actionAdmin.doChange();
+                },
+                onClick:function(){
+                    dijit.byId("actionAssignToSelect").set("displayedValue","");
+                    dijit.byId("actionAssignToSelect").loadDropDown();
+                }
+
             },
-            onClick:function(){
-            	dijit.byId("actionAssignToSelect").set("displayedValue","");
-            	dijit.byId("actionAssignToSelect").loadDropDown();
-            }
+            "actionAssignToSelect");
 
-        },
-        "actionAssignToSelect");
-		
 
-		actionAdmin.whoCanUse = new Array();
+        actionAdmin.whoCanUse = new Array();
         <% Set<Role> roles = APILocator.getPermissionAPI().getRolesWithPermission(action, PermissionAPI.PERMISSION_USE);
            List<Role> workflowRoles = APILocator.getRoleAPI().findWorkflowSpecialRoles();
         %>
-		<%for(Role tmpRole :  roles){
-			if (UtilMethods.isSet(tmpRole) && UtilMethods.isSet(tmpRole.getId()) ) {%>
-                actionAdmin.addToWhoCanUse("<%=(tmpRole.isSystem()) ? tmpRole.getRoleKey() : tmpRole.getId()%>",
-                "<%=(tmpRole.getName().toLowerCase().contains("anonymous")) ? LanguageUtil.get(pageContext, "current-user") + " (" + LanguageUtil.get(pageContext, "Everyone") + ")" : tmpRole.getName()+ ((tmpRole.isSystem() && !workflowRoles.contains(tmpRole) ) ? " (" + LanguageUtil.get(pageContext, "User") + ")" : "")%>");
-            <%}
-        }%>
-        
-		actionAdmin.refreshWhoCanUse();
-		
-	    // Load action classes into array
+        <%for(Role tmpRole :  roles){
+            if (UtilMethods.isSet(tmpRole) && UtilMethods.isSet(tmpRole.getId()) ) {%>
+        actionAdmin.addToWhoCanUse("<%=(tmpRole.isSystem()) ? tmpRole.getRoleKey() : tmpRole.getId()%>",
+            "<%=(tmpRole.getName().toLowerCase().contains("anonymous")) ? LanguageUtil.get(pageContext, "current-user") + " (" + LanguageUtil.get(pageContext, "Everyone") + ")" : tmpRole.getName()+ ((tmpRole.isSystem() && !workflowRoles.contains(tmpRole) ) ? " (" + LanguageUtil.get(pageContext, "User") + ")" : "")%>");
+        <%}
+    }%>
+
+        actionAdmin.refreshWhoCanUse();
+
+        // Load action classes into array
         actionClassAdmin.actionClasses = [];
         <%for(WorkflowActionClass subaction : subActions){ %>
-            actionClassAdmin.actionClasses.push({id:"<%=subaction.getId()%>",name:"<%=subaction.getName()%>"});
+        actionClassAdmin.actionClasses.push({id:"<%=subaction.getId()%>",name:"<%=subaction.getName()%>"});
         <%} %>
 
         // Refresh action classes table
         actionClassAdmin.refreshActionClasses();
-        
-        
 
-        
-	});
-	
+
+
+
+    });
+
 
 </script>
 
 
 <div class="portlet-main view-actions">
-	
+
 	<div dojoType="dijit.form.Form" id="addEditAction" jsId="addEditAction" encType="multipart/form-data" action="/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfActionAjax" method="POST">
 		<input type="hidden" name="cmd" value="save">
 		<input type="hidden" name="schemeId"	value="<%=UtilMethods.webifyString(scheme.getId())%>">
@@ -166,15 +177,15 @@
 		<input type="hidden" name="actionId"	id="actionId" value="<%=UtilMethods.webifyString(action.getId())%>">
 
 		<div class="container-fluid">
-			<%if(UtilMethods.isSet(actionId)) {%>
+			<%if(UtilMethods.isSet(actionId) && (!"new".equals(actionId))) {%>
 			<div class="row">
 				<div class="col-md-12">
-					<p><%=LanguageUtil.get(pageContext, "Action")%> <%=LanguageUtil.get(pageContext, "Id")%>: <strong><%=actionId %></strong></p>
+					<p><%=LanguageUtil.get(pageContext, "Action")%> <%=LanguageUtil.get(pageContext, "Id")%>: <strong><%=APILocator.getShortyAPI().shortify(actionId) %></strong></p>
 				</div>
 			</div>
 			<%} %>
 
-			<div class="row">
+			<div class="row" >
 				<div class="col-xs-5 view-actions__permissions">
 					<button dojoType="dijit.form.Button" class="view-actions__back-btn" onClick='mainAdmin.show(stepAdmin.baseJsp + "?schemeId=<%=schemeId%>")'>
 						<i class="fa fa-level-up" aria-hidden="true"></i>
@@ -183,118 +194,137 @@
 						<dt>
 							<h3><%=LanguageUtil.get(pageContext, "About-Action")%></h3>
 						</dt>
-						
-					</dl>
-					<dl class="vertical">
-						<dt>
-							<label for=""><%=LanguageUtil.get(pageContext, "Action-Name")%>:</label>
-						</dt>
-						<dd>
-							<input type="text" name="actionName" id="actionName" style="width: 80%;"
-								dojoType="dijit.form.ValidationTextBox" required="true"
-								value="<%=UtilMethods.webifyString(action.getName())%>"
-								maxlength="255" onkeypress="actionAdmin.doChange()" <%if(action.isNew()){ %>onchange="actionAdmin.saveAction('<%=schemeId %>');"<%} %>>
-						</dd>
-					</dl>
-					<dl class="vertical">
-						<dt>
-							<label for=""><%=LanguageUtil.get(pageContext, "Who-can-use-action")%>:</label>
-						</dt>
-						<dd>
-							<input id="actionWhoCanUseSelect"/>
-							<button dojoType="dijit.form.Button"
-								onClick='actionAdmin.addSelectedToWhoCanUse'
-								iconClass="addIcon">
-								<%=LanguageUtil.get(pageContext, "add")%>
-							</button>
-						</dd>
-					</dl>
-					<dl class="vertical">
-						<dt></dt>
-						<dd>
-							<div class="who-can-use view-actions__who-can-use">
-								<table class="who-can-use__list" id="whoCanUseTbl">
-								</table>
-							</div>
-						</dd>
-					</dl>
-					<dl class="vertical">
-						<dt></dt>
-						<dd>
 
-							<div class="checkbox">
-								<input type="checkbox" name="actionCommentable"
-									id="actionCommentable" dojoType="dijit.form.CheckBox" value="true"
-									<%=(action.isCommentable()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()">
-								<label for=""><%=LanguageUtil.get(pageContext, "Allow-Comments")%></label>
-							</div>
-							<div class="checkbox">
-								<input type="checkbox" name="actionAssignable"
-									id="actionAssignable" dojoType="dijit.form.CheckBox" value="true"
-									<%=(action.isAssignable()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()">
-								<label for=""><%=LanguageUtil.get(pageContext, "User-Assignable")%></label>
-							</div>
-						</dd>
 					</dl>
 					<dl class="vertical">
 						<dt>
-							<label for=""><%=LanguageUtil.get(pageContext, "show-when")%>:</label>
+							<label for="actionName"><%=LanguageUtil.get(pageContext, "Name")%>:</label>
 						</dt>
 						<dd>
-							<select name="showOn" id="showOn"  onChange="actionAdmin.doChange()"
+							<input type="text" name="actionName" id="actionName" style="width: 80%;" 
+								   dojoType="dijit.form.ValidationTextBox" required="true"
+								   value="<%=UtilMethods.webifyString(action.getName())%>"
+								   maxlength="255" onkeypress="actionAdmin.doChange()" <%if(action.isNew()){ %>onchange="actionAdmin.saveAction('<%=schemeId %>');"<%} %>>
+						</dd>
+					</dl>
+					
+					<dl class="vertical">
+						<dt>
+							<label for="actionNextStep"><%=LanguageUtil.get(pageContext, "Next-Step")%>:</label>
+						</dt>
+						<dd>
+							<select name="actionNextStep" id="actionNextStep"  onChange="actionAdmin.doChange()" style="width: 50%;"  labelType="html"
 									dojoType="dijit.form.FilteringSelect">
-								<option value="LOCKED"
-										<%=(showLocked) ? "selected='true'" : "" %>>
-									<%=LanguageUtil.get(pageContext, "Requires-Checkout-Locked") %>
-								</option>
-								<option value="UNLOCKED"
-										<%=(showUnLocked) ? "selected='true'" : "" %>>
-									<%=LanguageUtil.get(pageContext, "Requires-Checkout-Unlocked") %>
-								</option>
-								<option value="LOCKED,UNLOCKED"
-										<%=(showOnBoth) ? "selected='true'" : "" %>>
-									<%=LanguageUtil.get(pageContext, "Requires-Checkout-Both") %>
-								</option>
-							</select>
-						</dd>
-					</dl>
-					<dl class="vertical">
-						<dt>
-							<label for=""><%=LanguageUtil.get(pageContext, "Assign-To")%>:</label>
-						</dt>
-						<dd>
-							<input id="actionAssignToSelect"  />
-							<%--hideHierarchayControl --%>
-							<div class="checkbox" id="divRoleHierarchyForAssign" style="display:<%=hideHierarchayControl ? "none" : "block" %>;">
-								<input type="checkbox" name="actionRoleHierarchyForAssign" id="actionRoleHierarchyForAssign" dojoType="dijit.form.CheckBox" value="true"
-								<%=(action.isRoleHierarchyForAssign()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()">
-								<label for="actionRoleHierarchyForAssign"><%=LanguageUtil.get(pageContext, "Use-Role-Hierarchy")%></label>
-							</div>
-						</dd>
-					</dl>
-					<dl class="vertical">
-						<dt>
-							<label for=""><%=LanguageUtil.get(pageContext, "Next-Step")%>:</label>
-						</dt>
-						<dd>
-							<select name="actionNextStep" id="actionNextStep"  onChange="actionAdmin.doChange()"
-								dojoType="dijit.form.FilteringSelect">
 
 								<option value="<%=WorkflowAction.CURRENT_STEP %>"
 										<%=(action != null && action.isNextStepCurrentStep()) ? "selected='true'" : "" %>>
 									<%=LanguageUtil.get(pageContext, "Current-Step")%>
 								</option>
 
-									<%if(steps !=null){
+								<%if(steps !=null){
 
-										for(WorkflowStep s : steps){ %>
+									for(WorkflowStep s : steps){ %>
 										<option value="<%=s.getId() %>"
-											<%=(action != null && s.getId().equals(action.getNextStep())) ? "selected='true'" : "" %>><%=s.getName() %></option>
-										<%}%>
-									<% }%>
+										<%=(action != null && s.getId().equals(action.getNextStep())) ? "selected='true'" : "" %>><%=s.getName() %></option>
+								<%}%>
+								<% }%>
 							</select>
 						</dd>
 					</dl>
+					<br> <br> 
+					
+					<dl class="vertical">
+						<fieldset style="width:80%">
+							<legend><%=LanguageUtil.get(pageContext, "Who-can-use-action")%></legend>
+							<dt></dt>
+							<dd>
+								<input id="actionWhoCanUseSelect"/>
+								<button dojoType="dijit.form.Button"
+										onClick='actionAdmin.addSelectedToWhoCanUse'
+										iconClass="addIcon">
+									<%=LanguageUtil.get(pageContext, "add")%>
+								</button>
+							</dd>
+		
+							<dt></dt>
+							<dd>
+								
+								<table class="who-can-use__list" id="whoCanUseTbl">
+								</table>
+								
+							</dd>
+						
+						</fieldset>
+					</dl>
+					<dl class="vertical">
+						<fieldset style="width:80%">
+							<legend><%=LanguageUtil.get(pageContext, "show-when")%></legend>
+							<div class="checkbox">
+								<input type="checkbox" name="showOn" id="showOnLOCKED" dojoType="dijit.form.CheckBox"   value="LOCKED"        onclick="actionAdmin.doChange()"   <%=(showLocked)?     "checked" : "" %>/>
+								<label for="showOnLOCKED"><%=LanguageUtil.get(pageContext, "Requires-Checkout-Locked") %></label>
+								&nbsp; &nbsp;
+								<input type="checkbox" name="showOn" id="showOnUNLOCKED"  dojoType="dijit.form.CheckBox"   value="UNLOCKED"      onclick="actionAdmin.doChange()"   <%=(showUnLocked)?   "checked" : "" %>/>
+								<label for="showOnUNLOCKED"><%=LanguageUtil.get(pageContext, "Requires-Checkout-Unlocked") %></label>
+							</div>
+								<div style="padding:10px;font-style: italic;">AND</div>
+							<div class="checkbox">
+								<input type="checkbox" name="showOn" id="showOnNEW"   dojoType="dijit.form.CheckBox"   value="NEW"         onclick="actionAdmin.doChange()"   <%=(showNew)? 		 "checked" : "" %>/>
+								<label for="showOnNEW"><%=LanguageUtil.get(pageContext, "new") %></label>
+								&nbsp; &nbsp;
+								<input type="checkbox" name="showOn" id="showOnPUBLISHED"  dojoType="dijit.form.CheckBox"   value="PUBLISHED"   onclick="actionAdmin.doChange()"   <%=(showPublished)?   "checked" : "" %>/>
+								<label for="showOnPUBLISHED"><%=LanguageUtil.get(pageContext, "Published") %></label>
+								&nbsp; &nbsp;
+								<input type="checkbox" name="showOn" id="showOnUNPUBLISHED"  dojoType="dijit.form.CheckBox"   value="UNPUBLISHED" onclick="actionAdmin.doChange()"   <%=(showUnpublished)? "checked" : "" %>/>
+								<label for="showOnUNPUBLISHED"><%=LanguageUtil.get(pageContext, "Unpublished") %></label>
+								&nbsp; &nbsp;
+								<input type="checkbox" name="showOn" id="showOnARCHIVED"  dojoType="dijit.form.CheckBox"   value="ARCHIVED"    onclick="actionAdmin.doChange()"   <%=(showArchive)? 	 "checked" : "" %>/>
+								<label for="showOnARCHIVED"><%=LanguageUtil.get(pageContext, "Archived") %></label>
+								&nbsp; &nbsp;
+								<input type="checkbox" name="showOnAll" id="showOnALL" dojoType="dijit.form.CheckBox"  value="ALL"         onChange="var check=this.checked; document.getElementsByName('showOn').forEach(function(checkbox) {dijit.byId(checkbox.id).set('checked', check);}); return true;"   <%=(showAll)? 		 "checked" : "" %>/>
+								<label for="showOnALL"><%=LanguageUtil.get(pageContext, "All") %></label>
+	
+							</div>
+						</fieldset>
+					</dl>
+					<dl class="vertical">
+						<fieldset style="width:80%">
+							<legend><%=LanguageUtil.get(pageContext, "Comments-and-Assigns")%></legend>
+
+							<dt></dt>
+							<dd>
+	
+								<div class="checkbox">
+									<input type="checkbox" name="actionAssignable"
+										   id="actionAssignable" dojoType="dijit.form.CheckBox" value="true"
+										<%=(action.isAssignable()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()">
+									<label for="actionAssignable"><%=LanguageUtil.get(pageContext, "User-Assignable")%></label>
+									
+									&nbsp; &nbsp; &nbsp;
+									<input type="checkbox" name="actionCommentable"
+										   id="actionCommentable" dojoType="dijit.form.CheckBox" value="true"
+										<%=(action.isCommentable()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()">
+									<label for="actionCommentable"><%=LanguageUtil.get(pageContext, "Allow-Comments")%></label>
+				
+								</div>
+							</dd>
+					
+							<dt>
+								<label for=""><%=LanguageUtil.get(pageContext, "Assign-To")%>:</label>
+							</dt>
+							<dd>
+								<input id="actionAssignToSelect"  />
+								<%--hideHierarchayControl --%>
+								<div class="checkbox" id="divRoleHierarchyForAssign" style="padding:10px;display:<%=hideHierarchayControl ? "none" : "block" %>;">
+									<input type="checkbox" name="actionRoleHierarchyForAssign" id="actionRoleHierarchyForAssign" dojoType="dijit.form.CheckBox" value="true"
+										<%=(action.isRoleHierarchyForAssign()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()">
+									<label for="actionRoleHierarchyForAssign"><%=LanguageUtil.get(pageContext, "Use-Role-Hierarchy")%></label>
+								</div>
+							</dd>
+						</fieldset>
+					</dl>
+					
+
+
 					<dl class="vertical">
 						<dt>
 							<label for=""><%=LanguageUtil.get(pageContext, "Custom-Code")%>:</label>
@@ -317,7 +347,7 @@
 				</div>
 
 				<div class="col-xs-5 view-actions__sub-actions">
-					<div class="view-actions__arrow-right"> 
+					<div class="view-actions__arrow-right">
 						<i class="fa fa-arrow-circle-o-right" aria-hidden="true"></i>
 					</div>
 					<%if(!action.isNew()){ %>
@@ -331,12 +361,12 @@
 							<select name="wfActionlets" id="wfActionlets" dojoType="dijit.form.FilteringSelect" onChange="actionClassAdmin.addSelectedToActionClasses()">
 								<option value=""></option>
 								<%for(WorkFlowActionlet a : wapi.findActionlets()){%>
-									<option value="<%=a.getClass().getCanonicalName()%>"><%=a.getName() %></option>
+								<option value="<%=a.getClass().getCanonicalName()%>"><%=a.getName() %></option>
 								<%} %>
 							</select>
 							<button dojoType="dijit.form.Button"
-							onClick="actionClassAdmin.addSelectedToActionClasses();" style="width:auto;" iconClass="addIcon">
-							<%=LanguageUtil.get(pageContext, "Add-Workflow-SubAction")%>
+									onClick="actionClassAdmin.addSelectedToActionClasses();" style="width:auto;" iconClass="addIcon">
+								<%=LanguageUtil.get(pageContext, "Add-Workflow-SubAction")%>
 							</button>
 						</dt>
 					</dl>
@@ -351,16 +381,11 @@
 					<%} %>
 				</div>
 				<div class="col-xs-2 view-actions__workflow-actions">
-					<div class="view-actions__arrow-right"> 
+					<div class="view-actions__arrow-right">
 						<i class="fa fa-arrow-circle-o-right" aria-hidden="true"></i>
 					</div>
 					<div class="content-edit-actions">
 						<div>
-							<%if(action!=null && !action.isNew()) {%>
-							<a id="deleteButtonDiv" class="saveButtonHide" onClick="actionAdmin.deleteAction('<%=action.getId() %>');">
-								<%=LanguageUtil.get(pageContext, "Delete")%>
-							</a>
-							<%} %>
 							<a id="saveButtonDiv" class="saveButtonHide" onClick="actionAdmin.saveAction('<%=schemeId %>');">
 								<%=LanguageUtil.get(pageContext, "Save")%>
 							</a>

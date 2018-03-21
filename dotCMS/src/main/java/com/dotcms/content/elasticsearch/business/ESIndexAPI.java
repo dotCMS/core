@@ -103,10 +103,9 @@ public class ESIndexAPI {
     private  final String MAPPING_MARKER = "mapping=";
     private  final String JSON_RECORD_DELIMITER = "---+||+-+-";
     private static final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
-    private  final int DEFAULT_HEARTBEAT_TIMEOUT = 1800; // 1800 seconds = 30 mins
 
     public static final String BACKUP_REPOSITORY = "backup";
-    private final String REPOSITORY_PATH = "es.path.repo";
+    private final String REPOSITORY_PATH = "path.repo";
 
 	final private ESClient esclient;
 	final private ESContentletIndexAPI iapi;
@@ -586,6 +585,7 @@ public class ESIndexAPI {
 			settings = getDefaultIndexSettings(shards);
 		}
 		Map map = new ObjectMapper().readValue(settings, LinkedHashMap.class);
+		map.put("number_of_shards", shards);
 
 		if (ClusterUtils.isESAutoWireReplicas()){
 			int serverCount;
@@ -603,6 +603,9 @@ public class ESIndexAPI {
 				map.put("auto_expand_replicas", "false");
 				map.put("number_of_replicas", serverCount - 1);
 			}
+		}else{
+			map.put("auto_expand_replicas", "false");
+			map.put("number_of_replicas", Config.getIntProperty("es.index.number_of_replicas", 0));
 		}
 
 		// create actual index
@@ -669,7 +672,7 @@ public class ESIndexAPI {
             .startObject("analysis")
              .startObject("analyzer")
               .startObject("default")
-               .field("type", "Whitespace")
+               .field("type", "whitespace")
               .endObject()
              .endObject()
             .endObject()
@@ -856,7 +859,7 @@ public class ESIndexAPI {
 
 	/**
 	 * Creates a snapshot zip file using the index and creating a repository on
-	 * the es.path.repo location. This file structure will remain on the file system.
+	 * the path.repo location. This file structure will remain on the file system.
 	 * The snapshot name is usually the same as the index name.
 	 *
 	 * @param repositoryName
@@ -880,8 +883,8 @@ public class ESIndexAPI {
 		String fileName = indexName + "_" + DateUtil.format(new Date(), "yyyy-MM-dd_hh-mm-ss");
 		File toFile = null;
 		// creates specific backup path (if it shouldn't exist)
-		toFile = new File(
-				Config.getStringProperty(REPOSITORY_PATH, ConfigUtils.getBackupPath() + File.separator + "backup_repo"));
+
+		toFile = new File(client.settings().get(REPOSITORY_PATH));
 		if (!toFile.exists()) {
 			toFile.mkdirs();
 		}
@@ -927,6 +930,9 @@ public class ESIndexAPI {
 	private boolean restoreSnapshot(String repositoryName, String snapshotName)
 			throws InterruptedException, ExecutionException {
 		Client client = esclient.getClient();
+		if (!isSnapshotExist(repositoryName, snapshotName) && ESIndexAPI.BACKUP_REPOSITORY.equals(repositoryName)) {
+			snapshotName = BACKUP_REPOSITORY; //When restoring a snapshot created straight from a live index, the snapshotName is also: backup
+		}
 		if (isRepositoryExist(repositoryName) && isSnapshotExist(repositoryName, snapshotName)) {
 			GetSnapshotsRequest getSnapshotsRequest = new GetSnapshotsRequest(repositoryName);
 			GetSnapshotsResponse getSnapshotsResponse = client.admin().cluster().getSnapshots(getSnapshotsRequest).get();
@@ -1010,8 +1016,7 @@ public class ESIndexAPI {
 		File outFile = null;
 		AdminLogger.log(this.getClass(), "uploadSnapshot", "Trying to restore snapshot index");
 		// creates specific backup path (if it shouldn't exist)
-		File toDirectory = new File(
-				Config.getStringProperty(REPOSITORY_PATH, ConfigUtils.getBackupPath() + File.separator + "backup_repo"));
+		File toDirectory = new File(esclient.getClient().settings().get(REPOSITORY_PATH));
 		if (!toDirectory.exists()) {
 			toDirectory.mkdirs();
 		}
@@ -1197,8 +1202,7 @@ public class ESIndexAPI {
 				Logger.error(this.getClass(), e.getMessage());
 			}
 			if (cleanUp) {
-				File toDelete = new File(Config.getStringProperty(REPOSITORY_PATH,
-						ConfigUtils.getBackupPath() + File.separator + "backup_repo"));
+				File toDelete = new File(client.settings().get(REPOSITORY_PATH));
 				try {
 					FileUtil.deleteDir(toDelete.getAbsolutePath());
 				} catch (IOException e) {
@@ -1209,5 +1213,9 @@ public class ESIndexAPI {
 			}
 		}
 		return result;
+	}
+
+	public String getRepositoryPath(){
+		return esclient.getClient().settings().get(REPOSITORY_PATH);
 	}
 }

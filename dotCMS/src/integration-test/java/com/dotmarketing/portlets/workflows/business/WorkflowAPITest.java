@@ -22,18 +22,27 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
-import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.DeleteContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.ResetTaskActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import org.junit.AfterClass;
@@ -73,6 +82,9 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
     private static ContentType contentType3;
     private static Structure contentTypeStructure3;
+
+    private static ContentType contentType4;
+    private static Structure contentTypeStructure4;
 
     /* Workflow Scheme 1 */
     private static WorkflowScheme workflowScheme1;
@@ -184,6 +196,35 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
     private static final String FIELD_NAME ="Title";
     private static final String FIELD_VAR_NAME ="title";
+
+    private static final String DOCUMENT_MANAGEMENT_WORKFLOW_NAME="Document Management";
+    private static final String EDITING_STEP_NAME="Editing";
+    private static final String REVIEW_STEP_NAME="Review";
+    private static final String LEGAL_APPROVAL_STEP_NAME="Legal Approval";
+    private static final String PUBLISHED_STEP_NAME="Published";
+    private static final String ARCHIVED_STEP_NAME="Archived";
+
+    private static final String SAVE_AS_DRAFT_ACTION_NAME="Save as Draft";
+    private static final String SEND_FOR_REVIEW_ACTION_NAME="Send for Review";
+    private static final String RETURN_FOR_EDITS_ACTION_NAME="Return for Edits";
+    private static final String SEND_TO_LEGAL_ACTION_NAME="Send to Legal";
+    private static final String PUBLISH_ACTION_NAME="Publish";
+    private static final String REPUBLISH_ACTION_NAME="Republish";
+    private static final String UNPUBLISH_ACTION_NAME="Unpublish";
+    private static final String ARCHIVE_ACTION_NAME="Archive";
+    private static final String DELETE_ACTION_NAME="Full Delete";
+    private static final String RESET_WORKFLOW_ACTION_NAME="Reset Workflow";
+
+    private static final String SAVE_AS_DRAFT_SUBACTION="Save Draft content";
+    private static final String PUBLISH_SUBACTION="Publish content";
+    private static final String UNLOCK_SUBACTION="Unlock content";
+    private static final String SAVE_CONTENT_SUBACTION="Save content";
+    private static final String ARCHIVE_SUBACTION="Archive content";
+    private static final String UNARCHIVE_SUBACTION="Unarchive content";
+    private static final String UNPUBLISH_SUBACTION="Unpublish content";
+    private static final String DELETE_SUBACTION="Unpublish content";
+    private static final String RESET_WORKFLOW_SUBACTION="Reset Workflow";
+
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -880,33 +921,10 @@ public class WorkflowAPITest extends IntegrationTestBase {
             assertNotNull(action);
             assertEquals(action.getName(), workflowScheme5Step1Action1.getName());
 
-            //This should throw a DotSecurityException
-            try {
-                action = APILocator.getWorkflowAPI()
-                        .findAction(workflowScheme5Step1Action1.getId(),
-                                workflowScheme5Step1.getId(), billIntranet);
-                //the code shoud never get to this point
-                assertTrue(false);
-            }catch (Exception e){
-                assertTrue(e instanceof DotSecurityException);
-            }
-
-
             action = APILocator.getWorkflowAPI().findAction(workflowScheme5Step1Action1.getId(),
                     workflowScheme5Step1.getId(),chrisPublisher);
             assertNotNull(action);
             assertEquals(action.getName(), workflowScheme5Step1Action1.getName());
-
-            //This should throw a DotSecurityException
-            try {
-                action = APILocator.getWorkflowAPI()
-                        .findAction(workflowScheme5Step1Action1.getId(),
-                                workflowScheme5Step1.getId(), billIntranet);
-                //the code shoud never get to this point
-                assertTrue(false);
-            }catch (Exception e){
-                assertTrue(e instanceof DotSecurityException);
-            }
 
         } finally {
             contentletAPI.archive(testContentlet, user, false);
@@ -1053,7 +1071,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
 		     * Validate that step2 could not be deleted
 		     */
             try {
-                workflowAPI.deleteStep(step2);
+                workflowAPI.deleteStep(step2, user);
             } catch (Exception e) {
 			/*
 			 * Should enter here with this exception
@@ -1064,7 +1082,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
 		    /*
 		     * Validate correct deletion of step1
 		     */
-            workflowAPI.deleteStep(step1);
+            workflowAPI.deleteStep(step1, user);
 
 		    /*
 		     * Validate that the step 1 was deleted from the scheme
@@ -1077,7 +1095,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
 		     * Validate that step2 could not be deleted
 		     */
             try {
-                workflowAPI.deleteStep(step2);
+                workflowAPI.deleteStep(step2, user);
             } catch (Exception e) {
 			/*
 			 * Should enter here with this exception
@@ -1099,10 +1117,265 @@ public class WorkflowAPITest extends IntegrationTestBase {
 		    /*
 		     * Clean test
 		     */
-            APILocator.getContentletAPI().delete(contentlet1, user, false);
             contentTypeAPI.delete(st);
-            workflowAPI.deleteStep(step2);
-            workflowAPI.deleteScheme(ws);
+            workflowAPI.deleteStep(step2, user);
+            workflowAPI.deleteScheme(ws, user);
+        }
+    }
+
+    /**
+     * This test validate a contentlet workflow flow through different steps with different users
+     * simulating the Document Management workflow
+     */
+    @Test
+    public void validatingDocumentManagementWorkflow()
+            throws DotDataException, IOException, DotSecurityException {
+        Contentlet contentlet1 = null;
+        try {
+            final User joeContributor = APILocator.getUserAPI().loadUserById("dotcms.org.2789");
+            final User janeReviewer = APILocator.getUserAPI().loadUserById("dotcms.org.2787");
+            final User chrisPublisher = APILocator.getUserAPI().loadUserById("dotcms.org.2795");
+
+            final int editPermission =
+                    PermissionAPI.PERMISSION_READ + PermissionAPI.PERMISSION_EDIT;
+            final int publishPermission = editPermission + PermissionAPI.PERMISSION_PUBLISH;
+
+            contentType4 = insertContentType(
+                    "ValidatingDMWf" + UtilMethods.dateToHTMLDate(new Date(), "MM-dd-yyyy-HHmmss"),
+                    BaseContentType.CONTENT);
+            contentTypeStructure4 = new StructureTransformer(ContentType.class.cast(contentType4))
+                    .asStructure();
+
+            Permission p = new Permission(contentType4.getPermissionId(), contributor.getId(),
+                    editPermission, true);
+            permissionAPI.save(p, contentType4, user, true);
+
+            p = new Permission(Contentlet.class.getCanonicalName(), contentType4.getPermissionId(),
+                    contributor.getId(), editPermission, true);
+            permissionAPI.save(p, contentType4, user, true);
+
+            p = new Permission(contentType4.getPermissionId(), publisher.getId(), publishPermission,
+                    true);
+            permissionAPI.save(p, contentType4, user, true);
+
+            p = new Permission(Contentlet.class.getCanonicalName(), contentType4.getPermissionId(),
+                    publisher.getId(), publishPermission, true);
+            permissionAPI.save(p, contentType4, user, true);
+
+            //get the Document Management workflow scheme
+            WorkflowScheme ws = createDocumentManagentReplica(
+                    DOCUMENT_MANAGEMENT_WORKFLOW_NAME + UtilMethods
+                            .dateToHTMLDate(new Date(), "MM-dd-yyyy-HHmmss"));
+
+            List<String> schemes = new ArrayList<>();
+            schemes.add(ws.getId());
+            workflowAPI.saveSchemeIdsForContentType(contentType4, schemes);
+
+            /*
+             * Create test content and set it up in scheme step
+		     */
+            contentlet1 = new Contentlet();
+            contentlet1.setContentTypeId(contentType4.id());
+            contentlet1.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+            contentlet1.setStringProperty(FIELD_VAR_NAME,
+                    "testDocumentManagement-1" + UtilMethods
+                            .dateToHTMLDate(new Date(), "MM-dd-yyyy-HHmmss"));
+
+            List<WorkflowAction> actions = workflowAPI
+                    .findAvailableActions(contentlet1, joeContributor);
+            if (actions.isEmpty() || actions.size() != 1) {
+                assertTrue("Incorrect number of actions available", false);
+            }
+            if (!SAVE_AS_DRAFT_ACTION_NAME.equals(actions.get(0).getName())) {
+                assertTrue("Wromg action available", false);
+            }
+            final WorkflowAction saveAsDraft = actions.get(0);
+
+            //As Contributor - Save as Draft
+            ContentletRelationships contentletRelationships = APILocator.getContentletAPI()
+                    .getAllRelationships(contentlet1);
+            contentlet1 = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet1,
+                    new ContentletDependencies.Builder().respectAnonymousPermissions(Boolean.FALSE)
+                            .modUser(joeContributor)
+                            .relationships(contentletRelationships)
+                            .workflowActionId(saveAsDraft.getId()) //Save as a draft
+                            .workflowActionComments(StringPool.BLANK)
+                            .workflowAssignKey(StringPool.BLANK)
+                            .categories(Collections.emptyList())
+                            .generateSystemEvent(Boolean.FALSE).build());
+
+            contentletAPI.isInodeIndexed(contentlet1.getInode());
+            assertTrue("Contentlet is on the wrong Workflow Step", EDITING_STEP_NAME
+                    .equals(workflowAPI.findStepByContentlet(contentlet1).getName()));
+
+            //As Contributor - Send for Review
+            actions = workflowAPI.findAvailableActions(contentlet1, joeContributor);
+            if (actions.isEmpty() || actions.size() != 1) {
+                assertTrue("Incorrect number of actions available", false);
+            }
+
+            if (!SEND_FOR_REVIEW_ACTION_NAME.equals(actions.get(0).getName())) {
+                assertTrue("Wrong action available", false);
+            }
+
+            final WorkflowAction sendForReview = actions.get(0);
+            contentlet1 = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet1,
+                    new ContentletDependencies.Builder()
+                            .respectAnonymousPermissions(Boolean.FALSE)
+                            .modUser(joeContributor)
+                            .relationships(contentletRelationships)
+                            .workflowActionId(sendForReview.getId()) //Send For Review
+                            .workflowActionComments(StringPool.BLANK)
+                            .workflowAssignKey(StringPool.BLANK)
+                            .categories(Collections.emptyList())
+                            .generateSystemEvent(Boolean.FALSE).build());
+
+            assertTrue("Contentlet is on the wrong Workflow Step", REVIEW_STEP_NAME
+                    .equals(workflowAPI.findStepByContentlet(contentlet1).getName()));
+
+            //As Reviewer - return for editing
+            actions = workflowAPI.findAvailableActions(contentlet1, janeReviewer);
+            if (actions.isEmpty() || actions.size() != 2) {
+                assertTrue("Incorrect number of actions available", false);
+            }
+            if (!RETURN_FOR_EDITS_ACTION_NAME.equals(actions.get(0).getName())) {
+                assertTrue("Wrong action available", false);
+            }
+
+            if (!SEND_TO_LEGAL_ACTION_NAME.equals(actions.get(1).getName())) {
+                assertTrue("Wrong action available", false);
+            }
+
+            final WorkflowAction returnForEdits = actions.get(0);
+
+            contentlet1 = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet1,
+                    new ContentletDependencies.Builder().respectAnonymousPermissions(Boolean.FALSE)
+                            .modUser(janeReviewer)
+                            .relationships(contentletRelationships)
+                            .workflowActionId(returnForEdits.getId()) //Send For Review
+                            .workflowActionComments(StringPool.BLANK)
+                            .workflowAssignKey(contributor.getId())
+                            .categories(Collections.emptyList())
+                            .generateSystemEvent(Boolean.FALSE).build());
+
+            assertTrue("Contentlet is on the wrong Workflow Step", EDITING_STEP_NAME
+                    .equals(workflowAPI.findStepByContentlet(contentlet1).getName()));
+            // As contributor. lock for editing
+            contentletAPI.lock(contentlet1, joeContributor, false);
+
+            //As Contributor - save as Draft
+            actions = workflowAPI.findAvailableActions(contentlet1, joeContributor);
+            if (actions.isEmpty() || actions.size() != 2) {
+                assertTrue("Incorrect number of actions available", false);
+            }
+            if (!SAVE_AS_DRAFT_ACTION_NAME.equals(actions.get(0).getName())) {
+                assertTrue("Wrong action available", false);
+            }
+            if (!SEND_FOR_REVIEW_ACTION_NAME.equals(actions.get(1).getName())) {
+                assertTrue("Wrong action available", false);
+            }
+            final String title2 = contentlet1.getStringProperty(FIELD_VAR_NAME) + "-2";
+            contentlet1.setStringProperty(FIELD_VAR_NAME, title2);
+
+            contentlet1 = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet1,
+                    new ContentletDependencies.Builder().respectAnonymousPermissions(Boolean.FALSE)
+                            .modUser(joeContributor)
+                            .relationships(contentletRelationships)
+                            .workflowActionId(saveAsDraft.getId()) //Send For Review
+                            .workflowActionComments(StringPool.BLANK)
+                            .workflowAssignKey(StringPool.BLANK)
+                            .categories(Collections.emptyList())
+                            .generateSystemEvent(Boolean.FALSE).build());
+
+            assertTrue("Contentlet is on the wrong Workflow Step", EDITING_STEP_NAME
+                    .equals(workflowAPI.findStepByContentlet(contentlet1).getName()));
+
+            //As Contributor - Send for Review
+            actions = workflowAPI.findAvailableActions(contentlet1, joeContributor);
+            if (actions.isEmpty() || actions.size() != 2) {
+                assertTrue("Incorrect number of actions available", false);
+            }
+            if (!SAVE_AS_DRAFT_ACTION_NAME.equals(actions.get(0).getName())) {
+                assertTrue("Wrong action available", false);
+            }
+            if (!SEND_FOR_REVIEW_ACTION_NAME.equals(actions.get(1).getName())) {
+                assertTrue("Wrong action available", false);
+            }
+
+            contentlet1 = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet1,
+                    new ContentletDependencies.Builder().respectAnonymousPermissions(Boolean.FALSE)
+                            .modUser(joeContributor)
+                            .relationships(contentletRelationships)
+                            .workflowActionId(sendForReview.getId()) //Send For Review
+                            .workflowActionComments(StringPool.BLANK)
+                            .workflowAssignKey(StringPool.BLANK)
+                            .categories(Collections.emptyList())
+                            .generateSystemEvent(Boolean.FALSE).build());
+
+            assertTrue("Contentlet is on the wrong Workflow Step", REVIEW_STEP_NAME
+                    .equals(workflowAPI.findStepByContentlet(contentlet1).getName()));
+
+            //As reviewer - send to legal
+            actions = workflowAPI.findAvailableActions(contentlet1, janeReviewer);
+            if (actions.isEmpty() || actions.size() != 2) {
+                assertTrue("Incorrect number of actions available", false);
+            }
+            if (!RETURN_FOR_EDITS_ACTION_NAME.equals(actions.get(0).getName())) {
+                assertTrue("Wrong action available", false);
+            }
+            if (!SEND_TO_LEGAL_ACTION_NAME.equals(actions.get(1).getName())) {
+                assertTrue("Wrong action available", false);
+            }
+
+            final WorkflowAction sendToLegal = actions.get(1);
+
+            contentlet1 = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet1,
+                    new ContentletDependencies.Builder().respectAnonymousPermissions(Boolean.FALSE)
+                            .modUser(janeReviewer)
+                            .relationships(contentletRelationships)
+                            .workflowActionId(sendToLegal.getId()) //Send to Legal
+                            .workflowActionComments(StringPool.BLANK)
+                            .workflowAssignKey(StringPool.BLANK)
+                            .categories(Collections.emptyList())
+                            .generateSystemEvent(Boolean.FALSE).build());
+
+            assertTrue("Contentlet is on the wrong Workflow Step", LEGAL_APPROVAL_STEP_NAME
+                    .equals(workflowAPI.findStepByContentlet(contentlet1).getName()));
+
+            //As Publisher - publish
+            actions = workflowAPI.findAvailableActions(contentlet1, chrisPublisher);
+            if (actions.isEmpty() || actions.size() != 2) {
+                assertTrue("Incorrect number of actions available", false);
+            }
+            if (!RETURN_FOR_EDITS_ACTION_NAME.equals(actions.get(0).getName())) {
+                assertTrue("Wrong action available", false);
+            }
+            if (!PUBLISH_ACTION_NAME.equals(actions.get(1).getName())) {
+                assertTrue("Wrong action available", false);
+            }
+
+            final WorkflowAction publish = actions.get(1);
+
+            contentlet1 = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet1,
+                    new ContentletDependencies.Builder().respectAnonymousPermissions(Boolean.FALSE)
+                            .modUser(chrisPublisher)
+                            .relationships(contentletRelationships)
+                            .workflowActionId(publish.getId()) //Send For Review
+                            .workflowActionComments(StringPool.BLANK)
+                            .workflowAssignKey(StringPool.BLANK)
+                            .categories(Collections.emptyList())
+                            .generateSystemEvent(Boolean.FALSE).build());
+
+            assertTrue("Contentlet is on the wrong Workflow Step", PUBLISHED_STEP_NAME
+                    .equals(workflowAPI.findStepByContentlet(contentlet1).getName()));
+            assertTrue(title2.equals(contentlet1.getStringProperty(FIELD_VAR_NAME)));
+            assertTrue(contentlet1.isLive());
+
+        } finally {
+            /*
+		     * Clean test
+		     */
+            contentTypeAPI.delete(contentType4);
         }
     }
 
@@ -1171,7 +1444,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             scheme.setName(schemeName);
             scheme.setDescription("testing workflows " + schemeName);
             scheme.setCreationDate(new Date());
-            workflowAPI.saveScheme(scheme);
+            workflowAPI.saveScheme(scheme, APILocator.systemUser());
         } catch (AlreadyExistException e) {
             //scheme already exist
         }
@@ -1202,7 +1475,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             step.setName(name);
             step.setResolved(resolved);
             step.setSchemeId(schemeId);
-            workflowAPI.saveStep(step);
+            workflowAPI.saveStep(step, user);
         } catch (AlreadyExistException e) {
             //scheme already exist
         }
@@ -1239,11 +1512,15 @@ public class WorkflowAPITest extends IntegrationTestBase {
             action.setNextAssign(whoCanUse.getId());
             action.setCommentable(true);
             action.setAssignable(false);
+            action.setShowOn(WorkflowState.LOCKED, WorkflowState.UNLOCKED, WorkflowState.NEW,
+                    WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED, WorkflowState.ARCHIVED);
+
             workflowAPI.saveAction(action,
                     Arrays.asList(new Permission[]{
                             new Permission(action.getId(),
                                     whoCanUse.getId(),
-                                    PermissionAPI.PERMISSION_USE)}));
+                                    PermissionAPI.PERMISSION_USE)}),
+                    APILocator.systemUser());
 
             workflowAPI.saveAction(action.getId(), stepId, APILocator.systemUser());
         } catch (AlreadyExistException e) {
@@ -1270,7 +1547,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             actionClass.setClazz(actionClassToUse.getCanonicalName());
             actionClass.setName(name);
             actionClass.setOrder(order);
-            workflowAPI.saveActionClass(actionClass);
+            workflowAPI.saveActionClass(actionClass, APILocator.systemUser());
         } catch (AlreadyExistException e) {
             //scheme already exist
         }
@@ -1288,78 +1565,489 @@ public class WorkflowAPITest extends IntegrationTestBase {
         contentTypeAPI.delete(contentType3);
         try {
             //Deleting workflow 1
-            workflowAPI.deleteAction(workflowScheme1Step1Action1);
-            workflowAPI.deleteAction(workflowScheme1Step2Action1);
+            workflowAPI.deleteAction(workflowScheme1Step1Action1, user);
+            workflowAPI.deleteAction(workflowScheme1Step2Action1, user);
 
-            workflowAPI.deleteStep(workflowScheme1Step1);
-            workflowAPI.deleteStep(workflowScheme1Step2);
+            workflowAPI.deleteStep(workflowScheme1Step1, user);
+            workflowAPI.deleteStep(workflowScheme1Step2, user);
 
             workflowScheme1.setArchived(true);
-            workflowAPI.saveScheme(workflowScheme1);
-            workflowAPI.deleteScheme(workflowScheme1);
+            workflowAPI.saveScheme(workflowScheme1, user);
+            workflowAPI.deleteScheme(workflowScheme1, user);
 
             //Deleting workflow 2
-            workflowAPI.deleteAction(workflowScheme2Step1Action1);
-            workflowAPI.deleteAction(workflowScheme2Step2Action1);
-            workflowAPI.deleteStep(workflowScheme2Step1);
-            workflowAPI.deleteStep(workflowScheme2Step2);
+            workflowAPI.deleteAction(workflowScheme2Step1Action1, user);
+            workflowAPI.deleteAction(workflowScheme2Step2Action1, user);
+            workflowAPI.deleteStep(workflowScheme2Step1, user);
+            workflowAPI.deleteStep(workflowScheme2Step2, user);
 
             workflowScheme2.setArchived(true);
-            workflowAPI.saveScheme(workflowScheme2);
-            workflowAPI.deleteScheme(workflowScheme2);
+            workflowAPI.saveScheme(workflowScheme2, user);
+            workflowAPI.deleteScheme(workflowScheme2, user);
 
             //Deleting workflow 3
-            workflowAPI.deleteAction(workflowScheme3Step1Action1);
-            workflowAPI.deleteAction(workflowScheme3Step2Action1);
-            workflowAPI.deleteAction(workflowScheme3Step2Action2);
+            workflowAPI.deleteAction(workflowScheme3Step1Action1, user);
+            workflowAPI.deleteAction(workflowScheme3Step2Action1, user);
+            workflowAPI.deleteAction(workflowScheme3Step2Action2, user);
 
-            workflowAPI.deleteStep(workflowScheme3Step1);
-            workflowAPI.deleteStep(workflowScheme3Step2);
+            workflowAPI.deleteStep(workflowScheme3Step1, user);
+            workflowAPI.deleteStep(workflowScheme3Step2, user);
 
             workflowScheme3.setArchived(true);
-            workflowAPI.saveScheme(workflowScheme3);
-            workflowAPI.deleteScheme(workflowScheme3);
+            workflowAPI.saveScheme(workflowScheme3, user);
+            workflowAPI.deleteScheme(workflowScheme3, user);
 
             //Deleting workflow 4
-            workflowAPI.deleteAction(workflowScheme4Step1ActionContributor);
-            workflowAPI.deleteAction(workflowScheme4Step1ActionEdit);
-            workflowAPI.deleteAction(workflowScheme4Step1ActionEditPermissions);
-            workflowAPI.deleteAction(workflowScheme4Step1ActionPublish);
-            workflowAPI.deleteAction(workflowScheme4Step1ActionView);
+            workflowAPI.deleteAction(workflowScheme4Step1ActionContributor, user);
+            workflowAPI.deleteAction(workflowScheme4Step1ActionEdit, user);
+            workflowAPI.deleteAction(workflowScheme4Step1ActionEditPermissions, user);
+            workflowAPI.deleteAction(workflowScheme4Step1ActionPublish, user);
+            workflowAPI.deleteAction(workflowScheme4Step1ActionView, user);
 
-            workflowAPI.deleteAction(workflowScheme4Step2ActionReviewer);
-            workflowAPI.deleteAction(workflowScheme4Step2ActionEdit);
-            workflowAPI.deleteAction(workflowScheme4Step2ActionEditPermissions);
-            workflowAPI.deleteAction(workflowScheme4Step2ActionPublish);
-            workflowAPI.deleteAction(workflowScheme4Step2ActionView);
+            workflowAPI.deleteAction(workflowScheme4Step2ActionReviewer, user);
+            workflowAPI.deleteAction(workflowScheme4Step2ActionEdit, user);
+            workflowAPI.deleteAction(workflowScheme4Step2ActionEditPermissions, user);
+            workflowAPI.deleteAction(workflowScheme4Step2ActionPublish, user);
+            workflowAPI.deleteAction(workflowScheme4Step2ActionView, user);
 
-            workflowAPI.deleteAction(workflowScheme4Step3ActionPublisher);
-            workflowAPI.deleteAction(workflowScheme4Step3ActionEdit);
-            workflowAPI.deleteAction(workflowScheme4Step3ActionEditPermissions);
-            workflowAPI.deleteAction(workflowScheme4Step3ActionPublish);
-            workflowAPI.deleteAction(workflowScheme4Step3ActionView);
+            workflowAPI.deleteAction(workflowScheme4Step3ActionPublisher, user);
+            workflowAPI.deleteAction(workflowScheme4Step3ActionEdit, user);
+            workflowAPI.deleteAction(workflowScheme4Step3ActionEditPermissions, user);
+            workflowAPI.deleteAction(workflowScheme4Step3ActionPublish, user);
+            workflowAPI.deleteAction(workflowScheme4Step3ActionView, user);
 
-            workflowAPI.deleteStep(workflowScheme4Step1);
-            workflowAPI.deleteStep(workflowScheme4Step2);
-            workflowAPI.deleteStep(workflowScheme4Step3);
+            workflowAPI.deleteStep(workflowScheme4Step1, user);
+            workflowAPI.deleteStep(workflowScheme4Step2, user);
+            workflowAPI.deleteStep(workflowScheme4Step3, user);
 
             workflowScheme4.setArchived(true);
-            workflowAPI.saveScheme(workflowScheme4);
-            workflowAPI.deleteScheme(workflowScheme4);
+            workflowAPI.saveScheme(workflowScheme4, user);
+            workflowAPI.deleteScheme(workflowScheme4, user);
 
             //Deleting workflow 5
-            workflowAPI.deleteAction(workflowScheme5Step1Action1);
-            workflowAPI.deleteStep(workflowScheme5Step1);
+            workflowAPI.deleteAction(workflowScheme5Step1Action1, user);
+            workflowAPI.deleteStep(workflowScheme5Step1, user);
 
             workflowScheme5.setArchived(true);
-            workflowAPI.saveScheme(workflowScheme5);
-            workflowAPI.deleteScheme(workflowScheme5);
+            workflowAPI.saveScheme(workflowScheme5, user);
+            workflowAPI.deleteScheme(workflowScheme5, user);
 
         }catch (AlreadyExistException e){
 
         }
 
 
+    }
+
+    /**
+     * This method generate a replica of the current Document Management Workflow
+     *
+     * @param newWorkflowScheme The new for the workflow replica
+     * @return The new workflow
+     */
+    public static WorkflowScheme createDocumentManagentReplica(String newWorkflowScheme)
+            throws DotDataException, DotSecurityException {
+
+        final WorkflowScheme scheme = addWorkflowScheme(newWorkflowScheme);
+        final Role adminRole = roleAPI.loadCMSAdminRole();
+        final Role anonymus = roleAPI.loadCMSAnonymousRole();
+        //Create Steps
+
+        //Editing Step
+        WorkflowStep editingStep = addWorkflowStep(EDITING_STEP_NAME, 0, Boolean.FALSE,
+                Boolean.FALSE, scheme.getId());
+
+        //Review Step
+        WorkflowStep reviewStep = addWorkflowStep(REVIEW_STEP_NAME, 1, Boolean.FALSE, Boolean.FALSE,
+                scheme.getId());
+
+        //Legal Approval Step
+        WorkflowStep legalApprovalStep = addWorkflowStep(LEGAL_APPROVAL_STEP_NAME, 2, Boolean.FALSE,
+                Boolean.FALSE, scheme.getId());
+
+        //Published Step
+        WorkflowStep publishedStep = addWorkflowStep(PUBLISHED_STEP_NAME, 3, Boolean.TRUE,
+                Boolean.FALSE, scheme.getId());
+
+        //Archived Step
+        WorkflowStep archivedStep = addWorkflowStep(ARCHIVED_STEP_NAME, 4, Boolean.TRUE,
+                Boolean.FALSE, scheme.getId());
+
+        //Create Actions
+
+        //Save as Draft Action
+        WorkflowAction saveAsDraftAction = null;
+        try {
+            saveAsDraftAction = new WorkflowAction();
+            saveAsDraftAction.setName(SAVE_AS_DRAFT_ACTION_NAME);
+            saveAsDraftAction.setSchemeId(scheme.getId());
+            saveAsDraftAction.setOwner(adminRole.getId());
+            saveAsDraftAction.setOrder(0);
+            saveAsDraftAction.setNextStep(WorkflowAction.CURRENT_STEP);
+            saveAsDraftAction.setNextAssign(anonymus.getId());
+            saveAsDraftAction.setCommentable(true);
+            saveAsDraftAction.setAssignable(false);
+            saveAsDraftAction.setShowOn(WorkflowState.LOCKED, WorkflowState.NEW,
+                    WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED);
+
+            workflowAPI.saveAction(saveAsDraftAction,
+                    Arrays.asList(new Permission[]{
+                            new Permission(saveAsDraftAction.getId(),
+                                    anyWhoEdit.getId(),
+                                    PermissionAPI.PERMISSION_USE)}),
+                    APILocator.systemUser());
+
+            workflowAPI.saveAction(saveAsDraftAction.getId(), editingStep.getId(),
+                    APILocator.systemUser(), 0);
+            workflowAPI.saveAction(saveAsDraftAction.getId(), reviewStep.getId(),
+                    APILocator.systemUser(), 0);
+            workflowAPI.saveAction(saveAsDraftAction.getId(), legalApprovalStep.getId(),
+                    APILocator.systemUser(), 0);
+        } catch (AlreadyExistException e) {
+            //scheme already exist
+        }
+
+        //Send for review Action
+        WorkflowAction sendForReviewAction = null;
+        try {
+            sendForReviewAction = new WorkflowAction();
+            sendForReviewAction.setName(SEND_FOR_REVIEW_ACTION_NAME);
+            sendForReviewAction.setSchemeId(scheme.getId());
+            sendForReviewAction.setOwner(adminRole.getId());
+            sendForReviewAction.setOrder(1);
+            sendForReviewAction.setNextStep(reviewStep.getId());
+            sendForReviewAction.setNextAssign(reviewer.getId());
+            sendForReviewAction.setCommentable(true);
+            sendForReviewAction.setAssignable(false);
+            sendForReviewAction.setShowOn(WorkflowState.LOCKED, WorkflowState.UNLOCKED,
+                    WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED);
+
+            workflowAPI.saveAction(sendForReviewAction,
+                    Arrays.asList(new Permission[]{
+                            new Permission(sendForReviewAction.getId(),
+                                    anyWhoEdit.getId(),
+                                    PermissionAPI.PERMISSION_USE),
+                            new Permission(sendForReviewAction.getId(),
+                                    contributor.getId(),
+                                    PermissionAPI.PERMISSION_USE)}),
+                    APILocator.systemUser());
+
+            workflowAPI.saveAction(sendForReviewAction.getId(), editingStep.getId(),
+                    APILocator.systemUser(), 1);
+        } catch (AlreadyExistException e) {
+            //scheme already exist
+        }
+
+        //Send to Legal Action
+        WorkflowAction sendToLegalAction = null;
+        try {
+            sendToLegalAction = new WorkflowAction();
+            sendToLegalAction.setName(SEND_TO_LEGAL_ACTION_NAME);
+            sendToLegalAction.setSchemeId(scheme.getId());
+            sendToLegalAction.setOwner(adminRole.getId());
+            sendToLegalAction.setOrder(1);
+            sendToLegalAction.setNextStep(legalApprovalStep.getId());
+            sendToLegalAction.setNextAssign(publisher.getId());
+            sendToLegalAction.setCommentable(true);
+            sendToLegalAction.setAssignable(false);
+            sendToLegalAction.setShowOn(WorkflowState.LOCKED, WorkflowState.UNLOCKED,
+                    WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED);
+
+            workflowAPI.saveAction(sendToLegalAction,
+                    Arrays.asList(new Permission[]{
+                            new Permission(sendToLegalAction.getId(),
+                                    reviewer.getId(),
+                                    PermissionAPI.PERMISSION_USE)}),
+                    APILocator.systemUser());
+
+            workflowAPI.saveAction(sendToLegalAction.getId(), editingStep.getId(),
+                    APILocator.systemUser(), 1);
+            workflowAPI.saveAction(sendToLegalAction.getId(), reviewStep.getId(),
+                    APILocator.systemUser(), 2);
+        } catch (AlreadyExistException e) {
+            //scheme already exist
+        }
+
+        //Publish Action
+        WorkflowAction publishAction = null;
+        try {
+            publishAction = new WorkflowAction();
+            publishAction.setName(PUBLISH_ACTION_NAME);
+            publishAction.setSchemeId(scheme.getId());
+            publishAction.setOwner(adminRole.getId());
+            publishAction.setOrder(1);
+            publishAction.setNextStep(publishedStep.getId());
+            publishAction.setNextAssign(anonymus.getId());
+            publishAction.setCommentable(false);
+            publishAction.setAssignable(false);
+            publishAction.setShowOn(WorkflowState.LOCKED, WorkflowState.UNLOCKED,
+                    WorkflowState.UNPUBLISHED);
+
+            workflowAPI.saveAction(publishAction,
+                    Arrays.asList(new Permission[]{
+                            new Permission(publishAction.getId(),
+                                    anyWhoPublish.getId(),
+                                    PermissionAPI.PERMISSION_USE)}),
+                    APILocator.systemUser());
+
+            workflowAPI
+                    .saveAction(publishAction.getId(), editingStep.getId(), APILocator.systemUser(),
+                            3);
+            workflowAPI
+                    .saveAction(publishAction.getId(), reviewStep.getId(), APILocator.systemUser(),
+                            3);
+            workflowAPI.saveAction(publishAction.getId(), legalApprovalStep.getId(),
+                    APILocator.systemUser(), 3);
+        } catch (AlreadyExistException e) {
+            //scheme already exist
+        }
+
+        //Return For Edit Action
+        WorkflowAction returnForEditAction = null;
+        try {
+            returnForEditAction = new WorkflowAction();
+            returnForEditAction.setName(RETURN_FOR_EDITS_ACTION_NAME);
+            returnForEditAction.setSchemeId(scheme.getId());
+            returnForEditAction.setOwner(adminRole.getId());
+            returnForEditAction.setOrder(1);
+            returnForEditAction.setNextStep(editingStep.getId());
+            returnForEditAction.setNextAssign(contributor.getId());
+            returnForEditAction.setCommentable(true);
+            returnForEditAction.setAssignable(true);
+            returnForEditAction.setShowOn(WorkflowState.LOCKED, WorkflowState.UNLOCKED,
+                    WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED);
+
+            workflowAPI.saveAction(returnForEditAction,
+                    Arrays.asList(new Permission[]{
+                            new Permission(returnForEditAction.getId(),
+                                    reviewer.getId(),
+                                    PermissionAPI.PERMISSION_USE)}),
+                    APILocator.systemUser());
+
+            workflowAPI.saveAction(returnForEditAction.getId(), reviewStep.getId(),
+                    APILocator.systemUser(), 1);
+            workflowAPI.saveAction(returnForEditAction.getId(), legalApprovalStep.getId(),
+                    APILocator.systemUser(), 1);
+        } catch (AlreadyExistException e) {
+            //scheme already exist
+        }
+
+        //Republish Action
+        WorkflowAction republishAction = null;
+        try {
+            republishAction = new WorkflowAction();
+            republishAction.setName(REPUBLISH_ACTION_NAME);
+            republishAction.setSchemeId(scheme.getId());
+            republishAction.setOwner(adminRole.getId());
+            republishAction.setOrder(0);
+            republishAction.setNextStep(publishedStep.getId());
+            republishAction.setNextAssign(anonymus.getId());
+            republishAction.setCommentable(false);
+            republishAction.setAssignable(false);
+            republishAction.setShowOn(WorkflowState.LOCKED, WorkflowState.UNLOCKED,
+                    WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED);
+
+            workflowAPI.saveAction(republishAction,
+                    Arrays.asList(new Permission[]{
+                            new Permission(republishAction.getId(),
+                                    anonymus.getId(),
+                                    PermissionAPI.PERMISSION_USE)}),
+                    APILocator.systemUser());
+
+            workflowAPI.saveAction(republishAction.getId(), publishedStep.getId(),
+                    APILocator.systemUser(), 0);
+            workflowAPI.saveAction(republishAction.getId(), archivedStep.getId(),
+                    APILocator.systemUser(), 2);
+        } catch (AlreadyExistException e) {
+            //scheme already exist
+        }
+
+        //Unpublish Action
+        WorkflowAction unpublishAction = null;
+        try {
+            unpublishAction = new WorkflowAction();
+            unpublishAction.setName(UNPUBLISH_ACTION_NAME);
+            unpublishAction.setSchemeId(scheme.getId());
+            unpublishAction.setOwner(adminRole.getId());
+            unpublishAction.setOrder(1);
+            unpublishAction.setNextStep(reviewStep.getId());
+            unpublishAction.setNextAssign(anonymus.getId());
+            unpublishAction.setCommentable(false);
+            unpublishAction.setAssignable(false);
+            unpublishAction.setShowOn(WorkflowState.LOCKED, WorkflowState.UNLOCKED,
+                    WorkflowState.PUBLISHED);
+
+            workflowAPI.saveAction(unpublishAction,
+                    Arrays.asList(new Permission[]{
+                            new Permission(unpublishAction.getId(),
+                                    anyWhoPublish.getId(),
+                                    PermissionAPI.PERMISSION_USE)}),
+                    APILocator.systemUser());
+
+            workflowAPI.saveAction(unpublishAction.getId(), publishedStep.getId(),
+                    APILocator.systemUser(), 1);
+        } catch (AlreadyExistException e) {
+            //scheme already exist
+        }
+
+        //Archive action
+        WorkflowAction archiveAction = null;
+        try {
+            archiveAction = new WorkflowAction();
+            archiveAction.setName(ARCHIVE_ACTION_NAME);
+            archiveAction.setSchemeId(scheme.getId());
+            archiveAction.setOwner(adminRole.getId());
+            archiveAction.setOrder(1);
+            archiveAction.setNextStep(archivedStep.getId());
+            archiveAction.setNextAssign(anonymus.getId());
+            archiveAction.setCommentable(false);
+            archiveAction.setAssignable(false);
+            archiveAction.setShowOn(WorkflowState.UNLOCKED, WorkflowState.UNPUBLISHED);
+
+            workflowAPI.saveAction(archiveAction,
+                    Arrays.asList(new Permission[]{
+                            new Permission(archiveAction.getId(),
+                                    publisher.getId(),
+                                    PermissionAPI.PERMISSION_USE)}),
+                    APILocator.systemUser());
+
+            workflowAPI.saveAction(archiveAction.getId(), publishedStep.getId(),
+                    APILocator.systemUser(), 2);
+        } catch (AlreadyExistException e) {
+            //scheme already exist
+        }
+
+        //Delete action
+        WorkflowAction deleteAction = null;
+        try {
+            deleteAction = new WorkflowAction();
+            deleteAction.setName(DELETE_ACTION_NAME);
+            deleteAction.setSchemeId(scheme.getId());
+            deleteAction.setOwner(adminRole.getId());
+            deleteAction.setOrder(1);
+            deleteAction.setNextStep(archivedStep.getId());
+            deleteAction.setNextAssign(anonymus.getId());
+            deleteAction.setCommentable(false);
+            deleteAction.setAssignable(false);
+            deleteAction.setShowOn(WorkflowState.UNLOCKED, WorkflowState.ARCHIVED);
+
+            workflowAPI.saveAction(deleteAction,
+                    Arrays.asList(new Permission[]{
+                            new Permission(archiveAction.getId(),
+                                    publisher.getId(),
+                                    PermissionAPI.PERMISSION_USE)}),
+                    APILocator.systemUser());
+
+            workflowAPI
+                    .saveAction(deleteAction.getId(), archivedStep.getId(), APILocator.systemUser(),
+                            1);
+        } catch (AlreadyExistException e) {
+            //scheme already exist
+        }
+
+        //reset workflow action
+        WorkflowAction resetWorkflowAction = null;
+        try {
+            resetWorkflowAction = new WorkflowAction();
+            resetWorkflowAction.setName(RESET_WORKFLOW_ACTION_NAME);
+            resetWorkflowAction.setSchemeId(scheme.getId());
+            resetWorkflowAction.setOwner(adminRole.getId());
+            resetWorkflowAction.setOrder(1);
+            resetWorkflowAction.setNextStep(archivedStep.getId());
+            resetWorkflowAction.setNextAssign(anonymus.getId());
+            resetWorkflowAction.setCommentable(false);
+            resetWorkflowAction.setAssignable(false);
+            resetWorkflowAction.setShowOn(WorkflowState.LOCKED, WorkflowState.UNLOCKED,
+                    WorkflowState.ARCHIVED);
+
+            workflowAPI.saveAction(resetWorkflowAction,
+                    Arrays.asList(new Permission[]{
+                            new Permission(archiveAction.getId(),
+                                    publisher.getId(),
+                                    PermissionAPI.PERMISSION_USE)}),
+                    APILocator.systemUser());
+
+            workflowAPI.saveAction(resetWorkflowAction.getId(), archivedStep.getId(),
+                    APILocator.systemUser(), 0);
+        } catch (AlreadyExistException e) {
+            //scheme already exist
+        }
+
+        //Add subactions to the actions
+
+        //Save as Draft subactionss
+        addSubActionClass(SAVE_AS_DRAFT_SUBACTION, saveAsDraftAction.getId(),
+                SaveContentAsDraftActionlet.class, 0);
+
+        //Send For Review subactions
+        addSubActionClass(SAVE_AS_DRAFT_SUBACTION, sendForReviewAction.getId(),
+                SaveContentAsDraftActionlet.class, 0);
+        addSubActionClass(UNLOCK_SUBACTION, sendForReviewAction.getId(),
+                CheckinContentActionlet.class, 1);
+
+        //Send to Legal subactions
+        addSubActionClass(SAVE_AS_DRAFT_SUBACTION, sendToLegalAction.getId(),
+                SaveContentAsDraftActionlet.class, 0);
+        addSubActionClass(UNLOCK_SUBACTION, sendToLegalAction.getId(),
+                CheckinContentActionlet.class, 1);
+
+        //Publish subactions
+        addSubActionClass(SAVE_CONTENT_SUBACTION, publishAction.getId(), SaveContentActionlet.class,
+                0);
+        addSubActionClass(PUBLISH_SUBACTION, publishAction.getId(), PublishContentActionlet.class,
+                1);
+        addSubActionClass(UNLOCK_SUBACTION, publishAction.getId(), CheckinContentActionlet.class,
+                2);
+
+        //Return for Edit subactions
+        addSubActionClass(SAVE_AS_DRAFT_SUBACTION, returnForEditAction.getId(),
+                SaveContentAsDraftActionlet.class, 0);
+        addSubActionClass(UNLOCK_SUBACTION, returnForEditAction.getId(),
+                CheckinContentActionlet.class, 1);
+
+        //Republish subactions
+        addSubActionClass(SAVE_AS_DRAFT_SUBACTION, republishAction.getId(),
+                SaveContentAsDraftActionlet.class, 0);
+        addSubActionClass(UNARCHIVE_SUBACTION, republishAction.getId(),
+                UnarchiveContentActionlet.class, 1);
+        addSubActionClass(PUBLISH_SUBACTION, republishAction.getId(), PublishContentActionlet.class,
+                2);
+        addSubActionClass(UNLOCK_SUBACTION, republishAction.getId(), CheckinContentActionlet.class,
+                3);
+
+        //Unpublish subactions
+        addSubActionClass(SAVE_AS_DRAFT_SUBACTION, unpublishAction.getId(),
+                SaveContentAsDraftActionlet.class, 0);
+        addSubActionClass(UNPUBLISH_SUBACTION, unpublishAction.getId(),
+                UnpublishContentActionlet.class, 1);
+        addSubActionClass(UNLOCK_SUBACTION, unpublishAction.getId(), CheckinContentActionlet.class,
+                2);
+
+        //Archive subactions
+        addSubActionClass(UNLOCK_SUBACTION, archiveAction.getId(), CheckinContentActionlet.class,
+                0);
+        addSubActionClass(UNPUBLISH_SUBACTION, archiveAction.getId(),
+                UnpublishContentActionlet.class, 1);
+        addSubActionClass(ARCHIVE_SUBACTION, archiveAction.getId(), ArchiveContentActionlet.class,
+                2);
+
+        //Reset workflow subactions
+        addSubActionClass(UNLOCK_SUBACTION, resetWorkflowAction.getId(),
+                CheckinContentActionlet.class, 0);
+        addSubActionClass(UNARCHIVE_SUBACTION, resetWorkflowAction.getId(),
+                UnpublishContentActionlet.class, 1);
+        addSubActionClass(RESET_WORKFLOW_SUBACTION, resetWorkflowAction.getId(),
+                ResetTaskActionlet.class, 2);
+
+        //Delete subactions
+        addSubActionClass(UNLOCK_SUBACTION, deleteAction.getId(), CheckinContentActionlet.class, 0);
+        addSubActionClass(ARCHIVE_SUBACTION, deleteAction.getId(), ArchiveContentActionlet.class,
+                1);
+        addSubActionClass(RESET_WORKFLOW_SUBACTION, deleteAction.getId(), ResetTaskActionlet.class,
+                2);
+        addSubActionClass(DELETE_SUBACTION, deleteAction.getId(), DeleteContentActionlet.class, 3);
+
+        return scheme;
     }
 
 }

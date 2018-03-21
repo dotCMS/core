@@ -71,7 +71,6 @@ public class CommentOnWorkflowActionlet extends WorkFlowActionlet {
                 Logger.error(CommentOnWorkflowActionlet.class, e.getMessage(), e);
             }
         }
-
     }
 
     private void setRole(final WorkflowProcessor processor,

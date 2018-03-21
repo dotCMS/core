@@ -101,21 +101,7 @@ public class CopyActionlet extends WorkFlowActionlet {
     private void performCopy(final Contentlet contentlet,
                              final User user) throws DotDataException, DotSecurityException, IOException {
 
-        Contentlet copyContentlet = null;
-
-        if (contentlet.isFileAsset() || contentlet.isHTMLPage()) {
-
-            final Identifier contIdentifier = APILocator.getIdentifierAPI().find(contentlet);
-            Host             host           = this.hostAPI.find(contentlet.getHost(), user, false);
-
-            host = (host == null)? new Host(): host;
-            copyContentlet = this.contentletAPI.copyContentlet(contentlet, host,
-                    this.folderAPI.findFolderByPath(contIdentifier.getParentPath(), host, user, false),
-                    user, new StringBuilder("_copy_").append(System.currentTimeMillis()).toString(), false);
-        } else {
-
-            copyContentlet = this.contentletAPI.copyContentlet(contentlet, user, false);
-        }
+        Contentlet copyContentlet = this.contentletAPI.copyContentlet(contentlet, user, false);
 
         if (null != copyContentlet) {
 

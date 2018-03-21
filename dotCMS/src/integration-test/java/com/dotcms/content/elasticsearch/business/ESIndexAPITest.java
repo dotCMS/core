@@ -4,6 +4,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotmarketing.util.UtilMethods;
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
@@ -12,6 +14,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.zip.ZipFile;
 
 import org.elasticsearch.ElasticsearchException;
+import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -22,7 +25,6 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 
@@ -40,12 +42,23 @@ public class ESIndexAPITest {
 	public static void prepare() throws Exception{
 		//Setting web app environment
         IntegrationTestInitService.getInstance().init();
-        String pathToRepo = Config.getStringProperty("es.path.repo","test-resources");
+		String pathToRepo = getPathToRepo();
+
 		File tempDir = new File(pathToRepo);
 		if(!tempDir.exists()){
 			tempDir.mkdirs();
 		}
 		tempDir.deleteOnExit();
+	}
+
+	@NotNull
+	private static String getPathToRepo() {
+		String pathToRepo = APILocator.getESIndexAPI().getRepositoryPath();
+
+		if (!UtilMethods.isSet(pathToRepo)){
+            pathToRepo = "test-resources";
+        }
+		return pathToRepo;
 	}
 
 	@After
@@ -95,7 +108,7 @@ public class ESIndexAPITest {
 		snapshot = esIndexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", indexName);
 		esIndexAPI.closeIndex(indexName);
 		ZipFile file = new ZipFile(snapshot.getAbsolutePath());
-		String pathToRepo = Config.getStringProperty("es.path.repo","test-resources");
+		String pathToRepo = getPathToRepo();
 		File tempDir = new File(pathToRepo);
 		boolean response = esIndexAPI.uploadSnapshot(file, tempDir.getAbsolutePath(),true);
 		assertTrue(response);
@@ -119,7 +132,7 @@ public class ESIndexAPITest {
 			
 			snapshot = esIndexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", indexName);
 			file = new ZipFile(snapshot.getAbsolutePath());
-			String pathToRepo = Config.getStringProperty("es.path.repo","test-resources");
+			String pathToRepo = getPathToRepo();
 			tempDir = new File(pathToRepo);
 			esIndexAPI.uploadSnapshot(file, tempDir.getAbsolutePath(),true);
 		}catch(Exception e){
@@ -141,18 +154,35 @@ public class ESIndexAPITest {
 	 * @throws ExecutionException
 	 */
 	@Test
-	public void uploadSnapshotTest() throws IOException, InterruptedException, ExecutionException{
-		String currentLiveIndex = getLiveIndex();
-		esIndexAPI.closeIndex(currentLiveIndex);
-		String path = ConfigTestHelper.getPathToTestResource("index.zip");
-		ZipFile file = new ZipFile(path);
-		String pathToRepo = Config.getStringProperty("es.path.repo","test-resources");
-		File tempDir = new File(pathToRepo);
-		boolean response = esIndexAPI.uploadSnapshot(file, tempDir.getAbsolutePath(),true);
+	public void uploadSnapshotTest() throws DotDataException, IOException, InterruptedException, ExecutionException{
+
+		final String path = ConfigTestHelper.getPathToTestResource("index.zip");
+		final String pathToRepo = getPathToRepo();
+
+		//Copy index.zip resource to repo
+		final File tempDir = new File(pathToRepo);
+		final File resourceFile = new File(path);
+		FileUtils.copyFileToDirectory(resourceFile, tempDir);
+
+		//Read index.zip file
+		final ZipFile indexFile = new ZipFile(pathToRepo + "/index.zip");
+
+
+		//Create a new Index name corresponding to the Snapshot to Upload
+		final String indexName = "live_20161011212551";
+		esIndexAPI.createIndex(indexName);
+
+		//Create a snapshot and close the index (becuase the upload needs the index to be closed)
+		esIndexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", indexName);
+		esIndexAPI.closeIndex(indexName);
+
+		//Upload the snapshot
+		final boolean response = esIndexAPI.uploadSnapshot(indexFile, tempDir.getAbsolutePath(),true);
 		assertTrue(response);
-		esIndexAPI.closeIndex("live_20161011212551");
-		esIndexAPI.openIndex(currentLiveIndex);
-		esIndexAPI.delete("live_20161011212551");
+
+		//Clean up
+		esIndexAPI.closeIndex(indexName);
+		esIndexAPI.delete(indexName);
 	}
 
 	/**
@@ -165,11 +195,18 @@ public class ESIndexAPITest {
 
 	@Test(expected = ElasticsearchException.class)
 	public void uploadSnapshotTest_noSnapshotFound() throws IOException, InterruptedException, ExecutionException{
-		String path = ConfigTestHelper.getPathToTestResource("failing-test.zip");
-		ZipFile file = new ZipFile(path);
-		String pathToRepo = Config.getStringProperty("es.path.repo","test-resources");
-		File tempDir = new File(pathToRepo);
-		esIndexAPI.uploadSnapshot(file, tempDir.getAbsolutePath(),true);
+		final String path = ConfigTestHelper.getPathToTestResource("failing-test.zip");
+		final String pathToRepo = getPathToRepo();
+
+		//Copy index.zip resource to repo
+		final File tempDir = new File(pathToRepo);
+		final File resourceFile = new File(path);
+		FileUtils.copyFileToDirectory(resourceFile, tempDir);
+
+		//Read failing-test.zip file
+		final ZipFile failingFile = new ZipFile(pathToRepo + "/failing-test.zip");
+
+		esIndexAPI.uploadSnapshot(failingFile, tempDir.getAbsolutePath(),true);
 	}
 
 	/**
@@ -184,7 +221,7 @@ public class ESIndexAPITest {
 		File snapshot = null;
 		snapshot = esIndexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", indexName);
 		ZipFile file = new ZipFile(snapshot.getAbsolutePath());
-		String pathToRepo = Config.getStringProperty("es.path.repo","test-resources");
+		String pathToRepo = getPathToRepo();
 		File tempDir = new File(pathToRepo);
 		esIndexAPI.uploadSnapshot(file, tempDir.getAbsolutePath(),true);
 		if(snapshot!=null){
@@ -214,7 +251,7 @@ public class ESIndexAPITest {
 
 	@AfterClass
 	public static void cleanUpTests(){
-		String pathToRepo = Config.getStringProperty("es.path.repo","test-resources");
+		String pathToRepo = getPathToRepo();
 		File baseDirectory = new File(pathToRepo);
 		File toDelete = baseDirectory.getParentFile();
 		try {

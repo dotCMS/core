@@ -571,29 +571,24 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
 
             //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             //++++++++++++++++++++++++OTHER TESTS+++++++++++++++++++++++
-            //Testing the search
+            //Testing the search by existing word with wildcard
             siteSearchResults = siteSearchAPI.search( indexName, "engli*", 0, 100 );
             //Validations
             assertTrue( siteSearchResults.getError() == null || siteSearchResults.getError().isEmpty() );
             assertTrue( siteSearchResults.getTotalResults() > 0 );
 
-            //Testing the search
+            //Testing the search by existing word with wildcard
             siteSearchResults = siteSearchAPI.search( indexName, "*engli", 0, 100 );
             //Validations
             assertTrue( siteSearchResults.getError() == null || siteSearchResults.getError().isEmpty() );
-            assertEquals( siteSearchResults.getTotalResults(), 0 );
+            assertEquals(1, siteSearchResults.getTotalResults());
 
-            //Testing the search
-            siteSearchResults = siteSearchAPI.search( indexName, "e", 0, 100 );
-            //Validations
-            assertTrue( siteSearchResults.getError() == null || siteSearchResults.getError().isEmpty() );
-            assertEquals( siteSearchResults.getTotalResults(), 0 );
 
             //Testing the search with a non existing word
             siteSearchResults = siteSearchAPI.search( indexName, "weird", 0, 100 );
             //Validations
             assertTrue( siteSearchResults.getError() == null || siteSearchResults.getError().isEmpty() );
-            assertEquals( siteSearchResults.getTotalResults(), 0 );
+            assertEquals(0, siteSearchResults.getTotalResults());
         } finally {
             //And finally remove the index
             siteSearchAPI.deleteFromIndex( indexName, docId );

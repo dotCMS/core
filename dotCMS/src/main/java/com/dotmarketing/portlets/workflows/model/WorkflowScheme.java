@@ -5,8 +5,12 @@ import java.util.Date;
 
 
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.util.UtilMethods;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class WorkflowScheme implements Serializable {
 
 	private static final long serialVersionUID = 1L;
@@ -100,6 +104,16 @@ public class WorkflowScheme implements Serializable {
 	public boolean isNew(){
 		return !UtilMethods.isSet(id);
 
+	}
+
+	/**
+	 * Returns true if this scheme is the system workflow.
+	 * @return boolean
+	 */
+	@JsonProperty("system")
+	public boolean isSystem () {
+
+		return WorkflowAPI.SYSTEM_WORKFLOW_ID.equals(this.getId());
 	}
 
 	public Date getModDate() {
