@@ -3218,7 +3218,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                     // try to get the content metadata from the old version
                                     if(metadata!=null) {
                                         File oldMeta=APILocator.getFileAssetAPI().getContentMetadataFile(oldInode);
-                                        if(oldMeta.exists()) {
+                                        if(oldMeta.exists() && !oldMeta.equals(metadata)) {
                                             if(metadata.exists()) // unlikely to happend. deleting just in case
                                                 metadata.delete();
                                             metadata.getParentFile().mkdirs();
