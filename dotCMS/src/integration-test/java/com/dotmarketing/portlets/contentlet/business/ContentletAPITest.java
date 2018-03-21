@@ -73,6 +73,7 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.model.Tag;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -2144,6 +2145,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
     @Test
     public void widgetInvalidateAllLang() throws Exception {
+        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",true);
 
         HttpServletRequest requestProxy = new MockInternalRequest().request();
         HttpServletResponse responseProxy = new BaseResponse().response();
@@ -2197,6 +2199,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         w2 = contentletAPI.checkin(w2, user, false);
         contentletAPI.publish(w2, user, false);
         contentletAPI.isInodeIndexed(w2.getInode(),true);
+        CacheLocator.getVeloctyResourceCache().clearCache();
 
         // now if everything have been cleared correctly those should match again
         org.apache.velocity.Template teng3 = engine.getTemplate(
@@ -2220,6 +2223,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         APILocator.getVersionableAPI().removeLive(w2);
         contentletAPI.archive(w2, user, false);
         contentletAPI.delete(w2, user, false);
+        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",false);
     }
     @Test
     public void testFileCopyOnSecondLanguageVersion() throws DotDataException, DotSecurityException {
