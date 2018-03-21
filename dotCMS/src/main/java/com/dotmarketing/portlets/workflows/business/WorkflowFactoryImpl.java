@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.workflows.business;
 
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.util.ConversionUtils;
@@ -474,7 +475,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			throw new DotDataException(e.toString());
 		}
 		finally {
-			cache.remove(c);
+			cache.remove(task);
 		}
 	}
 
@@ -1768,4 +1769,57 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		}
 	}
 
+	@Override
+	public List<WorkflowTask> findTasksByStep(String stepId) throws DotDataException, DotSecurityException {
+		List<WorkflowTask> tasks = null;
+		DotConnect dc = new DotConnect();
+
+		try {
+			dc.setSQL(sql.SELECT_TASKS_BY_STEP);
+			dc.addParam(stepId);
+			tasks =  this.convertListToObjects(dc.loadObjectResults(), WorkflowTask.class);
+		} catch (DotDataException e) {
+			Logger.error(WorkFlowFactory.class,e.getMessage(),e);
+			throw new DotDataException(e.getMessage(), e);
+		}
+		return tasks;
+	}
+
+	@Override
+	public List<ContentType> findContentTypesByScheme(WorkflowScheme scheme) throws DotDataException, DotSecurityException{
+		List<ContentType> contentTypes = null;
+		DotConnect dc = new DotConnect();
+		try {
+			dc.setSQL(sql.SELECT_STRUCTS_FOR_SCHEME);
+			dc.addParam(scheme.getId());
+			List<HashMap<String, String>> contentTypeIds = dc.loadResults();
+
+			contentTypes =  this.convertListToObjects(dc.loadObjectResults(), ContentType.class);
+
+		} catch (DotDataException e) {
+			Logger.error(WorkFlowFactory.class,e.getMessage(),e);
+			throw new DotDataException(e.getMessage(), e);
+		}
+		return contentTypes;
+	}
+
+	@Override
+	public void deleteScheme(WorkflowScheme scheme) throws DotDataException, DotSecurityException{
+		DotConnect dc = new DotConnect();
+		try {
+			//delete association of content types with the scheme
+			dc.setSQL(sql.DELETE_STRUCTS_FOR_SCHEME);
+			dc.addParam(scheme.getId());
+			dc.loadResult();
+
+			//delete the scheme
+			dc.setSQL(sql.DELETE_SCHEME);
+			dc.addParam(scheme.getId());
+			dc.loadResult();
+
+		} catch (DotDataException e) {
+			Logger.error(WorkFlowFactory.class,e.getMessage(),e);
+			throw new DotDataException(e.getMessage(), e);
+		}
+	}
 }

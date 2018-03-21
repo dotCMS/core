@@ -998,5 +998,23 @@ public class WorkflowHelper {
         return newScheme;
     }
 
+    /**
+     * Delete an existing scheme
+     * @param schemeId The id of the Scheme to be deleted
+     * @param user The User that want to delete the scheme
+     * @throws AlreadyExistException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    public void delete(final String schemeId, final User user) throws AlreadyExistException, DotDataException, DotSecurityException {
+
+        final WorkflowScheme scheme = this.workflowAPI.findScheme(schemeId);
+        if(null != scheme) {
+            this.workflowAPI.deleteScheme(scheme, user);
+        }else{
+            throw new DoesNotExistException("Workflow-does-not-exists-scheme");
+        }
+    }
+
 
 } // E:O:F:WorkflowHelper.

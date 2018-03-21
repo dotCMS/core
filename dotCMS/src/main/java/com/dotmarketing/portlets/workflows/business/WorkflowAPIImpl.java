@@ -316,8 +316,120 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@WrapInTransaction
-	public void deleteScheme(final WorkflowScheme scheme, final User user) throws DotDataException {
+	public void deleteScheme(final WorkflowScheme scheme, final User user)
+			throws DotDataException, DotSecurityException, AlreadyExistException {
 
+		if (null == scheme || SYSTEM_WORKFLOW_ID.equals(scheme.getId()) || !scheme.isArchived()) {
+
+			Logger.warn(this, "Can not delete workflow Id:" + scheme.getId());
+			throw new DotWorkflowException("Can not delete workflow Id:" + scheme.getId());
+		}
+
+		final List<WorkflowStep> steps = this.findSteps(scheme);
+		for (WorkflowStep step : steps) {
+			//delete workflow tasks
+			this.findTasksByStep(step.getId()).stream()
+					.forEach(task -> this.deleteWorkflowTaskWrapper(task, user));
+		}
+		//delete actions
+		this.findActions(scheme, user).stream()
+				.forEach(action -> this.deleteWorkflowActionWrapper(action, user));
+
+		//delete steps
+		steps.stream().forEach(step -> this.deleteWorkflowStepWrapper(step, user));
+
+		//delete scheme
+		this.workFlowFactory.deleteScheme(scheme);
+	}
+
+	/**
+	 * Wrap the delete Workflow Step method to be use by lambdas
+	 *
+	 * @param step The workflow step to be deleted
+	 * @param user The user
+	 * @throws DotRuntimeException
+	 */
+	@CloseDBIfOpened
+	private void deleteWorkflowStepWrapper(WorkflowStep step, User user)
+			throws DotRuntimeException {
+		try {
+			//delete step
+			this.deleteStep(step, user);
+		} catch (Exception e) {
+			throw new DotRuntimeException(e);
+		}
+	}
+
+	/**
+	 * Wrap the delete Workflow Action method to be use by lambdas
+	 *
+	 * @param action The workflow action to be deleted
+	 * @param user The user
+	 * @throws DotRuntimeException
+	 */
+	@CloseDBIfOpened
+	private void deleteWorkflowActionWrapper(WorkflowAction action, User user)
+			throws DotRuntimeException {
+		try {
+			//delete action
+			this.deleteAction(action,user);
+		} catch (Exception e) {
+			throw new DotRuntimeException(e);
+		}
+	}
+
+	/**
+	 * Wrap the delete Workflow Task method to be use by lambdas
+	 *
+	 * @param task The workflow task to be deleted
+	 * @param user The user
+	 * @throws DotRuntimeException
+	 */
+	@CloseDBIfOpened
+	private void deleteWorkflowTaskWrapper(WorkflowTask task, User user)
+			throws DotRuntimeException {
+		try {
+			//delete task comment
+			this.findWorkFlowComments(task).stream().forEach(this::deleteCommentWrapper);
+
+			//delete task history
+			this.findWorkflowHistory(task).stream().forEach(this::deleteWorkflowHistoryWrapper);
+
+			//delete task
+			this.deleteWorkflowTask(task, user);
+		} catch (Exception e) {
+			throw new DotRuntimeException(e);
+		}
+	}
+
+	/**
+	 * Wrap the delete Workflow Comment method to be use by lambdas
+	 * @param workflowComment The workflow comment object to be deleted
+	 * @throws DotRuntimeException
+	 */
+	@CloseDBIfOpened
+	private void deleteCommentWrapper(WorkflowComment workflowComment)
+			throws DotRuntimeException{
+		try{
+			this.deleteComment(workflowComment);
+		}catch(Exception e){
+			throw new DotRuntimeException(e);
+		}
+	}
+
+	/**
+	 * Wrap the delete Workflow History method to be use by lambdas
+	 * @param workflowHistory The workflow History object to be deleted
+	 * @throws DotRuntimeException
+	 */
+	@CloseDBIfOpened
+	private void deleteWorkflowHistoryWrapper(WorkflowHistory workflowHistory)
+			throws DotRuntimeException{
+		try{
+			this.deleteWorkflowHistory(workflowHistory);
+		}catch(Exception e){
+			throw new DotRuntimeException(e);
+		}
 	}
 
 	@CloseDBIfOpened
@@ -1636,6 +1748,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 
 		return actions.build();
+	}
+
+	@CloseDBIfOpened
+	public List<WorkflowTask> findTasksByStep(String stepId) throws DotDataException, DotSecurityException{
+		return this.workFlowFactory.findTasksByStep(stepId);
 	}
 
 }
