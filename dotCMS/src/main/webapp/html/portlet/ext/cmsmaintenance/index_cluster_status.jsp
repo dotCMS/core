@@ -17,30 +17,29 @@ String indexName=request.getParameter("indexName");
 
 ESClient client=new ESClient();
 NodesStatsResponse ns=client.getClient().admin().cluster().nodesStats(new NodesStatsRequest()).actionGet();
-NodeStats[] nsArray=ns.getNodes();
 %>
 <strong>Cluster: <%=ns.getClusterName() %></strong>
-<% for(int i=0;i<nsArray.length;i++) { %>
+<% for(NodeStats stats:ns.getNodes()) { %>
 <table class="listingTable">
    <tr>
       <td> <strong>Node name</strong> </td>
-      <td> <%= nsArray[i].getNode().name() %> <%=nsArray[i].getNode().isMasterNode() ? "(master)" : ""  %> </td>
+      <td> <%= stats.getNode().getName() %> <%=stats.getNode().isMasterNode() ? "(master)" : ""  %> </td>
    </tr>
    <tr>
       <td> Site Name </td>
-      <td> <%= nsArray[i].getHostname() %> </td>
+      <td> <%= stats.getHostname() %> </td>
    </tr>
    <tr>
       <td> Address </td>
-      <td> <%= nsArray[i].getNode().address() %> </td>
+      <td> <%= stats.getNode().getAddress() %> </td>
    </tr>
    <tr>
       <td> Store Size </td>
-      <td> <%= nsArray[i].getIndices().getStore().getSize().toString() %> </td>
+      <td> <%= stats.getIndices().getStore().size().toString() %> </td>
    </tr>
    <tr>
       <td> Document Count </td>
-      <td> <%= nsArray[i].getIndices().getDocs().getCount() %> </td>
+      <td> <%= stats.getIndices().getDocs().getCount() %> </td>
    </tr>
 </table>
 <% } %>

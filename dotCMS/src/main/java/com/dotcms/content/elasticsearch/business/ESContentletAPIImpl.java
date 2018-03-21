@@ -3218,7 +3218,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                     // try to get the content metadata from the old version
                                     if(metadata!=null) {
                                         File oldMeta=APILocator.getFileAssetAPI().getContentMetadataFile(oldInode);
-                                        if(oldMeta.exists()) {
+                                        if(oldMeta.exists() && !oldMeta.equals(metadata)) {
                                             if(metadata.exists()) // unlikely to happend. deleting just in case
                                                 metadata.delete();
                                             metadata.getParentFile().mkdirs();
@@ -5219,10 +5219,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final List<MultiTree> pageContents = MultiTreeFactory
                     .getMultiTrees(contentletToCopy.getIdentifier());
             for (final MultiTree multitree : pageContents) {
-                MultiTree newMultitree = new MultiTree(resultContentlet.getIdentifier(),
+
+                MultiTreeFactory.saveMultiTree(new MultiTree(resultContentlet.getIdentifier(),
                         multitree.getContainer(),
-                        multitree.getContentlet());
-                MultiTreeFactory.saveMultiTree(newMultitree);
+                        multitree.getContentlet(),
+                        MultiTree.LEGACY_RELATION_TYPE,
+                        multitree.getTreeOrder()));
             }
         }
 

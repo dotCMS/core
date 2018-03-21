@@ -48,7 +48,7 @@ tar zxf core/dist-output/dotcms_*.tar.gz
 mv dotserver/`ls dotserver | grep  tomcat` dotserver/tomcat
 
 # Assign permissions to ES modules jar
-chmod -R +x dotserver/tomcat/webapps/ROOT/WEB-INF/elastic_search/modules/
+chmod -R +x dotserver/tomcat/webapps/ROOT/WEB-INF/elasticsearch/modules/
 
 # Copy test JARs into distro's tomcat
 cp core/dotCMS/build/libs/dotcms_*-*Test.jar dotserver/tomcat/webapps/ROOT/WEB-INF/lib
@@ -92,7 +92,6 @@ sed -i "s,{valquery},$DB_VALIDATION_QUERY,g" dotserver/tomcat/webapps/ROOT/META-
 sed -i 's,<!-- TEST FRAMEWORK SERVLETS,<!-- TEST FRAMEWORK SERVLETS -->,g' dotserver/tomcat/webapps/ROOT/WEB-INF/web.xml
 sed -i 's,END OF TEST FRAMEWORK SERVLETS -->,<!-- END OF TEST FRAMEWORK SERVLETS -->,g' dotserver/tomcat/webapps/ROOT/WEB-INF/web.xml
 
-sed -i "s,^es.transport.tcp.port *=.*$,es.transport.tcp.port=$PORT_ES_TRANSPORT,g" dotserver/tomcat/webapps/ROOT/WEB-INF/classes/dotcms-config-cluster.properties
 sed -i "s,dotCMSContentIndex,$ESCLUSTER,g" dotserver/tomcat/webapps/ROOT/WEB-INF/classes/dotcms-config-cluster.properties
 sed -i "s,AUTOWIRE_CLUSTER_TRANSPORT=true,AUTOWIRE_CLUSTER_TRANSPORT=false,g" dotserver/tomcat/webapps/ROOT/WEB-INF/classes/dotcms-config-cluster.properties
 sed -i "s,AUTOWIRE_CLUSTER_ES=true,AUTOWIRE_CLUSTER_ES=false,g" dotserver/tomcat/webapps/ROOT/WEB-INF/classes/dotcms-config-cluster.properties
@@ -104,13 +103,12 @@ sed -i "s,^$DB_TYPE.db.base.url=.*$,$DB_TYPE.db.base.url=$DB_URL,g" core/dotCMS/
 sed -i "s,^$DB_TYPE.db.username=.*$,$DB_TYPE.db.username=$DB_USERNAME,g" core/dotCMS/src/integration-test/resources/db-config.properties
 sed -i "s,^$DB_TYPE.db.password=.*$,$DB_TYPE.db.password=$DB_PASSWORD,g" core/dotCMS/src/integration-test/resources/db-config.properties
 
-sed -i "s,^es.transport.tcp.port *=.*$,es.transport.tcp.port=$PORT_ES_TRANSPORT,g" core/dotCMS/src/integration-test/resources/it-dotcms-config-cluster.properties
-sed -i "s,^es.cluster.name *=.*$,es.cluster.name=$ESCLUSTER_3x,g" core/dotCMS/src/integration-test/resources/it-dotcms-config-cluster.properties
-sed -i "s,^es.path.data *=.*$,es.path.data=$PWD/dotserver/tomcat/webapps/ROOT/dotsecure/esdata,g" core/dotCMS/src/integration-test/resources/it-dotcms-config-cluster.properties
-sed -i "s,^es.path.work *=.*$,es.path.work=$PWD/dotserver/tomcat/webapps/ROOT/dotsecure/esdata/work,g" core/dotCMS/src/integration-test/resources/it-dotcms-config-cluster.properties
-sed -i "s,^es.path.repo *=.*$,es.path.repo=$PWD/dotserver/tomcat/webapps/ROOT/dotsecure/esdata/essnapshot/snaphosts,g" core/dotCMS/src/integration-test/resources/it-dotcms-config-cluster.properties
-sed -i "s,^es.path.logs *=.*$,es.path.logs=$PWD/dotserver/tomcat/webapps/ROOT/dotsecure/logs,g" core/dotCMS/src/integration-test/resources/it-dotcms-config-cluster.properties
-sed -i "s,^es.path.home *=.*$,es.path.home=$PWD/dotserver/tomcat/webapps/ROOT/WEB-INF/elastic_search,g" core/dotCMS/src/integration-test/resources/it-dotcms-config-cluster.properties
+sed -i "s,^transport.tcp.port *:.*$,transport.tcp.port: $PORT_ES_TRANSPORT,g" dotserver/tomcat/webapps/ROOT/WEB-INF/elasticsearch/config/elasticsearch.yml
+sed -i "s,^cluster.name *=.*$,cluster.name=$ESCLUSTER_3x,g" dotserver/tomcat/webapps/ROOT/WEB-INF/elasticsearch/config/elasticsearch.yml
+sed -i "s,^path.data *:.*$,path.data: $PWD/dotserver/tomcat/webapps/ROOT/dotsecure/esdata,g" dotserver/tomcat/webapps/ROOT/WEB-INF/elasticsearch/config/elasticsearch.yml
+sed -i "s,^path.repo *:.*$,path.repo: $PWD/dotserver/tomcat/webapps/ROOT/dotsecure/esdata/essnapshot/snapshots,g" dotserver/tomcat/webapps/ROOT/WEB-INF/elasticsearch/config/elasticsearch.yml
+sed -i "s,^path.logs *:.*$,path.logs: $PWD/dotserver/tomcat/webapps/ROOT/dotsecure/logs,g" dotserver/tomcat/webapps/ROOT/WEB-INF/elasticsearch/config/elasticsearch.yml
+sed -i "s,^es.path.home *=.*$,es.path.home=$PWD/dotserver/tomcat/webapps/ROOT/WEB-INF/elasticsearch,g" core/dotCMS/src/integration-test/resources/it-dotcms-config-cluster.properties
 
 echo "
 AUTOWIRE_CLUSTER_TRANSPORT=false
