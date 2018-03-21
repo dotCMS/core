@@ -10,6 +10,8 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.VelocityUtil;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
 import org.apache.velocity.context.Context;
 
 import java.util.ArrayList;
@@ -35,12 +37,29 @@ public class CommentOnWorkflowActionlet extends WorkFlowActionlet {
     }
 
     public String getName() {
-        return "Comment on Workflow";
+
+        String name = "Comment on Workflow";
+
+        try {
+            name = LanguageUtil.get("Workflow-Comment-on-workflow");
+        } catch (LanguageException e) {
+            name = "Comment on Workflow";
+        }
+
+        return name;
     }
 
     public String getHowTo() {
 
-        return "This actionlet allows you to add a comment on the workflow task.";
+        String name = "This actionlet allows you to add a comment on the workflow task.";
+
+        try {
+            name = LanguageUtil.get("Workflow-Comment-on-workflow-howto");
+        } catch (LanguageException e) {
+            name = "This actionlet allows you to add a comment on the workflow task.";
+        }
+
+        return name;
     }
 
     public void executeAction(final WorkflowProcessor processor,
