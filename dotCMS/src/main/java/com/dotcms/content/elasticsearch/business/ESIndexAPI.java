@@ -1214,4 +1214,8 @@ public class ESIndexAPI {
 		}
 		return result;
 	}
+
+	public String getRepositoryPath(){
+		return esclient.getClient().settings().get(REPOSITORY_PATH);
+	}
 }
