@@ -638,19 +638,19 @@ public class WorkflowHelper {
     /**
      * Save a WorkflowActionForm returning the WorkflowAction created.
      * A WorkflowActionForm can send a stepId in that case the Action will be associated to the Step in the same transaction.
+     * @param actionId When present an update operation takes place otherwise an insert is executed
      * @param workflowActionForm WorkflowActionForm
      * @return WorkflowAction (workflow action created)
      */
     @WrapInTransaction
-    public WorkflowAction save (final WorkflowActionForm workflowActionForm, final User user) {
+    public WorkflowAction save (final String actionId, final WorkflowActionForm workflowActionForm, final User user) {
 
         String actionNextAssign     = workflowActionForm.getActionNextAssign();
         if (actionNextAssign != null && actionNextAssign.startsWith("role-")) {
             actionNextAssign  = actionNextAssign.replaceAll("role-", StringPool.BLANK);
         }
 
-        final WorkflowHelper.IsNewAndCloneItResult isNewAndCloneItResult =
-                this.isNewAndCloneIt(workflowActionForm.getActionId());
+        final WorkflowHelper.IsNewAndCloneItResult isNewAndCloneItResult = this.isNewAndCloneIt(actionId);
         final WorkflowAction newAction = isNewAndCloneItResult.getAction();
         final boolean isNew            = isNewAndCloneItResult.isNew();
 
@@ -724,11 +724,22 @@ public class WorkflowHelper {
         return newAction;
     } // save.
 
+    /**
+     *
+     * @param workflowActionForm
+     * @param user
+     * @return
+     */
+    public WorkflowAction save (final WorkflowActionForm workflowActionForm, final User user) {
+        final String actionId = workflowActionForm.getActionId();
+        return save(actionId, workflowActionForm, user);
+    }
+
     @WrapInTransaction
     public void saveActionToStep(final WorkflowActionStepBean workflowActionStepForm, final User user) throws DotDataException, DotSecurityException {
 
-        WorkflowAction action = this.workflowAPI.findAction(workflowActionStepForm.getActionId(), workflowActionStepForm.getStepId(), user);
-        if(action!=null) {
+        final WorkflowAction action = this.workflowAPI.findAction(workflowActionStepForm.getActionId(), workflowActionStepForm.getStepId(), user);
+        if(action != null) {
             WorkflowReorderBean bean = new WorkflowReorderBean.Builder()
             .actionId(workflowActionStepForm.getActionId()).stepId(workflowActionStepForm.getStepId())
             .order(workflowActionStepForm.getOrder()).build();
