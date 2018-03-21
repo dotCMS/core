@@ -167,6 +167,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private static final String CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT = "Can't change state of checked out content or where inode is not set. Use Search or Find then use method";
     private static final String CANT_GET_LOCK_ON_CONTENT ="Only the CMS Admin or the user who locked the contentlet can lock/unlock it";
+    private static final String FAILED_TO_DELETE_UNARCHIVED_CONTENT = "Failed to delete unarchived content. Content must be archived first before it can be deleted.";
 
     private final ESContentletIndexAPI indexAPI;
     private final ESContentFactoryImpl contentFactory;
@@ -1701,6 +1702,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         logContentletActivity(contentlets, "Deleting Content", user);
         for (Contentlet contentlet : contentlets){
+            if(!contentlet.isArchived()){
+                throw new DotContentletStateException(
+                    getLocalizedMessageOrDefault(user, "Failed-to-delete-unarchived-content", FAILED_TO_DELETE_UNARCHIVED_CONTENT)
+                );
+            }
+
             if(contentlet.getInode().equals("")) {
                 logContentletActivity(contentlet, "Error Deleting Content", user);
                 throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
@@ -5929,4 +5936,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+    private String getLocalizedMessageOrDefault(final User user, final String key, final String defaultMessage){
+        String message = defaultMessage;
+        try {
+            message = LanguageUtil.get(user, key);
+        }catch(Exception e){
+            Logger.error(this, e.toString());
+        }
+        return message;
+    }
 }
