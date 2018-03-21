@@ -63,7 +63,7 @@ public class WorkflowResourceTest extends UnitTestBase {
         final RoleAPI roleAPI = mock(RoleAPI.class);
         final ContentletAPI contentletAPI = mock(ContentletAPI.class);
 
-        final WorkflowHelper workflowHelper = new WorkflowHelper(workflowAPI, roleAPI, contentletAPI);
+        final WorkflowHelper workflowHelper = new WorkflowHelper(workflowAPI, roleAPI, contentletAPI, permissionAPI, WorkflowImportExportUtil.getInstance());
         final ContentHelper contentHelper = mock(ContentHelper.class) ;
         final WebResource webResource = mock(WebResource.class);
 

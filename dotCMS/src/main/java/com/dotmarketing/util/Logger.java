@@ -9,6 +9,7 @@ import org.apache.logging.log4j.LogManager;
 
 import java.io.File;
 import java.util.WeakHashMap;
+import java.util.function.Supplier;
 
 import org.apache.velocity.servlet.VelocityServlet;
 import org.apache.velocity.tools.view.tools.ViewTool;
@@ -57,6 +58,12 @@ public class Logger{
     	}
         logger.info(message);
     }
+
+	public static void debug(final Object ob, final Supplier<String> message) {
+		if (isDebugEnabled(ob.getClass())) {
+			debug(ob.getClass(), message.get());
+		}
+	}
 
     public static void debug(Object ob, String message) {
     	debug(ob.getClass(), message);

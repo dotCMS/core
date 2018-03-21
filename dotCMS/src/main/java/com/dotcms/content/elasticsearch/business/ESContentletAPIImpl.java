@@ -3898,19 +3898,30 @@ public class ESContentletAPIImpl implements ContentletAPI {
             } catch (IOException ioe) {
                 Logger.error(this,"IO Error in copying Binary File object ", ioe);
             }
-
-            // workflow
-            contentlet.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, (String) properties.get(Contentlet.WORKFLOW_ACTION_KEY));
-            contentlet.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY, (String) properties.get(Contentlet.WORKFLOW_COMMENTS_KEY));
-            contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, (String) properties.get(Contentlet.WORKFLOW_ASSIGN_KEY));
-
-
-            contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE, (String) properties.get(Contentlet.WORKFLOW_PUBLISH_DATE));
-            contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME, (String) properties.get(Contentlet.WORKFLOW_PUBLISH_TIME));
-            contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE, (String) properties.get(Contentlet.WORKFLOW_EXPIRE_DATE));
-            contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_TIME, (String) properties.get(Contentlet.WORKFLOW_EXPIRE_TIME));
-            contentlet.setStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE, (String) properties.get(Contentlet.WORKFLOW_NEVER_EXPIRE));
         }
+
+        // workflow
+        copyWorkflowProperties(contentlet, properties);
+    }
+
+    private void copyWorkflowProperties(Contentlet contentlet, Map<String, Object> properties) {
+        contentlet.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY,
+                (String) properties.get(Contentlet.WORKFLOW_ACTION_KEY));
+        contentlet.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY,
+                (String) properties.get(Contentlet.WORKFLOW_COMMENTS_KEY));
+        contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY,
+                (String) properties.get(Contentlet.WORKFLOW_ASSIGN_KEY));
+
+        contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE,
+                (String) properties.get(Contentlet.WORKFLOW_PUBLISH_DATE));
+        contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME,
+                (String) properties.get(Contentlet.WORKFLOW_PUBLISH_TIME));
+        contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE,
+                (String) properties.get(Contentlet.WORKFLOW_EXPIRE_DATE));
+        contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_TIME,
+                (String) properties.get(Contentlet.WORKFLOW_EXPIRE_TIME));
+        contentlet.setStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE,
+                (String) properties.get(Contentlet.WORKFLOW_NEVER_EXPIRE));
     }
 
     @Override
@@ -5595,42 +5606,48 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @WrapInTransaction
     @Override
-    public Contentlet saveDraft(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats ,List<Permission> permissions, User user,boolean respectFrontendRoles) throws IllegalArgumentException,DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException{
-        if(contentlet.getInode().equals(""))
-            throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
-        canLock(contentlet, user);
-        //get the latest and greatest from db
-        Contentlet working = contentFactory.findContentletByIdentifier(contentlet.getIdentifier(), false, contentlet.getLanguageId());
+    public Contentlet saveDraft(Contentlet contentlet,
+            Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats,
+            List<Permission> permissions, User user, boolean respectFrontendRoles)
+            throws IllegalArgumentException, DotDataException, DotSecurityException, DotContentletStateException, DotContentletValidationException {
+        if (!InodeUtils.isSet(contentlet.getInode())) {
+            return checkin(contentlet, contentRelationships, cats, permissions, user, false);
+        } else {
+            canLock(contentlet, user);
+            //get the latest and greatest from db
+            Contentlet working = contentFactory
+                    .findContentletByIdentifier(contentlet.getIdentifier(), false,
+                            contentlet.getLanguageId());
 
         /*
          * Only draft if there is a working version that is not live
          * and always create a new version if the user is different
          */
-        if(! working.isLive() && working.getModUser().equals(contentlet.getModUser())){
+            if (!working.isLive() && working.getModUser().equals(contentlet.getModUser())) {
 
-            // if we are the latest and greatest and are a draft
-            if(working.getInode().equals(contentlet.getInode()) ){
+                // if we are the latest and greatest and are a draft
+                if (working.getInode().equals(contentlet.getInode())) {
 
-                return checkinWithoutVersioning(contentlet, contentRelationships,
-                        cats,
-                        permissions, user, false);
+                    return checkinWithoutVersioning(contentlet, contentRelationships,
+                            cats,
+                            permissions, user, false);
 
+                } else {
+                    String workingInode = working.getInode();
+                    copyProperties(working, contentlet.getMap());
+                    working.setInode(workingInode);
+                    working.setModUser(user.getUserId());
+                    return checkinWithoutVersioning(working, contentRelationships,
+                            cats,
+                            permissions, user, false);
+                }
             }
-            else{
-                String workingInode = working.getInode();
-                copyProperties(working, contentlet.getMap());
-                working.setInode(workingInode);
-                working.setModUser(user.getUserId());
-                return checkinWithoutVersioning(working, contentRelationships,
-                        cats,
-                        permissions, user, false);
-            }
+
+            contentlet.setInode(null);
+            return checkin(contentlet, contentRelationships,
+                    cats,
+                    permissions, user, false);
         }
-
-        contentlet.setInode(null);
-        return checkin(contentlet, contentRelationships,
-                cats,
-                permissions, user, false);
     }
 
     @WrapInTransaction

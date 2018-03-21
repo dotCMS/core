@@ -510,5 +510,61 @@
       }
     }
   ],
+  "permissions": [
+    {
+      "id": 0,
+      "inode": "4da13a42-5d59-480c-ad8f-94a3adf809fe",
+      "permission": 1,
+      "type": "individual",
+      "bitPermission": false,
+      "individualPermission": true,
+      "roleId": "0f995057-5c35-4ae7-998a-774dda146c63"
+    },
+    {
+      "id": 0,
+      "inode": "4da13a42-5d59-480c-ad8f-94a3adf809fe",
+      "permission": 1,
+      "type": "individual",
+      "bitPermission": false,
+      "individualPermission": true,
+      "roleId": "73ec980e-d74f-4cec-a4d0-e319061e20b9"
+    },
+    {
+      "id": 0,
+      "inode": "134a50d3-782d-43de-8877-42c0be1c86a4",
+      "permission": 1,
+      "type": "individual",
+      "bitPermission": false,
+      "individualPermission": true,
+      "roleId": "0f995057-5c35-4ae7-998a-774dda146c63"
+    },
+    {
+      "id": 0,
+      "inode": "ce42435d-33fe-4843-a4a9-98c7f7f38a63",
+      "permission": 1,
+      "type": "individual",
+      "bitPermission": false,
+      "individualPermission": true,
+      "roleId": "73ec980e-d74f-4cec-a4d0-e319061e20b9"
+    },
+    {
+      "id": 0,
+      "inode": "ce42435d-33fe-4843-a4a9-98c7f7f38a63",
+      "permission": 1,
+      "type": "individual",
+      "bitPermission": false,
+      "individualPermission": true,
+      "roleId": "617f7300-5c7b-463f-9554-380b918520bc"
+    },
+    {
+      "id": 0,
+      "inode": "000ec468-0a63-4283-beb7-fcb36c107b2f",
+      "permission": 1,
+      "type": "individual",
+      "bitPermission": false,
+      "individualPermission": true,
+      "roleId": "617f7300-5c7b-463f-9554-380b918520bc"
+    }
+  ],
   "actionClassParams": []
 }
