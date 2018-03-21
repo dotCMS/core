@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.net.URLDecoder;
 import java.util.*;
 
+@Deprecated
 public class WfStepAjax extends WfBaseAction {
 
 	private final WorkflowHelper workflowHelper = WorkflowHelper.getInstance();
