@@ -154,6 +154,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.springframework.beans.BeanUtils;
+import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -1704,7 +1705,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         for (Contentlet contentlet : contentlets){
             if(!contentlet.isArchived()){
                 throw new DotContentletStateException(
-                    getLocalizedMessageOrDefault(user, "Failed-to-delete-unarchived-content", FAILED_TO_DELETE_UNARCHIVED_CONTENT)
+                    getLocalizedMessageOrDefault(user, "Failed-to-delete-unarchived-content", FAILED_TO_DELETE_UNARCHIVED_CONTENT, getClass())
                 );
             }
 
@@ -5936,13 +5937,4 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
-    private String getLocalizedMessageOrDefault(final User user, final String key, final String defaultMessage){
-        String message = defaultMessage;
-        try {
-            message = LanguageUtil.get(user, key);
-        }catch(Exception e){
-            Logger.error(this, e.toString());
-        }
-        return message;
-    }
 }
