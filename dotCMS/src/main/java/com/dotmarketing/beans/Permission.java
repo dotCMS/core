@@ -1,5 +1,8 @@
 package com.dotmarketing.beans;
 
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonSetter;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -12,6 +15,7 @@ import org.apache.commons.lang.builder.ToStringBuilder;
  * 	@author Hibernate CodeGenerator
  * @author David H Torres (2009) 
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Permission implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -71,6 +75,7 @@ public class Permission implements Serializable {
         return this.roleId;
     }
 
+    @JsonSetter("roleId")
     public void setRoleId(String roleid) {
         this.roleId = roleid;
     }
@@ -186,7 +191,8 @@ public class Permission implements Serializable {
 	public boolean isIndividualPermission() {
 		return type.equals(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE);
 	}
-	
+
+	@JsonIgnore
 	public Map<String, Object> getMap() {
 		HashMap<String, Object> theMap = new HashMap<String, Object>();
 		theMap.put("id", this.id);

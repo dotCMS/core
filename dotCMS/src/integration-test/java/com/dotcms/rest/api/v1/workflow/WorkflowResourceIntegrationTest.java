@@ -9,10 +9,14 @@ import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.workflow.form.*;
 import com.dotcms.workflow.helper.WorkflowHelper;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.AlreadyExistException;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
@@ -20,6 +24,8 @@ import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
+import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject;
+import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import org.apache.commons.lang.RandomStringUtils;
 import org.junit.BeforeClass;
@@ -27,9 +33,12 @@ import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
+import java.util.stream.Collectors;
 
+import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotmarketing.business.Role.ADMINISTRATOR;
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -65,10 +74,11 @@ public class WorkflowResourceIntegrationTest {
         contentletAPI = APILocator.getContentletAPI();
         roleAPI = APILocator.getRoleAPI();
         contentHelper = ContentHelper.getInstance();
-        workflowHelper = new WorkflowHelper(workflowAPI, roleAPI, contentletAPI);
-        responseUtil = ResponseUtil.INSTANCE;
         permissionAPI = APILocator.getPermissionAPI();
         workflowImportExportUtil = WorkflowImportExportUtil.getInstance();
+        workflowHelper = new WorkflowHelper(workflowAPI, roleAPI, contentletAPI, permissionAPI, workflowImportExportUtil);
+        responseUtil = ResponseUtil.INSTANCE;
+
         final User user = mock(User.class);
         when(user.getUserId()).thenReturn(ADMIN_DEFAULT_ID);
         when(user.getEmailAddress()).thenReturn(ADMIN_DEFAULT_MAIL);
@@ -217,6 +227,184 @@ public class WorkflowResourceIntegrationTest {
             assertTrue(lastOrderValue < step.getMyOrder());
             lastOrderValue = step.getMyOrder();
         }
+    }
+
+
+    @Test
+    public void testImportScheme() throws DotDataException {
+
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final WorkflowSchemeImportExportObject workflowExportObject = new WorkflowSchemeImportExportObject();
+        final List<Permission> permissions                          = new ArrayList<>();
+        final List<WorkflowScheme> schemes                          = new ArrayList<>();
+        final WorkflowScheme       scheme                           = new WorkflowScheme();
+        final List<WorkflowStep>   steps                            = new ArrayList<>();
+        final List<WorkflowAction> actions                          = new ArrayList<>();
+        final List<Map<String, String>> actionSteps                 = new ArrayList<>();
+
+        try {
+
+            scheme.setArchived(false);
+            scheme.setName("scheme::TestImport" + UUIDGenerator.generateUuid());
+            scheme.setModDate(new Date());
+            scheme.setId(UUIDGenerator.generateUuid());
+            schemes.add(scheme);
+
+            workflowExportObject.setSchemes(schemes);
+
+            final WorkflowStep workflowStep1 = new WorkflowStep();
+
+            workflowStep1.setSchemeId(scheme.getId());
+            workflowStep1.setCreationDate(new Date());
+            workflowStep1.setResolved(false);
+            workflowStep1.setMyOrder(0);
+            workflowStep1.setName("Step1");
+            workflowStep1.setId(UUIDGenerator.generateUuid());
+            steps.add(workflowStep1);
+
+            final WorkflowStep workflowStep2 = new WorkflowStep();
+
+            workflowStep2.setSchemeId(scheme.getId());
+            workflowStep2.setCreationDate(new Date());
+            workflowStep2.setResolved(false);
+            workflowStep2.setMyOrder(1);
+            workflowStep2.setName("Step2");
+            workflowStep2.setId(UUIDGenerator.generateUuid());
+            steps.add(workflowStep2);
+
+            workflowExportObject.setSteps(steps);
+
+            final WorkflowAction workflowAction1 = new WorkflowAction();
+
+            workflowAction1.setId(UUIDGenerator.generateUuid());
+            workflowAction1.setShowOn(WorkflowState.LOCKED, WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED);
+            workflowAction1.setNextStep(workflowStep2.getId());
+            workflowAction1.setNextAssign(roleAPI.loadRoleByKey(ADMINISTRATOR).getId());
+            workflowAction1.setSchemeId(scheme.getId());
+            workflowAction1.setName("save");
+            workflowAction1.setOrder(0);
+            workflowAction1.setCommentable(true);
+            actions.add(workflowAction1);
+
+            final WorkflowAction workflowAction2 = new WorkflowAction();
+
+            workflowAction2.setId(UUIDGenerator.generateUuid());
+            workflowAction2.setShowOn(WorkflowState.LOCKED, WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED);
+            workflowAction2.setNextStep(workflowStep2.getId());
+            workflowAction2.setNextAssign(roleAPI.loadRoleByKey(ADMINISTRATOR).getId());
+            workflowAction2.setSchemeId(scheme.getId());
+            workflowAction2.setName("save/publish");
+            workflowAction2.setOrder(1);
+            workflowAction2.setCommentable(true);
+            actions.add(workflowAction2);
+
+            final WorkflowAction workflowAction3 = new WorkflowAction();
+
+            workflowAction3.setId(UUIDGenerator.generateUuid());
+            workflowAction3.setShowOn(WorkflowState.LOCKED, WorkflowState.PUBLISHED);
+            workflowAction3.setNextStep(WorkflowAction.CURRENT_STEP);
+            workflowAction3.setNextAssign(roleAPI.loadRoleByKey(ADMINISTRATOR).getId());
+            workflowAction3.setSchemeId(scheme.getId());
+            workflowAction3.setName("finish");
+            workflowAction3.setOrder(2);
+            workflowAction3.setCommentable(true);
+            actions.add(workflowAction3);
+
+            workflowExportObject.setActions(actions);
+
+            final Map<String, String> actionStep1 = new HashMap<>();
+            actionStep1.put(WorkflowImportExportUtil.ACTION_ID, workflowAction1.getId());
+            actionStep1.put(WorkflowImportExportUtil.STEP_ID, workflowStep1.getId());
+            actionStep1.put(WorkflowImportExportUtil.ACTION_ORDER, "0");
+            actionSteps.add(actionStep1);
+
+            final Map<String, String> actionStep2 = new HashMap<>();
+            actionStep2.put(WorkflowImportExportUtil.ACTION_ID, workflowAction2.getId());
+            actionStep2.put(WorkflowImportExportUtil.STEP_ID, workflowStep1.getId());
+            actionStep2.put(WorkflowImportExportUtil.ACTION_ORDER, "1");
+            actionSteps.add(actionStep2);
+
+            final Map<String, String> actionStep3 = new HashMap<>();
+            actionStep3.put(WorkflowImportExportUtil.ACTION_ID, workflowAction3.getId());
+            actionStep3.put(WorkflowImportExportUtil.STEP_ID, workflowStep2.getId());
+            actionStep3.put(WorkflowImportExportUtil.ACTION_ORDER, "2");
+            actionSteps.add(actionStep3);
+
+            workflowExportObject.setActionSteps(actionSteps);
+
+            workflowExportObject.setActionClasses(Collections.emptyList());
+            workflowExportObject.setActionClassParams(Collections.emptyList());
+
+            final Permission permission1 = new Permission();
+            permission1.setId(0);
+            permission1.setInode(workflowAction1.getId());
+            final String anyoneWhoCanEditRoleId = "617f7300-5c7b-463f-9554-380b918520bc";
+            permission1.setRoleId(anyoneWhoCanEditRoleId);
+            permission1.setPermission(1);
+            permissions.add(permission1);
+
+            final Permission permission2 = new Permission();
+            permission2.setId(0);
+            permission2.setInode(workflowAction2.getId());
+            permission2.setRoleId(anyoneWhoCanEditRoleId);
+            permission2.setPermission(1);
+            permissions.add(permission2);
+
+
+            final WorkflowSchemeImportExportObjectForm exportObjectForm =
+                    new WorkflowSchemeImportExportObjectForm(workflowExportObject, permissions);
+
+            final Response importResponse = workflowResource.importScheme(request, exportObjectForm);
+            assertEquals(Response.Status.OK.getStatusCode(), importResponse.getStatus());
+
+            final Response exportResponse = workflowResource.exportScheme(request, scheme.getId());
+            assertEquals(Response.Status.OK.getStatusCode(), importResponse.getStatus());
+            final ResponseEntityView exportEntityView = ResponseEntityView.class.cast(exportResponse.getEntity());
+            final Map importSchemeMap = Map.class.cast(exportEntityView.getEntity());
+            assertNotNull(importSchemeMap);
+
+            final WorkflowSchemeImportExportObject exportObject = (WorkflowSchemeImportExportObject) importSchemeMap.get("workflowImportObject");
+            final List<Permission> permissionsExported = (List<Permission>) importSchemeMap.get("permissions");
+
+            assertNotNull(exportObject);
+            assertNotNull(permissionsExported);
+
+            assertNotNull(exportObject.getSchemes());
+            assertEquals(1, exportObject.getSchemes().size());
+            assertEquals(scheme.getId(), exportObject.getSchemes().get(0).getId());
+
+            assertNotNull(exportObject.getSteps());
+            assertEquals(2, exportObject.getSteps().size());
+            assertEquals(workflowStep1.getId(), exportObject.getSteps().get(0).getId());
+            assertEquals(workflowStep2.getId(), exportObject.getSteps().get(1).getId());
+
+            assertNotNull(exportObject.getActions());
+            assertEquals(3, exportObject.getActions().size());
+            final Set<String> actionIdSet = exportObject.getActions().stream().map(WorkflowAction::getId).collect(Collectors.toSet());
+            assertTrue(actionIdSet.contains(workflowAction1.getId()));
+            assertTrue(actionIdSet.contains(workflowAction2.getId()));
+            assertTrue(actionIdSet.contains(workflowAction3.getId()));
+
+            assertNotNull(exportObject.getActionSteps());
+            assertEquals(3, exportObject.getActionSteps().size());
+
+            assertNotNull(permissionsExported);
+            assertEquals(2, permissionsExported.size());
+        } finally {
+
+            if (null != scheme.getId()) {
+
+                try {
+                    final WorkflowScheme schemeToRemove = workflowAPI.findScheme(scheme.getId());
+                    schemeToRemove.setArchived(true);
+                    workflowAPI.saveScheme(schemeToRemove, APILocator.systemUser());
+                    workflowAPI.deleteScheme(schemeToRemove, APILocator.systemUser());
+                } catch (DotDataException | AlreadyExistException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
     }
 
     @Test

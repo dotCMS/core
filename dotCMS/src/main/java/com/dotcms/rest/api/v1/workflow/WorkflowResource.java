@@ -18,6 +18,8 @@ import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.workflow.form.*;
 import com.dotcms.workflow.helper.WorkflowHelper;
+
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.AlreadyExistException;
@@ -44,6 +46,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.LocaleUtil;
 
+import static com.dotcms.util.CollectionsUtils.*;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.List;
@@ -981,7 +984,7 @@ public class WorkflowResource {
                 throw new DotSecurityException(errorMessageSupplier.get());
             }
         } catch (DotDataException e) {
-            throw new DotSecurityException(errorMessageSupplier.get());
+            throw new DotSecurityException(errorMessageSupplier.get(), e);
         }
 
         return contentlet;
@@ -1039,9 +1042,54 @@ public class WorkflowResource {
         return response;
     } // reorderAction
 
+    /**
+     * Do an export of the scheme with all dependencies to rebuild it (such as steps and actions)
+     * in addition the permission (who can use) will be also returned.
+     * @param request  HttpServletRequest
+     * @return Response
+     */
+    @POST
+    @Path("/schemes/import")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response importScheme(@Context final HttpServletRequest request,
+                                       final WorkflowSchemeImportExportObjectForm workflowSchemeImportExportObjectForm) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, true, request, true, null);
+        Response response;
+        Locale                           locale;
+
+        try {
+
+            Logger.debug(this, "Importing the workflow schemes");
+            this.workflowHelper.importScheme (workflowSchemeImportExportObjectForm.getWorkflowExportObject(),
+                            workflowSchemeImportExportObjectForm.getPermissions(),
+                            initDataObject.getUser());
+            response     = Response.ok(new ResponseEntityView("OK")).build(); // 200
+        } catch (DoesNotExistException e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on importScheme, Error importing schemes, some objects could not exists", e);
+            locale   = LocaleUtil.getLocale(request);
+            response = this.responseUtil.getErrorResponse(request, Response.Status.NOT_FOUND,
+                    locale, initDataObject.getUser().getUserId(), "Workflow-import-fail");
+        } catch (Exception e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on importScheme, schemeId, exception message: " + e.getMessage(), e);
+            response = (e.getCause() instanceof SecurityException)?
+                    this.createUnAuthorizedResponse(e) :
+                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        return response;
+    } // importScheme.
 
     /**
-     * Returns a set of actions associated to the schemeId
+     * Do an export of the scheme with all dependencies to rebuild it (such as steps and actions)
+     * in addition the permission (who can use) will be also returned.
      * @param request  HttpServletRequest
      * @param schemeId String
      * @return Response
@@ -1058,6 +1106,7 @@ public class WorkflowResource {
                 (null, true, request, true, null);
         Response response;
         WorkflowSchemeImportExportObject exportObject;
+        List<Permission>                 permissions;
         WorkflowScheme                   scheme;
         Locale                           locale;
 
@@ -1066,7 +1115,10 @@ public class WorkflowResource {
             Logger.debug(this, "Exporting the workflow scheme: " + schemeId);
             scheme       = this.workflowAPI.findScheme(schemeId);
             exportObject = this.workflowImportExportUtil.buildExportObject(Arrays.asList(scheme));
-            response     = Response.ok(new ResponseEntityView(exportObject)).build(); // 200
+            permissions  = this.workflowHelper.getActionsPermissions(exportObject.getActions());
+            response     = Response.ok(new ResponseEntityView(
+                    map("workflowImportObject",exportObject,
+                            "permissions", permissions))).build(); // 200
         } catch (DoesNotExistException e) {
 
             Logger.error(this.getClass(),
@@ -1085,7 +1137,7 @@ public class WorkflowResource {
         }
 
         return response;
-    } // exportScheme.
+    } // exportscheme.
 
     /**
      * Returns all the possible default actions associated to the content type workflow schemes.
