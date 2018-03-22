@@ -17,6 +17,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.AlreadyExistException;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -78,13 +79,13 @@ public class WorkflowAPITest extends IntegrationTestBase {
     private static Structure contentTypeStructure;
 
     private static ContentType contentType2;
-    private static Structure contentTypeStructure2;
 
     private static ContentType contentType3;
     private static Structure contentTypeStructure3;
 
     private static ContentType contentType4;
-    private static Structure contentTypeStructure4;
+
+    private static ContentType contentType5;
 
     /* Workflow Scheme 1 */
     private static WorkflowScheme workflowScheme1;
@@ -184,6 +185,12 @@ public class WorkflowAPITest extends IntegrationTestBase {
     private static String workflowScheme5Step1Action1SubAction1Name;
     private static WorkflowActionClass workflowScheme5Step1Action1SubAction1;
 
+    /*Workflow Scheme 6*/
+    private static WorkflowScheme workflowScheme6;
+
+    /*Workflow Scheme 7*/
+    private static WorkflowScheme workflowScheme7;
+
     /* Roles */
     private static Role reviewer;
     private static Role contributor;
@@ -225,6 +232,14 @@ public class WorkflowAPITest extends IntegrationTestBase {
     private static final String DELETE_SUBACTION="Unpublish content";
     private static final String RESET_WORKFLOW_SUBACTION="Reset Workflow";
 
+    private static final String DATE_FORMAT="MM-dd-yyyy-HHmmss";
+    private static final String CONTENTLET_ON_WRONG_STEP_MESSAGE="Contentlet is on the wrong Workflow Step";
+    private static final String WRONG_ACTION_AVAILABLE_MESSAGE="Wrong action available";
+    private static final String INCORRECT_NUMBER_OF_ACTIONS_MESSAGE="Incorrect number of actions available";
+
+    private static final String ACTIONS_LIST_SHOULD_BE_EMPY = "Actions list should be empty";
+    private static final String STEPS_LIST_SHOULD_BE_EMPTY = "Steps list should be empty";
+    private static final String SCHEME_SHOULDNT_EXIST = "Scheme shouldn't exist";
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -374,8 +389,6 @@ public class WorkflowAPITest extends IntegrationTestBase {
          * Generate ContentType 2
          */
         contentType2 = insertContentType(contentTypeName2, BaseContentType.CONTENT);
-        contentTypeStructure2 = new StructureTransformer(ContentType.class.cast(contentType2))
-                .asStructure();
 
         /**
          * Generate workflow schemes
@@ -941,7 +954,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
      * @throws DotSecurityException
      */
     @Test
-    public void issue5197() throws DotDataException, IOException, DotSecurityException{
+    public void issue5197() throws DotDataException, IOException, DotSecurityException, AlreadyExistException {
         WorkflowScheme ws = null;
         WorkflowStep step1 = null;
         WorkflowStep step2 = null;
@@ -961,7 +974,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
 		    /*
 		     * Create workflow scheme
 		     */
-            String schemeName = "issue5197-" + UtilMethods.dateToHTMLDate(new Date(), "MM-dd-yyyy-HHmmss");
+            String schemeName = "issue5197-" + UtilMethods.dateToHTMLDate(new Date(), DATE_FORMAT);
             addWorkflowScheme(schemeName);
 
             ws = workflowAPI.findSchemeByName(schemeName);
@@ -1043,7 +1056,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             contentlet1.setHost(defaultHost.getIdentifier());
             contentlet1.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
             contentlet1.setStringProperty("title",
-                    "test5197-1" + UtilMethods.dateToHTMLDate(new Date(), "MM-dd-yyyy-HHmmss"));
+                    "test5197-1" + UtilMethods.dateToHTMLDate(new Date(), DATE_FORMAT));
 
             contentlet1 = contentletAPI.checkin(contentlet1, user, false);
             if (permissionAPI.doesUserHavePermission(contentlet1, PermissionAPI.PERMISSION_PUBLISH,user))
@@ -1118,6 +1131,8 @@ public class WorkflowAPITest extends IntegrationTestBase {
 		     * Clean test
 		     */
             contentTypeAPI.delete(st);
+            ws.setArchived(true);
+            workflowAPI.saveScheme(ws, user);
             workflowAPI.deleteStep(step2, user);
             workflowAPI.deleteScheme(ws, user);
         }
@@ -1129,7 +1144,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
      */
     @Test
     public void validatingDocumentManagementWorkflow()
-            throws DotDataException, IOException, DotSecurityException {
+            throws DotDataException, IOException, DotSecurityException, AlreadyExistException {
         Contentlet contentlet1 = null;
         try {
             final User joeContributor = APILocator.getUserAPI().loadUserById("dotcms.org.2789");
@@ -1141,10 +1156,8 @@ public class WorkflowAPITest extends IntegrationTestBase {
             final int publishPermission = editPermission + PermissionAPI.PERMISSION_PUBLISH;
 
             contentType4 = insertContentType(
-                    "ValidatingDMWf" + UtilMethods.dateToHTMLDate(new Date(), "MM-dd-yyyy-HHmmss"),
+                    "ValidatingDMWf" + UtilMethods.dateToHTMLDate(new Date(), DATE_FORMAT),
                     BaseContentType.CONTENT);
-            contentTypeStructure4 = new StructureTransformer(ContentType.class.cast(contentType4))
-                    .asStructure();
 
             Permission p = new Permission(contentType4.getPermissionId(), contributor.getId(),
                     editPermission, true);
@@ -1163,12 +1176,12 @@ public class WorkflowAPITest extends IntegrationTestBase {
             permissionAPI.save(p, contentType4, user, true);
 
             //get the Document Management workflow scheme
-            WorkflowScheme ws = createDocumentManagentReplica(
+            workflowScheme6 = createDocumentManagentReplica(
                     DOCUMENT_MANAGEMENT_WORKFLOW_NAME + UtilMethods
-                            .dateToHTMLDate(new Date(), "MM-dd-yyyy-HHmmss"));
+                            .dateToHTMLDate(new Date(), DATE_FORMAT));
 
-            List<String> schemes = new ArrayList<>();
-            schemes.add(ws.getId());
+            final List<String> schemes = new ArrayList<>();
+            schemes.add(workflowScheme6.getId());
             workflowAPI.saveSchemeIdsForContentType(contentType4, schemes);
 
             /*
@@ -1179,20 +1192,20 @@ public class WorkflowAPITest extends IntegrationTestBase {
             contentlet1.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
             contentlet1.setStringProperty(FIELD_VAR_NAME,
                     "testDocumentManagement-1" + UtilMethods
-                            .dateToHTMLDate(new Date(), "MM-dd-yyyy-HHmmss"));
+                            .dateToHTMLDate(new Date(), DATE_FORMAT));
 
             List<WorkflowAction> actions = workflowAPI
                     .findAvailableActions(contentlet1, joeContributor);
             if (actions.isEmpty() || actions.size() != 1) {
-                assertTrue("Incorrect number of actions available", false);
+                assertTrue(INCORRECT_NUMBER_OF_ACTIONS_MESSAGE, false);
             }
             if (!SAVE_AS_DRAFT_ACTION_NAME.equals(actions.get(0).getName())) {
-                assertTrue("Wromg action available", false);
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
             }
             final WorkflowAction saveAsDraft = actions.get(0);
 
             //As Contributor - Save as Draft
-            ContentletRelationships contentletRelationships = APILocator.getContentletAPI()
+            final ContentletRelationships contentletRelationships = APILocator.getContentletAPI()
                     .getAllRelationships(contentlet1);
             contentlet1 = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet1,
                     new ContentletDependencies.Builder().respectAnonymousPermissions(Boolean.FALSE)
@@ -1205,17 +1218,17 @@ public class WorkflowAPITest extends IntegrationTestBase {
                             .generateSystemEvent(Boolean.FALSE).build());
 
             contentletAPI.isInodeIndexed(contentlet1.getInode());
-            assertTrue("Contentlet is on the wrong Workflow Step", EDITING_STEP_NAME
+            assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, EDITING_STEP_NAME
                     .equals(workflowAPI.findStepByContentlet(contentlet1).getName()));
 
             //As Contributor - Send for Review
             actions = workflowAPI.findAvailableActions(contentlet1, joeContributor);
             if (actions.isEmpty() || actions.size() != 1) {
-                assertTrue("Incorrect number of actions available", false);
+                assertTrue(INCORRECT_NUMBER_OF_ACTIONS_MESSAGE, false);
             }
 
             if (!SEND_FOR_REVIEW_ACTION_NAME.equals(actions.get(0).getName())) {
-                assertTrue("Wrong action available", false);
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
             }
 
             final WorkflowAction sendForReview = actions.get(0);
@@ -1230,20 +1243,21 @@ public class WorkflowAPITest extends IntegrationTestBase {
                             .categories(Collections.emptyList())
                             .generateSystemEvent(Boolean.FALSE).build());
 
-            assertTrue("Contentlet is on the wrong Workflow Step", REVIEW_STEP_NAME
+            contentletAPI.isInodeIndexed(contentlet1.getInode());
+            assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, REVIEW_STEP_NAME
                     .equals(workflowAPI.findStepByContentlet(contentlet1).getName()));
 
             //As Reviewer - return for editing
             actions = workflowAPI.findAvailableActions(contentlet1, janeReviewer);
             if (actions.isEmpty() || actions.size() != 2) {
-                assertTrue("Incorrect number of actions available", false);
+                assertTrue(INCORRECT_NUMBER_OF_ACTIONS_MESSAGE, false);
             }
             if (!RETURN_FOR_EDITS_ACTION_NAME.equals(actions.get(0).getName())) {
-                assertTrue("Wrong action available", false);
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
             }
 
             if (!SEND_TO_LEGAL_ACTION_NAME.equals(actions.get(1).getName())) {
-                assertTrue("Wrong action available", false);
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
             }
 
             final WorkflowAction returnForEdits = actions.get(0);
@@ -1258,7 +1272,8 @@ public class WorkflowAPITest extends IntegrationTestBase {
                             .categories(Collections.emptyList())
                             .generateSystemEvent(Boolean.FALSE).build());
 
-            assertTrue("Contentlet is on the wrong Workflow Step", EDITING_STEP_NAME
+            contentletAPI.isInodeIndexed(contentlet1.getInode());
+            assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, EDITING_STEP_NAME
                     .equals(workflowAPI.findStepByContentlet(contentlet1).getName()));
             // As contributor. lock for editing
             contentletAPI.lock(contentlet1, joeContributor, false);
@@ -1266,13 +1281,13 @@ public class WorkflowAPITest extends IntegrationTestBase {
             //As Contributor - save as Draft
             actions = workflowAPI.findAvailableActions(contentlet1, joeContributor);
             if (actions.isEmpty() || actions.size() != 2) {
-                assertTrue("Incorrect number of actions available", false);
+                assertTrue(INCORRECT_NUMBER_OF_ACTIONS_MESSAGE, false);
             }
             if (!SAVE_AS_DRAFT_ACTION_NAME.equals(actions.get(0).getName())) {
-                assertTrue("Wrong action available", false);
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
             }
             if (!SEND_FOR_REVIEW_ACTION_NAME.equals(actions.get(1).getName())) {
-                assertTrue("Wrong action available", false);
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
             }
             final String title2 = contentlet1.getStringProperty(FIELD_VAR_NAME) + "-2";
             contentlet1.setStringProperty(FIELD_VAR_NAME, title2);
@@ -1287,19 +1302,20 @@ public class WorkflowAPITest extends IntegrationTestBase {
                             .categories(Collections.emptyList())
                             .generateSystemEvent(Boolean.FALSE).build());
 
-            assertTrue("Contentlet is on the wrong Workflow Step", EDITING_STEP_NAME
+            contentletAPI.isInodeIndexed(contentlet1.getInode());
+            assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, EDITING_STEP_NAME
                     .equals(workflowAPI.findStepByContentlet(contentlet1).getName()));
 
             //As Contributor - Send for Review
             actions = workflowAPI.findAvailableActions(contentlet1, joeContributor);
             if (actions.isEmpty() || actions.size() != 2) {
-                assertTrue("Incorrect number of actions available", false);
+                assertTrue(INCORRECT_NUMBER_OF_ACTIONS_MESSAGE, false);
             }
             if (!SAVE_AS_DRAFT_ACTION_NAME.equals(actions.get(0).getName())) {
-                assertTrue("Wrong action available", false);
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
             }
             if (!SEND_FOR_REVIEW_ACTION_NAME.equals(actions.get(1).getName())) {
-                assertTrue("Wrong action available", false);
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
             }
 
             contentlet1 = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet1,
@@ -1312,19 +1328,20 @@ public class WorkflowAPITest extends IntegrationTestBase {
                             .categories(Collections.emptyList())
                             .generateSystemEvent(Boolean.FALSE).build());
 
-            assertTrue("Contentlet is on the wrong Workflow Step", REVIEW_STEP_NAME
+            contentletAPI.isInodeIndexed(contentlet1.getInode());
+            assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, REVIEW_STEP_NAME
                     .equals(workflowAPI.findStepByContentlet(contentlet1).getName()));
 
             //As reviewer - send to legal
             actions = workflowAPI.findAvailableActions(contentlet1, janeReviewer);
             if (actions.isEmpty() || actions.size() != 2) {
-                assertTrue("Incorrect number of actions available", false);
+                assertTrue(INCORRECT_NUMBER_OF_ACTIONS_MESSAGE, false);
             }
             if (!RETURN_FOR_EDITS_ACTION_NAME.equals(actions.get(0).getName())) {
-                assertTrue("Wrong action available", false);
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
             }
             if (!SEND_TO_LEGAL_ACTION_NAME.equals(actions.get(1).getName())) {
-                assertTrue("Wrong action available", false);
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
             }
 
             final WorkflowAction sendToLegal = actions.get(1);
@@ -1339,19 +1356,20 @@ public class WorkflowAPITest extends IntegrationTestBase {
                             .categories(Collections.emptyList())
                             .generateSystemEvent(Boolean.FALSE).build());
 
-            assertTrue("Contentlet is on the wrong Workflow Step", LEGAL_APPROVAL_STEP_NAME
+            contentletAPI.isInodeIndexed(contentlet1.getInode());
+            assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, LEGAL_APPROVAL_STEP_NAME
                     .equals(workflowAPI.findStepByContentlet(contentlet1).getName()));
 
             //As Publisher - publish
             actions = workflowAPI.findAvailableActions(contentlet1, chrisPublisher);
             if (actions.isEmpty() || actions.size() != 2) {
-                assertTrue("Incorrect number of actions available", false);
+                assertTrue(INCORRECT_NUMBER_OF_ACTIONS_MESSAGE, false);
             }
             if (!RETURN_FOR_EDITS_ACTION_NAME.equals(actions.get(0).getName())) {
-                assertTrue("Wrong action available", false);
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
             }
             if (!PUBLISH_ACTION_NAME.equals(actions.get(1).getName())) {
-                assertTrue("Wrong action available", false);
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
             }
 
             final WorkflowAction publish = actions.get(1);
@@ -1366,7 +1384,8 @@ public class WorkflowAPITest extends IntegrationTestBase {
                             .categories(Collections.emptyList())
                             .generateSystemEvent(Boolean.FALSE).build());
 
-            assertTrue("Contentlet is on the wrong Workflow Step", PUBLISHED_STEP_NAME
+            contentletAPI.isInodeIndexed(contentlet1.getInode());
+            assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, PUBLISHED_STEP_NAME
                     .equals(workflowAPI.findStepByContentlet(contentlet1).getName()));
             assertTrue(title2.equals(contentlet1.getStringProperty(FIELD_VAR_NAME)));
             assertTrue(contentlet1.isLive());
@@ -1375,10 +1394,695 @@ public class WorkflowAPITest extends IntegrationTestBase {
             /*
 		     * Clean test
 		     */
+
+            //Deleting workflow 6
+            workflowScheme6.setArchived(true);
+            workflowAPI.saveScheme(workflowScheme6, user);
+            workflowAPI.deleteScheme(workflowScheme6, user);
+
+            //delete content type
             contentTypeAPI.delete(contentType4);
         }
     }
 
+    /**
+     * Test the deleteScheme method
+     */
+    @Test
+    public void deleteScheme()
+            throws DotDataException, IOException, DotSecurityException, AlreadyExistException {
+
+        try {
+            final User joeContributor = APILocator.getUserAPI().loadUserById("dotcms.org.2789");
+            final User janeReviewer = APILocator.getUserAPI().loadUserById("dotcms.org.2787");
+            final User chrisPublisher = APILocator.getUserAPI().loadUserById("dotcms.org.2795");
+
+            final String comment1 = "please review";
+            final String comment2= "please fix this text";
+            final String comment3 = "please review again";
+            final String comment4 = "Ready to publish";
+
+            final int editPermission =
+                    PermissionAPI.PERMISSION_READ + PermissionAPI.PERMISSION_EDIT;
+            final int publishPermission = editPermission + PermissionAPI.PERMISSION_PUBLISH;
+
+            contentType5 = insertContentType(
+                    "DeleteWf" + UtilMethods.dateToHTMLDate(new Date(), DATE_FORMAT),
+                    BaseContentType.CONTENT);
+
+            Permission p = new Permission(contentType5.getPermissionId(), contributor.getId(),
+                    editPermission, true);
+            permissionAPI.save(p, contentType5, user, true);
+
+            p = new Permission(Contentlet.class.getCanonicalName(), contentType5.getPermissionId(),
+                    contributor.getId(), editPermission, true);
+            permissionAPI.save(p, contentType5, user, true);
+
+            p = new Permission(contentType5.getPermissionId(), publisher.getId(), publishPermission,
+                    true);
+            permissionAPI.save(p, contentType5, user, true);
+
+            p = new Permission(Contentlet.class.getCanonicalName(), contentType5.getPermissionId(),
+                    publisher.getId(), publishPermission, true);
+            permissionAPI.save(p, contentType5, user, true);
+
+            //get the Document Management workflow scheme
+            workflowScheme7 = createDocumentManagentReplica(
+                    DOCUMENT_MANAGEMENT_WORKFLOW_NAME + UtilMethods
+                            .dateToHTMLDate(new Date(), DATE_FORMAT));
+
+            final List<String> schemes = new ArrayList<>();
+            schemes.add(workflowScheme7.getId());
+            workflowAPI.saveSchemeIdsForContentType(contentType5, schemes);
+
+        /*
+         * Create test contents and set it up in scheme steps
+		 */
+            //Contentlet1 on published step
+            Contentlet contentlet1 = new Contentlet();
+            contentlet1.setContentTypeId(contentType5.id());
+            contentlet1.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+            contentlet1.setStringProperty(FIELD_VAR_NAME,
+                    "testDeleteWf-1" + UtilMethods
+                            .dateToHTMLDate(new Date(), DATE_FORMAT));
+
+            List<WorkflowAction> actions = workflowAPI
+                    .findAvailableActions(contentlet1, joeContributor);
+            if (actions.isEmpty() || actions.size() != 1) {
+                assertTrue(INCORRECT_NUMBER_OF_ACTIONS_MESSAGE, false);
+            }
+            if (!SAVE_AS_DRAFT_ACTION_NAME.equals(actions.get(0).getName())) {
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
+            }
+            final WorkflowAction saveAsDraft = actions.get(0);
+
+            //As Contributor - Save as Draft
+            final ContentletRelationships contentletRelationships = APILocator.getContentletAPI()
+                    .getAllRelationships(contentlet1);
+            contentlet1 = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet1,
+                    new ContentletDependencies.Builder().respectAnonymousPermissions(Boolean.FALSE)
+                            .modUser(joeContributor)
+                            .relationships(contentletRelationships)
+                            .workflowActionId(saveAsDraft.getId()) //Save as a draft
+                            .workflowActionComments(StringPool.BLANK)
+                            .workflowAssignKey(StringPool.BLANK)
+                            .categories(Collections.emptyList())
+                            .generateSystemEvent(Boolean.FALSE).build());
+
+            contentletAPI.isInodeIndexed(contentlet1.getInode());
+            assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, EDITING_STEP_NAME
+                    .equals(workflowAPI.findStepByContentlet(contentlet1).getName()));
+
+            //As Contributor - Send for Review
+            actions = workflowAPI.findAvailableActions(contentlet1, joeContributor);
+            if (actions.isEmpty() || actions.size() != 1) {
+                assertTrue(INCORRECT_NUMBER_OF_ACTIONS_MESSAGE, false);
+            }
+
+            if (!SEND_FOR_REVIEW_ACTION_NAME.equals(actions.get(0).getName())) {
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
+            }
+
+            final WorkflowAction sendForReview = actions.get(0);
+            contentlet1 = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet1,
+                    new ContentletDependencies.Builder()
+                            .respectAnonymousPermissions(Boolean.FALSE)
+                            .modUser(joeContributor)
+                            .relationships(contentletRelationships)
+                            .workflowActionId(sendForReview.getId()) //Send For Review
+                            .workflowActionComments(comment1)
+                            .workflowAssignKey(StringPool.BLANK)
+                            .categories(Collections.emptyList())
+                            .generateSystemEvent(Boolean.FALSE).build());
+
+            contentletAPI.isInodeIndexed(contentlet1.getInode());
+            assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, REVIEW_STEP_NAME
+                    .equals(workflowAPI.findStepByContentlet(contentlet1).getName()));
+
+            //As Reviewer - return for editing
+            actions = workflowAPI.findAvailableActions(contentlet1, janeReviewer);
+            if (actions.isEmpty() || actions.size() != 2) {
+                assertTrue(INCORRECT_NUMBER_OF_ACTIONS_MESSAGE, false);
+            }
+            if (!RETURN_FOR_EDITS_ACTION_NAME.equals(actions.get(0).getName())) {
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
+            }
+
+            if (!SEND_TO_LEGAL_ACTION_NAME.equals(actions.get(1).getName())) {
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
+            }
+
+            final WorkflowAction returnForEdits = actions.get(0);
+
+            contentlet1 = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet1,
+                    new ContentletDependencies.Builder().respectAnonymousPermissions(Boolean.FALSE)
+                            .modUser(janeReviewer)
+                            .relationships(contentletRelationships)
+                            .workflowActionId(returnForEdits.getId()) //Return for edit
+                            .workflowActionComments(comment2)
+                            .workflowAssignKey(contributor.getId())
+                            .categories(Collections.emptyList())
+                            .generateSystemEvent(Boolean.FALSE).build());
+
+            contentletAPI.isInodeIndexed(contentlet1.getInode());
+            assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, EDITING_STEP_NAME
+                    .equals(workflowAPI.findStepByContentlet(contentlet1).getName()));
+            // As contributor. lock for editing
+            contentletAPI.lock(contentlet1, joeContributor, false);
+
+            //As Contributor - save as Draft
+            actions = workflowAPI.findAvailableActions(contentlet1, joeContributor);
+            if (actions.isEmpty() || actions.size() != 2) {
+                assertTrue(INCORRECT_NUMBER_OF_ACTIONS_MESSAGE, false);
+            }
+            if (!SAVE_AS_DRAFT_ACTION_NAME.equals(actions.get(0).getName())) {
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
+            }
+            if (!SEND_FOR_REVIEW_ACTION_NAME.equals(actions.get(1).getName())) {
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
+            }
+            final String title2 = contentlet1.getStringProperty(FIELD_VAR_NAME) + "-2";
+            contentlet1.setStringProperty(FIELD_VAR_NAME, title2);
+
+            contentlet1 = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet1,
+                    new ContentletDependencies.Builder().respectAnonymousPermissions(Boolean.FALSE)
+                            .modUser(joeContributor)
+                            .relationships(contentletRelationships)
+                            .workflowActionId(saveAsDraft.getId()) //Save as a draft
+                            .workflowActionComments(StringPool.BLANK)
+                            .workflowAssignKey(StringPool.BLANK)
+                            .categories(Collections.emptyList())
+                            .generateSystemEvent(Boolean.FALSE).build());
+
+            contentletAPI.isInodeIndexed(contentlet1.getInode());
+            assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, EDITING_STEP_NAME
+                    .equals(workflowAPI.findStepByContentlet(contentlet1).getName()));
+
+            //As Contributor - Send for Review
+            actions = workflowAPI.findAvailableActions(contentlet1, joeContributor);
+            if (actions.isEmpty() || actions.size() != 2) {
+                assertTrue(INCORRECT_NUMBER_OF_ACTIONS_MESSAGE, false);
+            }
+            if (!SAVE_AS_DRAFT_ACTION_NAME.equals(actions.get(0).getName())) {
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
+            }
+            if (!SEND_FOR_REVIEW_ACTION_NAME.equals(actions.get(1).getName())) {
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
+            }
+
+            contentlet1 = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet1,
+                    new ContentletDependencies.Builder().respectAnonymousPermissions(Boolean.FALSE)
+                            .modUser(joeContributor)
+                            .relationships(contentletRelationships)
+                            .workflowActionId(sendForReview.getId()) //Send For Review
+                            .workflowActionComments(comment3)
+                            .workflowAssignKey(StringPool.BLANK)
+                            .categories(Collections.emptyList())
+                            .generateSystemEvent(Boolean.FALSE).build());
+
+            contentletAPI.isInodeIndexed(contentlet1.getInode());
+            assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, REVIEW_STEP_NAME
+                    .equals(workflowAPI.findStepByContentlet(contentlet1).getName()));
+
+            //As reviewer - send to legal
+            actions = workflowAPI.findAvailableActions(contentlet1, janeReviewer);
+            if (actions.isEmpty() || actions.size() != 2) {
+                assertTrue(INCORRECT_NUMBER_OF_ACTIONS_MESSAGE, false);
+            }
+            if (!RETURN_FOR_EDITS_ACTION_NAME.equals(actions.get(0).getName())) {
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
+            }
+            if (!SEND_TO_LEGAL_ACTION_NAME.equals(actions.get(1).getName())) {
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
+            }
+
+            final WorkflowAction sendToLegal = actions.get(1);
+
+            contentlet1 = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet1,
+                    new ContentletDependencies.Builder().respectAnonymousPermissions(Boolean.FALSE)
+                            .modUser(janeReviewer)
+                            .relationships(contentletRelationships)
+                            .workflowActionId(sendToLegal.getId()) //Send to Legal
+                            .workflowActionComments(comment4)
+                            .workflowAssignKey(StringPool.BLANK)
+                            .categories(Collections.emptyList())
+                            .generateSystemEvent(Boolean.FALSE).build());
+
+            contentletAPI.isInodeIndexed(contentlet1.getInode());
+            assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, LEGAL_APPROVAL_STEP_NAME
+                    .equals(workflowAPI.findStepByContentlet(contentlet1).getName()));
+
+            //As Publisher - publish
+            actions = workflowAPI.findAvailableActions(contentlet1, chrisPublisher);
+            if (actions.isEmpty() || actions.size() != 2) {
+                assertTrue(INCORRECT_NUMBER_OF_ACTIONS_MESSAGE, false);
+            }
+            if (!RETURN_FOR_EDITS_ACTION_NAME.equals(actions.get(0).getName())) {
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
+            }
+            if (!PUBLISH_ACTION_NAME.equals(actions.get(1).getName())) {
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
+            }
+
+            final WorkflowAction publish = actions.get(1);
+
+            contentlet1 = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet1,
+                    new ContentletDependencies.Builder().respectAnonymousPermissions(Boolean.FALSE)
+                            .modUser(chrisPublisher)
+                            .relationships(contentletRelationships)
+                            .workflowActionId(publish.getId()) //publish
+                            .workflowActionComments(StringPool.BLANK)
+                            .workflowAssignKey(StringPool.BLANK)
+                            .categories(Collections.emptyList())
+                            .generateSystemEvent(Boolean.FALSE).build());
+
+            contentletAPI.isInodeIndexed(contentlet1.getInode());
+            assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, PUBLISHED_STEP_NAME
+                    .equals(workflowAPI.findStepByContentlet(contentlet1).getName()));
+            assertTrue(title2.equals(contentlet1.getStringProperty(FIELD_VAR_NAME)));
+            assertTrue(contentlet1.isLive());
+
+
+
+            //Content2 on Legal Approval
+            Contentlet contentlet2 = new Contentlet();
+            contentlet2.setContentTypeId(contentType5.id());
+            contentlet2.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+            contentlet2.setStringProperty(FIELD_VAR_NAME,
+                    "testDeleteWf-2" + UtilMethods
+                            .dateToHTMLDate(new Date(), DATE_FORMAT));
+
+            actions = workflowAPI
+                    .findAvailableActions(contentlet2, joeContributor);
+            if (actions.isEmpty() || actions.size() != 1) {
+                assertTrue(INCORRECT_NUMBER_OF_ACTIONS_MESSAGE, false);
+            }
+            if (!SAVE_AS_DRAFT_ACTION_NAME.equals(actions.get(0).getName())) {
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
+            }
+
+            //As Contributor - Save as Draft
+            final ContentletRelationships contentletRelationships2 = APILocator.getContentletAPI()
+                    .getAllRelationships(contentlet2);
+            contentlet2 = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet2,
+                    new ContentletDependencies.Builder().respectAnonymousPermissions(Boolean.FALSE)
+                            .modUser(joeContributor)
+                            .relationships(contentletRelationships2)
+                            .workflowActionId(saveAsDraft.getId()) //Save as a draft
+                            .workflowActionComments(StringPool.BLANK)
+                            .workflowAssignKey(StringPool.BLANK)
+                            .categories(Collections.emptyList())
+                            .generateSystemEvent(Boolean.FALSE).build());
+
+            contentletAPI.isInodeIndexed(contentlet2.getInode());
+            assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, EDITING_STEP_NAME
+                    .equals(workflowAPI.findStepByContentlet(contentlet2).getName()));
+
+            //As Contributor - Send for Review
+            actions = workflowAPI.findAvailableActions(contentlet2, joeContributor);
+            if (actions.isEmpty() || actions.size() != 1) {
+                assertTrue(INCORRECT_NUMBER_OF_ACTIONS_MESSAGE, false);
+            }
+
+            if (!SEND_FOR_REVIEW_ACTION_NAME.equals(actions.get(0).getName())) {
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
+            }
+
+            contentlet2 = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet2,
+                    new ContentletDependencies.Builder()
+                            .respectAnonymousPermissions(Boolean.FALSE)
+                            .modUser(joeContributor)
+                            .relationships(contentletRelationships2)
+                            .workflowActionId(sendForReview.getId()) //Send For Review
+                            .workflowActionComments(comment1)
+                            .workflowAssignKey(StringPool.BLANK)
+                            .categories(Collections.emptyList())
+                            .generateSystemEvent(Boolean.FALSE).build());
+
+            contentletAPI.isInodeIndexed(contentlet2.getInode());
+            assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, REVIEW_STEP_NAME
+                    .equals(workflowAPI.findStepByContentlet(contentlet2).getName()));
+
+            //As Reviewer - return for editing
+            actions = workflowAPI.findAvailableActions(contentlet2, janeReviewer);
+            if (actions.isEmpty() || actions.size() != 2) {
+                assertTrue(INCORRECT_NUMBER_OF_ACTIONS_MESSAGE, false);
+            }
+            if (!RETURN_FOR_EDITS_ACTION_NAME.equals(actions.get(0).getName())) {
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
+            }
+
+            if (!SEND_TO_LEGAL_ACTION_NAME.equals(actions.get(1).getName())) {
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
+            }
+
+            contentlet2 = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet2,
+                    new ContentletDependencies.Builder().respectAnonymousPermissions(Boolean.FALSE)
+                            .modUser(janeReviewer)
+                            .relationships(contentletRelationships2)
+                            .workflowActionId(returnForEdits.getId()) //Return for Edit
+                            .workflowActionComments(comment2)
+                            .workflowAssignKey(contributor.getId())
+                            .categories(Collections.emptyList())
+                            .generateSystemEvent(Boolean.FALSE).build());
+
+            contentletAPI.isInodeIndexed(contentlet2.getInode());
+            assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, EDITING_STEP_NAME
+                    .equals(workflowAPI.findStepByContentlet(contentlet2).getName()));
+            // As contributor. lock for editing
+            contentletAPI.lock(contentlet2, joeContributor, false);
+
+            //As Contributor - save as Draft
+            actions = workflowAPI.findAvailableActions(contentlet2, joeContributor);
+            if (actions.isEmpty() || actions.size() != 2) {
+                assertTrue(INCORRECT_NUMBER_OF_ACTIONS_MESSAGE, false);
+            }
+            if (!SAVE_AS_DRAFT_ACTION_NAME.equals(actions.get(0).getName())) {
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
+            }
+            if (!SEND_FOR_REVIEW_ACTION_NAME.equals(actions.get(1).getName())) {
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
+            }
+
+            contentlet2 = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet2,
+                    new ContentletDependencies.Builder().respectAnonymousPermissions(Boolean.FALSE)
+                            .modUser(joeContributor)
+                            .relationships(contentletRelationships2)
+                            .workflowActionId(saveAsDraft.getId()) //Save as a draft
+                            .workflowActionComments(comment3)
+                            .workflowAssignKey(StringPool.BLANK)
+                            .categories(Collections.emptyList())
+                            .generateSystemEvent(Boolean.FALSE).build());
+
+            contentletAPI.isInodeIndexed(contentlet2.getInode());
+            assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, EDITING_STEP_NAME
+                    .equals(workflowAPI.findStepByContentlet(contentlet2).getName()));
+
+            //As Contributor - Send for Review
+            actions = workflowAPI.findAvailableActions(contentlet2, joeContributor);
+            if (actions.isEmpty() || actions.size() != 2) {
+                assertTrue(INCORRECT_NUMBER_OF_ACTIONS_MESSAGE, false);
+            }
+            if (!SAVE_AS_DRAFT_ACTION_NAME.equals(actions.get(0).getName())) {
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
+            }
+            if (!SEND_FOR_REVIEW_ACTION_NAME.equals(actions.get(1).getName())) {
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
+            }
+
+            contentlet2 = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet2,
+                    new ContentletDependencies.Builder().respectAnonymousPermissions(Boolean.FALSE)
+                            .modUser(joeContributor)
+                            .relationships(contentletRelationships2)
+                            .workflowActionId(sendForReview.getId()) //Send For Review
+                            .workflowActionComments(comment4)
+                            .workflowAssignKey(StringPool.BLANK)
+                            .categories(Collections.emptyList())
+                            .generateSystemEvent(Boolean.FALSE).build());
+
+            contentletAPI.isInodeIndexed(contentlet2.getInode());
+            assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, REVIEW_STEP_NAME
+                    .equals(workflowAPI.findStepByContentlet(contentlet2).getName()));
+
+            //As reviewer - send to legal
+            actions = workflowAPI.findAvailableActions(contentlet2, janeReviewer);
+            if (actions.isEmpty() || actions.size() != 2) {
+                assertTrue(INCORRECT_NUMBER_OF_ACTIONS_MESSAGE, false);
+            }
+            if (!RETURN_FOR_EDITS_ACTION_NAME.equals(actions.get(0).getName())) {
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
+            }
+            if (!SEND_TO_LEGAL_ACTION_NAME.equals(actions.get(1).getName())) {
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
+            }
+
+
+            contentlet2 = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet2,
+                    new ContentletDependencies.Builder().respectAnonymousPermissions(Boolean.FALSE)
+                            .modUser(janeReviewer)
+                            .relationships(contentletRelationships2)
+                            .workflowActionId(sendToLegal.getId()) //Send to Legal
+                            .workflowActionComments(comment4)
+                            .workflowAssignKey(StringPool.BLANK)
+                            .categories(Collections.emptyList())
+                            .generateSystemEvent(Boolean.FALSE).build());
+
+            contentletAPI.isInodeIndexed(contentlet2.getInode());
+            assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, LEGAL_APPROVAL_STEP_NAME
+                    .equals(workflowAPI.findStepByContentlet(contentlet2).getName()));
+
+            //As Publisher - publish
+            actions = workflowAPI.findAvailableActions(contentlet2, chrisPublisher);
+            if (actions.isEmpty() || actions.size() != 2) {
+                assertTrue(INCORRECT_NUMBER_OF_ACTIONS_MESSAGE, false);
+            }
+            if (!RETURN_FOR_EDITS_ACTION_NAME.equals(actions.get(0).getName())) {
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
+            }
+            if (!PUBLISH_ACTION_NAME.equals(actions.get(1).getName())) {
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
+            }
+
+
+            //Content 3 in Review Step
+            Contentlet contentlet3 = new Contentlet();
+            contentlet3.setContentTypeId(contentType5.id());
+            contentlet3.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+            contentlet3.setStringProperty(FIELD_VAR_NAME,
+                    "testDeleteWf-3" + UtilMethods
+                            .dateToHTMLDate(new Date(), DATE_FORMAT));
+
+            actions = workflowAPI
+                    .findAvailableActions(contentlet3, joeContributor);
+            if (actions.isEmpty() || actions.size() != 1) {
+                assertTrue(INCORRECT_NUMBER_OF_ACTIONS_MESSAGE, false);
+            }
+            if (!SAVE_AS_DRAFT_ACTION_NAME.equals(actions.get(0).getName())) {
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
+            }
+
+            //As Contributor - Save as Draft
+            final ContentletRelationships contentletRelationships3 = APILocator.getContentletAPI()
+                    .getAllRelationships(contentlet3);
+            contentlet3 = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet3,
+                    new ContentletDependencies.Builder().respectAnonymousPermissions(Boolean.FALSE)
+                            .modUser(joeContributor)
+                            .relationships(contentletRelationships3)
+                            .workflowActionId(saveAsDraft.getId()) //Save as a draft
+                            .workflowActionComments(StringPool.BLANK)
+                            .workflowAssignKey(StringPool.BLANK)
+                            .categories(Collections.emptyList())
+                            .generateSystemEvent(Boolean.FALSE).build());
+
+            contentletAPI.isInodeIndexed(contentlet3.getInode());
+            assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, EDITING_STEP_NAME
+                    .equals(workflowAPI.findStepByContentlet(contentlet3).getName()));
+
+            //As Contributor - Send for Review
+            actions = workflowAPI.findAvailableActions(contentlet3, joeContributor);
+            if (actions.isEmpty() || actions.size() != 1) {
+                assertTrue(INCORRECT_NUMBER_OF_ACTIONS_MESSAGE, false);
+            }
+
+            if (!SEND_FOR_REVIEW_ACTION_NAME.equals(actions.get(0).getName())) {
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
+            }
+
+            contentlet3 = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet3,
+                    new ContentletDependencies.Builder()
+                            .respectAnonymousPermissions(Boolean.FALSE)
+                            .modUser(joeContributor)
+                            .relationships(contentletRelationships3)
+                            .workflowActionId(sendForReview.getId()) //Send For Review
+                            .workflowActionComments(comment1)
+                            .workflowAssignKey(StringPool.BLANK)
+                            .categories(Collections.emptyList())
+                            .generateSystemEvent(Boolean.FALSE).build());
+
+            contentletAPI.isInodeIndexed(contentlet3.getInode());
+            assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, REVIEW_STEP_NAME
+                    .equals(workflowAPI.findStepByContentlet(contentlet3).getName()));
+
+
+            //Content4 on Editing
+            Contentlet contentlet4 = new Contentlet();
+            contentlet4.setContentTypeId(contentType5.id());
+            contentlet4.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+            contentlet4.setStringProperty(FIELD_VAR_NAME,
+                    "testDeleteWf-4" + UtilMethods
+                            .dateToHTMLDate(new Date(), DATE_FORMAT));
+
+            actions = workflowAPI
+                    .findAvailableActions(contentlet4, joeContributor);
+            if (actions.isEmpty() || actions.size() != 1) {
+                assertTrue(INCORRECT_NUMBER_OF_ACTIONS_MESSAGE, false);
+            }
+            if (!SAVE_AS_DRAFT_ACTION_NAME.equals(actions.get(0).getName())) {
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
+            }
+
+            //As Contributor - Save as Draft
+            final ContentletRelationships contentletRelationships4 = APILocator.getContentletAPI()
+                    .getAllRelationships(contentlet2);
+            contentlet4 = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet4,
+                    new ContentletDependencies.Builder().respectAnonymousPermissions(Boolean.FALSE)
+                            .modUser(joeContributor)
+                            .relationships(contentletRelationships4)
+                            .workflowActionId(saveAsDraft.getId()) //Save as a draft
+                            .workflowActionComments(StringPool.BLANK)
+                            .workflowAssignKey(StringPool.BLANK)
+                            .categories(Collections.emptyList())
+                            .generateSystemEvent(Boolean.FALSE).build());
+
+            contentletAPI.isInodeIndexed(contentlet4.getInode());
+            assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, EDITING_STEP_NAME
+                    .equals(workflowAPI.findStepByContentlet(contentlet4).getName()));
+
+            //As Contributor - Send for Review
+            actions = workflowAPI.findAvailableActions(contentlet4, joeContributor);
+            if (actions.isEmpty() || actions.size() != 1) {
+                assertTrue(INCORRECT_NUMBER_OF_ACTIONS_MESSAGE, false);
+            }
+
+            if (!SEND_FOR_REVIEW_ACTION_NAME.equals(actions.get(0).getName())) {
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
+            }
+
+            contentlet4 = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet4,
+                    new ContentletDependencies.Builder()
+                            .respectAnonymousPermissions(Boolean.FALSE)
+                            .modUser(joeContributor)
+                            .relationships(contentletRelationships4)
+                            .workflowActionId(sendForReview.getId()) //Send For Review
+                            .workflowActionComments(comment1)
+                            .workflowAssignKey(StringPool.BLANK)
+                            .categories(Collections.emptyList())
+                            .generateSystemEvent(Boolean.FALSE).build());
+
+            contentletAPI.isInodeIndexed(contentlet4.getInode());
+            assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, REVIEW_STEP_NAME
+                    .equals(workflowAPI.findStepByContentlet(contentlet4).getName()));
+
+            //As Reviewer - return for editing
+            actions = workflowAPI.findAvailableActions(contentlet4, janeReviewer);
+            if (actions.isEmpty() || actions.size() != 2) {
+                assertTrue(INCORRECT_NUMBER_OF_ACTIONS_MESSAGE, false);
+            }
+            if (!RETURN_FOR_EDITS_ACTION_NAME.equals(actions.get(0).getName())) {
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
+            }
+
+            if (!SEND_TO_LEGAL_ACTION_NAME.equals(actions.get(1).getName())) {
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
+            }
+
+            contentlet4 = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet4,
+                    new ContentletDependencies.Builder().respectAnonymousPermissions(Boolean.FALSE)
+                            .modUser(janeReviewer)
+                            .relationships(contentletRelationships4)
+                            .workflowActionId(returnForEdits.getId()) //Return for Editing
+                            .workflowActionComments(comment2)
+                            .workflowAssignKey(contributor.getId())
+                            .categories(Collections.emptyList())
+                            .generateSystemEvent(Boolean.FALSE).build());
+
+            contentletAPI.isInodeIndexed(contentlet4.getInode());
+            assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, EDITING_STEP_NAME
+                    .equals(workflowAPI.findStepByContentlet(contentlet4).getName()));
+
+
+            //Validate workflow tasks status
+            WorkflowTask task1 = workflowAPI.findTaskByContentlet(contentlet1);
+            assertNotNull(task1);
+
+            List<WorkflowComment> comments1 = workflowAPI.findWorkFlowComments(task1);
+            assertNotNull(comments1);
+            assertTrue(comments1.size() == 4);
+
+            List<WorkflowHistory> histories1 = workflowAPI.findWorkflowHistory(task1);
+            assertNotNull(histories1);
+            assertTrue(histories1.size() == 7);
+
+            WorkflowTask task2 = workflowAPI.findTaskByContentlet(contentlet2);
+            assertNotNull(task2);
+
+            List<WorkflowComment> comments2 = workflowAPI.findWorkFlowComments(task2);
+            assertNotNull(comments2);
+            assertTrue(comments2.size() == 5);
+
+            List<WorkflowHistory> histories2 = workflowAPI.findWorkflowHistory(task2);
+            assertNotNull(histories2);
+            assertTrue(histories2.size() == 6);
+
+            WorkflowTask task3 = workflowAPI.findTaskByContentlet(contentlet3);
+            assertNotNull(task3);
+            List<WorkflowComment> comments3 = workflowAPI.findWorkFlowComments(task3);
+            assertNotNull(comments3);
+            assertTrue(comments3.size() == 1);
+
+            List<WorkflowHistory> histories3 = workflowAPI.findWorkflowHistory(task3);
+            assertNotNull(histories3);
+            assertTrue(histories3.size() == 2);
+
+            WorkflowTask task4 = workflowAPI.findTaskByContentlet(contentlet4);
+            assertNotNull(task4);
+            List<WorkflowComment> comments4 = workflowAPI.findWorkFlowComments(task4);
+            assertNotNull(comments4);
+            assertTrue(comments4.size() == 2);
+
+            List<WorkflowHistory> histories4 = workflowAPI.findWorkflowHistory(task4);
+            assertNotNull(histories4);
+            assertTrue(histories4.size() == 3);
+
+            //Test the delete
+            //Deleting workflow 7
+            workflowScheme7.setArchived(true);
+            workflowAPI.saveScheme(workflowScheme7, user);
+            workflowAPI.deleteScheme(workflowScheme7, user);
+
+            //validate actions deleted
+            assertTrue(ACTIONS_LIST_SHOULD_BE_EMPY,workflowAPI.findActions(workflowScheme7, user).isEmpty());
+            //validate steps deleted
+            assertTrue(STEPS_LIST_SHOULD_BE_EMPTY,workflowAPI.findSteps(workflowScheme7).isEmpty());
+            try {
+                //validate scheme deleted
+                workflowScheme7 = workflowAPI.findScheme(workflowScheme7.getId());
+                assertTrue(false);
+            }catch(DoesNotExistException e){
+                assertTrue(true);
+            }
+
+            //validate workflow comments deleted
+            assertTrue(workflowAPI.findWorkFlowComments(task1).size() == 0);
+            assertTrue(workflowAPI.findWorkFlowComments(task2).size() == 0);
+            assertTrue(workflowAPI.findWorkFlowComments(task3).size() == 0);
+            assertTrue(workflowAPI.findWorkFlowComments(task4).size() == 0);
+
+            //validate workflow history deleted
+            assertTrue(workflowAPI.findWorkflowHistory(task1).size() == 0);
+            assertTrue(workflowAPI.findWorkflowHistory(task2).size() == 0);
+            assertTrue(workflowAPI.findWorkflowHistory(task3).size() == 0);
+            assertTrue(workflowAPI.findWorkflowHistory(task4).size() == 0);
+
+            //validate workflow tasks deleted
+            task1 = workflowAPI.findTaskByContentlet(contentlet1);
+            assertNull(task1.getId());
+
+            task2 = workflowAPI.findTaskByContentlet(contentlet2);
+            assertNull(task2.getId());
+
+            task3 = workflowAPI.findTaskByContentlet(contentlet3);
+            assertNull(task3.getId());
+
+            task4 = workflowAPI.findTaskByContentlet(contentlet4);
+            assertNull(task4.getId());
+
+        } finally {
+            //clean test
+            //delete content type
+            contentTypeAPI.delete(contentType5);
+        }
+    }
     /**
      * Validate if the scheme is present in the list of schemes
      *
@@ -1645,7 +2349,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
      * @param newWorkflowScheme The new for the workflow replica
      * @return The new workflow
      */
-    public static WorkflowScheme createDocumentManagentReplica(String newWorkflowScheme)
+    public static WorkflowScheme createDocumentManagentReplica(final String newWorkflowScheme)
             throws DotDataException, DotSecurityException {
 
         final WorkflowScheme scheme = addWorkflowScheme(newWorkflowScheme);
@@ -1654,23 +2358,23 @@ public class WorkflowAPITest extends IntegrationTestBase {
         //Create Steps
 
         //Editing Step
-        WorkflowStep editingStep = addWorkflowStep(EDITING_STEP_NAME, 0, Boolean.FALSE,
+        final WorkflowStep editingStep = addWorkflowStep(EDITING_STEP_NAME, 0, Boolean.FALSE,
                 Boolean.FALSE, scheme.getId());
 
         //Review Step
-        WorkflowStep reviewStep = addWorkflowStep(REVIEW_STEP_NAME, 1, Boolean.FALSE, Boolean.FALSE,
+        final WorkflowStep reviewStep = addWorkflowStep(REVIEW_STEP_NAME, 1, Boolean.FALSE, Boolean.FALSE,
                 scheme.getId());
 
         //Legal Approval Step
-        WorkflowStep legalApprovalStep = addWorkflowStep(LEGAL_APPROVAL_STEP_NAME, 2, Boolean.FALSE,
+        final WorkflowStep legalApprovalStep = addWorkflowStep(LEGAL_APPROVAL_STEP_NAME, 2, Boolean.FALSE,
                 Boolean.FALSE, scheme.getId());
 
         //Published Step
-        WorkflowStep publishedStep = addWorkflowStep(PUBLISHED_STEP_NAME, 3, Boolean.TRUE,
+        final WorkflowStep publishedStep = addWorkflowStep(PUBLISHED_STEP_NAME, 3, Boolean.TRUE,
                 Boolean.FALSE, scheme.getId());
 
         //Archived Step
-        WorkflowStep archivedStep = addWorkflowStep(ARCHIVED_STEP_NAME, 4, Boolean.TRUE,
+        final WorkflowStep archivedStep = addWorkflowStep(ARCHIVED_STEP_NAME, 4, Boolean.TRUE,
                 Boolean.FALSE, scheme.getId());
 
         //Create Actions

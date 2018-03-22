@@ -154,6 +154,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.springframework.beans.BeanUtils;
+import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -167,6 +168,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private static final String CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT = "Can't change state of checked out content or where inode is not set. Use Search or Find then use method";
     private static final String CANT_GET_LOCK_ON_CONTENT ="Only the CMS Admin or the user who locked the contentlet can lock/unlock it";
+    private static final String FAILED_TO_DELETE_UNARCHIVED_CONTENT = "Failed to delete unarchived content. Content must be archived first before it can be deleted.";
 
     private final ESContentletIndexAPI indexAPI;
     private final ESContentFactoryImpl contentFactory;
@@ -1701,6 +1703,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         logContentletActivity(contentlets, "Deleting Content", user);
         for (Contentlet contentlet : contentlets){
+            if(!contentlet.isArchived()){
+                throw new DotContentletStateException(
+                    getLocalizedMessageOrDefault(user, "Failed-to-delete-unarchived-content", FAILED_TO_DELETE_UNARCHIVED_CONTENT, getClass())
+                );
+            }
+
             if(contentlet.getInode().equals("")) {
                 logContentletActivity(contentlet, "Error Deleting Content", user);
                 throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
