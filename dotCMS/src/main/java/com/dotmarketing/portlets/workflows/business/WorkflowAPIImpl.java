@@ -2,6 +2,8 @@ package com.dotmarketing.portlets.workflows.business;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
@@ -27,6 +29,7 @@ import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import org.apache.commons.lang.time.StopWatch;
 import org.osgi.framework.BundleContext;
 
 import java.util.*;
@@ -50,6 +53,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	// not very fancy, but the WorkflowImport is a friend of WorkflowAPI
 	private volatile FriendClass  friendClass = null;
+
+	protected final DotSubmitter submitter = DotConcurrentFactory.getInstance()
+			.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public WorkflowAPIImpl() {
@@ -315,7 +321,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	}
 
-	@WrapInTransaction
+
 	public void deleteScheme(final WorkflowScheme scheme, final User user)
 			throws DotDataException, DotSecurityException, AlreadyExistException {
 
@@ -325,21 +331,44 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			throw new DotWorkflowException("Can not delete workflow Id:" + scheme.getId());
 		}
 
-		final List<WorkflowStep> steps = this.findSteps(scheme);
-		for (WorkflowStep step : steps) {
-			//delete workflow tasks
-			this.findTasksByStep(step.getId()).stream()
-					.forEach(task -> this.deleteWorkflowTaskWrapper(task, user));
+		//Delete the Scheme in a separated thread
+		this.submitter.execute(() -> deleteSchemeTask(scheme, user));
+
+	}
+
+	/**
+	 * This task allows to elimiminate the workflow scheme on a separate thread
+	 * @param scheme Workflow Scheme to be delete
+	 * @param user The user
+	 */
+	@WrapInTransaction
+	private void deleteSchemeTask(WorkflowScheme scheme, User user) {
+		try {
+			final StopWatch stopWatch = new StopWatch();
+			stopWatch.start();
+			Logger.info(this, "Begin the Delete Workflow Scheme task.");
+
+			final List<WorkflowStep> steps = this.findSteps(scheme);
+			for (WorkflowStep step : steps) {
+				//delete workflow tasks
+				this.findTasksByStep(step.getId()).stream()
+						.forEach(task -> this.deleteWorkflowTaskWrapper(task, user));
+			}
+			//delete actions
+			this.findActions(scheme, user).stream()
+					.forEach(action -> this.deleteWorkflowActionWrapper(action, user));
+
+			//delete steps
+			steps.stream().forEach(step -> this.deleteWorkflowStepWrapper(step, user));
+
+			//delete scheme
+			this.workFlowFactory.deleteScheme(scheme);
+			stopWatch.stop();
+			Logger.info(this, "Delete Workflow Scheme task DONE, duration:" +
+					DateUtil.millisToSeconds(stopWatch.getTime()) + " seconds");
+		} catch (Exception e) {
+			throw new DotRuntimeException(e);
 		}
-		//delete actions
-		this.findActions(scheme, user).stream()
-				.forEach(action -> this.deleteWorkflowActionWrapper(action, user));
-
-		//delete steps
-		steps.stream().forEach(step -> this.deleteWorkflowStepWrapper(step, user));
-
-		//delete scheme
-		this.workFlowFactory.deleteScheme(scheme);
 	}
 
 	/**
