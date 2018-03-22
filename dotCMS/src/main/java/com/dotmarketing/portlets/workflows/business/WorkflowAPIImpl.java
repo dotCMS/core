@@ -325,6 +325,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public void deleteScheme(final WorkflowScheme scheme, final User user)
 			throws DotDataException, DotSecurityException, AlreadyExistException {
 
+		this.isUserAllowToModifiedWorkflow(user);
+
 		if (null == scheme){
 			Logger.warn(this, "Can not delete a null workflow");
 			throw new DotWorkflowException("Can not delete a null workflow");
@@ -346,7 +348,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 * @param user The user
 	 */
 	@WrapInTransaction
-	private void deleteSchemeTask(WorkflowScheme scheme, User user) {
+	private void deleteSchemeTask(final WorkflowScheme scheme, final User user) {
 		try {
 			final StopWatch stopWatch = new StopWatch();
 			stopWatch.start();
@@ -383,7 +385,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 * @throws DotRuntimeException
 	 */
 	@CloseDBIfOpened
-	private void deleteWorkflowStepWrapper(WorkflowStep step, User user)
+	private void deleteWorkflowStepWrapper(final WorkflowStep step, final User user)
 			throws DotRuntimeException {
 		try {
 			//delete step
@@ -401,7 +403,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 * @throws DotRuntimeException
 	 */
 	@CloseDBIfOpened
-	private void deleteWorkflowActionWrapper(WorkflowAction action, User user)
+	private void deleteWorkflowActionWrapper(final WorkflowAction action, final User user)
 			throws DotRuntimeException {
 		try {
 			//delete action
@@ -419,7 +421,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 * @throws DotRuntimeException
 	 */
 	@CloseDBIfOpened
-	private void deleteWorkflowTaskWrapper(WorkflowTask task, User user)
+	private void deleteWorkflowTaskWrapper(final WorkflowTask task, final User user)
 			throws DotRuntimeException {
 		try {
 			//delete task comment
@@ -441,7 +443,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 * @throws DotRuntimeException
 	 */
 	@CloseDBIfOpened
-	private void deleteCommentWrapper(WorkflowComment workflowComment)
+	private void deleteCommentWrapper(final WorkflowComment workflowComment)
 			throws DotRuntimeException{
 		try{
 			this.deleteComment(workflowComment);
@@ -456,7 +458,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 * @throws DotRuntimeException
 	 */
 	@CloseDBIfOpened
-	private void deleteWorkflowHistoryWrapper(WorkflowHistory workflowHistory)
+	private void deleteWorkflowHistoryWrapper(final WorkflowHistory workflowHistory)
 			throws DotRuntimeException{
 		try{
 			this.deleteWorkflowHistory(workflowHistory);
@@ -1784,7 +1786,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@CloseDBIfOpened
-	public List<WorkflowTask> findTasksByStep(String stepId) throws DotDataException, DotSecurityException{
+	public List<WorkflowTask> findTasksByStep(final String stepId) throws DotDataException, DotSecurityException{
 		return this.workFlowFactory.findTasksByStep(stepId);
 	}
 

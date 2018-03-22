@@ -472,7 +472,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 				HibernateUtil.rollbackTransaction();
 			}
 			Logger.error(this, "deleteWorkflowTask failed:" + e, e);
-			throw new DotDataException(e.toString());
+			throw new DotDataException(e);
 		}
 		finally {
 			cache.remove(task);
@@ -1776,7 +1776,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	@Override
-	public List<WorkflowTask> findTasksByStep(String stepId) throws DotDataException, DotSecurityException {
+	public List<WorkflowTask> findTasksByStep(final String stepId) throws DotDataException, DotSecurityException {
 		List<WorkflowTask> tasks = null;
 		DotConnect dc = new DotConnect();
 
@@ -1792,7 +1792,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	@Override
-	public List<ContentType> findContentTypesByScheme(WorkflowScheme scheme) throws DotDataException, DotSecurityException{
+	public List<ContentType> findContentTypesByScheme(final WorkflowScheme scheme) throws DotDataException, DotSecurityException{
 		List<ContentType> contentTypes = null;
 		DotConnect dc = new DotConnect();
 		try {
@@ -1810,7 +1810,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	@Override
-	public void deleteScheme(WorkflowScheme scheme) throws DotDataException, DotSecurityException{
+	public void deleteScheme(final WorkflowScheme scheme) throws DotDataException, DotSecurityException{
 		DotConnect dc = new DotConnect();
 		try {
 			//delete association of content types with the scheme

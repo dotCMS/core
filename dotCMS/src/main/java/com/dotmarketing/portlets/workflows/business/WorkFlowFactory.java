@@ -262,7 +262,7 @@ public interface WorkFlowFactory {
 	public void updateStepReferences(String stepId, String replacementStepId) throws DotDataException, DotSecurityException;
 
 	/**
-	 * Return all teh workflow task that are associated to a workflow step.
+	 * Return all the workflow tasks that are associated to a workflow step.
 	 * @return List of workflows task associated to the step
 	 * @throws DotDataException
 	 * @throws DotSecurityException
