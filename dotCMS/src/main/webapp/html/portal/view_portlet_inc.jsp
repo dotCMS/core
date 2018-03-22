@@ -8,10 +8,14 @@
 
 	boolean access = false;
 	try {
-		String accessPortletId = request.getParameter(WebKeys.PORTLET_URL_CURRENT_ANGULAR_PORTLET) != null ?
+		String defaultAccessPortletId = request.getParameter(WebKeys.PORTLET_URL_CURRENT_ANGULAR_PORTLET) != null ?
 				request.getParameter(WebKeys.PORTLET_URL_CURRENT_ANGULAR_PORTLET) :
 				portlet.getPortletId();
-		access = APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(accessPortletId,user);
+		access = APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(defaultAccessPortletId,user);
+
+		if (!access && !portlet.getPortletId().equals(defaultAccessPortletId)){
+			access = APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(portlet.getPortletId(),user);
+		}
 	} catch (DotDataException e) {
 		e.printStackTrace();
 	}
