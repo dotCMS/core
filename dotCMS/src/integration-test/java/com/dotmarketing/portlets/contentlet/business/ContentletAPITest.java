@@ -31,6 +31,7 @@ import com.dotcms.datagen.StructureDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.mock.response.BaseResponse;
+import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
@@ -73,6 +74,7 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.model.Tag;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -2144,6 +2146,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
     @Test
     public void widgetInvalidateAllLang() throws Exception {
+        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",true);
 
         HttpServletRequest requestProxy = new MockInternalRequest().request();
         HttpServletResponse responseProxy = new BaseResponse().response();
@@ -2197,6 +2200,8 @@ public class ContentletAPITest extends ContentletBaseTest {
         w2 = contentletAPI.checkin(w2, user, false);
         contentletAPI.publish(w2, user, false);
         contentletAPI.isInodeIndexed(w2.getInode(),true);
+        VelocityResourceKey key = new VelocityResourceKey(w2,PageMode.LIVE,2);
+        CacheLocator.getVeloctyResourceCache().remove(key);
 
         // now if everything have been cleared correctly those should match again
         org.apache.velocity.Template teng3 = engine.getTemplate(
@@ -2220,6 +2225,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         APILocator.getVersionableAPI().removeLive(w2);
         contentletAPI.archive(w2, user, false);
         contentletAPI.delete(w2, user, false);
+        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",false);
     }
     @Test
     public void testFileCopyOnSecondLanguageVersion() throws DotDataException, DotSecurityException {
