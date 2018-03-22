@@ -325,7 +325,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public void deleteScheme(final WorkflowScheme scheme, final User user)
 			throws DotDataException, DotSecurityException, AlreadyExistException {
 
-		if (null == scheme || SYSTEM_WORKFLOW_ID.equals(scheme.getId()) || !scheme.isArchived()) {
+		if (null == scheme){
+			Logger.warn(this, "Can not delete a null workflow");
+			throw new DotWorkflowException("Can not delete a null workflow");
+		}
+		if( SYSTEM_WORKFLOW_ID.equals(scheme.getId()) || !scheme.isArchived()) {
 
 			Logger.warn(this, "Can not delete workflow Id:" + scheme.getId());
 			throw new DotWorkflowException("Can not delete workflow Id:" + scheme.getId());
