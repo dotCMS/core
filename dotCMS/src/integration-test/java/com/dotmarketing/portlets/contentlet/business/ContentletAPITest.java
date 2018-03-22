@@ -31,6 +31,7 @@ import com.dotcms.datagen.StructureDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.mock.response.BaseResponse;
+import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
@@ -2199,7 +2200,8 @@ public class ContentletAPITest extends ContentletBaseTest {
         w2 = contentletAPI.checkin(w2, user, false);
         contentletAPI.publish(w2, user, false);
         contentletAPI.isInodeIndexed(w2.getInode(),true);
-        CacheLocator.getVeloctyResourceCache().clearCache();
+        VelocityResourceKey key = new VelocityResourceKey(w2,PageMode.LIVE,2);
+        CacheLocator.getVeloctyResourceCache().remove(key);
 
         // now if everything have been cleared correctly those should match again
         org.apache.velocity.Template teng3 = engine.getTemplate(
