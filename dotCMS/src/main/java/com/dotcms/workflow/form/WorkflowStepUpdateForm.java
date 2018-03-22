@@ -19,7 +19,6 @@ public class WorkflowStepUpdateForm extends Validated implements IWorkflowStepFo
     @NotNull
     private final boolean enableEscalation;
 
-    @NotNull
     private final String escalationAction;
 
     @NotNull
@@ -77,7 +76,7 @@ public class WorkflowStepUpdateForm extends Validated implements IWorkflowStepFo
         private String escalationAction;
 
         @JsonProperty
-        private String escalationTime;
+        private String escalationTime = "0";
 
         @JsonProperty
         private boolean stepResolved;
