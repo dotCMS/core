@@ -13,8 +13,8 @@ export class FieldPropertyService {
     private fieldTypes = new Map<string, FieldType>();
 
     constructor(fieldService: FieldService) {
-        fieldService.loadFieldTypes().subscribe((fieldTypes) => {
-            fieldTypes.forEach((fieldType) => {
+        fieldService.loadFieldTypes().subscribe(fieldTypes => {
+            fieldTypes.forEach(fieldType => {
                 this.fieldTypes.set(fieldType.clazz, fieldType);
             });
         });
@@ -80,6 +80,16 @@ export class FieldPropertyService {
      */
     isDisabledInEditMode(propertyName: string): boolean {
         return PROPERTY_INFO[propertyName] ? PROPERTY_INFO[propertyName].disabledInEdit : null;
+    }
+
+    /**
+     * Return true if field is fixed and the property should be disabled when fixed is true
+     * @param {boolean} fixed
+     * @param {string} propertyName
+     * @returns {boolean}
+     */
+    isDisabledInFixed(propertyName: string): boolean {
+        return PROPERTY_INFO[propertyName] ? PROPERTY_INFO[propertyName].disabledInFixed : false;
     }
 
     /**

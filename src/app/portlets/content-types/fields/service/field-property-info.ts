@@ -49,7 +49,8 @@ export const PROPERTY_INFO = {
         component: NamePropertyComponent,
         defaultValue: '',
         order: 0,
-        validations: [Validators.required]
+        validations: [Validators.required],
+        disabledInFixed: true
     },
     regexCheck: {
         component: RegexCheckPropertyComponent,

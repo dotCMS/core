@@ -1,11 +1,11 @@
 <div [formGroup]="group">
     <label class="form__label">{{ i18nMessages['contenttypes.field.properties.name.label'] }}*</label>
-    <input 
-        pInputText 
+    <input
+        pInputText
         type="text"
         [formControlName]="property.name">
-    <dot-field-validation-message 
-        [message]="i18nMessages['contenttypes.field.properties.name.error.required']" 
+    <dot-field-validation-message
+        [message]="i18nMessages['contenttypes.field.properties.name.error.required']"
         [field]="group.controls[property.name]">
     </dot-field-validation-message>
 </div>
