@@ -24,6 +24,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.beanutils.BeanUtils;
 
+@Deprecated
 public class WfRoleStoreAjax extends WfBaseAction {
 
     public void action ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
