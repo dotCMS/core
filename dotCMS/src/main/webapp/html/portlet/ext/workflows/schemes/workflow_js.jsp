@@ -266,17 +266,49 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 		;
 
 	},
+    deleteScheme : function(schemeId) {
+
+        if(!confirm("<%=LanguageUtil.get(pageContext, "Confirm-Delete-Scheme")%>")){
+            return;
+        }
+        var xhrArgs = {
+            url: "/api/v1/workflow/schemes/" + schemeId ,
+            timeout : 30000,
+            handle : function(dataOrError, ioArgs) {
+                if (dojo.isString(dataOrError)) {
+                    if (dataOrError.indexOf("FAILURE") == 0) {
+                        schemeAdmin.deleteError(dataOrError);
+                    } else {
+                        schemeAdmin.deleteSuccess(dataOrError);
+                     }
+                } else {
+                    this.deleteError("<%=LanguageUtil.get(pageContext, "Unable-to-delete-Scheme")%>");
+                }
+            }
+        };
+        dojo.xhrDelete(xhrArgs);
+        return;
+    },
 	saveSuccess : function(message) {
 		var dialog = dijit.byId(schemeAdmin.addEditDiv);
 		dialog.hide();
 		mainAdmin.refresh();
-		showDotCMSSystemMessage("Saved");
+		showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Workflow-Scheme-saved")%>");
 
 	},
 	saveError : function(message) {
 		showDotCMSSystemMessage(message, true);
 
-	}
+	},
+    deleteSuccess : function(message) {
+        var dialog = dijit.byId(schemeAdmin.addEditDiv);
+        dialog.hide();
+        schemeAdmin.show();
+        showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Workflow-Scheme-deleted")%>");
+    },
+    deleteError : function(message) {
+        showDotCMSSystemMessage(message, true);
+    }
 
 });
 
