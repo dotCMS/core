@@ -17,7 +17,10 @@
 			access = APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(portlet.getPortletId(),user);
 		}
 	} catch (DotDataException e) {
-		e.printStackTrace();
+		Logger.error(this.getClass(),
+				String.format("Exception on view_portlet_inc.jsp, portletId: %s angularPortletId: %s",
+						portlet.getPortletId(),
+						request.getParameter(WebKeys.PORTLET_URL_CURRENT_ANGULAR_PORTLET)), e);
 	}
 
 	String licenseManagerOverrideTicket = request.getParameter("licenseManagerOverrideTicket");
@@ -164,6 +167,7 @@ boolean showPortletInactive = portlet.isShowPortletInactive();
 	%>
 		
 <%@page import="com.dotmarketing.business.APILocator"%>
+<%@ page import="com.dotmarketing.util.Logger" %>
 <jsp:include page="/html/portal/portlet_error.jsp"></jsp:include>
 	<%
 		}

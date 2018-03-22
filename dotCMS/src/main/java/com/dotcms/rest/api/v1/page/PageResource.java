@@ -275,9 +275,11 @@ public class PageResource {
         return res;
     }
 
-    private Map<String, Object> getRenderedPageMap(HttpServletRequest request, HttpServletResponse response, User user,
-                                                   HTMLPageAsset page) throws DotSecurityException, IOException, DotDataException {
-        PageMode pageMode = PageMode.get(request);
+    private Map<String, Object> getRenderedPageMap(final HttpServletRequest request, final HttpServletResponse response,
+                                                   final User user, final HTMLPageAsset page)
+            throws DotSecurityException, IOException, DotDataException {
+
+        final PageMode pageMode = PageMode.get(request);
         final Builder<String, Object> responseMapBuilder = ImmutableMap.builder();
         final Template template = this.templateAPI.findWorkingTemplate(page.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false);
 
@@ -364,10 +366,10 @@ public class PageResource {
         Response res = null;
 
         try {
-            IHTMLPage page = this.pageResourceHelper.getPage(user, pageId);
+            final IHTMLPage page = this.pageResourceHelper.getPage(user, pageId);
             this.pageResourceHelper.saveTemplate(user, page, form);
 
-            Map<String, Object> renderedPageMap = getRenderedPageMap(request, response, user, (HTMLPageAsset) page);
+            final Map<String, Object> renderedPageMap = getRenderedPageMap(request, response, user, (HTMLPageAsset) page);
             res = Response.ok(new ResponseEntityView(renderedPageMap)).build();
 
         } catch (DotSecurityException e) {
