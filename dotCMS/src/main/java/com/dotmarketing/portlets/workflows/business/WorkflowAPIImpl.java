@@ -1292,6 +1292,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 			try {
 
+				// validates the action belongs to the scheme
 				final WorkflowAction action 	   = this.findAction(actionId, user);
 				final List<WorkflowScheme> schemes = this.findSchemesForContentType(contentlet.getContentType());
 
@@ -1300,6 +1301,17 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					if (!schemes.stream().anyMatch(scheme -> scheme.getId().equals(action.getSchemeId()))) {
 
 						throw new DotDataException("Invalid-Action-Scheme-Error");
+					}
+				}
+
+				// if we are on a step, validates that the action belongs to this step
+				final WorkflowTask   workflowTask   = this.findTaskByContentlet(contentlet);
+
+				if (null != workflowTask && null != workflowTask.getStatus()) {
+
+					if (null == this.findAction(action.getId(), workflowTask.getStatus(), user)) {
+
+						throw new DotDataException("Invalid-Action-Step-Error");
 					}
 				}
 			} catch (DotSecurityException e) {
