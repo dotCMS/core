@@ -1351,7 +1351,7 @@ public class WorkflowResource {
             response = Response.ok(new ResponseEntityView(OK)).build(); // 200
         } catch ( DoesNotExistException e) {
             Logger.error(this.getClass(), "Exception attempting to delete a nonexistent schema identified by : " +schemeId + ", exception message: " + e.getMessage(), e);
-            response = ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
+            response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
         } catch (Exception e) {
             Logger.error(this.getClass(), "Exception attempting to delete schema identified by : " +schemeId + ", exception message: " + e.getMessage(), e);
             response = (e.getCause() instanceof SecurityException)?
