@@ -5219,10 +5219,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final List<MultiTree> pageContents = MultiTreeFactory
                     .getMultiTrees(contentletToCopy.getIdentifier());
             for (final MultiTree multitree : pageContents) {
-                MultiTree newMultitree = new MultiTree(resultContentlet.getIdentifier(),
+
+                MultiTreeFactory.saveMultiTree(new MultiTree(resultContentlet.getIdentifier(),
                         multitree.getContainer(),
-                        multitree.getContentlet());
-                MultiTreeFactory.saveMultiTree(newMultitree);
+                        multitree.getContentlet(),
+                        MultiTree.LEGACY_RELATION_TYPE,
+                        multitree.getTreeOrder()));
             }
         }
 
