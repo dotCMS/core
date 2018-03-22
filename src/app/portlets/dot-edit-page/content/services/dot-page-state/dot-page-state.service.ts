@@ -27,11 +27,16 @@ export class DotPageStateService {
      */
     set(page: DotPage, state: DotPageState, viewAs?: DotEditPageViewAs): Observable<DotRenderedPageState> {
         const lockUnlock$: Observable<string> = this.getLockMode(page.workingInode, state.locked);
+        const pageOpts = {
+            url: page.pageURI,
+            mode: state.mode,
+            viewAs: viewAs
+        };
         const pageMode$: Observable<DotRenderedPage> =
-            state.mode !== undefined ? this.getPageModeMethod(state.mode)(page.pageURI, viewAs) : Observable.of(null);
+            state.mode !== undefined ? this.dotRenderHTMLService.get(pageOpts) : Observable.of(null);
 
         return lockUnlock$.mergeMap(() =>
-            pageMode$.map((updatedPage: DotRenderedPage) => new DotRenderedPageState(updatedPage, state, this.loginService.auth.user))
+            pageMode$.map((updatedPage: DotRenderedPage) => new DotRenderedPageState(this.loginService.auth.user, updatedPage, state))
         );
     }
 
@@ -45,7 +50,7 @@ export class DotPageStateService {
     get(url: string): Observable<DotRenderedPageState> {
         return this.dotRenderHTMLService
             .getEdit(url)
-            .map((page: DotRenderedPage) => new DotRenderedPageState(page, null, this.loginService.auth.user));
+            .map((page: DotRenderedPage) => new DotRenderedPageState(this.loginService.auth.user, page));
     }
 
     private getLockMode(workingInode: string, lock: boolean): Observable<string> {
@@ -56,14 +61,5 @@ export class DotPageStateService {
         }
 
         return Observable.of(null);
-    }
-
-    private getPageModeMethod(mode: PageMode): (string, DotEditPageViewAs?) => Observable<DotRenderedPage> {
-        const map = {};
-        map[PageMode.PREVIEW] = (url: string, viewAsConfig?: DotEditPageViewAs) => this.dotRenderHTMLService.getPreview(url, viewAsConfig);
-        map[PageMode.EDIT] = (url: string, viewAsConfig?: DotEditPageViewAs) => this.dotRenderHTMLService.getEdit(url, viewAsConfig);
-        map[PageMode.LIVE] = (url: string, viewAsConfig?: DotEditPageViewAs) => this.dotRenderHTMLService.getLive(url, viewAsConfig);
-
-        return map[mode];
     }
 }

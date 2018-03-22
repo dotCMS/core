@@ -101,28 +101,32 @@ describe('DotEditPageToolbarComponent', () => {
         fixture = testbed.createComponent(DotEditPageToolbarComponent);
         component = fixture.componentInstance;
         de = fixture.debugElement;
-        component.pageState = new DotRenderedPageState({
-            page: {
-                ...mockDotPage,
-                canEdit: true,
-                canLock: true,
-                identifier: '123',
-                languageId: 1,
-                liveInode: '456',
-                title: '',
-                pageURI: '',
-                shortyLive: '',
-                shortyWorking: '',
-                workingInode: '',
+        component.pageState = new DotRenderedPageState(
+            mockUser,
+            {
+                page: {
+                    ...mockDotPage,
+                    canEdit: true,
+                    canLock: true,
+                    identifier: '123',
+                    languageId: 1,
+                    liveInode: '456',
+                    title: '',
+                    pageURI: '',
+                    shortyLive: '',
+                    shortyWorking: '',
+                    workingInode: '',
+                },
+                html: '',
+                layout: mockDotLayout,
+                canCreateTemplate: true,
+                viewAs: null
             },
-            html: '',
-            layout: mockDotLayout,
-            canCreateTemplate: true,
-            viewAs: null
-        }, {
-            locked: false,
-            mode: PageMode.PREVIEW,
-        }, mockUser);
+            {
+                locked: false,
+                mode: PageMode.PREVIEW,
+            }
+        );
 
         dotGlobalMessageService = de.injector.get(DotGlobalMessageService);
         dotDialogService = de.injector.get(DotDialogService);

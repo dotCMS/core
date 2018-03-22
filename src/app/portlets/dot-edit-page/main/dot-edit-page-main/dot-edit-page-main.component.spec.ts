@@ -26,7 +26,7 @@ describe('DotEditPageMainComponent', () => {
         'editpage.toolbar.nav.layout': 'Layout'
     });
 
-    const mockDotRenderedPageState: DotRenderedPageState = new DotRenderedPageState(mockDotRenderedPage, null, mockUser);
+    const mockDotRenderedPageState: DotRenderedPageState = new DotRenderedPageState(mockUser, mockDotRenderedPage);
 
     beforeEach(
         async(() => {

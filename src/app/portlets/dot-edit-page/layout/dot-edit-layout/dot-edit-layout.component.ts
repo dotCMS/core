@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Observable } from 'rxjs/Observable';
 import { DotRenderedPageState } from '../../shared/models/dot-rendered-page-state.model';
+import { DotPageStateService } from '../../content/services/dot-page-state/dot-page-state.service';
 
 @Component({
     selector: 'dot-edit-layout',
@@ -12,7 +13,7 @@ export class DotEditLayoutComponent implements OnInit {
     isAdvancedTemplate: Observable<boolean>;
     pageState: Observable<DotRenderedPageState>;
 
-    constructor(private route: ActivatedRoute) {}
+    constructor(private route: ActivatedRoute, private dotPageStateService: DotPageStateService) {}
 
     ngOnInit() {
         this.pageState = this.route.parent.parent.data.pluck('content');

@@ -186,7 +186,7 @@ describe('DotEditContentComponent', () => {
 
         beforeEach(() => {
             viewAsToolbar = fixture.debugElement.query(By.css('dot-edit-content-view-as-toolbar'));
-            component.pageState = new DotRenderedPageState(mockDotRenderedPage, null, mockUser);
+            component.pageState = new DotRenderedPageState(mockUser, mockDotRenderedPage, null);
         });
 
         it('should have a View As toolbar', () => {

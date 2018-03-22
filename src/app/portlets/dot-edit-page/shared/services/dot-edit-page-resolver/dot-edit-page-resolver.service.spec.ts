@@ -70,10 +70,10 @@ describe('DotEditPageResolver', () => {
         });
 
         it('should return a DotRenderedPageState valid object', () => {
-            spyOn(dotPageStateService, 'get').and.returnValue(Observable.of(new DotRenderedPageState(mockDotRenderedPage, null, mockUser)));
+            spyOn(dotPageStateService, 'get').and.returnValue(Observable.of(new DotRenderedPageState(mockUser, mockDotRenderedPage)));
 
             resolver.resolve(route).subscribe((res) => {
-                expect(res).toEqual(new DotRenderedPageState(mockDotRenderedPage, null, mockUser));
+                expect(res).toEqual(new DotRenderedPageState(mockUser, mockDotRenderedPage));
             });
         });
 
@@ -119,21 +119,24 @@ describe('DotEditPageResolver', () => {
         });
 
         it('should return a DotRenderedPageState valid object', () => {
-            spyOn(dotPageStateService, 'get').and.returnValue(Observable.of(new DotRenderedPageState(mockDotRenderedPage, null, mockUser)));
+            spyOn(dotPageStateService, 'get').and.returnValue(Observable.of(new DotRenderedPageState(mockUser, mockDotRenderedPage)));
 
             resolver.resolve(route).subscribe((res) => {
-                expect(res).toEqual(new DotRenderedPageState(mockDotRenderedPage, null, mockUser));
+                expect(res).toEqual(new DotRenderedPageState(mockUser, mockDotRenderedPage));
             });
         });
 
         it('should trigger 403 error when try to go to layout because user canEdit page', () => {
-            spyOn(dotPageStateService, 'get').and.returnValue(Observable.of(new DotRenderedPageState({
-                ...mockDotRenderedPage,
-                page: {
-                    ...mockDotRenderedPage.page,
-                    canEdit: false
+            spyOn(dotPageStateService, 'get').and.returnValue(Observable.of(new DotRenderedPageState(
+                mockUser,
+                {
+                    ...mockDotRenderedPage,
+                    page: {
+                        ...mockDotRenderedPage.page,
+                        canEdit: false
+                    }
                 }
-            }, null, mockUser)));
+            )));
 
 
             spyOn(dotHttpErrorManagerService, 'handle').and.returnValue(Observable.of({

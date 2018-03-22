@@ -24,7 +24,13 @@ export class DotRenderHTMLService {
      * @memberof DotRenderHTMLService
      */
     getEdit(url: string, viewAsConfig?: DotEditPageViewAs): Observable<DotRenderedPage> {
-        return this.get(url, PageMode.EDIT, viewAsConfig);
+        return this.get(
+            {
+                url: url,
+                mode: PageMode.EDIT,
+                viewAs: viewAsConfig
+            }
+        );
     }
 
     /**
@@ -36,7 +42,13 @@ export class DotRenderHTMLService {
      * @memberof DotRenderHTMLService
      */
     getPreview(url: string, viewAsConfig?: DotEditPageViewAs): Observable<DotRenderedPage> {
-        return this.get(url, PageMode.PREVIEW, viewAsConfig);
+        return this.get(
+            {
+                url: url,
+                mode: PageMode.PREVIEW,
+                viewAs: viewAsConfig
+            }
+        );
     }
 
     /**
@@ -48,21 +60,27 @@ export class DotRenderHTMLService {
      * @memberof DotRenderHTMLService
      */
     getLive(url: string, viewAsConfig?: DotEditPageViewAs): Observable<DotRenderedPage> {
-        return this.get(url, PageMode.LIVE, viewAsConfig);
+        return this.get(
+            {
+                url: url,
+                mode: PageMode.LIVE,
+                viewAs: viewAsConfig
+            }
+        );
     }
 
-    private get(url: string, pageMode: PageMode, viewAsConfig?: DotEditPageViewAs): Observable<DotRenderedPage> {
-        let params = { mode: this.getPageModeString(pageMode) };
-        if (viewAsConfig) {
+    public get(options: DotRenderPageOptions): Observable<DotRenderedPage> {
+        let params = { mode: this.getPageModeString(options.mode) };
+        if (options.viewAs) {
             params = {
                 ...params,
-                ...this.setOptionalViewAsParams(viewAsConfig)
+                ...this.setOptionalViewAsParams(options.viewAs)
             };
         }
         return this.coreWebService
             .requestView({
                 method: RequestMethod.Get,
-                url: `v1/page/renderHTML/${url.replace(/^\//, '')}`,
+                url: `v1/page/renderHTML/${options.url.replace(/^\//, '')}`,
                 params: params
             })
             .pluck('bodyJsonObject');
@@ -84,4 +102,10 @@ export class DotRenderHTMLService {
 
         return pageModeString[pageMode];
     }
+}
+
+export interface DotRenderPageOptions {
+    url: string;
+    mode: PageMode;
+    viewAs?: DotEditPageViewAs;
 }

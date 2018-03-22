@@ -12,6 +12,8 @@ import { ResponseView } from 'dotcms-js/dotcms-js';
 import * as _ from 'lodash';
 import { DotEditLayoutService } from '../../shared/services/dot-edit-layout.service';
 import { DotGlobalMessageService } from '../../../../view/components/_common/dot-global-message/dot-global-message.service';
+import { DotRenderedPage } from '../../shared/models/dot-rendered-page.model';
+import { LoginService } from 'dotcms-js/core/login.service';
 
 @Component({
     selector: 'dot-edit-layout-designer',
@@ -39,7 +41,8 @@ export class DotEditLayoutDesignerComponent implements OnInit {
         private pageViewService: PageViewService,
         private templateContainersCacheService: TemplateContainersCacheService,
         public dotMessageService: DotMessageService,
-        public router: Router
+        public router: Router,
+        private loginService: LoginService
     ) {}
 
     ngOnInit(): void {
@@ -117,14 +120,9 @@ export class DotEditLayoutDesignerComponent implements OnInit {
         this.dotGlobalMessageService.loading(this.dotMessageService.get('dot.common.message.saving'));
         const dotLayout: DotLayout = this.form.value;
         this.pageViewService.save(this.pageState.page.identifier, dotLayout).subscribe(
-            () => {
+            (updatedPage: DotRenderedPage) => {
                 this.dotGlobalMessageService.display(this.dotMessageService.get('dot.common.message.saved'));
-
-                // TODO: This extra request will change once the this.pageViewService.save return a DotPageView object.
-                // this.pageViewService.get(this.route.snapshot.queryParams.url).subscribe((pageView: DotPageView) => {
-                //     this.dotGlobalMessageService.display(this.dotMessageService.get('dot.common.message.saved'));
-                //     this.setupLayout(pageView);
-                // });
+                this.setupLayout(new DotRenderedPageState(this.loginService.auth.user, updatedPage));
             },
             (err: ResponseView) => {
                 this.dotGlobalMessageService.error(err.response.statusText);
@@ -148,7 +146,7 @@ export class DotEditLayoutDesignerComponent implements OnInit {
 
     private setupLayout(pageState?: DotRenderedPageState): void {
         if (pageState) {
-            this.pageState = pageState;
+            this.pageState.dotRenderedPageState = pageState;
         }
         this.templateContainersCacheService.set(this.pageState.containers);
         this.initForm();

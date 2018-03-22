@@ -102,13 +102,13 @@ describe('DotEditLayoutDesignerComponent', () => {
     describe('edit layout', () => {
         beforeEach(() => {
             component.pageState = new DotRenderedPageState(
+                mockUser,
                 {
                     ...mockDotRenderedPage,
                     template: null,
                     canCreateTemplate: false
                 },
-                null,
-                mockUser
+                null
             );
             fixture.detectChanges();
         });
@@ -191,13 +191,13 @@ describe('DotEditLayoutDesignerComponent', () => {
         describe('can save as template', () => {
             beforeEach(() => {
                 component.pageState = new DotRenderedPageState(
+                    mockUser,
                     {
                         ...mockDotRenderedPage,
                         template: null,
                         canCreateTemplate: true
                     },
-                    null,
-                    mockUser
+                    null
                 );
                 fixture.detectChanges();
             });
@@ -237,7 +237,7 @@ describe('DotEditLayoutDesignerComponent', () => {
 
     describe('edit template', () => {
         beforeEach(() => {
-            component.pageState = new DotRenderedPageState(mockDotRenderedPage, null, mockUser);
+            component.pageState = new DotRenderedPageState(mockUser, mockDotRenderedPage);
             fixture.detectChanges();
         });
 
@@ -267,7 +267,7 @@ describe('DotEditLayoutDesignerComponent', () => {
 
     describe('containers model', () => {
         beforeEach(() => {
-            component.pageState = new DotRenderedPageState(mockDotRenderedPage, null, mockUser);
+            component.pageState = new DotRenderedPageState(mockUser, mockDotRenderedPage);
         });
 
         it('should have a sidebar containers', () => {
@@ -292,7 +292,7 @@ describe('DotEditLayoutDesignerComponent', () => {
         let saveButton: DebugElement;
 
         beforeEach(() => {
-            component.pageState = new DotRenderedPageState(mockDotRenderedPage, null, mockUser);
+            component.pageState = new DotRenderedPageState(mockUser, mockDotRenderedPage);
             fixture.detectChanges();
             saveButton = fixture.debugElement.query(By.css('.dot-edit-layout__toolbar-action-save'));
         });
@@ -337,7 +337,7 @@ describe('DotEditLayoutDesignerComponent', () => {
 
         describe('should show', () => {
             beforeEach(() => {
-                component.pageState = new DotRenderedPageState(mockDotRenderedPage, null, mockUser);
+                component.pageState = new DotRenderedPageState(mockUser, mockDotRenderedPage);
                 fixture.detectChanges();
             });
 
@@ -362,6 +362,7 @@ describe('DotEditLayoutDesignerComponent', () => {
         describe('not show', () => {
             it('when user can\'t edit the tempplate and set layout mode', () => {
                 component.pageState = new DotRenderedPageState(
+                    mockUser,
                     {
                         ...mockDotRenderedPage,
                         template: {
@@ -369,8 +370,7 @@ describe('DotEditLayoutDesignerComponent', () => {
                             canEdit: false
                         }
                     },
-                    null,
-                    mockUser
+                    null
                 );
                 fixture.detectChanges();
                 expect(dotDialogService.alert).not.toHaveBeenCalled();
@@ -379,6 +379,7 @@ describe('DotEditLayoutDesignerComponent', () => {
 
             it('when page have a layout and set layout mode', () => {
                 component.pageState = new DotRenderedPageState(
+                    mockUser,
                     {
                         ...mockDotRenderedPage,
                         template: {
@@ -386,8 +387,7 @@ describe('DotEditLayoutDesignerComponent', () => {
                             anonymous: true
                         }
                     },
-                    null,
-                    mockUser
+                    null
                 );
                 fixture.detectChanges();
                 expect(dotDialogService.alert).not.toHaveBeenCalled();

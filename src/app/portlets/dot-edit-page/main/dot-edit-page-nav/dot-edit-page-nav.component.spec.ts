@@ -33,7 +33,7 @@ describe('DotEditPageNavComponent', () => {
         beforeEach(() => {
             fixture = TestBed.createComponent(DotEditPageNavComponent);
             component = fixture.componentInstance;
-            component.pageState = new DotRenderedPageState(mockDotRenderedPage, null, mockUser);
+            component.pageState = new DotRenderedPageState(mockUser, mockDotRenderedPage);
             fixture.detectChanges();
         });
 
@@ -43,7 +43,7 @@ describe('DotEditPageNavComponent', () => {
         });
 
         it('should have basic menu items', () => {
-            component.pageState = new DotRenderedPageState(mockDotRenderedPage, null, mockUser);
+            component.pageState = new DotRenderedPageState(mockUser, mockDotRenderedPage);
             fixture.detectChanges();
             const menuListItems = fixture.debugElement.queryAll(By.css('.edit-page-nav__item'));
             expect(menuListItems.length).toEqual(2);
@@ -66,6 +66,7 @@ describe('DotEditPageNavComponent', () => {
 
         it('should have menu items: Content and Code', () => {
             component.pageState = new DotRenderedPageState(
+                mockUser,
                 {
                     ...mockDotRenderedPage,
                     template: {
@@ -73,8 +74,7 @@ describe('DotEditPageNavComponent', () => {
                         drawed: false
                     }
                 },
-                null,
-                mockUser
+                null
             );
             fixture.detectChanges();
             const menuListItems: DebugElement[] = fixture.debugElement.queryAll(By.css('.edit-page-nav__item'));
@@ -91,6 +91,7 @@ describe('DotEditPageNavComponent', () => {
 
         it('should have code option disabled because user can\'t edit the page thus the layout or template', () => {
             component.pageState = new DotRenderedPageState(
+                mockUser,
                 {
                     ...mockDotRenderedPage,
                     page: {
@@ -98,8 +99,7 @@ describe('DotEditPageNavComponent', () => {
                         canEdit: false
                     }
                 },
-                null,
-                mockUser
+                null
             );
             fixture.detectChanges();
 

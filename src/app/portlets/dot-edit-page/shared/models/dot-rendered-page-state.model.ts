@@ -13,44 +13,30 @@ export interface DotPageState {
 }
 
 export class DotRenderedPageState {
-    private _canCreateTemplate: boolean;
-    private _containers?: any;
-    private _html: string;
-    private _layout: DotLayout;
-    private _page: DotPage;
     private _state: DotPageState;
-    private _template?: DotTemplate;
-    private _viewAs?: DotEditPageViewAs;
 
-    constructor(dotRenderedPage: DotRenderedPage, state: DotPageState, private user: User) {
-        this._page = dotRenderedPage.page;
-        this._html = dotRenderedPage.html;
-        this._containers = dotRenderedPage.containers;
-        this._layout = dotRenderedPage.layout;
-        this._template = dotRenderedPage.template;
-        this._state = state || this.getDefaultState(this._page);
-        this._viewAs = dotRenderedPage.viewAs;
-        this._canCreateTemplate = dotRenderedPage.canCreateTemplate;
+    constructor(private user: User, private dotRenderedPage: DotRenderedPage, state?: DotPageState) {
+        this._state = state || this.getDefaultState(this.dotRenderedPage.page);
     }
 
     get canCreateTemplate(): any {
-        return this._canCreateTemplate;
+        return this.dotRenderedPage.canCreateTemplate;
     }
 
     get containers(): any {
-        return this._containers;
+        return this.dotRenderedPage.containers;
     }
 
     get html(): string {
-        return this._html;
+        return this.dotRenderedPage.html;
     }
 
     get layout(): DotLayout {
-        return this._layout;
+        return this.dotRenderedPage.layout;
     }
 
     get page(): DotPage {
-        return this._page;
+        return this.dotRenderedPage.page;
     }
 
     get state(): DotPageState {
@@ -58,11 +44,15 @@ export class DotRenderedPageState {
     }
 
     get template(): DotTemplate {
-        return this._template;
+        return this.dotRenderedPage.template;
     }
 
     get viewAs(): DotEditPageViewAs {
-        return this._viewAs;
+        return this.dotRenderedPage.viewAs;
+    }
+
+    set dotRenderedPageState(dotRenderedPageState: DotRenderedPageState) {
+        this.dotRenderedPage = dotRenderedPageState;
     }
 
     private getDefaultState(page: DotPage): DotPageState {

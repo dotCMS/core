@@ -5,8 +5,8 @@ import { Observable } from 'rxjs/Observable';
 
 import { CoreWebService } from 'dotcms-js/dotcms-js';
 
-import { DotPageView } from '../../../portlets/dot-edit-page/shared/models/dot-page-view.model';
 import { DotLayout } from '../../../portlets/dot-edit-page/shared/models/dot-layout.model';
+import { DotRenderedPage } from '../../../portlets/dot-edit-page/shared/models/dot-rendered-page.model';
 
 /**
  * Provide util methods to get and save a PageView object
@@ -23,7 +23,7 @@ export class PageViewService {
      * @returns {Observable<any>}
      * @memberof PageViewService
      */
-    save(pageIdentifier: string, dotLayout: DotLayout): Observable<DotPageView> {
+    save(pageIdentifier: string, dotLayout: DotLayout): Observable<DotRenderedPage> {
         return this.coreWebService
             .requestView({
                 body: dotLayout,

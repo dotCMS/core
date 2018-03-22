@@ -14,6 +14,8 @@ import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { mockDotRenderedPage } from '../../../../test/dot-rendered-page.mock';
 import { mockDotPageState } from '../../content/dot-edit-content.component.spec';
+import { DotPageStateServiceMock } from '../../../../test/dot-page-state.service.mock';
+import { DotPageStateService } from '../../content/services/dot-page-state/dot-page-state.service';
 
 const getTestingModule = (dotRenderedPage?: DotRenderedPage) => {
     return {
@@ -43,6 +45,10 @@ const getTestingModule = (dotRenderedPage?: DotRenderedPage) => {
                         }
                     }
                 }
+            },
+            {
+                provide: DotPageStateService,
+                useClass: DotPageStateServiceMock
             }
         ]
     };
@@ -101,8 +107,11 @@ describe('DotEditLayoutComponent with Edit Advanced Layout', () => {
         expect(layoutDesigner).toBeTruthy();
     });
 
-    it('should pass templateInode to the dot-edit-layout-advanced', () => {
+    it('should pass pageState to the dot-edit-layout-advanced', () => {
         const layoutEditorAdvanced: DebugElement = fixture.debugElement.query(By.css('dot-edit-layout-advanced'));
-        expect(layoutEditorAdvanced.componentInstance.templateInode).toEqual('123');
+        expect(layoutEditorAdvanced.componentInstance.pageState).toEqual({
+            ...advancedTemplateMockDotRenderedPage,
+            state: mockDotPageState
+        });
     });
 });

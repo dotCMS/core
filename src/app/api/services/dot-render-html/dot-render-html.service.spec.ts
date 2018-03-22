@@ -5,10 +5,11 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { LoginService } from 'dotcms-js/dotcms-js';
 
 import { DOTTestBed } from '../../../test/dot-test-bed';
-import { DotRenderHTMLService } from './dot-render-html.service';
+import { DotRenderHTMLService, DotRenderPageOptions } from './dot-render-html.service';
 import { DotRenderedPage } from '../../../portlets/dot-edit-page/shared/models/dot-rendered-page.model';
 import { LoginServiceMock } from '../../../test/login-service.mock';
 import { mockDotRenderedPage } from '../../../test/dot-rendered-page.mock';
+import { PageMode } from '../../../portlets/dot-edit-page/shared/models/page-mode.enum';
 
 describe('DotRenderHTMLService', () => {
     let editPageService: DotRenderHTMLService;
@@ -34,8 +35,6 @@ describe('DotRenderHTMLService', () => {
             lastConnection.push(connection);
         });
     });
-
-
 
     it('should get a rendered page in edit mode', () => {
         let result: DotRenderedPage;
@@ -75,6 +74,25 @@ describe('DotRenderHTMLService', () => {
             body: mockDotRenderedPage
         })));
         expect(lastConnection[0].request.url).toContain('/api/v1/page/renderHTML/about-us?mode=LIVE');
+        expect(result).toEqual(mockDotRenderedPage);
+    });
+
+    it('should get a rendered page in specific mode', () => {
+        let result: DotRenderedPage;
+        const param: DotRenderPageOptions = {
+            url: 'about-us',
+            mode: PageMode.EDIT
+        };
+        editPageService.get(param).subscribe((renderedPage: DotRenderedPage) => (result = renderedPage));
+
+        lastConnection[0].mockRespond(
+            new Response(
+                new ResponseOptions({
+                    body: mockDotRenderedPage
+                })
+            )
+        );
+        expect(lastConnection[0].request.url).toContain('/api/v1/page/renderHTML/about-us?mode=EDIT_MODE');
         expect(result).toEqual(mockDotRenderedPage);
     });
 });
