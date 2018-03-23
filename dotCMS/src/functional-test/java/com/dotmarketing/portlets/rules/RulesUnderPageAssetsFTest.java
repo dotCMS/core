@@ -48,7 +48,7 @@ public class RulesUnderPageAssetsFTest{
     private HttpServletRequest request;
     private final String indexUrl;
 
-    private static final int ALLOWED_SECONDS_FOR_INDEX_SYNC = 5;
+    private static final int ALLOWED_SECONDS_FOR_INDEX_SYNC = 2;
 
     @BeforeClass
     public static void prepare () throws Exception {
