@@ -13,7 +13,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.HTMLPageAssetUtil;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -32,9 +31,9 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import javax.servlet.http.HttpServletRequest;
 
-import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -48,6 +47,8 @@ public class RulesUnderPageAssetsFTest{
     private User sysUser;
     private HttpServletRequest request;
     private final String indexUrl;
+
+    private static final int ALLOWED_SECONDS_FOR_INDEX_SYNC = 5;
 
     @BeforeClass
     public static void prepare () throws Exception {
@@ -87,7 +88,7 @@ public class RulesUnderPageAssetsFTest{
     @Test
     public void testFireRuleUnderLivePage() throws Exception {
         final String folderPath = "/RuleUnderPageFolder/";
-        final String pageName = "testFireRuleUnderLivePagePage";
+        final String pageName = "testFireRuleUnderLivePagePage" + System.currentTimeMillis();;
 
         //Create Folder.
         APILocator.getFolderAPI().createFolders(folderPath, host, sysUser, false);
@@ -127,6 +128,7 @@ public class RulesUnderPageAssetsFTest{
         //Remove Page with rules.
         APILocator.getContentletAPI().unpublish(dummyPage, sysUser, false);
         APILocator.getContentletAPI().archive(dummyPage, sysUser, false);
+        Thread.sleep(TimeUnit.SECONDS.toMillis(ALLOWED_SECONDS_FOR_INDEX_SYNC));
         assertTrue(dummyPage.isArchived());
         APILocator.getContentletAPI().delete(dummyPage, sysUser, false);
 
@@ -142,7 +144,7 @@ public class RulesUnderPageAssetsFTest{
     public void copyPageWithRules() throws Exception {
         final String folderPath = "/RuleUnderPageFolder/";
         final String targetFolderPath = "/TargetPageFolder/";
-        final String pageName = "copyPageWithRulesPage";
+        final String pageName = "copyPageWithRulesPage" + System.currentTimeMillis();
 
         //Create Folder.
         APILocator.getFolderAPI().createFolders(folderPath, host, sysUser, false);
@@ -185,11 +187,13 @@ public class RulesUnderPageAssetsFTest{
         //Remove Page with rules.
         APILocator.getContentletAPI().unpublish(dummyPage, sysUser, false);
         APILocator.getContentletAPI().archive(dummyPage, sysUser, false);
+        Thread.sleep(TimeUnit.SECONDS.toMillis(ALLOWED_SECONDS_FOR_INDEX_SYNC));
         assertTrue(dummyPage.isArchived());
         APILocator.getContentletAPI().delete(dummyPage, sysUser, false);
 
         APILocator.getContentletAPI().unpublish(targetHTMLPageAsset, sysUser, false);
         APILocator.getContentletAPI().archive(targetHTMLPageAsset, sysUser, false);
+        Thread.sleep(TimeUnit.SECONDS.toMillis(ALLOWED_SECONDS_FOR_INDEX_SYNC));
         assertTrue(targetHTMLPageAsset.isArchived());
         APILocator.getContentletAPI().delete(targetHTMLPageAsset, sysUser, false);
         //Remove Template.
@@ -203,7 +207,7 @@ public class RulesUnderPageAssetsFTest{
     @Test
     public void deletePageWithRules() throws Exception {
         final String folderPath = "/DeletePageFolder/";
-        final String pageName = "deletePageWithRulesPage";
+        final String pageName = "deletePageWithRulesPage" + System.currentTimeMillis();
 
         //Create Folder.
         APILocator.getFolderAPI().createFolders(folderPath, host, sysUser, false);
@@ -233,6 +237,7 @@ public class RulesUnderPageAssetsFTest{
         //Remove Page with rules.
         APILocator.getContentletAPI().unpublish(dummyPage, sysUser, false);
         APILocator.getContentletAPI().archive(dummyPage, sysUser, false);
+        Thread.sleep(TimeUnit.SECONDS.toMillis(ALLOWED_SECONDS_FOR_INDEX_SYNC));
         assertTrue(dummyPage.isArchived());
         APILocator.getContentletAPI().delete(dummyPage, sysUser, false);
 
@@ -251,8 +256,8 @@ public class RulesUnderPageAssetsFTest{
     @Test
     public void testFireRuleAnotherPage() throws Exception {
         final String folderPath = "/RuleUnderPageFolder/";
-        final String pageName = "DummyPage";
-        final String secondPageName = "SecondDummyPage";
+        final String pageName = "DummyPage"  + System.currentTimeMillis();;
+        final String secondPageName = "SecondDummyPage"  + System.currentTimeMillis();
 
         //Create Folder.
         APILocator.getFolderAPI().createFolders(folderPath, host, sysUser, false);
@@ -295,11 +300,13 @@ public class RulesUnderPageAssetsFTest{
         //Remove Page with rules.
         APILocator.getContentletAPI().unpublish(dummyPage, sysUser, false);
         APILocator.getContentletAPI().archive(dummyPage, sysUser, false);
+        Thread.sleep(TimeUnit.SECONDS.toMillis(ALLOWED_SECONDS_FOR_INDEX_SYNC));
         assertTrue(dummyPage.isArchived());
         APILocator.getContentletAPI().delete(dummyPage, sysUser, false);
 
         APILocator.getContentletAPI().unpublish(secondDummyPage, sysUser, false);
         APILocator.getContentletAPI().archive(secondDummyPage, sysUser, false);
+        Thread.sleep(TimeUnit.SECONDS.toMillis(ALLOWED_SECONDS_FOR_INDEX_SYNC));
         assertTrue(secondDummyPage.isArchived());
         APILocator.getContentletAPI().delete(secondDummyPage, sysUser, false);
 
