@@ -284,6 +284,7 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
             throws DotDataException, DotSecurityException, AlreadyExistException {
         try {
             if (null != contentlet) {
+                contentletAPI.archive(contentlet, systemUser, false);
                 contentletAPI.delete(contentlet, systemUser, false);
             }
         } finally {
