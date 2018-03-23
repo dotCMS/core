@@ -152,7 +152,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 name: 'nameField'
             };
 
-            comp.removeFields.subscribe((removeFields) => (fieldsToRemove = removeFields));
+            comp.removeFields.subscribe(removeFields => (fieldsToRemove = removeFields));
 
             tick();
 
@@ -172,8 +172,9 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 name: 'nameField'
             };
             fieldRow.addFields([field]);
+            fieldRow.lineDivider.id = 'test';
 
-            comp.removeFields.subscribe((removeFields) => (fieldsToRemove = removeFields));
+            comp.removeFields.subscribe(removeFields => (fieldsToRemove = removeFields));
 
             tick();
 
@@ -182,6 +183,18 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
             expect([fieldRow.lineDivider, fieldRow.columns[0].tabDivider, field]).toEqual(fieldsToRemove);
         })
     );
+
+    it('should remove and empty row without lineDivider id, and not emit removeFields ', () => {
+        const fieldRow1 = new FieldRow();
+        const fieldRow2 = new FieldRow();
+        fieldRow1.lineDivider.id = 'test';
+        comp.fieldRows = [fieldRow1, fieldRow2];
+        spyOn(comp.removeFields, 'emit');
+        comp.removeFieldRow(fieldRow2);
+
+        expect(comp.removeFields.emit).toHaveBeenCalledTimes(0);
+        expect(comp.fieldRows).toEqual([fieldRow1]);
+    });
 
     describe('Load fields and drag and drop', () => {
         beforeEach(
@@ -429,7 +442,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
 
                 tick();
 
-                comp.saveFields.subscribe((fields) => (saveFields = fields));
+                comp.saveFields.subscribe(fields => (saveFields = fields));
                 comp.saveFieldsHandler(this.fields[8]);
 
                 tick();
@@ -451,7 +464,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
 
                 tick();
 
-                comp.saveFields.subscribe((fields) => (saveFields = fields));
+                comp.saveFields.subscribe(fields => (saveFields = fields));
 
                 const fieldUpdated = {
                     fixed: true,
