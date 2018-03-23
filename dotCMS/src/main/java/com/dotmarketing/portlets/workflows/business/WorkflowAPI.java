@@ -574,4 +574,11 @@ public interface WorkflowAPI {
 	 * @throws DotSecurityException
 	 */
 	public List<WorkflowTask> findTasksByStep(String stepId) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Return the system workflow scheme
+	 * @return The system workflow scheme
+	 * @throws DotDataException
+	 */
+	public WorkflowScheme findSystemWorkflowScheme() throws DotDataException;
 }
