@@ -29,6 +29,7 @@ import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
 import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.util.ImportUtil;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 
@@ -320,6 +321,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         if ( expectingWarnings ) {
             List<String> warnings = results.get( "warnings" );
             assertNotNull( warnings );//Expected warnings as no key fields were chosen
+            Logger.info(this,"List WARNINGS: " + warnings.size());
             assertTrue( !warnings.isEmpty() );
         } else {
             List<String> warnings = results.get( "warnings" );
