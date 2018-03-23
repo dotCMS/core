@@ -33,6 +33,8 @@ import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
+
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -125,6 +127,7 @@ public class RulesUnderPageAssetsFTest{
         //Remove Page with rules.
         APILocator.getContentletAPI().unpublish(dummyPage, sysUser, false);
         APILocator.getContentletAPI().archive(dummyPage, sysUser, false);
+        assertTrue(dummyPage.isArchived());
         APILocator.getContentletAPI().delete(dummyPage, sysUser, false);
 
         //Remove Template.
@@ -182,9 +185,12 @@ public class RulesUnderPageAssetsFTest{
         //Remove Page with rules.
         APILocator.getContentletAPI().unpublish(dummyPage, sysUser, false);
         APILocator.getContentletAPI().archive(dummyPage, sysUser, false);
+        assertTrue(dummyPage.isArchived());
         APILocator.getContentletAPI().delete(dummyPage, sysUser, false);
+
         APILocator.getContentletAPI().unpublish(targetHTMLPageAsset, sysUser, false);
         APILocator.getContentletAPI().archive(targetHTMLPageAsset, sysUser, false);
+        assertTrue(targetHTMLPageAsset.isArchived());
         APILocator.getContentletAPI().delete(targetHTMLPageAsset, sysUser, false);
         //Remove Template.
         APILocator.getTemplateAPI().delete(template, sysUser, false);
@@ -227,6 +233,7 @@ public class RulesUnderPageAssetsFTest{
         //Remove Page with rules.
         APILocator.getContentletAPI().unpublish(dummyPage, sysUser, false);
         APILocator.getContentletAPI().archive(dummyPage, sysUser, false);
+        assertTrue(dummyPage.isArchived());
         APILocator.getContentletAPI().delete(dummyPage, sysUser, false);
 
         //Get all rules from the deleted page, shouldn't be any.
@@ -288,9 +295,12 @@ public class RulesUnderPageAssetsFTest{
         //Remove Page with rules.
         APILocator.getContentletAPI().unpublish(dummyPage, sysUser, false);
         APILocator.getContentletAPI().archive(dummyPage, sysUser, false);
+        assertTrue(dummyPage.isArchived());
         APILocator.getContentletAPI().delete(dummyPage, sysUser, false);
+
         APILocator.getContentletAPI().unpublish(secondDummyPage, sysUser, false);
         APILocator.getContentletAPI().archive(secondDummyPage, sysUser, false);
+        assertTrue(secondDummyPage.isArchived());
         APILocator.getContentletAPI().delete(secondDummyPage, sysUser, false);
 
         //Remove Template.
