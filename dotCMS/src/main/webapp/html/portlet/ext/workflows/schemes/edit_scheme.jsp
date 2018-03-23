@@ -25,8 +25,8 @@
 
 
 <div dojoType="dijit.form.Form" id="addEditSchemeForm" jsId="addEditSchemeForm" encType="multipart/form-data" action="/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfSchemeAjax" method="POST">
-	<input type="hidden" name="cmd" value="save">
-	<input type="hidden" name="schemeId" value="<%=UtilMethods.webifyString(scheme.getId())%>">
+	<input type="hidden" id="cmd" name="cmd" value="save">
+	<input type="hidden" id="schemeId" name="schemeId" value="<%=UtilMethods.webifyString(scheme.getId())%>">
 	<!-- START Listing Results -->
 	<div class="form-horizontal">
 		<dl>
@@ -81,6 +81,11 @@
 		<button dojoType="dijit.form.Button" onClick='schemeAdmin.saveAddEdit()' iconClass="saveIcon" type="button">
 			<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save"))%>
 		</button>
+		<%if(scheme.isArchived()){%>
+		<button dojoType="dijit.form.Button" onClick='schemeAdmin.deleteScheme("<%=UtilMethods.webifyString(scheme.getId())%>")' iconClass="deleteIcon" type="button">
+			<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete"))%>
+		</button>
+		<%}%>
 		<button dojoType="dijit.form.Button"
 			onClick='schemeAdmin.hideAddEdit()' class="dijitButtonFlat" type="button">
 			<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel"))%>
