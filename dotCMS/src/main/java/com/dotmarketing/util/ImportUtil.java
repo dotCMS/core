@@ -1102,6 +1102,7 @@ public class ImportUtil {
 
                     contentlets = multilingualContentlets;
                 }
+                Logger.info(ImportUtil.class,"isNew: " + isNew);
 
                 if ( !isNew ) {
                     if ( conditionValues.equals( "" ) || !keyContentUpdated.contains( conditionValues ) || isMultilingual ) {
@@ -1110,6 +1111,7 @@ public class ImportUtil {
                             keyContentUpdated.add( conditionValues );
                         }
                     }
+                    Logger.info(ImportUtil.class,"Contentlets size: " + contentlets.size());
                     if ( contentlets.size() == 1 ) {
                         results.get( "warnings" ).add(
                                 LanguageUtil.get( user, "Line--" ) + lineNumber + ". " + LanguageUtil.get( user, "The-key-fields-chosen-match-one-existing-content(s)" ) + " - "
