@@ -982,9 +982,9 @@ public class ContentResourceTest {
 
 
         } finally {
+            //This method performs a cascade delete and also archives the content
             APILocator.getFolderAPI().delete(folder,user,false);
-            contentletAPI.delete(contentlet,user,false);
-
+            //So no need to call delete again.
         }
 
     }
