@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.workflow;
 
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -17,6 +18,7 @@ import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
@@ -399,7 +401,7 @@ public class WorkflowResourceIntegrationTest {
                     schemeToRemove.setArchived(true);
                     workflowAPI.saveScheme(schemeToRemove, APILocator.systemUser());
                     workflowAPI.deleteScheme(schemeToRemove, APILocator.systemUser());
-                } catch (DotDataException | AlreadyExistException e) {
+                } catch (DotDataException | DotSecurityException | AlreadyExistException e) {
                     e.printStackTrace();
                 }
             }
@@ -655,6 +657,68 @@ public class WorkflowResourceIntegrationTest {
         final WorkflowAction wa = WorkflowAction.class.cast(findActionResponseEv.getEntity());
         assertNotNull(wa);
         assertEquals(actionNewName,wa.getName());
+    }
+
+    /**
+     * Test the delete scheme resource
+     * @throws Exception
+     */
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testDeleteScheme() throws Exception{
+        final Role adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
+        final String adminRoleId = adminRole.getId();
+        final WorkflowScheme savedScheme = createScheme();
+        assertNotNull(savedScheme);
+        final List<WorkflowStep> workflowSteps = addSteps(savedScheme,2);
+        assertFalse(workflowSteps.isEmpty());
+        assertEquals(2, workflowSteps.size());
+        final List<WorkflowAction> actions = createWorkflowActions(savedScheme, adminRoleId, workflowSteps);
+        assertEquals(2, actions.size());
+
+        final WorkflowStep secondStep = workflowSteps.get(1);
+        final WorkflowAction firstAction = actions.get(0);
+
+        final HttpServletRequest request1 = mock(HttpServletRequest.class);
+        //assign the first action to the second step
+        final Response saveActionToStepResponse = workflowResource.saveActionToStep(
+                request1, secondStep.getId(),
+                new WorkflowActionStepForm.Builder().actionId(firstAction.getId()).build()
+        );
+        final ResponseEntityView updateResponseEv = ResponseEntityView.class.cast(saveActionToStepResponse.getEntity());
+        assertEquals(ResponseEntityView.OK,updateResponseEv.getEntity());
+
+        final HttpServletRequest request2 = mock(HttpServletRequest.class);
+        final Response actionsBySchemeResponse = workflowResource.findActionsByScheme(request2, savedScheme.getId());
+        final ResponseEntityView findActionsResponseEv = ResponseEntityView.class.cast(actionsBySchemeResponse.getEntity());
+        final List<WorkflowAction> actionsByScheme = List.class.cast(findActionsResponseEv.getEntity());
+        assertEquals(2, actionsByScheme.size());
+
+        final HttpServletRequest request3 = mock(HttpServletRequest.class);
+        //This returns 1 single action
+        final Response actionsByStepResponse = workflowResource.findActionByStep(request3, secondStep.getId(), firstAction.getId());
+        final ResponseEntityView findActionsByStepResponseEv = ResponseEntityView.class.cast(actionsByStepResponse.getEntity());
+        final WorkflowAction actionByStep = WorkflowAction.class.cast(findActionsByStepResponseEv.getEntity());
+        assertNotNull(actionByStep);
+        assertEquals(firstAction.getId(),actionByStep.getId());
+
+        //test delete without archive
+        final HttpServletRequest request4 = mock(HttpServletRequest.class);
+        final Response deleteSchemeResponse = workflowResource.delete(request4, savedScheme.getId());
+        assertEquals(Status.INTERNAL_SERVER_ERROR.getStatusCode(), deleteSchemeResponse.getStatus());
+
+        //test archive scheme
+        WorkflowSchemeForm form = new WorkflowSchemeForm.Builder().schemeDescription("Delete scheme").schemeArchived(true).schemeName(savedScheme.getName()).build();
+        final HttpServletRequest request5 = mock(HttpServletRequest.class);
+        final Response updateResponse = workflowResource.update(request5,savedScheme.getId(), form);
+        assertEquals(Response.Status.OK.getStatusCode(), updateResponse.getStatus());
+
+        //test delete scheme
+        final HttpServletRequest request6 = mock(HttpServletRequest.class);
+        final Response deleteSchemeResponse2 = workflowResource.delete(request6, savedScheme.getId());
+        assertEquals(Status.OK.getStatusCode(), deleteSchemeResponse2.getStatus());
+
+
     }
 
 }

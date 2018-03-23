@@ -88,6 +88,7 @@ public class HostBundlerTest extends IntegrationTestBase {
             Assert.assertEquals(status.getCount(), 1);
         } finally {
             tempDir.delete();
+            hostAPI.archive(host, user, false);
             hostAPI.delete(host, user, false);
         }
     }

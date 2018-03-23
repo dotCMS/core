@@ -208,7 +208,8 @@ public class PageResourceHelper implements Serializable {
 
     @CloseDB
     public String getPageRendered(final HTMLPageAsset page, final HttpServletRequest request,
-                                  final HttpServletResponse response, final User user, final PageMode mode) throws Exception {
+                                  final HttpServletResponse response, final User user, final PageMode mode)
+            throws DotSecurityException, DotDataException, IOException {
 
 
         final Host site =resolveSite(request, user);
