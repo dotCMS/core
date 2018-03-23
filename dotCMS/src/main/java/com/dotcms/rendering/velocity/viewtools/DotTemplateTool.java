@@ -330,5 +330,4 @@ public class DotTemplateTool implements ViewTool {
         return themeMap;
     }
 
-
 }
