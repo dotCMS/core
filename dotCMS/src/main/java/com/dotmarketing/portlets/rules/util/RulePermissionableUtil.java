@@ -6,6 +6,7 @@ import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.Logger;
@@ -40,8 +41,14 @@ public class RulePermissionableUtil {
                 }else{
                     Contentlet contentlet;
 
-                    contentlet = APILocator.getContentletAPI().findContentletByIdentifier(parent, false,
-                            APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
+                    try {
+                        contentlet = APILocator.getContentletAPI()
+                                .findContentletByIdentifier(parent, false,
+                                        APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                                        systemUser, false);
+                    } catch (DotContentletStateException se) {
+                        contentlet = null;
+                    }
 
                     if (contentlet == null) {
                         List<Contentlet> results = APILocator.getContentletAPI()

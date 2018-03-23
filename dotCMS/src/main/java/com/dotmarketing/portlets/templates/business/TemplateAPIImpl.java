@@ -256,7 +256,6 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		}
 		APILocator.getVersionableAPI().setWorking(template);
 
-
         return template;
 	}
 

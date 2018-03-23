@@ -1045,7 +1045,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         Contentlet contentlet = contentlets.iterator().next();
 
         //Create the test relationship
-        createRelationShip( contentlet.getStructure(), false );
+        Relationship testRelationship = createRelationShip( contentlet.getStructure(), false );
 
         //Find all the relationships for this contentlet
         ContentletRelationships contentletRelationships = contentletAPI.getAllRelationships( contentlet.getInode(), user, false );
@@ -1053,6 +1053,10 @@ public class ContentletAPITest extends ContentletBaseTest {
         //Validations
         assertNotNull( contentletRelationships );
         assertTrue( contentletRelationships.getRelationshipsRecords() != null && !contentletRelationships.getRelationshipsRecords().isEmpty() );
+
+        if (testRelationship != null) {
+            relationshipAPI.delete(testRelationship);
+        }
     }
 
     /**
@@ -1092,6 +1096,9 @@ public class ContentletAPITest extends ContentletBaseTest {
         //Validations
         assertNotNull( contentletRelationships );
         assertTrue( contentletRelationships.getRelationshipsRecords() != null && !contentletRelationships.getRelationshipsRecords().isEmpty() );
+        if (testRelationship != null) {
+            relationshipAPI.delete(testRelationship);
+        }
     }
 
     /**
@@ -1722,6 +1729,10 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Validations
         assertTrue( foundContentlets == null || foundContentlets.isEmpty() );
+        if (testRelationship != null) {
+            relationshipAPI.delete(testRelationship);
+        }
+
     }
 
     /**
@@ -1765,6 +1776,9 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Validations
         assertTrue( foundContentlets == null || foundContentlets.isEmpty() );
+        if (testRelationship != null) {
+            relationshipAPI.delete(testRelationship);
+        }
     }
 
     /**
@@ -1815,6 +1829,9 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals( tree.getParent(), parentContentlet.getIdentifier() );
         assertEquals( tree.getChild(), childContentlet.getIdentifier() );
         assertEquals( tree.getRelationType(), testRelationship.getRelationTypeValue() );
+        if (testRelationship != null) {
+            relationshipAPI.delete(testRelationship);
+        }
     }
 
     /**
@@ -1861,6 +1878,9 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals( tree.getParent(), parentContentlet.getIdentifier() );
         assertEquals( tree.getChild(), childContentlet.getIdentifier() );
         assertEquals( tree.getRelationType(), testRelationship.getRelationTypeValue() );
+        if (testRelationship != null) {
+            relationshipAPI.delete(testRelationship);
+        }
     }
 
     /**
@@ -1906,6 +1926,9 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Validations
         assertTrue( foundContentlets != null && !foundContentlets.isEmpty() );
+        if (testRelationship != null) {
+            relationshipAPI.delete(testRelationship);
+        }
     }
 
     /**
@@ -1950,6 +1973,9 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Validations
         assertTrue( foundContentlets != null && !foundContentlets.isEmpty() );
+        if (testRelationship != null) {
+            relationshipAPI.delete(testRelationship);
+        }
     }
 
     /**
