@@ -152,9 +152,11 @@ public class LinkCheckerAPITest extends IntegrationTestBase {
             List<Contentlet> contentList=new ArrayList<Contentlet>();
             contentList.addAll(APILocator.getContentletAPI().findByStructure(structure.getInode(), sysuser, false, 0, 0));
             contentList.addAll(APILocator.getContentletAPI().findByStructure(urlmapstructure.getInode(), sysuser, false, 0, 0));
+            APILocator.getContentletAPI().archive(contentList, sysuser, false);
             APILocator.getContentletAPI().delete(contentList, sysuser, false);
 
             for(HTMLPageAsset pp : pages){
+                    APILocator.getContentletAPI().archive(pp, sysuser, false);
             		APILocator.getContentletAPI().delete(pp, sysuser, false,true);
             }
             APILocator.getTemplateAPI().delete(template, sysuser, false);

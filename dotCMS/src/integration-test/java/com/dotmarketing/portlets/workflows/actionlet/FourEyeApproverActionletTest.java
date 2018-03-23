@@ -186,6 +186,7 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
 
         // Cleanup
         contentlet = contentlet3;
+        contentletAPI.archive(contentlet3, systemUser, false);
         contentletAPI.delete(contentlet3, systemUser, false);
     }
 
@@ -226,6 +227,7 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
                 contentlet2.isLive());
 
         // Cleanup
+        contentletAPI.archive(contentlet2, systemUser, false);
         contentletAPI.delete(contentlet2, systemUser, false);
     }
 
@@ -266,6 +268,7 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
         }
 
         // Cleanup
+        contentletAPI.archive(contentlet1, systemUser, false);
         contentletAPI.delete(contentlet1, systemUser, false);
 
         Assert.assertTrue(

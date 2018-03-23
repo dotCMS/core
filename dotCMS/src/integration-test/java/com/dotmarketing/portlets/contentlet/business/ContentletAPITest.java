@@ -418,6 +418,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals( copyContentlet.getFolder(), contentlet.getFolder() );
         assertEquals( copyContentlet.getHost(), contentlet.getHost() );
 
+        contentletAPI.archive(copyContentlet, user, false);
         contentletAPI.delete(copyContentlet, user, false);
     }
 
@@ -449,6 +450,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals( copyContentlet.getFolder(), contentlet.getFolder() );
         assertEquals( copyContentlet.get("junitTestWysiwyg"), contentlet.get("junitTestWysiwyg") );
 
+        contentletAPI.archive(copyContentlet, user, false);
         contentletAPI.delete(copyContentlet, user, false);
     }
 
@@ -478,6 +480,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals( copyContentlet.get( "junitTestWysiwyg" ), contentlet.get( "junitTestWysiwyg" ) );
         assertEquals( copyContentlet.getHost(), contentlet.getHost() );
 
+        contentletAPI.archive( copyContentlet, user, false );
         contentletAPI.delete( copyContentlet, user, false );
     }
 
@@ -509,6 +512,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals( copyContentlet.getFolder(), contentlet.getFolder() );
         assertEquals( copyContentlet.get( "junitTestWysiwyg" ), contentlet.get( "junitTestWysiwyg" ) );
 
+        contentletAPI.archive( copyContentlet, user, false );
         contentletAPI.delete( copyContentlet, user, false );
     }
     
@@ -2139,6 +2143,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals("e",search.get(3).getStringProperty(field.getVelocityVarName()));
         assertEquals("f",search.get(4).getStringProperty(field.getVelocityVarName()));
 
+        contentletAPI.archive(list, user, false);
         contentletAPI.delete(list, user, false);
         FieldFactory.deleteField(field);
         APILocator.getStructureAPI().delete(testStructure, user);
@@ -3858,6 +3863,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             type = contentTypeAPI.save(type, null, null);
 
             //html page is removed
+            contentletAPI.archive(htmlPage, user, false);
             contentletAPI.delete(htmlPage, user, false);
 
             //verify that the content type was unlinked from the deleted page

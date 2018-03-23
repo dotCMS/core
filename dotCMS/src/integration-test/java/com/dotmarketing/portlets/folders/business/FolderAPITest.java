@@ -970,6 +970,7 @@ public class FolderAPITest {
 			}
 
 			if (contentAsset != null && contentAsset.getInode() != null) {
+				contentletAPI.archive(contentAsset, user, false);
 				contentletAPI.delete(contentAsset, user, false);
 			}
 		}
