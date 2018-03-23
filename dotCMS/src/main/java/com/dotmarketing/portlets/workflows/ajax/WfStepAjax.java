@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.workflows.ajax;
 
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.DeserializationFeature;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.workflow.form.WorkflowActionStepBean;
@@ -13,6 +14,7 @@ import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 import com.liferay.portal.model.User;
 
 import javax.servlet.ServletException;
@@ -43,7 +45,7 @@ public class WfStepAjax extends WfBaseAction {
 		final String order = request.getParameter("stepOrder");
 		final String stepName = request.getParameter("stepName");
 		final boolean enableEscalation = request.getParameter("enableEscalation") != null;
-		final String escalationAction = request.getParameter("escalationAction");
+		final String escalationAction = StringUtils.nullEmptyStr(request.getParameter("escalationAction"));
 		final String escalationTime = request.getParameter("escalationTime");
 		final boolean stepResolved = request.getParameter("stepResolved") != null;
 		Integer stepOrder = null;
@@ -54,14 +56,25 @@ public class WfStepAjax extends WfBaseAction {
 			//order param is not present
 			Logger.error(this.getClass(),"param stepOrder is invalid or null");
 		}
+
+        final WorkflowStepUpdateForm.Builder builder = new WorkflowStepUpdateForm.Builder();
+		builder.stepName(stepName).stepResolved(stepResolved).stepOrder(stepOrder);
+        if(enableEscalation) {
+            builder.enableEscalation(true).escalationAction(escalationAction).escalationTime(escalationTime);
+        }
+        else {
+            builder.enableEscalation(false).escalationAction(null).escalationTime("0");
+        }
+
 		try {
-			final WorkflowStepUpdateForm from = new WorkflowStepUpdateForm.Builder().stepName(stepName).enableEscalation(enableEscalation).escalationAction(escalationAction).escalationTime(escalationTime).stepResolved(stepResolved).stepOrder(stepOrder).build();
 			final WorkflowStep step = workflowAPI.findStep(stepId);
-            workflowHelper.updateStep(step, from, user);
+            workflowHelper.updateStep(step, builder.build(), user);
 		} catch (Exception e) {
 			Logger.error(this.getClass(), e.getMessage());
 			Logger.debug(this.getClass(), e.getMessage(), e);
-			writeError(response, e.getMessage());
+			writeError(response,
+				ExceptionUtil.getLocalizedMessageOrDefault(getUser(),"Failed-To-Update-Step","Failed to update step.", getClass())
+			);
 		}
 
 	}

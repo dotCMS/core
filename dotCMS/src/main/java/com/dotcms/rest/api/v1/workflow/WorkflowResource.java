@@ -1330,4 +1330,35 @@ public class WorkflowResource {
         return response;
     }
 
+    /**
+     * Delete an existing scheme
+     *
+     * @param request
+     * @return
+     */
+    @DELETE
+    @Path("/schemes/{schemeId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response delete(@Context final HttpServletRequest request,
+            @PathParam("schemeId") final String schemeId) {
+        final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
+        Logger.debug(this, "Deleting scheme with id: " + schemeId);
+        Response response = null;
+        try {
+            this.workflowHelper.delete(schemeId, initDataObject.getUser());
+            response = Response.ok(new ResponseEntityView(OK)).build(); // 200
+        } catch ( DoesNotExistException e) {
+            Logger.error(this.getClass(), "Exception attempting to delete a nonexistent schema identified by : " +schemeId + ", exception message: " + e.getMessage(), e);
+            response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+        } catch (Exception e) {
+            Logger.error(this.getClass(), "Exception attempting to delete schema identified by : " +schemeId + ", exception message: " + e.getMessage(), e);
+            response = (e.getCause() instanceof SecurityException)?
+                    this.createUnAuthorizedResponse(e) :
+                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+        return response;
+    }
+
 } // E:O:F:WorkflowResource.

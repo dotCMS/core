@@ -2,6 +2,8 @@ package com.dotmarketing.portlets.workflows.business;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
@@ -27,6 +29,7 @@ import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import org.apache.commons.lang.time.StopWatch;
 import org.osgi.framework.BundleContext;
 
 import java.util.*;
@@ -50,6 +53,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	// not very fancy, but the WorkflowImport is a friend of WorkflowAPI
 	private volatile FriendClass  friendClass = null;
+
+	protected final DotSubmitter submitter = DotConcurrentFactory.getInstance()
+			.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public WorkflowAPIImpl() {
@@ -315,9 +321,150 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	}
 
-	@WrapInTransaction
-	public void deleteScheme(final WorkflowScheme scheme, final User user) throws DotDataException {
 
+	public void deleteScheme(final WorkflowScheme scheme, final User user)
+			throws DotDataException, DotSecurityException, AlreadyExistException {
+
+		this.isUserAllowToModifiedWorkflow(user);
+
+		if (null == scheme){
+			Logger.warn(this, "Can not delete a null workflow");
+			throw new DotWorkflowException("Can not delete a null workflow");
+		}
+		if( SYSTEM_WORKFLOW_ID.equals(scheme.getId()) || !scheme.isArchived()) {
+
+			Logger.warn(this, "Can not delete workflow Id:" + scheme.getId());
+			throw new DotWorkflowException("Can not delete workflow Id:" + scheme.getId());
+		}
+
+		//Delete the Scheme in a separated thread
+		this.submitter.execute(() -> deleteSchemeTask(scheme, user));
+
+	}
+
+	/**
+	 * This task allows to elimiminate the workflow scheme on a separate thread
+	 * @param scheme Workflow Scheme to be delete
+	 * @param user The user
+	 */
+	@WrapInTransaction
+	private void deleteSchemeTask(final WorkflowScheme scheme, final User user) {
+		try {
+			final StopWatch stopWatch = new StopWatch();
+			stopWatch.start();
+			Logger.info(this, "Begin the Delete Workflow Scheme task.");
+
+			final List<WorkflowStep> steps = this.findSteps(scheme);
+			for (WorkflowStep step : steps) {
+				//delete workflow tasks
+				this.findTasksByStep(step.getId()).stream()
+						.forEach(task -> this.deleteWorkflowTaskWrapper(task, user));
+			}
+			//delete actions
+			this.findActions(scheme, user).stream()
+					.forEach(action -> this.deleteWorkflowActionWrapper(action, user));
+
+			//delete steps
+			steps.stream().forEach(step -> this.deleteWorkflowStepWrapper(step, user));
+
+			//delete scheme
+			this.workFlowFactory.deleteScheme(scheme);
+			stopWatch.stop();
+			Logger.info(this, "Delete Workflow Scheme task DONE, duration:" +
+					DateUtil.millisToSeconds(stopWatch.getTime()) + " seconds");
+		} catch (Exception e) {
+			throw new DotRuntimeException(e);
+		}
+	}
+
+	/**
+	 * Wrap the delete Workflow Step method to be use by lambdas
+	 *
+	 * @param step The workflow step to be deleted
+	 * @param user The user
+	 * @throws DotRuntimeException
+	 */
+	@CloseDBIfOpened
+	private void deleteWorkflowStepWrapper(final WorkflowStep step, final User user)
+			throws DotRuntimeException {
+		try {
+			//delete step
+			this.deleteStep(step, user);
+		} catch (Exception e) {
+			throw new DotRuntimeException(e);
+		}
+	}
+
+	/**
+	 * Wrap the delete Workflow Action method to be use by lambdas
+	 *
+	 * @param action The workflow action to be deleted
+	 * @param user The user
+	 * @throws DotRuntimeException
+	 */
+	@CloseDBIfOpened
+	private void deleteWorkflowActionWrapper(final WorkflowAction action, final User user)
+			throws DotRuntimeException {
+		try {
+			//delete action
+			this.deleteAction(action,user);
+		} catch (Exception e) {
+			throw new DotRuntimeException(e);
+		}
+	}
+
+	/**
+	 * Wrap the delete Workflow Task method to be use by lambdas
+	 *
+	 * @param task The workflow task to be deleted
+	 * @param user The user
+	 * @throws DotRuntimeException
+	 */
+	@CloseDBIfOpened
+	private void deleteWorkflowTaskWrapper(final WorkflowTask task, final User user)
+			throws DotRuntimeException {
+		try {
+			//delete task comment
+			this.findWorkFlowComments(task).stream().forEach(this::deleteCommentWrapper);
+
+			//delete task history
+			this.findWorkflowHistory(task).stream().forEach(this::deleteWorkflowHistoryWrapper);
+
+			//delete task
+			this.deleteWorkflowTask(task, user);
+		} catch (Exception e) {
+			throw new DotRuntimeException(e);
+		}
+	}
+
+	/**
+	 * Wrap the delete Workflow Comment method to be use by lambdas
+	 * @param workflowComment The workflow comment object to be deleted
+	 * @throws DotRuntimeException
+	 */
+	@CloseDBIfOpened
+	private void deleteCommentWrapper(final WorkflowComment workflowComment)
+			throws DotRuntimeException{
+		try{
+			this.deleteComment(workflowComment);
+		}catch(Exception e){
+			throw new DotRuntimeException(e);
+		}
+	}
+
+	/**
+	 * Wrap the delete Workflow History method to be use by lambdas
+	 * @param workflowHistory The workflow History object to be deleted
+	 * @throws DotRuntimeException
+	 */
+	@CloseDBIfOpened
+	private void deleteWorkflowHistoryWrapper(final WorkflowHistory workflowHistory)
+			throws DotRuntimeException{
+		try{
+			this.deleteWorkflowHistory(workflowHistory);
+		}catch(Exception e){
+			throw new DotRuntimeException(e);
+		}
 	}
 
 	@CloseDBIfOpened
@@ -1648,6 +1795,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 
 		return actions.build();
+	}
+
+	@CloseDBIfOpened
+	public List<WorkflowTask> findTasksByStep(final String stepId) throws DotDataException, DotSecurityException{
+		return this.workFlowFactory.findTasksByStep(stepId);
 	}
 
 }
