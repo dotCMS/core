@@ -17,16 +17,13 @@ import org.junit.Test;
 public class RelationshipFactoryImplTest extends ContentTypeBaseTest{
 
     @Test
-    public void testByTypeValue() throws DotHibernateException {
-        RelationshipFactory fac = FactoryLocator.getRelationshipFactory();
-        List<Relationship> rels = fac.dbAll();
+    public void testByTypeValue_RelationshipsShouldBeSameRegardlessCase_SameRelationship() throws DotHibernateException {
+        RelationshipFactory relationshipFactory = FactoryLocator.getRelationshipFactory();
+        List<Relationship> relationshipList = relationshipFactory.dbAll();
 
-        for (Relationship ship : rels) {
-            Relationship newRel = fac.byTypeValue(ship.getRelationTypeValue().toUpperCase());
-            Logger.info(this, "ship: " + ship.getRelationTypeValue());
-            Logger.info(this, "newRel: " + newRel.getRelationTypeValue());
-            assertEquals(ship,newRel);
-
+        for (Relationship relationship : relationshipList) {
+            Relationship relationshipWithUpperCase = relationshipFactory.byTypeValue(relationship.getRelationTypeValue().toUpperCase());
+            assertEquals(relationship,relationshipWithUpperCase);
 
         }
 
