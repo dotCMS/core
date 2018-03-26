@@ -280,8 +280,7 @@ public class TikaUtils {
      * Creates the metadata file where the parsed info will be stored
      */
     private void prepareMetaDataFile(File contentMetadataFile) throws IOException {
-
-        //In order to re-create it
+        //Create the file if does not exist
         contentMetadataFile.getParentFile().mkdirs();
         contentMetadataFile.createNewFile();
     }
