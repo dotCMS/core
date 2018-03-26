@@ -76,8 +76,8 @@ public class TikaUtils {
 
         Map<String, String> metaMap = new HashMap<>();
 
-        // store content metadata on disk
-        File contentM = APILocator.getFileAssetAPI().getContentMetadataFile(inode);
+        // Search for the stored content metadata on disk
+        File contentMetadataFile = APILocator.getFileAssetAPI().getContentMetadataFile(inode);
 
         Reader fulltext = null;
         InputStream is = null;
@@ -109,8 +109,13 @@ public class TikaUtils {
                 buf = new char[1024];
                 bytes = new byte[1024];
                 count = fulltext.read(buf);
-                if (count > 0 && !contentM.exists() && contentM.getParentFile().mkdirs() && contentM.createNewFile()) {
-                    OutputStream out = Files.newOutputStream(contentM.toPath());
+
+                if (count > 0) {
+
+                    //Create the new content metadata file
+                    prepareMetaDataFile(contentMetadataFile);
+
+                    OutputStream out = Files.newOutputStream(contentMetadataFile.toPath());
 
                     // compressor config
                     String compressor = Config.getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
@@ -200,6 +205,21 @@ public class TikaUtils {
         }
 
         return metaMap;
+    }
+
+    /**
+     * If a metadata file already exist and we are requesting to parse a saved file we need
+     * to delete the existing metadata file in order to save the new data.
+     */
+    private void prepareMetaDataFile(File contentMetadataFile) throws IOException {
+
+        //We need to delete it first
+        if (null != contentMetadataFile && contentMetadataFile.exists()) {
+            contentMetadataFile.delete();
+        }
+        //In order to re-create it
+        contentMetadataFile.getParentFile().mkdirs();
+        contentMetadataFile.createNewFile();
     }
 
     /**
