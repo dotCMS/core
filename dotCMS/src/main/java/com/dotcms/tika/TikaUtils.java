@@ -5,7 +5,10 @@ import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.apache.commons.io.input.ReaderInputStream;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.OSGIUtil;
@@ -58,8 +61,9 @@ public class TikaUtils {
 
     /**
      * This method takes a file and uses tika to parse the metadata from it. It
-     * returns a Map of the metadata <strong>BUT this method won't override the existing metadata file of the given
-     * contentlet and besaid that will pull in memory the given file content before to parse it</strong>.
+     * returns a Map of the metadata <strong>BUT this method won't try to create any metadata file
+     * if does not exist or to override the existing metadata file for the given Contentlet and
+     * besaid that will put in memory the given file content before to parse it</strong>.
      *
      * @param inode Contentlet owner of the file to parse
      * @param binFile File to parse the metadata from it
@@ -70,14 +74,49 @@ public class TikaUtils {
 
     /**
      * This method takes a file and uses tika to parse the metadata from it. It
-     * returns a Map of the metadata and <strong>overrides the existing metadata file of the given
-     * contentlet</strong>.
+     * returns a Map of the metadata and creates a metadata file for the given
+     * Contentlet if does not already exist, if already exist only the metadata is returned and no
+     * file is override.
      *
      * @param inode Contentlet owner of the file to parse
      * @param binFile File to parse the metadata from it
      */
     public Map<String, String> getMetaDataMap(String inode, File binFile) {
         return getMetaDataMap(inode, binFile, false);
+    }
+
+    /**
+     * Verifies if the Contentlet is a File asset in order to identify if it
+     * is missing a metadata file, if the metadata does not exist this method
+     * parses the file asset and generates it.
+     *
+     * @param contentlet Content to validate if have or not a metadata file
+     */
+    public Boolean generateMetaDataIfRequired(Contentlet contentlet)
+            throws DotSecurityException, DotDataException {
+
+        if (contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) {
+
+            //See if we have content metadata file
+            File contentMeta = APILocator.getFileAssetAPI()
+                    .getContentMetadataFile(contentlet.getInode());
+
+            //If the metadata file does not exist we need to parse and get the metadata for the file
+            if (!contentMeta.exists()) {
+
+                File binFile = APILocator.getContentletAPI()
+                        .getBinaryFile(contentlet.getInode(), FileAssetAPI.BINARY_FIELD,
+                                APILocator.getUserAPI().getSystemUser());
+                if (binFile != null) {
+
+                    //Parse the metadata from this file
+                    getMetaDataMap(contentlet.getInode(), binFile);
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -134,7 +173,7 @@ public class TikaUtils {
                 bytes = new byte[1024];
                 count = fulltext.read(buf);
 
-                if (count > 0) {
+                if (count > 0 && !contentMetadataFile.exists()) {
 
                     //Create the new content metadata file
                     prepareMetaDataFile(contentMetadataFile);
@@ -187,6 +226,12 @@ public class TikaUtils {
                         IOUtils.closeQuietly(out);
                         IOUtils.closeQuietly(fulltext);
                     }
+                } else if (!contentMetadataFile.exists()) {
+                    /*
+                    Create an empty file as we have nothing to put here but it is a record
+                    that we already try to process this file.
+                     */
+                    prepareMetaDataFile(contentMetadataFile);
                 }
             }
         } catch (IOException ioExc) {
@@ -232,15 +277,10 @@ public class TikaUtils {
     }
 
     /**
-     * If a metadata file already exist and we are requesting to parse a saved file we need
-     * to delete the existing metadata file in order to save the new data.
+     * Creates the metadata file where the parsed info will be stored
      */
     private void prepareMetaDataFile(File contentMetadataFile) throws IOException {
 
-        //We need to delete it first
-        if (null != contentMetadataFile && contentMetadataFile.exists()) {
-            contentMetadataFile.delete();
-        }
         //In order to re-create it
         contentMetadataFile.getParentFile().mkdirs();
         contentMetadataFile.createNewFile();
