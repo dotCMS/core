@@ -162,6 +162,11 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         assertNotNull( savedData );
         assertEquals( savedData.size(), 4 );
 
+        contentletAPI.isInodeIndexed(savedData.get(0).getInode());
+        contentletAPI.isInodeIndexed(savedData.get(1).getInode());
+        contentletAPI.isInodeIndexed(savedData.get(2).getInode());
+        contentletAPI.isInodeIndexed(savedData.get(3).getInode());
+
         //----------------USING WRONG HOST IDENTIFIERS----------------------------
         //------------------------------------------------------------------------
         //Create the csv file to import
