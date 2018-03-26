@@ -1,9 +1,19 @@
 package com.dotcms.content.elasticsearch.util;
 
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.base.CharMatcher;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.liferay.util.FileUtil;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import org.apache.commons.lang.StringUtils;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.settings.Settings.Builder;
 
 public class ESUtils {
 
@@ -26,6 +36,33 @@ public class ESUtils {
 		}
 
 		return escapedText;
+	}
+
+	public static String getYamlConfiguration(String esPathHome){
+		String yamlPath = System.getenv("ES_PATH_CONF");
+		if (UtilMethods.isSet(yamlPath)  && FileUtil.exists(yamlPath)){
+			return yamlPath;
+		}else{
+			return esPathHome + "/config/elasticsearch.yml";
+		}
+	}
+
+	public static Builder getExtSettingsBuilder() throws IOException {
+
+		String esPathHome = Config.getStringProperty(ESClient.HOME_PATH, "WEB-INF/elasticsearch");
+		String yamlPath = System.getenv("ES_PATH_CONF");
+		if (!UtilMethods.isSet(yamlPath) || !FileUtil.exists(yamlPath)){
+			//Get elasticsearch-ext.yml from default location
+			yamlPath = esPathHome + "/config/elasticsearch-ext.yml";
+		} else{
+			//Otherwise, get parent directory from the ES_PATH_CONF
+			yamlPath = new File(yamlPath).getParent();
+		}
+		Path settingsPath = Paths.get(yamlPath);
+		if (Files.exists(settingsPath)){
+			return Settings.builder().loadFromPath(settingsPath);
+		}
+		return Settings.builder();
 	}
 	
 }
