@@ -162,10 +162,10 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         assertNotNull( savedData );
         assertEquals( savedData.size(), 4 );
 
-        contentletAPI.isInodeIndexed(savedData.get(0).getInode());
-        contentletAPI.isInodeIndexed(savedData.get(1).getInode());
-        contentletAPI.isInodeIndexed(savedData.get(2).getInode());
-        contentletAPI.isInodeIndexed(savedData.get(3).getInode());
+        Logger.info(this, "Test1 Content. IsInodeIndexed:" + contentletAPI.isInodeIndexed(savedData.get(0).getInode()));
+        Logger.info(this, "Test2 Content. IsInodeIndexed:" + contentletAPI.isInodeIndexed(savedData.get(1).getInode()));
+        Logger.info(this, "Test3 Content. IsInodeIndexed:" + contentletAPI.isInodeIndexed(savedData.get(2).getInode()));
+        Logger.info(this, "Test4 Content. IsInodeIndexed:" + contentletAPI.isInodeIndexed(savedData.get(3).getInode()));
 
         //----------------USING WRONG HOST IDENTIFIERS----------------------------
         //------------------------------------------------------------------------
