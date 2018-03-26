@@ -5482,7 +5482,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return isInodeIndexedWithQuery(luceneQuery, -1);
     }
 
-    public boolean isInodeIndexedWithQuery(String luceneQuery, int secondsToWait) {
+    private boolean isInodeIndexedWithQuery(String luceneQuery, int secondsToWait) {
 
         int limit = 300;
         if (-1 != secondsToWait) {
