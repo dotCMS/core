@@ -196,7 +196,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         List<ContentletSearch> contentletSearchResults;
         int x = 0;
         do {
-            Thread.sleep( 200 );
+            Thread.sleep( 30000 );
             //Verify if it was added to the index
             contentletSearchResults = contentletAPI.searchIndex( "+structureName:" + contentType.getVelocityVarName() + " +working:true +deleted:false +" + contentType.getVelocityVarName() + ".title:Test1 +languageId:1", 0, -1, null, user, true );
             x++;
