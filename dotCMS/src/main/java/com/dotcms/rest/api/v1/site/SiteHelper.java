@@ -12,6 +12,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import java.io.Serializable;
 import java.util.List;
@@ -93,7 +94,6 @@ public class SiteHelper implements Serializable {
 	 */
 	public Host getSite(User user, String siteId) throws DotSecurityException, DotDataException {
 		Host site = this.hostAPI.find(siteId, user, Boolean.TRUE);
-
 		return site;
 	}
 
@@ -176,5 +176,19 @@ public class SiteHelper implements Serializable {
 		} catch (DotDataException|DotSecurityException e) {
 			throw new DotRuntimeException(e);
 		}
+	}
+
+	public void swicthSite(HttpServletRequest req, String hostId) {
+		final HttpSession session = req.getSession();
+
+		session.setAttribute(
+				com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, hostId);
+		session.removeAttribute(WebKeys.CONTENTLET_LAST_SEARCH);
+	}
+
+	public void swicthToDefaultHost(HttpServletRequest req, User user) throws DotSecurityException, DotDataException {
+		Host defaultHost = this.hostAPI.findDefaultHost(user, false);
+		this.swicthSite(req, defaultHost.getIdentifier());
+
 	}
 }
