@@ -1,5 +1,6 @@
 package com.dotmarketing.quartz.job;
 
+import com.dotcms.business.CloseDBIfOpened;
 import java.util.Date;
 
 import org.quartz.Job;
@@ -21,7 +22,7 @@ public class DistReindexJournalCleanupThread2 implements Runnable, Job {
     public DistReindexJournalCleanupThread2() {
     }
 
-
+	@CloseDBIfOpened
 	public void run() {
 	    
 	    try {
@@ -55,7 +56,6 @@ public class DistReindexJournalCleanupThread2 implements Runnable, Job {
 			} catch (DotHibernateException e) {
 				Logger.error(this, e.getMessage(), e);
 			}
-    		DbConnectionFactory.closeConnection();
     	}
 		
 	}

@@ -1,5 +1,6 @@
 package com.dotcms.publisher.business;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.mapper.PublishAuditStatusMapper;
@@ -196,6 +197,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			"FROM publishing_queue_audit a where a.bundle_id = ? ";
 
 	@Override
+	@CloseDBIfOpened
 	public PublishAuditStatus getPublishAuditStatus(String bundleId)
 			throws DotPublisherException {
 
@@ -217,8 +219,6 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 		}catch(Exception e){
 			Logger.debug(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
-		}finally{
-			DbConnectionFactory.closeConnection();
 		}
 	}
 
@@ -227,6 +227,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			"FROM publishing_queue_audit order by status_updated desc";
 
 	@Override
+	@CloseDBIfOpened
 	public List<PublishAuditStatus> getAllPublishAuditStatus() throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
@@ -236,8 +237,6 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 		}catch(Exception e){
 			Logger.debug(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
-		}finally{
-			DbConnectionFactory.closeConnection();
 		}
 	}
 

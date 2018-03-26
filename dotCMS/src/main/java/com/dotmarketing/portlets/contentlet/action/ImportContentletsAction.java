@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.action;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
@@ -72,6 +73,7 @@ public class ImportContentletsAction extends DotPortletAction {
 	 * @param res
 	 *            - The Struts wrapper for the HTTP Response object.
 	 */
+	@CloseDBIfOpened
 	public void processAction(ActionMapping mapping, final ActionForm form, final PortletConfig config, final ActionRequest req, final ActionResponse res) throws Exception {
 		Logger.debug(this, "Import Contentlets Action");
 		
@@ -274,8 +276,6 @@ public class ImportContentletsAction extends DotPortletAction {
 	                            HibernateUtil.closeSession();
 	                        } catch (DotHibernateException e) {
 	                            Logger.warn(this, e.getMessage(), e);
-	                        }finally {
-	                            DbConnectionFactory.closeConnection();
 	                        }
 						}
 					}

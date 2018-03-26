@@ -1,5 +1,6 @@
 package com.dotmarketing.fixtask;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -40,7 +41,8 @@ public class FixTasksExecutor  implements StatefulJob {
 	 * different method to avoid further clutter
 	 */
 	List <Map>  returnValue =  new ArrayList <Map>();
-	
+
+	@CloseDBIfOpened
 	public void execute(JobExecutionContext arg0) {
 		try {
     		returnValue= new ArrayList <Map>();
@@ -126,9 +128,6 @@ public class FixTasksExecutor  implements StatefulJob {
             } catch (DotHibernateException e) {
                 Logger.warn(this, e.getMessage(), e);
             }
-		    finally {
-		        DbConnectionFactory.closeConnection();
-		    }
 		}
 		Logger.info(this, "Finishing tasks.");
 

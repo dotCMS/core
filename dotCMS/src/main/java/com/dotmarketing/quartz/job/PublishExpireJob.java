@@ -3,6 +3,7 @@
  */
 package com.dotmarketing.quartz.job;
 
+import com.dotcms.business.CloseDBIfOpened;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Date;
@@ -48,6 +49,7 @@ public class PublishExpireJob implements StatefulJob {
 
 	}
 
+	@CloseDBIfOpened
 	public void execute(JobExecutionContext ctx) throws JobExecutionException {
 	    try {
     		ContentletAPI capi = APILocator.getContentletAPI();
@@ -123,9 +125,6 @@ public class PublishExpireJob implements StatefulJob {
             } catch (DotHibernateException e) {
                 Logger.warn(this, e.getMessage(), e);
             }
-	        finally {
-	            DbConnectionFactory.closeConnection();
-	        }
 	    }
 
 	}

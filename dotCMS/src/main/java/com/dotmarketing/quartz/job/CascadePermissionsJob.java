@@ -3,6 +3,7 @@
  */
 package com.dotmarketing.quartz.job;
 
+import com.dotcms.business.CloseDBIfOpened;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -103,7 +104,8 @@ public class CascadePermissionsJob implements Job {
 	public CascadePermissionsJob() {
 		
 	}
-	
+
+	@CloseDBIfOpened
 	public void execute(JobExecutionContext jobContext) throws JobExecutionException {
 		
 	    Permissionable permissionable;
@@ -129,9 +131,6 @@ public class CascadePermissionsJob implements Job {
                 HibernateUtil.closeSession();
             } catch (DotHibernateException e) {
                 Logger.warn(this, e.getMessage(), e);
-            }
-            finally {
-                DbConnectionFactory.closeConnection();
             }
 		}
 	}

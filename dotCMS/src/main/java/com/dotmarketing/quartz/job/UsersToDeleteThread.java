@@ -1,5 +1,6 @@
 package com.dotmarketing.quartz.job;
 
+import com.dotcms.business.CloseDBIfOpened;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -88,7 +89,8 @@ public class UsersToDeleteThread extends Thread implements Job {
 			Logger.error(this, e.getMessage(), e);
 		}
 	}
-	
+
+	@CloseDBIfOpened
 	public void execute(JobExecutionContext context) throws JobExecutionException {
 		Logger.debug(this, "Running UsersToDeleteThread - " + new Date());
 
@@ -99,8 +101,6 @@ public class UsersToDeleteThread extends Thread implements Job {
 				HibernateUtil.closeSession();
 			} catch (DotHibernateException e) {
 				Logger.warn(this, e.getMessage(), e);
-			} finally {
-				DbConnectionFactory.closeConnection();
 			}
 		}
 	}

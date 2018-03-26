@@ -1,5 +1,6 @@
 package com.dotmarketing.quartz.job;
 
+import com.dotcms.business.CloseDBIfOpened;
 import java.util.Date;
 
 import org.quartz.Job;
@@ -62,6 +63,7 @@ public class CalendarReminderThread implements Job {
 	  * @param		context JobExecutionContext.
 	  * @exception	JobExecutionException .
 	  */
+	@CloseDBIfOpened
 	public void execute(JobExecutionContext context) throws JobExecutionException {
 		Logger.debug(this, "Running CalendarReminderThread - " + new Date());		
 		try {
@@ -74,9 +76,6 @@ public class CalendarReminderThread implements Job {
                 HibernateUtil.closeSession();
             } catch (DotHibernateException e) {
                 Logger.warn(this, e.getMessage(), e);
-            }
-            finally {
-                DbConnectionFactory.closeConnection();
             }
 		}
 	}

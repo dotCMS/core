@@ -1,5 +1,6 @@
 package com.dotcms.rest;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.google.gson.Gson;
 import com.dotcms.rest.exception.ForbiddenException;
 
@@ -62,7 +63,8 @@ public class ESIndexResource {
             throw new DotSecurityException("unauthorized");
         return init;
     }
-    
+
+    @CloseDBIfOpened
     public static void restoreIndex(final File file, final String alias, String index, final boolean clear) throws DotDataException {
         if(LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level) {
             if(UtilMethods.isSet(alias)) {
@@ -94,8 +96,6 @@ public class ESIndexResource {
                             HibernateUtil.closeSession();
                         } catch (DotHibernateException e) {
                             Logger.warn(this, e.getMessage(), e);
-                        }finally {
-                            DbConnectionFactory.closeConnection();
                         }
                     }
                 }

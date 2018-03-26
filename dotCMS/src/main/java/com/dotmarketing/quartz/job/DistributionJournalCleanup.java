@@ -1,5 +1,6 @@
 package com.dotmarketing.quartz.job;
 
+import com.dotcms.business.CloseDBIfOpened;
 import java.util.Date;
 
 import org.quartz.Job;
@@ -17,6 +18,7 @@ public class DistributionJournalCleanup implements Runnable, Job {
     public DistributionJournalCleanup() {
     }
 
+	@CloseDBIfOpened
     public void run() 
     {
     	try 
@@ -41,7 +43,6 @@ public class DistributionJournalCleanup implements Runnable, Job {
 			} catch (DotHibernateException e) {
 				Logger.error(this,e.getMessage());
 			}
-    		DbConnectionFactory.closeConnection();
     	}
     }
 

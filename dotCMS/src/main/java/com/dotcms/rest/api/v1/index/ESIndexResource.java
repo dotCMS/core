@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.index;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.google.gson.Gson;
 
 import com.dotcms.content.elasticsearch.business.DotIndexException;
@@ -109,6 +110,7 @@ public class ESIndexResource {
         return init;
     }
 
+    @CloseDBIfOpened
     public static void restoreIndex(final File file, final String alias, String index, final boolean clear) throws DotDataException {
         if(LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level) {
             if(UtilMethods.isSet(alias)) {
@@ -140,8 +142,6 @@ public class ESIndexResource {
                             HibernateUtil.closeSession();
                         } catch (DotHibernateException e) {
                             Logger.warn(this, e.getMessage(), e);
-                        }finally {
-                            DbConnectionFactory.closeConnection();
                         }
                     }
                 }

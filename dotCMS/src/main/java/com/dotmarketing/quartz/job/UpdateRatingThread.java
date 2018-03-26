@@ -1,5 +1,6 @@
 package com.dotmarketing.quartz.job;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.rendering.velocity.services.ContentTypeLoader;
 
 import com.dotmarketing.beans.Identifier;
@@ -57,6 +58,7 @@ public class UpdateRatingThread implements StatefulJob {
 
 
 	@SuppressWarnings("unchecked")
+	@CloseDBIfOpened
 	public void execute(JobExecutionContext arg0) throws JobExecutionException {
 		Logger.debug(this, "Running Ratings Statistics");
 		try {
@@ -254,9 +256,6 @@ public class UpdateRatingThread implements StatefulJob {
                 HibernateUtil.closeSession();
             } catch (DotHibernateException e) {
                 Logger.warn(this, e.getMessage(), e);
-            }
-            finally {
-                DbConnectionFactory.closeConnection();
             }
 		}
 	}

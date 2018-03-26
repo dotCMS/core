@@ -1,5 +1,6 @@
 package com.dotcms.publisher.integrity;
 
+import com.dotcms.business.CloseDBIfOpened;
 import javax.servlet.ServletContext;
 
 import com.dotcms.integritycheckers.IntegrityUtil;
@@ -20,6 +21,7 @@ public class IntegrityDataGeneratorThread extends Thread {
         this.servletContext = servletContext;
     }
 
+    @CloseDBIfOpened
     public void run() {
 
         try {
@@ -53,8 +55,6 @@ public class IntegrityDataGeneratorThread extends Thread {
                 HibernateUtil.closeSession();
             } catch (DotHibernateException e) {
                 Logger.warn(this, e.getMessage(), e);
-            }finally {
-                DbConnectionFactory.closeConnection();
             }
         }
     }

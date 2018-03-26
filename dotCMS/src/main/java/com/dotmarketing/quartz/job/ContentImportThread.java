@@ -1,5 +1,6 @@
 package com.dotmarketing.quartz.job;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -109,6 +110,7 @@ public class ContentImportThread implements Job{
 	 * This method run the import content thread
 	 */
 	@SuppressWarnings("deprecation")
+	@CloseDBIfOpened
 	public void execute(JobExecutionContext context) throws JobExecutionException {
 		Logger.debug(this, "Running ContentImportThread - " + new Date());
 
@@ -238,9 +240,6 @@ public class ContentImportThread implements Job{
                 HibernateUtil.closeSession();
             } catch (DotHibernateException e) {
                 Logger.warn(this, e.getMessage(), e);
-            }
-            finally {
-                DbConnectionFactory.closeConnection();
             }
 		}
 	}

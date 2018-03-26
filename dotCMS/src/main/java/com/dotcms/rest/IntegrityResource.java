@@ -1,5 +1,6 @@
 package com.dotcms.rest;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.integritycheckers.IntegrityType;
 import com.dotcms.integritycheckers.IntegrityUtil;
@@ -332,6 +333,7 @@ public class IntegrityResource {
     @GET
     @Path("/checkintegrity/{params:.*}")
     @Produces (MediaType.APPLICATION_JSON)
+    @CloseDBIfOpened
     public Response checkIntegrity(@Context HttpServletRequest request, @PathParam("params") String params)  {
         InitDataObject initData = webResource.init(params, true, request, true, null);
 
@@ -479,8 +481,6 @@ public class IntegrityResource {
                                             Logger.warn(this, e.getMessage(), e);
                                     } catch (DotDataException e) {
                                         Logger.error(IntegrityResource.class, "Error while deleting temp tables", e);
-                                    } finally {
-                                        DbConnectionFactory.closeConnection();
                                     }
                                 }
 

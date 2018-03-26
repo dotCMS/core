@@ -1,5 +1,6 @@
 package com.dotmarketing.servlets;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.cluster.business.HazelcastUtil;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.enterprise.LicenseUtil;
@@ -295,6 +296,7 @@ public class InitServlet extends HttpServlet {
 
     private class InitThread extends Thread {
 
+        @CloseDBIfOpened
         public void run() {
             try {
                 long runInitThread = Config.getIntProperty("RUN_INIT_THREAD", 6000);
@@ -444,8 +446,6 @@ public class InitServlet extends HttpServlet {
                     HibernateUtil.closeSession();
                 } catch (DotHibernateException e) {
                     Logger.error(InitServlet.class, e.getMessage(), e);
-                } finally {
-                    DbConnectionFactory.closeConnection();
                 }
             }
 

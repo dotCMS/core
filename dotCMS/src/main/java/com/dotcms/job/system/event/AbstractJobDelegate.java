@@ -1,5 +1,6 @@
 package com.dotcms.job.system.event;
 
+import com.dotcms.business.CloseDBIfOpened;
 import java.io.Serializable;
 
 import com.dotcms.util.Delegate;
@@ -28,6 +29,7 @@ import com.dotmarketing.util.Logger;
 public abstract class AbstractJobDelegate implements Delegate<JobDelegateDataBean>, Serializable {
 
 	@Override
+	@CloseDBIfOpened
 	public void execute(JobDelegateDataBean data) {
 		try {
 			executeDelegate(data);
@@ -40,8 +42,6 @@ public abstract class AbstractJobDelegate implements Delegate<JobDelegateDataBea
 				HibernateUtil.closeSession();
 			} catch (DotHibernateException e) {
 				Logger.warn(this, e.getMessage(), e);
-			} finally {
-				DbConnectionFactory.closeConnection();
 			}
 		}
 	}

@@ -106,6 +106,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 		}
 	}
 
+	@CloseDBIfOpened
 	public void execute(JobExecutionContext arg0) throws JobExecutionException {
 		try {
 			systemUser = userAPI.getSystemUser();
@@ -120,9 +121,6 @@ public class XMLSitemapJob implements Job, StatefulJob {
             } catch (DotHibernateException e) {
                 Logger.warn(this, e.getMessage(), e);
             }
-		    finally {
-		        DbConnectionFactory.closeConnection();
-		    }
 		}
 
 	}

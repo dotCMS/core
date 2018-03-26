@@ -1,5 +1,6 @@
 package com.dotmarketing.quartz.job;
 
+import com.dotcms.business.CloseDBIfOpened;
 import java.util.Date;
 import java.util.Locale;
 import java.util.UUID;
@@ -172,6 +173,7 @@ public class DeleteFieldJob extends DotStatefulJob {
 	 *             An error occurred when deleting the Field.
 	 */
 	@Override
+    @CloseDBIfOpened
 	public void run(JobExecutionContext jobContext) throws JobExecutionException {
 		final JobDataMap map = jobContext.getJobDetail().getJobDataMap();
 		Structure contentType = null;
@@ -235,8 +237,6 @@ public class DeleteFieldJob extends DotStatefulJob {
                 HibernateUtil.closeSession();
             } catch (DotHibernateException e) {
                 Logger.warn(this, "exception while calling HibernateUtil.closeSession()", e);
-            } finally {
-                DbConnectionFactory.closeConnection();
             }
         }
 	}

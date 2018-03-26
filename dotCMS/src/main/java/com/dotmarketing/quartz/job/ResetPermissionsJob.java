@@ -1,5 +1,6 @@
 package com.dotmarketing.quartz.job;
 
+import com.dotcms.business.CloseDBIfOpened;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Map;
@@ -90,6 +91,7 @@ public class ResetPermissionsJob implements Job {
      * @param jobContext - The {@link JobExecutionContext} containing details and execution
      *        parameters of the job.
      */
+	@CloseDBIfOpened
 	public void execute(JobExecutionContext jobContext) throws JobExecutionException {
 		
 		JobDataMap map = jobContext.getJobDetail().getJobDataMap();
@@ -115,9 +117,6 @@ public class ResetPermissionsJob implements Job {
                 HibernateUtil.closeSession();
             } catch (DotHibernateException e) {
                 Logger.warn(this, e.getMessage(), e);
-            }
-            finally {
-                DbConnectionFactory.closeConnection();
             }
 		}
 		

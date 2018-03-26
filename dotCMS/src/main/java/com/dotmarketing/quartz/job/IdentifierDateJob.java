@@ -3,6 +3,7 @@
  */
 package com.dotmarketing.quartz.job;
 
+import com.dotcms.business.CloseDBIfOpened;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -49,6 +50,7 @@ public class IdentifierDateJob implements Job {
 	 * @see org.quartz.Job#execute(org.quartz.JobExecutionContext)
 	 */
 	@Override
+	@CloseDBIfOpened
 	public void execute(JobExecutionContext jobContext) throws JobExecutionException {
 		ContentletAPI contentletAPI = APILocator.getContentletAPI();
 		
@@ -146,9 +148,6 @@ public class IdentifierDateJob implements Job {
                 HibernateUtil.closeSession();
             } catch (DotHibernateException e) {
                 Logger.warn(this, e.getMessage(), e);
-            }
-            finally {
-                DbConnectionFactory.closeConnection();
             }
 		}
 	}

@@ -1,5 +1,6 @@
 package com.dotmarketing.quartz.job;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
@@ -105,6 +106,7 @@ public class DeleteUserJob implements Job {
     }
 
     @Override
+    @CloseDBIfOpened
     public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
 
         JobDataMap map = jobExecutionContext.getJobDetail().getJobDataMap();
@@ -157,8 +159,6 @@ public class DeleteUserJob implements Job {
                 HibernateUtil.closeSession();
             } catch (DotHibernateException e) {
                 Logger.warn(this, "exception while calling HibernateUtil.closeSession()", e);
-            } finally {
-                DbConnectionFactory.closeConnection();
             }
         }
     }

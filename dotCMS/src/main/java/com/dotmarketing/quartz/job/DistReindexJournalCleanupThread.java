@@ -1,6 +1,7 @@
 package com.dotmarketing.quartz.job;
 
 
+import com.dotcms.business.CloseDBIfOpened;
 import java.util.Date;
 
 import org.quartz.Job;
@@ -23,7 +24,7 @@ public class DistReindexJournalCleanupThread implements Runnable, Job, StatefulJ
     public DistReindexJournalCleanupThread() {
     }
 
-
+	@CloseDBIfOpened
 	public void run() {
 	    try {
             if(ESReindexationProcessStatus.inFullReindexation()) return;
@@ -55,7 +56,6 @@ public class DistReindexJournalCleanupThread implements Runnable, Job, StatefulJ
 			} catch (DotHibernateException e) {
 				Logger.error(this, e.getMessage(), e);
 			}
-    		DbConnectionFactory.closeConnection();
     	}
 		
 	}
@@ -67,8 +67,9 @@ public class DistReindexJournalCleanupThread implements Runnable, Job, StatefulJ
 	 */
 	public void destroy() {
 	}
-	
 
+
+	@CloseDBIfOpened
 	public void execute(JobExecutionContext context) throws JobExecutionException {
 		Logger.debug(this, "Running DistReindexJournalCleanupThread - " + new Date());
 
@@ -81,9 +82,6 @@ public class DistReindexJournalCleanupThread implements Runnable, Job, StatefulJ
 				HibernateUtil.closeSession();
 			} catch (DotHibernateException e) {
 				Logger.error(this, e.getMessage(), e);
-			}
-			finally {
-			    DbConnectionFactory.closeConnection();
 			}
 		}
 		

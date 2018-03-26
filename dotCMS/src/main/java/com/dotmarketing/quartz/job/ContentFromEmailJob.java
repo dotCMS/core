@@ -1,5 +1,6 @@
 package com.dotmarketing.quartz.job;
 
+import com.dotcms.business.CloseDBIfOpened;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -51,7 +52,8 @@ public class ContentFromEmailJob implements Job {
 	public ContentFromEmailJob() {
 		
 	}
-	
+
+	@CloseDBIfOpened
 	public void execute(JobExecutionContext ctx) throws JobExecutionException {
 
 		ContentletAPI conAPI = APILocator.getContentletAPI();
@@ -284,9 +286,6 @@ public class ContentFromEmailJob implements Job {
                 HibernateUtil.closeSession();
             } catch (DotHibernateException e) {
                 Logger.warn(this, e.getMessage(), e);
-            }
-            finally {
-                DbConnectionFactory.closeConnection();
             }
 		}
 	}

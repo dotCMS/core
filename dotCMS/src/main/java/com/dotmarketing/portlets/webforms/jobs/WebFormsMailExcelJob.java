@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.webforms.jobs;
 
+import com.dotcms.business.CloseDBIfOpened;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -19,6 +20,7 @@ import com.dotmarketing.util.WebKeys;
 
 public class WebFormsMailExcelJob implements Job {
 
+	@CloseDBIfOpened
 	public void execute(JobExecutionContext context) throws JobExecutionException 
 	{
 		Logger.info(this, "START WebFormsMailExcelJob");
@@ -60,9 +62,6 @@ public class WebFormsMailExcelJob implements Job {
                 HibernateUtil.closeSession();
             } catch (DotHibernateException e) {
                 Logger.warn(this, e.getMessage(), e);
-            }
-            finally {
-                DbConnectionFactory.closeConnection();
             }
 		}
 	}

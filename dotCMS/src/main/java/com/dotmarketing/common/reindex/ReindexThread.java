@@ -225,6 +225,7 @@ public class ReindexThread extends Thread {
 	 * containing the content identifier will be sent to the user via the
 	 * Notifications API to take care of the problem as soon as possible.
 	 */
+	@CloseDBIfOpened
 	public void run() {
 		this.notifiedFailingRecords.clear();
 		while (!die) {
@@ -508,19 +509,8 @@ public class ReindexThread extends Thread {
 				} finally {
 					try {
 						HibernateUtil.closeSession();
-						try{
-							DbConnectionFactory.closeConnection();
-						}catch (Exception e) {
-							Logger.debug(this, "Unable to close connection : " + e.getMessage(),e);
-						}
-						
 					} catch (DotHibernateException e) {
 						Logger.error(this, e.getMessage(), e);
-						try{
-							DbConnectionFactory.closeConnection();
-						}catch (Exception e1) {
-							Logger.debug(this, "Unable to close connection : " + e1.getMessage(),e1);
-						}
 					}
 				}
 				
