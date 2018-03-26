@@ -57,6 +57,30 @@ public class TikaUtils {
     }
 
     /**
+     * This method takes a file and uses tika to parse the metadata from it. It
+     * returns a Map of the metadata <strong>BUT this method won't override the existing metadata file of the given
+     * contentlet and besaid that will pull in memory the given file content before to parse it</strong>.
+     *
+     * @param inode Contentlet owner of the file to parse
+     * @param binFile File to parse the metadata from it
+     */
+    public Map<String, String> getMetaDataMapForceMemory(String inode, File binFile) {
+        return getMetaDataMap(inode, binFile, true);
+    }
+
+    /**
+     * This method takes a file and uses tika to parse the metadata from it. It
+     * returns a Map of the metadata and <strong>overrides the existing metadata file of the given
+     * contentlet</strong>.
+     *
+     * @param inode Contentlet owner of the file to parse
+     * @param binFile File to parse the metadata from it
+     */
+    public Map<String, String> getMetaDataMap(String inode, File binFile) {
+        return getMetaDataMap(inode, binFile, false);
+    }
+
+    /**
      * Right now the method use the Tika facade directly for parse the document without any kind of restriction about the parser because the
      * new Tika().parse method use the AutoDetectParser by default.
      *
@@ -64,7 +88,7 @@ public class TikaUtils {
      *
      * May 31, 2013 - 12:27:19 PM
      */
-    public Map<String, String> getMetaDataMap(String inode, File binFile, String mimeType, boolean forceMemory) {
+    private Map<String, String> getMetaDataMap(String inode, File binFile, boolean forceMemory) {
 
         if (!osgiInitialized) {
             Logger.error(this.getClass(),
@@ -255,14 +279,6 @@ public class TikaUtils {
         }
 
         return metaMap;
-    }
-
-    /**
-     * This method takes a file and uses tika to parse the metadata from it. It
-     * returns a Map of the metadata
-     */
-    public Map<String, String> getMetaDataMap(String inode, File binFile, boolean forceMemory) {
-        return getMetaDataMap(inode, binFile, null, forceMemory);
     }
 
     /**
