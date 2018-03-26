@@ -28,6 +28,7 @@ import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import java.util.concurrent.Future;
 import org.apache.commons.lang.time.StopWatch;
 import org.osgi.framework.BundleContext;
 
@@ -318,7 +319,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 
-	public void deleteScheme(final WorkflowScheme scheme, final User user)
+	public Future<WorkflowScheme> deleteScheme(final WorkflowScheme scheme, final User user)
 			throws DotDataException, DotSecurityException, AlreadyExistException {
 
 		this.isUserAllowToModifiedWorkflow(user);
@@ -334,7 +335,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 
 		//Delete the Scheme in a separated thread
-		this.submitter.execute(() -> deleteSchemeTask(scheme, user));
+		return this.submitter.submit(() -> deleteSchemeTask(scheme, user));
 
 	}
 
@@ -344,7 +345,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 * @param user The user
 	 */
 	@WrapInTransaction
-	private void deleteSchemeTask(final WorkflowScheme scheme, final User user) {
+	private WorkflowScheme deleteSchemeTask(final WorkflowScheme scheme, final User user) {
 		try {
 			final StopWatch stopWatch = new StopWatch();
 			stopWatch.start();
@@ -371,6 +372,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		} catch (Exception e) {
 			throw new DotRuntimeException(e);
 		}
+		return scheme;
 	}
 
 	/**

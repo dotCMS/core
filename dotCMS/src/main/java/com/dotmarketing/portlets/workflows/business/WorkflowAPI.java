@@ -20,6 +20,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Future;
 
 public interface WorkflowAPI {
 
@@ -198,7 +199,7 @@ public interface WorkflowAPI {
 	 * @throws DotSecurityException
 	 * @throws AlreadyExistException
 	 */
-	public void deleteScheme(WorkflowScheme scheme, User user) throws DotDataException, DotSecurityException, AlreadyExistException;
+	public Future<WorkflowScheme> deleteScheme(WorkflowScheme scheme, User user) throws DotDataException, DotSecurityException, AlreadyExistException;
 
 	public List<WorkflowStep> findSteps(WorkflowScheme scheme) throws DotDataException;
 
