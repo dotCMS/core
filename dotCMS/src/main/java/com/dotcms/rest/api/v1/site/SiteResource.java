@@ -224,8 +224,8 @@ public class SiteResource implements Serializable {
         try {
 
 
-            siteHelper.swicthToDefaultHost(req, user);
-            return Response.ok(new ResponseEntityView(map("hostSwitched", true))).build();
+            Host host = siteHelper.swicthToDefaultHost(req, user);
+            return Response.ok(new ResponseEntityView(host)).build();
 
         } catch (DotSecurityException e) {
             throw new ForbiddenException(e);

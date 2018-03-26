@@ -186,9 +186,9 @@ public class SiteHelper implements Serializable {
 		session.removeAttribute(WebKeys.CONTENTLET_LAST_SEARCH);
 	}
 
-	public void swicthToDefaultHost(HttpServletRequest req, User user) throws DotSecurityException, DotDataException {
+	public Host swicthToDefaultHost(HttpServletRequest req, User user) throws DotSecurityException, DotDataException {
 		Host defaultHost = this.hostAPI.findDefaultHost(user, false);
 		this.swicthSite(req, defaultHost.getIdentifier());
-
+		return defaultHost;
 	}
 }
