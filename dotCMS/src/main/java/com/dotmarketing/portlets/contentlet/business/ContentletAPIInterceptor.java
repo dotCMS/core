@@ -1980,17 +1980,17 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	}
 
 	@Override
-    public boolean isInodeIndexArchived(String inode){
+    public boolean isInodeIndexedArchived(String inode){
         for(ContentletAPIPreHook pre : preHooks){
-            final boolean preResult = pre.isInodeIndexArchived(inode);
+            final boolean preResult = pre.isInodeIndexedArchived(inode);
             if(!preResult){
                 Logger.error(this, "The following prehook failed " + pre.getClass().getName());
                 throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
             }
         }
-        boolean c = conAPI.isInodeIndexArchived(inode);
+        boolean c = conAPI.isInodeIndexedArchived(inode);
         for(ContentletAPIPostHook post : postHooks){
-            post.isInodeIndexArchived(inode);
+            post.isInodeIndexedArchived(inode);
         }
         return c;
     }

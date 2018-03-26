@@ -1403,10 +1403,9 @@ public interface ContentletAPI {
     /**
      *
      * @param inode
-     * @param secondsToWait
      * @return
      */
-    public boolean isInodeIndexArchived(String inode);
+    public boolean isInodeIndexedArchived(String inode);
 
 	/**
 	 * Method will update hostInode of content to systemhost

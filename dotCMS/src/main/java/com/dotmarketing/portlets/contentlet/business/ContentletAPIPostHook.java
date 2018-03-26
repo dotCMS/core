@@ -1157,7 +1157,7 @@ public interface ContentletAPIPostHook {
 	 * @param inode
 	 * @return
 	 */
-	public default boolean isInodeIndexArchived(String inode) {
+	public default boolean isInodeIndexedArchived(String inode) {
 		return true;
 	};
 

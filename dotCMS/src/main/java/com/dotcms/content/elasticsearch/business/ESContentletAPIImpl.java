@@ -5469,7 +5469,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @Override
-    public boolean isInodeIndexArchived(String inode){
+    public boolean isInodeIndexedArchived(String inode){
 
         if (!UtilMethods.isSet(inode)) {
             Logger.warn(this, "Requested Inode is not indexed because Inode is not set");
