@@ -1366,6 +1366,16 @@ public interface ContentletAPIPreHook {
       return true;
     }
 
+
+	/**
+	 * Method will time out after 30 seconds returning false
+	 * @param inode
+	 * @return
+	 */
+	public default boolean isInodeArchived(String inode) {
+		return true;
+	};
+
 	/**
 	 * 
 	 * @param inode

@@ -1399,7 +1399,15 @@ public interface ContentletAPI {
 	 * @return
 	 */
 	public boolean isInodeIndexed(String inode, int secondsToWait);
-	
+
+    /**
+     *
+     * @param inode
+     * @param secondsToWait
+     * @return
+     */
+    public boolean isInodeArchived(String inode);
+
 	/**
 	 * Method will update hostInode of content to systemhost
 	 * @param hostIdentifier

@@ -48,8 +48,6 @@ public class RulesUnderPageAssetsFTest{
     private HttpServletRequest request;
     private final String indexUrl;
 
-    private static final int ALLOWED_SECONDS_FOR_INDEX_SYNC = 2;
-
     @BeforeClass
     public static void prepare () throws Exception {
         LicenseTestUtil.getLicense();
@@ -128,7 +126,7 @@ public class RulesUnderPageAssetsFTest{
         //Remove Page with rules.
         APILocator.getContentletAPI().unpublish(dummyPage, sysUser, false);
         APILocator.getContentletAPI().archive(dummyPage, sysUser, false);
-        Thread.sleep(TimeUnit.SECONDS.toMillis(ALLOWED_SECONDS_FOR_INDEX_SYNC));
+        APILocator.getContentletAPI().isInodeArchived(dummyPage.getInode());
         assertTrue(dummyPage.isArchived());
         APILocator.getContentletAPI().delete(dummyPage, sysUser, false);
 
@@ -187,13 +185,14 @@ public class RulesUnderPageAssetsFTest{
         //Remove Page with rules.
         APILocator.getContentletAPI().unpublish(dummyPage, sysUser, false);
         APILocator.getContentletAPI().archive(dummyPage, sysUser, false);
-        Thread.sleep(TimeUnit.SECONDS.toMillis(ALLOWED_SECONDS_FOR_INDEX_SYNC));
+
+        APILocator.getContentletAPI().isInodeArchived(dummyPage.getInode());
         assertTrue(dummyPage.isArchived());
         APILocator.getContentletAPI().delete(dummyPage, sysUser, false);
 
         APILocator.getContentletAPI().unpublish(targetHTMLPageAsset, sysUser, false);
         APILocator.getContentletAPI().archive(targetHTMLPageAsset, sysUser, false);
-        Thread.sleep(TimeUnit.SECONDS.toMillis(ALLOWED_SECONDS_FOR_INDEX_SYNC));
+        APILocator.getContentletAPI().isInodeArchived(targetHTMLPageAsset.getInode());
         assertTrue(targetHTMLPageAsset.isArchived());
         APILocator.getContentletAPI().delete(targetHTMLPageAsset, sysUser, false);
         //Remove Template.
@@ -237,7 +236,7 @@ public class RulesUnderPageAssetsFTest{
         //Remove Page with rules.
         APILocator.getContentletAPI().unpublish(dummyPage, sysUser, false);
         APILocator.getContentletAPI().archive(dummyPage, sysUser, false);
-        Thread.sleep(TimeUnit.SECONDS.toMillis(ALLOWED_SECONDS_FOR_INDEX_SYNC));
+        APILocator.getContentletAPI().isInodeArchived(dummyPage.getInode());
         assertTrue(dummyPage.isArchived());
         APILocator.getContentletAPI().delete(dummyPage, sysUser, false);
 
@@ -300,13 +299,13 @@ public class RulesUnderPageAssetsFTest{
         //Remove Page with rules.
         APILocator.getContentletAPI().unpublish(dummyPage, sysUser, false);
         APILocator.getContentletAPI().archive(dummyPage, sysUser, false);
-        Thread.sleep(TimeUnit.SECONDS.toMillis(ALLOWED_SECONDS_FOR_INDEX_SYNC));
+        APILocator.getContentletAPI().isInodeArchived(dummyPage.getInode());
         assertTrue(dummyPage.isArchived());
         APILocator.getContentletAPI().delete(dummyPage, sysUser, false);
 
         APILocator.getContentletAPI().unpublish(secondDummyPage, sysUser, false);
         APILocator.getContentletAPI().archive(secondDummyPage, sysUser, false);
-        Thread.sleep(TimeUnit.SECONDS.toMillis(ALLOWED_SECONDS_FOR_INDEX_SYNC));
+        APILocator.getContentletAPI().isInodeArchived(secondDummyPage.getInode());
         assertTrue(secondDummyPage.isArchived());
         APILocator.getContentletAPI().delete(secondDummyPage, sysUser, false);
 
