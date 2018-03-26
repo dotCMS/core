@@ -73,7 +73,7 @@ public class ESClient {
                     shutDownNode();
 
                     final String node_id = ConfigUtils.getServerId();
-                    String esPathHome = Config.getStringProperty(HOME_PATH, "WEB-INF/elastic_search");
+                    String esPathHome = Config.getStringProperty(HOME_PATH, "WEB-INF/elasticsearch");
 
                     esPathHome = !new File(esPathHome).isAbsolute() ? FileUtil.getRealPath(esPathHome) : esPathHome;
 

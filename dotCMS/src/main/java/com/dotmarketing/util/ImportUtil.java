@@ -2,6 +2,7 @@ package com.dotmarketing.util;
 
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import io.bit3.jsass.importer.Import;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringWriter;
@@ -881,6 +882,8 @@ public class ImportUtil {
             StringBuffer buffy = new StringBuffer();
             buffy.append( "+structureName:" + contentType.getVelocityVarName() + " +working:true +deleted:false" );
 
+            Logger.info(ImportUtil.class,"Identifier is set: " + UtilMethods.isSet( identifier ));
+            Logger.info(ImportUtil.class,"Keyfields size: " + keyFields.size());
             if ( UtilMethods.isSet( identifier ) ) {
                 buffy.append( " +identifier:" + identifier );
 
@@ -957,7 +960,9 @@ public class ImportUtil {
                     buffy.append( " +languageId:" ).append( language );
                 }
 
+                Logger.info(ImportUtil.class, "buffy: " + buffy.toString());
                 List<ContentletSearch> cons = conAPI.searchIndex( buffy.toString(), 0, -1, null, user, true );
+                Logger.info(ImportUtil.class,"Cons: " + cons.size());
                 /*
                 We need to handle the case when keys are used, we could have a contentlet already saved with the same keys but different language
                 so the above query is not going to find it.
@@ -970,7 +975,7 @@ public class ImportUtil {
                         }
                     }
                 }
-
+                Logger.info(ImportUtil.class,"Cons: " + cons.size());
                 Contentlet con;
                 for (ContentletSearch contentletSearch: cons) {
                     con = conAPI.find(contentletSearch.getInode(), user, true);
@@ -1005,6 +1010,8 @@ public class ImportUtil {
                                     break;
                                 }
                             }else{
+                                Logger.info(ImportUtil.class,"conValue: " + conValue.toString());
+                                Logger.info(ImportUtil.class,"Value: " + value.toString());
                                 if(conValue.toString().equalsIgnoreCase(value.toString())){
                                     columnExists = true;
                                 }else{
@@ -1013,7 +1020,8 @@ public class ImportUtil {
                                 }
                             }
                         }
-                        if(columnExists) {
+                        Logger.info(ImportUtil.class, "column exists: " + columnExists);
+                        if(columnExists) {//aca entra
                             contentlets.add(con);
                             //Keep a register of all contentlets to be updated
                             results.get("updatedInodes").add(con.getInode());
@@ -1064,6 +1072,7 @@ public class ImportUtil {
             //Creating/updating content
             boolean isNew = false;
             Long existingMultilingualLanguage = null;//For multilingual batch imports we need the language of an existing contentlet if there is any
+            Logger.info(ImportUtil.class,"Contentlets Size: " + contentlets.size());
             if ( contentlets.size() == 0 ) {
                 counters.setNewContentCounter( counters.getNewContentCounter() + 1 );
                 isNew = true;
@@ -1102,6 +1111,7 @@ public class ImportUtil {
 
                     contentlets = multilingualContentlets;
                 }
+                Logger.info(ImportUtil.class,"isNew: " + isNew);
 
                 if ( !isNew ) {
                     if ( conditionValues.equals( "" ) || !keyContentUpdated.contains( conditionValues ) || isMultilingual ) {
@@ -1110,6 +1120,7 @@ public class ImportUtil {
                             keyContentUpdated.add( conditionValues );
                         }
                     }
+                    Logger.info(ImportUtil.class,"Contentlets size: " + contentlets.size());
                     if ( contentlets.size() == 1 ) {
                         results.get( "warnings" ).add(
                                 LanguageUtil.get( user, "Line--" ) + lineNumber + ". " + LanguageUtil.get( user, "The-key-fields-chosen-match-one-existing-content(s)" ) + " - "

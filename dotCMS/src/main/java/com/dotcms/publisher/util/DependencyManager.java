@@ -17,6 +17,7 @@ import com.dotmarketing.business.DotIdentifierStateException;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -1085,7 +1086,9 @@ public class DependencyManager {
 				final Rule rule = rulesAPI.getRuleById(ruleId, this.user, false);
 				ruleToProcess = ruleId;
 				final List<Contentlet> contentlets = contentletAPI.searchByIdentifier(
-						"+identifier:" + rule.getParent(), 1, 0, null, this.user, false);
+						"+identifier:" + rule.getParent(), 1, 0, null, this.user, false,
+						PermissionAPI.PERMISSION_READ, true);
+
 				if (contentlets != null && contentlets.size() > 0) {
 					final Contentlet parent = contentlets.get(0);
 					// If the parent of the rule is a Site...

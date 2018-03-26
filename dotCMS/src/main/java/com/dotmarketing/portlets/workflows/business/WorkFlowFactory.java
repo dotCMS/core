@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.workflows.business;
 
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -259,5 +260,31 @@ public interface WorkFlowFactory {
 	 * @throws DotSecurityException
 	 */
 	public void updateStepReferences(String stepId, String replacementStepId) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Return all the workflow tasks that are associated to a workflow step.
+	 * @return List of workflows task associated to the step
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public List<WorkflowTask> findTasksByStep(String stepId) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Return the list of content types that uses the specified workflow scheme
+	 *
+	 * @param scheme The workflow scheme
+	 * @return List of content Types
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public List<ContentType> findContentTypesByScheme(WorkflowScheme scheme) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Delete the scheme from the db and the references with the associated content types
+	 * @param scheme The workflow scheme to delete
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public void deleteScheme(WorkflowScheme scheme) throws DotDataException, DotSecurityException;
 
 }

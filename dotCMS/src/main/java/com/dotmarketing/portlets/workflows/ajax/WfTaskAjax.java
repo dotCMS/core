@@ -24,6 +24,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.web.VelocityWebUtil;
 
+@Deprecated
 public class WfTaskAjax extends WfBaseAction {
 
 	public void action(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
