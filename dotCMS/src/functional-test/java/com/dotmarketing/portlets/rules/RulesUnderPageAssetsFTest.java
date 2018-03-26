@@ -31,7 +31,6 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import javax.servlet.http.HttpServletRequest;
 
 import org.junit.BeforeClass;
@@ -126,7 +125,7 @@ public class RulesUnderPageAssetsFTest{
         //Remove Page with rules.
         APILocator.getContentletAPI().unpublish(dummyPage, sysUser, false);
         APILocator.getContentletAPI().archive(dummyPage, sysUser, false);
-        APILocator.getContentletAPI().isInodeArchived(dummyPage.getInode());
+        APILocator.getContentletAPI().isInodeIndexArchived(dummyPage.getInode());
         assertTrue(dummyPage.isArchived());
         APILocator.getContentletAPI().delete(dummyPage, sysUser, false);
 
@@ -186,13 +185,13 @@ public class RulesUnderPageAssetsFTest{
         APILocator.getContentletAPI().unpublish(dummyPage, sysUser, false);
         APILocator.getContentletAPI().archive(dummyPage, sysUser, false);
 
-        APILocator.getContentletAPI().isInodeArchived(dummyPage.getInode());
+        APILocator.getContentletAPI().isInodeIndexArchived(dummyPage.getInode());
         assertTrue(dummyPage.isArchived());
         APILocator.getContentletAPI().delete(dummyPage, sysUser, false);
 
         APILocator.getContentletAPI().unpublish(targetHTMLPageAsset, sysUser, false);
         APILocator.getContentletAPI().archive(targetHTMLPageAsset, sysUser, false);
-        APILocator.getContentletAPI().isInodeArchived(targetHTMLPageAsset.getInode());
+        APILocator.getContentletAPI().isInodeIndexArchived(targetHTMLPageAsset.getInode());
         assertTrue(targetHTMLPageAsset.isArchived());
         APILocator.getContentletAPI().delete(targetHTMLPageAsset, sysUser, false);
         //Remove Template.
@@ -236,7 +235,7 @@ public class RulesUnderPageAssetsFTest{
         //Remove Page with rules.
         APILocator.getContentletAPI().unpublish(dummyPage, sysUser, false);
         APILocator.getContentletAPI().archive(dummyPage, sysUser, false);
-        APILocator.getContentletAPI().isInodeArchived(dummyPage.getInode());
+        APILocator.getContentletAPI().isInodeIndexArchived(dummyPage.getInode());
         assertTrue(dummyPage.isArchived());
         APILocator.getContentletAPI().delete(dummyPage, sysUser, false);
 
@@ -299,13 +298,13 @@ public class RulesUnderPageAssetsFTest{
         //Remove Page with rules.
         APILocator.getContentletAPI().unpublish(dummyPage, sysUser, false);
         APILocator.getContentletAPI().archive(dummyPage, sysUser, false);
-        APILocator.getContentletAPI().isInodeArchived(dummyPage.getInode());
+        APILocator.getContentletAPI().isInodeIndexArchived(dummyPage.getInode());
         assertTrue(dummyPage.isArchived());
         APILocator.getContentletAPI().delete(dummyPage, sysUser, false);
 
         APILocator.getContentletAPI().unpublish(secondDummyPage, sysUser, false);
         APILocator.getContentletAPI().archive(secondDummyPage, sysUser, false);
-        APILocator.getContentletAPI().isInodeArchived(secondDummyPage.getInode());
+        APILocator.getContentletAPI().isInodeIndexArchived(secondDummyPage.getInode());
         assertTrue(secondDummyPage.isArchived());
         APILocator.getContentletAPI().delete(secondDummyPage, sysUser, false);
 

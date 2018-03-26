@@ -1372,7 +1372,7 @@ public interface ContentletAPIPreHook {
 	 * @param inode
 	 * @return
 	 */
-	public default boolean isInodeArchived(String inode) {
+	public default boolean isInodeIndexArchived(String inode) {
 		return true;
 	};
 
