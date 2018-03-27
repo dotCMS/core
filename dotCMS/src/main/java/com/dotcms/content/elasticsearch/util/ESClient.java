@@ -84,7 +84,6 @@ public class ESClient {
                         ).start();
                     } catch (IOException | NodeValidationException e){
                         Logger.error(this, "Error validating ES node at start.", e);
-                        //TODO: idk if a throw E is necessary.
                     }
 
                     try {
@@ -129,7 +128,6 @@ public class ESClient {
                 _nodeInstance.close();
             } catch (IOException e){
                 Logger.error(this, "Error shutDownNode ES.", e);
-                //TODO: idk if a throw E is necessary.
             }
         }
     }
@@ -209,7 +207,6 @@ public class ESClient {
         Builder externalSettings = ESUtils.getExtSettingsBuilder();
         ServerAPI serverAPI      = APILocator.getServerAPI();
 
-        httpPort = null;
         serverId = ConfigUtils.getServerId();
         //This line is added because when someone add a license the node is already up and working and reset the existing port
         shutDownNode();
@@ -250,17 +247,18 @@ public class ESClient {
             httpPort = UtilMethods.isSet(currentServer.getEsHttpPort()) ? currentServer.getEsHttpPort().toString()
                     :ClusterFactory.getNextAvailablePort(serverId, ServerPort.ES_HTTP_PORT, externalSettings);
             currentServer = Server.builder(currentServer).withEsHttpPort(Integer.parseInt(httpPort)).build();
-            if (!UtilMethods.isSet(externalSettings.get(ServerPort.ES_HTTP_PORT.getPropertyName()))){
-                externalSettings.put(ServerPort.ES_HTTP_PORT.getPropertyName(), bindAddr);
+            if (!UtilMethods.isSet(externalSettings.get("http.host"))){
+                externalSettings.put("http.host", bindAddr);
             }
+
+            externalSettings.put(ServerPort.ES_HTTP_PORT.getPropertyName(), httpPort);
         }
+        List<String> myself = new ArrayList<>();
+        myself.add(currentServer.getServerId());
 
-        externalSettings.put("http.port", httpPort);
-
-        //TODO:Check this set and compare with setUnicastHosts
         currentServer = Server.builder(currentServer).withEsTransportTcpPort(Integer.parseInt(transportTCPPort)).build();
 
-        setUnicastHosts(httpPort, transportTCPPort, bindAddr, serverAPI, currentServer,
+        setUnicastHosts(myself, transportTCPPort, bindAddr, serverAPI, currentServer,
                 externalSettings);
 
         try {
@@ -273,14 +271,12 @@ public class ESClient {
 		initNode(externalSettings);
 	}
 
-    private void setUnicastHosts(String httpPort, String transportTCPPort, String bindAddr,
-            ServerAPI serverAPI, Server currentServer, Builder externalSettings)
-            throws DotDataException {
+    private void setUnicastHosts(final List<String> myself,
+            final String transportTCPPort, final String bindAddr, final ServerAPI serverAPI,
+            final Server currentServer, final Builder externalSettings) throws DotDataException {
 
         String initData;
 
-        List<String> myself = new ArrayList<>();
-        myself.add(currentServer.getServerId());
         List<Server> aliveServers = serverAPI.getAliveServers(myself);
         aliveServers.add(currentServer);
 
@@ -312,7 +308,7 @@ public class ESClient {
         initData=initialHosts.toString();
 
         if(initData!=null) {
-            externalSettings.put("discovery.zen.ping.unicast.hosts", httpPort);
+            externalSettings.put("discovery.zen.ping.unicast.hosts", initData);
             Logger.info(this, "discovery.zen.ping.unicast.hosts: "+initData);
         }
     }
