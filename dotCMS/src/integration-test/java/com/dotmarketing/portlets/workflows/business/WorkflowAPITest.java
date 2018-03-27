@@ -88,6 +88,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
     private static ContentType contentType4;
 
     private static ContentType contentType5;
+    private static ContentType contentType7;
 
     /* Workflow Scheme 1 */
     private static WorkflowScheme workflowScheme1;
@@ -193,6 +194,10 @@ public class WorkflowAPITest extends IntegrationTestBase {
     /*Workflow Scheme 7*/
     private static WorkflowScheme workflowScheme7;
 
+    /*Workflow Scheme 8 and 9*/
+    private static WorkflowScheme workflowScheme8;
+    private static WorkflowScheme workflowScheme9;
+
     /* Roles */
     private static Role reviewer;
     private static Role contributor;
@@ -242,6 +247,10 @@ public class WorkflowAPITest extends IntegrationTestBase {
     private static final String ACTIONS_LIST_SHOULD_BE_EMPY = "Actions list should be empty";
     private static final String STEPS_LIST_SHOULD_BE_EMPTY = "Steps list should be empty";
     private static final String SCHEME_SHOULDNT_EXIST = "Scheme shouldn't exist";
+    private static final String TASK_STATUS_SHOULD_NOT_BE_NULL="Workflow Task status shouldn't be null";
+    private static final String TASK_STATUS_SHOULD_BE_NULL="Workflow Task status should be null";
+    private static final String INCORRECT_TASK_STATUS="The task status is incorrect";
+    private static final String CONTENTLET_IS_NOT_ON_STEP ="The contentlet is not on a step";
 
     final int editPermission = PermissionAPI.PERMISSION_READ + PermissionAPI.PERMISSION_EDIT;
 
@@ -1914,6 +1923,119 @@ public class WorkflowAPITest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Validate that when a Content type is modified associating and/or removing workflows schemes
+     * then the existing workflow tasks associated to the scheme keep the current status and the
+     * removed ones are set on null
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void saveScheme_keepExistingContentWorkflowTaskStatus_IfWorkflowSchemeRemainsAssociated()
+            throws DotDataException, DotSecurityException, AlreadyExistException {
+        try {
+
+            final User joeContributor = APILocator.getUserAPI().loadUserById("dotcms.org.2789");
+
+            //Create testing content type
+            contentType7 = insertContentType(
+                    "KeepWfTaskStatus" + UtilMethods.dateToHTMLDate(new Date(), DATE_FORMAT),
+                    BaseContentType.CONTENT);
+            final int editPermission =
+                    PermissionAPI.PERMISSION_READ + PermissionAPI.PERMISSION_EDIT;
+
+            Permission p = new Permission(contentType7.getPermissionId(), contributor.getId(),
+                    editPermission, true);
+            permissionAPI.save(p, contentType7, user, true);
+
+            p = new Permission(Contentlet.class.getCanonicalName(), contentType7.getPermissionId(),
+                    contributor.getId(), editPermission, true);
+            permissionAPI.save(p, contentType7, user, true);
+
+            // Create testing workflows
+            workflowScheme8 = createDocumentManagentReplica(
+                    DOCUMENT_MANAGEMENT_WORKFLOW_NAME + "_8_" + UtilMethods
+                            .dateToHTMLDate(new Date(), DATE_FORMAT));
+
+            workflowScheme9 = createDocumentManagentReplica(
+                    DOCUMENT_MANAGEMENT_WORKFLOW_NAME + "_9_" + UtilMethods
+                            .dateToHTMLDate(new Date(), DATE_FORMAT));
+
+            List<String> schemeIds = new ArrayList<>();
+            schemeIds.add(workflowScheme8.getId());
+
+            workflowAPI.saveSchemeIdsForContentType(contentType7, schemeIds);
+
+            //Add Workflow Task
+            //Contentlet1 on published step
+            Contentlet contentlet1 = createContent("testKeepWfTaskStatus", contentType7);
+
+            List<WorkflowAction> actions = workflowAPI
+                    .findAvailableActions(contentlet1, joeContributor);
+            final WorkflowAction saveAsDraft = actions.get(0);
+
+            //As Contributor - Save as Draft
+            final ContentletRelationships contentletRelationships = APILocator.getContentletAPI()
+                    .getAllRelationships(contentlet1);
+            //save as Draft
+            contentlet1 = fireWorkflowAction(contentlet1, contentletRelationships, saveAsDraft,
+                    StringPool.BLANK, StringPool.BLANK, joeContributor);
+
+            //validate workflow tasks deleted
+            WorkflowStep editingStep = workflowAPI.findSteps(workflowScheme8).get(0);
+            WorkflowStep step = workflowAPI.findStepByContentlet(contentlet1);
+            assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, EDITING_STEP_NAME
+                    .equals(step.getName()) && editingStep.getId().equals(step.getId()));
+
+            WorkflowTask task1 = workflowAPI.findTaskByContentlet(contentlet1);
+            assertNotNull(task1.getId());
+            assertNotNull(TASK_STATUS_SHOULD_NOT_BE_NULL, task1.getStatus());
+            assertTrue(INCORRECT_TASK_STATUS,editingStep.getId().equals(task1.getStatus()));
+
+            //Add a new Scheme to content type
+            schemeIds.add(workflowScheme9.getId());
+            workflowAPI.saveSchemeIdsForContentType(contentType7, schemeIds);
+
+            //Validate that the contentlet Workflow task keeps the original value
+            step = workflowAPI.findStepByContentlet(contentlet1);
+            assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, EDITING_STEP_NAME
+                    .equals(step.getName()) && editingStep.getId().equals(step.getId()));
+
+            task1 = workflowAPI.findTaskByContentlet(contentlet1);
+            assertNotNull(task1.getId());
+            assertNotNull(TASK_STATUS_SHOULD_NOT_BE_NULL, task1.getStatus());
+            assertTrue(INCORRECT_TASK_STATUS,editingStep.getId().equals(task1.getStatus()));
+
+
+            //remove an existing Scheme with workflow task associated to the content type
+            schemeIds.remove(workflowScheme8.getId());
+            workflowAPI.saveSchemeIdsForContentType(contentType7, schemeIds);
+
+            //Validate that the contentlet Workflow task lost the original value
+            step = workflowAPI.findStepByContentlet(contentlet1);
+            assertNotNull(CONTENTLET_IS_NOT_ON_STEP,step);
+            assertFalse(CONTENTLET_ON_WRONG_STEP_MESSAGE, EDITING_STEP_NAME
+                    .equals(step.getName()) && editingStep.getId().equals(step.getId()));
+
+            task1 = workflowAPI.findTaskByContentlet(contentlet1);
+            assertNotNull(task1.getId());
+            assertNull(TASK_STATUS_SHOULD_BE_NULL, task1.getStatus());
+
+        } finally {
+            //clean test
+            //delete content type
+            contentTypeAPI.delete(contentType7);
+
+            workflowScheme8.setArchived(true);
+            workflowAPI.saveScheme(workflowScheme8,user);
+            workflowAPI.deleteScheme(workflowScheme8, user);
+
+            workflowScheme9.setArchived(true);
+            workflowAPI.saveScheme(workflowScheme9,user);
+            workflowAPI.deleteScheme(workflowScheme9, user);
+        }
+
+    }
     /**
      * Validate if the scheme is present in the list of schemes
      *
