@@ -43,7 +43,7 @@ public class ESUtils {
 		if (UtilMethods.isSet(yamlPath)  && FileUtil.exists(yamlPath)){
 			return yamlPath;
 		}else{
-			return esPathHome + "/config/elasticsearch.yml";
+			return esPathHome + File.separator + "config" + File.separator + "elasticsearch.yml";
 		}
 	}
 
@@ -53,10 +53,10 @@ public class ESUtils {
 		String yamlPath = System.getenv("ES_PATH_CONF");
 		if (!UtilMethods.isSet(yamlPath) || !FileUtil.exists(yamlPath)){
 			//Get elasticsearch-ext.yml from default location
-			yamlPath = esPathHome + "/config/elasticsearch-ext.yml";
+			yamlPath = esPathHome + File.separator + "config" +  File.separator + "elasticsearch-ext.yml";
 		} else{
 			//Otherwise, get parent directory from the ES_PATH_CONF
-			yamlPath = new File(yamlPath).getParent();
+			yamlPath = new File(yamlPath).getParent() + File.separator + "elasticsearch-ext.yml";
 		}
 		Path settingsPath = Paths.get(yamlPath);
 		if (Files.exists(settingsPath)){
