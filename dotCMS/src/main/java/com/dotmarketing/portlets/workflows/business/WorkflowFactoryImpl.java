@@ -632,7 +632,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 		List<WorkflowScheme> schemes = new ArrayList<>();
 		if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
-			schemes.add(this.findDefaultScheme());
 			schemes.add(this.findSystemWorkflow());
 			return schemes;
 		}
@@ -652,12 +651,8 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		db.addParam(structId);
 		try {
 			schemes = this.convertListToObjects(db.loadObjectResults(), WorkflowScheme.class);
-			if(schemes.isEmpty()){
-				schemes.add(this.findDefaultScheme());
-			}
 		} catch (final Exception er) {
 			schemes = new ArrayList();
-			schemes.add(this.findDefaultScheme());
 		}
 
 		cache.addForStructure(structId, schemes);
@@ -666,7 +661,8 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	}
 
-	private WorkflowScheme findSystemWorkflow() throws DotDataException {
+	@Override
+	public WorkflowScheme findSystemWorkflow() throws DotDataException {
 		return this.findScheme(WorkFlowFactory.SYSTEM_WORKFLOW_ID);
 	}
 
