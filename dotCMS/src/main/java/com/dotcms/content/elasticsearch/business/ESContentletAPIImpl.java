@@ -5468,6 +5468,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return isInodeIndexedWithQuery("+inode:" + inode, secondsToWait);
     }
 
+    @Override
+    public boolean isInodeIndexedArchived(String inode){
+
+        if (!UtilMethods.isSet(inode)) {
+            Logger.warn(this, "Requested Inode is not indexed because Inode is not set");
+        }
+
+        return isInodeIndexedWithQuery("+inode:" + inode + String.format(" +deleted:%s",true));
+    }
+
     private boolean isInodeIndexedWithQuery(String luceneQuery) {
         return isInodeIndexedWithQuery(luceneQuery, -1);
     }
