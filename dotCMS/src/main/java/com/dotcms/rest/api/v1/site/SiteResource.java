@@ -208,7 +208,7 @@ public class SiteResource implements Serializable {
      * @return
      */
     @PUT
-    @Path ("/switch}")
+    @Path ("/switch")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
