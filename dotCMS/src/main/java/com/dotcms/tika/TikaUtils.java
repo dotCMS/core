@@ -14,6 +14,8 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.OSGIUtil;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.liferay.portal.model.User;
 import java.io.File;
 import java.io.IOException;
@@ -110,7 +112,11 @@ public class TikaUtils {
                 if (binFile != null) {
 
                     //Parse the metadata from this file
-                    getMetaDataMap(contentlet.getInode(), binFile);
+                    Map<String, String> metaData = getMetaDataMap(contentlet.getInode(), binFile);
+                    if (null != metaData) {
+                        Gson gson = new GsonBuilder().disableHtmlEscaping().create();
+                        contentlet.setProperty(FileAssetAPI.META_DATA_FIELD, gson.toJson(metaData));
+                    }
                     return true;
                 }
             }
@@ -161,7 +167,9 @@ public class TikaUtils {
                 //Creating the meta data map to use by our content
                 metaMap = buildMetaDataMap();
                 metaMap.put(FileAssetAPI.CONTENT_FIELD, content);
-            } else {
+
+            } else if (!contentMetadataFile
+                    .exists()) { //If a metadata file exist we should parse nothing
 
                 is = this.tikaService.tikaInputStreamGet(binFile);
                 fulltext = this.tikaService.parse(is);
@@ -173,7 +181,7 @@ public class TikaUtils {
                 bytes = new byte[1024];
                 count = fulltext.read(buf);
 
-                if (count > 0 && !contentMetadataFile.exists()) {
+                if (count > 0) {
 
                     //Create the new content metadata file
                     prepareMetaDataFile(contentMetadataFile);
@@ -226,7 +234,7 @@ public class TikaUtils {
                         IOUtils.closeQuietly(out);
                         IOUtils.closeQuietly(fulltext);
                     }
-                } else if (!contentMetadataFile.exists()) {
+                } else {
                     /*
                     Create an empty file as we have nothing to put here but it is a record
                     that we already try to process this file.
