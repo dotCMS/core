@@ -960,7 +960,9 @@ public class ImportUtil {
                     buffy.append( " +languageId:" ).append( language );
                 }
 
+                Logger.info(ImportUtil.class, "buffy: " + buffy.toString());
                 List<ContentletSearch> cons = conAPI.searchIndex( buffy.toString(), 0, -1, null, user, true );
+                Logger.info(ImportUtil.class,"Cons: " + cons.size());
                 /*
                 We need to handle the case when keys are used, we could have a contentlet already saved with the same keys but different language
                 so the above query is not going to find it.
@@ -973,7 +975,7 @@ public class ImportUtil {
                         }
                     }
                 }
-
+                Logger.info(ImportUtil.class,"Cons: " + cons.size());
                 Contentlet con;
                 for (ContentletSearch contentletSearch: cons) {
                     con = conAPI.find(contentletSearch.getInode(), user, true);
