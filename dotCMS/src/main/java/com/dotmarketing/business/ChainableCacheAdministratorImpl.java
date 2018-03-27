@@ -134,10 +134,10 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 				}
 	            localServer = Server.builder(localServer).withCachePort(Integer.parseInt(bindPort)).build();
    
-                List<String> myself = new ArrayList<String>();
+                List<String> myself = new ArrayList<>();
                 myself.add(localServer.getServerId());
 
-                List<Server> aliveServers = serverAPI.getAliveServers();
+                List<Server> aliveServers = serverAPI.getAliveServers(myself);
                 aliveServers.add(localServer);
 
                 StringBuilder initialHosts = new StringBuilder();
