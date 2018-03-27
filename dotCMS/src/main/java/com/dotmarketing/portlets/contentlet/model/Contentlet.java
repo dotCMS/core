@@ -197,7 +197,13 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      * @return
      */
     public long getLanguageId() {
-    	return (Long)map.get(LANGUAGEID_KEY);
+    	try {
+			return (Long) map.get(LANGUAGEID_KEY);
+		} catch (ClassCastException e) {
+			long languageId = Long.parseLong((String) map.get(LANGUAGEID_KEY));
+			map.put(LANGUAGEID_KEY, languageId);
+			return languageId;
+		}
     }
 
     /**

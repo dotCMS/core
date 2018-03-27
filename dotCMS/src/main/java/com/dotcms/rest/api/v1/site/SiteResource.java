@@ -219,8 +219,8 @@ public class SiteResource implements Serializable {
         final InitDataObject initData = this.webResource.init(null, true, req, true, null); // should logged in
         final User user = initData.getUser();
 
-        Logger.debug(this,
-                "Switching to default host for user: " + user.getUserId());
+        Logger.debug(this, "Switching to default host for user: " + user.getUserId());
+
         try {
 
 
@@ -228,11 +228,10 @@ public class SiteResource implements Serializable {
             return Response.ok(new ResponseEntityView(host)).build();
 
         } catch (DotSecurityException e) {
+            Logger.error(this.getClass(), "Exception on switch site exception message: " + e.getMessage(), e);
             throw new ForbiddenException(e);
         } catch (Exception e) {
-            if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
-                throw new ForbiddenException(e);
-            }
+            Logger.error(this.getClass(), "Exception on switch site exception message: " + e.getMessage(), e);
             return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 
