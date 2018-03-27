@@ -50,12 +50,6 @@ public class IntegrityDataGeneratorThread extends Thread {
             servletContext.setAttribute("integrityDataGenerationError", e.getMessage());
         } finally {
             servletContext.setAttribute("integrityDataGenerationStatus", ProcessStatus.FINISHED);
-            
-            try {
-                HibernateUtil.closeSession();
-            } catch (DotHibernateException e) {
-                Logger.warn(this, e.getMessage(), e);
-            }
         }
     }
 

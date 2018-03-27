@@ -7,7 +7,6 @@ import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
-import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.rendering.velocity.services.TemplateLoader;
 import com.dotcms.repackage.com.google.common.base.Strings;
@@ -460,7 +459,6 @@ public class WebAssetFactory {
 	 * @throws DotSecurityException
 	 */
 	@SuppressWarnings("unchecked")
-	@CloseDBIfOpened
 	public static WebAsset publishAsset(WebAsset currWebAsset, User user, boolean isNewVersion) throws WebAssetException, DotStateException, DotDataException, DotSecurityException {
 
 		Logger.debug(WebAssetFactory.class, "Publishing asset!!!!");
@@ -511,7 +509,7 @@ public class WebAssetFactory {
 
 			if(localTransaction) {
 
-				HibernateUtil.closeAndCommitTransaction();
+				HibernateUtil.commitTransaction();
 			}
 		} catch(Exception e){
 
@@ -520,6 +518,11 @@ public class WebAssetFactory {
 			if(localTransaction){
 
 				HibernateUtil.rollbackTransaction();
+			}
+		} finally {
+
+			if(localTransaction) {
+				DbConnectionFactory.closeConnection();
 			}
 		}
 

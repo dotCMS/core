@@ -333,7 +333,6 @@ public class IntegrityResource {
     @GET
     @Path("/checkintegrity/{params:.*}")
     @Produces (MediaType.APPLICATION_JSON)
-    @CloseDBIfOpened
     public Response checkIntegrity(@Context HttpServletRequest request, @PathParam("params") String params)  {
         InitDataObject initData = webResource.init(params, true, request, true, null);
 
@@ -397,6 +396,8 @@ public class IntegrityResource {
                 final String integrityDataRequestID = response.readEntity(String.class);
 
                 Thread integrityDataRequestChecker = new Thread() {
+
+                    @CloseDBIfOpened
                     public void run(){
 
                         FormDataMultiPart form = new FormDataMultiPart();

@@ -115,13 +115,6 @@ public class XMLSitemapJob implements Job, StatefulJob {
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
 		}
-		finally {
-		    try {
-                HibernateUtil.closeSession();
-            } catch (DotHibernateException e) {
-                Logger.warn(this, e.getMessage(), e);
-            }
-		}
 
 	}
 

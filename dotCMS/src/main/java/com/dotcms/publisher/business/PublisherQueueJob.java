@@ -204,12 +204,6 @@ public class PublisherQueueJob implements StatefulJob {
 			}
 		} catch (Exception e) {
 			Logger.error(PublisherQueueJob.class, e.getMessage(), e);
-		} finally {
-			try {
-				HibernateUtil.closeSession();
-			} catch (DotHibernateException e) {
-				Logger.warn(this, "exception while calling HibernateUtil.closeSession()", e);
-			}
 		}
 	}
 

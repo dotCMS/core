@@ -322,6 +322,7 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
             final List<Language> dlangs=langs;
             final boolean inc = incremental;
             new Thread() {
+                @CloseDBIfOpened
                 public void run() {
                 	String date = DateUtil.getCurrentDate();
                     ActivityLogger.logInfo(getClass(), "Job Started", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: timemachine"  );

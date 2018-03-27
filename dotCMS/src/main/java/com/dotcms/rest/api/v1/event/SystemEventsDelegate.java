@@ -72,15 +72,6 @@ public class SystemEventsDelegate implements Delegate<AppContext> {
         } catch (Exception e) {
 
             Logger.debug(this, e.getMessage(), e);
-        } finally {
-
-            // The main reason for this abstraction is to ensure that the
-            // database connection is released and closed after executing this
-            try {
-                HibernateUtil.closeSession();
-            } catch (DotHibernateException e) {
-                Logger.warn(this, e.getMessage(), e);
-            }
         }
 
         if (null != newEvents) {

@@ -225,7 +225,6 @@ public class ReindexThread extends Thread {
 	 * containing the content identifier will be sent to the user via the
 	 * Notifications API to take care of the problem as soon as possible.
 	 */
-	@CloseDBIfOpened
 	public void run() {
 		this.notifiedFailingRecords.clear();
 		while (!die) {
@@ -250,7 +249,7 @@ public class ReindexThread extends Thread {
 				try {
 					if(remoteQ.size()==0)
 					    fillRemoteQ();
-					
+
 					if(remoteQ.size()==0 && ESReindexationProcessStatus.inFullReindexation() && jAPI.recordsLeftToIndexForServer()==0) {
 						// The re-indexation process has finished successfully
 						reindexSwitchover(false);
@@ -263,7 +262,7 @@ public class ReindexThread extends Thread {
 						// all the "good" records have been processed
 						fillRemoteQ(true);
 					}
-					
+
 					if(!remoteDelQ.isEmpty()) {
 					    synchronized(remoteDelQ) {
 				            try {
@@ -503,14 +502,25 @@ public class ReindexThread extends Thread {
 				            addRecordsToDelete(recordsToDelete);
 				        }
 					}
-					
+
 				} catch (Exception ex) {
 					Logger.error(this, "Unable to index record", ex);
 				} finally {
 					try {
 						HibernateUtil.closeSession();
+						try{
+							DbConnectionFactory.closeConnection();
+						}catch (Exception e) {
+							Logger.debug(this, "Unable to close connection : " + e.getMessage(),e);
+						}
+
 					} catch (DotHibernateException e) {
 						Logger.error(this, e.getMessage(), e);
+						try{
+							DbConnectionFactory.closeConnection();
+						}catch (Exception e1) {
+							Logger.debug(this, "Unable to close connection : " + e1.getMessage(),e1);
+						}
 					}
 				}
 				

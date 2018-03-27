@@ -35,14 +35,6 @@ public abstract class AbstractJobDelegate implements Delegate<JobDelegateDataBea
 			executeDelegate(data);
 		} catch (Exception e) {
 			Logger.error(this, "An error occurred when running the Job Delegate: " + this.getClass(), e);
-		} finally {
-			// The main reason for this abstraction is to ensure that the
-			// database connection is released and closed after executing this
-			try {
-				HibernateUtil.closeSession();
-			} catch (DotHibernateException e) {
-				Logger.warn(this, e.getMessage(), e);
-			}
 		}
 	}
 
