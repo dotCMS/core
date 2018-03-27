@@ -275,7 +275,6 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
 
     }
 
-    @CloseDBIfOpened
     public void saveJobConfig(HttpServletRequest req, HttpServletResponse resp) throws Exception {
         String cronExp=req.getParameter("cronExp");
         String[] hostIdentifiers=req.getParameterValues("snaphost");
