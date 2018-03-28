@@ -17,10 +17,15 @@ import org.elasticsearch.common.settings.Settings.Builder;
 
 public class ESUtils {
 
+	public static final String ES_PATH_HOME = "es.path.home";
 	// Query util methods
 	@VisibleForTesting
 	static final String[] SPECIAL_CHARS = new String[] { "+", "-", "&&", "||", "!", "(", ")", "{", "}", "[", "]", "^", "\"", "?",
 			":", "\\" };
+	public static final String ES_PATH_HOME_DEFAULT_VALUE = "WEB-INF/elasticsearch";
+	private static final String ES_CONFIG_DIR = "config";
+	private static final String ES_YML_FILE = "elasticsearch.yml";
+	private static final String ES_EXT_YML_FILE = "elasticsearch-ext.yml";
 
 	public static String escape(final String text) {
 
@@ -38,27 +43,27 @@ public class ESUtils {
 		return escapedText;
 	}
 
-	public static String getYamlConfiguration(String esPathHome){
-		String yamlPath = System.getenv("ES_PATH_CONF");
+	public static String getYamlConfiguration(final String esPathHome){
+		final String yamlPath = System.getenv("ES_PATH_CONF");
 		if (UtilMethods.isSet(yamlPath)  && FileUtil.exists(yamlPath)){
 			return yamlPath;
 		}else{
-			return esPathHome + File.separator + "config" + File.separator + "elasticsearch.yml";
+			return esPathHome + File.separator + ES_CONFIG_DIR + File.separator + ES_YML_FILE;
 		}
 	}
 
 	public static Builder getExtSettingsBuilder() throws IOException {
 
-		String esPathHome = Config.getStringProperty(ESClient.HOME_PATH, "WEB-INF/elasticsearch");
+		final String esPathHome = Config.getStringProperty(ES_PATH_HOME, ES_PATH_HOME_DEFAULT_VALUE);
 		String yamlPath = System.getenv("ES_PATH_CONF");
 		if (!UtilMethods.isSet(yamlPath) || !FileUtil.exists(yamlPath)){
 			//Get elasticsearch-ext.yml from default location
-			yamlPath = esPathHome + File.separator + "config" +  File.separator + "elasticsearch-ext.yml";
+			yamlPath = esPathHome + File.separator + ES_CONFIG_DIR +  File.separator + ES_EXT_YML_FILE;
 		} else{
 			//Otherwise, get parent directory from the ES_PATH_CONF
-			yamlPath = new File(yamlPath).getParent() + File.separator + "elasticsearch-ext.yml";
+			yamlPath = new File(yamlPath).getParent() + File.separator + ES_EXT_YML_FILE;
 		}
-		Path settingsPath = Paths.get(yamlPath);
+		final Path settingsPath = Paths.get(yamlPath);
 		if (Files.exists(settingsPath)){
 			return Settings.builder().loadFromPath(settingsPath);
 		}

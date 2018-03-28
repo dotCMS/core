@@ -19,7 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
@@ -35,9 +35,8 @@ public class ESClient {
 
 	private static Node _nodeInstance;
 	final String syncMe = "esSync";
-	public static final String HOME_PATH = "es.path.home";
 
-	public Client getClient() {
+    public Client getClient() {
 
         try{
             initNode(ESUtils.getExtSettingsBuilder());
@@ -56,7 +55,7 @@ public class ESClient {
 		}
 	}
 
-    private void initNode (Builder extSettings) {
+    private void initNode (final Builder extSettings) {
     	
         if ( _nodeInstance == null || _nodeInstance.isClosed()) {
         	long start = System.currentTimeMillis();
@@ -66,13 +65,13 @@ public class ESClient {
                     shutDownNode();
 
                     final String node_id = ConfigUtils.getServerId();
-                    String esPathHome = Config.getStringProperty(HOME_PATH, "WEB-INF/elasticsearch");
+                    String esPathHome = Config.getStringProperty(ESUtils.ES_PATH_HOME, ESUtils.ES_PATH_HOME_DEFAULT_VALUE);
 
                     esPathHome = !new File(esPathHome).isAbsolute() ? FileUtil.getRealPath(esPathHome) : esPathHome;
 
                     Logger.info(this, "***PATH HOME: " + esPathHome);
 
-                    String yamlPath = ESUtils.getYamlConfiguration(esPathHome);
+                    final String yamlPath = ESUtils.getYamlConfiguration(esPathHome);
 
                     try{
                         _nodeInstance = new Node(
@@ -86,26 +85,7 @@ public class ESClient {
                         Logger.error(this, "Error validating ES node at start.", e);
                     }
 
-                    try {
-
-                        //Build the replicas config settings for the indices client
-                        //TODO: Evaluate if this code can be moved to setReplicasSettings()
-                        Optional<UpdateSettingsRequest> settingsRequest = getReplicasSettings();
-
-                        if(settingsRequest.isPresent()) {
-                            _nodeInstance.client().admin().indices().updateSettings(
-                                settingsRequest.get()
-                            ).actionGet();
-                        }
-                    } catch ( IndexNotFoundException e ) {
-                        /*
-                        Updating settings without Indices will throw this exception but should be only visible on start when the
-                        just created node does not have any created indices, for this case call the setReplicasSettings method after the indices creation.
-                         */
-                        Logger.warn( ESClient.class, "Unable to set ES property auto_expand_replicas: [No indices found]" );
-                    } catch ( Exception e ) {
-                        Logger.error( ESClient.class, "Unable to set ES property auto_expand_replicas.", e );
-                    }
+                    setReplicasSettings();
 
                     try {
                         // wait a bit while the node gets available for requests
@@ -120,8 +100,6 @@ public class ESClient {
         
     }
 
-
-
     public void shutDownNode () {
         if ( _nodeInstance != null ) {
             try {
@@ -135,20 +113,26 @@ public class ESClient {
     /**
      * This method will update the replicas settings for the IndicesAdminClient
      */
-    public void setReplicasSettings () {
-        if ( _nodeInstance != null && !_nodeInstance.isClosed() ) {
-            try {
-                //Build the replicas config settings for the indices client
-                Optional<UpdateSettingsRequest> settingsRequest = getReplicasSettings();
+    public void setReplicasSettings() {
+        try {
+            //Build the replicas config settings for the indices client
+            Optional<UpdateSettingsRequest> settingsRequest = getReplicasSettings();
 
-                if(settingsRequest.isPresent()) {
-                    _nodeInstance.client().admin().indices().updateSettings(
+            if (settingsRequest.isPresent()) {
+                _nodeInstance.client().admin().indices().updateSettings(
                         settingsRequest.get()
-                    ).actionGet();
-                }
-            } catch ( Exception e ) {
-                Logger.error( ESClient.class, "Unable to set ES property auto_expand_replicas.", e );
+                ).actionGet();
             }
+        } catch (IndexNotFoundException e) {
+            /*
+            Updating settings without Indices will throw this exception but should be only visible
+            on start when the just created node does not have any created indices, for this case
+            call the setReplicasSettings method after the indices creation.
+             */
+            Logger.warn(ESClient.class,
+                    "Unable to set ES property auto_expand_replicas: [No indices found]");
+        } catch (Exception e) {
+            Logger.error(ESClient.class, "Unable to set ES property auto_expand_replicas.", e);
         }
     }
 
@@ -195,92 +179,163 @@ public class ESClient {
         return updateSettingsRequest;
     }
 
+    /**
+     *
+     * @throws Exception
+     */
 	public void setClusterNode() throws Exception {
         Server currentServer;
-
-	    String bindAddr;
-        String bindAddressFromProperty;
-        String httpPort;
         String serverId;
-        String transportTCPPort;
 
-        Builder externalSettings = ESUtils.getExtSettingsBuilder();
+        //Load settings from elasticsearch-ext.yml
+        final Builder externalSettings = ESUtils.getExtSettingsBuilder();
+
+        //Get current server
         ServerAPI serverAPI      = APILocator.getServerAPI();
-
         serverId = ConfigUtils.getServerId();
-        //This line is added because when someone add a license the node is already up and working and reset the existing port
-        shutDownNode();
-
         currentServer = serverAPI.getCurrentServer();
 
-        bindAddressFromProperty = externalSettings.get("transport.host");
+        //Add transport.host and transport.tcp.port to the settings
+        setUpTransportConf(currentServer, serverId, externalSettings);
 
-        if(UtilMethods.isSet(bindAddressFromProperty)) {
-            try {
-                InetAddress addr = InetAddress.getByName(bindAddressFromProperty);
-                if(ClusterFactory.isValidIP(bindAddressFromProperty)){
-                    bindAddressFromProperty = addr.getHostAddress();
-                }else{
-                    Logger.info(ClusterFactory.class, "Address provided in transport.host property is not "
-                            + "valid: " + bindAddressFromProperty);
-                    bindAddressFromProperty = null;
-                }
-            } catch(UnknownHostException e) {
-                Logger.info(ClusterFactory.class, "Address provided in transport.host property is not "
-                        + " valid: " + bindAddressFromProperty);
-                bindAddressFromProperty = null;
-            }
-        }
+        //Add http.host and http.port to the settings if http.enabled=true
+        currentServer = setUpHttpConf(currentServer, serverId, externalSettings);
 
-        bindAddr = bindAddressFromProperty!=null ? bindAddressFromProperty : currentServer.getIpAddress();
+        //Set unicast hosts and update server
+        updateCurrentServer(currentServer, externalSettings, serverAPI);
 
-        if(UtilMethods.isSet(currentServer.getEsTransportTcpPort())){
-            transportTCPPort = getNextAvailableESPort(serverId,bindAddr,currentServer.getEsTransportTcpPort().toString(), externalSettings);
-        }else{
-            transportTCPPort = getNextAvailableESPort(serverId, bindAddr, null, externalSettings);
-        }
+        restartNode(externalSettings);
+	}
 
-        externalSettings.put("transport.host", bindAddr);
-        externalSettings.put(ServerPort.ES_TRANSPORT_TCP_PORT.getPropertyName(), transportTCPPort);
+    /**
+     *
+     * @param currentServer
+     * @param serverId
+     * @param externalSettings
+     * @return
+     */
+    private Server setUpHttpConf(Server currentServer, final String serverId,
+            final Builder externalSettings) {
+        String httpPort;
 
-        if(UtilMethods.isSet(externalSettings.get("http.enabled")) && (Boolean.parseBoolean(externalSettings.get("http.enabled")))) {
-            httpPort = UtilMethods.isSet(currentServer.getEsHttpPort()) ? currentServer.getEsHttpPort().toString()
-                    :ClusterFactory.getNextAvailablePort(serverId, ServerPort.ES_HTTP_PORT, externalSettings);
-            currentServer = Server.builder(currentServer).withEsHttpPort(Integer.parseInt(httpPort)).build();
-            if (!UtilMethods.isSet(externalSettings.get("http.host"))){
+        String bindAddr = externalSettings.get("transport.host");
+        if (UtilMethods.isSet(externalSettings.get("http.enabled")) && (Boolean
+                .parseBoolean(externalSettings.get("http.enabled")))) {
+            httpPort =
+                    UtilMethods.isSet(currentServer.getEsHttpPort()) ? currentServer.getEsHttpPort()
+                            .toString()
+                            : ClusterFactory.getNextAvailablePort(serverId, ServerPort.ES_HTTP_PORT,
+                                    externalSettings);
+            currentServer = Server.builder(currentServer).withEsHttpPort(Integer.parseInt(httpPort))
+                    .build();
+            if (!UtilMethods.isSet(externalSettings.get("http.host"))) {
                 externalSettings.put("http.host", bindAddr);
             }
 
             externalSettings.put(ServerPort.ES_HTTP_PORT.getPropertyName(), httpPort);
         }
-        List<String> myself = new ArrayList<>();
-        myself.add(currentServer.getServerId());
+        return currentServer;
+    }
 
-        currentServer = Server.builder(currentServer).withEsTransportTcpPort(Integer.parseInt(transportTCPPort)).build();
+    /**
+     *
+     * @param currentServer
+     * @param serverId
+     * @param externalSettings
+     */
+    private void setUpTransportConf(final Server currentServer, final String serverId,
+            final Builder externalSettings) {
+        String bindAddressFromProperty;
+        String bindAddr;
+        String transportTCPPort;
+        bindAddressFromProperty = externalSettings.get("transport.host");
 
-        setUnicastHosts(myself, transportTCPPort, bindAddr, serverAPI, currentServer,
-                externalSettings);
+        if (UtilMethods.isSet(bindAddressFromProperty)) {
+            try {
+                InetAddress addr = InetAddress.getByName(bindAddressFromProperty);
+                if (ClusterFactory.isValidIP(bindAddressFromProperty)) {
+                    bindAddressFromProperty = addr.getHostAddress();
+                } else {
+                    Logger.info(ClusterFactory.class,
+                            "Address provided in transport.host property is not "
+                                    + "valid: " + bindAddressFromProperty);
+                    bindAddressFromProperty = null;
+                }
+            } catch (UnknownHostException e) {
+                Logger.info(ClusterFactory.class,
+                        "Address provided in transport.host property is not "
+                                + " valid: " + bindAddressFromProperty);
+                bindAddressFromProperty = null;
+            }
+        }
+
+        bindAddr = bindAddressFromProperty != null ? bindAddressFromProperty
+                : currentServer.getIpAddress();
+        externalSettings.put("transport.host", bindAddr);
+
+        if (UtilMethods.isSet(currentServer.getEsTransportTcpPort())) {
+            transportTCPPort = getNextAvailableESPort(serverId, bindAddr,
+                    currentServer.getEsTransportTcpPort().toString(), externalSettings);
+        } else {
+            transportTCPPort = getNextAvailableESPort(serverId, bindAddr, null, externalSettings);
+        }
+
+        externalSettings.put(ServerPort.ES_TRANSPORT_TCP_PORT.getPropertyName(), transportTCPPort);
+    }
+
+    /**
+     *
+     * @param currentServer
+     * @param externalSettings
+     * @param serverAPI
+     * @throws DotDataException
+     */
+    private void updateCurrentServer(Server currentServer,
+            final Builder externalSettings, final ServerAPI serverAPI) throws DotDataException {
+
+        setUnicastHosts(serverAPI, currentServer, externalSettings);
 
         try {
             serverAPI.updateServer(currentServer);
         } catch (DotDataException e) {
-            Logger.error(this, "Error trying to update server. Server Id: " + currentServer.getServerId());
+            Logger.error(this,
+                    "Error trying to update server. Server Id: " + currentServer.getServerId());
         }
+    }
 
+    /**
+     *
+     * @param externalSettings
+     */
+    private void restartNode(Builder externalSettings) {
         shutDownNode();
-		initNode(externalSettings);
-	}
+        initNode(externalSettings);
+    }
 
-    private void setUnicastHosts(final List<String> myself,
-            final String transportTCPPort, final String bindAddr, final ServerAPI serverAPI,
-            final Server currentServer, final Builder externalSettings) throws DotDataException {
+    /**
+     *
+     * @param serverAPI
+     * @param currentServer
+     * @param externalSettings
+     * @throws DotDataException
+     */
+    private void setUnicastHosts(final ServerAPI serverAPI,
+            Server currentServer, final Builder externalSettings) throws DotDataException {
 
         String initData;
 
-        List<Server> aliveServers = serverAPI.getAliveServers(myself);
+        final String bindAddr = externalSettings.get("transport.host");
+        final String transportTCPPort = externalSettings
+                .get(ServerPort.ES_TRANSPORT_TCP_PORT.getPropertyName());
+
+        final List<Server> aliveServers = serverAPI
+                .getAliveServers(Collections.singletonList(currentServer.getServerId()));
+
+        currentServer = Server.builder(currentServer)
+                .withEsTransportTcpPort(Integer.parseInt(transportTCPPort)).build();
         aliveServers.add(currentServer);
 
-        StringBuilder initialHosts = new StringBuilder();
+        final StringBuilder initialHosts = new StringBuilder();
 
         int i=0;
         for (Server server : aliveServers) {
@@ -326,8 +381,8 @@ public class ESClient {
 	 * @param externalSettings
      * @return port
 	 */
-	public String getNextAvailableESPort(String serverId, String bindAddr, String basePort,
-            Builder externalSettings) {
+	public String getNextAvailableESPort(final String serverId, final String bindAddr, final String basePort,
+            final Builder externalSettings) {
 
         String freePort = null;
 
