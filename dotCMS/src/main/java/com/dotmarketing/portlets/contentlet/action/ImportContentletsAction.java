@@ -7,9 +7,7 @@ import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.contentlet.action.ImportAuditUtil.ImportAuditResults;
 import com.dotmarketing.portlets.contentlet.business.ContentletCache;
@@ -73,7 +71,6 @@ public class ImportContentletsAction extends DotPortletAction {
 	 * @param res
 	 *            - The Struts wrapper for the HTTP Response object.
 	 */
-	@CloseDBIfOpened
 	public void processAction(ActionMapping mapping, final ActionForm form, final PortletConfig config, final ActionRequest req, final ActionResponse res) throws Exception {
 		Logger.debug(this, "Import Contentlets Action");
 		
@@ -199,6 +196,7 @@ public class ImportContentletsAction extends DotPortletAction {
 				final HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
 				final long importId = ImportAuditUtil.createAuditRecord(user.getUserId(), (String)httpReq.getSession().getAttribute("fileName"));
 				Thread t=new Thread() {
+					@CloseDBIfOpened
 					public void run() {
 						try {
 							Logger.debug(this, "Calling Process File Method");
@@ -271,12 +269,6 @@ public class ImportContentletsAction extends DotPortletAction {
 							}else{
 								ImportAuditUtil.cancelledImports.remove(importId);
 							}
-							
-							try {
-	                            HibernateUtil.closeSession();
-	                        } catch (DotHibernateException e) {
-	                            Logger.warn(this, e.getMessage(), e);
-	                        }
 						}
 					}
 				};

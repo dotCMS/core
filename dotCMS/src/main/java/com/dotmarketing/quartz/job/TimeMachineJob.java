@@ -50,13 +50,6 @@ public class TimeMachineJob implements Job, StatefulJob {
         catch(Exception ex) {
             throw new JobExecutionException(ex);
         }
-        finally {
-            try {
-                HibernateUtil.closeSession();
-            } catch (DotHibernateException e) {
-                Logger.warn(this, e.getMessage(), e);
-            }
-        }
     }
 
 }

@@ -8,9 +8,7 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.calendar.business.CalendarReminderAPI;
 import com.dotmarketing.util.Logger;
 
@@ -70,13 +68,6 @@ public class CalendarReminderThread implements Job {
 			run();
 		} catch (Exception e) {
 			Logger.warn(this, e.toString());
-		}
-		finally {
-		    try {
-                HibernateUtil.closeSession();
-            } catch (DotHibernateException e) {
-                Logger.warn(this, e.getMessage(), e);
-            }
 		}
 	}
 }

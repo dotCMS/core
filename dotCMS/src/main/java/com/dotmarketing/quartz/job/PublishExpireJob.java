@@ -14,10 +14,7 @@ import org.quartz.JobExecutionException;
 import org.quartz.StatefulJob;
 
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
@@ -51,82 +48,72 @@ public class PublishExpireJob implements StatefulJob {
 
 	@CloseDBIfOpened
 	public void execute(JobExecutionContext ctx) throws JobExecutionException {
-	    try {
-    		ContentletAPI capi = APILocator.getContentletAPI();
-    		User pubUser = null;
-    		User expireUSer = null;
-    		try {
-    			pubUser = APILocator.getUserAPI().getSystemUser();
-    			expireUSer = APILocator.getUserAPI().getSystemUser();
-    		} catch (DotDataException e) {
-    			Logger.error(this.getClass(), e.getMessage(), e);
-    			throw new JobExecutionException(e);
-    		}
-    		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmm00");
-    		String now = sdf.format(new Date());
-    
-    		/*
-    		 * do publish first, where publish is in the past and expire is in the
-    		 * future and live = false
-    		 */
-    		for (Structure s : getStructWithPublishField()) {
-    			StringWriter luceneQuery = new StringWriter();
-    			luceneQuery.append(" +structureName:" + s.getVelocityVarName());
-    			luceneQuery.append(" +" + s.getVelocityVarName() + "." + publishDateField + ":[19990101010000 to " + now + "]");
-    			luceneQuery.append(" +" + s.getVelocityVarName() + "." + expireDateField + ":[" + now + " to 20990101010000]");
-    			luceneQuery.append(" +live:false ");
-    			luceneQuery.append(" +working:true ");
-    			luceneQuery.append(" +deleted:false ");
-    
-    			try {
-    				List<Contentlet> cons = capi.search(luceneQuery.toString(), 0, batchSize, null, expireUSer, false);
-    				while (cons.size() > 0) {
-    
-    					capi.publish(cons, pubUser, false);
-    					Thread.sleep(500);
-    
-    					cons = capi.search(luceneQuery.toString(), 0, batchSize, null, expireUSer, false);
-    				}
-    			} catch (Exception e) {
-    				Logger.error(this.getClass(), e.getMessage(), e);
-    				throw new JobExecutionException(e);
-    			}
-    		}
-    
-    		/*
-    		 * do expire second, where expire is in the past and live = true
-    		 */
-    		for (Structure s : getStructWithExpireField()) {
-    			StringWriter luceneQuery = new StringWriter();
-    			luceneQuery.append(" +structureName:" + s.getVelocityVarName());
-    			luceneQuery.append(" +" + s.getVelocityVarName() + "." + expireDateField + ":[19990101010000 to " + now + "]");
-    			luceneQuery.append(" +live:true ");
-    			luceneQuery.append(" +working:true ");
-    			luceneQuery.append(" +deleted:false ");
-    
-    			try {
-    				List<Contentlet> cons = capi.search(luceneQuery.toString(), 0, batchSize, null, expireUSer, false);
-    				while (cons.size() > 0) {
-    
-    					capi.unpublish(cons, expireUSer, false);
-    					Thread.sleep(500);
-    					
-    					cons = capi.search(luceneQuery.toString(), 0, batchSize, null, expireUSer, false);
-    				}
-    			} catch (Exception e) {
-    				Logger.error(this.getClass(), e.getMessage(), e);
-    				throw new JobExecutionException(e);
-    			}
-    		}
-	    }
-	    finally {
-	        try {
-                HibernateUtil.closeSession();
-            } catch (DotHibernateException e) {
-                Logger.warn(this, e.getMessage(), e);
-            }
-	    }
+		ContentletAPI capi = APILocator.getContentletAPI();
+		User pubUser = null;
+		User expireUSer = null;
+		try {
+			pubUser = APILocator.getUserAPI().getSystemUser();
+			expireUSer = APILocator.getUserAPI().getSystemUser();
+		} catch (DotDataException e) {
+			Logger.error(this.getClass(), e.getMessage(), e);
+			throw new JobExecutionException(e);
+		}
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmm00");
+		String now = sdf.format(new Date());
 
+		/*
+		 * do publish first, where publish is in the past and expire is in the
+		 * future and live = false
+		 */
+		for (Structure s : getStructWithPublishField()) {
+			StringWriter luceneQuery = new StringWriter();
+			luceneQuery.append(" +structureName:" + s.getVelocityVarName());
+			luceneQuery.append(" +" + s.getVelocityVarName() + "." + publishDateField + ":[19990101010000 to " + now + "]");
+			luceneQuery.append(" +" + s.getVelocityVarName() + "." + expireDateField + ":[" + now + " to 20990101010000]");
+			luceneQuery.append(" +live:false ");
+			luceneQuery.append(" +working:true ");
+			luceneQuery.append(" +deleted:false ");
+
+			try {
+				List<Contentlet> cons = capi.search(luceneQuery.toString(), 0, batchSize, null, expireUSer, false);
+				while (cons.size() > 0) {
+
+					capi.publish(cons, pubUser, false);
+					Thread.sleep(500);
+
+					cons = capi.search(luceneQuery.toString(), 0, batchSize, null, expireUSer, false);
+				}
+			} catch (Exception e) {
+				Logger.error(this.getClass(), e.getMessage(), e);
+				throw new JobExecutionException(e);
+			}
+		}
+
+		/*
+		 * do expire second, where expire is in the past and live = true
+		 */
+		for (Structure s : getStructWithExpireField()) {
+			StringWriter luceneQuery = new StringWriter();
+			luceneQuery.append(" +structureName:" + s.getVelocityVarName());
+			luceneQuery.append(" +" + s.getVelocityVarName() + "." + expireDateField + ":[19990101010000 to " + now + "]");
+			luceneQuery.append(" +live:true ");
+			luceneQuery.append(" +working:true ");
+			luceneQuery.append(" +deleted:false ");
+
+			try {
+				List<Contentlet> cons = capi.search(luceneQuery.toString(), 0, batchSize, null, expireUSer, false);
+				while (cons.size() > 0) {
+
+					capi.unpublish(cons, expireUSer, false);
+					Thread.sleep(500);
+
+					cons = capi.search(luceneQuery.toString(), 0, batchSize, null, expireUSer, false);
+				}
+			} catch (Exception e) {
+				Logger.error(this.getClass(), e.getMessage(), e);
+				throw new JobExecutionException(e);
+			}
+		}
 	}
 
 	private List<Structure> getStructWithPublishField() {

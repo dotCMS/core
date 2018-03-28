@@ -6,7 +6,6 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -235,12 +234,6 @@ public class ContentImportThread implements Job{
 			Logger.info(this,"The ContentImportThread Job End successfully"+(String)context.getJobDetail().getName());
 		} catch (Exception e) {
 			Logger.error(this, e.toString());
-		} finally {
-		    try {
-                HibernateUtil.closeSession();
-            } catch (DotHibernateException e) {
-                Logger.warn(this, e.getMessage(), e);
-            }
 		}
 	}
 

@@ -441,14 +441,7 @@ public class InitServlet extends HttpServlet {
                 Logger.debug(this, "Unable to get Hostname", e);
             } catch (Exception e) {
                 Logger.debug(this, "InitThread broke:", e);
-            } finally {
-                try {
-                    HibernateUtil.closeSession();
-                } catch (DotHibernateException e) {
-                    Logger.error(InitServlet.class, e.getMessage(), e);
-                }
             }
-
         }
 
     }

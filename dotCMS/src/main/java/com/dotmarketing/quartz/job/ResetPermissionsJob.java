@@ -1,6 +1,6 @@
 package com.dotmarketing.quartz.job;
 
-import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Map;
@@ -22,10 +22,7 @@ import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.reindex.ReindexThread;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
@@ -91,7 +88,7 @@ public class ResetPermissionsJob implements Job {
      * @param jobContext - The {@link JobExecutionContext} containing details and execution
      *        parameters of the job.
      */
-	@CloseDBIfOpened
+	@WrapInTransaction
 	public void execute(JobExecutionContext jobContext) throws JobExecutionException {
 		
 		JobDataMap map = jobContext.getJobDetail().getJobDataMap();
@@ -100,26 +97,12 @@ public class ResetPermissionsJob implements Job {
 		
 		String permissionableId = (String) map.get("permissionableId");
 		try {
-			HibernateUtil.startTransaction();
-			Permissionable permissionable = (Permissionable) retrievePermissionable(permissionableId);
+			Permissionable permissionable = retrievePermissionable(permissionableId);
 			permissionAPI.resetPermissionsUnder(permissionable);
-			HibernateUtil.closeAndCommitTransaction();
-		} catch (Exception e) {
+		} catch (DotDataException | DotSecurityException e) {
 			Logger.error(this, e.getMessage(), e);
-			try {
-				HibernateUtil.rollbackTransaction();
-			} catch (DotHibernateException e1) {
-				Logger.error(ResetPermissionsJob.class,e1.getMessage(),e1);
-			}
 			throw new DotRuntimeException(e.getMessage(), e);
-		} finally {
-		    try {
-                HibernateUtil.closeSession();
-            } catch (DotHibernateException e) {
-                Logger.warn(this, e.getMessage(), e);
-            }
 		}
-		
 	}
 	
 	private Permissionable retrievePermissionable (String assetId) throws DotDataException, DotSecurityException {
