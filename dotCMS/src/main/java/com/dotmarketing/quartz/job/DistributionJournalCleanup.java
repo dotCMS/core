@@ -1,6 +1,7 @@
 package com.dotmarketing.quartz.job;
 
 import com.dotcms.business.WrapInTransaction;
+import com.dotmarketing.exception.DotRuntimeException;
 import java.util.Date;
 
 import org.quartz.Job;
@@ -16,15 +17,16 @@ public class DistributionJournalCleanup implements Runnable, Job {
     }
 
 	@WrapInTransaction
-    public void run() 
+    public void run()
     {
-    	try 
+    	try
     	{
     		APILocator.getDistributedJournalAPI().processJournalEntries();
     	}
-    	catch (Exception e) 
+    	catch (Exception e)
     	{
     		Logger.error(this, "Error ocurred while trying to process journal entries.", e);
+    		throw new DotRuntimeException(e);
     	}
     }
 
