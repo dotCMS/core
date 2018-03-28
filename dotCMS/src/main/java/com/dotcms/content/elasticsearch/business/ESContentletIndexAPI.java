@@ -19,6 +19,7 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.gson.Gson;
@@ -349,6 +350,13 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 		// eliminate dups
 		Set<Contentlet> contentToIndexSet = new HashSet<>(contentToIndex);
 
+		/*
+		Verify if it is enabled the option to regenerate missing metadata files on reindex,
+		enabling this could affect greatly the performance of a reindex process.
+		 */
+		Boolean regenerateMissingMetadata = Config
+				.getBooleanProperty("regenerate.missing.metadata.on.reindex", false);
+
 		for(Contentlet con : contentToIndexSet) {
             String id=con.getIdentifier()+"_"+con.getLanguageId();
             IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
@@ -356,16 +364,18 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
             String mapping=null;
             try {
 
-				if (con.isLive() || con.isWorking()) {
-					/*
-					Before to reindex this Contentlet we need to verify if already have
-					a metadata file (Applies only to file assets), if already have it we do nothing,
-					if it is missing we parse the file asset and we generate it.
-					 */
-					new TikaUtils().generateMetaDataIfRequired(con);
+				if (regenerateMissingMetadata) {
+					if (con.isLive() || con.isWorking()) {
+                        /*
+                        Before to reindex this Contentlet we need to verify if already have
+                        a metadata file (Applies only to file assets), if already have it we do nothing,
+                        if it is missing we parse the file asset and we generate it.
+                         */
+						new TikaUtils().generateMetaDataIfRequired(con);
+					}
 				}
 
-                if(con.isWorking()) {
+				if (con.isWorking()) {
                     mapping=gson.toJson(mappingAPI.toMap(con));
                     
                     if(!reindexOnly)

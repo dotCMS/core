@@ -1,9 +1,11 @@
 package com.dotcms.tika;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.osgi.OSGIConstants;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.apache.commons.io.input.ReaderInputStream;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -90,10 +92,12 @@ public class TikaUtils {
     /**
      * Verifies if the Contentlet is a File asset in order to identify if it
      * is missing a metadata file, if the metadata does not exist this method
-     * parses the file asset and generates it.
+     * parses the file asset and generates it, this operation also implies a save
+     * operation to the Contentlet in order to save the parsed metadata info.
      *
      * @param contentlet Content to validate if have or not a metadata file
      */
+    @CloseDBIfOpened
     public Boolean generateMetaDataIfRequired(Contentlet contentlet)
             throws DotSecurityException, DotDataException {
 
@@ -116,6 +120,8 @@ public class TikaUtils {
                     if (null != metaData) {
                         Gson gson = new GsonBuilder().disableHtmlEscaping().create();
                         contentlet.setProperty(FileAssetAPI.META_DATA_FIELD, gson.toJson(metaData));
+                        //Save the parsed metadata to the contentlet
+                        FactoryLocator.getContentletFactory().save(contentlet);
                     }
                     return true;
                 }

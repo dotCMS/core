@@ -48,13 +48,8 @@ import com.dotmarketing.util.UtilMethods;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.sql.Date;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -515,12 +510,15 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 							}
 						}
 
-						if(keyValueMap!=null && !keyValueMap.isEmpty())
-							for(String key : keyValueMap.keySet())
+						if (keyValueMap != null && !keyValueMap.isEmpty()) {
+							for (String key : keyValueMap.keySet()) {
 								if (allowedFields == null || allowedFields
 										.contains(key.toLowerCase())) {
-									m.put(keyName, keyValueMap.get(key));
+									m.put(keyName + "_" + key, keyValueMap.get(key).toString());
 								}
+							}
+						}
+
 					}
 				} else if(f.getFieldType().equals(Field.FieldType.TAG.toString())) {
 
