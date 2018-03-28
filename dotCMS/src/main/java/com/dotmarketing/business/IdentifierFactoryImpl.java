@@ -528,7 +528,6 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	}
 
 	@Override
-	@CloseDBIfOpened
 	protected String getAssetTypeFromDB(String identifier) throws DotDataException{
 		String assetType = null;
 		try{
