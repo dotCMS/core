@@ -1,8 +1,15 @@
 package com.dotcms.exception;
 
+import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.workflows.business.NotAllowedUserWorkflowException;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+
+import java.util.Set;
 
 /**
  * Exception Utils
@@ -18,11 +25,33 @@ public class ExceptionUtil {
      * @param exceptionClass
      * @return boolean
      */
-    public static boolean causedBy(final Throwable e, final Class exceptionClass) {
+    public static boolean causedBy(final Throwable e, final Class <? extends Throwable> exceptionClass) {
 
         Throwable t = e;
         while (t != null) {
             if (t.getClass().equals(exceptionClass)) {
+                return true;
+            }
+            t = t.getCause();
+        }
+        return false;
+    }
+
+    public static Set<Class<? extends Throwable>> SECURITY_EXCEPTIONS = ImmutableSet.of(SecurityException.class, DotSecurityException.class, NotAllowedUserWorkflowException.class);
+
+    public static final Set<Class<? extends Throwable>> NOT_FOUND_EXCEPTIONS = ImmutableSet.of(NotFoundInDbException.class, DoesNotExistException.class);
+
+    /**
+     *
+     * @param e
+     * @param exceptionClasses
+     * @return boolean
+     */
+    public static boolean causedBy(final Throwable e, final Set<Class<? extends Throwable>> exceptionClasses) {
+
+        Throwable t = e;
+        while (t != null) {
+            if (exceptionClasses.contains(t.getClass())) {
                 return true;
             }
             t = t.getCause();

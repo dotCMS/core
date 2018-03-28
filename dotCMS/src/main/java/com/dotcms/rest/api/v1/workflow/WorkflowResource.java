@@ -1,6 +1,9 @@
 package com.dotcms.rest.api.v1.workflow;
 
+import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
@@ -9,6 +12,8 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.InitDataObject;
+
+import static com.dotcms.exception.ExceptionUtil.*;
 import static com.dotcms.rest.ResponseEntityView.OK;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -51,6 +56,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.function.Supplier;
 
 @SuppressWarnings("serial")
@@ -105,6 +111,29 @@ public class WorkflowResource {
 
     }
 
+    private Response createUnAuthorizedResponse (final Exception e) {
+
+        SecurityLogger.logInfo(this.getClass(), e.getMessage());
+        return ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
+    }
+
+    private Response mapExceptionResponse(final Exception e){
+
+        if(causedBy(e, SECURITY_EXCEPTIONS)){
+            return this.createUnAuthorizedResponse(e);
+        }
+
+        if(causedBy(e, NOT_FOUND_EXCEPTIONS)){
+            return ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+        }
+
+        if(causedBy(e, IllegalArgumentException.class)){
+            return ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
+        }
+
+        return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+    }
+
     /**
      * Returns all schemes non-archived associated to a content type. 401 if the user does not have permission.
      * @param request  HttpServletRequest
@@ -121,37 +150,20 @@ public class WorkflowResource {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
-        Response response;
-        List<WorkflowScheme> schemes;
-
         try {
-
             Logger.debug(this,
                     "Getting the workflow schemes for the contentTypeId: " + contentTypeId);
-            schemes   = (null != contentTypeId)?
+            List<WorkflowScheme> schemes = (null != contentTypeId) ?
                     this.workflowHelper.findSchemesByContentType
-                            (contentTypeId, initDataObject.getUser()):
+                            (contentTypeId, initDataObject.getUser()) :
                     this.workflowHelper.findSchemes();
 
-            response  =
-                    Response.ok(new ResponseEntityView(schemes)).build(); // 200
+            return Response.ok(new ResponseEntityView(schemes)).build(); // 200
         } catch (Exception e) {
-
-            Logger.error(this.getClass(),
-                    "Exception on findSchemes exception message: " + e.getMessage(), e);
-            response = (e.getCause() instanceof SecurityException)?
-                    this.createUnAuthorizedResponse(e) :
-                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+            Logger.error(this.getClass(),"Exception on findSchemes exception message: " + e.getMessage(), e);
+            return mapExceptionResponse(e);
         }
-
-        return response;
     } // findSchemes.
-
-    private Response createUnAuthorizedResponse (final Exception e) {
-
-        SecurityLogger.logInfo(this.getClass(), e.getMessage());
-        return ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
-    }
 
     /**
      * Returns all schemes for the content type and include schemes non-archive . 401 if the user does not have permission.
@@ -168,32 +180,23 @@ public class WorkflowResource {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
-        Response response;
-        List<WorkflowScheme> schemes;
-        List<WorkflowScheme> contentTypeSchemes;
 
         try {
 
             Logger.debug(this,
                     "Getting the workflow schemes for the contentTypeId: " + contentTypeId
                             + " and including All Schemes");
-            schemes   = this.workflowHelper.findSchemes();
-            contentTypeSchemes = this.workflowHelper.findSchemesByContentType
+            final List<WorkflowScheme> schemes = this.workflowHelper.findSchemes();
+            final List<WorkflowScheme> contentTypeSchemes = this.workflowHelper.findSchemesByContentType
                     (contentTypeId, initDataObject.getUser());
 
-            response  =
-                    Response.ok(new ResponseEntityView(new SchemesAndSchemesContentTypeView
-                            (schemes, contentTypeSchemes))).build(); // 200
+            return Response.ok(new ResponseEntityView(new SchemesAndSchemesContentTypeView(schemes, contentTypeSchemes))).build(); // 200
         } catch (Exception e) {
 
-            Logger.error(this.getClass(),
-                    "Exception on findSchemes exception message: " + e.getMessage(), e);
-            response = (e.getCause() instanceof SecurityException)?
-                    this.createUnAuthorizedResponse(e) :
-                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-        }
+            Logger.error(this.getClass(),"Exception on findAllSchemesAndSchemesByContentType exception message: " + e.getMessage(), e);
+            return mapExceptionResponse(e);
 
-        return response;
+        }
     } // findAllSchemesAndSchemesByContentType.
 
     /**
@@ -212,33 +215,16 @@ public class WorkflowResource {
 
         this.webResource.init
                 (null, true, request, true, null);
-        Response response;
-        List<WorkflowStep> steps;
 
         try {
-
             Logger.debug(this, "Getting the workflow steps for the scheme: " + schemeId);
-            steps     = this.workflowHelper.findSteps(schemeId);
-
-            response  =
-                    Response.ok(new ResponseEntityView(steps)).build(); // 200
-        } catch (DoesNotExistException e) {
-
-            Logger.error(this.getClass(),
-                    "DoesNotExistException on findStepsByScheme, schemeId: " + schemeId +
-                            ", exception message: " + e.getMessage(), e);
-            response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+            final List<WorkflowStep> steps = this.workflowHelper.findSteps(schemeId);
+            return Response.ok(new ResponseEntityView(steps)).build(); // 200
         } catch (Exception e) {
+            Logger.error(this.getClass(),"Exception on findAllSchemesAndSchemesByContentType exception message: " + e.getMessage(), e);
+            return mapExceptionResponse(e);
 
-            Logger.error(this.getClass(),
-                    "Exception on findStepsByScheme, schemeId: " + schemeId +
-                            ", exception message: " + e.getMessage(), e);
-            response = (e.getCause() instanceof SecurityException)?
-                    this.createUnAuthorizedResponse(e) :
-                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
-
-        return response;
     } // findSteps.
 
     /**
@@ -257,33 +243,16 @@ public class WorkflowResource {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
-        Response response;
-        List<WorkflowAction> actions;
-
         try {
-
             Logger.debug(this, "Getting the available actions for the contentlet inode: " + inode);
-            actions   = this.workflowHelper.findAvailableActions(inode,
-                            initDataObject.getUser());
-            response  =
-                    Response.ok(new ResponseEntityView(actions)).build(); // 200
-        } catch (DoesNotExistException e) {
-
-            Logger.error(this.getClass(),
-                    "DoesNotExistException on findAvailableActions, contentlet inode: " + inode +
-                            ", exception message: " + e.getMessage(), e);
-            response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+            final List<WorkflowAction> actions = this.workflowHelper.findAvailableActions(inode, initDataObject.getUser());
+            return Response.ok(new ResponseEntityView(actions)).build(); // 200
         } catch (Exception e) {
-
             Logger.error(this.getClass(),
                     "Exception on findStepsByScheme, contentlet inode: " + inode +
                             ", exception message: " + e.getMessage(), e);
-            response = (e.getCause() instanceof SecurityException)?
-                    this.createUnAuthorizedResponse(e) :
-                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+            return mapExceptionResponse(e);
         }
-
-        return response;
     } // findAvailableActions.
 
     /**
@@ -302,34 +271,14 @@ public class WorkflowResource {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
-        Response response;
-        WorkflowAction action;
-        final Locale locale = LocaleUtil.getLocale(request);
-        final User user   = initDataObject.getUser();
-
         try {
-
             Logger.debug(this, "Finding the workflow action " + actionId);
-            action    = this.workflowAPI.findAction(actionId, user);
-
-            response  = (null == action)?
-                    this.responseUtil.getErrorResponse(request, Response.Status.NOT_FOUND, locale, user.getUserId(), "Workflow-does-not-exists-action"):
-                    Response.ok(new ResponseEntityView(action)).build(); // 200
-        } catch (DotSecurityException e) {
-
-            Logger.error(this.getClass(),
-                    "DotSecurityException on findActionByStep, actionId: " + actionId +
-                            ", exception message: " + e.getMessage(), e);
-            response = this.createUnAuthorizedResponse(e);
+            final WorkflowAction action = this.workflowHelper.findAction(actionId, initDataObject.getUser());
+            return Response.ok(new ResponseEntityView(action)).build(); // 200
         } catch (Exception e) {
-
-            Logger.error(this.getClass(),
-                    "Exception on findActionByStep, actionId: " + actionId +
-                            ", exception message: " + e.getMessage(), e);
-            response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+            return mapExceptionResponse(e);
         }
 
-        return response;
     } // findAction.
 
     /**
@@ -350,34 +299,13 @@ public class WorkflowResource {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
-        Response response;
-        WorkflowAction action;
-        final Locale locale = LocaleUtil.getLocale(request);
-        final User   user   = initDataObject.getUser();
-
         try {
-
             Logger.debug(this, "Getting the workflow action " + actionId + " for the step: " + stepId);
-            action    = this.workflowAPI.findAction(actionId, stepId, user);
-
-            response  = (null == action)?
-                    this.responseUtil.getErrorResponse(request, Response.Status.NOT_FOUND, locale, user.getUserId(), "Workflow-does-not-exists-action"):
-                    Response.ok(new ResponseEntityView(action)).build(); // 200
-        } catch (DotSecurityException e) {
-
-            Logger.error(this.getClass(),
-                    "DotSecurityException on findActionByStep, actionId: " + actionId +
-                            ", stepId: " + stepId + ", exception message: " + e.getMessage(), e);
-            response = this.createUnAuthorizedResponse(e);
+            WorkflowAction action = this.workflowAPI.findAction(actionId, stepId, initDataObject.getUser());
+            return Response.ok(new ResponseEntityView(action)).build(); // 200
         } catch (Exception e) {
-
-            Logger.error(this.getClass(),
-                    "Exception on findActionByStep, actionId: " + actionId +
-                            ", stepId: " + stepId + ", exception message: " + e.getMessage(), e);
-            response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+            return mapExceptionResponse(e);
         }
-
-        return response;
     } // findActionByStep.
 
     /**
@@ -398,34 +326,17 @@ public class WorkflowResource {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
-        Response response;
-        List<WorkflowAction> actions;
-        final User   user   = initDataObject.getUser();
-
+        final User user = initDataObject.getUser();
         try {
-
             Logger.debug(this, "Getting the workflow actions for the step: " + stepId);
-            actions   = this.workflowHelper.findActions(stepId, user);
-
-            response  =
-                    Response.ok(new ResponseEntityView(actions)).build(); // 200
-        } catch (DoesNotExistException e) {
-
-            Logger.error(this.getClass(),
-                    "DoesNotExistException on findActionsByStep, stepId: " + stepId +
-                            ", exception message: " + e.getMessage(), e);
-            response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+            final List<WorkflowAction> actions = this.workflowHelper.findActions(stepId, user);
+            return Response.ok(new ResponseEntityView(actions)).build(); // 200
         } catch (Exception e) {
-
             Logger.error(this.getClass(),
                     "Exception on findActionsByStep, stepId: " + stepId +
                             ", exception message: " + e.getMessage(), e);
-            response = (e.getCause() instanceof SecurityException)?
-                    this.createUnAuthorizedResponse(e) :
-                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+            return mapExceptionResponse(e);
         }
-
-        return response;
     } // findActionByStep.
 
     /**
@@ -444,25 +355,16 @@ public class WorkflowResource {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
-        Response response;
-        List<WorkflowAction> actions;
-
         try {
-
             Logger.debug(this, "Getting the workflow actions: " + schemeId);
-            actions   = this.workflowHelper.findActionsByScheme(schemeId, initDataObject.getUser());
-            response  = Response.ok(new ResponseEntityView(actions)).build(); // 200
+            final List<WorkflowAction> actions = this.workflowHelper.findActionsByScheme(schemeId, initDataObject.getUser());
+            return Response.ok(new ResponseEntityView(actions)).build(); // 200
         } catch (Exception e) {
-
             Logger.error(this.getClass(),
                     "Exception on findActionsByScheme, schemeId: " + schemeId +
                             ", exception message: " + e.getMessage(), e);
-            response = (e.getCause() instanceof SecurityException)?
-                    this.createUnAuthorizedResponse(e) :
-                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+            return mapExceptionResponse(e);
         }
-
-        return response;
     } // findActionsByScheme.
 
     /**
@@ -862,32 +764,13 @@ public class WorkflowResource {
     public final Response findStepById(@Context final HttpServletRequest request,
                                        @NotNull @PathParam("stepId") final String stepId) {
         this.webResource.init(null, true, request, true, null);
-
         Logger.debug(this, "finding step by id stepId: " + stepId);
-        Response response;
         try {
             final WorkflowStep step = this.workflowHelper.findStepById(stepId);
-            response = Response.ok(new ResponseEntityView(step)).build();
-        } catch (NotAllowedUserWorkflowException e) {
-            Logger.error(this.getClass(),
-                    "NotAllowedUserWorkflowException on findStepById, stepId: " + stepId +
-                            ", exception message: " + e.getMessage(), e);
-            throw new ForbiddenException(e);
-        } catch (DoesNotExistException e) {
-            Logger.error(this.getClass(),
-                    "DoesNotExistException on findStepById, stepId: " + stepId +
-                            ", exception message: " + e.getMessage(), e);
-            response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+            return Response.ok(new ResponseEntityView(step)).build();
         } catch (Exception e) {
-
-            Logger.error(this.getClass(),
-                    "Exception on addStep, stepId: " + stepId +
-                            ", exception message: " + e.getMessage(), e);
-            response = (e.getCause() instanceof SecurityException) ?
-                    ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED) :
-                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+            return mapExceptionResponse(e);
         }
-        return response;
     }
 
 
@@ -1152,31 +1035,20 @@ public class WorkflowResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findAvailableDefaultActionsByContentType(@Context final HttpServletRequest request,
             @PathParam("contentTypeId")      final String contentTypeId) {
-
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
-        Response response;
-        List<WorkflowDefaultActionView> actions;
         try {
-
             Logger.debug(this,
                     "Getting the available workflow schemes default action for the ContentType: "
                             + contentTypeId );
-            actions = this.workflowHelper.findAvailableDefaultActionsByContentType
-                    (contentTypeId, initDataObject.getUser());
-
-            response  =
-                    Response.ok(new ResponseEntityView(actions)).build(); // 200
+            final List<WorkflowDefaultActionView> actions = this.workflowHelper.findAvailableDefaultActionsByContentType(contentTypeId, initDataObject.getUser());
+            return Response.ok(new ResponseEntityView(actions)).build(); // 200
         } catch (Exception e) {
-
             Logger.error(this.getClass(),
                     "Exception on find Available Default Actions exception message: " + e.getMessage(), e);
-            response = (e.getCause() instanceof SecurityException)?
-                    this.createUnAuthorizedResponse(e) :
-                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+            return mapExceptionResponse(e);
         }
 
-        return response;
     } // findAvailableDefaultActionsByContentType.
 
     /**
@@ -1190,33 +1062,27 @@ public class WorkflowResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response findAvailableDefaultActionsBySchemes(@Context final HttpServletRequest request,
-            @QueryParam("ids")      final String schemeIds) {
+    public final Response findAvailableDefaultActionsBySchemes(
+            @Context final HttpServletRequest request,
+            @QueryParam("ids") final String schemeIds) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
-        Response response;
-        List<WorkflowDefaultActionView> actions;
         try {
 
             Logger.debug(this,
                     "Getting the available workflow schemes default action for the schemes: "
-                            + schemeIds );
-            actions = this.workflowHelper.findAvailableDefaultActionsBySchemes
-                    (schemeIds, initDataObject.getUser());
-
-            response  =
-                    Response.ok(new ResponseEntityView(actions)).build(); // 200
+                            + schemeIds);
+            final List<WorkflowDefaultActionView> actions = this.workflowHelper
+                    .findAvailableDefaultActionsBySchemes(schemeIds, initDataObject.getUser());
+            return Response.ok(new ResponseEntityView(actions)).build(); // 200
         } catch (Exception e) {
 
             Logger.error(this.getClass(),
-                    "Exception on find Available Default Actions exception message: " + e.getMessage(), e);
-            response = (e.getCause() instanceof SecurityException)?
-                    this.createUnAuthorizedResponse(e) :
-                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+                    "Exception on find Available Default Actions exception message: " + e
+                            .getMessage(), e);
+            return mapExceptionResponse(e);
         }
-
-        return response;
     } // findAvailableDefaultActionsBySchemes.
 
     /**
@@ -1231,38 +1097,26 @@ public class WorkflowResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response findInitialAvailableActionsByContentType(@Context final HttpServletRequest request,
+    public final Response findInitialAvailableActionsByContentType(
+            @Context final HttpServletRequest request,
             @PathParam("contentTypeId") final String contentTypeId) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
-        Response response;
-        List<WorkflowDefaultActionView> actions;
-
         try {
-
-            Logger.debug(this, "Getting the available actions for the contentlet inode: " + contentTypeId);
-            actions   = this.workflowHelper.findInitialAvailableActionsByContentType(contentTypeId,
-                    initDataObject.getUser());
-            response  =
-                    Response.ok(new ResponseEntityView(actions)).build(); // 200
-        } catch (DoesNotExistException e) {
-
-            Logger.error(this.getClass(),
-                    "DoesNotExistException on findAvailableActionsByContentType, content type id: " + contentTypeId +
-                            ", exception message: " + e.getMessage(), e);
-            response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+            Logger.debug(this,
+                    "Getting the available actions for the contentlet inode: " + contentTypeId);
+            final List<WorkflowDefaultActionView> actions = this.workflowHelper
+                    .findInitialAvailableActionsByContentType(contentTypeId,
+                            initDataObject.getUser());
+            return Response.ok(new ResponseEntityView(actions)).build(); // 200
         } catch (Exception e) {
-
             Logger.error(this.getClass(),
-                    "Exception on findInitialAvailableActionsByContentType, content type id: " + contentTypeId +
+                    "Exception on findInitialAvailableActionsByContentType, content type id: "
+                            + contentTypeId +
                             ", exception message: " + e.getMessage(), e);
-            response = (e.getCause() instanceof SecurityException)?
-                    this.createUnAuthorizedResponse(e) :
-                    ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+            return mapExceptionResponse(e);
         }
-
-        return response;
     } // findInitialAvailableActionsByContentType.
 
     /**
