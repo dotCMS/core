@@ -194,7 +194,7 @@ public class ESClient {
         final Builder externalSettings = ESUtils.getExtSettingsBuilder();
 
         //Get current server
-        ServerAPI serverAPI      = APILocator.getServerAPI();
+        final ServerAPI serverAPI      = APILocator.getServerAPI();
         serverId = ConfigUtils.getServerId();
         currentServer = serverAPI.getCurrentServer();
 
@@ -219,11 +219,11 @@ public class ESClient {
      * @param externalSettings
      * @return
      */
-    private void setUpHttpConf(Server currentServer, final String serverId,
+    private void setUpHttpConf(final Server currentServer, final String serverId,
             final Builder externalSettings) {
         String httpPort;
 
-        String bindAddr = externalSettings.get("transport.host");
+        final String bindAddr = externalSettings.get("transport.host");
         if (UtilMethods.isSet(externalSettings.get("http.enabled")) && (Boolean
                 .parseBoolean(externalSettings.get("http.enabled")))) {
             httpPort =
@@ -316,7 +316,7 @@ public class ESClient {
      *
      * @param externalSettings
      */
-    private void restartNode(Builder externalSettings) {
+    private void restartNode(final Builder externalSettings) {
         shutDownNode();
         initNode(externalSettings);
     }
