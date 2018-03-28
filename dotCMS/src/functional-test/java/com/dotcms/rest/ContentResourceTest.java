@@ -56,6 +56,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
+import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.servlets.test.ServletTestRunner;
@@ -587,6 +588,8 @@ public class ContentResourceTest {
         saveDraft.setRequiresCheckout(false);
         saveDraft.setStepId(step1.getId());
         saveDraft.setNextAssign(APILocator.getRoleAPI().loadCMSAnonymousRole().getId());
+        saveDraft.setShowOn(WorkflowState.LOCKED,WorkflowState.UNLOCKED, WorkflowState.NEW,
+                WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED);
         APILocator.getWorkflowAPI().saveAction(saveDraft,
                 Arrays.asList(new Permission[] {
                         new Permission(
@@ -609,6 +612,8 @@ public class ContentResourceTest {
         escalate.setAssignable(true);
         escalate.setCommentable(true);
         escalate.setNextAssign(APILocator.getRoleAPI().loadCMSAnonymousRole().getId());
+        escalate.setShowOn(WorkflowState.LOCKED,WorkflowState.UNLOCKED, WorkflowState.NEW,
+                WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED);
         APILocator.getWorkflowAPI().saveAction(escalate,
                 Arrays.asList(new Permission[] {
                         new Permission(
@@ -630,6 +635,8 @@ public class ContentResourceTest {
         sendReview.setRequiresCheckout(false);
         sendReview.setStepId(step1.getId());
         sendReview.setNextAssign(APILocator.getRoleAPI().loadCMSAnonymousRole().getId());
+        sendReview.setShowOn(WorkflowState.LOCKED,WorkflowState.UNLOCKED,
+                WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED);
         APILocator.getWorkflowAPI().saveAction(sendReview,
                 Arrays.asList(new Permission[] {
                         new Permission(
@@ -650,6 +657,8 @@ public class ContentResourceTest {
         reject.setRequiresCheckout(false);
         reject.setStepId(step2.getId());
         reject.setNextAssign(APILocator.getRoleAPI().loadCMSAnonymousRole().getId());
+        reject.setShowOn(WorkflowState.LOCKED,WorkflowState.UNLOCKED,
+                WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED);
         APILocator.getWorkflowAPI().saveAction(reject,
                 Arrays.asList(new Permission[] {
                         new Permission(
@@ -670,6 +679,8 @@ public class ContentResourceTest {
         publish.setRequiresCheckout(false);
         publish.setStepId(step2.getId());
         publish.setNextAssign(APILocator.getRoleAPI().loadCMSAnonymousRole().getId());
+        publish.setShowOn(WorkflowState.LOCKED,WorkflowState.UNLOCKED,
+                WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED);
         APILocator.getWorkflowAPI().saveAction(publish,
                 Arrays.asList(new Permission[] {
                         new Permission(
