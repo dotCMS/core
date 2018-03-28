@@ -1368,45 +1368,44 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	/**
-	 * Set workflow tasks with status null, for all the existing workflow task with the
-	 * specified contentTypeInode and not in the list of steps availables fot the content type
-	 * schemes
+	 * Set workflow tasks with status null, for all the existing workflow task with the specified
+	 * contentTypeInode and not in the list of steps availables fot the content type schemes
 	 *
 	 * @param contentTypeInode Content Type Inode
 	 * @param steps List of valid Steps
-	 * @throws DotDataException
 	 */
 	private void cleanWorkflowTaskStatus(final String contentTypeInode, List<WorkflowStep> steps)
-			throws DotDataException{
+			throws DotDataException {
 		try {
 
-            String condition="";
-			if(steps.size() > 0) {
-				condition=" and status not in (";
-				StringBuilder parameters= new StringBuilder();
+			String condition = "";
+			if (steps.size() > 0) {
+				condition = " and status not in (";
+				StringBuilder parameters = new StringBuilder();
 				for (WorkflowStep step : steps) {
 					parameters.append(", ?");
 				}
-				condition+=parameters.toString().substring(1)+" )";
+				condition += parameters.toString().substring(1) + " )";
 			}
 
 			final DotConnect db = new DotConnect();
-			db.setSQL(sql.SELECT_TASK_STEPS_TO_CLEAN_BY_STRUCT+condition);
+			db.setSQL(sql.SELECT_TASK_STEPS_TO_CLEAN_BY_STRUCT + condition);
 			db.addParam(contentTypeInode);
-			if(steps.size() > 0) {
+			if (steps.size() > 0) {
 				for (WorkflowStep step : steps) {
 					db.addParam(step.getId());
 				}
 			}
-            final List<WorkflowTask> tasks = this.convertListToObjects(db.loadObjectResults(), WorkflowTask.class);
+			final List<WorkflowTask> tasks = this
+					.convertListToObjects(db.loadObjectResults(), WorkflowTask.class);
 
 			//clean cache
 			tasks.stream().forEach(task -> cache.remove(task));
 
-			db.setSQL(sql.UPDATE_STEPS_BY_STRUCT+condition);
+			db.setSQL(sql.UPDATE_STEPS_BY_STRUCT + condition);
 			db.addParam((Object) null);
 			db.addParam(contentTypeInode);
-			if(steps.size() > 0) {
+			if (steps.size() > 0) {
 				for (WorkflowStep step : steps) {
 					db.addParam(step.getId());
 				}
@@ -1415,7 +1414,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 		} catch (final Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
-			throw new DotDataException(e.getMessage(),e);
+			throw new DotDataException(e.getMessage(), e);
 		}
 	}
 

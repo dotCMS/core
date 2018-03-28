@@ -88,7 +88,6 @@ public class WorkflowAPITest extends IntegrationTestBase {
     private static ContentType contentType4;
 
     private static ContentType contentType5;
-    private static ContentType contentType7;
 
     /* Workflow Scheme 1 */
     private static WorkflowScheme workflowScheme1;
@@ -194,10 +193,6 @@ public class WorkflowAPITest extends IntegrationTestBase {
     /*Workflow Scheme 7*/
     private static WorkflowScheme workflowScheme7;
 
-    /*Workflow Scheme 8 and 9*/
-    private static WorkflowScheme workflowScheme8;
-    private static WorkflowScheme workflowScheme9;
-
     /* Roles */
     private static Role reviewer;
     private static Role contributor;
@@ -252,7 +247,13 @@ public class WorkflowAPITest extends IntegrationTestBase {
     private static final String INCORRECT_TASK_STATUS="The task status is incorrect";
     private static final String CONTENTLET_IS_NOT_ON_STEP ="The contentlet is not on a step";
 
-    final int editPermission = PermissionAPI.PERMISSION_READ + PermissionAPI.PERMISSION_EDIT;
+    private static final int editPermission = PermissionAPI.PERMISSION_READ + PermissionAPI.PERMISSION_EDIT;
+    private static final int publishPermission = editPermission + PermissionAPI.PERMISSION_PUBLISH;
+
+    private static User joeContributor;
+    private static User janeReviewer;
+    private static User chrisPublisher;
+    private static User billIntranet;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -279,6 +280,11 @@ public class WorkflowAPITest extends IntegrationTestBase {
         anyWhoEdit = roleAPI.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_ROLE_KEY);
         anyWhoPublish = roleAPI.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_PUBLISH_ROLE_KEY);
         anyWhoEditPermissions = roleAPI.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_PERMISSIONS_ROLE_KEY);
+
+        joeContributor = APILocator.getUserAPI().loadUserById("dotcms.org.2789");
+        janeReviewer = APILocator.getUserAPI().loadUserById("dotcms.org.2787");
+        chrisPublisher = APILocator.getUserAPI().loadUserById("dotcms.org.2795");
+        billIntranet = APILocator.getUserAPI().loadUserById("dotcms.org.2806");
 
         long time = System.currentTimeMillis();
         contentTypeName = "WorkflowTesting_" + time;
@@ -693,12 +699,6 @@ public class WorkflowAPITest extends IntegrationTestBase {
      */
     @Test
     public void findAvailableActions() throws DotDataException, DotSecurityException {
-
-        //Users
-        final User joeContributor = APILocator.getUserAPI().loadUserById("dotcms.org.2789");
-        final User janeReviewer = APILocator.getUserAPI().loadUserById("dotcms.org.2787");
-        final User chrisPublisher = APILocator.getUserAPI().loadUserById("dotcms.org.2795");
-        final User billIntranet = APILocator.getUserAPI().loadUserById("dotcms.org.2806");
 
         /*
         Need to do the test checking with different user the actions displayed. We need to specify
@@ -1154,13 +1154,6 @@ public class WorkflowAPITest extends IntegrationTestBase {
             throws DotDataException, IOException, DotSecurityException, AlreadyExistException {
 
         try {
-            final User joeContributor = APILocator.getUserAPI().loadUserById("dotcms.org.2789");
-            final User janeReviewer = APILocator.getUserAPI().loadUserById("dotcms.org.2787");
-            final User chrisPublisher = APILocator.getUserAPI().loadUserById("dotcms.org.2795");
-
-            final int editPermission =
-                    PermissionAPI.PERMISSION_READ + PermissionAPI.PERMISSION_EDIT;
-            final int publishPermission = editPermission + PermissionAPI.PERMISSION_PUBLISH;
 
             contentType4 = insertContentType(
                     "ValidatingDMWf" + UtilMethods.dateToHTMLDate(new Date(), DATE_FORMAT),
@@ -1365,9 +1358,6 @@ public class WorkflowAPITest extends IntegrationTestBase {
             throws DotDataException, IOException, DotSecurityException, AlreadyExistException {
 
         try {
-            final User joeContributor = APILocator.getUserAPI().loadUserById("dotcms.org.2789");
-            final User janeReviewer = APILocator.getUserAPI().loadUserById("dotcms.org.2787");
-            final User chrisPublisher = APILocator.getUserAPI().loadUserById("dotcms.org.2795");
 
             final String comment1 = "please review";
             final String comment2 = "please fix this text";
@@ -1927,48 +1917,35 @@ public class WorkflowAPITest extends IntegrationTestBase {
      * Validate that when a Content type is modified associating and/or removing workflows schemes
      * then the existing workflow tasks associated to the scheme keep the current status and the
      * removed ones are set on null
-     *
-     * @throws DotDataException
      */
     @Test
     public void saveScheme_keepExistingContentWorkflowTaskStatus_IfWorkflowSchemeRemainsAssociated()
             throws DotDataException, DotSecurityException, AlreadyExistException {
+        WorkflowScheme workflowScheme1 = null;
+        WorkflowScheme workflowScheme2 = null;
         try {
 
-            final User joeContributor = APILocator.getUserAPI().loadUserById("dotcms.org.2789");
-
             //Create testing content type
-            contentType7 = insertContentType(
-                    "KeepWfTaskStatus" + UtilMethods.dateToHTMLDate(new Date(), DATE_FORMAT),
-                    BaseContentType.CONTENT);
-            final int editPermission =
-                    PermissionAPI.PERMISSION_READ + PermissionAPI.PERMISSION_EDIT;
-
-            Permission p = new Permission(contentType7.getPermissionId(), contributor.getId(),
-                    editPermission, true);
-            permissionAPI.save(p, contentType7, user, true);
-
-            p = new Permission(Contentlet.class.getCanonicalName(), contentType7.getPermissionId(),
-                    contributor.getId(), editPermission, true);
-            permissionAPI.save(p, contentType7, user, true);
+            ContentType contentType = generateContentTypeAndAssignPermissions("KeepWfTaskStatus",
+                    BaseContentType.CONTENT, editPermission, contributor.getId());
 
             // Create testing workflows
-            workflowScheme8 = createDocumentManagentReplica(
-                    DOCUMENT_MANAGEMENT_WORKFLOW_NAME + "_8_" + UtilMethods
+            workflowScheme1 = createDocumentManagentReplica(
+                    DOCUMENT_MANAGEMENT_WORKFLOW_NAME + "_1_" + UtilMethods
                             .dateToHTMLDate(new Date(), DATE_FORMAT));
 
-            workflowScheme9 = createDocumentManagentReplica(
-                    DOCUMENT_MANAGEMENT_WORKFLOW_NAME + "_9_" + UtilMethods
+            workflowScheme2 = createDocumentManagentReplica(
+                    DOCUMENT_MANAGEMENT_WORKFLOW_NAME + "_2_" + UtilMethods
                             .dateToHTMLDate(new Date(), DATE_FORMAT));
 
-            List<String> schemeIds = new ArrayList<>();
-            schemeIds.add(workflowScheme8.getId());
+            final List<String> schemeIds = new ArrayList<>();
+            schemeIds.add(workflowScheme1.getId());
 
-            workflowAPI.saveSchemeIdsForContentType(contentType7, schemeIds);
+            workflowAPI.saveSchemeIdsForContentType(contentType, schemeIds);
 
             //Add Workflow Task
             //Contentlet1 on published step
-            Contentlet contentlet1 = createContent("testKeepWfTaskStatus", contentType7);
+            Contentlet contentlet1 = createContent("testKeepWfTaskStatus", contentType);
 
             List<WorkflowAction> actions = workflowAPI
                     .findAvailableActions(contentlet1, joeContributor);
@@ -1982,7 +1959,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
                     StringPool.BLANK, StringPool.BLANK, joeContributor);
 
             //validate workflow tasks deleted
-            WorkflowStep editingStep = workflowAPI.findSteps(workflowScheme8).get(0);
+            WorkflowStep editingStep = workflowAPI.findSteps(workflowScheme1).get(0);
             WorkflowStep step = workflowAPI.findStepByContentlet(contentlet1);
             assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, EDITING_STEP_NAME
                     .equals(step.getName()) && editingStep.getId().equals(step.getId()));
@@ -1990,11 +1967,11 @@ public class WorkflowAPITest extends IntegrationTestBase {
             WorkflowTask task1 = workflowAPI.findTaskByContentlet(contentlet1);
             assertNotNull(task1.getId());
             assertNotNull(TASK_STATUS_SHOULD_NOT_BE_NULL, task1.getStatus());
-            assertTrue(INCORRECT_TASK_STATUS,editingStep.getId().equals(task1.getStatus()));
+            assertTrue(INCORRECT_TASK_STATUS, editingStep.getId().equals(task1.getStatus()));
 
             //Add a new Scheme to content type
-            schemeIds.add(workflowScheme9.getId());
-            workflowAPI.saveSchemeIdsForContentType(contentType7, schemeIds);
+            schemeIds.add(workflowScheme2.getId());
+            workflowAPI.saveSchemeIdsForContentType(contentType, schemeIds);
 
             //Validate that the contentlet Workflow task keeps the original value
             step = workflowAPI.findStepByContentlet(contentlet1);
@@ -2004,16 +1981,15 @@ public class WorkflowAPITest extends IntegrationTestBase {
             task1 = workflowAPI.findTaskByContentlet(contentlet1);
             assertNotNull(task1.getId());
             assertNotNull(TASK_STATUS_SHOULD_NOT_BE_NULL, task1.getStatus());
-            assertTrue(INCORRECT_TASK_STATUS,editingStep.getId().equals(task1.getStatus()));
-
+            assertTrue(INCORRECT_TASK_STATUS, editingStep.getId().equals(task1.getStatus()));
 
             //remove an existing Scheme with workflow task associated to the content type
-            schemeIds.remove(workflowScheme8.getId());
-            workflowAPI.saveSchemeIdsForContentType(contentType7, schemeIds);
+            schemeIds.remove(workflowScheme1.getId());
+            workflowAPI.saveSchemeIdsForContentType(contentType, schemeIds);
 
             //Validate that the contentlet Workflow task lost the original value
             step = workflowAPI.findStepByContentlet(contentlet1);
-            assertNotNull(CONTENTLET_IS_NOT_ON_STEP,step);
+            assertNotNull(CONTENTLET_IS_NOT_ON_STEP, step);
             assertFalse(CONTENTLET_ON_WRONG_STEP_MESSAGE, EDITING_STEP_NAME
                     .equals(step.getName()) && editingStep.getId().equals(step.getId()));
 
@@ -2024,18 +2000,19 @@ public class WorkflowAPITest extends IntegrationTestBase {
         } finally {
             //clean test
             //delete content type
-            contentTypeAPI.delete(contentType7);
+            contentTypeAPI.delete(contentType);
 
-            workflowScheme8.setArchived(true);
-            workflowAPI.saveScheme(workflowScheme8,user);
-            workflowAPI.deleteScheme(workflowScheme8, user);
+            workflowScheme1.setArchived(true);
+            workflowAPI.saveScheme(workflowScheme1, user);
+            workflowAPI.deleteScheme(workflowScheme1, user);
 
-            workflowScheme9.setArchived(true);
-            workflowAPI.saveScheme(workflowScheme9,user);
-            workflowAPI.deleteScheme(workflowScheme9, user);
+            workflowScheme2.setArchived(true);
+            workflowAPI.saveScheme(workflowScheme2, user);
+            workflowAPI.deleteScheme(workflowScheme2, user);
         }
 
     }
+
     /**
      * Validate if the scheme is present in the list of schemes
      *
@@ -2747,6 +2724,33 @@ public class WorkflowAPITest extends IntegrationTestBase {
         content.setStringProperty(FIELD_VAR_NAME,
                 title + UtilMethods.dateToHTMLDate(new Date(), DATE_FORMAT));
         return content;
+    }
+
+    /**
+     * Generate a content type and set a default permission permissions
+     *
+     * @param contentTypeName Name of the content type to create
+     * @param baseContentType The type of content type to create
+     * @param permission The type of permission
+     * @param roleId The role that will have permission over the content type
+     * @return the new content type
+     */
+    private ContentType generateContentTypeAndAssignPermissions(final String contentTypeName,
+            final BaseContentType baseContentType, final int permission, final String roleId)
+            throws DotDataException, DotSecurityException {
+        ContentType contentType = insertContentType(
+                contentTypeName + UtilMethods.dateToHTMLDate(new Date(), DATE_FORMAT),
+                baseContentType);
+
+        Permission p = new Permission(contentType.getPermissionId(), roleId,
+                permission, true);
+        permissionAPI.save(p, contentType, user, true);
+
+        p = new Permission(Contentlet.class.getCanonicalName(), contentType.getPermissionId(),
+                roleId, permission, true);
+        permissionAPI.save(p, contentType, user, true);
+
+        return contentType;
     }
 
 }
