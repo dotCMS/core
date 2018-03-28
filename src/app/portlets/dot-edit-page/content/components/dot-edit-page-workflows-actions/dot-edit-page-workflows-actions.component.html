@@ -2,5 +2,6 @@
     flat 
     class="edit-page-toolbar__actions"
     [label]="label"
-    [model]="workflowsActions | async">
+    [model]="workflowsMenuActions | async"
+    [disabled]="!actionsAvailable">
 </p-splitButton>

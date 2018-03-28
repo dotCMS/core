@@ -97,4 +97,15 @@ describe('DotWorkflowService', () => {
         ]);
         expect(this.lastConnection.request.url).toContain(`v1/workflow/contentlet/${inode}/actions`);
     });
+
+    it('should fire workflows page action', () => {
+        const inode = 'cc2cdf9c-a20d-4862-9454-2a76c1132123';
+        const actionId = '44d4d4cd-c812-49db-adb1-1030be73e69a';
+        spyOn(this.dotWorkflowService, 'fireWorkflowAction').and.callThrough();
+        this.dotWorkflowService.fireWorkflowAction(inode, actionId).subscribe();
+        expect(this.dotWorkflowService.fireWorkflowAction).toHaveBeenCalledTimes(1);
+        expect(this.lastConnection.request.url).toContain(`v1/workflow/actions/${actionId}/fire?inode=${inode}`);
+        expect(2).toBe(this.lastConnection.request.method); // 2 is PUT method
+    });
+
 });

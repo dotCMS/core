@@ -1,3 +1,5 @@
+import { LoginServiceMock } from './../../../../../test/login-service.mock';
+import { LoginService } from 'dotcms-js/core/login.service';
 import { DotDialogService } from '../../../../../api/services/dot-dialog/dot-dialog.service';
 import { async, ComponentFixture } from '@angular/core/testing';
 import { DotEditPageToolbarComponent } from './dot-edit-page-toolbar.component';
@@ -91,6 +93,10 @@ describe('DotEditPageToolbarComponent', () => {
                     {
                         provide: DotWorkflowService,
                         useClass: DotWorkflowServiceMock
+                    },
+                    {
+                        provide: LoginService,
+                        useClass: LoginServiceMock
                     },
                 ]
             });

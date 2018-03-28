@@ -153,6 +153,10 @@
     }
 }
 
+.edit-page-toolbar__save {
+    margin-right: $basic-padding;
+}
+
 @keyframes blinker {
     0% {
         opacity: 0.25;

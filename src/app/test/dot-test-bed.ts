@@ -1,3 +1,4 @@
+import { DotHttpErrorManagerService } from './../api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotIframeService } from './../view/components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { ConnectionBackend, RequestOptions, BaseRequestOptions, Http } from '@angular/http';
 import { Logger } from 'angular2-logger/core';
@@ -42,7 +43,10 @@ export class DOTTestBed {
             DotDialogService,
             DotEventsService,
             DotGlobalMessageService,
+            DotHttpErrorManagerService,
+            DotIframeService,
             DotMessageService,
+            DotRouterService,
             DotcmsConfig,
             DotcmsEventsService,
             FormatDateService,
@@ -51,9 +55,7 @@ export class DOTTestBed {
             LoggerService,
             SocketFactory,
             StringUtils,
-            UserModel,
-            DotRouterService,
-            DotIframeService
+            UserModel
         ]
     };
 
