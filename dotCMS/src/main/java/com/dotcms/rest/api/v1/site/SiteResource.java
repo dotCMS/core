@@ -30,12 +30,10 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
 
 import java.io.Serializable;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -180,7 +178,7 @@ public class SiteResource implements Serializable {
                 hostFound = siteHelper.getSite( user, hostId);
 
                 if (hostFound != null) {
-                    siteHelper.swicthSite(req, hostId);
+                    siteHelper.switchSite(req, hostId);
                     switchDone = true;
                 }
             }
@@ -222,7 +220,7 @@ public class SiteResource implements Serializable {
         Logger.debug(this, "Switching to default host for user: " + user.getUserId());
 
         try {
-            final Host host = siteHelper.swicthToDefaultHost(req, user);
+            final Host host = siteHelper.switchToDefaultHost(req, user);
             return Response.ok(new ResponseEntityView(host)).build();
 
         } catch (DotSecurityException e) {
