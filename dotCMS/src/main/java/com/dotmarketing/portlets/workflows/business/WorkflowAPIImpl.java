@@ -371,6 +371,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 			//delete scheme
 			this.workFlowFactory.deleteScheme(scheme);
+			SecurityLogger.logInfo(this.getClass(),
+					"The Workflow Scheme with id:" + scheme.getId() + " was deleted");
+
 			stopWatch.stop();
 			Logger.info(this, "Delete Workflow Scheme task DONE, duration:" +
 					DateUtil.millisToSeconds(stopWatch.getTime()) + " seconds");
@@ -521,6 +524,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 			this.workFlowFactory.deleteActions(step); // workflow_action_step
 			this.workFlowFactory.deleteStep(step);    // workflow_step
+			SecurityLogger.logInfo(this.getClass(),
+					"The Workflow Step with id:" + step.getId() + " was deleted");
+
 		} catch(Exception e){
 
 			throw new DotDataException(e.getMessage(), e);
@@ -568,6 +574,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public void deleteComment(final WorkflowComment comment) throws DotDataException {
 
 		this.workFlowFactory.deleteComment(comment);
+		SecurityLogger.logInfo(this.getClass(),
+				"The Workflow Comment with id:" + comment.getId() + " was deleted.");
 	}
 
 	@CloseDBIfOpened
@@ -593,6 +601,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public void deleteWorkflowHistory(final WorkflowHistory history) throws DotDataException {
 
 		this.workFlowFactory.deleteWorkflowHistory(history);
+		SecurityLogger.logInfo(this.getClass(),
+				"The Workflow History with id:" + history.getId() + " was deleted.");
 	}
 
 	@WrapInTransaction
@@ -602,9 +612,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@WrapInTransaction
-	public void deleteWorkflowTask(final WorkflowTask task, final User user) throws DotDataException {
+	public void deleteWorkflowTask(final WorkflowTask task, final User user)
+			throws DotDataException {
 
 		this.workFlowFactory.deleteWorkflowTask(task);
+		SecurityLogger.logInfo(this.getClass(),
+				"The Workflow Task with id:" + task.getId() + " was deleted.");
 	}
 
 	@CloseDBIfOpened
@@ -1010,6 +1023,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		Logger.debug(this,
 				"Removing the WorkflowAction and Step Dependencies, for action: " + action.getId());
 		this.workFlowFactory.deleteAction(action);
+		SecurityLogger.logInfo(this.getClass(),
+				"The Workflow Action with id:" + action.getId() + " was deleted");
+
 	}
 
 	@WrapInTransaction
@@ -1149,6 +1165,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					}
 				}
 			}
+			SecurityLogger.logInfo(this.getClass(),
+					"The Workflow Action Class with id:" + actionClass.getId() + " was deleted");
+
 		} catch (Exception e) {
 			throw new DotWorkflowException(e.getMessage(),e);
 		}
