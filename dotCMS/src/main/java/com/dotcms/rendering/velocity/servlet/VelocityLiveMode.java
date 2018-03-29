@@ -182,7 +182,7 @@ public class VelocityLiveMode extends VelocityModeHandler {
 
     User getUser() {
         User user = null;
-        HttpSession session = request.getSession(false);
+        final HttpSession session = request.getSession(false);
 
         if (session != null) {
             user = (User) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_USER);

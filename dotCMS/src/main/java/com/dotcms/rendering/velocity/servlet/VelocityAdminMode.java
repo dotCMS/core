@@ -9,14 +9,16 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 /**
- * Velocity renderer for PageMode#ADMIN_MODE
+ * {@link VelocityModeHandler} to render a page into {@link com.dotmarketing.util.PageMode#ADMIN_MODE}
  */
 public class VelocityAdminMode extends VelocityLiveMode {
 
-    public VelocityAdminMode(HttpServletRequest request, HttpServletResponse response, String uri, Host host) {
+    public VelocityAdminMode(final HttpServletRequest request, final HttpServletResponse response, final String uri,
+                             final Host host) {
         super(request, response, uri, host);
     }
 
+    @Override
     User getUser() {
         return APILocator.getLoginServiceAPI().getLoggedInUser();
     }
