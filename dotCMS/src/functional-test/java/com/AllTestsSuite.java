@@ -12,6 +12,7 @@ import com.dotcms.rest.api.v1.sites.rules.ConditionGroupResourceFTest;
 import com.dotcms.rest.api.v1.sites.rules.RuleResourceFTest;
 import com.dotcms.rest.api.v1.system.i18n.I8NResourceFTest;
 import com.dotcms.rest.api.v1.system.ruleengine.ActionletResourceFTest;
+import com.dotmarketing.ImportUtilTest;
 import com.dotmarketing.portlets.contentlet.business.FileAssetTest;
 import com.dotmarketing.portlets.rules.RulesUnderPageAssetsFTest;
 import com.dotmarketing.portlets.rules.actionlet.SetResponseHeaderActionletFTest;
@@ -79,6 +80,7 @@ import org.junit.runners.Suite;
 
     URLMapTest.class,
     SiteSearchAjaxActionTest.class,
-    WebDavTest.class
+    WebDavTest.class,
+    ImportUtilTest.class
 })
 public class AllTestsSuite {}
