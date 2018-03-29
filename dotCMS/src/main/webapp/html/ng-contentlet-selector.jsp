@@ -158,8 +158,12 @@
 
         dojo.addOnLoad(function () {
             contentSelector.show();
-        })
 
+            // Make sure is called after the show() is completed
+            setTimeout(() => {
+                contentSelector._doSearchPage1();
+            }, 0);
+        })
     </script>
 </head>
 <body>
