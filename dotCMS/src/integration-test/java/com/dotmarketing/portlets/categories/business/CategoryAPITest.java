@@ -9,6 +9,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.contenttype.business.ContentTypeAPIImpl;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -42,6 +44,7 @@ public class CategoryAPITest extends IntegrationTestBase {
 
     private static User user;
     private static Host defaultHost;
+    private static ContentTypeAPIImpl contentTypeApi;
 
     @BeforeClass
     public static void prepare () throws Exception {
@@ -54,6 +57,7 @@ public class CategoryAPITest extends IntegrationTestBase {
         //Setting the test user
         user = APILocator.getUserAPI().getSystemUser();
         defaultHost = hostAPI.findDefaultHost( user, false );
+        contentTypeApi  = (ContentTypeAPIImpl) APILocator.getContentTypeAPI(user);
     }
 
 
@@ -306,6 +310,7 @@ public class CategoryAPITest extends IntegrationTestBase {
         parents = categoryAPI.getParents( contentlet, user, false );
         assertNotNull( parents );
         assertTrue( parents.size() == 2 );
+        contentTypeApi.delete(new StructureTransformer(testStructure).from());
     }
 
     /**

@@ -282,21 +282,11 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
     @AfterClass
     public static void cleanup()
             throws DotDataException, DotSecurityException, AlreadyExistException {
-        try {
-            if (null != contentlet) {
-                contentletAPI.archive(contentlet, systemUser, false);
-                contentletAPI.delete(contentlet, systemUser, false);
-            }
-        } finally {
-            try {
-                if (null != schemeStepActionResult) {
-                    cleanScheme(schemeStepActionResult.getScheme());
-                }
-            } finally {
-                if (null != type) {
-                    contentTypeAPI.delete(type);
-                }
-            }
+        if (null != schemeStepActionResult) {
+            cleanScheme(schemeStepActionResult.getScheme());
+        }
+        if (null != type) {
+            contentTypeAPI.delete(type);
         }
     }
 
