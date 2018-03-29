@@ -44,7 +44,7 @@ public class MessageActionlet extends WorkFlowActionlet {
     private static final String PARAM_CONTENT_MESSAGE    = "message";
     private boolean shouldStop = Boolean.FALSE;
 
-    public static final String CURRENT_USER_DEFAULT_VALUE = "CurrentUser";
+    public static final String CURRENT_USER_DEFAULT_VALUE = MultiUserReferenceParameter.CURRENT_USER_VALUE;
     private static final List<WorkflowActionletParameter> ACTIONLET_PARAMETERS = new ImmutableList.Builder<WorkflowActionletParameter>()
                                                     .add(new MultiUserReferenceParameter(PARAM_CONTENT_USER,
                                                             "User IDs", CURRENT_USER_DEFAULT_VALUE,
@@ -113,7 +113,7 @@ public class MessageActionlet extends WorkFlowActionlet {
 
         for (final String userId : userList) {
 
-             if (CURRENT_USER_DEFAULT_VALUE.equals(userId)) {
+             if (CURRENT_USER_DEFAULT_VALUE.equalsIgnoreCase(userId)) {
 
                  userIdList.add(currentUser.getUserId());
              } else {
