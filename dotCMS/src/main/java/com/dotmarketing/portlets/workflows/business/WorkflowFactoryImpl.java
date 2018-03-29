@@ -1396,6 +1396,8 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 					db.addParam(step.getId());
 				}
 			}
+
+			//get the elements that need to be removed from cache
 			final List<WorkflowTask> tasks = this
 					.convertListToObjects(db.loadObjectResults(), WorkflowTask.class);
 			Logger.info(this.getClass(),"Cleaning cache for:"+tasks.size()+" Task(s)");
@@ -1411,6 +1413,19 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 				}
 			}
 			db.loadResult();
+
+			//remove this part included to check that the values were updated
+			db.setSQL(sql.SELECT_TASK_STEPS_TO_CLEAN_BY_STRUCT + condition);
+			db.addParam(contentTypeInode);
+			if (steps.size() > 0) {
+				for (WorkflowStep step : steps) {
+					db.addParam(step.getId());
+				}
+			}
+			final List<WorkflowTask> tasks2 = this
+					.convertListToObjects(db.loadObjectResults(), WorkflowTask.class);
+			Logger.info(this.getClass(),"Task not updated on DB for:"+tasks2.size()+" Task(s)");
+
 
 		} catch (final Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
