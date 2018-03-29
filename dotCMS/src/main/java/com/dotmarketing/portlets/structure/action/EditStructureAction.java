@@ -377,14 +377,17 @@ public class EditStructureAction extends DotPortletAction {
 			final ImmutableList.Builder<WorkflowScheme> schemes = new ImmutableList.Builder<>();
 			String[] schemeIds = req.getParameterValues("workflowScheme");
 
-			for(String schemeId : schemeIds) {
-				if (UtilMethods.isSet(schemeId)) {
-					WorkflowScheme scheme = APILocator.getWorkflowAPI().findScheme(schemeId);
-					schemes.add(scheme);
+			if(UtilMethods.isSet(schemeIds)) {
+				for (String schemeId : schemeIds) {
+					if (UtilMethods.isSet(schemeId)) {
+						WorkflowScheme scheme = APILocator.getWorkflowAPI().findScheme(schemeId);
+						schemes.add(scheme);
+					}
 				}
 			}
+
 			APILocator.getWorkflowAPI().saveSchemesForStruct(structure, schemes.build());
-			
+
 			/**
 			 * 
 			 * Moved to API

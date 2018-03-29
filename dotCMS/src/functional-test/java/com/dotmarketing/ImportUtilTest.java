@@ -1,4 +1,8 @@
-package com.dotcms.util;
+package com.dotmarketing;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
@@ -12,6 +16,7 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.model.ContentletSearch;
@@ -32,24 +37,18 @@ import com.dotmarketing.util.ImportUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
-
-import java.util.Arrays;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 /**
  * Verifies that the Content Importer/Exporter feature is working as expected.
@@ -64,13 +63,13 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     private static Language defaultLanguage;
     private static ContentTypeAPIImpl contentTypeApi;
     private static FieldAPI fieldAPI;
-    private static BaseWorkflowIntegrationTest.CreateSchemeStepActionResult schemeStepActionResult1 = null;
+    private static CreateSchemeStepActionResult schemeStepActionResult1 = null;
     private static WorkflowAPI workflowAPI;
 
     @BeforeClass
     public static void prepare () throws Exception {
     	//Setting web app environment
-        IntegrationTestInitService.getInstance().init();
+        //IntegrationTestInitService.getInstance().init();
         user = APILocator.getUserAPI().getSystemUser();
         defaultSite = APILocator.getHostAPI().findDefaultHost( user, false );
         defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
@@ -85,7 +84,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     }
 
     /**
-     * Testing the {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, com.liferay.portal.model.User, long, String[], com.dotcms.repackage.javacsv.com.csvreader.CsvReader, int, int, java.io.Reader, String)} method
+     * Testing the {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, User, long, String[], com.dotcms.repackage.javacsv.com.csvreader.CsvReader, int, int, Reader, String)} method
      *
      * @throws DotDataException
      * @throws DotSecurityException
@@ -446,7 +445,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             validate(results, true, false, true);
 
             assertTrue(results.get("warnings").size() == 1);
-            assertEquals(results.get("warnings").get(0), "the-structure-field testTitle is-unique");
+            assertEquals("The Content Type field testTitle is unique.", results.get("warnings").get(0));
 
 
         } finally {
@@ -510,9 +509,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             validate(results, true, false, true);
 
             assertTrue(results.get("warnings").size() == 2);
-            assertEquals(results.get("warnings").get(0), "the-structure-field testTitle is-unique");
-            assertEquals(results.get("warnings").get(1),
-                "Line-- 3 contains-duplicate-values-for-structure-unique-field testTitle and-will-be-ignored");
+            assertEquals("The Content Type field testTitle is unique.", results.get("warnings").get(0));
+            assertEquals("Line # 3 contains duplicate values for a unique Content Type field testTitle and will be ignored.", results.get("warnings").get(1));
 
         } finally {
             contentTypeApi.delete(type);

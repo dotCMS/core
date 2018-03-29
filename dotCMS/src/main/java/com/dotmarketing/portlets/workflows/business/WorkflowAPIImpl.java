@@ -9,7 +9,6 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.FriendClass;
-import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.*;
@@ -29,6 +28,7 @@ import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import java.util.concurrent.Future;
 import org.apache.commons.lang.time.StopWatch;
 import org.osgi.framework.BundleContext;
 
@@ -208,6 +208,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@CloseDBIfOpened
+	public WorkflowScheme findSystemWorkflowScheme() throws DotDataException {
+		return workFlowFactory.findSystemWorkflow();
+	}
+
+	@CloseDBIfOpened
 	public boolean isDefaultScheme(WorkflowScheme scheme) throws DotDataException {
 		if (scheme == null || scheme.getId() == null) {
 			return false;
@@ -262,7 +267,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		if (contentType == null || ! UtilMethods.isSet(contentType.inode())
 				|| LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
 
-			schemes.add(findDefaultScheme());
+			schemes.add(this.findSystemWorkflowScheme());
 		} else {
 
 			try {
@@ -270,14 +275,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				Logger.debug(this, "Finding the schemes for: " + contentType);
 				final List<WorkflowScheme> contentTypeSchemes =
 						this.workFlowFactory.findSchemesForStruct(contentType.inode());
-				if(contentTypeSchemes.isEmpty()){
-					schemes.add(findDefaultScheme());
-				} else {
-					schemes.addAll(contentTypeSchemes);
-				}
+				schemes.addAll(contentTypeSchemes);
 			}
 			catch(Exception e) {
-				schemes.add(findDefaultScheme());
+				Logger.debug(this,e.getMessage(),e);
 			}
 		}
 
@@ -287,22 +288,18 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@CloseDBIfOpened
 	public List<WorkflowScheme> findSchemesForStruct(final Structure structure) throws DotDataException {
 
-        List<WorkflowScheme> schemes = new ArrayList<>();
+		final ImmutableList.Builder<WorkflowScheme> schemes =
+				new ImmutableList.Builder<>();
 		if(structure ==null || ! UtilMethods.isSet(structure.getInode()) || LicenseUtil.getLevel() < LicenseLevel.STANDARD.level){
-			schemes.add(findDefaultScheme());
-			return schemes;
-		}
-		try{
-			schemes = workFlowFactory.findSchemesForStruct(structure.getInode());
-			if(schemes.isEmpty()){
-				schemes.add(findDefaultScheme());
+			schemes.add(this.findSystemWorkflowScheme());
+		} else {
+			try {
+				schemes.addAll(workFlowFactory.findSchemesForStruct(structure.getInode()));
+			} catch (Exception e) {
+				Logger.debug(this, e.getMessage(), e);
 			}
-			return schemes;
 		}
-		catch(Exception e){
-			schemes.add(findDefaultScheme());
-			return schemes;
-		}
+		return schemes.build();
 	}
 
 	@WrapInTransaction
@@ -322,7 +319,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 
-	public void deleteScheme(final WorkflowScheme scheme, final User user)
+	public Future<WorkflowScheme> deleteScheme(final WorkflowScheme scheme, final User user)
 			throws DotDataException, DotSecurityException, AlreadyExistException {
 
 		this.isUserAllowToModifiedWorkflow(user);
@@ -338,7 +335,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 
 		//Delete the Scheme in a separated thread
-		this.submitter.execute(() -> deleteSchemeTask(scheme, user));
+		return this.submitter.submit(() -> deleteSchemeTask(scheme, user));
 
 	}
 
@@ -348,7 +345,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 * @param user The user
 	 */
 	@WrapInTransaction
-	private void deleteSchemeTask(final WorkflowScheme scheme, final User user) {
+	private WorkflowScheme deleteSchemeTask(final WorkflowScheme scheme, final User user) {
 		try {
 			final StopWatch stopWatch = new StopWatch();
 			stopWatch.start();
@@ -369,12 +366,16 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 			//delete scheme
 			this.workFlowFactory.deleteScheme(scheme);
+			SecurityLogger.logInfo(this.getClass(),
+					"The Workflow Scheme with id:" + scheme.getId() + " was deleted");
+
 			stopWatch.stop();
 			Logger.info(this, "Delete Workflow Scheme task DONE, duration:" +
 					DateUtil.millisToSeconds(stopWatch.getTime()) + " seconds");
 		} catch (Exception e) {
 			throw new DotRuntimeException(e);
 		}
+		return scheme;
 	}
 
 	/**
@@ -515,6 +516,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 			this.workFlowFactory.deleteActions(step); // workflow_action_step
 			this.workFlowFactory.deleteStep(step);    // workflow_step
+			SecurityLogger.logInfo(this.getClass(),
+					"The Workflow Step with id:" + step.getId() + " was deleted");
+
 		} catch(Exception e){
 
 			throw new DotDataException(e.getMessage(), e);
@@ -562,6 +566,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public void deleteComment(final WorkflowComment comment) throws DotDataException {
 
 		this.workFlowFactory.deleteComment(comment);
+		SecurityLogger.logInfo(this.getClass(),
+				"The Workflow Comment with id:" + comment.getId() + " was deleted.");
 	}
 
 	@CloseDBIfOpened
@@ -587,6 +593,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public void deleteWorkflowHistory(final WorkflowHistory history) throws DotDataException {
 
 		this.workFlowFactory.deleteWorkflowHistory(history);
+		SecurityLogger.logInfo(this.getClass(),
+				"The Workflow History with id:" + history.getId() + " was deleted.");
 	}
 
 	@WrapInTransaction
@@ -596,9 +604,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@WrapInTransaction
-	public void deleteWorkflowTask(final WorkflowTask task, final User user) throws DotDataException {
+	public void deleteWorkflowTask(final WorkflowTask task, final User user)
+			throws DotDataException {
 
 		this.workFlowFactory.deleteWorkflowTask(task);
+		SecurityLogger.logInfo(this.getClass(),
+				"The Workflow Task with id:" + task.getId() + " was deleted.");
 	}
 
 	@CloseDBIfOpened
@@ -1004,6 +1015,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		Logger.debug(this,
 				"Removing the WorkflowAction and Step Dependencies, for action: " + action.getId());
 		this.workFlowFactory.deleteAction(action);
+		SecurityLogger.logInfo(this.getClass(),
+				"The Workflow Action with id:" + action.getId() + " was deleted");
+
 	}
 
 	@WrapInTransaction
@@ -1143,6 +1157,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					}
 				}
 			}
+			SecurityLogger.logInfo(this.getClass(),
+					"The Workflow Action Class with id:" + actionClass.getId() + " was deleted");
+
 		} catch (Exception e) {
 			throw new DotWorkflowException(e.getMessage(),e);
 		}

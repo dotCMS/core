@@ -1099,6 +1099,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         if (testRelationship != null) {
             relationshipAPI.delete(testRelationship);
         }
+        APILocator.getStructureAPI().delete(testStructure, user);
     }
 
     /**
@@ -1319,6 +1320,8 @@ public class ContentletAPITest extends ContentletBaseTest {
         // make sure the db is totally clean up
 
         AssetUtil.assertDeleted(newContentlet.getInode(), newContentlet.getIdentifier(), "contentlet");
+
+        APILocator.getStructureAPI().delete(testStructure, user);
     }
 
     /**
@@ -1367,6 +1370,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Validations
         assertTrue( foundContentlets == null || foundContentlets.isEmpty() );
+        APILocator.getStructureAPI().delete(testStructure, user);
     }
 
     /**
@@ -1599,6 +1603,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         //Validations
         assertNotNull( versions );
         assertEquals( versions.size(), 1 );
+        APILocator.getStructureAPI().delete(testStructure, user);
     }
 
     /**
@@ -1629,6 +1634,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Validations
         assertTrue( foundContentlet == null || foundContentlet.getInode() == null || foundContentlet.getInode().isEmpty() );
+        APILocator.getStructureAPI().delete(testStructure, user);
     }
 
     /**
@@ -1688,6 +1694,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Validations for newContentlet2
         assertTrue( foundContentlets == null || foundContentlets.isEmpty() );
+        APILocator.getStructureAPI().delete(testStructure, user);
     }
 
     /**
@@ -1732,7 +1739,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         if (testRelationship != null) {
             relationshipAPI.delete(testRelationship);
         }
-
+        APILocator.getStructureAPI().delete(testStructure, user);
     }
 
     /**
@@ -1779,6 +1786,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         if (testRelationship != null) {
             relationshipAPI.delete(testRelationship);
         }
+        APILocator.getStructureAPI().delete(testStructure, user);
     }
 
     /**
@@ -1832,6 +1840,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         if (testRelationship != null) {
             relationshipAPI.delete(testRelationship);
         }
+        APILocator.getStructureAPI().delete(testStructure, user);
     }
 
     /**
@@ -1881,6 +1890,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         if (testRelationship != null) {
             relationshipAPI.delete(testRelationship);
         }
+        APILocator.getStructureAPI().delete(testStructure, user);
     }
 
     /**
@@ -1929,6 +1939,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         if (testRelationship != null) {
             relationshipAPI.delete(testRelationship);
         }
+        APILocator.getStructureAPI().delete(testStructure, user);
     }
 
     /**
@@ -1976,6 +1987,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         if (testRelationship != null) {
             relationshipAPI.delete(testRelationship);
         }
+        APILocator.getStructureAPI().delete(testStructure, user);
     }
 
     /**
@@ -2035,6 +2047,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals(identifier, saved.getIdentifier());
 
         contentletAPI.isInodeIndexed(newInode);
+        APILocator.getStructureAPI().delete(testStructure, user);
     }
 
     /**
@@ -2131,6 +2144,7 @@ public class ContentletAPITest extends ContentletBaseTest {
                 " +"+testStructure.getVelocityVarName()+"."+fieldExpDate.getVelocityVarName()+":"+ DateUtil.toLuceneDateTime(d4);
         final long count = APILocator.getContentletAPI().indexCount(q, user, false);
         assertEquals(1, count);
+        APILocator.getStructureAPI().delete(testStructure, user);
     }
 
     private boolean compareDates(Date date1, Date date2) {
