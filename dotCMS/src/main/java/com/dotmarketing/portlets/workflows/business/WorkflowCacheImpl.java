@@ -100,11 +100,11 @@ public class WorkflowCacheImpl extends WorkflowCache {
 	}
 	
 	protected void remove(WorkflowTask task) {
-		if (task != null && task.getWebasset() != null) {
+		if (UtilMethods.isSet(task) && UtilMethods.isSet(task.getWebasset())) {
 			cache.remove(this.getKey(task.getWebasset(), task.getLanguageId()), TASK_GROUP); // remove the task id.
 			cache.remove(task.getWebasset(), STEP_GROUP);
 		}
-		if (task != null && UtilMethods.isSet(task.getId())) {
+		if (UtilMethods.isSet(task) && UtilMethods.isSet(task.getId())) {
 			cache.remove(task.getId(), TASK_GROUP); // remove the task.
 		}
 	}
