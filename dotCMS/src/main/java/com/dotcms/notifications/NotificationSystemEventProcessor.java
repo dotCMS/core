@@ -6,10 +6,7 @@ import com.dotcms.api.system.event.SystemEventProcessor;
 import com.dotcms.notifications.bean.Notification;
 import com.dotcms.notifications.bean.UserNotificationPair;
 import com.dotcms.notifications.view.NotificationView;
-import com.dotcms.rest.api.v1.system.websocket.SessionWrapper;
 import com.liferay.portal.model.User;
-
-import javax.websocket.Session;
 
 /**
  * Decorates the {@link com.dotcms.api.system.event.SystemEventType}.NOTIFICATION in order to convert the {@link com.dotcms.notifications.bean.Notification}
@@ -35,6 +32,6 @@ public class NotificationSystemEventProcessor implements SystemEventProcessor {
 
         return new SystemEvent(event.getId(), event.getEventType(),
                 new Payload(notificationView, payload.getVisibility(), payload.getVisibilityValue()),
-                event.getCreationDate());
+                event.getCreationDate(), event.getServerId());
     } // process.
 } // E:O:F:NotificationSystemEventProcessor.

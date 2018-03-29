@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.workflows.business;
 
+import com.dotcms.api.system.event.SystemMessageEventUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
@@ -9,7 +10,6 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.FriendClass;
-import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.*;
@@ -22,6 +22,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.workflows.MessageActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.*;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.*;
@@ -50,6 +51,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	private final WorkflowStateFilter workflowStatusFilter =
 			new WorkflowStateFilter();
+
+	private final SystemMessageEventUtil systemMessageEventUtil =
+			SystemMessageEventUtil.getInstance();
 
 	// not very fancy, but the WorkflowImport is a friend of WorkflowAPI
 	private volatile FriendClass  friendClass = null;
@@ -86,7 +90,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				TranslationActionlet.class,
 				SaveContentActionlet.class,
 				SaveContentAsDraftActionlet.class,
-				CopyActionlet.class
+				CopyActionlet.class,
+				MessageActionlet.class
 		}));
 
 		refreshWorkFlowActionletMap();
@@ -322,6 +327,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 
+
 	public void deleteScheme(final WorkflowScheme scheme, final User user)
 			throws DotDataException, DotSecurityException, AlreadyExistException {
 
@@ -337,9 +343,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			throw new DotWorkflowException("Can not delete workflow Id:" + scheme.getId());
 		}
 
-		//Delete the Scheme in a separated thread
+		//Delete the Sceme in a separated thread
 		this.submitter.execute(() -> deleteSchemeTask(scheme, user));
-
 	}
 
 	/**
@@ -348,7 +353,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 * @param user The user
 	 */
 	@WrapInTransaction
-	private void deleteSchemeTask(final WorkflowScheme scheme, final User user) {
+	public void deleteSchemeTask(final WorkflowScheme scheme, final User user) {
 		try {
 			final StopWatch stopWatch = new StopWatch();
 			stopWatch.start();
@@ -372,9 +377,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			stopWatch.stop();
 			Logger.info(this, "Delete Workflow Scheme task DONE, duration:" +
 					DateUtil.millisToSeconds(stopWatch.getTime()) + " seconds");
+
+			this.systemMessageEventUtil.pushSimpleTextEvent
+					(LanguageUtil.get(user.getLocale(), "Workflow-deleted", scheme.getName()), user.getUserId());
 		} catch (Exception e) {
 			throw new DotRuntimeException(e);
 		}
+
 	}
 
 	/**

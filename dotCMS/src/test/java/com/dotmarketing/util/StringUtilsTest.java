@@ -3,12 +3,11 @@ package com.dotmarketing.util;
 
 import com.liferay.util.StringPool;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.dotmarketing.util.StringUtils.interpolate;
+import static org.junit.Assert.*;
 
 public class StringUtilsTest {
 
@@ -145,5 +144,40 @@ public class StringUtilsTest {
 
         assertNotNull(expected);
         assertEquals("customvar_en:jsanca-hostId:1.dotcms.com--en>>:en-", expected);
+    }
+
+    @Test
+    public void testIsHtml_WhenInvalidHtml_ShouldBeFalse() {
+
+        assertFalse(StringUtils.isHtml("This is not an html"));
+    }
+
+    @Test
+    public void testIsHtml_WhenIncompleHtml_ShouldBeFalse() {
+
+        assertFalse(StringUtils.isHtml("<This is not an html"));
+    }
+
+    @Test
+    public void testIsHtml_WhenIncompleHtml2_ShouldBeFalse() {
+
+        assertFalse(StringUtils.isHtml("This is not an html >"));
+    }
+
+    @Test
+    public void testIsHtml_WhenValidHtml_ShouldBeTrue() {
+
+        assertTrue(StringUtils.isHtml("<strong>This is an html </strong>"));
+    }
+
+    @Test
+    public void testIsHtml_WhenValidMultiLineHtml_ShouldBeTrue() {
+
+        assertTrue(StringUtils.isHtml("<html>\n" +
+                                                    "<body>\n" +
+                                                    "<p>This is a HTML</p>\n" +
+                                                    "</body>\n" +
+                                                  "<html>\n"
+        ));
     }
 }

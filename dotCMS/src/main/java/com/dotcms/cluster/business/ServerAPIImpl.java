@@ -28,7 +28,7 @@ import com.dotmarketing.util.UtilMethods;
 
 public class ServerAPIImpl implements ServerAPI {
 
-    private static String SERVER_ID=null;
+    private static volatile String SERVER_ID=null;
 	private final ServerFactory serverFactory;
 
 	public ServerAPIImpl() {
@@ -130,24 +130,32 @@ public class ServerAPIImpl implements ServerAPI {
 	public String readServerId()  {
 	    // once set this should never change
 
-	    if(SERVER_ID==null){
-    	    try{
-        	    File serverFile = serverIdFile();
-        	    if(!serverFile.exists()){
-        	        writeServerIdToDisk(UUIDUtil.uuid());
-        	    }
-        	    
-        	    try (BufferedReader br = Files.newBufferedReader(serverFile.toPath())) {
-            		SERVER_ID = br.readLine();
-            		Logger.debug(ServerAPIImpl.class, "ServerID: " + SERVER_ID);
-        	    }
-    
-    	    } catch(IOException ioe){
-    	        throw new DotStateException("Unable to read server id at " + serverIdFile() +
-						" please make sure that the directory exists and is readable and writeable. If problems" +
-						" persist, try deleting the file.  The system will recreate a new one on startup", ioe);
-    	    } 
+	    if(SERVER_ID == null) {
+
+	    	synchronized (this) {
+
+				if (SERVER_ID == null) {
+
+					try {
+
+						final File serverFile = serverIdFile();
+						if (!serverFile.exists()) {
+							writeServerIdToDisk(UUIDUtil.uuid());
+						}
+
+						try (BufferedReader br = Files.newBufferedReader(serverFile.toPath())) {
+							SERVER_ID = br.readLine();
+							Logger.debug(ServerAPIImpl.class, "ServerID: " + SERVER_ID);
+						}
+					} catch (IOException ioe) {
+						throw new DotStateException("Unable to read server id at " + serverIdFile() +
+								" please make sure that the directory exists and is readable and writeable. If problems" +
+								" persist, try deleting the file.  The system will recreate a new one on startup", ioe);
+					}
+				}
+			}
 	    }
+
 	    return SERVER_ID;
 	}
 

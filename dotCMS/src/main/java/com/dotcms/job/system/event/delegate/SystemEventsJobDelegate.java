@@ -2,6 +2,7 @@ package com.dotcms.job.system.event.delegate;
 
 import com.dotcms.api.system.event.SystemEvent;
 import com.dotcms.api.system.event.SystemEventsAPI;
+import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.job.system.event.AbstractJobDelegate;
 import com.dotcms.job.system.event.SystemEventsJob;
 import com.dotcms.job.system.event.delegate.bean.JobDelegateDataBean;
@@ -32,8 +33,9 @@ import java.util.List;
 @SuppressWarnings("serial")
 public class SystemEventsJobDelegate extends AbstractJobDelegate {
 
-	private final SystemEventsAPI systemEventsAPI = APILocator.getSystemEventsAPI();
+	private final SystemEventsAPI 		systemEventsAPI 	  = APILocator.getSystemEventsAPI();
 	private final WebSocketContainerAPI webSocketContainerAPI = APILocator.getWebSocketContainerAPI();
+	private static final String 		SERVER_ID		 	  = APILocator.getServerAPI().readServerId();
 
 	@Override
 	public void executeDelegate(final JobDelegateDataBean data) throws DotDataException {
@@ -50,12 +52,23 @@ public class SystemEventsJobDelegate extends AbstractJobDelegate {
 		}
 
 		if (null != newEvents && !newEvents.isEmpty()) {
+
 			final SystemEventsWebSocketEndPoint webSocketEndPoint = this.webSocketContainerAPI
 					.getEndpointInstance(SystemEventsWebSocketEndPoint.class);
-			for (SystemEvent event : newEvents) {
-				webSocketEndPoint.sendSystemEvent(event);
+
+			for (final SystemEvent event : newEvents) {
+
+				// the owner server does not need to send the message again!
+				if (!SERVER_ID.equals(event.getServerId())) {
+
+					webSocketEndPoint.sendSystemEvent(event);
+				} else {
+
+					Logger.info(this, "The event: " + event.getId() +
+								", has been skipped on the server: " + SERVER_ID);
+				}
 			}
 		}
-	}
+	} // executeDelegate.
 
 }

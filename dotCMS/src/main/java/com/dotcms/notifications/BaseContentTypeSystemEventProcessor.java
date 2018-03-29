@@ -27,6 +27,6 @@ public class BaseContentTypeSystemEventProcessor  implements SystemEventProcesso
 
         return new SystemEvent(event.getId(), event.getEventType(),
                 new Payload(contentTypeView, payload.getVisibility(), payload.getVisibilityValue()),
-                event.getCreationDate());
+                event.getCreationDate(), event.getServerId());
     } // process.
 } // E:O:F:BaseContentTypeSystemEventProcessor.
