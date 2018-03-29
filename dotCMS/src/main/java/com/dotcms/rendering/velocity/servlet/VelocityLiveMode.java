@@ -103,12 +103,7 @@ public class VelocityLiveMode extends VelocityModeHandler {
             }
 
 
-            User user = null;
-            HttpSession session = request.getSession(false);
-
-            if (session != null) {
-                user = (User) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_USER);
-            }
+            User user = getUser();
 
             Logger.debug(this.getClass(), "Page Permissions for URI=" + uri);
 
@@ -183,6 +178,17 @@ public class VelocityLiveMode extends VelocityModeHandler {
 
             LicenseUtil.stopLiveMode();
         }
+    }
+
+    User getUser() {
+        User user = null;
+        HttpSession session = request.getSession(false);
+
+        if (session != null) {
+            user = (User) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_USER);
+        }
+
+        return user;
     }
 
 }
