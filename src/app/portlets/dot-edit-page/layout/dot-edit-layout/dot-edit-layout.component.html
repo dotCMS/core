@@ -1,5 +1,3 @@
-<dot-edit-layout-advanced [pageState]="pageState | async" *ngIf="(pageState | async)?.template && isAdvancedTemplate | async else designer"></dot-edit-layout-advanced>
+<!--Advance template support was removed on commit https://github.com/dotCMS/core-web/pull/589-->
+<dot-edit-layout-designer [pageState]="pageState | async"></dot-edit-layout-designer>
 
-<ng-template #designer>
-    <dot-edit-layout-designer [pageState]="pageState | async"></dot-edit-layout-designer>
-</ng-template>

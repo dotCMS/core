@@ -20,12 +20,7 @@ import { DotPageStateService } from '../../content/services/dot-page-state/dot-p
 const getTestingModule = (dotRenderedPage?: DotRenderedPage) => {
     return {
         declarations: [DotEditLayoutComponent],
-        imports: [
-            BrowserAnimationsModule,
-            DotEditLayoutAdvancedModule,
-            DotEditLayoutDesignerModule,
-            RouterTestingModule
-        ],
+        imports: [BrowserAnimationsModule, DotEditLayoutAdvancedModule, DotEditLayoutDesignerModule, RouterTestingModule],
         providers: [
             {
                 provide: LoginService,
@@ -38,7 +33,7 @@ const getTestingModule = (dotRenderedPage?: DotRenderedPage) => {
                         parent: {
                             data: Observable.of({
                                 content: {
-                                    ...dotRenderedPage || mockDotRenderedPage,
+                                    ...(dotRenderedPage || mockDotRenderedPage),
                                     state: mockDotPageState
                                 }
                             })
@@ -82,36 +77,4 @@ describe('DotEditLayoutComponent with Layout Designer', () => {
     });
 });
 
-const advancedTemplateMockDotRenderedPage: DotRenderedPage = {
-    ...mockDotRenderedPage,
-    template: {
-        ...mockDotRenderedPage.template,
-        drawed: false
-    }
-};
-
-describe('DotEditLayoutComponent with Edit Advanced Layout', () => {
-    beforeEach(
-        async(() => {
-            DOTTestBed.configureTestingModule(getTestingModule(advancedTemplateMockDotRenderedPage));
-        })
-    );
-
-    beforeEach(() => {
-        fixture = TestBed.createComponent(DotEditLayoutComponent);
-        fixture.detectChanges();
-    });
-
-    it('should have dot-edit-layout-advanced', () => {
-        const layoutDesigner: DebugElement = fixture.debugElement.query(By.css('dot-edit-layout-advanced'));
-        expect(layoutDesigner).toBeTruthy();
-    });
-
-    it('should pass pageState to the dot-edit-layout-advanced', () => {
-        const layoutEditorAdvanced: DebugElement = fixture.debugElement.query(By.css('dot-edit-layout-advanced'));
-        expect(layoutEditorAdvanced.componentInstance.pageState).toEqual({
-            ...advancedTemplateMockDotRenderedPage,
-            state: mockDotPageState
-        });
-    });
-});
+// Advance template support was removed on commit https://github.com/dotCMS/core-web/pull/589

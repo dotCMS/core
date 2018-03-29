@@ -63,8 +63,8 @@ describe('DotEditPageNavComponent', () => {
             fixture = TestBed.createComponent(DotEditPageNavComponent);
             component = fixture.componentInstance;
         });
-
-        it('should have menu items: Content and Code', () => {
+        // Disable advance template commit https://github.com/dotCMS/core-web/pull/589
+        it('should have menu items: Content only', () => {
             component.pageState = new DotRenderedPageState(
                 mockUser,
                 {
@@ -78,15 +78,11 @@ describe('DotEditPageNavComponent', () => {
             );
             fixture.detectChanges();
             const menuListItems: DebugElement[] = fixture.debugElement.queryAll(By.css('.edit-page-nav__item'));
-            expect(menuListItems.length).toEqual(2);
+            const iconClass = menuListItems[0].query(By.css('i')).nativeElement.classList.value;
 
-            const labels = ['Content', 'Code'];
-            const icons = ['fa fa-file-text', 'fa fa-code'];
-            menuListItems.forEach((item: DebugElement, index: number) => {
-                const iconClass = item.query(By.css('i')).nativeElement.classList.value;
-                expect(iconClass).toEqual(icons[index]);
-                expect(item.nativeElement.textContent).toContain(labels[index]);
-            });
+            expect(menuListItems.length).toEqual(1);
+            expect(iconClass).toEqual('fa fa-file-text');
+            expect(menuListItems[0].nativeElement.textContent).toContain('Content');
         });
 
         it('should have code option disabled because user can\'t edit the page thus the layout or template', () => {
