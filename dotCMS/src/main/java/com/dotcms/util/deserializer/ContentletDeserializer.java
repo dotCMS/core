@@ -2,6 +2,7 @@ package com.dotcms.util.deserializer;
 
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Logger;
 import com.google.gson.*;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
@@ -44,8 +45,8 @@ public class ContentletDeserializer implements JsonDeserializer, JsonSerializer<
 
         try {
             jsonObject.add(Contentlet.ARCHIVED_KEY, new JsonPrimitive( contentlet.isArchived() ));
-        } catch (DotDataException|DotSecurityException e) {
-            //ignore
+        } catch (DotDataException | DotSecurityException e) {
+            Logger.error(this.getClass(), "Exception on serialize exception message: " + e.getMessage(), e);
         }
 
         return jsonObject;

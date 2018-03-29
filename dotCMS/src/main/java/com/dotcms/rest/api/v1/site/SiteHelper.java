@@ -178,16 +178,17 @@ public class SiteHelper implements Serializable {
 		}
 	}
 
-	public void swicthSite(HttpServletRequest req, String hostId) {
+	public void swicthSite(final HttpServletRequest req, final String hostId) {
 		final HttpSession session = req.getSession();
 
-		session.setAttribute(
-				com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, hostId);
+		session.setAttribute(WebKeys.CMS_SELECTED_HOST_ID, hostId);
 		session.removeAttribute(WebKeys.CONTENTLET_LAST_SEARCH);
 	}
 
-	public Host swicthToDefaultHost(HttpServletRequest req, User user) throws DotSecurityException, DotDataException {
-		Host defaultHost = this.hostAPI.findDefaultHost(user, false);
+	public Host swicthToDefaultHost(final HttpServletRequest req, final User user)
+			throws DotSecurityException, DotDataException {
+
+		final Host defaultHost = this.hostAPI.findDefaultHost(user, false);
 		this.swicthSite(req, defaultHost.getIdentifier());
 		return defaultHost;
 	}

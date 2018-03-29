@@ -222,9 +222,7 @@ public class SiteResource implements Serializable {
         Logger.debug(this, "Switching to default host for user: " + user.getUserId());
 
         try {
-
-
-            Host host = siteHelper.swicthToDefaultHost(req, user);
+            final Host host = siteHelper.swicthToDefaultHost(req, user);
             return Response.ok(new ResponseEntityView(host)).build();
 
         } catch (DotSecurityException e) {
