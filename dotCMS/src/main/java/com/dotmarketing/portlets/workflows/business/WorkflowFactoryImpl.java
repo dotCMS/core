@@ -1398,7 +1398,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			}
 			final List<WorkflowTask> tasks = this
 					.convertListToObjects(db.loadObjectResults(), WorkflowTask.class);
-
+			Logger.info(this.getClass(),"Cleaning cache for:"+tasks.size()+" Task(s)");
 			//clean cache
 			tasks.stream().forEach(task -> cache.remove(task));
 

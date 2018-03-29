@@ -37,6 +37,7 @@ import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet
 import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
 import com.dotmarketing.portlets.workflows.model.*;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -1979,6 +1980,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
                     .equals(step.getName()) && editingStep.getId().equals(step.getId()));
 
             task1 = workflowAPI.findTaskByContentlet(contentlet1);
+            Logger.info(this,"task1-1 ID: " + task1.getId()+" STATUS:"+task1.getStatus());
             assertNotNull(task1.getId());
             assertNotNull(TASK_STATUS_SHOULD_NOT_BE_NULL, task1.getStatus());
             assertTrue(INCORRECT_TASK_STATUS, editingStep.getId().equals(task1.getStatus()));
@@ -1994,6 +1996,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
                     .equals(step.getName()) && editingStep.getId().equals(step.getId()));
 
             task1 = workflowAPI.findTaskByContentlet(contentlet1);
+            Logger.info(this,"task1-2 ID: " + task1.getId()+" STATUS:"+task1.getStatus());
             assertNotNull(task1.getId());
             assertNull(TASK_STATUS_SHOULD_BE_NULL, task1.getStatus());
 
