@@ -287,4 +287,10 @@ public interface WorkFlowFactory {
 	 */
 	public void deleteScheme(WorkflowScheme scheme) throws DotDataException, DotSecurityException;
 
+	/**
+	 * Return the system work flow scheme
+	 * @return The system workflow scheme
+	 * @throws DotDataException
+	 */
+	public WorkflowScheme findSystemWorkflow() throws DotDataException;
 }

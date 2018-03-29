@@ -30,6 +30,7 @@ import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import java.util.concurrent.Future;
 import org.apache.commons.lang.time.StopWatch;
 import org.osgi.framework.BundleContext;
 
@@ -213,6 +214,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@CloseDBIfOpened
+	public WorkflowScheme findSystemWorkflowScheme() throws DotDataException {
+		return workFlowFactory.findSystemWorkflow();
+	}
+
+	@CloseDBIfOpened
 	public boolean isDefaultScheme(WorkflowScheme scheme) throws DotDataException {
 		if (scheme == null || scheme.getId() == null) {
 			return false;
@@ -267,7 +273,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		if (contentType == null || ! UtilMethods.isSet(contentType.inode())
 				|| LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
 
-			schemes.add(findDefaultScheme());
+			schemes.add(this.findSystemWorkflowScheme());
 		} else {
 
 			try {
@@ -275,14 +281,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				Logger.debug(this, "Finding the schemes for: " + contentType);
 				final List<WorkflowScheme> contentTypeSchemes =
 						this.workFlowFactory.findSchemesForStruct(contentType.inode());
-				if(contentTypeSchemes.isEmpty()){
-					schemes.add(findDefaultScheme());
-				} else {
-					schemes.addAll(contentTypeSchemes);
-				}
+				schemes.addAll(contentTypeSchemes);
 			}
 			catch(Exception e) {
-				schemes.add(findDefaultScheme());
+				Logger.debug(this,e.getMessage(),e);
 			}
 		}
 
@@ -292,22 +294,18 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@CloseDBIfOpened
 	public List<WorkflowScheme> findSchemesForStruct(final Structure structure) throws DotDataException {
 
-        List<WorkflowScheme> schemes = new ArrayList<>();
+		final ImmutableList.Builder<WorkflowScheme> schemes =
+				new ImmutableList.Builder<>();
 		if(structure ==null || ! UtilMethods.isSet(structure.getInode()) || LicenseUtil.getLevel() < LicenseLevel.STANDARD.level){
-			schemes.add(findDefaultScheme());
-			return schemes;
-		}
-		try{
-			schemes = workFlowFactory.findSchemesForStruct(structure.getInode());
-			if(schemes.isEmpty()){
-				schemes.add(findDefaultScheme());
+			schemes.add(this.findSystemWorkflowScheme());
+		} else {
+			try {
+				schemes.addAll(workFlowFactory.findSchemesForStruct(structure.getInode()));
+			} catch (Exception e) {
+				Logger.debug(this, e.getMessage(), e);
 			}
-			return schemes;
 		}
-		catch(Exception e){
-			schemes.add(findDefaultScheme());
-			return schemes;
-		}
+		return schemes.build();
 	}
 
 	@WrapInTransaction
@@ -327,8 +325,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 
-
-	public void deleteScheme(final WorkflowScheme scheme, final User user)
+	public Future<WorkflowScheme> deleteScheme(final WorkflowScheme scheme, final User user)
 			throws DotDataException, DotSecurityException, AlreadyExistException {
 
 		this.isUserAllowToModifiedWorkflow(user);
@@ -343,8 +340,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			throw new DotWorkflowException("Can not delete workflow Id:" + scheme.getId());
 		}
 
-		//Delete the Sceme in a separated thread
-		this.submitter.execute(() -> deleteSchemeTask(scheme, user));
+		//Delete the Scheme in a separated thread
+		return this.submitter.submit(() -> deleteSchemeTask(scheme, user));
 	}
 
 	/**
@@ -353,7 +350,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 * @param user The user
 	 */
 	@WrapInTransaction
-	public void deleteSchemeTask(final WorkflowScheme scheme, final User user) {
+	private WorkflowScheme deleteSchemeTask(final WorkflowScheme scheme, final User user) {
 		try {
 			final StopWatch stopWatch = new StopWatch();
 			stopWatch.start();
@@ -383,7 +380,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		} catch (Exception e) {
 			throw new DotRuntimeException(e);
 		}
-
+		return scheme;
 	}
 
 	/**

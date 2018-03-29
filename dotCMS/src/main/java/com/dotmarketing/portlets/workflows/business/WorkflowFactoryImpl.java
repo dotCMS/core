@@ -632,7 +632,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 		List<WorkflowScheme> schemes = new ArrayList<>();
 		if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
-			schemes.add(this.findDefaultScheme());
 			schemes.add(this.findSystemWorkflow());
 			return schemes;
 		}
@@ -652,12 +651,8 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		db.addParam(structId);
 		try {
 			schemes = this.convertListToObjects(db.loadObjectResults(), WorkflowScheme.class);
-			if(schemes.isEmpty()){
-				schemes.add(this.findDefaultScheme());
-			}
 		} catch (final Exception er) {
 			schemes = new ArrayList();
-			schemes.add(this.findDefaultScheme());
 		}
 
 		cache.addForStructure(structId, schemes);
@@ -666,7 +661,8 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	}
 
-	private WorkflowScheme findSystemWorkflow() throws DotDataException {
+	@Override
+	public WorkflowScheme findSystemWorkflow() throws DotDataException {
 		return this.findScheme(WorkFlowFactory.SYSTEM_WORKFLOW_ID);
 	}
 
@@ -1345,19 +1341,19 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.addParam(contentTypeInode);
 			db.loadResult();
 
+			final ImmutableList.Builder<WorkflowStep> steps = new ImmutableList.Builder<>();
 			for(String id : schemesIds) {
 				db.setSQL(sql.INSERT_SCHEME_FOR_STRUCT);
 				db.addParam(UUIDGenerator.generateUuid());
 				db.addParam(id);
 				db.addParam(contentTypeInode);
 				db.loadResult();
+
+				steps.addAll(this.findSteps(this.findScheme(id)));
 			}
 			// update all tasks for the content type and reset their step to
 			// null
-			db.setSQL(sql.UPDATE_STEPS_BY_STRUCT);
-			db.addParam((Object) null);
-			db.addParam(contentTypeInode);
-			db.loadResult();
+			this.cleanWorkflowTaskStatus(contentTypeInode,steps.build());
 
 			// we have to clear the saved steps/tasks for all contentlets using
 			// this workflow
@@ -1368,6 +1364,57 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		} catch (final Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
 			throw new DotDataException(e.getMessage(),e);
+		}
+	}
+
+	/**
+	 * Set workflow tasks with status null, for all the existing workflow task with the specified
+	 * contentTypeInode and not in the list of steps availables fot the content type schemes
+	 *
+	 * @param contentTypeInode Content Type Inode
+	 * @param steps List of valid Steps
+	 */
+	private void cleanWorkflowTaskStatus(final String contentTypeInode, List<WorkflowStep> steps)
+			throws DotDataException {
+		try {
+
+			String condition = "";
+			if (steps.size() > 0) {
+				condition = " and status not in (";
+				StringBuilder parameters = new StringBuilder();
+				for (WorkflowStep step : steps) {
+					parameters.append(", ?");
+				}
+				condition += parameters.toString().substring(1) + " )";
+			}
+
+			final DotConnect db = new DotConnect();
+			db.setSQL(sql.SELECT_TASK_STEPS_TO_CLEAN_BY_STRUCT + condition);
+			db.addParam(contentTypeInode);
+			if (steps.size() > 0) {
+				for (WorkflowStep step : steps) {
+					db.addParam(step.getId());
+				}
+			}
+			final List<WorkflowTask> tasks = this
+					.convertListToObjects(db.loadObjectResults(), WorkflowTask.class);
+
+			//clean cache
+			tasks.stream().forEach(task -> cache.remove(task));
+
+			db.setSQL(sql.UPDATE_STEPS_BY_STRUCT + condition);
+			db.addParam((Object) null);
+			db.addParam(contentTypeInode);
+			if (steps.size() > 0) {
+				for (WorkflowStep step : steps) {
+					db.addParam(step.getId());
+				}
+			}
+			db.loadResult();
+
+		} catch (final Exception e) {
+			Logger.error(this.getClass(), e.getMessage(), e);
+			throw new DotDataException(e.getMessage(), e);
 		}
 	}
 

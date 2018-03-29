@@ -1151,6 +1151,16 @@ public interface ContentletAPIPostHook {
 	 */
 	public default void isInodeIndexed(String inode, boolean returnValue){}
 
+
+	/**
+	 * Method will time out after 30 seconds returning false
+	 * @param inode
+	 * @return
+	 */
+	public default boolean isInodeIndexedArchived(String inode) {
+		return true;
+	};
+
 	/**
 	 * 
 	 * @param inode

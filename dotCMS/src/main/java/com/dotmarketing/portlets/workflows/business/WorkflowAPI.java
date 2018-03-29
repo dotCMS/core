@@ -199,7 +199,7 @@ public interface WorkflowAPI {
 	 * @throws DotSecurityException
 	 * @throws AlreadyExistException
 	 */
-	public void deleteScheme(WorkflowScheme scheme, User user) throws DotDataException, DotSecurityException, AlreadyExistException;
+	public Future<WorkflowScheme> deleteScheme(WorkflowScheme scheme, User user) throws DotDataException, DotSecurityException, AlreadyExistException;
 
 	public List<WorkflowStep> findSteps(WorkflowScheme scheme) throws DotDataException;
 
@@ -575,4 +575,11 @@ public interface WorkflowAPI {
 	 * @throws DotSecurityException
 	 */
 	public List<WorkflowTask> findTasksByStep(String stepId) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Return the system workflow scheme
+	 * @return The system workflow scheme
+	 * @throws DotDataException
+	 */
+	public WorkflowScheme findSystemWorkflowScheme() throws DotDataException;
 }
