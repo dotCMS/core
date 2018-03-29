@@ -567,8 +567,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		this.workFlowFactory.deleteComment(comment);
 		SecurityLogger.logInfo(this.getClass(),
-				"The Workflow Comment with id:" + (null != comment ? comment.getId() : "")
-						+ " was deleted.");
+				"The Workflow Comment with id:" + comment.getId() + " was deleted.");
 	}
 
 	@CloseDBIfOpened
@@ -595,8 +594,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		this.workFlowFactory.deleteWorkflowHistory(history);
 		SecurityLogger.logInfo(this.getClass(),
-				"The Workflow History with id:" + (null != history ? history.getId() : "")
-						+ " was deleted.");
+				"The Workflow History with id:" + history.getId() + " was deleted.");
 	}
 
 	@WrapInTransaction
@@ -611,8 +609,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		this.workFlowFactory.deleteWorkflowTask(task);
 		SecurityLogger.logInfo(this.getClass(),
-				"The Workflow Task with id:" + (null != task ? task.getId() : "")
-						+ " was deleted.");
+				"The Workflow Task with id:" + task.getId() + " was deleted.");
 	}
 
 	@CloseDBIfOpened
