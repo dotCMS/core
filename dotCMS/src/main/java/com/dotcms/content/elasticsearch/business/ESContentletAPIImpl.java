@@ -3219,10 +3219,23 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                     if(metadata!=null && metadata.exists())
                                         metadata.delete();
 
-                                }
-                                else if (oldFile.exists()) {
+                                } else if (oldFile.exists()) {
                                     // otherwise, we copy the files as hardlinks
                                     FileUtil.copyFile(oldFile, newFile);
+
+                                    // try to get the content metadata from the old version
+                                    if (metadata != null) {
+                                        File oldMeta = APILocator.getFileAssetAPI()
+                                                .getContentMetadataFile(oldInode);
+                                        if (oldMeta.exists() && !oldMeta.equals(metadata)) {
+                                            if (metadata
+                                                    .exists()) {// unlikely to happend. deleting just in case
+                                                metadata.delete();
+                                            }
+                                            metadata.getParentFile().mkdirs();
+                                            FileUtil.copyFile(oldMeta, metadata);
+                                        }
+                                    }
                                 }
                                 contentlet.setBinary(velocityVarNm, newFile);
                             }

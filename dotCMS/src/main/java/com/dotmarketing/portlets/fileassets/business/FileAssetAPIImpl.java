@@ -269,15 +269,8 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		return (con != null && con.getStructure() != null && con.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) ;
 	}
 
-	/**
-	 * This method takes a file and uses tika to parse the metadata from it. It
-	 * returns a Map of the metadata and <strong>overrides the existing metadata file of the given
-	 * contentlet</strong>.
-	 *
-	 * @param contentlet Contentlet owner of the file to parse
-	 * @param binFile File to parse the metadata from it
-	 */
-	public Map<String, String> getMetaDataMap(Contentlet contentlet, File binFile) {
+	public Map<String, String> getMetaDataMap(Contentlet contentlet, File binFile)
+			throws DotDataException {
 		return new TikaUtils().getMetaDataMap(contentlet.getInode(), binFile);
 	}
 
