@@ -165,14 +165,14 @@ public class TikaUtils {
         // I can use the faster parseToString
         try {
 
-            //Creating the meta data map to use by our content
-            metaMap = buildMetaDataMap();
-
             if (forceMemory) {
 
                 try (InputStream stream = Files.newInputStream(binFile.toPath())) {
                     // no worry about the limit and less time to process.
                     final String content = this.tikaService.parseToString(stream);
+
+                    //Creating the meta data map to use by our content
+                    metaMap = buildMetaDataMap();
                     metaMap.put(FileAssetAPI.CONTENT_FIELD, content);
                 }
 
@@ -183,13 +183,13 @@ public class TikaUtils {
                         Reader fulltext = this.tikaService.parse(is)) {
 
                     //Write the parsed info into the metadata file
-                    writeMetadata(fulltext, contentMetadataFile);
+                    metaMap = writeMetadata(fulltext, contentMetadataFile);
                 }
             }
         } catch (IOException ioExc) {
             try {
                 //On error lets try a fallback operation
-                fallbackParse(binFile, contentMetadataFile, ioExc);
+                metaMap = fallbackParse(binFile, contentMetadataFile, ioExc);
             } catch (Exception e) {
                 logError(binFile, e);
             }
@@ -209,24 +209,10 @@ public class TikaUtils {
     }
 
     /**
-     * Returns a {@link Map} that includes original content's map entries and also special entries for string
-     * representation of the values of binary, category fields and also tags
-     */
-    private Map<String, Object> getAdditionalProperties(String inode) {
-        Map<String, Object> additionProps = new HashMap<>();
-        try {
-            additionProps = ContentletUtil.getContentPrintableMap(this.systemUser,
-                    APILocator.getContentletAPI().find(inode, this.systemUser, true));
-        } catch (Exception e) {
-            Logger.error(this, "Unable to add additional metadata to map", e);
-        }
-        return additionProps;
-    }
-
-    /**
      * Writes the content of a given Reader into the Contentlet metadata file
      */
-    private void writeMetadata(Reader fullText, File contentMetadataFile) throws IOException {
+    private Map<String, String> writeMetadata(Reader fullText, File contentMetadataFile)
+            throws IOException {
 
         char[] buf = new char[SIZE];
         int count = fullText.read(buf);
@@ -272,6 +258,9 @@ public class TikaUtils {
              */
             prepareMetaDataFile(contentMetadataFile);
         }
+
+        //Creating the meta data map to use by our content
+        return buildMetaDataMap();
     }
 
     /**
@@ -281,7 +270,8 @@ public class TikaUtils {
      * This fallback operation will read the given file as a plain text file in order to avoid
      * validation errors.
      */
-    private void fallbackParse(File binFile, File contentMetadataFile, Exception ioExc)
+    private Map<String, String> fallbackParse(File binFile, File contentMetadataFile,
+            Exception ioExc)
             throws Exception {
 
         String errorMessage = String
@@ -300,9 +290,24 @@ public class TikaUtils {
 
             try (Reader contentReader = new StringReader(content)) {
                 //Write the parsed info into the metadata file
-                writeMetadata(contentReader, contentMetadataFile);
+                return writeMetadata(contentReader, contentMetadataFile);
             }
         }
+    }
+
+    /**
+     * Returns a {@link Map} that includes original content's map entries and also special entries for string
+     * representation of the values of binary, category fields and also tags
+     */
+    private Map<String, Object> getAdditionalProperties(String inode) {
+        Map<String, Object> additionProps = new HashMap<>();
+        try {
+            additionProps = ContentletUtil.getContentPrintableMap(this.systemUser,
+                    APILocator.getContentletAPI().find(inode, this.systemUser, true));
+        } catch (Exception e) {
+            Logger.error(this, "Unable to add additional metadata to map", e);
+        }
+        return additionProps;
     }
 
     /**
