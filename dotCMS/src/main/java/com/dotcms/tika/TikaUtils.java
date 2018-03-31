@@ -176,8 +176,7 @@ public class TikaUtils {
                     metaMap.put(FileAssetAPI.CONTENT_FIELD, content);
                 }
 
-            } else if (!contentMetadataFile
-                    .exists()) { //If a metadata file exist we should parse nothing
+            } else {
 
                 try (InputStream is = this.tikaService.tikaInputStreamGet(binFile);
                         Reader fulltext = this.tikaService.parse(is)) {
@@ -217,7 +216,7 @@ public class TikaUtils {
         char[] buf = new char[SIZE];
         int count = fullText.read(buf);
 
-        if (count > 0) {
+        if (count > 0 && !contentMetadataFile.exists()) {
 
             //Create the new content metadata file
             prepareMetaDataFile(contentMetadataFile);
@@ -349,9 +348,12 @@ public class TikaUtils {
      * Creates the metadata file where the parsed info will be stored
      */
     private void prepareMetaDataFile(File contentMetadataFile) throws IOException {
-        //Create the file if does not exist
-        contentMetadataFile.getParentFile().mkdirs();
-        contentMetadataFile.createNewFile();
+
+        if (!contentMetadataFile.exists()) {
+            //Create the file if does not exist
+            contentMetadataFile.getParentFile().mkdirs();
+            contentMetadataFile.createNewFile();
+        }
     }
 
     private void logError(File binFile, Exception e) {
