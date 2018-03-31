@@ -253,8 +253,8 @@ public class TikaUtils {
             }
         } else {
             /*
-            Create an empty file as we have nothing to put here but it is a record
-            that we already try to process this file.
+            Create an empty file if count == 0, there is no content but it is a record
+            that we already try to process this file. If the file already exist do nothing
              */
             prepareMetaDataFile(contentMetadataFile);
         }
