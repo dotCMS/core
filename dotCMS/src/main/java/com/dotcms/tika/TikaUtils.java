@@ -184,6 +184,7 @@ public class TikaUtils {
                     //Write the parsed info into the metadata file
                     metaMap = writeMetadata(fulltext, contentMetadataFile);
                 }
+
             }
         } catch (IOException ioExc) {
             try {
