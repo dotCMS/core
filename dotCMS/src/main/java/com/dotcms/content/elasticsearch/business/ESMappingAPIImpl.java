@@ -511,7 +511,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 						}
 
 						if (keyValueMap != null && !keyValueMap.isEmpty()) {
-							for (String key : keyValueMap.keySet()) {
+							for (final String key : keyValueMap.keySet()) {
 								if (allowedFields == null || allowedFields
 										.contains(key.toLowerCase())) {
 									m.put(keyName + "_" + key, keyValueMap.get(key).toString());
