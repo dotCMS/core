@@ -20,12 +20,13 @@ public class SystemEventDTO implements Serializable {
 	private final String id;
 	private final String eventType;
 	private final String payload;
-	private final long creationDate;
+	private final long   creationDate;
+	private final String serverId;
 
 	/**
 	 * Creates a System Event object.
-	 * 
-	 * @param identifier
+	 *
+	 * @param id
 	 *            - The event ID.
 	 * @param eventType
 	 *            - The event type or category.
@@ -34,12 +35,18 @@ public class SystemEventDTO implements Serializable {
 	 *            representation of an object.
 	 * @param creationDate
 	 *            - The event creation date.
+	 * @param serverId
+	 * 			  - Server that creates the event
 	 */
-	public SystemEventDTO(String id, String eventType, String payload, long creationDate) {
-		this.id = id;
-		this.eventType = eventType;
-		this.payload = payload;
+	public SystemEventDTO(final String id, final String eventType,
+						  final String payload, final long creationDate,
+						  final String serverId) {
+
+		this.id 		  = id;
+		this.eventType 	  = eventType;
+		this.payload 	  = payload;
 		this.creationDate = creationDate;
+		this.serverId 	  = serverId;
 	}
 
 	/**
@@ -78,6 +85,14 @@ public class SystemEventDTO implements Serializable {
 		return id;
 	}
 
+	/**
+	 * Get the Server id where the event was created
+ 	 * @return String
+	 */
+	public String getServerId() {
+		return serverId;
+	}
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -85,7 +100,8 @@ public class SystemEventDTO implements Serializable {
 		result = prime * result + ((creationDate == 0) ? 0 : (int) creationDate);
 		result = prime * result + ((eventType == null) ? 0 : eventType.hashCode());
 		result = prime * result + ((id == null) ? 0 : id.hashCode());
-		result = prime * result + ((payload == null) ? 0 : payload.hashCode());
+		result = prime * result + ((payload == null)  ? 0 : payload.hashCode());
+		result = prime * result + ((serverId == null) ? 0 : serverId.hashCode());
 		return result;
 	}
 
