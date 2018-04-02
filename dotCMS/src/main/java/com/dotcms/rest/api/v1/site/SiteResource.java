@@ -28,13 +28,12 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
 
 import java.io.Serializable;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -167,7 +166,6 @@ public class SiteResource implements Serializable {
 
         Response response = null;
         final InitDataObject initData = this.webResource.init(null, true, req, true, null); // should logged in
-        final HttpSession session = req.getSession();
         final User user = initData.getUser();
         boolean switchDone = false;
         Host hostFound = null;
@@ -180,11 +178,7 @@ public class SiteResource implements Serializable {
                 hostFound = siteHelper.getSite( user, hostId);
 
                 if (hostFound != null) {
-
-                    session.setAttribute(
-                            com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, hostId);
-                    session.removeAttribute(WebKeys.CONTENTLET_LAST_SEARCH);
-
+                    siteHelper.switchSite(req, hostId);
                     switchDone = true;
                 }
             }
@@ -205,4 +199,37 @@ public class SiteResource implements Serializable {
         return response;
     } // sites.
 
+    /**
+     * Swicth to the user's default site
+     *
+     * @param req
+     * @return
+     */
+    @PUT
+    @Path ("/switch")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response switchSite(
+            @Context final HttpServletRequest req
+    ) {
+
+        final InitDataObject initData = this.webResource.init(null, true, req, true, null); // should logged in
+        final User user = initData.getUser();
+
+        Logger.debug(this, "Switching to default host for user: " + user.getUserId());
+
+        try {
+            final Host host = siteHelper.switchToDefaultHost(req, user);
+            return Response.ok(new ResponseEntityView(host)).build();
+
+        } catch (DotSecurityException e) {
+            Logger.error(this.getClass(), "Exception on switch site exception message: " + e.getMessage(), e);
+            throw new ForbiddenException(e);
+        } catch (Exception e) {
+            Logger.error(this.getClass(), "Exception on switch site exception message: " + e.getMessage(), e);
+            return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+    }
 } // E:O:F:SiteBrowserResource.
