@@ -275,6 +275,15 @@ public class PageResource {
         return res;
     }
 
+    public Map<String, Object> getRenderedPageMap(final HttpServletRequest request, final HttpServletResponse response, String uri, PageMode mode)
+            throws DotSecurityException, IOException, DotDataException {
+        final InitDataObject auth = webResource.init(false, request, true);
+        final User user = auth.getUser();
+        final HTMLPageAsset page = this.pageResourceHelper.getPage(request, user, uri, mode);
+
+        return this.getRenderedPageMap(request, response, user, page);
+    }
+
     private Map<String, Object> getRenderedPageMap(final HttpServletRequest request, final HttpServletResponse response,
                                                    final User user, final HTMLPageAsset page)
             throws DotSecurityException, IOException, DotDataException {

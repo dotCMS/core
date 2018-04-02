@@ -3,12 +3,16 @@ package com.dotcms.rendering.velocity.servlet;
 import com.dotcms.business.CloseDB;
 import com.dotcms.rendering.velocity.viewtools.RequestWrapper;
 
+import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.rest.api.v1.page.JsonMapper;
+import com.dotcms.rest.api.v1.page.PageResource;
 import com.dotmarketing.filters.Constants;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 
 import java.io.IOException;
 import java.net.URLDecoder;
+import java.util.Map;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -16,6 +20,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
@@ -50,12 +56,17 @@ public class VelocityServlet extends HttpServlet {
 
 
         try {
-            VelocityModeHandler.modeHandler(mode, request, response).serve();
-
+            if (mode == PageMode.EDIT_MODE) {
+                PageResource pageResource = new PageResource();
+                Map<String, Object> renderedPageMap = pageResource.getRenderedPageMap(request, response, uri, PageMode.EDIT_MODE);
+                final ObjectWriter objectWriter = new ObjectMapper().writer().withDefaultPrettyPrinter();
+                response.getOutputStream().write(objectWriter.writeValueAsString(renderedPageMap).getBytes());
+            } else {
+                VelocityModeHandler.modeHandler(mode, request, response).serve();
+            }
         } catch (ResourceNotFoundException rnfe) {
             Logger.error(this, "ResourceNotFoundException" + rnfe.toString(), rnfe);
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
-            return;
         } catch (ParseErrorException pee) {
             Logger.error(this, "Template Parse Exception : " + pee.toString(), pee);
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Template Parse Exception");
@@ -65,9 +76,7 @@ public class VelocityServlet extends HttpServlet {
         } catch (Exception e) {
             Logger.error(this, "Exception" + e.toString(), e);
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Exception Error on template");
-
-        } 
-
+        }
     }
 
     @Override
