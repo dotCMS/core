@@ -2,6 +2,7 @@ package com.dotcms.exception;
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.workflows.business.NotAllowedUserWorkflowException;
@@ -40,6 +41,8 @@ public class ExceptionUtil {
     public static Set<Class<? extends Throwable>> SECURITY_EXCEPTIONS = ImmutableSet.of(SecurityException.class, DotSecurityException.class, NotAllowedUserWorkflowException.class);
 
     public static final Set<Class<? extends Throwable>> NOT_FOUND_EXCEPTIONS = ImmutableSet.of(NotFoundInDbException.class, DoesNotExistException.class);
+
+    public static final Set<Class<? extends Throwable>> BAD_REQUEST_EXCEPTIONS = ImmutableSet.of(AlreadyExistException.class, IllegalArgumentException.class);
 
     /**
      *

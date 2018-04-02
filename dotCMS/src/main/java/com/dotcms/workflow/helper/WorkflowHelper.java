@@ -3,11 +3,9 @@ package com.dotcms.workflow.helper;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
-import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.v1.workflow.WorkflowDefaultActionView;
@@ -387,18 +385,10 @@ public class WorkflowHelper {
      * @param stepId String
      */
     @WrapInTransaction
-    public void deleteStep(final String stepId) {
+    public void deleteStep(final String stepId) throws DotSecurityException, DotDataException {
 
-        WorkflowStep workflowStep = null;
-
-        try {
-            Logger.debug(this, "Looking for the stepId: " + stepId);
-            workflowStep = this.workflowAPI.findStep(stepId);
-        } catch (Exception e) {
-
-            Logger.error(this, e.getMessage());
-            Logger.debug(this, e.getMessage(), e);
-        }
+        Logger.debug(this, "Looking for the stepId: " + stepId);
+        WorkflowStep workflowStep = this.workflowAPI.findStep(stepId);
 
         if (null != workflowStep) {
 
@@ -424,26 +414,19 @@ public class WorkflowHelper {
      * @return WorkflowStep
      */
     @WrapInTransaction
-    public void deleteAction(final String actionId,
-                             final User user) {
+    public void deleteAction(final @NotNull String actionId,
+            final User user) throws DotSecurityException, DotDataException {
 
-        WorkflowAction action = null;
-
-        try {
-
-            Logger.debug(this, "Looking for the action: " + actionId);
-            action = this.workflowAPI.findAction
-                    (actionId, user);
-        } catch (DotDataException | DotSecurityException e) {
-
-            Logger.error(this, e.getMessage());
-            Logger.debug(this, e.getMessage(), e);
+        if (!UtilMethods.isSet(actionId)) {
+            throw new IllegalArgumentException("Missing required parameter actionId.");
         }
+
+        Logger.debug(this, "Looking for the action: " + actionId);
+        final WorkflowAction action = this.workflowAPI.findAction(actionId, user);
 
         if (null != action) {
 
             try {
-
                 Logger.debug(this, "Deleting the action: " + actionId);
                 this.workflowAPI.deleteAction(action, user);
             } catch (DotDataException | AlreadyExistException e) {
@@ -466,9 +449,17 @@ public class WorkflowHelper {
      * @return WorkflowStep
      */
     @WrapInTransaction
-    public WorkflowStep deleteAction(final String actionId,
-                                     final String stepId,
+    public WorkflowStep deleteAction(final @NotNull String actionId,
+                                     final @NotNull String stepId,
                                      final User user) {
+
+        if (!UtilMethods.isSet(actionId)) {
+            throw new IllegalArgumentException("Missing required parameter actionId.");
+        }
+
+        if (!UtilMethods.isSet(stepId)) {
+            throw new IllegalArgumentException("Missing required parameter stepId.");
+        }
 
         WorkflowAction action = null;
         WorkflowStep step     = null;
@@ -578,20 +569,13 @@ public class WorkflowHelper {
      * @param user   User
      * @return List of WorkflowAction
      */
-    public List<WorkflowAction> findActions(final String stepId, final User user) {
+    public List<WorkflowAction> findActions(final String stepId, final User user)
+            throws DotSecurityException, DotDataException {
 
-        WorkflowStep workflowStep    = null;
         List<WorkflowAction> actions = null;
 
-        try {
-
-            Logger.debug(this, "Looking for the stepId: " + stepId);
-            workflowStep = this.workflowAPI.findStep(stepId);
-        } catch (Exception e) {
-
-            Logger.error(this, e.getMessage());
-            Logger.debug(this, e.getMessage(), e);
-        }
+        Logger.debug(this, "Looking for the stepId: " + stepId);
+        WorkflowStep workflowStep = this.workflowAPI.findStep(stepId);
 
         if (null != workflowStep) {
 
@@ -599,7 +583,7 @@ public class WorkflowHelper {
 
                 Logger.debug(this, "Looking for the actions associated to the step: " + stepId);
                 actions = this.workflowAPI.findActions(workflowStep, user);
-            } catch (DotDataException  | DotSecurityException e) {
+            } catch (DotDataException | DotSecurityException e) {
 
                 Logger.error(this, e.getMessage());
                 Logger.debug(this, e.getMessage(), e);
@@ -609,7 +593,7 @@ public class WorkflowHelper {
             throw new DoesNotExistException("Workflow-does-not-exists-step");
         }
 
-        return (null == actions)? Collections.emptyList(): actions;
+        return (null == actions) ? Collections.emptyList() : actions;
     } // findActions.
 
     /**
@@ -617,26 +601,15 @@ public class WorkflowHelper {
      * @param schemeId String
      * @return List of WorkflowStep
      */
-    public List<WorkflowStep> findSteps(final String schemeId) {
+    public List<WorkflowStep> findSteps(final String schemeId)
+            throws DotSecurityException, DotDataException {
 
-
-        List<WorkflowStep> workflowSteps  = null;
-        WorkflowScheme     workflowScheme = null;
-
-        try {
-
-            Logger.debug(this, "Looking for the schemeId: " + schemeId);
-            workflowScheme = this.workflowAPI.findScheme(schemeId);
-        } catch (DotDataException | DotSecurityException e) {
-
-            Logger.error(this, e.getMessage());
-            Logger.debug(this, e.getMessage(), e);
-        }
-
+        Logger.debug(this, "Looking for the schemeId: " + schemeId);
+        final WorkflowScheme workflowScheme = this.workflowAPI.findScheme(schemeId);
+        final List<WorkflowStep> workflowSteps;
         if (null != workflowScheme) {
 
             try {
-
                 workflowSteps = this.workflowAPI.findSteps(workflowScheme);
             } catch (DotDataException e) {
 
@@ -657,7 +630,7 @@ public class WorkflowHelper {
      * @param actionId String
      * @return IsNewAndCloneItResult
      */
-    protected IsNewAndCloneItResult isNewAndCloneIt (final String actionId) {
+    private IsNewAndCloneItResult isNewAndCloneIt(final String actionId) {
 
 
         final WorkflowAction newAction = new WorkflowAction();
@@ -683,7 +656,7 @@ public class WorkflowHelper {
      * @return Role
      * @throws DotDataException
      */
-    protected Role resolveRole(final String id) throws DotDataException {
+    private Role resolveRole(final String id) throws DotDataException {
 
         Role role = null;
         final String newid = id.substring
@@ -709,10 +682,13 @@ public class WorkflowHelper {
      * @param user     User
      * @return List of WorkflowAction
      */
-    public List<WorkflowAction> findActionsByScheme(final String schemeId,
+    public List<WorkflowAction> findActionsByScheme(@NotNull final String schemeId,
                                                     final User user) {
 
-        List<WorkflowAction> actions = null;
+        if (!UtilMethods.isSet(schemeId)) {
+            throw new IllegalArgumentException("Missing required parameter schemeId.");
+        }
+        final List<WorkflowAction> actions;
         final WorkflowScheme workflowSchemeProxy = new WorkflowScheme();
 
         try {
@@ -922,7 +898,7 @@ public class WorkflowHelper {
     }
 
     /**
-     * Find Availables actions that can be used as default action by Workflow schemes
+     * Find Available actions that can be used as default action by Workflow schemes
      * @param schemeIds     Comma separated list of workflow schemes Ids to process
      * @param user          User   the user that makes the request
      * @return List<WorkflowDefaultActionView>
@@ -940,6 +916,7 @@ public class WorkflowHelper {
             Logger.debug(this,
                     "Getting the available workflows default actions by schemeIds: " + schemeIds);
 
+            //If no valid license is found we simply return the system wf.
             if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
                 schemes.add(workflowAPI.findSystemWorkflowScheme());
             } else {
@@ -977,7 +954,11 @@ public class WorkflowHelper {
      */
     @CloseDBIfOpened
     public List<WorkflowDefaultActionView> findInitialAvailableActionsByContentType(
-            final String contentTypeId, final User user) {
+            final @NotNull String contentTypeId, final User user) {
+
+        if (!UtilMethods.isSet(contentTypeId)) {
+            throw new IllegalArgumentException("Missing required parameter contentTypeId.");
+        }
 
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
         final ImmutableList.Builder<WorkflowDefaultActionView> results = new ImmutableList.Builder<>();
