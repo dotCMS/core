@@ -294,8 +294,10 @@ public class DbConnectionFactory {
     }
 
     /**
+     * @deprecated in favor of {@link com.dotcms.business.CloseDBIfOpened}
      * This method closes all the possible opened connections
      */
+    @Deprecated
     public static void closeConnection() {
         try {
             HashMap<String, Connection> connectionsList = (HashMap<String, Connection>) connectionsHolder.get();
@@ -334,8 +336,10 @@ public class DbConnectionFactory {
     }
 
     /**
+     * @deprecated in favor of {@link com.dotcms.business.CloseDBIfOpened}
      * This method closes a connection to the given datasource
      */
+    @Deprecated
     public static void closeConnection(String ds) {
         try {
             HashMap<String, Connection> connectionsList = (HashMap<String, Connection>) connectionsHolder.get();

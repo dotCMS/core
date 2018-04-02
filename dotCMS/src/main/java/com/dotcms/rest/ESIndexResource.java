@@ -1,5 +1,6 @@
 package com.dotcms.rest;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.google.gson.Gson;
 import com.dotcms.rest.exception.ForbiddenException;
 
@@ -25,10 +26,7 @@ import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataContent
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataParam;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.AdminLogger;
@@ -62,7 +60,7 @@ public class ESIndexResource {
             throw new DotSecurityException("unauthorized");
         return init;
     }
-    
+
     public static void restoreIndex(final File file, final String alias, String index, final boolean clear) throws DotDataException {
         if(LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level) {
             if(UtilMethods.isSet(alias)) {
@@ -80,6 +78,7 @@ public class ESIndexResource {
         if(UtilMethods.isSet(index)) {
             final String indexToRestore=index;
             new Thread() {
+                @CloseDBIfOpened
                 public void run() {
                     try {
                         if(clear)
@@ -89,14 +88,6 @@ public class ESIndexResource {
                     }
                     catch(Exception ex) {
                         Logger.error(ESIndexResource.class, "Error restoring "+indexToRestore,ex);
-                    }finally {
-                        try {
-                            HibernateUtil.closeSession();
-                        } catch (DotHibernateException e) {
-                            Logger.warn(this, e.getMessage(), e);
-                        }finally {
-                            DbConnectionFactory.closeConnection();
-                        }
                     }
                 }
             }.start();

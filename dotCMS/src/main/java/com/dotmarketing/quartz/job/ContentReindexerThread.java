@@ -1,5 +1,6 @@
 package com.dotmarketing.quartz.job;
 
+import com.dotcms.business.CloseDBIfOpened;
 import java.util.Date;
 
 import org.quartz.Job;
@@ -7,7 +8,6 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -20,6 +20,7 @@ public class ContentReindexerThread implements Runnable, Job {
     public ContentReindexerThread() {
     }
 
+	@CloseDBIfOpened
     public void run() 
     {
     	
@@ -28,15 +29,9 @@ public class ContentReindexerThread implements Runnable, Job {
         	conAPI.reindex();
             Logger.info(this, "Reindexation is in progress");
         }catch (Exception e) {
-        	Logger.info(this, "Unable to reindex. Probably because another reindexation is in progress");
-		}finally{
-    		try {
-				HibernateUtil.closeSession();
-			} catch (DotHibernateException e) {
-				Logger.error(ContentReindexerThread.class, e.getMessage(), e);
-			}
-    		DbConnectionFactory.closeConnection();
-    	}
+			Logger.info(this,
+					"Unable to reindex. Probably because another reindexation is in progress");
+		}
     }
 
     /*
