@@ -112,7 +112,7 @@ public abstract class ContentletFactory {
 	 * @throws DotDataException
 	 * @throws DotSecurityException 
 	 */
-	protected abstract Contentlet save(Contentlet contentlet) throws DotDataException, DotSecurityException;
+	public abstract Contentlet save(Contentlet contentlet) throws DotDataException, DotSecurityException;
 	protected abstract Contentlet save(Contentlet contentlet, String existingInode) throws DotDataException, DotSecurityException;
 	
 	/**
