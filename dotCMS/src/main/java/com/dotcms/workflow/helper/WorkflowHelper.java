@@ -5,6 +5,8 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
@@ -269,7 +271,7 @@ public class WorkflowHelper {
             Logger.debug(this, "Reordering the stepId: "  + stepId +
                             ", order: " + order);
             this.workflowAPI.reorderStep(step, order, user);
-        } catch (DotDataException | AlreadyExistException e) {
+        } catch (DotDataException | AlreadyExistException | DotSecurityException e) {
 
             Logger.error(this, e.getMessage());
             Logger.debug(this, e.getMessage(), e);
@@ -317,7 +319,7 @@ public class WorkflowHelper {
             );
 
             workflowAPI.saveStep(step, user);
-        } catch (DotDataException | AlreadyExistException e) {
+        } catch (DotDataException | AlreadyExistException | DotSecurityException e) {
             Logger.error(this, e.getMessage());
             Logger.debug(this, e.getMessage(), e);
             throw new DotWorkflowException(e.getMessage(), e);
@@ -330,7 +332,7 @@ public class WorkflowHelper {
      * @param stepId
      * @return
      */
-    public WorkflowStep findStepById(final String stepId) throws DotDataException{
+    public WorkflowStep findStepById(final String stepId) throws DotDataException, DotSecurityException{
         WorkflowStep step;
         try {
             step = workflowAPI.findStep(stepId);
@@ -347,7 +349,7 @@ public class WorkflowHelper {
      * @throws DotDataException
      * @throws AlreadyExistException
      */
-    public WorkflowStep updateStep(final String stepId, final WorkflowStepUpdateForm workflowStepUpdateForm, final User user) throws DotDataException, AlreadyExistException {
+    public WorkflowStep updateStep(final String stepId, final WorkflowStepUpdateForm workflowStepUpdateForm, final User user) throws DotDataException, AlreadyExistException, DotSecurityException {
         final WorkflowStep step;
         try {
             step = workflowAPI.findStep(stepId);
@@ -625,7 +627,7 @@ public class WorkflowHelper {
 
             Logger.debug(this, "Looking for the schemeId: " + schemeId);
             workflowScheme = this.workflowAPI.findScheme(schemeId);
-        } catch (DotDataException e) {
+        } catch (DotDataException | DotSecurityException e) {
 
             Logger.error(this, e.getMessage());
             Logger.debug(this, e.getMessage(), e);
@@ -901,10 +903,11 @@ public class WorkflowHelper {
         try {
 
             Logger.debug(this, "Getting the available default workflows actions by content type: " + contentTypeId);
+            //When no license is available. This should get the system workflow.
             final List<WorkflowAction> actions = this.workflowAPI.findAvailableDefaultActionsByContentType(contentTypeAPI.find(contentTypeId), user);
-            for (WorkflowAction action : actions){
-                WorkflowScheme scheme = this.workflowAPI.findScheme(action.getSchemeId());
-                WorkflowDefaultActionView value = new WorkflowDefaultActionView(scheme,action);
+            for (final WorkflowAction action : actions){
+                final WorkflowScheme scheme = this.workflowAPI.findScheme(action.getSchemeId());
+                final WorkflowDefaultActionView value = new WorkflowDefaultActionView(scheme, action);
                 results.add(value);
             }
 
@@ -924,23 +927,34 @@ public class WorkflowHelper {
      * @param user          User   the user that makes the request
      * @return List<WorkflowDefaultActionView>
      */
-    public List<WorkflowDefaultActionView> findAvailableDefaultActionsBySchemes(final @NotNull String schemeIds, final User user) {
+    public List<WorkflowDefaultActionView> findAvailableDefaultActionsBySchemes(
+            final @NotNull String schemeIds, final User user) {
 
-        if(!UtilMethods.isSet(schemeIds)){
+        if (!UtilMethods.isSet(schemeIds)) {
             throw new IllegalArgumentException("Missing required parameter schemeIds.");
         }
 
         final ImmutableList.Builder<WorkflowScheme> schemes = new ImmutableList.Builder<>();
         final ImmutableList.Builder<WorkflowDefaultActionView> results = new ImmutableList.Builder<>();
         try {
-            Logger.debug(this, "Getting the available workflows default actions by schemeIds: "+schemeIds);
-            for(final String id: schemeIds.split(",")){
-                schemes.add(this.workflowAPI.findScheme(id));
+            Logger.debug(this,
+                    "Getting the available workflows default actions by schemeIds: " + schemeIds);
+
+            if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
+                schemes.add(workflowAPI.findSystemWorkflowScheme());
+            } else {
+                for (final String id : schemeIds.split(",")) {
+                    schemes.add(this.workflowAPI.findScheme(id));
+                }
             }
-            final List<WorkflowAction> actions = this.workflowAPI.findAvailableDefaultActionsBySchemes(schemes.build(), APILocator.getUserAPI().getSystemUser());
-            for (WorkflowAction action : actions){
-                WorkflowScheme scheme = this.workflowAPI.findScheme(action.getSchemeId());
-                WorkflowDefaultActionView value = new WorkflowDefaultActionView(scheme,action);
+
+            final List<WorkflowAction> actions = this.workflowAPI
+                    .findAvailableDefaultActionsBySchemes(schemes.build(),
+                            APILocator.getUserAPI().getSystemUser());
+            for (final WorkflowAction action : actions) {
+                final WorkflowScheme scheme = this.workflowAPI.findScheme(action.getSchemeId());
+                final WorkflowDefaultActionView value = new WorkflowDefaultActionView(scheme,
+                        action);
                 results.add(value);
             }
         } catch (DotDataException | DotSecurityException e) {

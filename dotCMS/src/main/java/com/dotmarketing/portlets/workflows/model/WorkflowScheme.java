@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.workflows.model;
 
+import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import java.io.Serializable;
 import java.util.Date;
 
@@ -15,6 +16,8 @@ public class WorkflowScheme implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
+	public static final String SYSTEM_WORKFLOW_ID = WorkFlowFactory.SYSTEM_WORKFLOW_ID;
+
 	String id;
 	Date creationDate = new Date();
 	String name;
@@ -27,6 +30,10 @@ public class WorkflowScheme implements Serializable {
 
 	public boolean isDefaultScheme() {
 		return defaultScheme;
+	}
+
+    public boolean isSystemWorkflowScheme(){
+		return (SYSTEM_WORKFLOW_ID.equals(id));
 	}
 
 	public void setDefaultScheme(boolean defaultScheme) {

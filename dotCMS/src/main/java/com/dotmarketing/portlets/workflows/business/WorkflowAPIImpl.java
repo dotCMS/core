@@ -257,7 +257,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@CloseDBIfOpened
 	public List<WorkflowScheme> findSchemes(final boolean showArchived) throws DotDataException {
 		if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
-			return new ImmutableList.Builder<WorkflowScheme>().add(findDefaultScheme()).build();
+			return new ImmutableList.Builder<WorkflowScheme>().add(findSystemWorkflowScheme()).build();
 		}
 		return workFlowFactory.findSchemes(showArchived);
 	}
@@ -284,7 +284,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@CloseDBIfOpened
-	public WorkflowScheme findScheme(String id) throws DotDataException {
+	public WorkflowScheme findScheme(String id) throws DotDataException, DotSecurityException {
+		if (!WorkFlowFactory.SYSTEM_WORKFLOW_ID.equals(id)) {
+			if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
+				throw new DotSecurityException("You must have a valid license to gain access to schemes.");
+			}
+		}
 		return workFlowFactory.findScheme(id);
 	}
 
@@ -332,14 +337,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		} else {
 
 			try {
-				if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
-					schemes.add(findDefaultScheme());
-				} else {
 					Logger.debug(this, "Finding the schemes for: " + contentType);
 					final List<WorkflowScheme> contentTypeSchemes =
 							this.workFlowFactory.findSchemesForStruct(contentType.inode());
 					schemes.addAll(contentTypeSchemes);
-				}
 			}
 			catch(Exception e) {
 				Logger.debug(this,e.getMessage(),e);
@@ -590,19 +591,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@WrapInTransaction
 	@Override
-	public void reorderStep(final WorkflowStep step, final int order, final User user) throws DotDataException, AlreadyExistException {
+	public void reorderStep(final WorkflowStep step, final int order, final User user) throws DotDataException, AlreadyExistException, DotSecurityException {
 
 		this.isUserAllowToModifiedWorkflow(user);
 
-		final List<WorkflowStep> steps;
 		final WorkflowScheme scheme = this.findScheme(step.getSchemeId());
-
-		try {
-
-			steps  = this.findSteps (scheme);
-		} catch (Exception e) {
-			throw new DotDataException(e.getLocalizedMessage(), e);
-		}
+		final List<WorkflowStep> steps  = this.findSteps (scheme);
 
 		IntStream.range(0, steps.size())
 				.filter(i -> steps.get(i).getId().equals(step.getId()))
@@ -746,8 +740,16 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
     }
 
 	@CloseDBIfOpened
-	public List<WorkflowAction> findActions(final WorkflowScheme scheme, final User user) throws DotDataException,
+	public List<WorkflowAction> findActions(final WorkflowScheme scheme, final User user)
+			throws DotDataException,
 			DotSecurityException {
+
+		if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
+			if (!SYSTEM_WORKFLOW_ID.equals(scheme.getId())) {
+				throw new DotSecurityException(
+						"You must have a valid license to gain access to schemes.");
+			}
+		}
 
 		final List<WorkflowAction> actions = workFlowFactory.findActions(scheme);
 		return permissionAPI.filterCollection(actions,
@@ -784,7 +786,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
 			Logger.debug(this, "");
-			throw new DotSecurityException("You have to have a valid license to see any available actions.");
+			throw new DotSecurityException("You must have a valid license to see any available actions.");
 		}
 
 		if(contentlet == null || contentlet.getStructure() ==null) {
@@ -865,7 +867,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 */
 	@Deprecated
 	@WrapInTransaction
-	public void reorderAction(WorkflowAction action, int order) throws DotDataException, AlreadyExistException {
+	public void reorderAction(WorkflowAction action, int order) throws DotDataException, AlreadyExistException, DotSecurityException {
 
 		final WorkflowStep step = findStep(action.getStepId());
 		this.reorderAction(action, step, APILocator.systemUser(), order);
@@ -1047,8 +1049,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@CloseDBIfOpened
-	public WorkflowStep findStep(String id) throws DotDataException {
-		return workFlowFactory.findStep(id);
+	public WorkflowStep findStep(String id) throws DotDataException, DotSecurityException {
+		final WorkflowStep step = workFlowFactory.findStep(id);
+		if(LicenseUtil.getLevel() < LicenseLevel.STANDARD.level){
+			if(!SYSTEM_WORKFLOW_ID.equals(step.getSchemeId())){
+                throw new DotSecurityException("You must have a valid license to see any available step.");
+			}
+		}
+		return step;
 	}
 
 	@WrapInTransaction
@@ -1825,17 +1833,35 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         return action;
     }
 
+	/**
+	 * Returns the actions associted to the content type if there's no license. only actions
+	 * associated with the system workflow will be returned.
+	 *
+	 * @param contentType ContentType to be processed
+	 * @param user The current User
+	 */
 	@CloseDBIfOpened
-	public List<WorkflowAction> findAvailableDefaultActionsByContentType(ContentType contentType, User user)
+	public List<WorkflowAction> findAvailableDefaultActionsByContentType(ContentType contentType,
+			User user)
 			throws DotDataException, DotSecurityException {
 
 		DotPreconditions.isTrue(this.permissionAPI.
-						doesUserHavePermission(contentType, PermissionAPI.PERMISSION_READ, user,true),
+						doesUserHavePermission(contentType, PermissionAPI.PERMISSION_READ, user, true),
 				() -> "User " + user + " cannot read content type " + contentType.name(),
 				DotSecurityException.class);
 
 		List<WorkflowScheme> schemes = findSchemesForContentType(contentType);
-		return findAvailableDefaultActionsBySchemes(schemes, APILocator.getUserAPI().getSystemUser());
+
+		if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
+			//When no License, we only allow the system workflow
+			final WorkflowScheme systemWorkflow = schemes.stream()
+					.filter(WorkflowScheme::isSystemWorkflowScheme).findFirst()
+					.orElse(workFlowFactory.findSystemWorkflow());
+			schemes = new ImmutableList.Builder<WorkflowScheme>().add(systemWorkflow).build();
+
+		}
+		return findAvailableDefaultActionsBySchemes(schemes,
+				APILocator.getUserAPI().getSystemUser());
 	}
 
 
@@ -1844,7 +1870,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			throws DotDataException, DotSecurityException{
 		final ImmutableList.Builder<WorkflowAction> actions = new ImmutableList.Builder<>();
 		for(WorkflowScheme scheme: schemes){
-			List<WorkflowStep> steps = findSteps(scheme);
+			final List<WorkflowStep> steps = findSteps(scheme);
 			actions.addAll(findActions(steps.get(0), user));
 		}
 		return actions.build();

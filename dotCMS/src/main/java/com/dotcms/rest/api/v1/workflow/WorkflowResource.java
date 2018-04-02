@@ -175,8 +175,9 @@ public class WorkflowResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response findAllSchemesAndSchemesByContentType(@Context            final HttpServletRequest request,
-                                                                @PathParam("contentTypeId")      final String contentTypeId) {
+    public final Response findAllSchemesAndSchemesByContentType(
+            @Context final HttpServletRequest request,
+            @PathParam("contentTypeId") final String contentTypeId) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
@@ -187,13 +188,18 @@ public class WorkflowResource {
                     "Getting the workflow schemes for the contentTypeId: " + contentTypeId
                             + " and including All Schemes");
             final List<WorkflowScheme> schemes = this.workflowHelper.findSchemes();
-            final List<WorkflowScheme> contentTypeSchemes = this.workflowHelper.findSchemesByContentType
-                    (contentTypeId, initDataObject.getUser());
+            final List<WorkflowScheme> contentTypeSchemes = this.workflowHelper
+                    .findSchemesByContentType
+                            (contentTypeId, initDataObject.getUser());
 
-            return Response.ok(new ResponseEntityView(new SchemesAndSchemesContentTypeView(schemes, contentTypeSchemes))).build(); // 200
+            return Response.ok(new ResponseEntityView(
+                    new SchemesAndSchemesContentTypeView(schemes, contentTypeSchemes)))
+                    .build(); // 200
         } catch (Exception e) {
 
-            Logger.error(this.getClass(),"Exception on findAllSchemesAndSchemesByContentType exception message: " + e.getMessage(), e);
+            Logger.error(this.getClass(),
+                    "Exception on findAllSchemesAndSchemesByContentType exception message: " + e
+                            .getMessage(), e);
             return mapExceptionResponse(e);
 
         }
@@ -1052,6 +1058,7 @@ public class WorkflowResource {
     } // findAvailableDefaultActionsByContentType.
 
     /**
+     *
      * Returns all the possible default actions associated to the workflow schemes.
      * 401 if the user does not have permission.
      * @param request  HttpServletRequest
