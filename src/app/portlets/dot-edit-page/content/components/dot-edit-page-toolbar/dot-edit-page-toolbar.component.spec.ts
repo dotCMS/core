@@ -37,13 +37,13 @@ describe('DotEditPageToolbarComponent', () => {
     let dotGlobalMessageService: DotGlobalMessageService;
     let dotDialogService: DotDialogService;
 
-    function clickStateButton(state) {
-        const states = {
-            edit: 0,
-            preview: 1,
-            live: 2
-        };
+    const states = {
+        edit: 0,
+        preview: 1,
+        live: 2
+    };
 
+    function clickStateButton(state) {
         const stateSelectorButtons: DebugElement[] = de.queryAll(
             By.css('.edit-page-toolbar__state-selector .ui-button')
         );
@@ -122,16 +122,14 @@ describe('DotEditPageToolbarComponent', () => {
                     shortyLive: '',
                     shortyWorking: '',
                     workingInode: '',
+                    lockedBy: null
                 },
                 html: '',
                 layout: mockDotLayout,
                 canCreateTemplate: true,
                 viewAs: null
             },
-            {
-                locked: false,
-                mode: PageMode.PREVIEW,
-            }
+            PageMode.PREVIEW
         );
 
         dotGlobalMessageService = de.injector.get(DotGlobalMessageService);
@@ -435,6 +433,7 @@ describe('DotEditPageToolbarComponent', () => {
             clickLocker();
 
             expect(component.lockerModel).toBe(false);
+            expect(component.mode ).toBe(PageMode.LIVE, 'The mode should be the same');
             expect(pageStateResult).toEqual(undefined, 'doesn\'t emit state');
         });
 
@@ -454,6 +453,7 @@ describe('DotEditPageToolbarComponent', () => {
                 conf.accept();
             });
 
+            component.pageState.state.locked = true;
             component.pageState.state.lockedByAnotherUser = true;
             component.pageState.state.mode = PageMode.PREVIEW;
 
@@ -486,6 +486,20 @@ describe('DotEditPageToolbarComponent', () => {
             expect(component.lockerModel).toBe(false);
         });
 
+        it('should not change mode on edit attemp when confirmation reject', () => {
+            spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
+                conf.reject();
+            });
+
+            component.pageState.state.lockedByAnotherUser = true;
+            component.pageState.state.mode = PageMode.LIVE;
+
+            fixture.detectChanges();
+            clickStateButton('edit');
+
+            expect(component.mode).toEqual(PageMode.LIVE);
+        });
+
         it('should set the locker true from preview to edit', () => {
             component.pageState.state.mode = PageMode.PREVIEW;
             component.pageState.state.locked = false;
@@ -502,6 +516,7 @@ describe('DotEditPageToolbarComponent', () => {
 
             clickStateButton('live');
             expect(component.lockerModel).toBe(true, 'page locked after click in preview');
+            expect(pageStateResult.locked).toBeUndefined();
         });
 
         it('should keep the locker true from edit to preview', () => {
@@ -511,6 +526,17 @@ describe('DotEditPageToolbarComponent', () => {
 
             clickStateButton('preview');
             expect(component.lockerModel).toBe(true, 'page locked after click in preview');
+            expect(pageStateResult.locked).toBeUndefined();
+        });
+
+        it('should not change locker when change from preview to live mode', () => {
+            component.pageState.state.mode = PageMode.PREVIEW;
+            component.pageState.state.locked = false;
+            fixture.detectChanges();
+
+            clickStateButton('live');
+            expect(component.lockerModel).toBe(false);
+            expect(pageStateResult.locked).toBeUndefined();
         });
     });
 });

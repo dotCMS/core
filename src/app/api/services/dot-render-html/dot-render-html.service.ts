@@ -98,7 +98,7 @@ export class DotRenderHTMLService {
         const pageModeString = {};
         pageModeString[PageMode.EDIT] = 'EDIT_MODE';
         pageModeString[PageMode.PREVIEW] = 'PREVIEW_MODE';
-        pageModeString[PageMode.LIVE] = 'LIVE';
+        pageModeString[PageMode.LIVE] = 'ADMIN_MODE';
 
         return pageModeString[pageMode];
     }

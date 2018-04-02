@@ -73,7 +73,7 @@ describe('DotRenderHTMLService', () => {
         lastConnection[0].mockRespond(new Response(new ResponseOptions({
             body: mockDotRenderedPage
         })));
-        expect(lastConnection[0].request.url).toContain('/api/v1/page/renderHTML/about-us?mode=LIVE');
+        expect(lastConnection[0].request.url).toContain('/api/v1/page/renderHTML/about-us?mode=ADMIN_MODE');
         expect(result).toEqual(mockDotRenderedPage);
     });
 

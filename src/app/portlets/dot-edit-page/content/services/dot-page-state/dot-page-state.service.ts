@@ -36,7 +36,7 @@ export class DotPageStateService {
             state.mode !== undefined ? this.dotRenderHTMLService.get(pageOpts) : Observable.of(null);
 
         return lockUnlock$.mergeMap(() =>
-            pageMode$.map((updatedPage: DotRenderedPage) => new DotRenderedPageState(this.loginService.auth.user, updatedPage, state))
+            pageMode$.map((updatedPage: DotRenderedPage) => new DotRenderedPageState(this.loginService.auth.user, updatedPage, state.mode))
         );
     }
 

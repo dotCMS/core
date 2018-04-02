@@ -11,6 +11,7 @@ import { DotRenderedPageState } from '../../../shared/models/dot-rendered-page-s
 import { LoginServiceMock } from '../../../../../test/login-service.mock';
 import { PageMode } from '../../../shared/models/page-mode.enum';
 import { mockDotRenderedPage, mockDotPage } from '../../../../../test/dot-rendered-page.mock';
+import * as _ from 'lodash';
 
 describe('DotPageStateService', () => {
     let service: DotPageStateService;
@@ -53,6 +54,7 @@ describe('DotPageStateService', () => {
                     expect(updatedPageState.page).toEqual(mockDotPage);
                     expect(updatedPageState.state).toEqual({
                         locked: true,
+                        lockedByAnotherUser: true,
                         mode: PageMode.LIVE
                     });
                 });
@@ -76,19 +78,23 @@ describe('DotPageStateService', () => {
             );
 
             expect(lastConnection[0].request.url).toContain('/api/content/lock/inode/999');
-            expect(lastConnection[1].request.url).toContain('/api/v1/page/renderHTML/an/url/test?mode=LIVE');
+            expect(lastConnection[1].request.url).toContain('/api/v1/page/renderHTML/an/url/test?mode=ADMIN_MODE');
         });
 
         it('should set a page unlocked and preview mode', () => {
+            const mockDotRenderedPageTest = _.cloneDeep(mockDotRenderedPage);
+            mockDotRenderedPageTest.page.lockedBy = null;
+
             service
                 .set(mockDotPage, {
                     mode: PageMode.PREVIEW,
                     locked: false
                 })
                 .subscribe((updatedPageState: DotRenderedPageState) => {
-                    expect(updatedPageState.page).toEqual(mockDotPage);
+                    expect(updatedPageState.page).toEqual(mockDotRenderedPageTest.page);
                     expect(updatedPageState.state).toEqual({
                         locked: false,
+                        lockedByAnotherUser: false,
                         mode: PageMode.PREVIEW
                     });
                 });
@@ -106,13 +112,39 @@ describe('DotPageStateService', () => {
             lastConnection[1].mockRespond(
                 new Response(
                     new ResponseOptions({
-                        body: mockDotRenderedPage
+                        body: mockDotRenderedPageTest
                     })
                 )
             );
 
             expect(lastConnection[0].request.url).toContain('/api/content/unlock/inode/999');
             expect(lastConnection[1].request.url).toContain('/api/v1/page/renderHTML/an/url/test?mode=PREVIEW');
+        });
+
+        it('should set a page preview mode and keep the lock', () => {
+            service
+                .set(mockDotPage, {
+                    mode: PageMode.PREVIEW
+                })
+                .subscribe((updatedPageState: DotRenderedPageState) => {
+                    expect(updatedPageState.page).toEqual(mockDotPage);
+                    expect(updatedPageState.state).toEqual({
+                        locked: true,
+                        lockedByAnotherUser: true,
+                        mode: PageMode.PREVIEW
+                    });
+                });
+
+            lastConnection[0].mockRespond(
+                new Response(
+                    new ResponseOptions({
+                        body: mockDotRenderedPage
+                    })
+                )
+            );
+
+            expect(lastConnection[0].request.url).toContain('/api/v1/page/renderHTML/an/url/test?mode=PREVIEW');
+            expect(lastConnection[1]).toBeUndefined();
         });
     });
 

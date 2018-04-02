@@ -119,15 +119,8 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
      */
     lockPageHandler(_event): void {
         if (this.shouldConfirmToLock()) {
-            this.dotDialogService.confirm({
-                accept: () => {
-                    this.setLockerState();
-                },
-                reject: () => {
-                    this.lockerModel = false;
-                },
-                header: this.dotMessageService.get('editpage.content.steal.lock.confirmation.message.header'),
-                message: this.dotMessageService.get('editpage.content.steal.lock.confirmation.message')
+            this.showLockConfirmDialog(() => {
+                this.setLockerState();
             });
         } else {
             this.setLockerState();
@@ -142,21 +135,24 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
      */
     stateSelectorHandler(pageState: PageMode): void {
         if (this.shouldConfirmToLock()) {
-            this.dotDialogService.confirm({
-                accept: () => {
-                    this.setSelectorState(pageState);
-                },
-                reject: () => {
-                    this.lockerModel = false;
-                    this.mode = PageMode.PREVIEW;
-                },
-                header: this.dotMessageService.get('editpage.content.steal.lock.confirmation_message.header'),
-                message: this.dotMessageService.get('editpage.content.steal.lock.confirmation_message.message'),
-                footerLabel: {}
+            this.showLockConfirmDialog(() => {
+                this.setSelectorState(pageState);
             });
         } else {
             this.setSelectorState(pageState);
         }
+    }
+
+    private showLockConfirmDialog(acceptCallback: Function): void {
+        this.dotDialogService.confirm({
+            accept: acceptCallback,
+            reject: () => {
+                this.lockerModel = false;
+                this.mode = this.pageState.state.mode;
+            },
+            header: this.dotMessageService.get('editpage.content.steal.lock.confirmation.message.header'),
+            message: this.dotMessageService.get('editpage.content.steal.lock.confirmation.message')
+        });
     }
 
     private setLockerState() {
@@ -171,14 +167,16 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
     }
 
     private setSelectorState(pageMode: PageMode) {
+        const toEmit: DotEditPageState = {
+            mode: pageMode
+        };
+
         if (pageMode === PageMode.EDIT) {
             this.lockerModel = true;
+            toEmit.locked = true;
         }
 
-        this.changeState.emit({
-            mode: pageMode,
-            locked: this.lockerModel
-        });
+        this.changeState.emit(toEmit);
     }
 
     private setFieldsModels(pageState: DotRenderedPageState): void {

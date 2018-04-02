@@ -7,7 +7,7 @@ import { DotTemplate } from './dot-template.model';
 import { DotEditPageViewAs } from '../../../../shared/models/dot-edit-page-view-as/dot-edit-page-view-as.model';
 
 export interface DotPageState {
-    locked: boolean;
+    locked?: boolean;
     lockedByAnotherUser?: boolean;
     mode: PageMode;
 }
@@ -15,8 +15,15 @@ export interface DotPageState {
 export class DotRenderedPageState {
     private _state: DotPageState;
 
-    constructor(private user: User, private dotRenderedPage: DotRenderedPage, state?: DotPageState) {
-        this._state = state || this.getDefaultState(this.dotRenderedPage.page);
+    constructor(private user: User, private dotRenderedPage: DotRenderedPage, mode?: PageMode) {
+        const locked = !!dotRenderedPage.page.lockedBy;
+        const lockedByAnotherUser = locked ? dotRenderedPage.page.lockedBy !== this.user.userId : false;
+
+        this._state = {
+            locked: locked,
+            lockedByAnotherUser: lockedByAnotherUser,
+            mode: mode || this.getDefaultMode(lockedByAnotherUser, dotRenderedPage.page, locked)
+        };
     }
 
     get canCreateTemplate(): any {
@@ -55,19 +62,11 @@ export class DotRenderedPageState {
         this.dotRenderedPage = dotRenderedPageState;
     }
 
-    private getDefaultState(page: DotPage): DotPageState {
-        const locked = !!page.lockedBy;
-        const lockedByAnotherUser = locked ? page.lockedBy !== this.user.userId : false;
-        const mode: PageMode = lockedByAnotherUser ? PageMode.PREVIEW : this.getPageMode(page, locked);
-
-        return {
-            locked,
-            lockedByAnotherUser,
-            mode
-        };
-    }
-
     private getPageMode(page: DotPage, locked: boolean): PageMode {
         return locked && page.canLock ? PageMode.EDIT : PageMode.PREVIEW;
+    }
+
+    private getDefaultMode(lockedByAnotherUser: boolean, page: DotPage, locked: boolean): PageMode {
+        return lockedByAnotherUser ? PageMode.PREVIEW : this.getPageMode(page, locked);
     }
 }
