@@ -5,6 +5,7 @@ import static org.apache.commons.lang.StringUtils.split;
 import com.dotcms.repackage.com.google.common.base.CaseFormat;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
+import com.dotcms.repackage.org.jsoup.Jsoup;
 import com.liferay.util.StringPool;
 import java.util.Collections;
 import java.util.HashMap;
@@ -41,6 +42,20 @@ public class StringUtils {
         }
     }
 
+    public static boolean isHtml(final String htmlString) {
+
+        if(!htmlString.contains("<") || !htmlString.contains(">")){
+            return false;
+        }
+
+        try {
+            Jsoup.parse(htmlString);
+        } catch (Exception e) {
+            return false;
+        }
+
+        return true;
+    }
 
 
 

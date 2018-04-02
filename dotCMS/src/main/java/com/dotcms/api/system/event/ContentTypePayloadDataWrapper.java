@@ -1,7 +1,6 @@
 package com.dotcms.api.system.event;
 
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotmarketing.portlets.structure.model.Structure;
 
 /**
  * It is a wrapper to store the Content Type's action url when a event is push

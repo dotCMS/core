@@ -23,6 +23,7 @@ package com.dotcms.api.system.event;
 public enum Visibility {
 
     USER,
+    USERS,
     ROLE,
     ROLES,
     PERMISSION,
