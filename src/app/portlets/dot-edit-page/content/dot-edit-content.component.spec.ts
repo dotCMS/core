@@ -365,6 +365,35 @@ describe('DotEditContentComponent', () => {
             expect(dotEditContentHtmlService.initEditMode).not.toHaveBeenCalled();
             expect(dotEditContentHtmlService.renderPage).toHaveBeenCalledWith('<html></html>', component.iframe);
         });
+
+        it('should set live mode', () => {
+            spyStateSet({
+                ...mockDotRenderedPage,
+                state: {
+                    mode: PageMode.LIVE,
+                    locked: true
+                }
+            });
+
+            fixture.detectChanges();
+
+            component.toolbar.changeState.emit({
+                mode: PageMode.LIVE
+            });
+
+            expect(component.statePageHandler).toHaveBeenCalledWith({
+                mode: PageMode.LIVE
+            });
+
+            expect(component.pageState.page).toEqual(mockDotPage);
+            expect(component.pageState.state).toEqual({
+                mode: PageMode.LIVE,
+                locked: true
+            });
+            expect(dotGlobalMessageService.display).not.toHaveBeenCalled();
+            expect(dotEditContentHtmlService.initEditMode).not.toHaveBeenCalled();
+            expect(dotEditContentHtmlService.renderPage).toHaveBeenCalledWith('<html></html>', component.iframe);
+        });
     });
 
     describe('edit contentlets', () => {

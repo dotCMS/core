@@ -135,13 +135,19 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
      * @memberof DotEditContentComponent
      */
     statePageHandler(newState: DotPageState): void {
-        this.dotGlobalMessageService.display(this.dotMessageService.get('dot.common.message.saving'));
+        const showGlobalMessage = newState.locked !== undefined;
+
+        if (showGlobalMessage) {
+            this.dotGlobalMessageService.display(this.dotMessageService.get('dot.common.message.saving'));
+        }
 
         this.dotPageStateService.set(this.pageState.page, newState).subscribe(
             (pageState: DotRenderedPageState) => {
                 this.setPageState(pageState);
 
-                this.dotGlobalMessageService.display(this.dotMessageService.get('dot.common.message.saved'));
+                if (showGlobalMessage) {
+                    this.dotGlobalMessageService.display(this.dotMessageService.get('dot.common.message.saved'));
+                }
             },
             (err: ResponseView) => {
                 this.handleSetPageStateFailed(err);
