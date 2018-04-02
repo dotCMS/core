@@ -35,6 +35,7 @@ import com.liferay.portal.model.User;
 
 import java.util.Arrays;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
@@ -93,6 +94,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
      * @throws InterruptedException
      */
     @Test
+    @Ignore ("Temporarily disabled")
     public void importFile () throws DotDataException, DotSecurityException, IOException, InterruptedException {
 
         ContentletAPI contentletAPI = APILocator.getContentletAPI();
