@@ -9,21 +9,16 @@ import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-import com.liferay.util.FileUtil;
-import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.Settings;
@@ -68,13 +63,11 @@ public class ESClient {
                     shutDownNode();
 
                     final String node_id = ConfigUtils.getServerId();
-                    String esPathHome = Config.getStringProperty(ESUtils.ES_PATH_HOME, ESUtils.ES_PATH_HOME_DEFAULT_VALUE);
-
-                    esPathHome = !new File(esPathHome).isAbsolute() ? FileUtil.getRealPath(esPathHome) : esPathHome;
+                    String esPathHome = ESUtils.getESPathHome();
 
                     Logger.info(this, "***PATH HOME: " + esPathHome);
 
-                    final String yamlPath = ESUtils.getYamlConfiguration(esPathHome);
+                    final String yamlPath = ESUtils.getYamlConfiguration();
 
                     try{
                         _nodeInstance = new Node(
