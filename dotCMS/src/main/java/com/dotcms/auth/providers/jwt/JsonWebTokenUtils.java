@@ -10,7 +10,6 @@ import com.dotcms.util.marshal.MarshalFactory;
 import com.dotcms.util.marshal.MarshalUtils;
 import com.dotcms.util.security.Encryptor;
 import com.dotcms.util.security.EncryptorFactory;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;

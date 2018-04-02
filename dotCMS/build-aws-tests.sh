@@ -92,7 +92,6 @@ sed -i "s,{valquery},$DB_VALIDATION_QUERY,g" dotserver/tomcat/webapps/ROOT/META-
 sed -i 's,<!-- TEST FRAMEWORK SERVLETS,<!-- TEST FRAMEWORK SERVLETS -->,g' dotserver/tomcat/webapps/ROOT/WEB-INF/web.xml
 sed -i 's,END OF TEST FRAMEWORK SERVLETS -->,<!-- END OF TEST FRAMEWORK SERVLETS -->,g' dotserver/tomcat/webapps/ROOT/WEB-INF/web.xml
 
-sed -i "s,dotCMSContentIndex,$ESCLUSTER,g" dotserver/tomcat/webapps/ROOT/WEB-INF/classes/dotcms-config-cluster.properties
 sed -i "s,AUTOWIRE_CLUSTER_TRANSPORT=true,AUTOWIRE_CLUSTER_TRANSPORT=false,g" dotserver/tomcat/webapps/ROOT/WEB-INF/classes/dotcms-config-cluster.properties
 sed -i "s,AUTOWIRE_CLUSTER_ES=true,AUTOWIRE_CLUSTER_ES=false,g" dotserver/tomcat/webapps/ROOT/WEB-INF/classes/dotcms-config-cluster.properties
 

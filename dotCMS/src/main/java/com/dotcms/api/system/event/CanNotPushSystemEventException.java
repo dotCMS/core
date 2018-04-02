@@ -6,11 +6,11 @@ import com.dotcms.exception.BaseRuntimeInternationalizationException;
  * When an event can not be push on the queue, throws this exception
  */
 public class CanNotPushSystemEventException extends BaseRuntimeInternationalizationException {
-    public CanNotPushSystemEventException(String message) {
+    public CanNotPushSystemEventException(final String message) {
         super(message);
     }
 
-    public CanNotPushSystemEventException(Throwable e) {
+    public CanNotPushSystemEventException(final Throwable e) {
         super(e);
     }
 }

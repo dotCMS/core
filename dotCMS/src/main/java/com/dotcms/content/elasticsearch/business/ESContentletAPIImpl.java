@@ -2052,7 +2052,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 new ContentletLoader().invalidate(contentlet);
 
                 publishRelatedHtmlPages(contentlet);
-                contentletSystemEventUtil.pushArchiveEvent(contentlet);
+                contentletSystemEventUtil.pushArchiveEvent(workingContentlet);
             }else{
                 throw new DotContentletStateException("Contentlet is locked: Unable to archive");
             }
