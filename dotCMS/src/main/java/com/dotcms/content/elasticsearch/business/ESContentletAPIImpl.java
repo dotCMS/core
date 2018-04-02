@@ -1,5 +1,7 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
+
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -154,7 +156,6 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.springframework.beans.BeanUtils;
-import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -3218,17 +3219,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                     if(metadata!=null && metadata.exists())
                                         metadata.delete();
 
-                                }
-                                else if (oldFile.exists()) {
+                                } else if (oldFile.exists()) {
                                     // otherwise, we copy the files as hardlinks
                                     FileUtil.copyFile(oldFile, newFile);
 
                                     // try to get the content metadata from the old version
-                                    if(metadata!=null) {
-                                        File oldMeta=APILocator.getFileAssetAPI().getContentMetadataFile(oldInode);
-                                        if(oldMeta.exists() && !oldMeta.equals(metadata)) {
-                                            if(metadata.exists()) // unlikely to happend. deleting just in case
+                                    if (metadata != null) {
+                                        File oldMeta = APILocator.getFileAssetAPI()
+                                                .getContentMetadataFile(oldInode);
+                                        if (oldMeta.exists() && !oldMeta.equals(metadata)) {
+                                            if (metadata
+                                                    .exists()) {// unlikely to happend. deleting just in case
                                                 metadata.delete();
+                                            }
                                             metadata.getParentFile().mkdirs();
                                             FileUtil.copyFile(oldMeta, metadata);
                                         }
