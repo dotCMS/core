@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.contentlet.model;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -197,7 +198,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      * @return
      */
     public long getLanguageId() {
-    	return (Long)map.get(LANGUAGEID_KEY);
+    	return ConversionUtils.toLong(map.get(LANGUAGEID_KEY), 0l);
     }
 
     /**
