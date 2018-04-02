@@ -163,6 +163,7 @@ describe('DotDialogComponent', () => {
             const dialog = de.query(By.css('p-dialog')).componentInstance;
 
             expect(dialog.closable).toBe(false, 'closable');
+            expect(dialog.draggable).toBe(false, 'draggable');
             expect(dialog.header).toBe('Header Test', 'header');
             expect(dialog.modal).toBe('modal', 'modal');
             expect(dialog.responsive).toBe(true, 'responsive');

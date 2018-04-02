@@ -9,7 +9,7 @@ import { ResponseView, HttpCode } from 'dotcms-js/dotcms-js';
 import { DotRouterService } from '../../../../../api/services/dot-router/dot-router.service';
 import { DotRenderedPageState } from '../../../shared/models/dot-rendered-page-state.model';
 import { DotPageStateService } from '../../../content/services/dot-page-state/dot-page-state.service';
-import { DotHttpErrorManagerService } from '../../../../../api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotHttpErrorManagerService, DotHttpErrorHandled } from '../../../../../api/services/dot-http-error-manager/dot-http-error-manager.service';
 
 /**
  * With the url return a string of the edit page html
@@ -57,7 +57,7 @@ export class DotEditPageResolver implements Resolve<DotRenderedPageState> {
     }
 
     private errorHandler(err: ResponseView): Observable<DotRenderedPageState> {
-        this.dotHttpErrorManagerService.handle(err).subscribe((res: any) => {
+        this.dotHttpErrorManagerService.handle(err).subscribe((res: DotHttpErrorHandled) => {
 
             if (!res.redirected) {
                 this.dotRouterService.gotoPortlet('/c/site-browser');

@@ -1,4 +1,4 @@
-import { DotHttpErrorManagerService } from '../../../api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotHttpErrorManagerService, DotHttpErrorHandled } from '../../../api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { Injectable } from '@angular/core';
 import { Resolve, ActivatedRouteSnapshot } from '@angular/router';
 import { Observable } from 'rxjs/Observable';
@@ -38,7 +38,7 @@ export class ContentTypeEditResolver implements Resolve<ContentType> {
             .getDataById('v1/contenttype', id)
             .take(1)
             .catch((err: ResponseView) => {
-                this.dotHttpErrorManagerService.handle(err).subscribe((res: any) => {
+                this.dotHttpErrorManagerService.handle(err).subscribe((res: DotHttpErrorHandled) => {
                     if (!res.redirected) {
                         this.dotRouterService.gotoPortlet('/content-types-angular', true);
                     }

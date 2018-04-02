@@ -53,8 +53,8 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
     }
 
     ngOnChanges(changes: SimpleChanges): void {
-        if (changes.page && !changes.page.firstChange) {
-            this.setFieldsModels(changes.page.currentValue);
+        if (changes.pageState && !changes.pageState.firstChange) {
+            this.setFieldsModels(changes.pageState.currentValue);
         }
     }
 

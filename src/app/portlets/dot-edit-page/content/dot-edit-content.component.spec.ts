@@ -1,3 +1,4 @@
+import { SiteServiceMock, mockSites } from './../../../test/site-service.mock';
 import { ActivatedRoute } from '@angular/router';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
@@ -6,7 +7,7 @@ import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/c
 import { RouterTestingModule } from '@angular/router/testing';
 import { Observable } from 'rxjs/Observable';
 import { DialogModule } from 'primeng/primeng';
-import { LoginService } from 'dotcms-js/dotcms-js';
+import { LoginService, SiteService } from 'dotcms-js/dotcms-js';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DotContainerContentletService } from './services/dot-container-contentlet.service';
 import { DotContentletLockerService } from '../../../api/services/dot-contentlet-locker/dot-contentlet-locker.service';
@@ -35,6 +36,8 @@ import { mockDotRenderedPage, mockDotPage } from '../../../test/dot-rendered-pag
 import { DotEditPageViewAs } from '../../../shared/models/dot-edit-page-view-as/dot-edit-page-view-as.model';
 import { mockDotDevice } from '../../../test/dot-device.mock';
 import { mockDotEditPageViewAs } from '../../../test/dot-edit-page-view-as.mock';
+import { mockResponseView } from '../../../test/response-view.mock';
+import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
 
 export const mockDotPageState: DotPageState = {
     mode: PageMode.PREVIEW,
@@ -55,8 +58,11 @@ describe('DotEditContentComponent', () => {
     let dotDialogService: DotDialogService;
     let dotEditContentHtmlService: DotEditContentHtmlService;
     let dotGlobalMessageService: DotGlobalMessageService;
+    let dotHttpErrorManagerService: DotHttpErrorManagerService;
     let dotPageStateService: DotPageStateService;
+    let dotRouterService: DotRouterService;
     let fixture: ComponentFixture<DotEditContentComponent>;
+    const siteServiceMock = new SiteServiceMock();
     let route: ActivatedRoute;
 
     beforeEach(() => {
@@ -112,6 +118,10 @@ describe('DotEditContentComponent', () => {
                     useClass: DotWorkflowServiceMock
                 },
                 {
+                    provide: SiteService,
+                    useValue: siteServiceMock
+                },
+                {
                     provide: ActivatedRoute,
                     useValue: {
                         parent: {
@@ -122,6 +132,11 @@ describe('DotEditContentComponent', () => {
                                         state: mockDotPageState
                                     }
                                 })
+                            }
+                        },
+                        snapshot: {
+                            queryParams: {
+                                url: 'an/url/fake'
                             }
                         }
                     }
@@ -136,7 +151,9 @@ describe('DotEditContentComponent', () => {
         dotDialogService = de.injector.get(DotDialogService);
         dotEditContentHtmlService = de.injector.get(DotEditContentHtmlService);
         dotGlobalMessageService = de.injector.get(DotGlobalMessageService);
+        dotHttpErrorManagerService = de.injector.get(DotHttpErrorManagerService);
         dotPageStateService = de.injector.get(DotPageStateService);
+        dotRouterService = de.injector.get(DotRouterService);
         route = de.injector.get(ActivatedRoute);
     });
 
@@ -197,7 +214,7 @@ describe('DotEditContentComponent', () => {
             const pageWrapper: DebugElement = de.query(By.css('.dot-edit__page-wrapper'));
             component.pageState.viewAs.device = mockDotDevice;
             fixture.detectChanges();
-            expect(pageWrapper.styles).toEqual({ width: mockDotDevice.cssWidth + 'px', height: mockDotDevice.cssHeight + 'px'});
+            expect(pageWrapper.styles).toEqual({ width: mockDotDevice.cssWidth + 'px', height: mockDotDevice.cssHeight + 'px' });
             expect(pageWrapper.nativeElement.classList.contains('dot-edit__page-wrapper--deviced')).toBe(true);
         });
 
@@ -214,7 +231,7 @@ describe('DotEditContentComponent', () => {
             );
         });
 
-        it('should send the ViewAs initial configuration to the toolbar', () => {
+        it('should send the View As initial configuration to the toolbar', () => {
             fixture.detectChanges();
             expect(viewAsToolbar.componentInstance.value).toEqual(mockDotRenderedPage.viewAs);
         });
@@ -258,7 +275,7 @@ describe('DotEditContentComponent', () => {
                 content: {
                     page: {
                         ...mockDotRenderedPage,
-                        canLock: true,
+                        canLock: true
                     },
                     state: {
                         locked: true,
@@ -277,7 +294,7 @@ describe('DotEditContentComponent', () => {
     });
 
     describe('set page state when toolbar emit new state', () => {
-        const spyStateSet = val => {
+        const spyStateSet = (val) => {
             spyOn(dotPageStateService, 'set').and.returnValue(Observable.of(val));
         };
 
@@ -370,7 +387,7 @@ describe('DotEditContentComponent', () => {
             spyOn(dotEditContentHtmlService, 'contentletEvents').and.returnValue(Observable.of(mockResEvent));
             spyOn(dotEditContentHtmlService, 'removeContentlet').and.callFake(() => {});
 
-            spyOn(dotDialogService, 'confirm').and.callFake(conf => {
+            spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
                 conf.accept();
             });
 
@@ -386,6 +403,39 @@ describe('DotEditContentComponent', () => {
                     identifier: mockResEvent.dataset.dotIdentifier
                 }
             );
+        });
+    });
+
+    describe('handle switch site', () => {
+        const mockRenderedPageState = new DotRenderedPageState(mockUser, mockDotRenderedPage);
+
+        beforeEach(() => {
+            component.pageState = null;
+
+        });
+
+        it('should rerender pagestate after switch site', () => {
+            expect(component.pageState).toBe(null);
+
+            spyOn(dotPageStateService, 'get').and.returnValue(Observable.of(mockRenderedPageState));
+            fixture.detectChanges();
+
+            siteServiceMock.setFakeCurrentSite(mockSites[1]);
+            expect(dotPageStateService.get).toHaveBeenCalledWith('an/url/fake');
+            expect(component.pageState).toBe(mockRenderedPageState);
+        });
+
+        it('should handle error', () => {
+            const fake500Response = mockResponseView(500);
+            spyOn(dotPageStateService, 'get').and.returnValue(Observable.throw(fake500Response));
+            spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
+            spyOn(dotRouterService, 'gotoPortlet');
+            fixture.detectChanges();
+
+            siteServiceMock.setFakeCurrentSite(mockSites[1]);
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(fake500Response);
+            expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/c/site-browser');
+
         });
     });
 });
