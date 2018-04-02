@@ -62,12 +62,6 @@ public class ServerAPIImpl implements ServerAPI {
 
 	private void createMyServer() throws DotDataException {
 
-		
-		
-		
-		
-
-		
 		Server.Builder serverBuilder =  Server.builder()
 				.withServerId(readServerId());
 
@@ -84,9 +78,6 @@ public class ServerAPIImpl implements ServerAPI {
 		
 		serverBuilder.withName(hostName);
 		serverBuilder.withClusterId(ClusterFactory.getClusterId());
-		
-		
-		
 
 		// set up ports
 
@@ -94,16 +85,12 @@ public class ServerAPIImpl implements ServerAPI {
 		Config.setProperty(ServerPort.CACHE_PORT.getPropertyName(), port);
 		serverBuilder.withCachePort(Integer.parseInt(port));
 
-		port=new ESClient().getNextAvailableESPort(readServerId(), ipAddress,null);
-		Config.setProperty(ServerPort.ES_TRANSPORT_TCP_PORT.getPropertyName(), port);
+		port=new ESClient().getNextAvailableESPort(readServerId(), ipAddress,null, null);
 		serverBuilder.withEsTransportTcpPort(Integer.parseInt(port));
 
 		port=ClusterFactory.getNextAvailablePort(readServerId(), ServerPort.ES_HTTP_PORT);
-		Config.setProperty(ServerPort.ES_HTTP_PORT.getPropertyName(), port);
 		serverBuilder.withEsHttpPort(Integer.parseInt(port));
 		saveServer(serverBuilder.build());
-		
-
 
 		try {
             writeHeartBeatToDisk();
