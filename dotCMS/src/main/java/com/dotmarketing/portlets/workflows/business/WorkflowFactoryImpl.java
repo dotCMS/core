@@ -1388,7 +1388,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 				condition += parameters.toString().substring(1) + " )";
 			}
 
-			//get the elements that need to be removed from cache
 			final DotConnect db = new DotConnect();
 			db.setSQL(sql.SELECT_TASK_STEPS_TO_CLEAN_BY_STRUCT + condition);
 			db.addParam(contentTypeInode);
@@ -1397,12 +1396,12 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 					db.addParam(step.getId());
 				}
 			}
-
 			final List<WorkflowTask> tasks = this
 					.convertListToObjects(db.loadObjectResults(), WorkflowTask.class);
 
+			//clean cache
+			tasks.stream().forEach(task -> cache.remove(task));
 
-			//updating entries on DB
 			db.setSQL(sql.UPDATE_STEPS_BY_STRUCT + condition);
 			db.addParam((Object) null);
 			db.addParam(contentTypeInode);
@@ -1413,23 +1412,10 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			}
 			db.loadResult();
 
-			//clean cache
-			Logger.info(this.getClass(),"Cleaning cache for:"+tasks.size()+" Task(s)");
-			tasks.stream().forEach(task -> this.flushTaskFromCache(task));
-
 		} catch (final Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
 			throw new DotDataException(e.getMessage(), e);
 		}
-	}
-
-	private void flushTaskFromCache(final WorkflowTask task) {
-		Logger.info(this.getClass(),
-				"Preparing to Clean cache for task ID:" + task.getId() + " - status:" + task
-						.getStatus());
-		cache.remove(task);
-		Logger.info(this.getClass(),"Task was removed from cacheCleaning cache");
-
 	}
 
 	@Override
