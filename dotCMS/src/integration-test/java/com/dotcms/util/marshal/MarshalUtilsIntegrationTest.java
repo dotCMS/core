@@ -5,6 +5,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.text.ParseException;
 
+import com.dotmarketing.business.APILocator;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -54,7 +55,7 @@ public class MarshalUtilsIntegrationTest {
 				CollectionsUtils.list(new NotificationAction(new I18NMessage("See More"), "#seeMore", NotificationActionType.LINK, null)));
 		final SystemEvent systemEvent = new SystemEvent("123456", SystemEventType.NOTIFICATION, new Payload(
 				new Notification("78910", NotificationType.GENERIC, NotificationLevel.INFO, "admin@dotcms.com", null,
-						false, notificationData)), new java.util.Date());
+						false, notificationData)), new java.util.Date(), "1234");
 
         String json = marshalUtils.marshal(systemEvent);
 
