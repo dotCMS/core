@@ -16,8 +16,12 @@ export class SiteServiceMock {
         }
     ];
 
-    currentSite: Site;
+    private _currentSite: Site;
     private _switchSite$: Subject<Site> = new Subject<Site>();
+
+    get currentSite(): Observable<Site> {
+        return Observable.of(this._currentSite);
+    }
 
     getSiteById(): Site {
         return null;
@@ -28,7 +32,7 @@ export class SiteServiceMock {
     }
 
     setFakeCurrentSite(site?: Site) {
-        this.currentSite = site || this.mockSites[0];
+        this._currentSite = site || this.mockSites[0];
         this._switchSite$.next(site || this.mockSites[0]);
     }
 

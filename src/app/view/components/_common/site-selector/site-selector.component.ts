@@ -50,6 +50,7 @@ export class SiteSelectorComponent implements OnInit, OnChanges {
     currentSite: Observable<Site>;
     totalRecords: number;
     sitesCurrentPage: Site[];
+    sites: any[];
 
     constructor(private siteService: SiteService, public paginationService: PaginatorService) {}
 
@@ -64,7 +65,7 @@ export class SiteSelectorComponent implements OnInit, OnChanges {
 
         this.getSitesList();
 
-        this.siteService.refreshSites$.subscribe((_site: Site) => this.handleSitesRefresh());
+        this.siteService.refreshSites$.subscribe(() => this.handleSitesRefresh());
 
         if (this.id) {
             this.selectCurrentSite(this.id);
@@ -85,6 +86,9 @@ export class SiteSelectorComponent implements OnInit, OnChanges {
      */
     handleSitesRefresh(): void {
         this.paginationService.getCurrentPage().subscribe((items) => {
+            this.sites = items.splice(0);
+            this.getSitesList();
+
             // items.splice(0) is used to return a new object and trigger the change detection in angular
             this.sitesCurrentPage = items.splice(0);
             this.totalRecords = this.paginationService.totalRecords;
@@ -141,9 +145,7 @@ export class SiteSelectorComponent implements OnInit, OnChanges {
 
     private selectCurrentSite(siteId: string): void {
         const selectedInCurrentPage = this.getSiteByIdFromCurrentPage(siteId);
-        this.currentSite = selectedInCurrentPage
-            ? Observable.of(selectedInCurrentPage)
-            : this.siteService.getSiteById(siteId);
+        this.currentSite = selectedInCurrentPage ? Observable.of(selectedInCurrentPage) : this.siteService.getSiteById(siteId);
     }
 
     private setCurrentSiteAsDefault() {
@@ -157,4 +159,5 @@ export class SiteSelectorComponent implements OnInit, OnChanges {
             });
         }
     }
+
 }

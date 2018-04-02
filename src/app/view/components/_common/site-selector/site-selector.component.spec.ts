@@ -109,11 +109,12 @@ describe('SiteSelectorComponent', () => {
             };
 
             const siteService = de.injector.get(SiteService);
-            const spy = spyOn(siteService, 'refreshSites$').and.returnValue(Observable.of([site1, site2]));
+            spyOn(siteService, 'refreshSites$').and.returnValue(Observable.of([site1, site2]));
+            spyOn(comp, 'handleSitesRefresh').and.callThrough();
 
             fixture.detectChanges();
 
-            expect(spy.calls.any()).toEqual(false);
+            expect(comp.handleSitesRefresh).toHaveBeenCalledTimes(1);
         })
     );
 
@@ -132,8 +133,7 @@ describe('SiteSelectorComponent', () => {
 
             fixture.detectChanges();
 
-            const searchableDropdownComponent: SearchableDropdownComponent = de.query(By.css('dot-searchable-dropdown'))
-                .componentInstance;
+            const searchableDropdownComponent: SearchableDropdownComponent = de.query(By.css('dot-searchable-dropdown')).componentInstance;
 
             searchableDropdownComponent.pageChange.emit({
                 filter: filter,
@@ -163,8 +163,7 @@ describe('SiteSelectorComponent', () => {
 
             fixture.detectChanges();
 
-            const searchableDropdownComponent: SearchableDropdownComponent = de.query(By.css('dot-searchable-dropdown'))
-                .componentInstance;
+            const searchableDropdownComponent: SearchableDropdownComponent = de.query(By.css('dot-searchable-dropdown')).componentInstance;
 
             searchableDropdownComponent.filterChange.emit(filter);
             comp.handleFilterChange(filter);
@@ -185,8 +184,7 @@ describe('SiteSelectorComponent', () => {
 
             fixture.detectChanges();
 
-            const searchableDropdownComponent: SearchableDropdownComponent = de.query(By.css('dot-searchable-dropdown'))
-                .componentInstance;
+            const searchableDropdownComponent: SearchableDropdownComponent = de.query(By.css('dot-searchable-dropdown')).componentInstance;
 
             searchableDropdownComponent.filterChange.emit('');
 
