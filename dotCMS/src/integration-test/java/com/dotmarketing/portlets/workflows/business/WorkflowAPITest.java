@@ -13,6 +13,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
@@ -67,6 +68,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
     protected static RoleAPI roleAPI;
     protected static PermissionAPI permissionAPI;
     protected static ContentletAPI contentletAPI;
+    protected static WorkflowCache workflowCache;
 
     private static String contentTypeName;
     private static String contentTypeName2;
@@ -255,6 +257,15 @@ public class WorkflowAPITest extends IntegrationTestBase {
     private static User chrisPublisher;
     private static User billIntranet;
 
+    private static final String WORKFLOW_SCHEME_CACHE_SHOULD_BE_NULL = "Workflow Scheme Cache should be null";
+    private static final String WORKFLOW_SCHEME_CACHE_SHOULD_NOT_BE_NULL = "Workflow Scheme Cache should not be null";
+    private static final String WORKFLOW_SCHEME_CACHE_WITH_WRONG_SIZE = "Workflow Scheme cache List size is incorrect";
+    private static final String WORKFLOW_SCHEME_LIST_WITH_WRONG_SIZE = "Workflow Scheme List size is incorrect";
+    private static final String WORKFLOW_STEPS_CACHE_SHOULD_BE_NULL = "Workflow Scheme Cache should be null";
+    private static final String WORKFLOW_STEPS_CACHE_SHOULD_NOT_BE_NULL = "Workflow Scheme Cache should not be null";
+    private static final String WORKFLOW_STEPS_CACHE_WITH_WRONG_SIZE = "Workflow Steps cache List size is incorrect";
+    private static final String WORKFLOW_STEPS_LIST_WITH_WRONG_SIZE = "Workflow Steps List size is incorrect";
+
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
@@ -271,6 +282,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
         roleAPI = APILocator.getRoleAPI();
         permissionAPI = APILocator.getPermissionAPI();
         contentletAPI = APILocator.getContentletAPI();
+        workflowCache = CacheLocator.getWorkFlowCache();
 
         publisher = roleAPI.findRoleByName("Publisher / Legal", null);
         reviewer = roleAPI.findRoleByName("Reviewer", publisher);
@@ -2010,16 +2022,201 @@ public class WorkflowAPITest extends IntegrationTestBase {
             workflowAPI.saveScheme(workflowScheme2, user);
             workflowAPI.deleteScheme(workflowScheme2, user);
         }
-
     }
 
     /**
-     * Validate if the scheme is present in the list of schemes
-     *
-     * @param scheme WorkflowScheme to check
-     * @param schemes List of WorkflowSchemes to compare
-     * @return true if exist, false if not
+     * Validate that when a Content type is modified associating and/or removing workflows schemes
+     * then the values are updated correctly in cache to avoid extra calls to the DB
      */
+    @Test
+    public void findSchemesForContenttype_validateIfSchemesResultsAreOnCache()
+            throws DotDataException, DotSecurityException, AlreadyExistException {
+        WorkflowScheme workflowScheme1 = null;
+        WorkflowScheme workflowScheme2 = null;
+        ContentType contentType = null;
+        try {
+
+            contentType = generateContentTypeAndAssignPermissions("KeepWfTaskStatus",
+                    BaseContentType.CONTENT, editPermission, contributor.getId());
+
+            // Create testing workflows
+            workflowScheme1 = createDocumentManagentReplica(
+                    DOCUMENT_MANAGEMENT_WORKFLOW_NAME + "_3_" + UtilMethods
+                            .dateToHTMLDate(new Date(), DATE_FORMAT));
+
+            workflowScheme2 = createDocumentManagentReplica(
+                    DOCUMENT_MANAGEMENT_WORKFLOW_NAME + "_4_" + UtilMethods
+                            .dateToHTMLDate(new Date(), DATE_FORMAT));
+
+            List<WorkflowScheme> schemesInCache = new ArrayList<>();
+
+            //0. Test with no schemes associated
+            schemesInCache = workflowCache.getSchemesByStruct(contentType.id());
+            assertNull(WORKFLOW_SCHEME_CACHE_SHOULD_BE_NULL, schemesInCache);
+
+            //search for schemes
+            List<WorkflowScheme> schemes = workflowAPI.findSchemesForContentType(contentType);
+            assertTrue(WORKFLOW_SCHEME_LIST_WITH_WRONG_SIZE,schemes.size() == 0);
+
+            //validate cache values
+            schemesInCache = workflowCache.getSchemesByStruct(contentType.id());
+            assertNotNull(WORKFLOW_SCHEME_CACHE_SHOULD_NOT_BE_NULL, schemesInCache);
+            assertTrue(WORKFLOW_SCHEME_CACHE_WITH_WRONG_SIZE, schemesInCache.size() == 0);
+
+            //1. Test Adding one scheme
+            final List<String> schemeIds = new ArrayList<>();
+            schemeIds.add(workflowScheme1.getId());
+            workflowAPI.saveSchemeIdsForContentType(contentType, schemeIds);
+
+            //validate cache values
+            schemesInCache = workflowCache.getSchemesByStruct(contentType.id());
+            assertNull(WORKFLOW_SCHEME_CACHE_SHOULD_BE_NULL, schemesInCache);
+
+            //search for schemes
+            schemes = workflowAPI.findSchemesForContentType(contentType);
+            assertTrue(WORKFLOW_SCHEME_LIST_WITH_WRONG_SIZE,schemes.size() == 1);
+
+            //validate cache values
+            schemesInCache = workflowCache.getSchemesByStruct(contentType.id());
+            assertNotNull(WORKFLOW_SCHEME_CACHE_SHOULD_NOT_BE_NULL, schemesInCache);
+            assertTrue(WORKFLOW_SCHEME_CACHE_WITH_WRONG_SIZE, schemesInCache.size() == 1);
+
+            //2. Test adding a second scheme
+            schemeIds.add(workflowScheme2.getId());
+            workflowAPI.saveSchemeIdsForContentType(contentType, schemeIds);
+
+            //validate cache values
+            schemesInCache = workflowCache.getSchemesByStruct(contentType.id());
+            assertNull(WORKFLOW_SCHEME_CACHE_SHOULD_BE_NULL, schemesInCache);
+
+            //search for schemes
+            schemes = workflowAPI.findSchemesForContentType(contentType);
+            assertTrue(WORKFLOW_SCHEME_LIST_WITH_WRONG_SIZE,schemes.size() == 2);
+
+            //validate cache values
+            schemesInCache = workflowCache.getSchemesByStruct(contentType.id());
+            assertNotNull(WORKFLOW_SCHEME_CACHE_SHOULD_NOT_BE_NULL, schemesInCache);
+            assertTrue(WORKFLOW_SCHEME_CACHE_WITH_WRONG_SIZE,schemesInCache.size() == 2);
+
+            //3. Test removing one scheme
+            schemeIds.remove(workflowScheme1.getId());
+            workflowAPI.saveSchemeIdsForContentType(contentType, schemeIds);
+
+            //validate cache values
+            schemesInCache = workflowCache.getSchemesByStruct(contentType.id());
+            assertNull(WORKFLOW_SCHEME_CACHE_SHOULD_BE_NULL, schemesInCache);
+
+            //search for schemes
+            schemes = workflowAPI.findSchemesForContentType(contentType);
+            assertTrue(WORKFLOW_SCHEME_LIST_WITH_WRONG_SIZE,schemes.size() == 1);
+
+            //validate cache values
+            schemesInCache = workflowCache.getSchemesByStruct(contentType.id());
+            assertNotNull(WORKFLOW_SCHEME_CACHE_SHOULD_NOT_BE_NULL, schemesInCache);
+            assertTrue(WORKFLOW_SCHEME_CACHE_WITH_WRONG_SIZE,schemesInCache.size() == 1);
+
+            //4. test removing all schemes
+            schemeIds.remove(workflowScheme2.getId());
+            workflowAPI.saveSchemeIdsForContentType(contentType, schemeIds);
+
+            //validate cache values
+            schemesInCache = workflowCache.getSchemesByStruct(contentType.id());
+            assertNull(WORKFLOW_SCHEME_CACHE_SHOULD_BE_NULL, schemesInCache);
+
+            //search for schemes
+            schemes = workflowAPI.findSchemesForContentType(contentType);
+            assertTrue(WORKFLOW_SCHEME_LIST_WITH_WRONG_SIZE,schemes.size() == 0);
+
+            //validate cache values
+            schemesInCache = workflowCache.getSchemesByStruct(contentType.id());
+            assertNotNull(WORKFLOW_SCHEME_CACHE_SHOULD_NOT_BE_NULL,schemesInCache);
+            assertTrue(WORKFLOW_SCHEME_CACHE_WITH_WRONG_SIZE,schemesInCache.size() == 0);
+
+        } finally {
+            //clean test
+            //delete content type
+            contentTypeAPI.delete(contentType);
+
+            workflowScheme1.setArchived(true);
+            workflowAPI.saveScheme(workflowScheme1, user);
+            workflowAPI.deleteScheme(workflowScheme1, user);
+
+            workflowScheme2.setArchived(true);
+            workflowAPI.saveScheme(workflowScheme2, user);
+            workflowAPI.deleteScheme(workflowScheme2, user);
+        }
+    }
+
+    /**
+     * Validate that the findStepsByContentlet method is saving in cache the workflow steps
+     * to avoid extra calls to the DB
+     */
+    @Test
+    public void findStepsByContentlet_validateIfStepsResultsAreOnCache()
+            throws DotDataException, DotSecurityException, AlreadyExistException {
+        WorkflowScheme workflowScheme = null;
+        ContentType contentType = null;
+        try {
+
+            contentType = generateContentTypeAndAssignPermissions("KeepWfTaskStatus",
+                    BaseContentType.CONTENT, editPermission, contributor.getId());
+
+            // Create testing workflows
+            workflowScheme = createDocumentManagentReplica(
+                    DOCUMENT_MANAGEMENT_WORKFLOW_NAME + "_5_" + UtilMethods
+                            .dateToHTMLDate(new Date(), DATE_FORMAT));
+
+
+            final List<String> schemeIds = new ArrayList<>();
+            schemeIds.add(workflowScheme.getId());
+            workflowAPI.saveSchemeIdsForContentType(contentType, schemeIds);
+
+            //Add Workflow Task
+            //Contentlet1 on published step
+            Contentlet contentlet = createContent("testCacheFindStepsByContentlet", contentType);
+
+            List<WorkflowAction> actions = workflowAPI
+                    .findAvailableActions(contentlet, joeContributor);
+            final WorkflowAction saveAsDraft = actions.get(0);
+
+            //As Contributor - Save as Draft
+            final ContentletRelationships contentletRelationships = APILocator.getContentletAPI()
+                    .getAllRelationships(contentlet);
+            //save as Draft
+            contentlet = fireWorkflowAction(contentlet, contentletRelationships, saveAsDraft,
+                    StringPool.BLANK, StringPool.BLANK, joeContributor);
+
+            //Validating cache
+            List<WorkflowStep> stepsInCacheList = workflowCache.getSteps(contentlet);
+            assertNull(WORKFLOW_STEPS_CACHE_SHOULD_BE_NULL, stepsInCacheList);
+
+            //Search for steps
+            List<WorkflowStep> steps = workflowAPI.findStepsByContentlet(contentlet);
+            assertTrue(WORKFLOW_STEPS_LIST_WITH_WRONG_SIZE,steps.size() == 1);
+
+            //validate steps in cache
+            stepsInCacheList = workflowCache.getSteps(contentlet);
+            assertNotNull(WORKFLOW_STEPS_CACHE_SHOULD_NOT_BE_NULL, stepsInCacheList);
+            assertTrue(WORKFLOW_STEPS_CACHE_WITH_WRONG_SIZE,stepsInCacheList.size() == 1);
+
+        }finally {
+            //clean test
+            //delete content type
+            contentTypeAPI.delete(contentType);
+
+            workflowScheme.setArchived(true);
+            workflowAPI.saveScheme(workflowScheme, user);
+            workflowAPI.deleteScheme(workflowScheme, user);
+        }
+    }
+
+            /**
+             * Validate if the scheme is present in the list of schemes
+             *
+             * @param scheme WorkflowScheme to check
+             * @param schemes List of WorkflowSchemes to compare
+             * @return true if exist, false if not
+             */
     protected static boolean containsScheme(WorkflowScheme scheme, List<WorkflowScheme> schemes) {
         boolean containsScheme = false;
         for (WorkflowScheme compareScheme : schemes) {
