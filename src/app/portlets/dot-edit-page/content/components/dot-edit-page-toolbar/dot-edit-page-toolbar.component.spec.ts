@@ -7,6 +7,7 @@ import { DotEditPageToolbarModule } from './dot-edit-page-toolbar.module';
 import { DotEditPageWorkflowsActionsModule } from '../dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
 import { DebugElement, Component, Input } from '@angular/core';
 import { By } from '@angular/platform-browser';
+import * as _ from 'lodash';
 import { DotMessageService } from '../../../../../api/services/dot-messages-service';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -72,9 +73,7 @@ describe('DotEditPageToolbarComponent', () => {
     beforeEach(
         async(() => {
             testbed = DOTTestBed.configureTestingModule({
-                declarations: [
-                    MockWorkflowActionsComponent
-                ],
+                declarations: [MockWorkflowActionsComponent],
                 imports: [
                     DotEditPageToolbarModule,
                     DotEditPageWorkflowsActionsModule,
@@ -97,7 +96,7 @@ describe('DotEditPageToolbarComponent', () => {
                     {
                         provide: LoginService,
                         useClass: LoginServiceMock
-                    },
+                    }
                 ]
             });
         })
@@ -222,7 +221,7 @@ describe('DotEditPageToolbarComponent', () => {
         const lockedMessage: DebugElement = de.query(By.css('.edit-page-toolbar__locked-by-message'));
         expect(lockedMessage.nativeElement.textContent).toContain('Page is locked');
 
-        const editStateModel = component.states.find(state => state.label === 'Edit');
+        const editStateModel = component.states.find((state) => state.label === 'Edit');
         expect(editStateModel.styleClass).toEqual('edit-page-toolbar__state-selector-item--disabled');
     });
 
@@ -232,7 +231,7 @@ describe('DotEditPageToolbarComponent', () => {
 
         const lockedMessage: DebugElement = de.query(By.css('.edit-page-toolbar__cant-edit-message'));
         expect(lockedMessage.nativeElement.textContent).toContain('You dont have permissions');
-        const editStateModel = component.states.find(state => state.label === 'Edit');
+        const editStateModel = component.states.find((state) => state.label === 'Edit');
         expect(editStateModel.styleClass).toEqual('edit-page-toolbar__state-selector-item--disabled');
     });
 
@@ -537,6 +536,34 @@ describe('DotEditPageToolbarComponent', () => {
             clickStateButton('live');
             expect(component.lockerModel).toBe(false);
             expect(pageStateResult.locked).toBeUndefined();
+        });
+
+        it('should edit tab don\'t be called twice', () => {
+            spyOn(_, 'debounce').and.callFake(function(cb) {
+                return function() {
+                    cb();
+                };
+            });
+            spyOn(component.changeState, 'emit');
+
+            component.pageState.state.mode = PageMode.PREVIEW;
+            component.pageState.state.locked = false;
+
+            fixture.detectChanges();
+
+            clickStateButton('live');
+            fixture.detectChanges();
+
+            clickStateButton('edit');
+            fixture.detectChanges();
+
+            clickStateButton('edit');
+            fixture.detectChanges();
+
+            clickStateButton('edit');
+            fixture.detectChanges();
+
+            expect(component.changeState.emit).toHaveBeenCalledTimes(1);
         });
     });
 });

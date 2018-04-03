@@ -1,6 +1,7 @@
 import { DotDialogService } from '../../../../../api/services/dot-dialog/dot-dialog.service';
 import { Component, OnInit, Input, EventEmitter, Output, ViewChild, ElementRef, SimpleChanges, OnChanges } from '@angular/core';
 import { SelectItem, InputSwitch } from 'primeng/primeng';
+import * as _ from 'lodash';
 import { DotEditPageState } from '../../../../../shared/models/dot-edit-page-state/dot-edit-page-state.model';
 import { DotMessageService } from '../../../../../api/services/dot-messages-service';
 import { DotGlobalMessageService } from '../../../../../view/components/_common/dot-global-message/dot-global-message.service';
@@ -25,6 +26,8 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
     states: SelectItem[] = [];
     lockerModel: boolean;
     mode: PageMode;
+
+    private debounceStateSelector = _.debounce((pageState: PageMode) => this.setSelectorState(pageState), 500, { leading: true });
 
     constructor(
         public dotMessageService: DotMessageService,
@@ -139,7 +142,7 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
                 this.setSelectorState(pageState);
             });
         } else {
-            this.setSelectorState(pageState);
+            this.debounceStateSelector(pageState);
         }
     }
 
@@ -190,8 +193,7 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
             {
                 label: this.dotMessageService.get('editpage.toolbar.edit.page'),
                 value: PageMode.EDIT,
-                styleClass:
-                    !pageState.page.canEdit || !pageState.page.canLock ? 'edit-page-toolbar__state-selector-item--disabled' : ''
+                styleClass: !pageState.page.canEdit || !pageState.page.canLock ? 'edit-page-toolbar__state-selector-item--disabled' : ''
             },
             { label: this.dotMessageService.get('editpage.toolbar.preview.page'), value: PageMode.PREVIEW },
             { label: this.dotMessageService.get('editpage.toolbar.live.page'), value: PageMode.LIVE }
