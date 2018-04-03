@@ -585,8 +585,6 @@ public class WorkflowResource {
                     ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 
-        int[] a = {1};
-
         return response;
     } // saveAction
 
