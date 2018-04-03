@@ -8,12 +8,15 @@ import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { DotWorkflowServiceMock, mockWorkflows } from '../../../../../test/dot-workflow-service.mock';
 import { mockDotPage } from '../../../../../test/dot-rendered-page.mock';
 import { LoginService } from 'dotcms-js/dotcms-js';
+import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
 import { LoginServiceMock } from '../../../../../test/login-service.mock';
 import { DotWorkflowService } from '../../../../../api/services/dot-workflow/dot-workflow.service';
+import { DotMessageService } from '../../../../../api/services/dot-messages-service';
 import { DotRouterService } from '../../../../../api/services/dot-router/dot-router.service';
 import { DotHttpErrorManagerService } from '../../../../../api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotEditPageWorkflowsActionsComponent } from './dot-edit-page-workflows-actions.component';
 import { DotPage } from '../../../shared/models/dot-page.model';
+import { DotGlobalMessageService } from '../../../../../view/components/_common/dot-global-message/dot-global-message.service';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -32,6 +35,10 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
     let actionButton: DebugElement;
     let dotWorkflowService: DotWorkflowService;
     let workflowActionComponent: DebugElement;
+    let dotGlobalMessageService: DotGlobalMessageService;
+    const messageServiceMock = new MockDotMessageService({
+        'editpage.actions.fire.confirmation': 'The action "{0}" was executed correctly'
+    });
 
     beforeEach(
         async(() => {
@@ -43,6 +50,7 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
                         provide: DotWorkflowService,
                         useClass: DotWorkflowServiceMock
                     },
+                    { provide: DotMessageService, useValue: messageServiceMock },
                     { provide: LoginService, useClass: LoginServiceMock },
                     DotHttpErrorManagerService,
                     DotRouterService
@@ -61,6 +69,7 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
 
         actionButton = de.query(By.css('.edit-page-toolbar__actions'));
         workflowActionComponent = de.query(By.css('dot-edit-page-workflows-actions'));
+        dotGlobalMessageService = de.injector.get(DotGlobalMessageService);
 
         dotWorkflowService = workflowActionComponent.injector.get(DotWorkflowService);
         spyOn(dotWorkflowService, 'fireWorkflowAction').and.callThrough();
@@ -125,6 +134,15 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
 
                 thirdButton.click();
                 expect(dotWorkflowService.fireWorkflowAction).toHaveBeenCalledWith(component.page.workingInode, mockWorkflows[2].id);
+            });
+
+            it('should show success message after fired action in the menu items', () => {
+                spyOn(dotGlobalMessageService, 'display');
+                firstButton.click();
+                fixture.detectChanges();
+                expect(dotGlobalMessageService.display).toHaveBeenCalledWith(
+                    `The action "${mockWorkflows[0].name}" was executed correctly`
+                );
             });
 
             it('should refresh the action list after fire action', () => {
