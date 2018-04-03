@@ -1,17 +1,18 @@
-import { Component, OnInit, Input } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Observable } from 'rxjs/Observable';
 import { MenuItem } from 'primeng/primeng';
 import { DotWorkflowAction } from '../../../../../shared/models/dot-workflow-action/dot-workflow-action.model';
 import { DotWorkflowService } from '../../../../../api/services/dot-workflow/dot-workflow.service';
 import { DotHttpErrorManagerService } from '../../../../../api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { Observable } from 'rxjs/Observable';
+import { DotPage } from '../../../shared/models/dot-page.model';
 
 @Component({
     selector: 'dot-edit-page-workflows-actions',
     templateUrl: './dot-edit-page-workflows-actions.component.html',
     styleUrls: ['./dot-edit-page-workflows-actions.component.scss']
 })
-export class DotEditPageWorkflowsActionsComponent implements OnInit {
-    @Input() inode: string;
+export class DotEditPageWorkflowsActionsComponent implements OnChanges {
+    @Input() page: DotPage;
     @Input() label: string;
 
     actionsAvailable: boolean;
@@ -19,8 +20,10 @@ export class DotEditPageWorkflowsActionsComponent implements OnInit {
 
     constructor(private workflowsService: DotWorkflowService, private httpErrorManagerService: DotHttpErrorManagerService) {}
 
-    ngOnInit() {
-        this.workflowsMenuActions = this.getWorkflowActions(this.inode);
+    ngOnChanges(changes: SimpleChanges) {
+        if (changes.page) {
+            this.workflowsMenuActions = this.getWorkflowActions(this.page.workingInode);
+        }
     }
 
     private getWorkflowActions(inode: string): Observable<MenuItem[]> {
@@ -51,14 +54,14 @@ export class DotEditPageWorkflowsActionsComponent implements OnInit {
                 command: () => {
                     const currentMenuActions = this.workflowsMenuActions;
                     this.workflowsMenuActions = this.workflowsService
-                        .fireWorkflowAction(this.inode, workflow.id)
+                        .fireWorkflowAction(this.page.workingInode, workflow.id)
                         .pluck('inode')
                         // TODO: A better implementation needs to be done to
                         // handle workflow actions errors, which are edge cases
-                        .catch((error) => Observable.of(null))
+                        .catch(() => Observable.of(null))
                         .mergeMap((inode: string) => {
-                            this.inode = inode || this.inode;
-                            return this.getWorkflowActions(this.inode);
+                            const newInode = inode || this.page.workingInode;
+                            return this.getWorkflowActions(newInode);
                         })
                         .catch((error) => {
                             this.httpErrorManagerService.handle(error);
