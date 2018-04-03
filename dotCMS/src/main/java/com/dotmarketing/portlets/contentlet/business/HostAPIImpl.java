@@ -598,7 +598,6 @@ public class HostAPIImpl implements HostAPI {
                 }
             }
             
-            @WrapInTransaction
             public void deleteHost() throws Exception {
                 if(host != null){
                     hostCache.remove(host);
