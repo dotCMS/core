@@ -1533,7 +1533,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
 	@Override
-    protected Contentlet save(Contentlet contentlet) throws DotDataException, DotStateException, DotSecurityException {
+    public Contentlet save(Contentlet contentlet) throws DotDataException, DotStateException, DotSecurityException {
 	    return save(contentlet,null);
 	}
 
@@ -2024,7 +2024,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
             for (RegExMatch regExMatch : matches) {
                 query = query.replace("[" + regExMatch.getGroups().get(0).getMatch() + " to "
                         + regExMatch.getGroups().get(2).getMatch() + "]", "["
-                        + regExMatch.getGroups().get(0).getMatch() + " to " + regExMatch.getGroups().get(2).getMatch()
+                        + replaceDateTimeFormatInClause(regExMatch.getGroups().get(0).getMatch())
+                        + " to " + replaceDateTimeFormatInClause(
+                        regExMatch.getGroups().get(2).getMatch())
                         + "]");
             }
 

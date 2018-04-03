@@ -1,5 +1,6 @@
 package com.dotmarketing.quartz.job;
 
+import com.dotcms.business.CloseDBIfOpened;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -19,7 +20,6 @@ import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.RoleFactory;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -197,7 +197,8 @@ public class ContentReviewThread implements Runnable, Job {
 			Logger.error(this.getClass(), e.getMessage(), e);
 		}
     }
-    
+
+	@CloseDBIfOpened
     public void execute(JobExecutionContext context) throws JobExecutionException {
     	Logger.debug(this, "Running ContentReviewThread - " + new Date());
 
@@ -205,15 +206,6 @@ public class ContentReviewThread implements Runnable, Job {
 			run();
 		} catch (Exception e) {
 			Logger.info(this, e.toString());
-		} finally {
-		    try {
-                HibernateUtil.closeSession();
-            } catch (DotHibernateException e) {
-                Logger.warn(this, e.getMessage(), e);
-            }
-            finally {
-                DbConnectionFactory.closeConnection();
-            }
 		}
 	}
 }

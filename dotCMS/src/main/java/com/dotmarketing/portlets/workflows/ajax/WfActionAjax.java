@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+
+@Deprecated
 public class WfActionAjax extends WfBaseAction {
 
     private final WorkflowHelper workflowHelper = WorkflowHelper.getInstance();

@@ -2640,7 +2640,8 @@ CREATE TABLE system_event (
     identifier NVARCHAR(36) NOT NULL,
     event_type NVARCHAR(50) NOT NULL,
     payload NVARCHAR(MAX) NOT NULL,
-    created BIGINT NOT NULL
+    created BIGINT NOT NULL,
+    server_id NVARCHAR(36) NOT NULL
 );
 ALTER TABLE system_event ADD CONSTRAINT pk_system_event PRIMARY KEY (identifier);
 CREATE INDEX idx_system_event ON system_event (created);

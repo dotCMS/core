@@ -285,6 +285,11 @@ ol.wfStepsList li{padding:8px 16px;margin:0 10px; list-style:decimal;  list-styl
 .wf-action-wrapper:hover{
 	background: #E6EFF7;
 }
+
+.makeMeBlue{
+	background:#E6EFF7;
+}
+
 .pull-right {
 	float: right;
 	margin: 0 0px 8px 8px;

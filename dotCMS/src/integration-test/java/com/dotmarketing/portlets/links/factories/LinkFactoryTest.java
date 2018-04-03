@@ -180,6 +180,7 @@ public class LinkFactoryTest extends IntegrationTestBase {
             }
 
             if (contentAsset != null && contentAsset.getInode() != null) {
+                contentletAPI.archive(contentAsset, systemUser, false);
                 contentletAPI.delete(contentAsset, systemUser, false);
             }
 

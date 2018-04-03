@@ -1,5 +1,7 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
+
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -167,6 +169,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private static final String CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT = "Can't change state of checked out content or where inode is not set. Use Search or Find then use method";
     private static final String CANT_GET_LOCK_ON_CONTENT ="Only the CMS Admin or the user who locked the contentlet can lock/unlock it";
+    private static final String FAILED_TO_DELETE_UNARCHIVED_CONTENT = "Failed to delete unarchived content. Content must be archived first before it can be deleted.";
 
     private final ESContentletIndexAPI indexAPI;
     private final ESContentFactoryImpl contentFactory;
@@ -1701,6 +1704,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         logContentletActivity(contentlets, "Deleting Content", user);
         for (Contentlet contentlet : contentlets){
+            if(!contentlet.isArchived()){
+                throw new DotContentletStateException(
+                    getLocalizedMessageOrDefault(user, "Failed-to-delete-unarchived-content", FAILED_TO_DELETE_UNARCHIVED_CONTENT, getClass())
+                );
+            }
+
             if(contentlet.getInode().equals("")) {
                 logContentletActivity(contentlet, "Error Deleting Content", user);
                 throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
@@ -2044,7 +2053,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 new ContentletLoader().invalidate(contentlet);
 
                 publishRelatedHtmlPages(contentlet);
-                contentletSystemEventUtil.pushArchiveEvent(contentlet);
+                contentletSystemEventUtil.pushArchiveEvent(workingContentlet);
             }else{
                 throw new DotContentletStateException("Contentlet is locked: Unable to archive");
             }
@@ -3210,17 +3219,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                     if(metadata!=null && metadata.exists())
                                         metadata.delete();
 
-                                }
-                                else if (oldFile.exists()) {
+                                } else if (oldFile.exists()) {
                                     // otherwise, we copy the files as hardlinks
                                     FileUtil.copyFile(oldFile, newFile);
 
                                     // try to get the content metadata from the old version
-                                    if(metadata!=null) {
-                                        File oldMeta=APILocator.getFileAssetAPI().getContentMetadataFile(oldInode);
-                                        if(oldMeta.exists()) {
-                                            if(metadata.exists()) // unlikely to happend. deleting just in case
+                                    if (metadata != null) {
+                                        File oldMeta = APILocator.getFileAssetAPI()
+                                                .getContentMetadataFile(oldInode);
+                                        if (oldMeta.exists() && !oldMeta.equals(metadata)) {
+                                            if (metadata
+                                                    .exists()) {// unlikely to happend. deleting just in case
                                                 metadata.delete();
+                                            }
                                             metadata.getParentFile().mkdirs();
                                             FileUtil.copyFile(oldMeta, metadata);
                                         }
@@ -3898,19 +3909,30 @@ public class ESContentletAPIImpl implements ContentletAPI {
             } catch (IOException ioe) {
                 Logger.error(this,"IO Error in copying Binary File object ", ioe);
             }
-
-            // workflow
-            contentlet.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, (String) properties.get(Contentlet.WORKFLOW_ACTION_KEY));
-            contentlet.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY, (String) properties.get(Contentlet.WORKFLOW_COMMENTS_KEY));
-            contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, (String) properties.get(Contentlet.WORKFLOW_ASSIGN_KEY));
-
-
-            contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE, (String) properties.get(Contentlet.WORKFLOW_PUBLISH_DATE));
-            contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME, (String) properties.get(Contentlet.WORKFLOW_PUBLISH_TIME));
-            contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE, (String) properties.get(Contentlet.WORKFLOW_EXPIRE_DATE));
-            contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_TIME, (String) properties.get(Contentlet.WORKFLOW_EXPIRE_TIME));
-            contentlet.setStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE, (String) properties.get(Contentlet.WORKFLOW_NEVER_EXPIRE));
         }
+
+        // workflow
+        copyWorkflowProperties(contentlet, properties);
+    }
+
+    private void copyWorkflowProperties(Contentlet contentlet, Map<String, Object> properties) {
+        contentlet.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY,
+                (String) properties.get(Contentlet.WORKFLOW_ACTION_KEY));
+        contentlet.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY,
+                (String) properties.get(Contentlet.WORKFLOW_COMMENTS_KEY));
+        contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY,
+                (String) properties.get(Contentlet.WORKFLOW_ASSIGN_KEY));
+
+        contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE,
+                (String) properties.get(Contentlet.WORKFLOW_PUBLISH_DATE));
+        contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME,
+                (String) properties.get(Contentlet.WORKFLOW_PUBLISH_TIME));
+        contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE,
+                (String) properties.get(Contentlet.WORKFLOW_EXPIRE_DATE));
+        contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_TIME,
+                (String) properties.get(Contentlet.WORKFLOW_EXPIRE_TIME));
+        contentlet.setStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE,
+                (String) properties.get(Contentlet.WORKFLOW_NEVER_EXPIRE));
     }
 
     @Override
@@ -5208,10 +5230,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final List<MultiTree> pageContents = MultiTreeFactory
                     .getMultiTrees(contentletToCopy.getIdentifier());
             for (final MultiTree multitree : pageContents) {
-                MultiTree newMultitree = new MultiTree(resultContentlet.getIdentifier(),
+
+                MultiTreeFactory.saveMultiTree(new MultiTree(resultContentlet.getIdentifier(),
                         multitree.getContainer(),
-                        multitree.getContentlet());
-                MultiTreeFactory.saveMultiTree(newMultitree);
+                        multitree.getContentlet(),
+                        MultiTree.LEGACY_RELATION_TYPE,
+                        multitree.getTreeOrder()));
             }
         }
 
@@ -5447,6 +5471,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return isInodeIndexedWithQuery("+inode:" + inode, secondsToWait);
     }
 
+    @Override
+    public boolean isInodeIndexedArchived(String inode){
+
+        if (!UtilMethods.isSet(inode)) {
+            Logger.warn(this, "Requested Inode is not indexed because Inode is not set");
+        }
+
+        return isInodeIndexedWithQuery("+inode:" + inode + String.format(" +deleted:%s",true));
+    }
+
     private boolean isInodeIndexedWithQuery(String luceneQuery) {
         return isInodeIndexedWithQuery(luceneQuery, -1);
     }
@@ -5595,42 +5629,48 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @WrapInTransaction
     @Override
-    public Contentlet saveDraft(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats ,List<Permission> permissions, User user,boolean respectFrontendRoles) throws IllegalArgumentException,DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException{
-        if(contentlet.getInode().equals(""))
-            throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
-        canLock(contentlet, user);
-        //get the latest and greatest from db
-        Contentlet working = contentFactory.findContentletByIdentifier(contentlet.getIdentifier(), false, contentlet.getLanguageId());
+    public Contentlet saveDraft(Contentlet contentlet,
+            Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats,
+            List<Permission> permissions, User user, boolean respectFrontendRoles)
+            throws IllegalArgumentException, DotDataException, DotSecurityException, DotContentletStateException, DotContentletValidationException {
+        if (!InodeUtils.isSet(contentlet.getInode())) {
+            return checkin(contentlet, contentRelationships, cats, permissions, user, false);
+        } else {
+            canLock(contentlet, user);
+            //get the latest and greatest from db
+            Contentlet working = contentFactory
+                    .findContentletByIdentifier(contentlet.getIdentifier(), false,
+                            contentlet.getLanguageId());
 
         /*
          * Only draft if there is a working version that is not live
          * and always create a new version if the user is different
          */
-        if(! working.isLive() && working.getModUser().equals(contentlet.getModUser())){
+            if (!working.isLive() && working.getModUser().equals(contentlet.getModUser())) {
 
-            // if we are the latest and greatest and are a draft
-            if(working.getInode().equals(contentlet.getInode()) ){
+                // if we are the latest and greatest and are a draft
+                if (working.getInode().equals(contentlet.getInode())) {
 
-                return checkinWithoutVersioning(contentlet, contentRelationships,
-                        cats,
-                        permissions, user, false);
+                    return checkinWithoutVersioning(contentlet, contentRelationships,
+                            cats,
+                            permissions, user, false);
 
+                } else {
+                    String workingInode = working.getInode();
+                    copyProperties(working, contentlet.getMap());
+                    working.setInode(workingInode);
+                    working.setModUser(user.getUserId());
+                    return checkinWithoutVersioning(working, contentRelationships,
+                            cats,
+                            permissions, user, false);
+                }
             }
-            else{
-                String workingInode = working.getInode();
-                copyProperties(working, contentlet.getMap());
-                working.setInode(workingInode);
-                working.setModUser(user.getUserId());
-                return checkinWithoutVersioning(working, contentRelationships,
-                        cats,
-                        permissions, user, false);
-            }
+
+            contentlet.setInode(null);
+            return checkin(contentlet, contentRelationships,
+                    cats,
+                    permissions, user, false);
         }
-
-        contentlet.setInode(null);
-        return checkin(contentlet, contentRelationships,
-                cats,
-                permissions, user, false);
     }
 
     @WrapInTransaction

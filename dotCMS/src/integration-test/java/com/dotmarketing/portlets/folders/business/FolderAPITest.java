@@ -957,6 +957,12 @@ public class FolderAPITest {
 			Assert.assertEquals(link.getIdentifier(), links.get(0).getIdentifier());
 			Assert.assertEquals(link.getInode(), links.get(0).getInode());
 		} finally {
+
+			if (contentAsset != null && contentAsset.getInode() != null) {
+				contentletAPI.archive(contentAsset, user, false);
+				contentletAPI.delete(contentAsset, user, false);
+			}
+
 			if (ftest != null) {
 				folderAPI.delete(ftest, user, false);
 			}
@@ -969,9 +975,6 @@ public class FolderAPITest {
 				templateAPI.delete(template, user, false);
 			}
 
-			if (contentAsset != null && contentAsset.getInode() != null) {
-				contentletAPI.delete(contentAsset, user, false);
-			}
 		}
 
 	}

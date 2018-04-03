@@ -20,6 +20,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Future;
 
 public interface WorkflowAPI {
 
@@ -189,7 +190,16 @@ public interface WorkflowAPI {
 
 	public void saveScheme(WorkflowScheme scheme, User user) throws DotDataException, AlreadyExistException;
 
-	public void deleteScheme(WorkflowScheme scheme, User user) throws DotDataException;
+	/**
+	 * Delete the workflow scheme with all the steps, action, actionlets and
+	 * associations with content types
+	 * @param scheme the workflow scheme to delete
+	 * @param user The current user
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 * @throws AlreadyExistException
+	 */
+	public Future<WorkflowScheme> deleteScheme(WorkflowScheme scheme, User user) throws DotDataException, DotSecurityException, AlreadyExistException;
 
 	public List<WorkflowStep> findSteps(WorkflowScheme scheme) throws DotDataException;
 
@@ -557,4 +567,19 @@ public interface WorkflowAPI {
 	 */
 	public List<WorkflowAction> findInitialAvailableActionsByContentType(ContentType contentType, User user) throws DotDataException, DotSecurityException;
 
+	/**
+	 * return all the workflow task on a particular step
+	 * @param stepId Id of the step
+	 * @return List of workflow tasks
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public List<WorkflowTask> findTasksByStep(String stepId) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Return the system workflow scheme
+	 * @return The system workflow scheme
+	 * @throws DotDataException
+	 */
+	public WorkflowScheme findSystemWorkflowScheme() throws DotDataException;
 }

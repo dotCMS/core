@@ -39,7 +39,7 @@ public abstract class VelocityModeHandler {
             .put(PageMode.PREVIEW_MODE, VelocityPreviewMode::new)
             .put(PageMode.EDIT_MODE, VelocityEditMode::new)
             .put(PageMode.LIVE, VelocityLiveMode::new)
-            .put(PageMode.ADMIN_MODE, VelocityLiveMode::new)
+            .put(PageMode.ADMIN_MODE, VelocityAdminMode::new)
             .build();
 
     @FunctionalInterface

@@ -2,20 +2,21 @@
   "schemes": [
     {
       "id": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
-      "creationDate": 1517515782672,
+      "creationDate": 1522185744131,
       "name": "System Workflow",
       "description": "",
       "archived": false,
       "mandatory": false,
       "defaultScheme": false,
-      "modDate": 1517501951803,
-      "entryActionId": null
+      "modDate": 1522181693944,
+      "entryActionId": null,
+      "system": true
     }
   ],
   "steps": [
     {
       "id": "6cb7e3bd-1710-4eed-8838-d3db60f78f19",
-      "creationDate": 1517516395329,
+      "creationDate": 1522697713567,
       "name": "New",
       "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
       "myOrder": 0,
@@ -26,7 +27,7 @@
     },
     {
       "id": "ee24a4cb-2d15-4c98-b1bd-6327126451f3",
-      "creationDate": 1517516395329,
+      "creationDate": 1522697713568,
       "name": "Unpublished",
       "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
       "myOrder": 1,
@@ -37,7 +38,7 @@
     },
     {
       "id": "dc3c9cd0-8467-404b-bf95-cb7df3fbc293",
-      "creationDate": 1517516395329,
+      "creationDate": 1522697713568,
       "name": "Published",
       "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
       "myOrder": 2,
@@ -48,7 +49,7 @@
     },
     {
       "id": "d6b095b6-b65f-4bdb-bbfd-701d663dfee2",
-      "creationDate": 1517516395330,
+      "creationDate": 1522697713568,
       "name": "Archived",
       "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
       "myOrder": 3,
@@ -62,186 +63,185 @@
     {
       "id": "4da13a42-5d59-480c-ad8f-94a3adf809fe",
       "name": "Archive",
-      "stepId": null,
       "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
       "condition": "",
       "nextStep": "d6b095b6-b65f-4bdb-bbfd-701d663dfee2",
       "nextAssign": "654b0931-1027-41f7-ad4d-173115ed8ec1",
       "icon": "workflowIcon",
       "roleHierarchyForAssign": false,
-      "requiresCheckout": false,
       "assignable": false,
       "commentable": false,
       "order": 0,
+      "owner": null,
+      "nextStepCurrentStep": false,
       "showOn": [
         "UNLOCKED",
-        "LOCKED"
-      ],
-      "owner": null,
-      "nextStepCurrentStep": false
+        "LOCKED",
+        "UNPUBLISHED"
+      ]
     },
     {
       "id": "134a50d3-782d-43de-8877-42c0be1c86a4",
       "name": "Copy",
-      "stepId": null,
       "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
       "condition": "",
       "nextStep": "currentstep",
       "nextAssign": "654b0931-1027-41f7-ad4d-173115ed8ec1",
       "icon": "workflowIcon",
       "roleHierarchyForAssign": false,
-      "requiresCheckout": false,
       "assignable": false,
       "commentable": false,
       "order": 0,
+      "owner": null,
+      "nextStepCurrentStep": true,
       "showOn": [
         "UNLOCKED",
-        "LOCKED"
-      ],
-      "owner": null,
-      "nextStepCurrentStep": true
+        "PUBLISHED",
+        "LOCKED",
+        "UNPUBLISHED"
+      ]
     },
     {
       "id": "777f1c6b-c877-4a37-ba4b-10627316c2cc",
       "name": "Delete",
-      "stepId": null,
       "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
       "condition": "",
       "nextStep": "d6b095b6-b65f-4bdb-bbfd-701d663dfee2",
       "nextAssign": "654b0931-1027-41f7-ad4d-173115ed8ec1",
       "icon": "workflowIcon",
       "roleHierarchyForAssign": false,
-      "requiresCheckout": false,
       "assignable": false,
       "commentable": false,
       "order": 0,
-      "showOn": [
-        "UNLOCKED"
-      ],
       "owner": null,
-      "nextStepCurrentStep": false
+      "nextStepCurrentStep": false,
+      "showOn": [
+        "ARCHIVED",
+        "UNLOCKED",
+        "LOCKED"
+      ]
     },
     {
       "id": "000ec468-0a63-4283-beb7-fcb36c107b2f",
       "name": "Publish",
-      "stepId": null,
       "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
       "condition": "",
       "nextStep": "dc3c9cd0-8467-404b-bf95-cb7df3fbc293",
       "nextAssign": "654b0931-1027-41f7-ad4d-173115ed8ec1",
       "icon": "workflowIcon",
       "roleHierarchyForAssign": false,
-      "requiresCheckout": false,
       "assignable": false,
       "commentable": false,
       "order": 0,
+      "owner": null,
+      "nextStepCurrentStep": false,
       "showOn": [
         "UNLOCKED",
-        "LOCKED"
-      ],
-      "owner": null,
-      "nextStepCurrentStep": false
+        "LOCKED",
+        "UNPUBLISHED"
+      ]
     },
     {
       "id": "4958588d-9c8e-40e4-bfcb-4ded40bd099f",
       "name": "Republish",
-      "stepId": null,
       "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
       "condition": "",
       "nextStep": "dc3c9cd0-8467-404b-bf95-cb7df3fbc293",
       "nextAssign": "654b0931-1027-41f7-ad4d-173115ed8ec1",
       "icon": "workflowIcon",
       "roleHierarchyForAssign": false,
-      "requiresCheckout": false,
       "assignable": false,
       "commentable": false,
       "order": 0,
-      "showOn": [
-        "UNLOCKED"
-      ],
       "owner": null,
-      "nextStepCurrentStep": false
+      "nextStepCurrentStep": false,
+      "showOn": [
+        "UNLOCKED",
+        "PUBLISHED",
+        "UNPUBLISHED"
+      ]
     },
     {
       "id": "ceca71a0-deee-4999-bd47-b01baa1bcfc8",
       "name": "Save",
-      "stepId": null,
       "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
       "condition": "",
       "nextStep": "ee24a4cb-2d15-4c98-b1bd-6327126451f3",
       "nextAssign": "654b0931-1027-41f7-ad4d-173115ed8ec1",
       "icon": "workflowIcon",
       "roleHierarchyForAssign": false,
-      "requiresCheckout": true,
       "assignable": false,
       "commentable": false,
       "order": 0,
-      "showOn": [
-        "LOCKED"
-      ],
       "owner": null,
-      "nextStepCurrentStep": false
+      "nextStepCurrentStep": false,
+      "showOn": [
+        "PUBLISHED",
+        "LOCKED",
+        "UNPUBLISHED",
+        "NEW"
+      ]
     },
     {
       "id": "b9d89c80-3d88-4311-8365-187323c96436",
       "name": "Save / Publish",
-      "stepId": null,
       "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
       "condition": "",
       "nextStep": "dc3c9cd0-8467-404b-bf95-cb7df3fbc293",
       "nextAssign": "654b0931-1027-41f7-ad4d-173115ed8ec1",
       "icon": "workflowIcon",
       "roleHierarchyForAssign": false,
-      "requiresCheckout": false,
       "assignable": false,
       "commentable": false,
       "order": 0,
-      "showOn": [
-        "LOCKED"
-      ],
       "owner": null,
-      "nextStepCurrentStep": false
+      "nextStepCurrentStep": false,
+      "showOn": [
+        "PUBLISHED",
+        "LOCKED",
+        "UNPUBLISHED",
+        "NEW"
+      ]
     },
     {
       "id": "c92f9aa1-9503-4567-ac30-d3242b54d02d",
       "name": "Unarchive",
-      "stepId": null,
       "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
       "condition": "",
       "nextStep": "ee24a4cb-2d15-4c98-b1bd-6327126451f3",
       "nextAssign": "654b0931-1027-41f7-ad4d-173115ed8ec1",
       "icon": "workflowIcon",
       "roleHierarchyForAssign": false,
-      "requiresCheckout": false,
       "assignable": false,
       "commentable": false,
       "order": 0,
-      "showOn": [
-        "UNLOCKED"
-      ],
       "owner": null,
-      "nextStepCurrentStep": false
+      "nextStepCurrentStep": false,
+      "showOn": [
+        "ARCHIVED",
+        "UNLOCKED",
+        "LOCKED"
+      ]
     },
     {
       "id": "38efc763-d78f-4e4b-b092-59cd8c579b93",
       "name": "Unpublish",
-      "stepId": null,
       "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
       "condition": "",
       "nextStep": "ee24a4cb-2d15-4c98-b1bd-6327126451f3",
       "nextAssign": "654b0931-1027-41f7-ad4d-173115ed8ec1",
       "icon": "workflowIcon",
       "roleHierarchyForAssign": false,
-      "requiresCheckout": false,
       "assignable": false,
       "commentable": false,
       "order": 0,
+      "owner": null,
+      "nextStepCurrentStep": false,
       "showOn": [
         "UNLOCKED",
+        "PUBLISHED",
         "LOCKED"
-      ],
-      "owner": null,
-      "nextStepCurrentStep": false
+      ]
     }
   ],
   "actionSteps": [
@@ -324,11 +324,11 @@
       "order": 0,
       "clazz": "com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet",
       "actionlet": {
+        "howTo": "This actionlet will archive the content.",
         "name": "Archive content",
         "parameters": null,
-        "howTo": "This actionlet will archive the content.",
-        "localizedName": "Archive Content",
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet.howTo"
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet.howTo",
+        "localizedName": "Archive Content"
       }
     },
     {
@@ -338,12 +338,12 @@
       "order": 1,
       "clazz": "com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet",
       "actionlet": {
-        "name": "Unlock content",
-        "parameters": null,
         "nextStep": null,
         "howTo": "This actionlet will checkin and unlock the content.",
-        "localizedName": "Unlock Content",
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet.howTo"
+        "name": "Unlock content",
+        "parameters": null,
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet.howTo",
+        "localizedName": "Unlock Content"
       }
     },
     {
@@ -353,11 +353,11 @@
       "order": 0,
       "clazz": "com.dotmarketing.portlets.workflows.actionlet.CopyActionlet",
       "actionlet": {
+        "howTo": "This workflow actionlet copies the edited contentlet ",
         "name": "Copy Contentlet",
         "parameters": [],
-        "howTo": "This workflow actionlet copies the edited contentlet ",
-        "localizedName": "Copy Contentlet",
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.CopyActionlet.howTo"
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.CopyActionlet.howTo",
+        "localizedName": "Copy Contentlet"
       }
     },
     {
@@ -367,11 +367,11 @@
       "order": 0,
       "clazz": "com.dotmarketing.portlets.workflows.actionlet.DeleteContentActionlet",
       "actionlet": {
+        "howTo": "This action will delete the content. Warning: this can't be undone!",
         "name": "Delete content",
         "parameters": null,
-        "howTo": "This action will delete the content. Warning: this can't be undone!",
-        "localizedName": "Delete content",
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.DeleteContentActionlet.howTo"
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.DeleteContentActionlet.howTo",
+        "localizedName": "Delete content"
       }
     },
     {
@@ -381,12 +381,12 @@
       "order": 0,
       "clazz": "com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet",
       "actionlet": {
-        "name": "Save content",
-        "parameters": null,
         "nextStep": null,
         "howTo": "This actionlet will checkin the content.",
-        "localizedName": "Save content",
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet.howTo"
+        "name": "Save content",
+        "parameters": null,
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet.howTo",
+        "localizedName": "Save content"
       }
     },
     {
@@ -396,12 +396,12 @@
       "order": 1,
       "clazz": "com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet",
       "actionlet": {
-        "name": "Publish content",
-        "parameters": null,
         "nextStep": null,
         "howTo": "This actionlet will publish the content.",
-        "localizedName": "Publish Content",
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet.howTo"
+        "name": "Publish content",
+        "parameters": null,
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet.howTo",
+        "localizedName": "Publish Content"
       }
     },
     {
@@ -411,12 +411,12 @@
       "order": 2,
       "clazz": "com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet",
       "actionlet": {
-        "name": "Unlock content",
-        "parameters": null,
         "nextStep": null,
         "howTo": "This actionlet will checkin and unlock the content.",
-        "localizedName": "Unlock Content",
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet.howTo"
+        "name": "Unlock content",
+        "parameters": null,
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet.howTo",
+        "localizedName": "Unlock Content"
       }
     },
     {
@@ -426,12 +426,12 @@
       "order": 0,
       "clazz": "com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet",
       "actionlet": {
-        "name": "Publish content",
-        "parameters": null,
         "nextStep": null,
         "howTo": "This actionlet will publish the content.",
-        "localizedName": "Publish Content",
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet.howTo"
+        "name": "Publish content",
+        "parameters": null,
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet.howTo",
+        "localizedName": "Publish Content"
       }
     },
     {
@@ -441,42 +441,42 @@
       "order": 0,
       "clazz": "com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet",
       "actionlet": {
-        "name": "Save content",
-        "parameters": null,
         "nextStep": null,
         "howTo": "This actionlet will checkin the content.",
-        "localizedName": "Save content",
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet.howTo"
-      }
-    },
-    {
-      "id": "9aacba54-b6f4-424c-97f2-56019cbdbbc7",
-      "actionId": "b9d89c80-3d88-4311-8365-187323c96436",
-      "name": "Publish content",
-      "order": 0,
-      "clazz": "com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet",
-      "actionlet": {
-        "name": "Publish content",
+        "name": "Save content",
         "parameters": null,
-        "nextStep": null,
-        "howTo": "This actionlet will publish the content.",
-        "localizedName": "Publish Content",
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet.howTo"
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet.howTo",
+        "localizedName": "Save content"
       }
     },
     {
       "id": "b84879e9-545f-4436-b4c5-e76c1743d168",
       "actionId": "b9d89c80-3d88-4311-8365-187323c96436",
       "name": "Save content",
-      "order": 1,
+      "order": 0,
       "clazz": "com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet",
       "actionlet": {
-        "name": "Save content",
-        "parameters": null,
         "nextStep": null,
         "howTo": "This actionlet will checkin the content.",
-        "localizedName": "Save content",
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet.howTo"
+        "name": "Save content",
+        "parameters": null,
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet.howTo",
+        "localizedName": "Save content"
+      }
+    },
+    {
+      "id": "9aacba54-b6f4-424c-97f2-56019cbdbbc7",
+      "actionId": "b9d89c80-3d88-4311-8365-187323c96436",
+      "name": "Publish content",
+      "order": 1,
+      "clazz": "com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet",
+      "actionlet": {
+        "nextStep": null,
+        "howTo": "This actionlet will publish the content.",
+        "name": "Publish content",
+        "parameters": null,
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet.howTo",
+        "localizedName": "Publish Content"
       }
     },
     {
@@ -486,12 +486,12 @@
       "order": 0,
       "clazz": "com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet",
       "actionlet": {
-        "name": "Unarchive content",
-        "parameters": null,
         "nextStep": null,
         "howTo": "This actionlet will un archive the content and return it to a working state",
-        "localizedName": "Unarchive Content",
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet.howTo"
+        "name": "Unarchive content",
+        "parameters": null,
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet.howTo",
+        "localizedName": "Unarchive Content"
       }
     },
     {
@@ -501,14 +501,97 @@
       "order": 0,
       "clazz": "com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet",
       "actionlet": {
-        "name": "Unpublish content",
-        "parameters": null,
         "nextStep": null,
         "howTo": "This actionlet will unpublish the content.",
-        "localizedName": "Unpublish Content",
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet.howTo"
+        "name": "Unpublish content",
+        "parameters": null,
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet.howTo",
+        "localizedName": "Unpublish Content"
       }
     }
   ],
-  "actionClassParams": []
+  "actionClassParams": [],
+  "permissions": [
+    {
+      "id": 0,
+      "inode": "4da13a42-5d59-480c-ad8f-94a3adf809fe",
+      "permission": 1,
+      "type": "individual",
+      "bitPermission": false,
+      "individualPermission": true,
+      "roleId": "617f7300-5c7b-463f-9554-380b918520bc"
+    },
+    {
+      "id": 0,
+      "inode": "134a50d3-782d-43de-8877-42c0be1c86a4",
+      "permission": 1,
+      "type": "individual",
+      "bitPermission": false,
+      "individualPermission": true,
+      "roleId": "617f7300-5c7b-463f-9554-380b918520bc"
+    },
+    {
+      "id": 0,
+      "inode": "777f1c6b-c877-4a37-ba4b-10627316c2cc",
+      "permission": 1,
+      "type": "individual",
+      "bitPermission": false,
+      "individualPermission": true,
+      "roleId": "c3eb4526-6d96-48d8-9540-e5fa560cfc0f"
+    },
+    {
+      "id": 0,
+      "inode": "000ec468-0a63-4283-beb7-fcb36c107b2f",
+      "permission": 1,
+      "type": "individual",
+      "bitPermission": false,
+      "individualPermission": true,
+      "roleId": "c3eb4526-6d96-48d8-9540-e5fa560cfc0f"
+    },
+    {
+      "id": 0,
+      "inode": "4958588d-9c8e-40e4-bfcb-4ded40bd099f",
+      "permission": 1,
+      "type": "individual",
+      "bitPermission": false,
+      "individualPermission": true,
+      "roleId": "c3eb4526-6d96-48d8-9540-e5fa560cfc0f"
+    },
+    {
+      "id": 0,
+      "inode": "ceca71a0-deee-4999-bd47-b01baa1bcfc8",
+      "permission": 1,
+      "type": "individual",
+      "bitPermission": false,
+      "individualPermission": true,
+      "roleId": "617f7300-5c7b-463f-9554-380b918520bc"
+    },
+    {
+      "id": 0,
+      "inode": "b9d89c80-3d88-4311-8365-187323c96436",
+      "permission": 1,
+      "type": "individual",
+      "bitPermission": false,
+      "individualPermission": true,
+      "roleId": "c3eb4526-6d96-48d8-9540-e5fa560cfc0f"
+    },
+    {
+      "id": 0,
+      "inode": "c92f9aa1-9503-4567-ac30-d3242b54d02d",
+      "permission": 1,
+      "type": "individual",
+      "bitPermission": false,
+      "individualPermission": true,
+      "roleId": "617f7300-5c7b-463f-9554-380b918520bc"
+    },
+    {
+      "id": 0,
+      "inode": "38efc763-d78f-4e4b-b092-59cd8c579b93",
+      "permission": 1,
+      "type": "individual",
+      "bitPermission": false,
+      "individualPermission": true,
+      "roleId": "c3eb4526-6d96-48d8-9540-e5fa560cfc0f"
+    }
+  ]
 }

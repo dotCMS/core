@@ -1,20 +1,11 @@
 package com.dotcms.api.system.event;
 
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
-import com.dotcms.exception.BaseInternationalizationException;
-import com.dotcms.exception.BaseRuntimeInternationalizationException;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.validation.*;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
-import com.liferay.portal.model.User;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * This Util class provided methods to record different events link with the several types of

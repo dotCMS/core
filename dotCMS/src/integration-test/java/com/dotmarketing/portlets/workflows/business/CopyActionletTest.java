@@ -92,33 +92,15 @@ public class CopyActionletTest extends BaseWorkflowIntegrationTest {
     @AfterClass
     public static void cleanup() throws DotDataException, DotSecurityException, AlreadyExistException {
 
-        try {
+        if (null != CopyActionletTest.type) {
 
-            if (null != CopyActionletTest.contentlet) {
+            ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+            contentTypeAPI.delete(CopyActionletTest.type);
+        }
 
-                CopyActionletTest.contentletAPI.delete(CopyActionletTest.contentlet, APILocator.systemUser(), false);
-            }
+        if (null != CopyActionletTest.schemeStepActionResult) {
 
-            if (null != CopyActionletTest.contentletCopy) {
-
-                CopyActionletTest.contentletAPI.delete(CopyActionletTest.contentletCopy, APILocator.systemUser(), false);
-            }
-        } finally {
-
-            try {
-
-                if (null != CopyActionletTest.schemeStepActionResult) {
-
-                    CopyActionletTest.cleanScheme(CopyActionletTest.schemeStepActionResult.getScheme());
-                }
-            } finally {
-
-                if (null != CopyActionletTest.type) {
-
-                    ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
-                    contentTypeAPI.delete(CopyActionletTest.type);
-                }
-            }
+            CopyActionletTest.cleanScheme(CopyActionletTest.schemeStepActionResult.getScheme());
         }
     } // cleanup
 

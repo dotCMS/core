@@ -39,7 +39,7 @@ abstract class WorkflowSQL {
 
 
 
-
+	protected static String SELECT_TASK_STEPS_TO_CLEAN_BY_STRUCT= "select * from  workflow_task where webasset in (select identifier from contentlet where contentlet.structure_inode = ? group by identifier) ";
 	protected static String UPDATE_STEPS_BY_STRUCT= "update workflow_task set status = ? where webasset in (select identifier from contentlet where contentlet.structure_inode = ? group by identifier) ";
 	protected static String DELETE_SCHEME_FOR_STRUCT= "delete from workflow_scheme_x_structure where structure_id = ?";
 	protected static String INSERT_SCHEME_FOR_STRUCT= "insert into workflow_scheme_x_structure (id, scheme_id, structure_id) values ( ?, ?, ?)";
@@ -105,4 +105,9 @@ abstract class WorkflowSQL {
     // chri
 
     protected static String SELECT_EXPIRED_TASKS = "";
+
+    protected static String SELECT_TASKS_BY_STEP="select * from workflow_task where status = ?";
+	protected static String SELECT_STRUCTS_FOR_SCHEME="select st.* from structure st join workflow_scheme_x_structure wss on st.inode = wss.structure_id where wss.scheme_id = ?";
+    protected static String DELETE_STRUCTS_FOR_SCHEME="delete from workflow_scheme_x_structure where scheme_id = ?";
+	protected static String DELETE_SCHEME="delete from workflow_scheme where id = ?";
 }

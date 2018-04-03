@@ -31,6 +31,7 @@ import com.dotcms.datagen.StructureDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.mock.response.BaseResponse;
+import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
@@ -73,6 +74,7 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.model.Tag;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -416,6 +418,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals( copyContentlet.getFolder(), contentlet.getFolder() );
         assertEquals( copyContentlet.getHost(), contentlet.getHost() );
 
+        contentletAPI.archive(copyContentlet, user, false);
         contentletAPI.delete(copyContentlet, user, false);
     }
 
@@ -447,6 +450,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals( copyContentlet.getFolder(), contentlet.getFolder() );
         assertEquals( copyContentlet.get("junitTestWysiwyg"), contentlet.get("junitTestWysiwyg") );
 
+        contentletAPI.archive(copyContentlet, user, false);
         contentletAPI.delete(copyContentlet, user, false);
     }
 
@@ -476,6 +480,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals( copyContentlet.get( "junitTestWysiwyg" ), contentlet.get( "junitTestWysiwyg" ) );
         assertEquals( copyContentlet.getHost(), contentlet.getHost() );
 
+        contentletAPI.archive( copyContentlet, user, false );
         contentletAPI.delete( copyContentlet, user, false );
     }
 
@@ -507,6 +512,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals( copyContentlet.getFolder(), contentlet.getFolder() );
         assertEquals( copyContentlet.get( "junitTestWysiwyg" ), contentlet.get( "junitTestWysiwyg" ) );
 
+        contentletAPI.archive( copyContentlet, user, false );
         contentletAPI.delete( copyContentlet, user, false );
     }
     
@@ -1039,7 +1045,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         Contentlet contentlet = contentlets.iterator().next();
 
         //Create the test relationship
-        createRelationShip( contentlet.getStructure(), false );
+        Relationship testRelationship = createRelationShip( contentlet.getStructure(), false );
 
         //Find all the relationships for this contentlet
         ContentletRelationships contentletRelationships = contentletAPI.getAllRelationships( contentlet.getInode(), user, false );
@@ -1047,6 +1053,10 @@ public class ContentletAPITest extends ContentletBaseTest {
         //Validations
         assertNotNull( contentletRelationships );
         assertTrue( contentletRelationships.getRelationshipsRecords() != null && !contentletRelationships.getRelationshipsRecords().isEmpty() );
+
+        if (testRelationship != null) {
+            relationshipAPI.delete(testRelationship);
+        }
     }
 
     /**
@@ -1086,6 +1096,10 @@ public class ContentletAPITest extends ContentletBaseTest {
         //Validations
         assertNotNull( contentletRelationships );
         assertTrue( contentletRelationships.getRelationshipsRecords() != null && !contentletRelationships.getRelationshipsRecords().isEmpty() );
+        if (testRelationship != null) {
+            relationshipAPI.delete(testRelationship);
+        }
+        APILocator.getStructureAPI().delete(testStructure, user);
     }
 
     /**
@@ -1306,6 +1320,8 @@ public class ContentletAPITest extends ContentletBaseTest {
         // make sure the db is totally clean up
 
         AssetUtil.assertDeleted(newContentlet.getInode(), newContentlet.getIdentifier(), "contentlet");
+
+        APILocator.getStructureAPI().delete(testStructure, user);
     }
 
     /**
@@ -1354,6 +1370,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Validations
         assertTrue( foundContentlets == null || foundContentlets.isEmpty() );
+        APILocator.getStructureAPI().delete(testStructure, user);
     }
 
     /**
@@ -1586,6 +1603,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         //Validations
         assertNotNull( versions );
         assertEquals( versions.size(), 1 );
+        APILocator.getStructureAPI().delete(testStructure, user);
     }
 
     /**
@@ -1616,6 +1634,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Validations
         assertTrue( foundContentlet == null || foundContentlet.getInode() == null || foundContentlet.getInode().isEmpty() );
+        APILocator.getStructureAPI().delete(testStructure, user);
     }
 
     /**
@@ -1675,6 +1694,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Validations for newContentlet2
         assertTrue( foundContentlets == null || foundContentlets.isEmpty() );
+        APILocator.getStructureAPI().delete(testStructure, user);
     }
 
     /**
@@ -1716,6 +1736,10 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Validations
         assertTrue( foundContentlets == null || foundContentlets.isEmpty() );
+        if (testRelationship != null) {
+            relationshipAPI.delete(testRelationship);
+        }
+        APILocator.getStructureAPI().delete(testStructure, user);
     }
 
     /**
@@ -1759,6 +1783,10 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Validations
         assertTrue( foundContentlets == null || foundContentlets.isEmpty() );
+        if (testRelationship != null) {
+            relationshipAPI.delete(testRelationship);
+        }
+        APILocator.getStructureAPI().delete(testStructure, user);
     }
 
     /**
@@ -1809,6 +1837,10 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals( tree.getParent(), parentContentlet.getIdentifier() );
         assertEquals( tree.getChild(), childContentlet.getIdentifier() );
         assertEquals( tree.getRelationType(), testRelationship.getRelationTypeValue() );
+        if (testRelationship != null) {
+            relationshipAPI.delete(testRelationship);
+        }
+        APILocator.getStructureAPI().delete(testStructure, user);
     }
 
     /**
@@ -1855,6 +1887,10 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals( tree.getParent(), parentContentlet.getIdentifier() );
         assertEquals( tree.getChild(), childContentlet.getIdentifier() );
         assertEquals( tree.getRelationType(), testRelationship.getRelationTypeValue() );
+        if (testRelationship != null) {
+            relationshipAPI.delete(testRelationship);
+        }
+        APILocator.getStructureAPI().delete(testStructure, user);
     }
 
     /**
@@ -1900,6 +1936,10 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Validations
         assertTrue( foundContentlets != null && !foundContentlets.isEmpty() );
+        if (testRelationship != null) {
+            relationshipAPI.delete(testRelationship);
+        }
+        APILocator.getStructureAPI().delete(testStructure, user);
     }
 
     /**
@@ -1944,6 +1984,10 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Validations
         assertTrue( foundContentlets != null && !foundContentlets.isEmpty() );
+        if (testRelationship != null) {
+            relationshipAPI.delete(testRelationship);
+        }
+        APILocator.getStructureAPI().delete(testStructure, user);
     }
 
     /**
@@ -1977,7 +2021,6 @@ public class ContentletAPITest extends ContentletBaseTest {
         cont.setIdentifier(identifier);
 
         Contentlet saved = contentletAPI.checkin(cont, user, false);
-        //contentlets.add(saved);
 
         assertEquals(saved.getInode(), inode);
         assertEquals(saved.getIdentifier(), identifier);
@@ -1997,12 +2040,12 @@ public class ContentletAPITest extends ContentletBaseTest {
         existing.setInode(newInode);
 
         saved=contentletAPI.checkin(existing, user, false);
-        contentlets.add(saved);
-
+        
         assertEquals(newInode, saved.getInode());
         assertEquals(identifier, saved.getIdentifier());
 
         contentletAPI.isInodeIndexed(newInode);
+        APILocator.getStructureAPI().delete(testStructure, user);
     }
 
     /**
@@ -2099,6 +2142,7 @@ public class ContentletAPITest extends ContentletBaseTest {
                 " +"+testStructure.getVelocityVarName()+"."+fieldExpDate.getVelocityVarName()+":"+ DateUtil.toLuceneDateTime(d4);
         final long count = APILocator.getContentletAPI().indexCount(q, user, false);
         assertEquals(1, count);
+        APILocator.getStructureAPI().delete(testStructure, user);
     }
 
     private boolean compareDates(Date date1, Date date2) {
@@ -2137,6 +2181,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals("e",search.get(3).getStringProperty(field.getVelocityVarName()));
         assertEquals("f",search.get(4).getStringProperty(field.getVelocityVarName()));
 
+        contentletAPI.archive(list, user, false);
         contentletAPI.delete(list, user, false);
         FieldFactory.deleteField(field);
         APILocator.getStructureAPI().delete(testStructure, user);
@@ -2144,6 +2189,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
     @Test
     public void widgetInvalidateAllLang() throws Exception {
+        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",true);
 
         HttpServletRequest requestProxy = new MockInternalRequest().request();
         HttpServletResponse responseProxy = new BaseResponse().response();
@@ -2197,6 +2243,8 @@ public class ContentletAPITest extends ContentletBaseTest {
         w2 = contentletAPI.checkin(w2, user, false);
         contentletAPI.publish(w2, user, false);
         contentletAPI.isInodeIndexed(w2.getInode(),true);
+        VelocityResourceKey key = new VelocityResourceKey(w2,PageMode.LIVE,2);
+        CacheLocator.getVeloctyResourceCache().remove(key);
 
         // now if everything have been cleared correctly those should match again
         org.apache.velocity.Template teng3 = engine.getTemplate(
@@ -2220,6 +2268,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         APILocator.getVersionableAPI().removeLive(w2);
         contentletAPI.archive(w2, user, false);
         contentletAPI.delete(w2, user, false);
+        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",false);
     }
     @Test
     public void testFileCopyOnSecondLanguageVersion() throws DotDataException, DotSecurityException {
@@ -3852,6 +3901,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             type = contentTypeAPI.save(type, null, null);
 
             //html page is removed
+            contentletAPI.archive(htmlPage, user, false);
             contentletAPI.delete(htmlPage, user, false);
 
             //verify that the content type was unlinked from the deleted page

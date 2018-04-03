@@ -208,7 +208,8 @@ public class PageResourceHelper implements Serializable {
 
     @CloseDB
     public String getPageRendered(final HTMLPageAsset page, final HttpServletRequest request,
-                                  final HttpServletResponse response, final User user, final PageMode mode) throws Exception {
+                                  final HttpServletResponse response, final User user, final PageMode mode)
+            throws DotSecurityException, DotDataException, IOException {
 
 
         final Host site =resolveSite(request, user);
@@ -526,8 +527,8 @@ public class PageResourceHelper implements Serializable {
         }
     }
     
-    private Host resolveSite(HttpServletRequest request, User user) throws DotDataException, DotSecurityException {
-        PageMode mode = PageMode.get(request);
+    private Host resolveSite(final HttpServletRequest request, final User user) throws DotDataException, DotSecurityException {
+        final PageMode mode = PageMode.get(request);
         final String siteName = null == request.getParameter(Host.HOST_VELOCITY_VAR_NAME) ?
                 request.getServerName() : request.getParameter(Host.HOST_VELOCITY_VAR_NAME);
         Host site = this.hostWebAPI.resolveHostName(siteName, user, mode.respectAnonPerms);
@@ -536,7 +537,7 @@ public class PageResourceHelper implements Serializable {
             site = this.hostAPI.find(request.getSession().getAttribute( com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID ).toString(), user, mode.respectAnonPerms);
         }
         return site;
-        
+
     }
     
     

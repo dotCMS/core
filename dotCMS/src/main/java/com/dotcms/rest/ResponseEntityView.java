@@ -11,6 +11,8 @@ import java.util.Map;
  */
 public class ResponseEntityView implements Serializable {
 
+    public static final String OK = "Ok";
+
     private static final String EMPTY_ENTITY = "";
 
     private final List<ErrorEntity> errors;

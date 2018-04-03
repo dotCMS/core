@@ -392,6 +392,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
             //Validations
             assertTrue( result == null || result.isEmpty() );
         } finally {
+            APILocator.getContentletAPI().archive( testContentlet, user, false );
             APILocator.getContentletAPI().delete( testContentlet, user, false );
         }
     }
@@ -442,6 +443,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
             } while((result == null || result.isEmpty()) && x<100);
 
         } finally {
+            APILocator.getContentletAPI().archive( testContentlet, user, false );
             APILocator.getContentletAPI().delete( testContentlet, user, false );
         }
     }

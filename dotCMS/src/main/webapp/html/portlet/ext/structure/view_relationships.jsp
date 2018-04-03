@@ -105,6 +105,7 @@
 							 	<portlet:param name='struts_action' value='/ext/structure/edit_relationship' />
 							 	<portlet:param name='inode' value='<%=relationship.getInode()%>' />
 							 	<portlet:param name='referer' value='<%=referer%>' />
+							 	<portlet:param name='structure_id' value='<%=currentContentTypeId != null ? currentContentTypeId : "all"%>'/>
 							    </portlet:actionURL>">
 							<%=relationship.getRelationTypeValue()%>
 						</a>
