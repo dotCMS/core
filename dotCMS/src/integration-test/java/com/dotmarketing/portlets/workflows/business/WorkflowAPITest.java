@@ -2056,7 +2056,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
             //search for schemes
             List<WorkflowScheme> schemes = workflowAPI.findSchemesForContentType(contentType);
-            assertTrue(WORKFLOW_SCHEME_LIST_WITH_WRONG_SIZE,schemes.size() == 0);
+            assertTrue(WORKFLOW_SCHEME_LIST_WITH_WRONG_SIZE, schemes.size() == 0);
 
             //validate cache values
             schemesInCache = workflowCache.getSchemesByStruct(contentType.id());
@@ -2074,7 +2074,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
             //search for schemes
             schemes = workflowAPI.findSchemesForContentType(contentType);
-            assertTrue(WORKFLOW_SCHEME_LIST_WITH_WRONG_SIZE,schemes.size() == 1);
+            assertTrue(WORKFLOW_SCHEME_LIST_WITH_WRONG_SIZE, schemes.size() == 1);
 
             //validate cache values
             schemesInCache = workflowCache.getSchemesByStruct(contentType.id());
@@ -2091,12 +2091,12 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
             //search for schemes
             schemes = workflowAPI.findSchemesForContentType(contentType);
-            assertTrue(WORKFLOW_SCHEME_LIST_WITH_WRONG_SIZE,schemes.size() == 2);
+            assertTrue(WORKFLOW_SCHEME_LIST_WITH_WRONG_SIZE, schemes.size() == 2);
 
             //validate cache values
             schemesInCache = workflowCache.getSchemesByStruct(contentType.id());
             assertNotNull(WORKFLOW_SCHEME_CACHE_SHOULD_NOT_BE_NULL, schemesInCache);
-            assertTrue(WORKFLOW_SCHEME_CACHE_WITH_WRONG_SIZE,schemesInCache.size() == 2);
+            assertTrue(WORKFLOW_SCHEME_CACHE_WITH_WRONG_SIZE, schemesInCache.size() == 2);
 
             //3. Test removing one scheme
             schemeIds.remove(workflowScheme1.getId());
@@ -2108,12 +2108,12 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
             //search for schemes
             schemes = workflowAPI.findSchemesForContentType(contentType);
-            assertTrue(WORKFLOW_SCHEME_LIST_WITH_WRONG_SIZE,schemes.size() == 1);
+            assertTrue(WORKFLOW_SCHEME_LIST_WITH_WRONG_SIZE, schemes.size() == 1);
 
             //validate cache values
             schemesInCache = workflowCache.getSchemesByStruct(contentType.id());
             assertNotNull(WORKFLOW_SCHEME_CACHE_SHOULD_NOT_BE_NULL, schemesInCache);
-            assertTrue(WORKFLOW_SCHEME_CACHE_WITH_WRONG_SIZE,schemesInCache.size() == 1);
+            assertTrue(WORKFLOW_SCHEME_CACHE_WITH_WRONG_SIZE, schemesInCache.size() == 1);
 
             //4. test removing all schemes
             schemeIds.remove(workflowScheme2.getId());
@@ -2125,12 +2125,12 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
             //search for schemes
             schemes = workflowAPI.findSchemesForContentType(contentType);
-            assertTrue(WORKFLOW_SCHEME_LIST_WITH_WRONG_SIZE,schemes.size() == 0);
+            assertTrue(WORKFLOW_SCHEME_LIST_WITH_WRONG_SIZE, schemes.size() == 0);
 
             //validate cache values
             schemesInCache = workflowCache.getSchemesByStruct(contentType.id());
-            assertNotNull(WORKFLOW_SCHEME_CACHE_SHOULD_NOT_BE_NULL,schemesInCache);
-            assertTrue(WORKFLOW_SCHEME_CACHE_WITH_WRONG_SIZE,schemesInCache.size() == 0);
+            assertNotNull(WORKFLOW_SCHEME_CACHE_SHOULD_NOT_BE_NULL, schemesInCache);
+            assertTrue(WORKFLOW_SCHEME_CACHE_WITH_WRONG_SIZE, schemesInCache.size() == 0);
 
         } finally {
             //clean test
@@ -2148,8 +2148,8 @@ public class WorkflowAPITest extends IntegrationTestBase {
     }
 
     /**
-     * Validate that the findStepsByContentlet method is saving in cache the workflow steps
-     * to avoid extra calls to the DB
+     * Validate that the findStepsByContentlet method is saving in cache the workflow steps to avoid
+     * extra calls to the DB
      */
     @Test
     public void findStepsByContentlet_validateIfStepsResultsAreOnCache()
@@ -2165,7 +2165,6 @@ public class WorkflowAPITest extends IntegrationTestBase {
             workflowScheme = createDocumentManagentReplica(
                     DOCUMENT_MANAGEMENT_WORKFLOW_NAME + "_5_" + UtilMethods
                             .dateToHTMLDate(new Date(), DATE_FORMAT));
-
 
             final List<String> schemeIds = new ArrayList<>();
             schemeIds.add(workflowScheme.getId());
@@ -2192,14 +2191,14 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
             //Search for steps
             List<WorkflowStep> steps = workflowAPI.findStepsByContentlet(contentlet);
-            assertTrue(WORKFLOW_STEPS_LIST_WITH_WRONG_SIZE,steps.size() == 1);
+            assertTrue(WORKFLOW_STEPS_LIST_WITH_WRONG_SIZE, steps.size() == 1);
 
             //validate steps in cache
             stepsInCacheList = workflowCache.getSteps(contentlet);
             assertNotNull(WORKFLOW_STEPS_CACHE_SHOULD_NOT_BE_NULL, stepsInCacheList);
-            assertTrue(WORKFLOW_STEPS_CACHE_WITH_WRONG_SIZE,stepsInCacheList.size() == 1);
+            assertTrue(WORKFLOW_STEPS_CACHE_WITH_WRONG_SIZE, stepsInCacheList.size() == 1);
 
-        }finally {
+        } finally {
             //clean test
             //delete content type
             contentTypeAPI.delete(contentType);
@@ -2210,13 +2209,13 @@ public class WorkflowAPITest extends IntegrationTestBase {
         }
     }
 
-            /**
-             * Validate if the scheme is present in the list of schemes
-             *
-             * @param scheme WorkflowScheme to check
-             * @param schemes List of WorkflowSchemes to compare
-             * @return true if exist, false if not
-             */
+    /**
+     * Validate if the scheme is present in the list of schemes
+     *
+     * @param scheme WorkflowScheme to check
+     * @param schemes List of WorkflowSchemes to compare
+     * @return true if exist, false if not
+     */
     protected static boolean containsScheme(WorkflowScheme scheme, List<WorkflowScheme> schemes) {
         boolean containsScheme = false;
         for (WorkflowScheme compareScheme : schemes) {
