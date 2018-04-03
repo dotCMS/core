@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.workflows.business;
 
+import com.dotcms.api.system.event.SystemMessageEventUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
@@ -21,6 +22,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.workflows.MessageActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.*;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.*;
@@ -50,6 +52,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	private final WorkflowStateFilter workflowStatusFilter =
 			new WorkflowStateFilter();
+
+	private final SystemMessageEventUtil systemMessageEventUtil =
+			SystemMessageEventUtil.getInstance();
 
 	// not very fancy, but the WorkflowImport is a friend of WorkflowAPI
 	private volatile FriendClass  friendClass = null;
@@ -86,7 +91,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				TranslationActionlet.class,
 				SaveContentActionlet.class,
 				SaveContentAsDraftActionlet.class,
-				CopyActionlet.class
+				CopyActionlet.class,
+				MessageActionlet.class
 		}));
 
 		refreshWorkFlowActionletMap();
@@ -336,7 +342,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		//Delete the Scheme in a separated thread
 		return this.submitter.submit(() -> deleteSchemeTask(scheme, user));
-
 	}
 
 	/**
@@ -372,6 +377,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			stopWatch.stop();
 			Logger.info(this, "Delete Workflow Scheme task DONE, duration:" +
 					DateUtil.millisToSeconds(stopWatch.getTime()) + " seconds");
+
+			this.systemMessageEventUtil.pushSimpleTextEvent
+					(LanguageUtil.get(user.getLocale(), "Workflow-deleted", scheme.getName()), user.getUserId());
 		} catch (Exception e) {
 			throw new DotRuntimeException(e);
 		}

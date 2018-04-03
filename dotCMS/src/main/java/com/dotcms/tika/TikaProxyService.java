@@ -236,6 +236,27 @@ public interface TikaProxyService extends Serializable {
     public String parseToString(URL url) throws Exception;
 
     /**
+     * Parses the given document as a Plain Text document
+     * and returns the extracted text content.
+     * The given input stream is closed by this method.
+     * <p>
+     * To avoid unpredictable excess memory use, the returned string contains
+     * only up to {@link #getMaxStringLength()} first characters extracted
+     * from the input document. Use the {@link #setMaxStringLength(int)}
+     * method to adjust this limitation.
+     * <p>
+     * <strong>NOTE:</strong> Unlike most other Tika methods that take an
+     * {@link InputStream}, this method will close the given stream for
+     * you as a convenience. With other methods you are still responsible
+     * for closing the stream or a wrapper instance returned by Tika.
+     *
+     * @param stream the document to be parsed
+     * @return extracted text content
+     * @throws Exception if the document can not be read
+     */
+    public String parseToStringAsPlainText(InputStream stream) throws Exception;
+
+    /**
      * Returns the maximum length of strings returned by the
      * parseToString methods.
      *

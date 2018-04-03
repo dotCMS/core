@@ -226,6 +226,7 @@ public class TaskLocatorUtil {
 		ret.add(Task04340TemplateShowOnMenu.class);
 		ret.add(Task04345AddSystemWorkflowToContentType.class);
 		ret.add(Task04350AddDefaultWorkflowActionStates.class);
+		ret.add(Task04355SystemEventAddServerIdColumn.class);
 
 		return ret;
 	}

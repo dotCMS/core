@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.action;
 
 import com.dotcms.api.system.event.Visibility;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
@@ -186,6 +187,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	 * @throws IOException
 	 * @throws LanguageException
 	 */
+	@CloseDBIfOpened
 	public void buildFakeAjaxResponse(ActionRequest req, ActionResponse res) throws IOException, LanguageException{
 	  try {
         HibernateUtil.closeAndCommitTransaction();
@@ -193,9 +195,6 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
         try {
           HibernateUtil.rollbackTransaction();
         } catch (DotHibernateException e1) { }
-      finally{
-        DbConnectionFactory.closeConnection();
-      }
     }
       HttpServletResponse response = ((ActionResponseImpl)res).getHttpServletResponse();
       User user = super._getUser((ActionRequest) req);

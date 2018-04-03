@@ -152,6 +152,7 @@ public class InodeUtils {
 	 * @return String with the Type of the Asset if found. This method hist the DB.
 	 * @throws DotDataException
 	 */
+	@CloseDBIfOpened
 	public static String getAssetTypeFromDB(String inode) throws DotDataException {
 		String assetType = null;
 
@@ -173,8 +174,6 @@ public class InodeUtils {
 			Logger.error(InodeUtils.class, "Error trying find the Asset Type " + e.getMessage());
 			throw new DotDataException("Error trying find the Asset Type ", e);
 
-		} finally{
-			DbConnectionFactory.closeConnection();
 		}
 
 		return assetType;
