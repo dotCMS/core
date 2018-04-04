@@ -31,6 +31,11 @@ public interface WorkflowAPI {
 
 	public WorkFlowActionlet newActionlet(String className) throws DotDataException;
 
+	/**
+	 * If the user is not allowed to modified workflow, will throw {@link NotAllowedUserWorkflowException}
+	 * @param user
+	 */
+	void isUserAllowToModifiedWorkflow (final User user);
 
 	public java.util.List<WorkflowTask> searchTasks(WorkflowSearcher searcher) throws DotDataException;
 
@@ -188,6 +193,13 @@ public interface WorkflowAPI {
 	 */
 	public List<WorkflowScheme> findSchemesForContentType(ContentType contentType) throws DotDataException;
 
+	/**
+	 * Save an scheme
+	 * @param scheme {@link WorkflowScheme}
+	 * @param user   {@link User}
+	 * @throws DotDataException
+	 * @throws AlreadyExistException
+	 */
 	public void saveScheme(WorkflowScheme scheme, User user) throws DotDataException, AlreadyExistException;
 
 	/**
