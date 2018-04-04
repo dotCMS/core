@@ -1,15 +1,21 @@
 package com.dotcms.workflow.helper;
 
+import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.v1.workflow.WorkflowDefaultActionView;
-import com.dotcms.workflow.form.*;
+import com.dotcms.workflow.form.IWorkflowStepForm;
+import com.dotcms.workflow.form.WorkflowActionForm;
+import com.dotcms.workflow.form.WorkflowActionStepBean;
+import com.dotcms.workflow.form.WorkflowReorderBean;
+import com.dotcms.workflow.form.WorkflowSchemeForm;
+import com.dotcms.workflow.form.WorkflowStepAddForm;
+import com.dotcms.workflow.form.WorkflowStepUpdateForm;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -37,13 +43,15 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.lang.time.StopWatch;
-
 import java.io.IOException;
-import java.util.*;
-
-import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.beanutils.MethodUtils;
+import org.apache.commons.lang.time.StopWatch;
 
 
 /**
@@ -136,6 +144,15 @@ public class WorkflowHelper {
     public List<WorkflowAction> findAvailableActions(final String inode, final User user) {
         try {
             Logger.debug(this, "Asking for the available actions for the inode: " + inode);
+
+            if (!UtilMethods.isSet(inode)) {
+                throw new IllegalArgumentException("Missing required parameter inode.");
+            }
+
+            if(!workflowAPI.hasValidLicense()){
+               return workflowAPI.findActions(workflowAPI.findSystemWorkflowScheme(), user);
+            }
+
             final Contentlet contentlet = this.contentletAPI.find(inode, user, true);
             if(contentlet == null){
                throw new DoesNotExistException(String.format("Contentlet identified by inode '%s' was Not found.",inode));
@@ -176,6 +193,11 @@ public class WorkflowHelper {
      * @throws DotSecurityException
      */
     public WorkflowAction findAction(String actionId, String stepId, User user) throws DotDataException, DotSecurityException{
+
+        if (!UtilMethods.isSet(actionId) || !UtilMethods.isSet(stepId)) {
+            throw new IllegalArgumentException("Missing required parameter actionId or stepId.");
+        }
+
         final WorkflowAction action = this.workflowAPI.findAction(actionId, stepId, user);
         if(action == null){
             throw new DoesNotExistException("Workflow-does-not-exists-action");
@@ -605,6 +627,11 @@ public class WorkflowHelper {
             throws DotSecurityException, DotDataException {
 
         Logger.debug(this, "Looking for the schemeId: " + schemeId);
+
+        if (!UtilMethods.isSet(schemeId)) {
+            throw new IllegalArgumentException("Missing required parameter schemeId.");
+        }
+
         final WorkflowScheme workflowScheme = this.workflowAPI.findScheme(schemeId);
         final List<WorkflowStep> workflowSteps;
         if (null != workflowScheme) {
@@ -917,7 +944,7 @@ public class WorkflowHelper {
                     "Getting the available workflows default actions by schemeIds: " + schemeIds);
 
             //If no valid license is found we simply return the system wf.
-            if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
+            if (!workflowAPI.hasValidLicense()) {
                 schemes.add(workflowAPI.findSystemWorkflowScheme());
             } else {
                 for (final String id : schemeIds.split(",")) {

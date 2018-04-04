@@ -27,6 +27,8 @@ public interface WorkflowAPI {
 	public static final String SYSTEM_WORKFLOW_ID           = WorkFlowFactory.SYSTEM_WORKFLOW_ID;
 	public static final Set<WorkflowState> DEFAULT_SHOW_ON = EnumSet.of(WorkflowState.LOCKED, WorkflowState.UNLOCKED);
 
+	public boolean hasValidLicense();
+
     public void registerBundleService ();
 
 	public WorkFlowActionlet newActionlet(String className) throws DotDataException;

@@ -7,6 +7,7 @@ import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.FriendClass;
 import com.dotmarketing.beans.Host;
@@ -29,6 +30,7 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import java.util.concurrent.Future;
+import java.util.function.Supplier;
 import org.apache.commons.lang.time.StopWatch;
 import org.osgi.framework.BundleContext;
 
@@ -53,6 +55,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	// not very fancy, but the WorkflowImport is a friend of WorkflowAPI
 	private volatile FriendClass  friendClass = null;
+
+	//This by default tells if a license is valid or not.
+	private Supplier<Boolean> licenseValiditySupplier = () -> (LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level);
 
 	protected final DotSubmitter submitter = DotConcurrentFactory.getInstance()
 			.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
@@ -93,6 +98,20 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		registerBundleService();
 	}
 
+	/**
+	 * This allows me to override the license supplier for testing purposes
+	 * @param licenseValiditySupplier
+	 */
+	@VisibleForTesting
+	public WorkflowAPIImpl(Supplier<Boolean> licenseValiditySupplier) {
+		this();
+		this.licenseValiditySupplier = licenseValiditySupplier;
+	}
+
+	public boolean hasValidLicense(){
+		return (licenseValiditySupplier.get());
+	}
+
 	private FriendClass getFriendClass () {
 
 		if (null == this.friendClass) {
@@ -127,7 +146,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			// if the class calling the workflow api is not friend, so checks the validation
 			if (!this.getFriendClass().isFriend()) {
 				DotPreconditions.isTrue(
-						(LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level) &&
+						(hasValidLicense()) &&
 								APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("workflow-schemes", user),
 						() -> "User " + user + " cannot access workflows ", NotAllowedUserWorkflowException.class);
 			}
@@ -199,7 +218,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@CloseDBIfOpened
 	public List<WorkflowScheme> findSchemes(final boolean showArchived) throws DotDataException {
-		if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
+		if (!hasValidLicense()) {
 			return new ImmutableList.Builder<WorkflowScheme>().add(findSystemWorkflowScheme()).build();
 		}
 		return workFlowFactory.findSchemes(showArchived);
@@ -229,7 +248,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@CloseDBIfOpened
 	public WorkflowScheme findScheme(String id) throws DotDataException, DotSecurityException {
 		if (!WorkFlowFactory.SYSTEM_WORKFLOW_ID.equals(id)) {
-			if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
+			if (!hasValidLicense()) {
 				throw new DotSecurityException("You must have a valid license to gain access to schemes.");
 			}
 		}
@@ -273,8 +292,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		final ImmutableList.Builder<WorkflowScheme> schemes =
 				new ImmutableList.Builder<>();
 
-		if (contentType == null || !UtilMethods.isSet(contentType.inode())
-				|| LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
+		if (contentType == null || !UtilMethods.isSet(contentType.inode()) || !hasValidLicense()) {
 
 			schemes.add(this.findSystemWorkflowScheme());
 		} else {
@@ -298,7 +316,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		final ImmutableList.Builder<WorkflowScheme> schemes =
 				new ImmutableList.Builder<>();
-		if(structure ==null || ! UtilMethods.isSet(structure.getInode()) || LicenseUtil.getLevel() < LicenseLevel.STANDARD.level){
+		if(structure ==null || ! UtilMethods.isSet(structure.getInode()) || !hasValidLicense()){
 			schemes.add(this.findSystemWorkflowScheme());
 		} else {
 			try {
@@ -700,7 +718,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			throws DotDataException,
 			DotSecurityException {
 
-		if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
+		if (!hasValidLicense()) {
 			if (!SYSTEM_WORKFLOW_ID.equals(scheme.getId())) {
 				throw new DotSecurityException(
 						"You must have a valid license to gain access to schemes.");
@@ -740,7 +758,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public List<WorkflowAction> findAvailableActions(final Contentlet contentlet, final User user)
 			throws DotDataException, DotSecurityException {
 
-		if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
+		if (!hasValidLicense()) {
 			Logger.debug(this, "");
 			throw new DotSecurityException("You must have a valid license to see any available actions.");
 		}
@@ -868,7 +886,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		final WorkflowAction workflowAction = this.workFlowFactory.findAction(id);
 		if(null != workflowAction){
-			if(LicenseUtil.getLevel() < LicenseLevel.STANDARD.level){
+			if(!hasValidLicense()){
 				if(!SYSTEM_WORKFLOW_ID.equals(workflowAction.getSchemeId())){
 					throw new DotSecurityException("You must have a valid license to see any available action.");
 				}
@@ -885,7 +903,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		Logger.debug(this, "Finding the action: " + actionId + " for the step: " + stepId);
 		final WorkflowAction workflowAction = this.workFlowFactory.findAction(actionId, stepId);
 		if(null != workflowAction){
-			if(LicenseUtil.getLevel() < LicenseLevel.STANDARD.level){
+			if(!hasValidLicense()){
 				if(!SYSTEM_WORKFLOW_ID.equals(workflowAction.getSchemeId())){
 					throw new DotSecurityException("You must have a valid license to see any available action.");
 				}
@@ -1023,7 +1041,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@CloseDBIfOpened
 	public WorkflowStep findStep(String id) throws DotDataException, DotSecurityException {
 		final WorkflowStep step = workFlowFactory.findStep(id);
-		if(LicenseUtil.getLevel() < LicenseLevel.STANDARD.level){
+		if(!hasValidLicense()){
 			if(!SYSTEM_WORKFLOW_ID.equals(step.getSchemeId())){
                 throw new DotSecurityException("You must have a valid license to see any available step.");
 			}
@@ -1830,7 +1848,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		List<WorkflowScheme> schemes = findSchemesForContentType(contentType);
 
-		if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
+		if (!hasValidLicense()) {
 			//When no License, we only allow the system workflow
 			final WorkflowScheme systemWorkflow = schemes.stream()
 					.filter(WorkflowScheme::isSystemWorkflowScheme).findFirst()

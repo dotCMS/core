@@ -1,40 +1,54 @@
 package com.dotcms.rest.api.v1.workflow;
 
-import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.exception.ExceptionUtil;
+import static com.dotcms.exception.ExceptionUtil.BAD_REQUEST_EXCEPTIONS;
+import static com.dotcms.exception.ExceptionUtil.NOT_FOUND_EXCEPTIONS;
+import static com.dotcms.exception.ExceptionUtil.SECURITY_EXCEPTIONS;
+import static com.dotcms.exception.ExceptionUtil.causedBy;
+import static com.dotcms.rest.ResponseEntityView.OK;
+import static com.dotcms.util.CollectionsUtils.map;
+
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
-import com.dotcms.repackage.javax.ws.rs.*;
+import com.dotcms.repackage.javax.ws.rs.DELETE;
+import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.POST;
+import com.dotcms.repackage.javax.ws.rs.PUT;
+import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
+import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.QueryParam;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.InitDataObject;
-
-import static com.dotcms.exception.ExceptionUtil.*;
-import static com.dotcms.rest.ResponseEntityView.OK;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotcms.workflow.form.*;
+import com.dotcms.workflow.form.FireActionForm;
+import com.dotcms.workflow.form.WorkflowActionForm;
+import com.dotcms.workflow.form.WorkflowActionStepBean;
+import com.dotcms.workflow.form.WorkflowActionStepForm;
+import com.dotcms.workflow.form.WorkflowReorderBean;
+import com.dotcms.workflow.form.WorkflowReorderWorkflowActionStepForm;
+import com.dotcms.workflow.form.WorkflowSchemeForm;
+import com.dotcms.workflow.form.WorkflowSchemeImportExportObjectForm;
+import com.dotcms.workflow.form.WorkflowStepAddForm;
+import com.dotcms.workflow.form.WorkflowStepUpdateForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
-
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
-import com.dotmarketing.portlets.workflows.business.NotAllowedUserWorkflowException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
@@ -50,14 +64,11 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.LocaleUtil;
-
-import static com.dotcms.util.CollectionsUtils.*;
-import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 import java.util.function.Supplier;
+import javax.servlet.http.HttpServletRequest;
 
 @SuppressWarnings("serial")
 @Beta /* Non Official released */
@@ -188,9 +199,7 @@ public class WorkflowResource {
                     "Getting the workflow schemes for the contentTypeId: " + contentTypeId
                             + " and including All Schemes");
             final List<WorkflowScheme> schemes = this.workflowHelper.findSchemes();
-            final List<WorkflowScheme> contentTypeSchemes = this.workflowHelper
-                    .findSchemesByContentType
-                            (contentTypeId, initDataObject.getUser());
+            final List<WorkflowScheme> contentTypeSchemes = this.workflowHelper.findSchemesByContentType(contentTypeId, initDataObject.getUser());
 
             return Response.ok(new ResponseEntityView(
                     new SchemesAndSchemesContentTypeView(schemes, contentTypeSchemes)))
@@ -310,7 +319,7 @@ public class WorkflowResource {
                 (null, true, request, true, null);
         try {
             Logger.debug(this, "Getting the workflow action " + actionId + " for the step: " + stepId);
-            final WorkflowAction action = this.workflowAPI.findAction(actionId, stepId, initDataObject.getUser());
+            final WorkflowAction action = this.workflowHelper.findAction(actionId, stepId, initDataObject.getUser());
             return Response.ok(new ResponseEntityView(action)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
