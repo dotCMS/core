@@ -43,7 +43,7 @@ public class MultiUserReferenceParameter extends WorkflowActionletParameter {
     @Override
     public String hasError(final String stringToValidate) {
         final StringBuilder errorMsg = new StringBuilder();
-        if (UtilMethods.isSet(stringToValidate)) { 
+        if (UtilMethods.isSet(stringToValidate)) {
             final StringTokenizer tokenizer = new StringTokenizer(stringToValidate, ",");
             while (tokenizer.hasMoreTokens()) {
                 final String token = tokenizer.nextToken().trim();

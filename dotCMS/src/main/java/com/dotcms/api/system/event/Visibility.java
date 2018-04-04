@@ -5,6 +5,7 @@ package com.dotcms.api.system.event;
  *
  * <u>
  *     <li><b>USER:</b> Choose this visibility if you want your event triggered to a specific user.</li>
+ *     <li><b>USER_SESSION:</b> Choose this visibility if you want your event triggered to a specific user and specific session.</li>
  *     <li><b>ROLE:</b> Choose this visibility if you want your event triggered to a specific role.</li>
  *     <li><b>ROLES:</b> Choose this visibility if you want your event triggered to a specific roles (Depending on the operator pass to the {@link VisibilityRoles}, it is will apply an OR/AND logic over the roles.).</li>
  *     <li><b>PERMISSION:</b> Choose this visibility if you want your event triggered to an users with a specific permission .</li>
@@ -23,6 +24,7 @@ package com.dotcms.api.system.event;
 public enum Visibility {
 
     USER,
+    USER_SESSION,
     USERS,
     ROLE,
     ROLES,
