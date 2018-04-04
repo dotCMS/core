@@ -5,14 +5,18 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.DbType;
+import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.quartz.JobExecutionException;
 
-public class Task04335CreateSystemWorkflowTest extends IntegrationTestBase {
+public class Task04335CreateSystemWorkflowTest extends BaseWorkflowIntegrationTest {
 
 
     @BeforeClass
@@ -22,8 +26,9 @@ public class Task04335CreateSystemWorkflowTest extends IntegrationTestBase {
     }
 
     @Test
-    public void addPermission_onDiffDataBase_Success() throws DotDataException, DotSecurityException, JobExecutionException {
+    public void addPermission_onDiffDataBase_Success() throws DotDataException, DotSecurityException, JobExecutionException, AlreadyExistException {
 
+        final WorkflowAction action = createWorkflowAction(WorkflowAPI.SYSTEM_WORKFLOW_ID, "TestAction");
         /**
          * {
          "id": 0,
@@ -39,7 +44,7 @@ public class Task04335CreateSystemWorkflowTest extends IntegrationTestBase {
         try {
             new DotConnect().setSQL(Task04335CreateSystemWorkflow.insertPermissionMap.get(dbType))
                     .addParam("individual")
-                    .addParam("4da13a42-5d59-480c-ad8f-94a3adf809fe")
+                    .addParam(action.getId())
                     .addParam("617f7300-5c7b-463f-9554-380b918520bc")
                     .addParam(1)
                     .loadResult();

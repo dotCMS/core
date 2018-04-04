@@ -42,7 +42,6 @@ public class Task04335CreateSystemWorkflow implements StartupTask {
     protected static final String INSERT_ACTION_FOR_STEP   = "insert into workflow_action_step(action_id, step_id, action_order) values (?,?,?)";
     protected static final String INSERT_ACTION_CLASS      = "insert into workflow_action_class (id, action_id, name, my_order, clazz) values (?,?, ?, ?, ?)";
     protected static final String DELIMITER                = ",";
-    protected static final String INSERT_PERMISSION        = "insert into permission(permission_type, inode_id, roleid, permission) values (?, ?, ?, ?)";
     protected static final Map<DbType, String> insertPermissionMap   = map(
             DbType.POSTGRESQL,   "insert into permission(id, permission_type, inode_id, roleid, permission) values (nextval('permission_seq'), ?, ?, ?, ?)",
             DbType.ORACLE,       "insert into permission(id, permission_type, inode_id, roleid, permission) values (permission_seq.NEXTVAL,    ?, ?, ?, ?)",
