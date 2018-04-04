@@ -51,6 +51,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.liferay.portal.model.User;
 import java.util.List;
+import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -186,6 +187,7 @@ public class WorkflowResourceLicenseIntegrationTest {
 
     @Test
     public void Find_Action_By_Step_Invalid_License() throws Exception {
+        //we use
         final WorkflowScheme defaultScheme = licensedWorkflowAPI.findDefaultScheme();
         assertNotNull("Unable to find default scheme", defaultScheme);
         final List<WorkflowAction> actions = licensedWorkflowAPI
@@ -193,9 +195,11 @@ public class WorkflowResourceLicenseIntegrationTest {
         assertFalse("Default scheme has no actions ", actions.isEmpty());
         final List<WorkflowStep> steps = licensedWorkflowAPI.findSteps(defaultScheme);
 
+        final Optional<WorkflowAction> o = actions.stream().filter(workflowAction -> "Assign Workflow".equals(workflowAction.getName())).findFirst();
+        assertTrue(o.isPresent());
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final Response findResponse = nonLicenseWorkflowResource
-                .findActionByStep(request, steps.get(0).getId(), actions.get(0).getId());
+                .findActionByStep(request, steps.get(0).getId(), o.get().getId());
         assertEquals(Status.UNAUTHORIZED.getStatusCode(), findResponse.getStatus());
     }
 

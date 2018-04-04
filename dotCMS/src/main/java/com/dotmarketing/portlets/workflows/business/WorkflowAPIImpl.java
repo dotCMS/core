@@ -253,8 +253,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@CloseDBIfOpened
 	public WorkflowScheme findScheme(String id) throws DotDataException, DotSecurityException {
-		if (!WorkFlowFactory.SYSTEM_WORKFLOW_ID.equals(id)) {
-			if (!hasValidLicense()) {
+		if (!SYSTEM_WORKFLOW_ID.equals(id)) {
+			if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
 				throw new DotSecurityException("You must have a valid license to gain access to schemes.");
 			}
 		}
@@ -725,9 +725,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public List<WorkflowAction> findActions(final WorkflowScheme scheme, final User user)
 			throws DotDataException,
 			DotSecurityException {
+		if (!SYSTEM_WORKFLOW_ID.equals(scheme.getId())) {
+			if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
 
-		if (!hasValidLicense()) {
-			if (!SYSTEM_WORKFLOW_ID.equals(scheme.getId())) {
 				throw new DotSecurityException(
 						"You must have a valid license to gain access to schemes.");
 			}
@@ -894,9 +894,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		final WorkflowAction workflowAction = this.workFlowFactory.findAction(id);
 		if(null != workflowAction){
-			if(!hasValidLicense()){
-				if(!SYSTEM_WORKFLOW_ID.equals(workflowAction.getSchemeId())){
-					throw new DotSecurityException("You must have a valid license to see any available action.");
+			if (!SYSTEM_WORKFLOW_ID.equals(workflowAction.getSchemeId())) {
+				if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
+
+					throw new DotSecurityException(
+							"You must have a valid license to see any available action.");
 				}
 			}
 		}
@@ -910,10 +912,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		Logger.debug(this, "Finding the action: " + actionId + " for the step: " + stepId);
 		final WorkflowAction workflowAction = this.workFlowFactory.findAction(actionId, stepId);
-		if(null != workflowAction){
-			if(!hasValidLicense()){
-				if(!SYSTEM_WORKFLOW_ID.equals(workflowAction.getSchemeId())){
-					throw new DotSecurityException("You must have a valid license to see any available action.");
+		if (null != workflowAction) {
+			if (!SYSTEM_WORKFLOW_ID.equals(workflowAction.getSchemeId())) {
+				if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
+
+					throw new DotSecurityException(
+							"You must have a valid license to see any available action.");
 				}
 			}
 		}
@@ -1049,9 +1053,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@CloseDBIfOpened
 	public WorkflowStep findStep(String id) throws DotDataException, DotSecurityException {
 		final WorkflowStep step = workFlowFactory.findStep(id);
-		if(!hasValidLicense()){
-			if(!SYSTEM_WORKFLOW_ID.equals(step.getSchemeId())){
-                throw new DotSecurityException("You must have a valid license to see any available step.");
+		if (!SYSTEM_WORKFLOW_ID.equals(step.getSchemeId())) {
+			if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
+
+				throw new DotSecurityException(
+						"You must have a valid license to see any available step.");
 			}
 		}
 		return step;

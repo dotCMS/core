@@ -50,7 +50,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.beanutils.MethodUtils;
 import org.apache.commons.lang.time.StopWatch;
 
 
@@ -176,6 +175,11 @@ public class WorkflowHelper {
      * @throws DotSecurityException
      */
     public WorkflowAction findAction(final String actionId, final User user) throws DotDataException, DotSecurityException{
+
+        if (!UtilMethods.isSet(actionId)) {
+            throw new IllegalArgumentException("Missing required parameter actionId.");
+        }
+
         final WorkflowAction action = this.workflowAPI.findAction(actionId, user);
         if(action == null){
            throw new DoesNotExistException("Workflow-does-not-exists-action");

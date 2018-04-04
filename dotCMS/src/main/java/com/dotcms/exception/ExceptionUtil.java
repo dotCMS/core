@@ -9,7 +9,6 @@ import com.dotmarketing.portlets.workflows.business.NotAllowedUserWorkflowExcept
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-
 import java.util.Set;
 
 /**
@@ -17,6 +16,17 @@ import java.util.Set;
  * @author andrecurione
  */
 public class ExceptionUtil {
+
+    public static final Set<Class<? extends Throwable>> SECURITY_EXCEPTIONS = ImmutableSet
+            .of(SecurityException.class, DotSecurityException.class,
+                    NotAllowedUserWorkflowException.class);
+
+    public static final Set<Class<? extends Throwable>> NOT_FOUND_EXCEPTIONS = ImmutableSet
+            .of(NotFoundInDbException.class, DoesNotExistException.class);
+
+    public static final Set<Class<? extends Throwable>> BAD_REQUEST_EXCEPTIONS = ImmutableSet
+            .of(AlreadyExistException.class, IllegalArgumentException.class);
+
 
     private ExceptionUtil () {}
 
@@ -37,12 +47,6 @@ public class ExceptionUtil {
         }
         return false;
     }
-
-    public static Set<Class<? extends Throwable>> SECURITY_EXCEPTIONS = ImmutableSet.of(SecurityException.class, DotSecurityException.class, NotAllowedUserWorkflowException.class);
-
-    public static final Set<Class<? extends Throwable>> NOT_FOUND_EXCEPTIONS = ImmutableSet.of(NotFoundInDbException.class, DoesNotExistException.class);
-
-    public static final Set<Class<? extends Throwable>> BAD_REQUEST_EXCEPTIONS = ImmutableSet.of(AlreadyExistException.class, IllegalArgumentException.class);
 
     /**
      *
