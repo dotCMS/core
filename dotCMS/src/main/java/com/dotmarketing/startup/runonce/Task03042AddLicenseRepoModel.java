@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.business.CloseDBIfOpened;
 import java.util.List;
 
 import com.dotmarketing.common.db.DotConnect;
@@ -10,6 +11,7 @@ import com.dotmarketing.util.Logger;
 public class Task03042AddLicenseRepoModel extends AbstractJDBCStartupTask {
 
     @Override
+    @CloseDBIfOpened
     public boolean forceRun() {
         try {
             DotConnect dc=new DotConnect();
@@ -19,13 +21,6 @@ public class Task03042AddLicenseRepoModel extends AbstractJDBCStartupTask {
         }
         catch(Exception ex) {
             return true;
-        }
-        finally {
-            try {
-                DbConnectionFactory.closeConnection();
-            } catch (Exception e) {
-                Logger.error(this, e.getMessage(), e);
-            }
         }
     }
 

@@ -598,7 +598,6 @@ public class HostAPIImpl implements HostAPI {
                 }
             }
             
-
             public void deleteHost() throws Exception {
                 if(host != null){
                     hostCache.remove(host);
@@ -660,12 +659,17 @@ public class HostAPIImpl implements HostAPI {
                 dc.addParam(host.getIdentifier());
                 dc.loadResult();
 
-                String[] assets = {Inode.Type.CONTAINERS.getTableName(),"template","links"};
-                for(String asset : assets) {
-                    dc.setSQL("select inode from "+asset+" where exists (select * from identifier where host_inode=? and id="+asset+".identifier)");
+                Inode.Type[] assets = {Inode.Type.CONTAINERS, Inode.Type.TEMPLATE, Inode.Type.LINKS};
+                for(Inode.Type asset : assets) {
+                    dc.setSQL("select inode from "+asset.getTableName()+" where exists (select * from identifier where host_inode=? and id="+asset.getTableName()+".identifier)");
                     dc.addParam(host.getIdentifier());
                     for(Map row : (List<Map>)dc.loadResults()) {
-                        dc.setSQL("delete from "+asset+" where inode=?");
+                        dc.setSQL("delete from "+asset.getVersionTableName()+" where working_inode=? or live_inode=?");
+                        dc.addParam(row.get("inode"));
+                        dc.addParam(row.get("inode"));
+                        dc.loadResult();
+
+                        dc.setSQL("delete from "+asset.getTableName()+" where inode=?");
                         dc.addParam(row.get("inode"));
                         dc.loadResult();
                     }

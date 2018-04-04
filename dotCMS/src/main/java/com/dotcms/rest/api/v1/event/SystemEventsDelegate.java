@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.event;
 
 import com.dotcms.api.system.event.*;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.repackage.javax.ws.rs.container.AsyncResponse;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
@@ -57,6 +58,7 @@ public class SystemEventsDelegate implements Delegate<AppContext> {
     }
 
     @Override
+    @CloseDBIfOpened
     public void execute(final AppContext context) {
 
         List<SystemEvent> newEvents = null;
@@ -70,17 +72,6 @@ public class SystemEventsDelegate implements Delegate<AppContext> {
         } catch (Exception e) {
 
             Logger.debug(this, e.getMessage(), e);
-        } finally {
-
-            // The main reason for this abstraction is to ensure that the
-            // database connection is released and closed after executing this
-            try {
-                HibernateUtil.closeSession();
-            } catch (DotHibernateException e) {
-                Logger.warn(this, e.getMessage(), e);
-            } finally {
-                DbConnectionFactory.closeConnection();
-            }
         }
 
         if (null != newEvents) {

@@ -101,7 +101,7 @@ public class CopyActionlet extends WorkFlowActionlet {
     private void performCopy(final Contentlet contentlet,
                              final User user) throws DotDataException, DotSecurityException, IOException {
 
-        Contentlet copyContentlet = this.contentletAPI.copyContentlet(contentlet, user, false);
+        final Contentlet copyContentlet = this.contentletAPI.copyContentlet(contentlet, user, false);
 
         if (null != copyContentlet) {
 

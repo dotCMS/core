@@ -1,5 +1,6 @@
 package com.dotmarketing.quartz.job;
 
+import com.dotcms.business.CloseDBIfOpened;
 import java.util.List;
 
 import org.quartz.Job;
@@ -23,6 +24,7 @@ import com.dotmarketing.util.Logger;
 public class TimeMachineJob implements Job, StatefulJob {
 
     @Override
+    @CloseDBIfOpened
     public void execute(JobExecutionContext ctx) throws JobExecutionException {
         JobDataMap dataMap = ctx.getJobDetail().getJobDataMap();
         Boolean allhosts=(Boolean) dataMap.get("allhosts");
@@ -47,16 +49,6 @@ public class TimeMachineJob implements Job, StatefulJob {
         }
         catch(Exception ex) {
             throw new JobExecutionException(ex);
-        }
-        finally {
-            try {
-                HibernateUtil.closeSession();
-            } catch (DotHibernateException e) {
-                Logger.warn(this, e.getMessage(), e);
-            }
-            finally {
-                DbConnectionFactory.closeConnection();
-            }
         }
     }
 

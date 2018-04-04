@@ -3,7 +3,6 @@ package com.dotcms.api.system.event.verifier;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.PayloadVerifier;
 import com.dotcms.api.system.event.PayloadVerifierFactory;
-import com.dotcms.rest.api.v1.system.websocket.SessionWrapper;
 import com.liferay.portal.model.User;
 
 /**

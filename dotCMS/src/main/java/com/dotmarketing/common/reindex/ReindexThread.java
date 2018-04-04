@@ -249,7 +249,7 @@ public class ReindexThread extends Thread {
 				try {
 					if(remoteQ.size()==0)
 					    fillRemoteQ();
-					
+
 					if(remoteQ.size()==0 && ESReindexationProcessStatus.inFullReindexation() && jAPI.recordsLeftToIndexForServer()==0) {
 						// The re-indexation process has finished successfully
 						reindexSwitchover(false);
@@ -262,7 +262,7 @@ public class ReindexThread extends Thread {
 						// all the "good" records have been processed
 						fillRemoteQ(true);
 					}
-					
+
 					if(!remoteDelQ.isEmpty()) {
 					    synchronized(remoteDelQ) {
 				            try {
@@ -502,7 +502,7 @@ public class ReindexThread extends Thread {
 				            addRecordsToDelete(recordsToDelete);
 				        }
 					}
-					
+
 				} catch (Exception ex) {
 					Logger.error(this, "Unable to index record", ex);
 				} finally {
@@ -513,7 +513,7 @@ public class ReindexThread extends Thread {
 						}catch (Exception e) {
 							Logger.debug(this, "Unable to close connection : " + e.getMessage(),e);
 						}
-						
+
 					} catch (DotHibernateException e) {
 						Logger.error(this, e.getMessage(), e);
 						try{

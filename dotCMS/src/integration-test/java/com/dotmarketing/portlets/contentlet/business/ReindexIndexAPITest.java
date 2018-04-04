@@ -42,7 +42,7 @@ import com.liferay.portal.model.User;
  * Date: 3/20/12
  * Time: 12:12 PM
  */
-public class ReindexIndexAPITest extends ContentletBaseTest {
+public class ReindexIndexAPITest{
 
     private static boolean respectFrontendRoles = false;
     protected static User user;
@@ -53,6 +53,7 @@ public class ReindexIndexAPITest extends ContentletBaseTest {
     protected static Host defaultHost;
     protected static Language lang;
     protected static Folder folder ;
+    protected static ContentletAPI contentletAPI;
 
 
     @BeforeClass
