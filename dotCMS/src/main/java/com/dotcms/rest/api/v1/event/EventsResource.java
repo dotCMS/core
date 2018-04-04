@@ -91,10 +91,11 @@ public class EventsResource implements Serializable {
                                         @QueryParam("lastcallback") Long lastCallback) {
 
 
-        Response response = null;
-        final InitDataObject initData = this.webResource.init(null, true, request, true, null);
-        final AppContext appContext =  WebSessionContext.getInstance(request);
+        Response response              = null;
+        final InitDataObject initData  = this.webResource.init(null, true, request, true, null);
+        final AppContext appContext    =  WebSessionContext.getInstance(request);
         List<SystemEvent> systemEvents = null;
+
         try {
 
             if (null != initData.getUser()) {
@@ -127,9 +128,10 @@ public class EventsResource implements Serializable {
                                 @QueryParam("lastcallback") Long lastCallback) {
 
 
-        Response response = null;
+        Response response             = null;
         final InitDataObject initData = this.webResource.init(null, true, request, true, null);
-        final AppContext appContext =  new SimpleMapAppContext();
+        //final AppContext appContext =  new SimpleMapAppContext();
+        final AppContext appContext   =  WebSessionContext.getInstance(request);
 
         try {
 

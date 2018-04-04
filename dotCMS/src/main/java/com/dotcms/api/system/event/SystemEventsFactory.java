@@ -124,7 +124,7 @@ public class SystemEventsFactory implements Serializable {
 		 *                            when this push is called inside a thread
 		 * @throws DotDataException
 		 */
-		private void push(final SystemEvent systemEvent, boolean forceNewTransaction) throws DotDataException {
+		private void push(final SystemEvent systemEvent, final boolean forceNewTransaction) throws DotDataException {
 
 			if (!UtilMethods.isSet(systemEvent)) {
 				final String msg = "System Event object cannot be null.";

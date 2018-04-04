@@ -5,6 +5,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.repackage.javax.ws.rs.container.AsyncResponse;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.api.v1.system.websocket.WebSocketUserSessionData;
 import com.dotcms.system.AppContext;
 import com.dotcms.util.Delegate;
 import com.dotcms.util.marshal.MarshalFactory;
@@ -30,11 +31,11 @@ import static com.dotcms.util.CollectionsUtils.list;
  */
 public class SystemEventsDelegate implements Delegate<AppContext> {
 
-    public static final String RESULT = "result";
+    public static final String RESULT        = "result";
     public static final String LAST_CALLBACK = "lastcallback";
-    public static final String DO_MARSHALL = "domarshall";
-    public static final String RESPONSE = "response";
-    public static final String USER = "user";
+    public static final String DO_MARSHALL   = "domarshall";
+    public static final String RESPONSE      = "response";
+    public static final String USER          = "user";
 
     private final SystemEventsAPI systemEventsAPI;
     private final MarshalUtils marshalUtils;
@@ -100,14 +101,15 @@ public class SystemEventsDelegate implements Delegate<AppContext> {
                                                final List<SystemEvent> newEvents) {
 
         final List<SystemEvent> filteredEventList = list();
-        final User sessionUser = context.getAttribute(USER);
+        final User sessionUser                    = context.getAttribute(USER);
+        final String userSessionId                = context.getId();
 
         if (null != newEvents) {
 
-            for (SystemEvent systemEvent : newEvents) {
+            for (final SystemEvent systemEvent : newEvents) {
 
                 try {
-                    if (this.apply(systemEvent, sessionUser)) {
+                    if (this.apply(systemEvent, sessionUser, userSessionId)) {
 
                         filteredEventList.add(this.processEvent(sessionUser, systemEvent));
                     } else {
@@ -142,10 +144,11 @@ public class SystemEventsDelegate implements Delegate<AppContext> {
      * @throws DotDataException
      */
     private boolean apply(final SystemEvent event,
-                          final User sessionUser) throws DotDataException {
+                          final User sessionUser,
+                          final String userSessionId) throws DotDataException {
 
         final Payload payload = event.getPayload();
-        boolean apply = false; // if the payload is null, must not send to the session.
+        boolean apply         = false; // if the payload is null, must not send to the session.
 
         if  (null != payload && null != payload.getVisibility() && null != sessionUser) {
 
@@ -153,7 +156,18 @@ public class SystemEventsDelegate implements Delegate<AppContext> {
             final PayloadVerifier verifier = this.payloadVerifierFactory.getVerifier(payload);
 
             //Check if we have the "visibility" rights to use this payload
-            apply = (null != verifier) ? verifier.verified(payload, sessionUser) : true;
+            apply = (null != verifier) ? verifier.verified(payload,
+                    new WebSocketUserSessionData() {
+                        @Override
+                        public User getUser() {
+                            return sessionUser;
+                        }
+
+                        @Override
+                        public String getUserSessionId() {
+                            return userSessionId;
+                        }
+                    }) : true;
         }
 
         return apply;
