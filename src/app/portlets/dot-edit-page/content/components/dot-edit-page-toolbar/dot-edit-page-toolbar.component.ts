@@ -137,7 +137,7 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
      * @memberof DotEditPageToolbarComponent
      */
     stateSelectorHandler(pageState: PageMode): void {
-        if (this.shouldConfirmToLock()) {
+        if (this.mode === PageMode.EDIT && this.shouldConfirmToLock()) {
             this.showLockConfirmDialog(() => {
                 this.setSelectorState(pageState);
             });
@@ -201,6 +201,6 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
     }
 
     private shouldConfirmToLock(): boolean {
-        return (this.lockerModel || this.mode === PageMode.EDIT) && this.pageState.state.lockedByAnotherUser;
+        return this.pageState.page.canLock && this.pageState.state.lockedByAnotherUser;
     }
 }
