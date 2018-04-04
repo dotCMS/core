@@ -16,19 +16,33 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.workflows.model.*;
+import com.dotmarketing.portlets.workflows.model.WorkFlowTaskFiles;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
+import com.dotmarketing.portlets.workflows.model.WorkflowComment;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
+import com.dotmarketing.portlets.workflows.model.WorkflowState;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
-import org.apache.commons.beanutils.BeanUtils;
-
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+import org.apache.commons.beanutils.BeanUtils;
 
 
 /**
@@ -172,6 +186,8 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			return this.convertScheme(map);
 		} else if (obj instanceof WorkflowHistory) {
 			return this.convertHistory(map);
+		} else if (obj instanceof WorkflowTask) {
+			return this.convertTask(map);
 		} else {
 			return this.convert(obj, map);
 		}
@@ -212,6 +228,22 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		BeanUtils.copyProperties(step, row);
 
 		return step;
+	}
+
+	private WorkflowTask convertTask(Map<String, Object> row)
+			throws IllegalAccessException, InvocationTargetException {
+
+		final WorkflowTask task = new WorkflowTask();
+		row.put("languageId", row.get("language_id"));
+		row.put("creationDate", row.get("creation_date"));
+		row.put("modDate", row.get("mod_date"));
+		row.put("dueDate", row.get("due_date"));
+		row.put("createdBy", row.get("created_by"));
+		row.put("assignedTo", row.get("assigned_to"));
+		row.put("belongsTo", row.get("belongs_to"));
+		BeanUtils.copyProperties(task, row);
+
+		return task;
 	}
 
 	/**
@@ -396,15 +428,14 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	@Override
 	public int getCountContentletsReferencingStep(WorkflowStep step) throws DotDataException{
-		int amount = 0;
+
 		final DotConnect db = new DotConnect();
 
 		// get step related assets
 		db.setSQL(sql.SELECT_COUNT_CONTENTLES_BY_STEP);
 		db.addParam(step.getId());
 		Map<String,Object> res = db.loadObjectResults().get(0);
-		amount=Integer.parseInt(String.valueOf(res.get("count")));
-		return amount;
+		return Integer.parseInt(String.valueOf(res.get("count")));
 	}
 
 	@Override
@@ -773,17 +804,21 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		WorkflowTask task = cache.getTask(contentlet);
 
 		if (task == null) {
-			final HibernateUtil hu = new HibernateUtil(WorkflowTask.class);
-			hu.setQuery(
-					"from workflow_task in class com.dotmarketing.portlets.workflows.model.WorkflowTask where webasset = ? and language_id = ?");
-			hu.setParam(contentlet.getIdentifier());
-			hu.setParam(contentlet.getLanguageId());
-			task = (WorkflowTask) hu.load();
 
-			if (task != null && task.getId()!=null) {
-				cache.addTask(contentlet, task);
+			final DotConnect db = new DotConnect();
+			db.setSQL(WorkflowSQL.SELECT_TASK);
+			db.addParam(contentlet.getIdentifier());
+			db.addParam(contentlet.getLanguageId());
+
+			List<WorkflowTask> foundTasks = this
+					.convertListToObjects(db.loadObjectResults(), WorkflowTask.class);
+			if (null != foundTasks && !foundTasks.isEmpty()) {
+				task = foundTasks.get(0);
 			}
-			else{
+
+			if (null != task && null != task.getId()) {
+				cache.addTask(contentlet, task);
+			} else {
 				cache.add404Task(contentlet);
 			}
 		}
@@ -865,7 +900,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	 */
 	private DotConnect getWorkflowSqlQuery(WorkflowSearcher searcher, boolean counting) throws DotDataException {
 
-		final boolean isAdministrator = APILocator.getRoleAPI().doesUserHaveRole(searcher.getUser(), APILocator.getRoleAPI().loadCMSAdminRole());
 		DotConnect dc = new DotConnect();
 		final StringBuilder query = new StringBuilder();
 
@@ -1824,7 +1858,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	@Override
 	public List<WorkflowTask> findTasksByStep(final String stepId) throws DotDataException, DotSecurityException {
-		List<WorkflowTask> tasks = null;
+		List<WorkflowTask> tasks;
 		DotConnect dc = new DotConnect();
 
 		try {
@@ -1840,13 +1874,11 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	@Override
 	public List<ContentType> findContentTypesByScheme(final WorkflowScheme scheme) throws DotDataException, DotSecurityException{
-		List<ContentType> contentTypes = null;
+		List<ContentType> contentTypes;
 		DotConnect dc = new DotConnect();
 		try {
 			dc.setSQL(sql.SELECT_STRUCTS_FOR_SCHEME);
 			dc.addParam(scheme.getId());
-			List<HashMap<String, String>> contentTypeIds = dc.loadResults();
-
 			contentTypes =  this.convertListToObjects(dc.loadObjectResults(), ContentType.class);
 
 		} catch (DotDataException e) {
