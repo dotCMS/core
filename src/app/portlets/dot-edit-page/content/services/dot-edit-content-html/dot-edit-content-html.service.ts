@@ -273,7 +273,6 @@ export class DotEditContentHtmlService {
             this.iframeActions.next({
                 name: type,
                 dataset: target.dataset,
-                contentletEvents: this.contentletEvents,
                 container: container ? container.dataset : null
             });
         });
