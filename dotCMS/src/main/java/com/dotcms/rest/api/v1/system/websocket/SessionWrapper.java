@@ -14,20 +14,28 @@ import java.util.Set;
  * Our implementation of websocket session to keep the userid and roles.
  * @author jsanca
  */
-public class SessionWrapper implements Session {
+public class SessionWrapper implements Session, WebSocketUserSessionData {
 
     private final Session session;
     private final User user;
+    private final String userSessionId;
 
-    public SessionWrapper(final Session session, final User user) {
+    public SessionWrapper(final Session session, final User user, final String userSessionId) {
 
-        this.session = session;
-        this.user = user;
+        this.session        = session;
+        this.user           = user;
+        this.userSessionId  = userSessionId;
     }
 
+    @Override
     public User getUser () {
 
         return user;
+    }
+
+    @Override
+    public String getUserSessionId() {
+        return userSessionId;
     }
 
     @Override

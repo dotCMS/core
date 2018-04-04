@@ -1,10 +1,6 @@
 package com.dotcms.listeners;
 
-import com.dotcms.api.system.event.Payload;
-import com.dotcms.api.system.event.SystemEvent;
-import com.dotcms.api.system.event.SystemEventType;
-import com.dotcms.api.system.event.SystemEventsAPI;
-import com.dotcms.api.system.event.Visibility;
+import com.dotcms.api.system.event.*;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
@@ -104,21 +100,23 @@ public class SessionMonitor implements ServletRequestListener,
         }*/
     }
     
-    public void sessionDestroyed(HttpSessionEvent event) {
-        String userId = (String) event.getSession().getAttribute("USER_ID");
+    public void sessionDestroyed(final HttpSessionEvent event) {
+
+        final String userId = (String) event.getSession().getAttribute("USER_ID");
         if (userId != null) {
-            String id = event.getSession().getId();
-            sysUsers.remove(id);
-            userSessions.remove(id);
-            sysUsersAddress.remove(id);
+
+            final String sessionId = event.getSession().getId();
+
+            sysUsers.remove(sessionId);
+            userSessions.remove(sessionId);
+            sysUsersAddress.remove(sessionId);
 
             try {
 
                 Logger.debug(this, "Triggering a session destroyed event");
 
                 this.systemEventsAPI.push(new SystemEvent
-                        (SystemEventType.SESSION_DESTROYED, new Payload(
-                                new Long(System.currentTimeMillis()), Visibility.USER, userId)));
+                        (SystemEventType.SESSION_DESTROYED, UserSessionPayloadBuilder.build(userId, sessionId)));
             } catch (DotDataException e) {
 
                 Logger.debug(this, "Could not sent the session destroyed event" + e.getMessage(), e);

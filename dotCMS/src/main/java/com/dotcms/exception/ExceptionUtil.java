@@ -9,6 +9,8 @@ import com.dotmarketing.portlets.workflows.business.NotAllowedUserWorkflowExcept
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -49,11 +51,12 @@ public class ExceptionUtil {
     }
 
     /**
-     *
+     * Returns true if the Throwable is instance or contains a cause of the specified on any of the exceptionClasses
      * @param e
      * @param exceptionClasses
      * @return boolean
      */
+
     public static boolean causedBy(final Throwable e, final Set<Class<? extends Throwable>> exceptionClasses) {
 
         Throwable t = e;
@@ -65,6 +68,18 @@ public class ExceptionUtil {
         }
         return false;
     }
+
+    /**
+     *
+     * @param e
+     * @param exceptionClasses
+     * @return
+     */
+    public static boolean causedBy(final Throwable e, final Class<? extends Throwable>... exceptionClasses) {
+
+        return causedBy(e, new HashSet<>(Arrays.asList(exceptionClasses)));
+    }
+
 
     public static String getLocalizedMessageOrDefault(final User user, final String key, final String defaultMessage, final Class clazz){
         String message = defaultMessage;
