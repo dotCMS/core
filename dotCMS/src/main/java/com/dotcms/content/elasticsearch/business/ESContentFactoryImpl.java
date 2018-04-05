@@ -2074,7 +2074,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         // Format yyyyMMddHHmmss
         replace = DateUtil.replaceDateTimeWithFormat(replace,
-                "\\\"?(\\d{1,2}\\d{1,2}\\d{4}\\d{1,2}\\d{1,2}\\d{1,2})\\\"?",
+                "\\\"?(\\d{4}\\d{2}\\d{2}\\d{2}\\d{2}\\d{2})\\\"?",
                 datetimeFormat.getPattern());
 
         // Format MM/dd/yyyy
