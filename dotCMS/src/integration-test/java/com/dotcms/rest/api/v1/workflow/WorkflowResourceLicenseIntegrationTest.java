@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.util.LicenseValiditySupplier;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
 import com.dotcms.rest.ContentHelper;
@@ -42,6 +43,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPIImpl;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
@@ -80,8 +82,12 @@ public class WorkflowResourceLicenseIntegrationTest {
         IntegrationTestInitService.getInstance().init();
 
         licensedWorkflowAPI = APILocator.getWorkflowAPI();
-        nonLicensedWorkflowAPI = new WorkflowAPIImpl(
-                () -> false);// We override the license validity supplier to always deny having it.
+        nonLicensedWorkflowAPI = new WorkflowAPIImpl(new LicenseValiditySupplier() {
+            @Override
+            public boolean hasValidLicense() {
+                return false;
+            }
+        });// We override the license validity supplier to always deny having it.
         ContentletAPI contentletAPI = APILocator.getContentletAPI();
         roleAPI = APILocator.getRoleAPI();
         ContentHelper contentHelper = ContentHelper.getInstance();
@@ -355,6 +361,20 @@ public class WorkflowResourceLicenseIntegrationTest {
         assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), exportResponse.getStatus());
     }
 
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void Find_Available_Actions_Invalid_License() throws Exception {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        List<Contentlet> contetlets = APILocator.getContentletAPI().findAllContent(0,1);
+        final Response response = nonLicenseWorkflowResource.findAvailableActions(request, contetlets.get(0).getInode());
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        ResponseEntityView ev = ResponseEntityView.class.cast(response.getEntity());
+        List<WorkflowAction> actions = List.class.cast(ev.getEntity());
+        for(WorkflowAction action:actions){
+            assertEquals(WorkflowScheme.SYSTEM_WORKFLOW_ID,action.getSchemeId());
+        }
+    }
 
     @SuppressWarnings("unchecked")
     @Test

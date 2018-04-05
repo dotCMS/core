@@ -6,17 +6,26 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.util.LicenseValiditySupplier;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.FriendClass;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.*;
+import com.dotmarketing.exception.AlreadyExistException;
+import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -24,20 +33,67 @@ import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.MessageActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.*;
-import com.dotmarketing.portlets.workflows.model.*;
-import com.dotmarketing.util.*;
+import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CheckURLAccessibilityActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CheckoutContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CommentOnWorkflowActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CopyActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.DeleteContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.EmailActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.FourEyeApproverActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.MultipleApproverActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.NotifyUsersActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.PushNowActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.ResetTaskActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SetValueActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.TranslationActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.TwitterActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
+import com.dotmarketing.portlets.workflows.model.WorkflowComment;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
+import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
+import com.dotmarketing.portlets.workflows.model.WorkflowState;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.Hashtable;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.concurrent.Future;
-import java.util.function.Supplier;
+import java.util.stream.IntStream;
 import org.apache.commons.lang.time.StopWatch;
 import org.osgi.framework.BundleContext;
-
-import java.util.*;
-import java.util.stream.IntStream;
 
 
 public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
@@ -62,7 +118,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	private volatile FriendClass  friendClass = null;
 
 	//This by default tells if a license is valid or not.
-	private Supplier<Boolean> licenseValiditySupplier = () -> (LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level);
+	private LicenseValiditySupplier licenseValiditySupplierSupplier = new LicenseValiditySupplier() {};
 
 	protected final DotSubmitter submitter = DotConcurrentFactory.getInstance()
 			.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
@@ -106,16 +162,16 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	/**
 	 * This allows me to override the license supplier for testing purposes
-	 * @param licenseValiditySupplier
+	 * @param licenseValiditySupplierSupplier
 	 */
 	@VisibleForTesting
-	public WorkflowAPIImpl(Supplier<Boolean> licenseValiditySupplier) {
+	public WorkflowAPIImpl(final LicenseValiditySupplier licenseValiditySupplierSupplier) {
 		this();
-		this.licenseValiditySupplier = licenseValiditySupplier;
+		this.licenseValiditySupplierSupplier = licenseValiditySupplierSupplier;
 	}
 
 	public boolean hasValidLicense(){
-		return (licenseValiditySupplier.get());
+		return (licenseValiditySupplierSupplier.hasValidLicense());
 	}
 
 	private FriendClass getFriendClass () {
@@ -201,7 +257,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@CloseDBIfOpened
 	public List<WorkflowStep> findStepsByContentlet(Contentlet contentlet) throws DotDataException{
-		return workFlowFactory.findStepsByContentlet(contentlet);
+		final List<WorkflowScheme> schemes = workFlowFactory.findSchemesForStruct(contentlet.getContentTypeId(),
+				licenseValiditySupplierSupplier);
+		return workFlowFactory.findStepsByContentlet(contentlet, schemes);
 	}
 
 	@CloseDBIfOpened
@@ -307,7 +365,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			try {
 					Logger.debug(this, "Finding the schemes for: " + contentType);
 					final List<WorkflowScheme> contentTypeSchemes =
-							this.workFlowFactory.findSchemesForStruct(contentType.inode());
+							this.workFlowFactory.findSchemesForStruct(contentType.inode(),
+									licenseValiditySupplierSupplier);
 					schemes.addAll(contentTypeSchemes);
 			}
 			catch(Exception e) {
@@ -327,7 +386,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			schemes.add(this.findSystemWorkflowScheme());
 		} else {
 			try {
-				schemes.addAll(workFlowFactory.findSchemesForStruct(structure.getInode()));
+				schemes.addAll(workFlowFactory.findSchemesForStruct(structure.getInode(),
+						licenseValiditySupplierSupplier));
 			} catch (Exception e) {
 				Logger.debug(this, e.getMessage(), e);
 			}
