@@ -1,5 +1,17 @@
 package com.dotcms.rest.api.v1.workflow;
 
+import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.ADMIN_DEFAULT_ID;
+import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.ADMIN_DEFAULT_MAIL;
+import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.ADMIN_NAME;
+import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.CURRENT_STEP;
+import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.actionName;
+import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.addSteps;
+import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.createScheme;
+import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.createWorkflowActions;
+import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.doCleanUp;
+import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.findSchemes;
+import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.findSteps;
+import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.schemeName;
 import static com.dotmarketing.business.Role.ADMINISTRATOR;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -22,7 +34,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.workflow.form.WorkflowActionForm;
 import com.dotcms.workflow.form.WorkflowActionStepForm;
 import com.dotcms.workflow.form.WorkflowSchemeForm;
-import com.dotcms.workflow.form.WorkflowSchemeImportExportObjectForm;
+import com.dotcms.workflow.form.WorkflowSchemeImportObjectForm;
 import com.dotcms.workflow.form.WorkflowStepUpdateForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.beans.Permission;
@@ -57,7 +69,6 @@ import javax.servlet.http.HttpServletRequest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.*;
 
 public class WorkflowResourceIntegrationTest  {
 
@@ -223,8 +234,8 @@ public class WorkflowResourceIntegrationTest  {
             permissions.add(permission2);
 
 
-            final WorkflowSchemeImportExportObjectForm exportObjectForm =
-                    new WorkflowSchemeImportExportObjectForm(workflowExportObject, permissions);
+            final WorkflowSchemeImportObjectForm exportObjectForm =
+                    new WorkflowSchemeImportObjectForm(workflowExportObject, permissions);
 
             final Response importResponse = workflowResource.importScheme(request, exportObjectForm);
             assertEquals(Response.Status.OK.getStatusCode(), importResponse.getStatus());

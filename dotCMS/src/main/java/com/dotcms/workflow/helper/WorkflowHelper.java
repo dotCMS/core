@@ -100,7 +100,8 @@ public class WorkflowHelper {
     @WrapInTransaction
     public void importScheme(final WorkflowSchemeImportExportObject workflowExportObject,
                              final List<Permission>                 permissions,
-                             final User                             user) throws IOException, DotSecurityException, DotDataException {
+                             final User                             user) throws IOException,
+                                DotSecurityException, DotDataException, AlreadyExistException {
 
         WorkflowAction action = null;
 
@@ -108,7 +109,8 @@ public class WorkflowHelper {
         stopWatch.start();
         Logger.debug(this, () -> "Starting the scheme import");
 
-        this.workflowImportExportUtil.importWorkflowExport(workflowExportObject);
+        this.checkSchemeNames (workflowExportObject.getSchemes());
+        this.workflowImportExportUtil.importWorkflowExport(workflowExportObject, user);
 
         stopWatch.stop();
         Logger.debug(this, () -> "Ended the scheme import, in: " + DateUtil.millisToSeconds(stopWatch.getTime()));
@@ -132,6 +134,23 @@ public class WorkflowHelper {
         stopWatch.stop();
         Logger.debug(this, () -> "Ended the action permissions import, in: " + DateUtil.millisToSeconds(stopWatch.getTime()));
     } // importScheme.
+
+    private void checkSchemeNames(final List<WorkflowScheme> schemes) throws AlreadyExistException, DotDataException {
+
+        for (final WorkflowScheme scheme : schemes) {
+
+            final WorkflowScheme schemeWithSameName =
+                    this.workflowAPI.findSchemeByName(scheme.getName());
+
+            if(UtilMethods.isSet(schemeWithSameName)
+                    && UtilMethods.isSet(schemeWithSameName.getId())
+                    && !schemeWithSameName.getId().equals(scheme.getId())) {
+
+                throw new AlreadyExistException("Already exist a scheme with the same name ("+schemeWithSameName.getName()
+                        +"). Create different schemes with the same name is not allowed. Please change your workflow scheme name.");
+            }
+        }
+    }
 
     /**
      * Finds the available actions for an inode and user.

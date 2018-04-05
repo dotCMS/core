@@ -7,6 +7,8 @@ import com.dotcms.repackage.com.fasterxml.jackson.databind.DeserializationFeatur
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.DbType;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
@@ -40,8 +42,12 @@ public class Task04335CreateSystemWorkflow implements StartupTask {
     protected static final String INSERT_ACTION_FOR_STEP   = "insert into workflow_action_step(action_id, step_id, action_order) values (?,?,?)";
     protected static final String INSERT_ACTION_CLASS      = "insert into workflow_action_class (id, action_id, name, my_order, clazz) values (?,?, ?, ?, ?)";
     protected static final String DELIMITER                = ",";
-    protected static final String INSERT_PERMISSION        = "insert into permission(id, permission_type, inode_id, roleid, permission) values (?, ?, ?, ?, ?)";
-    protected static final String SELECT_MAX_PERMISSION    = "select max(id) as max from permission";
+    protected static final Map<DbType, String> insertPermissionMap   = map(
+            DbType.POSTGRESQL,   "insert into permission(id, permission_type, inode_id, roleid, permission) values (nextval('permission_seq'), ?, ?, ?, ?)",
+            DbType.ORACLE,       "insert into permission(id, permission_type, inode_id, roleid, permission) values (permission_seq.NEXTVAL,    ?, ?, ?, ?)",
+            DbType.MYSQL,        "insert into permission(permission_type, inode_id, roleid, permission) values (?, ?, ?, ?)",
+            DbType.MSSQL,        "insert into permission(permission_type, inode_id, roleid, permission) values (?, ?, ?, ?)"
+    );
 
 
     @Override
@@ -90,14 +96,12 @@ public class Task04335CreateSystemWorkflow implements StartupTask {
     private void addPermissions(final List<Map> permissions) throws DotDataException {
         if (UtilMethods.isSet(permissions)) {
 
+            final DbType dbType = DbType.getDbType(DbConnectionFactory.getDBType());
             Logger.debug(this, "The System Workflow: Adding who can use roles");
-            long maxPermissionId = ConversionUtils.toLong(new DotConnect()
-                    .setSQL(SELECT_MAX_PERMISSION).loadObjectResults().get(0).get("max"), 0l);
 
             for (final Map permission : permissions) {
 
-                new DotConnect().setSQL(INSERT_PERMISSION)
-                        .addParam(++maxPermissionId)
+                new DotConnect().setSQL(insertPermissionMap.get(dbType))
                         .addParam(permission.get("type"))
                         .addParam(permission.get("inode"))
                         .addParam(permission.get("roleId"))
@@ -165,7 +169,7 @@ public class Task04335CreateSystemWorkflow implements StartupTask {
                 .addParam(Boolean.valueOf(action.get("commentable").toString()))
                 .addParam((String)action.get("icon"))
                 .addParam(Boolean.valueOf(action.get("roleHierarchyForAssign").toString()))
-                .addParam(Boolean.valueOf(action.get("requiresCheckout").toString()))
+                .addParam(Boolean.valueOf(action.getOrDefault("requiresCheckout", "false").toString()))
                 .addParam(this.getShowOn((List<String>)action.get("showOn")))
                 .loadResult();
     }
