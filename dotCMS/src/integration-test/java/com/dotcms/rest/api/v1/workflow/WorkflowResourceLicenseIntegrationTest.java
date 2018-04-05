@@ -42,7 +42,6 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPIImpl;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
@@ -356,20 +355,6 @@ public class WorkflowResourceLicenseIntegrationTest {
         assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), exportResponse.getStatus());
     }
 
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void Find_Available_Actions_Invalid_License() throws Exception {
-        final HttpServletRequest request = mock(HttpServletRequest.class);
-        List<Contentlet> contetlets = APILocator.getContentletAPI().findAllContent(0,1);
-        final Response response = nonLicenseWorkflowResource.findAvailableActions(request, contetlets.get(0).getInode());
-        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        ResponseEntityView ev = ResponseEntityView.class.cast(response.getEntity());
-        List<WorkflowAction> actions = List.class.cast(ev.getEntity());
-        for(WorkflowAction action:actions){
-            assertEquals(WorkflowScheme.SYSTEM_WORKFLOW_ID,action.getSchemeId());
-        }
-    }
 
     @SuppressWarnings("unchecked")
     @Test

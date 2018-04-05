@@ -167,10 +167,6 @@ public class WorkflowHelper {
                 throw new IllegalArgumentException("Missing required parameter inode.");
             }
 
-            if(!workflowAPI.hasValidLicense()){
-               return workflowAPI.findActions(workflowAPI.findSystemWorkflowScheme(), user);
-            }
-
             final Contentlet contentlet = this.contentletAPI.find(inode, user, true);
             if(contentlet == null){
                throw new DoesNotExistException(String.format("Contentlet identified by inode '%s' was Not found.",inode));

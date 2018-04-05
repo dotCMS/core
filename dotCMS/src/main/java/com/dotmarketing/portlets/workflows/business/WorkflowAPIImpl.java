@@ -765,11 +765,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public List<WorkflowAction> findAvailableActions(final Contentlet contentlet, final User user)
 			throws DotDataException, DotSecurityException {
 
-		if (!hasValidLicense()) {
-			Logger.debug(this, "Attempt to get available actions with an invalid license.");
-			throw new DotSecurityException("Workflow-Actions-License-required");
-		}
-
 		if(contentlet == null || contentlet.getStructure() ==null) {
 
 			Logger.debug(this, "the Contentlet: " + contentlet + " or their structure could be null");
