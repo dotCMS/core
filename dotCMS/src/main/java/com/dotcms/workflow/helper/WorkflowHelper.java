@@ -543,11 +543,15 @@ public class WorkflowHelper {
 
     }
 
+    public List<WorkflowScheme> findSchemes() {
+        return findSchemes(false);
+    }
+
     /**
      * Finds the non-archived schemes
      * @return List
      */
-    public List<WorkflowScheme> findSchemes() {
+    public List<WorkflowScheme> findSchemes(boolean showArchived) {
 
         List<WorkflowScheme> schemes = null;
 
@@ -555,7 +559,7 @@ public class WorkflowHelper {
 
             Logger.debug(this, "Getting all non-archived schemes");
             schemes =
-                    this.workflowAPI.findSchemes(false);
+                    this.workflowAPI.findSchemes(showArchived);
         } catch (DotDataException e) {
 
             Logger.error(this, e.getMessage());
