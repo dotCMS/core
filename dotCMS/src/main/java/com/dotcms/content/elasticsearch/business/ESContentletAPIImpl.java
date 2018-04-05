@@ -750,14 +750,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (0 < roles.size()) {
             buffy.append(" (");
             for (Role role : roles) {
-                buffy.append("permissions:P" + role.getId() + ".1P* ");
+                buffy.append("permissions:p" + role.getId() + ".1p* ");
             }
             buffy.append(") ");
         }
         if(respectFrontendRoles) {
-            buffy.append("(permissions:P" + APILocator.getRoleAPI().loadCMSAnonymousRole().getId() + ".1P*) ");
+            buffy.append("(permissions:p" + APILocator.getRoleAPI().loadCMSAnonymousRole().getId() + ".1p*) ");
             if (user != null && !user.getUserId().equals("anonymous")) {
-                buffy.append("(permissions:P" + APILocator.getRoleAPI().loadLoggedinSiteRole().getId() + ".1P*)");
+                buffy.append("(permissions:p" + APILocator.getRoleAPI().loadLoggedinSiteRole().getId() + ".1p*)");
             }
         }
         buffy.append(")");
