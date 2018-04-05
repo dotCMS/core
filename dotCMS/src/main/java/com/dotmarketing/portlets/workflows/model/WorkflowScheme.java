@@ -1,15 +1,12 @@
 package com.dotmarketing.portlets.workflows.model;
 
-import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
-import java.io.Serializable;
-import java.util.Date;
-
-
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
-import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.util.UtilMethods;
+import java.io.Serializable;
+import java.util.Date;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class WorkflowScheme implements Serializable {
@@ -115,8 +112,7 @@ public class WorkflowScheme implements Serializable {
 	 */
 	@JsonProperty("system")
 	public boolean isSystem () {
-
-		return WorkflowAPI.SYSTEM_WORKFLOW_ID.equals(this.getId());
+		return (SYSTEM_WORKFLOW_ID.equals(this.getId()));
 	}
 
 	public Date getModDate() {
