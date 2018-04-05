@@ -1486,12 +1486,37 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 						throw new DotDataException("Invalid-Action-Step-Error");
 					}
+				} else {  // if the content is not in any step (may be is new), will check the first step.
+
+					// we are sure in this moment that the scheme id on the action is in the list.
+					final WorkflowScheme  scheme = schemes.stream().filter
+							(aScheme -> aScheme.getId().equals(action.getSchemeId())).findFirst().get();
+
+					final Optional<WorkflowStep> workflowStepOptional = this.findFirstStep(scheme);
+
+					if (!workflowStepOptional.isPresent() ||
+							null == this.findAction(action.getId(), workflowStepOptional.get().getId(), user)) {
+
+						throw new DotDataException("Invalid-Action-Step-Error");
+					}
 				}
 			} catch (DotSecurityException e) {
 				throw new DotDataException(e);
 			}
 		}
 	} // validateAction.
+
+	/**
+	 * Finds the first step of the scheme, it is an optional so can be present or not depending if the scheme is not empty.
+ 	 * @param scheme WorkflowScheme
+	 * @return Optional WorkflowStep
+	 * @throws DotDataException
+	 */
+	private Optional<WorkflowStep> findFirstStep (final WorkflowScheme  scheme) throws DotDataException {
+
+		return this.workFlowFactory
+				.findSteps(scheme).stream().findFirst();
+	}
 
 
 	public WorkflowProcessor fireWorkflowNoCheckin(Contentlet contentlet, User user) throws DotDataException,DotWorkflowException, DotContentletValidationException{
