@@ -15,7 +15,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -353,8 +352,8 @@ public class WorkflowResourceIntegrationTest {
             permissions.add(permission2);
 
 
-            final WorkflowSchemeImportExportObjectForm exportObjectForm =
-                    new WorkflowSchemeImportExportObjectForm(workflowExportObject, permissions);
+            final WorkflowSchemeImportObjectForm exportObjectForm =
+                    new WorkflowSchemeImportObjectForm(workflowExportObject, permissions);
 
             final Response importResponse = workflowResource.importScheme(request, exportObjectForm);
             assertEquals(Response.Status.OK.getStatusCode(), importResponse.getStatus());
