@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.rules.util;
 
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -51,12 +52,7 @@ public class RulePermissionableUtil {
                     }
 
                     if (contentlet == null) {
-                        List<Contentlet> results = APILocator.getContentletAPI()
-                                .search("+identifier:" + parent + " +working:true", 1, 0, null,
-                                        systemUser, false);
-                        if (!results.isEmpty()) {
-                            contentlet = results.get(0);
-                        }
+                        contentlet = FactoryLocator.getContentletFactory().findContentletByIdentifierAnyLanguage(parent);
                     }
                     if (contentlet == null) {
                         throw new DotDataException("Identifier: " + parent + " does not exist.");
