@@ -46,7 +46,7 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 
 		if(LicenseUtil.getLevel() < LicenseLevel.STANDARD.level){
 			final String noLicenseMessage = "Unable to execute ES API Requests. Please apply an Enterprise License";
-			RuntimeException e1 = new RuntimeException(noLicenseMessage);
+			final RuntimeException e1 = new RuntimeException(noLicenseMessage);
 			Logger.warn(this.getClass(), noLicenseMessage);
 			return ExceptionMapperUtil.createResponse(e1, Response.Status.BAD_REQUEST);
 		}
