@@ -875,17 +875,17 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 	@Override
     public Contentlet findContentletByIdentifierAnyLanguage(String identifier) throws DotDataException, DotSecurityException {
-        List<String> inodes = new DotConnect()
+        Contentlet contentlet = null;
+        final List<HashMap<String, String>> inodes = new DotConnect()
                 .setSQL("Select inode from contentlet where identifier=?")
                 .addParam(identifier)
                 .setMaxRows(1)
                 .getResults();
         if (CollectionUtils.isNotEmpty(inodes)) {
-            String inode = inodes.get(0);
-            Contentlet c = find(inode);
-            return c;
+            final String inode = inodes.get(0).get("inode");
+            contentlet = find(inode);
         }
-        return null;
+        return contentlet;
     }
 
 	@Override
