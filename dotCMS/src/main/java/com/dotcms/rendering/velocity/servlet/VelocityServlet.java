@@ -3,8 +3,8 @@ package com.dotcms.rendering.velocity.servlet;
 import com.dotcms.business.CloseDB;
 import com.dotcms.rendering.velocity.viewtools.RequestWrapper;
 
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.rest.api.v1.page.JsonMapper;
+import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
+import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectWriter;
 import com.dotcms.rest.api.v1.page.PageResource;
 import com.dotmarketing.filters.Constants;
 import com.dotmarketing.util.Logger;
@@ -12,21 +12,33 @@ import com.dotmarketing.util.PageMode;
 
 import java.io.IOException;
 import java.net.URLDecoder;
-import java.util.Map;
 
+import java.util.HashMap;
+import java.util.Map;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 
 public class VelocityServlet extends HttpServlet {
+
+    private static String JS_CODE = "<div id='rendered_page_html_code' hidden>%s</div>" +
+            "<script type=\"text/javascript\">\n" +
+            "var customEvent = document.createEvent('CustomEvent');\n" +
+            "var data = %s;" +
+            "data.html = document.getElementById('rendered_page_html_code').innerHTML;" +
+            "customEvent.initCustomEvent('ng-event', false, false,  {\n" +
+            "            name: 'load-edit-mode-page',\n" +
+            "            data: data" +
+            "});\n" +
+            "setTimeout(function(){console.log('AAAAAAAAAA');document.dispatchEvent(customEvent);}, 1000);\n" +
+            "</script>";
+
     /**
      * 
      */
@@ -59,8 +71,11 @@ public class VelocityServlet extends HttpServlet {
             if (mode == PageMode.EDIT_MODE) {
                 PageResource pageResource = new PageResource();
                 Map<String, Object> renderedPageMap = pageResource.getRenderedPageMap(request, response, uri, PageMode.EDIT_MODE);
+                Map<String, Object> renderedPageMapCopy = new HashMap(renderedPageMap);
+                Object html = renderedPageMapCopy.remove("html");
                 final ObjectWriter objectWriter = new ObjectMapper().writer().withDefaultPrettyPrinter();
-                response.getOutputStream().write(objectWriter.writeValueAsString(renderedPageMap).getBytes());
+                String renderedPage = objectWriter.writeValueAsString(renderedPageMapCopy).replace("</script>", "\\</script\\>");
+                response.getOutputStream().write(String.format(JS_CODE, html, renderedPage).getBytes());
             } else {
                 VelocityModeHandler.modeHandler(mode, request, response).serve();
             }
