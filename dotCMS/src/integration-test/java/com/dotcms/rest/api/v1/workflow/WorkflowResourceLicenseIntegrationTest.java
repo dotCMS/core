@@ -33,7 +33,7 @@ import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.workflow.form.WorkflowActionStepForm;
 import com.dotcms.workflow.form.WorkflowSchemeForm;
-import com.dotcms.workflow.form.WorkflowSchemeImportExportObjectForm;
+import com.dotcms.workflow.form.WorkflowSchemeImportObjectForm;
 import com.dotcms.workflow.form.WorkflowStepAddForm;
 import com.dotcms.workflow.form.WorkflowStepUpdateForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
@@ -343,7 +343,7 @@ public class WorkflowResourceLicenseIntegrationTest {
     @Test
     public void Import_Invalid_License() throws Exception {
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final WorkflowSchemeImportExportObjectForm form = createImportExportObjectForm();
+        final WorkflowSchemeImportObjectForm form = createImportExportObjectForm();
         final Response response = nonLicenseWorkflowResource.importScheme(request,form);
         assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
     }

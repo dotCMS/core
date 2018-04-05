@@ -5,14 +5,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
 
-import com.dotcms.workflow.form.WorkflowSchemeImportExportObjectForm;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotcms.contenttype.business.ContentTypeAPI;
-import com.dotcms.contenttype.business.FieldAPI;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -20,12 +13,16 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.workflow.form.WorkflowActionForm;
 import com.dotcms.workflow.form.WorkflowSchemeForm;
+import com.dotcms.workflow.form.WorkflowSchemeImportObjectForm;
 import com.dotcms.workflow.form.WorkflowStepAddForm;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
@@ -35,7 +32,6 @@ import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject;
 import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -51,19 +47,19 @@ import org.apache.commons.lang.RandomStringUtils;
 
 public abstract class WorkflowResourceTestUtil {
 
-     static final String ADMIN_DEFAULT_ID = "dotcms.org.1";
-     static final String ADMIN_DEFAULT_MAIL = "admin@dotcms.com";
-     static final String ADMIN_NAME = "User Admin";
+    static final String ADMIN_DEFAULT_ID = "dotcms.org.1";
+    static final String ADMIN_DEFAULT_MAIL = "admin@dotcms.com";
+    static final String ADMIN_NAME = "User Admin";
 
     //Markers to identify all the garbage created by this Test.  So we can clean-up at the end.
-     static final String SCHEME_NAME_PREFIX = "scheme::";
-     static final String STEP_NAME_PREFIX = "step::";
-     static final String ACTION_NAME_PREFIX = "action::";
-     static final String CURRENT_STEP = "currentstep";
+    static final String SCHEME_NAME_PREFIX = "scheme::";
+    static final String STEP_NAME_PREFIX = "step::";
+    static final String ACTION_NAME_PREFIX = "action::";
+    static final String CURRENT_STEP = "currentstep";
 
 
-
-    static void doCleanUp(final WorkflowResource workflowResource, final WorkflowAPI workflowAPI) throws Exception {
+    static void doCleanUp(final WorkflowResource workflowResource, final WorkflowAPI workflowAPI)
+            throws Exception {
         final List<WorkflowScheme> schemes = findSchemes(workflowResource);
         for (WorkflowScheme scheme : schemes) {
             if (scheme.getName().startsWith(SCHEME_NAME_PREFIX)) {
@@ -115,7 +111,8 @@ public abstract class WorkflowResourceTestUtil {
     /**
      * Adds-up a number of steps to the given scheme
      */
-    static List<WorkflowStep> addSteps(final WorkflowResource workflowResource, final WorkflowScheme savedScheme, int num) {
+    static List<WorkflowStep> addSteps(final WorkflowResource workflowResource,
+            final WorkflowScheme savedScheme, int num) {
         final List<WorkflowStep> workflowSteps = new ArrayList<>(2);
         for (int i = 0; i < num; i++) {
             final String randomStepName = stepName();
@@ -143,7 +140,8 @@ public abstract class WorkflowResourceTestUtil {
      * @param workflowSteps
      * @return
      */
-     static List<WorkflowAction> createWorkflowActions(final WorkflowResource workflowResource, final WorkflowScheme savedScheme,
+    static List<WorkflowAction> createWorkflowActions(final WorkflowResource workflowResource,
+            final WorkflowScheme savedScheme,
             final String roleId, final List<WorkflowStep> workflowSteps) {
         final List<WorkflowAction> workflowActions = new ArrayList<>(2);
         final Set<WorkflowState> states = WorkflowState.toSet(WorkflowState.values());
@@ -185,7 +183,8 @@ public abstract class WorkflowResourceTestUtil {
     }
 
     @SuppressWarnings("unchecked")
-    static List<WorkflowStep> findSteps(final WorkflowResource workflowResource, final WorkflowScheme savedScheme) {
+    static List<WorkflowStep> findSteps(final WorkflowResource workflowResource,
+            final WorkflowScheme savedScheme) {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final Response findResponse = workflowResource
                 .findStepsByScheme(request, savedScheme.getId());
@@ -195,7 +194,8 @@ public abstract class WorkflowResourceTestUtil {
         return List.class.cast(findResponseEv.getEntity());
     }
 
-    static ContentType insertContentType(User user, String contentTypeName, BaseContentType baseType)
+    static ContentType insertContentType(User user, String contentTypeName,
+            BaseContentType baseType)
             throws DotDataException, DotSecurityException {
 
         ContentTypeBuilder builder = ContentTypeBuilder.builder(baseType.immutableClass())
@@ -218,7 +218,8 @@ public abstract class WorkflowResourceTestUtil {
 
         PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
-        ContentType contentType = insertContentType(APILocator.systemUser(), contentTypeName, baseContentType);
+        ContentType contentType = insertContentType(APILocator.systemUser(), contentTypeName,
+                baseContentType);
 
         Permission p = new Permission(contentType.getPermissionId(), roleId,
                 permission, true);
@@ -232,7 +233,7 @@ public abstract class WorkflowResourceTestUtil {
     }
 
 
-    static WorkflowSchemeImportExportObjectForm createImportExportObjectForm() throws Exception {
+    static WorkflowSchemeImportObjectForm createImportExportObjectForm() throws Exception {
 
         final WorkflowSchemeImportExportObject workflowExportObject = new WorkflowSchemeImportExportObject();
         final List<Permission> permissions = new ArrayList<>();
@@ -352,7 +353,12 @@ public abstract class WorkflowResourceTestUtil {
         permission2.setPermission(1);
         permissions.add(permission2);
 
-        return new WorkflowSchemeImportExportObjectForm(workflowExportObject, permissions);
+        final WorkflowSchemeImportObjectForm exportObjectForm =
+                new WorkflowSchemeImportObjectForm(
+                        new WorkflowSchemeImportExportObjectView(schemes, steps, actions,
+                                actionSteps, Collections.emptyList(), Collections.emptyList()),
+                        permissions);
 
+        return exportObjectForm;
     }
 }

@@ -52,7 +52,6 @@ import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
-import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
@@ -70,7 +69,8 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class WorkflowResourceIntegrationTest  {
+public class WorkflowResourceIntegrationTest {
+
 
     private static WorkflowAPI workflowAPI;
     private static RoleAPI roleAPI;
@@ -117,13 +117,12 @@ public class WorkflowResourceIntegrationTest  {
     public void testImportScheme() throws DotDataException {
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final WorkflowSchemeImportExportObject workflowExportObject = new WorkflowSchemeImportExportObject();
-        final List<Permission> permissions                          = new ArrayList<>();
-        final List<WorkflowScheme> schemes                          = new ArrayList<>();
-        final WorkflowScheme       scheme                           = new WorkflowScheme();
-        final List<WorkflowStep>   steps                            = new ArrayList<>();
-        final List<WorkflowAction> actions                          = new ArrayList<>();
-        final List<Map<String, String>> actionSteps                 = new ArrayList<>();
+        final List<Permission> permissions                              = new ArrayList<>();
+        final List<WorkflowScheme> schemes                              = new ArrayList<>();
+        final WorkflowScheme       scheme                               = new WorkflowScheme();
+        final List<WorkflowStep>   steps                                = new ArrayList<>();
+        final List<WorkflowAction> actions                              = new ArrayList<>();
+        final List<Map<String, String>> actionSteps                     = new ArrayList<>();
 
         try {
 
@@ -132,8 +131,6 @@ public class WorkflowResourceIntegrationTest  {
             scheme.setModDate(new Date());
             scheme.setId(UUIDGenerator.generateUuid());
             schemes.add(scheme);
-
-            workflowExportObject.setSchemes(schemes);
 
             final WorkflowStep workflowStep1 = new WorkflowStep();
 
@@ -154,8 +151,6 @@ public class WorkflowResourceIntegrationTest  {
             workflowStep2.setName("Step2");
             workflowStep2.setId(UUIDGenerator.generateUuid());
             steps.add(workflowStep2);
-
-            workflowExportObject.setSteps(steps);
 
             final WorkflowAction workflowAction1 = new WorkflowAction();
 
@@ -193,8 +188,6 @@ public class WorkflowResourceIntegrationTest  {
             workflowAction3.setCommentable(true);
             actions.add(workflowAction3);
 
-            workflowExportObject.setActions(actions);
-
             final Map<String, String> actionStep1 = new HashMap<>();
             actionStep1.put(WorkflowImportExportUtil.ACTION_ID, workflowAction1.getId());
             actionStep1.put(WorkflowImportExportUtil.STEP_ID, workflowStep1.getId());
@@ -213,11 +206,6 @@ public class WorkflowResourceIntegrationTest  {
             actionStep3.put(WorkflowImportExportUtil.ACTION_ORDER, "2");
             actionSteps.add(actionStep3);
 
-            workflowExportObject.setActionSteps(actionSteps);
-
-            workflowExportObject.setActionClasses(Collections.emptyList());
-            workflowExportObject.setActionClassParams(Collections.emptyList());
-
             final Permission permission1 = new Permission();
             permission1.setId(0);
             permission1.setInode(workflowAction1.getId());
@@ -235,7 +223,9 @@ public class WorkflowResourceIntegrationTest  {
 
 
             final WorkflowSchemeImportObjectForm exportObjectForm =
-                    new WorkflowSchemeImportObjectForm(workflowExportObject, permissions);
+                    new WorkflowSchemeImportObjectForm(
+                            new WorkflowSchemeImportExportObjectView(schemes,steps,actions,actionSteps,Collections.emptyList(),Collections.emptyList()),
+                            permissions);
 
             final Response importResponse = workflowResource.importScheme(request, exportObjectForm);
             assertEquals(Response.Status.OK.getStatusCode(), importResponse.getStatus());
@@ -246,7 +236,7 @@ public class WorkflowResourceIntegrationTest  {
             final Map importSchemeMap = Map.class.cast(exportEntityView.getEntity());
             assertNotNull(importSchemeMap);
 
-            final WorkflowSchemeImportExportObject exportObject = (WorkflowSchemeImportExportObject) importSchemeMap.get("workflowImportObject");
+            final WorkflowSchemeImportExportObjectView exportObject = (WorkflowSchemeImportExportObjectView) importSchemeMap.get("workflowExportObject");
             final List<Permission> permissionsExported = (List<Permission>) importSchemeMap.get("permissions");
 
             assertNotNull(exportObject);
