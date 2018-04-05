@@ -3,7 +3,7 @@ package com.dotcms.api.system.event.verifier;
 
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.PayloadVerifier;
-import com.liferay.portal.model.User;
+import com.dotcms.rest.api.v1.system.websocket.WebSocketUserSessionData;
 
 import java.util.List;
 
@@ -16,10 +16,10 @@ public class UsersVerifier implements  PayloadVerifier{
     public UsersVerifier(){}
 
     @Override
-    public boolean verified(final Payload payload, final User sessionUser) {
+    public boolean verified(final Payload payload, final WebSocketUserSessionData userSessionData) {
 
         final List<String> userIdList = (List<String>)payload.getVisibilityValue();
 
-        return userIdList.contains(sessionUser.getUserId());
+        return userIdList.contains(userSessionData.getUser().getUserId());
     }
 }

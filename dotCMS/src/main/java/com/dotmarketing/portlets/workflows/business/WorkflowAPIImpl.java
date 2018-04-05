@@ -127,7 +127,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 	}
 
-	private void isUserAllowToModifiedWorkflow (final User user) {
+	@Override
+	public void isUserAllowToModifiedWorkflow (final User user) {
 
 		try {
 			// if the class calling the workflow api is not friend, so checks the validation

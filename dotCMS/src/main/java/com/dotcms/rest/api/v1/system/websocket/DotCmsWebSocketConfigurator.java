@@ -64,6 +64,7 @@ public class DotCmsWebSocketConfigurator extends Configurator {
 
 		super.modifyHandshake(serverEndpointConfig, request, response);
 
+		String sessionId		   = null;
 		User user      			   = null;
 		String authorizationHeader = null;
 		final List<String> headers = request.getHeaders().get(ContainerRequest.AUTHORIZATION);
@@ -75,6 +76,7 @@ public class DotCmsWebSocketConfigurator extends Configurator {
 			try {
 
 				httpSession = HttpSession.class.cast(session);
+				sessionId   = httpSession.getId();
 				user = (User) httpSession.getAttribute(com.liferay.portal.util.WebKeys.USER);
 
 				if (!UtilMethods.isSet(user)) {
@@ -103,6 +105,12 @@ public class DotCmsWebSocketConfigurator extends Configurator {
 
 				serverEndpointConfig.getUserProperties().put
 						(SystemEventsWebSocketEndPoint.USER, user);
+			}
+
+			if (UtilMethods.isSet(sessionId)) {
+
+				serverEndpointConfig.getUserProperties().put
+						(SystemEventsWebSocketEndPoint.USER_SESSION_ID, sessionId);
 			}
 		} catch (Exception e) {
 

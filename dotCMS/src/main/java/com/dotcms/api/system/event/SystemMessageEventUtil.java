@@ -16,7 +16,7 @@ public class SystemMessageEventUtil {
     private final SystemEventsAPI systemEventsAPI;
 
     @VisibleForTesting
-    protected SystemMessageEventUtil(SystemEventsAPI systemEventsAPI){
+    protected SystemMessageEventUtil(final SystemEventsAPI systemEventsAPI){
         this.systemEventsAPI = systemEventsAPI;
     }
 
