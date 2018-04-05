@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.workflow;
 
+import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.CURRENT_STEP;
+import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.actionName;
 import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.addSteps;
 import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.createScheme;
 import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.createWorkflowActions;
@@ -19,6 +21,9 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.workflow.form.WorkflowActionForm;
+import com.dotcms.workflow.form.WorkflowActionStepForm;
+import com.dotcms.workflow.form.WorkflowReorderWorkflowActionStepForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -28,10 +33,13 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.liferay.portal.model.User;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -124,6 +132,32 @@ public class WorkflowResourceResponseCodeIntegrationTest {
     }
 
     @Test
+    public void Save_Workflow_Scheme_Invalid_Ids() throws Exception{
+        final Role publisher = roleAPI.findRoleByName("Publisher / Legal", null);
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final Set<WorkflowState> states = WorkflowState.toSet(WorkflowState.values());
+        final String actionNewName = actionName();
+
+        final WorkflowActionForm form = new WorkflowActionForm.Builder().
+                schemeId("00").
+                stepId("00").
+                actionId("00").
+                actionName(actionNewName).
+                showOn(states).
+                actionNextStep(CURRENT_STEP).
+                actionAssignable(false).
+                actionCommentable(false).
+                requiresCheckout(false).
+                actionNextAssign(publisher.getId()).
+                whoCanUse(Arrays.asList(publisher.getId())).
+                actionCondition("").
+                build();
+
+        final Response findResponse = workflowResource.save(request, form);
+        assertEquals(Status.NOT_FOUND.getStatusCode(), findResponse.getStatus());
+    }
+
+    @Test
     public void Find_Actions_By_Step() throws Exception{
         final Role adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
         final WorkflowScheme savedScheme = createScheme(workflowResource);
@@ -208,4 +242,91 @@ public class WorkflowResourceResponseCodeIntegrationTest {
         final Response findResponse = workflowResource.findAvailableDefaultActionsBySchemes(request,null);
         assertEquals(Status.BAD_REQUEST.getStatusCode(), findResponse.getStatus());
     }
+
+    @Test
+    public void Save_Actions_to_Step_Invalid_Scheme(){
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final Response saveActionToStepResponse = workflowResource.saveActionToStep(
+                request, "0",
+                new WorkflowActionStepForm.Builder().actionId("0").build()
+        );
+
+        assertEquals(Status.NOT_FOUND.getStatusCode(), saveActionToStepResponse.getStatus());
+    }
+
+    @Test
+    public void Save_Action_Invalid_Ids_Expect_404() throws Exception{
+        final Role adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
+        final Set<WorkflowState> states = WorkflowState.toSet(WorkflowState.values());
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final WorkflowActionForm form = new WorkflowActionForm.Builder().schemeId("00").
+                stepId("00").
+                actionName(actionName()).
+                showOn(states).
+                actionNextStep(CURRENT_STEP).
+                actionAssignable(false).
+                actionCommentable(false).
+                requiresCheckout(false).
+                actionNextAssign(adminRole.getId()).
+                whoCanUse(Arrays.asList("")).
+                actionCondition("").
+                build();
+        final Response saveActionToStepResponse = workflowResource.save(
+                request, form
+        );
+        assertEquals(Status.NOT_FOUND.getStatusCode(), saveActionToStepResponse.getStatus());
+    }
+
+    @Test
+    public void Update_Action_Invalid_Scheme() throws Exception{
+        final Role adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
+        final Set<WorkflowState> states = WorkflowState.toSet(WorkflowState.values());
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final WorkflowActionForm form = new WorkflowActionForm.Builder().schemeId("00").
+                stepId("00").
+                actionName(actionName()).
+                showOn(states).
+                actionNextStep(CURRENT_STEP).
+                actionAssignable(false).
+                actionCommentable(false).
+                requiresCheckout(false).
+                actionNextAssign(adminRole.getId()).
+                whoCanUse(Arrays.asList("")).
+                actionCondition("").
+                build();
+        final Response saveActionToStepResponse = workflowResource.updateAction(
+                request,"000", form
+        );
+        assertEquals(Status.NOT_FOUND.getStatusCode(), saveActionToStepResponse.getStatus());
+    }
+
+    @Test
+    public void Save_Action_to_Step_Invalid_Id() {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final Response saveActionToStepResponse = workflowResource.saveActionToStep(request,"00",new WorkflowActionStepForm.Builder().actionId("000").build());
+        assertEquals(Status.NOT_FOUND.getStatusCode(), saveActionToStepResponse.getStatus());
+    }
+
+    @Test
+    public void Delete_Step_Invalid_Id()  {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final Response saveActionToStepResponse = workflowResource.deleteStep(request,"00");
+        assertEquals(Status.NOT_FOUND.getStatusCode(), saveActionToStepResponse.getStatus());
+    }
+
+    @Test
+    public void Delete_Action_Null_Id()  {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final Response saveActionToStepResponse = workflowResource.deleteAction(request,null);
+        assertEquals(Status.BAD_REQUEST.getStatusCode(), saveActionToStepResponse.getStatus());
+    }
+
+    @Test
+    public void Reorder_Action_Invalid_Id()  {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        WorkflowReorderWorkflowActionStepForm form = new WorkflowReorderWorkflowActionStepForm.Builder().order(-1).build();
+        final Response saveActionToStepResponse = workflowResource.reorderAction(request,"00","00", form );
+        assertEquals(Status.NOT_FOUND.getStatusCode(), saveActionToStepResponse.getStatus());
+    }
+
 }

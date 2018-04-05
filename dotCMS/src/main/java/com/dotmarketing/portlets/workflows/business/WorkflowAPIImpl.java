@@ -1000,9 +1000,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			}
 
 			this.workFlowFactory.saveAction(workflowAction, workflowStep, order);
-		} catch (DoesNotExistException  e) {
+		} catch (DoesNotExistException e) {
 
 			throw e;
+		} catch ( IndexOutOfBoundsException e){
+
+			throw new DoesNotExistException(e);
 		} catch (AlreadyExistException e) {
 
 			Logger.error(WorkflowAPIImpl.class, e.getMessage());

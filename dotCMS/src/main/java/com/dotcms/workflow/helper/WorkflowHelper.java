@@ -233,39 +233,46 @@ public class WorkflowHelper {
      */
     @WrapInTransaction
     public void reorderAction(final WorkflowReorderBean workflowReorderActionStepForm,
-                              final User user)  {
+            final User user) throws DotSecurityException {
 
         WorkflowAction action = null;
-        WorkflowStep step     = null;
+        WorkflowStep step = null;
 
         try {
-
             Logger.debug(this, "Looking for the actionId: "
                     + workflowReorderActionStepForm.getActionId());
-            action =
-                    this.workflowAPI.findAction(workflowReorderActionStepForm.getActionId(), user);
+            action = this.workflowAPI.findAction(workflowReorderActionStepForm.getActionId(), user);
+        } catch (Exception e) {
+            Logger.error(this, e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
+        }
 
+        try {
             Logger.debug(this, "Looking for the stepId: "
                     + workflowReorderActionStepForm.getStepId());
-            step =
-                    this.workflowAPI.findStep(workflowReorderActionStepForm.getStepId());
+            step = this.workflowAPI.findStep(workflowReorderActionStepForm.getStepId());
+        } catch (Exception e) {
+            Logger.error(this, e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
+        }
 
-            if (null == action) {
-                throw new DoesNotExistException("Workflow-does-not-exists-action");
-            }
+        if (null == action) {
+            throw new DoesNotExistException("Workflow-does-not-exists-action");
+        }
 
-            if (null == step) {
-                throw new DoesNotExistException("Workflow-does-not-exists-step");
-            }
+        if (null == step) {
+            throw new DoesNotExistException("Workflow-does-not-exists-step");
+        }
 
-            Logger.debug(this, "Reordering the action: " + action.getId()
-                    + " for the stepId: " + step.getId() + ", order: " +
-                    workflowReorderActionStepForm.getOrder()
-            );
+        Logger.debug(this, "Reordering the action: " + action.getId()
+                + " for the stepId: " + step.getId() + ", order: " +
+                workflowReorderActionStepForm.getOrder()
+        );
 
-            this.workflowAPI.reorderAction(action, step, user,
-                    workflowReorderActionStepForm.getOrder());
-        } catch (DotDataException | DotSecurityException | AlreadyExistException e) {
+        try {
+            this.workflowAPI
+                    .reorderAction(action, step, user, workflowReorderActionStepForm.getOrder());
+        } catch (DotDataException | AlreadyExistException e) {
 
             Logger.error(this, e.getMessage());
             Logger.debug(this, e.getMessage(), e);
@@ -413,13 +420,19 @@ public class WorkflowHelper {
     @WrapInTransaction
     public void deleteStep(final String stepId) throws DotSecurityException, DotDataException {
 
+        if (!UtilMethods.isSet(stepId)) {
+            throw new IllegalArgumentException("Missing required parameter stepId.");
+        }
+
+        WorkflowStep workflowStep = null;
         Logger.debug(this, "Looking for the stepId: " + stepId);
-        WorkflowStep workflowStep = this.workflowAPI.findStep(stepId);
-
+        try {
+            workflowStep = this.workflowAPI.findStep(stepId);
+        } catch (IndexOutOfBoundsException e) {
+            throw new DoesNotExistException("Workflow-does-not-exists-step");
+        }
         if (null != workflowStep) {
-
             try {
-
                 Logger.debug(this, "deleting step: " + stepId);
                 this.workflowAPI.deleteStep(workflowStep, APILocator.systemUser());
             } catch (DotDataException e) {
@@ -787,7 +800,7 @@ public class WorkflowHelper {
             }
 
             Logger.debug(this, "Saving new Action: " + newAction.getName());
-            this.workflowAPI.saveAction(newAction, permissions,user);
+            this.workflowAPI.saveAction(newAction, permissions, user);
 
             if(isNew) {
 
@@ -841,20 +854,25 @@ public class WorkflowHelper {
     @WrapInTransaction
     public void saveActionToStep(final WorkflowActionStepBean workflowActionStepForm, final User user) throws DotDataException, DotSecurityException {
 
-        final WorkflowAction action = this.workflowAPI.findAction(workflowActionStepForm.getActionId(), workflowActionStepForm.getStepId(), user);
+        final String actionId = workflowActionStepForm.getActionId();
+        final String stepId = workflowActionStepForm.getStepId();
+
+        if (!UtilMethods.isSet(actionId) || !UtilMethods.isSet(stepId)) {
+            throw new IllegalArgumentException("Missing required parameter actionId or stepId.");
+        }
+
+        final WorkflowAction action = this.workflowAPI.findAction(actionId, stepId, user);
         if(action != null) {
             WorkflowReorderBean bean = new WorkflowReorderBean.Builder()
-            .actionId(workflowActionStepForm.getActionId()).stepId(workflowActionStepForm.getStepId())
+            .actionId(actionId).stepId(stepId)
             .order(workflowActionStepForm.getOrder()).build();
 
             this.reorderAction(bean, user);
             
         }else {
-        
-        
-        
-        this.workflowAPI.saveAction(workflowActionStepForm.getActionId(),
-                workflowActionStepForm.getStepId(), user, workflowActionStepForm.getOrder());
+
+        this.workflowAPI.saveAction(actionId,
+                stepId, user, workflowActionStepForm.getOrder());
         }
     } // addActionToStep.
 
