@@ -1,5 +1,6 @@
 package com.dotcms.rest;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.integritycheckers.IntegrityType;
 import com.dotcms.integritycheckers.IntegrityUtil;
@@ -395,6 +396,8 @@ public class IntegrityResource {
                 final String integrityDataRequestID = response.readEntity(String.class);
 
                 Thread integrityDataRequestChecker = new Thread() {
+
+                    @CloseDBIfOpened
                     public void run(){
 
                         FormDataMultiPart form = new FormDataMultiPart();
@@ -479,8 +482,6 @@ public class IntegrityResource {
                                             Logger.warn(this, e.getMessage(), e);
                                     } catch (DotDataException e) {
                                         Logger.error(IntegrityResource.class, "Error while deleting temp tables", e);
-                                    } finally {
-                                        DbConnectionFactory.closeConnection();
                                     }
                                 }
 

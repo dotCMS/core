@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Host;
@@ -545,8 +546,6 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 					.format("Error trying find the Asset Type from identifier=[%s]: %s", identifier, e.getMessage()));
 			throw new DotDataException(String
 					.format("Error trying find the Asset Type from identifier=[%s]", identifier), e);
-		} finally{
-			DbConnectionFactory.closeConnection();
 		}
 		return assetType;
 	}
