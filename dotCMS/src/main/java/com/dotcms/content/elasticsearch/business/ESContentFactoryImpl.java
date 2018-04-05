@@ -70,6 +70,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.ElasticsearchException;
@@ -871,6 +872,21 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 		}
 	}
+
+	@Override
+    public Contentlet findContentletByIdentifierAnyLanguage(String identifier) throws DotDataException, DotSecurityException {
+        List<String> inodes = new DotConnect()
+                .setSQL("Select inode from contentlet where identifier=?")
+                .addParam(identifier)
+                .setMaxRows(1)
+                .getResults();
+        if (CollectionUtils.isNotEmpty(inodes)) {
+            String inode = inodes.get(0);
+            Contentlet c = find(inode);
+            return c;
+        }
+        return null;
+    }
 
 	@Override
 	protected Contentlet findContentletForLanguage(long languageId, Identifier identifier) throws DotDataException {

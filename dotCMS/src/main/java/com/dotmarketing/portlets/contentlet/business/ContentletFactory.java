@@ -77,6 +77,8 @@ public abstract class ContentletFactory {
 	 * @throws DotSecurityException 
 	 */
 	protected abstract Contentlet findContentletByIdentifier(String identifier, Boolean live, Long languageId) throws DotDataException, DotSecurityException;
+
+	public abstract Contentlet findContentletByIdentifierAnyLanguage(String identifier) throws DotDataException, DotSecurityException;
 	
 	/**
 	 * Retrieves a contentlet from the database based on its identifier
