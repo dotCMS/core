@@ -1,15 +1,19 @@
 package com.dotcms.rest.elasticsearch;
 
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.rest.*;
+import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -40,14 +44,22 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 		User user = initData.getUser();
 		ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
 
+		if(LicenseUtil.getLevel() < LicenseLevel.STANDARD.level){
+			final String noLicenseMessage = "Unable to execute ES API Requests. Please apply an Enterprise License";
+			RuntimeException e1 = new RuntimeException(noLicenseMessage);
+			Logger.warn(this.getClass(), noLicenseMessage);
+			return ExceptionMapperUtil.createResponse(e1, Response.Status.BAD_REQUEST);
+		}
+
 		PageMode mode = PageMode.get(request);
 
 		JSONObject esQuery;
+
 		try {
 			esQuery = new JSONObject(esQueryStr);
 		} catch (Exception e1) {
-			Logger.warn(this.getClass(), "unable to create JSONObject");
-			throw new DotDataException("malformed json : " + e1.getMessage());
+			Logger.warn(this.getClass(), "Unable to create JSONObject", e1);
+			return ExceptionMapperUtil.createResponse(e1, Response.Status.BAD_REQUEST);
 		}
 
 		try {
