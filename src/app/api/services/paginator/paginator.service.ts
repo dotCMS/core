@@ -143,7 +143,7 @@ export class PaginatorService {
                     10
                 );
                 return response.entity;
-            });
+            }).take(1);
     }
 
     /**

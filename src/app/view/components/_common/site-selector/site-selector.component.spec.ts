@@ -6,11 +6,10 @@ import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { SearchableDropDownModule } from '../searchable-dropdown/searchable-dropdown.module';
 import { DotMessageService } from '../../../../api/services/dot-messages-service';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
-import { SiteServiceMock } from '../../../../test/site-service.mock';
+import { SiteServiceMock, mockSites } from '../../../../test/site-service.mock';
 import { SiteService } from 'dotcms-js/dotcms-js';
 import { Observable } from 'rxjs/Observable';
 import { SearchableDropdownComponent } from '../searchable-dropdown/component/searchable-dropdown.component';
-import { fakeAsync, tick } from '@angular/core/testing';
 import { PaginatorService } from '../../../../api/services/paginator';
 import { IframeOverlayService } from '../iframe/service/iframe-overlay.service';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -19,6 +18,7 @@ describe('SiteSelectorComponent', () => {
     let comp: SiteSelectorComponent;
     let fixture: ComponentFixture<SiteSelectorComponent>;
     let de: DebugElement;
+    let paginatorService: PaginatorService;
 
     beforeEach(
         async(() => {
@@ -42,6 +42,7 @@ describe('SiteSelectorComponent', () => {
             fixture = DOTTestBed.createComponent(SiteSelectorComponent);
             comp = fixture.componentInstance;
             de = fixture.debugElement;
+            paginatorService = de.injector.get(PaginatorService);
         })
     );
 
@@ -51,8 +52,6 @@ describe('SiteSelectorComponent', () => {
         comp.system = false;
 
         fixture.detectChanges();
-
-        const paginatorService: PaginatorService = de.injector.get(PaginatorService);
 
         expect(paginatorService.extraParams.get('archive')).toBe('false');
         expect(paginatorService.extraParams.get('live')).toBe('false');
@@ -65,8 +64,6 @@ describe('SiteSelectorComponent', () => {
         comp.system = true;
 
         fixture.detectChanges();
-
-        const paginatorService: PaginatorService = de.injector.get(PaginatorService);
 
         expect(paginatorService.extraParams.get('archive')).toBe('true');
         expect(paginatorService.extraParams.get('live')).toBe('true');
@@ -87,7 +84,6 @@ describe('SiteSelectorComponent', () => {
         const siteService = de.injector.get(SiteService);
         spyOn(siteService, 'switchSite$').and.returnValue(Observable.of(site1));
 
-        const paginatorService: PaginatorService = de.injector.get(PaginatorService);
         spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of([site1, site2]));
 
         fixture.detectChanges();
@@ -95,101 +91,110 @@ describe('SiteSelectorComponent', () => {
         expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
     });
 
-    it(
-        'should call refresh if a event happen',
-        async(() => {
-            const site1 = {
-                identifier: 1,
-                name: 'Site 1'
-            };
+    it('should call refresh if a event happen', () => {
+        const site1 = {
+            identifier: 1,
+            name: 'Site 1'
+        };
 
-            const site2 = {
-                identifier: 2,
-                name: 'Site 2'
-            };
+        const site2 = {
+            identifier: 2,
+            name: 'Site 2'
+        };
 
-            const siteService = de.injector.get(SiteService);
-            spyOn(siteService, 'refreshSites$').and.returnValue(Observable.of([site1, site2]));
-            spyOn(comp, 'handleSitesRefresh').and.callThrough();
+        const siteService = de.injector.get(SiteService);
+        spyOn(siteService, 'refreshSites$').and.returnValue(Observable.of([site1, site2]));
+        spyOn(comp, 'handleSitesRefresh').and.callThrough();
 
-            fixture.detectChanges();
+        fixture.detectChanges();
 
-            expect(comp.handleSitesRefresh).toHaveBeenCalledTimes(1);
-        })
-    );
+        expect(comp.handleSitesRefresh).toHaveBeenCalledTimes(1);
+    });
 
-    it(
-        'should change Page',
-        fakeAsync(() => {
-            const filter = 'filter';
-            const page = 1;
+    it('should change page', () => {
+        const filter = 'filter';
+        const page = 1;
 
-            const paginatorService: PaginatorService = de.injector.get(PaginatorService);
-            paginatorService.totalRecords = 2;
-            spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of([]));
+        paginatorService.totalRecords = 2;
+        spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of([]));
 
-            const siteService = de.injector.get(SiteService);
-            spyOn(siteService, 'switchSite$').and.returnValue(Observable.of({}));
+        const siteService = de.injector.get(SiteService);
+        spyOn(siteService, 'switchSite$').and.returnValue(Observable.of({}));
 
-            fixture.detectChanges();
+        fixture.detectChanges();
 
-            const searchableDropdownComponent: SearchableDropdownComponent = de.query(By.css('dot-searchable-dropdown')).componentInstance;
+        const searchableDropdownComponent: SearchableDropdownComponent = de.query(By.css('dot-searchable-dropdown')).componentInstance;
 
-            searchableDropdownComponent.pageChange.emit({
-                filter: filter,
-                first: 10,
-                page: page,
-                pageCount: 10,
-                rows: 0
-            });
+        searchableDropdownComponent.pageChange.emit({
+            filter: filter,
+            first: 10,
+            page: page,
+            pageCount: 10,
+            rows: 0
+        });
 
-            tick();
-            expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
-            expect(paginatorService.getWithOffset).toHaveBeenCalledWith(10);
-        })
-    );
+        expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
+        expect(paginatorService.getWithOffset).toHaveBeenCalledWith(10);
+    });
 
-    it(
-        'should paginate when the filter change',
-        fakeAsync(() => {
-            const filter = 'filter';
+    it('should paginate when the filter change', () => {
+        const filter = 'filter';
 
-            const paginatorService: PaginatorService = de.injector.get(PaginatorService);
-            paginatorService.totalRecords = 2;
-            spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of([]));
+        paginatorService.totalRecords = 2;
+        spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of([]));
 
-            const siteService = de.injector.get(SiteService);
-            spyOn(siteService, 'switchSite$').and.returnValue(Observable.of({}));
+        const siteService = de.injector.get(SiteService);
+        spyOn(siteService, 'switchSite$').and.returnValue(Observable.of({}));
 
-            fixture.detectChanges();
+        fixture.detectChanges();
 
-            const searchableDropdownComponent: SearchableDropdownComponent = de.query(By.css('dot-searchable-dropdown')).componentInstance;
+        const searchableDropdownComponent: SearchableDropdownComponent = de.query(By.css('dot-searchable-dropdown')).componentInstance;
 
-            searchableDropdownComponent.filterChange.emit(filter);
-            comp.handleFilterChange(filter);
+        searchableDropdownComponent.filterChange.emit(filter);
+        comp.handleFilterChange(filter);
 
-            tick();
-            expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
-            expect(paginatorService.filter).toEqual(filter);
-        })
-    );
+        expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
+        expect(paginatorService.filter).toEqual(filter);
+    });
 
-    it(
-        'should be assign to filter if empty',
-        fakeAsync(() => {
-            const paginatorService: PaginatorService = de.injector.get(PaginatorService);
-            paginatorService.filter = 'filter';
-            paginatorService.totalRecords = 2;
-            spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of([]));
+    it('should be assign to filter if empty', () => {
+        paginatorService.filter = 'filter';
+        paginatorService.totalRecords = 2;
+        spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of([]));
 
-            fixture.detectChanges();
+        fixture.detectChanges();
 
-            const searchableDropdownComponent: SearchableDropdownComponent = de.query(By.css('dot-searchable-dropdown')).componentInstance;
+        const searchableDropdownComponent: SearchableDropdownComponent = de.query(By.css('dot-searchable-dropdown')).componentInstance;
 
-            searchableDropdownComponent.filterChange.emit('');
+        searchableDropdownComponent.filterChange.emit('');
 
-            tick();
-            expect(paginatorService.filter).toEqual('');
-        })
-    );
+        expect(paginatorService.filter).toEqual('');
+    });
+
+    it('should emit change event', () => {
+        paginatorService.filter = 'filter';
+        paginatorService.totalRecords = 2;
+        spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of([]));
+
+        fixture.detectChanges();
+        const searchableDropdownComponent: DebugElement = de.query(By.css('dot-searchable-dropdown'));
+        let result: any;
+        comp.change.subscribe(res => result = res);
+        searchableDropdownComponent.triggerEventHandler('change',  {fake: 'site'});
+
+        expect(result).toEqual({fake: 'site'});
+    });
+
+    it('should set current site correctly', () => {
+        paginatorService.filter = 'filter';
+        paginatorService.totalRecords = 2;
+        spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of([]));
+
+        fixture.detectChanges();
+
+        let result: any;
+        comp.currentSite.subscribe(res => result = res);
+
+        expect(result).toEqual(mockSites[0]);
+    });
 });

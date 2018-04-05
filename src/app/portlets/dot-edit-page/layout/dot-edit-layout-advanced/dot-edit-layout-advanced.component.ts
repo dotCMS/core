@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, NgZone, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, Input, NgZone } from '@angular/core';
 import { Observable } from 'rxjs/Observable';
 import { DotMenuService } from '../../../../api/services/dot-menu.service';
 import { DotGlobalMessageService } from '../../../../view/components/_common/dot-global-message/dot-global-message.service';

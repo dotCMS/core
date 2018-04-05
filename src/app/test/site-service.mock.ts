@@ -19,8 +19,8 @@ export class SiteServiceMock {
     _currentSite: Site;
     private _switchSite$: Subject<Site> = new Subject<Site>();
 
-    get currentSite(): Observable<Site> {
-        return Observable.of(this._currentSite);
+    get currentSite(): Site {
+        return this._currentSite || mockSites[0];
     }
 
     getSiteById(): Site {

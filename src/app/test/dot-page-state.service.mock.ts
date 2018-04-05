@@ -15,7 +15,7 @@ const mockDotRenderedPage: DotRenderedPage = {
 
 @Injectable()
 export class DotPageStateServiceMock {
-    get(url: string): Observable<DotRenderedPageState> {
+    get(_url: string): Observable<DotRenderedPageState> {
         return Observable.of(new DotRenderedPageState(mockUser, mockDotRenderedPage));
     }
 }

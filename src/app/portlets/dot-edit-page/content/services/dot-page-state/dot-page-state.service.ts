@@ -6,7 +6,6 @@ import { DotRenderedPage } from '../../../shared/models/dot-rendered-page.model'
 import { Observable } from 'rxjs/Observable';
 import { Injectable } from '@angular/core';
 import { DotContentletLockerService } from '../../../../../api/services/dot-contentlet-locker/dot-contentlet-locker.service';
-import { PageMode } from '../../../shared/models/page-mode.enum';
 import { DotEditPageViewAs } from '../../../../../shared/models/dot-edit-page-view-as/dot-edit-page-view-as.model';
 
 @Injectable()
