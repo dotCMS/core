@@ -1054,26 +1054,51 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response importScheme(@Context final HttpServletRequest request,
-                                       final WorkflowSchemeImportExportObjectForm workflowSchemeImportExportObjectForm) {
+                                       final WorkflowSchemeImportObjectForm workflowSchemeImportForm) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
         Response response;
-        Locale                           locale;
+        Locale   locale;
+        final WorkflowSchemeImportExportObject exportObject;
 
         try {
 
             Logger.debug(this, "Importing the workflow schemes");
-            this.workflowHelper.importScheme (workflowSchemeImportExportObjectForm.getWorkflowExportObject(),
-                            workflowSchemeImportExportObjectForm.getPermissions(),
+
+            exportObject = new WorkflowSchemeImportExportObject();
+            exportObject.setSchemes(workflowSchemeImportForm.getWorkflowImportObject().getSchemes());
+            exportObject.setSteps  (workflowSchemeImportForm.getWorkflowImportObject().getSteps());
+            exportObject.setActions(workflowSchemeImportForm.getWorkflowImportObject().getActions());
+            exportObject.setActionSteps(workflowSchemeImportForm.getWorkflowImportObject().getActionSteps());
+            exportObject.setActionClasses(workflowSchemeImportForm.getWorkflowImportObject().getActionClasses());
+            exportObject.setActionClassParams(workflowSchemeImportForm.getWorkflowImportObject().getActionClassParams());
+
+            this.workflowHelper.importScheme (
+                            exportObject,
+                            workflowSchemeImportForm.getPermissions(),
                             initDataObject.getUser());
             response     = Response.ok(new ResponseEntityView("OK")).build(); // 200
+        } catch (NotAllowedUserWorkflowException e){
+
+            Logger.error(this.getClass(),
+                    "Exception on importScheme, Error importing schemes, forbidden", e);
+            locale   = LocaleUtil.getLocale(request);
+            response = this.responseUtil.getErrorResponse(request, Response.Status.FORBIDDEN,
+                    locale, initDataObject.getUser().getUserId(), "Workflow-import-fail");
         } catch (DoesNotExistException e) {
 
             Logger.error(this.getClass(),
                     "Exception on importScheme, Error importing schemes, some objects could not exists", e);
             locale   = LocaleUtil.getLocale(request);
             response = this.responseUtil.getErrorResponse(request, Response.Status.NOT_FOUND,
+                    locale, initDataObject.getUser().getUserId(), "Workflow-import-fail");
+        } catch (AlreadyExistException e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on importScheme, Error importing schemes, scheme already exists", e);
+            locale   = LocaleUtil.getLocale(request);
+            response = this.responseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST,
                     locale, initDataObject.getUser().getUserId(), "Workflow-import-fail");
         } catch (Exception e) {
 
@@ -1113,12 +1138,21 @@ public class WorkflowResource {
         try {
 
             Logger.debug(this, "Exporting the workflow scheme: " + schemeId);
+            this.workflowAPI.isUserAllowToModifiedWorkflow(initDataObject.getUser());
+
             scheme       = this.workflowAPI.findScheme(schemeId);
             exportObject = this.workflowImportExportUtil.buildExportObject(Arrays.asList(scheme));
             permissions  = this.workflowHelper.getActionsPermissions(exportObject.getActions());
             response     = Response.ok(new ResponseEntityView(
-                    map("workflowImportObject",exportObject,
+                    map("workflowExportObject", new WorkflowSchemeImportExportObjectView(exportObject),
                             "permissions", permissions))).build(); // 200
+        } catch (NotAllowedUserWorkflowException e){
+
+            Logger.error(this.getClass(),
+                    "Exception on exportScheme, Error exporting the schemes, forbidden", e);
+            locale   = LocaleUtil.getLocale(request);
+            response = this.responseUtil.getErrorResponse(request, Response.Status.FORBIDDEN,
+                    locale, initDataObject.getUser().getUserId(), "Workflow-import-fail");
         } catch (DoesNotExistException e) {
 
             Logger.error(this.getClass(),
@@ -1129,7 +1163,7 @@ public class WorkflowResource {
         } catch (Exception e) {
 
             Logger.error(this.getClass(),
-                    "Exception on findActionsByScheme, schemeId: " + schemeId +
+                    "Exception on exportScheme, schemeId: " + schemeId +
                             ", exception message: " + e.getMessage(), e);
             response = (e.getCause() instanceof SecurityException)?
                     this.createUnAuthorizedResponse(e) :

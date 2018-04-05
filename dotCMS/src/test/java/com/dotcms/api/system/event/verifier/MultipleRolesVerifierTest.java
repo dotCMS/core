@@ -4,6 +4,7 @@ import com.dotcms.UnitTestBase;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.VisibilityRoles;
+import com.dotcms.rest.api.v1.system.websocket.WebSocketUserSessionData;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DotDataException;
@@ -44,7 +45,17 @@ public class MultipleRolesVerifierTest extends UnitTestBase {
         when(roleAPI.doesUserHaveRole(user, superUserRole.getId())).thenReturn(true);
         when(roleAPI.doesUserHaveRole(user, adminUserRole.getId())).thenReturn(false);
 
-        final boolean verified = rolesVerifier.verified(payload, user);
+        final boolean verified = rolesVerifier.verified(payload, new WebSocketUserSessionData() {
+            @Override
+            public User getUser() {
+                return user;
+            }
+
+            @Override
+            public String getUserSessionId() {
+                return "";
+            }
+        });
 
         Assert.assertFalse(verified);
     } // verifiedAndFailTest.
@@ -69,7 +80,17 @@ public class MultipleRolesVerifierTest extends UnitTestBase {
         when(roleAPI.doesUserHaveRole(user, superUserRole.getId())).thenReturn(true);
         when(roleAPI.doesUserHaveRole(user, adminUserRole.getId())).thenReturn(true);
 
-        final boolean verified = rolesVerifier.verified(payload, user);
+        final boolean verified = rolesVerifier.verified(payload, new WebSocketUserSessionData() {
+            @Override
+            public User getUser() {
+                return user;
+            }
+
+            @Override
+            public String getUserSessionId() {
+                return "";
+            }
+        });
 
         Assert.assertTrue(verified);
     } // verifiedAndSuccessTest.
@@ -94,7 +115,17 @@ public class MultipleRolesVerifierTest extends UnitTestBase {
         when(roleAPI.doesUserHaveRole(user, superUserRole.getId())).thenReturn(false);
         when(roleAPI.doesUserHaveRole(user, adminUserRole.getId())).thenReturn(false);
 
-        final boolean verified = rolesVerifier.verified(payload, user);
+        final boolean verified = rolesVerifier.verified(payload, new WebSocketUserSessionData() {
+            @Override
+            public User getUser() {
+                return user;
+            }
+
+            @Override
+            public String getUserSessionId() {
+                return "";
+            }
+        });
 
         Assert.assertFalse(verified);
     } // verifiedAndFailTest.
@@ -119,7 +150,17 @@ public class MultipleRolesVerifierTest extends UnitTestBase {
         when(roleAPI.doesUserHaveRole(user, superUserRole.getId())).thenReturn(false);
         when(roleAPI.doesUserHaveRole(user, adminUserRole.getId())).thenReturn(false);
 
-        final boolean verified = rolesVerifier.verified(payload, user);
+        final boolean verified = rolesVerifier.verified(payload, new WebSocketUserSessionData() {
+            @Override
+            public User getUser() {
+                return user;
+            }
+
+            @Override
+            public String getUserSessionId() {
+                return "";
+            }
+        });
 
         Assert.assertTrue(verified);
     } // verifiedOrSuccessTest.
@@ -144,7 +185,17 @@ public class MultipleRolesVerifierTest extends UnitTestBase {
         when(roleAPI.doesUserHaveRole(user, superUserRole.getId())).thenReturn(true);
         when(roleAPI.doesUserHaveRole(user, adminUserRole.getId())).thenReturn(false);
 
-        final boolean verified = rolesVerifier.verified(payload, user);
+        final boolean verified = rolesVerifier.verified(payload, new WebSocketUserSessionData() {
+            @Override
+            public User getUser() {
+                return user;
+            }
+
+            @Override
+            public String getUserSessionId() {
+                return "";
+            }
+        });
 
         Assert.assertTrue(verified);
     } // verifiedOrSuccessTest.
@@ -168,7 +219,17 @@ public class MultipleRolesVerifierTest extends UnitTestBase {
         when(roleAPI.doesUserHaveRole(user, superUserRole.getId())).thenReturn(false);
         when(roleAPI.doesUserHaveRole(user, adminUserRole.getId())).thenReturn(true);
 
-        final boolean verified = rolesVerifier.verified(payload, user);
+        final boolean verified = rolesVerifier.verified(payload, new WebSocketUserSessionData() {
+            @Override
+            public User getUser() {
+                return user;
+            }
+
+            @Override
+            public String getUserSessionId() {
+                return "";
+            }
+        });
 
         Assert.assertTrue(verified);
     } // verifiedOrSuccessTest.
@@ -192,7 +253,17 @@ public class MultipleRolesVerifierTest extends UnitTestBase {
         when(roleAPI.doesUserHaveRole(user, superUserRole.getId())).thenReturn(true);
         when(roleAPI.doesUserHaveRole(user, adminUserRole.getId())).thenReturn(true);
 
-        final boolean verified = rolesVerifier.verified(payload, user);
+        final boolean verified = rolesVerifier.verified(payload, new WebSocketUserSessionData() {
+            @Override
+            public User getUser() {
+                return user;
+            }
+
+            @Override
+            public String getUserSessionId() {
+                return "";
+            }
+        });
 
         Assert.assertTrue(verified);
     } // verifiedOrSuccessTest.

@@ -10,7 +10,7 @@ import javax.servlet.http.HttpSession;
  */
 public final class WebSessionContext implements AppContext {
 
-    private HttpSession session;
+    private final HttpSession session;
 
     private WebSessionContext(HttpServletRequest request){
         this.session = request.getSession();
@@ -28,6 +28,12 @@ public final class WebSessionContext implements AppContext {
     @Override
     public <T> void setAttribute(String attributeName, T attributeValue) {
         this.session.setAttribute(attributeName, attributeValue);
+    }
+
+    @Override
+    public String getId() {
+
+        return this.session.getId();
     }
 
     @Override
