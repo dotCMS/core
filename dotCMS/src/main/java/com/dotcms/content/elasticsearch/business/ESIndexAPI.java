@@ -3,6 +3,8 @@ package com.dotcms.content.elasticsearch.business;
 import com.carrotsearch.hppc.cursors.ObjectCursor;
 import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
@@ -19,6 +21,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.ZipUtil;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.tools.zip.ZipEntry;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionFuture;
@@ -43,7 +46,6 @@ import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeResponse;
 import org.elasticsearch.action.admin.indices.open.OpenIndexRequest;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequestBuilder;
-import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsResponse;
 import org.elasticsearch.action.admin.indices.stats.IndexStats;
 import org.elasticsearch.action.admin.indices.stats.IndicesStatsResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
@@ -63,6 +65,7 @@ import org.elasticsearch.cluster.metadata.RepositoryMetaData;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
@@ -120,6 +123,18 @@ public class ESIndexAPI {
 
 		public String getStatus() {
 			return status;
+		}
+	}
+
+	public enum ReplicasMode { AUTOWIRE("autowire"), NO_BOUNDARY("0-all"), EMPTY("empty");
+		private final String replicasMode;
+
+		ReplicasMode(String replicasMode) {
+			this.replicasMode = replicasMode;
+		}
+
+		public String getReplicasMode() {
+			return replicasMode;
 		}
 	};
 
@@ -379,7 +394,7 @@ public class ESIndexAPI {
 			// also let it go other servers
 			moveIndexBackToCluster(index);
 
-            ArrayList<String> list=new ArrayList<String>();
+            ArrayList<String> list=new ArrayList<>();
             list.add(index);
             iapi.optimize(list);
 
@@ -450,26 +465,23 @@ public class ESIndexAPI {
 	 * @throws IOException
 	 * @throws DotDataException
 	 */
-	public  void clearIndex(String indexName) throws DotStateException, IOException, DotDataException{
+	public  void clearIndex(final String indexName) throws DotStateException, IOException, DotDataException{
 		if(indexName == null || !indexExists(indexName)){
 			throw new DotStateException("Index" + indexName + " does not exist");
 		}
 
         AdminLogger.log(this.getClass(), "clearIndex", "Trying to clear index: " + indexName);
 
-        Map<String, ClusterIndexHealth> map = getClusterHealth();
-		ClusterIndexHealth cih = map.get(indexName);
-		int shards = cih.getNumberOfShards();
-		int replicas = cih.getNumberOfReplicas();
-
-		String alias=getIndexAlias(indexName);
+		final ClusterIndexHealth cih = getClusterHealth().get(indexName);
+		final int shards = cih.getNumberOfShards();
+		final String alias=getIndexAlias(indexName);
 
 		iapi.delete(indexName);
 
 		if(UtilMethods.isSet(indexName) && indexName.indexOf("sitesearch") > -1) {
 			APILocator.getSiteSearchAPI().createSiteSearchIndex(indexName, alias, shards);
 		} else {
-			CreateIndexResponse res=createIndex(indexName, shards);
+			final CreateIndexResponse res=createIndex(indexName, shards);
 
 			try {
 				int w=0;
@@ -485,10 +497,6 @@ public class ESIndexAPI {
 		    createAlias(indexName, alias);
 		}
 
-		if(replicas > 0){
-			APILocator.getESIndexAPI().updateReplicas(indexName, replicas);
-		}
-
         AdminLogger.log(this.getClass(), "clearIndex", "Index: " + indexName + " cleared");
 	}
 
@@ -497,52 +505,109 @@ public class ESIndexAPI {
 	 * @param index
 	 * @throws IOException
 	 */
-	public  void moveIndexToLocalNode(String index) throws IOException {
-        Client client=new ESClient().getClient();
-//        String nodeName="dotCMS_" + Config.getStringProperty("DIST_INDEXATION_SERVER_ID");
-        String nodeName="dotCMS_" + APILocator.getServerAPI().readServerId();
-        UpdateSettingsResponse resp=client.admin().indices().updateSettings(
+	public  void moveIndexToLocalNode(final String index) throws IOException {
+        final Client client=new ESClient().getClient();
+        final String nodeName="dotCMS_" + APILocator.getServerAPI().readServerId();
+
+		client.admin().indices().updateSettings(
           new UpdateSettingsRequest(index).settings(
                 jsonBuilder().startObject()
                      .startObject("index")
                         .field("number_of_replicas",0)
+						.endObject()
+						.startObject("cluster")
                         .field("routing.allocation.include._name",nodeName)
                      .endObject()
                .endObject().string(), XContentType.JSON)).actionGet();
     }
+
+    public static int getReplicasCount(){
+
+		int nReplicas = 1;
+		final String replicasMode = getReplicasMode();
+
+		if (LicenseUtil.getLevel() <= LicenseLevel.STANDARD.level){
+			return 0;
+		}
+
+		if (replicasMode.equals(ReplicasMode.AUTOWIRE.getReplicasMode())){
+			if (ClusterUtils.isESAutoWire()){
+				nReplicas = getReplicasCountByNodes();
+			} else{
+				Logger.error(ESIndexAPI.class,
+						"Setting ES_INDEX_REPLICAS=\"autowire\" and AUTOWIRE_CLUSTER_ES=false is not allowed; number_of_replicas=0 will be used by default");
+			}
+		} else if (replicasMode.equals(ReplicasMode.NO_BOUNDARY.getReplicasMode())) {
+			nReplicas = -1;
+		} else if (!replicasMode.equals(ReplicasMode.EMPTY.getReplicasMode())){
+			try {
+				nReplicas = Integer.parseInt(replicasMode);
+			} catch(NumberFormatException e){
+				Logger.error(ESIndexAPI.class,
+						"ES_INDEX_REPLICAS value is not valid; number_of_replicas=0 will be used by default");
+			}
+		}
+
+		return nReplicas;
+
+	}
+
+	private static String getReplicasMode(){
+
+    	String replicasMode;
+
+		if (!ClusterUtils.isReplicasSet()){
+			if (ClusterUtils.isESAutoWire()){
+				replicasMode = ReplicasMode.AUTOWIRE.getReplicasMode();
+			}else{
+				replicasMode = ReplicasMode.EMPTY.getReplicasMode();
+			}
+		} else {
+			replicasMode = Config.getStringProperty("ES_INDEX_REPLICAS", null);
+		}
+
+		return replicasMode;
+	}
+
+	private static int getReplicasCountByNodes(){
+		int serverCount;
+
+		try {
+			serverCount = APILocator.getServerAPI().getAliveServersIds().length;
+		} catch (DotDataException e) {
+			Logger.error(ESIndexAPI.class, "Error getting live server list for server count, using 1 as default.");
+			serverCount = 1;
+		}
+		// formula is (live server count (including the ones that are down but not yet timed out) - 1)
+
+		if(serverCount>0) {
+			serverCount = serverCount - 1;
+		}
+
+		return serverCount;
+
+	}
 
 	/**
 	 * clusters an index, including changing the routing
 	 * @param index
 	 * @throws IOException
 	 */
-    public  void moveIndexBackToCluster(String index) throws IOException {
-        Client client=new ESClient().getClient();
-        int nreplicas=Config.getIntProperty("es.index.number_of_replicas",0);
-	
-	if (ClusterUtils.isESAutoWireReplicas()){
-		int serverCount;
+    public  void moveIndexBackToCluster(final String index) throws IOException {
+        final Client client=new ESClient().getClient();
+        final int nReplicas = getReplicasCount();
 
-		try {
-			serverCount = APILocator.getServerAPI().getAliveServersIds().length;
-		} catch (DotDataException e) {
-			Logger.error(this.getClass(), "Error getting live server list for server count, using 1 as default.");
-			serverCount = 1;
-		}
-		// formula is (live server count (including the ones that are down but not yet timed out) - 1)
+		final XContentBuilder builder = jsonBuilder().startObject().startObject("index");
 
-		if(serverCount>0) {
-			nreplicas = serverCount - 1;
-		}  else {
-			nreplicas = 0;
+		if (nReplicas >= 0){
+			builder.field("number_of_replicas",nReplicas);
+			builder.field("auto_expand_replicas",false).endObject();
+		}else{
+			builder.field("auto_expand_replicas",ReplicasMode.NO_BOUNDARY.getReplicasMode()).endObject();
 		}
-	}
-	   
-        UpdateSettingsResponse resp=client.admin().indices().updateSettings(
-          new UpdateSettingsRequest(index).settings(
-                jsonBuilder().startObject()
-                     .startObject("index")
-                        .field("number_of_replicas",nreplicas)
+
+        client.admin().indices().updateSettings(
+          new UpdateSettingsRequest(index).settings(builder.startObject("cluster")
                         .field("routing.allocation.include._name","*")
                      .endObject()
                .endObject().string(), XContentType.JSON)).actionGet();
@@ -558,7 +623,10 @@ public class ESIndexAPI {
      * @throws ElasticsearchException
      * @throws IOException
      */
-	public synchronized CreateIndexResponse createIndex(String indexName, String settings, int shards) throws ElasticsearchException, IOException {
+	public synchronized CreateIndexResponse createIndex(final String indexName, String settings,
+			int shards) throws ElasticsearchException, IOException {
+
+		final int nReplicas = getReplicasCount();
 
 		AdminLogger.log(this.getClass(), "createIndex",
 			"Trying to create index: " + indexName + " with shards: " + shards);
@@ -587,25 +655,11 @@ public class ESIndexAPI {
 		Map map = new ObjectMapper().readValue(settings, LinkedHashMap.class);
 		map.put("number_of_shards", shards);
 
-		if (ClusterUtils.isESAutoWireReplicas()){
-			int serverCount;
-
-			try {
-				serverCount = APILocator.getServerAPI().getAliveServersIds().length;
-			} catch (DotDataException e) {
-				Logger.error(this.getClass(), "Error getting live server list for server count, using 1 as default.");
-				Logger.debug(this.getClass(), e.getMessage(), e);
-				serverCount = 1;
-			}
-			// formula is (live server count (including the ones that are down but not yet timed out) - 1)
-
-			if(serverCount>0) {
-				map.put("auto_expand_replicas", "false");
-				map.put("number_of_replicas", serverCount - 1);
-			}
+		if (nReplicas >= 0){
+			map.put("number_of_replicas",nReplicas);
+			map.put("auto_expand_replicas",false);
 		}else{
-			map.put("auto_expand_replicas", "false");
-			map.put("number_of_replicas", Config.getIntProperty("es.index.number_of_replicas", 0));
+			map.put("auto_expand_replicas",ReplicasMode.NO_BOUNDARY.getReplicasMode());
 		}
 
 		// create actual index
@@ -619,7 +673,9 @@ public class ESIndexAPI {
 	}
 
 
-	public synchronized CreateIndexResponse createIndex(String indexName, String settings, int shards, String type, String mapping) throws ElasticsearchException, IOException {
+	public synchronized CreateIndexResponse createIndex(final String indexName, String settings,
+			int shards, final String type, final String mapping)
+			throws ElasticsearchException, IOException {
 
 		//Seems like the method is not longer used
 		// but I still will add the log just in case
@@ -635,7 +691,7 @@ public class ESIndexAPI {
 		}
 		if(shards <1){
 			try{
-				shards = Config.getIntProperty("es.index.number_of_shards");
+				shards = Config.getIntProperty("es.index.number_of_shards", 1);
 			}catch(Exception e){}
 		}
 
@@ -668,7 +724,7 @@ public class ESIndexAPI {
 	public String getDefaultIndexSettings(int shards) throws IOException{
 		return jsonBuilder().startObject()
             .startObject("index")
-           	.field("number_of_shards",shards+"")
+           	.field("number_of_shards",shards)
             .startObject("analysis")
              .startObject("analyzer")
               .startObject("default")
@@ -705,28 +761,28 @@ public class ESIndexAPI {
 	 * @param replicas
 	 * @throws DotDataException
 	 */
-    public  synchronized void updateReplicas (String indexName, int replicas) throws DotDataException {
+    public synchronized void updateReplicas (final String indexName, final int replicas) throws DotDataException {
 
-    	if (ClusterUtils.isESAutoWireReplicas()){
-    		AdminLogger.log(this.getClass(),"updateReplicas", "Error on updateReplica. Replicas are configured to be handled by dotCMS.");
-    		throw new DotDataException("Error on updateReplica. Replicas are configured to be handled by dotCMS.");
-    	}
+		if (!ClusterUtils.isReplicasSet() || !StringUtils
+				.isNumeric(Config.getStringProperty("ES_INDEX_REPLICAS", null))) {
+			AdminLogger.log(this.getClass(), "updateReplicas",
+					"Replicas can only be updated when an Enterprise License is used and ES_INDEX_REPLICAS is set to a specific value.");
+			throw new DotDataException(
+					"Replicas can only be updated when an Enterprise License is used and ES_INDEX_REPLICAS is set to a specific value.");
+		}
 
     	AdminLogger.log(this.getClass(), "updateReplicas", "Trying to update replicas to index: " + indexName);
 
-    	Map<String,ClusterIndexHealth> idxs = getClusterHealth();
-		ClusterIndexHealth health = idxs.get( indexName);
+		final ClusterIndexHealth health = getClusterHealth().get( indexName);
 		if(health ==null){
 			return;
 		}
-		int curReplicas = health.getNumberOfReplicas();
+
+		final int curReplicas = health.getNumberOfReplicas();
 
 		if(curReplicas != replicas){
-
-
-			Map newSettings = new HashMap();
-	        newSettings.put("index.number_of_replicas", replicas+"");
-
+			final Map newSettings = new HashMap();
+	        newSettings.put("number_of_replicas", replicas);
 
 			UpdateSettingsRequestBuilder usrb = new ESClient().getClient().admin().indices().prepareUpdateSettings(indexName);
 			usrb.setSettings(newSettings);
