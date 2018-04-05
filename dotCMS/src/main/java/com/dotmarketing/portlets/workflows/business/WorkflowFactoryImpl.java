@@ -708,12 +708,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return step;
 	}
 
-	/*
-	public List<WorkflowStep> findStepsByContentlet(final Contentlet contentlet) throws DotDataException {
-		final List<WorkflowScheme> schemes  = this.findSchemesForStruct(contentlet.getContentTypeId());
-		return findStepsByContentlet(contentlet, schemes);
-	}*/
-
 	@Override
 	public List<WorkflowStep> findStepsByContentlet(final Contentlet contentlet, final List<WorkflowScheme> schemes) throws DotDataException {
 		List<WorkflowStep> steps            = new ArrayList<>();
