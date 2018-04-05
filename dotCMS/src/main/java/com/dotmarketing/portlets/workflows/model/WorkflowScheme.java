@@ -32,10 +32,6 @@ public class WorkflowScheme implements Serializable {
 		return defaultScheme;
 	}
 
-    public boolean isSystemWorkflowScheme(){
-		return (SYSTEM_WORKFLOW_ID.equals(id));
-	}
-
 	public void setDefaultScheme(boolean defaultScheme) {
 		this.defaultScheme = defaultScheme;
 	}

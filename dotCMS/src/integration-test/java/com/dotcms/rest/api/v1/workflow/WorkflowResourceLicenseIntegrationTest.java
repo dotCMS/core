@@ -158,7 +158,7 @@ public class WorkflowResourceLicenseIntegrationTest {
         //Should Only return the system workflow
         final List<WorkflowScheme> schemes = findSchemes(nonLicenseWorkflowResource);
         assertEquals(1, schemes.size());
-        assertTrue(schemes.get(0).isSystemWorkflowScheme());
+        assertTrue(schemes.get(0).isSystem());
     }
 
     @Test
@@ -229,10 +229,10 @@ public class WorkflowResourceLicenseIntegrationTest {
         //Should only return the system workflow
         assertEquals(1, view.getContentTypeSchemes().size());
         final WorkflowScheme scheme1 = view.getContentTypeSchemes().get(0);
-        assertTrue(scheme1.isSystemWorkflowScheme());
+        assertTrue(scheme1.isSystem());
         assertEquals(1, view.getSchemes().size());
         final WorkflowScheme scheme2 = view.getSchemes().get(0);
-        assertTrue(scheme2.isSystemWorkflowScheme());
+        assertTrue(scheme2.isSystem());
     }
 
     @Test
@@ -381,7 +381,7 @@ public class WorkflowResourceLicenseIntegrationTest {
         ResponseEntityView ev = ResponseEntityView.class.cast(response.getEntity());
         List<WorkflowDefaultActionView> actions = List.class.cast(ev.getEntity());
         for(WorkflowDefaultActionView av:actions){
-          assertTrue(av.getScheme().isSystemWorkflowScheme());
+          assertTrue(av.getScheme().isSystem());
         }
     }
 
@@ -418,7 +418,7 @@ public class WorkflowResourceLicenseIntegrationTest {
         ResponseEntityView ev = ResponseEntityView.class.cast(response.getEntity());
         List<WorkflowDefaultActionView> actions = List.class.cast(ev.getEntity());
         for(WorkflowDefaultActionView av:actions){
-            assertTrue(av.getScheme().isSystemWorkflowScheme());
+            assertTrue(av.getScheme().isSystem());
         }
     }
 

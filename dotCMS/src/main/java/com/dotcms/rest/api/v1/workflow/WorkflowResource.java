@@ -161,7 +161,7 @@ public class WorkflowResource {
         try {
             Logger.debug(this,
                     "Getting the workflow schemes for the contentTypeId: " + contentTypeId);
-            List<WorkflowScheme> schemes = (null != contentTypeId) ?
+            final List<WorkflowScheme> schemes = (null != contentTypeId) ?
                     this.workflowHelper.findSchemesByContentType
                             (contentTypeId, initDataObject.getUser()) :
                     this.workflowHelper.findSchemes();

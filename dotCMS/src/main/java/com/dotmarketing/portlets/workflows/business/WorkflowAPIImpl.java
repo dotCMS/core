@@ -256,7 +256,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public WorkflowScheme findScheme(String id) throws DotDataException, DotSecurityException {
 		if (!SYSTEM_WORKFLOW_ID.equals(id)) {
 			if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
-				throw new DotSecurityException("You must have a valid license to gain access to schemes.");
+				throw new DotSecurityException("Workflow-Schemes-License-required");
 			}
 		}
 		return workFlowFactory.findScheme(id);
@@ -728,9 +728,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			DotSecurityException {
 		if (!SYSTEM_WORKFLOW_ID.equals(scheme.getId())) {
 			if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
-
-				throw new DotSecurityException(
-						"You must have a valid license to gain access to schemes.");
+				throw new DotSecurityException("Workflow-Actions-License-required");
 			}
 		}
 
@@ -768,8 +766,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			throws DotDataException, DotSecurityException {
 
 		if (!hasValidLicense()) {
-			Logger.debug(this, "");
-			throw new DotSecurityException("You must have a valid license to see any available actions.");
+			Logger.debug(this, "Attempt to get available actions with an invalid license.");
+			throw new DotSecurityException("Workflow-Actions-License-required");
 		}
 
 		if(contentlet == null || contentlet.getStructure() ==null) {
@@ -898,8 +896,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			if (!SYSTEM_WORKFLOW_ID.equals(workflowAction.getSchemeId())) {
 				if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
 
-					throw new DotSecurityException(
-							"You must have a valid license to see any available action.");
+					throw new DotSecurityException("Workflow-Actions-License-required");
 				}
 			}
 		}
@@ -916,9 +913,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		if (null != workflowAction) {
 			if (!SYSTEM_WORKFLOW_ID.equals(workflowAction.getSchemeId())) {
 				if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
-
-					throw new DotSecurityException(
-							"You must have a valid license to see any available action.");
+					throw new DotSecurityException("Workflow-Actions-License-required");
 				}
 			}
 		}
@@ -1869,7 +1864,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		if (!hasValidLicense()) {
 			//When no License, we only allow the system workflow
 			final WorkflowScheme systemWorkflow = schemes.stream()
-					.filter(WorkflowScheme::isSystemWorkflowScheme).findFirst()
+					.filter(WorkflowScheme::isSystem).findFirst()
 					.orElse(workFlowFactory.findSystemWorkflow());
 			schemes = new ImmutableList.Builder<WorkflowScheme>().add(systemWorkflow).build();
 
