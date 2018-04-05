@@ -1872,16 +1872,16 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
             //validate workflow tasks deleted
             task1 = workflowAPI.findTaskByContentlet(contentlet1);
-            assertNull(task1.getId());
+            assertNull(task1);
 
             task2 = workflowAPI.findTaskByContentlet(contentlet2);
-            assertNull(task2.getId());
+            assertNull(task2);
 
             task3 = workflowAPI.findTaskByContentlet(contentlet3);
-            assertNull(task3.getId());
+            assertNull(task3);
 
             task4 = workflowAPI.findTaskByContentlet(contentlet4);
-            assertNull(task4.getId());
+            assertNull(task4);
 
         } finally {
             //clean test

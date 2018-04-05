@@ -798,7 +798,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	@Override
 	public WorkflowTask findTaskByContentlet(final Contentlet contentlet) throws DotDataException {
 		if (!UtilMethods.isSet(contentlet.getIdentifier()) || cache.is404(contentlet)) {
-			return new WorkflowTask();
+			return null;
 		}
 
 		WorkflowTask task = cache.getTask(contentlet);

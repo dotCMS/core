@@ -567,7 +567,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             // delete workflow task for contentlet
             WorkFlowFactory wff = FactoryLocator.getWorkFlowFactory();
             WorkflowTask wft = wff.findTaskByContentlet(con);
-            if ( InodeUtils.isSet(wft.getInode() ) ) {
+            if ( null != wft && InodeUtils.isSet(wft.getInode() ) ) {
                 wff.deleteWorkflowTask(wft);
             }
 
