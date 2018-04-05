@@ -7,6 +7,7 @@ import com.dotcms.enterprise.license.DotLicenseRepoEntry;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import java.io.IOException;
 import java.util.List;
@@ -30,28 +31,16 @@ public class FreeServerFromClusterJob implements StatefulJob {
 
     @Override
     public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
-
         try {
             List<Server> inactiveServers = APILocator.getServerAPI().getInactiveServers();
 
             if (!inactiveServers.isEmpty()) {
-                boolean shouldRewire = false;
-
-                for (Server inactiveServer : inactiveServers) {
-                	removeServerFromClusterTables(inactiveServer);
-                    shouldRewire = true;
-                }
-
-                if (shouldRewire) {
-                    ClusterFactory.rewireCluster();
-                }
+                inactiveServers.forEach(this::removeServerFromClusterTables);
+                ClusterFactory.rewireClusterIfNeeded();
             }
         } catch (DotDataException dotDataException) {
             Logger.error(FreeServerFromClusterJob.class,
                     "Error trying to Free License or Clean Cluster Tables", dotDataException);
-        } catch (IOException iOException) {
-            Logger.error(FreeServerFromClusterJob.class,
-                    "Error trying to get the License Repo List", iOException);
         } catch (Exception exception) {
             Logger.error(FreeServerFromClusterJob.class,
                     "Error trying to Free Server from Cluster", exception);
@@ -89,14 +78,16 @@ public class FreeServerFromClusterJob implements StatefulJob {
      * Clean up the DB tables(cluster_server_uptime, cluster_server).
      *
      */
-    private void removeServerFromClusterTables( Server server)
-            throws DotDataException {
+    private void removeServerFromClusterTables(Server server) {
 
-        Logger.info(this, String.format("Server %s with license %s was Removed", server.getServerId(), server.getLicenseSerial()));
-        APILocator.getServerAPI().removeServerFromClusterTable(server.getServerId());
-        
-        LicenseUtil.freeLicenseOnRepo(server.getLicenseSerial(), server.getServerId());
-        
-        
+        try {
+            Logger.info(this, String
+                .format("Server %s with license %s was Removed", server.getServerId(), server.getLicenseSerial()));
+            APILocator.getServerAPI().removeServerFromClusterTable(server.getServerId());
+
+            LicenseUtil.freeLicenseOnRepo(server.getLicenseSerial(), server.getServerId());
+        } catch(DotDataException e) {
+            throw new DotRuntimeException(e.getMessage(), e);
+        }
     }
 }
