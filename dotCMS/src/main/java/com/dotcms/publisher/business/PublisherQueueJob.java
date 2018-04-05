@@ -2,6 +2,7 @@ package com.dotcms.publisher.business;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.enterprise.publishing.PublishDateUpdater;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher;
@@ -100,6 +101,7 @@ public class PublisherQueueJob implements StatefulJob {
 	 * @throws JobExecutionException
 	 *             An exception occurred while executing the job.
 	 */
+	@CloseDBIfOpened
 	public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
 		try {
 			Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job - check for publish dates");
@@ -202,14 +204,6 @@ public class PublisherQueueJob implements StatefulJob {
 			}
 		} catch (Exception e) {
 			Logger.error(PublisherQueueJob.class, e.getMessage(), e);
-		} finally {
-			try {
-				HibernateUtil.closeSession();
-			} catch (DotHibernateException e) {
-				Logger.warn(this, "exception while calling HibernateUtil.closeSession()", e);
-			} finally {
-				DbConnectionFactory.closeConnection();
-			}
 		}
 	}
 

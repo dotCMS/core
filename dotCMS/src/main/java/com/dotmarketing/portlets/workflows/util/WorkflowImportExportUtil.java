@@ -12,6 +12,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.Logger;
+import com.liferay.portal.model.User;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
@@ -83,6 +84,7 @@ public class WorkflowImportExportUtil {
 		BufferedReader bufferedReader   		  = null;
 		WorkflowSchemeImportExportObject importer = null;
 
+
 		try {
 
 			bufferedReader = new BufferedReader(reader);
@@ -96,7 +98,7 @@ public class WorkflowImportExportUtil {
 			importer = mapper.readValue
 					((String) stringWriter.toString(), WorkflowSchemeImportExportObject.class);
 
-			this.importWorkflowExport(importer);
+			this.importWorkflowExport(importer, APILocator.systemUser());
 		} catch (Exception e) {// Catch exception if any
 			Logger.error(this.getClass(), "Error: " + e.getMessage(), e);
 		} finally {
@@ -106,37 +108,41 @@ public class WorkflowImportExportUtil {
 	}
 
 	@WrapInTransaction
-	public void importWorkflowExport(final WorkflowSchemeImportExportObject importer) throws IOException {
+	public void importWorkflowExport(final WorkflowSchemeImportExportObject importer,
+									 final User user) throws IOException {
 
 		final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
 
 		try {
 
-			for (WorkflowScheme scheme : importer.getSchemes()) {
-				workflowAPI.saveScheme(scheme, APILocator.systemUser());
+			for (final WorkflowScheme scheme : importer.getSchemes()) {
+
+				workflowAPI.saveScheme(scheme, user);
 			}
 
-			for (WorkflowStep step : importer.getSteps()) {
-				workflowAPI.saveStep(step, APILocator.systemUser());
+			for (final WorkflowStep step : importer.getSteps()) {
+
+				workflowAPI.saveStep(step, user);
 			}
 
-			for (WorkflowAction action : importer.getActions()) {
-				workflowAPI.saveAction(action, null, APILocator.systemUser());
+			for (final WorkflowAction action : importer.getActions()) {
+				workflowAPI.saveAction(action, null, user);
 			}
 
-			for(Map<String, String> actionStepMap : importer.getActionSteps()){
+			for(final Map<String, String> actionStepMap : importer.getActionSteps()){
 
 				workflowAPI.saveAction(actionStepMap.get(ACTION_ID),
 						actionStepMap.get(STEP_ID),
-						APILocator.systemUser(),
+						user,
 						ConversionUtils.toInt(actionStepMap.get(ACTION_ORDER), 0));
 			}
 
-			for (WorkflowActionClass actionClass : importer.getActionClasses()) {
-				workflowAPI.saveActionClass(actionClass, APILocator.systemUser());
+			for (final WorkflowActionClass actionClass : importer.getActionClasses()) {
+				workflowAPI.saveActionClass(actionClass, user);
 			}
 
-			for(final Map<String, String> map : importer.getWorkflowStructures()){
+			for(final Map<String, String> map : importer.getWorkflowStructures()) {
+
 				DotConnect dc = new DotConnect();
 				dc.setSQL("delete from workflow_scheme_x_structure where id=?");
 				dc.addParam(map.get("id"));
@@ -148,7 +154,7 @@ public class WorkflowImportExportUtil {
 				dc.loadResult();
 			}
 
-			workflowAPI.saveWorkflowActionClassParameters(importer.getActionClassParams(), APILocator.systemUser());
+			workflowAPI.saveWorkflowActionClassParameters(importer.getActionClassParams(), user);
 
 		} catch (Exception e) {// Catch exception if any
 			Logger.error(this.getClass(), "Error: " + e.getMessage(), e);

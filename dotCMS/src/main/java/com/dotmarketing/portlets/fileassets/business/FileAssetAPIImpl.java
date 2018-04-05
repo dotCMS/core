@@ -269,10 +269,9 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		return (con != null && con.getStructure() != null && con.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) ;
 	}
 
-	public Map<String, String> getMetaDataMap(Contentlet con, File binFile)  {
-
-		return new TikaUtils().getMetaDataMap(con.getInode(),binFile,false);
-
+	public Map<String, String> getMetaDataMap(Contentlet contentlet, final File binFile)
+			throws DotDataException {
+		return new TikaUtils().getMetaDataMap(contentlet.getInode(), binFile);
 	}
 
 	public boolean fileNameExists(Host host, Folder folder, String fileName, String identifier) throws  DotDataException{

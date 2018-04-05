@@ -1533,7 +1533,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
 	@Override
-    protected Contentlet save(Contentlet contentlet) throws DotDataException, DotStateException, DotSecurityException {
+    public Contentlet save(Contentlet contentlet) throws DotDataException, DotStateException, DotSecurityException {
 	    return save(contentlet,null);
 	}
 

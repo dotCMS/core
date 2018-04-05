@@ -91,3 +91,7 @@ cluster.name: dotCMSContentIndex_3x
 path.data: dotsecure/esdata
 path.repo: dotsecure/essnapshot/snapshots
 path.logs: tomcat/logs
+http.port: 9200
+http.host: localhost
+http.enabled: false
+http.cors.enabled: false

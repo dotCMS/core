@@ -27,6 +27,7 @@ public class SystemEvent implements Serializable {
 	private final SystemEventType event;
 	private final Payload payload;
 	private final Date creationDate;
+	private final String serverId;
 
 	/**
 	 * Creates a System Event. The creation date of the event is automatically
@@ -38,7 +39,7 @@ public class SystemEvent implements Serializable {
 	 *            - The information containing the details of this event.
 	 */
 	public SystemEvent(SystemEventType event, Payload payload) {
-		this(null, event, payload, null);
+		this(null, event, payload, null, null);
 	}
 
 	/**
@@ -52,7 +53,7 @@ public class SystemEvent implements Serializable {
 	 *            - The creation date for this event.
 	 */
 	public SystemEvent(SystemEventType eventType, Payload payload, Date creationDate) {
-		this(null, eventType, payload, creationDate);
+		this(null, eventType, payload, creationDate, null);
 	}
 
 	/**
@@ -72,7 +73,11 @@ public class SystemEvent implements Serializable {
 	 *             If the system event type or the payload object are not
 	 *             specified.
 	 */
-	public SystemEvent(String id, SystemEventType eventType, Payload payload, Date creationDate) {
+	public SystemEvent(final String id, final SystemEventType eventType,
+					   final Payload payload,
+					   final Date creationDate,
+					   final String serverId) {
+
 		if (!UtilMethods.isSet(eventType)) {
 			throw new IllegalArgumentException("System Event type must be specified.");
 		}
@@ -83,6 +88,7 @@ public class SystemEvent implements Serializable {
 		this.event = eventType;
 		this.payload = payload;
 		this.creationDate = creationDate == null ? new Date() : creationDate;
+		this.serverId  = serverId;
 	}
 
 	/**
@@ -121,6 +127,14 @@ public class SystemEvent implements Serializable {
 		return id;
 	}
 
+	/**
+	 * Get the Server id where the event was created
+	 * @return String
+	 */
+	public String getServerId() {
+		return serverId;
+	}
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -129,6 +143,7 @@ public class SystemEvent implements Serializable {
 		result = prime * result + ((event == null) ? 0 : event.hashCode());
 		result = prime * result + ((id == null) ? 0 : id.hashCode());
 		result = prime * result + ((payload == null) ? 0 : payload.hashCode());
+		result = prime * result + ((serverId == null) ? 0 : payload.hashCode());
 		return result;
 	}
 

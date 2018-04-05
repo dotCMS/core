@@ -102,7 +102,7 @@ public class WorkflowCacheImpl extends WorkflowCache {
 	protected void remove(WorkflowTask task) {
 		if (UtilMethods.isSet(task) && UtilMethods.isSet(task.getWebasset())) {
 			cache.remove(this.getKey(task.getWebasset(), task.getLanguageId()), TASK_GROUP); // remove the task id.
-			cache.remove(task.getWebasset(), STEP_GROUP);
+			cache.remove(this.getKey(task.getWebasset(), task.getLanguageId()), STEP_GROUP);
 		}
 		if (UtilMethods.isSet(task) && UtilMethods.isSet(task.getId())) {
 			cache.remove(task.getId(), TASK_GROUP); // remove the task.
@@ -113,7 +113,7 @@ public class WorkflowCacheImpl extends WorkflowCache {
 
 		if (contentlet != null && UtilMethods.isSet(contentlet.getIdentifier())) {
 
-			cache.remove(contentlet.getIdentifier(),   STEP_GROUP);
+			cache.remove(this.getKey(contentlet),   STEP_GROUP);
 			cache.remove(this.getKey(contentlet), TASK_GROUP);
 		}
 	}
@@ -184,7 +184,7 @@ public class WorkflowCacheImpl extends WorkflowCache {
 			
 		 List<WorkflowStep> steps = null;
 			try {
-				steps = (List<WorkflowStep>) cache.get(contentlet.getIdentifier(), STEP_GROUP);
+				steps = (List<WorkflowStep>) cache.get(this.getKey(contentlet), STEP_GROUP);
 			} catch (Exception e) {
 				Logger.debug(this.getClass(), e.getMessage());
 			}
@@ -216,7 +216,7 @@ public class WorkflowCacheImpl extends WorkflowCache {
 	
 	protected List<WorkflowStep> addSteps(Contentlet contentlet, List<WorkflowStep> steps) {
 		 if(contentlet ==null || !UtilMethods.isSet(contentlet.getIdentifier())
-				 || steps ==null || !steps.isEmpty() ){
+				 || steps ==null ){
 			 return null;
 		 }
 

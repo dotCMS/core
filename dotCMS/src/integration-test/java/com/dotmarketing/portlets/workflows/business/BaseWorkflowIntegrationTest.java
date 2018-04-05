@@ -8,17 +8,12 @@ import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.Logger;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Utility class that provides useful methods to create and modify Workflows in dotCMS.
@@ -137,6 +132,22 @@ public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
         }
 
         return new CreateSchemeStepActionResult(null, null, action, workflowActionClass);
+    }
+
+    protected static WorkflowAction createWorkflowAction (final String schemeId,
+                                                          final String actionName) throws AlreadyExistException, DotDataException {
+
+        final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+        final WorkflowAction action = new WorkflowAction();
+        action.setName(actionName);
+        action.setSchemeId(schemeId);
+        action.setNextStep(WorkflowAction.CURRENT_STEP);
+        action.setShowOn(WorkflowAPI.DEFAULT_SHOW_ON);
+        action.setRequiresCheckout(false);
+        action.setCondition("");
+        action.setNextAssign(APILocator.getRoleAPI().loadCMSAnonymousRole().getId());
+        workflowAPI.saveAction(action, null, APILocator.systemUser());
+        return action;
     }
 
     /**

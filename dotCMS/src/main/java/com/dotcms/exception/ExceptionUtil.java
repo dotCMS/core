@@ -4,6 +4,10 @@ import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * Exception Utils
  * @author andrecurione
@@ -27,6 +31,39 @@ public class ExceptionUtil {
             }
             t = t.getCause();
         }
+        return false;
+    }
+
+    /**
+     * Returns true if the Throwable is instance or contains a cause of the specified on any of the exceptionClasses
+     * @param e
+     * @param exceptionClasses
+     * @return boolean
+     */
+    public static boolean causedBy(final Throwable e, final Class... exceptionClasses) {
+
+        return causedBy(e, new HashSet<>(Arrays.asList(exceptionClasses)));
+    }
+
+    /**
+     * Returns true if the Throwable is instance or contains a cause of the specified on any of the exceptionClasses
+     * @param e
+     * @param exceptionClasses
+     * @return boolean
+     */
+    public static boolean causedBy(final Throwable e, final Set<Class> exceptionClasses) {
+
+        Throwable t = e;
+
+        while (t != null) {
+
+            if (exceptionClasses.contains(t.getClass())) {
+                return true;
+            }
+
+            t = t.getCause();
+        }
+
         return false;
     }
 
