@@ -18,6 +18,9 @@ import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
@@ -27,6 +30,7 @@ import java.util.Locale;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import org.apache.velocity.tools.view.context.ViewContext;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -43,6 +47,9 @@ public class LanguageWebAPITest extends IntegrationTestBase {
 	private static final String LANGUAGE_VALUE_TEST_EXAMPLE_NO_COUNTRY = "Value for NO country language";
 	private static final String LANGUAGE_VALUE_TEST_EXAMPLE_COUNTRY = "Value for COUNTRY language";
 	private static final String LANGUAGE_VALUE_TEST_EXAMPLE_DEFAULT_LANGUAGE = "Value for DEFAULT language";
+	private static Contentlet keyValueContentlet;
+	private static Contentlet keyValueContentlet1;
+	private static Contentlet keyValueContentlet2;
 
 	@BeforeClass
 	public static void prepare() throws Exception {
@@ -83,7 +90,7 @@ public class LanguageWebAPITest extends IntegrationTestBase {
 		String defaultLanguageVariable = (null != keyValue) ? keyValue.getValue() : null;
 		if (null == defaultLanguageVariable || defaultLanguageVariable
 				.equals(LANGUAGE_KEY_TEST_EXAMPLE)) {
-			Contentlet keyValueContentlet = ContentUtils.createTestKeyValueContent(LANGUAGE_KEY_TEST_EXAMPLE,
+			keyValueContentlet = ContentUtils.createTestKeyValueContent(LANGUAGE_KEY_TEST_EXAMPLE,
 					LANGUAGE_VALUE_TEST_EXAMPLE_DEFAULT_LANGUAGE, englishLanguageId,
 					languageVariableContentType, systemUser);
 
@@ -99,7 +106,7 @@ public class LanguageWebAPITest extends IntegrationTestBase {
 		String noCountryLanguageVariable = (null != keyValue) ? keyValue.getValue() : null;
 		if (null == noCountryLanguageVariable || noCountryLanguageVariable
 				.equals(LANGUAGE_KEY_TEST_EXAMPLE)) {
-			ContentUtils.createTestKeyValueContent(englishIdentifier, LANGUAGE_KEY_TEST_EXAMPLE,
+			keyValueContentlet1 = ContentUtils.createTestKeyValueContent(englishIdentifier, LANGUAGE_KEY_TEST_EXAMPLE,
 					LANGUAGE_VALUE_TEST_EXAMPLE_NO_COUNTRY, spanishNoCountryLanguage.getId(),
 					languageVariableContentType, systemUser);
 		}
@@ -111,7 +118,7 @@ public class LanguageWebAPITest extends IntegrationTestBase {
 		String countryLanguageVariable = (null != keyValue) ? keyValue.getValue() : null;
 		if (null == countryLanguageVariable || countryLanguageVariable
 				.equals(LANGUAGE_KEY_TEST_EXAMPLE)) {
-			ContentUtils.createTestKeyValueContent(englishIdentifier, LANGUAGE_KEY_TEST_EXAMPLE,
+			keyValueContentlet2 = ContentUtils.createTestKeyValueContent(englishIdentifier, LANGUAGE_KEY_TEST_EXAMPLE,
 					LANGUAGE_VALUE_TEST_EXAMPLE_COUNTRY, spanishCostaRicaLanguage.getId(),
 					languageVariableContentType, systemUser);
 		}
@@ -137,6 +144,24 @@ public class LanguageWebAPITest extends IntegrationTestBase {
 		assertNotNull(countryLanguageVariable);
 		assertNotEquals(countryLanguageVariable, LANGUAGE_KEY_TEST_EXAMPLE);
 		assertEquals(countryLanguageVariable, LANGUAGE_VALUE_TEST_EXAMPLE_COUNTRY);
+	}
+
+	@AfterClass
+	public static void cleanUpData() throws DotSecurityException, DotDataException {
+		ContentletAPI contentletAPI = APILocator.getContentletAPI();
+		User user = APILocator.systemUser();
+		if(keyValueContentlet != null){
+			contentletAPI.archive(keyValueContentlet,user, false);
+			contentletAPI.delete(keyValueContentlet,user, false);
+		}
+		if(keyValueContentlet1 != null){
+			contentletAPI.archive(keyValueContentlet1,user, false);
+			contentletAPI.delete(keyValueContentlet1,user, false);
+		}
+		if(keyValueContentlet2 != null){
+			contentletAPI.archive(keyValueContentlet2,user, false);
+			contentletAPI.delete(keyValueContentlet2,user, false);
+		}
 	}
 
 	private static ContentType createLanguageVariable (final User systemUser,

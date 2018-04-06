@@ -218,12 +218,13 @@ public class DeleteFieldJobTest extends ContentTypeBaseTest {
 		// Key-Value Field
 		final String keyValueName = "Key-Value Field" + currentTime;
 		final String keyValueVariable = "keyValueField" + currentTime;
+		ContentType contentType = null;
 
 		try {
 			// Test Content Type data
 			final String contentTypeName = "DeleteFieldContentType_" + currentTime;
 			final String contentTypeVelocityVarName = "velocityVarNameTesting" + currentTime;
-			ContentType contentType = ContentTypeBuilder.builder(SimpleContentType.class).host(site.getIdentifier())
+			contentType = ContentTypeBuilder.builder(SimpleContentType.class).host(site.getIdentifier())
 					.description("Testing delete content type fields.").name(contentTypeName)
 					.variable(contentTypeVelocityVarName).fixed(Boolean.FALSE).owner(user.getUserId())
 					.expireDateVar(StringUtils.EMPTY).publishDateVar(StringUtils.EMPTY).build();
@@ -747,6 +748,10 @@ public class DeleteFieldJobTest extends ContentTypeBaseTest {
 			assertTrue(null == contentletFromDB || null == contentletFromDB.get(keyValueVariable));
 		} catch (Exception e) {
 			throw new RuntimeException(e);
+		} finally {
+			if(contentType!=null){
+				contentTypeApi.delete(contentType);
+			}
 		}
 	}
 
