@@ -113,6 +113,13 @@ public interface ContentletAPI {
 	 */
 	public Contentlet findContentletByIdentifier(String identifier, boolean live, long languageId, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
 
+	/**
+	 * Retrieves a contentlet from the database by its identifier and the working version
+	 * @param identifier
+	 * @return Contentlet
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
 	public Contentlet findContentletByIdentifierAnyLanguage(String identifier) throws DotDataException, DotSecurityException;
 
 	/**
