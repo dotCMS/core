@@ -100,6 +100,15 @@ public interface ContentletAPIPreHook {
     }
 
 	/**
+	 * Retrieves a contentlet from the database based on its identifier
+	 * @param identifier
+	 * @return
+	 */
+	public default boolean findContentletByIdentifierAnyLanguage (String identifier) {
+		return true;
+	}
+
+	/**
 	 * Retrieves a contentlet list from the database based on a identifiers array
 	 * @param identifiers	Array of identifiers
 	 * @param live	Retrieves the live version if false retrieves the working version
