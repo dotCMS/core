@@ -727,7 +727,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 					for(WorkflowScheme scheme : schemes) {
 						final List<WorkflowStep> schemeSteps = this.findSteps(scheme);
 						if(!schemeSteps.isEmpty()){
-						   step = this.findSteps(scheme).get(0);
+						   step = schemeSteps.get(0);
 						   steps.add(step);
 						}
 					}
