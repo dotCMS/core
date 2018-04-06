@@ -1,5 +1,7 @@
 package com.dotcms.rest.elasticsearch;
 
+import static com.dotcms.util.CollectionsUtils.map;
+
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
@@ -47,7 +49,10 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 			final String noLicenseMessage = "Unable to execute ES API Requests. Please apply an Enterprise License";
 			final RuntimeException e1 = new RuntimeException(noLicenseMessage);
 			Logger.warn(this.getClass(), noLicenseMessage);
-			return ExceptionMapperUtil.createResponse(e1, Response.Status.BAD_REQUEST);
+			return Response.status(Response.Status.BAD_REQUEST)
+					.entity(map("message", noLicenseMessage))
+					.header("error-message", noLicenseMessage)
+					.build();
 		}
 
 		PageMode mode = PageMode.get(request);
