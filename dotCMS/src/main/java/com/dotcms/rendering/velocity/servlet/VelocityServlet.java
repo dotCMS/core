@@ -27,14 +27,12 @@ import org.apache.velocity.exception.ResourceNotFoundException;
 
 public class VelocityServlet extends HttpServlet {
 
-    private static String JS_CODE = "<div id='rendered_page_html_code' hidden>%s</div>" +
+    private static String JS_CODE =
             "<script type=\"text/javascript\">\n" +
             "var customEvent = document.createEvent('CustomEvent');\n" +
-            "var data = %s;" +
-            "data.html = document.getElementById('rendered_page_html_code').innerHTML;" +
             "customEvent.initCustomEvent('ng-event', false, false,  {\n" +
             "            name: 'load-edit-mode-page',\n" +
-            "            data: data" +
+            "            data: %s" +
             "});\n" +
             "setTimeout(function(){console.log('AAAAAAAAAA');document.dispatchEvent(customEvent);}, 1000);\n" +
             "</script>";
@@ -72,10 +70,10 @@ public class VelocityServlet extends HttpServlet {
                 PageResource pageResource = new PageResource();
                 Map<String, Object> renderedPageMap = pageResource.getRenderedPageMap(request, response, uri, PageMode.EDIT_MODE);
                 Map<String, Object> renderedPageMapCopy = new HashMap(renderedPageMap);
-                Object html = renderedPageMapCopy.remove("html");
+                //renderedPageMapCopy.remove("html");
                 final ObjectWriter objectWriter = new ObjectMapper().writer().withDefaultPrettyPrinter();
                 String renderedPage = objectWriter.writeValueAsString(renderedPageMapCopy).replace("</script>", "\\</script\\>");
-                response.getOutputStream().write(String.format(JS_CODE, html, renderedPage).getBytes());
+                response.getOutputStream().write(String.format(JS_CODE, renderedPage).getBytes());
             } else {
                 VelocityModeHandler.modeHandler(mode, request, response).serve();
             }
