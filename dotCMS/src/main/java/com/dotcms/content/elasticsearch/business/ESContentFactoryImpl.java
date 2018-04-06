@@ -874,7 +874,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
 	@Override
-    public Contentlet findContentletByIdentifierAnyLanguage(String identifier) throws DotDataException, DotSecurityException {
+    protected Contentlet findContentletByIdentifierAnyLanguage(String identifier) throws DotDataException, DotSecurityException {
         Contentlet contentlet = null;
         final List<HashMap<String, String>> inodes = new DotConnect()
                 .setSQL("Select inode from contentlet where identifier=?")

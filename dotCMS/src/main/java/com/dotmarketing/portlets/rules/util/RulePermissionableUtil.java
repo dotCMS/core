@@ -2,7 +2,6 @@ package com.dotmarketing.portlets.rules.util;
 
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -13,7 +12,6 @@ import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import java.util.List;
 
 /**
  * Created by Oscar Arrieta on 2/6/16.
@@ -52,7 +50,7 @@ public class RulePermissionableUtil {
                     }
 
                     if (contentlet == null) {
-                        contentlet = FactoryLocator.getContentletFactory().findContentletByIdentifierAnyLanguage(parent);
+                        contentlet = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(parent);
                     }
                     if (contentlet == null) {
                         throw new DotDataException("Identifier: " + parent + " does not exist.");
