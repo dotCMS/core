@@ -239,14 +239,6 @@ describe('DotEditPageToolbarComponent', () => {
         expect(lockSwitch.classes.warn).toBe(false);
     });
 
-    it('should warn class in the locker', () => {
-        fixture.componentInstance.pageState.state.lockedByAnotherUser = true;
-        fixture.detectChanges();
-
-        const lockSwitch: DebugElement = de.query(By.css('.edit-page-toolbar__locker'));
-        expect(lockSwitch.classes.warn).toBe(true);
-    });
-
     it('should have locker enabled', () => {
         fixture.detectChanges();
         const lockSwitch: DebugElement = de.query(By.css('.edit-page-toolbar__locker'));
@@ -272,6 +264,7 @@ describe('DotEditPageToolbarComponent', () => {
 
         const editStateModel = component.states.find((state) => state.label === 'Edit');
         expect(editStateModel.styleClass).toEqual('edit-page-toolbar__state-selector-item--disabled');
+        expect(component.lockerModel).toBeFalsy();
     });
 
     it('should have page can\'t edit message and disabled edit button', () => {
@@ -625,6 +618,54 @@ describe('DotEditPageToolbarComponent', () => {
 
             clickStateButton('live');
             expect(dotDialogService.confirm).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('lock page state', () => {
+
+        beforeEach(() => {
+            fixture.componentInstance.pageState.page.canLock = true;
+            fixture.componentInstance.pageState.state.locked = true;
+            fixture.componentInstance.pageState.page.lockedBy = 'someone';
+        });
+
+        it('should have page is locked by another user message and not disabled edit button', () => {
+            fixture.componentInstance.pageState.state.lockedByAnotherUser = true;
+
+            fixture.detectChanges();
+
+            const lockedMessage: DebugElement = de.query(By.css('.edit-page-toolbar__locked-by-message'));
+            expect(lockedMessage.nativeElement.textContent).toContain('Page is locked');
+
+            const editStateModel = component.states.find((state) => state.label === 'Edit');
+            expect(editStateModel.styleClass).toEqual('');
+            expect(component.lockerModel).toBeFalsy();
+        });
+
+        it('should have not show any meesage and not disabled edit button neither when page is locked by current user', () => {
+            fixture.componentInstance.pageState.state.lockedByAnotherUser = false;
+            fixture.componentInstance.pageState.page.canLock = true;
+            fixture.componentInstance.pageState.state.locked = true;
+            fixture.componentInstance.pageState.page.lockedBy = 'someone';
+
+            fixture.detectChanges();
+
+            const lockedMessage: DebugElement = de.query(By.css('.edit-page-toolbar__locked-by-message'));
+            expect(lockedMessage).toBeNull();
+            expect(component.lockerModel).toBeTruthy();
+        });
+
+        it('should warn class in the locker', () => {
+            fixture.componentInstance.pageState.state.lockedByAnotherUser = true;
+            fixture.detectChanges();
+
+            const lockSwitch: DebugElement = de.query(By.css('.edit-page-toolbar__locker'));
+            expect(lockSwitch.classes.warn).toBe(true);
+        });
+
+        afterEach(() => {
+            const editStateModel = component.states.find((state) => state.label === 'Edit');
+            expect(editStateModel.styleClass).toEqual('');
         });
     });
 });

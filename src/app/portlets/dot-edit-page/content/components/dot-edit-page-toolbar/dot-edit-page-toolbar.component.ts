@@ -183,9 +183,13 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
     }
 
     private setFieldsModels(pageState: DotRenderedPageState): void {
-        this.lockerModel = pageState.state.locked;
+        this.lockerModel = pageState.state.locked && !this.canTakeLock(pageState);
         this.mode = pageState.state.mode;
         this.states = this.getStateModeOptions(pageState);
+    }
+
+    private canTakeLock(pageState: DotRenderedPageState): boolean {
+        return pageState.page.canLock && pageState.state.lockedByAnotherUser;
     }
 
     private getStateModeOptions(pageState: DotRenderedPageState): SelectItem[] {
