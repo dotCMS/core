@@ -6,6 +6,7 @@ import static com.dotmarketing.business.APILocator.getWorkflowAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
@@ -160,7 +161,7 @@ public class WorkflowProcessor {
 		}
 	}
 
-	private WorkflowStep findFirstStepByScheme(final String schemeId) throws DotDataException {
+	private WorkflowStep findFirstStepByScheme(final String schemeId) throws DotDataException, DotSecurityException {
 
 		return getWorkflowAPI().findSteps(getWorkflowAPI().findScheme(schemeId)).stream().findFirst().orElse(null);
 	}

@@ -27,6 +27,8 @@ public interface WorkflowAPI {
 	public static final String SYSTEM_WORKFLOW_ID           = WorkFlowFactory.SYSTEM_WORKFLOW_ID;
 	public static final Set<WorkflowState> DEFAULT_SHOW_ON = EnumSet.of(WorkflowState.LOCKED, WorkflowState.UNLOCKED);
 
+	public boolean hasValidLicense();
+
     public void registerBundleService ();
 
 	public WorkFlowActionlet newActionlet(String className) throws DotDataException;
@@ -181,7 +183,7 @@ public interface WorkflowAPI {
 
 	public boolean isDefaultScheme(WorkflowScheme scheme) throws DotDataException;
 
-	public WorkflowScheme findScheme(String id) throws DotDataException;
+	public WorkflowScheme findScheme(String id) throws DotDataException, DotSecurityException;
 
 	public List<WorkflowScheme> findSchemesForStruct(Structure struct) throws DotDataException;
 
@@ -226,7 +228,7 @@ public interface WorkflowAPI {
 	 * @throws DotDataException
 	 * @throws AlreadyExistException
 	 */
-	public void reorderStep(WorkflowStep step, int order, User user) throws DotDataException, AlreadyExistException;
+	public void reorderStep(WorkflowStep step, int order, User user) throws DotDataException, AlreadyExistException, DotSecurityException;
 
 	/**
 	 * This is a legacy method for reorder
@@ -238,7 +240,7 @@ public interface WorkflowAPI {
 	 * @throws AlreadyExistException
 	 */
 	@Deprecated
-	public void reorderAction(WorkflowAction action, int order) throws DotDataException, AlreadyExistException;
+	public void reorderAction(WorkflowAction action, int order) throws DotDataException, AlreadyExistException, DotSecurityException;
 
 	/**
 	 * This method makes the reorder for the action associated to the step, reordering the rest of the actions too.
@@ -415,7 +417,7 @@ public interface WorkflowAPI {
 	 */
 	void saveAction(String actionId, String stepId, User user, int order);
 
-	public WorkflowStep findStep(String id) throws DotDataException;
+	public WorkflowStep findStep(String id) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Deletes the action associated to the scheme

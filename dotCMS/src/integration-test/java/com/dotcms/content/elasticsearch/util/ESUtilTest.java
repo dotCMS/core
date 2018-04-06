@@ -60,28 +60,36 @@ public class ESUtilTest extends IntegrationTestBase {
         Field field = FieldBuilder.builder(TextField.class).name("text"+time).contentTypeId(type.id()).build();
         field = APILocator.getContentTypeFieldAPI().save(field, systemUser);
 
-        Contentlet contentlet = new Contentlet();
-        contentlet.setContentTypeId(type.id());
-        contentlet.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
-        contentlet.setStringProperty(field.variable(), ESUtils.escape("this"+testValue+"has"+testValue+"specialchars"));
+        try {
+            Contentlet contentlet = new Contentlet();
+            contentlet.setContentTypeId(type.id());
+            contentlet.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+            contentlet.setStringProperty(field.variable(),
+                    ESUtils.escape("this" + testValue + "has" + testValue + "specialchars"));
 
-        contentlet = contentletAPI.checkin(contentlet, systemUser, false);
+            contentlet = contentletAPI.checkin(contentlet, systemUser, false);
 
-        final String fieldValue = contentlet.get(field.variable()).toString();
-        final String escapedValue = ESUtils.escape(fieldValue);
-        System.out.println("fieldValue = " + fieldValue);
-        System.out.println("escapedValue = " + escapedValue);
+            final String fieldValue = contentlet.get(field.variable()).toString();
+            final String escapedValue = ESUtils.escape(fieldValue);
+            System.out.println("fieldValue = " + fieldValue);
+            System.out.println("escapedValue = " + escapedValue);
 
-        boolean isInodeIndexed = contentletAPI.isInodeIndexed(contentlet.getInode());
-        Logger.info(this, "IsNodeIndexed: " + isInodeIndexed);
+            boolean isInodeIndexed = contentletAPI.isInodeIndexed(contentlet.getInode());
+            Logger.info(this, "IsNodeIndexed: " + isInodeIndexed);
 
-        final StringBuilder luceneQuery = new StringBuilder().append("+structureInode:").append(type.id())
-            .append(' ').append(type.variable()).append('.').append(field.variable()).append(':').append(escapedValue);
+            final StringBuilder luceneQuery = new StringBuilder().append("+structureInode:")
+                    .append(type.id())
+                    .append(' ').append(type.variable()).append('.').append(field.variable())
+                    .append(':').append(escapedValue);
 
-        final List<ContentletSearch> contentlets = contentletAPI.searchIndex(luceneQuery.toString(), 0, -1,
-            null, systemUser, false);
+            final List<ContentletSearch> contentlets = contentletAPI
+                    .searchIndex(luceneQuery.toString(), 0, -1,
+                            null, systemUser, false);
 
-        assertEquals(contentlets.get(0).getInode(), contentlet.getInode());
+            assertEquals(contentlets.get(0).getInode(), contentlet.getInode());
+        }finally{
+            APILocator.getContentTypeAPI(systemUser).delete(type);
+        }
 
     }
 
@@ -97,27 +105,34 @@ public class ESUtilTest extends IntegrationTestBase {
         Field field = FieldBuilder.builder(TextField.class).name("text"+time).contentTypeId(type.id()).build();
         field = APILocator.getContentTypeFieldAPI().save(field, systemUser);
 
-        Contentlet contentlet = new Contentlet();
-        contentlet.setContentTypeId(type.id());
-        contentlet.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
-        contentlet.setStringProperty(field.variable(), "this has spaces");
+        try {
+            Contentlet contentlet = new Contentlet();
+            contentlet.setContentTypeId(type.id());
+            contentlet.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+            contentlet.setStringProperty(field.variable(), "this has spaces");
 
-        contentlet = contentletAPI.checkin(contentlet, systemUser, false);
+            contentlet = contentletAPI.checkin(contentlet, systemUser, false);
 
-        final String fieldValue = contentlet.get(field.variable()).toString();
-        final String escapedValue = ESUtils.escape(fieldValue);
+            final String fieldValue = contentlet.get(field.variable()).toString();
+            final String escapedValue = ESUtils.escape(fieldValue);
 
-        boolean isInodeIndexed = contentletAPI.isInodeIndexed(contentlet.getInode());
-        Logger.info(this, "IsNodeIndexed: " + isInodeIndexed);
+            boolean isInodeIndexed = contentletAPI.isInodeIndexed(contentlet.getInode());
+            Logger.info(this, "IsNodeIndexed: " + isInodeIndexed);
 
-        final StringBuilder luceneQuery = new StringBuilder().append("+structureInode:").append(type.id())
-            .append(' ').append(type.variable()).append('.').append(field.variable()).append(':').append(escapedValue);
+            final StringBuilder luceneQuery = new StringBuilder().append("+structureInode:")
+                    .append(type.id())
+                    .append(' ').append(type.variable()).append('.').append(field.variable())
+                    .append(':').append(escapedValue);
 
-        final List<ContentletSearch> contentlets = contentletAPI.searchIndex(luceneQuery.toString(), 0, -1,
-            null, systemUser, false);
+            final List<ContentletSearch> contentlets = contentletAPI
+                    .searchIndex(luceneQuery.toString(), 0, -1,
+                            null, systemUser, false);
 
-        assertFalse(contentlets.isEmpty());
-        assertEquals(contentlets.get(0).getInode(), contentlet.getInode());
+            assertFalse(contentlets.isEmpty());
+            assertEquals(contentlets.get(0).getInode(), contentlet.getInode());
+        }finally {
+            APILocator.getContentTypeAPI(systemUser).delete(type);
+        }
 
     }
 

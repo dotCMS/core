@@ -16,19 +16,33 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.workflows.model.*;
+import com.dotmarketing.portlets.workflows.model.WorkFlowTaskFiles;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
+import com.dotmarketing.portlets.workflows.model.WorkflowComment;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
+import com.dotmarketing.portlets.workflows.model.WorkflowState;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
-import org.apache.commons.beanutils.BeanUtils;
-
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+import org.apache.commons.beanutils.BeanUtils;
 
 
 /**
@@ -627,16 +641,11 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return scheme;
 	}
 
+
 	@Override
-	public List<WorkflowScheme> findSchemesForStruct(String structId) throws DotDataException {
+	public List<WorkflowScheme> findSchemesForStruct(final String structId) throws DotDataException {
 
-		List<WorkflowScheme> schemes = new ArrayList<>();
-		if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
-			schemes.add(this.findSystemWorkflow());
-			return schemes;
-		}
-
-		schemes = cache.getSchemesByStruct(structId);
+		List<WorkflowScheme> schemes = cache.getSchemesByStruct(structId);
 
 		if (schemes != null) {
 
@@ -689,10 +698,9 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	@Override
-	public List<WorkflowStep> findStepsByContentlet(Contentlet contentlet) throws DotDataException {
+	public List<WorkflowStep> findStepsByContentlet(final Contentlet contentlet, final List<WorkflowScheme> schemes) throws DotDataException {
 		List<WorkflowStep> steps            = new ArrayList<>();
         List<WorkflowStep> currentSteps     = cache.getSteps(contentlet);
-		final List<WorkflowScheme> schemes  = this.findSchemesForStruct(contentlet.getContentTypeId());
 		String workflowTaskId        		= null;
 		List<Map<String, Object>> dbResults = null;
 
