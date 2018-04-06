@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.workflows.business;
 
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.util.LicenseValiditySupplier;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -98,8 +97,6 @@ public interface WorkFlowFactory {
 	public WorkflowScheme findScheme(String id) throws DotDataException;
 
 	public List<WorkflowScheme> findSchemesForStruct(final String structId) throws DotDataException;
-
-	public List<WorkflowScheme> findSchemesForStruct(final String structId, final LicenseValiditySupplier licenseValiditySupplier) throws DotDataException;
 
 	public void deleteSchemeForStruct(String struc) throws DotDataException;
 

@@ -2,7 +2,6 @@ package com.dotmarketing.portlets.workflows.business;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.util.LicenseValiditySupplier;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.business.APILocator;
@@ -642,21 +641,18 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return scheme;
 	}
 
+
 	@Override
 	public List<WorkflowScheme> findSchemesForStruct(final String structId) throws DotDataException {
-         return this.findSchemesForStruct(structId, new LicenseValiditySupplier() {});
-	}
 
-	@Override
-	public List<WorkflowScheme> findSchemesForStruct(final String structId, final LicenseValiditySupplier licenseValiditySupplier) throws DotDataException {
-
+		/*
 		List<WorkflowScheme> schemes = new ArrayList<>();
 		if (!licenseValiditySupplier.hasValidLicense()) {
 			schemes.add(this.findSystemWorkflow());
 			return schemes;
-		}
+		}*/
 
-		schemes = cache.getSchemesByStruct(structId);
+		List<WorkflowScheme> schemes = cache.getSchemesByStruct(structId);
 
 		if (schemes != null) {
 

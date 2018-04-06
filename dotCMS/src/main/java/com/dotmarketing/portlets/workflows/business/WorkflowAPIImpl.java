@@ -257,8 +257,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@CloseDBIfOpened
 	public List<WorkflowStep> findStepsByContentlet(Contentlet contentlet) throws DotDataException{
-		final List<WorkflowScheme> schemes = workFlowFactory.findSchemesForStruct(contentlet.getContentTypeId(),
-				licenseValiditySupplierSupplier);
+		final List<WorkflowScheme> schemes = hasValidLicense() ?
+				workFlowFactory.findSchemesForStruct(contentlet.getContentTypeId()) :
+				Arrays.asList(workFlowFactory.findSystemWorkflow()) ;
 		return workFlowFactory.findStepsByContentlet(contentlet, schemes);
 	}
 
@@ -364,9 +365,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 			try {
 					Logger.debug(this, "Finding the schemes for: " + contentType);
-					final List<WorkflowScheme> contentTypeSchemes =
-							this.workFlowFactory.findSchemesForStruct(contentType.inode(),
-									licenseValiditySupplierSupplier);
+					final List<WorkflowScheme> contentTypeSchemes = hasValidLicense() ?
+							this.workFlowFactory.findSchemesForStruct(contentType.inode()) :
+							Arrays.asList(workFlowFactory.findSystemWorkflow()) ;
 					schemes.addAll(contentTypeSchemes);
 			}
 			catch(Exception e) {
@@ -386,8 +387,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			schemes.add(this.findSystemWorkflowScheme());
 		} else {
 			try {
-				schemes.addAll(workFlowFactory.findSchemesForStruct(structure.getInode(),
-						licenseValiditySupplierSupplier));
+				if(hasValidLicense()) {
+					schemes.addAll(workFlowFactory.findSchemesForStruct(structure.getInode()));
+				}else{
+					schemes.add(workFlowFactory.findSystemWorkflow());
+				}
 			} catch (Exception e) {
 				Logger.debug(this, e.getMessage(), e);
 			}
