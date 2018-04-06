@@ -658,16 +658,11 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return scheme;
 	}
 
+
 	@Override
-	public List<WorkflowScheme> findSchemesForStruct(String structId) throws DotDataException {
+	public List<WorkflowScheme> findSchemesForStruct(final String structId) throws DotDataException {
 
-		List<WorkflowScheme> schemes = new ArrayList<>();
-		if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
-			schemes.add(this.findSystemWorkflow());
-			return schemes;
-		}
-
-		schemes = cache.getSchemesByStruct(structId);
+		List<WorkflowScheme> schemes = cache.getSchemesByStruct(structId);
 
 		if (schemes != null) {
 
@@ -720,10 +715,9 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	@Override
-	public List<WorkflowStep> findStepsByContentlet(Contentlet contentlet) throws DotDataException {
+	public List<WorkflowStep> findStepsByContentlet(final Contentlet contentlet, final List<WorkflowScheme> schemes) throws DotDataException {
 		List<WorkflowStep> steps            = new ArrayList<>();
         List<WorkflowStep> currentSteps     = cache.getSteps(contentlet);
-		final List<WorkflowScheme> schemes  = this.findSchemesForStruct(contentlet.getContentTypeId());
 		String workflowTaskId        		= null;
 		List<Map<String, Object>> dbResults = null;
 

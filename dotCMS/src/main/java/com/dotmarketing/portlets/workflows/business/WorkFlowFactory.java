@@ -67,7 +67,7 @@ public interface WorkFlowFactory {
 	 * @return A list of step available for the contentlet
 	 * @throws DotDataException
 	 */
-	public List<WorkflowStep> findStepsByContentlet(Contentlet contentlet) throws DotDataException;
+	public List<WorkflowStep> findStepsByContentlet(Contentlet contentlet, final List<WorkflowScheme> schemes) throws DotDataException;
 
 	/**
 	 * Check if the schemeId pass exist n the list of workflow scheme.
@@ -96,7 +96,7 @@ public interface WorkFlowFactory {
 
 	public WorkflowScheme findScheme(String id) throws DotDataException;
 
-	public List<WorkflowScheme> findSchemesForStruct(String id) throws DotDataException;
+	public List<WorkflowScheme> findSchemesForStruct(final String structId) throws DotDataException;
 
 	public void deleteSchemeForStruct(String struc) throws DotDataException;
 

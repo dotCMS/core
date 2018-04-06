@@ -23,6 +23,13 @@ public class WorkflowReorderWorkflowActionStepForm extends Validated {
         this.checkValid();
     }
 
+    @Override
+    public String toString() {
+        return "WorkflowReorderWorkflowActionStepForm{" +
+                "order=" + order +
+                '}';
+    }
+
     public static final class Builder {
 
         @JsonProperty(required = true)

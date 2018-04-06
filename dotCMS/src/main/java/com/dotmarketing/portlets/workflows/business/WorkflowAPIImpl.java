@@ -6,16 +6,26 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.FriendClass;
+import com.dotcms.util.LicenseValiditySupplier;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.*;
+import com.dotmarketing.exception.AlreadyExistException;
+import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -23,19 +33,68 @@ import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.MessageActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.*;
-import com.dotmarketing.portlets.workflows.model.*;
-import com.dotmarketing.util.*;
+import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CheckURLAccessibilityActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CheckoutContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CommentOnWorkflowActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CopyActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.DeleteContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.EmailActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.FourEyeApproverActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.MultipleApproverActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.NotifyUsersActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.PushNowActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.ResetTaskActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SetValueActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.TranslationActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.TwitterActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
+import com.dotmarketing.portlets.workflows.model.WorkflowComment;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
+import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
+import com.dotmarketing.portlets.workflows.model.WorkflowState;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.Hashtable;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.concurrent.Future;
+import java.util.stream.IntStream;
 import org.apache.commons.lang.time.StopWatch;
 import org.osgi.framework.BundleContext;
-
-import java.util.*;
-import java.util.stream.IntStream;
 
 
 public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
@@ -58,6 +117,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	// not very fancy, but the WorkflowImport is a friend of WorkflowAPI
 	private volatile FriendClass  friendClass = null;
+
+	//This by default tells if a license is valid or not.
+	private LicenseValiditySupplier licenseValiditySupplierSupplier = new LicenseValiditySupplier() {};
 
 	protected final DotSubmitter submitter = DotConcurrentFactory.getInstance()
 			.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
@@ -99,6 +161,20 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		registerBundleService();
 	}
 
+	/**
+	 * This allows me to override the license supplier for testing purposes
+	 * @param licenseValiditySupplierSupplier
+	 */
+	@VisibleForTesting
+	public WorkflowAPIImpl(final LicenseValiditySupplier licenseValiditySupplierSupplier) {
+		this();
+		this.licenseValiditySupplierSupplier = licenseValiditySupplierSupplier;
+	}
+
+	public boolean hasValidLicense(){
+		return (licenseValiditySupplierSupplier.hasValidLicense());
+	}
+
 	private FriendClass getFriendClass () {
 
 		if (null == this.friendClass) {
@@ -134,7 +210,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			// if the class calling the workflow api is not friend, so checks the validation
 			if (!this.getFriendClass().isFriend()) {
 				DotPreconditions.isTrue(
-						(LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level) &&
+						(hasValidLicense()) &&
 								APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("workflow-schemes", user),
 						() -> "User " + user + " cannot access workflows ", NotAllowedUserWorkflowException.class);
 			}
@@ -182,7 +258,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@CloseDBIfOpened
 	public List<WorkflowStep> findStepsByContentlet(Contentlet contentlet) throws DotDataException{
-		return workFlowFactory.findStepsByContentlet(contentlet);
+		final List<WorkflowScheme> schemes = hasValidLicense() ?
+				workFlowFactory.findSchemesForStruct(contentlet.getContentTypeId()) :
+				Arrays.asList(workFlowFactory.findSystemWorkflow()) ;
+		return workFlowFactory.findStepsByContentlet(contentlet, schemes);
 	}
 
 	@CloseDBIfOpened
@@ -206,6 +285,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@CloseDBIfOpened
 	public List<WorkflowScheme> findSchemes(final boolean showArchived) throws DotDataException {
+		if (!hasValidLicense()) {
+			return new ImmutableList.Builder<WorkflowScheme>().add(findSystemWorkflowScheme()).build();
+		}
 		return workFlowFactory.findSchemes(showArchived);
 	}
 
@@ -231,7 +313,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@CloseDBIfOpened
-	public WorkflowScheme findScheme(String id) throws DotDataException {
+	public WorkflowScheme findScheme(String id) throws DotDataException, DotSecurityException {
+		if (!SYSTEM_WORKFLOW_ID.equals(id)) {
+			if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
+				throw new DotSecurityException("Workflow-Schemes-License-required");
+			}
+		}
 		return workFlowFactory.findScheme(id);
 	}
 
@@ -266,23 +353,23 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@CloseDBIfOpened
 	@Override
-	public List<WorkflowScheme> findSchemesForContentType(final ContentType contentType) throws DotDataException {
+	public List<WorkflowScheme> findSchemesForContentType(final ContentType contentType)
+			throws DotDataException {
 
 		final ImmutableList.Builder<WorkflowScheme> schemes =
 				new ImmutableList.Builder<>();
 
-		if (contentType == null || ! UtilMethods.isSet(contentType.inode())
-				|| LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
+		if (contentType == null || !UtilMethods.isSet(contentType.inode()) || !hasValidLicense()) {
 
 			schemes.add(this.findSystemWorkflowScheme());
 		} else {
 
 			try {
-
-				Logger.debug(this, "Finding the schemes for: " + contentType);
-				final List<WorkflowScheme> contentTypeSchemes =
-						this.workFlowFactory.findSchemesForStruct(contentType.inode());
-				schemes.addAll(contentTypeSchemes);
+					Logger.debug(this, "Finding the schemes for: " + contentType);
+					final List<WorkflowScheme> contentTypeSchemes = hasValidLicense() ?
+							this.workFlowFactory.findSchemesForStruct(contentType.inode()) :
+							Arrays.asList(workFlowFactory.findSystemWorkflow()) ;
+					schemes.addAll(contentTypeSchemes);
 			}
 			catch(Exception e) {
 				Logger.debug(this,e.getMessage(),e);
@@ -297,11 +384,15 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		final ImmutableList.Builder<WorkflowScheme> schemes =
 				new ImmutableList.Builder<>();
-		if(structure ==null || ! UtilMethods.isSet(structure.getInode()) || LicenseUtil.getLevel() < LicenseLevel.STANDARD.level){
+		if(structure ==null || ! UtilMethods.isSet(structure.getInode()) || !hasValidLicense()){
 			schemes.add(this.findSystemWorkflowScheme());
 		} else {
 			try {
-				schemes.addAll(workFlowFactory.findSchemesForStruct(structure.getInode()));
+				if(hasValidLicense()) {
+					schemes.addAll(workFlowFactory.findSchemesForStruct(structure.getInode()));
+				}else{
+					schemes.add(workFlowFactory.findSystemWorkflow());
+				}
 			} catch (Exception e) {
 				Logger.debug(this, e.getMessage(), e);
 			}
@@ -541,19 +632,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@WrapInTransaction
 	@Override
-	public void reorderStep(final WorkflowStep step, final int order, final User user) throws DotDataException, AlreadyExistException {
+	public void reorderStep(final WorkflowStep step, final int order, final User user) throws DotDataException, AlreadyExistException, DotSecurityException {
 
 		this.isUserAllowToModifiedWorkflow(user);
 
-		final List<WorkflowStep> steps;
 		final WorkflowScheme scheme = this.findScheme(step.getSchemeId());
-
-		try {
-
-			steps  = this.findSteps (scheme);
-		} catch (Exception e) {
-			throw new DotDataException(e.getLocalizedMessage(), e);
-		}
+		final List<WorkflowStep> steps  = this.findSteps (scheme);
 
 		IntStream.range(0, steps.size())
 				.filter(i -> steps.get(i).getId().equals(step.getId()))
@@ -704,8 +788,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
     }
 
 	@CloseDBIfOpened
-	public List<WorkflowAction> findActions(final WorkflowScheme scheme, final User user) throws DotDataException,
+	public List<WorkflowAction> findActions(final WorkflowScheme scheme, final User user)
+			throws DotDataException,
 			DotSecurityException {
+		if (!SYSTEM_WORKFLOW_ID.equals(scheme.getId())) {
+			if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
+				throw new DotSecurityException("Workflow-Actions-License-required");
+			}
+		}
 
 		final List<WorkflowAction> actions = workFlowFactory.findActions(scheme);
 		return permissionAPI.filterCollection(actions,
@@ -720,7 +810,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@CloseDBIfOpened
-	public List<WorkflowAction> findActions(final List<WorkflowStep> steps,final User user, final Permissionable permissionable) throws DotDataException,
+	public List<WorkflowAction> findActions(final List<WorkflowStep> steps, final User user, final Permissionable permissionable) throws DotDataException,
 			DotSecurityException {
 		final ImmutableList.Builder<WorkflowAction> actions = new ImmutableList.Builder<>();
 		for(WorkflowStep step : steps) {
@@ -818,7 +908,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 */
 	@Deprecated
 	@WrapInTransaction
-	public void reorderAction(WorkflowAction action, int order) throws DotDataException, AlreadyExistException {
+	public void reorderAction(WorkflowAction action, int order) throws DotDataException, AlreadyExistException, DotSecurityException {
 
 		final WorkflowStep step = findStep(action.getStepId());
 		this.reorderAction(action, step, APILocator.systemUser(), order);
@@ -861,7 +951,16 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@CloseDBIfOpened
 	public WorkflowAction findAction(final String id, final User user) throws DotDataException, DotSecurityException {
 
-		return this.workFlowFactory.findAction(id);
+		final WorkflowAction workflowAction = this.workFlowFactory.findAction(id);
+		if(null != workflowAction){
+			if (!SYSTEM_WORKFLOW_ID.equals(workflowAction.getSchemeId())) {
+				if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
+
+					throw new DotSecurityException("Workflow-Actions-License-required");
+				}
+			}
+		}
+		return workflowAction;
 	}
 
 	@CloseDBIfOpened
@@ -870,7 +969,15 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 									 final User user) throws DotDataException, DotSecurityException {
 
 		Logger.debug(this, "Finding the action: " + actionId + " for the step: " + stepId);
-		return this.workFlowFactory.findAction(actionId, stepId);
+		final WorkflowAction workflowAction = this.workFlowFactory.findAction(actionId, stepId);
+		if (null != workflowAction) {
+			if (!SYSTEM_WORKFLOW_ID.equals(workflowAction.getSchemeId())) {
+				if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
+					throw new DotSecurityException("Workflow-Actions-License-required");
+				}
+			}
+		}
+		return workflowAction;
 	}
 
 	@WrapInTransaction
@@ -949,9 +1056,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			}
 
 			this.workFlowFactory.saveAction(workflowAction, workflowStep, order);
-		} catch (DoesNotExistException  e) {
+		} catch (DoesNotExistException e) {
 
 			throw e;
+		} catch ( IndexOutOfBoundsException e){
+
+			throw new DoesNotExistException(e);
 		} catch (AlreadyExistException e) {
 
 			Logger.error(WorkflowAPIImpl.class, e.getMessage());
@@ -1000,8 +1110,16 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@CloseDBIfOpened
-	public WorkflowStep findStep(String id) throws DotDataException {
-		return workFlowFactory.findStep(id);
+	public WorkflowStep findStep(String id) throws DotDataException, DotSecurityException {
+		final WorkflowStep step = workFlowFactory.findStep(id);
+		if (!SYSTEM_WORKFLOW_ID.equals(step.getSchemeId())) {
+			if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
+
+				throw new DotSecurityException(
+						"You must have a valid license to see any available step.");
+			}
+		}
+		return step;
 	}
 
 	@WrapInTransaction
@@ -1492,12 +1610,37 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 						throw new DotDataException("Invalid-Action-Step-Error");
 					}
+				} else {  // if the content is not in any step (may be is new), will check the first step.
+
+					// we are sure in this moment that the scheme id on the action is in the list.
+					final WorkflowScheme  scheme = schemes.stream().filter
+							(aScheme -> aScheme.getId().equals(action.getSchemeId())).findFirst().get();
+
+					final Optional<WorkflowStep> workflowStepOptional = this.findFirstStep(scheme);
+
+					if (!workflowStepOptional.isPresent() ||
+							null == this.findAction(action.getId(), workflowStepOptional.get().getId(), user)) {
+
+						throw new DotDataException("Invalid-Action-Step-Error");
+					}
 				}
 			} catch (DotSecurityException e) {
 				throw new DotDataException(e);
 			}
 		}
 	} // validateAction.
+
+	/**
+	 * Finds the first step of the scheme, it is an optional so can be present or not depending if the scheme is not empty.
+ 	 * @param scheme WorkflowScheme
+	 * @return Optional WorkflowStep
+	 * @throws DotDataException
+	 */
+	private Optional<WorkflowStep> findFirstStep (final WorkflowScheme  scheme) throws DotDataException {
+
+		return this.workFlowFactory
+				.findSteps(scheme).stream().findFirst();
+	}
 
 
 	public WorkflowProcessor fireWorkflowNoCheckin(Contentlet contentlet, User user) throws DotDataException,DotWorkflowException, DotContentletValidationException{
@@ -1790,17 +1933,35 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         return action;
     }
 
+	/**
+	 * Returns the actions associted to the content type if there's no license. only actions
+	 * associated with the system workflow will be returned.
+	 *
+	 * @param contentType ContentType to be processed
+	 * @param user The current User
+	 */
 	@CloseDBIfOpened
-	public List<WorkflowAction> findAvailableDefaultActionsByContentType(ContentType contentType, User user)
+	public List<WorkflowAction> findAvailableDefaultActionsByContentType(ContentType contentType,
+			User user)
 			throws DotDataException, DotSecurityException {
 
 		DotPreconditions.isTrue(this.permissionAPI.
-						doesUserHavePermission(contentType, PermissionAPI.PERMISSION_READ, user,true),
+						doesUserHavePermission(contentType, PermissionAPI.PERMISSION_READ, user, true),
 				() -> "User " + user + " cannot read content type " + contentType.name(),
 				DotSecurityException.class);
 
 		List<WorkflowScheme> schemes = findSchemesForContentType(contentType);
-		return findAvailableDefaultActionsBySchemes(schemes, APILocator.getUserAPI().getSystemUser());
+
+		if (!hasValidLicense()) {
+			//When no License, we only allow the system workflow
+			final WorkflowScheme systemWorkflow = schemes.stream()
+					.filter(WorkflowScheme::isSystem).findFirst()
+					.orElse(workFlowFactory.findSystemWorkflow());
+			schemes = new ImmutableList.Builder<WorkflowScheme>().add(systemWorkflow).build();
+
+		}
+		return findAvailableDefaultActionsBySchemes(schemes,
+				APILocator.getUserAPI().getSystemUser());
 	}
 
 
@@ -1809,7 +1970,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			throws DotDataException, DotSecurityException{
 		final ImmutableList.Builder<WorkflowAction> actions = new ImmutableList.Builder<>();
 		for(WorkflowScheme scheme: schemes){
-			List<WorkflowStep> steps = findSteps(scheme);
+			final List<WorkflowStep> steps = findSteps(scheme);
 			actions.addAll(findActions(steps.get(0), user));
 		}
 		return actions.build();
