@@ -38,7 +38,7 @@
     &--disabled:hover {
         background-color: transparent;
         opacity: 0.2;
-        pointer-events: none;
+        cursor: not-allowed;
     }
 }
 

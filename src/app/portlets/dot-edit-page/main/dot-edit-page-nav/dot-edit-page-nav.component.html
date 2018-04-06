@@ -1,8 +1,19 @@
 <ul class="edit-page-nav">
     <li *ngFor="let item of model | async">
-        <a class="edit-page-nav__item" [class.edit-page-nav__item--disabled]="item.disabled" routerLinkActive="edit-page-nav__item--active" [routerLink]="item.link" [queryParams]="route.queryParams | async">
-            <i class="{{ item.icon }}"></i>
-            <span class="edit-page-nav__item-text">{{ item.label }}</span>
-        </a>
+        <div *ngIf="!item.needsEntepriseLicense;then basic else enterprise"></div>
+        <ng-template #basic>
+            <a class="edit-page-nav__item" [class.edit-page-nav__item--disabled]="item.disabled" routerLinkActive="{{ !item.disabled ? 'edit-page-nav__item--active' : '' }}"
+                [routerLink]="!item.disabled ? item.link : null" [queryParams]="route.queryParams | async">
+                <i class="{{ item.icon }}"></i>
+                <span class="edit-page-nav__item-text">{{ item.label }}</span>
+            </a>
+        </ng-template>
+        <ng-template #enterprise>
+            <span pTooltip="{{ dotMessageService.get('editpage.toolbar.nav.license.enterprise.only') }}" tooltipPosition="left"
+                class="edit-page-nav__item edit-page-nav__item--disabled">
+                <i class="{{ item.icon }}"></i>
+                <span class="edit-page-nav__item-text">{{ item.label }}</span>
+            </span>
+        </ng-template>
     </li>
 </ul>
