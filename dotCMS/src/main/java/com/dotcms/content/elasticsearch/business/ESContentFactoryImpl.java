@@ -876,8 +876,13 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	@Override
     protected Contentlet findContentletByIdentifierAnyLanguage(String identifier) throws DotDataException, DotSecurityException {
         Contentlet contentlet = null;
+        final StringBuilder sb = new StringBuilder()
+                .append("SELECT c.inode FROM contentlet c, contentlet_version_info cvi ")
+                .append("WHERE c.identifier=? AND c.inode = cvi.working_inode ")
+                .append("AND cvi.deleted = ")
+                .append(DbConnectionFactory.getDBFalse());
         final List<HashMap<String, String>> inodes = new DotConnect()
-                .setSQL("Select inode from contentlet where identifier=?")
+                .setSQL(sb.toString())
                 .addParam(identifier)
                 .setMaxRows(1)
                 .getResults();
