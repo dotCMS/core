@@ -39,4 +39,11 @@ public class WorkflowActionStepForm extends Validated {
             return new WorkflowActionStepForm(this);
         }
     }
+
+    @Override
+    public String toString() {
+        return "WorkflowActionStepForm{" +
+                "actionId='" + actionId + '\'' +
+                '}';
+    }
 }
