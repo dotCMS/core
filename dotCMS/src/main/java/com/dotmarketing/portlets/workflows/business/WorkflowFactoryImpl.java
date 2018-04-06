@@ -645,13 +645,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	@Override
 	public List<WorkflowScheme> findSchemesForStruct(final String structId) throws DotDataException {
 
-		/*
-		List<WorkflowScheme> schemes = new ArrayList<>();
-		if (!licenseValiditySupplier.hasValidLicense()) {
-			schemes.add(this.findSystemWorkflow());
-			return schemes;
-		}*/
-
 		List<WorkflowScheme> schemes = cache.getSchemesByStruct(structId);
 
 		if (schemes != null) {
