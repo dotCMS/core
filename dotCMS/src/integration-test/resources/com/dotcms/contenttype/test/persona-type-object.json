@@ -5,7 +5,7 @@
 	"system": false,
 	"folder": "SYSTEM_FOLDER",
 	"name": "Persona Test",
-	"variable": "personaTest",
+	"variable": "testPersona",
 	"host": "SYSTEM_HOST",
 	"fixed": false,
 	"fields": [

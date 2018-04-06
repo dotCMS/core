@@ -79,6 +79,11 @@ public class ContentTypeResourceTest extends ContentTypeBaseTest {
 
 		int x = response.getStatus();
 		assertThat("result:200 with json " + jsonFile + "got :" + x, x == 200);
+		for(ContentType delType:delTypes){
+			if(delType.variable().contains("test")) {
+				contentTypeApi.delete(contentTypeApi.find(delType.variable()));
+			}
+		}
 	}
 
 	/**
