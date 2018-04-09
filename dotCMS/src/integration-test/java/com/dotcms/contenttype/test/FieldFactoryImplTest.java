@@ -411,6 +411,7 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 			}
 
 		}
+		contentTypeApi.delete(struct);
 	}
 
 	@Test

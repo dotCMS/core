@@ -89,6 +89,13 @@ public interface ContentletAPIPostHook {
 	public default void findContentletByIdentifier(String identifier, boolean live, long languageId, User user, boolean respectFrontendRoles,Contentlet returnValue){}
 
 	/**
+	 * Retrieves a contentlet from the database based on its identifier
+	 * @param identifier
+	 * @param returnValue - value returned by primary API Method
+	 */
+	public default void findContentletByIdentifierAnyLanguage (String identifier) { }
+
+	/**
 	 * Retrieves a contentlet list from the database based on a identifiers array
 	 * @param identifiers	Array of identifiers
 	 * @param live	Retrieves the live version if false retrieves the working version

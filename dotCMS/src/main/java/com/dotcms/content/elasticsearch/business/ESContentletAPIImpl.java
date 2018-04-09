@@ -315,6 +315,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @Override
+    public Contentlet findContentletByIdentifierAnyLanguage(String identifier) throws DotDataException, DotSecurityException {
+        try {
+            return contentFactory.findContentletByIdentifierAnyLanguage(identifier);
+        } catch (DotSecurityException se) {
+            throw se;
+        } catch (Exception e) {
+            throw new DotContentletStateException("Can't find contentlet: " + identifier, e);
+        }
+    }
+
+    @Override
     public List<Contentlet> findContentletsByIdentifiers(String[] identifiers, boolean live, long languageId, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException, DotContentletStateException {
         List<Contentlet> l = new ArrayList<Contentlet>();
 

@@ -1,6 +1,6 @@
 [{
 	"name": "Simple Content Page",
-	"variable": "SimpleHtmlPage3",
+	"variable": "testSimpleHtmlPage3",
 	"host": "SYSTEM_HOST",
 	"folder": "SYSTEM_FOLDER",
 	"clazz": "com.dotcms.contenttype.model.type.PageContentType",
