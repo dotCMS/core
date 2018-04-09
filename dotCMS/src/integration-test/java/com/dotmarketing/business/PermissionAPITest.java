@@ -661,6 +661,7 @@ public class PermissionAPITest extends IntegrationTestBase {
             	APILocator.getStructureAPI().delete(s, sysuser);
             }
             APILocator.getHostAPI().archive(hh, sysuser, false);
+            APILocator.getHostAPI().delete(hh, sysuser, false);
         }
     }
 
