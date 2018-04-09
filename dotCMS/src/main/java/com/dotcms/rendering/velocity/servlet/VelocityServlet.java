@@ -29,12 +29,12 @@ public class VelocityServlet extends HttpServlet {
 
     private static String JS_CODE =
             "<script type=\"text/javascript\">\n" +
-            "var customEvent = document.createEvent('CustomEvent');\n" +
-            "customEvent.initCustomEvent('ng-event', false, false,  {\n" +
-            "            name: 'load-edit-mode-page',\n" +
-            "            data: %s" +
-            "});\n" +
-            "setTimeout(function(){console.log('AAAAAAAAAA');document.dispatchEvent(customEvent);}, 1000);\n" +
+                "var customEvent = window.top.document.createEvent('CustomEvent');\n" +
+                "customEvent.initCustomEvent('ng-event', false, false,  {\n" +
+                "            name: 'load-edit-mode-page',\n" +
+                "            data: %s" +
+                "});\n" +
+                "window.top.document.dispatchEvent(customEvent);" +
             "</script>";
 
     /**
