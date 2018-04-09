@@ -5079,6 +5079,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             boolean isContentletLive = false;
             boolean isContentletWorking = false;
 
+            if(!contentlet.isWorking() && !contentlet.isLive()){
+                //Old version, so let's skip it
+                continue;
+            }
+
             if (user == null) {
                 throw new DotSecurityException("A user must be specified.");
             }
