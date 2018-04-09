@@ -44,6 +44,7 @@ public class ConfigurationHelper implements Serializable {
 	public static final String IS_COMMUNITY = "isCommunity";
 	public static final String DISPLAY_SERVER_ID = "displayServerId";
 	public static final String LEVEL_NAME = "levelName";
+	public static final String LICENSE_LEVEL = "level";
 	public static final String RELEASE_INFO = "releaseInfo";
 	public static final String VERSION = "version";
 	public static final String BUILD_DATE = "buildDate";
@@ -96,7 +97,9 @@ public class ConfigurationHelper implements Serializable {
 				map(
 						IS_COMMUNITY,      LicenseManager.getInstance().isCommunity(),
 						DISPLAY_SERVER_ID, LicenseUtil.getDisplayServerId(),
-						LEVEL_NAME,        LicenseUtil.getLevelName()
+						LEVEL_NAME,        LicenseUtil.getLevelName(),
+						LICENSE_LEVEL, LicenseUtil.getLevel()
+
 				),
 				RELEASE_INFO,
 				map(

@@ -77,6 +77,15 @@ public abstract class ContentletFactory {
 	 * @throws DotSecurityException 
 	 */
 	protected abstract Contentlet findContentletByIdentifier(String identifier, Boolean live, Long languageId) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Retrieves a contentlet from the database based on its identifier and the working version
+	 * @param identifier
+	 * @return Contentlet
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	protected abstract Contentlet findContentletByIdentifierAnyLanguage(String identifier) throws DotDataException, DotSecurityException;
 	
 	/**
 	 * Retrieves a contentlet from the database based on its identifier
@@ -112,7 +121,7 @@ public abstract class ContentletFactory {
 	 * @throws DotDataException
 	 * @throws DotSecurityException 
 	 */
-	protected abstract Contentlet save(Contentlet contentlet) throws DotDataException, DotSecurityException;
+	public abstract Contentlet save(Contentlet contentlet) throws DotDataException, DotSecurityException;
 	protected abstract Contentlet save(Contentlet contentlet, String existingInode) throws DotDataException, DotSecurityException;
 	
 	/**

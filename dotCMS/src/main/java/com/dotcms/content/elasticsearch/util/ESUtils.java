@@ -43,22 +43,31 @@ public class ESUtils {
 		return escapedText;
 	}
 
-	public static String getYamlConfiguration(final String esPathHome){
+	public static String getESPathHome() {
+		String esPathHome = Config
+				.getStringProperty(ESUtils.ES_PATH_HOME, ESUtils.ES_PATH_HOME_DEFAULT_VALUE);
+
+		esPathHome =
+				!new File(esPathHome).isAbsolute() ? FileUtil.getRealPath(esPathHome) : esPathHome;
+
+		return esPathHome;
+	}
+
+	public static String getYamlConfiguration(){
 		final String yamlPath = System.getenv("ES_PATH_CONF");
 		if (UtilMethods.isSet(yamlPath)  && FileUtil.exists(yamlPath)){
 			return yamlPath;
 		}else{
-			return esPathHome + File.separator + ES_CONFIG_DIR + File.separator + ES_YML_FILE;
+			return getESPathHome() + File.separator + ES_CONFIG_DIR + File.separator + ES_YML_FILE;
 		}
 	}
 
 	public static Builder getExtSettingsBuilder() throws IOException {
 
-		final String esPathHome = Config.getStringProperty(ES_PATH_HOME, ES_PATH_HOME_DEFAULT_VALUE);
 		String yamlPath = System.getenv("ES_PATH_CONF");
 		if (!UtilMethods.isSet(yamlPath) || !FileUtil.exists(yamlPath)){
 			//Get elasticsearch-ext.yml from default location
-			yamlPath = esPathHome + File.separator + ES_CONFIG_DIR +  File.separator + ES_EXT_YML_FILE;
+			yamlPath = getESPathHome() + File.separator + ES_CONFIG_DIR +  File.separator + ES_EXT_YML_FILE;
 		} else{
 			//Otherwise, get parent directory from the ES_PATH_CONF
 			yamlPath = new File(yamlPath).getParent() + File.separator + ES_EXT_YML_FILE;
