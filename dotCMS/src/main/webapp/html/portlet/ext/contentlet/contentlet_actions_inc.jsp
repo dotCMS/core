@@ -51,35 +51,29 @@ for(WorkflowAction action : wfActions){
 <%boolean canUserWriteToContentlet = conPerAPI.doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_WRITE,user);%> 
 
 <div class="content-edit-actions">
-	<div style="margin-bottom:10px">
+	<div style="margin-bottom:-1px">
 		<%if(isContLocked && (contentEditable || isUserCMSAdmin)) {%>
-		
-				<%if(contentEditable){ %>
-				    <a onClick="unlockContent('<%=contentlet.getInode() %>');" id="unlockContentButton">
-						<span class="unlockIcon"></span>
-						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Release-Lock")) %>
-					</a>
-				<%}else{ %>
-				    <a onClick="stealLock('<%=contentlet.getInode() %>');" id="stealLockContentButton">
-						<span class="unlockIcon"></span>
-						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Steal-Lock")) %>
-					</a>
-				<%} %>
+			<%if(contentEditable){ %>
+			    <a onClick="unlockContent('<%=contentlet.getInode() %>');" id="unlockContentButton">
+					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Release-Lock")) %>
+				</a>
+			<%}else{ %>
+			    <a onClick="stealLock('<%=contentlet.getInode() %>');" id="stealLockContentButton">
+					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Steal-Lock")) %>
+				</a>
+			<%} %>
 		<%} %>
 
-		
 		
 		<%if ((InodeUtils.isSet(contentlet.getInode())) && (canUserWriteToContentlet) && (!contentlet.isArchived()) && isContLocked && contentEditable) { %> 
 			<%if (!InodeUtils.isSet(contentlet.getInode()) || contentlet.isLive() || contentlet.isWorking()) { %> 
 				<%if (contentlet.isLive() && !contentlet.isWorking()) {%>
 					<a onClick="selectVersion('<%=contentlet.getInode()%>');">
-						<span class="reorderIcon"></span>
 						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Revert-Working-Changes")) %>
 					</a>
 				<%}%>
 			<%} else if (InodeUtils.isSet(contentlet.getInode())) {%>
 				<a  onClick="selectVersion('<%=contentlet.getInode()%>');">
-					<span class="reorderIcon"></span>
 					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Bring-Back-Version")) %>
 				</a>
 			<%} %>
@@ -87,64 +81,58 @@ for(WorkflowAction action : wfActions){
 		
 			<%if((null != scheme ) || ( wfActionsAll != null && wfActionsAll.size() > 0)){ %>
 			    <a onClick="makeEditable('<%=contentlet.getInode() %>');" id="lockContentButton">
-					<span class="lockIcon"></span>
 					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Make-Editable")) %>
 				</a>
 			<%} %>
 		<%}%>
-		
 	</div>
 
-	<div style="margin-bottom:10px">
-		
-		<%
-		final boolean canPublish = (InodeUtils.isSet(contentlet.getInode())?canUserPublishContentlet && isContLocked && contentEditable && !contentlet.isArchived():canUserPublishContentlet);
-		if (canPublish && isHost) {
-			final String savePublishButtonTitle = UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save-Activate"));
-		%>
-	
+
+	<%final boolean canPublish = (InodeUtils.isSet(contentlet.getInode())?canUserPublishContentlet && isContLocked && contentEditable && !contentlet.isArchived():canUserPublishContentlet);%>
+	<%if (canPublish && isHost) {%>
+		<% final String savePublishButtonTitle = UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save-Activate"));%>
+		<div style="margin-top:-1px">
 			<a onClick="saveContent(false);">
 				<span class="saveIcon"></span>
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save")) %>
 			</a>
-	
 			<input type="hidden" id="copyOptions" name="copyOptions" value="<%= copyOptions %>" />
 			<a onClick="publishContent()">
 				<span class="publishIcon"></span>
 				<%= savePublishButtonTitle %>
 			</a>
-		<% } %>
+		</div>
+	<% } %>
 		
+	<%--Start workflow tasks --%>
+	<%if(wfActions.size()>0) {%>
 		<%String wfSchemeIdStr=null; %>
-		<%--Start workflow tasks --%>
-		<%for(WorkflowAction action : wfActions){ %>
-		
-			<% List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(action); %>
-			<% boolean hasPushPublishActionlet = false; %>
-			<% for(WorkflowActionClass actionlet : actionlets){ %>
-				<% if(actionlet.getActionlet() != null && actionlet.getActionlet().getClass().getCanonicalName().equals(PushPublishActionlet.class.getCanonicalName())){ %>
-					<% hasPushPublishActionlet = true; %>
+		<div style="margin-top:-1px">
+			<%for(WorkflowAction action : wfActions){ %>
+				<% List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(action); %>
+				<% boolean hasPushPublishActionlet = false; %>
+				<% for(WorkflowActionClass actionlet : actionlets){ %>
+					<% if(actionlet.getActionlet() != null && actionlet.getActionlet().getClass().getCanonicalName().equals(PushPublishActionlet.class.getCanonicalName())){ %>
+						<% hasPushPublishActionlet = true; %>
+					<% } %>
 				<% } %>
-			<% } %>
-			<% if(wfSchemeIdStr!=null && !wfSchemeIdStr.equals(action.getSchemeId())){%>
-	</div>3
-	<div style="margin-bottom:10px">
-			<%} %>
-			<a onclick="contentAdmin.executeWfAction('<%=action.getId()%>', <%= hasPushPublishActionlet || action.isAssignable() || action.isCommentable() || UtilMethods.isSet(action.getCondition()) %>)">
-				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, action.getName())) %>
-				<%if(showScheme){ %>
-					<div style="padding-left:8px;font-size:x-small"><%=APILocator.getWorkflowAPI().findScheme(action.getSchemeId()).getName() %></div>
+				<% if(wfSchemeIdStr!=null && !wfSchemeIdStr.equals(action.getSchemeId())){%>
+					</div><div style="margin-top:-1px">
 				<%} %>
-			</a>
-		
-		
-			<% wfSchemeIdStr=action.getSchemeId();%>
-		
-		<%} %>
-	</div>
-	
+				<% wfSchemeIdStr=action.getSchemeId();%>
+				<a onclick="contentAdmin.executeWfAction('<%=action.getId()%>', <%= hasPushPublishActionlet || action.isAssignable() || action.isCommentable() || UtilMethods.isSet(action.getCondition()) %>)">
+					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, action.getName())) %>
+					<%if(showScheme){ %>
+						<div style="padding-left:8px;font-size:x-small"><%=APILocator.getWorkflowAPI().findScheme(action.getSchemeId()).getName() %></div>
+					<%} %>
+				</a>
+			<%} %>
+		</div>
+	<%} %>
 
-	<div style="margin-bottom:10px">
+
+
+	<div style="margin-top:20px">
 		<a onClick="cancelEdit();">
 			<span class="cancelIcon"></span>
 			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel")) %>
