@@ -1085,7 +1085,7 @@ public class ContentletAjax {
 	@CloseDB
 	@NotNull
 	private JSONArray getAvailableWorkflowActionsJson(final User currentUser,
-													  final Contentlet contentlet) throws DotDataException {
+													  final Contentlet contentlet) throws DotDataException, DotSecurityException {
 
 		final List<WorkflowAction> workflowActions = new ArrayList<>();
 

@@ -1,5 +1,11 @@
 package com.dotmarketing.portlets.workflows.business;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
@@ -37,7 +43,14 @@ import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
-import com.dotmarketing.portlets.workflows.model.*;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
+import com.dotmarketing.portlets.workflows.model.WorkflowComment;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowState;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -52,8 +65,6 @@ import java.util.concurrent.Future;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
 
 /**
  * Test the workflowAPI
@@ -1872,16 +1883,16 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
             //validate workflow tasks deleted
             task1 = workflowAPI.findTaskByContentlet(contentlet1);
-            assertNull(task1.getId());
+            assertNull(task1);
 
             task2 = workflowAPI.findTaskByContentlet(contentlet2);
-            assertNull(task2.getId());
+            assertNull(task2);
 
             task3 = workflowAPI.findTaskByContentlet(contentlet3);
-            assertNull(task3.getId());
+            assertNull(task3);
 
             task4 = workflowAPI.findTaskByContentlet(contentlet4);
-            assertNull(task4.getId());
+            assertNull(task4);
 
         } finally {
             //clean test
