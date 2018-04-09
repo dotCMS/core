@@ -663,7 +663,29 @@
 
     }
 
+    function refreshRelationshipsCp(){
 
+
+        var y =Math.floor(Math.random()*1123213213);
+
+        var myCp = dijit.byId("contentRelationshipsCp");
+        if (myCp) {
+            myCp.attr("href", "/html/portlet/ext/contentlet/edit_contentlet_relationships.jsp?contentletId=" +contentAdmin.contentletIdentifier + "&r=" + y);
+            return;
+        }
+        var myDiv = dijit.byId("contentletRelationshipsDiv");
+        if (myDiv) {
+            dojo.empty(myDiv);
+        }
+        myCp = new dijit.layout.ContentPane({
+            id : "contentRelationshipsCp",
+            style: "height:100%",
+            href: "/html/portlet/ext/contentlet/edit_contentlet_relationships.jsp?contentletId=" +contentAdmin.contentletIdentifier + "&r=" + y
+        }).placeAt("contentletRelationshipsDiv");
+    	
+
+
+    }
 
 
 

@@ -417,8 +417,9 @@ dojo.addOnLoad(function () {
 		   relationshipsTabFieldExists = true;
 		   request.setAttribute("isRelationsihpAField",false); //DOTCMS-6893
 	%>
-		<div id="relationships" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Relationships") %>">
-			<jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_relationships.jsp" />
+		<div id="contentRelationshipsTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Relationships") %>"  onShow="refreshRelationshipsCp()">
+					<div id="contentletRelationshipsDiv" class="rules__tab-container" style="height:100%;">
+					</div>
 		</div>
 	<%}%>
 
@@ -498,12 +499,11 @@ dojo.addOnLoad(function () {
 
 			<jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_basic_properties.jsp" />
 
-			<div class="content-edit-actions">
-				<%--<h3><%=LanguageUtil.get(pageContext, "Actions") %></h3>--%>
+
 				<div id="contentletActionsHanger">
 					<%@ include file="/html/portlet/ext/contentlet/contentlet_actions_inc.jsp" %>
 				</div>
-			</div>
+
 
 			<div class="content-edit-workflow">
 				<% if(null != wfSteps && wfSteps.size() ==1){

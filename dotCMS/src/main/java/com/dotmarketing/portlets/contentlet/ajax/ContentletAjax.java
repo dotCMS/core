@@ -15,6 +15,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
@@ -1097,7 +1098,7 @@ public class ContentletAjax {
         }
 
 		final JSONArray wfActionMapList = new JSONArray();
-
+        final boolean showScheme = (workflowActions!=null) ?  workflowActions.stream().collect(Collectors.groupingBy(WorkflowAction::getSchemeId)).size()>1 : false;
 		for (WorkflowAction action : workflowActions) {
 
             boolean hasPushPublishActionlet = false;
@@ -1126,8 +1127,9 @@ public class ContentletAjax {
                 wfActionMap.put("hasPushPublishActionlet", hasPushPublishActionlet);
 
                 try {
-
-                    wfActionMap.put("wfActionNameStr", LanguageUtil.get(currentUser, action.getName()) +" ( "+LanguageUtil.get(currentUser,wfScheme.getName())+" )");
+                    final String actionNameStr = (showScheme) ? LanguageUtil.get(currentUser, action.getName()) +" ( "+LanguageUtil.get(currentUser,wfScheme.getName())+" )" : LanguageUtil.get(currentUser, action.getName());
+                    
+                    wfActionMap.put("wfActionNameStr", actionNameStr);
                 } catch (LanguageException e) {
                     Logger.error(this, "Could not load language key : " + action.getName());
                 }
