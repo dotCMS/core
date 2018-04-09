@@ -6,6 +6,8 @@ import com.dotcms.rendering.velocity.viewtools.RequestWrapper;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectWriter;
 import com.dotcms.rest.api.v1.page.PageResource;
+import com.dotcms.rest.api.v1.page.PageResourceHelper;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.filters.Constants;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -21,12 +23,12 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.liferay.portal.model.User;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 
 public class VelocityServlet extends HttpServlet {
-
     private static String JS_CODE =
             "<script type=\"text/javascript\">\n" +
                 "var customEvent = window.top.document.createEvent('CustomEvent');\n" +
@@ -63,16 +65,13 @@ public class VelocityServlet extends HttpServlet {
 
         PageMode mode = PageMode.get(request);
 
-
-
         try {
             if (mode == PageMode.EDIT_MODE) {
-                PageResource pageResource = new PageResource();
-                Map<String, Object> renderedPageMap = pageResource.getRenderedPageMap(request, response, uri, PageMode.EDIT_MODE);
-                Map<String, Object> renderedPageMapCopy = new HashMap(renderedPageMap);
-                //renderedPageMapCopy.remove("html");
+                User user = APILocator.getLoginServiceAPI().getLoggedInUser();
+                Map<String, Object> renderedPageMap = PageResourceHelper.getInstance().getPageRendered(request,
+                        response, user, uri, PageMode.EDIT_MODE);
                 final ObjectWriter objectWriter = new ObjectMapper().writer().withDefaultPrettyPrinter();
-                String renderedPage = objectWriter.writeValueAsString(renderedPageMapCopy).replace("</script>", "\\</script\\>");
+                String renderedPage = objectWriter.writeValueAsString(renderedPageMap).replace("</script>", "\\</script\\>");
                 response.getOutputStream().write(String.format(JS_CODE, renderedPage).getBytes());
             } else {
                 VelocityModeHandler.modeHandler(mode, request, response).serve();

@@ -38,11 +38,7 @@ import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.URLUtils;
-import com.dotmarketing.util.UUIDUtil;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
+import com.dotmarketing.util.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.common.collect.ImmutableMap;
@@ -199,15 +195,8 @@ public class PageResourceHelper implements Serializable {
         return getPageMetadata(request, response, user, uri, true, PageMode.get(request));
     }
 
-    public String getPageRendered(final HttpServletRequest request, final HttpServletResponse response, final User user,
-                                  final String uri, final PageMode mode) throws Exception {
-
-        final HTMLPageAsset page =  this.getPage(request, user, uri, mode);
-        return this.getPageRendered(page, request, response, user, mode);
-    }
-
     @CloseDB
-    public String getPageRendered(final HTMLPageAsset page, final HttpServletRequest request,
+    private String getPageHTML(final HTMLPageAsset page, final HttpServletRequest request,
                                   final HttpServletResponse response, final User user, final PageMode mode)
             throws DotSecurityException, DotDataException, IOException {
 
@@ -474,6 +463,77 @@ public class PageResourceHelper implements Serializable {
                 .checkPermission(contentlet, PermissionLevel.READ, user);
         APILocator.getPermissionAPI()
                 .checkPermission(container, PermissionLevel.EDIT, user);
+    }
+
+    public Map<String, Object> getPageRendered(HttpServletRequest request, HttpServletResponse response, User user,
+                                               String pageUri, PageMode pageMode)
+            throws DotDataException, DotSecurityException, IOException {
+        final HTMLPageAsset page = this.getPage(request, user, pageUri, pageMode);
+        return this.getPageRendered(request, response, user, page, pageMode);
+    }
+
+    public Map<String, Object> getPageRendered(HttpServletRequest request, HttpServletResponse response, User user,
+                                               HTMLPageAsset page, PageMode pageMode)
+            throws DotDataException, DotSecurityException, IOException {
+
+        final ImmutableMap.Builder<String, Object> responseMapBuilder = ImmutableMap.builder();
+        final Template template = this.templateAPI.findWorkingTemplate(page.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false);
+
+        responseMapBuilder
+                .put("html", this.getPageHTML(page, request, response, user, pageMode))
+                .put("page", this.getPageMap(page, user))
+                .put("containers", this.getMappedContainers(template))
+                .put("viewAs", createViewAsMap(request, user))
+                .put("canCreateTemplate", APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("templates", user));
+
+        if (template.isDrawed()) {
+            responseMapBuilder.put("layout", DotTemplateTool.themeLayout(template.getInode()));
+        }
+
+        if (this.permissionAPI.doesUserHavePermission(template, PermissionLevel.READ.getType(), user, false)) {
+            responseMapBuilder.put("template",
+                    ImmutableMap.builder()
+                            .put("canEdit", this.permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(), user))
+                            .putAll(this.asMap(template))
+                            .build());
+        }
+
+        return responseMapBuilder.build();
+    }
+
+    private ImmutableMap<Object, Object> createViewAsMap(final HttpServletRequest request, final User user)
+            throws DotDataException {
+        final String deviceInode = (String) request.getSession().getAttribute(WebKeys.CURRENT_DEVICE);
+
+        final ImmutableMap.Builder<Object, Object> builder = ImmutableMap.builder();
+
+        final Persona currentPersona = (Persona) this.getCurrentPersona(request);
+
+        if (currentPersona != null) {
+            builder.put("persona", currentPersona.getMap());
+        }
+
+        builder.put("language", WebAPILocator.getLanguageWebAPI().getLanguage(request));
+
+        try {
+            final String currentDeviceId = deviceInode == null ?
+                    (String) request.getSession().getAttribute(WebKeys.CURRENT_DEVICE)
+                    : deviceInode;
+
+            if (currentDeviceId != null) {
+                final Contentlet device = APILocator.getContentletAPI().find(currentDeviceId, user, false);
+
+                if (device != null) {
+                    builder.put("device", device.getMap());
+                } else {
+                    request.getSession().removeAttribute(WebKeys.CURRENT_DEVICE);
+                }
+            }
+        } catch (DotSecurityException e) {
+            //In this case don't response with the device attribute
+        }
+
+        return builder.build();
     }
 
     public Map<Object, Object> getPageMap(HTMLPageAsset page, User user) throws DotDataException {
