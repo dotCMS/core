@@ -60,7 +60,11 @@ public interface SiteSearchAPI {
 
 	Map<String, Aggregation> getAggregations(String indexName, String query) throws DotDataException;
 
-	Map<String, Aggregation> getFacets(String indexName, String query) throws DotDataException; //TODO: https://github.com/dotcms/core/issues/13492
+	/***
+	 * @deprecated use getAggregations instead
+	 */
+	@Deprecated
+	Map<String, Aggregation> getFacets(String indexName, String query) throws DotDataException;
 
     List<String> listClosedIndices();
 }

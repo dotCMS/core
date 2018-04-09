@@ -82,8 +82,12 @@ public class WorkflowEmailUtil {
 
             }
             link += "/c/portal/layout?p_l_id=" + layout.getId()
-                    + "&p_p_id="+PortletID.WORKFLOW+"&p_p_action=1&p_p_state=maximized&p_p_mode=view&_"+PortletID.WORKFLOW+"_struts_action=/ext/workflows/edit_workflow_task&_workflow_cmd=view&_"+PortletID.WORKFLOW+"_taskId="
-                    + processor.getTask().getId();
+                    + "&p_p_id=" + PortletID.WORKFLOW
+                    + "&p_p_action=1&p_p_state=maximized&p_p_mode=view&_" + PortletID.WORKFLOW
+                    + "_struts_action=/ext/workflows/edit_workflow_task&_workflow_cmd=view" + (
+                    null != processor.getTask() ? "&_"
+                            + PortletID.WORKFLOW + "_taskId="
+                            + processor.getTask().getId() : "");
 
             HttpServletRequest requestProxy = new MockHttpRequest(host.getHostname(), null).request();
             HttpServletResponse responseProxy = new BaseResponse().response();
@@ -100,9 +104,12 @@ public class WorkflowEmailUtil {
             ctx.put("nextStepResolved", processor.getNextStep().isResolved());
             ctx.put("nextStepId", processor.getNextStep().getId());
             ctx.put("nextStepName", processor.getNextStep().getName());
-            ctx.put("workflowTaskTitle", UtilMethods.isSet(processor.getTask().getTitle())
-                    ? processor.getTask().getTitle() : processor.getContentlet().getTitle());
-            ctx.put("modDate", processor.getTask().getModDate());
+            ctx.put("workflowTaskTitle",
+                    null != processor.getTask() && UtilMethods.isSet(processor.getTask().getTitle())
+                            ? processor.getTask().getTitle()
+                            : processor.getContentlet().getTitle());
+            ctx.put("modDate", null != processor.getTask() ? processor.getTask().getModDate()
+                    : processor.getContentlet().getModDate());
             ctx.put("structureName", processor.getContentlet().getStructure().getName());
 
 
