@@ -1,12 +1,12 @@
 export interface DotWorkflow {
-    id: string;
-    name: string;
-    creationDate: number;
-    description: string;
     archived: boolean;
-    mandatory: boolean;
+    creationDate: Date;
     defaultScheme: boolean;
-    modDate: Date;
+    description: string;
     entryActionId: string;
+    id: string;
+    mandatory: boolean;
+    modDate: Date;
+    name: string;
     system: boolean;
 }

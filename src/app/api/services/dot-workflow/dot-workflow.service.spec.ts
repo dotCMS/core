@@ -2,6 +2,8 @@ import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DotWorkflowService } from './dot-workflow.service';
 import { MockBackend } from '@angular/http/testing';
 import { ConnectionBackend, ResponseOptions, Response } from '@angular/http';
+import { Observable } from 'rxjs/Observable';
+import { mockWorkflows } from '../../../test/dot-workflow-service.mock';
 
 describe('DotWorkflowService', () => {
     beforeEach(() => {
@@ -106,6 +108,13 @@ describe('DotWorkflowService', () => {
         expect(this.dotWorkflowService.fireWorkflowAction).toHaveBeenCalledTimes(1);
         expect(this.lastConnection.request.url).toContain(`v1/workflow/actions/${actionId}/fire?inode=${inode}`);
         expect(2).toBe(this.lastConnection.request.method); // 2 is PUT method
+    });
+
+    it('should get default workflow', () => {
+        spyOn(this.dotWorkflowService, 'get').and.returnValue(Observable.of(mockWorkflows));
+        this.dotWorkflowService.getDefault().subscribe(workflow => {
+            expect(workflow).toEqual(mockWorkflows[0]);
+        });
     });
 
 });

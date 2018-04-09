@@ -23,6 +23,8 @@ import { SiteSelectorFieldModule } from '../../../view/components/_common/site-s
 import { SiteServiceMock } from '../../../test/site-service.mock';
 import { DotWorkflowService } from '../../../api/services/dot-workflow/dot-workflow.service';
 import { MdInputTextModule } from '../../../view/directives/md-inputtext/md-input-text.module';
+import { DotWorkflowsSelectorFieldModule } from '../../../view/components/_common/dot-workflows-selector-field/dot-workflows-selector-field.module';
+import { DotWorkflowServiceMock } from '../../../test/dot-workflow-service.mock';
 
 describe('ContentTypesFormComponent', () => {
     let comp: ContentTypesFormComponent;
@@ -81,15 +83,16 @@ describe('ContentTypesFormComponent', () => {
                     TabViewModule,
                     SiteSelectorFieldModule,
                     RouterTestingModule,
-                    MdInputTextModule
+                    MdInputTextModule,
+                    DotWorkflowsSelectorFieldModule
                 ],
                 providers: [
                     { provide: LoginService, useClass: LoginServiceMock },
                     { provide: DotMessageService, useValue: messageServiceMock },
                     { provide: SiteService, useValue: siteServiceMock },
+                    { provide: DotWorkflowService, useClass: DotWorkflowServiceMock },
                     DotcmsConfig,
                     ContentTypesInfoService,
-                    DotWorkflowService
                 ]
             });
 
@@ -101,25 +104,6 @@ describe('ContentTypesFormComponent', () => {
             dotcmsConfig = fixture.debugElement.injector.get(DotcmsConfig);
 
             dotWorkflowService = fixture.debugElement.injector.get(DotWorkflowService);
-            spyOn(dotWorkflowService, 'get').and.returnValue(
-                Observable.of([
-                    {
-                        id: '123',
-                        name: 'Workflow 1',
-                        system: false
-                    },
-                    {
-                        id: '456',
-                        name: 'Workflow 2',
-                        system: false
-                    },
-                    {
-                        id: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2',
-                        name: 'System Workflow',
-                        system: true
-                    }
-                ])
-            );
         })
     );
 
@@ -535,7 +519,6 @@ describe('ContentTypesFormComponent', () => {
         comp.form.controls.name.setValue('A content type name');
 
         fixture.detectChanges();
-
         comp.submitForm();
 
         expect(comp.submitForm).toHaveBeenCalledTimes(1);
@@ -550,7 +533,7 @@ describe('ContentTypesFormComponent', () => {
             fixed: null,
             folder: null,
             system: null,
-            workflow: ['d61a59e1-a49c-46f2-a929-db2b4bfa88b2']
+            workflow: ['85c1515c-c4f3-463c-bac2-860b8fcacc34']
         });
     });
 
@@ -593,32 +576,6 @@ describe('ContentTypesFormComponent', () => {
                     const workflowMsg = de.query(By.css('#field-workflow-hint'));
                     expect(workflowMsg).toBeFalsy();
                     expect(comp.form.get('workflow').disabled).toBeFalsy();
-                });
-
-                it('should call the WorkFlow endpoint if the license community its false', () => {
-                    expect(dotWorkflowService.get).toHaveBeenCalled();
-                });
-
-                it('should pass the workflows selectiems', () => {
-                    const workflowInput: MultiSelect = de.query(By.css('#content-type-form-workflow')).componentInstance;
-                    expect(workflowInput.options).toEqual([
-                        {
-                            value: '123',
-                            label: 'Workflow 1'
-                        },
-                        {
-                            value: '456',
-                            label: 'Workflow 2'
-                        },
-                        {
-                            value: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2',
-                            label: 'System Workflow'
-                        }
-                    ]);
-                });
-
-                it('should set system worflow selected as default when create content', () => {
-                    expect(comp.form.get('workflow').value).toEqual(['d61a59e1-a49c-46f2-a929-db2b4bfa88b2']);
                 });
             });
         });

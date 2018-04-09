@@ -39,7 +39,6 @@ export class ContentTypesFormComponent implements OnInit {
     dateVarOptions: SelectItem[] = [];
     form: FormGroup;
     nameFieldLabel: string;
-    workflowOptions: Observable<SelectItem[]>;
 
     private originalValue: any;
 
@@ -80,6 +79,12 @@ export class ContentTypesFormComponent implements OnInit {
         this.bindActionButtonState();
         this.setNameFieldLabel();
         this.name.nativeElement.focus();
+
+        if (!this.isEditMode()) {
+            this.dotWorkflowService.getDefault().subscribe((workflow: DotWorkflow) => {
+                this.form.get('workflow').setValue([workflow.id]);
+            });
+        }
     }
 
     /**
@@ -204,19 +209,6 @@ export class ContentTypesFormComponent implements OnInit {
             });
     }
 
-    private fillWorkflowFieldOptions(): void {
-        this.workflowOptions = this.dotWorkflowService
-            .get()
-            .do((workflows: DotWorkflow[]) => {
-                if (!this.isEditMode()) {
-                    this.setDefaultWorkflow(workflows);
-                }
-            })
-            .flatMap((workflows: DotWorkflow[]) => workflows)
-            .map((workflow: DotWorkflow) => this.getWorkflowFieldOption(workflow))
-            .toArray();
-    }
-
     private getWorkflowFieldOption(workflow: DotWorkflow): SelectItem {
         return {
             label: workflow.name,
@@ -285,8 +277,6 @@ export class ContentTypesFormComponent implements OnInit {
     }
 
     private updateWorkflowFormControl(license): void {
-        this.fillWorkflowFieldOptions();
-
         if (!license.isCommunity) {
             const workflowControl = this.form.get('workflow');
 

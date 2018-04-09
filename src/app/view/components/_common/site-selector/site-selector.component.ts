@@ -3,7 +3,6 @@ import {
     Component,
     ViewEncapsulation,
     ViewChild,
-    forwardRef,
     Output,
     EventEmitter,
     Input,
@@ -12,7 +11,6 @@ import {
     OnChanges,
     OnDestroy
 } from '@angular/core';
-import { NG_VALUE_ACCESSOR } from '@angular/forms';
 import { Site, SiteService } from 'dotcms-js/dotcms-js';
 import { PaginatorService } from '../../../../api/services/paginator';
 import { SearchableDropdownComponent } from '../searchable-dropdown/component';
@@ -20,20 +18,18 @@ import { Observable } from 'rxjs/Observable';
 
 /**
  * It is dropdown of sites, it handle pagination and global search
+ *
  * @export
  * @class SiteSelectorComponent
- * @implements {ControlValueAccessor}
+ * @implements {OnInit}
+ * @implements {OnChanges}
+ * @implements {OnDestroy}
  */
 @Component({
     encapsulation: ViewEncapsulation.None,
     providers: [
         PaginatorService,
-        SearchableDropdownComponent,
-        {
-            multi: true,
-            provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => SiteSelectorComponent)
-        }
+        SearchableDropdownComponent
     ],
     selector: 'dot-site-selector',
     styleUrls: ['./site-selector.component.scss'],

@@ -1,4 +1,3 @@
-
 <form [formGroup]="form" class="content-type__form" id="content-type-form" novalidate>
     <div class="form__group">
         <span dotMdInputtext label="{{ nameFieldLabel }}">
@@ -17,8 +16,7 @@
     </div>
     <div class="form__group">
         <label for="content-type-form-workflow" class="form__label">{{ dotMessageService.get('contenttypes.form.label.workflow') }}</label>
-
-        <p-multiSelect [options]="workflowOptions | async" id="content-type-form-workflow" name="workflow" formControlName="workflow" tabindex="4" defaultLabel="Select Workflow" appendTo="body" maxSelectedLabels="1" ></p-multiSelect>
+        <dot-workflows-selector-field id="content-type-form-workflow" formControlName="workflow"></dot-workflows-selector-field>
     </div>
     <span id="field-workflow-hint" class="form__group-hint" *ngIf="form.get('workflow').disabled">{{ dotMessageService.get('contenttypes.form.hint.error.only.default.scheme.available.in.Community') }}</span>
     <div class="form__group">

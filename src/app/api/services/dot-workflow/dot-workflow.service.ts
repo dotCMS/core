@@ -30,6 +30,18 @@ export class DotWorkflowService {
     }
 
     /**
+     * Get the default workflow
+     *
+     * @returns {Observable<DotWorkflow>}
+     * @memberof DotWorkflowService
+     */
+    getDefault(): Observable<DotWorkflow> {
+        return this.get()
+            .switchMap((workflows: DotWorkflow[]) => workflows.filter((workflow: DotWorkflow) => workflow.defaultScheme))
+            .take(1);
+    }
+
+    /**
      * Returns the wokflow or workflow actions for a page asset
      *
      * @param {string} inode

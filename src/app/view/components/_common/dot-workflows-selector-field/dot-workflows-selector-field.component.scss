@@ -1,0 +1,13 @@
+@import 'mixins';
+@import 'variables';
+
+.workflow__archive-label {
+    color: $gray;
+    text-decoration: line-through;
+}
+
+.workflow__archive-message {
+    color: $gray-light;
+    font-size: $font-size-small;
+    margin-left: $basic-padding;
+}

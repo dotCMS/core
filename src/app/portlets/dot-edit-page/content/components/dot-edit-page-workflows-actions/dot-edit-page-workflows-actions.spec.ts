@@ -5,7 +5,7 @@ import { DebugElement, Component, Input } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { SplitButton } from 'primeng/primeng';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
-import { DotWorkflowServiceMock, mockWorkflows } from '../../../../../test/dot-workflow-service.mock';
+import { DotWorkflowServiceMock, mockWorkflowsActions } from '../../../../../test/dot-workflow-service.mock';
 import { mockDotPage } from '../../../../../test/dot-rendered-page.mock';
 import { LoginService } from 'dotcms-js/dotcms-js';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
@@ -127,13 +127,13 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
 
             it('should fire actions on click in the menu items', () => {
                 firstButton.click();
-                expect(dotWorkflowService.fireWorkflowAction).toHaveBeenCalledWith(component.page.workingInode, mockWorkflows[0].id);
+                expect(dotWorkflowService.fireWorkflowAction).toHaveBeenCalledWith(component.page.workingInode, mockWorkflowsActions[0].id);
 
                 secondButton.click();
-                expect(dotWorkflowService.fireWorkflowAction).toHaveBeenCalledWith(component.page.workingInode, mockWorkflows[1].id);
+                expect(dotWorkflowService.fireWorkflowAction).toHaveBeenCalledWith(component.page.workingInode, mockWorkflowsActions[1].id);
 
                 thirdButton.click();
-                expect(dotWorkflowService.fireWorkflowAction).toHaveBeenCalledWith(component.page.workingInode, mockWorkflows[2].id);
+                expect(dotWorkflowService.fireWorkflowAction).toHaveBeenCalledWith(component.page.workingInode, mockWorkflowsActions[2].id);
             });
 
             it('should show success message after fired action in the menu items', () => {
@@ -141,7 +141,7 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
                 firstButton.click();
                 fixture.detectChanges();
                 expect(dotGlobalMessageService.display).toHaveBeenCalledWith(
-                    `The action "${mockWorkflows[0].name}" was executed correctly`
+                    `The action "${mockWorkflowsActions[0].name}" was executed correctly`
                 );
             });
 
