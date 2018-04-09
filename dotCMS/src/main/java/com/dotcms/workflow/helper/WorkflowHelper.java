@@ -599,7 +599,7 @@ public class WorkflowHelper {
     }
 
     /**
-     * Finds the non-archived schemes
+     * Finds the all the schemes if showArchived is true, otherwise it return only non-archived schemes
      * @return List
      */
     public List<WorkflowScheme> findSchemes(boolean showArchived) {
