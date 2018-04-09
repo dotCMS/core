@@ -161,7 +161,7 @@ public class WorkflowHelper {
     @CloseDBIfOpened
     public List<WorkflowAction> findAvailableActions(final String inode, final User user) {
         try {
-            Logger.debug(this, "Asking for the available actions for the inode: " + inode);
+            Logger.debug(this, ()->"Asking for the available actions for the inode: " + inode);
 
             if (!UtilMethods.isSet(inode)) {
                 throw new IllegalArgumentException("Missing required parameter inode.");
@@ -203,15 +203,15 @@ public class WorkflowHelper {
     }
 
     /**
-     *
-     * @param actionId
-     * @param stepId
-     * @param user
-     * @return
+     * Finds an action by step.
+     * @param actionId String
+     * @param stepId   String
+     * @param user     User
+     * @return WorkflowAction
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    public WorkflowAction findAction(String actionId, String stepId, User user) throws DotDataException, DotSecurityException{
+    public WorkflowAction findAction(final String actionId, final String stepId, final User user) throws DotDataException, DotSecurityException{
 
         if (!UtilMethods.isSet(actionId) || !UtilMethods.isSet(stepId)) {
             throw new IllegalArgumentException("Missing required parameter actionId or stepId.");
@@ -254,7 +254,7 @@ public class WorkflowHelper {
         WorkflowStep step = null;
 
         try {
-            Logger.debug(this, "Looking for the actionId: "
+            Logger.debug(this, () -> "Looking for the actionId: "
                     + workflowReorderActionStepForm.getActionId());
             action = this.workflowAPI.findAction(workflowReorderActionStepForm.getActionId(), user);
         } catch (Exception e) {
@@ -263,7 +263,7 @@ public class WorkflowHelper {
         }
 
         try {
-            Logger.debug(this, "Looking for the stepId: "
+            Logger.debug(this, () -> "Looking for the stepId: "
                     + workflowReorderActionStepForm.getStepId());
             step = this.workflowAPI.findStep(workflowReorderActionStepForm.getStepId());
         } catch (Exception e) {
@@ -279,7 +279,7 @@ public class WorkflowHelper {
             throw new DoesNotExistException("Workflow-does-not-exists-step");
         }
 
-        Logger.debug(this, "Reordering the action: " + action.getId()
+        Logger.debug(this,  "Reordering the action: " + action.getId()
                 + " for the stepId: " + step.getId() + ", order: " +
                 workflowReorderActionStepForm.getOrder()
         );
@@ -311,10 +311,10 @@ public class WorkflowHelper {
 
         try {
 
-            Logger.debug(this, "Looking for the stepId: " + stepId);
+            Logger.debug(this, () -> "Looking for the stepId: " + stepId);
             step = this.workflowAPI.findStep(stepId);
 
-            Logger.debug(this, "Reordering the stepId: "  + stepId +
+            Logger.debug(this, () -> "Reordering the stepId: "  + stepId +
                             ", order: " + order);
             this.workflowAPI.reorderStep(step, order, user);
         } catch (DotDataException | AlreadyExistException | DotSecurityException e) {
@@ -356,9 +356,12 @@ public class WorkflowHelper {
         final String schemeId = workflowStepUpdateForm.getSchemeId();
         WorkflowStep step = new WorkflowStep();
         step = populateStep(step, workflowStepUpdateForm);
-        step.setSchemeId(schemeId);
+
         try {
-            final List<WorkflowStep> steps = workflowAPI.findSteps(workflowAPI.findScheme(schemeId));
+            final WorkflowScheme scheme    = workflowAPI.findScheme(schemeId);
+            final List<WorkflowStep> steps = workflowAPI.findSteps(scheme);
+            step.setSchemeId(scheme.getId());
+
             final Optional<WorkflowStep> optional = steps.stream().max(Comparator.comparing(WorkflowStep::getMyOrder));
             step.setMyOrder(
                     optional.map(workflowStep -> (workflowStep.getMyOrder() + 1)).orElse(0)
@@ -475,13 +478,13 @@ public class WorkflowHelper {
             throw new IllegalArgumentException("Missing required parameter actionId.");
         }
 
-        Logger.debug(this, "Looking for the action: " + actionId);
+        Logger.debug(this, () -> "Looking for the action: " + actionId);
         final WorkflowAction action = this.workflowAPI.findAction(actionId, user);
 
         if (null != action) {
 
             try {
-                Logger.debug(this, "Deleting the action: " + actionId);
+                Logger.debug(this, () -> "Deleting the action: " + actionId);
                 this.workflowAPI.deleteAction(action, user);
             } catch (DotDataException | AlreadyExistException e) {
 
@@ -520,11 +523,11 @@ public class WorkflowHelper {
 
         try {
 
-            Logger.debug(this, "Looking for the actionId: " + actionId);
+            Logger.debug(this, () -> "Looking for the actionId: " + actionId);
             action =
                     this.workflowAPI.findAction(actionId, user);
 
-            Logger.debug(this, "Looking for the stepId: " + stepId);
+            Logger.debug(this, () -> "Looking for the stepId: " + stepId);
             step =
                     this.workflowAPI.findStep(stepId);
 
@@ -536,7 +539,7 @@ public class WorkflowHelper {
                 throw new DoesNotExistException("Workflow-does-not-exists-step");
             }
 
-            Logger.debug(this, "Deleting the action: " + actionId
+            Logger.debug(this, () -> "Deleting the action: " + actionId
                     + " for the stepId: " + stepId);
 
             this.workflowAPI.deleteAction(action, step, user);
@@ -562,7 +565,7 @@ public class WorkflowHelper {
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
         try {
 
-            Logger.debug(this, "Getting the schemes by content type: " + contentTypeId);
+            Logger.debug(this, () -> "Getting the schemes by content type: " + contentTypeId);
 
             return this.workflowAPI.findSchemesForContentType
                     (contentTypeAPI.find(contentTypeId));
@@ -581,7 +584,7 @@ public class WorkflowHelper {
 
         try {
 
-            Logger.debug(this, String.format("Saving the schemes: %s by content type: %s",
+            Logger.debug(this, () -> String.format("Saving the schemes: %s by content type: %s",
                     String.join(",", workflowIds), contentTypeId));
 
             this.workflowAPI.saveSchemeIdsForContentType(contentTypeAPI.find(contentTypeId), workflowIds);
@@ -604,7 +607,7 @@ public class WorkflowHelper {
 
         try {
 
-            Logger.debug(this, "Getting all non-archived schemes");
+            Logger.debug(this, () -> "Getting all non-archived schemes");
             schemes =
                     this.workflowAPI.findSchemes(false);
         } catch (DotDataException e) {
@@ -628,14 +631,14 @@ public class WorkflowHelper {
 
         List<WorkflowAction> actions = null;
 
-        Logger.debug(this, "Looking for the stepId: " + stepId);
+        Logger.debug(this, () -> "Looking for the stepId: " + stepId);
         WorkflowStep workflowStep = this.workflowAPI.findStep(stepId);
 
         if (null != workflowStep) {
 
             try {
 
-                Logger.debug(this, "Looking for the actions associated to the step: " + stepId);
+                Logger.debug(this, () -> "Looking for the actions associated to the step: " + stepId);
                 actions = this.workflowAPI.findActions(workflowStep, user);
             } catch (DotDataException | DotSecurityException e) {
 
@@ -658,7 +661,7 @@ public class WorkflowHelper {
     public List<WorkflowStep> findSteps(final String schemeId)
             throws DotSecurityException, DotDataException {
 
-        Logger.debug(this, "Looking for the schemeId: " + schemeId);
+        Logger.debug(this, () -> "Looking for the schemeId: " + schemeId);
 
         if (!UtilMethods.isSet(schemeId)) {
             throw new IllegalArgumentException("Missing required parameter schemeId.");
@@ -703,7 +706,7 @@ public class WorkflowHelper {
             isNew = !(origAction !=null || !origAction.isNew());
         } catch (Exception e) {
 
-            Logger.debug(this.getClass(), "Unable to find action" + actionId);
+            Logger.debug(this.getClass(), () -> "Unable to find action" + actionId);
         }
 
         return new IsNewAndCloneItResult(isNew, newAction);
@@ -748,13 +751,13 @@ public class WorkflowHelper {
             throw new IllegalArgumentException("Missing required parameter schemeId.");
         }
         final List<WorkflowAction> actions;
-        final WorkflowScheme workflowSchemeProxy = new WorkflowScheme();
+        WorkflowScheme scheme = null;
 
         try {
 
-            workflowSchemeProxy.setId(schemeId);
+            scheme  = this.workflowAPI.findScheme(schemeId);
             actions =
-                    this.workflowAPI.findActions(workflowSchemeProxy, (null == user)?
+                    this.workflowAPI.findActions(scheme, (null == user)?
                             APILocator.getUserAPI().getSystemUser(): user);
         } catch (DotDataException | DotSecurityException e) {
 
@@ -814,7 +817,7 @@ public class WorkflowHelper {
                 }
             }
 
-            Logger.debug(this, "Saving new Action: " + newAction.getName());
+            Logger.debug(this, () -> "Saving new Action: " + newAction.getName());
             this.workflowAPI.saveAction(newAction, permissions, user);
 
             if(isNew) {
@@ -822,13 +825,13 @@ public class WorkflowHelper {
                 // if should be associated to a stepId right now
                 if (UtilMethods.isSet(workflowActionForm.getStepId())) {
 
-                    Logger.debug(this, "The Action: " + newAction.getId() +
+                    Logger.debug(this, () -> "The Action: " + newAction.getId() +
                             ", is going to be associated to the step: " + workflowActionForm.getStepId());
                     this.workflowAPI.saveAction(newAction.getId(),
                             workflowActionForm.getStepId(), user);
                 }
 
-                Logger.debug(this, "Saving new WorkflowActionClass, for the Workflow action: "
+                Logger.debug(this, () -> "Saving new WorkflowActionClass, for the Workflow action: "
                         + newAction.getId());
 
                 addSyncCommitListener(() -> {
@@ -942,7 +945,7 @@ public class WorkflowHelper {
         final ImmutableList.Builder<WorkflowDefaultActionView> results = new ImmutableList.Builder<>();
         try {
 
-            Logger.debug(this, "Getting the available default workflows actions by content type: " + contentTypeId);
+            Logger.debug(this, () -> "Getting the available default workflows actions by content type: " + contentTypeId);
             //When no license is available. This should get the system workflow.
             final List<WorkflowAction> actions = this.workflowAPI.findAvailableDefaultActionsByContentType(contentTypeAPI.find(contentTypeId), user);
             for (final WorkflowAction action : actions){
@@ -978,7 +981,7 @@ public class WorkflowHelper {
         final ImmutableList.Builder<WorkflowDefaultActionView> results = new ImmutableList.Builder<>();
         try {
             Logger.debug(this,
-                    "Getting the available workflows default actions by schemeIds: " + schemeIds);
+                    () -> "Getting the available workflows default actions by schemeIds: " + schemeIds);
 
             //If no valid license is found we simply return the system wf.
             if (!workflowAPI.hasValidLicense()) {
@@ -1029,7 +1032,7 @@ public class WorkflowHelper {
         try {
 
             Logger.debug(this,
-                    "Asking for the available actions for the content type Id: " + contentTypeId);
+                    () -> "Asking for the available actions for the content type Id: " + contentTypeId);
             final ContentType contentType = contentTypeAPI.find(contentTypeId);
 
             if (null == contentType) {
@@ -1074,7 +1077,7 @@ public class WorkflowHelper {
                 final WorkflowScheme origScheme = this.workflowAPI.findScheme(schemeId);
                 BeanUtils.copyProperties(newScheme, origScheme);
             } catch (Exception e) {
-                Logger.debug(this.getClass(), "Unable to find scheme" + schemeId);
+                Logger.debug(this.getClass(), () -> "Unable to find scheme" + schemeId);
                 throw new DoesNotExistException(e.getMessage(), e);
             }
         }
