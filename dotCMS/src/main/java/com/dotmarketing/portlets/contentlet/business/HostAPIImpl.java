@@ -386,7 +386,8 @@ public class HostAPIImpl implements HostAPI {
             c = new Contentlet();
             c.setStructureInode(hostType().inode() );
         }
-        APILocator.getContentletAPI().copyProperties(c, host.getMap());;
+        c.getMap().put(Contentlet.DONT_VALIDATE_ME, host.getMap().get(Contentlet.DONT_VALIDATE_ME));
+        APILocator.getContentletAPI().copyProperties(c, host.getMap());
         c.setInode("");
         c = APILocator.getContentletAPI().checkin(c, user, respectFrontendRoles);
 
