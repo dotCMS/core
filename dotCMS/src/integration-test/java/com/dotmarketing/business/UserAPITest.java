@@ -2,6 +2,7 @@ package com.dotmarketing.business;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.notifications.bean.Notification;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.TimeUtil;
@@ -597,6 +598,10 @@ public class UserAPITest extends IntegrationTestBase {
 		CacheLocator.getFolderCache().removeFolder(testFolder, identifierAPI.find(testFolder.getIdentifier()));
 		testFolder = folderAPI.findFolderByPath(testFolder.getPath(), host, systemUser, false);
 		assertTrue(testFolder.getOwner().equals(replacementUser.getUserId()));
+
+		APILocator.getContentTypeAPI(systemUser).delete(new StructureTransformer(st).from());
+		conAPI.archive(contentAsset,systemUser,false);
+		conAPI.delete(contentAsset,systemUser,false);
 	}
 
 	private void waitForDeleteCompletedNotification(User userToDelete) throws DotDataException, InterruptedException {

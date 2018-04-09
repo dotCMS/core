@@ -1495,38 +1495,44 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	private void saveWorkflowTask(final WorkflowProcessor processor) throws DotDataException {
 
-		final WorkflowTask task = processor.getTask();
-		if(task != null){
-            Role r = roleAPI.getUserRole(processor.getUser());
-            if(task.isNew()){
+		WorkflowTask task = processor.getTask();
 
-            	DotPreconditions.isTrue(UtilMethods.isSet(processor.getContentlet().getIdentifier()),
-						() -> getWorkflowContentNeedsBeSaveMessage(processor.getUser()), DotWorkflowException.class);
+		if (null == task) {
+			task = new WorkflowTask();
+		}
 
-                task.setCreatedBy(r.getId());
-                task.setWebasset(processor.getContentlet().getIdentifier());
-                task.setLanguageId(processor.getContentlet().getLanguageId());
-                if(processor.getWorkflowMessage() != null){
-                    task.setDescription(processor.getWorkflowMessage());
-                }
-            }
-            task.setTitle(processor.getContentlet().getTitle());
-            task.setModDate(new Date());
-            if(processor.getNextAssign() != null)
-                task.setAssignedTo(processor.getNextAssign().getId());
-            task.setStatus(processor.getNextStep().getId());
+		final Role r = roleAPI.getUserRole(processor.getUser());
+		if (task.isNew()) {
 
-            saveWorkflowTask(task,processor);
-            if(processor.getWorkflowMessage() != null){
-                WorkflowComment comment = new WorkflowComment();
-                comment.setComment(processor.getWorkflowMessage());
+			DotPreconditions.isTrue(UtilMethods.isSet(processor.getContentlet().getIdentifier()),
+					() -> getWorkflowContentNeedsBeSaveMessage(processor.getUser()),
+					DotWorkflowException.class);
 
-                comment.setWorkflowtaskId(task.getId());
-                comment.setCreationDate(new Date());
-                comment.setPostedBy(r.getId());
-                saveComment(comment);
-            }
-        }
+			task.setCreatedBy(r.getId());
+			task.setWebasset(processor.getContentlet().getIdentifier());
+			task.setLanguageId(processor.getContentlet().getLanguageId());
+			if (processor.getWorkflowMessage() != null) {
+				task.setDescription(processor.getWorkflowMessage());
+			}
+		}
+		task.setTitle(processor.getContentlet().getTitle());
+		task.setModDate(new Date());
+		if (processor.getNextAssign() != null) {
+			task.setAssignedTo(processor.getNextAssign().getId());
+		}
+		task.setStatus(processor.getNextStep().getId());
+
+		saveWorkflowTask(task, processor);
+		if (processor.getWorkflowMessage() != null) {
+			WorkflowComment comment = new WorkflowComment();
+			comment.setComment(processor.getWorkflowMessage());
+
+			comment.setWorkflowtaskId(task.getId());
+			comment.setCreationDate(new Date());
+			comment.setPostedBy(r.getId());
+			saveComment(comment);
+		}
+
 	}
 
 	// todo: note; this method is not referer by anyone, should it be removed?
