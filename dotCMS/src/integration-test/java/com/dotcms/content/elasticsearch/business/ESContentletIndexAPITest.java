@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -310,41 +311,6 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
     }
 
     /**
-     * Testing {@link ContentletIndexAPI#getRidOfOldIndex()}
-     *
-     * @throws Exception
-     * @see ContentletIndexAPI
-     * @see ESContentletIndexAPI
-     */
-    @Test
-    public void getRidOfOldIndex () throws Exception {
-        /*
-        ContentletIndexAPI indexAPI = APILocator.getContentletIndexAPI();
-
-        List<String> oldIndices = indexAPI.getCurrentIndex();
-        //Validate
-        assertNotNull( oldIndices );
-        assertTrue( !oldIndices.isEmpty() );
-
-        indexAPI.getRidOfOldIndex();
-
-        List<String> indices = indexAPI.getCurrentIndex();
-        //Validate
-        assertNotNull( indices );
-        assertTrue( !indices.isEmpty() );
-
-        assertNotSame( oldIndices, indices );
-
-        indices = indexAPI.getNewIndex();
-        //Validate
-        assertNotNull( indices );
-        assertTrue( indices.isEmpty() );
-        */
-
-        // this blows up everything. do not try at home
-    }
-
-    /**
      * Testing the {@link ContentletIndexAPI#addContentToIndex(com.dotmarketing.portlets.contentlet.model.Contentlet)},
      * {@link ContentletIndexAPI#removeContentFromIndex(com.dotmarketing.portlets.contentlet.model.Contentlet)} methods
      *
@@ -394,6 +360,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
         } finally {
             APILocator.getContentletAPI().archive( testContentlet, user, false );
             APILocator.getContentletAPI().delete( testContentlet, user, false );
+            APILocator.getContentTypeAPI(user).delete(new StructureTransformer(testStructure).from());
         }
     }
 
@@ -445,6 +412,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
         } finally {
             APILocator.getContentletAPI().archive( testContentlet, user, false );
             APILocator.getContentletAPI().delete( testContentlet, user, false );
+            APILocator.getContentTypeAPI(user).delete(new StructureTransformer(testStructure).from());
         }
     }
 
@@ -593,6 +561,9 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
             assertEquals(0, siteSearchResults.getTotalResults());
         } finally {
             //And finally remove the index
+            APILocator.getContentTypeAPI(user).delete(new StructureTransformer(testStructure).from());
+            APILocator.getContentletAPI().archive(testHtmlPage,user,false);
+            APILocator.getContentletAPI().delete(testHtmlPage,user,false);
             siteSearchAPI.deleteFromIndex( indexName, docId );
         }
     }

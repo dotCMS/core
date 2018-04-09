@@ -136,17 +136,22 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		int runs = 20;
 
 		for (int i = 0; i < runs; i++) {
-			long time = System.currentTimeMillis() + i;
 			int base = (i % 5) + 1;
 			Thread.sleep(1);
 			ContentType type = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(base))
-					.description("description" + time).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
-					.name("ContentTypeTestingWithFields" + time).owner("owner").variable("velocityVarNameTesting" + time).build();
+					.description("description" + i).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+					.name("ContentTypeTestingWithFields" + i).owner("owner").variable("velocityVarNameTesting" + i).build();
 			type = contentTypeApi.save(type);
 			addFields(type);
 		}
 		int count2 = contentTypeApi.count();
 		assertThat("contenttypes are added", count == count2 - runs);
+
+		for(int i=0;i<runs;i++){
+			ContentType type = contentTypeApi.find("velocityVarNameTesting"+i);
+			contentTypeApi.delete(type);
+		}
+
 	}
 
 	@Test
@@ -162,6 +167,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 	@Test
 	public void testDefaultType() throws DotDataException, DotSecurityException {
 
+		ContentType defaultContentType = contentTypeApi.findDefault();
 		long time = System.currentTimeMillis();
 		ContentType initialDefaultType = contentTypeApi.save(ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
 				.description("description" + time).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
@@ -173,10 +179,13 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 				.description("description" + time).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
 				.name("ContentTypeDefault2" + time).owner("owner").variable("velocityVarNameDefault2" + time).build());
 		contentTypeApi.setAsDefault(newDefaultType);
-		newDefaultType = contentTypeApi.findDefault();
 		assertThat("there is a new default content type", newDefaultType.inode().equals(contentTypeApi.findDefault().inode()));
 
 		assertThat("existing content type is not default anymore", initialDefaultType != null && !contentTypeApi.find(initialDefaultType.inode()).defaultType());
+
+		contentTypeApi.setAsDefault(defaultContentType);
+		contentTypeApi.delete(initialDefaultType);
+		contentTypeApi.delete(newDefaultType);
 	}
 
 	@Test
