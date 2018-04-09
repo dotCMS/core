@@ -30,12 +30,10 @@
 	params.put("struts_action",new String[] {"/ext/contentlet/view_contentlets_popup"});
 	String viewContentsPopupURL = PortletURLUtil.getActionURL(request, WindowState.MAXIMIZED.toString(), params);
 
-	DateFormat modDateFormat = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, user.getLocale());
+	DateFormat modDateFormat = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, locale);
 	modDateFormat.setTimeZone(timeZone);
 
-	Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifier(request.getParameter("contentletId"), false, -1, user, false);
-	
-	
+	Contentlet contentlet = (Contentlet) request.getAttribute("contentlet");
 	String contentletInode = String.valueOf(contentlet.getInode());
 	Map con = contentlet.getMap();
 
@@ -74,24 +72,8 @@
 <%
 	}
 
-	ContentletRelationships cRelationships = APILocator.getContentletAPI().getAllRelationships(contentlet);
-	List<ContentletRelationships.ContentletRelationshipRecords> relationshipRecords = cRelationships.getRelationshipsRecords();
-	Map<String, List<Contentlet>>
-	for(ContentletRelationshipRecords contentletRelationshipRecords: relationshipRecords){
-		List<Contentlet> contentletsList = contentletRelationshipRecords.getRecords();
-		String relInode = contentletRelationshipRecords.getRelationship().getInode();
-		List<Contentlet>
-		for(Contentlet con: contentletsList){
-		    
-		    
-		    
-		}
-		
-		
-		
-		
-		
-	List<ContentletRelationships.ContentletRelationshipRecords> relationshipRecords = API
+	List<ContentletRelationships.ContentletRelationshipRecords> relationshipRecords =
+		(List<ContentletRelationships.ContentletRelationshipRecords>) request.getAttribute("relationshipRecords");
 	if (relationshipRecords.size() > 0) {
 
 		List<ContentletRelationships.ContentletRelationshipRecords> sortList = new ArrayList<ContentletRelationships.ContentletRelationshipRecords>();
