@@ -253,7 +253,9 @@
                     handleAs : "json",
                     sync: false,
                     load : function(data) {
-						actionPanelTable.nodeData=data;
+                        if (!data && data.length > 0) {
+                            actionPanelTable.nodeData = data;
+                        }
 						actionPanelTable.drawNodeTable();
 						actionPanelTable.toggle();
                     },
@@ -313,7 +315,7 @@
                     + "</tr>";
 
                     if(nodeList ==undefined){
-                    	  nodesTableHTML += "<tr><td colspan='8' id='row-" + this.myServerId + "' style=''><div class='loader'></div></td></tr>";
+                    	  nodesTableHTML += "<tr><td colspan='8' id='row-" + this.myServerId + "' style=''><%= LanguageUtil.get(pageContext, "configuration_cluster_no_nodes_found") %></td></tr>";
                     	  
                     	
                     	
