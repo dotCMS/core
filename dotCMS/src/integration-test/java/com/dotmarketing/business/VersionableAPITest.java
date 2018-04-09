@@ -109,9 +109,15 @@ public class VersionableAPITest {
 		//Create Contentlet
 		Structure structure = new StructureDataGen().nextPersisted();
 		Contentlet contentlet = new ContentletDataGen(structure.getInode()).nextPersisted();
-        
-        //Call Versionable
-        Versionable verAPI = APILocator.getVersionableAPI().findWorkingVersion(contentlet.getIdentifier(), user, false);
+
+		try {
+			//Call Versionable
+			Versionable verAPI = APILocator.getVersionableAPI()
+					.findWorkingVersion(contentlet.getIdentifier(), user, false);
+		}finally {
+			StructureDataGen.remove(structure);
+		}
+
 	}
 	
 	@Test
@@ -176,9 +182,13 @@ public class VersionableAPITest {
 		//Create Contentlet
 		Structure structure = new StructureDataGen().nextPersisted();
 		Contentlet contentlet = new ContentletDataGen(structure.getInode()).nextPersisted();
-        
-        //Call Versionable
-        Versionable verAPI = APILocator.getVersionableAPI().findLiveVersion(contentlet.getIdentifier(), user, false);
+        try {
+			//Call Versionable
+			Versionable verAPI = APILocator.getVersionableAPI()
+					.findLiveVersion(contentlet.getIdentifier(), user, false);
+		}finally {
+        	StructureDataGen.remove(structure);
+		}
 	}
 
 }
