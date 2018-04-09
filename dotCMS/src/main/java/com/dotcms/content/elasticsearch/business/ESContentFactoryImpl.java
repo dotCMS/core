@@ -808,13 +808,29 @@ public class ESContentFactoryImpl extends ContentletFactory {
         return cons;
 	}
 
+    @Override
+    protected List<Contentlet> findAllVersions(Identifier identifier) throws DotDataException, DotStateException, DotSecurityException {
+        return findAllVersions(identifier, true);
+    }
+
 	@Override
-	protected List<Contentlet> findAllVersions(Identifier identifier) throws DotDataException, DotStateException, DotSecurityException {
+	protected List<Contentlet> findAllVersions(Identifier identifier, boolean includeAllVersions) throws DotDataException, DotStateException, DotSecurityException {
 	    if(!InodeUtils.isSet(identifier.getInode()))
             return new ArrayList<Contentlet>();
 
         DotConnect dc = new DotConnect();
-        dc.setSQL("SELECT inode FROM contentlet WHERE identifier=? order by mod_date desc");
+        StringBuffer query = new StringBuffer();
+
+        if(includeAllVersions) {
+            query.append("SELECT inode FROM contentlet WHERE identifier=? order by mod_date desc");
+
+        } else {
+            query.append("SELECT inode FROM contentlet c INNER JOIN contentlet_version_info cvi "
+                    + "ON (c.inode = cvi.working_inode OR c.inode = cvi.live_inode) "
+                    + "WHERE c.identifier=? order by c.mod_date desc ");
+        }
+
+        dc.setSQL(query.toString());
         dc.addObject(identifier.getId());
         List<Map<String,Object>> list=dc.loadObjectResults();
         ArrayList<String> inodes=new ArrayList<String>(list.size());

@@ -974,6 +974,19 @@ public interface ContentletAPIPreHook {
 	public default boolean findAllVersions(Identifier identifier, User user, boolean respectFrontendRoles){
       return true;
     }
+
+	/**
+	 * Retrieves all versions for a contentlet identifier
+	 * Note this method should not be used currently because it could pull too many versions.
+	 * @param identifier
+	 * @param bringOldVersions
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return
+	 */
+	public default boolean findAllVersions(Identifier identifier, boolean bringOldVersions, User user, boolean respectFrontendRoles){
+		return true;
+	}
 	
 	/**
 	 * Retrieves all versions for a contentlet identifier checked in by a real user meaning not the system user

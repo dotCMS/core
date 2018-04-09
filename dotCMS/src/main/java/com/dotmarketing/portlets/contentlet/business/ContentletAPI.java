@@ -1136,10 +1136,10 @@ public interface ContentletAPI {
 	 * @throws DotSecurityException 
 	 */
 	public void restoreVersion(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException, DotContentletStateException, DotDataException;
-	
+
 	/**
 	 * Retrieves all versions for a contentlet identifier
-	 * Note this method should not be used currently because it could pull too many versions. 
+	 * Note this method should not be used currently because it could pull too many versions.
 	 * @param identifier
 	 * @param user
 	 * @param respectFrontendRoles
@@ -1148,8 +1148,24 @@ public interface ContentletAPI {
 	 * @throws DotDataException
 	 * @throws DotStateException if the identifier is for contentlet
 	 */
+
 	public List<Contentlet> findAllVersions(Identifier identifier, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotStateException;
-	
+
+	/**
+	 * Retrieves all versions for a contentlet identifier
+	 * Note this method should not be used currently because it could pull too many versions.
+	 * @param identifier
+	 * @param bringOldVersions
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 * @throws DotStateException if the identifier is for contentlet
+	 */
+
+	public List<Contentlet> findAllVersions(Identifier identifier, boolean bringOldVersions, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotStateException;
+
 	/**
 	 * Retrieves all versions for a contentlet identifier checked in by a real user meaning not the system user
 	 * @param identifier
@@ -1160,6 +1176,7 @@ public interface ContentletAPI {
 	 * @throws DotDataException
 	 * @throws DotStateException if the identifier is for contentlet
 	 */
+
 	public List<Contentlet> findAllUserVersions(Identifier identifier, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotStateException;
 	
 	/**
