@@ -1501,7 +1501,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			task = new WorkflowTask();
 		}
 
-		Role r = roleAPI.getUserRole(processor.getUser());
+		final Role r = roleAPI.getUserRole(processor.getUser());
 		if (task.isNew()) {
 
 			DotPreconditions.isTrue(UtilMethods.isSet(processor.getContentlet().getIdentifier()),

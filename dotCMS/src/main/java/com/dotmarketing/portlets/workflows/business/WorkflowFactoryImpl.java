@@ -435,7 +435,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		db.setSQL(sql.SELECT_COUNT_CONTENTLES_BY_STEP);
 		db.addParam(step.getId());
 		Map<String,Object> res = db.loadObjectResults().get(0);
-		return Integer.parseInt(String.valueOf(res.get("count")));
+		return ConversionUtils.toInt(res.get("count"), 0);
 	}
 
 	@Override
