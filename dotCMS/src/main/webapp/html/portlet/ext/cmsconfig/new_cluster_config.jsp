@@ -253,10 +253,13 @@
                     handleAs : "json",
                     sync: false,
                     load : function(data) {
-                        if (data && data.length > 0) {
+                        if (data != undefined && data.length > 0) {
                             actionPanelTable.nodeData = data;
+                            actionPanelTable.drawNodeTable();
+                        } else {
+                            dojo.removeClass('loader', 'loader');
+                            dojo.byId('loader').innerHTML = '<%= LanguageUtil.get(pageContext, "configuration_cluster_no_nodes_found") %>';
                         }
-						actionPanelTable.drawNodeTable();
 						actionPanelTable.toggle();
                     },
                     error : function(error) {
@@ -315,9 +318,7 @@
                     + "</tr>";
 
                     if(nodeList ==undefined){
-                    	  nodesTableHTML += "<tr><td colspan='8' id='row-" + this.myServerId + "' style=''><%= LanguageUtil.get(pageContext, "configuration_cluster_no_nodes_found") %></td></tr>";
-                    	  
-                    	
+                        nodesTableHTML += "<tr><td colspan='8' id='row-" + this.myServerId + "' style=''><div class='loader' id='loader'></div></td></tr>";
                     	
                     }
                     
