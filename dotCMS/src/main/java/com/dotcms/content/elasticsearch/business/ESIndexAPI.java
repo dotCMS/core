@@ -514,8 +514,6 @@ public class ESIndexAPI {
                 jsonBuilder().startObject()
                      .startObject("index")
                         .field("number_of_replicas",0)
-						.endObject()
-						.startObject("cluster")
                         .field("routing.allocation.include._name",nodeName)
                      .endObject()
                .endObject().string(), XContentType.JSON)).actionGet();
@@ -523,11 +521,11 @@ public class ESIndexAPI {
 
     public static int getReplicasCount(){
 
-		int nReplicas = 1;
+		int nReplicas = 0;
 		final String replicasMode = getReplicasMode();
 
 		if (LicenseUtil.getLevel() <= LicenseLevel.STANDARD.level){
-			return 0;
+			return nReplicas;
 		}
 
 		if (replicasMode.equals(ReplicasMode.AUTOWIRE.getReplicasMode())){
@@ -601,16 +599,15 @@ public class ESIndexAPI {
 
 		if (nReplicas >= 0){
 			builder.field("number_of_replicas",nReplicas);
-			builder.field("auto_expand_replicas",false).endObject();
+			builder.field("auto_expand_replicas",false);
 		}else{
-			builder.field("auto_expand_replicas",ReplicasMode.NO_BOUNDARY.getReplicasMode()).endObject();
+			builder.field("auto_expand_replicas",ReplicasMode.NO_BOUNDARY.getReplicasMode());
 		}
 
         client.admin().indices().updateSettings(
-          new UpdateSettingsRequest(index).settings(builder.startObject("cluster")
-                        .field("routing.allocation.include._name","*")
-                     .endObject()
-               .endObject().string(), XContentType.JSON)).actionGet();
+          new UpdateSettingsRequest(index).settings(builder
+				  .field("routing.allocation.include._name","*").endObject()
+				  .endObject().string(), XContentType.JSON)).actionGet();
     }
 
     /**
