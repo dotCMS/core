@@ -594,11 +594,15 @@ public class WorkflowHelper {
 
     }
 
+    public List<WorkflowScheme> findSchemes() {
+        return findSchemes(false);
+    }
+
     /**
-     * Finds the non-archived schemes
+     * Finds the all the schemes if showArchived is true, otherwise it return only non-archived schemes
      * @return List
      */
-    public List<WorkflowScheme> findSchemes() {
+    public List<WorkflowScheme> findSchemes(boolean showArchived) {
 
         List<WorkflowScheme> schemes = null;
 
@@ -606,7 +610,7 @@ public class WorkflowHelper {
 
             Logger.debug(this, "Getting all non-archived schemes");
             schemes =
-                    this.workflowAPI.findSchemes(false);
+                    this.workflowAPI.findSchemes(showArchived);
         } catch (DotDataException e) {
 
             Logger.error(this, e.getMessage());
@@ -1057,7 +1061,7 @@ public class WorkflowHelper {
 
 
     /**
-     * Saves an existing sheme or create a new one
+     * Saves an existing scheme or create a new one
      * @param schemeId a new scheme is created when null is passed otherwise attempts to update one
      * @param workflowSchemeForm
      * @param user

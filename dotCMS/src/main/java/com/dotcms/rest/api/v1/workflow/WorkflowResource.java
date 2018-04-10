@@ -162,9 +162,8 @@ public class WorkflowResource {
             Logger.debug(this,
                     "Getting the workflow schemes for the contentTypeId: " + contentTypeId);
             final List<WorkflowScheme> schemes = (null != contentTypeId) ?
-                    this.workflowHelper.findSchemesByContentType
-                            (contentTypeId, initDataObject.getUser()) :
-                    this.workflowHelper.findSchemes();
+                    this.workflowHelper.findSchemesByContentType(contentTypeId, initDataObject.getUser()):
+                    this.workflowHelper.findSchemes(true);
 
             return Response.ok(new ResponseEntityView(schemes)).build(); // 200
         } catch (Exception e) {
