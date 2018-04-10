@@ -1057,7 +1057,7 @@ public class WorkflowHelper {
 
 
     /**
-     * Saves an existing sheme or create a new one
+     * Saves an existing scheme or create a new one
      * @param schemeId a new scheme is created when null is passed otherwise attempts to update one
      * @param workflowSchemeForm
      * @param user
