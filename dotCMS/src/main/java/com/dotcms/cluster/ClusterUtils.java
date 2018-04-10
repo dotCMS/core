@@ -17,9 +17,11 @@ public class ClusterUtils {
 	}
 
 	public static boolean isESAutoWireReplicas(){
-		String replicasConf = Config.getStringProperty("ES_INDEX_REPLICAS", null);
+		final String replicasConf = Config.getStringProperty("ES_INDEX_REPLICAS", null);
 		return isESAutoWire()
-			&& UtilMethods.isSet(replicasConf) && replicasConf.equals(ReplicasMode.AUTOWIRE.getReplicasMode()) && LicenseUtil.getLevel()> 200;
+			&& UtilMethods.isSet(replicasConf) &&
+				replicasConf.equals(ReplicasMode.AUTOWIRE.getReplicasMode()) &&
+				LicenseUtil.getLevel()> 200;
 	}
 
 	public static boolean isReplicasSet(){

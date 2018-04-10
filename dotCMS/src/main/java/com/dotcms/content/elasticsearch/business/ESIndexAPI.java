@@ -129,14 +129,14 @@ public class ESIndexAPI {
 	public enum ReplicasMode { AUTOWIRE("autowire"), NO_BOUNDARY("0-all"), EMPTY("empty");
 		private final String replicasMode;
 
-		ReplicasMode(String replicasMode) {
+		ReplicasMode(final String replicasMode) {
 			this.replicasMode = replicasMode;
 		}
 
 		public String getReplicasMode() {
 			return replicasMode;
 		}
-	};
+	}
 
 	public ESIndexAPI(){
 		this.esclient = new ESClient();
@@ -394,7 +394,7 @@ public class ESIndexAPI {
 			// also let it go other servers
 			moveIndexBackToCluster(index);
 
-            ArrayList<String> list=new ArrayList<>();
+            final List<String> list=new ArrayList<>();
             list.add(index);
             iapi.optimize(list);
 
