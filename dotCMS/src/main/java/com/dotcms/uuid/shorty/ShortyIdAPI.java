@@ -45,7 +45,7 @@ public interface ShortyIdAPI {
     /**
      * Encapsulates the entities supported by shorty api.
      */
-    enum ShortyInputType { 
+    enum ShortyInputType {
         CONTENT, WORKFLOW_SCHEME, WORKFLOW_STEP, WORKFLOW_ACTION
     }
 
