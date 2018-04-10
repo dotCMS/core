@@ -3,6 +3,7 @@
  */
 package com.dotmarketing.quartz.job;
 
+import com.dotcms.business.CloseDBIfOpened;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -26,10 +27,7 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.VersionableAPI;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
@@ -103,7 +101,8 @@ public class CascadePermissionsJob implements Job {
 	public CascadePermissionsJob() {
 		
 	}
-	
+
+	@CloseDBIfOpened
 	public void execute(JobExecutionContext jobContext) throws JobExecutionException {
 		
 	    Permissionable permissionable;
@@ -123,16 +122,6 @@ public class CascadePermissionsJob implements Job {
 		} catch (DotSecurityException e) {
 			Logger.error(CascadePermissionsJob.class, e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(), e);
-		}
-		finally {
-		    try {
-                HibernateUtil.closeSession();
-            } catch (DotHibernateException e) {
-                Logger.warn(this, e.getMessage(), e);
-            }
-            finally {
-                DbConnectionFactory.closeConnection();
-            }
 		}
 	}
 	

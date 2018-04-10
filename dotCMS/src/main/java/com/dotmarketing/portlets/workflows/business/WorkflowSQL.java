@@ -106,6 +106,7 @@ abstract class WorkflowSQL {
 
     protected static String SELECT_EXPIRED_TASKS = "";
 
+	protected static String SELECT_TASK = "SELECT * FROM workflow_task WHERE webasset = ? AND language_id = ?";
     protected static String SELECT_TASKS_BY_STEP="select * from workflow_task where status = ?";
 	protected static String SELECT_STRUCTS_FOR_SCHEME="select st.* from structure st join workflow_scheme_x_structure wss on st.inode = wss.structure_id where wss.scheme_id = ?";
     protected static String DELETE_STRUCTS_FOR_SCHEME="delete from workflow_scheme_x_structure where scheme_id = ?";

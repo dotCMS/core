@@ -51,7 +51,7 @@ import com.liferay.portal.model.User;
  * This job is triggered from the Content Type edition portlet, when clicking
  * the {@code Delete} button of any field.
  * <p>
- * 
+ *
  * @author Daniel Silva
  * @version 3.5.1
  * @since Apr 26, 2016
@@ -93,7 +93,7 @@ public class DeleteFieldJob extends DotStatefulJob {
     /**
 	 * Specifies the execution parameters for the field deletion job and
 	 * schedules it for immediate execution.
-	 * 
+	 *
 	 * @param contentType
 	 *            - The Content Type ({@linkplain Structure}) whose field will
 	 *            be deleted.
@@ -112,7 +112,7 @@ public class DeleteFieldJob extends DotStatefulJob {
 	/**
 	 * Specifies the execution parameters for the field deletion job and
 	 * schedules it for immediate execution.
-	 * 
+	 *
 	 * @param contentType
 	 *            - The Content Type ({@linkplain Structure}) whose field will
 	 *            be deleted.
@@ -163,7 +163,7 @@ public class DeleteFieldJob extends DotStatefulJob {
 	 * Performs the field deletion process based on a set of specific
 	 * parameters. This process involves deleting the Field object and then
 	 * saving the Content Type.
-	 * 
+	 *
 	 * @param jobContext
 	 *            - The {@link JobExecutionContext} object contains the
 	 *            execution parameters of the job, including the data associated

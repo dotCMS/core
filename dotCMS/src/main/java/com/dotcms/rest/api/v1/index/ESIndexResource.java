@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.index;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.google.gson.Gson;
 
 import com.dotcms.content.elasticsearch.business.DotIndexException;
@@ -126,6 +127,7 @@ public class ESIndexResource {
         if(UtilMethods.isSet(index)) {
             final String indexToRestore=index;
             new Thread() {
+                @CloseDBIfOpened
                 public void run() {
                     try {
                         if(clear)
@@ -135,14 +137,6 @@ public class ESIndexResource {
                     }
                     catch(Exception ex) {
                         Logger.error(ESIndexResource.class, "Error restoring "+indexToRestore,ex);
-                    }finally {
-                        try {
-                            HibernateUtil.closeSession();
-                        } catch (DotHibernateException e) {
-                            Logger.warn(this, e.getMessage(), e);
-                        }finally {
-                            DbConnectionFactory.closeConnection();
-                        }
                     }
                 }
             }.start();

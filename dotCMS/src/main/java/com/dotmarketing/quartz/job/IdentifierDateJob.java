@@ -51,39 +51,39 @@ public class IdentifierDateJob implements Job {
 	@Override
 	public void execute(JobExecutionContext jobContext) throws JobExecutionException {
 		ContentletAPI contentletAPI = APILocator.getContentletAPI();
-		
+
 		JobDataMap map = jobContext.getJobDetail().getJobDataMap();
 		ContentType type = (ContentType) map.get("contenttype");
 		User user = (User) map.get("user");
-		
+
 		try{
 			//Lucene query to be sure that I will get all fields of the contentlet
 			String luceneQuery = "+structureName:" + type.variable() +
-								" +working:true" + 
+								" +working:true" +
 								" +languageId:" + APILocator.getLanguageAPI().getDefaultLanguage().getId();
-			
+
 			//Identifiers will be updated 500 at a time
 			Integer limit = 500;
 			Integer offset = 0;
-			
+
 			//Get all the ContentletSearch
 			List<ContentletSearch> contenletSearchList = contentletAPI.searchIndex(luceneQuery, limit, offset, "random", user, false);
-			
+
 			//If the query result is not empty
 			while(!contenletSearchList.isEmpty()){
 				//Start 500 (limit) transaction
 				HibernateUtil.startTransaction();
-				
-				//Iterates all the ContentletSearch of the query 
+
+				//Iterates all the ContentletSearch of the query
 				for(ContentletSearch contentletSearch : contenletSearchList){
 					//Get the identifier of each contentlet
 					Identifier identifier= APILocator.getIdentifierAPI().find(contentletSearch.getIdentifier());
-					
-					//Gets from hibernate all the Data of the Contentlet 
-					com.dotmarketing.portlets.contentlet.business.Contentlet fatty = 
+
+					//Gets from hibernate all the Data of the Contentlet
+					com.dotmarketing.portlets.contentlet.business.Contentlet fatty =
 							(com.dotmarketing.portlets.contentlet.business.Contentlet)HibernateUtil
 							.load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, contentletSearch.getInode());
-					
+
 					//Check if the new Publish Date Var is not null
 					if(UtilMethods.isSet(type.publishDateVar())){
 						//Sets the identifier SysPublishDate to the new Structure/Content Publish Date Var
@@ -91,15 +91,15 @@ public class IdentifierDateJob implements Job {
 					}else{
 						identifier.setSysPublishDate(null);
 					}
-					
+
 					//Check if the new Expire Date Var is not null
 					if(UtilMethods.isSet(type.expireDateVar())){
 						//Sets the identifier SysExpireDate to the new Structure/Content Expire Date Var
 						identifier.setSysExpireDate((Date)fatty.getMap().get(type.expireDateVar()));
 					}else{
 						identifier.setSysExpireDate(null);
-					}	
-					
+					}
+
 					//Saves the update
 					APILocator.getIdentifierAPI().save(identifier);
 					//Clears Identifier Cache
@@ -111,14 +111,14 @@ public class IdentifierDateJob implements Job {
 							CacheLocator.getContentletCache().remove(versionInfo.getWorkingInode());
 							if(UtilMethods.isSet(versionInfo.getLiveInode())) {
 								CacheLocator.getContentletCache().remove(versionInfo.getLiveInode());
-								
+
 							}
 						}
 					}
 				}
 				//Commit 500 (limit) transaction
 				HibernateUtil.closeAndCommitTransaction();
-				
+
 				//Next 500
 				limit += limit;
 				offset += limit;

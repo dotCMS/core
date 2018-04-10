@@ -1,5 +1,6 @@
 package com.dotcms.timemachine.ajax;
 
+import com.dotcms.business.CloseDBIfOpened;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -320,6 +321,7 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
             final List<Language> dlangs=langs;
             final boolean inc = incremental;
             new Thread() {
+                @CloseDBIfOpened
                 public void run() {
                 	String date = DateUtil.getCurrentDate();
                     ActivityLogger.logInfo(getClass(), "Job Started", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: timemachine"  );
@@ -336,8 +338,6 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
                             HibernateUtil.closeSession();
                         } catch (DotHibernateException e) {
                             Logger.warn(this, e.getMessage(), e);
-                        }finally {
-                            DbConnectionFactory.closeConnection();
                         }
                     }
                }

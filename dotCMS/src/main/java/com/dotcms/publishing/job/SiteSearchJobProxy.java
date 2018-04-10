@@ -1,5 +1,6 @@
 package com.dotcms.publishing.job;
 
+import com.dotcms.business.CloseDBIfOpened;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
@@ -11,8 +12,8 @@ import com.dotmarketing.quartz.TaskRuntimeValues;
 import com.dotmarketing.util.Logger;
 
 public class SiteSearchJobProxy extends DotStatefulJob {
-	
 
+	@CloseDBIfOpened
 	public void run(JobExecutionContext jobContext) throws JobExecutionException {		
 		SiteSearchJobImpl jobImpl = new SiteSearchJobImpl();
 		SiteSearchPublishStatus status = null;
@@ -33,14 +34,6 @@ public class SiteSearchJobProxy extends DotStatefulJob {
 			Logger.error(this.getClass(), e.getMessage(), e);
 			throw new JobExecutionException(e);
 			
-		}
-		finally{
-			try{
-				DbConnectionFactory.closeConnection();
-			}
-			catch(Exception e){
-				
-			}
 		}
 	}
 }

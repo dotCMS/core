@@ -83,7 +83,7 @@ public enum SystemEventType {
 
 	RAW_MESSAGE,  // just raw text message
 	RAW_ERROR_MESSAGE,  // just raw text error message
-	RICH_MEDIA_MESSAGE, // media message, usually a formated html
+	RICH_MEDIA_MESSAGE, // media message, usually a formatted html
 	CONFIRMATION_MESSAGE, // could be a RAW or RICH message but includes a callback on case confirmation (yes) and optional callback for no.
 
 }

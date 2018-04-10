@@ -67,11 +67,11 @@ public class KeyValueAPITest extends IntegrationTestBase {
     }
 
     /*
-     * Saving KeyValues in english and spanish where both versions are the same Contenlet (same identifier)
-     * and testing the unique field is properly validated
+     * Creates a content version in english and in spanish with the same key/value
+     * Successfully creates both versions since its the same identifier
      */
     @Test
-    public void saveKeyValueContent() throws DotContentletStateException,
+    public void savesKeyValueContentWithVersionInEnglishAndSpanish() throws DotContentletStateException,
                     IllegalArgumentException, DotDataException, DotSecurityException {
 
         Contentlet contentletEnglish = null;
@@ -89,85 +89,39 @@ public class KeyValueAPITest extends IntegrationTestBase {
                     value1, spanishLanguageId, keyValueContentType,
                     systemUser);
 
-            Assert.assertTrue(
-                    "Failed creating a new english Contentlet using the Key/Value Content Type.",
-                    UtilMethods.isSet(contentletEnglish.getIdentifier()));
-            Assert.assertTrue(
-                    "Failed creating a new spanish Contentlet using the Key/Value Content Type.",
-                    UtilMethods.isSet(contentletSpanish.getIdentifier()));
+            Assert.assertTrue(UtilMethods.isSet(contentletEnglish.getIdentifier()));
+            Assert.assertTrue(UtilMethods.isSet(contentletSpanish.getIdentifier()));
         } finally {
             deleteContentlets(systemUser, contentletEnglish, contentletSpanish);
         }
     }
 
     /*
-     * Saving KeyValues in english testing the unique field is properly validated
+     * Tries to create 2 contents in the same language (english) with the same key/value
+     * Throws DotContentletValidationException when trying to save the second one
      */
-    @Test
-    public void saveKeyValueContentWithUnique2()
-            throws DotContentletStateException,
-            IllegalArgumentException, DotDataException, DotSecurityException {
-
-        Contentlet contentlet1 = null;
-        Contentlet contentlet2 = null;
-
-        try {
-            String key1 = "com.dotcms.test.key1." + new Date().getTime();
-            String value1 = "Test Key #1";
-
-            contentlet1 = createTestKeyValueContent(key1, value1, englishLanguageId,
-                    keyValueContentType,
-                    systemUser);
-            Assert.assertTrue(
-                    "Failed creating a new Contentlet using the Key/Value Content Type.",
-                    UtilMethods.isSet(contentlet1.getIdentifier()));
-
-            contentlet2 = createTestKeyValueContent(key1, value1, englishLanguageId,
-                    keyValueContentType,
-                    systemUser);
-            fail("Saving this record should not be possible as already exist another Contentlet with the same unique key.");
-        } catch (DotContentletValidationException e) {
-            e.printStackTrace();
-        } catch (Exception e) {
-            e.printStackTrace();
-            fail("Unexpected exception, expecting a DotContentletValidationException.");
-        } finally {
-            deleteContentlets(systemUser, contentlet1, contentlet2);
-        }
-    }
-
-    /*
-     * Saving KeyValues in english and spanish where both Contenlets are different Contentlets testing
-     * the unique field is properly validated
-     */
-    @Test
+    @Test(expected = DotContentletValidationException.class)
     public void saveKeyValueContentWithUnique()
             throws DotContentletStateException,
             IllegalArgumentException, DotDataException, DotSecurityException {
 
         Contentlet contentlet1 = null;
         Contentlet contentlet2 = null;
-
         try {
-            String key1 = "com.dotcms.test.key1." + new Date().getTime();
-            String value1 = "Test Key #1";
+            String key1 = "com.dotcms.test.key11." + new Date().getTime();
+            String value1 = "Test Key #11";
 
             contentlet1 = createTestKeyValueContent(key1, value1, englishLanguageId,
                     keyValueContentType,
                     systemUser);
-            Assert.assertTrue(
-                    "Failed creating a new Contentlet using the Key/Value Content Type.",
-                    UtilMethods.isSet(contentlet1.getIdentifier()));
+            Assert.assertTrue(UtilMethods.isSet(contentlet1.getIdentifier()));
+            System.out.println("Saved!!!!!!");
 
-            contentlet2 = createTestKeyValueContent(key1, value1, spanishLanguageId,
+            contentlet2 = createTestKeyValueContent(key1, value1, englishLanguageId,
                     keyValueContentType,
                     systemUser);
-            Assert.assertTrue(
-                    "Failed creating a new Contentlet using the Key/Value Content Type.",
-                    UtilMethods.isSet(contentlet2.getIdentifier()));
-
-        } finally {
-            deleteContentlets(systemUser, contentlet1, contentlet2);
+        }finally {
+            deleteContentlets(systemUser, contentlet1);
         }
     }
 
@@ -230,10 +184,8 @@ public class KeyValueAPITest extends IntegrationTestBase {
         final List<KeyValue> keyValueList = keyValueAPI
                 .get(key1, systemUser, keyValueContentType, Boolean.FALSE);
 
-        Assert.assertTrue("Failed creating a new Contentlet using the Key/Value Content Type.",
-                        UtilMethods.isSet(contentlet.getIdentifier()));
-        Assert.assertTrue("Failed creating a new Contentlet using the Key/Value Content Type.",
-                        UtilMethods.isSet(contentlet2.getIdentifier()));
+        Assert.assertTrue(UtilMethods.isSet(contentlet.getIdentifier()));
+        Assert.assertTrue(UtilMethods.isSet(contentlet2.getIdentifier()));
         Assert.assertTrue("Key/Value list CANNOT BE empty.", !keyValueList.isEmpty());
 
         deleteContentlets(systemUser, contentlet, contentlet2);

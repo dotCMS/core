@@ -1,11 +1,9 @@
 package com.dotcms.rest.api.v1.system.websocket;
 
 import com.dotcms.api.system.event.*;
-import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.ForbiddenException;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.init.DotInitScheduler;
 import com.dotmarketing.util.Config;
@@ -22,7 +20,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * This Websocket end-point allows other parts of the system (such as the User
@@ -40,42 +40,43 @@ import java.util.concurrent.TimeUnit;
 @ServerEndpoint(value = SystemEventsWebSocketEndPoint.API_WS_V1_SYSTEM_EVENTS, encoders = { SystemEventEncoder.class }, configurator = DotCmsWebSocketConfigurator.class)
 public class SystemEventsWebSocketEndPoint implements Serializable {
 
-	public static final String ID = "userId";
-	public static final String USER = "user";
+	public static final String ID 				= "userId";
+	public static final String USER 			= "user";
+	public static final String USER_SESSION_ID  = "userSessionId";
 	public static final String API_WS_V1_SYSTEM_EVENTS = "/api/ws/v1/system/events";
 
 
 	private final Queue<Session> queue;
-	private final UserAPI userAPI;
 	private final SystemEventProcessorFactory systemEventProcessorFactory;
     private final PayloadVerifierFactory payloadVerifierFactory;
     private final static ForbiddenCloseCode FORBIDDEN_CLOSE_CODE = new ForbiddenCloseCode();
+    private final long millisPingTimeOut;
 
 	/**
 	 * Configuration for ping pong strategy
 	 */
+	public  static final String     DOTCMS_WEBSOCKET_MILLIS_PING_TIME_OUT = "dotcms.websocket.millis.ping.timeout";
 	public  static final String     DOTCMS_WEBSOCKET_MILLIS_PINGPONG      = "dotcms.websocket.millis.pingpong";
 	public  static final String     DOTCMS_WEBSOCKET_USEPINGPONG          = "dotcms.websocket.usepingpong";
+	public  static final String     DOTCMS_WEBSOCKET_MAX_IDLE_TIMEOUT     = "dotcms.websocket.maxidletimeout";
 	private static final ByteBuffer PING_RECEIVED                         = ByteBuffer.wrap("PING".getBytes());
 
 	public SystemEventsWebSocketEndPoint() {
 
 		this(new ConcurrentLinkedQueue<Session>(),
-				APILocator.getUserAPI(),
                 SystemEventProcessorFactory.getInstance(),
                 PayloadVerifierFactory.getInstance());
     }
 
 	@VisibleForTesting
 	public SystemEventsWebSocketEndPoint(final Queue<Session> queue,
-                                         final UserAPI userAPI,
                                          final SystemEventProcessorFactory systemEventProcessorFactory,
                                          final PayloadVerifierFactory payloadVerifierFactory) {
 
-		this.queue       = queue;
-		this.userAPI     = userAPI;
+		this.queue       				 = queue;
         this.systemEventProcessorFactory = systemEventProcessorFactory;
         this.payloadVerifierFactory      = payloadVerifierFactory;
+
 		final boolean usePingPong = Config.getBooleanProperty(DOTCMS_WEBSOCKET_USEPINGPONG, true);
 		if (usePingPong) {
 
@@ -84,15 +85,29 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
 			DotInitScheduler.getScheduledThreadPoolExecutor().
 					scheduleWithFixedDelay(this::processPingPongQueue, 0, millisForWaitPingPong, TimeUnit.MILLISECONDS);
 		}
+
+		this.millisPingTimeOut =
+				Config.getLongProperty(DOTCMS_WEBSOCKET_MILLIS_PING_TIME_OUT,
+						-1);  // ten seconds by default.
 	} // SystemEventsWebSocketEndPoint.
 
 	private void processPingPongQueue () {
 
 		Logger.debug(this,
 				"Processing the session queue at: " + new Date());
-		for (Session session : this.queue) {
+		final ArrayList<Session> closedSessions = new ArrayList<>();
+		for (final Session session : this.queue) {
 
-			this.doPing(session);
+			if (session.isOpen()) {
+				this.doPing(session);
+			} else {
+
+				closedSessions.add(session);
+			}
+		}
+
+		if (!closedSessions.isEmpty()) {
+			this.queue.removeAll(closedSessions);
 		}
 	}
 
@@ -112,13 +127,31 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
 
 			// we wait for a N seconds and then send the ping message
 			if (session.isOpen()) {
-				Logger.debug(this, "Doing ping to: " + session + " at " + new Date());
-				session.getAsyncRemote().sendPing(PING_RECEIVED);
+
+ 				Logger.debug(this, "Doing ping to: " + session + " at " + new Date());
+				final RemoteEndpoint.Async asyncHandle = session.getAsyncRemote();
+
+				if (this.millisPingTimeOut > 0) {
+					asyncHandle.setSendTimeout(this.millisPingTimeOut);
+				}
+
+				asyncHandle.sendPing(PING_RECEIVED);
 			} else {
 
 				Logger.debug(this, "Couldn't do the ping to: " + session + ", session is closed");
 			}
-		}  catch (Exception e) {
+		} catch (IOException e) {
+
+			if (Logger.isErrorEnabled(this.getClass())) {
+
+				Logger.error(this.getClass(), e.getMessage(), e);
+			}
+
+			if (ExceptionUtil.causedBy(e, TimeoutException.class, ExecutionException.class))  {
+
+				this.queue.remove(session);
+			}
+		} catch (Exception e) {
 			if (Logger.isErrorEnabled(this.getClass())) {
 
 				Logger.error(this.getClass(), e.getMessage(), e);
@@ -131,15 +164,24 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
 	@OnOpen
 	public void open(final Session session) {
 
-		User user = null;
-		boolean isLoggedIn = false;
+		User   user 		 = null;
+		String userSessionId = null;
+		boolean isLoggedIn   = false;
 
 		if (session.getUserProperties().containsKey(USER)) {
 
 			try {
 
-				user = (User) session.getUserProperties().get(USER);
-				this.queue.add(new SessionWrapper(session, user));
+				final long maxIdleTimeout =
+					Config.getLongProperty(DOTCMS_WEBSOCKET_MAX_IDLE_TIMEOUT, -1);
+
+				if (maxIdleTimeout > 0) {
+					session.setMaxIdleTimeout(maxIdleTimeout);
+				}
+
+				userSessionId = (String)session.getUserProperties().get(USER_SESSION_ID);
+				user 		  = (User) session.getUserProperties().get(USER);
+				this.queue.add(new SessionWrapper(session, user, userSessionId));
 				isLoggedIn = true;
 				Logger.debug(this, "New session open: " + session +
 										", with user: " + user.getEmailAddress());
@@ -220,7 +262,9 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
 				}
 			}
 
-			this.queue.removeAll(closedSessions);
+			if (!closedSessions.isEmpty()) {
+				this.queue.removeAll(closedSessions);
+			}
 		} catch (Throwable e) {
 
 			Logger.error(this, "An error occurred when sending a message through the " + this.getClass().getName(), e);
@@ -253,7 +297,7 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
         final PayloadVerifier verifier = this.payloadVerifierFactory.getVerifier(payload);
 
         //Check if we have the "visibility" rights to use this payload
-        return (null != verifier) ? verifier.verified(payload, session.getUser()) : true;
+        return (null != verifier) ? verifier.verified(payload, session) : true;
     }
 
 	private boolean apply(final SystemEvent event,
