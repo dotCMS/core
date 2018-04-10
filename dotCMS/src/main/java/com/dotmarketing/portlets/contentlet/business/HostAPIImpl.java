@@ -386,7 +386,8 @@ public class HostAPIImpl implements HostAPI {
             c = new Contentlet();
             c.setStructureInode(hostType().inode() );
         }
-        APILocator.getContentletAPI().copyProperties(c, host.getMap());;
+        c.getMap().put(Contentlet.DONT_VALIDATE_ME, host.getMap().get(Contentlet.DONT_VALIDATE_ME));
+        APILocator.getContentletAPI().copyProperties(c, host.getMap());
         c.setInode("");
         c = APILocator.getContentletAPI().checkin(c, user, respectFrontendRoles);
 
@@ -716,13 +717,16 @@ public class HostAPIImpl implements HostAPI {
         }
         Contentlet c = APILocator.getContentletAPI().find(host.getInode(), user, respectFrontendRoles);
         //retrieve all hosts that have this current host as tag storage host
-        List<Host> hosts = retrieveHostsPerTagStorage(host.getTagStorage(), user);
+        List<Host> hosts = retrieveHostsPerTagStorage(host.getIdentifier(), user);
         for(Host h: hosts) {
             if(h.getIdentifier() != null){
                 if(!h.getIdentifier().equals(host.getIdentifier())){
                     //prevents changing tag storage for archived host.
                     //the tag storage will change for all hosts which tag storage is archived host
+                    // Apparently this code updates all other hosts setting their own self as tag storage
                     h.setTagStorage(h.getIdentifier());
+                    //So In order to avoid an exception updating a host that could be archived we're gonna tell the API to skip validation.
+                    h.getMap().put(Contentlet.DONT_VALIDATE_ME, true);
                     h = save(h, user, true);
                 }
             }

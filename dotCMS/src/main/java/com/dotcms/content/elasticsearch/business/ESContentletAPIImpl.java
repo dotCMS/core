@@ -315,6 +315,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @Override
+    public Contentlet findContentletByIdentifierAnyLanguage(String identifier) throws DotDataException, DotSecurityException {
+        try {
+            return contentFactory.findContentletByIdentifierAnyLanguage(identifier);
+        } catch (DotSecurityException se) {
+            throw se;
+        } catch (Exception e) {
+            throw new DotContentletStateException("Can't find contentlet: " + identifier, e);
+        }
+    }
+
+    @Override
     public List<Contentlet> findContentletsByIdentifiers(String[] identifiers, boolean live, long languageId, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException, DotContentletStateException {
         List<Contentlet> l = new ArrayList<Contentlet>();
 
@@ -751,14 +762,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (0 < roles.size()) {
             buffy.append(" (");
             for (Role role : roles) {
-                buffy.append("permissions:P" + role.getId() + ".1P* ");
+                buffy.append("permissions:p" + role.getId() + ".1p* ");
             }
             buffy.append(") ");
         }
         if(respectFrontendRoles) {
-            buffy.append("(permissions:P" + APILocator.getRoleAPI().loadCMSAnonymousRole().getId() + ".1P*) ");
+            buffy.append("(permissions:p" + APILocator.getRoleAPI().loadCMSAnonymousRole().getId() + ".1p*) ");
             if (user != null && !user.getUserId().equals("anonymous")) {
-                buffy.append("(permissions:P" + APILocator.getRoleAPI().loadLoggedinSiteRole().getId() + ".1P*)");
+                buffy.append("(permissions:p" + APILocator.getRoleAPI().loadLoggedinSiteRole().getId() + ".1p*)");
             }
         }
         buffy.append(")");

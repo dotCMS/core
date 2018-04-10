@@ -56,6 +56,7 @@ import com.dotmarketing.util.UUIDUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -73,6 +74,12 @@ public class FieldResourceTest {
         type = APILocator.getContentTypeAPI(APILocator.systemUser()).save(type);
         Field field = FieldBuilder.builder(TextField.class).name("text").contentTypeId(type.id()).build();
         APILocator.getContentTypeFieldAPI().save(field,APILocator.systemUser());
+	}
+
+	@AfterClass
+	public static void cleanUpData() throws DotDataException, DotSecurityException {
+		ContentType contentType = getContentType();
+		APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);
 	}
 
 

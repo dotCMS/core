@@ -109,6 +109,7 @@ public class VanityUrlAPITest {
         } finally {
             try {
                 if (contentlet1 != null) {
+                    contentletAPI.archive(contentlet1, user, false);
                     contentletAPI.delete(contentlet1, user, false);
                 }
             } catch (Exception e) {
@@ -194,10 +195,12 @@ public class VanityUrlAPITest {
         } finally {
             try {
                 if (contentlet1 != null) {
+                    contentletAPI.archive(contentlet1, user, false);
                     contentletAPI.delete(contentlet1, user, false);
                 }
 
                 if (contentlet2 != null) {
+                    contentletAPI.archive(contentlet2, user, false);
                     contentletAPI.delete(contentlet2, user, false);
                 }
             } catch (Exception e) {
@@ -245,6 +248,7 @@ public class VanityUrlAPITest {
         } finally {
             try {
                 if (contentlet1 != null) {
+                    contentletAPI.archive(contentlet1, user, false);
                     contentletAPI.delete(contentlet1, user, false);
                 }
             } catch (Exception e) {

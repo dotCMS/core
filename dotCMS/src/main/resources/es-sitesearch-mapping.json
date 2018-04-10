@@ -47,8 +47,8 @@
           "doc_values" : true
         },
         "keywords": {
-          "type": "text",
-	 	  "analyzer": "comma_analyzer"
+          "type": "keyword",
+          "doc_values" : true
 		},
         "language": {
           "type": "integer"
