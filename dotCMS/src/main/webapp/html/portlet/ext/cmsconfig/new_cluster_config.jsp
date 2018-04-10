@@ -253,7 +253,7 @@
                     handleAs : "json",
                     sync: false,
                     load : function(data) {
-                        if (!data && data.length > 0) {
+                        if (data && data.length > 0) {
                             actionPanelTable.nodeData = data;
                         }
 						actionPanelTable.drawNodeTable();
