@@ -21,20 +21,20 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
     return dbHits;
   }
 
-  private final Map<ShortyType, DBEqualsStrategy> dbEqualsStrategyMap =
+  private final Map<ShortyInputType, DBEqualsStrategy> dbEqualsStrategyMap =
           map(
-                  ShortyType.CONTENT,         (final DotConnect db, final String shorty) ->  db.setSQL(ShortyIdSql.SELECT_SHORTY_SQL_EQUALS).addParam(shorty).addParam(shorty),
-                  ShortyType.WORKFLOW_SCHEME, (final DotConnect db, final String shorty) ->  db.setSQL(ShortyIdSql.SELECT_WF_SCHEME_SHORTY_SQL_EQUALS).addParam(shorty),
-                  ShortyType.WORKFLOW_STEP,   (final DotConnect db, final String shorty) ->  db.setSQL(ShortyIdSql.SELECT_WF_STEP_SHORTY_SQL_EQUALS).addParam(shorty),
-                  ShortyType.WORKFLOW_ACTION, (final DotConnect db, final String shorty) ->  db.setSQL(ShortyIdSql.SELECT_WF_ACTION_SHORTY_SQL_EQUALS).addParam(shorty)
+                  ShortyInputType.CONTENT,         (final DotConnect db, final String shorty) ->  db.setSQL(ShortyIdSql.SELECT_SHORTY_SQL_EQUALS).addParam(shorty).addParam(shorty),
+                  ShortyInputType.WORKFLOW_SCHEME, (final DotConnect db, final String shorty) ->  db.setSQL(ShortyIdSql.SELECT_WF_SCHEME_SHORTY_SQL_EQUALS).addParam(shorty),
+                  ShortyInputType.WORKFLOW_STEP,   (final DotConnect db, final String shorty) ->  db.setSQL(ShortyIdSql.SELECT_WF_STEP_SHORTY_SQL_EQUALS).addParam(shorty),
+                  ShortyInputType.WORKFLOW_ACTION, (final DotConnect db, final String shorty) ->  db.setSQL(ShortyIdSql.SELECT_WF_ACTION_SHORTY_SQL_EQUALS).addParam(shorty)
              );
 
-  private final Map<ShortyType, DBLikeStrategy> dbLikeStrategyMap =
+  private final Map<ShortyInputType, DBLikeStrategy> dbLikeStrategyMap =
           map(
-                  ShortyType.CONTENT,         (final DotConnect db, final String uuidIfy) -> db.setSQL(ShortyIdSql.SELECT_SHORTY_SQL_LIKE).addParam(uuidIfy + "%").addParam(uuidIfy + "%"),
-                  ShortyType.WORKFLOW_SCHEME, (final DotConnect db, final String uuidIfy) -> db.setSQL(ShortyIdSql.SELECT_WF_SCHEME_SHORTY_SQL_LIKE).addParam(uuidIfy + "%"),
-                  ShortyType.WORKFLOW_STEP,   (final DotConnect db, final String uuidIfy) -> db.setSQL(ShortyIdSql.SELECT_WF_STEP_SHORTY_SQL_LIKE).addParam(uuidIfy + "%"),
-                  ShortyType.WORKFLOW_ACTION, (final DotConnect db, final String uuidIfy) -> db.setSQL(ShortyIdSql.SELECT_WF_ACTION_SHORTY_SQL_LIKE).addParam(uuidIfy + "%")
+                  ShortyInputType.CONTENT,         (final DotConnect db, final String uuidIfy) -> db.setSQL(ShortyIdSql.SELECT_SHORTY_SQL_LIKE).addParam(uuidIfy + "%").addParam(uuidIfy + "%"),
+                  ShortyInputType.WORKFLOW_SCHEME, (final DotConnect db, final String uuidIfy) -> db.setSQL(ShortyIdSql.SELECT_WF_SCHEME_SHORTY_SQL_LIKE).addParam(uuidIfy + "%"),
+                  ShortyInputType.WORKFLOW_STEP,   (final DotConnect db, final String uuidIfy) -> db.setSQL(ShortyIdSql.SELECT_WF_STEP_SHORTY_SQL_LIKE).addParam(uuidIfy + "%"),
+                  ShortyInputType.WORKFLOW_ACTION, (final DotConnect db, final String uuidIfy) -> db.setSQL(ShortyIdSql.SELECT_WF_ACTION_SHORTY_SQL_LIKE).addParam(uuidIfy + "%")
           );
 
 
@@ -43,30 +43,13 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
       Config.getIntProperty("MINIMUM_SHORTY_ID_LENGTH", 10);
 
   @Override
-  public Optional<ShortyId> getShorty(final String shortStr) { // todo: this should call the new one with content as input
-    try {
-      validShorty(shortStr);
-      ShortyId shortyId = null;
-      Optional<ShortyId> opt = new ShortyIdCache().get(shortStr);
-      if (opt.isPresent()) {
-        shortyId = opt.get();
-      } else if (shortStr.length() == 36) {
-        shortyId = viaDbEquals(shortStr, ShortyType.CONTENT);
-        new ShortyIdCache().add(shortyId);
-      } else {
-        shortyId = viaDbLike(shortStr, ShortyType.CONTENT);
-        new ShortyIdCache().add(shortyId);
-      }
-      return shortyId.type == ShortType.CACHE_MISS ? Optional.empty() : Optional.of(shortyId);
-    } catch (ShortyException se) {
+  public Optional<ShortyId> getShorty(final String shortStr) {
 
-      Logger.warn(this.getClass(), se.getMessage());
-      return Optional.empty();
-    }
+    return getShorty(shortStr, ShortyInputType.CONTENT);
   }
 
   @Override
-  public Optional<ShortyId> getShorty(final String shortStr, final ShortyType shortyType) {
+  public Optional<ShortyId> getShorty(final String shortStr, final ShortyInputType shortyType) {
     try {
       validShorty(shortStr);
       ShortyId shortyId = null;
@@ -152,7 +135,7 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
   }
 
   @CloseDBIfOpened
-  private ShortyId viaDbEquals(final String shorty, final ShortyType shortyType) {
+  private ShortyId viaDbEquals(final String shorty, final ShortyInputType shortyType) {
     this.dbHits++;
     final DotConnect db = new DotConnect();
     this.dbEqualsStrategyMap.get(shortyType).apply(db, shorty);
@@ -171,7 +154,7 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
   }
 
   @CloseDBIfOpened
-  private ShortyId viaDbLike(final String shorty, final ShortyType shortyType) {
+  private ShortyId viaDbLike(final String shorty, final ShortyInputType shortyType) {
     this.dbHits++;
     final DotConnect db = new DotConnect();
     final String uuid = uuidIfy(shorty);

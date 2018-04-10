@@ -9,7 +9,7 @@ public interface ShortyIdAPI {
 
     /**
      * Convert a shorty from an optional ShortyId that contains the long id.
-     * This will be by default ShortyType.CONTENT
+     * This will be by default ShortyInputType.CONTENT
      * @param shorty String
      * @return ShortyId
      */
@@ -18,10 +18,10 @@ public interface ShortyIdAPI {
     /**
      * Convert a shorty from an optional ShortyId that contains the long id.
      * @param shorty String
-     * @param shortyType ShortyType
+     * @param shortyType ShortyInputType
      * @return ShortyId
      */
-    Optional<ShortyId> getShorty(String shorty, ShortyType shortyType);
+    Optional<ShortyId> getShorty(String shorty, ShortyInputType shortyType);
 
     long getDbHits();
 
@@ -45,7 +45,7 @@ public interface ShortyIdAPI {
     /**
      * Encapsulates the entities supported by shorty api.
      */
-    enum ShortyType { // todo; rename to Shorty Input Type
+    enum ShortyInputType { 
         CONTENT, WORKFLOW_SCHEME, WORKFLOW_STEP, WORKFLOW_ACTION
     }
 

@@ -155,7 +155,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 * @param shortyId String
 	 * @return String id
 	 */
-	private String getLongId (final String shortyId, final ShortyIdAPI.ShortyType type) {
+	private String getLongId (final String shortyId, final ShortyIdAPI.ShortyInputType type) {
 
 		// todo: if shortyId is more than 36 is a long id and does not need to check the shorty
 		final Optional<ShortyId> shortyIdOptional =
@@ -166,7 +166,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	} // getLongId.
 
 	private String getLongIdForScheme(final String schemeId) {
-		return this.getLongId(schemeId, ShortyIdAPI.ShortyType.WORKFLOW_SCHEME);
+		return this.getLongId(schemeId, ShortyIdAPI.ShortyInputType.WORKFLOW_SCHEME);
 	}
 
 
@@ -263,7 +263,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@Override
 	public boolean existSchemeIdOnSchemesList(final String schemeId, final List<WorkflowScheme> schemes) {
 
-		return workFlowFactory.existSchemeIdOnSchemesList(this.getLongId(schemeId, ShortyIdAPI.ShortyType.WORKFLOW_SCHEME), schemes);
+		return workFlowFactory.existSchemeIdOnSchemesList(this.getLongId(schemeId, ShortyIdAPI.ShortyInputType.WORKFLOW_SCHEME), schemes);
 	}
 
 	@Override
@@ -309,7 +309,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@CloseDBIfOpened
 	public WorkflowScheme findScheme(final String id) throws DotDataException, DotSecurityException {
 
-		final String schemeId = this.getLongId(id, ShortyIdAPI.ShortyType.WORKFLOW_SCHEME);
+		final String schemeId = this.getLongId(id, ShortyIdAPI.ShortyInputType.WORKFLOW_SCHEME);
 
 		if (!SYSTEM_WORKFLOW_ID.equals(schemeId)) {
 			if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
@@ -989,7 +989,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@CloseDBIfOpened
 	public WorkflowAction findAction(final String id, final User user) throws DotDataException, DotSecurityException {
 
-		final WorkflowAction workflowAction = this.workFlowFactory.findAction(this.getLongId(id, ShortyIdAPI.ShortyType.WORKFLOW_ACTION));
+		final WorkflowAction workflowAction = this.workFlowFactory.findAction(this.getLongId(id, ShortyIdAPI.ShortyInputType.WORKFLOW_ACTION));
 		if(null != workflowAction){
 			if (!SYSTEM_WORKFLOW_ID.equals(workflowAction.getSchemeId())) {
 				if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
@@ -1009,8 +1009,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		Logger.debug(this, ()->"Finding the action: " + actionId + " for the step: " + stepId);
 		final WorkflowAction workflowAction = this.workFlowFactory
-				.findAction(this.getLongId(actionId, ShortyIdAPI.ShortyType.WORKFLOW_ACTION),
-						this.getLongId(stepId, ShortyIdAPI.ShortyType.WORKFLOW_STEP));
+				.findAction(this.getLongId(actionId, ShortyIdAPI.ShortyInputType.WORKFLOW_ACTION),
+						this.getLongId(stepId, ShortyIdAPI.ShortyInputType.WORKFLOW_STEP));
 		if (null != workflowAction) {
 			if (!SYSTEM_WORKFLOW_ID.equals(workflowAction.getSchemeId())) {
 				if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
@@ -1083,7 +1083,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 			Logger.debug(this, () -> "Saving (doing the relationship) the actionId: " + actionId + ", stepId: " + stepId);
 
-			workflowAction = this.findAction(this.getLongId(actionId, ShortyIdAPI.ShortyType.WORKFLOW_ACTION), user);
+			workflowAction = this.findAction(this.getLongId(actionId, ShortyIdAPI.ShortyInputType.WORKFLOW_ACTION), user);
 
 			if (null == workflowAction) {
 
@@ -1091,7 +1091,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				throw new DoesNotExistException("Workflow-does-not-exists-action");
 			}
 
-			workflowStep   = this.findStep  (this.getLongId(stepId, ShortyIdAPI.ShortyType.WORKFLOW_STEP));
+			workflowStep   = this.findStep  (this.getLongId(stepId, ShortyIdAPI.ShortyInputType.WORKFLOW_STEP));
 
 			if (null == workflowStep) {
 
@@ -1154,7 +1154,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		action.setSchemeId(this.getLongIdForScheme(action.getSchemeId()));
 		if (UtilMethods.isSet(action.getId())) {
-			action.setId(this.getLongId(action.getId(), ShortyIdAPI.ShortyType.WORKFLOW_ACTION));
+			action.setId(this.getLongId(action.getId(), ShortyIdAPI.ShortyInputType.WORKFLOW_ACTION));
 		}
 
 		workFlowFactory.saveAction(action);
@@ -1164,7 +1164,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@CloseDBIfOpened
 	public WorkflowStep findStep(final String id) throws DotDataException, DotSecurityException {
 
-		final WorkflowStep step = workFlowFactory.findStep(this.getLongId(id, ShortyIdAPI.ShortyType.WORKFLOW_STEP));
+		final WorkflowStep step = workFlowFactory.findStep(this.getLongId(id, ShortyIdAPI.ShortyInputType.WORKFLOW_STEP));
 		if (!SYSTEM_WORKFLOW_ID.equals(step.getSchemeId())) {
 			if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
 
@@ -1651,7 +1651,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		final String actionId = contentlet.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY);
 		if(UtilMethods.isSet(actionId)) {
 
-			contentlet.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, this.getLongId(actionId, ShortyIdAPI.ShortyType.WORKFLOW_ACTION));
+			contentlet.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, this.getLongId(actionId, ShortyIdAPI.ShortyInputType.WORKFLOW_ACTION));
 		}
 	}
 
@@ -1852,7 +1852,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@WrapInTransaction
 	@Override
 	public void updateStepReferences(final String stepId, final String replacementStepId) throws DotDataException, DotSecurityException {
-		workFlowFactory.updateStepReferences(this.getLongId(stepId, ShortyIdAPI.ShortyType.WORKFLOW_STEP), this.getLongId(replacementStepId, ShortyIdAPI.ShortyType.WORKFLOW_STEP));
+		workFlowFactory.updateStepReferences(this.getLongId(stepId, ShortyIdAPI.ShortyInputType.WORKFLOW_STEP), this.getLongId(replacementStepId, ShortyIdAPI.ShortyInputType.WORKFLOW_STEP));
 	}
 
     /**
@@ -1990,7 +1990,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
     public WorkflowAction findActionRespectingPermissions(final String id, final Permissionable permissionable,
             final User user) throws DotDataException, DotSecurityException {
 
-        final WorkflowAction action = workFlowFactory.findAction(this.getLongId(id, ShortyIdAPI.ShortyType.WORKFLOW_ACTION));
+        final WorkflowAction action = workFlowFactory.findAction(this.getLongId(id, ShortyIdAPI.ShortyInputType.WORKFLOW_ACTION));
 
         DotPreconditions.isTrue(
                 hasSpecialWorkflowPermission(user, true, permissionable, action) ||
@@ -2010,8 +2010,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
             final User user) throws DotDataException, DotSecurityException {
 
         Logger.debug(this, () -> "Finding the action: " + actionId + " for the step: " + stepId);
-        final WorkflowAction action = this.workFlowFactory.findAction(this.getLongId(actionId, ShortyIdAPI.ShortyType.WORKFLOW_ACTION),
-				this.getLongId(stepId, ShortyIdAPI.ShortyType.WORKFLOW_STEP));
+        final WorkflowAction action = this.workFlowFactory.findAction(this.getLongId(actionId, ShortyIdAPI.ShortyInputType.WORKFLOW_ACTION),
+				this.getLongId(stepId, ShortyIdAPI.ShortyInputType.WORKFLOW_STEP));
         if (null != action) {
 
             DotPreconditions.isTrue(
@@ -2086,7 +2086,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@CloseDBIfOpened
 	public List<WorkflowTask> findTasksByStep(final String stepId) throws DotDataException, DotSecurityException{
-		return this.workFlowFactory.findTasksByStep(this.getLongId(stepId, ShortyIdAPI.ShortyType.WORKFLOW_STEP));
+		return this.workFlowFactory.findTasksByStep(this.getLongId(stepId, ShortyIdAPI.ShortyInputType.WORKFLOW_STEP));
 	}
 
 }
