@@ -637,7 +637,7 @@ public class ESIndexAPI {
 		}
 		if(shards <1){
 			try{
-				shards = Config.getIntProperty("es.index.number_of_shards");
+				shards = Config.getIntProperty("es.index.number_of_shards", 2);
 			}catch(Exception e){}
 		}
 
@@ -689,7 +689,7 @@ public class ESIndexAPI {
 		}
 		if(shards <1){
 			try{
-				shards = Config.getIntProperty("es.index.number_of_shards", 1);
+				shards = Config.getIntProperty("es.index.number_of_shards", 2);
 			}catch(Exception e){}
 		}
 
