@@ -660,10 +660,28 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			this.currentSortBy = sortBy;
 		}
 
-		//ContentletAjax.searchContentlets (this.structureInode, fieldsValues, categoriesValues, false, false, this.currentPage, this.currentSortBy, null, null, false, dojo.hitch(this, this._fillResults));
-		ContentletAjax.searchContentlets(this.structureInode, fieldsValues, categoriesValues, false,
-		        false,  false, false, this.currentPage, 10,this.currentSortBy, null,
-		        null,dojo.hitch(this, this._fillResults));
+        //ContentletAjax.searchContentlets (this.structureInode, fieldsValues, categoriesValues, false, false, this.currentPage, this.currentSortBy, null, null, false, dojo.hitch(this, this._fillResults));
+
+        var searchFor = this.structureInode
+        if (this.structureInode === 'catchall' && this.containerStructures.length > 0) {
+            searchFor = this.containerStructures;
+        }
+
+		ContentletAjax.searchContentlets(
+            searchFor,
+            fieldsValues,
+            categoriesValues,
+            false,
+            false,
+            false,
+            false,
+            this.currentPage,
+            10,
+            this.currentSortBy,
+            null,
+            null,
+            dojo.hitch(this, this._fillResults)
+        );
 
 		this.searchCounter++; // this is used to eliminate the widget already registered exception upon repeated searchs.
 	},
