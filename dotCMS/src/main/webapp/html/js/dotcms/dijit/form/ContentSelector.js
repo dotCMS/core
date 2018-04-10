@@ -91,7 +91,8 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	availableLanguages: new Array(),
 
 	postCreate: function () {
-		this.containerStructures = JSON.parse(this.containerStructures.toString())
+        var structuresParam = this.containerStructures.toString();
+        this.containerStructures = structuresParam.length ? JSON.parse(structuresParam) : [];
 
 		if (this.containerStructures.length > 0) {
             this._fillStructures();
