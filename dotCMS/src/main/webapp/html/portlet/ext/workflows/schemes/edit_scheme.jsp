@@ -29,6 +29,18 @@
 	<input type="hidden" id="schemeId" name="schemeId" value="<%=UtilMethods.webifyString(scheme.getId())%>">
 	<!-- START Listing Results -->
 	<div class="form-horizontal">
+
+		<dl>
+			<dt>
+				<label for=""><%=LanguageUtil.get(pageContext, "Scheme")%> <%=LanguageUtil.get(pageContext, "Id")%>:</label>
+			</dt>
+			<dd>
+				<strong>
+					<a onclick="this.parentNode.innerHTML='<%=scheme.getId()%>'; return false;" href="#"><%=APILocator.getShortyAPI().shortify(scheme.getId()) %></a>
+				</strong>
+			</dd>
+		</dl>
+
 		<dl>
 			<dt>
 				<label for=""><%=LanguageUtil.get(pageContext, "Name")%>:</label>
