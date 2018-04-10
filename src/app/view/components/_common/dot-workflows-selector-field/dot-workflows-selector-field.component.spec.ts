@@ -154,7 +154,10 @@ describe('DotWorkflowsSelectorFieldComponent', () => {
 
         it('should propagate value', () => {
             fixtureHost.detectChanges();
-            innerMultiselect.triggerEventHandler('onChange', ['123']);
+            innerMultiselect.triggerEventHandler('onChange', {
+                originalEvent: {},
+                value: ['123']
+            });
             fixtureHost.detectChanges();
             expect(fixtureHost.componentInstance.form.value).toEqual({ workflows: ['123'] });
         });
