@@ -1,14 +1,19 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.workflows.model.*;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
+import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
-
 import java.util.List;
 import java.util.Map;
 
@@ -80,8 +85,16 @@ public class SaveContentActionlet extends WorkFlowActionlet {
 					"content version already saved for the contentlet: " + contentlet.getIdentifier());
 		} catch (Exception e) {
 
-			Logger.error(this.getClass(),e.getMessage(),e);
-			throw new  WorkflowActionFailureException(e.getMessage(),e);
+			if (e instanceof DotContentletValidationException) {
+				final DotContentletValidationException dve = DotContentletValidationException.class
+						.cast(e);
+				final String exceptionAsString = ExceptionUtil.toString(dve);
+				Logger.error(this.getClass(), exceptionAsString, e);
+				throw new WorkflowActionFailureException(exceptionAsString, e);
+			}
+
+			Logger.error(this.getClass(), e.getMessage(), e);
+			throw new WorkflowActionFailureException(e.getMessage(), e);
 		}
 	}
 
