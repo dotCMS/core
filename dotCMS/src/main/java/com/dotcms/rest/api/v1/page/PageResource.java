@@ -67,24 +67,18 @@ public class PageResource {
 
     private final PageResourceHelper pageResourceHelper;
     private final WebResource webResource;
-    private final TemplateAPI templateAPI;
-    private final PermissionAPI permissionAPI;
 
     /**
      * Creates an instance of this REST end-point.
      */
     public PageResource() {
-        this(PageResourceHelper.getInstance(), new WebResource(), APILocator.getTemplateAPI(),
-                APILocator.getPermissionAPI());
+        this(PageResourceHelper.getInstance(), new WebResource());
     }
 
     @VisibleForTesting
-    protected PageResource(final PageResourceHelper pageResourceHelper, final WebResource webResource,
-                           TemplateAPI templateAPI, PermissionAPI permissionAPI) {
+    protected PageResource(final PageResourceHelper pageResourceHelper, final WebResource webResource) {
         this.pageResourceHelper = pageResourceHelper;
         this.webResource = webResource;
-        this.templateAPI = templateAPI;
-        this.permissionAPI = permissionAPI;
     }
 
     /**
@@ -250,7 +244,10 @@ public class PageResource {
                 request.getSession().setAttribute(WebKeys.CURRENT_DEVICE, deviceInode);
             }
 
-            final Response.ResponseBuilder responseBuilder = Response.ok(getRenderedPageMap(request, response, user, page));
+            final PageMode pageMode = PageMode.get(request);
+
+            final Response.ResponseBuilder responseBuilder = Response.ok(
+                    this.pageResourceHelper.getPageRendered(request, response, user, page, pageMode));
             responseBuilder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, " +
                     "Content-Type, " + "Accept, Authorization");
             res = responseBuilder.build();
@@ -273,71 +270,6 @@ public class PageResource {
             res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
         return res;
-    }
-
-    private Map<String, Object> getRenderedPageMap(final HttpServletRequest request, final HttpServletResponse response,
-                                                   final User user, final HTMLPageAsset page)
-            throws DotSecurityException, IOException, DotDataException {
-
-        final PageMode pageMode = PageMode.get(request);
-        final Builder<String, Object> responseMapBuilder = ImmutableMap.builder();
-        final Template template = this.templateAPI.findWorkingTemplate(page.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false);
-
-        responseMapBuilder
-                .put("html", this.pageResourceHelper.getPageRendered(page, request, response, user, pageMode))
-                .put("page", this.pageResourceHelper.getPageMap(page, user))
-                .put("containers", this.pageResourceHelper.getMappedContainers(template))
-                .put("viewAs", createViewAsMap(request, user))
-                .put("canCreateTemplate", APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("templates", user));
-
-        if (template.isDrawed()) {
-            responseMapBuilder.put("layout", DotTemplateTool.themeLayout(template.getInode()));
-        }
-
-        if (this.permissionAPI.doesUserHavePermission(template, PermissionLevel.READ.getType(), user, false)) {
-            responseMapBuilder.put("template",
-                ImmutableMap.builder()
-                    .put("canEdit", this.permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(), user))
-                    .putAll(this.pageResourceHelper.asMap(template))
-                    .build());
-        }
-
-        return responseMapBuilder.build();
-    }
-
-    private ImmutableMap<Object, Object> createViewAsMap(final HttpServletRequest request, final User user)
-            throws DotDataException {
-        final String deviceInode = (String) request.getSession().getAttribute(WebKeys.CURRENT_DEVICE);
-
-        final Builder<Object, Object> builder = ImmutableMap.builder();
-
-        final Persona currentPersona = (Persona) this.pageResourceHelper.getCurrentPersona(request);
-
-        if (currentPersona != null) {
-            builder.put("persona", currentPersona.getMap());
-        }
-
-        builder.put("language", WebAPILocator.getLanguageWebAPI().getLanguage(request));
-
-        try {
-            final String currentDeviceId = deviceInode == null ?
-                    (String) request.getSession().getAttribute(WebKeys.CURRENT_DEVICE)
-                    : deviceInode;
-
-            if (currentDeviceId != null) {
-                final Contentlet device = APILocator.getContentletAPI().find(currentDeviceId, user, false);
-
-                if (device != null) {
-                    builder.put("device", device.getMap());
-                } else {
-                    request.getSession().removeAttribute(WebKeys.CURRENT_DEVICE);
-                }
-            }
-        } catch (DotSecurityException e) {
-            //In this case don't response with the device attribute
-        }
-
-        return builder.build();
     }
 
     /**
@@ -369,7 +301,9 @@ public class PageResource {
             final IHTMLPage page = this.pageResourceHelper.getPage(user, pageId);
             this.pageResourceHelper.saveTemplate(user, page, form);
 
-            final Map<String, Object> renderedPageMap = getRenderedPageMap(request, response, user, (HTMLPageAsset) page);
+            final PageMode pageMode = PageMode.get(request);
+            final Map<String, Object> renderedPageMap = this.pageResourceHelper.getPageRendered(request, response, user,
+                    (HTMLPageAsset) page, pageMode);
             res = Response.ok(new ResponseEntityView(renderedPageMap)).build();
 
         } catch (DotSecurityException e) {

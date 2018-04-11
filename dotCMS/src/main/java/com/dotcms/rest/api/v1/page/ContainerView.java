@@ -17,7 +17,7 @@ import java.util.List;
  * @version 4.2
  * @since Oct 6, 2017
  */
-class ContainerView implements Serializable {
+public class ContainerView implements Serializable {
 
     private static final long serialVersionUID = 1572918359580445566L;
 
