@@ -146,7 +146,8 @@ public class LinkCheckerAPITest extends IntegrationTestBase {
             HibernateUtil.closeSession();
         }
     }
-    
+
+    @AfterClass
     public static void disposeThings() throws Exception {
         try {
             List<Contentlet> contentList=new ArrayList<Contentlet>();
@@ -427,7 +428,6 @@ public class LinkCheckerAPITest extends IntegrationTestBase {
         
         for(InvalidLink link : invalids)
             assertTrue(links.remove(link.getUrl()));
-        disposeThings();
     }
 
 }

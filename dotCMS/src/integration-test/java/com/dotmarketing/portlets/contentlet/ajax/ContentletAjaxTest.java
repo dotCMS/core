@@ -129,6 +129,9 @@ public class ContentletAjaxTest {
 		Assert.assertTrue((Long)result.get("total")==1);
 		result = (Map<String,Object>)results.get(3);
 		Assert.assertTrue(Long.parseLong(String.valueOf(result.get("languageId")))==defaultLang.getId());
+		contentlet = APILocator.getContentletAPI().find(String.valueOf(result.get("inode")),systemUser,false);
+		APILocator.getContentletAPI().archive(contentlet,systemUser,false);
+		APILocator.getContentletAPI().delete(contentlet,systemUser,false);
 
 		/*
 		 * Get italian version
@@ -146,14 +149,9 @@ public class ContentletAjaxTest {
 		Assert.assertTrue((Long)result.get("total")==1);
 		result = (Map<String,Object>)results.get(3);
 		Assert.assertTrue(Long.parseLong(String.valueOf(result.get("languageId")))==language.getId());
+		contentlet = APILocator.getContentletAPI().find(String.valueOf(result.get("inode")),systemUser,false);
+		APILocator.getContentletAPI().archive(contentlet,systemUser,false);
+		APILocator.getContentletAPI().delete(contentlet,systemUser,false);
 	}
-	
-	@After
-    public void deletes() throws Exception {
-		APILocator.getContentletAPI().unpublish(contentlet, systemUser, false);
-		APILocator.getContentletAPI().archive(contentlet, systemUser, false);
-		APILocator.getContentletAPI().delete(contentlet, systemUser, false);
-		APILocator.getLanguageAPI().deleteLanguage(language);
-    }
 
 }
