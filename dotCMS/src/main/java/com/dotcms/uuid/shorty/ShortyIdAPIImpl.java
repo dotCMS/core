@@ -1,9 +1,5 @@
 package com.dotcms.uuid.shorty;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
@@ -13,11 +9,34 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UUIDUtil;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import static com.dotcms.util.CollectionsUtils.map;
+
 public class ShortyIdAPIImpl implements ShortyIdAPI {
 
   public long getDbHits() {
     return dbHits;
   }
+
+  private final Map<ShortyInputType, DBEqualsStrategy> dbEqualsStrategyMap =
+          map(
+                  ShortyInputType.CONTENT,         (final DotConnect db, final String shorty) ->  db.setSQL(ShortyIdSql.SELECT_SHORTY_SQL_EQUALS).addParam(shorty).addParam(shorty),
+                  ShortyInputType.WORKFLOW_SCHEME, (final DotConnect db, final String shorty) ->  db.setSQL(ShortyIdSql.SELECT_WF_SCHEME_SHORTY_SQL_EQUALS).addParam(shorty),
+                  ShortyInputType.WORKFLOW_STEP,   (final DotConnect db, final String shorty) ->  db.setSQL(ShortyIdSql.SELECT_WF_STEP_SHORTY_SQL_EQUALS).addParam(shorty),
+                  ShortyInputType.WORKFLOW_ACTION, (final DotConnect db, final String shorty) ->  db.setSQL(ShortyIdSql.SELECT_WF_ACTION_SHORTY_SQL_EQUALS).addParam(shorty)
+             );
+
+  private final Map<ShortyInputType, DBLikeStrategy> dbLikeStrategyMap =
+          map(
+                  ShortyInputType.CONTENT,         (final DotConnect db, final String uuidIfy) -> db.setSQL(ShortyIdSql.SELECT_SHORTY_SQL_LIKE).addParam(uuidIfy + "%").addParam(uuidIfy + "%"),
+                  ShortyInputType.WORKFLOW_SCHEME, (final DotConnect db, final String uuidIfy) -> db.setSQL(ShortyIdSql.SELECT_WF_SCHEME_SHORTY_SQL_LIKE).addParam(uuidIfy + "%"),
+                  ShortyInputType.WORKFLOW_STEP,   (final DotConnect db, final String uuidIfy) -> db.setSQL(ShortyIdSql.SELECT_WF_STEP_SHORTY_SQL_LIKE).addParam(uuidIfy + "%"),
+                  ShortyInputType.WORKFLOW_ACTION, (final DotConnect db, final String uuidIfy) -> db.setSQL(ShortyIdSql.SELECT_WF_ACTION_SHORTY_SQL_LIKE).addParam(uuidIfy + "%")
+          );
+
 
   long dbHits = 0;
   public static final int MINIMUM_SHORTY_ID_LENGTH =
@@ -25,6 +44,12 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
 
   @Override
   public Optional<ShortyId> getShorty(final String shortStr) {
+
+    return getShorty(shortStr, ShortyInputType.CONTENT);
+  }
+
+  @Override
+  public Optional<ShortyId> getShorty(final String shortStr, final ShortyInputType shortyType) {
     try {
       validShorty(shortStr);
       ShortyId shortyId = null;
@@ -32,10 +57,10 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
       if (opt.isPresent()) {
         shortyId = opt.get();
       } else if (shortStr.length() == 36) {
-        shortyId = viaDbEquals(shortStr);
+        shortyId = viaDbEquals(shortStr, shortyType);
         new ShortyIdCache().add(shortyId);
       } else {
-        shortyId = viaDbLike(shortStr);
+        shortyId = viaDbLike(shortStr, shortyType);
         new ShortyIdCache().add(shortyId);
       }
       return shortyId.type == ShortType.CACHE_MISS ? Optional.empty() : Optional.of(shortyId);
@@ -45,6 +70,8 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
       return Optional.empty();
     }
   }
+
+
 
   @Override
   public ShortyId noShorty(String shorty) {
@@ -101,13 +128,17 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
     return UUIDUtil.uuidIfy(shorty);
   }
 
+  @FunctionalInterface
+  interface DBEqualsStrategy {
+    // applies the equals strategy
+    void apply (final DotConnect dotConnect, final String shorty);
+  }
+
   @CloseDBIfOpened
-  private ShortyId viaDbEquals(final String shorty) {
+  private ShortyId viaDbEquals(final String shorty, final ShortyInputType shortyType) {
     this.dbHits++;
-    DotConnect db = new DotConnect();
-    db.setSQL(ShortyIdSql.SELECT_SHORTY_SQL_EQUALS);
-    db.addParam(shorty);
-    db.addParam(shorty);
+    final DotConnect db = new DotConnect();
+    this.dbEqualsStrategyMap.get(shortyType).apply(db, shorty);
     try {
       return transformMap(shorty, db.loadObjectResults());
     } catch (DotDataException e) {
@@ -116,16 +147,18 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
     }
   }
 
+  @FunctionalInterface
+  interface DBLikeStrategy {
+    // applies the equals strategy
+    void apply (final DotConnect dotConnect, final String uuidIfy);
+  }
 
   @CloseDBIfOpened
-  private ShortyId viaDbLike(final String shorty) {
+  private ShortyId viaDbLike(final String shorty, final ShortyInputType shortyType) {
     this.dbHits++;
-    DotConnect db = new DotConnect();
-    db.setSQL(ShortyIdSql.SELECT_SHORTY_SQL_LIKE);
-    String uuid = uuidIfy(shorty);
-    db.addParam(uuid + "%");
-    db.addParam(uuid + "%");
-
+    final DotConnect db = new DotConnect();
+    final String uuid = uuidIfy(shorty);
+    this.dbLikeStrategyMap.get(shortyType).apply(db, uuid);
     try {
       return transformMap(shorty, db.loadObjectResults());
     } catch (DotDataException e) {

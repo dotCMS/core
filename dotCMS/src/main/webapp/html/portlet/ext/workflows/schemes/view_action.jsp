@@ -180,7 +180,13 @@
 			<%if(UtilMethods.isSet(actionId) && (!"new".equals(actionId))) {%>
 			<div class="row">
 				<div class="col-md-12">
-					<p><%=LanguageUtil.get(pageContext, "Action")%> <%=LanguageUtil.get(pageContext, "Id")%>: <strong><%=APILocator.getShortyAPI().shortify(actionId) %></strong></p>
+					<p>
+						<%=LanguageUtil.get(pageContext, "Action")%> <%=LanguageUtil.get(pageContext, "Id")%>:
+
+						<strong>
+							<a onclick="this.parentNode.innerHTML='<%=actionId%>'; return false;" href="#"><%=APILocator.getShortyAPI().shortify(actionId) %></a>
+						</strong>
+					</p>
 				</div>
 			</div>
 			<%} %>
