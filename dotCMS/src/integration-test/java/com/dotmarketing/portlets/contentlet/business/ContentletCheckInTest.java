@@ -22,32 +22,8 @@ import org.junit.Test;
  * Date: 3/20/12
  * Time: 12:12 PM
  */
-public class ContentletCheckInTest {
+public class ContentletCheckInTest extends ContentletBaseTest{
 
-    private static ContentletAPI contentletAPI;
-    private static FileAssetAPI fileAssetAPI;
-    private static FolderAPI folderAPI;
-    private static HostAPI hostAPI;
-    private static LanguageAPI languageAPI;
-    private static ShortyIdAPI shortyIdAPI;
-  
-  public ContentletCheckInTest() {
-      
-  }
-  
-  @BeforeClass
-  public static void prepare () throws Exception{
-
-      ContentletBaseTest.prepare();
-
-      hostAPI          = APILocator.getHostAPI();
-      folderAPI        = APILocator.getFolderAPI();
-      languageAPI      = APILocator.getLanguageAPI();
-      contentletAPI    = APILocator.getContentletAPI();
-      fileAssetAPI     = APILocator.getFileAssetAPI();
-      shortyIdAPI      = APILocator.getShortyAPI();
-  }
-  
   @Test
   public void checkinInvalidFileContent () throws Exception {
 
@@ -55,11 +31,14 @@ public class ContentletCheckInTest {
 
       final boolean respectFrontendRoles=false;
       final String fileTypeId=APILocator.getContentTypeAPI(APILocator.systemUser()).find("fileAsset").id();
-      final String uuid1 = shortyIdAPI.randomShorty();
-      final String uuid3 = shortyIdAPI.randomShorty();
+      final String uuid1 = APILocator.getShortyAPI().randomShorty();
+      final String uuid3 = APILocator.getShortyAPI().randomShorty();
       
       final User user = APILocator.systemUser();
       final Host host = hostAPI.findDefaultHost(user, false);
+
+      Contentlet con2 = null;
+
       try {
           folder1 = folderAPI.createFolders("/" + uuid1, host, user, false);
           final Language lang = languageAPI.getDefaultLanguage();
@@ -82,17 +61,17 @@ public class ContentletCheckInTest {
           asset.setContentTypeId(fileTypeId);
           asset.setHost(host.getIdentifier());
           asset.setFolder(folder1.getIdentifier());
-          final Contentlet con = contentletAPI.checkin(asset, user, true);
+          Contentlet con = contentletAPI.checkin(asset, user, true);
 
-          final Contentlet con2 = contentletAPI.find(con.getInode(), user, true);
+          con2 = contentletAPI.find(con.getInode(), user, true);
 
           assert (con.equals(con2));
 
-          final FileAsset fileAsset = fileAssetAPI.fromContentlet(con2);
+          final FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(con2);
 
           // this fails becuase the name does not match the folder's file mask
           // but it leaves the original file removed from the index
-          fileAssetAPI.renameFile(fileAsset, "test.fail", user, respectFrontendRoles);
+          APILocator.getFileAssetAPI().renameFile(fileAsset, "test.fail", user, respectFrontendRoles);
           assert (!folderAPI.getContent(folder1, user, respectFrontendRoles)
                   .isEmpty());
 

@@ -81,29 +81,32 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 
         folder=APILocator.getFolderAPI().createFolders(
                 "/test_junit/test_"+UUIDGenerator.generateUuid().replaceAll("-", "_"), host, sysuser, false);
-        page = new HTMLPageDataGen(folder, template).inode(existingInode).identifier(existingIdentifier).nextPersisted();
-        APILocator.getContentletIndexAPI().addContentToIndex(page, true, true);
-        isIndexed = APILocator.getContentletAPI().isInodeIndexed( page.getInode() );
+		HTMLPageAsset page2 = new HTMLPageDataGen(folder, template).inode(existingInode).identifier(existingIdentifier).nextPersisted();
+        APILocator.getContentletIndexAPI().addContentToIndex(page2, true, true);
+        isIndexed = APILocator.getContentletAPI().isInodeIndexed( page2.getInode() );
         assertTrue(isIndexed);
-        assertEquals(existingInode,page.getInode());
-        assertEquals(existingIdentifier,page.getIdentifier());
+        assertEquals(existingInode,page2.getInode());
+        assertEquals(existingIdentifier,page2.getIdentifier());
 
         pages = APILocator.getHTMLPageAssetAPI().getWorkingHTMLPages(folder, sysuser, false);
         assertTrue(pages.size()==1);
-        page=(HTMLPageAsset) pages.get(0);
-        assertEquals(existingInode,page.getInode());
-        assertEquals(existingIdentifier,page.getIdentifier());
+        page2=(HTMLPageAsset) pages.get(0);
+        assertEquals(existingInode,page2.getInode());
+        assertEquals(existingIdentifier,page2.getIdentifier());
 
         // now with existing inode but this time with an update
         HibernateUtil.getSession().clear();
         String newInode=UUIDGenerator.generateUuid();
-        page.setInode(newInode);
-        page.setTitle("other title");
-        Contentlet pageContentlet = APILocator.getContentletAPI().checkin(page, sysuser, false);
+        page2.setInode(newInode);
+        page2.setTitle("other title");
+        Contentlet pageContentlet = APILocator.getContentletAPI().checkin(page2, sysuser, false);
         HibernateUtil.closeAndCommitTransaction();
         assertEquals(newInode,pageContentlet.getInode());
         assertEquals(existingIdentifier,pageContentlet.getIdentifier());
         assertEquals("other title",pageContentlet.getTitle());
+
+		HTMLPageDataGen.remove(page);
+        HTMLPageDataGen.remove(pageContentlet);
     }
 
     @Test

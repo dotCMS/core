@@ -871,7 +871,7 @@ public class WorkflowResource {
         }
 
         return response;
-    } // exportscheme.
+    } // exportScheme.
 
     /**
      * Returns all the possible default actions associated to the content type workflow schemes.
