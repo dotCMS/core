@@ -78,11 +78,11 @@ public class ContentletBaseTest extends IntegrationTestBase {
     protected static RelationshipAPI relationshipAPI;
     private static RoleAPI roleAPI;
     protected static PermissionAPI permissionAPI;
-    private static HostAPI hostAPI;
+    protected static HostAPI hostAPI;
     private static CategoryAPI categoryAPI;
     protected static ContainerAPI containerAPI;
     private static TemplateAPI templateAPI;
-    private static FolderAPI folderAPI;
+    protected static FolderAPI folderAPI;
 
     protected static User user;
     protected static List<Contentlet> contentlets;
