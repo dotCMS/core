@@ -293,20 +293,13 @@ public abstract class GenericBundleActivator implements BundleActivator {
             //Working with the http bridge
             if ( System.getProperty(WebKeys.OSGI_ENABLED)!=null ) {//If it is null probably the servlet wasn't even been loaded...
 
-                try {
-                    OSGIProxyServlet.bundleContext.getBundle();
-                } catch (IllegalStateException e ) {
-
-                    Bundle[] bundles = context.getBundles();
-                    for ( Bundle bundle : bundles ) {
-                        if ( bundle.getSymbolicName().equals( OSGIUtil.BUNDLE_HTTP_BRIDGE_SYMBOLIC_NAME ) ) {
-                            //If we are here is because we have an invalid bundle context, so we need to provide a new one
-                            BundleContext httpBundle = bundle.getBundleContext();
-                            OSGIProxyServlet.tracker = new DispatcherTracker( httpBundle, null, OSGIProxyServlet.servletConfig );
-                            OSGIProxyServlet.tracker.open();
-                            OSGIProxyServlet.bundleContext = httpBundle;
-                        }
-
+                if (null == OSGIProxyServlet.bundleContext) {
+                    initProxyServlet(context);
+                } else {
+                    try {
+                        OSGIProxyServlet.bundleContext.getBundle();
+                    } catch (IllegalStateException e) {
+                        initProxyServlet(context);
                     }
                 }
 
@@ -314,6 +307,25 @@ public abstract class GenericBundleActivator implements BundleActivator {
         } catch ( Exception e ) {
             Logger.error( this, "Error loading HttpService.", e );
             throw e;
+        }
+    }
+
+    /**
+     * Sets the bundle context to the OSGIProxyServlet
+     */
+    private void initProxyServlet(BundleContext context) throws Exception {
+
+        Bundle[] bundles = context.getBundles();
+        for (Bundle bundle : bundles) {
+            if (bundle.getSymbolicName().equals(OSGIUtil.BUNDLE_HTTP_BRIDGE_SYMBOLIC_NAME)) {
+                //If we are here is because we have an invalid bundle context, so we need to provide a new one
+                BundleContext httpBundle = bundle.getBundleContext();
+                OSGIProxyServlet.tracker = new DispatcherTracker(httpBundle, null,
+                        OSGIProxyServlet.servletConfig);
+                OSGIProxyServlet.tracker.open();
+                OSGIProxyServlet.bundleContext = httpBundle;
+            }
+
         }
     }
 
