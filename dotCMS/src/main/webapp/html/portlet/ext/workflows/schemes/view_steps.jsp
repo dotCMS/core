@@ -111,6 +111,26 @@
 		}
 		ele.className = cName;
 	}
+
+    dojo.ready(function(){
+        var whoCanUseFilteringSelect = new dijit.form.FilteringSelect({
+                id: "whoCanUseSelect",
+                name: "whoCanUseSelect",
+                store: myRoleReadStore2,
+                pageSize:30,
+                searchDelay:300,
+                style: "width: 80%",
+                required:false,
+                onClick:function(){
+                    dijit.byId("whoCanUseSelect").set("displayedValue","");
+                    dijit.byId("whoCanUseSelect").loadDropDown();
+
+                },
+                value : 0
+            },
+            "actionWhoCanUseSelect");
+	});
+
 </script>
 
 
@@ -127,7 +147,13 @@
 		</div>
 	</div>
 
-	<div class="portlet-toolbar__info"></div>
+	<div class="portlet-toolbar__info">
+		<div class="inline-form">
+			<input id="actionWhoCanUseSelect"/>
+			<label font-size:85%; for="actionWhoCanUseSelect"><%=LanguageUtil.get(pageContext, "Filter-By-Who-Can-Use")%>
+			</label>
+		</div>
+	</div>
 
 	<div class="portlet-toolbar__actions-secondary">
 		<!-- ADD STEP -->
