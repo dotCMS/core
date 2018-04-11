@@ -1,4 +1,4 @@
-package com.dotcms.rest.api.v1.page;
+package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.Permissionable;

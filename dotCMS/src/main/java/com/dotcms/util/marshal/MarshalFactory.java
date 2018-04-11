@@ -16,6 +16,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import java.util.Map;
 
 /**
  * Marshal Factory, provides the default implementation for the MarhalUtils

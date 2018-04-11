@@ -1,4 +1,4 @@
-package com.dotcms.rest.api.v1.page;
+package com.dotmarketing.portlets.htmlpageasset.business.render;
 
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.beans.ContainerStructure;
@@ -17,7 +17,7 @@ import java.util.List;
  * @version 4.2
  * @since Oct 6, 2017
  */
-public class ContainerView implements Serializable {
+public class ContainerRendered implements Serializable {
 
     private static final long serialVersionUID = 1572918359580445566L;
 
@@ -26,13 +26,13 @@ public class ContainerView implements Serializable {
     private String rendered;
 
     /**
-     * Creates a new instance of the ContainerView.
+     * Creates a new instance of the ContainerRendered.
      *
      * @param container           The {@link Container} in the HTML Page.
      * @param containerStructures The list of {@link ContainerStructure} relationships.
      *                           the browser.
      */
-    public ContainerView(final Container container, final List<ContainerStructure> containerStructures) {
+    public ContainerRendered(final Container container, final List<ContainerStructure> containerStructures) {
         this.container = container;
 
         if (containerStructures != null) {
@@ -72,7 +72,7 @@ public class ContainerView implements Serializable {
 
     @Override
     public String toString() {
-        return "ContainerView{" + "container=" + container + ", containerStructures=" +
+        return "ContainerRendered{" + "container=" + container + ", containerStructures=" +
                 containerStructures + ", rendered='" + rendered + '\'' + '}';
     }
 

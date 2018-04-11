@@ -29,15 +29,7 @@ import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 
 public class VelocityServlet extends HttpServlet {
-    private static String JS_CODE =
-            "<script type=\"text/javascript\">\n" +
-                "var customEvent = window.top.document.createEvent('CustomEvent');\n" +
-                "customEvent.initCustomEvent('ng-event', false, false,  {\n" +
-                "            name: 'load-edit-mode-page',\n" +
-                "            data: %s" +
-                "});\n" +
-                "window.top.document.dispatchEvent(customEvent);" +
-            "</script>";
+
 
     /**
      * 
@@ -62,20 +54,10 @@ public class VelocityServlet extends HttpServlet {
         }
 
         request.setRequestUri(uri);
-
         PageMode mode = PageMode.get(request);
 
         try {
-            if (mode == PageMode.EDIT_MODE) {
-                User user = APILocator.getLoginServiceAPI().getLoggedInUser();
-                Map<String, Object> renderedPageMap = PageResourceHelper.getInstance().getPageRendered(request,
-                        response, user, uri, PageMode.EDIT_MODE);
-                final ObjectWriter objectWriter = new ObjectMapper().writer().withDefaultPrettyPrinter();
-                String renderedPage = objectWriter.writeValueAsString(renderedPageMap).replace("</script>", "\\</script\\>");
-                response.getOutputStream().write(String.format(JS_CODE, renderedPage).getBytes());
-            } else {
-                VelocityModeHandler.modeHandler(mode, request, response).serve();
-            }
+            VelocityModeHandler.modeHandler(mode, request, response).serve();
         } catch (ResourceNotFoundException rnfe) {
             Logger.error(this, "ResourceNotFoundException" + rnfe.toString(), rnfe);
             response.sendError(HttpServletResponse.SC_NOT_FOUND);

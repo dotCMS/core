@@ -1,5 +1,7 @@
 package com.dotmarketing.util;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
@@ -30,7 +32,10 @@ public enum PageMode {
     LIVE(true, false), 
     ADMIN_MODE(true, true), 
     PREVIEW_MODE(false, true), 
-    EDIT_MODE(false, true);
+    EDIT_MODE(false, true),
+    NAVIGATE_EDIT_MODE(false, true);;
+
+    private static PageMode DEFAULT_PAGE_MODE = LIVE;
 
     public final boolean showLive;
     public final boolean isAdmin;
@@ -45,16 +50,25 @@ public enum PageMode {
 
     public static PageMode get(final HttpSession ses) {
 
-        PageMode mode = (ses != null && ses.getAttribute(com.dotmarketing.util.WebKeys.PAGE_MODE_SESSION) != null
-                && ses.getAttribute("tm_date") == null)
-                        ? (PageMode) ses.getAttribute(com.dotmarketing.util.WebKeys.PAGE_MODE_SESSION)
-                        : LIVE;
+        PageMode mode = PageMode.isPageModeSet(ses)
+                        ? PageMode.getCurrentPageMode(ses)
+                        : DEFAULT_PAGE_MODE;
+
+        return mode;
+    }
+
+    public static PageMode getRawMode(final HttpServletRequest req) {
+        HttpSession ses = req.getSession();
+        PageMode mode = PageMode.isPageModeSet(ses)
+                ? (PageMode) ses.getAttribute(WebKeys.PAGE_MODE_SESSION)
+                : DEFAULT_PAGE_MODE;
+
         return mode;
     }
 
     public static PageMode get(final HttpServletRequest req) {
         if (req == null || req.getSession(false) == null || null!= req.getHeader("X-Requested-With")) {
-            return LIVE;
+            return DEFAULT_PAGE_MODE;
         }
         return get(req.getSession());
     }
@@ -65,8 +79,9 @@ public enum PageMode {
                     return mode;
                 }
         }
-        return LIVE;
+        return DEFAULT_PAGE_MODE;
     }
+
     public static PageMode setPageMode(final HttpServletRequest request, boolean contentLocked, boolean canLock) {
         
         PageMode mode = PREVIEW_MODE;
@@ -81,6 +96,30 @@ public enum PageMode {
         request.getSession().setAttribute(WebKeys.PAGE_MODE_SESSION, mode);
         request.setAttribute(WebKeys.PAGE_MODE_SESSION, mode);
         return mode;
+    }
+
+    private static boolean isPageModeSet(final HttpSession ses) {
+        return (ses != null && ses.getAttribute(com.dotmarketing.util.WebKeys.PAGE_MODE_SESSION) != null
+                && ses.getAttribute("tm_date") == null);
+    }
+
+    private static PageMode getCurrentPageMode(final HttpSession ses) {
+        PageMode sessionPageMode = (PageMode) ses.getAttribute(WebKeys.PAGE_MODE_SESSION);
+
+        if (isNavigateEditMode(ses)) {
+            return PageMode.NAVIGATE_EDIT_MODE;
+        } else {
+            return sessionPageMode;
+        }
+    }
+
+    private static boolean isNavigateEditMode(final HttpSession ses) {
+        PageMode sessionPageMode = (PageMode) ses.getAttribute(WebKeys.PAGE_MODE_SESSION);
+        HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+
+        return  sessionPageMode == PageMode.EDIT_MODE &&
+                request != null &&
+                request.getAttribute(WebKeys.PAGE_MODE_SESSION) == null;
     }
 
 }
