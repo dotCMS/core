@@ -1457,15 +1457,18 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				}
 			}
 
-			this.saveWorkflowTask(processor);
+			if (!processor.abort()) {
 
-			if(UtilMethods.isSet(processor.getContentlet())){
-			    APILocator.getContentletAPI().refresh(processor.getContentlet());
+				this.saveWorkflowTask(processor);
+
+				if (UtilMethods.isSet(processor.getContentlet())) {
+					APILocator.getContentletAPI().refresh(processor.getContentlet());
+				}
 			}
+
 			if(local){
 				HibernateUtil.closeAndCommitTransaction();
 			}
-
 		} catch(Exception e) {
 			if(local){
 				HibernateUtil.rollbackTransaction();
@@ -1504,7 +1507,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		final Role r = roleAPI.getUserRole(processor.getUser());
 		if (task.isNew()) {
 
-			DotPreconditions.isTrue(UtilMethods.isSet(processor.getContentlet().getIdentifier()),
+			DotPreconditions.isTrue(UtilMethods.isSet(processor.getContentlet()) && UtilMethods.isSet(processor.getContentlet().getIdentifier()),
 					() -> getWorkflowContentNeedsBeSaveMessage(processor.getUser()),
 					DotWorkflowException.class);
 

@@ -1,9 +1,5 @@
 package com.dotmarketing.portlets.workflows.model;
 
-import static com.dotmarketing.business.APILocator.getRoleAPI;
-import static com.dotmarketing.business.APILocator.getWorkflowAPI;
-
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -15,7 +11,12 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static com.dotmarketing.business.APILocator.getRoleAPI;
+import static com.dotmarketing.business.APILocator.getWorkflowAPI;
 public class WorkflowProcessor {
 
 	Contentlet contentlet;
@@ -32,6 +33,22 @@ public class WorkflowProcessor {
 	String workflowMessage;
 	List<WorkflowActionClass> actionClasses;
 	ContentletDependencies    contentletDependencies;
+	private final AtomicBoolean abort  = new AtomicBoolean(false);
+
+	/**
+	 * True if the processor was aborted
+	 * @return boolean
+	 */
+	public boolean abort () {
+		return this.abort.get();
+	}
+
+	/**
+	 * Be carefull on calling this method, it will abort the processor of the current workflow.
+	 */
+	public void abortProcessor () {
+		this.abort.set(true);
+	}
 
 	public ContentletDependencies getContentletDependencies() {
 		return contentletDependencies;
