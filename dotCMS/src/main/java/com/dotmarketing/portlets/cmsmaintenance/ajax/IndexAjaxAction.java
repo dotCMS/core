@@ -246,15 +246,17 @@ public class IndexAjaxAction extends AjaxAction {
 	}
 
 
-	public void updateReplicas(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {
+	public void updateReplicas(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		Map<String, String> map = getURIParams();
 		String indexName = indexHelper.getIndexNameOrAlias(map,"indexName","indexAlias",this.indexAPI);
 
 		int replicas = Integer.parseInt(map.get("replicas"));
 
-
-		APILocator.getESIndexAPI().updateReplicas(indexName, replicas);
-
+		try{
+			APILocator.getESIndexAPI().updateReplicas(indexName, replicas);
+		}catch (DotDataException e){
+			writeError(response, e.getMessage());
+		}
 	}
 
 
