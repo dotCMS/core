@@ -448,7 +448,7 @@ function doReindex(){
     	//document.getElementById('defaultStructure').value = "Rebuild Whole Index";
     	dojo.byId('defaultStructure').value = "Rebuild Whole Index";
 
-		var number=prompt("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Number-of-Shards"))%> ", <%=Config.getIntProperty("es.index.number_of_shards", 4)%>);
+		var number=prompt("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Number-of-Shards"))%> ", <%=Config.getIntProperty("es.index.number_of_shards", 2)%>);
 
 		if(!number){
 			return;
@@ -708,13 +708,13 @@ function connectUploadEvents() {
 
 function doCreateWorking() {
 	dijit.byId('addIndex').show();
-	document.getElementById('shards').value = <%=Config.getIntProperty("es.index.number_of_shards", 4)%>;
+	document.getElementById('shards').value = <%=Config.getIntProperty("es.index.number_of_shards", 2)%>;
 	shardsUrl = "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/createIndex/shards/";
 }
 
 function doCreateLive() {
 	dijit.byId('addIndex').show();
-	document.getElementById('shards').value = <%=Config.getIntProperty("es.index.number_of_shards", 4)%>;
+	document.getElementById('shards').value = <%=Config.getIntProperty("es.index.number_of_shards", 2)%>;
 	shardsUrl = "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/createIndex/live/on/shards/";
 }
 
@@ -1938,7 +1938,7 @@ dd.leftdl {
 
  	<div align="center" style="padding-top: 10px;">
 		<label name="index"><%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Number-of-Shards"))%></label>
-  		<input type="text" id="shards" name="shards" value="<%=Config.getIntProperty("es.index.number_of_shards", 4)%>">
+  		<input type="text" id="shards" name="shards" value="<%=Config.getIntProperty("es.index.number_of_shards", 2)%>">
   	</div><br />
   	<div class="buttonRow" align="center">
 	           <button id="addButton" dojoType="dijit.form.Button" iconClass="addIcon" onClick="shardCreating()"><%= LanguageUtil.get(pageContext, "Add") %></button>&nbsp; &nbsp; 

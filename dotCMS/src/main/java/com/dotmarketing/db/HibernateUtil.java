@@ -872,6 +872,10 @@ public class HibernateUtil {
 		public void run() {
 			runnable.run();
 		}
+
+		public Runnable getRunnable() {
+			return runnable;
+		}
 	}
 
 	/**
@@ -890,6 +894,10 @@ public class HibernateUtil {
 		@Override
 		public void run() {
 			runnable.run();
+		}
+
+		public Runnable getRunnable() {
+			return runnable;
 		}
 	}
 

@@ -21,6 +21,9 @@
 <%@ include file="/html/common/init.jsp"%>
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="java.util.List"%>
+<%@page import="org.apache.commons.lang.StringUtils"%>
+<%@page import="com.dotcms.cluster.ClusterUtils"%>
+
 <%
 
 List<Structure> structs = StructureFactory.getStructures();
@@ -193,7 +196,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 			<%ClusterIndexHealth health = map.get(x); %>
 			<div dojoType="dijit.Menu" contextMenuForWindow="false" style="display:none;" 
 			     targetNodeIds="<%=x%>Row" onOpen="dohighlight('<%=x%>Row')" onClose="undohighlight('<%=x%>Row')">
-        <%if(!Config.getBooleanProperty("AUTOWIRE_CLUSTER_ES",true) || !Config.getBooleanProperty("AUTOWIRE_MANAGE_ES_REPLICAS",true)){ %>
+        <%if(!Config.getBooleanProperty("AUTOWIRE_CLUSTER_ES",true) && ClusterUtils.isReplicasSet() && StringUtils.isNumeric(Config.getStringProperty("ES_INDEX_REPLICAS", null))){ %>
             <div dojoType="dijit.MenuItem" onClick="updateReplicas('<%=x %>',<%=health.getNumberOfReplicas()%>);" class="showPointer">
                 <span class="fixIcon"></span>
                 <%= LanguageUtil.get(pageContext,"Update-Replicas-Index") %>

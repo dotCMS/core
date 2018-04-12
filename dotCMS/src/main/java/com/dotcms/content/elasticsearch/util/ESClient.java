@@ -8,6 +8,8 @@ import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
 import com.dotcms.cluster.business.ServerAPI;
+import com.dotcms.content.elasticsearch.business.ESIndexAPI;
+import com.dotcms.content.elasticsearch.business.ESIndexAPI.ReplicasMode;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -25,6 +27,7 @@ import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.settings.Settings.Builder;
+import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.node.Node;
@@ -116,9 +119,9 @@ public class ESClient {
     public void setReplicasSettings() {
         try {
             //Build the replicas config settings for the indices client
-            Optional<UpdateSettingsRequest> settingsRequest = getReplicasSettings();
+            final Optional<UpdateSettingsRequest> settingsRequest = getReplicasSettings();
 
-            if (settingsRequest.isPresent()) {
+            if(settingsRequest.isPresent()) {
                 _nodeInstance.client().admin().indices().updateSettings(
                         settingsRequest.get()
                 ).actionGet();
@@ -130,19 +133,19 @@ public class ESClient {
             call the setReplicasSettings method after the indices creation.
              */
             Logger.warn(ESClient.class,
-                    "Unable to set ES property auto_expand_replicas: [No indices found]");
+                    "Unable to set up ES replicas: [No indices found]");
         } catch (Exception e) {
-            Logger.error(ESClient.class, "Unable to set ES property auto_expand_replicas.", e);
+            Logger.error(ESClient.class, "Unable to set up ES replicas.", e);
         }
     }
 
     /**
      * Returns the settings of the replicas configuration for the indices client, this configuration depends on the
-     * <strong>AUTOWIRE_CLUSTER_ES</strong> and <strong>AUTOWIRE_MANAGE_ES_REPLICAS</strong> properties.
+     * <strong>ES_INDEX_REPLICAS</strong> and <strong>ES_INDEX_REPLICAS</strong> properties.
      * <br>
      * <br>
      *
-     * If <strong>AUTOWIRE_CLUSTER_ES == true and AUTOWIRE_MANAGE_ES_REPLICAS == true</strong> the number of replicas will
+     * If <strong>AUTOWIRE_CLUSTER_ES == true and ES_INDEX_REPLICAS == autowire</strong> the number of replicas will
      * be handled by the AUTOWIRE.
      *
      * @return The replicas settings
@@ -150,33 +153,25 @@ public class ESClient {
      */
     private Optional<UpdateSettingsRequest> getReplicasSettings () throws IOException {
 
-		Optional<UpdateSettingsRequest> updateSettingsRequest = Optional.empty();
-
-        if (ClusterUtils.isESAutoWireReplicas()){
-            int serverCount;
-
-            try {
-                serverCount = APILocator.getServerAPI().getAliveServersIds().length;
-            } catch (DotDataException e) {
-                Logger.error(this.getClass(), "Error getting live server list for server count, using 1 as default.");
-                serverCount = 1;
-            }
-            // formula is (live server count (including the ones that are down but not yet timed out) - 1)
-
-            if(serverCount>0) {
-                UpdateSettingsRequest settingsRequest = new UpdateSettingsRequest();
-                settingsRequest.settings(jsonBuilder().startObject()
-                    .startObject("index")
-                    .field("auto_expand_replicas", false)
-                    .field("number_of_replicas", serverCount - 1)
-                    .endObject()
-                    .endObject().string(), XContentType.JSON);
-
-                return Optional.of(settingsRequest);
-            }
+        if (!ClusterUtils.isESAutoWireReplicas()){
+            return Optional.empty();
         }
 
-        return updateSettingsRequest;
+        UpdateSettingsRequest settingsRequest = new UpdateSettingsRequest();
+
+        final int nReplicas = ESIndexAPI.getReplicasCount();
+        final XContentBuilder builder = jsonBuilder().startObject()
+                .startObject("index");
+
+        if (nReplicas >= 0){
+            builder.field("number_of_replicas",nReplicas);
+            builder.field("auto_expand_replicas",false).endObject();
+        }else{
+            builder.field("auto_expand_replicas", ReplicasMode.NO_BOUNDARY.getReplicasMode()).endObject();
+        }
+        settingsRequest.settings(builder.endObject().string(), XContentType.JSON);
+
+        return Optional.of(settingsRequest);
     }
 
     /**

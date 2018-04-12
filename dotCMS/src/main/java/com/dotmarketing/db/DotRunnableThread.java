@@ -79,11 +79,26 @@ public class DotRunnableThread extends Thread {
   }
 
   private List<DotRunnable> getFlushers(final List<DotRunnable> allListeners) {
-    return allListeners.stream().filter(listener -> listener instanceof FlushCacheRunnable).collect(Collectors.toList());
+    return allListeners.stream().filter(this::isFlushCacheRunnable).collect(Collectors.toList());
   }
 
   private List<DotRunnable> getListeners(final List<DotRunnable> allListeners) {
-    return allListeners.stream().filter(listener -> (listener instanceof FlushCacheRunnable == false))
-        .collect(Collectors.toList());
+    return allListeners.stream().filter(this::isNotFlushCacheRunnable).collect(Collectors.toList());
+  }
+
+  private boolean isNotFlushCacheRunnable (final DotRunnable listener) {
+
+      return !this.isFlushCacheRunnable(listener);
+  }
+
+  private boolean isFlushCacheRunnable (final DotRunnable listener) {
+
+      return  (
+                listener instanceof FlushCacheRunnable ||
+                (listener instanceof HibernateUtil.DotAsyncRunnable
+                        && HibernateUtil.DotAsyncRunnable.class.cast(listener).getRunnable() instanceof FlushCacheRunnable) ||
+                (listener instanceof HibernateUtil.DotSyncRunnable
+                        && HibernateUtil.DotSyncRunnable.class.cast(listener).getRunnable() instanceof FlushCacheRunnable)
+              );
   }
 }
