@@ -764,7 +764,6 @@
 						 	var div = document.createElement("div");
 						 	div.style.width = '100%';
 						 	div.style.overflow = 'hidden';
-						 	div.style.height = '20px';
 						 	div.innerHTML = <%= functionName %>(item);
 							field<%= functionName %>TD.appendChild(div);
 							tr.appendChild(field<%= functionName %>TD);
