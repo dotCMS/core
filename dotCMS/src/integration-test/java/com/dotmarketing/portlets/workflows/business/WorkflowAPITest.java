@@ -1,11 +1,5 @@
 package com.dotmarketing.portlets.workflows.business;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
@@ -55,16 +49,14 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 /**
  * Test the workflowAPI
@@ -579,6 +571,107 @@ public class WorkflowAPITest extends IntegrationTestBase {
         assertTrue(containsScheme(workflowScheme1, contentTypeSchemes));
         assertTrue(containsScheme(workflowScheme2, contentTypeSchemes));
         assertTrue(containsScheme(workflowScheme3, contentTypeSchemes));
+    }
+
+    /**
+     * This method test the deep copy workflow scheme method
+     */
+    @Test
+    public void copy_system_workflow_success() throws DotDataException, DotSecurityException, AlreadyExistException {
+
+        WorkflowScheme schemeCopied = null;
+        try {
+
+            final WorkflowScheme scheme =
+                    workflowAPI.findSystemWorkflowScheme();
+
+            schemeCopied = workflowAPI.deepCopyWorkflowScheme(scheme, user);
+
+            assertNotNull(schemeCopied);
+            assertNotEquals(schemeCopied.getId(), scheme.getId());
+            assertNotEquals(schemeCopied.getName(), scheme.getName());
+            assertEquals(schemeCopied.getDescription(), scheme.getDescription());
+
+            final List<WorkflowStep> steps =
+                    workflowAPI.findSteps(scheme);
+
+            final List<WorkflowStep> stepsCopied =
+                    workflowAPI.findSteps(schemeCopied);
+
+            assertNotNull(steps);
+            assertNotNull(stepsCopied);
+            assertEquals(steps.size(), stepsCopied.size());
+
+            assertEqualsSteps (steps, stepsCopied, scheme, schemeCopied);
+
+            final List<WorkflowAction> actions =
+                    workflowAPI.findActions(scheme, user);
+
+            final List<WorkflowAction> actionsCopied =
+                    workflowAPI.findActions(schemeCopied, user);
+
+            assertNotNull(actions);
+            assertNotNull(actionsCopied);
+            assertEquals(actions.size(), actionsCopied.size());
+
+            assertEqualsActions (actions, actionsCopied, scheme, schemeCopied);
+        } finally {
+
+            // remove the copied scheme
+            if (null != schemeCopied) {
+
+                schemeCopied.setArchived(true);
+                workflowAPI.saveScheme(schemeCopied, user);
+                workflowAPI.deleteScheme(schemeCopied, user);
+            }
+        }
+    }
+
+    private void assertEqualsActions(final List<WorkflowAction> actions,
+                                     final List<WorkflowAction> actionsCopied,
+                                     final WorkflowScheme scheme,
+                                     final WorkflowScheme schemeCopied) {
+
+        for (final WorkflowAction action : actions) {
+
+            final Optional<WorkflowAction> copiedAction =
+                    actionsCopied.stream().filter(theAction -> theAction.getName().equals(action.getName())).findFirst();
+            if (copiedAction.isPresent()) {
+
+                assertNotEquals(copiedAction.get().getId(), action.getId());
+                assertNotEquals(copiedAction.get().getSchemeId(), action.getSchemeId());
+
+                assertEquals(action.getSchemeId(), scheme.getId());
+                assertEquals(copiedAction.get().getSchemeId(), schemeCopied.getId());
+
+                assertEquals(copiedAction.get().getName(), action.getName());
+            } else {
+                fail("The step: " + action.getName() + " does not exists and must exists as part of the copy");
+            }
+        }
+    }
+
+    private void assertEqualsSteps(final List<WorkflowStep> steps,
+                                   final List<WorkflowStep> stepsCopied,
+                                   final WorkflowScheme     scheme,
+                                   final WorkflowScheme     schemeCopied) {
+
+        for (final WorkflowStep step : steps) {
+
+            final Optional<WorkflowStep> copiedStep =
+                    stepsCopied.stream().filter(theStep -> theStep.getName().equals(step.getName())).findFirst();
+
+            if (copiedStep.isPresent()) {
+
+                assertNotEquals(copiedStep.get().getId(), step.getId());
+                assertNotEquals(copiedStep.get().getSchemeId(), step.getSchemeId());
+
+                assertEquals(step.getSchemeId(), scheme.getId());
+                assertEquals(copiedStep.get().getSchemeId(), schemeCopied.getId());
+            } else {
+                fail("The step: " + step.getName() + " does not exists and must exists as part of the copy");
+            }
+        }
     }
 
     /**
