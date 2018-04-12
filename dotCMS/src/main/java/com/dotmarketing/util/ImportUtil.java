@@ -1146,8 +1146,12 @@ public class ImportUtil {
             {
                 int wfActionIdIndex = -1;
                 try {
-                    wfActionIdIndex = Integer.parseInt( results.get( Contentlet.WORKFLOW_ACTION_KEY ).get( 0 ) );
-                } catch ( Exception e ) {
+                    if (null != results.get(Contentlet.WORKFLOW_ACTION_KEY)) {
+                        wfActionIdIndex = Integer
+                                .parseInt(results.get(Contentlet.WORKFLOW_ACTION_KEY).get(0));
+                    }
+                } catch (Exception e) {
+                    Logger.warn(ImportUtil.class, e.getMessage());
                 }
 
                 String wfActionIdStr = null;
