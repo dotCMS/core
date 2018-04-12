@@ -40,12 +40,10 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
     private final HTMLPageAssetAPI htmlPageAssetAPI = APILocator.getHTMLPageAssetAPI();
     private final LanguageAPI languageAPI = APILocator.getLanguageAPI();
     private final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
-    private final TemplateAPI templateAPI = APILocator.getTemplateAPI();
     private final HostAPI hostAPI = APILocator.getHostAPI();
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
     private final UserAPI userAPI = APILocator.getUserAPI();
-    private final ContainerAPI containerAPI = APILocator.getContainerAPI();
-    private final ContainerRenderedBuilder containerRenderedBuilder = ContainerRenderedBuilder.get();
+    private final ContainerRenderedBuilder containerRenderedBuilder = new ContainerRenderedBuilder();
 
     @Override
     public HTMLPageAssetRendered getPageRendered(HttpServletRequest request, HttpServletResponse response, User user,
@@ -66,7 +64,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                                                  final User user, final HTMLPageAsset page, PageMode pageMode)
             throws DotDataException, DotSecurityException, IOException {
 
-        return HTMLPageAssetRenderedBuilder.get()
+        return new HTMLPageAssetRenderedBuilder()
                 .setHtmlPageAsset(page)
                 .setUser(user)
                 .setRequest(request)

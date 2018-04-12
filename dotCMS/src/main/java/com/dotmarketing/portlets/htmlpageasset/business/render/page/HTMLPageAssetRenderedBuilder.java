@@ -56,17 +56,13 @@ public class HTMLPageAssetRenderedBuilder {
 
     private final ContainerRenderedBuilder containerRenderedBuilder;
 
-    private HTMLPageAssetRenderedBuilder() {
+    public HTMLPageAssetRenderedBuilder() {
         permissionAPI = APILocator.getPermissionAPI();
         userAPI = APILocator.getUserAPI();
         templateAPI = APILocator.getTemplateAPI();
         contentletAPI = APILocator.getContentletAPI();
         layoutAPI = APILocator.getLayoutAPI();
-        containerRenderedBuilder = ContainerRenderedBuilder.get();
-    }
-
-    public static HTMLPageAssetRenderedBuilder get() {
-        return new HTMLPageAssetRenderedBuilder();
+        containerRenderedBuilder = new ContainerRenderedBuilder();
     }
 
     public HTMLPageAssetRenderedBuilder setHtmlPageAsset(HTMLPageAsset htmlPageAsset) {

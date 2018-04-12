@@ -19,6 +19,7 @@ import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.model.User;
 import org.apache.velocity.context.Context;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -32,14 +33,10 @@ public class ContainerRenderedBuilder {
     private final TemplateAPI templateAPI;
     private final ContainerAPI containerAPI;
 
-    private ContainerRenderedBuilder() {
+    public ContainerRenderedBuilder() {
         userAPI = APILocator.getUserAPI();
         templateAPI = APILocator.getTemplateAPI();
         containerAPI = APILocator.getContainerAPI();
-    }
-
-    public static ContainerRenderedBuilder get() {
-        return new ContainerRenderedBuilder();
     }
 
     public List<ContainerRendered> getContainers(final Template template)
@@ -48,7 +45,7 @@ public class ContainerRenderedBuilder {
         final List<Container> templateContainers = this.templateAPI.getContainersInTemplate(template, systemUser,
                 false);
 
-        final List<ContainerRendered> containers = new LinkedList<>();
+        final List<ContainerRendered> containers = new ArrayList<>();
         for (final Container container : templateContainers) {
             final List<ContainerStructure> containerStructures = this.containerAPI.getContainerStructures(container);
             containers.add(new ContainerRendered(container, containerStructures));
