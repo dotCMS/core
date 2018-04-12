@@ -68,7 +68,7 @@ public class URLMapTest {
 			HibernateUtil.startTransaction();
 
 			// CONTAINER
-			container = APILocator.getContainerAPI().find("dde0b865-6cea-4ff0-8582-85e5974cf94f", user, false);
+			container = APILocator.getContainerAPI().getLiveContainerById("56bd55ea-b04b-480d-9e37-5d6f9217dcc3", user, false);
 
 			Structure simpleWidgetSt = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("SimpleWidget");
 
@@ -282,7 +282,10 @@ public class URLMapTest {
         	HibernateUtil.startTransaction();
         	if(testFolder!=null) APILocator.getFolderAPI().delete(testFolder, user, false);
         	if(testSt!=null) APILocator.getStructureAPI().delete(testSt, user);
-        	if(widget!=null) APILocator.getContentletAPI().delete(widget, user, false);
+        	if(widget!=null){
+				APILocator.getContentletAPI().archive(widget, user, false);
+        		APILocator.getContentletAPI().delete(widget, user, false);
+			}
 
         	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
