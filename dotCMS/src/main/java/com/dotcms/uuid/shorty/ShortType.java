@@ -15,8 +15,11 @@ public enum ShortType {
     STRUCTURE("structure"),
     USER_PROXY("user_proxy"),
     IDENTIFIER("identifier"),
-    INODE("inode");
-    
+    INODE("inode"),
+    WORKFLOW_SCHEME("workflow_scheme"),
+    WORKFLOW_STEP("workflow_step"),
+    WORKFLOW_ACTION("workflow_action");
+
     final String shortType;
 
     private ShortType(String type) {

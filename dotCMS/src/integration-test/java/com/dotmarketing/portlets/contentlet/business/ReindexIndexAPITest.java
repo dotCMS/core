@@ -104,7 +104,6 @@ public class ReindexIndexAPITest{
         map.put("body", "body");
 
 
-        //add 5 contentlets
         for(int i = 0;i<num;i++){
             map.put("title", i+ "indexFailTestTitle : ");
 
@@ -174,6 +173,11 @@ public class ReindexIndexAPITest{
         // make sure that the index is in the same state as before the failed transaction
         for(Contentlet c : origCons){
             assertTrue(contentletAPI.indexCount("+live:true +identifier:" +c.getIdentifier() + " +inode:" + c.getInode() , user, respectFrontendRoles)>0);
+        }
+
+        for(Contentlet c : origCons){
+            contentletAPI.archive(c,user,false);
+            contentletAPI.delete(c,user,false);
         }
 
     }

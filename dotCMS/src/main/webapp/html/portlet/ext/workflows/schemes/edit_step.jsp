@@ -29,6 +29,16 @@
 		<input type="hidden" name="schemeId" value="<%=UtilMethods.webifyString(scheme.getId())%>">
 		  <dl>
 			  <dt>
+				  <label for=""><%=LanguageUtil.get(pageContext, "Step")%> <%=LanguageUtil.get(pageContext, "Id")%>:</label>
+			  </dt>
+			  <dd>
+				  <strong>
+					  <a onclick="this.parentNode.innerHTML='<%=step.getId()%>'; return false;" href="#"><%=APILocator.getShortyAPI().shortify(step.getId()) %></a>
+				  </strong>
+			  </dd>
+		  </dl>
+		  <dl>
+			  <dt>
 				  <label for=""><%=LanguageUtil.get(pageContext, "Name")%>:</label>
 			  </dt>
 			  <dd>
