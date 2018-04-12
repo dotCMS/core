@@ -513,7 +513,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
 
             //Generate a System Event for this publish operation
-            contentletSystemEventUtil.pushPublishEvent(contentlet);
+            HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+                @Override
+                public void run() {
+
+                    contentletSystemEventUtil.pushPublishEvent(contentlet);
+                }
+            });
 
             if ( localTransaction ) {
                 HibernateUtil.closeAndCommitTransaction();
@@ -1746,7 +1752,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         Iterator<Contentlet> itr = perCons.iterator();
         while( itr.hasNext() ) {
-            Contentlet con = itr.next();
+            final Contentlet con = itr.next();
 
             //If we are deleting a Site/Host, we can call directly the destroy method.
             //No need to validate anything.
@@ -1794,11 +1800,23 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                 }
             }
+
             deletedIdentifiers.add(con.getIdentifier());
-            contentletSystemEventUtil.pushDeleteEvent(con);
+            this.sendDeleteEvent(con);
         }
 
         return noErrors;
+    }
+
+    private void sendDeleteEvent (final Contentlet contentlet) throws DotHibernateException {
+
+        HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+            @Override
+            public void run() {
+
+                contentletSystemEventUtil.pushDeleteEvent(contentlet);
+            }
+        });
     }
 
     /**
@@ -2007,7 +2025,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown")
                         + " does not have permission to edit the contentlet");
             }
-            Contentlet workingContentlet = findContentletByIdentifier(contentlet.getIdentifier(), false, contentlet.getLanguageId(), user, respectFrontendRoles);
+            final Contentlet workingContentlet = findContentletByIdentifier(contentlet.getIdentifier(), false, contentlet.getLanguageId(), user, respectFrontendRoles);
             Contentlet liveContentlet = null;
             try{
                 liveContentlet = findContentletByIdentifier(contentlet.getIdentifier(), true, contentlet.getLanguageId(), user, respectFrontendRoles);
@@ -2064,8 +2082,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 new ContentletLoader().invalidate(contentlet);
 
                 publishRelatedHtmlPages(contentlet);
-                contentletSystemEventUtil.pushArchiveEvent(workingContentlet);
-            }else{
+                HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+                    @Override
+                    public void run() {
+
+                        contentletSystemEventUtil.pushArchiveEvent(workingContentlet);
+                    }
+                });
+            } else {
+
                 throw new DotContentletStateException("Contentlet is locked: Unable to archive");
             }
 
@@ -2344,9 +2369,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
             new ContentletLoader().invalidate(contentlet, PageMode.LIVE);
             publishRelatedHtmlPages(contentlet);
 
+            HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+                @Override
+                public void run() {
 
+                    contentletSystemEventUtil.pushUnpublishEvent(contentlet);
+                }
+            });
 
-            contentletSystemEventUtil.pushUnpublishEvent(contentlet);
 
             /*
             Triggers a local system event when this contentlet commit listener is executed,
@@ -2387,7 +2417,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @WrapInTransaction
     @Override
-    public void unarchive(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException {
+    public void unarchive(final Contentlet contentlet, final User user, final boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException {
 
         String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
         String contentPushPublishTime = contentlet.getStringProperty("wfPublishTime");
@@ -2434,7 +2464,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
             new ContentletLoader().invalidate(contentlet);
             publishRelatedHtmlPages(contentlet);
 
-            contentletSystemEventUtil.pushUnArchiveEvent(contentlet);
+            HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+                @Override
+                public void run() {
+
+                    contentletSystemEventUtil.pushUnArchiveEvent(contentlet);
+                }
+            });
         } catch(DotDataException | DotStateException| DotSecurityException e) {
             ActivityLogger.logInfo(getClass(), "Error Unarchiving Content", "StartDate: " +contentPushPublishDate+ "; "
                     + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
@@ -3507,10 +3543,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         //Create a System event for this contentlet
         if ( generateSystemEvent ) {
-            contentletSystemEventUtil.pushSaveEvent(contentlet, createNewVersion);
+
+            this.pushSaveEvent(contentlet, createNewVersion);
         }
 
         return contentlet;
+    }
+
+    private void pushSaveEvent (final Contentlet eventContentlet, final boolean eventCreateNewVersion) throws DotHibernateException {
+
+        HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+            @Override
+            public void run() {
+
+                contentletSystemEventUtil.pushSaveEvent(eventContentlet, eventCreateNewVersion);
+            }
+        });
     }
 
     private List<Category> getExistingContentCategories(Contentlet contentlet)
@@ -5283,9 +5331,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         }
 
-        this.contentletSystemEventUtil.pushCopyEvent(resultContentlet);
+        this.sendCopyEvent(resultContentlet);
 
         return resultContentlet;
+    }
+
+    private void sendCopyEvent (final Contentlet contentlet) throws DotHibernateException {
+
+        HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+            @Override
+            public void run() {
+
+                contentletSystemEventUtil.pushCopyEvent(contentlet);
+            }
+        });
     }
 
     @WrapInTransaction
