@@ -9,6 +9,7 @@ import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
@@ -48,7 +49,7 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 		if(LicenseUtil.getLevel() < LicenseLevel.STANDARD.level){
 			final String noLicenseMessage = "Unable to execute ES API Requests. Please apply an Enterprise License";
 			Logger.warn(this.getClass(), noLicenseMessage);
-			return Response.status(Response.Status.BAD_REQUEST)
+			return Response.status(Status.FORBIDDEN)
 					.entity(map("message", noLicenseMessage))
 					.header("error-message", noLicenseMessage)
 					.build();
