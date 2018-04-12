@@ -119,7 +119,7 @@ describe('DotEditLayoutGridComponent', () => {
     it('should remove one Container from the Grid', () => {
         component.addBox();
         const dotDialogService = hostComponentfixture.debugElement.injector.get(DotDialogService);
-        spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
+        spyOn(dotDialogService, 'confirm').and.callFake(conf => {
             conf.accept();
         });
         component.onRemoveContainer(1);
@@ -166,7 +166,7 @@ describe('DotEditLayoutGridComponent', () => {
     it('should Propagate Change after a grid box is deleted', () => {
         component.addBox();
         const dotDialogService = hostComponentfixture.debugElement.injector.get(DotDialogService);
-        spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
+        spyOn(dotDialogService, 'confirm').and.callFake(conf => {
             conf.accept();
         });
         spyOn(component, 'propagateChange');
@@ -216,5 +216,10 @@ describe('DotEditLayoutGridComponent', () => {
     it('should call writeValue to define the initial value of grid', () => {
         hostComponentfixture.detectChanges();
         expect(component.value).toEqual(fakeValue);
+    });
+
+    it('should be multiple true on dot-container-selector', () => {
+        const containerSelector = de.query(By.css('dot-container-selector'));
+        expect(containerSelector.attributes['ng-reflect-multiple']).toBeTruthy();
     });
 });

@@ -48,6 +48,7 @@ export class SearchableDropdownComponent extends BaseComponent implements Contro
     @Input() placeholder = '';
     @Input() persistentPlaceholder: boolean;
     @Input() width: string;
+    @Input() multiple: boolean;
     @Output() change: EventEmitter<any> = new EventEmitter();
     @Output() filterChange: EventEmitter<string> = new EventEmitter();
     @Output() hide: EventEmitter<any> = new EventEmitter();
@@ -156,13 +157,13 @@ export class SearchableDropdownComponent extends BaseComponent implements Contro
 
     /**
      * Call when a option is clicked, if this option is not the same of the current value then
-     * the change events is emitted
+     * the change events is emitted. If multiple is true allow to emit the same value.
      * @private
      * @param {*} item
      * @memberof SearchableDropdownComponent
      */
     handleClick(item: any): void {
-        if (this.value !== item) {
+        if (this.value !== item || this.multiple) {
             this.value = item;
             if (Array.isArray(this.labelPropertyName)) {
                 this.valueString = item[this.labelPropertyName[0]];

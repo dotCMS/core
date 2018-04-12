@@ -10,7 +10,8 @@
             [totalRecords]="paginationService.totalRecords"
             [labelPropertyName]="['name', 'parentPermissionable.hostname']"
             placeholder="{{ dotMessageService.get('editpage.container.add.label') }}"
-            persistentPlaceholder="true">
+            persistentPlaceholder="true"
+            [multiple]="multiple">
         </dot-searchable-dropdown>
         <button class="container-selector__header-remove" type="button" pButton icon="fa-close" (click)="remove.emit($event)"></button>
     </div>

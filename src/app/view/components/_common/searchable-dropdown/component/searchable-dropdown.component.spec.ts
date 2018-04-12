@@ -114,7 +114,7 @@ describe('SearchableDropdownComponent', () => {
             const input = fixture.debugElement.query(By.css('input[type="text"]'));
             input.nativeElement.value = filter;
 
-            comp.pageChange.subscribe((e) => {
+            comp.pageChange.subscribe(e => {
                 event = e;
             });
 
@@ -139,18 +139,40 @@ describe('SearchableDropdownComponent', () => {
         })
     );
 
-    it('should change the value', (done) => {
-        comp.data = data;
-        comp.labelPropertyName = 'name';
-        comp.change.subscribe((value) => {
-            expect(data[0]).toEqual(value);
-            done();
+    describe('emit the change event', () => {
+        let items;
+
+        beforeEach(() => {
+            comp.data = data;
+            comp.labelPropertyName = 'name';
+            spyOn(comp.change, 'emit');
+
+            fixture.detectChanges();
+            items = fixture.debugElement.queryAll(By.css('span'));
         });
 
-        fixture.detectChanges();
+        it('should change the value', () => {
+            items[0].triggerEventHandler('click', null);
+            expect(comp.change.emit).toHaveBeenCalledWith(data[0]);
+        });
 
-        const items = fixture.debugElement.queryAll(By.css('span'));
-        items[0].triggerEventHandler('click', null);
+        it('should emit the same value twice when multiple equal true', () => {
+            comp.multiple = true;
+
+            items[0].triggerEventHandler('click', null);
+            items[0].triggerEventHandler('click', null);
+
+            expect(comp.change.emit).toHaveBeenCalledWith(data[0]);
+            expect(comp.change.emit).toHaveBeenCalledTimes(2);
+        });
+
+        it('should emit change the value once when multiple equal false', () => {
+            items[0].triggerEventHandler('click', null);
+            items[0].triggerEventHandler('click', null);
+
+            expect(comp.change.emit).toHaveBeenCalledWith(data[0]);
+            expect(comp.change.emit).toHaveBeenCalledTimes(1);
+        });
     });
 
     it('should be valueString equals to placeholder', () => {

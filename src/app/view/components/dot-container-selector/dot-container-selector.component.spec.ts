@@ -149,7 +149,7 @@ describe('ContainerSelectorComponent', () => {
         expect(comp.selectedContainersList.length).toEqual(0);
     });
 
-    it('should not add duplicated containers to the list', () => {
+    it('should not add duplicated containers to the list when multiple false', () => {
         comp.currentContainers = containers;
 
         searchableDropdownComponent.change.emit(containers[0]);
@@ -161,5 +161,16 @@ describe('ContainerSelectorComponent', () => {
         fixture.detectChanges();
 
         expect(comp.selectedContainersList.length).toEqual(1);
+    });
+
+    it('should add duplicated containers to the list when multiple true', () => {
+        comp.currentContainers = containers;
+        comp.multiple = true;
+
+        searchableDropdownComponent.change.emit(containers[0]);
+        searchableDropdownComponent.change.emit(containers[0]);
+        fixture.detectChanges();
+
+        expect(comp.selectedContainersList.length).toEqual(2);
     });
 });

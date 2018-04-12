@@ -3,6 +3,7 @@
         (change)="updateContainers($event)"
         (remove)="onRemoveContainer(i)"
         [(ngGridItem)]="gridBox.config"
-        [selectedContainersList]="gridBox.containers">
+        [selectedContainersList]="gridBox.containers"
+        [multiple]="true">
     </dot-container-selector>
 </div>
