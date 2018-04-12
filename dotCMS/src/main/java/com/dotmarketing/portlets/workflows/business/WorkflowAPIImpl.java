@@ -2084,7 +2084,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		final List<WorkflowScheme> schemes = findSchemesForContentType(contentType);
 		for(WorkflowScheme scheme: schemes){
 			final List<WorkflowStep> steps = findSteps(scheme);
-			actions.addAll(findActions(steps.stream().findFirst().orElse(null), user));
+			actions.addAll(findActions(steps.stream().findFirst().orElse(null), user, contentType));
 		}
 
 		return actions.build();
