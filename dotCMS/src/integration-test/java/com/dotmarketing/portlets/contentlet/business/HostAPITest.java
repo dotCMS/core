@@ -82,7 +82,14 @@ public class HostAPITest {
         
         Thread.sleep(600); // wait a bit for the index
 
-        APILocator.getHostAPI().archive(host, user, false);
+        try{
+            HibernateUtil.startTransaction();
+            APILocator.getHostAPI().archive(host, user, false);
+            HibernateUtil.closeAndCommitTransaction();
+        }catch(Exception e){
+            HibernateUtil.rollbackTransaction();
+            Logger.error(HostAPITest.class, e.getMessage());
+        }
         
         try{
         	HibernateUtil.startTransaction();
