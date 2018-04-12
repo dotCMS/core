@@ -897,10 +897,6 @@ public class WorkflowResource {
         try {
 
             Logger.debug(this, "Copying the workflow scheme: " + schemeId);
-            this.workflowAPI.isUserAllowToModifiedWorkflow(initDataObject.getUser());
-
-            //exportObject = this.workflowImportExportUtil.buildExportObject(Arrays.asList(scheme));
-            //permissions  = this.workflowHelper.getActionsPermissions(exportObject.getActions());
             response     = Response.ok(new ResponseEntityView(
                     this.workflowAPI.deepCopyWorkflowScheme(
                             this.workflowAPI.findScheme(schemeId),
