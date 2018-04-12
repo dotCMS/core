@@ -6,12 +6,17 @@ import com.dotcms.rest.exception.ValidationException;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
+import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.workflows.business.NotAllowedUserWorkflowException;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -92,6 +97,34 @@ public class ExceptionUtil {
             }
         }
         return message;
+    }
+
+
+    public static String toString(final DotContentletValidationException ex) {
+        final Map<String, List<Field>> errors = ex.getNotValidFields();
+        final Set<String> keys = errors.keySet();
+        final StringBuilder sb = new StringBuilder();
+        if(!errors.isEmpty()) {
+            String title = getLocalizedMessageOrDefault(null,
+                    "message.contentlet.fields.validation",
+                    "Content validatating exception fields: ", null);
+            sb.append(title).
+                    append("[");
+            for (final String key : keys) {
+                final Iterator<Field> fields = errors.get(key).iterator();
+                if (fields.hasNext()) {
+                    while (fields.hasNext()) {
+                        final Field field = fields.next();
+                        sb.append(field.getFieldName());
+                        if (fields.hasNext()) {
+                            sb.append(", ");
+                        }
+                    }
+                }
+            }
+            sb.append("]");
+        }
+        return sb.toString();
     }
 
 }
