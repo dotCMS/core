@@ -176,11 +176,7 @@ describe('ContentTypesPortletComponent', () => {
 
     it('should have remove, push publish and Add to bundle actions to the list item', () => {
         fixture.detectChanges();
-        expect(comp.rowActions.map((action) => action.menuItem.label)).toEqual([
-            'Delete',
-            'Push Publish',
-            'Add to bundle'
-        ]);
+        expect(comp.rowActions.map((action) => action.menuItem.label)).toEqual(['Delete', 'Push Publish', 'Add to bundle']);
     });
 
     it('should have ONLY remove action because is community license', () => {

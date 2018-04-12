@@ -21,6 +21,7 @@ import { NotLicensedService } from './api/services/not-licensed-service';
 import { NotificationsService } from './api/services/notifications-service';
 import { PaginatorService } from './api/services/paginator';
 import { PublicAuthGuardService } from './api/services/guards/public-auth-guard.service';
+import { DotLicenseService } from './api/services/dot-license/dot-license.service';
 import { StringFormat } from './api/util/stringFormat';
 
 const PROVIDERS: any[] = [
@@ -47,6 +48,7 @@ const PROVIDERS: any[] = [
     NotificationsService,
     PaginatorService,
     PublicAuthGuardService,
+    DotLicenseService,
     StringFormat
 ];
 

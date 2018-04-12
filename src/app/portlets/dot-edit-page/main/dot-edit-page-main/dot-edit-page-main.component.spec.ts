@@ -43,7 +43,7 @@ describe('DotEditPageMainComponent', () => {
                 declarations: [DotEditPageMainComponent],
                 providers: [
                     { provide: DotMessageService, useValue: messageServiceMock },
-                    { provide: PageViewService, useClass: PageViewServiceMock },
+                    { provide: PageViewService, useClass: PageViewServiceMock }
                 ]
             });
         })

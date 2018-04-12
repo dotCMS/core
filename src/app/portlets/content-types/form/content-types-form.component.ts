@@ -4,13 +4,13 @@ import { FormGroup, FormBuilder, Validators, FormControl } from '@angular/forms'
 import { Observable } from 'rxjs/Observable';
 
 import * as _ from 'lodash';
-import { DotcmsConfig } from 'dotcms-js/dotcms-js';
 import { SelectItem } from 'primeng/primeng';
 
 import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { SiteSelectorComponent } from '../../../view/components/_common/site-selector/site-selector.component';
 import { DotWorkflow } from '../../../shared/models/dot-workflow/dot-workflow.model';
 import { DotWorkflowService } from '../../../api/services/dot-workflow/dot-workflow.service';
+import { DotLicenseService } from '../../../api/services/dot-license/dot-license.service';
 
 // TODO: move this to models
 import { ContentTypeField } from '../fields';
@@ -43,9 +43,9 @@ export class ContentTypesFormComponent implements OnInit {
     private originalValue: any;
 
     constructor(
-        private dotcmsConfig: DotcmsConfig,
         private fb: FormBuilder,
         private dotWorkflowService: DotWorkflowService,
+        private dotLicenseService: DotLicenseService,
         public dotMessageService: DotMessageService
     ) {
         dotMessageService
@@ -201,12 +201,11 @@ export class ContentTypesFormComponent implements OnInit {
     }
 
     private initWorkflowField(): void {
-        this.dotcmsConfig
-            .getConfig()
-            .take(1)
-            .subscribe((res) => {
-                this.updateWorkflowFormControl(res.license);
+        this.dotLicenseService.isEnterpriseLicense()
+            .subscribe((isEnterpriseLicense: boolean) => {
+                this.updateWorkflowFormControl(isEnterpriseLicense);
             });
+
     }
 
     private getWorkflowFieldOption(workflow: DotWorkflow): SelectItem {
@@ -269,15 +268,13 @@ export class ContentTypesFormComponent implements OnInit {
     }
 
     private setDefaultWorkflow(workflows: DotWorkflow[]): void {
-        const defaultValue = workflows
-            .filter((workflow: DotWorkflow) => workflow.system)
-            .map((workflow: DotWorkflow) => workflow.id);
+        const defaultValue = workflows.filter((workflow: DotWorkflow) => workflow.system).map((workflow: DotWorkflow) => workflow.id);
 
         this.form.get('workflow').setValue(defaultValue);
     }
 
-    private updateWorkflowFormControl(license): void {
-        if (!license.isCommunity) {
+    private updateWorkflowFormControl(isEnterpriseLicense: boolean): void {
+        if (isEnterpriseLicense) {
             const workflowControl = this.form.get('workflow');
 
             workflowControl.enable();
