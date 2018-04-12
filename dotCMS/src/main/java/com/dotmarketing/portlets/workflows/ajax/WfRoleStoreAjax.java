@@ -50,6 +50,7 @@ public class WfRoleStoreAjax extends WfBaseAction {
 
         boolean includeFake = UtilMethods.isSet(request.getParameter( "includeFake" ))&&request.getParameter( "includeFake" ).equals("true");
         boolean includeWorkflowRoles = UtilMethods.isSet(request.getParameter( "includeWfRoles" ))&&request.getParameter( "includeWfRoles" ).equals("true");
+        boolean includeLabelAll = UtilMethods.isSet(request.getParameter( "includeLabelAll" ))&&request.getParameter( "includeLabelAll" ).equals("true");
 
         try {
             final Role cmsAnonOrig = APILocator.getRoleAPI().loadCMSAnonymousRole();
