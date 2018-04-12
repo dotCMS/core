@@ -294,7 +294,11 @@ public abstract class GenericBundleActivator implements BundleActivator {
             if ( System.getProperty(WebKeys.OSGI_ENABLED)!=null ) {//If it is null probably the servlet wasn't even been loaded...
 
                 if (null == OSGIProxyServlet.bundleContext) {
-                    initProxyServlet(context);
+                    synchronized (this) {
+                        if (null == OSGIProxyServlet.bundleContext) {
+                            initProxyServlet(context);
+                        }
+                    }
                 } else {
                     try {
                         OSGIProxyServlet.bundleContext.getBundle();
