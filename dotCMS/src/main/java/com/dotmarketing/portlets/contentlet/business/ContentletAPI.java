@@ -1118,7 +1118,7 @@ public interface ContentletAPI {
 	
 	/**
 	 * Will check in a update of your contentlet without generating a new version. The inode of your contentlet must be different from 0. 
-	 * Note this method will also atempt to publish the contentlet and related assets (when checking in) without altering the mod date or mod user.
+	 * Note this method will also attempt to publish the contentlet and related assets (when checking in) without altering the mod date or mod user.
 	 * Note that the contentlet argument must be obtained using checkout methods.   
 	 * @param contentlet - The inode of your contentlet must be different from 0.
 	 * @param contentRelationships - Used to set relationships to updated contentlet version 
@@ -1371,7 +1371,7 @@ public interface ContentletAPI {
 	public List<Contentlet> getSiblings(String identifier)throws DotDataException, DotSecurityException ;
 	
 	/**
-	 * Will search the DB.  Use the SQLQueryBuilderFactory or GenericQueryBuiilderFactory to build
+	 * Will search the DB. Uses the QueryUtil to build
 	 * your query object
 	 * @param query
 	 * @param user
@@ -1379,6 +1379,7 @@ public interface ContentletAPI {
 	 * @return
 	 * @throws ValidationException
 	 * @throws DotDataException
+	 * @see @com.dotmarketing.business.query.QueryUtil
 	 */
 	public List<Map<String, Serializable>> DBSearch(Query query, User user,boolean respectFrontendRoles) throws ValidationException, DotDataException;
 	
@@ -1422,7 +1423,7 @@ public interface ContentletAPI {
     public boolean isInodeIndexedArchived(String inode);
 
 	/**
-	 * Method will update hostInode of content to systemhost
+	 * Method will update hostInode of content to SYSTEM_HOST
 	 * @param hostIdentifier
 	 * @throws DotSecurityException 
 	 */	
