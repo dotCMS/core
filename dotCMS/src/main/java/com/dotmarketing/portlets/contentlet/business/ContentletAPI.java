@@ -52,24 +52,24 @@ public interface ContentletAPI {
 	 * of content.  Doesn't respect permissions.
 	 * @param offset can be 0 if no offset
 	 * @param limit can be 0 of no limit
-	 * @return
+	 * @return List<Contentlet> a list of Contents
 	 * @throws DotDataException
 	 */
 	public List<Contentlet> findAllContent(int offset, int limit) throws DotDataException;
 	
 	/**
 	 * Finds a Contentlet Object given the inode
-	 * @param inode
-	 * @return
+	 * @param inode A Contentlet Inode to look for
+	 * @return Contentlet - a Contentlet object
 	 * @throws DotDataException
 	 */
 	public Contentlet find(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Returns a live Contentlet Object for a given language 
-	 * @param languageId
-	 * @param inode
-	 * @return
+	 * @param languageId Language Id for pulling a specific language version of a content
+	 * @param contentletId an Identifier object for a given content
+	 * @return Contentlet - a Contentlet object
 	 * @throws DotDataException
 	 * @throws DotSecurityException 
 	 */
@@ -82,7 +82,7 @@ public interface ContentletAPI {
 	 * @param respectFrontendRoles
 	 * @param limit
 	 * @param offset
-	 * @return
+	 * @return List<Contentlet> - A List of contentlet objects given a parent Structure
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
@@ -95,7 +95,7 @@ public interface ContentletAPI {
 	 * @param respectFrontendRoles
 	 * @param limit
 	 * @param offset
-	 * @return
+	 * @return List<Contentlet> - A List of contentlet objects given a parent Structure Inode
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
@@ -105,8 +105,11 @@ public interface ContentletAPI {
 	 * Retrieves a contentlet from the Lucene index + cache first, then falls back
 	 * to the database if not found based on its identifier
 	 * @param identifier 
-	 * @param live Retrieves the live version if false retrieves the working version
-	 * @return
+	 * @param live Retrieves the live version, if false retrieves the working version
+	 * @param languageId Retrieves a langauge-specific version of this content.
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return Contentlet - a Contentlet object
 	 * @throws DotSecurityException
 	 * @throws DotContentletStateException
 	 * @throws DotDataException 
@@ -139,7 +142,7 @@ public interface ContentletAPI {
 	/**
 	 * Gets a list of Contentlets from a passed in list of inodes.  
 	 * @param inodes
-	 * @return
+	 * @return List<Contentlet>
 	 * @throws DotSecurityException 
 	 */
 	public List<Contentlet> findContentlets(List<String> inodes) throws DotDataException, DotSecurityException;
@@ -147,7 +150,9 @@ public interface ContentletAPI {
 	/**
 	 * Gets a list of Contentlets from a given parent folder  
 	 * @param parentFolder
-	 * @return
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return List<Contentlet>
 	 * @throws DotSecurityException 
 	 */
 	public List<Contentlet> findContentletsByFolder(Folder parentFolder, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
@@ -155,6 +160,8 @@ public interface ContentletAPI {
 	/**
 	 * Gets a list of Contentlets from a given parent host, retrieves the working version of content
 	 * @param parentHost
+	 * @param user
+	 * @param respectFrontendRoles
 	 * @return
 	 * @throws DotSecurityException 
 	 */
@@ -287,7 +294,7 @@ public interface ContentletAPI {
 	 * @param sortBy
 	 * @param user
 	 * @param respectFrontendRoles
-	 * @return
+	 * @return List<Contentlet>
 	 * @throws DotDataException
 	 * @throws DotSecurityException 
 	 */
@@ -368,7 +375,6 @@ public interface ContentletAPI {
 	 * sure to pass in an Admin User.  If a user doesn't have permissions to clean all teh contentlets it will clean 
 	 * as many as it can and throw the DotSecurityException  
 	 * @param structure
-	 * @param field
 	 * @param user
 	 * @param respectFrontendRoles
 	 * @throws DotSecurityException
@@ -396,7 +402,7 @@ public interface ContentletAPI {
 	 * @return
 	 * @throws DotDataException 
 	 * @throws DotSecurityException
-	 * @throws DotContentletStateException - if teh contentlet is null or has an inode of 0 
+	 * @throws DotContentletStateException - if the contentlet is null or does not exist
 	 */
 	public List<Map<String, Object>> getContentletReferences(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotContentletStateException;
 	
@@ -404,8 +410,6 @@ public interface ContentletAPI {
 	 * Gets the value of a field with a given contentlet 
 	 * @param contentlet
 	 * @param theField
-	 * @param user
-	 * @param respectFrontendRoles
 	 * @return
 	 */
 	public Object getFieldValue(Contentlet contentlet, Field theField);
@@ -443,6 +447,8 @@ public interface ContentletAPI {
 	/**
 	 * Returns all contentlet's relationships for a given contentlet inode 
 	 * @param contentletInode
+	 * @param user
+	 * @param respectFrontendRoles
 	 * @return a ContentletRelationships object containing all relationships for the contentlet
 	 * @throws DotDataException
 	 */
@@ -459,18 +465,21 @@ public interface ContentletAPI {
 	/**
 	 * Returns a contentlet's siblings for a given contentlet object.
 	 * @param contentlet
+	 * @param isLiveContent
+	 * @param user
+	 * @param respectFrontendRoles
 	 * @return a ContentletRelationships object containing all relationships for the contentlet
 	 * @throws DotDataException
 	 */
 	public List<Contentlet> getAllLanguages(Contentlet contentlet, Boolean isLiveContent, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
-	 * 
+	 * Checks if both contents have the same inode.
 	 * @param contentlet1
 	 * @param contentlet2
 	 * @param user
 	 * @param respectFrontendRoles
-	 * @return
+	 * @return boolean true if both contents' inodes match
 	 * @throws DotSecurityException
 	 * @throws DotDataException 
 	 */
@@ -573,7 +582,6 @@ public interface ContentletAPI {
 	 * @param contentlets
 	 * @param user
 	 * @param respectFrontendRoles
-	 * @return
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 * @throws DotContentletStateException
@@ -653,7 +661,7 @@ public interface ContentletAPI {
 	 * @param contentlets
 	 * @param user
 	 * @param respectFrontendRoles
-	 * @returns true when no errors occurs otherwise false
+	 * @return true when no errors occurs otherwise false
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
@@ -704,6 +712,7 @@ public interface ContentletAPI {
 	 * Deletes all related content from passed in contentlet and relationship 
 	 * @param contentlet
 	 * @param relationship
+	 * @param hasParent
 	 * @param user
 	 * @param respectFrontendRoles
 	 * @throws DotDataException
@@ -725,14 +734,13 @@ public interface ContentletAPI {
 	 * @throws DotSecurityException
 	 * @throws DotContentletStateException if one of the contentlets doesn't have passed in relationship. The method will still try to handle the other relationships
 	 */
-	public void relateContent(Contentlet contentlet, Relationship rel,List<Contentlet> related, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
+	public void relateContent(Contentlet contentlet, Relationship rel, List<Contentlet> related, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
 
 	/**
 	 * Associates the given list of contentlets using the relationship this
 	 * methods removes old associated content and reset the relatioships based
 	 * on the list of content passed as parameter
 	 * @param contentlet
-	 * @param rel
 	 * @param related
 	 * @param user
 	 * @param respectFrontendRoles
@@ -740,7 +748,7 @@ public interface ContentletAPI {
 	 * @throws DotSecurityException
 	 * @throws DotContentletStateException if one of the contentlets doesn't have passed in relationship. The method will still try to handle the other relationships
 	 */
-	public void relateContent(Contentlet contentlet, ContentletRelationshipRecords related, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException, DotContentletStateException;
+	public void relateContent(Contentlet contentlet, ContentletRelationshipRecords related, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
 
 	/**
 	 * Gets all related content, if this method is invoked with a same structures (where the parent and child structures are the same type) 
@@ -851,7 +859,7 @@ public interface ContentletAPI {
 	
 	/**
 	 * Reindexes content under a given folder + refreshes the content from cache
-	 * @param host
+	 * @param folder
 	 * @throws DotReindexStateException
 	 */
 	public void refreshContentUnderFolder(Folder folder)throws DotReindexStateException;
@@ -1052,18 +1060,16 @@ public interface ContentletAPI {
 	 * Will check in a new version of you contentlet. The inode of your contentlet must be 0.
 	 * Note that the contentlet argument must be obtained using checkout methods.  
 	 * @param contentlet - The inode of your contentlet must be 0.
-	 * @param contentRelationships - throws IllegalArgumentException if null. Used to set relationships to new contentlet version 
-	 * @param cats - throws IllegalArgumentException if null. Used to set categories to new contentlet version
-	 * @param permissions - throws IllegalArgumentException if null. Used to set permissions to new contentlet version
 	 * @param user
 	 * @param respectFrontendRoles
+	 * @param cats - throws IllegalArgumentException if null. Used to set categories to new contentlet version
 	 * @throws IllegalArgumentException
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 * @throws DotContentletStateException If inode not = to 0
 	 * @throws DotContentletValidationException If content is not valid
 	 */
-	public Contentlet checkin(Contentlet contentlet ,User user,boolean respectFrontendRoles,List<Category> cats) throws IllegalArgumentException,DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException;
+	public Contentlet checkin(Contentlet contentlet, User user, boolean respectFrontendRoles, List<Category> cats) throws IllegalArgumentException,DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException;
 	
 	/**
 	 * Will check in a new version of you contentlet. The inode of your contentlet must be 0.
@@ -1211,7 +1217,6 @@ public interface ContentletAPI {
 	 * Will return all content assigned to a specified Categories
 	 * @param categories - List of categories to look for
 	 * @param languageId language to pull content for. If 0 will return all languages
-	 * @param category Category to look for
 	 * @param live should return live or working content
 	 * @param orderBy indexName(previously known as dbColumnName) to order by. Can be null or empty string
 	 * @param user
@@ -1228,8 +1233,6 @@ public interface ContentletAPI {
 	 * @param contentlet
 	 * @param field
 	 * @param value
-	 * @param user
-	 * @param respectFrontendRoles
 	 * @throws DotContentletStateException if the object isn't the proper type or cannot be converted to the proper type
 	 */
 	public void setContentletProperty(Contentlet contentlet, Field field, Object value) throws DotContentletStateException;
@@ -1237,7 +1240,7 @@ public interface ContentletAPI {
 	/**
 	 * Use to validate your contentlet.
 	 * @param contentlet
-	 * @param categories
+	 * @param cats
 	 * @throws DotContentletValidationException will be thrown if the contentlet is not valid.  
 	 * Use the notValidFields property of the exception to get which fields where not valid  
 	 */
@@ -1247,7 +1250,7 @@ public interface ContentletAPI {
 	 * Use to validate your contentlet.
 	 * @param contentlet
 	 * @param contentRelationships
-	 * @param categories
+	 * @param cats
 	 * @throws DotContentletValidationException will be thrown if the contentlet is not valid.  
 	 * Use the notValidFields property of the exception to get which fields where not valid
 	 */
@@ -1257,7 +1260,7 @@ public interface ContentletAPI {
 	 * Use to validate your contentlet.
 	 * @param contentlet
 	 * @param contentRelationships
-	 * @param categories
+	 * @param cats
 	 * @throws DotContentletValidationException will be thrown if the contentlet is not valid.  
 	 * Use the notValidFields property of the exception to get which fields where not valid
 	 */
@@ -1300,7 +1303,7 @@ public interface ContentletAPI {
 
 	/**
 	 * Converts a "fat" (legacy) contentlet into a new contentlet.
-	 * @param Fat contentlet to be converted.
+	 * @param fatty Fat contentlet to be converted.
 	 * @return A "light" contentlet.
 	 * @throws DotDataException
 	 * @throws DotSecurityException 
@@ -1309,7 +1312,7 @@ public interface ContentletAPI {
 	
 	/**
 	 * Converts a "light" contentlet into a "fat" (legacy) contentlet.
-	 * @param A "light" contentlet to be converted.
+	 * @param cont A "light" contentlet to be converted.
 	 * @return Fat contentlet.
 	 * @throws DotDataException
 	 */
@@ -1325,8 +1328,10 @@ public interface ContentletAPI {
 	
 	/**
 	 * 
-	 * @param deleteFrom
-	 * @param offset
+	 * @param structureInode
+	 * @param field
+	 * @param user
+	 * @param respectFrontEndRoles
 	 * @return
 	 * @throws DotDataException
 	 */
