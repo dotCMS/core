@@ -1738,24 +1738,190 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return workFlowFactory.countTasks(searcher);
 	}
 
+	@WrapInTransaction
 	@Override
-	public void copyWorkflowActionClassParameter(final WorkflowActionClassParameter from, final WorkflowActionClass to) throws DotDataException{
-		workFlowFactory.copyWorkflowActionClassParameter(from, to);
+	public List<WorkflowActionClassParameter> copyWorkflowActionClassParameters(final Collection<WorkflowActionClassParameter> fromParams,
+																		  final WorkflowActionClass to,
+																		  final User user) throws DotDataException {
+
+		final List<WorkflowActionClassParameter> params = new ArrayList<>();
+
+		for (final WorkflowActionClassParameter from : fromParams) {
+
+			final WorkflowActionClassParameter param = new WorkflowActionClassParameter();
+
+			Logger.debug(this, () -> "Copying the WorkflowActionClassParameter: " + from.getId());
+
+			param.setActionClassId(to.getActionId());
+			param.setKey		  (from.getKey());
+			param.setValue		  (from.getValue());
+
+			params.add(param);
+		}
+
+		this.saveWorkflowActionClassParameters(params, user);
+
+		return params;
 	}
 
+	@WrapInTransaction
 	@Override
-	public void copyWorkflowActionClass(final WorkflowActionClass from, final WorkflowAction to) throws DotDataException{
-		workFlowFactory.copyWorkflowActionClass(from, to);
+	public WorkflowActionClass copyWorkflowActionClass(final WorkflowActionClass from,
+													   final WorkflowAction to,
+													   final User user) throws DotDataException, AlreadyExistException {
+
+		final WorkflowActionClass actionClass = new WorkflowActionClass();
+
+		Logger.debug(this, ()-> "Copying the WorkflowActionClass: " + from.getId() +
+							", name: " + from.getName());
+
+		actionClass.setClazz   (from.getClazz());
+		actionClass.setOrder   (from.getOrder());
+		actionClass.setName    (from.getName());
+		actionClass.setActionId(to.getId());
+
+		this.saveActionClass(actionClass, user);
+
+		return actionClass;
 	}
 
+	@WrapInTransaction
 	@Override
-	public void copyWorkflowAction(final WorkflowAction from, final WorkflowStep to) throws DotDataException{
-		workFlowFactory.copyWorkflowAction(from, to);
+	public WorkflowAction copyWorkflowAction(final WorkflowAction from,
+											 final WorkflowScheme to,
+											 final User user) throws DotDataException, AlreadyExistException, DotSecurityException {
+
+		Logger.debug(this, ()-> "Copying the WorkflowAction: " + from.getId() +
+				", name: " + from.getName());
+
+		final WorkflowAction action = new WorkflowAction();
+
+		action.setSchemeId   (to.getId());
+		action.setAssignable (from.isAssignable());
+		action.setCommentable(from.isCommentable());
+		action.setCondition  (from.getCondition());
+		action.setName		 (from.getName());
+		action.setShowOn	 (from.getShowOn());
+		action.setNextAssign (from.getNextAssign());
+		action.setNextStep	 (from.getNextStep());
+		action.setOrder		 (from.getOrder());
+		action.setOwner		 (from.getOwner());
+		action.setRoleHierarchyForAssign(from.isRoleHierarchyForAssign());
+
+		this.saveAction(action, user);
+
+		final List<Permission> permissionsFrom =
+				this.permissionAPI.getPermissions(from);
+
+		for (final Permission permissionfrom: permissionsFrom) {
+
+			this.permissionAPI.save(new Permission(permissionfrom.getType(), action.getPermissionId(),
+							permissionfrom.getRoleId(), permissionfrom.getPermission(), permissionfrom.isBitPermission()),
+					action, user, false);
+		}
+
+		return action;
 	}
 
+	@WrapInTransaction
 	@Override
-	public void copyWorkflowStep(final WorkflowStep from, final WorkflowScheme to) throws DotDataException{
-		workFlowFactory.copyWorkflowStep(from, to);
+	public WorkflowStep copyWorkflowStep(final WorkflowStep from,
+										 final WorkflowScheme to,
+										 final User user) throws DotDataException, AlreadyExistException {
+
+		Logger.debug(this, ()-> "Copying the WorkflowStep: " + from.getId() +
+				", name: " + from.getName());
+
+		final WorkflowStep step = new WorkflowStep();
+
+		step.setSchemeId   		(to.getId());
+		step.setMyOrder    		(from.getMyOrder());
+		step.setCreationDate	(new Date());
+		step.setEnableEscalation(from.isEnableEscalation());
+		step.setName		 	(from.getName());
+		step.setEscalationAction(from.getEscalationAction());
+		step.setEscalationTime  (from.getEscalationTime());
+		step.setResolved	 	(from.isResolved());
+
+		this.saveStep(step, user);
+
+		return step;
+	}
+
+	@WrapInTransaction
+	@Override
+	public WorkflowScheme deepCopyWorkflowScheme(final WorkflowScheme from, final User user) throws DotDataException, AlreadyExistException, DotSecurityException {
+
+		// 1) create the scheme with a copy_name_timestamp
+		// 2) get the stepsFrom and do a copy with the same name
+		// 3) get the scheme actions and copy with a diff id
+		// 4) add action class and parameters
+		// 4) associate the stepsFrom to the actions.
+		final WorkflowScheme scheme    = new WorkflowScheme();
+
+		Logger.debug(this, ()-> "Copying a new scheme from: "
+				+ from.getId() + ", name= " + from.getName());
+
+		scheme.setName(from.getName() + "_" + System.currentTimeMillis());
+		scheme.setArchived(from.isArchived());
+		scheme.setCreationDate(new Date());
+		scheme.setDescription(from.getDescription());
+		scheme.setModDate(new Date());
+
+		this.saveScheme(scheme, user);
+
+		final Map<String, WorkflowStep> steps		  = new HashMap<>();
+		final List<WorkflowStep> 	    stepsFrom 	  = this.findSteps(from);
+		for (final WorkflowStep step : stepsFrom) {
+
+			Logger.debug(this, ()-> "Copying a new step from: "
+					+ step.getId() + ", name= " + step.getName());
+
+			steps.put(step.getId(), this.copyWorkflowStep(step, scheme, user));
+		}
+
+		final Map<String, WorkflowAction> actions	   = new HashMap<>();
+		final List<WorkflowAction> 		  actionsFrom  = this.findActions(from, user);
+
+		for (final WorkflowAction action : actionsFrom) {
+
+			Logger.debug(this, ()-> "Copying a new action from: "
+					+ action.getId() + ", name= " + action.getName());
+
+			actions.put(action.getId(), this.copyWorkflowAction(action, scheme, user));
+		}
+
+		for (final WorkflowStep step : stepsFrom) {
+
+			final List<WorkflowAction>  actionSteps =
+					this.findActions(step, user);
+
+			for (final WorkflowAction action : actionSteps) {
+
+				final String stepId   = steps.get(step.getId()).getId();
+				final String actionId = actions.get(action.getId()).getId();
+
+				this.saveAction(actionId, stepId, user);
+			}
+		}
+
+		for (final WorkflowAction action : actionsFrom) {
+
+			final List<WorkflowActionClass> workflowActionClasses =
+					this.findActionClasses(action);
+
+			for (final WorkflowActionClass fromActionClass : workflowActionClasses) {
+
+				final WorkflowActionClass actionClass =
+						this.copyWorkflowActionClass(fromActionClass, actions.get(action.getId()), user);
+				final  Map<String, WorkflowActionClassParameter> classParameterMap =
+						this.findParamsForActionClass(fromActionClass);
+
+				this.copyWorkflowActionClassParameters(classParameterMap.values(), actionClass, user);
+			}
+		}
+
+		return scheme;
 	}
 
 	@Override

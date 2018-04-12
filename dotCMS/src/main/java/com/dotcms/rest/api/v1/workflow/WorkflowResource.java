@@ -874,6 +874,48 @@ public class WorkflowResource {
     } // exportScheme.
 
     /**
+     * Do an export of the scheme with all dependencies to rebuild it (such as steps and actions)
+     * in addition the permission (who can use) will be also returned.
+     * @param request  HttpServletRequest
+     * @param schemeId String
+     * @return Response
+     */
+    @POST
+    @Path("/schemes/{schemeId}/copy")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response copy(@Context final HttpServletRequest request,
+                               @PathParam("schemeId") final String schemeId) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, true, request, true, null);
+        Response response;
+        WorkflowSchemeImportExportObject exportObject;
+        List<Permission>                 permissions;
+
+        try {
+
+            Logger.debug(this, "Copying the workflow scheme: " + schemeId);
+            this.workflowAPI.isUserAllowToModifiedWorkflow(initDataObject.getUser());
+
+            //exportObject = this.workflowImportExportUtil.buildExportObject(Arrays.asList(scheme));
+            //permissions  = this.workflowHelper.getActionsPermissions(exportObject.getActions());
+            response     = Response.ok(new ResponseEntityView(
+                    this.workflowAPI.deepCopyWorkflowScheme(
+                            this.workflowAPI.findScheme(schemeId),
+                            initDataObject.getUser())
+                    )).build(); // 200
+        } catch (Exception e){
+            Logger.error(this.getClass(),
+                    "Exception on exportScheme, Error exporting the schemes", e);
+            return mapExceptionResponse(e);
+        }
+
+        return response;
+    } // exportScheme.
+
+    /**
      * Returns all the possible default actions associated to the content type workflow schemes.
      * 401 if the user does not have permission.
      * @param request  HttpServletRequest
