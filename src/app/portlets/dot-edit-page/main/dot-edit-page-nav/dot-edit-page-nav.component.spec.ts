@@ -84,15 +84,10 @@ describe('DotEditPageNavComponent', () => {
         });
         // Disable advance template commit https://github.com/dotCMS/core-web/pull/589
         it('should have menu items: Content only', () => {
+            const {layout, ...noLayoutPage} = mockDotRenderedPage;
             component.pageState = new DotRenderedPageState(
                 mockUser,
-                {
-                    ...mockDotRenderedPage,
-                    template: {
-                        ...mockDotRenderedPage.template,
-                        drawed: false
-                    }
-                },
+                noLayoutPage,
                 null
             );
             fixture.detectChanges();

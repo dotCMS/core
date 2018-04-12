@@ -5,7 +5,7 @@ import { DotEditPageViewAs } from '../../../../shared/models/dot-edit-page-view-
 
 export interface DotRenderedPage {
     html: string;
-    layout: DotLayout;
+    layout?: DotLayout;
     page: DotPage;
     containers?: any;
     template?: DotTemplate;
