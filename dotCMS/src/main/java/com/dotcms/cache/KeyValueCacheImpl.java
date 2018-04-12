@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotcms.contenttype.model.type.KeyValueContentType;
+import com.dotcms.keyvalue.business.KeyValue404;
 import com.dotcms.keyvalue.model.KeyValue;
 import static com.dotcms.util.CollectionsUtils.*;
 
@@ -39,7 +40,7 @@ public class KeyValueCacheImpl implements KeyValueCache {
     private static final String BY_CONTENT_TYPE_GROUP = "KeyValueCacheByContentType";
     private static final String BY_LANGUAGE_CONTENT_TYPE_GROUP = "KeyValueCacheByLanguageContentType";
     private static final String[] GROUP_NAMES = {PRIMARY_GROUP, BY_LANGUAGE_GROUP, BY_LANGUAGE_CONTENT_TYPE_GROUP};
-
+    private final static KeyValue KEY_VALUE_404=new KeyValue404();
     /**
      * Creates a new instance of the {@link KeyValueCache}.
      */
@@ -70,6 +71,13 @@ public class KeyValueCacheImpl implements KeyValueCache {
         final Map<Long, Map<String, KeyValue>> data =
                 imap(languageId, imap(contentTypeId, keyValue));
         this.cache.put(keyValue.getKey(), data, BY_LANGUAGE_CONTENT_TYPE_GROUP);
+    }
+    
+    @Override
+    public void add404ByLanguageAndContentType(final long languageId, final String contentTypeId,  final String key) {
+        final Map<Long, Map<String, KeyValue>> data =
+                imap(languageId, imap(contentTypeId, KEY_VALUE_404));
+        this.cache.put(key, data, BY_LANGUAGE_CONTENT_TYPE_GROUP);
     }
 
     @Override
