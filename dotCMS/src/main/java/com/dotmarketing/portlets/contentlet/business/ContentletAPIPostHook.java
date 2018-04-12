@@ -804,6 +804,19 @@ public interface ContentletAPIPostHook {
 	 * @param returnValue - value returned by primary API Method 
 	 */
 	public default void findAllVersions(Identifier identifier, User user, boolean respectFrontendRoles,List<Contentlet> returnValue){}
+
+	/**
+	 * Retrieves all versions for a contentlet identifier
+	 * Note this method should not be used currently because it could pull too many versions.
+	 * @param identifier - Identifier object that belongs to a contentlet
+	 * @param bringOldVersions - boolean value which determines if old versions (non-live, non-working
+	 * 	should be brought here). @see copyContentlet method, which requires passing in only live/working
+	 * 	versions of contents to be copied
+	 * @param user - User in context who has triggered this call.
+	 * @param respectFrontendRoles - For permissions validations
+	 * @param returnValue - value returned by primary API Method
+	 */
+	public default void findAllVersions(Identifier identifier, boolean bringOldVersions, User user, boolean respectFrontendRoles,List<Contentlet> returnValue){}
 	
 	/**
 	 * Retrieves all versions for a contentlet identifier checked in by a real user meaning not the system user

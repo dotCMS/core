@@ -227,13 +227,22 @@ public abstract class ContentletFactory {
 	/**
 	 * Retrieves all versions for a contentlet identifier
 	 * @param identifier
-	 * @param user
-	 * @param respectFrontendRoles
 	 * @return
 	 * @throws DotDataException
 	 * @throws DotSecurityException 
 	 */
 	protected abstract List<Contentlet> findAllVersions(Identifier identifier) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Retrieves all versions for a contentlet identifier.
+	 * @param identifier
+	 * @param bringOldVersions Include old versions of contents, so it will return only live/working
+	 * versions of contents, regardless of their languages
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	protected abstract List<Contentlet> findAllVersions(Identifier identifier, boolean bringOldVersions) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Converts a "fat" (legacy) contentlet into a new contentlet.

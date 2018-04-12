@@ -3777,8 +3777,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
-    public List<Contentlet> findAllVersions(Identifier identifier, User user,boolean respectFrontendRoles) throws DotSecurityException,DotDataException, DotStateException {
-        List<Contentlet> contentlets = contentFactory.findAllVersions(identifier);
+    public List<Contentlet> findAllVersions(Identifier identifier, User user, boolean respectFrontendRoles) throws DotSecurityException,DotDataException, DotStateException {
+        return findAllVersions(identifier, true, user, respectFrontendRoles);
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public List<Contentlet> findAllVersions(Identifier identifier, boolean bringOldVersions, User user, boolean respectFrontendRoles) throws DotSecurityException,DotDataException, DotStateException {
+        List<Contentlet> contentlets = contentFactory.findAllVersions(identifier, bringOldVersions);
         if(contentlets.isEmpty())
             return new ArrayList<Contentlet>();
         if(!permissionAPI.doesUserHavePermission(contentlets.get(0), PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
@@ -5089,7 +5095,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         List<Contentlet> versionsToMarkWorking = new ArrayList<Contentlet>();
         Map<String, Map<String, Contentlet>> contentletsToCopyRules = Maps.newHashMap();
 
-        versionsToCopy.addAll(findAllVersions(APILocator.getIdentifierAPI().find(contentletToCopy.getIdentifier()), user, respectFrontendRoles));
+        versionsToCopy.addAll(findAllVersions(APILocator.getIdentifierAPI().find(contentletToCopy.getIdentifier()), false, user, respectFrontendRoles));
 
         // we need to save the versions from older-to-newer to make sure the last save
         // is the current version
