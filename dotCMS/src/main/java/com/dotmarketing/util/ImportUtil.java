@@ -3,6 +3,7 @@ package com.dotmarketing.util;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.liferay.util.StringPool;
 import io.bit3.jsass.importer.Import;
 import java.io.IOException;
 import java.io.Reader;
@@ -391,7 +392,7 @@ public class ImportUtil {
             }
             if (header.equalsIgnoreCase(Contentlet.WORKFLOW_ACTION_KEY)) {
                 results.get("messages").add(LanguageUtil.get(user, "workflow-action-id-field-found-in-import-contentlet-csv-file"));
-                results.get(Contentlet.WORKFLOW_ACTION_KEY).add("" + i);
+                results.get(Contentlet.WORKFLOW_ACTION_KEY).add(StringPool.BLANK + i);
                 continue;
             }
 
