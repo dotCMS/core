@@ -19,7 +19,7 @@ public class OSGIProxyServlet extends HttpServlet {
 
     public static DispatcherTracker tracker;
     public static ServletConfig servletConfig;
-    public static BundleContext bundleContext;
+    public volatile static BundleContext bundleContext;
     private static AtomicBoolean isInitialized = new AtomicBoolean(Boolean.FALSE);
 
     @Override
