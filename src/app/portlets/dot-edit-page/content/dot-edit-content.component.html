@@ -1,10 +1,10 @@
 <dot-edit-page-toolbar
     (changeState)="statePageHandler($event)"
+    (actionFired)="reload()"
     (save)="saveContent()"
     [pageState]="pageState"
     [canSave]="isModelUpdated"
-    class="dot-edit__toolbar"
-    #toolbar>
+    class="dot-edit__toolbar">
 </dot-edit-page-toolbar>
 <dot-edit-content-view-as-toolbar
     (changeViewAs)="changeViewAsHandler($event)"

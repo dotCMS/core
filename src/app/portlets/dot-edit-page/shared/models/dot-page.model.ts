@@ -59,7 +59,7 @@ export interface DotPage {
     canEdit: boolean;
     canLock: boolean;
     identifier: string;
-    liveInode: string;
+    liveInode?: string;
     lockMessage?: string;
     lockedBy?: string;
     lockedByName?: string;

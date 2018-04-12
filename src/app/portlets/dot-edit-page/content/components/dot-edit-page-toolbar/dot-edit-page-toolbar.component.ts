@@ -22,6 +22,7 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
 
     @Output() changeState = new EventEmitter<DotEditPageState>();
     @Output() save = new EventEmitter<MouseEvent>();
+    @Output() actionFired = new EventEmitter<any>();
 
     states: SelectItem[] = [];
     lockerModel: boolean;
@@ -98,6 +99,15 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
     }
 
     /**
+     * Habdle action fired from dot-edit-page-workflows-actions
+     *
+     * @memberof DotEditPageToolbarComponent
+     */
+    handleActionFired(): void {
+        this.actionFired.emit();
+    }
+
+    /**
      * Handle the click to the locker switch
      *
      * @param {any} $event
@@ -146,16 +156,51 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
         }
     }
 
-    private showLockConfirmDialog(acceptCallback: Function): void {
-        this.dotDialogService.confirm({
-            accept: acceptCallback,
-            reject: () => {
-                this.lockerModel = false;
-                this.mode = this.pageState.state.mode;
-            },
-            header: this.dotMessageService.get('editpage.content.steal.lock.confirmation.message.header'),
-            message: this.dotMessageService.get('editpage.content.steal.lock.confirmation.message')
-        });
+    private canTakeLock(pageState: DotRenderedPageState): boolean {
+        return pageState.page.canLock && pageState.state.lockedByAnotherUser;
+    }
+
+    private getStateModeOptions(pageState: DotRenderedPageState): SelectItem[] {
+        return ['edit', 'preview', 'live'].map((mode: string) => this.getModeOption(mode, pageState));
+    }
+
+    private getModeOption(mode: string, pageState: DotRenderedPageState): SelectItem {
+        const modeMap = {
+            'edit': this.getEditOption.bind(this),
+            'preview': this.getPreviewOption.bind(this),
+            'live': this.getLiveOption.bind(this)
+        };
+
+        return modeMap[mode](pageState);
+    }
+
+    private getEditOption(pageState: DotRenderedPageState): SelectItem {
+        return {
+            label: this.dotMessageService.get('editpage.toolbar.edit.page'),
+            value: PageMode.EDIT,
+            styleClass: !pageState.page.canEdit || !pageState.page.canLock ? 'edit-page-toolbar__state-selector-item--disabled' : ''
+        };
+    }
+
+    private getLiveOption(pageState: DotRenderedPageState): SelectItem {
+        return {
+            label: this.dotMessageService.get('editpage.toolbar.live.page'),
+            value: PageMode.LIVE,
+            styleClass: !pageState.page.liveInode ? 'edit-page-toolbar__state-selector-item--disabled' : ''
+        };
+    }
+
+    private getPreviewOption(pageState: DotRenderedPageState): SelectItem {
+        return {
+            label: this.dotMessageService.get('editpage.toolbar.preview.page'),
+            value: PageMode.PREVIEW
+        };
+    }
+
+    private setFieldsModels(pageState: DotRenderedPageState): void {
+        this.lockerModel = pageState.state.locked && !this.canTakeLock(pageState);
+        this.mode = pageState.state.mode;
+        this.states = this.getStateModeOptions(pageState);
     }
 
     private setLockerState() {
@@ -182,29 +227,19 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
         this.changeState.emit(toEmit);
     }
 
-    private setFieldsModels(pageState: DotRenderedPageState): void {
-        this.lockerModel = pageState.state.locked && !this.canTakeLock(pageState);
-        this.mode = pageState.state.mode;
-        this.states = this.getStateModeOptions(pageState);
-    }
-
-    private canTakeLock(pageState: DotRenderedPageState): boolean {
-        return pageState.page.canLock && pageState.state.lockedByAnotherUser;
-    }
-
-    private getStateModeOptions(pageState: DotRenderedPageState): SelectItem[] {
-        return [
-            {
-                label: this.dotMessageService.get('editpage.toolbar.edit.page'),
-                value: PageMode.EDIT,
-                styleClass: !pageState.page.canEdit || !pageState.page.canLock ? 'edit-page-toolbar__state-selector-item--disabled' : ''
-            },
-            { label: this.dotMessageService.get('editpage.toolbar.preview.page'), value: PageMode.PREVIEW },
-            { label: this.dotMessageService.get('editpage.toolbar.live.page'), value: PageMode.LIVE }
-        ];
-    }
-
     private shouldConfirmToLock(): boolean {
         return this.pageState.page.canLock && this.pageState.state.lockedByAnotherUser;
+    }
+
+    private showLockConfirmDialog(acceptCallback: Function): void {
+        this.dotDialogService.confirm({
+            accept: acceptCallback,
+            reject: () => {
+                this.lockerModel = false;
+                this.mode = this.pageState.state.mode;
+            },
+            header: this.dotMessageService.get('editpage.content.steal.lock.confirmation.message.header'),
+            message: this.dotMessageService.get('editpage.content.steal.lock.confirmation.message')
+        });
     }
 }

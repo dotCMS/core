@@ -36,7 +36,6 @@ import { PageMode } from '../shared/models/page-mode.enum';
 })
 export class DotEditContentComponent implements OnInit, OnDestroy {
     @ViewChild('iframe') iframe: ElementRef;
-    @ViewChild('toolbar') toolbar: DotEditPageToolbarComponent;
 
     contentletActionsUrl: SafeResourceUrl;
     dialogSize = {
@@ -86,7 +85,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
             });
         });
 
-        this.dotEditContentHtmlService.pageModelChange.filter(model => model.length).subscribe(model => {
+        this.dotEditContentHtmlService.pageModelChange.filter((model) => model.length).subscribe((model) => {
             if (this.originalValue) {
                 this.ngZone.run(() => {
                     this.isModelUpdated = !_.isEqual(model, this.originalValue);
@@ -106,7 +105,9 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     }
 
     ngOnDestroy(): void {
-        this.swithSiteSub.unsubscribe();
+        if (this.swithSiteSub) {
+            this.swithSiteSub.unsubscribe();
+        }
     }
 
     /**
@@ -196,7 +197,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         const editContentletIframeEl = $event.target;
         if (editContentletIframeEl.contentDocument.body.innerHTML !== '') {
             editContentletIframeEl.contentWindow.focus();
-            editContentletIframeEl.contentWindow.addEventListener('keydown', event => {
+            editContentletIframeEl.contentWindow.addEventListener('keydown', (event) => {
                 if (event.key === 'Escape') {
                     this.ngZone.run(() => {
                         this.dialogTitle = null;
@@ -205,6 +206,23 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
             });
             editContentletIframeEl.contentWindow.ngEditContentletEvents = this.dotEditContentHtmlService.contentletEvents;
         }
+    }
+
+    /**
+     * Reload the edit page
+     *
+     * @memberof DotEditContentComponent
+     */
+    reload(): void {
+        this.dotPageStateService
+            .get(this.route.snapshot.queryParams.url)
+            .catch((err: ResponseView) => {
+                return this.errorHandler(err);
+            })
+            .subscribe((pageState: DotRenderedPageState) => {
+                this.setPageState(pageState);
+                this.originalValue = null;
+            });
     }
 
     private addContentlet($event: any): void {
@@ -233,9 +251,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
 
         this.dotMenuService.getDotMenuId('content').subscribe((portletId: string) => {
             // tslint:disable-next-line:max-line-length
-            const url = `/c/portal/layout?p_l_id=${portletId}&p_p_id=content&p_p_action=1&p_p_state=maximized&p_p_mode=view&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_content_cmd=edit&inode=${$event
-                .dataset
-                .dotInode}&referer=%2Fc%2Fportal%2Flayout%3Fp_l_id%3D${portletId}%26p_p_id%3Dcontent%26p_p_action%3D1%26p_p_state%3Dmaximized%26_content_struts_action%3D%2Fext%2Fcontentlet%2Fview_contentlets`;
+            const url = `/c/portal/layout?p_l_id=${portletId}&p_p_id=content&p_p_action=1&p_p_state=maximized&p_p_mode=view&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_content_cmd=edit&inode=${$event.dataset.dotInode}&referer=%2Fc%2Fportal%2Flayout%3Fp_l_id%3D${portletId}%26p_p_id%3Dcontent%26p_p_action%3D1%26p_p_state%3Dmaximized%26_content_struts_action%3D%2Fext%2Fcontentlet%2Fview_contentlets`;
 
             // TODO: this will get the title of the contentlet but will need and update to the endpoint to do it
             this.dialogTitle = 'Edit Contentlet';
@@ -336,15 +352,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
 
     private switchSiteSubscription(): Subscription {
         return this.siteService.switchSite$.subscribe(() => {
-            this.dotPageStateService
-                .get(this.route.snapshot.queryParams.url)
-                .catch((err: ResponseView) => {
-                    return this.errorHandler(err);
-                })
-                .subscribe((pageState: DotRenderedPageState) => {
-                    this.setPageState(pageState);
-                    this.originalValue = null;
-                });
+            this.reload();
         });
     }
 }

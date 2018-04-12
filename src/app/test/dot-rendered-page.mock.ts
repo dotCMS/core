@@ -9,7 +9,7 @@ export const mockDotPage: DotPage = {
     canLock: true,
     identifier: '123',
     languageId: 1,
-    liveInode: '',
+    liveInode: '456',
     lockMessage: '',
     lockedBy: 'someone',
     lockedByName: 'Some One',
