@@ -14,6 +14,9 @@ import { async } from '@angular/core/testing';
 import { ActivatedRouteSnapshot } from '@angular/router';
 import { DotRenderedPageState } from '../../models/dot-rendered-page-state.model';
 import { mockResponseView } from '../../../../../test/response-view.mock';
+import { Router } from '@angular/router';
+import { PageMode } from '../../models/page-mode.enum';
+import { DotEditPageDataService } from './dot-edit-page-data.service';
 
 const route: any = jasmine.createSpyObj<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', ['toString']);
 
@@ -25,6 +28,7 @@ describe('DotEditPageResolver', () => {
     let dotRenderHTMLService: DotRenderHTMLService;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
     let dotRouterService: DotRouterService;
+    let dotEditPageDataService: DotEditPageDataService;
 
     beforeEach(
         async(() => {
@@ -42,7 +46,8 @@ describe('DotEditPageResolver', () => {
                     {
                         provide: LoginService,
                         useClass: LoginServiceMock
-                    }
+                    },
+                    DotEditPageDataService
                 ],
                 imports: [RouterTestingModule]
             });
@@ -52,6 +57,7 @@ describe('DotEditPageResolver', () => {
             dotRenderHTMLService = testbed.get(DotRenderHTMLService);
             dotHttpErrorManagerService = testbed.get(DotHttpErrorManagerService);
             dotRouterService = testbed.get(DotRouterService);
+            dotEditPageDataService = testbed.get(DotEditPageDataService);
         })
     );
 
@@ -148,6 +154,18 @@ describe('DotEditPageResolver', () => {
             resolver.resolve(route).subscribe();
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/c/site-browser');
 
+        });
+    });
+
+    describe('with dotRenderedPageState', () => {
+        beforeEach(() => {
+            dotEditPageDataService.set(new DotRenderedPageState(mockUser, mockDotRenderedPage, PageMode.EDIT));
+        });
+
+        it('should return a DotRenderedPageState valid object', () => {
+            resolver.resolve(route).subscribe((res) => {
+                expect(res).toEqual(new DotRenderedPageState(mockUser, mockDotRenderedPage));
+            });
         });
     });
 });

@@ -15,9 +15,9 @@ export interface DotPageState {
 export class DotRenderedPageState {
     private _state: DotPageState;
 
-    constructor(private user: User, private dotRenderedPage: DotRenderedPage, mode?: PageMode) {
+    constructor(private _user: User, private dotRenderedPage: DotRenderedPage, mode?: PageMode) {
         const locked = !!dotRenderedPage.page.lockedBy;
-        const lockedByAnotherUser = locked ? dotRenderedPage.page.lockedBy !== this.user.userId : false;
+        const lockedByAnotherUser = locked ? dotRenderedPage.page.lockedBy !== _user.userId : false;
 
         this._state = {
             locked: locked,
@@ -56,6 +56,10 @@ export class DotRenderedPageState {
 
     get viewAs(): DotEditPageViewAs {
         return this.dotRenderedPage.viewAs;
+    }
+
+    get user(): User {
+        return this._user;
     }
 
     set dotRenderedPageState(dotRenderedPageState: DotRenderedPageState) {

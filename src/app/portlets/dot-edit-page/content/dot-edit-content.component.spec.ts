@@ -38,6 +38,7 @@ import { mockDotDevice } from '../../../test/dot-device.mock';
 import { mockDotEditPageViewAs } from '../../../test/dot-edit-page-view-as.mock';
 import { mockResponseView } from '../../../test/response-view.mock';
 import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
+import { DotEditPageDataService } from '../shared/services/dot-edit-page-resolver/dot-edit-page-data.service';
 import { DotEditPageToolbarComponent } from './components/dot-edit-page-toolbar/dot-edit-page-toolbar.component';
 
 export const mockDotPageState: DotPageState = {
@@ -67,6 +68,7 @@ describe('DotEditContentComponent', () => {
     let toolbarComponent: DotEditPageToolbarComponent;
     const siteServiceMock = new SiteServiceMock();
     let route: ActivatedRoute;
+    let dotEditPageDataService: DotEditPageDataService;
 
     beforeEach(() => {
         const messageServiceMock = new MockDotMessageService({
@@ -124,6 +126,7 @@ describe('DotEditContentComponent', () => {
                     provide: SiteService,
                     useValue: siteServiceMock
                 },
+                DotEditPageDataService,
                 {
                     provide: ActivatedRoute,
                     useValue: {
@@ -157,6 +160,7 @@ describe('DotEditContentComponent', () => {
         dotHttpErrorManagerService = de.injector.get(DotHttpErrorManagerService);
         dotPageStateService = de.injector.get(DotPageStateService);
         dotRouterService = de.injector.get(DotRouterService);
+        dotEditPageDataService = de.injector.get(DotEditPageDataService);
         toolbarElement = de.query(By.css('dot-edit-page-toolbar'));
         toolbarComponent = toolbarElement.componentInstance;
         route = de.injector.get(ActivatedRoute);
@@ -489,6 +493,16 @@ describe('DotEditContentComponent', () => {
             siteServiceMock.setFakeCurrentSite(mockSites[1]);
             expect(component.reload).toHaveBeenCalledTimes(1);
         });
+
+        it('should unsubscribe before destroy', () => {
+            spyOn(dotPageStateService, 'get');
+
+            fixture.detectChanges();
+            fixture.componentInstance.ngOnDestroy();
+
+            siteServiceMock.setFakeCurrentSite(mockSites[1]);
+            expect(dotPageStateService.get).not.toHaveBeenCalled();
+        });
     });
 
     describe('dialog configuration', () => {
@@ -552,6 +566,50 @@ describe('DotEditContentComponent', () => {
                     keypressFunction({ key: 'other' });
                     expect(component.dialogTitle).toEqual('test');
                 });
+            });
+        });
+
+        describe('listen load-edit-mode-page event', () => {
+
+            beforeEach(() => {
+                route.parent.parent.data = Observable.of({
+                    content: new DotRenderedPageState(mockUser, mockDotRenderedPage, PageMode.EDIT)
+                });
+
+                spyOn(dotRouterService, 'goToEditPage');
+                spyOn(dotEditPageDataService, 'set');
+            });
+
+            it('should go to edit-page and set data for the resolver', () => {
+                fixture.detectChanges();
+
+                const customEvent = document.createEvent('CustomEvent');
+                customEvent.initCustomEvent('ng-event', false, false, {
+                    name: 'load-edit-mode-page',
+                    data:  mockDotRenderedPage
+                });
+                document.dispatchEvent(customEvent);
+
+                expect(dotEditPageDataService.set).toHaveBeenCalledWith(
+                    new DotRenderedPageState(mockUser, mockDotRenderedPage, PageMode.EDIT));
+
+
+                expect(dotRouterService.goToEditPage).toHaveBeenCalledWith(mockDotRenderedPage.page.pageURI);
+            });
+
+            it('unsubcribe before destroy', () => {
+                fixture.detectChanges();
+                fixture.componentInstance.ngOnDestroy();
+
+                const customEvent = document.createEvent('CustomEvent');
+                customEvent.initCustomEvent('ng-event', false, false, {
+                    name: 'load-edit-mode-page',
+                    data:  mockDotRenderedPage
+                });
+                document.dispatchEvent(customEvent);
+
+                expect(dotEditPageDataService.set).not.toHaveBeenCalled();
+                expect(dotRouterService.goToEditPage).not.toHaveBeenCalled();
             });
         });
     });

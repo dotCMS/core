@@ -14,6 +14,7 @@ import { DotRenderHTMLService } from '../../api/services/dot-render-html/dot-ren
 import { DotDirectivesModule } from '../../shared/dot-directives.module';
 import { DotPageStateService } from './content/services/dot-page-state/dot-page-state.service';
 import { DotEditPageResolver } from './shared/services/dot-edit-page-resolver/dot-edit-page-resolver.service';
+import { DotEditPageDataService } from './shared/services/dot-edit-page-resolver/dot-edit-page-data.service';
 
 @NgModule({
     imports: [
@@ -32,7 +33,8 @@ import { DotEditPageResolver } from './shared/services/dot-edit-page-resolver/do
         DotPageStateService,
         DotRenderHTMLService,
         PageViewService,
-        TemplateContainersCacheService
+        TemplateContainersCacheService,
+        DotEditPageDataService
     ]
 })
 export class DotEditPageModule {}

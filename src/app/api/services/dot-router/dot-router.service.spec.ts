@@ -61,6 +61,5 @@ describe('DotRouterService', () => {
             service.goToEditPage('abc/def');
             expect(router.navigate).toHaveBeenCalledWith(['/edit-page/content'], { queryParams: { url: 'abc/def' } });
         });
-
     });
 });
