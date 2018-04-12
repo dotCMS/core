@@ -167,12 +167,8 @@ public class HTMLPageAssetRenderedBuilder {
     @CloseDB
     private String getPageHTML() throws DotSecurityException, DotDataException, IOException {
 
-        final PageMode mode = PageMode.getRawMode(request);
+        final PageMode mode = PageMode.get(request);
 
-        if(null == htmlPageAsset) {
-            response.sendError(HttpServletResponse.SC_NOT_FOUND);
-            return null;
-        }
         if(mode.isAdmin ) {
             APILocator.getPermissionAPI().checkPermission(htmlPageAsset, PermissionLevel.READ, user);
         }

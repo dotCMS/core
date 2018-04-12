@@ -51,16 +51,16 @@ public enum PageMode {
     public static PageMode get(final HttpSession ses) {
 
         PageMode mode = PageMode.isPageModeSet(ses)
-                        ? PageMode.getCurrentPageMode(ses)
+                        ? (PageMode) ses.getAttribute(WebKeys.PAGE_MODE_SESSION)
                         : DEFAULT_PAGE_MODE;
 
         return mode;
     }
 
-    public static PageMode getRawMode(final HttpServletRequest req) {
+    public static PageMode getWithNavigateMode(final HttpServletRequest req) {
         HttpSession ses = req.getSession();
         PageMode mode = PageMode.isPageModeSet(ses)
-                ? (PageMode) ses.getAttribute(WebKeys.PAGE_MODE_SESSION)
+                ? PageMode.getCurrentPageMode(ses)
                 : DEFAULT_PAGE_MODE;
 
         return mode;

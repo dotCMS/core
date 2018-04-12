@@ -54,7 +54,7 @@ public class VelocityServlet extends HttpServlet {
         }
 
         request.setRequestUri(uri);
-        PageMode mode = PageMode.get(request);
+        PageMode mode = PageMode.getWithNavigateMode(request);
 
         try {
             VelocityModeHandler.modeHandler(mode, request, response).serve();
