@@ -814,14 +814,14 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
 	@Override
-	protected List<Contentlet> findAllVersions(Identifier identifier, boolean includeAllVersions) throws DotDataException, DotStateException, DotSecurityException {
+	protected List<Contentlet> findAllVersions(Identifier identifier, boolean bringOldVersions) throws DotDataException, DotStateException, DotSecurityException {
 	    if(!InodeUtils.isSet(identifier.getInode()))
             return new ArrayList<Contentlet>();
 
         DotConnect dc = new DotConnect();
         StringBuffer query = new StringBuffer();
 
-        if(includeAllVersions) {
+        if(bringOldVersions) {
             query.append("SELECT inode FROM contentlet WHERE identifier=? order by mod_date desc");
 
         } else {
