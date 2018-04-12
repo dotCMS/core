@@ -70,6 +70,7 @@ public class MenuLinkAPITest extends IntegrationTestBase {
         	HibernateUtil.startTransaction();
         	hAPI.unpublish(host, user, false);
         	hAPI.archive(host, user, false);
+        	hAPI.delete(host,user,false);
         	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();

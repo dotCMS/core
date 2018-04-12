@@ -35,7 +35,7 @@ public class KeyValueAPIImpl implements KeyValueAPI {
     protected final FolderAPI folderAPI;
     protected final UserAPI userAPI;
     protected final KeyValueCache cache;
-
+    final static KeyValue KEY_VALUE_404=new KeyValue404();
     /**
      * Creates a new instance of the {@link KeyValueAPI}.
      */
@@ -117,15 +117,19 @@ public class KeyValueAPIImpl implements KeyValueAPI {
     @Override
     public KeyValue get(final String key, final long languageId, final ContentType contentType, final User user,
                     final boolean respectFrontendRoles) {
+
         if (languageId > -1 && null != contentType && UtilMethods.isSet(contentType.id())) {
             final KeyValue keyValue = this.cache.getByLanguageAndContentType(key, languageId, contentType.id());
-            if (null != keyValue) {
-                return keyValue;
+            if (null != keyValue ) {
+                return (KEY_VALUE_404.equals(keyValue)) ? null : keyValue;
             }
         }
 
         final List<KeyValue> result = queryKeyValues(key, languageId, contentType, user, respectFrontendRoles);
         result.stream().forEach((KeyValue keyValue) -> this.cache.addByLanguageAndContentType(languageId, contentType.id(), keyValue));
+        if(result.isEmpty()) {
+            this.cache.add404ByLanguageAndContentType(languageId, contentType.id(), key);
+        }
         return (!result.isEmpty()) ? result.get(0) : null;
     }
 

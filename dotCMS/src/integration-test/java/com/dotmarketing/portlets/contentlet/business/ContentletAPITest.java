@@ -22,6 +22,7 @@ import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
@@ -576,6 +577,14 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals("hello20_copy.txt",copy.getStringProperty(FileAssetAPI.FILE_NAME_FIELD));
         assertEquals("hello20_copy.txt",copy.getBinary(FileAssetAPI.BINARY_FIELD).getName());
         assertEquals("this is the content of the file", FileUtils.readFileToString(copy.getBinary(FileAssetAPI.BINARY_FIELD)));
+        contentletAPI.archive(file,user,false);
+        contentletAPI.delete(file,user,false);
+        contentletAPI.archive(copy,user,false);
+        contentletAPI.delete(copy,user,false);
+        contentletAPI.archive(host1,user,false);
+        contentletAPI.delete(host1,user,false);
+        contentletAPI.archive(host2,user,false);
+        contentletAPI.delete(host2,user,false);
         
     }
 
@@ -1146,6 +1155,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertNotNull( forAllLanguages );
         assertTrue( !forAllLanguages.isEmpty() );
         assertEquals(list.size(), forAllLanguages.size());
+        APILocator.getContentTypeAPI(user).delete(new StructureTransformer(st).from());
     }
 
     /**
@@ -1210,7 +1220,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
     @Ignore
     @Test
-    public void addRemoveContentFromIndex () throws DotDataException, DotSecurityException {
+    public void addRemoveContentFromIndex () throws DotDataException, DotSecurityException {//6 contentlets
    // respect CMS Anonymous permissions
       boolean respectFrontendRoles = false;
       int num = 5;
@@ -2398,8 +2408,6 @@ public class ContentletAPITest extends ContentletBaseTest {
     	FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(folder,file);
     	Contentlet fileAsset = fileAssetDataGen.languageId(english).nextPersisted();
   	  
-    	Contentlet resultEnglish = contentletAPI.findContentletByIdentifier(fileAsset.getIdentifier(), false, english, user, false);
-  	  
     	Contentlet contentletSpanish = contentletAPI.findContentletByIdentifier(fileAsset.getIdentifier(), false, english, user, false);
     	contentletSpanish.setInode("");
     	contentletSpanish.setLanguageId(spanish);
@@ -2407,8 +2415,10 @@ public class ContentletAPITest extends ContentletBaseTest {
   	  
     	Contentlet resultSpanish = contentletAPI.findContentletByIdentifier(fileAsset.getIdentifier(), false, spanish, user, false);
     	assertNotNull( resultSpanish );
-    	
+
+        Contentlet resultEnglish = contentletAPI.findContentletByIdentifier(fileAsset.getIdentifier(), false, english, user, false);
     	fileAssetDataGen.remove(resultSpanish);
+        fileAssetDataGen.remove(resultEnglish);
     }
     
     /**
@@ -3464,6 +3474,7 @@ public class ContentletAPITest extends ContentletBaseTest {
     public void testCheckin1_ExistingContentWithRels_NullRels_ShouldKeepExistingRels()
         throws DotDataException, DotSecurityException {
         Contentlet blogContent = null;
+        List<Contentlet> relatedContent = null;
 
         try {
 
@@ -3471,7 +3482,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             final ContentletRelationships relationships = getACoupleOfRelationships(blogContent);
             final Relationship relationship = relationships.getRelationshipsRecords().get(0).getRelationship();
-            final List<Contentlet> relatedContent = relationships.getRelationshipsRecords().get(0).getRecords();
+            relatedContent = relationships.getRelationshipsRecords().get(0).getRecords();
 
             final List<Category> categories = getACoupleOfCategories();
 
@@ -3491,9 +3502,12 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             assertTrue(existingRelationships.containsAll(relatedContent));
         } finally {
-            if(blogContent!=null && UtilMethods.isSet(blogContent.getIdentifier())) {
-                contentletAPI.destroy(blogContent, user, false);
-            }
+                contentletAPI.archive(blogContent, user, false);
+                contentletAPI.delete(blogContent, user, false);
+                for(Contentlet c : relatedContent){
+                    contentletAPI.archive(c, user, false);
+                    contentletAPI.delete(c, user, false);
+                }
         }
     }
 
@@ -3501,6 +3515,7 @@ public class ContentletAPITest extends ContentletBaseTest {
     public void testCheckin2_ExistingContentWithRels_NullRels_ShouldKeepExistingRels()
         throws DotDataException, DotSecurityException {
         Contentlet blogContent = null;
+        List<Contentlet> relatedContent = null;
 
         try {
             blogContent = getBlogContent();
@@ -3519,7 +3534,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             Relationship relationship = relationships.getRelationshipsRecords().get(0).getRelationship();
 
-            List<Contentlet> relatedContent = relationships.getRelationshipsRecords().get(0).getRecords();
+            relatedContent = relationships.getRelationshipsRecords().get(0).getRecords();
 
             RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
 
@@ -3530,6 +3545,10 @@ public class ContentletAPITest extends ContentletBaseTest {
             if(blogContent!=null && UtilMethods.isSet(blogContent.getIdentifier())) {
                 contentletAPI.destroy(blogContent, user, false);
             }
+            for(Contentlet c : relatedContent){
+                contentletAPI.archive(c, user, false);
+                contentletAPI.delete(c, user, false);
+            }
         }
     }
 
@@ -3537,6 +3556,7 @@ public class ContentletAPITest extends ContentletBaseTest {
     public void testCheckin3_ExistingContentWithRels_NullRels_ShouldKeepExistingRels()
         throws DotDataException, DotSecurityException {
         Contentlet blogContent = null;
+        List<Contentlet> relatedContent = null;
 
         try {
             blogContent = getBlogContent();
@@ -3559,7 +3579,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             Relationship relationship = relationships.getRelationshipsRecords().get(0).getRelationship();
 
-            List<Contentlet> relatedContent = relationships.getRelationshipsRecords().get(0).getRecords();
+            relatedContent = relationships.getRelationshipsRecords().get(0).getRecords();
 
             RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
 
@@ -3570,6 +3590,10 @@ public class ContentletAPITest extends ContentletBaseTest {
             if(blogContent!=null && UtilMethods.isSet(blogContent.getIdentifier())) {
                 contentletAPI.destroy(blogContent, user, false);
             }
+            for(Contentlet c :relatedContent){
+                contentletAPI.archive(c, user, false);
+                contentletAPI.delete(c, user, false);
+            }
         }
     }
 
@@ -3577,6 +3601,7 @@ public class ContentletAPITest extends ContentletBaseTest {
     public void testCheckin4_ExistingContentWithRels_NullRels_ShouldKeepExistingRels()
         throws DotDataException, DotSecurityException {
         Contentlet blogContent = null;
+        List<Contentlet> relatedContent = null;
 
         try {
             blogContent = getBlogContent();
@@ -3598,7 +3623,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             Relationship relationship = relationships.getRelationshipsRecords().get(0).getRelationship();
 
-            List<Contentlet> relatedContent = relationships.getRelationshipsRecords().get(0).getRecords();
+            relatedContent = relationships.getRelationshipsRecords().get(0).getRecords();
 
             RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
 
@@ -3609,6 +3634,10 @@ public class ContentletAPITest extends ContentletBaseTest {
             if(blogContent!=null && UtilMethods.isSet(blogContent.getIdentifier())) {
                 contentletAPI.destroy(blogContent, user, false);
             }
+            for(Contentlet c :relatedContent){
+                contentletAPI.archive(c, user, false);
+                contentletAPI.delete(c, user, false);
+            }
         }
     }
 
@@ -3616,6 +3645,7 @@ public class ContentletAPITest extends ContentletBaseTest {
     public void testCheckinWithoutVersioning_ExistingContentWithRels_NullRels_ShouldKeepExistingRels()
         throws DotDataException, DotSecurityException {
         Contentlet blogContent = null;
+        List<Contentlet> relatedContent = null;
 
         try {
             blogContent = getBlogContent();
@@ -3635,7 +3665,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             Relationship relationship = relationships.getRelationshipsRecords().get(0).getRelationship();
 
-            List<Contentlet> relatedContent = relationships.getRelationshipsRecords().get(0).getRecords();
+            relatedContent = relationships.getRelationshipsRecords().get(0).getRecords();
 
             RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
 
@@ -3646,6 +3676,10 @@ public class ContentletAPITest extends ContentletBaseTest {
             if(blogContent!=null && UtilMethods.isSet(blogContent.getIdentifier())) {
                 contentletAPI.destroy(blogContent, user, false);
             }
+            for(Contentlet c :relatedContent){
+                contentletAPI.archive(c, user, false);
+                contentletAPI.delete(c, user, false);
+            }
         }
     }
 
@@ -3653,6 +3687,7 @@ public class ContentletAPITest extends ContentletBaseTest {
     public void testCheckin3_ExistingContentWithRels_EmptyRels_ShouldWipeExistingRels()
         throws DotDataException, DotSecurityException {
         Contentlet blogContent = null;
+        List<Contentlet> relatedContent = null;
 
         try {
             blogContent = getBlogContent();
@@ -3682,10 +3717,16 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             List<Contentlet> existingRelationships = relationshipAPI.dbRelatedContent(relationship, reCheckedinContent);
 
+            relatedContent = relationships.getRelationshipsRecords().get(0).getRecords();
+
             assertFalse(UtilMethods.isSet(existingRelationships));
         } finally {
             if(blogContent!=null && UtilMethods.isSet(blogContent.getIdentifier())) {
                 contentletAPI.destroy(blogContent, user, false);
+            }
+            for(Contentlet c :relatedContent){
+                contentletAPI.archive(c, user, false);
+                contentletAPI.delete(c, user, false);
             }
         }
     }
@@ -3694,6 +3735,7 @@ public class ContentletAPITest extends ContentletBaseTest {
     public void testCheckin4_ExistingContentWithRels_EmptyRels_ShouldWipeExistingRels()
         throws DotDataException, DotSecurityException {
         Contentlet blogContent = null;
+        List<Contentlet> relatedContent = null;
 
         try {
             blogContent = getBlogContent();
@@ -3715,6 +3757,8 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             Relationship relationship = relationships.getRelationshipsRecords().get(0).getRelationship();
 
+            relatedContent = relationships.getRelationshipsRecords().get(0).getRecords();
+
             RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
 
             List<Contentlet> existingRelationships = relationshipAPI.dbRelatedContent(relationship, reCheckedinContent);
@@ -3724,6 +3768,10 @@ public class ContentletAPITest extends ContentletBaseTest {
             if(blogContent!=null && UtilMethods.isSet(blogContent.getIdentifier())) {
                 contentletAPI.destroy(blogContent, user, false);
             }
+            for(Contentlet c :relatedContent){
+                contentletAPI.archive(c, user, false);
+                contentletAPI.delete(c, user, false);
+            }
         }
     }
 
@@ -3731,6 +3779,7 @@ public class ContentletAPITest extends ContentletBaseTest {
     public void testCheckinWithoutVersioning_ExistingContentWithRels_EmptyRels_ShouldWipeExistingRels()
         throws DotDataException, DotSecurityException {
         Contentlet blogContent = null;
+        List<Contentlet> relatedContent = null;
 
         try {
             blogContent = getBlogContent();
@@ -3749,6 +3798,7 @@ public class ContentletAPITest extends ContentletBaseTest {
                 new HashMap<>(), null, null, user, false);
 
             Relationship relationship = relationships.getRelationshipsRecords().get(0).getRelationship();
+            relatedContent = relationships.getRelationshipsRecords().get(0).getRecords();
 
             RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
 
@@ -3758,6 +3808,10 @@ public class ContentletAPITest extends ContentletBaseTest {
         } finally {
             if(blogContent!=null && UtilMethods.isSet(blogContent.getIdentifier())) {
                 contentletAPI.destroy(blogContent, user, false);
+            }
+            for(Contentlet c :relatedContent){
+                contentletAPI.archive(c, user, false);
+                contentletAPI.delete(c, user, false);
             }
         }
     }
