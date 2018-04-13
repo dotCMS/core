@@ -1,4 +1,4 @@
-<%@page import="com.dotcms.enterprise.LicenseUtil"%>
+    <%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@ page import="com.dotmarketing.filters.CMSFilter" %>
 <%@ page import="com.dotmarketing.util.Config"%>
@@ -81,23 +81,23 @@
     }
 
     function cancelEditCallback(callbackData){
-        //scenario when creating a new content.
-        if (workingContentletInode === ''){
-            window.history.back();
-        }else{
-            if (ngEditContentletEvents) {
+        if (ngEditContentletEvents) {
+            //scenario when creating a new content.
+            if (workingContentletInode === ''){
+                window.history.back();
+            }else{
                 ngEditContentletEvents.next({
                     name: 'cancel'
                 });
+            }
+        } else {
+            if (callbackData.indexOf("referer") != -1) {
+                var sourceReferer = callbackData.substring(callbackData.indexOf("referer"));
+                sourceReferer = sourceReferer.split("referer").slice(1).join("referer").slice(1);
+                callbackData = callbackData.substring(0,callbackData.indexOf("referer"));
+                self.location = callbackData+"&referer="+escape(sourceReferer);
             } else {
-                if (callbackData.indexOf("referer") != -1) {
-                    var sourceReferer = callbackData.substring(callbackData.indexOf("referer"));
-                    sourceReferer = sourceReferer.split("referer").slice(1).join("referer").slice(1);
-                    callbackData = callbackData.substring(0,callbackData.indexOf("referer"));
-                    self.location = callbackData+"&referer="+escape(sourceReferer);
-                } else {
-                    self.location = callbackData;
-                }
+                self.location = callbackData;
             }
         }
     }
