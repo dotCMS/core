@@ -489,6 +489,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			this.systemMessageEventUtil.pushSimpleTextEvent
 					(LanguageUtil.get(user.getLocale(), "Workflow-deleted", scheme.getName()), user.getUserId());
 		} catch (Exception e) {
+			Logger.error(this.getClass(),
+					"Error deleting Scheme: " + scheme.getId() + ". " + e.getMessage(), e);
 			throw new DotRuntimeException(e);
 		}
 		return scheme;
