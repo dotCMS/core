@@ -262,7 +262,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
         //Create a test Content Type
-        String contentTypeSuffix = String.valueOf(new Date().getTime());
+        final String contentTypeSuffix = String.valueOf(new Date().getTime());
         Structure contentType = new Structure();
         contentType.setName("Import Test " + contentTypeSuffix);
         contentType.setVelocityVarName("ImportTest_" + contentTypeSuffix);
@@ -498,7 +498,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         final File tempTestFile = File
                 .createTempFile("csvTest_" + new Date().getTime(), ".txt");
         FileUtils.writeStringToFile(tempTestFile, content);
-        byte[] bytes = com.liferay.util.FileUtil.getBytes(tempTestFile);
+        final byte[] bytes = com.liferay.util.FileUtil.getBytes(tempTestFile);
 
         return new InputStreamReader(new ByteArrayInputStream(bytes), Charset.forName("UTF-8"));
     }
@@ -512,39 +512,39 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         //Reading the results
 
         if (expectingErrors) {
-            List<String> errors = results.get("errors");
+            final List<String> errors = results.get("errors");
             assertNotNull(errors);//Expected warnings as no key fields were chosen
             assertTrue(!errors.isEmpty());
         } else {
-            List<String> errors = results.get("errors");
+            final List<String> errors = results.get("errors");
             assertTrue(errors == null || errors.isEmpty());//No errors should be found
         }
 
         if (expectingWarnings) {
-            List<String> warnings = results.get("warnings");
+            final List<String> warnings = results.get("warnings");
             assertNotNull(warnings);//Expected warnings as no key fields were chosen
             Logger.info(this, "List WARNINGS: " + warnings.size());
             assertTrue(!warnings.isEmpty());
         } else {
-            List<String> warnings = results.get("warnings");
+            final List<String> warnings = results.get("warnings");
             assertTrue(warnings == null || warnings.isEmpty());
         }
 
-        List<String> finalResults = results.get("results");
+        final List<String> finalResults = results.get("results");
         assertNotNull(finalResults);//Expected final results messages
         assertTrue(!finalResults.isEmpty());
 
-        List<String> messages = results.get("messages");
+        final List<String> messages = results.get("messages");
         assertNotNull(messages);//Expected return messages
         assertTrue(!messages.isEmpty());
 
         if (!preview) {
 
-            List<String> lastInode = results.get("lastInode");
+            final List<String> lastInode = results.get("lastInode");
             assertNotNull(lastInode);
             assertTrue(!lastInode.isEmpty());
 
-            List<String> counters = results.get("counters");
+            final List<String> counters = results.get("counters");
             assertNotNull(counters);
             assertTrue(!counters.isEmpty());
         }
@@ -1240,18 +1240,17 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     @AfterClass
     public static void cleanup()
             throws DotDataException, DotSecurityException, AlreadyExistException {
-        WorkflowScheme wfScheme = null;
         if (null != schemeStepActionResult1 && null != schemeStepActionResult1.getScheme()) {
-            wfScheme = schemeStepActionResult1.getScheme();
+            final WorkflowScheme wfScheme = schemeStepActionResult1.getScheme();
             wfScheme.setArchived(true);
             workflowAPI.saveScheme(wfScheme, user);
             workflowAPI.deleteScheme(wfScheme, user);
         }
         if (null != schemeStepActionResult2 && null != schemeStepActionResult2.getScheme()) {
-            wfScheme = schemeStepActionResult2.getScheme();
-            wfScheme.setArchived(true);
-            workflowAPI.saveScheme(wfScheme, user);
-            workflowAPI.deleteScheme(wfScheme, user);
+            final WorkflowScheme wfScheme2 = schemeStepActionResult2.getScheme();
+            wfScheme2.setArchived(true);
+            workflowAPI.saveScheme(wfScheme2, user);
+            workflowAPI.deleteScheme(wfScheme2, user);
         }
     }
 
