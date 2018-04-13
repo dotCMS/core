@@ -123,4 +123,6 @@ public interface KeyValueCache extends Cachable {
      * @param contentlet - The Key/Value content to remove.
      */
     void remove(Contentlet contentlet);
+
+    void add404ByLanguageAndContentType(long languageId, String contentTypeId, String key);
 }
