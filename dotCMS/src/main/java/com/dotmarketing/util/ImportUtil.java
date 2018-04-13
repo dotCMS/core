@@ -1313,7 +1313,6 @@ public class ImportUtil {
                     //If not preview save the contentlet
                     if (!preview)
                     {
-                        cont.setInode(null);
                         cont.setLowIndexPriority(true);
                         //Load the old relationShips and add the new ones
                         ContentletRelationships contentletRelationships = conAPI.getAllRelationships(cont);
