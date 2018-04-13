@@ -22,6 +22,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -35,9 +36,11 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
 import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
@@ -48,6 +51,7 @@ import com.liferay.portal.model.User;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -63,6 +67,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -85,10 +90,12 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     private static ContentletAPI contentletAPI;
     private static ShortyIdAPI shortyIdAPI;
     private static WorkflowAPI workflowAPI;
-    private static WorkflowAction action1;
-    private static WorkflowAction action2;
-    private static WorkflowAction action3;
-    private static RoleAPI roleAPI;
+    private static WorkflowAction saveAction;
+    private static WorkflowAction saveAndPublishAction;
+    private static WorkflowAction saveAsDraftAction;
+    private static WorkflowAction unpublishAction;
+    private static WorkflowAction publishAction;
+    private static WorkflowAction publish2Action;
     private static PermissionAPI permissionAPI;
     private static final String TITLE_FIELD_NAME = "testTitle";
     private static final String BODY_FIELD_NAME = "testBody";
@@ -112,6 +119,12 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     private static WorkflowStep step2;
     private static WorkflowStep step3;
 
+    private static final String TEST_WITHOUT_WF_ACTION_ON_CSV = ", Test without WF Action ID set on CSV, ";
+    private static final String TEST_WITH_WF_ACTION_ON_CSV = ", Test with WF Action ID set on CSV, ";
+    private static final String TEST_WITH_WF_ACTION_ON_CSV_BUT_NO_PERMISSIONS = ", Test with WF Action ID set on CSV but no permissions, ";
+    private static final String TEST_WITH_WF_ACTION_ON_DROPDOWN_BUT_NO_PERMISSIONS = ", Test with WF Action ID set on dropdown but not permission, ";
+    private static final String TEST_WITH_WF_ACTION_ON_CSV_BUT_NO_PERMISSIONS_AND_USING_DROPDOWN_ACTION = ", Test with WF Action ID set on CSV (but no permission) and using dropdown action, ";
+
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
@@ -123,7 +136,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         fieldAPI = APILocator.getContentTypeFieldAPI();
         workflowAPI = APILocator.getWorkflowAPI();
         permissionAPI = APILocator.getPermissionAPI();
-        roleAPI = APILocator.getRoleAPI();
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
         contentletAPI = APILocator.getContentletAPI();
         shortyIdAPI = APILocator.getShortyAPI();
 
@@ -133,8 +146,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                         SaveContentActionlet.class);
 
         //Second Workflow
-        Role anyWhoCanEditRole = roleAPI.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_ROLE_KEY);
-        Role anyWhoCanPublishRole = roleAPI.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_PUBLISH_ROLE_KEY);
+        final Role anyWhoCanEditRole = roleAPI.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_ROLE_KEY);
+        final Role anyWhoCanPublishRole = roleAPI.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_PUBLISH_ROLE_KEY);
         publisherRole = roleAPI.findRoleByName("Publisher / Legal", null);
         reviewerRole = roleAPI.findRoleByName("Reviewer", publisherRole);
         contributorRole = roleAPI.findRoleByName("Contributor", reviewerRole);
@@ -142,16 +155,20 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         schemeStepActionResult2 = createSchemeStepActionActionlet(
                 "ImportUtilScheme_2_" + UUIDGenerator.generateUuid(), "initialStep", "Save",
                 SaveContentActionlet.class);
+
+        //Step for after saveAction
         step1 = createNewWorkflowStep(STEP_BY_USING_ACTION1,
                 schemeStepActionResult2.getScheme().getId());
         step1.setMyOrder(1);
         workflowAPI.saveStep(step1, user);
 
+        //Step for after saveAndPublishAction
         step2 = createNewWorkflowStep(STEP_BY_USING_ACTION2,
                 schemeStepActionResult2.getScheme().getId());
         step2.setMyOrder(2);
         workflowAPI.saveStep(step2, user);
 
+        //Step for after saveAsDraft
         step3 = createNewWorkflowStep(STEP_BY_USING_ACTION3,
                 schemeStepActionResult2.getScheme().getId());
         step3.setMyOrder(3);
@@ -159,41 +176,71 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
         final List<String> rolesIds = new ArrayList<>();
 
-        //Setting Action 1 configuration
-        action1 = schemeStepActionResult2.getAction();
+        //Initial step. Setting saveAction configuration
+        saveAction = schemeStepActionResult2.getAction();
         rolesIds.add(anyWhoCanEditRole.getId());
-        action1.setNextStep(step1.getId());
-        action1.setShowOn(WorkflowState.LOCKED, WorkflowState.UNLOCKED, WorkflowState.NEW,
+        saveAction.setNextStep(step1.getId());
+        saveAction.setShowOn(WorkflowState.LOCKED, WorkflowState.UNLOCKED, WorkflowState.NEW,
                 WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED);
-        addWhoCanUseToAction(action1, rolesIds);
+        addWhoCanUseToAction(saveAction, rolesIds);
         rolesIds.remove(anyWhoCanEditRole.getId());
 
-        //Setting Action 2 configuration
+        //Initial step. Setting saveAndPublishAction configuration
         BaseWorkflowIntegrationTest.CreateSchemeStepActionResult schemeResultTemp = createActionActionlet(
                 schemeStepActionResult2.getScheme().getId(),
                 schemeStepActionResult2.getStep().getId(), "Save & Publish",
                 SaveContentActionlet.class);
-        action2 = schemeResultTemp.getAction();
-        addActionletToAction(action2.getId(), PublishContentActionlet.class, 1);
+        saveAndPublishAction = schemeResultTemp.getAction();
+        addActionletToAction(saveAndPublishAction.getId(), PublishContentActionlet.class, 1);
 
-        action2.setNextStep(step2.getId());
+        saveAndPublishAction.setNextStep(step2.getId());
         rolesIds.add(anyWhoCanPublishRole.getId());
-        action2.setShowOn(WorkflowState.LOCKED, WorkflowState.UNLOCKED, WorkflowState.NEW,
+        saveAndPublishAction.setShowOn(WorkflowState.LOCKED, WorkflowState.UNLOCKED, WorkflowState.NEW,
                 WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED);
-        addWhoCanUseToAction(action2, rolesIds);
+        addWhoCanUseToAction(saveAndPublishAction, rolesIds);
         rolesIds.remove(anyWhoCanPublishRole.getId());
 
-        //Setting action 3 configuration
+        //Initial step. Setting saveAsDraft configuration
         schemeResultTemp = createActionActionlet(schemeStepActionResult2.getScheme().getId(),
                 schemeStepActionResult2.getStep().getId(), "Save as Draft",
                 SaveContentAsDraftActionlet.class);
-        action3 = schemeResultTemp.getAction();
-        action3.setNextStep(step3.getId());
+        saveAsDraftAction = schemeResultTemp.getAction();
+        saveAsDraftAction.setNextStep(step3.getId());
         rolesIds.add(reviewerRole.getId());
-        action3.setShowOn(WorkflowState.LOCKED, WorkflowState.UNLOCKED, WorkflowState.NEW,
+        saveAsDraftAction.setShowOn(WorkflowState.LOCKED, WorkflowState.UNLOCKED, WorkflowState.NEW,
                 WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED);
-        addWhoCanUseToAction(action3, rolesIds);
+        addWhoCanUseToAction(saveAsDraftAction, rolesIds);
         rolesIds.remove(reviewerRole.getId());
+
+        //step2 UnpublishAction configuration
+        schemeResultTemp = createActionActionlet(schemeStepActionResult2.getScheme().getId(),
+                step2.getId(), "Unpublish", UnpublishContentActionlet.class);
+        unpublishAction = schemeResultTemp.getAction();
+        rolesIds.add(publisherRole.getId());
+        unpublishAction
+                .setShowOn(WorkflowState.LOCKED, WorkflowState.UNLOCKED, WorkflowState.PUBLISHED);
+        addWhoCanUseToAction(unpublishAction, rolesIds);
+        rolesIds.remove(publisherRole.getId());
+
+        //step1 publishAction configuration
+        schemeResultTemp = createActionActionlet(schemeStepActionResult2.getScheme().getId(),
+                step1.getId(), "Publish", PublishContentActionlet.class);
+        publishAction = schemeResultTemp.getAction();
+        rolesIds.add(publisherRole.getId());
+        publishAction
+                .setShowOn(WorkflowState.LOCKED, WorkflowState.UNLOCKED, WorkflowState.UNPUBLISHED);
+        addWhoCanUseToAction(publishAction, rolesIds);
+        rolesIds.remove(publisherRole.getId());
+
+        //Step3 publish2Action configuration
+        schemeResultTemp = createActionActionlet(schemeStepActionResult2.getScheme().getId(),
+                step3.getId(), "Publish2", PublishContentActionlet.class);
+        publish2Action = schemeResultTemp.getAction();
+        rolesIds.add(publisherRole.getId());
+        publish2Action
+                .setShowOn(WorkflowState.LOCKED, WorkflowState.UNLOCKED, WorkflowState.UNPUBLISHED);
+        addWhoCanUseToAction(publish2Action, rolesIds);
+        rolesIds.remove(publisherRole.getId());
 
         //Special Users
         joeContributor = APILocator.getUserAPI().loadUserById("dotcms.org.2789");
@@ -446,10 +493,10 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     /**
      * Creates a temporal file using a given content
      */
-    private Reader createTempFile(String content) throws IOException {
+    private Reader createTempFile(final String content) throws IOException {
 
         final File tempTestFile = File
-                .createTempFile("csvTest_" + String.valueOf(new Date().getTime()), ".txt");
+                .createTempFile("csvTest_" + new Date().getTime(), ".txt");
         FileUtils.writeStringToFile(tempTestFile, content);
         byte[] bytes = com.liferay.util.FileUtil.getBytes(tempTestFile);
 
@@ -459,7 +506,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     /**
      * Validates a given result generated by the ImportUtil.importFile method
      */
-    private void validate(HashMap<String, List<String>> results, final Boolean preview,
+    private void validate(final HashMap<String, List<String>> results, final Boolean preview,
             final Boolean expectingErrors, final Boolean expectingWarnings) {
 
         //Reading the results
@@ -682,11 +729,11 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             //Creating csv
             reader = createTempFile(TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", "
                     + Contentlet.WORKFLOW_ACTION_KEY + "\r\n" +
-                    testA + ", Test without WF Action ID set on CSV, " + "\r\n" +
-                    testB + ", Test with WF Action ID set on CSV but no permissions, " + action3
+                    testA + TEST_WITHOUT_WF_ACTION_ON_CSV + "\r\n" +
+                    testB + TEST_WITH_WF_ACTION_ON_CSV_BUT_NO_PERMISSIONS + saveAsDraftAction
                     .getId() + "\r\n" +
-                    testC + ", Test with WF Action ID set on dropdown but not permission, "
-                    + action2.getId());
+                    testC + TEST_WITH_WF_ACTION_ON_DROPDOWN_BUT_NO_PERMISSIONS
+                    + saveAndPublishAction.getId());
             csvreader = new CsvReader(reader);
             csvreader.setSafetySwitch(false);
             csvHeaders = csvreader.getHeaders();
@@ -698,7 +745,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                                     new String[]{titleField.id()}, false, false,
                                     joeContributor, defaultLanguage.getId(), csvHeaders, csvreader,
                                     -1, -1, reader,
-                                    action3.getId());
+                                    saveAsDraftAction.getId());
             //Validations
             validate(results, false, false, false);
             assertEquals(results.get("warnings").size(), 0);
@@ -753,15 +800,12 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             titleField = fieldAPI.byContentTypeAndVar(contentType, TITLE_FIELD_NAME);
             //Creating csv
             reader = createTempFile(TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", "
-                    + Contentlet.WORKFLOW_ACTION_KEY + "\r\n" +
-                    testD + ", Test without WF Action ID set on CSV, " + action1
-                    .getId() + "\r\n" +
-                    testE
-                    + ", Test with WF Action ID set on CSV (but no permission) and using dropdown action, "
-                    + action2
-                    .getId() + "\r\n" +
-                    testF + ", Test with WF Action ID set on CSV, "
-                    + action3.getId());
+                    + Contentlet.WORKFLOW_ACTION_KEY + "\r\n"
+                    + testD + TEST_WITH_WF_ACTION_ON_CSV + saveAction.getId() + "\r\n"
+                    + testE + TEST_WITH_WF_ACTION_ON_CSV_BUT_NO_PERMISSIONS_AND_USING_DROPDOWN_ACTION
+                    + saveAndPublishAction.getId() + "\r\n"
+                    + testF+ TEST_WITH_WF_ACTION_ON_CSV + saveAsDraftAction.getId());
+
             csvreader = new CsvReader(reader);
             csvreader.setSafetySwitch(false);
             csvHeaders = csvreader.getHeaders();
@@ -773,7 +817,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                                     new String[]{titleField.id()}, false, false,
                                     janeReviewer, defaultLanguage.getId(), csvHeaders, csvreader,
                                     -1, -1, reader,
-                                    action3.getId());
+                                    saveAsDraftAction.getId());
             //Validations
             validate(results, false, false, false);
             assertEquals(results.get("warnings").size(), 0);
@@ -835,13 +879,11 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             titleField = fieldAPI.byContentTypeAndVar(contentType, TITLE_FIELD_NAME);
             //Creating csv
             reader = createTempFile(TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", "
-                    + Contentlet.WORKFLOW_ACTION_KEY + "\r\n" +
-                    testG + ", Test without WF Action ID set on CSV, " + action1
-                    .getId() + "\r\n" +
-                    testH + ", Test with WF Action ID set on CSV but no permissions, " + action2
-                    .getId() + "\r\n" +
-                    testI + ", Test with WF Action ID set on CSV, "
-                    + action3.getId());
+                    + Contentlet.WORKFLOW_ACTION_KEY + "\r\n"
+                    + testG + TEST_WITH_WF_ACTION_ON_CSV + saveAction.getId()+ "\r\n"
+                    + testH + TEST_WITH_WF_ACTION_ON_CSV_BUT_NO_PERMISSIONS + saveAndPublishAction
+                    .getId() + "\r\n"
+                    + testI + TEST_WITH_WF_ACTION_ON_CSV + saveAsDraftAction.getId());
             csvreader = new CsvReader(reader);
             csvreader.setSafetySwitch(false);
             csvHeaders = csvreader.getHeaders();
@@ -884,7 +926,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     }
 
     /**
-     * Import file saving with the right action Id using actions with shortIds. In the
+     * Import file saving with the right action Id using shortIds. In the
      * following way:
      *
      * a) the testJ should be saved with the rigth action and go to step 1
@@ -917,12 +959,12 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             //Creating csv
             reader = createTempFile(TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", "
                     + Contentlet.WORKFLOW_ACTION_KEY + "\r\n" +
-                    testJ + ", Test with WF Action ID set on CSV, " + shortyIdAPI.shortify(action1
+                    testJ + TEST_WITH_WF_ACTION_ON_CSV + shortyIdAPI.shortify(saveAction.getId())
+                    + "\r\n" +
+                    testK + TEST_WITH_WF_ACTION_ON_CSV + shortyIdAPI.shortify(saveAndPublishAction
                     .getId()) + "\r\n" +
-                    testK + ", Test with WF Action ID set on CSV, " + shortyIdAPI.shortify(action2
-                    .getId()) + "\r\n" +
-                    testL + ", Test with WF Action ID set on CSV, " + shortyIdAPI.shortify(action3
-                    .getId()));
+                    testL + TEST_WITH_WF_ACTION_ON_CSV + shortyIdAPI.shortify(saveAsDraftAction.getId()));
+
             csvreader = new CsvReader(reader);
             csvreader.setSafetySwitch(false);
             csvHeaders = csvreader.getHeaders();
@@ -934,7 +976,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                                     new String[]{titleField.id()}, false, false,
                                     chrisPublisher, defaultLanguage.getId(), csvHeaders, csvreader,
                                     -1, -1, reader,
-                                    action2.getId());
+                                    null);
             //Validations
             validate(results, false, false, false);
             assertEquals(results.get("warnings").size(), 0);
@@ -954,6 +996,141 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     assertEquals(task.getStatus(), step2.getId());
                 } else {
                     assertNotNull(task);
+                    assertEquals(task.getStatus(), step3.getId());
+                }
+            }
+
+        } finally {
+            if (null != contentType) {
+                contentTypeApi.delete(contentType);
+            }
+        }
+    }
+
+    /**
+     * Import file to update existing contents using action Ids with shortIds. In the
+     * following way:
+     *
+     * a) the testM should be Publish with the rigth action and stay on step 1
+     * b) the testN should be Unpublish with the rigth action and stay on step 2
+     * c) the testO should be Publish with the rigth action and stay on step 3
+     */
+    @Test
+    public void importFile_success_when_importLinesUpdateExistingContent()
+            throws DotSecurityException, DotDataException, IOException, InterruptedException {
+
+        ContentType contentType = null;
+        CsvReader csvreader;
+        long time;
+        HashMap<String, List<String>> results;
+        Reader reader;
+        String[] csvHeaders;
+        com.dotcms.contenttype.model.field.Field titleField;
+
+        try {
+            time = System.currentTimeMillis();
+            final String contentTypeName = "ContentTypeTestingWithActionIds5_" + time;
+            final String contentTypeVarName = "velocityVarNameTestingWithActionIds5_" + time;
+            final String testM = "TestM-" + time;
+            final String testN = "TestN-" + time;
+            final String testO = "TestO-" + time;
+
+            //create content type
+            contentType = createTestContentType(contentTypeName, contentTypeVarName);
+            titleField = fieldAPI.byContentTypeAndVar(contentType, TITLE_FIELD_NAME);
+            //Creating csv
+            reader = createTempFile(TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", "
+                    + Contentlet.WORKFLOW_ACTION_KEY + "\r\n" +
+                    testM + TEST_WITH_WF_ACTION_ON_CSV + shortyIdAPI.shortify(saveAction.getId())
+                    + "\r\n" +
+                    testN + TEST_WITH_WF_ACTION_ON_CSV + shortyIdAPI.shortify(saveAndPublishAction
+                    .getId()) + "\r\n" +
+                    testO + TEST_WITH_WF_ACTION_ON_CSV + shortyIdAPI.shortify(saveAsDraftAction
+                    .getId()));
+
+            csvreader = new CsvReader(reader);
+            csvreader.setSafetySwitch(false);
+            csvHeaders = csvreader.getHeaders();
+
+            //Preview=false
+            results =
+                    ImportUtil
+                            .importFile(0L, defaultSite.getInode(), contentType.inode(),
+                                    new String[]{titleField.id()}, false, false,
+                                    chrisPublisher, defaultLanguage.getId(), csvHeaders, csvreader,
+                                    -1, -1, reader,
+                                    null);
+            //Validations
+            validate(results, false, false, false);
+            assertEquals(results.get("warnings").size(), 0);
+            assertEquals(results.get("errors").size(), 0);
+
+            List<Contentlet> savedData = contentletAPI
+                    .findByStructure(contentType.inode(), user, false, 0, 0);
+            assertNotNull(savedData);
+            assertTrue(savedData.size() == 3);
+            for (final Contentlet cont : savedData) {
+                final WorkflowTask task = workflowAPI.findTaskByContentlet(cont);
+                if (cont.getStringProperty(TITLE_FIELD_NAME).startsWith(testM)) {
+                    assertNotNull(task);
+                    assertFalse(cont.isLive());
+                    assertEquals(task.getStatus(), step1.getId());
+                } else if(cont.getStringProperty(TITLE_FIELD_NAME).startsWith(testN)) {
+                    assertNotNull(task);
+                    assertTrue(cont.isLive());
+                    assertEquals(task.getStatus(), step2.getId());
+                } else {
+                    assertNotNull(task);
+                    assertFalse(cont.isLive());
+                    assertEquals(task.getStatus(), step3.getId());
+                }
+            }
+
+            //Update ContentType
+            Thread.sleep(1000);
+            reader = createTempFile(TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", "
+                    + Contentlet.WORKFLOW_ACTION_KEY + "\r\n" +
+                    testM + TEST_WITH_WF_ACTION_ON_CSV + shortyIdAPI.shortify(publishAction.getId())
+                    + "\r\n" +
+                    testN + TEST_WITH_WF_ACTION_ON_CSV + shortyIdAPI.shortify(unpublishAction
+                    .getId()) + "\r\n" +
+                    testO + TEST_WITH_WF_ACTION_ON_CSV + shortyIdAPI.shortify(publish2Action
+                    .getId()));
+
+            csvreader = new CsvReader(reader);
+            csvreader.setSafetySwitch(false);
+            csvHeaders = csvreader.getHeaders();
+
+            //Preview=false
+            results =
+                    ImportUtil
+                            .importFile(0L, defaultSite.getInode(), contentType.inode(),
+                                    new String[]{titleField.id()}, false, false,
+                                    chrisPublisher, defaultLanguage.getId(), csvHeaders, csvreader,
+                                    -1, -1, reader,
+                                    null);
+            //Validations
+            validate(results, false, false, true);
+            assertEquals(results.get("warnings").size(), 3);
+            assertEquals(results.get("errors").size(), 0);
+
+            savedData = contentletAPI
+                    .findByStructure(contentType.inode(), user, false, 0, 0);
+            assertNotNull(savedData);
+            assertTrue(savedData.size() == 3);
+            for (final Contentlet cont : savedData) {
+                final WorkflowTask task = workflowAPI.findTaskByContentlet(cont);
+                if (cont.getStringProperty(TITLE_FIELD_NAME).startsWith(testM)) {
+                    assertNotNull(task);
+                    assertEquals(task.getStatus(), step1.getId());
+                    assertTrue(cont.isLive());
+                } else if (cont.getStringProperty(TITLE_FIELD_NAME).startsWith(testN)) {
+                    assertNotNull(task);
+                    assertFalse(cont.isLive());
+                    assertEquals(task.getStatus(), step2.getId());
+                } else {
+                    assertNotNull(task);
+                    assertTrue(cont.isLive());
                     assertEquals(task.getStatus(), step3.getId());
                 }
             }
@@ -1056,4 +1233,26 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
         return contentType;
     }
+
+    /**
+     * Remove the workflows created for the test
+     */
+    @AfterClass
+    public static void cleanup()
+            throws DotDataException, DotSecurityException, AlreadyExistException {
+        WorkflowScheme wfScheme = null;
+        if (null != schemeStepActionResult1 && null != schemeStepActionResult1.getScheme()) {
+            wfScheme = schemeStepActionResult1.getScheme();
+            wfScheme.setArchived(true);
+            workflowAPI.saveScheme(wfScheme, user);
+            workflowAPI.deleteScheme(wfScheme, user);
+        }
+        if (null != schemeStepActionResult2 && null != schemeStepActionResult2.getScheme()) {
+            wfScheme = schemeStepActionResult2.getScheme();
+            wfScheme.setArchived(true);
+            workflowAPI.saveScheme(wfScheme, user);
+            workflowAPI.deleteScheme(wfScheme, user);
+        }
+    }
+
 }
