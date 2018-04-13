@@ -13,9 +13,9 @@ import { DotContentletService } from '../../../api/services/dot-contentlet.servi
 import { StructureTypeView } from '../../../shared/models/contentlet/structure-type-view.model';
 import { ButtonModel } from '../../../shared/models/action-header/button.model';
 import { DotDataTableAction } from '../../../shared/models/data-table/dot-data-table-action';
-import { DotcmsConfig, ConfigParams } from 'dotcms-js/dotcms-js';
 import { PushPublishService } from '../../../api/services/push-publish/push-publish.service';
 import { DotEnvironment } from '../../../shared/models/dot-environment/dot-environment';
+import { DotLicenseService } from '../../../api/services/dot-license/dot-license.service';
 
 /**
  * List of Content Types
@@ -66,34 +66,25 @@ export class ContentTypesPortletComponent implements OnInit {
         private crudService: CrudService,
         private dotDialogService: DotDialogService,
         private dotContentletService: DotContentletService,
-        private dotcmsConfig: DotcmsConfig,
         private route: ActivatedRoute,
         private router: Router,
         public dotMessageService: DotMessageService,
-        private pushPublishService: PushPublishService
+        private pushPublishService: PushPublishService,
+        private dotLicenseService: DotLicenseService
     ) {}
 
     ngOnInit() {
         Observable.forkJoin(
             this.dotMessageService.getMessages(this.i18nKeys),
             this.dotContentletService.getAllContentTypes(),
-            this.dotcmsConfig
-                .getConfig()
-                .take(1)
-                .map((config: ConfigParams) => {
-                    /*
-                    TODO: need to update ConfigParams interface and create a License interface
-                */
-                    const license: any = config.license;
-                    return license.isCommunity;
-                }),
+            this.dotLicenseService.isEnterpriseLicense(),
             this.pushPublishService.getEnvironments().map((environments: DotEnvironment[]) => !!environments.length)
         ).subscribe((res) => {
             const baseTypes: StructureTypeView[] = res[1];
             const rowActionsMap = {
                 delete: true,
-                pushPublish: !res[2] && res[3],
-                addToBundle: !res[2]
+                pushPublish: res[2] && res[3],
+                addToBundle: res[2]
             };
 
             this.actionHeaderOptions = {

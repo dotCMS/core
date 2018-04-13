@@ -17,9 +17,9 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { Injectable } from '@angular/core';
 import { DotContentletService } from '../../../api/services/dot-contentlet.service';
 import { PushPublishContentTypesDialogModule } from '../../../view/components/_common/push-publish-dialog/push-publish-dialog.module';
-import { DotcmsConfig } from 'dotcms-js/dotcms-js';
 import { PushPublishService } from '../../../api/services/push-publish/push-publish.service';
 import { DotAddToBundleModule } from '../../../view/components/_common/dot-add-to-bundle/dot-add-to-bundle.module';
+import { DotLicenseService } from '../../../api/services/dot-license/dot-license.service';
 
 @Injectable()
 class MockDotContentletService {
@@ -27,13 +27,9 @@ class MockDotContentletService {
 }
 
 @Injectable()
-class MockDotcmsConfig {
-    getConfig() {
-        return Observable.of({
-            license: {
-                isCommunity: false
-            }
-        });
+class MockDotLicenseService {
+    isEnterpriseLicense(): Observable<boolean> {
+        return Observable.of(true);
     }
 }
 
@@ -60,8 +56,8 @@ describe('ContentTypesPortletComponent', () => {
     let el: HTMLElement;
     let crudService: CrudService;
     let dotContentletService: DotContentletService;
-    let dotcmsConfigService: DotcmsConfig;
     let pushPublishService: PushPublishService;
+    let dotLicenseService: DotLicenseService;
 
     beforeEach(() => {
         const messageServiceMock = new MockDotMessageService({
@@ -91,8 +87,8 @@ describe('ContentTypesPortletComponent', () => {
                 FormatDateService,
                 { provide: DotContentletService, useClass: MockDotContentletService },
                 { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: DotcmsConfig, useClass: MockDotcmsConfig },
-                { provide: PushPublishService, useClass: MockPushPublishService }
+                { provide: PushPublishService, useClass: MockPushPublishService },
+                { provide: DotLicenseService, useClass: MockDotLicenseService },
             ]
         });
 
@@ -102,8 +98,8 @@ describe('ContentTypesPortletComponent', () => {
         el = de.nativeElement;
         crudService = fixture.debugElement.injector.get(CrudService);
         dotContentletService = fixture.debugElement.injector.get(DotContentletService);
-        dotcmsConfigService = fixture.debugElement.injector.get(DotcmsConfig);
         pushPublishService = fixture.debugElement.injector.get(PushPublishService);
+        dotLicenseService = fixture.debugElement.injector.get(DotLicenseService);
 
         spyOn(dotContentletService, 'getAllContentTypes').and.returnValue(
             Observable.of([
@@ -180,13 +176,8 @@ describe('ContentTypesPortletComponent', () => {
     });
 
     it('should have ONLY remove action because is community license', () => {
-        spyOn(dotcmsConfigService, 'getConfig').and.returnValue(
-            Observable.of({
-                license: {
-                    isCommunity: true
-                }
-            })
-        );
+        spyOn(dotLicenseService, 'isEnterpriseLicense').and.returnValue(Observable.of(false));
+
         fixture.detectChanges();
         expect(
             comp.rowActions.map((action) => {
