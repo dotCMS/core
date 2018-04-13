@@ -32,7 +32,7 @@ public class UnpublishContentActionlet extends WorkFlowActionlet {
 		try {
 
 			//Verify if there is something to unpublish
-			Boolean hasLiveVersion = APILocator.getVersionableAPI()
+			boolean hasLiveVersion = APILocator.getVersionableAPI()
 					.hasLiveVersion(processor.getContentlet());
 			if (hasLiveVersion) {
 				APILocator.getContentletAPI().unpublish(processor.getContentlet(), processor.getUser(), false);
