@@ -1680,7 +1680,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 					if (!schemes.stream().anyMatch(scheme -> scheme.getId().equals(action.getSchemeId()))) {
 
-						throw new DotDataException("Invalid-Action-Scheme-Error");
+						throw new IllegalArgumentException("Invalid-Action-Scheme-Error");
 					}
 				}
 
@@ -1691,7 +1691,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 					if (null == this.findAction(action.getId(), workflowTask.getStatus(), user)) {
 
-						throw new DotDataException("Invalid-Action-Step-Error");
+						throw new IllegalArgumentException("Invalid-Action-Step-Error");
 					}
 				} else {  // if the content is not in any step (may be is new), will check the first step.
 
@@ -1704,7 +1704,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					if (!workflowStepOptional.isPresent() ||
 							null == this.findAction(action.getId(), workflowStepOptional.get().getId(), user)) {
 
-						throw new DotDataException("Invalid-Action-Step-Error");
+						throw new IllegalArgumentException("Invalid-Action-Step-Error");
 					}
 				}
 			} catch (DotSecurityException e) {
