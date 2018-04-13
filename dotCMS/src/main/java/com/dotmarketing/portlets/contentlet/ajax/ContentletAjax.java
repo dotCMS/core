@@ -108,6 +108,8 @@ import org.jetbrains.annotations.NotNull;
  */
 public class ContentletAjax {
 
+	private static final String CONTENT_TYPES_INODE_SEPARATOR = ",";
+
 	private java.text.DateFormat modDateFormat = java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.SHORT,
 			java.text.DateFormat.SHORT);
 
@@ -451,7 +453,7 @@ public class ContentletAjax {
 	public List searchContentlets(String[] structureInodes, List<String> fields, List<String> categories, boolean showDeleted,
 								  boolean filterSystemHost,  boolean filterUnpublish, boolean filterLocked, int page, int perPage,String orderBy, String modDateFrom,
 								  String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
-		String structureInodesJoined = String.join(",", structureInodes);
+		String structureInodesJoined = String.join(CONTENT_TYPES_INODE_SEPARATOR, structureInodes);
 
 		return searchContentlets(structureInodesJoined, fields, categories, showDeleted, filterSystemHost, filterUnpublish, filterLocked,
 				page, perPage, orderBy, modDateFrom, modDateTo);
@@ -540,14 +542,14 @@ public class ContentletAjax {
 		List<Object> headers = new ArrayList<Object>();
 		Map<String, Field> fieldsMapping = new HashMap<String, Field>();
 		Structure st = null;
-		if(!Structure.STRUCTURE_TYPE_ALL.equals(structureInode) && structureInode.indexOf(',') == -1){
+		if(!Structure.STRUCTURE_TYPE_ALL.equals(structureInode) && !hasContentTypesInodeSeparator(structureInode)){
 		    st = CacheLocator.getContentTypeCache().getStructureByInode(structureInode);
 		    lastSearchMap.put("structure", st);
 		    luceneQuery.append("+contentType:" + st.getVelocityVarName() + " ");
-		} else if (!Structure.STRUCTURE_TYPE_ALL.equals(structureInode) && structureInode.indexOf(',') != -1) {
+		} else if (!Structure.STRUCTURE_TYPE_ALL.equals(structureInode) && hasContentTypesInodeSeparator(structureInode)) {
 			luceneQuery.append("+contentType:(");
 
-			String[] structureInodes = structureInode.split(",");
+			String[] structureInodes = structureInode.split(CONTENT_TYPES_INODE_SEPARATOR);
 
 			for (int i = 0; i < structureInodes.length; i++) {
 				st = CacheLocator.getContentTypeCache().getStructureByInode(structureInodes[i]);
@@ -1100,6 +1102,11 @@ public class ContentletAjax {
 
 		return results;
 	}
+
+	private boolean hasContentTypesInodeSeparator(String structureInode) {
+		return structureInode.contains(CONTENT_TYPES_INODE_SEPARATOR);
+	}
+
 	@CloseDB
 	@NotNull
 	private JSONArray getAvailableWorkflowActionsJson(final User currentUser,

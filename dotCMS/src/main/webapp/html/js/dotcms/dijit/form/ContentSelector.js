@@ -660,8 +660,6 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			this.currentSortBy = sortBy;
 		}
 
-        //ContentletAjax.searchContentlets (this.structureInode, fieldsValues, categoriesValues, false, false, this.currentPage, this.currentSortBy, null, null, false, dojo.hitch(this, this._fillResults));
-
         var searchFor = this.structureInode
         if (this.structureInode === 'catchall' && this.containerStructures.length > 0) {
             searchFor = this.containerStructures
