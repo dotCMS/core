@@ -173,16 +173,61 @@ describe('DotPageStateService', () => {
             expect(lastConnection[0].request.url).toContain('/api/v1/page/renderHTML/hello/world?mode=EDIT_MODE');
         });
 
-        it('should get a locked page and set default state', () => {
-            loginService.auth.user.userId = 'someone';
-
-            service.get('/test/123').subscribe((updatedPageState: DotRenderedPageState) => {
-                expect(updatedPageState.page).toEqual(mockDotPage);
-                expect(updatedPageState.state).toEqual({
-                    locked: true,
-                    mode: PageMode.EDIT,
-                    lockedByAnotherUser: false
+        describe('locked by another user', () => {
+            beforeEach(() => {
+                spyOnProperty(loginService, 'auth', 'get').and.returnValue({
+                    loginAsUser: {
+                        userId: 'someone'
+                    }
                 });
+            });
+
+            it('should get a locked page and set default state', () => {
+                service.get('/test/123').subscribe((updatedPageState: DotRenderedPageState) => {
+                    expect(updatedPageState.page).toEqual(mockDotPage);
+                    expect(updatedPageState.state).toEqual({
+                        locked: true,
+                        mode: PageMode.EDIT,
+                        lockedByAnotherUser: false
+                    });
+                });
+
+                lastConnection[0].mockRespond(
+                    new Response(
+                        new ResponseOptions({
+                            body: mockDotRenderedPage
+                        })
+                    )
+                );
+                expect(lastConnection[0].request.url).toContain('/api/v1/page/renderHTML/test/123?mode=EDIT_MODE');
+            });
+
+            it('should get a locked page and set default state locked by another user', () => {
+                service.get('/hola/mundo').subscribe((updatedPageState: DotRenderedPageState) => {
+                    expect(updatedPageState.page).toEqual(mockDotPage);
+                    expect(updatedPageState.state).toEqual({
+                        locked: true,
+                        mode: PageMode.EDIT,
+                        lockedByAnotherUser: false
+                    });
+                });
+
+                lastConnection[0].mockRespond(
+                    new Response(
+                        new ResponseOptions({
+                            body: mockDotRenderedPage
+                        })
+                    )
+                );
+                expect(lastConnection[0].request.url).toContain('/api/v1/page/renderHTML/hola/mundo?mode=EDIT_MODE');
+            });
+        });
+    });
+
+    describe('normal user', () => {
+        it('should get', () => {
+            service.get('/test/123').subscribe((updatedPageState: DotRenderedPageState) => {
+                expect(updatedPageState.user.userId).toEqual('123');
             });
 
             lastConnection[0].mockRespond(
@@ -192,18 +237,42 @@ describe('DotPageStateService', () => {
                     })
                 )
             );
-            expect(lastConnection[0].request.url).toContain('/api/v1/page/renderHTML/test/123?mode=EDIT_MODE');
         });
 
-        it('should get a locked page and set default state locked by another user', () => {
-
-            service.get('/hola/mundo').subscribe((updatedPageState: DotRenderedPageState) => {
-                expect(updatedPageState.page).toEqual(mockDotPage);
-                expect(updatedPageState.state).toEqual({
-                    locked: true,
-                    mode: PageMode.EDIT,
-                    lockedByAnotherUser: false
+        it('should set', () => {
+            service
+                .set(mockDotPage, {
+                    mode: PageMode.PREVIEW
+                })
+                .subscribe((updatedPageState: DotRenderedPageState) => {
+                    expect(updatedPageState.user.userId).toEqual('123');
                 });
+
+            lastConnection[0].mockRespond(
+                new Response(
+                    new ResponseOptions({
+                        body: mockDotRenderedPage
+                    })
+                )
+            );
+        });
+    });
+
+    describe('login as user', () => {
+        beforeEach(() => {
+            spyOnProperty(loginService, 'auth', 'get').and.returnValue({
+                loginAsUser: {
+                    userId: 'login-as-user'
+                },
+                user: {
+                    userId: '123'
+                }
+            });
+        });
+
+        it('should get', () => {
+            service.get('/test/123').subscribe((updatedPageState: DotRenderedPageState) => {
+                expect(updatedPageState.user.userId).toEqual('login-as-user');
             });
 
             lastConnection[0].mockRespond(
@@ -213,7 +282,24 @@ describe('DotPageStateService', () => {
                     })
                 )
             );
-            expect(lastConnection[0].request.url).toContain('/api/v1/page/renderHTML/hola/mundo?mode=EDIT_MODE');
+        });
+
+        it('should set', () => {
+            service
+                .set(mockDotPage, {
+                    mode: PageMode.PREVIEW
+                })
+                .subscribe((updatedPageState: DotRenderedPageState) => {
+                    expect(updatedPageState.user.userId).toEqual('login-as-user');
+                });
+
+            lastConnection[0].mockRespond(
+                new Response(
+                    new ResponseOptions({
+                        body: mockDotRenderedPage
+                    })
+                )
+            );
         });
     });
 });
