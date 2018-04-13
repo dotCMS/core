@@ -716,8 +716,8 @@ public class FolderAPITest {//24 contentlets
 		contentAsset1 = contentletAPI.checkin(contentAsset1, user, false);
 		contentletAPI.publish(contentAsset1, user, false);
 
-		contentletAPI.archive(contentAsset1,user,false);
-		contentletAPI.delete(contentAsset1,user,false);
+		//contentletAPI.archive(contentAsset1,user,false);
+		//contentletAPI.delete(contentAsset1,user,false);
 		
 		folderAPI.delete(ftest, user, false);
 
