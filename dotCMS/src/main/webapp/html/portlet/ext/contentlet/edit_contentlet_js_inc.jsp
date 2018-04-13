@@ -1,4 +1,4 @@
-    <%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@ page import="com.dotmarketing.filters.CMSFilter" %>
 <%@ page import="com.dotmarketing.util.Config"%>
