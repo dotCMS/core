@@ -720,6 +720,8 @@ public class FolderAPITest {//24 contentlets
 		contentletAPI.delete(contentAsset1,user,false);
 		
 		folderAPI.delete(ftest, user, false);
+
+		Thread.sleep(6000); //wait to index/cache refresh
 		
 		/*validate that the folder and pages were deleted*/
 		final Folder  folder = folderAPI.findFolderByPath(folderPath, host, user, false);
