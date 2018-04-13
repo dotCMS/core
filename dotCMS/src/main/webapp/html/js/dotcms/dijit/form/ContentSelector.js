@@ -664,7 +664,9 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 
         var searchFor = this.structureInode
         if (this.structureInode === 'catchall' && this.containerStructures.length > 0) {
-            searchFor = this.containerStructures;
+            searchFor = this.containerStructures
+				.map(function(contentType) { return contentType.inode })
+				.filter(function(inode){return inode !== 'catchall'});
         }
 
 		ContentletAjax.searchContentlets(

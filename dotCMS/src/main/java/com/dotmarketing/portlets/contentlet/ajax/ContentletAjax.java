@@ -3,19 +3,12 @@ package com.dotmarketing.portlets.contentlet.ajax;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -95,6 +88,7 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import com.liferay.util.StringUtil;
 import com.liferay.util.servlet.SessionMessages;
 import org.jetbrains.annotations.NotNull;
 
@@ -454,6 +448,15 @@ public class ContentletAjax {
 		        page, orderBy, perPage,currentUser, sess, modDateFrom, modDateTo);
 	}
 
+	public List searchContentlets(String[] structureInodes, List<String> fields, List<String> categories, boolean showDeleted,
+								  boolean filterSystemHost,  boolean filterUnpublish, boolean filterLocked, int page, int perPage,String orderBy, String modDateFrom,
+								  String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
+		String structureInodesJoined = String.join(",", structureInodes);
+
+		return searchContentlets(structureInodesJoined, fields, categories, showDeleted, filterSystemHost, filterUnpublish, filterLocked,
+				page, perPage, orderBy, modDateFrom, modDateTo);
+	}
+
 	/**
 	 * This method is used by the backend to pull from lucene index the form widgets
 	 * if the widget doesn't exist then is created and also checks the user
@@ -537,12 +540,27 @@ public class ContentletAjax {
 		List<Object> headers = new ArrayList<Object>();
 		Map<String, Field> fieldsMapping = new HashMap<String, Field>();
 		Structure st = null;
-		if(!Structure.STRUCTURE_TYPE_ALL.equals(structureInode)){
+		if(!Structure.STRUCTURE_TYPE_ALL.equals(structureInode) && structureInode.indexOf(',') == -1){
 		    st = CacheLocator.getContentTypeCache().getStructureByInode(structureInode);
 		    lastSearchMap.put("structure", st);
 		    luceneQuery.append("+contentType:" + st.getVelocityVarName() + " ");
-		}
-		else {
+		} else if (!Structure.STRUCTURE_TYPE_ALL.equals(structureInode) && structureInode.indexOf(',') != -1) {
+			luceneQuery.append("+contentType:(");
+
+			String[] structureInodes = structureInode.split(",");
+
+			for (int i = 0; i < structureInodes.length; i++) {
+				st = CacheLocator.getContentTypeCache().getStructureByInode(structureInodes[i]);
+
+				if (i != 0) {
+					luceneQuery.append(" OR " + st.getVelocityVarName());
+				} else {
+					luceneQuery.append(st.getVelocityVarName());
+				}
+			}
+			luceneQuery.append(") ");
+
+		} else {
 		    for(int i=0;i<fields.size();i++){
 		        String x = fields.get(i);
 		        if(Structure.STRUCTURE_TYPE_ALL.equals(x)){
