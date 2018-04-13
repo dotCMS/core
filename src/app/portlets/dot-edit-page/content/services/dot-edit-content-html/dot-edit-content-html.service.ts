@@ -394,6 +394,12 @@ export class DotEditContentHtmlService {
             // When a user drang and drop a contentlet in the iframe
             relocate: (contentletEvent: any) => {
                 this.renderRelocatedContentlet(contentletEvent.data);
+            },
+            // When user cancel the edition of a contentlet.
+            cancel: (contentletEvent: any) => {
+                this.iframeActions.next({
+                    name: 'close'
+                });
             }
         };
 
