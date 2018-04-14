@@ -266,7 +266,27 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 		;
 
 	},
-    deleteScheme : function(schemeId) {
+	copyScheme : function(schemeId) {
+
+		var xhrArgs = {
+			url: "/api/v1/workflow/schemes/" + schemeId + "/copy",
+			timeout : 30000,
+			handle : function(dataOrError, ioArgs) {
+				if (dojo.isString(dataOrError)) {
+					if (dataOrError.indexOf("FAILURE") == 0) {
+						schemeAdmin.copyError(dataOrError);
+					} else {
+						schemeAdmin.copySuccess(dataOrError);
+					}
+				} else {
+					this.copyError("<%=LanguageUtil.get(pageContext, "Unable-to-copy-Scheme")%>");
+				}
+			}
+		};
+		dojo.xhrPost(xhrArgs);
+		return;
+	},
+		deleteScheme : function(schemeId) {
 
         if(!confirm("<%=LanguageUtil.get(pageContext, "Confirm-Delete-Scheme")%>")){
             return;
@@ -308,7 +328,16 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
     },
     deleteError : function(message) {
         showDotCMSSystemMessage(message, true);
-    }
+    },
+	copySuccess : function(message) {
+		var dialog = dijit.byId(schemeAdmin.addEditDiv);
+		dialog.hide();
+		schemeAdmin.show();
+		showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Workflow-Scheme-copied")%>");
+	},
+	copyError : function(message) {
+		showDotCMSSystemMessage(message, true);
+	}
 
 });
 

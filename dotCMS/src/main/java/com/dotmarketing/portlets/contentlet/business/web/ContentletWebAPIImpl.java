@@ -15,6 +15,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.*;
 import com.dotmarketing.factories.EmailFactory;
@@ -124,10 +125,11 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			throw new Exception(ae.getMessage());
 		}
 
-		Contentlet cont;
-		boolean isNew = isNew(contentletFormData);
+		Contentlet contentlet;
+		final boolean isNew = isNew(contentletFormData);
 
 		try {
+
 			Logger.debug(this, "Calling Save Method");
 			try{
 				_saveWebAsset(contentletFormData,isAutoSave,isCheckin,user, generateSystemEvent);
@@ -159,14 +161,15 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
             }
 
 
-			cont = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
+			contentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
 
 			// finally we unlock the asset as the lock attribute is
 			// attached to the identifier rather than contentlet as
 			// before DOTCMS-6383
 		    //conAPI.unlock(cont, user, false);
+			this.pushSaveEvent(contentlet, isNew);
 		} catch (Exception ae) {
-			cont = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
+			contentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
 			//conAPI.refresh(cont);
 			_handleException(ae,autocommit);
 			throw ae;
@@ -176,14 +179,24 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			HibernateUtil.closeAndCommitTransaction();
 		}
 
-		// todo: make it async by thread pool
-		contentletSystemEventUtil.pushSaveEvent(cont, isNew);
 
 		contentletFormData.put("cache_control", "0");
 
 
-		return ((cont!=null) ? cont.getInode() : null);
+		return ((contentlet!=null) ? contentlet.getInode() : null);
 	}
+
+	private void pushSaveEvent (final Contentlet eventContentlet, final boolean eventCreateNewVersion) throws DotHibernateException {
+
+		HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+			@Override
+			public void run() {
+
+				contentletSystemEventUtil.pushSaveEvent(eventContentlet, eventCreateNewVersion);
+			}
+		});
+	}
+
 
 	private boolean isNew(Map<String, Object> contentletFormData) {
 		Contentlet currentContentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);

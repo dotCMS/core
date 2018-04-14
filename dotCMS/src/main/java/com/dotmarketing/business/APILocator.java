@@ -89,6 +89,8 @@ import com.dotmarketing.portlets.hostvariable.bussiness.HostVariableAPI;
 import com.dotmarketing.portlets.hostvariable.bussiness.HostVariableAPIImpl;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPIImpl;
+import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
+import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPIImpl;
 import com.dotmarketing.portlets.linkchecker.business.LinkCheckerAPI;
@@ -866,6 +868,15 @@ public class APILocator extends Locator<APIIndex>{
     }
 
 	/**
+	 * Creates a single instance of the {@link LanguageVariableAPI}
+	 *
+	 * @return The {@link LanguageVariableAPI} class.
+	 */
+	public static HTMLPageAssetRenderedAPI getHTMLPageAssetRenderedAPI() {
+		return (HTMLPageAssetRenderedAPI) getInstance(APIIndex.HTMLPAGE_ASSET_RENDERED_API);
+	}
+
+	/**
 	 * Generates a unique instance of the specified dotCMS API.
 	 *
 	 * @param index
@@ -996,7 +1007,8 @@ enum APIIndex
 	LOCAL_SYSTEM_EVENTS_API,
 	LANGUAGE_VARIABLE_API,
 	VANITY_URLS_API,
-	MULTI_TREE_API;
+	MULTI_TREE_API,
+	HTMLPAGE_ASSET_RENDERED_API;
 
 	Object create() {
 		switch(this) {
@@ -1065,6 +1077,7 @@ enum APIIndex
     		case LANGUAGE_VARIABLE_API: return new LanguageVariableAPIImpl();
 			case LOCAL_SYSTEM_EVENTS_API: return LocalSystemEventsAPIFactory.getInstance().getLocalSystemEventsAPI();
 			case MULTI_TREE_API: return new MultiTreeAPIImpl();
+			case HTMLPAGE_ASSET_RENDERED_API: return new HTMLPageAssetRenderedAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

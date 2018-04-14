@@ -26,10 +26,8 @@ import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.liferay.portal.model.User;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
+import java.util.*;
 import java.util.concurrent.Future;
 
 public interface WorkflowAPI {
@@ -501,10 +499,17 @@ public interface WorkflowAPI {
 
 	public int countTasks(WorkflowSearcher searcher)  throws DotDataException;
 
-	public void copyWorkflowActionClassParameter(WorkflowActionClassParameter from, WorkflowActionClass to) throws DotDataException;
-	public void copyWorkflowActionClass(WorkflowActionClass from, WorkflowAction to) throws DotDataException;
-	public void copyWorkflowAction(WorkflowAction from, WorkflowStep to) throws DotDataException;
-	public void copyWorkflowStep(WorkflowStep from, WorkflowScheme to) throws DotDataException;
+	public List<WorkflowActionClassParameter> copyWorkflowActionClassParameters(final Collection<WorkflowActionClassParameter> from, WorkflowActionClass to, final User user) throws DotDataException;
+	public WorkflowActionClass copyWorkflowActionClass(WorkflowActionClass from, WorkflowAction to, final User user) throws DotDataException, AlreadyExistException;
+	public WorkflowAction copyWorkflowAction(WorkflowAction from, WorkflowScheme to, final User user) throws DotDataException, AlreadyExistException, DotSecurityException;
+	public WorkflowStep copyWorkflowStep(WorkflowStep from, WorkflowScheme to, final User user) throws DotDataException, AlreadyExistException;
+
+	/**
+	 * Do a deep copy of the scheme, copying the steps, actions, etc.
+	 * @param from WorkflowScheme
+	 * @throws DotDataException
+	 */
+	public WorkflowScheme deepCopyWorkflowScheme(WorkflowScheme from, final User user) throws DotDataException, AlreadyExistException, DotSecurityException;
 
     public java.util.List<WorkflowTask> searchAllTasks(WorkflowSearcher searcher) throws DotDataException;
 

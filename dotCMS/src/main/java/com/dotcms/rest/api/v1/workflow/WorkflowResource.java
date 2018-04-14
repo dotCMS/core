@@ -1,22 +1,8 @@
 package com.dotcms.rest.api.v1.workflow;
 
-import static com.dotcms.exception.ExceptionUtil.BAD_REQUEST_EXCEPTIONS;
-import static com.dotcms.exception.ExceptionUtil.NOT_FOUND_EXCEPTIONS;
-import static com.dotcms.exception.ExceptionUtil.SECURITY_EXCEPTIONS;
-import static com.dotcms.exception.ExceptionUtil.causedBy;
-import static com.dotcms.rest.ResponseEntityView.OK;
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
-import com.dotcms.repackage.javax.ws.rs.DELETE;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.POST;
-import com.dotcms.repackage.javax.ws.rs.PUT;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.Produces;
-import com.dotcms.repackage.javax.ws.rs.QueryParam;
+import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -29,16 +15,7 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotcms.workflow.form.FireActionForm;
-import com.dotcms.workflow.form.WorkflowActionForm;
-import com.dotcms.workflow.form.WorkflowActionStepBean;
-import com.dotcms.workflow.form.WorkflowActionStepForm;
-import com.dotcms.workflow.form.WorkflowReorderBean;
-import com.dotcms.workflow.form.WorkflowReorderWorkflowActionStepForm;
-import com.dotcms.workflow.form.WorkflowSchemeForm;
-import com.dotcms.workflow.form.WorkflowSchemeImportObjectForm;
-import com.dotcms.workflow.form.WorkflowStepAddForm;
-import com.dotcms.workflow.form.WorkflowStepUpdateForm;
+import com.dotcms.workflow.form.*;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -58,17 +35,20 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.annotations.Beta;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+
+import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
-import javax.servlet.http.HttpServletRequest;
+
+import static com.dotcms.exception.ExceptionUtil.*;
+import static com.dotcms.rest.ResponseEntityView.OK;
+import static com.dotcms.util.CollectionsUtils.map;
 
 @SuppressWarnings("serial")
-@Beta /* Non Official released */
 @Path("/v1/workflow")
 public class WorkflowResource {
 
@@ -864,6 +844,44 @@ public class WorkflowResource {
             response     = Response.ok(new ResponseEntityView(
                     map("workflowExportObject", new WorkflowSchemeImportExportObjectView(exportObject),
                             "permissions", permissions))).build(); // 200
+        } catch (Exception e){
+            Logger.error(this.getClass(),
+                    "Exception on exportScheme, Error exporting the schemes", e);
+            return mapExceptionResponse(e);
+        }
+
+        return response;
+    } // exportScheme.
+
+    /**
+     * Do an export of the scheme with all dependencies to rebuild it (such as steps and actions)
+     * in addition the permission (who can use) will be also returned.
+     * @param request  HttpServletRequest
+     * @param schemeId String
+     * @return Response
+     */
+    @POST
+    @Path("/schemes/{schemeId}/copy")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response copy(@Context final HttpServletRequest request,
+                               @PathParam("schemeId") final String schemeId) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, true, request, true, null);
+        Response response;
+        WorkflowSchemeImportExportObject exportObject;
+        List<Permission>                 permissions;
+
+        try {
+
+            Logger.debug(this, "Copying the workflow scheme: " + schemeId);
+            response     = Response.ok(new ResponseEntityView(
+                    this.workflowAPI.deepCopyWorkflowScheme(
+                            this.workflowAPI.findScheme(schemeId),
+                            initDataObject.getUser())
+                    )).build(); // 200
         } catch (Exception e){
             Logger.error(this.getClass(),
                     "Exception on exportScheme, Error exporting the schemes", e);
