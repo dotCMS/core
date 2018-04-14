@@ -74,7 +74,7 @@ public class WfRoleStoreAjax extends WfBaseAction {
                             roleList.add( cmsAnon );
                         else
                             roleList.add( r );
-                        response.getWriter().write( rolesToJson( roleList, includeFake ) );
+                        response.getWriter().write( rolesToJson( roleList, includeFake, includeLabelAll ) );
                         return;
                     }
                 } catch ( Exception e ) {
@@ -122,7 +122,7 @@ public class WfRoleStoreAjax extends WfBaseAction {
             }
             //x = x.replaceAll("identifier", "x");
             response.setContentType("application/json");
-            response.getWriter().write( rolesToJson( roleList, includeFake ) );
+            response.getWriter().write( rolesToJson( roleList, includeFake, includeLabelAll ) );
 
         } catch ( Exception e ) {
             Logger.error( WfRoleStoreAjax.class, e.getMessage(), e );
@@ -176,7 +176,7 @@ public class WfRoleStoreAjax extends WfBaseAction {
             }
 
             response.setContentType("application/json");
-            response.getWriter().write( rolesToJson( roleList, includeFake ) );
+            response.getWriter().write( rolesToJson( roleList, includeFake, includeFake ) );
         } catch ( Exception e ) {
             Logger.error( WfRoleStoreAjax.class, e.getMessage(), e );
         }
@@ -184,7 +184,7 @@ public class WfRoleStoreAjax extends WfBaseAction {
 
     }
 
-    private String rolesToJson ( List<Role> roles, boolean includeFake ) throws IOException, DotDataException, LanguageException {
+    private String rolesToJson ( List<Role> roles, boolean includeFake, boolean includeLabelAll ) throws IOException, DotDataException, LanguageException {
 
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure( DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false );
@@ -195,10 +195,17 @@ public class WfRoleStoreAjax extends WfBaseAction {
         Map<String, Object> map = null;
 
         if(includeFake) {
-        	map = new HashMap<String, Object>();
+        	map = new HashMap<>();
 	        map.put( "name", "" );
 	        map.put( "id", 0 );
 	        list.add( map );
+        }
+
+        if(includeLabelAll) {
+            map = new HashMap<>();
+            map.put( "name", "All" );
+            map.put( "id", "" );
+            list.add( map );
         }
 
         User defaultUser = APILocator.getUserAPI().getDefaultUser();

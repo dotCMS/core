@@ -819,6 +819,17 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         return filterActionsCollection(actions, user, true, permissionable);
     }
 
+	public List<WorkflowAction> findActions(WorkflowStep step, Role role) throws DotDataException,
+           DotSecurityException {
+
+		if(null == step) {
+			return Collections.emptyList();
+		}
+		final List<WorkflowAction> actions = workFlowFactory.findActions(step);
+		return filterActionsCollection(actions, role);
+
+	}
+
 	@Override
 	@CloseDBIfOpened
 	public List<WorkflowAction> findActions(final WorkflowScheme scheme, final User user)
@@ -1907,6 +1918,33 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				permissionables.remove(i);
 			}else {
 				++i;
+			}
+		}
+
+		return permissionables;
+	}
+
+	/**
+	 * Filter the list of actions to display according to the role passed
+	 * @param actions
+	 * @param role
+	 * @return
+	 * @throws DotDataException
+	 */
+	@CloseDBIfOpened
+	private List<WorkflowAction> filterActionsCollection(final List<WorkflowAction> actions,
+			final Role role) throws DotDataException {
+
+		final List<WorkflowAction> permissionables = new ArrayList<>(actions);
+		if (permissionables.isEmpty()) {
+			return permissionables;
+		}
+
+		final Iterator<WorkflowAction> iterator = permissionables.iterator();
+		while (iterator.hasNext()) {
+			final WorkflowAction wa = iterator.next();
+			if (!permissionAPI.doesRoleHavePermission(wa, PermissionAPI.PERMISSION_USE, role)) {
+				iterator.remove();
 			}
 		}
 

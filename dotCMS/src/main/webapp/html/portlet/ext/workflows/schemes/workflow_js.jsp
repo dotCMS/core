@@ -540,7 +540,26 @@ dojo.declare("dotcms.dijit.workflows.StepAdmin", null, {
 				x.hide();
 			}
 		}
-	}
+	},
+    filterSteps:function(schemeId,roleId){
+
+        var targetNode = dojo.byId("wfStepInDragContainer");
+
+		var xhrArgs = {
+		   url: "/html/portlet/ext/workflows/schemes/view_steps_filtered.jsp?schemeId="+schemeId+"&roleId="+roleId,
+		   async:true,
+		   load: function(markup){
+               targetNode.innerHTML = markup;
+		   },
+		   error: function(error){
+                console.log(error);
+                showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Unable-to-load-Scheme")%>", true);
+		   }
+		};
+		// Call the asynchronous xhrGet
+		var deferred = dojo.xhrGet(xhrArgs);
+
+    }
 
 });
 
@@ -1184,6 +1203,7 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
 
 var myRoleReadStore = new dotcms.dojo.data.RoleReadStore({nodeId: "actionAssignToSelect"});
 var myRoleReadStore2 = new dotcms.dojo.data.RoleReadStore({nodeId: "whoCanUseSelect",includeWfRoles: "true"});
+var myRoleReadStoreFilter = new dotcms.dojo.data.RoleReadStore({nodeId: "whoCanUseSelect", includeWfRoles: "true", includeLabelAll:true});
 
 var myIconStore = new dojo.data.ItemFileReadStore({data:
 	<%@ include file="/html/portlet/ext/workflows/schemes/workflow_icons.json" %>

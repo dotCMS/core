@@ -25,10 +25,11 @@
 		}
 	}
 
-	
+	pageContext.setAttribute("scheme",scheme);
 %>
 
 <script type="text/javascript">
+
 
 
 	dragula([document.querySelectorAll('.wfStepInDrag'), document.getElementById('wfStepInDragContainer')], {
@@ -113,22 +114,29 @@
 	}
 
     dojo.ready(function(){
+        var schemeId = '<%=scheme.getId()%>';
         var whoCanUseFilteringSelect = new dijit.form.FilteringSelect({
                 id: "whoCanUseSelect",
                 name: "whoCanUseSelect",
-                store: myRoleReadStore2,
+                store: myRoleReadStoreFilter,
                 pageSize:30,
                 searchDelay:300,
                 style: "width: 80%",
                 required:false,
                 onClick:function(){
-                    dijit.byId("whoCanUseSelect").set("displayedValue","");
-                    dijit.byId("whoCanUseSelect").loadDropDown();
+                    var select = dijit.byId("whoCanUseSelect");
+                    select.set("displayedValue","");
+                    select.loadDropDown();
+                },onChange:function (item) {
 
-                },
-                value : 0
+                    var select = dijit.byId("whoCanUseSelect");
+                    var roleId = select.getValue();
+                    stepAdmin.filterSteps(schemeId, roleId);
+
+                }
             },
-            "actionWhoCanUseSelect");
+            "filterByWhoCanUseSelect");
+        dijit.byId("whoCanUseSelect").set("displayedValue","All");
 	});
 
 </script>
@@ -149,8 +157,8 @@
 
 	<div class="portlet-toolbar__info">
 		<div class="inline-form">
-			<input id="actionWhoCanUseSelect"/>
-			<label font-size:85%; for="actionWhoCanUseSelect"><%=LanguageUtil.get(pageContext, "Filter-By-Who-Can-Use")%>
+			<input id="filterByWhoCanUseSelect"/>
+			<label font-size:85%; for="filterByWhoCanUseSelect"><%=LanguageUtil.get(pageContext, "Filter-By-Who-Can-Use")%>
 			</label>
 		</div>
 	</div>
@@ -169,57 +177,10 @@
 	<div class="board-main-content">
 		<div class="board-canvas">
 			<div class="" id="wfStepInDragContainer">
-				
-				<%for(WorkflowStep step : steps){ %>
-					<%List<WorkflowAction> actions = wapi.findActions(step, APILocator.getUserAPI().getSystemUser());%>
-					<div class="list-wrapper wfStepInDrag" id="stepID<%=step.getId()%>">	
-						<div class="list-item"  onmouseout="colorMeNot()">
-							<div class="wfStepTitle">
-								<div class="showPointer wfStepTitleDivs handle" onClick="stepAdmin.showStepEdit('<%=step.getId()%>')">
-									<span style="border-bottom:dotted 1px #fff;"><%=step.getName() %></span>
-									<span style="font-weight:normal;display:inline-block;">
-										<%=step.isResolved() ? "(" +  LanguageUtil.get(pageContext, "resolved") + ")" : "" %>
-									</span>
-								</div>
-								<div class="clear"></div>
-							</div>
-							<div class="wfActionList" id="jsNode<%=step.getId()  %>"  data-wfstep-id="<%=step.getId()%>">
-									<%for(WorkflowAction action : actions){ %>
-										<div class="wf-action-wrapper x<%=action.getId()%>" data-wfaction-id="<%=action.getId()%>" onmouseover="colorMe('x<%=action.getId()%>')" onmouseout="colorMeNot('x<%=action.getId()%>')" >
-											<div class="handles"></div>
-											<div class="wf-action showPointer">
-												<div class="pull-right showPointer" onclick="actionAdmin.deleteActionForStep(this)"><span class="deleteIcon"></span></div>
-												<div  class="pull-left showPointer" onClick="actionAdmin.viewAction('<%=scheme.getId()%>', '<%=action.getId() %>');">
-													<%=action.getName() %> <span style="color:#a6a6a6">&#8227; <%=(WorkflowAction.CURRENT_STEP.equals(action.getNextStep())) ?  WorkflowAction.CURRENT_STEP : wapi.findStep(action.getNextStep()).getName() %></span>
-												</div>
-											</div>
-										</div>
-									<%} %>
-							</div>
 
-							<div class="btn-flat-wrapper">
-									<div class="btn-flat showPointer" onclick="stepAdmin.deleteStep('<%=step.getId()%>')">Delete</div>
-									<div class="btn-flat btn-primary showPointer" onclick="actionAdmin.addOrAssociatedAction('<%=scheme.getId()%>', '<%=step.getId()%>', 'step-action-<%=step.getId()%>');">
-										<i class="fa fa-plus" aria-hidden="true"></i> Add
-									</div>
-							</div>
-						</div>
-					</div>
-				<%}%>
-				<div class="list-wrapper showPointer ghostAddDiv" onclick="stepAdmin.schemeId='<%=schemeId%>';stepAdmin.showAddNewStep();" >	
-					<div class="list-item">
-						<div class="wfStepTitle">
-							<div class="wfStepTitleDivs">
-								<span style="border-bottom:dotted 0px #fff;"><%=LanguageUtil.get(pageContext, "Add-Workflow-Step")%></span>
-							</div>
-							<div class="clear"></div>
-						</div>
-						<div class="wfActionList">
-						
-						</div>
-					</div>
-				</div>
-				
+				<jsp:include page="view_steps_filtered.jsp">
+					<jsp:param name="scheme" value="#{scheme}" />
+				</jsp:include>
 				
 			</div>
 		</div>

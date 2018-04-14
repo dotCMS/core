@@ -668,6 +668,13 @@ public class WorkflowAPITest extends IntegrationTestBase {
         //check valid action for
         actions = workflowAPI.findActions(steps, reviewerUser);
         assertTrue(null != actions && actions.size() == 2);
+
+        actions = workflowAPI.findActions(workflowScheme1Step2, reviewer);
+        assertTrue(null != actions && actions.size() == 1);
+
+        actions = workflowAPI.findActions(workflowScheme3Step2, contributor);
+        assertTrue(null != actions && actions.size() == 1);
+
     }
 
     /**
