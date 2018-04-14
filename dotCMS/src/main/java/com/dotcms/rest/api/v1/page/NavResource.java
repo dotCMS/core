@@ -12,11 +12,16 @@ import com.dotcms.repackage.javax.ws.rs.QueryParam;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionLevel;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
@@ -36,6 +41,7 @@ import org.apache.velocity.tools.view.context.ViewContext;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.liferay.portal.model.User;
 
 @Path("/v1/nav")
 public class NavResource {
@@ -59,36 +65,37 @@ public class NavResource {
     }
 
     /**
-     * Returns the metadata in JSON format of the objects that make up an HTML Page in the system.
+     * Returns navigation metadata in JSON format for objects that have been marked show on men
      * 
      * <pre>
      * Format:
-     * http://localhost:8080/api/v1/page/json/{page-url}
+     * http://localhost:8080/api/v1/nav/{start-url}?depth={}
      * <br/>
-     * Example:
-     * http://localhost:8080/api/v1/page/json/about-us/locations/index
+     * Example - will send the navigation under the /about-us folder, 2 levels deep
+     * http://localhost:8080/api/v1/nav/about-us?depth=2
      * </pre>
      *
      * @param request The {@link HttpServletRequest} object.
      * @param response The {@link HttpServletResponse} object.
      * @param uri The path to the HTML Page whose information will be retrieved.
-     * @param live If it is false look for live and working page version, otherwise just look for
-     *        live version, true is the default value
-     * @return All the objects on an associated HTML Page.
+     * @param depth - an int for how many levels to include
+     * @return a json representation of the navigation
      */
     @NoCache
     @GET
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/{uri: .*}")
     public Response loadJson(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            @PathParam("uri") final String uri, @QueryParam("depth") final int depth,@QueryParam("site") final String site) {
+            @PathParam("uri") final String uri, @QueryParam("depth") final int depth) {
 
-        webResource.init(false, request, true);
+        final InitDataObject auth = webResource.init(false, request, true);
+        final User user = auth.getUser();
 
         Response res = null;
         try {
-
-
+            Host h =WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+            APILocator.getPermissionAPI().checkPermission(h, PermissionLevel.READ, user);
+            
             ViewContext ctx = new ChainedContext(VelocityUtil.getBasicContext(), request, response, Config.CONTEXT);
 
             final String path = (!uri.startsWith("/")) ? "/" + uri : uri;
