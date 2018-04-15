@@ -1,5 +1,13 @@
 package com.dotmarketing.portlets.workflows.business;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
@@ -49,14 +57,17 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
 
 /**
  * Test the workflowAPI
@@ -763,10 +774,12 @@ public class WorkflowAPITest extends IntegrationTestBase {
         assertTrue(null != actions && actions.size() == 2);
 
         actions = workflowAPI.findActions(workflowScheme1Step2, reviewer);
-        assertTrue(null != actions && actions.size() == 1);
+        assertNotNull(actions);
+        assertTrue(actions.size() == 1);
 
         actions = workflowAPI.findActions(workflowScheme3Step2, contributor);
-        assertTrue(null != actions && actions.size() == 1);
+        assertNotNull(actions);
+        assertTrue(actions.size() == 1);
 
     }
 

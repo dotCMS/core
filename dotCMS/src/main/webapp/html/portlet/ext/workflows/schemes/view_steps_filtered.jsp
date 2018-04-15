@@ -12,7 +12,7 @@
 
 
 <%
-    WorkflowAPI wapi = APILocator.getWorkflowAPI();
+    final WorkflowAPI wapi = APILocator.getWorkflowAPI();
     final String schemeId = request.getParameter("schemeId");
     final WorkflowScheme scheme = UtilMethods.isSet(pageContext.getAttribute("scheme")) ? WorkflowScheme.class.cast(pageContext.getAttribute("scheme")) : wapi.findScheme(schemeId);
     final List<WorkflowStep> steps = wapi.findSteps(scheme);

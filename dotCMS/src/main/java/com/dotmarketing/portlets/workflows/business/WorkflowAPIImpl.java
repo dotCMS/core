@@ -819,7 +819,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         return filterActionsCollection(actions, user, true, permissionable);
     }
 
-	public List<WorkflowAction> findActions(WorkflowStep step, Role role) throws DotDataException,
+	@Override
+	@CloseDBIfOpened
+	public List<WorkflowAction> findActions(final WorkflowStep step, final Role role) throws DotDataException,
            DotSecurityException {
 
 		if(null == step) {
@@ -2109,11 +2111,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			return permissionables;
 		}
 
-		final Iterator<WorkflowAction> iterator = permissionables.iterator();
-		while (iterator.hasNext()) {
-			final WorkflowAction wa = iterator.next();
+		final Iterator<WorkflowAction> workflowActionIterator = permissionables.iterator();
+		while (workflowActionIterator.hasNext()) {
+			final WorkflowAction wa = workflowActionIterator.next();
 			if (!permissionAPI.doesRoleHavePermission(wa, PermissionAPI.PERMISSION_USE, role)) {
-				iterator.remove();
+				workflowActionIterator.remove();
 			}
 		}
 

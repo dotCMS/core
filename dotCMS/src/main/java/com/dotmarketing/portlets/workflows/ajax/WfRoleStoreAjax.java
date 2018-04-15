@@ -13,6 +13,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -48,9 +49,9 @@ public class WfRoleStoreAjax extends WfBaseAction {
 
         }
 
-        boolean includeFake = UtilMethods.isSet(request.getParameter( "includeFake" ))&&request.getParameter( "includeFake" ).equals("true");
-        boolean includeWorkflowRoles = UtilMethods.isSet(request.getParameter( "includeWfRoles" ))&&request.getParameter( "includeWfRoles" ).equals("true");
-        boolean includeLabelAll = UtilMethods.isSet(request.getParameter( "includeLabelAll" ))&&request.getParameter( "includeLabelAll" ).equals("true");
+        final boolean includeFake = UtilMethods.isSet(request.getParameter( "includeFake" ))&&request.getParameter( "includeFake" ).equals("true");
+        final boolean includeWorkflowRoles = UtilMethods.isSet(request.getParameter( "includeWfRoles" ))&&request.getParameter( "includeWfRoles" ).equals("true");
+        final boolean includeLabelAll = UtilMethods.isSet(request.getParameter( "includeLabelAll" ))&&request.getParameter( "includeLabelAll" ).equals("true");
 
         try {
             final Role cmsAnonOrig = APILocator.getRoleAPI().loadCMSAnonymousRole();
@@ -196,7 +197,7 @@ public class WfRoleStoreAjax extends WfBaseAction {
 
         if(includeFake) {
         	map = new HashMap<>();
-	        map.put( "name", "" );
+	        map.put( "name", StringPool.BLANK );
 	        map.put( "id", 0 );
 	        list.add( map );
         }
@@ -204,7 +205,7 @@ public class WfRoleStoreAjax extends WfBaseAction {
         if(includeLabelAll) {
             map = new HashMap<>();
             map.put( "name", "All" );
-            map.put( "id", "" );
+            map.put( "id", StringPool.BLANK);
             list.add( map );
         }
 

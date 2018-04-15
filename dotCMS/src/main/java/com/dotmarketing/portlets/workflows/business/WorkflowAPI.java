@@ -352,7 +352,7 @@ public interface WorkflowAPI {
 
 
 	/**
-	 *
+	 * Find the list of Workflow Actions available for the role that is passed
 	 * @param step
 	 * @param role
 	 * @return
