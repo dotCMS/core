@@ -5416,11 +5416,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private String generateCopySuffix(Contentlet contentlet, Host host, Folder folder) throws DotDataException, DotStateException, DotSecurityException {
         String assetNameSuffix = StringPool.BLANK;
 
+        final boolean diffHost = ((host != null && contentlet.getHost() != null) && !contentlet.getHost()
+                .equalsIgnoreCase(host.getIdentifier()));
+
         // if different host we really don't need to
         if ((!contentlet.isFileAsset() && !contentlet.isHTMLPage()) && (
-                ((host != null && contentlet.getHost() != null) && !contentlet.getHost()
-                        .equalsIgnoreCase(host.getIdentifier()))
-                        || (folder != null && contentlet.getHost() != null) && !folder.getHostId()
+                diffHost || (folder != null && contentlet.getHost() != null) && !folder.getHostId()
                         .equalsIgnoreCase(contentlet.getHost()))){
             return assetNameSuffix;
         }
@@ -5428,7 +5429,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final String sourcef = (UtilMethods.isSet(contentlet.getFolder())) ? contentlet.getFolder() : APILocator.getFolderAPI().findSystemFolder().getInode();
         final String destf = (UtilMethods.isSet(folder)) ? folder.getInode() : APILocator.getFolderAPI().findSystemFolder().getInode();
 
-        if(sourcef.equals(destf)) { // is copying in the same folder?
+
+        if(!diffHost && sourcef.equals(destf)) { // is copying in the same folder and samehost?
             assetNameSuffix = "_copy";
 
             // We need to verify if already exist a content with suffix "_copy",
