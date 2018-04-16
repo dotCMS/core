@@ -32,7 +32,6 @@
         contentTypes = APILocator.getContentTypeAPI(user).findByType(BaseContentType.FORM);
     } else {
         contentTypes = APILocator.getContainerAPI().getContentTypesInContainer(container);
-
     }
 
     Layout contentLayout = APILocator.getLayoutAPI().findLayoutByName("Content");
