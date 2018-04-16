@@ -1245,6 +1245,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         if (null != schemeStepActionResult1 && null != schemeStepActionResult1.getScheme()) {
             final WorkflowScheme wfScheme = schemeStepActionResult1.getScheme();
             wfScheme.setArchived(true);
+            workflowAPI.saveScheme(wfScheme, user);
             try {
                 Future<WorkflowScheme> result = workflowAPI.deleteScheme(wfScheme, user);
                 result.get();
