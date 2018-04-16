@@ -91,7 +91,9 @@ public class PageResourceHelper implements Serializable {
             }
         }
 
-        multiTreeAPI.saveMultiTrees(pageId, multiTres);
+        if (!multiTres.isEmpty()) {
+            multiTreeAPI.saveMultiTrees(pageId, multiTres);
+        }
     }
 
     public void saveMultiTree(final String containerId,
