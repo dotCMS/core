@@ -114,7 +114,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         if (this.loadEditModePageSub) {
             this.loadEditModePageSub.unsubscribe();
         }
-      
+
         if (this.swithSiteSub) {
             this.swithSiteSub.unsubscribe();
         }
@@ -231,7 +231,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
             })
             .subscribe((pageState: DotRenderedPageState) => {
                 this.setPageState(pageState);
-                this.originalValue = null;
             });
     }
 
@@ -311,6 +310,18 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         this.contentletActionsUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
     }
 
+    private loadEditPageEventSubcription(): Subscription {
+        return Observable.fromEvent(window.document, 'ng-event')
+            .pluck('detail')
+            .filter((eventDetail: any) => eventDetail.name === 'load-edit-mode-page')
+            .pluck('data')
+            .subscribe((pageRendered: DotRenderedPage) => {
+                const dotRenderedPageState = new DotRenderedPageState(this.pageState.user, pageRendered);
+                this.dotEditPageDataService.set(dotRenderedPageState);
+                this.dotRouterService.goToEditPage(pageRendered.page.pageURI);
+            });
+    }
+
     private removeContentlet($event: any): void {
         this.dotDialogService.confirm({
             accept: () => {
@@ -339,6 +350,11 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         }
     }
 
+    private resetOriginalValue(): void {
+        this.originalValue = null;
+        this.isModelUpdated = false;
+    }
+
     private setDialogSize(): void {
         this.dialogSize = {
             width: window.innerWidth - 200,
@@ -347,6 +363,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     }
 
     private setPageState(pageState: DotRenderedPageState): void {
+        this.resetOriginalValue();
         this.pageState = pageState;
         this.renderPage(pageState);
     }
@@ -364,17 +381,5 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         return this.siteService.switchSite$.subscribe(() => {
             this.reload();
         });
-    }
-
-    private loadEditPageEventSubcription(): Subscription {
-        return Observable.fromEvent(window.document, 'ng-event')
-            .pluck('detail')
-            .filter((eventDetail: any) => eventDetail.name === 'load-edit-mode-page')
-            .pluck('data')
-            .subscribe((pageRendered: DotRenderedPage) => {
-                const dotRenderedPageState = new DotRenderedPageState(this.pageState.user, pageRendered);
-                this.dotEditPageDataService.set(dotRenderedPageState);
-                this.dotRouterService.goToEditPage(pageRendered.page.pageURI);
-            });
     }
 }
