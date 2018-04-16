@@ -4,6 +4,7 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -32,6 +33,7 @@ public class ContainerWebAPI implements ViewTool {
     private ViewContext viewContext;
 	private User backuser;
 	private PermissionAPI permissionAPI;
+	private ContainerAPI containerAPI;
 
 	public void init(Object initData) {
 		viewContext = (ViewContext) initData;
@@ -40,6 +42,7 @@ public class ContainerWebAPI implements ViewTool {
 
 		final UserWebAPI userAPI = WebAPILocator.getUserWebAPI();
 		permissionAPI = APILocator.getPermissionAPI();
+		containerAPI = APILocator.getContainerAPI();
 
 		try {
 			backuser = userAPI.getLoggedInUser(request.getSession());
@@ -92,6 +95,27 @@ public class ContainerWebAPI implements ViewTool {
 				final User systemUser = APILocator.getUserAPI().getSystemUser();
 				final Container container = APILocator.getContainerAPI().find(containerInode, systemUser, respectFrontendRoles);
 				return permissionAPI.doesUserHavePermission(container, permission, backuser, respectFrontendRoles);
+			}
+		} catch (DotSecurityException e) {
+			return false;
+		}
+	}
+
+
+	/**
+	 * This method checks if the logged in user has the required permission to ADD any content into the
+	 * the passed container id
+	 */
+	public boolean doesUserHasPermissionToAddContent (String containerInode) throws DotDataException {
+		try {
+			if(!InodeUtils.isSet(containerInode)) {
+				return false;
+			} else {
+				final User systemUser = APILocator.getUserAPI().getSystemUser();
+				final Container container = APILocator.getContainerAPI().find(containerInode, systemUser, false);
+				User loggedInUser = APILocator.getLoginServiceAPI().getLoggedInUser();
+				List<ContentType> contentTypesInContainer = containerAPI.getContentTypesInContainer(loggedInUser, container);
+				return !contentTypesInContainer.isEmpty();
 			}
 		} catch (DotSecurityException e) {
 			return false;
