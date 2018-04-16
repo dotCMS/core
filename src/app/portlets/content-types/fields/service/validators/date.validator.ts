@@ -33,9 +33,5 @@ export function validateDateDefaultValue(formControl: FormControl) {
 
 function isValueValid(formControl: FormControl): boolean {
     const clazz: string = formControl.parent.controls['clazz'].value;
-    return format[clazz] ? moment(formControl.value, format[clazz], true).isValid() || isValueNow(formControl.value) : true;
-}
-
-function isValueNow(value: string): boolean {
-    return !!value.match(/^(now|now\(\))$/);
+    return format[clazz] ? moment(formControl.value, format[clazz], true).isValid() || (formControl.value === 'now') : true;
 }

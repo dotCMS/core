@@ -96,15 +96,6 @@ describe('validateDateDefaultValue', () => {
         const valid = validateDateDefaultValue(<FormControl>group.controls['defaultValue']);
         expect(valid).toBeNull();
     });
-    it('should be valid (DateField) when clazz equal com.dotcms.contenttype.model.field.ImmutableDateField', () => {
-        const group: FormGroup = new FormGroup({
-            clazz: new FormControl('com.dotcms.contenttype.model.field.ImmutableDateField'),
-            defaultValue: new FormControl('now()')
-        });
-
-        const valid = validateDateDefaultValue(<FormControl>group.controls['defaultValue']);
-        expect(valid).toBeNull();
-    });
     it('should be valid (DateField) when clazz equal com.dotcms.contenttype.model.field.ImmutableDateTimeField', () => {
         const group: FormGroup = new FormGroup({
             clazz: new FormControl('com.dotcms.contenttype.model.field.ImmutableDateTimeField'),
@@ -114,28 +105,10 @@ describe('validateDateDefaultValue', () => {
         const valid = validateDateDefaultValue(<FormControl>group.controls['defaultValue']);
         expect(valid).toBeNull();
     });
-    it('should be valid (DateField) when clazz equal com.dotcms.contenttype.model.field.ImmutableDateTimeField', () => {
-        const group: FormGroup = new FormGroup({
-            clazz: new FormControl('com.dotcms.contenttype.model.field.ImmutableDateTimeField'),
-            defaultValue: new FormControl('now()')
-        });
-
-        const valid = validateDateDefaultValue(<FormControl>group.controls['defaultValue']);
-        expect(valid).toBeNull();
-    });
     it('should be valid (DateField) when clazz equal com.dotcms.contenttype.model.field.ImmutableTimeField', () => {
         const group: FormGroup = new FormGroup({
             clazz: new FormControl('com.dotcms.contenttype.model.field.ImmutableTimeField'),
             defaultValue: new FormControl('now')
-        });
-
-        const valid = validateDateDefaultValue(<FormControl>group.controls['defaultValue']);
-        expect(valid).toBeNull();
-    });
-    it('should be valid (DateField) when clazz equal com.dotcms.contenttype.model.field.ImmutableTimeField', () => {
-        const group: FormGroup = new FormGroup({
-            clazz: new FormControl('com.dotcms.contenttype.model.field.ImmutableTimeField'),
-            defaultValue: new FormControl('now()')
         });
 
         const valid = validateDateDefaultValue(<FormControl>group.controls['defaultValue']);
