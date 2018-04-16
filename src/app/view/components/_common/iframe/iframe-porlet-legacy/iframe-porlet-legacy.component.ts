@@ -55,6 +55,8 @@ export class IframePortletLegacyComponent implements OnInit {
     onLoad($event): void {
         Observable.fromEvent($event.target.contentWindow.document, 'ng-event').subscribe((event: any) => {
             if (event.detail.name === 'edit-page') {
+                this.dotLoadingIndicatorService.show();
+
                 this.ngZone.run(() => {
                     this.dotRouterService.goToEditPage(event.detail.data.url);
                 });

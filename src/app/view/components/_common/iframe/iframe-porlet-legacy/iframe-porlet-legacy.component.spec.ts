@@ -1,6 +1,6 @@
 import { ActivatedRoute } from '@angular/router';
 import { By } from '@angular/platform-browser';
-import { ComponentFixture, async } from '@angular/core/testing';
+import { ComponentFixture, async, fakeAsync, tick } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { DebugElement } from '@angular/core';
 import { DotContentletService } from '../../../../../api/services/dot-contentlet.service';
@@ -10,14 +10,20 @@ import { IframePortletLegacyComponent } from './iframe-porlet-legacy.component';
 import { Observable } from 'rxjs/Observable';
 import { RouterTestingModule } from '@angular/router/testing';
 import { SocketFactory, SiteService, LoginService } from 'dotcms-js/dotcms-js';
+import { IframeComponent } from '../iframe-component';
+import { DotLoadingIndicatorService } from '../dot-loading-indicator/dot-loading-indicator.service';
+import { DotRouterService } from '../../../../../api/services/dot-router/dot-router.service';
 
 describe('IframePortletLegacyComponent', () => {
     let comp: IframePortletLegacyComponent;
     let fixture: ComponentFixture<IframePortletLegacyComponent>;
     let de: DebugElement;
     let el: HTMLElement;
-    let route: ActivatedRoute;
+    let dotIframe: IframeComponent;
+    let dotLoadingIndicatorService: DotLoadingIndicatorService;
     let dotMenuService: DotMenuService;
+    let dotRouterService: DotRouterService;
+    let route: ActivatedRoute;
 
     beforeEach(
         async(() => {
@@ -49,8 +55,11 @@ describe('IframePortletLegacyComponent', () => {
             comp = fixture.componentInstance;
             de = fixture.debugElement;
             el = de.nativeElement;
-            route = fixture.debugElement.injector.get(ActivatedRoute);
-            dotMenuService = fixture.debugElement.injector.get(DotMenuService);
+            dotIframe = de.query(By.css('dot-iframe')).componentInstance;
+            dotLoadingIndicatorService = de.injector.get(DotLoadingIndicatorService);
+            dotMenuService = de.injector.get(DotMenuService);
+            dotRouterService = de.injector.get(DotRouterService);
+            route = de.injector.get(ActivatedRoute);
         })
     );
 
@@ -89,4 +98,32 @@ describe('IframePortletLegacyComponent', () => {
         expect(dotMenuService.getUrlById).toHaveBeenCalledWith('portlet-id');
         expect(src).toEqual('fake-url');
     });
+
+    it('should show loading indicator and go to edit page when event is emited by iframe', fakeAsync(() => {
+        route.queryParams = Observable.of({ url: 'hello/world' });
+        fixture.detectChanges();
+        tick(); // There is a timeout to show the iframe in the dot-iframe component
+        fixture.detectChanges();
+
+        spyOn(dotLoadingIndicatorService, 'show');
+        spyOn(dotRouterService, 'goToEditPage');
+
+        const iframe = de.query(By.css('dot-iframe')).query(By.css('iframe')).nativeElement;
+
+        dotIframe.load.emit({
+            target: iframe
+        });
+
+        const customEvent = document.createEvent('CustomEvent');
+        customEvent.initCustomEvent('ng-event', false, false,  {
+            name: 'edit-page',
+            data: {
+                url: 'some/url'
+            }
+        });
+        iframe.contentDocument.dispatchEvent(customEvent);
+
+        expect(dotLoadingIndicatorService.show).toHaveBeenCalledTimes(1);
+        expect(dotRouterService.goToEditPage).toHaveBeenCalledWith('some/url');
+    }));
 });
