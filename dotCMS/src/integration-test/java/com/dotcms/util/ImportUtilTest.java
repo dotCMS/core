@@ -1244,25 +1244,13 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             throws DotDataException, DotSecurityException, AlreadyExistException {
         if (null != schemeStepActionResult1 && null != schemeStepActionResult1.getScheme()) {
             final WorkflowScheme wfScheme = schemeStepActionResult1.getScheme();
-            wfScheme.setArchived(true);
-            workflowAPI.saveScheme(wfScheme, user);
-            try {
-                Future<WorkflowScheme> result = workflowAPI.deleteScheme(wfScheme, user);
-                result.get();
-            }catch (InterruptedException | ExecutionException e){
-                assertTrue(e.getMessage(),false);
-            }
+            workflowAPI.archive(wfScheme, user);
+            workflowAPI.deleteScheme(wfScheme, user);
         }
         if (null != schemeStepActionResult2 && null != schemeStepActionResult2.getScheme()) {
             final WorkflowScheme wfScheme2 = schemeStepActionResult2.getScheme();
-            wfScheme2.setArchived(true);
-            workflowAPI.saveScheme(wfScheme2, user);
-            try {
-                Future<WorkflowScheme> result = workflowAPI.deleteScheme(wfScheme2, user);
-                result.get();
-            }catch (InterruptedException | ExecutionException e){
-                assertTrue(e.getMessage(),false);
-            }
+            workflowAPI.archive(wfScheme2, user);
+            workflowAPI.deleteScheme(wfScheme2, user);
         }
     }
 

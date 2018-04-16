@@ -601,4 +601,12 @@ public interface WorkflowAPI {
 	 * @throws DotDataException
 	 */
 	public WorkflowScheme findSystemWorkflowScheme() throws DotDataException;
+
+	/**
+	 * Archive the specified workflow scheme
+	 *
+	 * @param scheme Workflow scheme to archive
+	 */
+	public void archive(WorkflowScheme scheme, User user)
+			throws DotDataException, AlreadyExistException;
 }
