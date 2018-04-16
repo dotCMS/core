@@ -4,7 +4,6 @@ import com.dotcms.api.system.event.SystemMessageEventUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
-import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.CollectionsUtils;
@@ -68,8 +67,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	//This by default tells if a license is valid or not.
 	private LicenseValiditySupplier licenseValiditySupplierSupplier = new LicenseValiditySupplier() {};
 
-	protected final DotSubmitter submitter = DotConcurrentFactory.getInstance()
-			.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public WorkflowAPIImpl() {
@@ -449,7 +446,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 
 		//Delete the Scheme in a separated thread
-		return this.submitter.submit(() -> deleteSchemeTask(scheme, user));
+		return DotConcurrentFactory.getInstance()
+				.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL)
+				.submit(() -> deleteSchemeTask(scheme, user));
 	}
 
 	/**
