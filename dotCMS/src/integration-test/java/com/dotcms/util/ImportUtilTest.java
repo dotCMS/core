@@ -51,6 +51,8 @@ import com.liferay.portal.model.User;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -1243,14 +1245,23 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         if (null != schemeStepActionResult1 && null != schemeStepActionResult1.getScheme()) {
             final WorkflowScheme wfScheme = schemeStepActionResult1.getScheme();
             wfScheme.setArchived(true);
-            workflowAPI.saveScheme(wfScheme, user);
-            workflowAPI.deleteScheme(wfScheme, user);
+            try {
+                Future<WorkflowScheme> result = workflowAPI.deleteScheme(wfScheme, user);
+                result.get();
+            }catch (InterruptedException | ExecutionException e){
+                assertTrue(e.getMessage(),false);
+            }
         }
         if (null != schemeStepActionResult2 && null != schemeStepActionResult2.getScheme()) {
             final WorkflowScheme wfScheme2 = schemeStepActionResult2.getScheme();
             wfScheme2.setArchived(true);
             workflowAPI.saveScheme(wfScheme2, user);
-            workflowAPI.deleteScheme(wfScheme2, user);
+            try {
+                Future<WorkflowScheme> result = workflowAPI.deleteScheme(wfScheme2, user);
+                result.get();
+            }catch (InterruptedException | ExecutionException e){
+                assertTrue(e.getMessage(),false);
+            }
         }
     }
 
