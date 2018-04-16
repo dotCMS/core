@@ -74,7 +74,7 @@ public class PageResourceHelper implements Serializable {
 
         MultiTreeFactory.deleteMultiTreeByParent(pageId);
 
-        final List<MultiTree> multiTres = new ArrayList<>();
+        final List<MultiTree> multiTrees = new ArrayList<>();
 
         for (final PageContainerForm.ContainerEntry containerEntry : containerEntries) {
             int i = 0;
@@ -87,12 +87,12 @@ public class PageResourceHelper implements Serializable {
                         .setTreeOrder(i++)
                         .setHtmlPage(pageId);
 
-                multiTres.add(multiTree);
+                multiTrees.add(multiTree);
             }
         }
 
-        if (!multiTres.isEmpty()) {
-            multiTreeAPI.saveMultiTrees(pageId, multiTres);
+        if (!multiTrees.isEmpty()) {
+            multiTreeAPI.saveMultiTrees(pageId, multiTrees);
         }
     }
 
