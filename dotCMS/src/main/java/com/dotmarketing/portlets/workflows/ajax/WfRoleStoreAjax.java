@@ -177,7 +177,7 @@ public class WfRoleStoreAjax extends WfBaseAction {
             }
 
             response.setContentType("application/json");
-            response.getWriter().write( rolesToJson( roleList, includeFake, includeFake ) );
+            response.getWriter().write( rolesToJson( roleList, includeFake, false ) );
         } catch ( Exception e ) {
             Logger.error( WfRoleStoreAjax.class, e.getMessage(), e );
         }
