@@ -4,7 +4,6 @@ import com.dotcms.api.system.event.SystemMessageEventUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
-import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.CollectionsUtils;
@@ -68,8 +67,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	//This by default tells if a license is valid or not.
 	private LicenseValiditySupplier licenseValiditySupplierSupplier = new LicenseValiditySupplier() {};
 
-	protected final DotSubmitter submitter = DotConcurrentFactory.getInstance()
-			.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public WorkflowAPIImpl() {
@@ -449,7 +446,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 
 		//Delete the Scheme in a separated thread
-		return this.submitter.submit(() -> deleteSchemeTask(scheme, user));
+		return DotConcurrentFactory.getInstance()
+				.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL)
+				.submit(() -> deleteSchemeTask(scheme, user));
 	}
 
 	/**
@@ -489,6 +488,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			this.systemMessageEventUtil.pushSimpleTextEvent
 					(LanguageUtil.get(user.getLocale(), "Workflow-deleted", scheme.getName()), user.getUserId());
 		} catch (Exception e) {
+			Logger.error(this.getClass(),
+					"Error deleting Scheme: " + scheme.getId() + ". " + e.getMessage(), e);
 			throw new DotRuntimeException(e);
 		}
 		return scheme;
@@ -818,6 +819,19 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         final List<WorkflowAction> actions = workFlowFactory.findActions(step);
         return filterActionsCollection(actions, user, true, permissionable);
     }
+
+	@Override
+	@CloseDBIfOpened
+	public List<WorkflowAction> findActions(final WorkflowStep step, final Role role) throws DotDataException,
+           DotSecurityException {
+
+		if(null == step) {
+			return Collections.emptyList();
+		}
+		final List<WorkflowAction> actions = workFlowFactory.findActions(step);
+		return filterActionsCollection(actions, role);
+
+	}
 
 	@Override
 	@CloseDBIfOpened
@@ -2083,6 +2097,33 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	/**
+	 * Filter the list of actions to display according to the role passed
+	 * @param actions
+	 * @param role
+	 * @return
+	 * @throws DotDataException
+	 */
+	@CloseDBIfOpened
+	private List<WorkflowAction> filterActionsCollection(final List<WorkflowAction> actions,
+			final Role role) throws DotDataException {
+
+		final List<WorkflowAction> permissionables = new ArrayList<>(actions);
+		if (permissionables.isEmpty()) {
+			return permissionables;
+		}
+
+		final Iterator<WorkflowAction> workflowActionIterator = permissionables.iterator();
+		while (workflowActionIterator.hasNext()) {
+			final WorkflowAction wa = workflowActionIterator.next();
+			if (!permissionAPI.doesRoleHavePermission(wa, PermissionAPI.PERMISSION_USE, role)) {
+				workflowActionIterator.remove();
+			}
+		}
+
+		return permissionables;
+	}
+
+	/**
 	 * Return true if the action has one of the workflow action roles and if the user has  any of
 	 * those permission over the content or content type
 	 * @param user User to validate
@@ -2253,7 +2294,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		final List<WorkflowScheme> schemes = findSchemesForContentType(contentType);
 		for(WorkflowScheme scheme: schemes){
 			final List<WorkflowStep> steps = findSteps(scheme);
-			actions.addAll(findActions(steps.stream().findFirst().orElse(null), user));
+			actions.addAll(findActions(steps.stream().findFirst().orElse(null), user, contentType));
 		}
 
 		return actions.build();
@@ -2262,6 +2303,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@CloseDBIfOpened
 	public List<WorkflowTask> findTasksByStep(final String stepId) throws DotDataException, DotSecurityException{
 		return this.workFlowFactory.findTasksByStep(this.getLongId(stepId, ShortyIdAPI.ShortyInputType.WORKFLOW_STEP));
+	}
+
+	@Override
+	@WrapInTransaction
+	public void archive(final WorkflowScheme scheme, final User user)
+			throws DotDataException, AlreadyExistException {
+		scheme.setArchived(Boolean.TRUE);
+		saveScheme(scheme, user);
 	}
 
 }

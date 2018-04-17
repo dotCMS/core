@@ -238,7 +238,8 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
             submitter =
                     this.submitterMap.get(name);
 
-            if (null != submitter && submitter.shutdown) { // if it is shutdown, create a new one
+            if (null != submitter && (submitter.shutdown || submitter.threadPoolExecutor
+                    .isTerminated())) { // if it is shutdown, create a new one
 
                 synchronized (DotConcurrentFactory.class) {
 
