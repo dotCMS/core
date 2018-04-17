@@ -1,8 +1,8 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { DotEditPageViewAs } from '../../../../shared/models/dot-edit-page-view-as/dot-edit-page-view-as.model';
-import { DotPersona } from '../../../../shared/models/dot-persona/dot-persona.model';
-import { DotLanguage } from '../../../../shared/models/dot-language/dot-language.model';
-import { DotDevice } from '../../../../shared/models/dot-device/dot-device.model';
+import { DotEditPageViewAs } from '../../../../../shared/models/dot-edit-page-view-as/dot-edit-page-view-as.model';
+import { DotPersona } from '../../../../../shared/models/dot-persona/dot-persona.model';
+import { DotLanguage } from '../../../../../shared/models/dot-language/dot-language.model';
+import { DotDevice } from '../../../../../shared/models/dot-device/dot-device.model';
 
 @Component({
     selector: 'dot-edit-content-view-as-toolbar',
