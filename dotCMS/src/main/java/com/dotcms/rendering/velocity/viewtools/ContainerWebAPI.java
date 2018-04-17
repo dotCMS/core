@@ -8,6 +8,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -106,19 +107,26 @@ public class ContainerWebAPI implements ViewTool {
 	 * This method checks if the logged in user has the required permission to ADD any content into the
 	 * the passed container id
 	 */
-	public boolean doesUserHasPermissionToAddContent (String containerInode) throws DotDataException {
-		try {
-			if(!InodeUtils.isSet(containerInode)) {
-				return false;
-			} else {
-				final User systemUser = APILocator.getUserAPI().getSystemUser();
-				final Container container = APILocator.getContainerAPI().find(containerInode, systemUser, false);
-				User loggedInUser = APILocator.getLoginServiceAPI().getLoggedInUser();
-				List<ContentType> contentTypesInContainer = containerAPI.getContentTypesInContainer(loggedInUser, container);
-				return !contentTypesInContainer.isEmpty();
-			}
-		} catch (DotSecurityException e) {
+	public boolean doesUserHasPermissionToAddContent (final String containerInode) throws DotDataException {
+
+		if(!InodeUtils.isSet(containerInode)) {
 			return false;
+		} else {
+			final User systemUser = APILocator.getUserAPI().getSystemUser();
+			Container container = null;
+
+			try {
+				container = APILocator.getContainerAPI().find(containerInode, systemUser, false);
+			} catch (DotSecurityException e) {
+				//This exception should never happend
+				Logger.debug(this.getClass(),
+						"Exception on doesUserHasPermissionToAddContent exception message: " + e.getMessage(), e);
+				throw new DotRuntimeException(e);
+			}
+
+			final User loggedInUser = APILocator.getLoginServiceAPI().getLoggedInUser();
+			final List<ContentType> contentTypesInContainer = containerAPI.getContentTypesInContainer(loggedInUser, container);
+			return !contentTypesInContainer.isEmpty();
 		}
 	}
 }
