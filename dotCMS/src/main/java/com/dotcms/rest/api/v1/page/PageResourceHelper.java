@@ -26,6 +26,7 @@ import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -172,6 +173,18 @@ public class PageResourceHelper implements Serializable {
             final Host host = getHost(pageForm.getHostId(), user);
             Template template = getTemplate(page, user, pageForm);
             template.setDrawed(true);
+
+            pageForm.changeds().forEach(containerUUIDChanged -> {
+                ContainerUUID old = containerUUIDChanged.getOld();
+                ContainerUUID aNew = containerUUIDChanged.getNew();
+
+                try {
+                    MultiTreeFactory.updateMultiTree(page.getIdentifier(), old.getIdentifier(), old.getUUID(), aNew.getUUID());
+                } catch (DotDataException e) {
+                    e.printStackTrace();
+                }
+            });
+
             return this.templateAPI.saveTemplate(template, host, user, false);
         } catch (Exception e) {
             throw new DotRuntimeException(e);

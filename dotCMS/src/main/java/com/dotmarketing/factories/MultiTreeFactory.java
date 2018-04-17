@@ -28,6 +28,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.Lists;
+import org.elasticsearch.cluster.routing.allocation.decider.Decision;
 
 import static com.dotcms.util.CollectionsUtils.list;
 
@@ -63,6 +64,10 @@ public class MultiTreeFactory {
 
     private static final String SELECT_BY_CONTAINER_AND_STRUCTURE = "SELECT mt.* FROM multi_tree mt JOIN contentlet c "
             + " ON c.identifier = mt.child WHERE mt.parent2 = ? AND c.structure_inode = ? ";
+
+
+
+    static final String UPDATE_RELATION_TYPE_SQL = "UPDATE multi_tree SET relation_type = ? WHERE parent1 = ? and parent2 = ? and relation_type = ?";
 
     public static void deleteMultiTree(final MultiTree mTree) throws DotDataException {
         _dbDelete(mTree);
@@ -409,6 +414,14 @@ public class MultiTreeFactory {
         saveMultiTree(multiTree);
     }
 
+    public static void updateMultiTree(String pageId, String containerId, String oldRelationType,
+                                       String newRelationType) throws DotDataException {
 
-
+        new DotConnect().setSQL(UPDATE_RELATION_TYPE_SQL)
+                .addParam(newRelationType)
+                .addParam(pageId)
+                .addParam(containerId)
+                .addParam(oldRelationType)
+                .loadResult();
+    }
 }
