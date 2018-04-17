@@ -1,22 +1,22 @@
 import { ComponentFixture } from '@angular/core/testing';
 import { DotEditContentViewAsToolbarComponent } from './dot-edit-content-view-as-toolbar.component';
-import { DotDevicesService } from '../../../../api/services/dot-devices/dot-devices.service';
-import { DotLanguagesService } from '../../../../api/services/dot-languages/dot-languages.service';
-import { DotPersonasService } from '../../../../api/services/dot-personas/dot-personas.service';
-import { DOTTestBed } from '../../../../test/dot-test-bed';
+import { DotDevicesService } from '../../../../../api/services/dot-devices/dot-devices.service';
+import { DotLanguagesService } from '../../../../../api/services/dot-languages/dot-languages.service';
+import { DotPersonasService } from '../../../../../api/services/dot-personas/dot-personas.service';
+import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
-import { DotDevicesServiceMock } from '../../../../test/dot-device-service.mock';
-import { DotLanguagesServiceMock } from '../../../../test/dot-languages-service.mock';
-import { DotPersonasServiceMock } from '../../../../test/dot-personas-service.mock';
-import { mockDotLanguage } from '../../../../test/dot-language.mock';
-import { mockDotDevice } from '../../../../test/dot-device.mock';
-import { DotPersona } from '../../../../shared/models/dot-persona/dot-persona.model';
-import { DotDevice } from '../../../../shared/models/dot-device/dot-device.model';
-import { DotLanguage } from '../../../../shared/models/dot-language/dot-language.model';
-import { mockDotEditPageViewAs } from '../../../../test/dot-edit-page-view-as.mock';
-import { mockDotPersona } from '../../../../test/dot-persona.mock';
+import { DotDevicesServiceMock } from '../../../../../test/dot-device-service.mock';
+import { DotLanguagesServiceMock } from '../../../../../test/dot-languages-service.mock';
+import { DotPersonasServiceMock } from '../../../../../test/dot-personas-service.mock';
+import { mockDotLanguage } from '../../../../../test/dot-language.mock';
+import { mockDotDevice } from '../../../../../test/dot-device.mock';
+import { DotPersona } from '../../../../../shared/models/dot-persona/dot-persona.model';
+import { DotDevice } from '../../../../../shared/models/dot-device/dot-device.model';
+import { DotLanguage } from '../../../../../shared/models/dot-language/dot-language.model';
+import { mockDotEditPageViewAs } from '../../../../../test/dot-edit-page-view-as.mock';
+import { mockDotPersona } from '../../../../../test/dot-persona.mock';
 
 @Component({
     selector: 'dot-persona-selector',
