@@ -2084,9 +2084,12 @@ public class ContentletAjax {
 	public Map<String, Object> saveBinaryFileOnContent(String fileName, String fieldInode) throws DotContentletValidationException, Exception{
 
 		Map<String,Object> callbackData = new HashMap<String,Object>();
-		if(!UtilMethods.isImage(fileName)){
+		// Temporary fix that skips validation of uploaded files
+		// TODO: R&D will work on the definitive fix
+		if (UtilMethods.isSet(fileName)){
 			return callbackData;
 		}
+		
 
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
 		User user = com.liferay.portal.util.PortalUtil.getUser((HttpServletRequest)req);

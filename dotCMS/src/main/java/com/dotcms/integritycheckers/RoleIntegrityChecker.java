@@ -259,7 +259,7 @@ public class RoleIntegrityChecker extends AbstractIntegrityChecker {
 		dc.setSQL("UPDATE layouts_cms_roles SET role_id = ? WHERE role_id = ?");
 		dc.addParam(newRoleId);
 		dc.addParam(oldRoleId);
-		dc.loadResult()
+		dc.loadResult();
 
 		workflowAPI.updateUserReferences(userAPI.getSystemUser().getUserId(), oldRoleId, userAPI.getSystemUser().getUserId(), newRoleId);
 
