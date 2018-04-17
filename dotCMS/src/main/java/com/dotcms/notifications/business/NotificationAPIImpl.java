@@ -53,7 +53,6 @@ public class NotificationAPIImpl implements NotificationAPI {
     private final MarshalUtils marshalUtils;
     private final ConversionUtils conversionUtils;
     private final DotConcurrentFactory dotConcurrentFactory;
-    private final DotSubmitter dotSubmitter;
     private final NewNotificationCache newNotificationCache;
     private RoleAPI roleAPI;//Don't access this attribute directly, use the getRoleAPI method instead
 
@@ -85,10 +84,6 @@ public class NotificationAPIImpl implements NotificationAPI {
         this.marshalUtils = marshalUtils;
         this.conversionUtils = conversionUtils;
         this.dotConcurrentFactory = dotConcurrentFactory;
-
-        // getting the thread pool for notifications.
-        this.dotSubmitter = this.dotConcurrentFactory.getSubmitter(NOTIFICATIONS_THREAD_POOL_SUBMITTER_NAME); // by default use the standard configuration, but it can be override via properties config.
-
         this.newNotificationCache = newNotificationCache;
         this.roleAPI = roleAPI;
     }
@@ -174,7 +169,8 @@ public class NotificationAPIImpl implements NotificationAPI {
                                      final String visibilityId, final String userId, final Locale locale) throws DotDataException {
 
         // since the notification is not a priory process on the current thread, we decided to execute it async
-        this.dotSubmitter.execute(() -> {
+        final DotSubmitter dotSubmitter = this.dotConcurrentFactory.getSubmitter(NOTIFICATIONS_THREAD_POOL_SUBMITTER_NAME);
+        dotSubmitter.execute(() -> {
 
             final NotificationData data = new NotificationData(title, message, actions);
             final String messageJson = this.marshalUtils.marshal(data);
