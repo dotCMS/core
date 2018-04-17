@@ -11,11 +11,13 @@ dojo.declare("dotcms.dojo.data.RoleReadStore", dojox.data.QueryReadStore, {
 	url: '/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfRoleStoreAjax',
 	includeFake:false,
     includeWfRoles:false,
+    includeLabelAll:false,
 
 	constructor: function (options) {
 		this.nodeId = options.nodeId;
 		this.includeFake = options.includeFake!=""?options.includeFake:false;
         this.includeWfRoles = options.includeWfRoles!=""?options.includeWfRoles:false;
+        this.includeLabelAll = options.includeLabelAll!=""?options.includeLabelAll:false;
 	},
 
 
@@ -61,7 +63,8 @@ dojo.declare("dotcms.dojo.data.RoleReadStore", dojox.data.QueryReadStore, {
             "start": request.start,
             "count": request.count,
             "includeFake": this.includeFake,
-            "includeWfRoles": this.includeWfRoles
+            "includeWfRoles": this.includeWfRoles,
+            "includeLabelAll": this.includeLabelAll
         };
         return this.inherited("fetch", arguments);
     },
