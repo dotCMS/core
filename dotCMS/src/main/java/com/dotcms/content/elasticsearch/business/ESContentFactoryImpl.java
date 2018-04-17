@@ -101,6 +101,7 @@ import org.springframework.util.NumberUtils;
  */
 public class ESContentFactoryImpl extends ContentletFactory {
 
+    private static final String[] ES_FIELDS = {"inode", "identifier"};
     private ContentletCache cc ;
 	private ESClient client;
 	private LanguageAPI langAPI;
@@ -1303,7 +1304,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         SearchSourceBuilder ssb = SearchSourceBuilder.searchSource();
 
-        ssb.fetchSource(new String[] {"inode", "identifier"}, null);
+        ssb.fetchSource(ES_FIELDS, null);
 
         if(Config.getBooleanProperty("ELASTICSEARCH_USE_FILTERS_FOR_SEARCHING",false) && sortBy!=null && ! sortBy.toLowerCase().startsWith("score")) {
 
