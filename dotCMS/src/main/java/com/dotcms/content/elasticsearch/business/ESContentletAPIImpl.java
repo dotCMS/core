@@ -1788,7 +1788,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                     //TODO we still have several things that need cleaning here:
                     //TODO https://github.com/dotCMS/core/issues/9146
-                    contentFactory.delete(Arrays.asList(new Contentlet[]{con}), false);
+                    Identifier identifier = APILocator.getIdentifierAPI().find(con.getIdentifier());
+                    List<Contentlet> allVersionsList = findAllVersions(identifier,user,false);
+                    List <Contentlet> contentletsLanguageList = new ArrayList<>(); //All versions of the contentlet with specific lang to be deleted
+                    for(Contentlet contentlet : allVersionsList){
+                        if(contentlet.getLanguageId()==con.getLanguageId()){
+                            contentletsLanguageList.add(contentlet);
+                        }
+                    }
+                    contentFactory.delete(contentletsLanguageList, false);
 
                     for (Contentlet contentlet : contentlets) {
                         try {
