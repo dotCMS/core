@@ -2,9 +2,11 @@ package com.dotmarketing.portlets.workflows.business;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
@@ -60,6 +62,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import org.junit.AfterClass;
@@ -582,6 +585,107 @@ public class WorkflowAPITest extends IntegrationTestBase {
     }
 
     /**
+     * This method test the deep copy workflow scheme method
+     */
+    @Test
+    public void copy_system_workflow_success() throws DotDataException, DotSecurityException, AlreadyExistException {
+
+        WorkflowScheme schemeCopied = null;
+        try {
+
+            final WorkflowScheme scheme =
+                    workflowAPI.findSystemWorkflowScheme();
+
+            schemeCopied = workflowAPI.deepCopyWorkflowScheme(scheme, user);
+
+            assertNotNull(schemeCopied);
+            assertNotEquals(schemeCopied.getId(), scheme.getId());
+            assertNotEquals(schemeCopied.getName(), scheme.getName());
+            assertEquals(schemeCopied.getDescription(), scheme.getDescription());
+
+            final List<WorkflowStep> steps =
+                    workflowAPI.findSteps(scheme);
+
+            final List<WorkflowStep> stepsCopied =
+                    workflowAPI.findSteps(schemeCopied);
+
+            assertNotNull(steps);
+            assertNotNull(stepsCopied);
+            assertEquals(steps.size(), stepsCopied.size());
+
+            assertEqualsSteps (steps, stepsCopied, scheme, schemeCopied);
+
+            final List<WorkflowAction> actions =
+                    workflowAPI.findActions(scheme, user);
+
+            final List<WorkflowAction> actionsCopied =
+                    workflowAPI.findActions(schemeCopied, user);
+
+            assertNotNull(actions);
+            assertNotNull(actionsCopied);
+            assertEquals(actions.size(), actionsCopied.size());
+
+            assertEqualsActions (actions, actionsCopied, scheme, schemeCopied);
+        } finally {
+
+            // remove the copied scheme
+            if (null != schemeCopied) {
+
+                schemeCopied.setArchived(true);
+                workflowAPI.saveScheme(schemeCopied, user);
+                workflowAPI.deleteScheme(schemeCopied, user);
+            }
+        }
+    }
+
+    private void assertEqualsActions(final List<WorkflowAction> actions,
+                                     final List<WorkflowAction> actionsCopied,
+                                     final WorkflowScheme scheme,
+                                     final WorkflowScheme schemeCopied) {
+
+        for (final WorkflowAction action : actions) {
+
+            final Optional<WorkflowAction> copiedAction =
+                    actionsCopied.stream().filter(theAction -> theAction.getName().equals(action.getName())).findFirst();
+            if (copiedAction.isPresent()) {
+
+                assertNotEquals(copiedAction.get().getId(), action.getId());
+                assertNotEquals(copiedAction.get().getSchemeId(), action.getSchemeId());
+
+                assertEquals(action.getSchemeId(), scheme.getId());
+                assertEquals(copiedAction.get().getSchemeId(), schemeCopied.getId());
+
+                assertEquals(copiedAction.get().getName(), action.getName());
+            } else {
+                fail("The step: " + action.getName() + " does not exists and must exists as part of the copy");
+            }
+        }
+    }
+
+    private void assertEqualsSteps(final List<WorkflowStep> steps,
+                                   final List<WorkflowStep> stepsCopied,
+                                   final WorkflowScheme     scheme,
+                                   final WorkflowScheme     schemeCopied) {
+
+        for (final WorkflowStep step : steps) {
+
+            final Optional<WorkflowStep> copiedStep =
+                    stepsCopied.stream().filter(theStep -> theStep.getName().equals(step.getName())).findFirst();
+
+            if (copiedStep.isPresent()) {
+
+                assertNotEquals(copiedStep.get().getId(), step.getId());
+                assertNotEquals(copiedStep.get().getSchemeId(), step.getSchemeId());
+
+                assertEquals(step.getSchemeId(), scheme.getId());
+                assertEquals(copiedStep.get().getSchemeId(), schemeCopied.getId());
+            } else {
+                fail("The step: " + step.getName() + " does not exists and must exists as part of the copy");
+            }
+        }
+    }
+
+    /**
      * This method test the findStepsByContentlet method
      */
     @Test
@@ -668,6 +772,15 @@ public class WorkflowAPITest extends IntegrationTestBase {
         //check valid action for
         actions = workflowAPI.findActions(steps, reviewerUser);
         assertTrue(null != actions && actions.size() == 2);
+
+        actions = workflowAPI.findActions(workflowScheme1Step2, reviewer);
+        assertNotNull(actions);
+        assertTrue(actions.size() == 1);
+
+        actions = workflowAPI.findActions(workflowScheme3Step2, contributor);
+        assertNotNull(actions);
+        assertTrue(actions.size() == 1);
+
     }
 
     /**
@@ -1843,8 +1956,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
             //Test the delete
             //Deleting workflow 7
-            workflowScheme7.setArchived(true);
-            workflowAPI.saveScheme(workflowScheme7, user);
+            workflowAPI.archive(workflowScheme7, user);
 
             try {
                 Future<WorkflowScheme> result = workflowAPI.deleteScheme(workflowScheme7, user);
@@ -2027,12 +2139,10 @@ public class WorkflowAPITest extends IntegrationTestBase {
             //delete content type
             contentTypeAPI.delete(keepWfTaskStatusContentType);
 
-            workflowScheme1.setArchived(true);
-            workflowAPI.saveScheme(workflowScheme1, user);
+            workflowAPI.archive(workflowScheme1, user);
             workflowAPI.deleteScheme(workflowScheme1, user);
 
-            workflowScheme2.setArchived(true);
-            workflowAPI.saveScheme(workflowScheme2, user);
+            workflowAPI.archive(workflowScheme2, user);
             workflowAPI.deleteScheme(workflowScheme2, user);
         }
     }
@@ -2150,12 +2260,10 @@ public class WorkflowAPITest extends IntegrationTestBase {
             //delete content type
             contentTypeAPI.delete(contentType);
 
-            workflowScheme1.setArchived(true);
-            workflowAPI.saveScheme(workflowScheme1, user);
+            workflowAPI.archive(workflowScheme1, user);
             workflowAPI.deleteScheme(workflowScheme1, user);
 
-            workflowScheme2.setArchived(true);
-            workflowAPI.saveScheme(workflowScheme2, user);
+            workflowAPI.archive(workflowScheme2, user);
             workflowAPI.deleteScheme(workflowScheme2, user);
         }
     }
@@ -2218,6 +2326,31 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
             workflowScheme.setArchived(true);
             workflowAPI.saveScheme(workflowScheme, user);
+            workflowAPI.deleteScheme(workflowScheme, user);
+        }
+    }
+
+    /**
+     * Test the archive workflow method
+     */
+    @Test
+    public void archive_success_whenWorkflowIsArchived()
+            throws DotDataException, DotSecurityException, AlreadyExistException {
+        WorkflowScheme workflowScheme = null;
+        try {
+
+            workflowScheme = createDocumentManagentReplica(
+                    DOCUMENT_MANAGEMENT_WORKFLOW_NAME + "_6_" + UtilMethods
+                            .dateToHTMLDate(new Date(), DATE_FORMAT));
+
+            assertFalse(workflowScheme.isArchived());
+
+            //archive workflow
+            workflowAPI.archive(workflowScheme, user);
+
+            assertTrue(workflowScheme.isArchived());
+
+        } finally {
             workflowAPI.deleteScheme(workflowScheme, user);
         }
     }
@@ -2423,8 +2556,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             workflowAPI.deleteStep(workflowScheme2Step1, user);
             workflowAPI.deleteStep(workflowScheme2Step2, user);
 
-            workflowScheme2.setArchived(true);
-            workflowAPI.saveScheme(workflowScheme2, user);
+            workflowAPI.archive(workflowScheme2, user);
             workflowAPI.deleteScheme(workflowScheme2, user);
 
             //Deleting workflow 3
@@ -2435,8 +2567,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             workflowAPI.deleteStep(workflowScheme3Step1, user);
             workflowAPI.deleteStep(workflowScheme3Step2, user);
 
-            workflowScheme3.setArchived(true);
-            workflowAPI.saveScheme(workflowScheme3, user);
+            workflowAPI.archive(workflowScheme3, user);
             workflowAPI.deleteScheme(workflowScheme3, user);
 
             //Deleting workflow 4
@@ -2462,16 +2593,14 @@ public class WorkflowAPITest extends IntegrationTestBase {
             workflowAPI.deleteStep(workflowScheme4Step2, user);
             workflowAPI.deleteStep(workflowScheme4Step3, user);
 
-            workflowScheme4.setArchived(true);
-            workflowAPI.saveScheme(workflowScheme4, user);
+            workflowAPI.archive(workflowScheme4, user);
             workflowAPI.deleteScheme(workflowScheme4, user);
 
             //Deleting workflow 5
             workflowAPI.deleteAction(workflowScheme5Step1Action1, user);
             workflowAPI.deleteStep(workflowScheme5Step1, user);
 
-            workflowScheme5.setArchived(true);
-            workflowAPI.saveScheme(workflowScheme5, user);
+            workflowAPI.archive(workflowScheme5, user);
             workflowAPI.deleteScheme(workflowScheme5, user);
 
         }catch (AlreadyExistException e){

@@ -715,11 +715,10 @@ public class FolderAPITest {//24 contentlets
 		contentAsset1.setInode(null);
 		contentAsset1 = contentletAPI.checkin(contentAsset1, user, false);
 		contentletAPI.publish(contentAsset1, user, false);
-
-		contentletAPI.archive(contentAsset1,user,false);
-		contentletAPI.delete(contentAsset1,user,false);
 		
 		folderAPI.delete(ftest, user, false);
+
+		contentletAPI.isInodeIndexed(contentAsset1.getInode());
 		
 		/*validate that the folder and pages were deleted*/
 		final Folder  folder = folderAPI.findFolderByPath(folderPath, host, user, false);

@@ -266,7 +266,27 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 		;
 
 	},
-    deleteScheme : function(schemeId) {
+	copyScheme : function(schemeId) {
+
+		var xhrArgs = {
+			url: "/api/v1/workflow/schemes/" + schemeId + "/copy",
+			timeout : 30000,
+			handle : function(dataOrError, ioArgs) {
+				if (dojo.isString(dataOrError)) {
+					if (dataOrError.indexOf("FAILURE") == 0) {
+						schemeAdmin.copyError(dataOrError);
+					} else {
+						schemeAdmin.copySuccess(dataOrError);
+					}
+				} else {
+					this.copyError("<%=LanguageUtil.get(pageContext, "Unable-to-copy-Scheme")%>");
+				}
+			}
+		};
+		dojo.xhrPost(xhrArgs);
+		return;
+	},
+		deleteScheme : function(schemeId) {
 
         if(!confirm("<%=LanguageUtil.get(pageContext, "Confirm-Delete-Scheme")%>")){
             return;
@@ -308,7 +328,16 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
     },
     deleteError : function(message) {
         showDotCMSSystemMessage(message, true);
-    }
+    },
+	copySuccess : function(message) {
+		var dialog = dijit.byId(schemeAdmin.addEditDiv);
+		dialog.hide();
+		schemeAdmin.show();
+		showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Workflow-Scheme-copied")%>");
+	},
+	copyError : function(message) {
+		showDotCMSSystemMessage(message, true);
+	}
 
 });
 
@@ -540,7 +569,26 @@ dojo.declare("dotcms.dijit.workflows.StepAdmin", null, {
 				x.hide();
 			}
 		}
-	}
+	},
+    filterSteps:function(schemeId,roleId){
+
+        var targetNode = dojo.byId("wfStepInDragContainer");
+
+		var xhrArgs = {
+		   url: "/html/portlet/ext/workflows/schemes/view_steps_filtered.jsp?schemeId="+schemeId+"&roleId="+roleId,
+		   async:true,
+		   load: function(markup){
+               targetNode.innerHTML = markup;
+		   },
+		   error: function(error){
+                console.log(error);
+                showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Unable-to-load-Scheme")%>", true);
+		   }
+		};
+		// Call the asynchronous xhrGet
+		var deferred = dojo.xhrGet(xhrArgs);
+
+    }
 
 });
 
@@ -1184,6 +1232,7 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
 
 var myRoleReadStore = new dotcms.dojo.data.RoleReadStore({nodeId: "actionAssignToSelect"});
 var myRoleReadStore2 = new dotcms.dojo.data.RoleReadStore({nodeId: "whoCanUseSelect",includeWfRoles: "true"});
+var myRoleReadStoreFilter = new dotcms.dojo.data.RoleReadStore({nodeId: "whoCanUseSelect", includeWfRoles: "true", includeLabelAll:true});
 
 var myIconStore = new dojo.data.ItemFileReadStore({data:
 	<%@ include file="/html/portlet/ext/workflows/schemes/workflow_icons.json" %>

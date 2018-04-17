@@ -29,10 +29,10 @@ import com.liferay.portal.model.User;
 
 public class VelocityEditMode extends VelocityModeHandler {
 
-    private final HttpServletRequest request;
-    private final HttpServletResponse response;
+    protected final HttpServletRequest request;
+    protected final HttpServletResponse response;
     private static final PageMode mode = PageMode.EDIT_MODE;
-    private final String uri;
+    protected final String uri;
     private final Host host;
 
     public VelocityEditMode(HttpServletRequest request, HttpServletResponse response, String uri, Host host) {

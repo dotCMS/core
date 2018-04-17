@@ -111,6 +111,8 @@ import org.jetbrains.annotations.NotNull;
  */
 public class ContentletAjax {
 
+	private static final String CONTENT_TYPES_INODE_SEPARATOR = ",";
+
 	private java.text.DateFormat modDateFormat = java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.SHORT,
 			java.text.DateFormat.SHORT);
 
@@ -451,6 +453,15 @@ public class ContentletAjax {
 		        page, orderBy, perPage,currentUser, sess, modDateFrom, modDateTo);
 	}
 
+	public List searchContentlets(String[] structureInodes, List<String> fields, List<String> categories, boolean showDeleted,
+								  boolean filterSystemHost,  boolean filterUnpublish, boolean filterLocked, int page, int perPage,String orderBy, String modDateFrom,
+								  String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
+		String structureInodesJoined = String.join(CONTENT_TYPES_INODE_SEPARATOR, structureInodes);
+
+		return searchContentlets(structureInodesJoined, fields, categories, showDeleted, filterSystemHost, filterUnpublish, filterLocked,
+				page, perPage, orderBy, modDateFrom, modDateTo);
+	}
+
 	/**
 	 * This method is used by the backend to pull from lucene index the form widgets
 	 * if the widget doesn't exist then is created and also checks the user
@@ -534,12 +545,27 @@ public class ContentletAjax {
 		List<Object> headers = new ArrayList<Object>();
 		Map<String, Field> fieldsMapping = new HashMap<String, Field>();
 		Structure st = null;
-		if(!Structure.STRUCTURE_TYPE_ALL.equals(structureInode)){
+		if(!Structure.STRUCTURE_TYPE_ALL.equals(structureInode) && !hasContentTypesInodeSeparator(structureInode)){
 		    st = CacheLocator.getContentTypeCache().getStructureByInode(structureInode);
 		    lastSearchMap.put("structure", st);
 		    luceneQuery.append("+contentType:" + st.getVelocityVarName() + " ");
-		}
-		else {
+		} else if (!Structure.STRUCTURE_TYPE_ALL.equals(structureInode) && hasContentTypesInodeSeparator(structureInode)) {
+			luceneQuery.append("+contentType:(");
+
+			String[] structureInodes = structureInode.split(CONTENT_TYPES_INODE_SEPARATOR);
+
+			for (int i = 0; i < structureInodes.length; i++) {
+				st = CacheLocator.getContentTypeCache().getStructureByInode(structureInodes[i]);
+
+				if (i != 0) {
+					luceneQuery.append(" OR " + st.getVelocityVarName());
+				} else {
+					luceneQuery.append(st.getVelocityVarName());
+				}
+			}
+			luceneQuery.append(") ");
+
+		} else {
 		    for(int i=0;i<fields.size();i++){
 		        String x = fields.get(i);
 		        if(Structure.STRUCTURE_TYPE_ALL.equals(x)){
@@ -1079,6 +1105,11 @@ public class ContentletAjax {
 
 		return results;
 	}
+
+	private boolean hasContentTypesInodeSeparator(String structureInode) {
+		return structureInode.contains(CONTENT_TYPES_INODE_SEPARATOR);
+	}
+
 	@CloseDB
 	@NotNull
 	private JSONArray getAvailableWorkflowActionsJson(final User currentUser,
