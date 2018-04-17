@@ -25,7 +25,7 @@ public class FixTask00070FixVersionInfo implements FixTask {
     @SuppressWarnings("unchecked")
     @Override
     public List<Map<String, Object>> executeFix() throws DotRuntimeException {
-        List<Map<String, Object>> returnValue = new ArrayList<>();
+        final List<Map<String, Object>> returnValue = new ArrayList<>();
         if (!FixAssetsProcessStatus.getRunning()) {
             try {
                 FixAssetsProcessStatus.startProgress();
