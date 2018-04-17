@@ -1733,7 +1733,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                     //TODO we still have several things that need cleaning here:
                     //TODO https://github.com/dotCMS/core/issues/9146
-                    contentFactory.delete(Arrays.asList(new Contentlet[]{con}), false);
+                    Identifier identifier = APILocator.getIdentifierAPI().find(con.getIdentifier());
+                    List<Contentlet> allVersionsList = findAllVersions(identifier,user,false);
+                    List <Contentlet> contentletsLanguageList  = allVersionsList.stream().
+                            filter(contentlet -> contentlet.getLanguageId()==con.getLanguageId()).collect(Collectors.toList());
+                    contentFactory.delete(contentletsLanguageList, false);
 
                     for (Contentlet contentlet : contentlets) {
                         try {
