@@ -16,14 +16,6 @@
 	String schemeId  = request.getParameter("schemeId");
 	WorkflowScheme scheme          = wapi.findScheme(schemeId);
 	final List<WorkflowStep> steps = wapi.findSteps(scheme);
-	
-	
-	Set<WorkflowAction> actionz = new HashSet<>();
-	for(WorkflowStep step : steps){
-		for(WorkflowAction action : wapi.findActions(step, APILocator.getUserAPI().getSystemUser())){
-		    actionz.add(action);
-		}
-	}
 
 	pageContext.setAttribute("scheme",scheme);
 %>
