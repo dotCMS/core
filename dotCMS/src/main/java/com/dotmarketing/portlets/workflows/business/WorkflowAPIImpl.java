@@ -4,6 +4,7 @@ import com.dotcms.api.system.event.SystemMessageEventUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.CollectionsUtils;
@@ -67,6 +68,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	//This by default tells if a license is valid or not.
 	private LicenseValiditySupplier licenseValiditySupplierSupplier = new LicenseValiditySupplier() {};
 
+	protected final DotConcurrentFactory concurrentFactory = DotConcurrentFactory.getInstance();
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public WorkflowAPIImpl() {
@@ -322,7 +324,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public void saveSchemesForStruct(final Structure contentType,
 									 final List<WorkflowScheme> schemes) throws DotDataException {
 
-
 		try {
 
 			Logger.debug(this, ()-> "Saving schemes: " + schemes +
@@ -445,10 +446,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			throw new DotWorkflowException("Can not delete workflow Id:" + scheme.getId());
 		}
 
+		final DotSubmitter submitter = this.concurrentFactory.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
 		//Delete the Scheme in a separated thread
-		return DotConcurrentFactory.getInstance()
-				.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL)
-				.submit(() -> deleteSchemeTask(scheme, user));
+		return submitter.submit(() -> deleteSchemeTask(scheme, user));
 	}
 
 	/**
