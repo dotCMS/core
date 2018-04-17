@@ -12,6 +12,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -32,6 +33,7 @@ public class ExceptionUtil {
 
 
     private ExceptionUtil () {}
+
 
     /**
      * Returns true if the Throwable is instance or contains a cause of the specified ExceptionClass
@@ -57,7 +59,6 @@ public class ExceptionUtil {
      * @param exceptionClasses
      * @return boolean
      */
-
     public static boolean causedBy(final Throwable e, final Set<Class<? extends Throwable>> exceptionClasses) {
 
         Throwable t = e;
@@ -68,6 +69,27 @@ public class ExceptionUtil {
             t = t.getCause();
         }
         return false;
+    }
+
+    /**
+     * Return an optional throwable if one of them match exactly the class name of the set exceptions
+     * Empty optional if not match any
+     * @param e
+     * @param exceptionClasses
+     * @return
+     */
+    public static Optional<Throwable> getCause(final Throwable e, final Set<Class<? extends Throwable>> exceptionClasses) {
+
+        Throwable t = e;
+        while (t != null) {
+
+            if (exceptionClasses.contains(t.getClass())) {
+                return Optional.of(t);
+            }
+            t = t.getCause();
+        }
+
+        return Optional.empty();
     }
 
     /**
