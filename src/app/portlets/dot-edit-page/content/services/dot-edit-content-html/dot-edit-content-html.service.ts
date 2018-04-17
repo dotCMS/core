@@ -42,9 +42,7 @@ export class DotEditContentHtmlService {
             this.handlerContentletEvents(contentletEvent.name)(contentletEvent);
         });
 
-        this.dotMessageService
-            .getMessages(['editpage.content.add.already.title', 'editpage.content.add.already.message'])
-            .subscribe();
+        this.dotMessageService.getMessages(['editpage.content.add.already.title', 'editpage.content.add.already.message']).subscribe();
     }
 
     /**
@@ -123,11 +121,9 @@ export class DotEditContentHtmlService {
                 uuid: containerEl.dataset.dotUuid
             };
 
-            this.dotContainerContentletService
-                .getContentletToContainer(container, contentlet)
-                .subscribe((contentletHtml: string) => {
-                    this.renderHTMLToContentlet(contentletEl, contentletHtml);
-                });
+            this.dotContainerContentletService.getContentletToContainer(container, contentlet).subscribe((contentletHtml: string) => {
+                this.renderHTMLToContentlet(contentletEl, contentletHtml);
+            });
         });
     }
 
@@ -141,9 +137,9 @@ export class DotEditContentHtmlService {
         const doc = this.getEditPageDocument();
         const containerEl = doc.querySelector(
             // tslint:disable-next-line:max-line-length
-            `div[data-dot-object="container"][data-dot-identifier="${
-                this.currentContainer.identifier
-            }"][data-dot-uuid="${this.currentContainer.uuid}"]`
+            `div[data-dot-object="container"][data-dot-identifier="${this.currentContainer.identifier}"][data-dot-uuid="${
+                this.currentContainer.uuid
+            }"]`
         );
 
         if (this.isContentExistInContainer(contentlet, containerEl)) {
@@ -205,12 +201,8 @@ export class DotEditContentHtmlService {
 
     private isContentExistInContainer(contentlet: DotPageContent, containerEL: HTMLElement): boolean {
         const contentsSelector = `div[data-dot-object="contentlet"]`;
-        const currentContentlets: HTMLElement[] = <HTMLElement[]>Array.from(
-            containerEL.querySelectorAll(contentsSelector).values()
-        );
-        return currentContentlets.some(
-            (contentElement) => contentElement.dataset.dotIdentifier === contentlet.identifier
-        );
+        const currentContentlets: HTMLElement[] = <HTMLElement[]>Array.from(containerEL.querySelectorAll(contentsSelector).values());
+        return currentContentlets.some((contentElement) => contentElement.dataset.dotIdentifier === contentlet.identifier);
     }
 
     private addContentToolBars(): void {
@@ -279,7 +271,7 @@ export class DotEditContentHtmlService {
     }
 
     private bindContainersEvents(): void {
-        const addButtons = Array.from(this.getEditPageDocument().querySelectorAll('.dotedit-container__add'));
+        const addButtons = Array.from(this.getEditPageDocument().querySelectorAll('.dotedit-container__add:not([disabled])'));
         addButtons.forEach((button: Node) => {
             const parent = button.parentElement;
             const menuItems = Array.from(parent.querySelectorAll('.dotedit-container__menu-item a'));
@@ -320,7 +312,9 @@ export class DotEditContentHtmlService {
     }
 
     private bindEditContentletEvents(): void {
-        const editButtons = Array.from(this.getEditPageDocument().querySelectorAll('.dotedit-contentlet__edit'));
+        const editButtons = Array.from(
+            this.getEditPageDocument().querySelectorAll('.dotedit-contentlet__edit:not(.dotedit-contentlet__disabled)')
+        );
         editButtons.forEach((button: HTMLElement) => {
             this.bindButtonsEvent(button, 'edit');
         });
@@ -443,9 +437,7 @@ export class DotEditContentHtmlService {
 
     private renderRelocatedContentlet(relocateInfo: any): void {
         const doc = this.getEditPageDocument();
-        const contenletEl = doc.querySelector(
-            `div[data-dot-object="contentlet"][data-dot-inode="${relocateInfo.contentlet.inode}"]`
-        );
+        const contenletEl = doc.querySelector(`div[data-dot-object="contentlet"][data-dot-inode="${relocateInfo.contentlet.inode}"]`);
         const contentletContentEl = contenletEl.querySelector('.dotedit-contentlet__content');
         contentletContentEl.innerHTML += '<div class="loader__overlay"><div class="loader"></div></div>';
         relocateInfo.container = relocateInfo.container || contenletEl.parentNode.dataset.dotIdentifier;

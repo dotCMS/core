@@ -4,6 +4,7 @@ const animation = '100ms ease-in';
 const mdShadow1 = '0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24)';
 const mdShadow3 = '0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23)';
 const white = '#fff';
+const grayLight = '#c5c5c5';
 
 export const EDIT_PAGE_CSS = `
     [data-dot-object="container"] {
@@ -17,6 +18,10 @@ export const EDIT_PAGE_CSS = `
         box-shadow: 0 0 20px red;
         border-radious: 2px;
         background-color: #ff00000f;
+    }
+
+    [data-dot-object="container"].disabled {
+        border-color: ${grayLight};
     }
 
     [data-dot-object="contentlet"] {
@@ -116,14 +121,18 @@ export const EDIT_PAGE_CSS = `
         outline: none;
     }
 
-    .dotedit-container__toolbar button:hover,
-    .dotedit-contentlet__toolbar button:hover {
+    .dotedit-container__toolbar button:not([disabled]):hover,
+    .dotedit-contentlet__toolbar button:not([disabled]):hover {
         box-shadow: ${mdShadow3};
     }
 
     .dotedit-container__toolbar button:active,
     .dotedit-contentlet__toolbar button:active {
         box-shadow: ${mdShadow1};
+    }
+
+    .dotedit-container__toolbar button:disabled {
+        background-color: ${grayLight}
     }
 
     .dotedit-contentlet__toolbar {
