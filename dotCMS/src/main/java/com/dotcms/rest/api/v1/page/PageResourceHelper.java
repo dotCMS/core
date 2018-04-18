@@ -174,7 +174,7 @@ public class PageResourceHelper implements Serializable {
             Template template = getTemplate(page, user, pageForm);
             template.setDrawed(true);
 
-            pageForm.changeds().forEach(containerUUIDChanged -> {
+            pageForm.getChanges().forEach(containerUUIDChanged -> {
                 ContainerUUID old = containerUUIDChanged.getOld();
                 ContainerUUID aNew = containerUUIDChanged.getNew();
 

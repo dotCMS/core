@@ -25,14 +25,14 @@ class PageForm {
     private String title;
     private String hostId;
     private TemplateLayout layout;
-    private List<ContainerUUIDChanged> changeds;
+    private List<ContainerUUIDChanged> changes;
 
-    public PageForm(String themeId, String title, String hostId, TemplateLayout layout, List<ContainerUUIDChanged> changeds) {
+    public PageForm(String themeId, String title, String hostId, TemplateLayout layout, List<ContainerUUIDChanged> changes) {
         this.themeId = themeId;
         this.title = title;
         this.hostId = hostId;
         this.layout = layout;
-        this.changeds = changeds;
+        this.changes = changes;
     }
 
     /**
@@ -71,8 +71,8 @@ class PageForm {
         return layout;
     }
 
-    public List<ContainerUUIDChanged> changeds () {
-        return changeds != null ? changeds : Collections.EMPTY_LIST;
+    public List<ContainerUUIDChanged> getChanges () {
+        return changes != null ? changes : Collections.EMPTY_LIST;
     }
 
     public static final class Builder {
@@ -95,7 +95,7 @@ class PageForm {
         private Map<String, Object> layout;
 
         @JsonIgnore
-        private List<ContainerUUIDChanged> changeds;
+        private List<ContainerUUIDChanged> changes;
 
         public Builder() {
         }
@@ -132,7 +132,7 @@ class PageForm {
         }
 
         private void setContainersUUID() {
-            List<ContainerUUIDChanged> changeds = new ArrayList<>();
+            List<ContainerUUIDChanged> changes = new ArrayList<>();
             Map<String, Long> maxUUIDByContainer = new HashMap<>();
             List<Map<String, Map>> rows = (List<Map<String, Map>>) ((Map<String, Object>) layout.get("body")).get("rows");
 
@@ -154,7 +154,7 @@ class PageForm {
                                 container.put("uuid", String.valueOf(nextUUID));
                                 ContainerUUID newContainerUUID = MAPPER.readValue(MAPPER.writeValueAsString(container),
                                         ContainerUUID.class);
-                                changeds.add(new ContainerUUIDChanged(oldContainerUUID, newContainerUUID));
+                                changes.add(new ContainerUUIDChanged(oldContainerUUID, newContainerUUID));
                             } else {
                                 container.put("uuid", String.valueOf(nextUUID));
                             }
@@ -166,11 +166,11 @@ class PageForm {
                         }
                     });
 
-            this.changeds = changeds;
+            this.changes = changes;
         }
 
         public PageForm build(){
-            return new PageForm(themeId, title, hostId, getTemplateLayout(), changeds);
+            return new PageForm(themeId, title, hostId, getTemplateLayout(), changes);
         }
     }
 }
