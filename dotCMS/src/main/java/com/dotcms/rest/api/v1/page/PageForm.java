@@ -13,7 +13,7 @@ import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.UtilMethods;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * {@link PageResource}'s form
@@ -32,6 +32,7 @@ class PageForm {
         this.title = title;
         this.hostId = hostId;
         this.layout = layout;
+        this.changeds = changeds;
     }
 
     /**
@@ -71,7 +72,7 @@ class PageForm {
     }
 
     public List<ContainerUUIDChanged> changeds () {
-        return changeds;
+        return changeds != null ? changeds : Collections.EMPTY_LIST;
     }
 
     public static final class Builder {
@@ -122,8 +123,8 @@ class PageForm {
         private TemplateLayout getTemplateLayout() throws BadRequestException {
 
             try {
-                String layoutString = MAPPER.writeValueAsString(layout);
                 this.setContainersUUID();
+                String layoutString = MAPPER.writeValueAsString(layout);
                 return MAPPER.readValue(layoutString, TemplateLayout.class);
             } catch (IOException e) {
                 throw new BadRequestException(e, "An error occurred when proccessing the JSON request");
@@ -137,11 +138,12 @@ class PageForm {
 
             rows.stream()
                     .map(row -> (List<Map<String, Map>>) row.get("columns"))
-                    .flatMap(column -> column.stream())
-                    .map(column -> (Map<String, String>) column.get("containers"))
+                    .flatMap(columns -> columns.stream())
+                    .map(column -> (List<Map<String, String>>) column.get("containers"))
+                    .flatMap(containers -> containers.stream())
                     .forEach(container -> {
                         try {
-                            String containerId = container.get("id");
+                            String containerId = container.get("identifier");
                             long currentUUID = maxUUIDByContainer.get(containerId) != null ?
                                     maxUUIDByContainer.get(containerId) : 0;
                             long nextUUID = currentUUID + 1;
@@ -149,12 +151,12 @@ class PageForm {
                             if (container.get("uuid") != null) {
                                 ContainerUUID oldContainerUUID = MAPPER.readValue(MAPPER.writeValueAsString(container),
                                         ContainerUUID.class);
-                                container.put(containerId, String.valueOf(nextUUID));
+                                container.put("uuid", String.valueOf(nextUUID));
                                 ContainerUUID newContainerUUID = MAPPER.readValue(MAPPER.writeValueAsString(container),
                                         ContainerUUID.class);
                                 changeds.add(new ContainerUUIDChanged(oldContainerUUID, newContainerUUID));
                             } else {
-                                container.put(containerId, String.valueOf(nextUUID));
+                                container.put("uuid", String.valueOf(nextUUID));
                             }
 
                             maxUUIDByContainer.put(containerId, nextUUID);
