@@ -33,7 +33,7 @@ export class DotEditLayoutService {
                     containers: column.containers.map((dotPageContainer: DotPageContainer) => {
                         return {
                             container: this.templateContainersCacheService.get(dotPageContainer.identifier),
-                            uuid: dotPageContainer.uuid ? dotPageContainer.uuid : new Date().getTime().toString()
+                            uuid: dotPageContainer.uuid
                         };
                     }),
                     config: Object.assign({}, DOT_LAYOUT_GRID_NEW_ROW_TEMPLATE, {
