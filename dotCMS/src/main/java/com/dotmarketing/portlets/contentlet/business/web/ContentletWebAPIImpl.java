@@ -188,13 +188,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 	private void pushSaveEvent (final Contentlet eventContentlet, final boolean eventCreateNewVersion) throws DotHibernateException {
 
-		HibernateUtil.addCommitListener(new FlushCacheRunnable() {
-			@Override
-			public void run() {
-
-				contentletSystemEventUtil.pushSaveEvent(eventContentlet, eventCreateNewVersion);
-			}
-		});
+		HibernateUtil.addAsyncCommitListener(() -> this.contentletSystemEventUtil.pushSaveEvent(eventContentlet, eventCreateNewVersion), 1000);
 	}
 
 
