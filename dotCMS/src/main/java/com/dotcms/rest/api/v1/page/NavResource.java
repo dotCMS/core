@@ -138,7 +138,7 @@ public class NavResource {
     }
 
 
-    private Map<String, Object> navToMap(final NavResult nav, final int maxDepth, int currentDepth) throws Exception {
+    private Map<String, Object> navToMap(final NavResult nav, final int maxDepth, final int currentDepth) throws Exception {
 
         Map<String, Object> navMap = new HashMap<String, Object>();
         navMap.put("title", nav.getTitle());
@@ -151,10 +151,12 @@ public class NavResource {
         navMap.put("order", nav.getOrder());
         navMap.put("type", nav.getType());
 
+        
         if (currentDepth < maxDepth) {
             List<Map<String, Object>> childs = new ArrayList<>();
             for (NavResult child : nav.getChildren()) {
-                childs.add(navToMap(child, maxDepth, ++currentDepth));
+                int startDepth=currentDepth;
+                childs.add(navToMap(child, maxDepth, ++startDepth));
             }
             navMap.put("children", childs);
         }
