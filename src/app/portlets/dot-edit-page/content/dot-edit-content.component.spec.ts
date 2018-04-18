@@ -54,6 +54,7 @@ class MockDotEditContentViewAsToolbarComponent {
     @Input() value: DotEditPageViewAs;
     @Output() changeViewAs = new EventEmitter<DotEditPageViewAs>();
 }
+
 describe('DotEditContentComponent', () => {
     let component: DotEditContentComponent;
     let de: DebugElement;
@@ -578,6 +579,33 @@ describe('DotEditContentComponent', () => {
 
                 spyOn(dotRouterService, 'goToEditPage');
                 spyOn(dotEditPageDataService, 'set');
+                spyOn(dotEditContentHtmlService, 'renderPage');
+            });
+
+            it('should reload the current page', () => {
+                fixture.detectChanges();
+
+                const customEvent = document.createEvent('CustomEvent');
+                customEvent.initCustomEvent('ng-event', false, false, {
+                    name: 'load-edit-mode-page',
+                    data:  {
+                        ...mockDotRenderedPage,
+                        page: {
+                            ...mockDotRenderedPage.page,
+                            pageURI: 'an/url/fake'
+                        }
+                    }
+                });
+                document.dispatchEvent(customEvent);
+
+                expect(dotEditPageDataService.set).not.toHaveBeenCalled();
+                expect(dotRouterService.goToEditPage).not.toHaveBeenCalled();
+                expect(component.isModelUpdated).toBe(false);
+                expect(component.pageState.page).toEqual({
+                    ...mockDotRenderedPage.page,
+                    pageURI: 'an/url/fake'
+                });
+                expect(dotEditContentHtmlService.renderPage).toHaveBeenCalled();
             });
 
             it('should go to edit-page and set data for the resolver', () => {

@@ -317,8 +317,13 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
             .pluck('data')
             .subscribe((pageRendered: DotRenderedPage) => {
                 const dotRenderedPageState = new DotRenderedPageState(this.pageState.user, pageRendered);
-                this.dotEditPageDataService.set(dotRenderedPageState);
-                this.dotRouterService.goToEditPage(pageRendered.page.pageURI);
+
+                if (this.route.snapshot.queryParams.url === pageRendered.page.pageURI) {
+                    this.setPageState(dotRenderedPageState);
+                } else {
+                    this.dotEditPageDataService.set(dotRenderedPageState);
+                    this.dotRouterService.goToEditPage(pageRendered.page.pageURI);
+                }
             });
     }
 
