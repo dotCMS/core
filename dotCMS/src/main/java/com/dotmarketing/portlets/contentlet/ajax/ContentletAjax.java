@@ -3,8 +3,7 @@ package com.dotmarketing.portlets.contentlet.ajax;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-import static com.google.common.base.Throwables.getRootCause;
-
+import static com.dotcms.exception.ExceptionUtil.getRootCause;
 import com.dotcms.business.CloseDB;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -1580,18 +1579,26 @@ public class ContentletAjax {
 		  return callbackData;
 	  }
 	  catch(final Exception e){
-		   final Throwable  rootCause = getRootCause(e);
-			if(rootCause instanceof DotContentletValidationException || e instanceof DotContentletValidationException ){
-				final DotContentletValidationException ve = DotContentletValidationException.class.cast(rootCause);
-				clearBinary = handleValidationException(user,ve,saveContentErrors);
-			} else {
-				Logger.error( this, e.getMessage(), e );
-				saveContentErrors.add( e.getMessage() );
-				callbackData.put( "saveContentErrors", saveContentErrors );
-				callbackData.put( "referer", referer );
-				clearBinary = false;
-				return callbackData;
-			}
+
+		  if (e instanceof DotContentletValidationException) {
+			  final DotContentletValidationException ve = DotContentletValidationException.class
+					  .cast(e);
+			  clearBinary = handleValidationException(user, ve, saveContentErrors);
+		  } else {
+			  final Throwable rootCause = getRootCause(e);
+			  if (rootCause instanceof DotContentletValidationException) {
+				  final DotContentletValidationException ve = DotContentletValidationException.class
+						  .cast(rootCause);
+				  clearBinary = handleValidationException(user, ve, saveContentErrors);
+			  } else {
+				  Logger.error(this, e.getMessage(), e);
+				  saveContentErrors.add(e.getMessage());
+				  callbackData.put("saveContentErrors", saveContentErrors);
+				  callbackData.put("referer", referer);
+				  clearBinary = false;
+				  return callbackData;
+			  }
+		  }
 		}
 		finally{
 			
