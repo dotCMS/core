@@ -81,10 +81,18 @@ public class HostAPITest {
         hostAssetsJobProxy.execute(jobExecutionContext);
         
         Thread.sleep(600); // wait a bit for the index
+
+        try{
+            HibernateUtil.startTransaction();
+            APILocator.getHostAPI().archive(host, user, false);
+            HibernateUtil.closeAndCommitTransaction();
+        }catch(Exception e){
+            HibernateUtil.rollbackTransaction();
+            Logger.error(HostAPITest.class, e.getMessage());
+        }
         
         try{
         	HibernateUtil.startTransaction();
-        	APILocator.getHostAPI().archive(host, user, false);
         	APILocator.getHostAPI().delete(host, user, false);
         	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){

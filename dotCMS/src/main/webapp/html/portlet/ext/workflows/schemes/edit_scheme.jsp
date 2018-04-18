@@ -1,12 +1,10 @@
-<%@page import="com.dotmarketing.portlets.workflows.model.WorkflowAction"%>
-<%@page import="java.util.ArrayList"%>
-<%@page import="com.dotmarketing.util.UtilMethods"%>
-<%@page import="com.dotmarketing.portlets.workflows.business.WorkflowAPI"%>
-<%@page import="com.dotmarketing.portlets.workflows.model.WorkflowStep"%>
-<%@page import="com.dotmarketing.portlets.workflows.model.WorkflowScheme"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
-<%@page import="java.util.List"%>
+<%@page import="com.dotmarketing.portlets.workflows.business.WorkflowAPI"%>
+<%@page import="com.dotmarketing.portlets.workflows.model.WorkflowScheme"%>
+<%@page import="com.dotmarketing.portlets.workflows.model.WorkflowStep"%>
+<%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
+<%@page import="java.util.List"%>
 
 <%
 	WorkflowAPI wapi = APILocator.getWorkflowAPI();
@@ -92,6 +90,9 @@
 	<div class="buttonRow" style="margin-top: 20px;">
 		<button dojoType="dijit.form.Button" onClick='schemeAdmin.saveAddEdit()' iconClass="saveIcon" type="button">
 			<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save"))%>
+		</button>
+		<button dojoType="dijit.form.Button" onClick='schemeAdmin.copyScheme("<%=UtilMethods.webifyString(scheme.getId())%>")' iconClass="saveIcon" type="button">
+			<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Copy"))%>
 		</button>
 		<%if(scheme.isArchived()){%>
 		<button dojoType="dijit.form.Button" onClick='schemeAdmin.deleteScheme("<%=UtilMethods.webifyString(scheme.getId())%>")' iconClass="deleteIcon" type="button">
