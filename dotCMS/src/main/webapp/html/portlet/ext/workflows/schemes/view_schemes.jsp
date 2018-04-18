@@ -24,17 +24,17 @@
 		<div class="portlet-toolbar">
 			<div class="portlet-toolbar__actions-primary">
 				<h2><%=LanguageUtil.get(pageContext, "Workflow-Schemes")%></h2>
-			</div>
-			<div class="portlet-toolbar__info">
-				<div class="inline-form">
-					<input type="checkbox" id="showArchivedChk" name="showArchived"
-					<%=(showArchived) ? "checked='true'" : ""%> id="system"
-					dojoType="dijit.form.CheckBox" value="1"
-					onClick="new function(){schemeAdmin.showArchived = <%=!showArchived%>;schemeAdmin.show();}" />
-					<label font-size:85%; for="showArchivedChk"><%=LanguageUtil.get(pageContext, "Show-Archived")%></label>
-				</div>
-			</div>
-	    	<div class="portlet-toolbar__actions-secondary">
+	               &nbsp;  &nbsp; 
+                
+            </div>
+            <div class="portlet-toolbar__actions-secondary">
+				    <input type="checkbox" id="showArchivedChk" name="showArchived"
+                    <%=(showArchived) ? "checked='true'" : ""%> id="system"
+                    dojoType="dijit.form.CheckBox" value="1"
+                    onClick="new function(){schemeAdmin.showArchived = <%=!showArchived%>;schemeAdmin.show();}" />
+                    <label font-size:85%; for="showArchivedChk"><%=LanguageUtil.get(pageContext, "Show-Archived")%></label>
+
+            &nbsp; &nbsp; 
 	    		<button dojoType="dijit.form.Button"
 					onClick="schemeAdmin.showAddEdit();return false;" iconClass="addIcon">
 					<%=LanguageUtil.get(pageContext, "Add-Workflow-Scheme")%>
@@ -56,7 +56,13 @@
 				<div class="flex-item editRow showPointer">
 					<div id="td<%=scheme.getId()%>" onclick="stepAdmin.showViewSteps('<%=scheme.getId()%>');">
 						<div class="wfSchemeTitle">
+						    <%if(scheme.isArchived()){ %>
+                                <a class="pull-right showPointer btn-flat btn-primary " href="#" onclick="schemeAdmin.deleteScheme('<%=scheme.getId()%>');"><i class="fa fa-trash" aria-hidden="true"></i></a>
+                            <%} %>
 							<a class="pull-right showPointer btn-flat btn-primary " href="#" onclick="schemeAdmin.showAddEdit('<%=scheme.getId()%>');"><i class="fa fa-pencil" aria-hidden="true"></i></a>
+
+							
+							
 							<%List<WorkflowStep> steps = wapi.findSteps(scheme);%>
 							<%if(!scheme.isArchived()){ %>
 								<span class="workflowIcon"></span> <%=scheme.getName()%>
