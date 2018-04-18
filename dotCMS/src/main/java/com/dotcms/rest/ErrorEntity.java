@@ -15,6 +15,9 @@ public class ErrorEntity implements Serializable {
     /** Final message (no an i18n key */
     private final String message;
 
+    /** field name. if available */
+    private final String fieldName;
+
     /**
      * Constructor
      * @param errorCode
@@ -23,8 +26,19 @@ public class ErrorEntity implements Serializable {
     public ErrorEntity(final String errorCode,
                        final String message) {
 
+        this(errorCode, message,null);
+    }
+
+    /**
+     * Constructor
+     * @param errorCode
+     * @param message
+     * @param fieldName
+     */
+    public ErrorEntity(final String errorCode, final String message, final String fieldName) {
         this.errorCode = errorCode;
         this.message = message;
+        this.fieldName = fieldName;
     }
 
     public String getErrorCode() {
@@ -35,11 +49,16 @@ public class ErrorEntity implements Serializable {
         return message;
     }
 
+    public String getFieldName() {
+        return fieldName;
+    }
+
     @Override
     public String toString() {
         return "ErrorEntity{" +
                 "errorCode='" + errorCode + '\'' +
                 ", message='" + message + '\'' +
+                ", fieldName='" + fieldName + '\'' +
                 '}';
     }
 } // E:O:F:ErrorEntity.
