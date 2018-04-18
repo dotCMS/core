@@ -143,16 +143,24 @@
 		<input type="hidden" name="schemeId" value="<%=UtilMethods.webifyString(scheme.getId())%>">
 		<div>
 
-			<h2>
-			<span class="showPointer" onClick="schemeAdmin.show()"  style="border-bottom:dotted 1px gray;">
-			 <%=LanguageUtil.get(pageContext, "Workflow-Schemes")%>
-			</span> &nbsp; &rarr; &nbsp;
 			
-			<span onClick="schemeAdmin.showAddEdit('<%=scheme.getId()%>');" style="border-bottom:dotted 1px gray;">
-			 <%=UtilMethods.webifyString(scheme.getName())%> &nbsp; &nbsp; <span class="editIcon" style="float: right;"></span>
-			</span>
-			</h2>
-			<p><%=UtilMethods.webifyString(scheme.getDescription())%></p>
+			<div class="showPointer" onClick="schemeAdmin.show()"  style="float: left;">
+			 <h2 style="border-bottom:dotted 1px gray;"><%=LanguageUtil.get(pageContext, "Workflow-Schemes")%></h2>
+			 <p>&nbsp;</p>
+			</div> 
+			
+			<div style="float: left;">
+			&nbsp; &rarr; &nbsp;
+			</div>
+			<div onClick="schemeAdmin.showAddEdit('<%=scheme.getId()%>');" style="float: left;">
+			 <h2 style="border-bottom:dotted 1px gray;"><%=UtilMethods.webifyString(scheme.getName())%></h2>
+			 <p><%=UtilMethods.webifyString(scheme.getDescription())%></p>
+			</div>
+            <div style="float: left;">&nbsp;
+            <span class="editIcon"></span>
+            </div>
+	
+			
 		</div>
 	</div>
     </div>

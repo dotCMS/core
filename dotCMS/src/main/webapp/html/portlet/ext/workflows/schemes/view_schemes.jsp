@@ -10,7 +10,7 @@
 <%
 
 	WorkflowAPI wapi = APILocator.getWorkflowAPI();
-	WorkflowScheme defaultScheme = wapi.findDefaultScheme();
+
 	boolean showArchived = (request.getParameter("showArchived") != null);
 	List<WorkflowScheme> schemes = wapi.findSchemes(showArchived);
 
