@@ -34,6 +34,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -54,6 +55,7 @@ public class ExceptionUtil {
 
 
     private ExceptionUtil () {}
+
 
     /**
      * Returns true if the Throwable is instance or contains a cause of the specified ExceptionClass
@@ -79,7 +81,6 @@ public class ExceptionUtil {
      * @param exceptionClasses
      * @return boolean
      */
-
     public static boolean causedBy(final Throwable e, final Set<Class<? extends Throwable>> exceptionClasses) {
 
         Throwable t = e;
@@ -103,6 +104,26 @@ public class ExceptionUtil {
         return causedBy(e, new HashSet<>(Arrays.asList(exceptionClasses)));
     }
 
+    /**
+     * Return an optional throwable if one of them match exactly the class name of the set exceptions
+     * Empty optional if not match any
+     * @param e
+     * @param exceptionClasses
+     * @return
+     */
+    public static Optional<Throwable> getCause(final Throwable e, final Set<Class<? extends Throwable>> exceptionClasses) {
+
+        Throwable t = e;
+        while (t != null) {
+
+            if (exceptionClasses.contains(t.getClass())) {
+                return Optional.of(t);
+            }
+            t = t.getCause();
+        }
+
+        return Optional.empty();
+    }
 
     public static String getLocalizedMessageOrDefault(final User user, final String key, final String defaultMessage, final Class clazz){
         String message = defaultMessage;

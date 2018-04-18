@@ -1874,6 +1874,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		// 3) get the scheme actions and copy with a diff id
 		// 4) add action class and parameters
 		// 4) associate the stepsFrom to the actions.
+		this.isUserAllowToModifiedWorkflow(user);
+
 		final WorkflowScheme scheme    = new WorkflowScheme();
 
 		Logger.debug(this, ()-> "Copying a new scheme from: "
@@ -1910,6 +1912,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		for (final WorkflowStep step : stepsFrom) {
 
+			int   actionOrder 						= 0;
 			final List<WorkflowAction>  actionSteps =
 					this.findActions(step, user);
 
@@ -1918,7 +1921,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				final String stepId   = steps.get(step.getId()).getId();
 				final String actionId = actions.get(action.getId()).getId();
 
-				this.saveAction(actionId, stepId, user);
+				this.saveAction(actionId, stepId, user, actionOrder++);
 			}
 		}
 
