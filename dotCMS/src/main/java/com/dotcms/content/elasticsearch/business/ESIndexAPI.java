@@ -126,15 +126,15 @@ public class ESIndexAPI {
 		}
 	}
 
-	public enum ReplicasMode { AUTOWIRE("autowire"), NO_BOUNDARY("0-all"), EMPTY("empty");
-		private final String replicasMode;
+	public enum ReplicasMode { AUTOWIRE("autowire"), BOUNDED("0-all"), STATIC("1");
+		private final String value;
 
 		ReplicasMode(final String replicasMode) {
-			this.replicasMode = replicasMode;
+			this.value = replicasMode;
 		}
 
-		public String getReplicasMode() {
-			return replicasMode;
+		public String getValue() {
+			return value;
 		}
 	}
 
@@ -519,25 +519,25 @@ public class ESIndexAPI {
                .endObject().string(), XContentType.JSON)).actionGet();
     }
 
-    public static int getReplicasCount(){
+    public int getReplicasCount(){
 
 		int nReplicas = 0;
-		final String replicasMode = getReplicasMode();
+		final String replicasMode = getReplicasValue();
 
 		if (LicenseUtil.getLevel() <= LicenseLevel.STANDARD.level){
 			return nReplicas;
 		}
 
-		if (replicasMode.equals(ReplicasMode.AUTOWIRE.getReplicasMode())){
+		if (replicasMode.equals(ReplicasMode.AUTOWIRE.getValue())){
 			if (ClusterUtils.isESAutoWire()){
 				nReplicas = getReplicasCountByNodes();
 			} else{
 				Logger.error(ESIndexAPI.class,
 						"Setting ES_INDEX_REPLICAS=\"autowire\" and AUTOWIRE_CLUSTER_ES=false is not allowed; number_of_replicas=0 will be used by default");
 			}
-		} else if (replicasMode.equals(ReplicasMode.NO_BOUNDARY.getReplicasMode())) {
+		} else if (replicasMode.equals(ReplicasMode.BOUNDED.getValue())) {
 			nReplicas = -1;
-		} else if (!replicasMode.equals(ReplicasMode.EMPTY.getReplicasMode())){
+		} else if (!replicasMode.equals(ReplicasMode.STATIC.getValue())){
 			try {
 				nReplicas = Integer.parseInt(replicasMode);
 			} catch(NumberFormatException e){
@@ -550,15 +550,15 @@ public class ESIndexAPI {
 
 	}
 
-	private static String getReplicasMode(){
+	private static String getReplicasValue(){
 
     	String replicasMode;
 
 		if (!ClusterUtils.isReplicasSet()){
 			if (ClusterUtils.isESAutoWire()){
-				replicasMode = ReplicasMode.AUTOWIRE.getReplicasMode();
+				replicasMode = ReplicasMode.AUTOWIRE.getValue();
 			}else{
-				replicasMode = ReplicasMode.EMPTY.getReplicasMode();
+				replicasMode = ReplicasMode.STATIC.getValue();
 			}
 		} else {
 			replicasMode = Config.getStringProperty("ES_INDEX_REPLICAS", null);
@@ -601,7 +601,7 @@ public class ESIndexAPI {
 			builder.field("number_of_replicas",nReplicas);
 			builder.field("auto_expand_replicas",false);
 		}else{
-			builder.field("auto_expand_replicas",ReplicasMode.NO_BOUNDARY.getReplicasMode());
+			builder.field("auto_expand_replicas",ReplicasMode.BOUNDED.getValue());
 		}
 
         client.admin().indices().updateSettings(
@@ -657,7 +657,7 @@ public class ESIndexAPI {
 			map.put("number_of_replicas",nReplicas);
 			map.put("auto_expand_replicas",false);
 		}else{
-			map.put("auto_expand_replicas",ReplicasMode.NO_BOUNDARY.getReplicasMode());
+			map.put("auto_expand_replicas",ReplicasMode.BOUNDED.getValue());
 		}
 
 		// create actual index

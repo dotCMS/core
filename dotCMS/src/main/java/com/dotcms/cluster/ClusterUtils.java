@@ -1,6 +1,5 @@
 package com.dotcms.cluster;
 
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI.ReplicasMode;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.util.Config;
@@ -20,7 +19,7 @@ public class ClusterUtils {
 		final String replicasConf = Config.getStringProperty("ES_INDEX_REPLICAS", null);
 		return isESAutoWire()
 			&& UtilMethods.isSet(replicasConf) &&
-				replicasConf.equals(ReplicasMode.AUTOWIRE.getReplicasMode()) &&
+				replicasConf.equals(ReplicasMode.AUTOWIRE.getValue()) &&
 				LicenseUtil.getLevel()> 200;
 	}
 
