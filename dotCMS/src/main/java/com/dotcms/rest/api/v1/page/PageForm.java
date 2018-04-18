@@ -15,6 +15,7 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
 
 /**
  * {@link PageResource}'s form
@@ -35,7 +36,7 @@ class PageForm {
         this.title = title;
         this.hostId = hostId;
         this.layout = layout;
-        this.changes = changes;
+        this.changes = new ImmutableList.Builder<ContainerUUIDChanged>().addAll(changes).build();
     }
 
     /**

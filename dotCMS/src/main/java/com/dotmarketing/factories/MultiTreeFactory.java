@@ -414,6 +414,7 @@ public class MultiTreeFactory {
         saveMultiTree(multiTree);
     }
 
+    @WrapInTransaction
     public static void updateMultiTree(final String pageId, final String containerId, final String oldRelationType,
                                        final String newRelationType) throws DotDataException {
 
