@@ -12,6 +12,7 @@ import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -21,13 +22,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @JsonDeserialize(builder = PageForm.Builder.class)
 class PageForm {
 
-    private String themeId;
-    private String title;
-    private String hostId;
-    private TemplateLayout layout;
-    private List<ContainerUUIDChanged> changes;
+    private final String themeId;
+    private final String title;
+    private final String hostId;
+    private final TemplateLayout layout;
+    private final List<ContainerUUIDChanged> changes;
 
-    public PageForm(String themeId, String title, String hostId, TemplateLayout layout, List<ContainerUUIDChanged> changes) {
+    public PageForm(final String themeId, final String title, final String hostId, final TemplateLayout layout,
+                    final List<ContainerUUIDChanged> changes) {
+
         this.themeId = themeId;
         this.title = title;
         this.hostId = hostId;
@@ -124,7 +127,7 @@ class PageForm {
 
             try {
                 this.setContainersUUID();
-                String layoutString = MAPPER.writeValueAsString(layout);
+                final String layoutString = MAPPER.writeValueAsString(layout);
                 return MAPPER.readValue(layoutString, TemplateLayout.class);
             } catch (IOException e) {
                 throw new BadRequestException(e, "An error occurred when proccessing the JSON request");
@@ -132,9 +135,9 @@ class PageForm {
         }
 
         private void setContainersUUID() {
-            List<ContainerUUIDChanged> changes = new ArrayList<>();
-            Map<String, Long> maxUUIDByContainer = new HashMap<>();
-            List<Map<String, Map>> rows = (List<Map<String, Map>>) ((Map<String, Object>) layout.get("body")).get("rows");
+            final List<ContainerUUIDChanged> changes = new ArrayList<>();
+            final Map<String, Long> maxUUIDByContainer = new HashMap<>();
+            final List<Map<String, Map>> rows = (List<Map<String, Map>>) ((Map<String, Object>) layout.get("body")).get("rows");
 
             rows.stream()
                     .map(row -> (List<Map<String, Map>>) row.get("columns"))
@@ -143,16 +146,16 @@ class PageForm {
                     .flatMap(containers -> containers.stream())
                     .forEach(container -> {
                         try {
-                            String containerId = container.get("identifier");
-                            long currentUUID = maxUUIDByContainer.get(containerId) != null ?
+                            final String containerId = container.get("identifier");
+                            final long currentUUID = maxUUIDByContainer.get(containerId) != null ?
                                     maxUUIDByContainer.get(containerId) : 0;
-                            long nextUUID = currentUUID + 1;
+                            final long nextUUID = currentUUID + 1;
 
                             if (container.get("uuid") != null) {
-                                ContainerUUID oldContainerUUID = MAPPER.readValue(MAPPER.writeValueAsString(container),
+                                final ContainerUUID oldContainerUUID = MAPPER.readValue(MAPPER.writeValueAsString(container),
                                         ContainerUUID.class);
                                 container.put("uuid", String.valueOf(nextUUID));
-                                ContainerUUID newContainerUUID = MAPPER.readValue(MAPPER.writeValueAsString(container),
+                                final ContainerUUID newContainerUUID = MAPPER.readValue(MAPPER.writeValueAsString(container),
                                         ContainerUUID.class);
                                 changes.add(new ContainerUUIDChanged(oldContainerUUID, newContainerUUID));
                             } else {
@@ -162,7 +165,7 @@ class PageForm {
                             maxUUIDByContainer.put(containerId, nextUUID);
 
                         } catch (IOException e) {
-                            e.printStackTrace();
+                            Logger.error(this.getClass(),"Exception on setContainersUUID exception message: " + e.getMessage(), e);
                         }
                     });
 

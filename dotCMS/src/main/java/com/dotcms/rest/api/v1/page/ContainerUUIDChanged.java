@@ -3,13 +3,13 @@ package com.dotcms.rest.api.v1.page;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 
 /**
- * Created by freddyrodriguez on 4/17/18.
+ * It is a change do by the end point into a {@link ContainerUUID}
  */
 public class ContainerUUIDChanged {
-    private ContainerUUID oldContainer;
-    private ContainerUUID newContainer;
+    private final ContainerUUID oldContainer;
+    private final ContainerUUID newContainer;
 
-    public ContainerUUIDChanged(ContainerUUID oldContainer, ContainerUUID newContainer) {
+    public ContainerUUIDChanged(final ContainerUUID oldContainer, final ContainerUUID newContainer) {
         this.oldContainer = oldContainer;
         this.newContainer = newContainer;
     }

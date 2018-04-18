@@ -414,8 +414,8 @@ public class MultiTreeFactory {
         saveMultiTree(multiTree);
     }
 
-    public static void updateMultiTree(String pageId, String containerId, String oldRelationType,
-                                       String newRelationType) throws DotDataException {
+    public static void updateMultiTree(final String pageId, final String containerId, final String oldRelationType,
+                                       final String newRelationType) throws DotDataException {
 
         new DotConnect().setSQL(UPDATE_RELATION_TYPE_SQL)
                 .addParam(newRelationType)

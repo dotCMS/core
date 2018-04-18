@@ -175,13 +175,13 @@ public class PageResourceHelper implements Serializable {
             template.setDrawed(true);
 
             pageForm.getChanges().forEach(containerUUIDChanged -> {
-                ContainerUUID old = containerUUIDChanged.getOld();
-                ContainerUUID aNew = containerUUIDChanged.getNew();
+                final ContainerUUID old = containerUUIDChanged.getOld();
+                final ContainerUUID aNew = containerUUIDChanged.getNew();
 
                 try {
                     MultiTreeFactory.updateMultiTree(page.getIdentifier(), old.getIdentifier(), old.getUUID(), aNew.getUUID());
                 } catch (DotDataException e) {
-                    e.printStackTrace();
+                    Logger.error(this.getClass(),"Exception on saveTemplate exception message: " + e.getMessage(), e);
                 }
             });
 
