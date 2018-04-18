@@ -28,6 +28,7 @@
 	<!-- START Listing Results -->
 	<div class="form-horizontal">
 
+		<%if(!scheme.isNew()){%>
 		<dl>
 			<dt>
 				<label for=""><%=LanguageUtil.get(pageContext, "Scheme")%> <%=LanguageUtil.get(pageContext, "Id")%>:</label>
@@ -38,6 +39,7 @@
 				</strong>
 			</dd>
 		</dl>
+		<%}%>
 
 		<dl>
 			<dt>
@@ -91,9 +93,11 @@
 		<button dojoType="dijit.form.Button" onClick='schemeAdmin.saveAddEdit()' iconClass="saveIcon" type="button">
 			<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save"))%>
 		</button>
+		<%if(!scheme.isNew()){%>
 		<button dojoType="dijit.form.Button" onClick='schemeAdmin.copyScheme("<%=UtilMethods.webifyString(scheme.getId())%>")' iconClass="saveIcon" type="button">
 			<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Copy"))%>
 		</button>
+		<%}%>
 		<%if(scheme.isArchived()){%>
 		<button dojoType="dijit.form.Button" onClick='schemeAdmin.deleteScheme("<%=UtilMethods.webifyString(scheme.getId())%>")' iconClass="deleteIcon" type="button">
 			<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete"))%>

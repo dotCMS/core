@@ -78,7 +78,7 @@ public class WorkflowActionForm extends Validated {
     }
 
     public Set<WorkflowState> getShowOn() {
-        return Collections.unmodifiableSet(showOn);
+        return (null != showOn)?Collections.unmodifiableSet(showOn):Collections.emptySet();
     }
 
     public boolean isActionRoleHierarchyForAssign() {

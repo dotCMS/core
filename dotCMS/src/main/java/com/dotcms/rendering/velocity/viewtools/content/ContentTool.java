@@ -409,8 +409,11 @@ public class ContentTool implements ViewTool {
 			
 			query=addPersonalizationToQuery(query);
 			String sort = secondarySort==null ? "score" : "score " + secondarySort;
-			return pull(query, offset, limit, sort);
-			
+			if (offset > 0){
+				return pullPerPage(query, offset, limit, sort);
+			}else{
+				return pull(query, offset, limit, sort);
+			}
 		}
 		catch(Throwable ex) {
             if(Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {

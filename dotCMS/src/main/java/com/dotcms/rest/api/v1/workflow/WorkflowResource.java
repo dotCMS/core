@@ -854,8 +854,7 @@ public class WorkflowResource {
     } // exportScheme.
 
     /**
-     * Do an export of the scheme with all dependencies to rebuild it (such as steps and actions)
-     * in addition the permission (who can use) will be also returned.
+     * Do a deep copy of the scheme including steps, action, permissions and so on.
      * @param request  HttpServletRequest
      * @param schemeId String
      * @return Response
@@ -865,7 +864,7 @@ public class WorkflowResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response copy(@Context final HttpServletRequest request,
+    public final Response copyScheme(@Context final HttpServletRequest request,
                                @PathParam("schemeId") final String schemeId) {
 
         final InitDataObject initDataObject = this.webResource.init
