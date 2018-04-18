@@ -1956,8 +1956,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
             //Test the delete
             //Deleting workflow 7
-            workflowScheme7.setArchived(true);
-            workflowAPI.saveScheme(workflowScheme7, user);
+            workflowAPI.archive(workflowScheme7, user);
 
             try {
                 Future<WorkflowScheme> result = workflowAPI.deleteScheme(workflowScheme7, user);
@@ -2140,12 +2139,10 @@ public class WorkflowAPITest extends IntegrationTestBase {
             //delete content type
             contentTypeAPI.delete(keepWfTaskStatusContentType);
 
-            workflowScheme1.setArchived(true);
-            workflowAPI.saveScheme(workflowScheme1, user);
+            workflowAPI.archive(workflowScheme1, user);
             workflowAPI.deleteScheme(workflowScheme1, user);
 
-            workflowScheme2.setArchived(true);
-            workflowAPI.saveScheme(workflowScheme2, user);
+            workflowAPI.archive(workflowScheme2, user);
             workflowAPI.deleteScheme(workflowScheme2, user);
         }
     }
@@ -2263,12 +2260,10 @@ public class WorkflowAPITest extends IntegrationTestBase {
             //delete content type
             contentTypeAPI.delete(contentType);
 
-            workflowScheme1.setArchived(true);
-            workflowAPI.saveScheme(workflowScheme1, user);
+            workflowAPI.archive(workflowScheme1, user);
             workflowAPI.deleteScheme(workflowScheme1, user);
 
-            workflowScheme2.setArchived(true);
-            workflowAPI.saveScheme(workflowScheme2, user);
+            workflowAPI.archive(workflowScheme2, user);
             workflowAPI.deleteScheme(workflowScheme2, user);
         }
     }
@@ -2331,6 +2326,31 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
             workflowScheme.setArchived(true);
             workflowAPI.saveScheme(workflowScheme, user);
+            workflowAPI.deleteScheme(workflowScheme, user);
+        }
+    }
+
+    /**
+     * Test the archive workflow method
+     */
+    @Test
+    public void archive_success_whenWorkflowIsArchived()
+            throws DotDataException, DotSecurityException, AlreadyExistException {
+        WorkflowScheme workflowScheme = null;
+        try {
+
+            workflowScheme = createDocumentManagentReplica(
+                    DOCUMENT_MANAGEMENT_WORKFLOW_NAME + "_6_" + UtilMethods
+                            .dateToHTMLDate(new Date(), DATE_FORMAT));
+
+            assertFalse(workflowScheme.isArchived());
+
+            //archive workflow
+            workflowAPI.archive(workflowScheme, user);
+
+            assertTrue(workflowScheme.isArchived());
+
+        } finally {
             workflowAPI.deleteScheme(workflowScheme, user);
         }
     }
@@ -2536,8 +2556,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             workflowAPI.deleteStep(workflowScheme2Step1, user);
             workflowAPI.deleteStep(workflowScheme2Step2, user);
 
-            workflowScheme2.setArchived(true);
-            workflowAPI.saveScheme(workflowScheme2, user);
+            workflowAPI.archive(workflowScheme2, user);
             workflowAPI.deleteScheme(workflowScheme2, user);
 
             //Deleting workflow 3
@@ -2548,8 +2567,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             workflowAPI.deleteStep(workflowScheme3Step1, user);
             workflowAPI.deleteStep(workflowScheme3Step2, user);
 
-            workflowScheme3.setArchived(true);
-            workflowAPI.saveScheme(workflowScheme3, user);
+            workflowAPI.archive(workflowScheme3, user);
             workflowAPI.deleteScheme(workflowScheme3, user);
 
             //Deleting workflow 4
@@ -2575,16 +2593,14 @@ public class WorkflowAPITest extends IntegrationTestBase {
             workflowAPI.deleteStep(workflowScheme4Step2, user);
             workflowAPI.deleteStep(workflowScheme4Step3, user);
 
-            workflowScheme4.setArchived(true);
-            workflowAPI.saveScheme(workflowScheme4, user);
+            workflowAPI.archive(workflowScheme4, user);
             workflowAPI.deleteScheme(workflowScheme4, user);
 
             //Deleting workflow 5
             workflowAPI.deleteAction(workflowScheme5Step1Action1, user);
             workflowAPI.deleteStep(workflowScheme5Step1, user);
 
-            workflowScheme5.setArchived(true);
-            workflowAPI.saveScheme(workflowScheme5, user);
+            workflowAPI.archive(workflowScheme5, user);
             workflowAPI.deleteScheme(workflowScheme5, user);
 
         }catch (AlreadyExistException e){

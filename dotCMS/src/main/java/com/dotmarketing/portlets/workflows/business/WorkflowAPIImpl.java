@@ -68,8 +68,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	//This by default tells if a license is valid or not.
 	private LicenseValiditySupplier licenseValiditySupplierSupplier = new LicenseValiditySupplier() {};
 
-	protected final DotSubmitter submitter = DotConcurrentFactory.getInstance()
-			.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
+	protected final DotConcurrentFactory concurrentFactory = DotConcurrentFactory.getInstance();
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public WorkflowAPIImpl() {
@@ -325,7 +324,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public void saveSchemesForStruct(final Structure contentType,
 									 final List<WorkflowScheme> schemes) throws DotDataException {
 
-
 		try {
 
 			Logger.debug(this, ()-> "Saving schemes: " + schemes +
@@ -448,8 +446,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			throw new DotWorkflowException("Can not delete workflow Id:" + scheme.getId());
 		}
 
+		final DotSubmitter submitter = this.concurrentFactory.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
 		//Delete the Scheme in a separated thread
-		return this.submitter.submit(() -> deleteSchemeTask(scheme, user));
+		return submitter.submit(() -> deleteSchemeTask(scheme, user));
 	}
 
 	/**
@@ -489,6 +488,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			this.systemMessageEventUtil.pushSimpleTextEvent
 					(LanguageUtil.get(user.getLocale(), "Workflow-deleted", scheme.getName()), user.getUserId());
 		} catch (Exception e) {
+			Logger.error(this.getClass(),
+					"Error deleting Scheme: " + scheme.getId() + ". " + e.getMessage(), e);
 			throw new DotRuntimeException(e);
 		}
 		return scheme;
@@ -1873,6 +1874,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		// 3) get the scheme actions and copy with a diff id
 		// 4) add action class and parameters
 		// 4) associate the stepsFrom to the actions.
+		this.isUserAllowToModifiedWorkflow(user);
+
 		final WorkflowScheme scheme    = new WorkflowScheme();
 
 		Logger.debug(this, ()-> "Copying a new scheme from: "
@@ -1909,6 +1912,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		for (final WorkflowStep step : stepsFrom) {
 
+			int   actionOrder 						= 0;
 			final List<WorkflowAction>  actionSteps =
 					this.findActions(step, user);
 
@@ -1917,7 +1921,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				final String stepId   = steps.get(step.getId()).getId();
 				final String actionId = actions.get(action.getId()).getId();
 
-				this.saveAction(actionId, stepId, user);
+				this.saveAction(actionId, stepId, user, actionOrder++);
 			}
 		}
 
@@ -2293,7 +2297,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		final List<WorkflowScheme> schemes = findSchemesForContentType(contentType);
 		for(WorkflowScheme scheme: schemes){
 			final List<WorkflowStep> steps = findSteps(scheme);
-			actions.addAll(findActions(steps.stream().findFirst().orElse(null), user));
+			actions.addAll(findActions(steps.stream().findFirst().orElse(null), user, contentType));
 		}
 
 		return actions.build();
@@ -2302,6 +2306,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@CloseDBIfOpened
 	public List<WorkflowTask> findTasksByStep(final String stepId) throws DotDataException, DotSecurityException{
 		return this.workFlowFactory.findTasksByStep(this.getLongId(stepId, ShortyIdAPI.ShortyInputType.WORKFLOW_STEP));
+	}
+
+	@Override
+	@WrapInTransaction
+	public void archive(final WorkflowScheme scheme, final User user)
+			throws DotDataException, AlreadyExistException {
+		scheme.setArchived(Boolean.TRUE);
+		saveScheme(scheme, user);
 	}
 
 }

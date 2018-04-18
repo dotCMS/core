@@ -44,6 +44,16 @@ public abstract class HttpStatusCodeException extends WebApplicationException {
         }
     }
 
+    HttpStatusCodeException(final Throwable cause, final Response.Status status, String key, final Object entity, final String message) {
+        super(cause, toResponse(status, entity, key, message));
+        if(Response.Status.NOT_FOUND == status ){
+            Logger.getLogger(this.getClass()).debug(this.getResponse().getEntity().toString(),this);
+        }
+        else{
+            Logger.getLogger(this.getClass()).warn(this.getResponse().getEntity().toString(), this);
+        }
+    }
+
     private static String getFormattedMessage(String message, String... messageArgs){
 
         String messageFormatted;
@@ -78,5 +88,16 @@ public abstract class HttpStatusCodeException extends WebApplicationException {
                        .header("error-key", key)
                        .header("error-message", message)
                        .entity(entity).type(MediaType.APPLICATION_JSON_TYPE).build();
+    }
+
+    private static Response toResponse(final Response.Status status,
+                                       final Object entity,
+                                       final String key,
+                                       final String message) {
+
+        return Response.status(status)
+                .header("error-key", key)
+                .header("error-message", message)
+                .entity(entity).type(MediaType.APPLICATION_JSON_TYPE).build();
     }
 }
