@@ -4,8 +4,11 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -33,20 +36,32 @@ public class ContainerWebAPI implements ViewTool {
     private Context ctx;
     private ViewContext viewContext;
 	private User backuser;
-	private PermissionAPI permissionAPI;
-	private ContainerAPI containerAPI;
+	private final PermissionAPI permissionAPI;
+	private final ContainerAPI containerAPI;
+	private final UserAPI userAPI;
+	final UserWebAPI userWebAPI;
+
+	ContainerWebAPI(){
+		this(APILocator.getPermissionAPI(), APILocator.getContainerAPI(), APILocator.getUserAPI(), WebAPILocator.getUserWebAPI());
+	}
+
+	@VisibleForTesting
+	ContainerWebAPI(final PermissionAPI permissionAPI, final ContainerAPI containerAPI, final UserAPI userAPI,
+					final UserWebAPI userWebAPI){
+
+		this.permissionAPI = permissionAPI;
+		this.containerAPI = containerAPI;
+		this.userAPI = userAPI;
+		this.userWebAPI = userWebAPI;
+	}
 
 	public void init(Object initData) {
 		viewContext = (ViewContext) initData;
 		request = viewContext.getRequest();
         ctx = viewContext.getVelocityContext();
 
-		final UserWebAPI userAPI = WebAPILocator.getUserWebAPI();
-		permissionAPI = APILocator.getPermissionAPI();
-		containerAPI = APILocator.getContainerAPI();
-
 		try {
-			backuser = userAPI.getLoggedInUser(request.getSession());
+			backuser = userWebAPI.getLoggedInUser(request.getSession());
 		} catch (Exception e) {
 			Logger.error(this, "Error finding the logged in user", e);
 		}
@@ -112,11 +127,11 @@ public class ContainerWebAPI implements ViewTool {
 		if(!InodeUtils.isSet(containerInode)) {
 			return false;
 		} else {
-			final User systemUser = APILocator.getUserAPI().getSystemUser();
+			final User systemUser = userAPI.getSystemUser();
 			Container container = null;
 
 			try {
-				container = APILocator.getContainerAPI().find(containerInode, systemUser, false);
+				container = containerAPI.find(containerInode, systemUser, false);
 			} catch (DotSecurityException e) {
 				//This exception should never happend
 				Logger.debug(this.getClass(),
@@ -124,9 +139,8 @@ public class ContainerWebAPI implements ViewTool {
 				throw new DotRuntimeException(e);
 			}
 
-			final User loggedInUser = APILocator.getLoginServiceAPI().getLoggedInUser();
-			final List<ContentType> contentTypesInContainer = containerAPI.getContentTypesInContainer(loggedInUser, container);
-			return !contentTypesInContainer.isEmpty();
+			final List<ContentType> contentTypesInContainer = containerAPI.getContentTypesInContainer(backuser, container);
+			return contentTypesInContainer != null && !contentTypesInContainer.isEmpty();
 		}
 	}
 }
