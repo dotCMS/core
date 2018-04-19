@@ -187,10 +187,6 @@ public interface WorkflowAPI {
 
 	public List<WorkflowScheme> findSchemes(boolean showArchived) throws DotDataException;
 
-	public WorkflowScheme findDefaultScheme() throws DotDataException;
-
-	public boolean isDefaultScheme(WorkflowScheme scheme) throws DotDataException;
-
 	public WorkflowScheme findScheme(String id) throws DotDataException, DotSecurityException;
 
 	public List<WorkflowScheme> findSchemesForStruct(Structure struct) throws DotDataException;

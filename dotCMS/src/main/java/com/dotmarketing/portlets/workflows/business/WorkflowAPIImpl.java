@@ -280,28 +280,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return workFlowFactory.findSchemes(showArchived);
 	}
 
-	@Override
-	@CloseDBIfOpened
-	public WorkflowScheme findDefaultScheme() throws DotDataException {
-		return workFlowFactory.findDefaultScheme();
-	}
 
 	@Override
 	@CloseDBIfOpened
 	public WorkflowScheme findSystemWorkflowScheme() throws DotDataException {
 		return workFlowFactory.findSystemWorkflow();
-	}
-
-	@Override
-	@CloseDBIfOpened
-	public boolean isDefaultScheme(final WorkflowScheme scheme) throws DotDataException {
-		if (scheme == null || scheme.getId() == null) {
-			return false;
-		}
-		if (workFlowFactory.findDefaultScheme().getId().equals(scheme.getId())) {
-			return true;
-		}
-		return false;
 	}
 
 	@Override
