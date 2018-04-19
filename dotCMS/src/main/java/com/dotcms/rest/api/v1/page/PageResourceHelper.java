@@ -171,7 +171,8 @@ public class PageResourceHelper implements Serializable {
         
         try {
             final Host host = getHost(pageForm.getHostId(), user);
-            final Template template = getTemplate(page, user, pageForm);
+            final User systemUser = userAPI.getSystemUser();
+            final Template template = getTemplate(page, systemUser, pageForm);
             final boolean hasPermission = template.isAnonymous() ?
                     permissionAPI.doesUserHavePermission(page, PermissionLevel.EDIT.getType(), user) :
                     permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(), user);
@@ -192,10 +193,11 @@ public class PageResourceHelper implements Serializable {
         return this.saveTemplate(null, user, pageForm);
     }
 
-    private Template getTemplate(IHTMLPage page, User user, PageForm form) throws DotDataException, DotSecurityException {
-        User systemUser = userAPI.getSystemUser();
-        final Template oldTemplate = this.templateAPI.findWorkingTemplate(page.getTemplateId(), systemUser, false);
-        Template saveTemplate;
+    private Template getTemplate(final IHTMLPage page, final User user, final PageForm form)
+            throws DotDataException, DotSecurityException {
+
+        final Template oldTemplate = this.templateAPI.findWorkingTemplate(page.getTemplateId(), user, false);
+        final Template saveTemplate;
 
         if (UtilMethods.isSet(oldTemplate) && (!form.isAnonymousLayout() || oldTemplate.isAnonymous())) {
             saveTemplate = oldTemplate;
