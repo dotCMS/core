@@ -136,7 +136,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	protected final DotConcurrentFactory concurrentFactory = DotConcurrentFactory.getInstance();
 
-	private List <Role> specialRolesHierarchy;
+	private volatile List <Role> specialRolesHierarchy;
 
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
@@ -2228,22 +2228,25 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 * @return a list of special roles ordered by permission precedence.
 	 * @throws DotDataException
 	 */
-	private synchronized List<Role> getSpecialRolesHierarchy() throws DotDataException {
-
+	private List<Role> getSpecialRolesHierarchy() throws DotDataException {
 		if (specialRolesHierarchy == null) {
-				final Role anyWhoCanEditPermisionsContent = roleAPI
-						.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_PERMISSIONS_ROLE_KEY);
-				final Role anyWhoCanPublishContent = roleAPI
-						.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_PUBLISH_ROLE_KEY);
-				final Role anyWhoCanEditContent = roleAPI
-						.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_ROLE_KEY);
-				final Role anyWhoCanViewContent = roleAPI
-						.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_VIEW_ROLE_KEY);
+			synchronized (this) {
+				if (specialRolesHierarchy == null) {
+					final Role anyWhoCanEditPermisionsContent = roleAPI
+							.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_PERMISSIONS_ROLE_KEY);
+					final Role anyWhoCanPublishContent = roleAPI
+							.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_PUBLISH_ROLE_KEY);
+					final Role anyWhoCanEditContent = roleAPI
+							.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_ROLE_KEY);
+					final Role anyWhoCanViewContent = roleAPI
+							.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_VIEW_ROLE_KEY);
 
-				// Do not alter the order of the Elements on the list. It is tied to the logic!!
-				specialRolesHierarchy = ImmutableList
-						.of(anyWhoCanEditPermisionsContent, anyWhoCanPublishContent,
-								anyWhoCanEditContent, anyWhoCanViewContent);
+					// Do not alter the order of the Elements on the list. It is tied to the logic!!
+					specialRolesHierarchy = ImmutableList
+							.of(anyWhoCanEditPermisionsContent, anyWhoCanPublishContent,
+									anyWhoCanEditContent, anyWhoCanViewContent);
+				}
+			}
 		}
 		return specialRolesHierarchy;
 	}
@@ -2281,7 +2284,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 * @throws DotDataException
 	 */
 	private boolean hasAnyRolePermission(final WorkflowAction wa,final Iterable<Role> roles) throws DotDataException{
-        for(Role role:roles){
+        for(final Role role:roles){
 			if (permissionAPI.doesRoleHavePermission(wa, PermissionAPI.PERMISSION_USE, role)) {
                 return true;
 			}
