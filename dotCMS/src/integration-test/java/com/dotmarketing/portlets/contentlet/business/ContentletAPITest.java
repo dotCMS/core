@@ -55,6 +55,7 @@ import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapterImpl;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
 import org.jetbrains.annotations.NotNull;
+import org.jruby.RubyProcess.Sys;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -2046,7 +2047,9 @@ public class ContentletAPITest extends ContentletBaseTest {
         StructureFactory.saveStructure(testStructure);
 
         // some dates to play with
-        Date d1= new Date();
+
+        String date = "11-08-1992 10:20:56";
+        Date d1= dateFormat.parse(date);
         Date d2=new Date(d1.getTime()+60000L);
         Date d3=new Date(d2.getTime()+60000L);
         Date d4=new Date(d3.getTime()+60000L);
@@ -2119,7 +2122,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         final long count = APILocator.getContentletAPI().indexCount(q, user, false);
         assertEquals(1, count);
         APILocator.getStructureAPI().delete(testStructure, user);
-    }
+    }//HASTA ACA LLEGA EL TEST
 
     private boolean compareDates(Date date1, Date date2) {
 
