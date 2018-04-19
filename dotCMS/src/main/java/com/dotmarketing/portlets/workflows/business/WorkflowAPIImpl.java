@@ -488,6 +488,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		this.isUserAllowToModifiedWorkflow(user);
 
+		if (UtilMethods.isSet(scheme.getId())) {
+			scheme.setId(this.getLongIdForScheme(scheme.getId()));
+		}
+
 		if (null != scheme && SYSTEM_WORKFLOW_ID.equals(scheme.getId())
 				&& scheme.isArchived()) {
 
@@ -666,6 +670,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		DotPreconditions.isTrue(UtilMethods.isSet(step.getName()) && UtilMethods.isSet(step.getSchemeId()),
 				()-> "Step name and Scheme are required", DotStateException.class);
+
+		if (UtilMethods.isSet(step.getSchemeId())) {
+			step.setSchemeId(this.getLongIdForScheme(step.getSchemeId()));
+		}
+
+		if (UtilMethods.isSet(step.getId())) {
+			step.setId(this.getLongId(step.getId(), ShortyIdAPI.ShortyInputType.WORKFLOW_STEP));
+		}
 
 		workFlowFactory.saveStep(step);
 	}
@@ -1116,6 +1128,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				DoesNotExistException.class);
 
 		try {
+
+			if (UtilMethods.isSet(action.getSchemeId())) {
+				action.setSchemeId(this.getLongId(action.getSchemeId(), ShortyIdAPI.ShortyInputType.WORKFLOW_SCHEME));
+			}
+
+			if (UtilMethods.isSet(action.getId())) {
+				action.setId(this.getLongId(action.getId(), ShortyIdAPI.ShortyInputType.WORKFLOW_ACTION));
+			}
 
 			this.saveAction(action, user);
 
