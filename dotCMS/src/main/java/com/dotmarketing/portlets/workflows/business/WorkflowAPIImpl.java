@@ -1867,7 +1867,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@WrapInTransaction
 	@Override
-	public WorkflowScheme deepCopyWorkflowScheme(final WorkflowScheme from, final User user) throws DotDataException, AlreadyExistException, DotSecurityException {
+	public WorkflowScheme deepCopyWorkflowScheme(final WorkflowScheme from, final User user,
+												 final Optional<String> optionalName) throws DotDataException, AlreadyExistException, DotSecurityException {
 
 		// 1) create the scheme with a copy_name_timestamp
 		// 2) get the stepsFrom and do a copy with the same name
@@ -1881,7 +1882,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		Logger.debug(this, ()-> "Copying a new scheme from: "
 				+ from.getId() + ", name= " + from.getName());
 
-		scheme.setName(from.getName() + "_" + System.currentTimeMillis());
+		scheme.setName(optionalName.isPresent() && UtilMethods.isSet(optionalName.get())?optionalName.get():from.getName() + "_" + System.currentTimeMillis());
 		scheme.setArchived(from.isArchived());
 		scheme.setCreationDate(new Date());
 		scheme.setDescription(from.getDescription());

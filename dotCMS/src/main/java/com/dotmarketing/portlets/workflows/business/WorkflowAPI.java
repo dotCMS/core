@@ -506,10 +506,12 @@ public interface WorkflowAPI {
 
 	/**
 	 * Do a deep copy of the scheme, copying the steps, actions, etc.
-	 * @param from WorkflowScheme
+	 * @param from WorkflowScheme scheme from you want to do the copy
+	 * @param user User user that is creating the copy
+	 * @param optionalName Optional String  optional name for the scheme.
 	 * @throws DotDataException
 	 */
-	public WorkflowScheme deepCopyWorkflowScheme(WorkflowScheme from, final User user) throws DotDataException, AlreadyExistException, DotSecurityException;
+	public WorkflowScheme deepCopyWorkflowScheme(WorkflowScheme from, final User user, final Optional<String> optionalName) throws DotDataException, AlreadyExistException, DotSecurityException;
 
     public java.util.List<WorkflowTask> searchAllTasks(WorkflowSearcher searcher) throws DotDataException;
 
