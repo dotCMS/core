@@ -1,21 +1,28 @@
 package com.dotcms.rest.exception.mapper;
 
+import static com.dotcms.exception.ExceptionUtil.ValidationError;
+import static com.dotcms.exception.ExceptionUtil.mapValidationException;
+import static com.dotcms.util.CollectionsUtils.map;
+
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.rest.ErrorEntity;
+import com.dotcms.rest.ResponseEntityView;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-
-import javax.servlet.http.HttpServletRequest;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-
-import static com.dotcms.util.CollectionsUtils.map;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Created by Oscar Arrieta on 8/27/15.
@@ -139,5 +146,33 @@ public final class ExceptionMapperUtil {
         return Response
                 .status(status)
                 .build();
+    }
+
+    /**
+     * Build a response extracting the info from the Content validation exception
+     * @param status
+     * @param ve
+     * @return
+     */
+    public static Response createResponse(final Response.Status status,
+            final DotContentletValidationException ve) {
+        final List<ErrorEntity> errorEntities = new ArrayList<>();
+        try {
+            final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+            final User user = WebAPILocator.getUserWebAPI().getUser(request);
+            final Map<String, List<ValidationError>> contentValidationErrors =
+                    mapValidationException(user, ve);
+
+            contentValidationErrors.forEach((k, errors)
+                    -> {
+                for (ValidationError e :errors) {
+                    errorEntities.add(new ErrorEntity(k, e.getMessage(), e.getField()));
+                }
+            });
+        } catch (Exception e) {
+            Logger.debug(ExceptionMapperUtil.class, e.getMessage(), e);
+        }
+        return Response.status(status).entity(new ResponseEntityView(errorEntities))
+                .type(MediaType.APPLICATION_JSON).build();
     }
 }
