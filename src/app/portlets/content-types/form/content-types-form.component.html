@@ -1,4 +1,4 @@
-<form [formGroup]="form" class="content-type__form" id="content-type-form" novalidate>
+<form [formGroup]="form" class="content-type__form" id="content-type-form" novalidate (keyup.enter)="submitForm()">
     <div class="form__group">
         <span dotMdInputtext label="{{ nameFieldLabel }}">
             <input pInputText type="text" id="content-type-form-name" name="name" formControlName="name" tabindex="1" #name class="mousetrap" />

@@ -12,10 +12,10 @@
         {{ dotMessageService.get('contenttypes.content.push_publish') }}
     </p-header>
 
-    <form [formGroup]="form" (ngSubmit)="submitPushAction($event)" novalidate #formEl="ngForm">
+    <form [formGroup]="form" (ngSubmit)="submitPushAction($event)" (keyup.enter)="submitPushAction($event)" novalidate #formEl="ngForm">
         <div class="form__group">
             <label class="form__label">{{ dotMessageService.get('contenttypes.content.push_publish.I_want_To') }}: </label>
-            <p-dropdown [style]="{'width':'100%'}" [options]="pushActions" formControlName="pushActionSelected"></p-dropdown>
+            <p-dropdown [style]="{'width':'100%'}" [options]="pushActions" formControlName="pushActionSelected" autofocus="true"></p-dropdown>
         </div>
 
         <div class="form__group" *ngIf="form.get('pushActionSelected').value === 'publish' || form.get('pushActionSelected').value === 'publishexpire'">

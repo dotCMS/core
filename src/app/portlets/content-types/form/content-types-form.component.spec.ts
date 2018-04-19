@@ -325,7 +325,7 @@ describe('ContentTypesFormComponent', () => {
             '#content-type-form-expire-date-field'
         ];
 
-        fields.forEach((field) => {
+        fields.forEach(field => {
             expect(fixture.debugElement.query(By.css(field))).not.toBeNull();
         });
     });
@@ -370,10 +370,11 @@ describe('ContentTypesFormComponent', () => {
             publishDateVar: 'publishDateVar',
             system: false,
             urlMapPattern: '/url/map',
-            workflows: [{
-                id: 'workflow-id'
-            }]
-
+            workflows: [
+                {
+                    id: 'workflow-id'
+                }
+            ]
         };
 
         comp.data = fakeData;
@@ -416,7 +417,7 @@ describe('ContentTypesFormComponent', () => {
             '#content-type-form-url-map-pattern'
         ];
 
-        fields.forEach((field) => {
+        fields.forEach(field => {
             expect(fixture.debugElement.query(By.css(field))).not.toBeNull();
         });
     });
@@ -493,44 +494,87 @@ describe('ContentTypesFormComponent', () => {
         let data = null;
         spyOn(comp, 'submitForm').and.callThrough();
 
-        comp.submit.subscribe((res) => (data = res));
+        comp.submit.subscribe(res => (data = res));
         comp.submitForm();
 
         expect(comp.submitForm).toHaveBeenCalled();
         expect(data).toBeNull();
     });
 
-    it('should send data with valid form', () => {
-        spyOn(dotLicenseService, 'isEnterpriseLicense').and.returnValue(Observable.of(true));
-
+    it('should not submit a valid form without changes and in Edit mode', () => {
         comp.data = {
-            baseType: 'CONTENT'
+            baseType: 'CONTENT',
+            id: '123'
         };
+        comp.fields = [
+            {
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableDateTimeField',
+                id: '123',
+                indexed: true,
+                name: 'publishDateVar'
+            }
+        ];
         fixture.detectChanges();
-
-        let data = null;
         spyOn(comp, 'submitForm').and.callThrough();
+        spyOn(comp.submit, 'emit');
 
-        comp.submit.subscribe((res) => (data = res));
-
-        comp.form.controls.name.setValue('A content type name');
-
-        fixture.detectChanges();
         comp.submitForm();
 
-        expect(comp.submitForm).toHaveBeenCalledTimes(1);
-        expect(data).toEqual({
-            clazz: '',
-            description: '',
-            detailPage: '',
-            host: '',
-            name: 'A content type name',
-            urlMapPattern: '',
-            defaultType: null,
-            fixed: null,
-            folder: null,
-            system: null,
-            workflow: ['85c1515c-c4f3-463c-bac2-860b8fcacc34']
+        expect(comp.submitForm).toHaveBeenCalled();
+        expect(comp.submit.emit).not.toHaveBeenCalled();
+    });
+
+    describe('send data with valid form', () => {
+        let data;
+
+        beforeEach(() => {
+            spyOn(dotLicenseService, 'isEnterpriseLicense').and.returnValue(Observable.of(true));
+            comp.data = {
+                baseType: 'CONTENT'
+            };
+            fixture.detectChanges();
+            data = null;
+            spyOn(comp, 'submitForm').and.callThrough();
+            comp.submit.subscribe(res => (data = res));
+            comp.form.controls.name.setValue('A content type name');
+            fixture.detectChanges();
+        });
+
+        it('should submit form correctly', () => {
+            comp.submitForm();
+
+            expect(comp.submitForm).toHaveBeenCalledTimes(1);
+            expect(data).toEqual({
+                clazz: '',
+                description: '',
+                detailPage: '',
+                host: '',
+                name: 'A content type name',
+                urlMapPattern: '',
+                defaultType: null,
+                fixed: null,
+                folder: null,
+                system: null,
+                workflow: ['85c1515c-c4f3-463c-bac2-860b8fcacc34']
+            });
+        });
+        it('should submit form correctly on Enter', () => {
+            const form = fixture.debugElement.query(By.css('form'));
+            form.nativeElement.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter' }));
+            expect(comp.submitForm).toHaveBeenCalledTimes(1);
+            expect(data).toEqual({
+                clazz: '',
+                description: '',
+                detailPage: '',
+                host: '',
+                name: 'A content type name',
+                urlMapPattern: '',
+                defaultType: null,
+                fixed: null,
+                folder: null,
+                system: null,
+                workflow: ['85c1515c-c4f3-463c-bac2-860b8fcacc34']
+            });
         });
     });
 

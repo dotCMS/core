@@ -132,7 +132,7 @@ export class ContentTypesFormComponent implements OnInit {
      * @memberof ContentTypesFormComponent
      */
     submitForm(): void {
-        if (this.form.valid) {
+        if (this.canSave) {
             this.submit.emit({
                 ...this.form.value,
                 workflow: this.form.getRawValue().workflow

@@ -113,7 +113,7 @@ describe('PushPublishContentTypesDialogComponent', () => {
 
         fixture.detectChanges();
 
-        comp.cancel.subscribe((res) => {
+        comp.cancel.subscribe(res => {
             expect(res).toEqual(true);
         });
     });
@@ -184,33 +184,54 @@ describe('PushPublishContentTypesDialogComponent', () => {
         expect(pushPublishServiceMock.pushPublishContent).not.toHaveBeenCalled();
     });
 
-    it('should call pushPublishContent service method with the right params when the form is submitted and is valid', () => {
-        fixture.detectChanges();
-        spyOn(comp, 'submitPushAction').and.callThrough();
-        spyOn(pushPublishServiceMock, 'pushPublishContent');
+    describe('pushPublishContent service method with the right params when the form is submitted and is valid', () => {
+        let newDate;
+        let form;
 
-        const newDate = new Date();
-        const form = fixture.debugElement.query(By.css('form'));
+        beforeEach(() => {
+            fixture.detectChanges();
+            spyOn(comp, 'submitPushAction').and.callThrough();
+            spyOn(pushPublishServiceMock, 'pushPublishContent');
 
-        comp.form.get('pushActionSelected').setValue('publishexpire');
-        comp.form.get('publishdate').setValue(newDate);
-        comp.form.get('expiredate').setValue(newDate);
-        comp.form.get('environment').setValue(['my environment, my second environment']);
-        comp.form.get('forcePush').setValue(true);
+            newDate = new Date();
+            form = fixture.debugElement.query(By.css('form'));
 
-        fixture.componentInstance.pushPublishIdentifier = '7ad979-89a-97ada9d9ad';
-        fixture.detectChanges();
+            comp.form.get('pushActionSelected').setValue('publishexpire');
+            comp.form.get('publishdate').setValue(newDate);
+            comp.form.get('expiredate').setValue(newDate);
+            comp.form.get('environment').setValue(['my environment, my second environment']);
+            comp.form.get('forcePush').setValue(true);
 
-        form.nativeElement.dispatchEvent(new Event('submit'));
+            fixture.componentInstance.pushPublishIdentifier = '7ad979-89a-97ada9d9ad';
+            fixture.detectChanges();
+        });
 
-        expect(comp.submitPushAction).toHaveBeenCalledTimes(1);
-        expect(comp.form.valid).toBeTruthy();
-        expect(pushPublishServiceMock.pushPublishContent).toHaveBeenCalledWith('7ad979-89a-97ada9d9ad', {
-            pushActionSelected: 'publishexpire',
-            publishdate: newDate,
-            expiredate: newDate,
-            environment: ['my environment, my second environment'],
-            forcePush: true
+        it('should submit form correctly', () => {
+            form.nativeElement.dispatchEvent(new Event('submit'));
+
+            expect(comp.submitPushAction).toHaveBeenCalledTimes(1);
+            expect(comp.form.valid).toBeTruthy();
+            expect(pushPublishServiceMock.pushPublishContent).toHaveBeenCalledWith('7ad979-89a-97ada9d9ad', {
+                pushActionSelected: 'publishexpire',
+                publishdate: newDate,
+                expiredate: newDate,
+                environment: ['my environment, my second environment'],
+                forcePush: true
+            });
+        });
+
+        it('should submit form correctly on Enter', () => {
+            form.nativeElement.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter' }));
+
+            expect(comp.submitPushAction).toHaveBeenCalledTimes(1);
+            expect(comp.form.valid).toBeTruthy();
+            expect(pushPublishServiceMock.pushPublishContent).toHaveBeenCalledWith('7ad979-89a-97ada9d9ad', {
+                pushActionSelected: 'publishexpire',
+                publishdate: newDate,
+                expiredate: newDate,
+                environment: ['my environment, my second environment'],
+                forcePush: true
+            });
         });
     });
 });

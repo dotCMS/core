@@ -89,7 +89,7 @@ describe('DotAddToBundleComponent', () => {
 
         fixture.detectChanges();
 
-        comp.cancel.subscribe((res) => {
+        comp.cancel.subscribe(res => {
             expect(res).toEqual(true);
         });
     });
@@ -164,24 +164,41 @@ describe('DotAddToBundleComponent', () => {
         expect(comp.placeholder).toEqual('Select or type bundle');
     });
 
-    it('should call addToBundle service method with the right params when the form is submitted and is valid', () => {
-        fixture.detectChanges();
-        spyOn(comp, 'submitBundle').and.callThrough();
-        spyOn(addToBundleServiceMock, 'addToBundle');
-        const form = fixture.debugElement.query(By.css('form'));
+    describe('should call addToBundle service method with the right params when the form is submitted and is valid', () => {
+        let form;
 
-        comp.form.get('addBundle').setValue({ id: '12345', name: 'my bundle' });
+        beforeEach(() => {
+            fixture.detectChanges();
+            spyOn(comp, 'submitBundle').and.callThrough();
+            spyOn(addToBundleServiceMock, 'addToBundle');
+            form = fixture.debugElement.query(By.css('form'));
 
-        fixture.componentInstance.addToBundleIdentifier = '7ad979-89a-97ada9d9ad';
-        fixture.detectChanges();
+            comp.form.get('addBundle').setValue({ id: '12345', name: 'my bundle' });
 
-        form.nativeElement.dispatchEvent(new Event('submit'));
+            fixture.componentInstance.addToBundleIdentifier = '7ad979-89a-97ada9d9ad';
+            fixture.detectChanges();
+        });
 
-        expect(comp.submitBundle).toHaveBeenCalledTimes(1);
-        expect(comp.form.valid).toBeTruthy();
-        expect(addToBundleServiceMock.addToBundle).toHaveBeenCalledWith('7ad979-89a-97ada9d9ad', {
-            id: '12345',
-            name: 'my bundle'
+        it('should submit form correctly', () => {
+            form.nativeElement.dispatchEvent(new Event('submit'));
+
+            expect(comp.submitBundle).toHaveBeenCalledTimes(1);
+            expect(comp.form.valid).toBeTruthy();
+            expect(addToBundleServiceMock.addToBundle).toHaveBeenCalledWith('7ad979-89a-97ada9d9ad', {
+                id: '12345',
+                name: 'my bundle'
+            });
+        });
+
+        it('should submit form correctly on Enter', () => {
+            form.nativeElement.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter' }));
+
+            expect(comp.submitBundle).toHaveBeenCalledTimes(1);
+            expect(comp.form.valid).toBeTruthy();
+            expect(addToBundleServiceMock.addToBundle).toHaveBeenCalledWith('7ad979-89a-97ada9d9ad', {
+                id: '12345',
+                name: 'my bundle'
+            });
         });
     });
 });
