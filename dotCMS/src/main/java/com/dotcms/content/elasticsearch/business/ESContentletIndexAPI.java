@@ -37,10 +37,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
 import org.elasticsearch.action.admin.indices.stats.IndexStats;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.IndicesAdminClient;
@@ -334,6 +337,28 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 			indexContentletList(req, contentToIndex, reindexOnly);
 			if(bulk==null && req.numberOfActions()>0){
 				req.execute().actionGet();
+			}
+		} catch (DotStateException | DotSecurityException | DotMappingException e) {
+			throw new DotDataException (e.getMessage(), e);
+		}
+	}
+
+
+	@Override
+	public void indexContentList(final List<Contentlet> contentToIndex,
+								 final BulkRequestBuilder bulk,
+								 final boolean reindexOnly,
+								 ActionListener<BulkResponse> listener) throws  DotDataException {
+
+		if(contentToIndex==null || contentToIndex.size()==0){
+			return;
+		}
+		Client client=new ESClient().getClient();
+		BulkRequestBuilder req = (bulk==null) ? client.prepareBulk() : bulk;
+		try {
+			indexContentletList(req, contentToIndex, reindexOnly);
+			if(bulk==null && req.numberOfActions()>0){
+				req.execute(listener);
 			}
 		} catch (DotStateException | DotSecurityException | DotMappingException e) {
 			throw new DotDataException (e.getMessage(), e);

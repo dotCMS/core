@@ -35,6 +35,10 @@
 				</div>
 			</div>
 	    	<div class="portlet-toolbar__actions-secondary">
+				<button dojoType="dijit.form.Button"
+						onClick="schemeAdmin.showImport();return false;" iconClass="addIcon">
+					<%=LanguageUtil.get(pageContext, "Import-Workflow-Scheme")%>
+				</button>
 	    		<button dojoType="dijit.form.Button"
 					onClick="schemeAdmin.showAddEdit();return false;" iconClass="addIcon">
 					<%=LanguageUtil.get(pageContext, "Add-Workflow-Scheme")%>
