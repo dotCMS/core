@@ -347,7 +347,7 @@
 		<%if(end < total){
 			long next=(end < total?end:total);
 		%>
-			<td align="right" width="33%" ><button class="solr_right" dojoType="dijit.form.Button" onClick="refreshQueueList('offset=<%=next%>&limit=<%=limit%>');return false;" iconClass="nextIcon"><%= LanguageUtil.get(pageContext, "publisher_Next") %></button></td>
+			<td align="right" width="33%" ><button style="float: right;" dojoType="dijit.form.Button" onClick="refreshQueueList('offset=<%=next%>&limit=<%=limit%>');return false;" iconClass="nextIcon"><%= LanguageUtil.get(pageContext, "publisher_Next") %></button></td>
 		<%}else{ %>
 			<td  width="33%" >&nbsp;</td>
 		<%} %>
