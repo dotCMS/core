@@ -178,7 +178,7 @@ public class PageResourceHelper implements Serializable {
                     permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(), user);
 
             if (!hasPermission) {
-                throw new DotSecurityException("The user don't have permission to EDIT");
+                throw new DotSecurityException("The user doesn't have permission to EDIT");
             }
 
             template.setDrawed(true);
