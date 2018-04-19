@@ -2,14 +2,11 @@ package com.dotcms.content.elasticsearch.util;
 
 import com.google.common.annotations.VisibleForTesting;
 
-import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
-
-import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
+import com.dotcms.cluster.business.ClusterAPI;
+import com.dotcms.cluster.business.ReplicasMode;
 import com.dotcms.cluster.business.ServerAPI;
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
-import com.dotcms.content.elasticsearch.business.ESIndexAPI.ReplicasMode;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -17,12 +14,7 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
+
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.Settings;
@@ -34,21 +26,30 @@ import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeValidationException;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
+
 public class ESClient {
 
 	private static Node _nodeInstance;
 	final String syncMe = "esSync";
 	private final ServerAPI serverAPI;
 	static final String ES_TRANSPORT_HOST = "transport.host";
-	private final ESIndexAPI esIndexAPI;
+	private final ClusterAPI clusterAPI;
 
 	public ESClient() {
-	    this(APILocator.getServerAPI(), new ESIndexAPI());
+	    this(APILocator.getServerAPI(), APILocator.getClusterAPI());
     }
 
-    public ESClient(ServerAPI serverAPI, ESIndexAPI esIndexAPI) {
+    public ESClient(ServerAPI serverAPI, ClusterAPI clusterAPI) {
         this.serverAPI = serverAPI;
-        this.esIndexAPI = esIndexAPI;
+        this.clusterAPI = clusterAPI;
     }
 
     public Client getClient() {
@@ -131,11 +132,10 @@ public class ESClient {
             //Build the replicas config settings for the indices client
             final Optional<UpdateSettingsRequest> settingsRequest = getReplicasSettings();
 
-            if(settingsRequest.isPresent()) {
-                _nodeInstance.client().admin().indices().updateSettings(
-                        settingsRequest.get()
-                ).actionGet();
-            }
+            settingsRequest.ifPresent(updateSettingsRequest -> _nodeInstance.client().admin().indices().updateSettings(
+                updateSettingsRequest
+            ).actionGet());
+
         } catch (IndexNotFoundException e) {
             /*
             Updating settings without Indices will throw this exception but should be only visible
@@ -164,20 +164,19 @@ public class ESClient {
     private Optional<UpdateSettingsRequest> getReplicasSettings () throws IOException {
         UpdateSettingsRequest settingsRequest = new UpdateSettingsRequest();
 
-        final int nReplicas = esIndexAPI.getReplicasCount();
+        final ReplicasMode replicasMode = clusterAPI.getReplicasMode();
         final XContentBuilder builder = jsonBuilder().startObject()
                 .startObject("index");
 
-        if (nReplicas >= 0){
-            builder.field("number_of_replicas",nReplicas);
-            builder.field("auto_expand_replicas",false).endObject();
-        }else{
-            builder.field("auto_expand_replicas", ReplicasMode.BOUNDED.getValue()).endObject();
-        }
+        builder.field("number_of_replicas",replicasMode.getNumberOfReplicas());
+        builder.field("auto_expand_replicas",replicasMode.getAutoExpandReplicas()).endObject();
+
         settingsRequest.settings(builder.endObject().string(), XContentType.JSON);
 
         return Optional.of(settingsRequest);
     }
+
+
 
     /**
      * Builds and returns the settings for starting up the ES node.

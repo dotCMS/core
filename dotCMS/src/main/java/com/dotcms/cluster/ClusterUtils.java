@@ -1,10 +1,15 @@
 package com.dotcms.cluster;
 
-import com.dotcms.content.elasticsearch.business.ESIndexAPI.ReplicasMode;
+import com.dotcms.cluster.business.ReplicasMode;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 
+/**
+ * Deprecated as of 5.0.0. Please use {@link com.dotcms.cluster.business.ClusterAPI}
+ */
+
+@Deprecated
 public class ClusterUtils {
 
 	public static boolean isTransportAutoWire(){
@@ -13,14 +18,6 @@ public class ClusterUtils {
 
 	public static boolean isESAutoWire(){
 		return Config.getBooleanProperty("AUTOWIRE_CLUSTER_ES", true)&& LicenseUtil.getLevel()> 200;
-	}
-
-	public static boolean isESAutoWireReplicas(){
-		final String replicasConf = Config.getStringProperty("ES_INDEX_REPLICAS", null);
-		return isESAutoWire()
-			&& UtilMethods.isSet(replicasConf) &&
-				replicasConf.equals(ReplicasMode.AUTOWIRE.getValue()) &&
-				LicenseUtil.getLevel()> 200;
 	}
 
 	public static boolean isReplicasSet(){
