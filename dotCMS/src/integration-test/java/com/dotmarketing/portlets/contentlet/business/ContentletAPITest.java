@@ -55,7 +55,6 @@ import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapterImpl;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
 import org.jetbrains.annotations.NotNull;
-import org.jruby.RubyProcess.Sys;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -2122,7 +2121,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         final long count = APILocator.getContentletAPI().indexCount(q, user, false);
         assertEquals(1, count);
         APILocator.getStructureAPI().delete(testStructure, user);
-    }//HASTA ACA LLEGA EL TEST
+    }
 
     private boolean compareDates(Date date1, Date date2) {
 
