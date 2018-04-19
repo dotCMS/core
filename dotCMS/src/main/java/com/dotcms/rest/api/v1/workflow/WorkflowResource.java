@@ -157,7 +157,8 @@ public class WorkflowResource {
     /**
      * Returns all schemes non-archived associated to a content type. 401 if the user does not have permission.
      * @param request  HttpServletRequest
-     * @param contentTypeId String content type id to get the schemes associated to it.
+     * @param contentTypeId String content type id to get the schemes associated to it, is this is null return
+     *                      all the schemes (archived and non-archived).
      * @return Response
      */
     @GET
