@@ -4,9 +4,8 @@
         pInputText
         type="text"
         [formControlName]="property.name">
-
     <dot-field-validation-message
-        [message]="this.getErrorLabel()"
+        [message]="this.errorLabel"
         [field]="group.controls[property.name]">
     </dot-field-validation-message>
 </div>
