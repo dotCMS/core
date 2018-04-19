@@ -60,7 +60,8 @@ public class PageResourceHelper implements Serializable {
     private final HostAPI hostAPI = APILocator.getHostAPI();
     private final LanguageAPI langAPI = APILocator.getLanguageAPI();
     private final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
-
+    private final UserAPI userAPI = APILocator.getUserAPI();
+    private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
     /**
      * Private constructor
@@ -170,7 +171,15 @@ public class PageResourceHelper implements Serializable {
         
         try {
             final Host host = getHost(pageForm.getHostId(), user);
-            Template template = getTemplate(page, user, pageForm);
+            final Template template = getTemplate(page, user, pageForm);
+            final boolean hasPermission = template.isAnonymous() ?
+                    permissionAPI.doesUserHavePermission(page, PermissionLevel.EDIT.getType(), user) :
+                    permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(), user);
+
+            if (!hasPermission) {
+                throw new DotSecurityException("The user don't have permission to EDIT");
+            }
+
             template.setDrawed(true);
             return this.templateAPI.saveTemplate(template, host, user, false);
         } catch (Exception e) {
@@ -184,8 +193,8 @@ public class PageResourceHelper implements Serializable {
     }
 
     private Template getTemplate(IHTMLPage page, User user, PageForm form) throws DotDataException, DotSecurityException {
-
-        final Template oldTemplate = this.templateAPI.findWorkingTemplate(page.getTemplateId(), user, false);
+        User systemUser = userAPI.getSystemUser();
+        final Template oldTemplate = this.templateAPI.findWorkingTemplate(page.getTemplateId(), systemUser, false);
         Template saveTemplate;
 
         if (UtilMethods.isSet(oldTemplate) && (!form.isAnonymousLayout() || oldTemplate.isAnonymous())) {
