@@ -1,12 +1,12 @@
 <div [formGroup]="group">
-    <label class="form__label">{{ i18nMessages['contenttypes.field.properties.default_value.label'] }}</label>
-    <input 
-        pInputText 
-        type="text" 
+    <label class="form__label">{{ dotMessageService.get('contenttypes.field.properties.default_value.label') }}</label>
+    <input
+        pInputText
+        type="text"
         [formControlName]="property.name">
 
-    <dot-field-validation-message 
-        [message]="i18nMessages['contenttypes.field.properties.default_value..error.format']" 
+    <dot-field-validation-message
+        [message]="this.getErrorLabel()"
         [field]="group.controls[property.name]">
     </dot-field-validation-message>
 </div>
