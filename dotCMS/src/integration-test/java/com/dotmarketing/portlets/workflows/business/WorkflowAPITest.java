@@ -596,7 +596,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             final WorkflowScheme scheme =
                     workflowAPI.findSystemWorkflowScheme();
 
-            schemeCopied = workflowAPI.deepCopyWorkflowScheme(scheme, user);
+            schemeCopied = workflowAPI.deepCopyWorkflowScheme(scheme, user, Optional.empty());
 
             assertNotNull(schemeCopied);
             assertNotEquals(schemeCopied.getId(), scheme.getId());

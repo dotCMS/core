@@ -66,6 +66,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 import javax.servlet.http.HttpServletRequest;
 
@@ -887,6 +888,7 @@ public class WorkflowResource {
 
     /**
      * Do a deep copy of the scheme including steps, action, permissions and so on.
+     * You can include a query string name, to include the scheme name
      * @param request  HttpServletRequest
      * @param schemeId String
      * @return Response
@@ -897,7 +899,8 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response copyScheme(@Context final HttpServletRequest request,
-                               @PathParam("schemeId") final String schemeId) {
+                               @PathParam("schemeId") final String schemeId,
+                               @QueryParam("name") final String name) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
@@ -911,8 +914,8 @@ public class WorkflowResource {
             response     = Response.ok(new ResponseEntityView(
                     this.workflowAPI.deepCopyWorkflowScheme(
                             this.workflowAPI.findScheme(schemeId),
-                            initDataObject.getUser())
-                    )).build(); // 200
+                            initDataObject.getUser(), Optional.of(name)))
+                    ).build(); // 200
         } catch (Exception e){
             Logger.error(this.getClass(),
                     "Exception on exportScheme, Error exporting the schemes", e);
