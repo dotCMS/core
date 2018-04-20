@@ -26,17 +26,20 @@ public class ClusterAPIImpl implements ClusterAPI {
 
     @Override
     public boolean isTransportAutoWire() {
-        return Config.getBooleanProperty("AUTOWIRE_CLUSTER_TRANSPORT", true) && LicenseUtil.getLevel()> 200;
+        return Config.getBooleanProperty("AUTOWIRE_CLUSTER_TRANSPORT", true)
+            && LicenseUtil.getLevel()> LicenseLevel.STANDARD.level;
     }
 
     @Override
     public boolean isESAutoWire() {
-        return Config.getBooleanProperty("AUTOWIRE_CLUSTER_ES", true)&& LicenseUtil.getLevel()> 200;
+        return Config.getBooleanProperty("AUTOWIRE_CLUSTER_ES", true)
+            && LicenseUtil.getLevel()> LicenseLevel.STANDARD.level;
     }
 
     @Override
     public boolean isReplicasSetInConfig() {
-        return UtilMethods.isSet(Config.getStringProperty("ES_INDEX_REPLICAS", null)) && LicenseUtil.getLevel()> 200;
+        return UtilMethods.isSet(Config.getStringProperty("ES_INDEX_REPLICAS", null))
+            && LicenseUtil.getLevel()> LicenseLevel.STANDARD.level;
     }
 
     @Override
@@ -47,7 +50,7 @@ public class ClusterAPIImpl implements ClusterAPI {
     @Override
     public ReplicasMode getReplicasMode(){
 
-        ReplicaModeFactory replicaModeFactory = new ReplicaModeFactory();
+        final ReplicaModeFactory replicaModeFactory = new ReplicaModeFactory();
         ReplicasMode replicasMode;
 
         if (isReplicasSetInConfig()) {

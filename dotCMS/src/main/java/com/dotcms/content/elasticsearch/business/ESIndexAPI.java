@@ -141,8 +141,8 @@ public class ESIndexAPI {
 	}
 
 	@VisibleForTesting
-	protected ESIndexAPI(ESClient esclient, ESContentletIndexAPI iapi, ESIndexHelper esIndexHelper,
-						 ServerAPI serverAPI, ClusterAPI clusterAPI){
+	protected ESIndexAPI(final ESClient esclient, final ESContentletIndexAPI iapi, final ESIndexHelper esIndexHelper,
+						 final ServerAPI serverAPI, final ClusterAPI clusterAPI){
 		this.esclient = esclient;
 		this.iapi = iapi;
 		this.esIndexHelper = esIndexHelper;
@@ -579,7 +579,8 @@ public class ESIndexAPI {
 		}
 		Map map = new ObjectMapper().readValue(settings, LinkedHashMap.class);
 		map.put("number_of_shards", shards);
-		map.put("index.mapping.total_fields.limit", 5000);
+		map.put("index.mapping.total_fields.limit",
+			Config.getIntProperty("ES_INDEX_MAPPING_TOTAL_FIELD_LIMITS", 5000));
 
 		map.put("number_of_replicas",replicasMode.getNumberOfReplicas());
 		map.put("auto_expand_replicas",replicasMode.getAutoExpandReplicas());

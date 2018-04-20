@@ -12,7 +12,7 @@ public class ReplicaModeFactory {
     public ReplicasMode fromConfig() {
         ReplicasMode replicasMode = null;
 
-        String replicasValueFromConfig = Config.getStringProperty("ES_INDEX_REPLICAS", null);
+        final String replicasValueFromConfig = Config.getStringProperty("ES_INDEX_REPLICAS", null);
 
         if(replicasValueFromConfig.equalsIgnoreCase(AUTOWIRE.name())) {
             replicasMode = AUTOWIRE;

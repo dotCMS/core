@@ -26,11 +26,11 @@ public enum ReplicasMode { AUTOWIRE(-1, "false"), BOUNDED(-1, "0-all"), STATIC(1
         return autoExpandReplicas;
     }
 
-    public void setNumberOfReplicas(int numberOfReplicas) {
+    public void setNumberOfReplicas(final int numberOfReplicas) {
         this.numberOfReplicas = numberOfReplicas;
     }
 
-    public void setAutoExpandReplicas(String autoExpandReplicas) {
+    public void setAutoExpandReplicas(final String autoExpandReplicas) {
         this.autoExpandReplicas = autoExpandReplicas;
     }
 }

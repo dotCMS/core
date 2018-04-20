@@ -14,6 +14,7 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.liferay.util.StringPool;
 
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.elasticsearch.client.Client;
@@ -47,7 +48,7 @@ public class ESClient {
 	    this(APILocator.getServerAPI(), APILocator.getClusterAPI());
     }
 
-    public ESClient(ServerAPI serverAPI, ClusterAPI clusterAPI) {
+    public ESClient(final ServerAPI serverAPI, final ClusterAPI clusterAPI) {
         this.serverAPI = serverAPI;
         this.clusterAPI = clusterAPI;
     }
@@ -224,23 +225,23 @@ public class ESClient {
         return externalSettings;
 	}
 
-    private void updateServerTransportConfFromSettings(Server currentServer, Builder externalSettings) {
+    private void updateServerTransportConfFromSettings(Server currentServer, final Builder externalSettings) {
 
         final int transportTCPPort = Integer.parseInt(externalSettings
             .get(ServerPort.ES_TRANSPORT_TCP_PORT.getPropertyName()));
 
-        currentServer = Server.builder(currentServer)
+        Server currentServerWithTransportSettings = Server.builder(currentServer)
             .withIpAddress(externalSettings.get(ES_TRANSPORT_HOST)).withEsTransportTcpPort(transportTCPPort).build();
 
         try {
-            serverAPI.updateServer(currentServer);
+            serverAPI.updateServer(currentServerWithTransportSettings);
         } catch (DotDataException e) {
             Logger.error(this,
-                "Error trying to update server. Server Id: " + currentServer.getServerId());
+                "Error trying to update server. Server Id: " + currentServer.getServerId(), e);
         }
     }
 
-    private void updateServerHttpConfFromSettings(Server currentServer, Builder externalSettings) {
+    private void updateServerHttpConfFromSettings(Server currentServer, final Builder externalSettings) {
 
 	    if(!UtilMethods.isSet(externalSettings.get(ServerPort.ES_HTTP_PORT.getPropertyName()))) {
 	        return;
@@ -249,14 +250,15 @@ public class ESClient {
         final int httpPort = Integer.parseInt(externalSettings
             .get(ServerPort.ES_HTTP_PORT.getPropertyName()));
 
-        currentServer = Server.builder(currentServer).withEsHttpPort(httpPort).build();
+        Server currentServerWithPort = Server.builder(currentServer).withEsHttpPort(httpPort).build();
 
         try {
-            serverAPI.updateServer(currentServer);
+            serverAPI.updateServer(currentServerWithPort);
         } catch (DotDataException e) {
             Logger.error(this,
-                "Error trying to update server. Server Id: " + currentServer.getServerId());
+                "Error trying to update server. Server Id: " + currentServer.getServerId(), e);
         }
+
     }
 
     /**
@@ -348,7 +350,7 @@ public class ESClient {
             ? server.getHost()
             : server.getIpAddress();
         final String port = Integer.toString(server.getEsTransportTcpPort());
-        return ipAddress + ":" + port;
+        return ipAddress + StringPool.COLON + port;
     }
 
     /**
@@ -381,7 +383,7 @@ public class ESClient {
 	    shutDownNode();
 	}
 
-	public String getNextAvailableESPort(final String serverId, final String bindAddr, final Builder externalSettings) {
+	private String getNextAvailableESPort(final String serverId, final String bindAddr, final Builder externalSettings) {
         return getNextAvailableESPort(serverId, bindAddr, null, externalSettings);
     }
 
@@ -391,7 +393,7 @@ public class ESClient {
 	 * @param serverId Server identification
 	 * @param bindAddr Address where the port should be running
 	 * @param basePort Initial port to check
-	 * @param externalSettings
+	 * @param externalSettings settings used to override configuration
      * @return port
 	 */
 	public String getNextAvailableESPort(final String serverId, final String bindAddr, final String basePort,
