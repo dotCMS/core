@@ -25,6 +25,7 @@ import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet;
@@ -257,6 +258,8 @@ public class WorkflowHelper {
             Logger.debug(this, () -> "Looking for the actionId: "
                     + workflowReorderActionStepForm.getActionId());
             action = this.workflowAPI.findAction(workflowReorderActionStepForm.getActionId(), user);
+        } catch (InvalidLicenseException e){
+            throw new DotSecurityException(e);
         } catch (Exception e) {
             Logger.error(this, e.getMessage());
             Logger.debug(this, e.getMessage(), e);

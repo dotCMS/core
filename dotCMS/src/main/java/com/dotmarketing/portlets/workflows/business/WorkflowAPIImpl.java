@@ -30,6 +30,7 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -108,7 +109,7 @@ import org.osgi.framework.BundleContext;
 
 public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
-	private final List<Class> actionletClasses;
+	private final List<Class<? extends WorkFlowActionlet>> actionletClasses;
 
 	private static Map<String, WorkFlowActionlet> actionletMap;
 
@@ -134,7 +135,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	//This by default tells if a license is valid or not.
 	private LicenseValiditySupplier licenseValiditySupplierSupplier = new LicenseValiditySupplier() {};
 
-	protected final DotConcurrentFactory concurrentFactory = DotConcurrentFactory.getInstance();
+	private final DotConcurrentFactory concurrentFactory = DotConcurrentFactory.getInstance();
 
 	private volatile List <Role> specialRolesHierarchy;
 
@@ -142,10 +143,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public WorkflowAPIImpl() {
 
-		actionletClasses = new ArrayList<Class>();
+		actionletClasses = new ArrayList<>();
 
 		// Add default actionlet classes
-		actionletClasses	.addAll(Arrays.asList(new Class[] {
+		actionletClasses.addAll(Arrays.asList(
 				CommentOnWorkflowActionlet.class,
 				NotifyUsersActionlet.class,
 				ArchiveContentActionlet.class,
@@ -170,7 +171,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				SaveContentAsDraftActionlet.class,
 				CopyActionlet.class,
 				MessageActionlet.class
-		}));
+		));
 
 		refreshWorkFlowActionletMap();
 		registerBundleService();
@@ -238,26 +239,36 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 
+    @Override
+    public void isUserAllowToModifiedWorkflow(final User user) {
 
-	@Override
-	public void isUserAllowToModifiedWorkflow (final User user) {
+        // if the class calling the workflow api is not friend, so checks the validation
+        if (!this.getFriendClass().isFriend()) {
+            if (!hasValidLicense()) {
+                throw new InvalidLicenseException("Workflow-Schemes-License-required");
+            }
 
-		try {
-			// if the class calling the workflow api is not friend, so checks the validation
-			if (!this.getFriendClass().isFriend()) {
-				DotPreconditions.isTrue(
-						(hasValidLicense()) &&
-								APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("workflow-schemes", user),
-						() -> "User " + user + " cannot access workflows ", NotAllowedUserWorkflowException.class);
-			}
-		} catch (DotDataException e) {
-			throw new NotAllowedUserWorkflowException(e);
-		}
-	}
+            boolean hasAccessToPortlet = false;
+
+            try {
+                hasAccessToPortlet = (APILocator.getLayoutAPI()
+                        .doesUserHaveAccessToPortlet("workflow-schemes", user));
+            } catch (DotDataException e) {
+                Logger.error(this,
+                        "Unable to verify access to portlet : workflow-schemes for user with id: "
+                                + user.getUserId(), e);
+            }
+
+            if (!hasAccessToPortlet) {
+                throw new WorkflowPortletAccessException("Workflow-Portlet-Access-denied");
+            }
+        }
+
+    }
 
 	@Override
 	public WorkFlowActionlet newActionlet(String className) throws DotDataException {
-		for ( Class<WorkFlowActionlet> z : actionletClasses ) {
+		for ( Class<? extends WorkFlowActionlet> z : actionletClasses ) {
 			if ( z.getName().equals(className.trim())) {
 				try {
 					return z.newInstance();
@@ -381,7 +392,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		if (!SYSTEM_WORKFLOW_ID.equals(schemeId)) {
 			if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
-				throw new DotSecurityException("Workflow-Schemes-License-required");
+				throw new InvalidLicenseException("Workflow-Schemes-License-required");
 			}
 		}
 
@@ -922,7 +933,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			DotSecurityException {
 		if (!SYSTEM_WORKFLOW_ID.equals(scheme.getId())) {
 			if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
-				throw new DotSecurityException("Workflow-Actions-License-required");
+				throw new InvalidLicenseException("Workflow-Actions-License-required");
 			}
 		}
 
@@ -1089,8 +1100,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		if(null != workflowAction){
 			if (!SYSTEM_WORKFLOW_ID.equals(workflowAction.getSchemeId())) {
 				if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
-
-					throw new DotSecurityException("Workflow-Actions-License-required");
+					throw new InvalidLicenseException("Workflow-Actions-License-required");
 				}
 			}
 		}
@@ -1110,7 +1120,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		if (null != workflowAction) {
 			if (!SYSTEM_WORKFLOW_ID.equals(workflowAction.getSchemeId())) {
 				if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
-					throw new DotSecurityException("Workflow-Actions-License-required");
+					throw new InvalidLicenseException("Workflow-Actions-License-required");
 				}
 			}
 		}
@@ -1162,10 +1172,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	private boolean existsScheme(final String schemeId) {
 
 		boolean existsScheme = false;
-
 		try {
-
 			existsScheme = null != this.findScheme(schemeId);
+		} catch (InvalidLicenseException e){
+			throw e;
 		} catch (Exception e) {
 			existsScheme = false;
 		}
@@ -1272,7 +1282,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		if (!SYSTEM_WORKFLOW_ID.equals(step.getSchemeId())) {
 			if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
 
-				throw new DotSecurityException(
+				throw new InvalidLicenseException(
 						"You must have a valid license to see any available step.");
 			}
 		}
@@ -1349,7 +1359,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					}
 
 					// get the included (shipped with) actionlet classes
-					for (Class<WorkFlowActionlet> z : actionletClasses) {
+					for (Class<? extends WorkFlowActionlet> z : actionletClasses) {
 						try {
 							actionletList.add(z.newInstance());
 						} catch (InstantiationException e) {
@@ -2219,7 +2229,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		final int index = specialRolesHierarchy.indexOf(role);
 		//Determine if we're dealing with a special role
 		if(index >= 0){
-			//If so.. get a sublist with preserving the precedence. so we can apply a filter with the resulting piece of hierarchy.
+			//If so.. get a sublist preserving the precedence. so we can apply a filter with the resulting piece of hierarchy.
 			final List<Role> rolesSubset = specialRolesHierarchy.subList(index, specialRolesHierarchy.size());
 			while (workflowActionIterator.hasNext()) {
 				final WorkflowAction wa = workflowActionIterator.next();
@@ -2245,7 +2255,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	/**
 	 * Returns an immutable list with the Hierarchy of special roles according to the permission precedence.
-	 * This means that the position roles[i] has more precedence in that roles[i+1]
+	 * This means that the position roles[i] has more precedence than roles[i+1]
 	 * @return a list of special roles ordered by permission precedence.
 	 * @throws DotDataException
 	 */

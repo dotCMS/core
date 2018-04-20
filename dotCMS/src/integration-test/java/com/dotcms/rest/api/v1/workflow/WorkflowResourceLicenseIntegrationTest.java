@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.workflow;
 
+import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.CURRENT_STEP;
+import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.actionName;
 import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.addSteps;
 import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.createContentTypeAndAssignPermissions;
 import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.createImportExportObjectForm;
@@ -10,6 +12,8 @@ import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.findSchem
 import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.findSteps;
 import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.schemeName;
 import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.stepName;
+import static com.dotcms.rest.exception.mapper.ExceptionMapperUtil.ACCESS_CONTROL_HEADER_INVALID_LICENSE;
+import static com.dotcms.rest.exception.mapper.ExceptionMapperUtil.ACCESS_CONTROL_HEADER_PERMISSION_VIOLATION;
 import static com.dotmarketing.business.Role.ADMINISTRATOR;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -23,7 +27,6 @@ import static org.mockito.Mockito.when;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.util.LicenseValiditySupplier;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
 import com.dotcms.rest.ContentHelper;
@@ -32,7 +35,10 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.util.LicenseValiditySupplier;
+import com.dotcms.workflow.form.WorkflowActionForm;
 import com.dotcms.workflow.form.WorkflowActionStepForm;
+import com.dotcms.workflow.form.WorkflowReorderWorkflowActionStepForm;
 import com.dotcms.workflow.form.WorkflowSchemeForm;
 import com.dotcms.workflow.form.WorkflowSchemeImportObjectForm;
 import com.dotcms.workflow.form.WorkflowStepAddForm;
@@ -48,11 +54,14 @@ import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPIImpl;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.liferay.portal.model.User;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -147,7 +156,8 @@ public class WorkflowResourceLicenseIntegrationTest {
         final WorkflowSchemeForm form = new WorkflowSchemeForm.Builder()
                 .schemeName(randomSchemaName).schemeDescription("").schemeArchived(false).build();
         final Response saveResponse = nonLicenseWorkflowResource.save(request, form);
-        assertEquals(Status.UNAUTHORIZED.getStatusCode(), saveResponse.getStatus());
+        assertEquals(Status.FORBIDDEN.getStatusCode(), saveResponse.getStatus());
+        assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE,saveResponse.getHeaderString("access-control"));
     }
 
     @Test
@@ -155,7 +165,8 @@ public class WorkflowResourceLicenseIntegrationTest {
         final WorkflowScheme savedScheme = createScheme(licenseWorkflowResource);
         final HttpServletRequest request1 = mock(HttpServletRequest.class);
         final Response response = nonLicenseWorkflowResource.delete(request1,savedScheme.getId());
-        assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
+        assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE,response.getHeaderString("access-control"));
     }
 
     @Test
@@ -173,7 +184,8 @@ public class WorkflowResourceLicenseIntegrationTest {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final Response findResponse = nonLicenseWorkflowResource
                 .findActionsByScheme(request, defaultScheme.getId());
-        assertEquals(Status.UNAUTHORIZED.getStatusCode(), findResponse.getStatus());
+        assertEquals(Status.FORBIDDEN.getStatusCode(), findResponse.getStatus());
+        assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE,findResponse.getHeaderString("access-control"));
     }
 
     @Test
@@ -187,7 +199,8 @@ public class WorkflowResourceLicenseIntegrationTest {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final Response findResponse = nonLicenseWorkflowResource
                 .findAction(request, actions.get(0).getId());
-        assertEquals(Status.UNAUTHORIZED.getStatusCode(), findResponse.getStatus());
+        assertEquals(Status.FORBIDDEN.getStatusCode(), findResponse.getStatus());
+        assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE,findResponse.getHeaderString("access-control"));
     }
 
     @Test
@@ -205,7 +218,8 @@ public class WorkflowResourceLicenseIntegrationTest {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final Response findResponse = nonLicenseWorkflowResource
                 .findActionByStep(request, steps.get(0).getId(), o.get().getId());
-        assertEquals(Status.UNAUTHORIZED.getStatusCode(), findResponse.getStatus());
+        assertEquals(Status.FORBIDDEN.getStatusCode(), findResponse.getStatus());
+        assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE,findResponse.getHeaderString("access-control"));
     }
 
     @Test
@@ -216,7 +230,24 @@ public class WorkflowResourceLicenseIntegrationTest {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final Response findResponse = nonLicenseWorkflowResource
                 .findStepsByScheme(request, defaultScheme.getId());
-        assertEquals(Status.UNAUTHORIZED.getStatusCode(), findResponse.getStatus());
+        assertEquals(Status.FORBIDDEN.getStatusCode(), findResponse.getStatus());
+        assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE,findResponse.getHeaderString("access-control"));
+    }
+
+    @Test
+    public void Delete_Steps_Invalid_License() {
+        final int numSteps = 2;
+        final WorkflowScheme savedScheme = createScheme(licenseWorkflowResource);
+        assertNotNull(savedScheme);
+        final List<WorkflowStep> workflowSteps = addSteps(licenseWorkflowResource, savedScheme, numSteps);
+        assertFalse(workflowSteps.isEmpty());
+        final HttpServletRequest removeStepRequest = mock(HttpServletRequest.class);
+
+        for(final WorkflowStep ws: workflowSteps){
+           final Response deleteStepResponse = nonLicenseWorkflowResource.deleteStep(removeStepRequest, ws.getId());
+           assertEquals(Status.FORBIDDEN.getStatusCode(), deleteStepResponse.getStatus());
+           assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE,deleteStepResponse.getHeaderString("access-control"));
+        }
     }
 
     @Test
@@ -254,7 +285,8 @@ public class WorkflowResourceLicenseIntegrationTest {
             final HttpServletRequest request = mock(HttpServletRequest.class);
             final Response findResponse = nonLicenseWorkflowResource
                     .findAllSchemesAndSchemesByContentType(request, contentType.id());
-            assertEquals(Status.UNAUTHORIZED.getStatusCode(), findResponse.getStatus());
+            assertEquals(Status.FORBIDDEN.getStatusCode(), findResponse.getStatus());
+            assertEquals(ACCESS_CONTROL_HEADER_PERMISSION_VIOLATION,findResponse.getHeaderString("access-control"));
         } finally {
             if(contentType != null){
                APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);
@@ -270,7 +302,8 @@ public class WorkflowResourceLicenseIntegrationTest {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         WorkflowSchemeForm form = new WorkflowSchemeForm.Builder().schemeDescription("lol").schemeArchived(false).schemeName(updatedName).build();
         final Response updateResponse = nonLicenseWorkflowResource.update(request,savedScheme.getId(), form);
-        assertEquals(Status.UNAUTHORIZED.getStatusCode(), updateResponse.getStatus());
+        assertEquals(Status.FORBIDDEN.getStatusCode(), updateResponse.getStatus());
+        assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE, updateResponse.getHeaderString("access-control"));
     }
 
     @Test
@@ -284,7 +317,8 @@ public class WorkflowResourceLicenseIntegrationTest {
                 .escalationTime("0").escalationAction("").stepResolved(false).build();
         final Response addStepResponse = nonLicenseWorkflowResource
                 .addStep(addStepRequest, workflowStepAddForm);
-        assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), addStepResponse.getStatus());
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), addStepResponse.getStatus());
+        assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE, addStepResponse.getHeaderString("access-control"));
     }
 
     @Test
@@ -301,8 +335,8 @@ public class WorkflowResourceLicenseIntegrationTest {
         final HttpServletRequest reorderStepRequest = mock(HttpServletRequest.class);
         final Response reorderStepResponse = nonLicenseWorkflowResource
                 .reorderStep(reorderStepRequest, stepId, newPosition);
-        assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), reorderStepResponse.getStatus());
-
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), reorderStepResponse.getStatus());
+        assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE, reorderStepResponse.getHeaderString("access-control"));
     }
 
     @Test
@@ -318,10 +352,125 @@ public class WorkflowResourceLicenseIntegrationTest {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final WorkflowStepUpdateForm updatedValuesForm = new WorkflowStepUpdateForm.Builder().enableEscalation(false).escalationAction("").escalationTime("0").enableEscalation(false).stepName(updatedName).stepOrder(newOrder).build();
         final Response updateStepResponse = nonLicenseWorkflowResource.updateStep(request, workflowStep.getId(), updatedValuesForm);
-        assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), updateStepResponse.getStatus());
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), updateStepResponse.getStatus());
+        assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE, updateStepResponse.getHeaderString("access-control"));
     }
 
     @Test
+    public void Find_Step_By_Id_Invalid_License(){
+        final int numSteps = 1;
+        final WorkflowScheme savedScheme = createScheme(licenseWorkflowResource);
+        assertNotNull(savedScheme);
+        final List<WorkflowStep> workflowSteps = addSteps(licenseWorkflowResource, savedScheme, numSteps);
+        assertFalse(workflowSteps.isEmpty());
+        final WorkflowStep workflowStep = workflowSteps.get(0);
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final Response updateStepResponse = nonLicenseWorkflowResource.findStepById(request,workflowStep.getId());
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), updateStepResponse.getStatus());
+        assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE, updateStepResponse.getHeaderString("access-control"));
+    }
+
+
+    @Test
+    public void Reorder_Action_InvalidLicense() throws Exception {
+        final Role adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
+        final String adminRoleId = adminRole.getId();
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final int numSteps = 2;
+        final WorkflowScheme savedScheme = createScheme(licenseWorkflowResource);
+        assertNotNull(savedScheme);
+        final List<WorkflowStep> workflowSteps = addSteps(licenseWorkflowResource, savedScheme,
+                numSteps);
+
+        final List<WorkflowAction> actions = createWorkflowActions(licenseWorkflowResource,
+                savedScheme, adminRoleId, workflowSteps);
+        assertEquals(2, actions.size());
+
+        final WorkflowStep firstStep = workflowSteps.get(0);
+        final WorkflowAction firstAction = actions.get(0);
+
+        final Response findResponse = nonLicenseWorkflowResource
+                .reorderAction(request, firstStep.getId(), firstAction.getId(),
+                        new WorkflowReorderWorkflowActionStepForm.Builder().order(1).build());
+        assertEquals(Status.FORBIDDEN.getStatusCode(), findResponse.getStatus());
+        assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE,
+                findResponse.getHeaderString("access-control"));
+    }
+
+    @Test
+    public void Save_Action_InvalidLicense() throws Exception {
+        final Role adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
+        final String adminRoleId = adminRole.getId();
+        final WorkflowScheme savedScheme = createScheme(licenseWorkflowResource);
+        assertNotNull(savedScheme);
+        final List<WorkflowStep> workflowSteps = addSteps(licenseWorkflowResource, savedScheme,1);
+        assertFalse(workflowSteps.isEmpty());
+        assertEquals(1, workflowSteps.size());
+        final List<WorkflowAction> actions = createWorkflowActions(licenseWorkflowResource, savedScheme, adminRoleId, workflowSteps);
+        assertEquals(1, actions.size());
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+
+        final Set<WorkflowState> states = WorkflowState.toSet(WorkflowState.values());
+        final String actionNewName = actionName();
+
+        final WorkflowActionForm form = new WorkflowActionForm.Builder()
+                .schemeId(savedScheme.getId()).
+                        stepId(workflowSteps.get(0).getId()).
+                        actionId(actions.get(0).getId()).
+                        actionName(actionNewName).
+                        showOn(states).
+                        actionNextStep(CURRENT_STEP).
+                        actionAssignable(false).
+                        actionCommentable(false).
+                        requiresCheckout(false).
+                        actionNextAssign(adminRoleId).
+                        whoCanUse(Collections.singletonList("")).
+                        actionCondition("").
+                        build();
+
+        final Response findResponse = nonLicenseWorkflowResource.save(request,form);
+        assertEquals(Status.FORBIDDEN.getStatusCode(), findResponse.getStatus());
+        assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE, findResponse.getHeaderString("access-control"));
+    }
+
+
+    @Test
+    public void Update_Action_Invalid_License() throws Exception {
+
+            final Role adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
+            final String adminRoleId = adminRole.getId();
+            final WorkflowScheme savedScheme = createScheme(licenseWorkflowResource);
+            assertNotNull(savedScheme);
+            final List<WorkflowStep> workflowSteps = addSteps(licenseWorkflowResource, savedScheme,1);
+            assertFalse(workflowSteps.isEmpty());
+            assertEquals(1, workflowSteps.size());
+            final List<WorkflowAction> actions = createWorkflowActions(licenseWorkflowResource, savedScheme, adminRoleId, workflowSteps);
+            assertEquals(1, actions.size());
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+
+            final Set<WorkflowState> states = WorkflowState.toSet(WorkflowState.values());
+            final String actionNewName = actionName();
+
+            final WorkflowActionForm form = new WorkflowActionForm.Builder().schemeId(savedScheme.getId()).
+                    stepId(workflowSteps.get(0).getId()).
+                    actionName(actionNewName).
+                    showOn(states).
+                    actionNextStep(CURRENT_STEP).
+                    actionAssignable(false).
+                    actionCommentable(false).
+                    requiresCheckout(false).
+                    actionNextAssign(adminRoleId).
+                    whoCanUse(Collections.singletonList("")).
+                    actionCondition("").
+                    build();
+
+            final String actionId = actions.get(0).getId();
+            final Response updateResponse = nonLicenseWorkflowResource.updateAction(request, actionId, form);
+            assertEquals(Status.FORBIDDEN.getStatusCode(), updateResponse.getStatus());
+            assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE, updateResponse.getHeaderString("access-control"));
+    }
+
+        @Test
     public void Save_Action_To_Step_Invalid_License() throws Exception{
         final Role adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
         final String adminRoleId = adminRole.getId();
@@ -336,13 +485,59 @@ public class WorkflowResourceLicenseIntegrationTest {
         final WorkflowStep secondStep = workflowSteps.get(1);
         final WorkflowAction firstAction = actions.get(0);
 
-        final HttpServletRequest request1 = mock(HttpServletRequest.class);
+        final HttpServletRequest request = mock(HttpServletRequest.class);
         //assign the first action to the second step
         final Response saveActionToStepResponse = nonLicenseWorkflowResource.saveActionToStep(
-                request1, secondStep.getId(),
+                request, secondStep.getId(),
                 new WorkflowActionStepForm.Builder().actionId(firstAction.getId()).build()
         );
-        assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), saveActionToStepResponse.getStatus());
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), saveActionToStepResponse.getStatus());
+        assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE, saveActionToStepResponse.getHeaderString("access-control"));
+    }
+
+    @Test
+    public void Delete_Action_Invalid_License()throws Exception {
+        final Role adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
+        final String adminRoleId = adminRole.getId();
+        final WorkflowScheme savedScheme = createScheme(licenseWorkflowResource);
+        assertNotNull(savedScheme);
+        final List<WorkflowStep> workflowSteps = addSteps(licenseWorkflowResource, savedScheme,1);
+        assertFalse(workflowSteps.isEmpty());
+        assertEquals(1, workflowSteps.size());
+        final List<WorkflowAction> actions = createWorkflowActions(licenseWorkflowResource, savedScheme, adminRoleId, workflowSteps);
+        assertEquals(1, actions.size());
+
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final Response findResponse = nonLicenseWorkflowResource.deleteAction(request,actions.get(0).getId());
+        assertEquals(Status.FORBIDDEN.getStatusCode(), findResponse.getStatus());
+        assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE, findResponse.getHeaderString("access-control"));
+    }
+
+    @Test
+    public void Delete_Action_by_Action_and_Step_Id_Invalid_License()throws Exception {
+        final Role adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
+        final String adminRoleId = adminRole.getId();
+        final WorkflowScheme savedScheme = createScheme(licenseWorkflowResource);
+        assertNotNull(savedScheme);
+        final List<WorkflowStep> workflowSteps = addSteps(licenseWorkflowResource, savedScheme,1);
+        assertFalse(workflowSteps.isEmpty());
+        assertEquals(1, workflowSteps.size());
+        final List<WorkflowAction> actions = createWorkflowActions(licenseWorkflowResource, savedScheme, adminRoleId, workflowSteps);
+        assertEquals(1, actions.size());
+
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final Response findResponse = nonLicenseWorkflowResource.deleteAction(request, actions.get(0).getId(), workflowSteps.get(0).getId());
+        assertEquals(Status.FORBIDDEN.getStatusCode(), findResponse.getStatus());
+        assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE, findResponse.getHeaderString("access-control"));
+    }
+
+    @Test
+    public void Copy_Invalid_License() throws Exception {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final WorkflowScheme savedScheme = createScheme(licenseWorkflowResource);
+        final Response findResponse = nonLicenseWorkflowResource.copyScheme(request, savedScheme.getId(), savedScheme.getName()  + "_copy");
+        assertEquals(Status.FORBIDDEN.getStatusCode(), findResponse.getStatus());
+        assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE, findResponse.getHeaderString("access-control"));
     }
 
     @Test
@@ -350,7 +545,8 @@ public class WorkflowResourceLicenseIntegrationTest {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final WorkflowSchemeImportObjectForm form = createImportExportObjectForm();
         final Response response = nonLicenseWorkflowResource.importScheme(request,form);
-        assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
+        assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE, response.getHeaderString("access-control"));
     }
 
     @Test
@@ -358,7 +554,8 @@ public class WorkflowResourceLicenseIntegrationTest {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final WorkflowScheme savedScheme = createScheme(licenseWorkflowResource);
         final Response exportResponse = nonLicenseWorkflowResource.exportScheme(request, savedScheme.getId());
-        assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), exportResponse.getStatus());
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), exportResponse.getStatus());
+        assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE, exportResponse.getHeaderString("access-control"));
     }
 
 
@@ -405,7 +602,8 @@ public class WorkflowResourceLicenseIntegrationTest {
             final HttpServletRequest request = mock(HttpServletRequest.class);
             final Response findResponse = nonLicenseWorkflowResource
                     .findAvailableDefaultActionsByContentType(request, contentType.id());
-            assertEquals(Status.UNAUTHORIZED.getStatusCode(), findResponse.getStatus());
+            assertEquals(Status.FORBIDDEN.getStatusCode(), findResponse.getStatus());
+            assertEquals(ACCESS_CONTROL_HEADER_PERMISSION_VIOLATION, findResponse.getHeaderString("access-control"));
         } finally {
             if(contentType != null){
                 APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);
@@ -441,7 +639,8 @@ public class WorkflowResourceLicenseIntegrationTest {
             final HttpServletRequest request = mock(HttpServletRequest.class);
             final Response findResponse = nonLicenseWorkflowResource
                     .findInitialAvailableActionsByContentType(request, contentType.id());
-            assertEquals(Status.UNAUTHORIZED.getStatusCode(), findResponse.getStatus());
+            assertEquals(Status.FORBIDDEN.getStatusCode(), findResponse.getStatus());
+            assertEquals(ACCESS_CONTROL_HEADER_PERMISSION_VIOLATION, findResponse.getHeaderString("access-control"));
         } finally {
             if(contentType != null){
                 APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);

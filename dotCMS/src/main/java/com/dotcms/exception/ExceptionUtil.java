@@ -16,12 +16,13 @@ import com.dotcms.rest.exception.ValidationException;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetValidationException;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
-import com.dotmarketing.portlets.workflows.business.NotAllowedUserWorkflowException;
+import com.dotmarketing.portlets.workflows.business.WorkflowPortletAccessException;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
@@ -45,7 +46,7 @@ public class ExceptionUtil {
 
     public static final Set<Class<? extends Throwable>> SECURITY_EXCEPTIONS = ImmutableSet
             .of(SecurityException.class, DotSecurityException.class,
-                    NotAllowedUserWorkflowException.class);
+                    InvalidLicenseException.class,WorkflowPortletAccessException.class);
 
     public static final Set<Class<? extends Throwable>> NOT_FOUND_EXCEPTIONS = ImmutableSet
             .of(NotFoundInDbException.class, DoesNotExistException.class);
