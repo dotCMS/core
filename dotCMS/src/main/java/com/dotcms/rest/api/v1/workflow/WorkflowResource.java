@@ -821,6 +821,8 @@ public class WorkflowResource {
 
             Logger.debug(this, "Importing the workflow schemes");
 
+            this.workflowAPI.isUserAllowToModifiedWorkflow(initDataObject.getUser());
+
             exportObject = new WorkflowSchemeImportExportObject();
             exportObject.setSchemes(workflowSchemeImportForm.getWorkflowImportObject().getSchemes());
             exportObject.setSteps  (workflowSchemeImportForm.getWorkflowImportObject().getSteps());

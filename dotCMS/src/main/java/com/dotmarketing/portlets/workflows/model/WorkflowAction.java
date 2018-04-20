@@ -33,6 +33,8 @@ public class WorkflowAction implements Permissionable, Serializable{
 
 	private String id;
 	private String name;
+
+	@Deprecated
 	private String stepId;
 	private String schemeId;
 	private String condition;
