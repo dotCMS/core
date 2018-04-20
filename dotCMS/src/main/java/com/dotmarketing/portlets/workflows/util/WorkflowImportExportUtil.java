@@ -126,6 +126,7 @@ public class WorkflowImportExportUtil {
 			}
 
 			for (final WorkflowAction action : importer.getActions()) {
+
 				workflowAPI.saveAction(action, null, user);
 			}
 

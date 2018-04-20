@@ -79,11 +79,17 @@
 
         ContentletAjax.cancelContentEdit(workingContentletInode,currentContentletInode,ref,langId,cancelEditCallback);
     }
+
     function cancelEditCallback(callbackData){
         if (ngEditContentletEvents) {
-            ngEditContentletEvents.next({
-                name: 'cancel'
-            });
+            //scenario when creating a new content.
+            if (workingContentletInode === ''){
+                window.history.back();
+            }else{
+                ngEditContentletEvents.next({
+                    name: 'cancel'
+                });
+            }
         } else {
             if (callbackData.indexOf("referer") != -1) {
                 var sourceReferer = callbackData.substring(callbackData.indexOf("referer"));

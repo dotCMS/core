@@ -37,6 +37,7 @@ import com.dotcms.repackage.net.sf.hibernate.SessionFactory;
 import com.dotcms.repackage.net.sf.hibernate.cfg.Configuration;
 import com.dotcms.repackage.net.sf.hibernate.cfg.Mappings;
 import com.dotcms.repackage.net.sf.hibernate.type.Type;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * This class provides a great number of utility methods that allow developers to interact with
@@ -835,6 +836,24 @@ public class HibernateUtil {
 
 	/**
 	 * Allows you to add an asynchronous commit listener to the current database
+	 * session/transaction. This means that the current flow of the application will continue its
+	 * way and the specified commit listener will be spawned subsequently after the transaction has
+	 * been committed or the session has been closed. <p>By default, asynchronous commit listeners
+	 * will be spawned by a new thread. This means that they will not share the same database
+	 * connection information with the main thread of the dotCMS application.</p>
+	 *
+	 * @param runnable The commit listener wrapped as a {@link Runnable} object.
+	 * @param order    in case you want to add an order
+	 *
+	 * @throws DotHibernateException An error occurred when registering the commit listener.
+	 */
+	public static void addAsyncCommitListener(final Runnable runnable, final int order) throws
+			DotHibernateException {
+		addCommitListener(new DotAsyncRunnable(runnable, order));
+	}
+
+	/**
+	 * Allows you to add an asynchronous commit listener to the current database
 	 * session/transaction. This means that the current flow of the application will take care of
 	 * running the specified commit listener. This is particularly useful when you need to keep
 	 * database objects that were created during the database transaction.
@@ -863,9 +882,15 @@ public class HibernateUtil {
 	public static class DotAsyncRunnable extends DotRunnable {
 
 		private final Runnable runnable;
+		private final int      order;
 
 		public DotAsyncRunnable(final Runnable runnable) {
+			this(runnable, 0);
+		}
+
+		public DotAsyncRunnable(final Runnable runnable, final int order) {
 			this.runnable = runnable;
+			this.order    = order;
 		}
 
 		@Override
@@ -875,6 +900,10 @@ public class HibernateUtil {
 
 		public Runnable getRunnable() {
 			return runnable;
+		}
+
+		public int getOrder() {
+			return order;
 		}
 	}
 
@@ -886,9 +915,15 @@ public class HibernateUtil {
 	public static class DotSyncRunnable extends DotRunnable {
 
 		private final Runnable runnable;
+		private final int      order;
 
 		public DotSyncRunnable(final Runnable runnable) {
+			this(runnable, 0);
+		}
+		public DotSyncRunnable(final Runnable runnable, final int order) {
+
 			this.runnable = runnable;
+			this.order    = order;
 		}
 
 		@Override
@@ -899,7 +934,13 @@ public class HibernateUtil {
 		public Runnable getRunnable() {
 			return runnable;
 		}
+
+		public int getOrder() {
+			return order;
+		}
 	}
+
+
 
 	/**
 	 * Adds a commit listener to the current database transaction/session. There are several

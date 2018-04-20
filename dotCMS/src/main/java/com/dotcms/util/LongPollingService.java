@@ -23,7 +23,7 @@ public class LongPollingService implements Serializable {
 
     private final long milliSecondToWait;
     private final Delegate<AppContext> delegate;
-    private final DotSubmitter dotSubmitter;
+    private final DotConcurrentFactory dotConcurrentFactory;
 
     /**
      * Constructor needs a time to wait (if it is null, will use a default one) and a delegate to perform the task.
@@ -47,7 +47,7 @@ public class LongPollingService implements Serializable {
 
         this.milliSecondToWait = milliSecondToWait;
         this.delegate = delegate;
-        this.dotSubmitter = dotConcurrentFactory.getSubmitter(LONG_POLLING_THREAD_POOL_SUBMITTER_NAME);
+        this.dotConcurrentFactory = dotConcurrentFactory;
     } // LongPollingService.
 
     /**
@@ -76,7 +76,8 @@ public class LongPollingService implements Serializable {
      */
     public void executeAsync (final AppContext appContext) {
 
-        this.dotSubmitter.execute(() -> {
+        final DotSubmitter dotSubmitter = dotConcurrentFactory.getSubmitter(LONG_POLLING_THREAD_POOL_SUBMITTER_NAME);
+        dotSubmitter.execute(() -> {
 
             this.execute(appContext);
         });

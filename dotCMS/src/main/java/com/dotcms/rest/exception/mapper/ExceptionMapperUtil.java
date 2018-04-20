@@ -1,23 +1,28 @@
 package com.dotcms.rest.exception.mapper;
 
+import static com.dotcms.exception.ExceptionUtil.ValidationError;
+import static com.dotcms.exception.ExceptionUtil.mapValidationException;
+import static com.dotcms.util.CollectionsUtils.map;
+
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotmarketing.business.APILocator;
+import com.dotcms.rest.ErrorEntity;
+import com.dotcms.rest.ResponseEntityView;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-
-import javax.servlet.http.HttpServletRequest;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-
-import static com.dotcms.util.CollectionsUtils.map;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Created by Oscar Arrieta on 8/27/15.
@@ -59,6 +64,39 @@ public final class ExceptionMapperUtil {
     /**
      * Creates an error response with a specific status.
      * @param entity JSON as String.
+     * @return Response with Status given in the parameter and Media Type JSON.
+     */
+    public static Response createResponse(final Object entity,
+                                          final String message,
+                                          final Response.Status status){
+
+        return Response
+                .status(status)
+                .entity(entity)
+                .header("error-message", getI18NMessage(message))
+                .type(MediaType.APPLICATION_JSON)
+                .build();
+    }
+
+    private static String getI18NMessage (final String message) {
+
+        String i18nmessage = message;
+        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        if(null != request){
+            try{
+                final User user = WebAPILocator.getUserWebAPI().getUser(request);
+                i18nmessage = LanguageUtil.get(user, message);
+            }catch (Exception e){
+                Logger.debug(ExceptionMapperUtil.class,e.getMessage(),e);
+            }
+        }
+
+        return i18nmessage;
+    }
+
+    /**
+     * Creates an error response with a specific status.
+     * @param entity JSON as String.
      * @return Response with Status 400 and Media Type JSON.
      */
     public static Response createResponse(final String entity,
@@ -81,16 +119,7 @@ public final class ExceptionMapperUtil {
      */
     public static Response  createResponse(final Exception exception, final Response.Status status){
         //Create the message.
-        String message = exception.getMessage();
-        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-        if(null != request){
-            try{
-              final User user = WebAPILocator.getUserWebAPI().getUser(request);
-              message = LanguageUtil.get(user, message);
-            }catch (Exception e){
-                Logger.debug(ExceptionMapperUtil.class,e.getMessage(),e);
-            }
-        }
+        final String message = getI18NMessage(exception.getMessage());
 
         //Creating the message in JSON format.
         if (ConfigUtils.isDevMode()) {
@@ -117,5 +146,33 @@ public final class ExceptionMapperUtil {
         return Response
                 .status(status)
                 .build();
+    }
+
+    /**
+     * Build a response extracting the info from the Content validation exception
+     * @param status
+     * @param ve
+     * @return
+     */
+    public static Response createResponse(final Response.Status status,
+            final DotContentletValidationException ve) {
+        final List<ErrorEntity> errorEntities = new ArrayList<>();
+        try {
+            final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+            final User user = WebAPILocator.getUserWebAPI().getUser(request);
+            final Map<String, List<ValidationError>> contentValidationErrors =
+                    mapValidationException(user, ve);
+
+            contentValidationErrors.forEach((k, errors)
+                    -> {
+                for (ValidationError e :errors) {
+                    errorEntities.add(new ErrorEntity(k, e.getMessage(), e.getField()));
+                }
+            });
+        } catch (Exception e) {
+            Logger.debug(ExceptionMapperUtil.class, e.getMessage(), e);
+        }
+        return Response.status(status).entity(new ResponseEntityView(errorEntities))
+                .type(MediaType.APPLICATION_JSON).build();
     }
 }

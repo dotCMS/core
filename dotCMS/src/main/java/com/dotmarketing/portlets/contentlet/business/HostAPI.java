@@ -1,9 +1,8 @@
-/**
- *
- */
 package com.dotmarketing.portlets.contentlet.business;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.Future;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.WebAsset;
@@ -15,6 +14,7 @@ import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
 
 /**
+ * Encapsulate the Host maintenance operations
  * @author jtesser
  * @author david torres
  *
@@ -23,32 +23,32 @@ public interface HostAPI {
 
 	/**
 	 * Will return a List of a host's aliases If no host aliases will return empty list
-	 * @param host
-	 * @return
+	 * @param host Host
+	 * @return List
 	 */
 	public List<String> parseHostAliases(Host host);
 
 	/**
-	 *
+	 * Find the default host
 	 * @return the default host
 	 */
 	public Host findDefaultHost(User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
-	 *
+	 * Find the system host
 	 * @return the system host
 	 */
 	public Host findSystemHost() throws DotDataException;
 
 	/**
-	 *
+	 * Find a host by name
 	 * @param hostName
 	 * @return the host with the passed in name
 	 */
 	public Host findByName(String hostName, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
-	 *
+	 * Find a host based on the alias
 	 * @param hostName
 	 * @return the host with the passed in name
 	 */
@@ -68,7 +68,7 @@ public interface HostAPI {
 
 
     /**
-     * unmarks the given host as archived
+     * Unmarks the given host as archived
      *
      * @param host
      * @param user
@@ -81,18 +81,22 @@ public interface HostAPI {
 
 	/**
 	 * Removes the given host plus all assets under it, use with caution.
-	 * @throws ParseException
+	 *
+	 * @throws DotDataException
+	 * @throws DotSecurityException
 	 * @throws DotContentletStateException
 	 */
 	public void delete(Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
 
 	/**
 	 * Removes the given host plus all assets under it, use with caution.
-	 * It does all the job in a separated thread and return inmediatly.
-	 * @throws ParseException
+	 * It does all the job in a separated thread and returns immediately (it returns an optional Future that returns true when the runAsSeparatedThread is true).
+	 *
+	 * @throws DotDataException
+	 * @throws DotSecurityException
 	 * @throws DotContentletStateException
 	 */
-	public void delete(Host host, User user, boolean respectFrontendRoles, boolean runAsSepareThread) throws DotDataException, DotSecurityException, DotContentletStateException;
+	public Optional<Future<Boolean>> delete(Host host, User user, boolean respectFrontendRoles, boolean runAsSeparatedThread) throws DotDataException, DotSecurityException, DotContentletStateException;
 
 	/**
 	 * Retrieves a host given its id
@@ -251,14 +255,16 @@ public interface HostAPI {
 	/**
 	 * Updates the MenuLinks of the host with the new hostname
 	 *
-	 * @param host
+	 * @param workinghost
+	 * @param updatedhost
 	 */
-	public void updateMenuLinks(Host workinghost,Host updatedhost) throws DotDataException;
+	public void updateMenuLinks(Host workinghost, Host updatedhost) throws DotDataException;
 
 	/**
 	 * Retrieves all hosts that matches a host's tag storage identifier
 	 *
-	 * @param host
+	 * @param tagStorageId
+	 * @param user
 	 */
 	public List<Host> retrieveHostsPerTagStorage (String tagStorageId, User user);
 	
@@ -275,14 +281,7 @@ public interface HostAPI {
 	 * @throws DotSecurityException
 	 */
 	public Host resolveHostName(String serverName, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException ;
-	
-	/**
-	 * Retrieves the subset of all hosts in the system
-	 * that matches the current filter, offset and limit
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 * @return List<Host> the subset of hosts that accomplish the search condition
-	 */
+
 	/**
 	 * Retrieves the subset of all hosts in the system
 	 * that matches the current host name filter, offset and limit

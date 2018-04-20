@@ -14,8 +14,6 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.abdera-i18n', version:'0.4.0-incubating_2'
     compile group: 'com.dotcms.lib', name: 'dot.abdera-parser', version:'0.4.0-incubating_2'
     compile group: 'com.dotcms.lib', name: 'dot.abdera-server', version:'0.4.0-incubating_2'
-    compile group: 'com.dotcms.lib', name: 'dot.apache-solr-core', version:'1.4.0_2'
-    compile group: 'com.dotcms.lib', name: 'dot.apache-solr-solrj', version:'1.4.0_2'
     compile group: 'com.dotcms.lib', name: 'dot.asm', version:'3.1_2'
     compile group: 'com.dotcms.lib', name: 'dot.axiom-api', version:'1.2.5_2'
     compile group: 'com.dotcms.lib', name: 'dot.axiom-impl', version:'1.2.5_2'

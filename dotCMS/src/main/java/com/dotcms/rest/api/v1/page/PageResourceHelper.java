@@ -60,7 +60,8 @@ public class PageResourceHelper implements Serializable {
     private final HostAPI hostAPI = APILocator.getHostAPI();
     private final LanguageAPI langAPI = APILocator.getLanguageAPI();
     private final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
-
+    private final UserAPI userAPI = APILocator.getUserAPI();
+    private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
     /**
      * Private constructor
@@ -74,7 +75,7 @@ public class PageResourceHelper implements Serializable {
 
         MultiTreeFactory.deleteMultiTreeByParent(pageId);
 
-        final List<MultiTree> multiTres = new ArrayList<>();
+        final List<MultiTree> multiTrees = new ArrayList<>();
 
         for (final PageContainerForm.ContainerEntry containerEntry : containerEntries) {
             int i = 0;
@@ -87,11 +88,13 @@ public class PageResourceHelper implements Serializable {
                         .setTreeOrder(i++)
                         .setHtmlPage(pageId);
 
-                multiTres.add(multiTree);
+                multiTrees.add(multiTree);
             }
         }
 
-        multiTreeAPI.saveMultiTrees(pageId, multiTres);
+        if (!multiTrees.isEmpty()) {
+            multiTreeAPI.saveMultiTrees(pageId, multiTrees);
+        }
     }
 
     public void saveMultiTree(final String containerId,
@@ -168,7 +171,16 @@ public class PageResourceHelper implements Serializable {
         
         try {
             final Host host = getHost(pageForm.getHostId(), user);
-            Template template = getTemplate(page, user, pageForm);
+            final User systemUser = userAPI.getSystemUser();
+            final Template template = getTemplate(page, systemUser, pageForm);
+            final boolean hasPermission = template.isAnonymous() ?
+                    permissionAPI.doesUserHavePermission(page, PermissionLevel.EDIT.getType(), user) :
+                    permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(), user);
+
+            if (!hasPermission) {
+                throw new DotSecurityException("The user doesn't have permission to EDIT");
+            }
+
             template.setDrawed(true);
             return this.templateAPI.saveTemplate(template, host, user, false);
         } catch (Exception e) {
@@ -181,10 +193,11 @@ public class PageResourceHelper implements Serializable {
         return this.saveTemplate(null, user, pageForm);
     }
 
-    private Template getTemplate(IHTMLPage page, User user, PageForm form) throws DotDataException, DotSecurityException {
+    private Template getTemplate(final IHTMLPage page, final User user, final PageForm form)
+            throws DotDataException, DotSecurityException {
 
         final Template oldTemplate = this.templateAPI.findWorkingTemplate(page.getTemplateId(), user, false);
-        Template saveTemplate;
+        final Template saveTemplate;
 
         if (UtilMethods.isSet(oldTemplate) && (!form.isAnonymousLayout() || oldTemplate.isAnonymous())) {
             saveTemplate = oldTemplate;
