@@ -256,4 +256,16 @@ public interface ContainerAPI {
     List<ContentType> getContentTypesInContainer(Container container)
             throws DotStateException, DotDataException, DotSecurityException;
 
+	/**
+	 * Return the {@link ContentType} into a {@link Container} for a specific {@link User}, return a empty List if the
+	 * user don't have READ permission in any {@link ContentType} into the specific {@link Container}
+	 *
+	 * @param user
+	 * @param container
+	 * @return
+	 * @throws DotStateException
+	 * @throws DotDataException
+	 */
+	List<ContentType> getContentTypesInContainer(User user, Container container) throws DotStateException, DotDataException;
+
 }
