@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.containers.business;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
@@ -353,11 +354,11 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		final List<ContainerStructure>  containerList = getContainerStructures(container);
 
 		final List<ContentType> contentTypeList = new ArrayList<>();
+		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
 
 		for (final ContainerStructure containerStructure : containerList) {
 			try {
-				final ContentType type = APILocator.getContentTypeAPI(APILocator.systemUser())
-						.find(containerStructure.getStructureId());
+				final ContentType type = contentTypeAPI.find(containerStructure.getStructureId());
 
 				if(type == null) {
 					continue;
@@ -391,17 +392,18 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		try {
 			final List<ContainerStructure>  containerStructureList = getContainerStructures(container);
 			final List<ContentType> contentTypeList = new ArrayList<>();
+			ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+			PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
 			for (final ContainerStructure containerStructure : containerStructureList) {
 				try {
-					final ContentType type = APILocator.getContentTypeAPI(user).find(containerStructure.getStructureId());
+					final ContentType type = contentTypeAPI.find(containerStructure.getStructureId());
 
 					if(type == null) {
 						continue;
 					}
 
-					final boolean hasPermission =
-							APILocator.getPermissionAPI().doesUserHavePermission(type, PermissionAPI.PERMISSION_READ, user, false);
+					final boolean hasPermission = permissionAPI.doesUserHavePermission(type, PermissionAPI.PERMISSION_READ, user, false);
 
 					if (!hasPermission){
 						continue;

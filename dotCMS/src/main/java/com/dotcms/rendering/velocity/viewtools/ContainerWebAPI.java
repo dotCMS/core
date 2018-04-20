@@ -39,9 +39,9 @@ public class ContainerWebAPI implements ViewTool {
 	private final PermissionAPI permissionAPI;
 	private final ContainerAPI containerAPI;
 	private final UserAPI userAPI;
-	final UserWebAPI userWebAPI;
+	private UserWebAPI userWebAPI;
 
-	ContainerWebAPI(){
+	public ContainerWebAPI(){
 		this(APILocator.getPermissionAPI(), APILocator.getContainerAPI(), APILocator.getUserAPI(), WebAPILocator.getUserWebAPI());
 	}
 
@@ -61,7 +61,7 @@ public class ContainerWebAPI implements ViewTool {
         ctx = viewContext.getVelocityContext();
 
 		try {
-			backuser = userWebAPI.getLoggedInUser(request.getSession());
+			backuser = userWebAPI.getUser(request);
 		} catch (Exception e) {
 			Logger.error(this, "Error finding the logged in user", e);
 		}
