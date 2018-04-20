@@ -25,7 +25,7 @@ public class ESUtils {
 	public static final String ES_PATH_HOME_DEFAULT_VALUE = "WEB-INF/elasticsearch";
 	private static final String ES_CONFIG_DIR = "config";
 	private static final String ES_YML_FILE = "elasticsearch.yml";
-	private static final String ES_EXT_YML_FILE = "elasticsearch-ext.yml";
+	private static final String ES_EXT_YML_FILE = "elasticsearch-override.yml";
 
 	public static String escape(final String text) {
 
