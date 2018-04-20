@@ -2437,7 +2437,9 @@ public class WorkflowAPITest extends IntegrationTestBase {
      * @param schemeId Scheme Id
      * @return The created step
      */
-    protected static WorkflowStep addWorkflowStep(final String name, final int order,
+    protected static WorkflowStep
+
+    addWorkflowStep(final String name, final int order,
             final boolean resolved,
             final boolean enableEscalation, final String schemeId)
             throws DotDataException, DotSecurityException {
