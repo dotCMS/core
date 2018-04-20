@@ -24,8 +24,8 @@ package com.liferay.util.servlet.fileupload;
 
 import java.io.File;
 
-import com.dotcms.repackage.org.apache.commons.fileupload.FileItem;
-import com.dotcms.repackage.org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 
 /**
  * <a href="LiferayFileItemFactory.java.html"><b><i>View Source</i></b></a>

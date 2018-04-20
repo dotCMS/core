@@ -1,9 +1,9 @@
 package com.dotmarketing.servlets;
 
 import com.dotcms.repackage.com.missiondata.fileupload.MonitoredDiskFileItemFactory;
-import com.dotcms.repackage.org.apache.commons.fileupload.FileItem;
-import com.dotcms.repackage.org.apache.commons.fileupload.FileItemFactory;
-import com.dotcms.repackage.org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.FileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
