@@ -53,6 +53,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -1475,14 +1476,17 @@ public class WorkflowAPITest extends IntegrationTestBase {
             /*
              * Clean test
 		     */
-
-            //Deleting workflow 6
-            workflowScheme6.setArchived(true);
-            workflowAPI.saveScheme(workflowScheme6, user);
-            workflowAPI.deleteScheme(workflowScheme6, user);
-
             //delete content type
             contentTypeAPI.delete(contentType4);
+
+            //Deleting workflow 6
+            workflowAPI.archive(workflowScheme6, user);
+            try {
+                workflowAPI.deleteScheme(workflowScheme6, user).get();
+            } catch (InterruptedException | ExecutionException e) {
+                assertTrue( e.getMessage(), false);
+            }
+
         }
     }
 
@@ -2056,8 +2060,8 @@ public class WorkflowAPITest extends IntegrationTestBase {
     @Test
     public void saveScheme_keepExistingContentWorkflowTaskStatus_IfWorkflowSchemeRemainsAssociated()
             throws DotDataException, DotSecurityException, AlreadyExistException {
-        WorkflowScheme workflowScheme1 = null;
-        WorkflowScheme workflowScheme2 = null;
+        WorkflowScheme workflowSchemeA = null;
+        WorkflowScheme workflowSchemeB = null;
         ContentType keepWfTaskStatusContentType = null;
         Contentlet keepWfTaskStatusContentlet = null;
         try {
@@ -2067,16 +2071,16 @@ public class WorkflowAPITest extends IntegrationTestBase {
                     BaseContentType.CONTENT, editPermission, contributor.getId());
 
             // Create testing workflows
-            workflowScheme1 = createDocumentManagentReplica(
+            workflowSchemeA = createDocumentManagentReplica(
                     DOCUMENT_MANAGEMENT_WORKFLOW_NAME + "_1_" + UtilMethods
                             .dateToHTMLDate(new Date(), DATE_FORMAT));
 
-            workflowScheme2 = createDocumentManagentReplica(
+            workflowSchemeB = createDocumentManagentReplica(
                     DOCUMENT_MANAGEMENT_WORKFLOW_NAME + "_2_" + UtilMethods
                             .dateToHTMLDate(new Date(), DATE_FORMAT));
 
             final List<String> schemeIds = new ArrayList<>();
-            schemeIds.add(workflowScheme1.getId());
+            schemeIds.add(workflowSchemeA.getId());
 
             workflowAPI.saveSchemeIdsForContentType(keepWfTaskStatusContentType, schemeIds);
 
@@ -2096,7 +2100,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
                     StringPool.BLANK, StringPool.BLANK, joeContributor);
 
             //validate workflow tasks deleted
-            WorkflowStep editingStep = workflowAPI.findSteps(workflowScheme1).get(0);
+            WorkflowStep editingStep = workflowAPI.findSteps(workflowSchemeA).get(0);
             WorkflowStep step = workflowAPI.findStepByContentlet(keepWfTaskStatusContentlet);
             assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, EDITING_STEP_NAME
                     .equals(step.getName()) && editingStep.getId().equals(step.getId()));
@@ -2107,7 +2111,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             assertTrue(INCORRECT_TASK_STATUS, editingStep.getId().equals(task1.getStatus()));
 
             //Add a new Scheme to content type
-            schemeIds.add(workflowScheme2.getId());
+            schemeIds.add(workflowSchemeB.getId());
             workflowAPI.saveSchemeIdsForContentType(keepWfTaskStatusContentType, schemeIds);
 
             //Validate that the contentlet Workflow task keeps the original value
@@ -2121,7 +2125,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             assertTrue(INCORRECT_TASK_STATUS, editingStep.getId().equals(task1.getStatus()));
 
             //remove an existing Scheme with workflow task associated to the content type
-            schemeIds.remove(workflowScheme1.getId());
+            schemeIds.remove(workflowSchemeA.getId());
             workflowAPI.saveSchemeIdsForContentType(keepWfTaskStatusContentType, schemeIds);
 
             //Validate that the contentlet Workflow task lost the original value
@@ -2139,11 +2143,11 @@ public class WorkflowAPITest extends IntegrationTestBase {
             //delete content type
             contentTypeAPI.delete(keepWfTaskStatusContentType);
 
-            workflowAPI.archive(workflowScheme1, user);
-            workflowAPI.deleteScheme(workflowScheme1, user);
+            workflowAPI.archive(workflowSchemeA, user);
+            workflowAPI.deleteScheme(workflowSchemeA, user);
 
-            workflowAPI.archive(workflowScheme2, user);
-            workflowAPI.deleteScheme(workflowScheme2, user);
+            workflowAPI.archive(workflowSchemeB, user);
+            workflowAPI.deleteScheme(workflowSchemeB, user);
         }
     }
 
@@ -2154,8 +2158,8 @@ public class WorkflowAPITest extends IntegrationTestBase {
     @Test
     public void findSchemesForContenttype_validateIfSchemesResultsAreOnCache()
             throws DotDataException, DotSecurityException, AlreadyExistException {
-        WorkflowScheme workflowScheme1 = null;
-        WorkflowScheme workflowScheme2 = null;
+        WorkflowScheme workflowSchemeC = null;
+        WorkflowScheme workflowSchemeD = null;
         ContentType contentType = null;
         try {
 
@@ -2163,11 +2167,11 @@ public class WorkflowAPITest extends IntegrationTestBase {
                     BaseContentType.CONTENT, editPermission, contributor.getId());
 
             // Create testing workflows
-            workflowScheme1 = createDocumentManagentReplica(
+            workflowSchemeC = createDocumentManagentReplica(
                     DOCUMENT_MANAGEMENT_WORKFLOW_NAME + "_3_" + UtilMethods
                             .dateToHTMLDate(new Date(), DATE_FORMAT));
 
-            workflowScheme2 = createDocumentManagentReplica(
+            workflowSchemeD = createDocumentManagentReplica(
                     DOCUMENT_MANAGEMENT_WORKFLOW_NAME + "_4_" + UtilMethods
                             .dateToHTMLDate(new Date(), DATE_FORMAT));
 
@@ -2188,7 +2192,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
             //1. Test Adding one scheme
             final List<String> schemeIds = new ArrayList<>();
-            schemeIds.add(workflowScheme1.getId());
+            schemeIds.add(workflowSchemeC.getId());
             workflowAPI.saveSchemeIdsForContentType(contentType, schemeIds);
 
             //validate cache values
@@ -2205,7 +2209,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             assertTrue(WORKFLOW_SCHEME_CACHE_WITH_WRONG_SIZE, schemesInCache.size() == 1);
 
             //2. Test adding a second scheme
-            schemeIds.add(workflowScheme2.getId());
+            schemeIds.add(workflowSchemeD.getId());
             workflowAPI.saveSchemeIdsForContentType(contentType, schemeIds);
 
             //validate cache values
@@ -2222,7 +2226,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             assertTrue(WORKFLOW_SCHEME_CACHE_WITH_WRONG_SIZE, schemesInCache.size() == 2);
 
             //3. Test removing one scheme
-            schemeIds.remove(workflowScheme1.getId());
+            schemeIds.remove(workflowSchemeC.getId());
             workflowAPI.saveSchemeIdsForContentType(contentType, schemeIds);
 
             //validate cache values
@@ -2239,7 +2243,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             assertTrue(WORKFLOW_SCHEME_CACHE_WITH_WRONG_SIZE, schemesInCache.size() == 1);
 
             //4. test removing all schemes
-            schemeIds.remove(workflowScheme2.getId());
+            schemeIds.remove(workflowSchemeD.getId());
             workflowAPI.saveSchemeIdsForContentType(contentType, schemeIds);
 
             //validate cache values
@@ -2260,11 +2264,11 @@ public class WorkflowAPITest extends IntegrationTestBase {
             //delete content type
             contentTypeAPI.delete(contentType);
 
-            workflowAPI.archive(workflowScheme1, user);
-            workflowAPI.deleteScheme(workflowScheme1, user);
+            workflowAPI.archive(workflowSchemeC, user);
+            workflowAPI.deleteScheme(workflowSchemeC, user);
 
-            workflowAPI.archive(workflowScheme2, user);
-            workflowAPI.deleteScheme(workflowScheme2, user);
+            workflowAPI.archive(workflowSchemeD, user);
+            workflowAPI.deleteScheme(workflowSchemeD, user);
         }
     }
 
@@ -2535,79 +2539,32 @@ public class WorkflowAPITest extends IntegrationTestBase {
      * Remove the content type and workflows created
      */
     @AfterClass
-    public static void cleanup() throws DotDataException, DotSecurityException {
+    public static void cleanup()
+            throws DotDataException, DotSecurityException, InterruptedException, ExecutionException, AlreadyExistException {
 
         contentTypeAPI.delete(contentType);
         contentTypeAPI.delete(contentType2);
         contentTypeAPI.delete(contentType3);
-        try {
-            //Deleting workflow 1
-            workflowAPI.deleteAction(workflowScheme1Step1Action1, user);
-            workflowAPI.deleteAction(workflowScheme1Step2Action1, user);
 
-            workflowAPI.deleteStep(workflowScheme1Step1, user);
-            workflowAPI.deleteStep(workflowScheme1Step2, user);
+        //Deleting workflow 1
+        workflowAPI.archive(workflowScheme1, user);
+        workflowAPI.deleteScheme(workflowScheme1, user).get();
 
-            workflowScheme1.setArchived(true);
-            workflowAPI.saveScheme(workflowScheme1, user);
-            workflowAPI.deleteScheme(workflowScheme1, user);
+        //Deleting workflow 2
+        workflowAPI.archive(workflowScheme2, user);
+        workflowAPI.deleteScheme(workflowScheme2, user).get();
 
-            //Deleting workflow 2
-            workflowAPI.deleteAction(workflowScheme2Step1Action1, user);
-            workflowAPI.deleteAction(workflowScheme2Step2Action1, user);
-            workflowAPI.deleteStep(workflowScheme2Step1, user);
-            workflowAPI.deleteStep(workflowScheme2Step2, user);
+        //Deleting workflow 3
+        workflowAPI.archive(workflowScheme3, user);
+        workflowAPI.deleteScheme(workflowScheme3, user).get();
 
-            workflowAPI.archive(workflowScheme2, user);
-            workflowAPI.deleteScheme(workflowScheme2, user);
+        //Deleting workflow 4
+        workflowAPI.archive(workflowScheme4, user);
+        workflowAPI.deleteScheme(workflowScheme4, user).get();
 
-            //Deleting workflow 3
-            workflowAPI.deleteAction(workflowScheme3Step1Action1, user);
-            workflowAPI.deleteAction(workflowScheme3Step2Action1, user);
-            workflowAPI.deleteAction(workflowScheme3Step2Action2, user);
-
-            workflowAPI.deleteStep(workflowScheme3Step1, user);
-            workflowAPI.deleteStep(workflowScheme3Step2, user);
-
-            workflowAPI.archive(workflowScheme3, user);
-            workflowAPI.deleteScheme(workflowScheme3, user);
-
-            //Deleting workflow 4
-            workflowAPI.deleteAction(workflowScheme4Step1ActionContributor, user);
-            workflowAPI.deleteAction(workflowScheme4Step1ActionEdit, user);
-            workflowAPI.deleteAction(workflowScheme4Step1ActionEditPermissions, user);
-            workflowAPI.deleteAction(workflowScheme4Step1ActionPublish, user);
-            workflowAPI.deleteAction(workflowScheme4Step1ActionView, user);
-
-            workflowAPI.deleteAction(workflowScheme4Step2ActionReviewer, user);
-            workflowAPI.deleteAction(workflowScheme4Step2ActionEdit, user);
-            workflowAPI.deleteAction(workflowScheme4Step2ActionEditPermissions, user);
-            workflowAPI.deleteAction(workflowScheme4Step2ActionPublish, user);
-            workflowAPI.deleteAction(workflowScheme4Step2ActionView, user);
-
-            workflowAPI.deleteAction(workflowScheme4Step3ActionPublisher, user);
-            workflowAPI.deleteAction(workflowScheme4Step3ActionEdit, user);
-            workflowAPI.deleteAction(workflowScheme4Step3ActionEditPermissions, user);
-            workflowAPI.deleteAction(workflowScheme4Step3ActionPublish, user);
-            workflowAPI.deleteAction(workflowScheme4Step3ActionView, user);
-
-            workflowAPI.deleteStep(workflowScheme4Step1, user);
-            workflowAPI.deleteStep(workflowScheme4Step2, user);
-            workflowAPI.deleteStep(workflowScheme4Step3, user);
-
-            workflowAPI.archive(workflowScheme4, user);
-            workflowAPI.deleteScheme(workflowScheme4, user);
-
-            //Deleting workflow 5
-            workflowAPI.deleteAction(workflowScheme5Step1Action1, user);
-            workflowAPI.deleteStep(workflowScheme5Step1, user);
-
-            workflowAPI.archive(workflowScheme5, user);
-            workflowAPI.deleteScheme(workflowScheme5, user);
-
-        }catch (AlreadyExistException e){
-
-        }
+        //Deleting workflow 5
+        workflowAPI.archive(workflowScheme5, user);
+        workflowAPI.deleteScheme(workflowScheme5, user).get();
     }
 
     /**
