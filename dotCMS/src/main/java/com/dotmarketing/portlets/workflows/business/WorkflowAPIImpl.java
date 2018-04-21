@@ -1661,14 +1661,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			task = new WorkflowTask();
 		}
 
-		final Role r = roleAPI.getUserRole(processor.getUser());
+		final Role role = roleAPI.getUserRole(processor.getUser());
 		if (task.isNew()) {
 
 			DotPreconditions.isTrue(UtilMethods.isSet(processor.getContentlet()) && UtilMethods.isSet(processor.getContentlet().getIdentifier()),
 					() -> getWorkflowContentNeedsBeSaveMessage(processor.getUser()),
 					DotWorkflowException.class);
 
-			task.setCreatedBy(r.getId());
+			task.setCreatedBy(role.getId());
 			task.setWebasset(processor.getContentlet().getIdentifier());
 			task.setLanguageId(processor.getContentlet().getLanguageId());
 			if (processor.getWorkflowMessage() != null) {
@@ -1683,13 +1683,18 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		task.setStatus(processor.getNextStep().getId());
 
 		saveWorkflowTask(task, processor);
+
+		if (null == processor.getTask()) {
+			processor.setTask(task); // when the content is new there might be the case than an action is waiting for the task in some commit listener
+		}
+
 		if (processor.getWorkflowMessage() != null) {
 			WorkflowComment comment = new WorkflowComment();
 			comment.setComment(processor.getWorkflowMessage());
 
 			comment.setWorkflowtaskId(task.getId());
 			comment.setCreationDate(new Date());
-			comment.setPostedBy(r.getId());
+			comment.setPostedBy(processor.getUser().getFullName());
 			saveComment(comment);
 		}
 
