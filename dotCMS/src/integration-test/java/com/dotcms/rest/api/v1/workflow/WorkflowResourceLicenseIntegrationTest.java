@@ -169,7 +169,7 @@ public class WorkflowResourceLicenseIntegrationTest {
     @Test
     public void Find_Actions_By_Schemas_InvalidLicense() throws Exception {
 
-        final WorkflowScheme defaultScheme = licensedWorkflowAPI.findDefaultScheme();
+        final WorkflowScheme defaultScheme = licensedWorkflowAPI.findSchemeByName("Document Management");
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final Response findResponse = nonLicenseWorkflowResource
                 .findActionsByScheme(request, defaultScheme.getId());
@@ -178,11 +178,11 @@ public class WorkflowResourceLicenseIntegrationTest {
 
     @Test
     public void Find_Action_InvalidLicense() throws Exception {
-        final WorkflowScheme defaultScheme = licensedWorkflowAPI.findDefaultScheme();
-        assertNotNull("Unable to find default scheme", defaultScheme);
+        final WorkflowScheme defaultScheme = licensedWorkflowAPI.findSchemeByName("Document Management");
+        assertNotNull("Unable to find \"Document Management\" scheme", defaultScheme);
         final List<WorkflowAction> actions = licensedWorkflowAPI
                 .findActions(defaultScheme, APILocator.systemUser());
-        assertFalse("Default scheme has no actions ", actions.isEmpty());
+        assertFalse("Default \"Document Management\" has no actions ", actions.isEmpty());
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final Response findResponse = nonLicenseWorkflowResource
@@ -193,14 +193,14 @@ public class WorkflowResourceLicenseIntegrationTest {
     @Test
     public void Find_Action_By_Step_Invalid_License() throws Exception {
         //we use
-        final WorkflowScheme defaultScheme = licensedWorkflowAPI.findDefaultScheme();
-        assertNotNull("Unable to find default scheme", defaultScheme);
+        final WorkflowScheme defaultScheme = licensedWorkflowAPI.findSchemeByName("Document Management");
+        assertNotNull("Unable to find document management scheme", defaultScheme);
         final List<WorkflowAction> actions = licensedWorkflowAPI
                 .findActions(defaultScheme, APILocator.systemUser());
-        assertFalse("Default scheme has no actions ", actions.isEmpty());
+        assertFalse("document management scheme has no actions ", actions.isEmpty());
         final List<WorkflowStep> steps = licensedWorkflowAPI.findSteps(defaultScheme);
 
-        final Optional<WorkflowAction> o = actions.stream().filter(workflowAction -> "Assign Workflow".equals(workflowAction.getName())).findFirst();
+        final Optional<WorkflowAction> o = actions.stream().filter(workflowAction -> "Publish".equals(workflowAction.getName())).findFirst();
         assertTrue(o.isPresent());
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final Response findResponse = nonLicenseWorkflowResource
@@ -210,7 +210,7 @@ public class WorkflowResourceLicenseIntegrationTest {
 
     @Test
     public void Find_Steps_By_Scheme_Invalid_License() throws Exception {
-        final WorkflowScheme defaultScheme = licensedWorkflowAPI.findDefaultScheme();
+        final WorkflowScheme defaultScheme = licensedWorkflowAPI.findSchemeByName("Document Management");
         assertNotNull("Unable to find default scheme", defaultScheme);
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
@@ -222,7 +222,7 @@ public class WorkflowResourceLicenseIntegrationTest {
     @Test
     public void Find_All_Schemes_By_Content_Type_Invalid_License_Expect_Only_System_Workflow()
             throws Exception {
-        final WorkflowScheme defaultScheme = licensedWorkflowAPI.findDefaultScheme();
+        final WorkflowScheme defaultScheme = licensedWorkflowAPI.findSchemeByName("Document Management");
         assertNotNull("Unable to find default scheme", defaultScheme);
 
         final HttpServletRequest request = mock(HttpServletRequest.class);

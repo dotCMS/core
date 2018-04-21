@@ -566,7 +566,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
         assertTrue(contentTypeSchemes != null && contentTypeSchemes.size() == 3);
 
         /* Validate that the default scheme is not associated to the content tyepe*/
-        WorkflowScheme defaultScheme = workflowAPI.findDefaultScheme();
+        WorkflowScheme defaultScheme = workflowAPI.findSchemeByName("Default Scheme");
         assertFalse(containsScheme(defaultScheme, contentTypeSchemes));
         assertTrue(containsScheme(workflowScheme1, contentTypeSchemes));
         assertTrue(containsScheme(workflowScheme2, contentTypeSchemes));

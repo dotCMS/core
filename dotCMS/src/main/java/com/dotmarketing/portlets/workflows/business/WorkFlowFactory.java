@@ -114,8 +114,6 @@ public interface WorkFlowFactory {
 
 	public void saveScheme(WorkflowScheme scheme) throws DotDataException, AlreadyExistException;
 
-	public WorkflowScheme findDefaultScheme() throws DotDataException;
-
 	public List<WorkflowStep> findSteps(WorkflowScheme scheme) throws DotDataException;
 
 	public void saveStep(WorkflowStep step) throws DotDataException, AlreadyExistException;

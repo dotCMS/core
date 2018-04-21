@@ -602,27 +602,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return actions;
 	} // findActions.
 
-	@Override
-	public WorkflowScheme findDefaultScheme() throws DotDataException {
-		WorkflowScheme scheme = cache.getDefaultScheme();
-		if (scheme == null) {
-			try {
-				final DotConnect db = new DotConnect();
-				db.setSQL(sql.SELECT_DEFAULT_SCHEME);
-				try {
-					scheme = (WorkflowScheme) this.convertListToObjects(db.loadObjectResults(), WorkflowScheme.class).get(0);
-				} catch (final Exception ex) {
-
-					throw new DotDataException("default scheme does not exist");
-				}
-
-				cache.addDefaultScheme(scheme);
-			} catch (final Exception e) {
-				throw new DotDataException(e.getMessage(),e);
-			}
-		}
-		return scheme;
-	}
 
 	@Override
 	public Map<String, WorkflowActionClassParameter> findParamsForActionClass(WorkflowActionClass actionClass) throws DotDataException {
