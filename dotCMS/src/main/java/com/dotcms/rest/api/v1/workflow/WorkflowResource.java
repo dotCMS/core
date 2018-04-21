@@ -124,7 +124,7 @@ public class WorkflowResource {
     private Response createUnAuthorizedResponse (final Exception e) {
 
         SecurityLogger.logInfo(this.getClass(), e.getMessage());
-        return ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
+        return ExceptionMapperUtil.createResponse(e, Status.FORBIDDEN);
     }
 
     private Response mapExceptionResponse(final Exception e){
@@ -605,7 +605,7 @@ public class WorkflowResource {
             return Response.ok(new ResponseEntityView(OK)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
-                    "NotAllowedUserWorkflowException on reorderStep, stepId: " + stepId +
+                    "WorkflowPortletAccessException on reorderStep, stepId: " + stepId +
                             ", exception message: " + e.getMessage(), e);
             return mapExceptionResponse(e);
         }
@@ -627,7 +627,7 @@ public class WorkflowResource {
             return Response.ok(new ResponseEntityView(step)).build();
         } catch (Exception e) {
             Logger.error(this.getClass(),
-                    "NotAllowedUserWorkflowException on updateStep, stepId: " + stepId +
+                    "WorkflowPortletAccessException on updateStep, stepId: " + stepId +
                             ", exception message: " + e.getMessage(), e);
             return mapExceptionResponse(e);
         }
