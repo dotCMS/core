@@ -18,6 +18,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -37,15 +38,9 @@ import java.util.List;
 @Path("/v1/theme")
 public class ThemeResource {
 
-    private static final String LUCENE_QUERY = "{" +
-            "\"query\" : { " +
-                "\"query_string\" : {" +
-                    "\"query\" : \"+parentpath:\\\\/application\\\\/themes\\\\/* +title:template.vtl host:%s\"" +
-                "}" +
-            "}" +
-        "}";
+    private static final String LUCENE_QUERY = "+parentpath:/application/themes/* +title:template.vtl host:%s";
 
-    private ESSeachAPI esSearchAPI = APILocator.getEsSearchAPI();
+    private ContentletAPI contentletAPI = APILocator.getContentletAPI();
     private UserAPI userAPI = APILocator.getUserAPI();
     private HostAPI hostAPI = APILocator.getHostAPI();
     private FolderAPI folderAPI = APILocator.getFolderAPI();
@@ -73,10 +68,10 @@ public class ThemeResource {
         try {
             Collection<ThemeView> themes = new ArrayList<>();
             final User systemUser = userAPI.getSystemUser();
-            final ESSearchResults esSearchResults = esSearchAPI.esSearch(query, false, loginServiceAPI.getLoggedInUser(),
-                    false);
+            List<Contentlet> contentlets = contentletAPI.search(query, 0, -1, null,
+                    loginServiceAPI.getLoggedInUser(), false);
 
-            for (final Contentlet contentlet : (List<Contentlet>) esSearchResults) {
+            for (final Contentlet contentlet : contentlets) {
                 final String folderId = contentlet.getFolder();
                 final String themeHostId = contentlet.getHost();
 
