@@ -94,7 +94,7 @@
 			<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save"))%>
 		</button>
 		<%if(!scheme.isNew()){%>
-		<button dojoType="dijit.form.Button" onClick='schemeAdmin.copyScheme("<%=UtilMethods.webifyString(scheme.getId())%>")' iconClass="saveIcon" type="button">
+		<button dojoType="dijit.form.Button" onClick='schemeAdmin.copyScheme("<%=UtilMethods.webifyString(scheme.getId())%>", "<%=UtilMethods.webifyString(scheme.getName())%>")' iconClass="saveIcon" type="button">
 			<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Copy"))%>
 		</button>
 		<%}%>

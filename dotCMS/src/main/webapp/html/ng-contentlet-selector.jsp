@@ -21,7 +21,8 @@
 <%
     String containerIdentifier = request.getParameter("container_id");
     User user = PortalUtil.getUser(request);
-    Container container = (Container) APILocator.getVersionableAPI().findWorkingVersion(containerIdentifier, user, false);
+    Container container = (Container) APILocator.getVersionableAPI().findWorkingVersion(containerIdentifier,
+            APILocator.getUserAPI().getSystemUser(), false);
 
     List<ContentType> contentTypes = null;
     String baseTypeToAdd = request.getParameter("add");
@@ -31,7 +32,7 @@
     } else if (BaseContentType.FORM.name().equalsIgnoreCase(baseTypeToAdd)) {
         contentTypes = APILocator.getContentTypeAPI(user).findByType(BaseContentType.FORM);
     } else {
-        contentTypes = APILocator.getContainerAPI().getContentTypesInContainer(container);
+        contentTypes = APILocator.getContainerAPI().getContentTypesInContainer(user, container);
     }
 
     Layout contentLayout = APILocator.getLayoutAPI().findLayoutByName("Content");

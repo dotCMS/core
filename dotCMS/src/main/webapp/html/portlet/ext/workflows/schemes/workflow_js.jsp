@@ -268,27 +268,31 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 		;
 
 	},
-	copyScheme : function(schemeId) {
+	copyScheme : function(schemeId, name) {
+
+		var optionalName = prompt ("<%=LanguageUtil.get(pageContext, "Workflow-Name")%>", name);
 
 		var xhrArgs = {
-			url: "/api/v1/workflow/schemes/" + schemeId + "/copy",
+			url: "/api/v1/workflow/schemes/" + schemeId + "/copy?name=" + optionalName,
 			timeout : 30000,
 			handle : function(dataOrError, ioArgs) {
-				if (dojo.isString(dataOrError)) {
-					if (dataOrError.indexOf("FAILURE") == 0) {
-						schemeAdmin.copyError(dataOrError);
-					} else {
-						schemeAdmin.copySuccess(dataOrError);
-					}
-				} else {
-					this.copyError("<%=LanguageUtil.get(pageContext, "Unable-to-copy-Scheme")%>");
-				}
+						if (ioArgs.xhr.status != 200) {
+
+							if (ioArgs.xhr.getResponseHeader("error-message")) {
+								schemeAdmin.copyError(ioArgs.xhr.getResponseHeader("error-message"));
+							} else {
+								schemeAdmin.copyError("<%=LanguageUtil.get(pageContext, "Unable-to-copy-Scheme")%>");
+							}
+						} else {
+
+							schemeAdmin.copySuccess(dataOrError);
+						}
 			}
 		};
 		dojo.xhrPost(xhrArgs);
 		return;
 	},
-		deleteScheme : function(schemeId) {
+    deleteScheme : function(schemeId) {
 
         if(!confirm("<%=LanguageUtil.get(pageContext, "Confirm-Delete-Scheme")%>")){
             return;
@@ -494,13 +498,13 @@ dojo.declare("dotcms.dijit.workflows.StepAdmin", null, {
 
 		return;
 	},
-	
+
 	showAddNewStep : function (){
 		var dia = dijit.byId("addNewStepDia");
 		if(dia){
 			dia.destroyRecursive();
 		}
-		
+
 		dia = new dijit.Dialog({
 				content: '<div class="inline-form"><%=LanguageUtil.get(pageContext, "Name")%>:&nbsp;<input type="text" name="stepName" id="stepName" dojoType="dijit.form.ValidationTextBox"  required="true" value="" maxlength="255">&nbsp;<button dojoType="dijit.form.Button" onClick="stepAdmin.addStep()" iconClass="addIcon" id="Save-new-step"><%=LanguageUtil.get(pageContext, "Add")%></button></div>',
 				id			:	"addNewStepDia",
@@ -513,12 +517,12 @@ dojo.declare("dotcms.dijit.workflows.StepAdmin", null, {
 			});
 
 		dia.show();
-	
-	
+
+
 	},
-	
-	
-	
+
+
+
 	addSuccess : function (data){
 		mainAdmin.refresh();
 		showDotCMSSystemMessage("Added");
@@ -754,7 +758,7 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 		}
 		return ;
 	},
-	
+
 	findStepId : function (ele){
 		var parent = ele;
 		while (true) {
@@ -768,7 +772,7 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 		}
 		return ;
 	},
-	
+
 	findActionId : function (ele){
 		var parent = ele;
 		while (true) {
@@ -795,19 +799,19 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 		}
 		return ;
 	},
-	
+
 	deleteActionForStep : function (ele){
 
 		var stepId = this.findStepId(ele);
 		var actionId = this.findActionId(ele);
 
 
-		
+
 		let matches = document.querySelectorAll('.x' + actionId );
 
 		// we only confirm if this is the last instance of the action
-		
-		
+
+
 		var deleteUrl = "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfActionAjax?cmd=deleteActionForStep&actionId=" + actionId + "&stepId=" + stepId ;
 		if(matches.length ==1){
 			if(!confirm("<%=LanguageUtil.get(pageContext, "Confirm-Delete-Action")%>")){
@@ -829,9 +833,9 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 
 					} else {
 						var die  =actionAdmin.findActionDiv(ele);
-						
+
 						die.parentNode.removeChild(die);
-						
+
 						actionAdmin.deleteSuccess(dataOrError);
 					}
 				} else {
@@ -900,7 +904,7 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 		}
 	},
 	copyOrReorderAction : function(ele) {
-	
+
 		let stepId = this.findStepId(ele);
 		let stepDiv = this.findStepDiv(ele);
 		let actionDiv = this.findActionDiv(ele);
@@ -935,7 +939,7 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 	};
 
 	dojo.xhrPost(xhrArgs);
-	
+
 	},
 	saveAction : function(schemeId) {
 
@@ -1261,7 +1265,7 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
 							showDotCMSSystemMessage(dataOrError, true);
 						}
 						else{
-							// We need to reorder the "Action Classes" array when an element is moved to a 
+							// We need to reorder the "Action Classes" array when an element is moved to a
 							// different position
 							actionClassAdmin.moveFromActionClasses(nodes[0].id.replace("myRow", ""), order);
 						}

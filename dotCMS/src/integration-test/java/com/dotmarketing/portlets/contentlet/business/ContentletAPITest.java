@@ -2046,7 +2046,9 @@ public class ContentletAPITest extends ContentletBaseTest {
         StructureFactory.saveStructure(testStructure);
 
         // some dates to play with
-        Date d1= new Date();
+
+        String date = "11-08-1992 10:20:56";
+        Date d1= dateFormat.parse(date);
         Date d2=new Date(d1.getTime()+60000L);
         Date d3=new Date(d2.getTime()+60000L);
         Date d4=new Date(d3.getTime()+60000L);
