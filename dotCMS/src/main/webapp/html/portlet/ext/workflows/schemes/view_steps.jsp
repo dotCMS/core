@@ -166,8 +166,9 @@
     </div>
 	<div class="portlet-toolbar__info">
 		<div class="inline-form">
+			<label font-size:85%; for="filterByWhoCanUseSelect"><%=LanguageUtil.get(pageContext, "Filter-By-Who-Can-Use")%> : 
 			<input id="filterByWhoCanUseSelect"/>
-			<label font-size:85%; for="filterByWhoCanUseSelect"><%=LanguageUtil.get(pageContext, "Filter-By-Who-Can-Use")%>
+			
 			</label>
 		</div>
 	</div>

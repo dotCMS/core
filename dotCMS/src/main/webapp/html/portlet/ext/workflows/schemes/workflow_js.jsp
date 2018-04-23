@@ -253,7 +253,6 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 				handle : function(dataOrError, ioArgs) {
 					if (dojo.isString(dataOrError)) {
 						if (dataOrError.indexOf("FAILURE") == 0) {
-
 							schemeAdmin.saveError(dataOrError);
 						} else {
 							schemeAdmin.saveSuccess(dataOrError);

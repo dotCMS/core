@@ -20,12 +20,12 @@
 	
 	<!-- START Toolbar -->
 	<form id="fm" method="post">
-		<div class="portlet-toolbar" style="padding-top:0px;">
+		<div class="portlet-toolbar" >
             <div class="showPointer" onClick="schemeAdmin.show()"  style="float: left;">
              <h2 style="border-bottom:dotted 1px white;"><%=LanguageUtil.get(pageContext, "Workflow-Schemes")%></h2>
              <p>&nbsp;</p>
             </div> 
-            <div style="float: right;">
+            <div style="float: right;padding-right:10px;">
 				
 					<input type="checkbox" id="showArchivedChk" name="showArchived"
 					<%=(showArchived) ? "checked='true'" : ""%> id="system"
