@@ -169,7 +169,7 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
 
                 editWrapperDiv.append("WIDGET,FORM");
                 editWrapperDiv.append("\"");
-                editWrapperDiv.append(" data-dot-can-edit=\"$containerAPI.doesUserHasPermission($containerInode, 2, false)\"");
+                editWrapperDiv.append(" data-dot-can-add=\"$containerAPI.doesUserHasPermissionToAddContent($containerInode)\"");
                 editWrapperDiv.append(">");
 
                 sb.append("#if($" +  SHOW_PRE_POST_LOOP + ")");

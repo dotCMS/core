@@ -10,7 +10,6 @@
 <%
 
 	WorkflowAPI wapi = APILocator.getWorkflowAPI();
-
 	boolean showArchived = (request.getParameter("showArchived") != null);
 	List<WorkflowScheme> schemes = wapi.findSchemes(showArchived);
 
@@ -32,15 +31,14 @@
 					<%=(showArchived) ? "checked='true'" : ""%> id="system"
 					dojoType="dijit.form.CheckBox" value="1"
 					onClick="new function(){schemeAdmin.showArchived = <%=!showArchived%>;schemeAdmin.show();}" />
+
 					<label for="showArchivedChk"><%=LanguageUtil.get(pageContext, "Show-Archived")%></label>
 		              &nbsp; &nbsp;
 
-	  
 				<button dojoType="dijit.form.Button"
 						onClick="schemeAdmin.showImport();return false;" iconClass="addIcon">
 					<%=LanguageUtil.get(pageContext, "Import-Workflow-Scheme")%>
 				</button>
-
 	    		<button dojoType="dijit.form.Button"
 					onClick="schemeAdmin.showAddEdit();return false;" iconClass="addIcon">
 					<%=LanguageUtil.get(pageContext, "Add-Workflow-Scheme")%>
