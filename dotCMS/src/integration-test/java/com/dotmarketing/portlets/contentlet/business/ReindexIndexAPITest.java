@@ -120,20 +120,12 @@ public class ReindexIndexAPITest{
             contentletAPI.publish(content, user, respectFrontendRoles);
             assertTrue( content.isLive());
             origCons.add(content);
+            contentletAPI.isInodeIndexed(content.getInode(),true);
         }
-
 
         //commit it index
         HibernateUtil.closeSession();
 
-
-        // let any expected reindex finish
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
         for(Contentlet c : origCons){
 
             // are we good in the index?
