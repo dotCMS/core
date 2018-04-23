@@ -1704,7 +1704,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 			comment.setWorkflowtaskId(task.getId());
 			comment.setCreationDate(new Date());
-			comment.setPostedBy(processor.getUser().getFullName());
+			comment.setPostedBy(processor.getUser().getUserId());
 			saveComment(comment);
 		}
 
