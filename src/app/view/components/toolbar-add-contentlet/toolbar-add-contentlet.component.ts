@@ -7,7 +7,7 @@ import { MenuItem } from 'primeng/primeng';
 import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { Observable } from 'rxjs/Observable';
 import { StructureTypeView } from '../../../shared/models/contentlet';
-import { ToolbarAddContenletService } from './toolbar-add-contentlet.service';
+import { ToolbarAddContenletService } from './services/toolbar-add-contentlet.service';
 
 @Component({
     encapsulation: ViewEncapsulation.None,

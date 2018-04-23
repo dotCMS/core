@@ -24,7 +24,7 @@ export class DotRouterService {
      * @param {string} id
      * @memberof DotRouterService
      */
-    reloadCurrentPortlet(id: string): void {
+    reloadCurrentPortlet(id?: string): void {
         this.portletReload$.next(id);
     }
 

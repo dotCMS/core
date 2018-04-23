@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { DotContentletService } from '../../../api/services/dot-contentlet.service';
+import { DotContentletService } from '../../../../api/services/dot-contentlet.service';
 import { Subject } from 'rxjs/Subject';
-import { StructureTypeView } from '../../../shared/models/contentlet';
+import { StructureTypeView } from '../../../../shared/models/contentlet';
 import { DotcmsEventsService } from 'dotcms-js/dotcms-js';
 
 @Injectable()

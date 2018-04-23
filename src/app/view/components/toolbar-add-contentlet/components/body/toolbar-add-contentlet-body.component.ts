@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter, ViewEncapsulation } from '@angular/core';
-import { StructureTypeView } from '../../../shared/models/contentlet';
-import { DotNavigationService } from '../dot-navigation/dot-navigation.service';
+import { StructureTypeView } from '../../../../../shared/models/contentlet';
+import { DotRouterService } from '../../../../../api/services/dot-router/dot-router.service';
 
 @Component({
     encapsulation: ViewEncapsulation.None,
@@ -15,11 +15,11 @@ export class ToolbarAddContenletBodyComponent {
     @Output() select = new EventEmitter<any>();
     @Output() more = new EventEmitter<any>();
 
-    constructor(private dotNavigationService: DotNavigationService) {}
+    constructor(private dotRouterService: DotRouterService) {}
 
-    onClick(event: any, id: string): void {
-        if (!event.ctrlKey && !event.metaKey) {
-            this.dotNavigationService.reloadCurrentPortlet(id);
+    onClick(event: MouseEvent, id: string): void {
+        if (this.shouldReload(event, id)) {
+            this.dotRouterService.reloadCurrentPortlet();
         }
         this.select.emit();
     }
@@ -28,5 +28,9 @@ export class ToolbarAddContenletBodyComponent {
         event.preventDefault();
         this.more.emit();
         return false;
+    }
+
+    private shouldReload(event: MouseEvent, id: string): boolean {
+        return !event.ctrlKey && !event.metaKey && this.dotRouterService.currentPortlet.id === id;
     }
 }
