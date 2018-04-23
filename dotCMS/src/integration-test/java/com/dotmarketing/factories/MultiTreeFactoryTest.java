@@ -202,7 +202,7 @@ public class MultiTreeFactoryTest extends IntegrationTestBase {
     }
 
     @Test
-    public void testUpdateMultiTree() throws Exception {
+    public void testUpdateMultiTree_GivenSomeMultiTreeWithRelationType_ShouldUpdateRelationType() throws Exception {
         final String NEW_RELATION_TYPE = "New Relation Type";
         final String containerId = CONTAINER + "0";
         final String relationType = RELATION_TYPE + "0";
