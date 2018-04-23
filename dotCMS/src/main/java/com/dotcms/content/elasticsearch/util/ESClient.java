@@ -7,7 +7,9 @@ import com.dotcms.cluster.bean.ServerPort;
 import com.dotcms.cluster.business.ClusterAPI;
 import com.dotcms.cluster.business.ReplicasMode;
 import com.dotcms.cluster.business.ServerAPI;
+import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.ConfigUtils;
@@ -163,6 +165,11 @@ public class ESClient {
      * @throws IOException
      */
     private Optional<UpdateSettingsRequest> getReplicasSettings () throws IOException {
+
+        if (!(LicenseUtil.getLevel()> LicenseLevel.STANDARD.level)){
+            return Optional.empty();
+        }
+
         UpdateSettingsRequest settingsRequest = new UpdateSettingsRequest();
 
         final ReplicasMode replicasMode = clusterAPI.getReplicasMode();
@@ -183,7 +190,7 @@ public class ESClient {
      * Builds and returns the settings for starting up the ES node.
      *
      * If ES Autowire is on settings are set by the autowire process unless there are settings
-     * specified in the elasticsearch-ext.yml file, which will always take precedence and will override autowire values.
+     * specified in the elasticsearch-override.yml file, which will always take precedence and will override autowire values.
      * <p>
      * The properties whose values are determined by autowire are:
      * <ul>
@@ -192,7 +199,7 @@ public class ESClient {
      * <li>transport.host
      * <li>transport.tcp.port
      * </ul>
-     * if ClusterUtils.isESAutoWire()==false: from the values in the elasticsearch-ext.yml file
+     * if ClusterUtils.isESAutoWire()==false: from the values in the elasticsearch-override.yml file
      *
      * @return settings object to be used for initializing ES node
      */
@@ -200,7 +207,7 @@ public class ESClient {
         Server currentServer;
         String serverId;
 
-        // Load settings from elasticsearch-ext.yml
+        // Load settings from elasticsearch-override.yml
         final Builder externalSettings = ESUtils.getExtSettingsBuilder();
 
         // Get current server

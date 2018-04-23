@@ -36,11 +36,11 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 
-import com.dotcms.repackage.org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.LiferayDiskFileUpload;
 import org.apache.commons.fileupload.LiferayFileItem;
 import org.apache.commons.fileupload.LiferayFileItemFactory;
-import com.dotcms.repackage.org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
 
 import com.dotmarketing.util.Logger;
 import com.liferay.util.GetterUtil;
