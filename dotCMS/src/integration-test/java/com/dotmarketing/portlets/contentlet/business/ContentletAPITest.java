@@ -2031,7 +2031,7 @@ public class ContentletAPITest extends ContentletBaseTest {
      * https://github.com/dotCMS/dotCMS/issues/1763
      */
     @Test
-    public void testPubExpDatesFromIdentifier() throws Exception {
+    public void testUpdatePublishExpireDatesFromIdentifier() throws Exception {
         final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         // set up a structure with pub/exp variables
         Structure testStructure = createStructure( "JUnit Test Structure_" + String.valueOf( new Date().getTime() ) + "zzzvv", "junit_test_structure_" + String.valueOf( new Date().getTime() ) + "zzzvv" );
@@ -2047,7 +2047,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         // some dates to play with
 
-        String date = "11-08-1992 10:20:56";
+        String date = "2222-08-11 10:20:56";
         Date d1= dateFormat.parse(date);
         Date d2=new Date(d1.getTime()+60000L);
         Date d3=new Date(d2.getTime()+60000L);
