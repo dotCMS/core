@@ -145,7 +145,7 @@
 
 			
 			<div class="showPointer" onClick="schemeAdmin.show()"  style="float: left;">
-			 <h2 style="border-bottom:dotted 1px gray;"><%=LanguageUtil.get(pageContext, "Workflow-Schemes")%></h2>
+			 <h2 style="border-bottom:dotted 1px white;"><%=LanguageUtil.get(pageContext, "Workflow-Schemes")%></h2>
 			 <p>&nbsp;</p>
 			</div> 
 			
@@ -174,7 +174,10 @@
 
 	<div class="portlet-toolbar__actions-secondary">
 		<!-- ADD STEP -->
-
+		<button dojoType="dijit.form.Button"
+				onClick="schemeAdmin.exportScheme('<%=scheme.getId()%>');return false;" iconClass="addIcon">
+			<%=LanguageUtil.get(pageContext, "Export-Workflow-Scheme")%>
+		</button>
 	   <!-- ADD STEP -->
 	</div>
 </div>

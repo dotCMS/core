@@ -21,20 +21,26 @@
 	
 	<!-- START Toolbar -->
 	<form id="fm" method="post">
-		<div class="portlet-toolbar">
-			<div class="portlet-toolbar__actions-primary">
-				<h2><%=LanguageUtil.get(pageContext, "Workflow-Schemes")%></h2>
-	               &nbsp;  &nbsp; 
-                
-            </div>
-            <div class="portlet-toolbar__actions-secondary">
-				    <input type="checkbox" id="showArchivedChk" name="showArchived"
-                    <%=(showArchived) ? "checked='true'" : ""%> id="system"
-                    dojoType="dijit.form.CheckBox" value="1"
-                    onClick="new function(){schemeAdmin.showArchived = <%=!showArchived%>;schemeAdmin.show();}" />
-                    <label font-size:85%; for="showArchivedChk"><%=LanguageUtil.get(pageContext, "Show-Archived")%></label>
+		<div class="portlet-toolbar" style="padding-top:0px;">
+            <div class="showPointer" onClick="schemeAdmin.show()"  style="float: left;">
+             <h2 style="border-bottom:dotted 1px white;"><%=LanguageUtil.get(pageContext, "Workflow-Schemes")%></h2>
+             <p>&nbsp;</p>
+            </div> 
+            <div style="float: right;">
+				
+					<input type="checkbox" id="showArchivedChk" name="showArchived"
+					<%=(showArchived) ? "checked='true'" : ""%> id="system"
+					dojoType="dijit.form.CheckBox" value="1"
+					onClick="new function(){schemeAdmin.showArchived = <%=!showArchived%>;schemeAdmin.show();}" />
+					<label for="showArchivedChk"><%=LanguageUtil.get(pageContext, "Show-Archived")%></label>
+		              &nbsp; &nbsp;
 
-            &nbsp; &nbsp; 
+	  
+				<button dojoType="dijit.form.Button"
+						onClick="schemeAdmin.showImport();return false;" iconClass="addIcon">
+					<%=LanguageUtil.get(pageContext, "Import-Workflow-Scheme")%>
+				</button>
+
 	    		<button dojoType="dijit.form.Button"
 					onClick="schemeAdmin.showAddEdit();return false;" iconClass="addIcon">
 					<%=LanguageUtil.get(pageContext, "Add-Workflow-Scheme")%>

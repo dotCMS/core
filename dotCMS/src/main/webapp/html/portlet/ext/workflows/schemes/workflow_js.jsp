@@ -180,9 +180,11 @@ dojo.declare("dotcms.dijit.workflows.MainAdmin", null, {
 dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 	baseJsp : "/html/portlet/ext/workflows/schemes/view_schemes.jsp",
 	editJsp : "/html/portlet/ext/workflows/schemes/edit_scheme.jsp",
+    importJsp : "/html/portlet/ext/workflows/schemes/import_scheme.jsp",
 	showArchived : false,
 	crumbTitle:"<%=LanguageUtil.get(pageContext, "Schemes")%>",
 	addEditDiv:"wfEditSchemeDia",
+    importDiv:"wfImportSchemeDia",
 	constructor : function() {
 
 	},
@@ -345,7 +347,102 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 	},
 	copyError : function(message) {
 		showDotCMSSystemMessage(message, true);
-	}
+	},
+
+    exportScheme : function(schemeId) {
+
+        var xhrArgs = {
+            url: "/api/v1/workflow/schemes/"+schemeId+"/export",
+            timeout : 30000,
+            handleAs: "json",
+            load: function(data) {
+                 schemeAdmin.downloadFile(schemeId, data);
+            }, error : function(error) {
+                 showDotCMSSystemMessage(error, true);
+            }
+        };
+        dojo.xhrGet(xhrArgs);
+        return;
+    },
+    downloadFile : function (schemeId, data) {
+        var blob = new Blob([JSON.stringify(data.entity)], {type: 'application/json'});
+        var url = URL.createObjectURL(blob);
+
+        let a = document.createElement("a");
+        a.style = "display: none";
+        document.body.appendChild(a);
+
+        a.href = url;
+        a.download = 'scheme_'+schemeId+'.json';
+        a.click();
+        window.URL.revokeObjectURL(url);
+    },
+
+    showImport : function(schemeId) {
+        var myCp = dijit.byId("wfImportSchemeCp");
+        if (myCp) {
+            myCp.destroyRecursive(false);
+        }
+        var href = this.importJsp;
+
+        myCp = new dijit.layout.ContentPane({
+            id : "wfImportSchemeCp",
+            parseOnLoad : true,
+        });
+
+        var dia = dijit.byId(this.importDiv);
+        if(dia){
+            dia.destroyRecursive(false);
+        }
+
+        dia = new dijit.Dialog({
+            id : this.importDiv,
+            title : "<%=LanguageUtil.get(pageContext, "Import-Workflow-Scheme")%>",
+            draggable : false
+        });
+
+        myCp.attr("href", href)
+        myCp.placeAt(this.importDiv)
+        dia.show();
+    },
+    hideImport : function() {
+        var dialog = dijit.byId(this.importDiv);
+        dialog.hide();
+    },
+    importScheme : function() {
+
+        if(!confirm("<%=LanguageUtil.get(pageContext, "Confirm-Import-Scheme")%>")){
+            return;
+        }
+
+        var fileReader = new FileReader();
+        fileReader.readAsText(document.getElementById("schemejsonfile").files[0]);
+        fileReader.onload = function (fileReaderEvent, fileText) {
+            var fileText = fileReaderEvent.target.result;
+
+            var xhrArgs = {
+                url : "/api/v1/workflow/schemes/import",
+                postData: fileText,
+                timeout : 30000,
+                handleAs : "json",
+                headers: { "Content-Type": "application/json"},
+                load : function(data) {
+                    schemeAdmin.importSuccess(data);
+                }, error : function(error) {
+                    showDotCMSSystemMessage(error, true);
+                }
+            };
+
+            dojo.xhrPost(xhrArgs);
+        }
+        return;
+    },
+    importSuccess : function(message) {
+        schemeAdmin.hideImport();
+        mainAdmin.refresh();
+        showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Workflow-Scheme-Imported")%>");
+
+    }
 
 });
 
