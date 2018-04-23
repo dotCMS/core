@@ -208,6 +208,30 @@ public class WorkflowResourceResponseCodeIntegrationTest {
         assertEquals(Status.OK.getStatusCode(), findResponse.getStatus());
     }
 
+
+    @Test
+    public void Test_Update_Action_Expect404() throws Exception{
+        final Role adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
+        final String adminRoleId = adminRole.getId();
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final Set<WorkflowState> states = WorkflowState.toSet(WorkflowState.values());
+        final WorkflowActionForm form = new WorkflowActionForm.Builder().schemeId("Any").
+                actionName("").
+                showOn(states).
+                actionNextStep(CURRENT_STEP).
+                actionAssignable(false).
+                actionCommentable(false).
+                requiresCheckout(false).
+                actionNextAssign(adminRoleId).
+                whoCanUse(Arrays.asList("")).
+                actionCondition("").
+                build();
+        final String actionId = "-1";
+        final Response updateResponse = workflowResource.updateAction(request, actionId, form);
+        assertEquals(Status.NOT_FOUND.getStatusCode(), updateResponse.getStatus());
+    }
+
+
     @Test
     public void Find_Actions_Null_Input() {
         final HttpServletRequest request = mock(HttpServletRequest.class);

@@ -2,6 +2,9 @@ package com.dotcms.content.elasticsearch.business;
 
 import com.carrotsearch.hppc.cursors.ObjectCursor;
 import com.dotcms.cluster.ClusterUtils;
+import com.dotcms.cluster.business.ClusterAPI;
+import com.dotcms.cluster.business.ReplicasMode;
+import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
@@ -10,6 +13,7 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.cluster.mbeans.Cluster;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.AdminLogger;
@@ -113,6 +117,8 @@ public class ESIndexAPI {
 	final private ESClient esclient;
 	final private ESContentletIndexAPI iapi;
 	final private ESIndexHelper esIndexHelper;
+	private final ServerAPI serverAPI;
+	private final ClusterAPI clusterAPI;
 
 	public enum Status { ACTIVE("active"), INACTIVE("inactive"), PROCESSING("processing");
 		private final String status;
@@ -126,29 +132,22 @@ public class ESIndexAPI {
 		}
 	}
 
-	public enum ReplicasMode { AUTOWIRE("autowire"), NO_BOUNDARY("0-all"), EMPTY("empty");
-		private final String replicasMode;
-
-		ReplicasMode(final String replicasMode) {
-			this.replicasMode = replicasMode;
-		}
-
-		public String getReplicasMode() {
-			return replicasMode;
-		}
-	}
-
 	public ESIndexAPI(){
 		this.esclient = new ESClient();
 		this.iapi = new ESContentletIndexAPI();
 		this.esIndexHelper = ESIndexHelper.INSTANCE;
+		this.serverAPI = APILocator.getServerAPI();
+		this.clusterAPI = APILocator.getClusterAPI();
 	}
 
 	@VisibleForTesting
-	protected ESIndexAPI(ESClient esclient, ESContentletIndexAPI iapi, ESIndexHelper esIndexHelper){
+	protected ESIndexAPI(final ESClient esclient, final ESContentletIndexAPI iapi, final ESIndexHelper esIndexHelper,
+						 final ServerAPI serverAPI, final ClusterAPI clusterAPI){
 		this.esclient = esclient;
 		this.iapi = iapi;
 		this.esIndexHelper = esIndexHelper;
+		this.serverAPI = serverAPI;
+		this.clusterAPI = clusterAPI;
 	}
 
     /**
@@ -519,73 +518,6 @@ public class ESIndexAPI {
                .endObject().string(), XContentType.JSON)).actionGet();
     }
 
-    public static int getReplicasCount(){
-
-		int nReplicas = 0;
-		final String replicasMode = getReplicasMode();
-
-		if (LicenseUtil.getLevel() <= LicenseLevel.STANDARD.level){
-			return nReplicas;
-		}
-
-		if (replicasMode.equals(ReplicasMode.AUTOWIRE.getReplicasMode())){
-			if (ClusterUtils.isESAutoWire()){
-				nReplicas = getReplicasCountByNodes();
-			} else{
-				Logger.error(ESIndexAPI.class,
-						"Setting ES_INDEX_REPLICAS=\"autowire\" and AUTOWIRE_CLUSTER_ES=false is not allowed; number_of_replicas=0 will be used by default");
-			}
-		} else if (replicasMode.equals(ReplicasMode.NO_BOUNDARY.getReplicasMode())) {
-			nReplicas = -1;
-		} else if (!replicasMode.equals(ReplicasMode.EMPTY.getReplicasMode())){
-			try {
-				nReplicas = Integer.parseInt(replicasMode);
-			} catch(NumberFormatException e){
-				Logger.error(ESIndexAPI.class,
-						"ES_INDEX_REPLICAS value is not valid; number_of_replicas=0 will be used by default");
-			}
-		}
-
-		return nReplicas;
-
-	}
-
-	private static String getReplicasMode(){
-
-    	String replicasMode;
-
-		if (!ClusterUtils.isReplicasSet()){
-			if (ClusterUtils.isESAutoWire()){
-				replicasMode = ReplicasMode.AUTOWIRE.getReplicasMode();
-			}else{
-				replicasMode = ReplicasMode.EMPTY.getReplicasMode();
-			}
-		} else {
-			replicasMode = Config.getStringProperty("ES_INDEX_REPLICAS", null);
-		}
-
-		return replicasMode;
-	}
-
-	private static int getReplicasCountByNodes(){
-		int serverCount;
-
-		try {
-			serverCount = APILocator.getServerAPI().getAliveServersIds().length;
-		} catch (DotDataException e) {
-			Logger.error(ESIndexAPI.class, "Error getting live server list for server count, using 1 as default.");
-			serverCount = 1;
-		}
-		// formula is (live server count (including the ones that are down but not yet timed out) - 1)
-
-		if(serverCount>0) {
-			serverCount = serverCount - 1;
-		}
-
-		return serverCount;
-
-	}
-
 	/**
 	 * clusters an index, including changing the routing
 	 * @param index
@@ -593,16 +525,12 @@ public class ESIndexAPI {
 	 */
     public  void moveIndexBackToCluster(final String index) throws IOException {
         final Client client=new ESClient().getClient();
-        final int nReplicas = getReplicasCount();
+        final ReplicasMode replicasMode = clusterAPI.getReplicasMode();
 
 		final XContentBuilder builder = jsonBuilder().startObject().startObject("index");
 
-		if (nReplicas >= 0){
-			builder.field("number_of_replicas",nReplicas);
-			builder.field("auto_expand_replicas",false);
-		}else{
-			builder.field("auto_expand_replicas",ReplicasMode.NO_BOUNDARY.getReplicasMode());
-		}
+		builder.field("number_of_replicas",replicasMode.getNumberOfReplicas());
+		builder.field("auto_expand_replicas",replicasMode.getAutoExpandReplicas());
 
         client.admin().indices().updateSettings(
           new UpdateSettingsRequest(index).settings(builder
@@ -623,7 +551,7 @@ public class ESIndexAPI {
 	public synchronized CreateIndexResponse createIndex(final String indexName, String settings,
 			int shards) throws ElasticsearchException, IOException {
 
-		final int nReplicas = getReplicasCount();
+		final ReplicasMode replicasMode = clusterAPI.getReplicasMode();
 
 		AdminLogger.log(this.getClass(), "createIndex",
 			"Trying to create index: " + indexName + " with shards: " + shards);
@@ -651,14 +579,11 @@ public class ESIndexAPI {
 		}
 		Map map = new ObjectMapper().readValue(settings, LinkedHashMap.class);
 		map.put("number_of_shards", shards);
-		map.put("index.mapping.total_fields.limit", 2000); // TODO ONLY FOR TESTING. REMOVE
+		map.put("index.mapping.total_fields.limit",
+			Config.getIntProperty("ES_INDEX_MAPPING_TOTAL_FIELD_LIMITS", 5000));
 
-		if (nReplicas >= 0){
-			map.put("number_of_replicas",nReplicas);
-			map.put("auto_expand_replicas",false);
-		}else{
-			map.put("auto_expand_replicas",ReplicasMode.NO_BOUNDARY.getReplicasMode());
-		}
+		map.put("number_of_replicas",replicasMode.getNumberOfReplicas());
+		map.put("auto_expand_replicas",replicasMode.getAutoExpandReplicas());
 
 		// create actual index
 		CreateIndexRequestBuilder cirb = iac.prepareCreate(indexName).setSettings(map);

@@ -26,6 +26,7 @@ import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -182,6 +183,18 @@ public class PageResourceHelper implements Serializable {
             }
 
             template.setDrawed(true);
+
+            pageForm.getChanges().forEach(containerUUIDChanged -> {
+                final ContainerUUID old = containerUUIDChanged.getOld();
+                final ContainerUUID aNew = containerUUIDChanged.getNew();
+
+                try {
+                    multiTreeAPI.updateMultiTree(page.getIdentifier(), old.getIdentifier(), old.getUUID(), aNew.getUUID());
+                } catch (DotDataException e) {
+                    Logger.error(this.getClass(),"Exception on saveTemplate exception message: " + e.getMessage(), e);
+                }
+            });
+
             return this.templateAPI.saveTemplate(template, host, user, false);
         } catch (Exception e) {
             throw new DotRuntimeException(e);

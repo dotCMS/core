@@ -2478,6 +2478,103 @@ public class ContentletAPITest extends ContentletBaseTest {
 		
     }
 
+    /*
+    Creates one content with 3 versions in English and 3 versions Spanish. Delete the Spanish one,
+    should delete all the versions in Spanish not only the live/working version.
+     */
+    @Test
+    public void testDelete_GivenMultiLangMultiVersionContent_WhenDeletingOneSpanishVersion_ShouldDeleteAllSpanishVersions() throws Exception{
+        // languages
+        int english = 1;
+        int spanish = 2;
+
+        ContentType contentType = null;
+        com.dotcms.contenttype.model.field.Field textField1 = null;
+        com.dotcms.contenttype.model.field.Field textField2 = null;
+
+        Contentlet contentletEnglish = null;
+        Contentlet contentletSpanish = null;
+
+        try {
+            //Create Content Type.
+            contentType = ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
+                    .description("Test ContentType Two Text Fields")
+                    .host(defaultHost.getIdentifier())
+                    .name("Test ContentType Two Text Fields")
+                    .owner("owner")
+                    .variable("testContentTypeWithTwoTextFields")
+                    .build();
+
+            contentType = contentTypeAPI.save(contentType);
+
+            //Creating Text Field.
+            textField1 = ImmutableTextField.builder()
+                    .name("Title")
+                    .variable("title")
+                    .contentTypeId(contentType.id())
+                    .dataType(DataTypes.TEXT)
+                    .build();
+
+            textField1 = fieldAPI.save(textField1, user);
+
+            //Creating Text Field.
+            textField2 = ImmutableTextField.builder()
+                    .name("Body")
+                    .variable("body")
+                    .contentTypeId(contentType.id())
+                    .dataType(DataTypes.TEXT)
+                    .build();
+
+            textField2 = fieldAPI.save(textField2, user);
+
+            contentletEnglish = new ContentletDataGen(contentType.id()).languageId(english).nextPersisted();
+            //new Version
+            contentletEnglish = contentletAPI.find(contentletEnglish.getInode(),user,false);
+            contentletEnglish.setInode("");
+            contentletEnglish = contentletAPI.checkin(contentletEnglish,user,false);
+            //new Version
+            contentletEnglish = contentletAPI.find(contentletEnglish.getInode(),user,false);
+            contentletEnglish.setInode("");
+            contentletEnglish = contentletAPI.checkin(contentletEnglish,user,false);
+
+            Identifier contentletIdentifier = APILocator.getIdentifierAPI().find(contentletEnglish.getIdentifier());
+
+            int quantityVersions = contentletAPI.findAllVersions(contentletIdentifier,user,false).size();
+
+            assertEquals(3,quantityVersions);
+
+            contentletSpanish = contentletAPI.find(contentletEnglish.getInode(),user,false);
+            contentletSpanish.setInode("");
+            contentletSpanish.setLanguageId(spanish);
+            contentletSpanish = contentletAPI.checkin(contentletSpanish, user, false);
+            //new Version
+            contentletSpanish = contentletAPI.find(contentletSpanish.getInode(),user,false);
+            contentletSpanish.setInode("");
+            contentletSpanish.setLanguageId(spanish);
+            contentletSpanish = contentletAPI.checkin(contentletSpanish, user, false);
+            //new Version
+            contentletSpanish = contentletAPI.find(contentletSpanish.getInode(),user,false);
+            contentletSpanish.setInode("");
+            contentletSpanish.setLanguageId(spanish);
+            contentletSpanish = contentletAPI.checkin(contentletSpanish, user, false);
+
+            quantityVersions = contentletAPI.findAllVersions(contentletIdentifier,user,false).size();
+
+            assertEquals(6,quantityVersions);
+
+            contentletAPI.archive(contentletSpanish,user,false);
+            contentletAPI.delete(contentletSpanish,user,false);
+
+            quantityVersions = contentletAPI.findAllVersions(contentletIdentifier,user,false).size();
+
+            assertEquals(3,quantityVersions);
+
+        }finally {
+            contentTypeAPI.delete(contentType);
+        }
+
+    }
+
     /**
      * This JUnit is to check the fix on Issue 10797 (https://github.com/dotCMS/core/issues/10797)
      * It executes the following:

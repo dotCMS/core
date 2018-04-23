@@ -42,7 +42,7 @@ public interface WorkflowAPI {
 	public WorkFlowActionlet newActionlet(String className) throws DotDataException;
 
 	/**
-	 * If the user is not allowed to modified workflow, will throw {@link NotAllowedUserWorkflowException}
+	 * If the user is not allowed to modified workflow, will throw {@link WorkflowPortletAccessException}
 	 * @param user
 	 */
 	void isUserAllowToModifiedWorkflow (final User user);
@@ -186,10 +186,6 @@ public interface WorkflowAPI {
 	public void  saveWorkflowTask(WorkflowTask task) throws DotDataException;
 
 	public List<WorkflowScheme> findSchemes(boolean showArchived) throws DotDataException;
-
-	public WorkflowScheme findDefaultScheme() throws DotDataException;
-
-	public boolean isDefaultScheme(WorkflowScheme scheme) throws DotDataException;
 
 	public WorkflowScheme findScheme(String id) throws DotDataException, DotSecurityException;
 
