@@ -7,7 +7,9 @@ import com.dotcms.cluster.bean.ServerPort;
 import com.dotcms.cluster.business.ClusterAPI;
 import com.dotcms.cluster.business.ReplicasMode;
 import com.dotcms.cluster.business.ServerAPI;
+import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.ConfigUtils;
@@ -163,6 +165,11 @@ public class ESClient {
      * @throws IOException
      */
     private Optional<UpdateSettingsRequest> getReplicasSettings () throws IOException {
+
+        if (!(LicenseUtil.getLevel()> LicenseLevel.STANDARD.level)){
+            return Optional.empty();
+        }
+
         UpdateSettingsRequest settingsRequest = new UpdateSettingsRequest();
 
         final ReplicasMode replicasMode = clusterAPI.getReplicasMode();
