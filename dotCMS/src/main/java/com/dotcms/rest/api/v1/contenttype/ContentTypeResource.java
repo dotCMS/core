@@ -256,7 +256,7 @@ public class ContentTypeResource implements Serializable {
 			final ContentType type = tapi.find(idOrVar);
 			resultMap.putAll(new JsonContentTypeTransformer(type).mapObject());
 			resultMap.put("workflows", 		 this.workflowHelper.findSchemesByContentType(type.id(), initData.getUser()));
-			resultMap.put("editable",        this.permissionAPI.doesUserHavePermission(type, PermissionAPI.PERMISSION_READ, initData.getUser()));
+			resultMap.put("editable",        this.permissionAPI.doesUserHavePermission(type, PermissionAPI.PERMISSION_WRITE, initData.getUser()));
 
 			response = Response.ok(new ResponseEntityView(resultMap)).build();
 		} catch (DotSecurityException e) {
