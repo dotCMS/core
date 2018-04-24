@@ -1484,7 +1484,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             try {
                 workflowAPI.deleteScheme(workflowScheme6, user).get();
             } catch (InterruptedException | ExecutionException e) {
-                assertTrue( e.getMessage(), false);
+                fail( e.getMessage());
             }
 
         }
