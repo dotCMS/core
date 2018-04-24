@@ -1616,7 +1616,7 @@ public class Contentlet extends WebAsset implements Serializable {
 			PropertyUtils.setProperty(this, f.getFieldContentlet(), value);
 		}catch(IllegalArgumentException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e){
 			Logger.error(this, "Unable to set the contentlet field.");
-			throw new DotRuntimeException("Unable to set the contentlet field.", iae);
+			throw new DotRuntimeException("Unable to set the contentlet field.", e);
 		}
 	}
 
