@@ -509,8 +509,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 		if( SYSTEM_WORKFLOW_ID.equals(scheme.getId()) || !scheme.isArchived()) {
 
-			Logger.warn(this, "Can not delete workflow Id:" + scheme.getId());
-			throw new DotWorkflowException("Can not delete workflow Id:" + scheme.getId());
+			Logger.warn(this,
+					"Can not delete workflow Id:" + scheme.getId() + ", name:" + scheme.getName());
+			throw new DotWorkflowException(
+					"Can not delete workflow Id:" + scheme.getId() + ", name:" + scheme.getName());
 		}
 
 		final DotSubmitter submitter = this.concurrentFactory.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
@@ -528,7 +530,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		try {
 			final StopWatch stopWatch = new StopWatch();
 			stopWatch.start();
-			Logger.info(this, "Begin the Delete Workflow Scheme task.");
+			Logger.info(this, "Begin the Delete Workflow Scheme task. workflow Id:" + scheme.getId()
+					+ ", name:" + scheme.getName());
 
 			final List<WorkflowStep> steps = this.findSteps(scheme);
 			for (WorkflowStep step : steps) {
@@ -546,7 +549,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			//delete scheme
 			this.workFlowFactory.deleteScheme(scheme);
 			SecurityLogger.logInfo(this.getClass(),
-					"The Workflow Scheme with id:" + scheme.getId() + " was deleted");
+					"The Workflow Scheme with id:" + scheme.getId() + ", name:" + scheme.getName()
+							+ " was deleted");
 
 			stopWatch.stop();
 			Logger.info(this, "Delete Workflow Scheme task DONE, duration:" +
@@ -556,7 +560,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					(LanguageUtil.get(user.getLocale(), "Workflow-deleted", scheme.getName()), user.getUserId());
 		} catch (Exception e) {
 			Logger.error(this.getClass(),
-					"Error deleting Scheme: " + scheme.getId() + ". " + e.getMessage(), e);
+					"Error deleting Scheme: " + scheme.getId() + ", name:" + scheme.getName() + ". "
+							+ e.getMessage(), e);
 			throw new DotRuntimeException(e);
 		}
 		return scheme;
@@ -709,7 +714,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			this.workFlowFactory.deleteActions(step); // workflow_action_step
 			this.workFlowFactory.deleteStep(step);    // workflow_step
 			SecurityLogger.logInfo(this.getClass(),
-					"The Workflow Step with id:" + step.getId() + " was deleted");
+					"The Workflow Step with id:" + step.getId() + ", name:" + step.getName()
+							+ " was deleted");
 
 		} catch(Exception e){
 
@@ -1277,12 +1283,16 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public void deleteAction(final WorkflowAction action, final User user) throws DotDataException, AlreadyExistException {
 
 		this.isUserAllowToModifiedWorkflow(user);
-		Logger.debug(this, () -> "Removing the WorkflowAction: " + action.getId());
+		Logger.debug(this,
+				() -> "Removing the WorkflowAction: " + action.getId() + ", name:" + action
+						.getName());
 
 		final List<WorkflowActionClass> workflowActionClasses =
 				findActionClasses(action);
 
-		Logger.debug(this, () -> "Removing the WorkflowActionClass, for action: " + action.getId());
+		Logger.debug(this,
+				() -> "Removing the WorkflowActionClass, for action: " + action.getId() + ", name:"
+						+ action.getName());
 
 		if(workflowActionClasses != null && workflowActionClasses.size() > 0) {
 			for(final WorkflowActionClass actionClass : workflowActionClasses) {
@@ -1291,10 +1301,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 
 		Logger.debug(this,
-				() -> "Removing the WorkflowAction and Step Dependencies, for action: " + action.getId());
+				() -> "Removing the WorkflowAction and Step Dependencies, for action: " + action
+						.getId() + ", name:" + action.getName());
 		this.workFlowFactory.deleteAction(action);
 		SecurityLogger.logInfo(this.getClass(),
-				"The Workflow Action with id:" + action.getId() + " was deleted");
+				"The Workflow Action with id:" + action.getId() + ", name:" + action.getName()
+						+ " was deleted");
 
 	}
 
@@ -1704,7 +1716,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 			comment.setWorkflowtaskId(task.getId());
 			comment.setCreationDate(new Date());
-			comment.setPostedBy(processor.getUser().getFullName());
+			comment.setPostedBy(processor.getUser().getUserId());
 			saveComment(comment);
 		}
 
