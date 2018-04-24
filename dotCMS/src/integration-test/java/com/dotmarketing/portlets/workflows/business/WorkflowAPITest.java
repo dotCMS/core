@@ -2079,7 +2079,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
      */
     @Test
     public void saveScheme_keepExistingContentWorkflowTaskStatus_IfWorkflowSchemeRemainsAssociated()
-            throws DotDataException, DotSecurityException, AlreadyExistException {
+            throws DotDataException, DotSecurityException, AlreadyExistException, ExecutionException, InterruptedException {
         WorkflowScheme workflowSchemeA = null;
         WorkflowScheme workflowSchemeB = null;
         ContentType keepWfTaskStatusContentType = null;
@@ -2167,10 +2167,10 @@ public class WorkflowAPITest extends IntegrationTestBase {
             contentTypeAPI.delete(keepWfTaskStatusContentType);
 
             workflowAPI.archive(workflowSchemeA, user);
-            workflowAPI.deleteScheme(workflowSchemeA, user);
+            workflowAPI.deleteScheme(workflowSchemeA, user).get();
 
             workflowAPI.archive(workflowSchemeB, user);
-            workflowAPI.deleteScheme(workflowSchemeB, user);
+            workflowAPI.deleteScheme(workflowSchemeB, user).get();
         }
     }
 
@@ -2180,7 +2180,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
      */
     @Test
     public void findSchemesForContenttype_validateIfSchemesResultsAreOnCache()
-            throws DotDataException, DotSecurityException, AlreadyExistException {
+            throws DotDataException, DotSecurityException, AlreadyExistException, ExecutionException, InterruptedException {
         WorkflowScheme workflowSchemeC = null;
         WorkflowScheme workflowSchemeD = null;
         ContentType contentType = null;
@@ -2288,10 +2288,10 @@ public class WorkflowAPITest extends IntegrationTestBase {
             contentTypeAPI.delete(contentType);
 
             workflowAPI.archive(workflowSchemeC, user);
-            workflowAPI.deleteScheme(workflowSchemeC, user);
+            workflowAPI.deleteScheme(workflowSchemeC, user).get();
 
             workflowAPI.archive(workflowSchemeD, user);
-            workflowAPI.deleteScheme(workflowSchemeD, user);
+            workflowAPI.deleteScheme(workflowSchemeD, user).get();
         }
     }
 
