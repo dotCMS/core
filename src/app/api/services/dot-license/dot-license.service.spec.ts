@@ -1,10 +1,4 @@
 import { DOTTestBed } from '../../../test/dot-test-bed';
-import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs/Observable';
-import { LoginService } from 'dotcms-js/dotcms-js';
-import { DotRouterService } from '../dot-router/dot-router.service';
-import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
-import { ConfigParams } from 'dotcms-js/core/dotcms-config.service';
 import { DotLicenseService } from './dot-license.service';
 import { ConnectionBackend, ResponseOptions, Response } from '@angular/http';
 import { MockBackend } from '@angular/http/testing';

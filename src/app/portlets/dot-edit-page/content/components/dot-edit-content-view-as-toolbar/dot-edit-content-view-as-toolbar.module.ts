@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DotEditContentViewAsToolbarComponent } from './dot-edit-content-view-as-toolbar.component';
-import { DropdownModule } from 'primeng/primeng';
+import { DropdownModule, CheckboxModule } from 'primeng/primeng';
 import { FormsModule } from '@angular/forms';
 import { DotPersonaSelectorModule } from '../../../../../view/components/dot-persona-selector/dot-persona-selector.module';
 import { DotLanguageSelectorModule } from '../../../../../view/components/dot-language-selector/dot-language-selector.module';
@@ -17,7 +17,8 @@ import { DotDevicesService } from '../../../../../api/services/dot-devices/dot-d
         FormsModule,
         DotPersonaSelectorModule,
         DotLanguageSelectorModule,
-        DotDeviceSelectorModule
+        DotDeviceSelectorModule,
+        CheckboxModule
     ],
     providers: [DotDevicesService, DotLanguagesService, DotPersonasService],
     declarations: [DotEditContentViewAsToolbarComponent],

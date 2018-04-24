@@ -14,7 +14,6 @@ import { async } from '@angular/core/testing';
 import { ActivatedRouteSnapshot } from '@angular/router';
 import { DotRenderedPageState } from '../../models/dot-rendered-page-state.model';
 import { mockResponseView } from '../../../../../test/response-view.mock';
-import { Router } from '@angular/router';
 import { PageMode } from '../../models/page-mode.enum';
 import { DotEditPageDataService } from './dot-edit-page-data.service';
 

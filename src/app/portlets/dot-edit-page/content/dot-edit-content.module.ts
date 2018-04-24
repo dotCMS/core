@@ -17,6 +17,7 @@ import { DotRenderHTMLService } from '../../../api/services/dot-render-html/dot-
 import { DotWorkflowService } from '../../../api/services/dot-workflow/dot-workflow.service';
 import { DotEditPageService } from '../../../api/services/dot-edit-page/dot-edit-page.service';
 import { DotEditContentViewAsToolbarModule } from './components/dot-edit-content-view-as-toolbar/dot-edit-content-view-as-toolbar.module';
+import { DotWhatsChangedModule } from './components/dot-whats-changed/dot-whats-changed.module';
 
 const routes: Routes = [
     {
@@ -34,7 +35,8 @@ const routes: Routes = [
         DotEditPageToolbarModule,
         DotLoadingIndicatorModule,
         DotDirectivesModule,
-        DotEditContentViewAsToolbarModule
+        DotEditContentViewAsToolbarModule,
+        DotWhatsChangedModule
     ],
     exports: [DotEditContentComponent],
     providers: [

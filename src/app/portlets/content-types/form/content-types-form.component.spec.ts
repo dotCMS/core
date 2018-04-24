@@ -7,7 +7,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { Observable } from 'rxjs/Observable';
 
-import { DropdownModule, OverlayPanelModule, ButtonModule, InputTextModule, TabViewModule, MultiSelect } from 'primeng/primeng';
+import { DropdownModule, OverlayPanelModule, ButtonModule, InputTextModule, TabViewModule } from 'primeng/primeng';
 
 import { DotcmsConfig, LoginService } from 'dotcms-js/dotcms-js';
 import { SiteService } from 'dotcms-js/dotcms-js';

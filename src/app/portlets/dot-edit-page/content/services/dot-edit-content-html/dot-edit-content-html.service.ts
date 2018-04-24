@@ -390,7 +390,7 @@ export class DotEditContentHtmlService {
                 this.renderRelocatedContentlet(contentletEvent.data);
             },
             // When user cancel the edition of a contentlet.
-            cancel: (contentletEvent: any) => {
+            cancel: (_contentletEvent: any) => {
                 this.iframeActions.next({
                     name: 'close'
                 });

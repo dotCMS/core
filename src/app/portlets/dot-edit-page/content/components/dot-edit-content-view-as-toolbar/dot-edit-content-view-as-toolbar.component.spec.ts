@@ -1,10 +1,10 @@
-import { ComponentFixture } from '@angular/core/testing';
+import { ComponentFixture, async } from '@angular/core/testing';
 import { DotEditContentViewAsToolbarComponent } from './dot-edit-content-view-as-toolbar.component';
 import { DotDevicesService } from '../../../../../api/services/dot-devices/dot-devices.service';
 import { DotLanguagesService } from '../../../../../api/services/dot-languages/dot-languages.service';
 import { DotPersonasService } from '../../../../../api/services/dot-personas/dot-personas.service';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
-import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
+import { Component, DebugElement, EventEmitter, Input, Output, OnInit } from '@angular/core';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { DotDevicesServiceMock } from '../../../../../test/dot-device-service.mock';
@@ -17,6 +17,24 @@ import { DotDevice } from '../../../../../shared/models/dot-device/dot-device.mo
 import { DotLanguage } from '../../../../../shared/models/dot-language/dot-language.model';
 import { mockDotEditPageViewAs } from '../../../../../test/dot-edit-page-view-as.mock';
 import { mockDotPersona } from '../../../../../test/dot-persona.mock';
+import { DotRenderedPageState } from '../../../shared/models/dot-rendered-page-state.model';
+import { mockUser, LoginServiceMock } from '../../../../../test/login-service.mock';
+import { mockDotRenderedPage } from '../../../../../test/dot-rendered-page.mock';
+import { DotDeviceSelectorComponent } from '../../../../../view/components/dot-device-selector/dot-device-selector.component';
+import { DotPersonaSelectorComponent } from '../../../../../view/components/dot-persona-selector/dot-persona-selector.component';
+import { DotLanguageSelectorComponent } from '../../../../../view/components/dot-language-selector/dot-language-selector.component';
+import { PageMode } from '../../../shared/models/page-mode.enum';
+import { LoginService } from 'dotcms-js/dotcms-js';
+
+@Component({
+    selector: 'dot-test-host',
+    template: `<dot-edit-content-view-as-toolbar [pageState]="pageState"></dot-edit-content-view-as-toolbar>`
+})
+class DotTestHostComponent implements OnInit {
+    @Input() pageState: DotRenderedPageState;
+
+    ngOnInit() {}
+}
 
 @Component({
     selector: 'dot-persona-selector',
@@ -46,16 +64,19 @@ class MockDotLanguageSelectorComponent {
 }
 
 describe('DotEditContentViewAsToolbarComponent', () => {
-    let component: DotEditContentViewAsToolbarComponent;
-    let fixture: ComponentFixture<DotEditContentViewAsToolbarComponent>;
-    let de: DebugElement;
-    let languageSelector: DebugElement;
-    let deviceSelector: DebugElement;
-    let personaSelector: DebugElement;
+    let componentHost: DotTestHostComponent;
+    let fixtureHost: ComponentFixture<DotTestHostComponent>;
 
-    beforeEach(() => {
+    let component: DotEditContentViewAsToolbarComponent;
+    let de: DebugElement;
+    let languageSelector: DotLanguageSelectorComponent;
+    let deviceSelector: DotDeviceSelectorComponent;
+    let personaSelector: DotPersonaSelectorComponent;
+
+    beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
             declarations: [
+                DotTestHostComponent,
                 DotEditContentViewAsToolbarComponent,
                 MockDotPersonaSelectorComponent,
                 MockDotDeviceSelectorComponent,
@@ -74,17 +95,31 @@ describe('DotEditContentViewAsToolbarComponent', () => {
                 {
                     provide: DotLanguagesService,
                     useClass: DotLanguagesServiceMock
+                },
+                {
+                    provide: LoginService,
+                    useClass: LoginServiceMock
                 }
             ]
         });
+    }));
 
-        fixture = DOTTestBed.createComponent(DotEditContentViewAsToolbarComponent);
-        component = fixture.componentInstance;
-        de = fixture.debugElement;
-        component.value = { language: mockDotLanguage };
-        languageSelector = de.query(By.css('dot-language-selector'));
-        deviceSelector = de.query(By.css('dot-device-selector'));
-        personaSelector = de.query(By.css('dot-persona-selector'));
+    beforeEach(() => {
+        fixtureHost = DOTTestBed.createComponent(DotTestHostComponent);
+        componentHost = fixtureHost.componentInstance;
+
+        de = fixtureHost.debugElement.query(By.css('dot-edit-content-view-as-toolbar'));
+        component = de.componentInstance;
+        languageSelector = de.query(By.css('dot-language-selector')).componentInstance;
+        deviceSelector = de.query(By.css('dot-device-selector')).componentInstance;
+        personaSelector = de.query(By.css('dot-persona-selector')).componentInstance;
+
+        spyOn(component, 'changePersonaHandler').and.callThrough();
+        spyOn(component, 'changeDeviceHandler').and.callThrough();
+        spyOn(component, 'changeLanguageHandler').and.callThrough();
+        spyOn(component.changeViewAs, 'emit');
+
+        componentHost.pageState = new DotRenderedPageState(mockUser, JSON.parse(JSON.stringify(mockDotRenderedPage)));
     });
 
     it('should have Persona selector', () => {
@@ -92,10 +127,8 @@ describe('DotEditContentViewAsToolbarComponent', () => {
     });
 
     it('should emit changes in Personas', () => {
-        spyOn(component, 'changePersonaHandler').and.callThrough();
-        spyOn(component.changeViewAs, 'emit');
-        personaSelector.componentInstance.selected.emit(mockDotPersona);
-        fixture.detectChanges();
+        fixtureHost.detectChanges();
+        personaSelector.selected.emit(mockDotPersona);
 
         expect(component.changePersonaHandler).toHaveBeenCalledWith(mockDotPersona);
         expect(component.changeViewAs.emit).toHaveBeenCalledWith({
@@ -109,13 +142,14 @@ describe('DotEditContentViewAsToolbarComponent', () => {
     });
 
     it('should emit changes in Device', () => {
-        spyOn(component, 'changeDeviceHandler').and.callThrough();
-        spyOn(component.changeViewAs, 'emit');
-        deviceSelector.componentInstance.selected.emit(mockDotDevice);
-        fixture.detectChanges();
+        fixtureHost.detectChanges();
+        deviceSelector.selected.emit(mockDotDevice);
 
         expect(component.changeDeviceHandler).toHaveBeenCalledWith(mockDotDevice);
-        expect(component.changeViewAs.emit).toHaveBeenCalledWith({ language: mockDotLanguage, device: mockDotDevice });
+        expect(component.changeViewAs.emit).toHaveBeenCalledWith({
+            language: mockDotLanguage,
+            device: mockDotDevice
+        });
     });
 
     it('should have Language selector', () => {
@@ -130,21 +164,65 @@ describe('DotEditContentViewAsToolbarComponent', () => {
             language: 'test',
             country: 'test'
         };
-        spyOn(component, 'changeLanguageHandler').and.callThrough();
-        spyOn(component.changeViewAs, 'emit');
-        languageSelector.componentInstance.selected.emit(testlanguage);
-        fixture.detectChanges();
+        fixtureHost.detectChanges();
+        languageSelector.selected.emit(testlanguage);
 
         expect(component.changeLanguageHandler).toHaveBeenCalledWith(testlanguage);
         expect(component.changeViewAs.emit).toHaveBeenCalledWith({ language: testlanguage });
     });
 
     it('should propagate the values to the selector components on init', () => {
-        component.value = mockDotEditPageViewAs;
-        fixture.detectChanges();
+        componentHost.pageState = new DotRenderedPageState(mockUser, {
+            ...mockDotRenderedPage,
+            viewAs: mockDotEditPageViewAs
+        });
+        fixtureHost.detectChanges();
 
-        expect(languageSelector.componentInstance.value).toEqual(mockDotEditPageViewAs.language);
-        expect(deviceSelector.componentInstance.value).toEqual(mockDotEditPageViewAs.device);
-        expect(personaSelector.componentInstance.value).toEqual(mockDotEditPageViewAs.persona);
+        expect(languageSelector.value).toEqual(mockDotEditPageViewAs.language);
+        expect(deviceSelector.value).toEqual(mockDotEditPageViewAs.device);
+        expect(personaSelector.value).toEqual(mockDotEditPageViewAs.persona);
+    });
+
+    it('should not have what\'s change checkbox', () => {
+        componentHost.pageState = new DotRenderedPageState(mockUser, {
+            ...mockDotRenderedPage,
+            page: {
+                ...mockDotRenderedPage.page,
+                lockedBy: '123'
+            }
+        });
+        fixtureHost.detectChanges();
+        const whatsChanged: DebugElement = de.query(By.css('p-checkbox'));
+        expect(whatsChanged).toBe(null);
+    });
+
+    it('should have what\'s change checkbox', () => {
+        componentHost.pageState = new DotRenderedPageState(mockUser, JSON.parse(JSON.stringify(mockDotRenderedPage)), PageMode.PREVIEW);
+        fixtureHost.detectChanges();
+        const whatsChanged: DebugElement = de.query(By.css('p-checkbox'));
+        expect(whatsChanged).toBeTruthy();
+    });
+
+    describe('what\'s change event', () => {
+        let whatsChanged: DebugElement;
+        beforeEach(() => {
+            spyOn(component.whatschange, 'emit');
+            componentHost.pageState = new DotRenderedPageState(mockUser, JSON.parse(JSON.stringify(mockDotRenderedPage)), PageMode.PREVIEW);
+            fixtureHost.detectChanges();
+
+            whatsChanged = de.query(By.css('p-checkbox'));
+        });
+
+        it('should emit what\'s change in true', () => {
+            whatsChanged.triggerEventHandler('onChange', true);
+            expect(component.whatschange.emit).toHaveBeenCalledTimes(1);
+            expect(component.whatschange.emit).toHaveBeenCalledWith(true);
+        });
+
+        it('should emit what\'s change in false', () => {
+            whatsChanged.triggerEventHandler('onChange', false);
+            expect(component.whatschange.emit).toHaveBeenCalledTimes(1);
+            expect(component.whatschange.emit).toHaveBeenCalledWith(false);
+        });
     });
 });

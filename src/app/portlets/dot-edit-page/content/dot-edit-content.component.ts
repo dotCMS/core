@@ -2,7 +2,6 @@ import { ActivatedRoute } from '@angular/router';
 import { Component, OnInit, ViewChild, ElementRef, NgZone, OnDestroy } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
-import { Subject } from 'rxjs/Subject';
 import { Subscription } from 'rxjs/Subscription';
 import { Observable } from 'rxjs/Observable';
 
@@ -12,7 +11,6 @@ import { SiteService, ResponseView } from 'dotcms-js/dotcms-js';
 import { DotDialogService } from '../../../api/services/dot-dialog';
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
 import { DotEditPageService } from '../../../api/services/dot-edit-page/dot-edit-page.service';
-import { DotEditPageToolbarComponent } from './components/dot-edit-page-toolbar/dot-edit-page-toolbar.component';
 import { DotEditPageViewAs } from '../../../shared/models/dot-edit-page-view-as/dot-edit-page-view-as.model';
 import { DotGlobalMessageService } from '../../../view/components/_common/dot-global-message/dot-global-message.service';
 import {
@@ -47,6 +45,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     dialogTitle: string;
     isModelUpdated = false;
     pageState: DotRenderedPageState;
+    showWhatsChanged = false;
 
     private swithSiteSub: Subscription;
     private loadEditModePageSub: Subscription;

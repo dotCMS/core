@@ -1,8 +1,6 @@
 import { Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { FormGroup, FormBuilder, Validators, FormControl } from '@angular/forms';
 
-import { Observable } from 'rxjs/Observable';
-
 import * as _ from 'lodash';
 import { SelectItem } from 'primeng/primeng';
 
@@ -208,13 +206,6 @@ export class ContentTypesFormComponent implements OnInit {
 
     }
 
-    private getWorkflowFieldOption(workflow: DotWorkflow): SelectItem {
-        return {
-            label: workflow.name,
-            value: workflow.id
-        };
-    }
-
     private isBaseTypeContent(): boolean {
         return this.data && this.data.baseType === 'CONTENT';
     }
@@ -265,12 +256,6 @@ export class ContentTypesFormComponent implements OnInit {
         }
 
         this.setSaveState();
-    }
-
-    private setDefaultWorkflow(workflows: DotWorkflow[]): void {
-        const defaultValue = workflows.filter((workflow: DotWorkflow) => workflow.system).map((workflow: DotWorkflow) => workflow.id);
-
-        this.form.get('workflow').setValue(defaultValue);
     }
 
     private updateWorkflowFormControl(isEnterpriseLicense: boolean): void {

@@ -1,3 +1,4 @@
-<dot-language-selector (selected)="changeLanguageHandler($event)"  [value]="value.language" ></dot-language-selector>
-<dot-device-selector (selected)="changeDeviceHandler($event)" [value]="value.device"></dot-device-selector>
-<dot-persona-selector (selected)="changePersonaHandler($event)"  [value]="value.persona"></dot-persona-selector>
+<dot-language-selector (selected)="changeLanguageHandler($event)"  [value]="pageState.viewAs.language" ></dot-language-selector>
+<dot-device-selector (selected)="changeDeviceHandler($event)" [value]="pageState.viewAs.device"></dot-device-selector>
+<dot-persona-selector (selected)="changePersonaHandler($event)"  [value]="pageState.viewAs.persona"></dot-persona-selector>
+<p-checkbox class="invert" [label]="whatsChangedMessage | async" *ngIf="isPreview" (onChange)="whatschange.emit($event)"></p-checkbox>

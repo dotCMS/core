@@ -18,6 +18,8 @@ p-radiobutton {
 }
 
 .ui-chkbox {
+    margin-right: $basic-padding / 2;
+
     .ui-chkbox-icon {
         @extend #check-icon;
         color: $check-checked-color;
@@ -47,17 +49,35 @@ p-radiobutton {
                 color: $check-disabled-color;
             }
         }
+    }
+}
 
-        &:not(.ui-state-active, .ui-state-disabled):hover {
-            background: $check-hover-bgcolor;
-            border: $check-hover-border;
+.invert {
+    .ui-chkbox {
+        .ui-chkbox-label {
+            color: #fff;
+        }
+
+        .ui-chkbox-box {
+            &.ui-state-default {
+                background: none;
+                border: solid 1px #fff;
+            }
+
+            &.ui-state-active {
+                border: solid 1px $brand-primary;
+                background: $check-checked-bgcolor;
+            }
         }
     }
 
+    .ui-chkbox-label {
+        color: #fff;
+    }
 }
 
 .ui-chkbox-label {
-    p-checkbox[disabled="true"] & {
+    p-checkbox[disabled='true'] & {
         color: $check-disabled-label-color;
     }
 }
@@ -102,7 +122,7 @@ p-radiobutton {
 .ui-radiobutton-label {
     margin-left: 0;
 
-    p-radiobutton[disabled="true"] & {
+    p-radiobutton[disabled='true'] & {
         color: $radio-disabled-label-color;
     }
 }
