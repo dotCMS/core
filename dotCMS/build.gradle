@@ -39,6 +39,7 @@ configurations {
     buildlibs
     starter
     profiler
+    profilerDependencies
     provided
     felix
 }
@@ -149,7 +150,11 @@ dependencies {
 
     starter group: 'com.dotcms', name: 'starter', version: '20180423', ext: 'zip'
 
-    profiler group: 'org.glowroot', name: 'glowroot-agent', version: '0.9.24'
+    profiler group: 'glowroot-custom', name: 'glowroot-agent', version: '0.10.7'
+    profilerDependencies group: 'glowroot-custom', name: 'collector-https-linux', version: '0.10.7'
+    profilerDependencies group: 'glowroot-custom', name: 'collector-https-osx', version: '0.10.7'
+    profilerDependencies group: 'glowroot-custom', name: 'collector-https-windows', version: '0.10.7'
+    profilerDependencies group: 'glowroot-custom', name: 'embedded-collector', version: '0.10.7'
 
     providedCompile "javax.servlet:javax.servlet-api:3.1.0"
     providedCompile fileTree("../libs/buildlibs").include('**/*.jar')
@@ -296,6 +301,9 @@ war {
     from (configurations.profiler) {
         into profilerFolder
         rename ( /glowroot(.+)\.jar/, "profiler.jar" )
+    }
+    from (configurations.profilerDependencies) {
+        into profilerFolder.plus("/lib")
     }
 }
 war.finalizedBy 'undeployPlugins'
