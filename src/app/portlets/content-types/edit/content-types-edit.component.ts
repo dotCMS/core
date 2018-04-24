@@ -10,6 +10,8 @@ import { FieldService } from '../fields/service';
 import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { ContentTypesInfoService } from '../../../api/services/content-types-info';
 import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
+import { DotHttpErrorManagerService, DotHttpErrorHandled } from '../../../api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { ResponseView } from 'dotcms-js/dotcms-js';
 
 /**
  * Portlet component for edit content types
@@ -41,6 +43,7 @@ export class ContentTypesEditComponent implements OnInit {
         private fieldService: FieldService,
         private location: Location,
         private route: ActivatedRoute,
+        private dotHttpErrorManagerService: DotHttpErrorManagerService,
         public dotMessageService: DotMessageService,
         public router: Router
     ) {}
@@ -165,7 +168,15 @@ export class ContentTypesEditComponent implements OnInit {
                 this.fields = this.data.fields;
                 this.location.replaceState(`/content-types-angular/edit/${this.data.id}`);
                 this.show = false;
+            }, (err: ResponseView) => {
+                this.handleHttpError(err);
             });
+    }
+
+    private handleHttpError(err: ResponseView) {
+        this.dotHttpErrorManagerService.handle(err).subscribe((handled: DotHttpErrorHandled) => {
+            this.dotRouterService.gotoPortlet('/content-types-angular');
+        });
     }
 
     private updateContentType(value: any): void {
@@ -174,6 +185,8 @@ export class ContentTypesEditComponent implements OnInit {
         this.crudService.putData(`v1/contenttype/id/${this.data.id}`, data).subscribe((contentType: ContentType) => {
             this.data = contentType;
             this.show = false;
+        }, (err: ResponseView) => {
+            this.handleHttpError(err);
         });
     }
 }
