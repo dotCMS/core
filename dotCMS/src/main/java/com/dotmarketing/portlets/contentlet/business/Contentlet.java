@@ -1612,16 +1612,11 @@ public class Contentlet extends WebAsset implements Serializable {
 				value = ((String)value).replace("\\u", "${esc.b}u");
 			}
 			*/
-			BeanUtils.setProperty(this, f.getFieldContentlet(), value);
-		}catch(IllegalArgumentException iae){
+
+			PropertyUtils.setProperty(this, f.getFieldContentlet(), value);
+		}catch(IllegalArgumentException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e){
 			Logger.error(this, "Unable to set the contentlet field.");
 			throw new DotRuntimeException("Unable to set the contentlet field.", iae);
-		} catch (IllegalAccessException e) {
-			Logger.error(this, "Unable to set the contentlet field.");
-			throw new DotRuntimeException("Unable to set the contentlet field.", e);
-		} catch (InvocationTargetException e) {
-			Logger.error(this, "Unable to set the contentlet field.");
-			throw new DotRuntimeException("Unable to set the contentlet field.", e);
 		}
 	}
 
