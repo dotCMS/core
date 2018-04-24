@@ -304,6 +304,10 @@ war {
     }
     from (configurations.profilerDependencies) {
         into profilerFolder.plus("/lib")
+        rename ( /embedded-collector(.+)\.jar/, "glowroot-embedded-collector.jar" )
+        rename ( /collector-https-linux(.+)\.jar/, "glowroot-central-collector-https-linux.jar" )
+        rename ( /collector-https-osx(.+)\.jar/, "glowroot-central-collector-https-osx.jar" )
+        rename ( /collector-https-windows(.+)\.jar/, "glowroot-central-collector-https-windows.jar" )
     }
 }
 war.finalizedBy 'undeployPlugins'
