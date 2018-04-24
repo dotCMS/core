@@ -4,6 +4,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -13,23 +14,38 @@ import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
-import com.dotmarketing.portlets.workflows.model.*;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
+import com.dotmarketing.portlets.workflows.model.WorkflowComment;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
+import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
 import com.dotmarketing.portlets.workflows.model.WorkflowState;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.liferay.portal.model.User;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
+import java.util.*;
+import java.util.concurrent.Future;
 
 public interface WorkflowAPI {
 
 	public static final String SYSTEM_WORKFLOW_ID           = WorkFlowFactory.SYSTEM_WORKFLOW_ID;
 	public static final Set<WorkflowState> DEFAULT_SHOW_ON = EnumSet.of(WorkflowState.LOCKED, WorkflowState.UNLOCKED);
 
+	public boolean hasValidLicense();
+
     public void registerBundleService ();
 
 	public WorkFlowActionlet newActionlet(String className) throws DotDataException;
 
+	/**
+	 * If the user is not allowed to modified workflow, will throw {@link WorkflowPortletAccessException}
+	 * @param user
+	 */
+	void isUserAllowToModifiedWorkflow (final User user);
 
 	public java.util.List<WorkflowTask> searchTasks(WorkflowSearcher searcher) throws DotDataException;
 
@@ -171,11 +187,7 @@ public interface WorkflowAPI {
 
 	public List<WorkflowScheme> findSchemes(boolean showArchived) throws DotDataException;
 
-	public WorkflowScheme findDefaultScheme() throws DotDataException;
-
-	public boolean isDefaultScheme(WorkflowScheme scheme) throws DotDataException;
-
-	public WorkflowScheme findScheme(String id) throws DotDataException;
+	public WorkflowScheme findScheme(String id) throws DotDataException, DotSecurityException;
 
 	public List<WorkflowScheme> findSchemesForStruct(Structure struct) throws DotDataException;
 
@@ -187,9 +199,25 @@ public interface WorkflowAPI {
 	 */
 	public List<WorkflowScheme> findSchemesForContentType(ContentType contentType) throws DotDataException;
 
+	/**
+	 * Save an scheme
+	 * @param scheme {@link WorkflowScheme}
+	 * @param user   {@link User}
+	 * @throws DotDataException
+	 * @throws AlreadyExistException
+	 */
 	public void saveScheme(WorkflowScheme scheme, User user) throws DotDataException, AlreadyExistException;
 
-	public void deleteScheme(WorkflowScheme scheme, User user) throws DotDataException;
+	/**
+	 * Delete the workflow scheme with all the steps, action, actionlets and
+	 * associations with content types
+	 * @param scheme the workflow scheme to delete
+	 * @param user The current user
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 * @throws AlreadyExistException
+	 */
+	public Future<WorkflowScheme> deleteScheme(WorkflowScheme scheme, User user) throws DotDataException, DotSecurityException, AlreadyExistException;
 
 	public List<WorkflowStep> findSteps(WorkflowScheme scheme) throws DotDataException;
 
@@ -204,7 +232,7 @@ public interface WorkflowAPI {
 	 * @throws DotDataException
 	 * @throws AlreadyExistException
 	 */
-	public void reorderStep(WorkflowStep step, int order, User user) throws DotDataException, AlreadyExistException;
+	public void reorderStep(WorkflowStep step, int order, User user) throws DotDataException, AlreadyExistException, DotSecurityException;
 
 	/**
 	 * This is a legacy method for reorder
@@ -216,7 +244,7 @@ public interface WorkflowAPI {
 	 * @throws AlreadyExistException
 	 */
 	@Deprecated
-	public void reorderAction(WorkflowAction action, int order) throws DotDataException, AlreadyExistException;
+	public void reorderAction(WorkflowAction action, int order) throws DotDataException, AlreadyExistException, DotSecurityException;
 
 	/**
 	 * This method makes the reorder for the action associated to the step, reordering the rest of the actions too.
@@ -318,6 +346,18 @@ public interface WorkflowAPI {
 	public List<WorkflowAction> findActions(WorkflowStep step, User user, Permissionable permissionable) throws DotDataException,
 			DotSecurityException;
 
+
+	/**
+	 * Find the list of Workflow Actions available for the role that is passed
+	 * @param step
+	 * @param role
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public List<WorkflowAction> findActions(WorkflowStep step, Role role) throws DotDataException,
+			DotSecurityException;
+
 	/**
 	 * Find the {@link WorkflowAction} associated to the {@link WorkflowScheme}
 	 * @param scheme {@link WorkflowScheme}
@@ -393,7 +433,7 @@ public interface WorkflowAPI {
 	 */
 	void saveAction(String actionId, String stepId, User user, int order);
 
-	public WorkflowStep findStep(String id) throws DotDataException;
+	public WorkflowStep findStep(String id) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Deletes the action associated to the scheme
@@ -455,10 +495,19 @@ public interface WorkflowAPI {
 
 	public int countTasks(WorkflowSearcher searcher)  throws DotDataException;
 
-	public void copyWorkflowActionClassParameter(WorkflowActionClassParameter from, WorkflowActionClass to) throws DotDataException;
-	public void copyWorkflowActionClass(WorkflowActionClass from, WorkflowAction to) throws DotDataException;
-	public void copyWorkflowAction(WorkflowAction from, WorkflowStep to) throws DotDataException;
-	public void copyWorkflowStep(WorkflowStep from, WorkflowScheme to) throws DotDataException;
+	public List<WorkflowActionClassParameter> copyWorkflowActionClassParameters(final Collection<WorkflowActionClassParameter> from, WorkflowActionClass to, final User user) throws DotDataException;
+	public WorkflowActionClass copyWorkflowActionClass(WorkflowActionClass from, WorkflowAction to, final User user) throws DotDataException, AlreadyExistException;
+	public WorkflowAction copyWorkflowAction(WorkflowAction from, WorkflowScheme to, final User user) throws DotDataException, AlreadyExistException, DotSecurityException;
+	public WorkflowStep copyWorkflowStep(WorkflowStep from, WorkflowScheme to, final User user) throws DotDataException, AlreadyExistException;
+
+	/**
+	 * Do a deep copy of the scheme, copying the steps, actions, etc.
+	 * @param from WorkflowScheme scheme from you want to do the copy
+	 * @param user User user that is creating the copy
+	 * @param optionalName Optional String  optional name for the scheme.
+	 * @throws DotDataException
+	 */
+	public WorkflowScheme deepCopyWorkflowScheme(WorkflowScheme from, final User user, final Optional<String> optionalName) throws DotDataException, AlreadyExistException, DotSecurityException;
 
     public java.util.List<WorkflowTask> searchAllTasks(WorkflowSearcher searcher) throws DotDataException;
 
@@ -557,4 +606,27 @@ public interface WorkflowAPI {
 	 */
 	public List<WorkflowAction> findInitialAvailableActionsByContentType(ContentType contentType, User user) throws DotDataException, DotSecurityException;
 
+	/**
+	 * return all the workflow task on a particular step
+	 * @param stepId Id of the step
+	 * @return List of workflow tasks
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public List<WorkflowTask> findTasksByStep(String stepId) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Return the system workflow scheme
+	 * @return The system workflow scheme
+	 * @throws DotDataException
+	 */
+	public WorkflowScheme findSystemWorkflowScheme() throws DotDataException;
+
+	/**
+	 * Archive the specified workflow scheme
+	 *
+	 * @param scheme Workflow scheme to archive
+	 */
+	public void archive(WorkflowScheme scheme, User user)
+			throws DotDataException, AlreadyExistException;
 }

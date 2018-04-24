@@ -182,10 +182,11 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
                 .findContentletByIdentifier(contentlet2.getIdentifier(),
                         false, languageId, systemUser, false);
         Assert.assertTrue("The contentlet MUST be live, it has all the approvers.",
-                contentlet2.isLive());
+                contentlet3.isLive());
 
         // Cleanup
         contentlet = contentlet3;
+        contentletAPI.archive(contentlet3, systemUser, false);
         contentletAPI.delete(contentlet3, systemUser, false);
     }
 
@@ -226,6 +227,7 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
                 contentlet2.isLive());
 
         // Cleanup
+        contentletAPI.archive(contentlet2, systemUser, false);
         contentletAPI.delete(contentlet2, systemUser, false);
     }
 
@@ -266,6 +268,7 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
         }
 
         // Cleanup
+        contentletAPI.archive(contentlet1, systemUser, false);
         contentletAPI.delete(contentlet1, systemUser, false);
 
         Assert.assertTrue(
@@ -279,20 +282,11 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
     @AfterClass
     public static void cleanup()
             throws DotDataException, DotSecurityException, AlreadyExistException {
-        try {
-            if (null != contentlet) {
-                contentletAPI.delete(contentlet, systemUser, false);
-            }
-        } finally {
-            try {
-                if (null != schemeStepActionResult) {
-                    cleanScheme(schemeStepActionResult.getScheme());
-                }
-            } finally {
-                if (null != type) {
-                    contentTypeAPI.delete(type);
-                }
-            }
+        if (null != schemeStepActionResult) {
+            cleanScheme(schemeStepActionResult.getScheme());
+        }
+        if (null != type) {
+            contentTypeAPI.delete(type);
         }
     }
 

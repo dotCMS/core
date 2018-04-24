@@ -1,6 +1,6 @@
 package com.dotcms.api.system.event;
 
-import com.liferay.portal.model.User;
+import com.dotcms.rest.api.v1.system.websocket.WebSocketUserSessionData;
 
 /**
  * This contract is used to verified a payload.
@@ -12,8 +12,8 @@ public interface PayloadVerifier {
     /**
      * Returns true if the payload is valid.
      * @param payload {@link Payload}
-     * @param sessionUser {@link User}
+     * @param userSessionData {@link WebSocketUserSessionData}
      * @return boolean
      */
-    public boolean verified (Payload payload, User sessionUser);
+    public boolean verified (Payload payload, WebSocketUserSessionData userSessionData);
 }

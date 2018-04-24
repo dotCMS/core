@@ -655,11 +655,13 @@ public class PermissionAPITest extends IntegrationTestBase {
         }
         finally {
             if(cont1!=null)
+                APILocator.getContentletAPI().archive(cont1, sysuser, false);
                 APILocator.getContentletAPI().delete(cont1, sysuser, false);
             if (s != null) {
             	APILocator.getStructureAPI().delete(s, sysuser);
             }
             APILocator.getHostAPI().archive(hh, sysuser, false);
+            APILocator.getHostAPI().delete(hh, sysuser, false);
         }
     }
 

@@ -2,6 +2,9 @@ package com.dotmarketing.util;
 
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.liferay.util.StringPool;
+import io.bit3.jsass.importer.Import;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringWriter;
@@ -161,6 +164,7 @@ public class ImportUtil {
         results.put("identifiers", new ArrayList<String>());
         results.put("updatedInodes", new ArrayList<String>());
         results.put("lastInode", new ArrayList<String>());
+        results.put(Contentlet.WORKFLOW_ACTION_KEY, new ArrayList<String>());
 
         Structure contentType = CacheLocator.getContentTypeCache().getStructureByInode (contentTypeInode);
         List<Permission> contentTypePermissions = permissionAPI.getPermissions(contentType);
@@ -386,11 +390,16 @@ public class ImportUtil {
                 results.get("identifiers").add("" + i);
                 continue;
             }
+            if (header.equalsIgnoreCase(Contentlet.WORKFLOW_ACTION_KEY)) {
+                results.get("messages").add(LanguageUtil.get(user, "workflow-action-id-field-found-in-import-contentlet-csv-file"));
+                results.get(Contentlet.WORKFLOW_ACTION_KEY).add(StringPool.BLANK + i);
+                continue;
+            }
 
             headerFields.add(header);
 
             for (Field field : fields) {
-            	if (field.getVelocityVarName().equalsIgnoreCase(header)) {
+                if (field.getVelocityVarName().equalsIgnoreCase(header)) {
                     if (field.getFieldType().equals(Field.FieldType.BUTTON.toString())){
                         found = true;
 
@@ -881,6 +890,8 @@ public class ImportUtil {
             StringBuffer buffy = new StringBuffer();
             buffy.append( "+structureName:" + contentType.getVelocityVarName() + " +working:true +deleted:false" );
 
+            Logger.info(ImportUtil.class,"Identifier is set: " + UtilMethods.isSet( identifier ));
+            Logger.info(ImportUtil.class,"Keyfields size: " + keyFields.size());
             if ( UtilMethods.isSet( identifier ) ) {
                 buffy.append( " +identifier:" + identifier );
 
@@ -957,7 +968,9 @@ public class ImportUtil {
                     buffy.append( " +languageId:" ).append( language );
                 }
 
+                Logger.info(ImportUtil.class, "buffy: " + buffy.toString());
                 List<ContentletSearch> cons = conAPI.searchIndex( buffy.toString(), 0, -1, null, user, true );
+                Logger.info(ImportUtil.class,"Cons: " + cons.size());
                 /*
                 We need to handle the case when keys are used, we could have a contentlet already saved with the same keys but different language
                 so the above query is not going to find it.
@@ -970,7 +983,7 @@ public class ImportUtil {
                         }
                     }
                 }
-
+                Logger.info(ImportUtil.class,"Cons: " + cons.size());
                 Contentlet con;
                 for (ContentletSearch contentletSearch: cons) {
                     con = conAPI.find(contentletSearch.getInode(), user, true);
@@ -1005,6 +1018,8 @@ public class ImportUtil {
                                     break;
                                 }
                             }else{
+                                Logger.info(ImportUtil.class,"conValue: " + conValue.toString());
+                                Logger.info(ImportUtil.class,"Value: " + value.toString());
                                 if(conValue.toString().equalsIgnoreCase(value.toString())){
                                     columnExists = true;
                                 }else{
@@ -1013,7 +1028,8 @@ public class ImportUtil {
                                 }
                             }
                         }
-                        if(columnExists) {
+                        Logger.info(ImportUtil.class, "column exists: " + columnExists);
+                        if(columnExists) {//aca entra
                             contentlets.add(con);
                             //Keep a register of all contentlets to be updated
                             results.get("updatedInodes").add(con.getInode());
@@ -1064,6 +1080,7 @@ public class ImportUtil {
             //Creating/updating content
             boolean isNew = false;
             Long existingMultilingualLanguage = null;//For multilingual batch imports we need the language of an existing contentlet if there is any
+            Logger.info(ImportUtil.class,"Contentlets Size: " + contentlets.size());
             if ( contentlets.size() == 0 ) {
                 counters.setNewContentCounter( counters.getNewContentCounter() + 1 );
                 isNew = true;
@@ -1102,6 +1119,7 @@ public class ImportUtil {
 
                     contentlets = multilingualContentlets;
                 }
+                Logger.info(ImportUtil.class,"isNew: " + isNew);
 
                 if ( !isNew ) {
                     if ( conditionValues.equals( "" ) || !keyContentUpdated.contains( conditionValues ) || isMultilingual ) {
@@ -1110,6 +1128,7 @@ public class ImportUtil {
                             keyContentUpdated.add( conditionValues );
                         }
                     }
+                    Logger.info(ImportUtil.class,"Contentlets size: " + contentlets.size());
                     if ( contentlets.size() == 1 ) {
                         results.get( "warnings" ).add(
                                 LanguageUtil.get( user, "Line--" ) + lineNumber + ". " + LanguageUtil.get( user, "The-key-fields-chosen-match-one-existing-content(s)" ) + " - "
@@ -1125,6 +1144,24 @@ public class ImportUtil {
 
             for (Contentlet cont : contentlets)
             {
+                int wfActionIdIndex = -1;
+                try {
+                    if (null != results.get(Contentlet.WORKFLOW_ACTION_KEY)) {
+                        wfActionIdIndex = Integer
+                                .parseInt(results.get(Contentlet.WORKFLOW_ACTION_KEY).get(0));
+                    }
+                } catch (Exception e) {
+                    Logger.warn(ImportUtil.class, e.getMessage());
+                }
+
+                String wfActionIdStr = null;
+                if ( -1 < wfActionIdIndex ) {
+                    wfActionIdStr = line[wfActionIdIndex];
+                    if(UtilMethods.isSet(wfActionIdStr)) {
+                        cont.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, wfActionIdStr);
+                    }
+                }
+
                 //Fill the new contentlet with the data
                 for (Integer column : headers.keySet()) {
                     Field field = headers.get(column);
@@ -1276,7 +1313,6 @@ public class ImportUtil {
                     //If not preview save the contentlet
                     if (!preview)
                     {
-                        cont.setInode(null);
                         cont.setLowIndexPriority(true);
                         //Load the old relationShips and add the new ones
                         ContentletRelationships contentletRelationships = conAPI.getAllRelationships(cont);
@@ -1296,19 +1332,81 @@ public class ImportUtil {
                             }
                         }
                         //END Load the old relationShips and add the new ones
-                        cont = workflowAPI.fireContentWorkflow(cont,
-                                new ContentletDependencies.Builder().respectAnonymousPermissions(Boolean.FALSE)
-                                        .modUser(user)
-                                        .relationships(contentletRelationships)
-                                        .workflowActionId(wfActionId)
-                                        .workflowActionComments("")
-                                        .workflowAssignKey("")
-                                        .categories(new ArrayList<Category>(categories))
-                                        .generateSystemEvent(Boolean.FALSE).build());
 
-                        if(Config.getBooleanProperty("PUBLISH_CSV_IMPORTED_CONTENT_AUTOMATICALLY", false)){
-                            APILocator.getContentletAPI().publish(cont, user, false);
+                        WorkflowAction executeWfAction = null;
+                        boolean userCanExecuteAction = false;
+                        // Check if the CSV file have set an actionId to execute and if the user
+                        // have permission to execute the action
+                        if (UtilMethods
+                                .isSet(cont.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY))) {
+                            try {
+                                executeWfAction = workflowAPI.findActionRespectingPermissions(
+                                        cont.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY),
+                                        cont, user);
+                            } catch (DotSecurityException e) {
+                                Logger.error(ImportUtil.class,
+                                        "User doesn't have permissions to execute wfActionId:"
+                                                + cont
+                                                .getStringProperty(Contentlet.WORKFLOW_ACTION_KEY)
+                                                + ". " + e.getMessage(), e);
+                            }
+
+                            if (null != executeWfAction && UtilMethods
+                                    .isSet(executeWfAction.getId())) {
+                                userCanExecuteAction = true;
+                            } else {
+                                // if the user doesn't have access to the action then removed it from
+                                // the content to avoid troubles executing the action set on the
+                                // dropdown or on the checkin
+                                cont.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, null);
+                            }
                         }
+
+                        //If the CSV line doesn't have set a wfActionId or the user doesn't have
+                        // permission to execute this action then check if and action was set int
+                        // the import dropdown
+                        if (!userCanExecuteAction && UtilMethods.isSet(wfActionId)) {
+                            try {
+                                executeWfAction = workflowAPI
+                                        .findActionRespectingPermissions(wfActionId, cont, user);
+                            } catch (DotSecurityException e) {
+                                Logger.warn(ImportUtil.class,
+                                        "User doesn't have permissions to execute wfActionId:"
+                                                + wfActionId + ". " + e.getMessage(), e);
+                            }
+
+                            if (null != executeWfAction && UtilMethods
+                                    .isSet(executeWfAction.getId())) {
+                                userCanExecuteAction = true;
+                            }
+                        }
+
+                        if (userCanExecuteAction) {
+
+                            cont = workflowAPI.fireContentWorkflow(cont,
+                                    new ContentletDependencies.Builder()
+                                            .respectAnonymousPermissions(Boolean.FALSE)
+                                            .modUser(user)
+                                            .relationships(contentletRelationships)
+                                            .workflowActionId(executeWfAction.getId())
+                                            .workflowActionComments("")
+                                            .workflowAssignKey("")
+                                            .categories(new ArrayList<Category>(categories))
+                                            .generateSystemEvent(Boolean.FALSE).build());
+                        } else {
+                            // If the User doesn't have permissions to execute the wfActionId or
+                            // not action Id is set on the CSV/Import select box then use the old
+                            // checking method
+                            cont = conAPI.checkin(cont, contentletRelationships,
+                                    new ArrayList<Category>(categories), contentTypePermissions,
+                                    user, false);
+
+                            if (Config.getBooleanProperty(
+                                    "PUBLISH_CSV_IMPORTED_CONTENT_AUTOMATICALLY", false)) {
+                                APILocator.getContentletAPI().publish(cont, user, false);
+                            }
+                        }
+
                         for (Integer column : headers.keySet()) {
                             Field field = headers.get(column);
                             Object value = values.get(column);

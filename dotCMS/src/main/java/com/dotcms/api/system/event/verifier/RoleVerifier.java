@@ -4,6 +4,7 @@ package com.dotcms.api.system.event.verifier;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.PayloadVerifier;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.rest.api.v1.system.websocket.WebSocketUserSessionData;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DotDataException;
@@ -26,9 +27,9 @@ public class RoleVerifier implements PayloadVerifier {
     }
 
     @Override
-    public boolean verified(final Payload payload, final User sessionUser) {
+    public boolean verified(final Payload payload, final WebSocketUserSessionData userSessionData) {
         try {
-            return this.checkRoles(sessionUser, payload.getVisibilityValue().toString());
+            return this.checkRoles(userSessionData.getUser(), payload.getVisibilityValue().toString());
         } catch (DotDataException e) {
             throw new VerifierException(e);
         }

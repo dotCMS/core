@@ -91,7 +91,8 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	availableLanguages: new Array(),
 
 	postCreate: function () {
-		this.containerStructures = JSON.parse(this.containerStructures.toString())
+        var structuresParam = this.containerStructures.toString();
+        this.containerStructures = structuresParam.length ? JSON.parse(structuresParam) : [];
 
 		if (this.containerStructures.length > 0) {
             this._fillStructures();
@@ -132,7 +133,14 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	_structureDetailsCallback: function (structure) {
 		!isNg && this.dialog.set('title', structure["name"] ? structure["name"] : "");
 		this.structureVelVar = structure["velocityVarName"] ? structure["velocityVarName"] : "";
-		this._structureChanged();
+        this._structureChanged();
+
+        if (isNg) {
+            var self = this;
+            setTimeout(function() {
+                self._doSearchPage1();
+            }, 100)
+        }
 	},
 
 	_structureChanged: function () {
@@ -147,7 +155,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			this.langDropdown.style.display = "";
 		//this.counter_radio = 0;
 		this.counter_checkbox = 0;
-	},
+    },
 
 	_fillStructures: function() {
 		this.structures_select.innerHTML = "";
@@ -652,10 +660,28 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			this.currentSortBy = sortBy;
 		}
 
-		//ContentletAjax.searchContentlets (this.structureInode, fieldsValues, categoriesValues, false, false, this.currentPage, this.currentSortBy, null, null, false, dojo.hitch(this, this._fillResults));
-		ContentletAjax.searchContentlets(this.structureInode, fieldsValues, categoriesValues, false,
-		        false,  false, false, this.currentPage, 10,this.currentSortBy, null,
-		        null,dojo.hitch(this, this._fillResults));
+        var searchFor = this.structureInode
+        if (this.structureInode === 'catchall' && this.containerStructures.length > 0) {
+            searchFor = this.containerStructures
+				.map(function(contentType) { return contentType.inode })
+				.filter(function(inode){return inode !== 'catchall'});
+        }
+
+		ContentletAjax.searchContentlets(
+            searchFor,
+            fieldsValues,
+            categoriesValues,
+            false,
+            false,
+            false,
+            false,
+            this.currentPage,
+            10,
+            this.currentSortBy,
+            null,
+            null,
+            dojo.hitch(this, this._fillResults)
+        );
 
 		this.searchCounter++; // this is used to eliminate the widget already registered exception upon repeated searchs.
 	},

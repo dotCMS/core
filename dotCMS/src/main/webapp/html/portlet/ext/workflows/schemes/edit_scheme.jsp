@@ -1,12 +1,10 @@
-<%@page import="com.dotmarketing.portlets.workflows.model.WorkflowAction"%>
-<%@page import="java.util.ArrayList"%>
-<%@page import="com.dotmarketing.util.UtilMethods"%>
-<%@page import="com.dotmarketing.portlets.workflows.business.WorkflowAPI"%>
-<%@page import="com.dotmarketing.portlets.workflows.model.WorkflowStep"%>
-<%@page import="com.dotmarketing.portlets.workflows.model.WorkflowScheme"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
-<%@page import="java.util.List"%>
+<%@page import="com.dotmarketing.portlets.workflows.business.WorkflowAPI"%>
+<%@page import="com.dotmarketing.portlets.workflows.model.WorkflowScheme"%>
+<%@page import="com.dotmarketing.portlets.workflows.model.WorkflowStep"%>
+<%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
+<%@page import="java.util.List"%>
 
 <%
 	WorkflowAPI wapi = APILocator.getWorkflowAPI();
@@ -25,10 +23,24 @@
 
 
 <div dojoType="dijit.form.Form" id="addEditSchemeForm" jsId="addEditSchemeForm" encType="multipart/form-data" action="/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfSchemeAjax" method="POST">
-	<input type="hidden" name="cmd" value="save">
-	<input type="hidden" name="schemeId" value="<%=UtilMethods.webifyString(scheme.getId())%>">
+	<input type="hidden" id="cmd" name="cmd" value="save">
+	<input type="hidden" id="schemeId" name="schemeId" value="<%=UtilMethods.webifyString(scheme.getId())%>">
 	<!-- START Listing Results -->
 	<div class="form-horizontal">
+
+		<%if(!scheme.isNew()){%>
+		<dl>
+			<dt>
+				<label for=""><%=LanguageUtil.get(pageContext, "Scheme")%> <%=LanguageUtil.get(pageContext, "Id")%>:</label>
+			</dt>
+			<dd>
+				<strong>
+					<a onclick="this.parentNode.innerHTML='<%=scheme.getId()%>'; return false;" href="#"><%=APILocator.getShortyAPI().shortify(scheme.getId()) %></a>
+				</strong>
+			</dd>
+		</dl>
+		<%}%>
+
 		<dl>
 			<dt>
 				<label for=""><%=LanguageUtil.get(pageContext, "Name")%>:</label>
@@ -81,6 +93,16 @@
 		<button dojoType="dijit.form.Button" onClick='schemeAdmin.saveAddEdit()' iconClass="saveIcon" type="button">
 			<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save"))%>
 		</button>
+		<%if(!scheme.isNew()){%>
+		<button dojoType="dijit.form.Button" onClick='schemeAdmin.copyScheme("<%=UtilMethods.webifyString(scheme.getId())%>", "<%=UtilMethods.webifyString(scheme.getName())%>")' iconClass="saveIcon" type="button">
+			<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Copy"))%>
+		</button>
+		<%}%>
+		<%if(scheme.isArchived()){%>
+		<button dojoType="dijit.form.Button" onClick='schemeAdmin.deleteScheme("<%=UtilMethods.webifyString(scheme.getId())%>")' iconClass="deleteIcon" type="button">
+			<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete"))%>
+		</button>
+		<%}%>
 		<button dojoType="dijit.form.Button"
 			onClick='schemeAdmin.hideAddEdit()' class="dijitButtonFlat" type="button">
 			<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel"))%>

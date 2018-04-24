@@ -21,6 +21,9 @@ import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
 
+import java.util.Optional;
+import java.util.concurrent.Future;
+
 /**
  * This class will test operations related with interacting with hosts: Deleting
  * a host, marking a host as default, etc.
@@ -81,18 +84,33 @@ public class HostAPITest {
         hostAssetsJobProxy.execute(jobExecutionContext);
         
         Thread.sleep(600); // wait a bit for the index
-        
+
+        try{
+            HibernateUtil.startTransaction();
+            APILocator.getHostAPI().archive(host, user, false);
+            HibernateUtil.closeAndCommitTransaction();
+        }catch(Exception e){
+            HibernateUtil.rollbackTransaction();
+            Logger.error(HostAPITest.class, e.getMessage());
+        }
+
+        Optional<Future<Boolean>> hostDeleteResult = Optional.empty();
         try{
         	HibernateUtil.startTransaction();
-        	APILocator.getHostAPI().archive(host, user, false);
-        	APILocator.getHostAPI().delete(host, user, false);
+            hostDeleteResult = APILocator.getHostAPI().delete(host, user, false, true);
         	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(HostAPITest.class, e.getMessage());
         }
 
-        Thread.sleep(6000); // wait a bit for the index
+        if (!hostDeleteResult.isPresent()) {
+
+            Thread.sleep(6000); // wait a bit for the index
+        } else {
+
+            hostDeleteResult.get().get();
+        }
         
         host = APILocator.getHostAPI().find(hostIdent, user, false);
         
@@ -166,16 +184,26 @@ public class HostAPITest {
          * Delete the new test host
          */
         Thread.sleep(600); // wait a bit for the index
+
+        Optional<Future<Boolean>> hostDeleteResult = Optional.empty();
+
         try {
             HibernateUtil.startTransaction();
             APILocator.getHostAPI().archive(host, user, false);
-            APILocator.getHostAPI().delete(host, user, false);
+            hostDeleteResult = APILocator.getHostAPI().delete(host, user, false, true);
             HibernateUtil.closeAndCommitTransaction();
         } catch (Exception e) {
             HibernateUtil.rollbackTransaction();
             Logger.error(HostAPITest.class, e.getMessage());
         }
-        Thread.sleep(600); // wait a bit for the index
+
+        if (!hostDeleteResult.isPresent()) {
+
+            Thread.sleep(6000); // wait a bit for the index
+        } else {
+
+            hostDeleteResult.get().get();
+        }
         /*
          * Validate if the current Original default host is the current default one
          */
@@ -225,18 +253,28 @@ public class HostAPITest {
          * Delete the new test host
          */
         Thread.sleep(600); // wait a bit for the index
+
+        Optional<Future<Boolean>> hostDeleteResult = Optional.empty();
+
         try{
         	HibernateUtil.startTransaction();
         	APILocator.getHostAPI().unpublish(host, user, false);
         	APILocator.getHostAPI().archive(host, user, false);
-        	APILocator.getHostAPI().delete(host, user, false);
+            hostDeleteResult = APILocator.getHostAPI().delete(host, user, false, true);
         	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(HostAPITest.class, e.getMessage());
         }
-        Thread.sleep(600); // wait a bit for the index
-        
+
+        if (!hostDeleteResult.isPresent()) {
+
+            Thread.sleep(6000); // wait a bit for the index
+        } else {
+
+            hostDeleteResult.get().get();
+        }
+
         hosts = APILocator.getHostAPI().search("nothing", Boolean.FALSE, Boolean.FALSE, 0, 0, user, Boolean.TRUE);
         
         /*

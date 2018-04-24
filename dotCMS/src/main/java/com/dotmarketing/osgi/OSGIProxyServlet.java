@@ -2,6 +2,7 @@ package com.dotmarketing.osgi;
 
 import com.dotmarketing.util.WebKeys;
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -18,8 +19,8 @@ public class OSGIProxyServlet extends HttpServlet {
 
     public static DispatcherTracker tracker;
     public static ServletConfig servletConfig;
-    public static BundleContext bundleContext;
-    private static Boolean isInitialized = Boolean.FALSE;
+    public volatile static BundleContext bundleContext;
+    private static AtomicBoolean isInitialized = new AtomicBoolean(Boolean.FALSE);
 
     @Override
     public void init ( ServletConfig config ) throws ServletException {
@@ -56,7 +57,7 @@ public class OSGIProxyServlet extends HttpServlet {
     		return;
     	}
 
-        if (!isInitialized) {
+        if (!isInitialized.get()) {
             try {
                 doInit();
             } catch (Exception e) {
@@ -97,7 +98,7 @@ public class OSGIProxyServlet extends HttpServlet {
     }
 
     private static void setIsInitialized(Boolean initialized) {
-        isInitialized = initialized;
+        isInitialized.set(initialized);
     }
 
     private static void setServletConfig(ServletConfig config) {

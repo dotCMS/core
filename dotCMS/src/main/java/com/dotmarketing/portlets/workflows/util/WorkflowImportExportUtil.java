@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.workflows.util;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.DeserializationFeature;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.util.CloseUtils;
@@ -11,12 +12,15 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.Logger;
+import com.liferay.portal.model.User;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
@@ -70,15 +74,20 @@ public class WorkflowImportExportUtil {
 
 	public void importWorkflowExport(final File file) throws IOException {
 
-		final WorkflowAPI workflowAPI   		  = APILocator.getWorkflowAPI();
+		this.importWorkflowExport(new FileReader(file));
+	}
+
+	public void importWorkflowExport(final Reader reader) throws IOException {
+
 		final ObjectMapper mapper       		  = new ObjectMapper();
 		final StringWriter stringWriter		      = new StringWriter();
 		BufferedReader bufferedReader   		  = null;
 		WorkflowSchemeImportExportObject importer = null;
 
+
 		try {
 
-			bufferedReader = new BufferedReader(new FileReader(file));
+			bufferedReader = new BufferedReader(reader);
 			mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
 			String str;
@@ -89,31 +98,52 @@ public class WorkflowImportExportUtil {
 			importer = mapper.readValue
 					((String) stringWriter.toString(), WorkflowSchemeImportExportObject.class);
 
-			for (WorkflowScheme scheme : importer.getSchemes()) {
-				workflowAPI.saveScheme(scheme, APILocator.systemUser());
+			this.importWorkflowExport(importer, APILocator.systemUser());
+		} catch (Exception e) {// Catch exception if any
+			Logger.error(this.getClass(), "Error: " + e.getMessage(), e);
+		} finally {
+
+			CloseUtils.closeQuietly(bufferedReader);
+		}
+	}
+
+	@WrapInTransaction
+	public void importWorkflowExport(final WorkflowSchemeImportExportObject importer,
+									 final User user) throws IOException {
+
+		final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+
+		try {
+
+			for (final WorkflowScheme scheme : importer.getSchemes()) {
+
+				workflowAPI.saveScheme(scheme, user);
 			}
 
-			for (WorkflowStep step : importer.getSteps()) {
-				workflowAPI.saveStep(step, APILocator.systemUser());
+			for (final WorkflowStep step : importer.getSteps()) {
+
+				workflowAPI.saveStep(step, user);
 			}
 
-			for (WorkflowAction action : importer.getActions()) {
-				workflowAPI.saveAction(action, null, APILocator.systemUser());
+			for (final WorkflowAction action : importer.getActions()) {
+
+				workflowAPI.saveAction(action, null, user);
 			}
 
-			for(Map<String, String> actionStepMap : importer.getActionSteps()){
+			for(final Map<String, String> actionStepMap : importer.getActionSteps()){
 
 				workflowAPI.saveAction(actionStepMap.get(ACTION_ID),
 						actionStepMap.get(STEP_ID),
-						APILocator.systemUser(),
+						user,
 						ConversionUtils.toInt(actionStepMap.get(ACTION_ORDER), 0));
 			}
 
-			for (WorkflowActionClass actionClass : importer.getActionClasses()) {
-				workflowAPI.saveActionClass(actionClass, APILocator.systemUser());
+			for (final WorkflowActionClass actionClass : importer.getActionClasses()) {
+				workflowAPI.saveActionClass(actionClass, user);
 			}
 
-			for(final Map<String, String> map : importer.getWorkflowStructures()){
+			for(final Map<String, String> map : importer.getWorkflowStructures()) {
+
 				DotConnect dc = new DotConnect();
 				dc.setSQL("delete from workflow_scheme_x_structure where id=?");
 				dc.addParam(map.get("id"));
@@ -125,13 +155,10 @@ public class WorkflowImportExportUtil {
 				dc.loadResult();
 			}
 
-			workflowAPI.saveWorkflowActionClassParameters(importer.getActionClassParams(), APILocator.systemUser());
+			workflowAPI.saveWorkflowActionClassParameters(importer.getActionClassParams(), user);
 
 		} catch (Exception e) {// Catch exception if any
 			Logger.error(this.getClass(), "Error: " + e.getMessage(), e);
-		} finally {
-
-			CloseUtils.closeQuietly(bufferedReader);
 		}
 	}
 
@@ -146,12 +173,14 @@ public class WorkflowImportExportUtil {
 	public WorkflowSchemeImportExportObject buildExportObject(final List<WorkflowScheme> schemes)
 			throws DotDataException, DotSecurityException {
 
-		final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
-		List<WorkflowStep> steps = new ArrayList<WorkflowStep>();
-		List<WorkflowAction> actions = new ArrayList<WorkflowAction>();
-		List<WorkflowActionClass> actionClasses = new ArrayList<WorkflowActionClass>();
-		List<WorkflowActionClassParameter> actionClassParams = new ArrayList<WorkflowActionClassParameter>();
-		List<Map<String, String>> actionStepsListMap = new ArrayList<>();
+		final WorkflowAPI workflowAPI  = APILocator.getWorkflowAPI();
+		final List<WorkflowStep> steps = new ArrayList<WorkflowStep>();
+		final Set<String> workflowIds  = schemes.stream().map(scheme -> scheme.getId()).collect(Collectors.toSet());
+		final List<WorkflowAction> actions 			  = new ArrayList<WorkflowAction>();
+		final List<WorkflowActionClass> actionClasses = new ArrayList<WorkflowActionClass>();
+		final List<WorkflowActionClassParameter> actionClassParams = new ArrayList<WorkflowActionClassParameter>();
+		final List<Map<String, String>> actionStepsListMap 		   = new ArrayList<>();
+
 
 		for (WorkflowScheme scheme : schemes) {
 
@@ -173,7 +202,9 @@ public class WorkflowImportExportUtil {
 		export.setActions(actions);
 		export.setActionClasses(actionClasses);
 		export.setActionClassParams(actionClassParams);
-		export.setWorkflowStructures(workflowStructures);
+		export.setWorkflowStructures(workflowStructures.stream()
+				.filter(workflowStructure -> workflowIds.contains(workflowStructure.get("scheme_id").toString()))
+				.collect(Collectors.toList()));
 		export.setActionSteps(actionStepsListMap);
 		return export;
 	}

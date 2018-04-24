@@ -6,6 +6,7 @@ import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
@@ -15,12 +16,7 @@ import com.dotcms.util.I18NMessage;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.WebAsset;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.PermissionLevel;
-import com.dotmarketing.business.Treeable;
+import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -41,13 +37,12 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
-import java.util.stream.Collectors;
 import org.apache.commons.lang.StringUtils;
+
+import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 
 /**
  * @author jtesser
@@ -61,6 +56,7 @@ public class HostAPIImpl implements HostAPI {
     private Host systemHost;
     private final SystemEventsAPI systemEventsAPI;
     private static final String CONTENT_TYPE_CONDITION = "+contentType";
+    private final DotConcurrentFactory concurrentFactory = DotConcurrentFactory.getInstance();
 
     public HostAPIImpl() {
         this.systemEventsAPI = APILocator.getSystemEventsAPI();
@@ -75,6 +71,7 @@ public class HostAPIImpl implements HostAPI {
      * @return the default host from cache.  If not found, returns from content search and adds to cache
      * @throws DotSecurityException, DotDataException
      */
+    @Override
     @CloseDBIfOpened
     public Host findDefaultHost(User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 
@@ -137,6 +134,7 @@ public class HostAPIImpl implements HostAPI {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Override
     @CloseDBIfOpened
     public Host resolveHostName(String serverName, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
@@ -182,7 +180,11 @@ public class HostAPIImpl implements HostAPI {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    public Host findByName(String hostName, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+    @Override
+    @CloseDBIfOpened
+    public Host findByName(final String hostName,
+                           final User user,
+                           final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         
         try {
             return findByNameNotDefault(hostName, user, respectFrontendRoles);
@@ -254,6 +256,7 @@ public class HostAPIImpl implements HostAPI {
     /**
      * @return the host with the passed in name
      */
+    @Override
     public Host findByAlias(String alias, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         Host host = null;
 
@@ -289,6 +292,7 @@ public class HostAPIImpl implements HostAPI {
         }
     }
 
+    @Override
     @CloseDBIfOpened
     public Host find(final String id, final User user,
                      final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -325,6 +329,8 @@ public class HostAPIImpl implements HostAPI {
      * @throws DotDataException
      *
      */
+    @Override
+    @CloseDBIfOpened
     public List<Host> findAll(User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         try {
             StringBuilder queryBuffer = new StringBuilder();
@@ -345,6 +351,7 @@ public class HostAPIImpl implements HostAPI {
      * @throws DotDataException
      *
      */
+    @Override
     @CloseDBIfOpened
     public List<Host> findAllFromDB(final User user,
                                     final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -373,6 +380,7 @@ public class HostAPIImpl implements HostAPI {
      * @throws DotSecurityException
      * @throws DotDataException
      */
+    @Override
     @WrapInTransaction
     public Host save(Host host, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
         if(host != null){
@@ -386,7 +394,8 @@ public class HostAPIImpl implements HostAPI {
             c = new Contentlet();
             c.setStructureInode(hostType().inode() );
         }
-        APILocator.getContentletAPI().copyProperties(c, host.getMap());;
+        c.getMap().put(Contentlet.DONT_VALIDATE_ME, host.getMap().get(Contentlet.DONT_VALIDATE_ME));
+        APILocator.getContentletAPI().copyProperties(c, host.getMap());
         c.setInode("");
         c = APILocator.getContentletAPI().checkin(c, user, respectFrontendRoles);
 
@@ -401,6 +410,7 @@ public class HostAPIImpl implements HostAPI {
 
     }
 
+    @Override
     @WrapInTransaction
     public void updateDefaultHost(Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException{
         // If host is marked as default make sure that no other host is already set to be the default
@@ -435,6 +445,8 @@ public class HostAPIImpl implements HostAPI {
         }
     }
 
+    @Override
+    @CloseDBIfOpened
     public List<Host> getHostsWithPermission(int permissionType, boolean includeArchived, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         try {
             StringBuilder queryBuffer = new StringBuilder();
@@ -462,10 +474,12 @@ public class HostAPIImpl implements HostAPI {
         }
     }
 
+    @Override
     public List<Host> getHostsWithPermission(int permissionType, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         return getHostsWithPermission(permissionType, true, user, respectFrontendRoles);
     }
 
+    @Override
     @CloseDBIfOpened
     public Host findSystemHost (User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         if(systemHost != null){
@@ -479,7 +493,6 @@ public class HostAPIImpl implements HostAPI {
             db.addParam(Host.SYSTEM_HOST);
             List<Map<String, Object>> rs = db.loadObjectResults();
             if(rs.isEmpty()) {
-                // TODO: Be aware that this line may cause an infinite loop.
                 createSystemHost();
             } else {
                 final String systemHostId = (String) rs.get(0).get("id");
@@ -495,6 +508,7 @@ public class HostAPIImpl implements HostAPI {
         return systemHost;
     }
 
+    @Override
     public Host findSystemHost () throws DotDataException {
 
         try {
@@ -506,10 +520,7 @@ public class HostAPIImpl implements HostAPI {
 
     }
 
-
-
-
-
+    @Override
     public Host findParentHost(Folder folder, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         if(folder.getIdentifier() !=null){
             return find(APILocator.getIdentifierAPI().find(folder.getIdentifier()).getHostId(), user, respectFrontendRoles);
@@ -517,6 +528,7 @@ public class HostAPIImpl implements HostAPI {
         return findDefaultHost(user, respectFrontendRoles);
     }
 
+    @Override
     public Host findParentHost(WebAsset asset, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         if(asset.getIdentifier()!=null){
             return find(APILocator.getIdentifierAPI().find(asset.getIdentifier()).getHostId(), user, respectFrontendRoles);
@@ -525,6 +537,7 @@ public class HostAPIImpl implements HostAPI {
         return null;
     }
 
+    @Override
     public Host findParentHost(Treeable asset, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         if(asset.getIdentifier()!=null){
             return find(APILocator.getIdentifierAPI().find(asset.getIdentifier()).getHostId(), user, respectFrontendRoles);
@@ -532,6 +545,7 @@ public class HostAPIImpl implements HostAPI {
         return null;
     }
 
+    @Override
     public boolean doesHostContainsFolder(Host parent, String folderName) throws DotDataException, DotSecurityException {
         List<Folder> trees = APILocator.getFolderAPI().findFoldersByHost(parent, APILocator.systemUser(), false);
         for (Folder folder : trees) {
@@ -542,43 +556,46 @@ public class HostAPIImpl implements HostAPI {
 
     }
 
+    @Override
     public void delete(final Host host, final User user, final boolean respectFrontendRoles) {
         delete(host,user,respectFrontendRoles,false);
     }
 
-    public void delete(final Host host, final User deletingUser, final boolean respectFrontendRoles, boolean runAsSepareThread) {
+    @Override
+    @CloseDBIfOpened
+    public Optional<Future<Boolean>> delete(final Host host, final User deletingUser,
+                                   final boolean respectFrontendRoles,
+                                   final boolean runAsSeparatedThread) {
 
+        Optional<Future<Boolean>> future = Optional.empty();
         try {
+
+            Logger.debug(this, ()-> "Deleting the host: " + host);
             APILocator.getPermissionAPI().checkPermission(host, PermissionLevel.PUBLISH, deletingUser);
         } catch (DotSecurityException e) {
+
+            Logger.error(this, e.getMessage(), e);
             throw new DotRuntimeException(e);
         }
-        final User user = APILocator.systemUser();
-        class DeleteHostThread extends Thread {
 
-            public void run() {
+        final User user = (null != deletingUser)?deletingUser:APILocator.systemUser();
+        class DeleteHostThread implements Callable<Boolean> {
+
+            @WrapInTransaction
+            @Override
+            public Boolean call() {
+
                 try {
                     deleteHost();
-    
-                    APILocator.getNotificationAPI().generateNotification(
-                            new I18NMessage("message.host.delete"), // title = Host Notification
-                            new I18NMessage("message.host.delete", "deleted:" + host.getHostname()),
-                            null, // no actions
-                            NotificationLevel.INFO,
-                            NotificationType.GENERIC,
-                            user.getUserId(),
-                            user.getLocale()
-                    );
-                    
+                    HibernateUtil.addAsyncCommitListener
+                            (() -> generateNotification());
                 } catch (Exception e) {
                     // send notification
                     try {
-                        final I18NMessage errorMessage = new I18NMessage("notifications_host_deletion_error",
-                                host.getHostname(), e.getMessage());
 
                         APILocator.getNotificationAPI().generateNotification(
                                 new I18NMessage("notification.hostapi.delete.error.title"), // title = Host Notification
-                                errorMessage,
+                                new I18NMessage("notifications_host_deletion_error", host.getHostname(), e.getMessage()),
                                 null, // no actions
                                 NotificationLevel.ERROR,
                                 NotificationType.GENERIC,
@@ -593,18 +610,34 @@ public class HostAPIImpl implements HostAPI {
                     Logger.error(HostAPIImpl.class, e.getMessage(), e);
                     throw new DotRuntimeException(e.getMessage(), e);
                 }
-                finally {
-                    DbConnectionFactory.closeSilently();
+
+                return Boolean.TRUE;
+            }
+
+            private void generateNotification() {
+                try {
+
+                    APILocator.getNotificationAPI().generateNotification(
+                            new I18NMessage("message.host.delete.title"), // title = Host Notification
+                            new I18NMessage("message.host.delete",
+                                    "Site deleted:" + host.getHostname(), host.getHostname()),
+                            null, // no actions
+                            NotificationLevel.INFO,
+                            NotificationType.GENERIC,
+                            user.getUserId(),
+                            user.getLocale());
+                } catch (Exception e) {
+
+                    Logger.debug(this, e.getMessage(), e);
                 }
             }
-            
 
             public void deleteHost() throws Exception {
                 if(host != null){
                     hostCache.remove(host);
                 }
 
-                DotConnect dc = new DotConnect();
+                final DotConnect dc = new DotConnect();
 
                 // Remove Links
                 MenuLinkAPI linkAPI = APILocator.getMenuLinkAPI();
@@ -660,12 +693,17 @@ public class HostAPIImpl implements HostAPI {
                 dc.addParam(host.getIdentifier());
                 dc.loadResult();
 
-                String[] assets = {Inode.Type.CONTAINERS.getTableName(),"template","links"};
-                for(String asset : assets) {
-                    dc.setSQL("select inode from "+asset+" where exists (select * from identifier where host_inode=? and id="+asset+".identifier)");
+                Inode.Type[] assets = {Inode.Type.CONTAINERS, Inode.Type.TEMPLATE, Inode.Type.LINKS};
+                for(Inode.Type asset : assets) {
+                    dc.setSQL("select inode from "+asset.getTableName()+" where exists (select * from identifier where host_inode=? and id="+asset.getTableName()+".identifier)");
                     dc.addParam(host.getIdentifier());
                     for(Map row : (List<Map>)dc.loadResults()) {
-                        dc.setSQL("delete from "+asset+" where inode=?");
+                        dc.setSQL("delete from "+asset.getVersionTableName()+" where working_inode=? or live_inode=?");
+                        dc.addParam(row.get("inode"));
+                        dc.addParam(row.get("inode"));
+                        dc.loadResult();
+
+                        dc.setSQL("delete from "+asset.getTableName()+" where inode=?");
                         dc.addParam(row.get("inode"));
                         dc.loadResult();
                     }
@@ -690,20 +728,23 @@ public class HostAPIImpl implements HostAPI {
                 contentAPI.delete(c, user, respectFrontendRoles);
                 hostCache.remove(host);
                 hostCache.clearAliasCache();
-
             }
         }
+        final DeleteHostThread deleteHostThread = new DeleteHostThread();
 
-        DeleteHostThread thread = new DeleteHostThread();
+        if(runAsSeparatedThread) {
 
-        if(runAsSepareThread) {
-            thread.start();
+            future = Optional.of(this.concurrentFactory.getSubmitter
+                    (DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL).submit(deleteHostThread));
         } else {
-            thread.run();
+            deleteHostThread.call();
         }
-    }
 
-    // todo: should it be in a transaction??
+        return future;
+    } // delete.
+
+    @Override
+    @WrapInTransaction
     public void archive(Host host, User user, boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException,
             DotContentletStateException {
@@ -712,13 +753,16 @@ public class HostAPIImpl implements HostAPI {
         }
         Contentlet c = APILocator.getContentletAPI().find(host.getInode(), user, respectFrontendRoles);
         //retrieve all hosts that have this current host as tag storage host
-        List<Host> hosts = retrieveHostsPerTagStorage(host.getTagStorage(), user);
+        List<Host> hosts = retrieveHostsPerTagStorage(host.getIdentifier(), user);
         for(Host h: hosts) {
             if(h.getIdentifier() != null){
                 if(!h.getIdentifier().equals(host.getIdentifier())){
                     //prevents changing tag storage for archived host.
                     //the tag storage will change for all hosts which tag storage is archived host
+                    // Apparently this code updates all other hosts setting their own self as tag storage
                     h.setTagStorage(h.getIdentifier());
+                    //So In order to avoid an exception updating a host that could be archived we're gonna tell the API to skip validation.
+                    h.getMap().put(Contentlet.DONT_VALIDATE_ME, true);
                     h = save(h, user, true);
                 }
             }
@@ -731,6 +775,7 @@ public class HostAPIImpl implements HostAPI {
                 String.valueOf(PermissionAPI.PERMISSION_READ)));
     }
 
+    @Override
     @WrapInTransaction
     public void unarchive(Host host, User user, boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException,
@@ -746,6 +791,7 @@ public class HostAPIImpl implements HostAPI {
         systemEventsAPI.pushAsync(SystemEventType.UN_ARCHIVE_SITE, new Payload(c, Visibility.PERMISSION,
                 String.valueOf(PermissionAPI.PERMISSION_READ)));
     }
+
 
     @WrapInTransaction
     private synchronized Host createDefaultHost() throws DotDataException,
@@ -833,6 +879,7 @@ public class HostAPIImpl implements HostAPI {
         return hosts;
     }
 
+    @Override
     public void publish(Host host, User user, boolean respectFrontendRoles) throws DotContentletStateException, DotDataException, DotSecurityException {
 
         if(host != null){
@@ -845,6 +892,7 @@ public class HostAPIImpl implements HostAPI {
 
     }
 
+    @Override
     public void unpublish(Host host, User user, boolean respectFrontendRoles) throws DotContentletStateException, DotDataException, DotSecurityException {
         if(host != null){
             hostCache.remove(host);
@@ -855,11 +903,13 @@ public class HostAPIImpl implements HostAPI {
         hostCache.clearAliasCache();
     }
 
+    @Override
     public void makeDefault(Host host, User user, boolean respectFrontendRoles) throws DotContentletStateException, DotDataException, DotSecurityException {
         host.setDefault(true);
         save(host, user, respectFrontendRoles);
     }
 
+    @Override
     @CloseDBIfOpened
     public Host DBSearch(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         if (!UtilMethods.isSet(id))
@@ -886,12 +936,14 @@ public class HostAPIImpl implements HostAPI {
         return host;
     }
 
+    @Override
     public void updateCache(Host host) {
         hostCache.remove(host);
         hostCache.clearAliasCache();
         hostCache.add(new Host(host));
     }
 
+    @Override
     public List<String> parseHostAliases(Host host) {
         List<String> ret = new ArrayList<String>();
         if(host.getAliases() == null){
@@ -904,6 +956,7 @@ public class HostAPIImpl implements HostAPI {
         return ret;
     }
 
+    @Override
     @SuppressWarnings("unchecked")
     @WrapInTransaction
     public void updateMenuLinks(Host workinghost,Host updatedhost) throws DotDataException {//DOTCMS-5090
@@ -940,6 +993,7 @@ public class HostAPIImpl implements HostAPI {
 
     }
 
+    @Override
     @CloseDBIfOpened
     public List<Host> retrieveHostsPerTagStorage (String tagStorageId, User user) {
         List<Host> hosts = new ArrayList<Host>();
@@ -967,21 +1021,24 @@ public class HostAPIImpl implements HostAPI {
 
     }
 
-
+    @Override
     public PaginatedArrayList<Host> searchByStopped(String filter, boolean showStopped, boolean showSystemHost, int limit, int offset, User user, boolean respectFrontendRoles){
         String condition = String.format(" +live:%b", !showStopped);
         return search(filter, condition, showSystemHost, limit, offset, user, respectFrontendRoles);
     }
 
+    @Override
     public PaginatedArrayList<Host> search(String filter, boolean showArchived, boolean showStopped, boolean showSystemHost, int limit, int offset, User user, boolean respectFrontendRoles){
         String condition = String.format(" +deleted:%b +live:%b", showArchived, !showStopped);
         return search(filter, condition, showSystemHost, limit, offset, user, respectFrontendRoles);
     }
 
+    @Override
     public PaginatedArrayList<Host> search(String filter, boolean showSystemHost, int limit, int offset, User user, boolean respectFrontendRoles){
         return search(filter, StringUtils.EMPTY, showSystemHost, limit, offset, user, respectFrontendRoles);
     }
 
+    @Override
 	public PaginatedArrayList<Host> search(String filter, boolean showArchived, boolean showSystemHost, int limit, int offset, User user, boolean respectFrontendRoles) {
         String condition = String.format(" +deleted:%b", showArchived);
         return search(filter, condition, showSystemHost, limit, offset, user, respectFrontendRoles);
@@ -1015,6 +1072,7 @@ public class HostAPIImpl implements HostAPI {
      * @param respectFrontendRoles
      * @return
      */
+    @Override
     public long count(User user, boolean respectFrontendRoles) {
         try {
             return APILocator.getContentletAPI()

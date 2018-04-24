@@ -70,11 +70,7 @@ public class WorkflowTool implements ViewTool {
 		return wapi.findSchemes(showArchived);
 	}
 
-	public WorkflowScheme findDefaultScheme() throws DotDataException {
-		return wapi.findDefaultScheme();
-	}
-
-	public WorkflowScheme findScheme(String id) throws DotDataException {
+	public WorkflowScheme findScheme(String id) throws DotDataException, DotSecurityException {
 		return wapi.findScheme(id);
 	}
 
@@ -111,7 +107,7 @@ public class WorkflowTool implements ViewTool {
 		return wapi.findActions(steps, user, permissionable);
 	}
 
-	public WorkflowStep findStep(String id) throws DotDataException {
+	public WorkflowStep findStep(String id) throws DotDataException, DotSecurityException {
 		return wapi.findStep(id);
 	}
 

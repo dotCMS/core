@@ -42,14 +42,10 @@ public class DeleteContentActionlet extends WorkFlowActionlet {
                 }
 
             }
-            if (!processor.getContentlet().isArchived()) {
-                APILocator.getContentletAPI()
-                        .archive(processor.getContentlet(), processor.getUser(), false);
-            }
-            APILocator.getContentletAPI()
-                    .delete(processor.getContentlet(), processor.getUser(), false);
+            APILocator.getContentletAPI().delete(processor.getContentlet(), processor.getUser(), false);
             processor.setTask(null);
             processor.setContentlet(null);
+            processor.abortProcessor();
         } catch (Exception e) {
             Logger.error(this.getClass(), e.getMessage(), e);
             throw new WorkflowActionFailureException(e.getMessage(), e);

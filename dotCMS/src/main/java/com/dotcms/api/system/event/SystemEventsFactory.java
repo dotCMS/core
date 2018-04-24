@@ -4,12 +4,17 @@ import com.dotcms.api.system.event.dao.SystemEventsDAO;
 import com.dotcms.api.system.event.dto.SystemEventDTO;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.notifications.bean.Notification;
+import com.dotcms.repackage.javax.ws.rs.HEAD;
+import com.dotcms.rest.api.v1.system.websocket.SystemEventsWebSocketEndPoint;
+import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPI;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.marshal.MarshalFactory;
 import com.dotcms.util.marshal.MarshalUtils;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -39,7 +44,7 @@ import java.util.Map;
 public class SystemEventsFactory implements Serializable {
 
 	public static final String EVENTS_THREAD_POOL_SUBMITTER_NAME = "events";
-	private final DotSubmitter dotSubmitter		  = DotConcurrentFactory.getInstance().getSubmitter(EVENTS_THREAD_POOL_SUBMITTER_NAME);
+	private final DotConcurrentFactory concurrentFactory		 = DotConcurrentFactory.getInstance();
 	private final SystemEventsDAO systemEventsDAO = new SystemEventsDAOImpl();
 	private final SystemEventsAPI systemEventsAPI = new SystemEventsAPIImpl();
 
@@ -83,7 +88,7 @@ public class SystemEventsFactory implements Serializable {
 	 * @return The {@link DotSubmitter} instance.
 	 */
 	public DotSubmitter getDotSubmitter() {
-		return this.dotSubmitter;
+		return this.concurrentFactory.getSubmitter(EVENTS_THREAD_POOL_SUBMITTER_NAME);
 	}
 
 	/**
@@ -105,10 +110,12 @@ public class SystemEventsFactory implements Serializable {
 	 */
 	private final class SystemEventsAPIImpl implements SystemEventsAPI {
 
-		private final ConversionUtils conversionUtils = ConversionUtils.INSTANCE;
-		private final DotSubmitter dotSubmitter = getDotSubmitter();
-		private SystemEventsDAO systemEventsDAO = getSystemEventsDAO();
-		private MarshalUtils marshalUtils = MarshalFactory.getInstance().getMarshalUtils();
+		private final ConversionUtils conversionUtils 			  = ConversionUtils.INSTANCE;
+		private final SystemEventsDAO systemEventsDAO 			  = getSystemEventsDAO();
+		private final MarshalUtils    marshalUtils 	 			  = MarshalFactory.getInstance().getMarshalUtils();
+		private final ServerAPI 	  serverAPI		  			  = APILocator.getServerAPI();
+		private final DotConcurrentFactory concurrentFactory	  = DotConcurrentFactory.getInstance();
+		private final WebSocketContainerAPI webSocketContainerAPI = APILocator.getWebSocketContainerAPI();
 
 		/**
 		 * Method that will save a given system event
@@ -118,16 +125,26 @@ public class SystemEventsFactory implements Serializable {
 		 *                            when this push is called inside a thread
 		 * @throws DotDataException
 		 */
-		private void push(final SystemEvent systemEvent, boolean forceNewTransaction) throws DotDataException {
+		private void push(final SystemEvent systemEvent, final boolean forceNewTransaction) throws DotDataException {
+
 			if (!UtilMethods.isSet(systemEvent)) {
 				final String msg = "System Event object cannot be null.";
 				Logger.error(this, msg);
 				throw new IllegalArgumentException(msg);
 			}
 
-			boolean localTransaction = false;
-			final boolean isNewConnection = !DbConnectionFactory.connectionExists();
+			final boolean isNewConnection    = !DbConnectionFactory.connectionExists();
+			boolean localTransaction 		 = false;
+			final SystemEventsWebSocketEndPoint webSocketEndPoint = this.webSocketContainerAPI
+					.getEndpointInstance(SystemEventsWebSocketEndPoint.class);
+
 			try {
+
+				// sends straight to the socket, the server id is sent to the queue in order to avoid to send twice the event.
+				if (null != webSocketEndPoint) {
+
+					webSocketEndPoint.sendSystemEvent(systemEvent);
+				}
 
 				if ( forceNewTransaction ) {
 					//Start a transaction
@@ -139,7 +156,8 @@ public class SystemEventsFactory implements Serializable {
 				}
 
 				this.systemEventsDAO.add(new SystemEventDTO(systemEvent.getId(), systemEvent.getEventType().name(),
-						this.marshalUtils.marshal(systemEvent.getPayload()), systemEvent.getCreationDate().getTime()));
+						this.marshalUtils.marshal(systemEvent.getPayload()),
+						systemEvent.getCreationDate(). getTime(), this.serverAPI.readServerId()));
 
 				//Everything ok..., committing the transaction
 				if ( localTransaction ) {
@@ -180,12 +198,13 @@ public class SystemEventsFactory implements Serializable {
 		@Override
 		public void pushAsync(final SystemEventType event, final Payload payload) throws DotDataException {
 
+			final DotSubmitter dotSubmitter = this.concurrentFactory.getSubmitter(EVENTS_THREAD_POOL_SUBMITTER_NAME);
 			// if by any reason the submitter couldn't be created, sends the message syn
-			if (null == this.dotSubmitter) {
+			if (null == dotSubmitter) {
 				Logger.debug(this, "Sending a message: " + event + "sync, it seems the dotSubmitter could not be created");
 				this.push(event, payload);
 			} else {
-				this.dotSubmitter.execute(() -> {
+				dotSubmitter.execute(() -> {
 
 					try {
 
@@ -304,13 +323,14 @@ public class SystemEventsFactory implements Serializable {
 		 *            - The {@link SystemEventDTO} object.
 		 * @return The {@link Notification} object.
 		 */
-		private SystemEvent convertSystemEventDTO(SystemEventDTO record) {
+		private SystemEvent convertSystemEventDTO(final SystemEventDTO record) {
 			final String id = record.getId();
 			final SystemEventType eventType = SystemEventType.valueOf(record.getEventType());
 			final String payloadStr = record.getPayload();
 			final Payload payload = marshalUtils.unmarshal(payloadStr, Payload.class);
 			final Date created = new Date(record.getCreationDate());
-			return new SystemEvent(id, eventType, payload, created);
+			final String serverId = record.getServerId();
+			return new SystemEvent(id, eventType, payload, created, serverId);
 		}
 
 	}
@@ -330,19 +350,20 @@ public class SystemEventsFactory implements Serializable {
 		@Override
 		public void add(final SystemEventDTO systemEvent) throws DotDataException {
 			final DotConnect dc = new DotConnect();
-			dc.setSQL("INSERT INTO system_event (identifier, event_type, payload, created) VALUES (?, ?, ?, ?)");
+			dc.setSQL("INSERT INTO system_event (identifier, event_type, payload, created, server_id) VALUES (?, ?, ?, ?, ?)");
 			final String id = (!UtilMethods.isSet(systemEvent.getId())) ? UUIDGenerator.generateUuid() : systemEvent.getId();
 			dc.addParam(id);
 			dc.addParam(systemEvent.getEventType());
 			dc.addParam(systemEvent.getPayload());
 			dc.addParam(systemEvent.getCreationDate());
+			dc.addParam(systemEvent.getServerId());
 			dc.loadResult();
 		}
 
 		@Override
 		public Collection<SystemEventDTO> getEventsSince(final long fromDate) throws DotDataException {
 			final DotConnect dc = new DotConnect();
-			dc.setSQL("SELECT identifier, event_type, payload, created FROM system_event WHERE created >= ? order by created");
+			dc.setSQL("SELECT identifier, event_type, payload, created, server_id FROM system_event WHERE created >= ? order by created");
 			dc.addParam(fromDate);
 			final List<Map<String, Object>> systemEvents = dc.loadObjectResults();
 			return this.conversionUtils.convert(systemEvents, this::convertSystemEventRecord);
@@ -351,7 +372,7 @@ public class SystemEventsFactory implements Serializable {
 		@Override
 		public Collection<SystemEventDTO> getAll() throws DotDataException {
 			final DotConnect dc = new DotConnect();
-			dc.setSQL("SELECT identifier, event_type, payload, created FROM system_event");
+			dc.setSQL("SELECT identifier, event_type, payload, created, server_id FROM system_event");
 			final List<Map<String, Object>> systemEvents = dc.loadObjectResults();
 			return this.conversionUtils.convert(systemEvents, this::convertSystemEventRecord);
 		}
@@ -399,7 +420,8 @@ public class SystemEventsFactory implements Serializable {
 			} else {
 				created = (Long) record.get("created");
 			}
-			return new SystemEventDTO(id, eventType, payload, created);
+			final String serverId = (String) record.get("server_id");
+			return new SystemEventDTO(id, eventType, payload, created, serverId);
 		}
 
 	}

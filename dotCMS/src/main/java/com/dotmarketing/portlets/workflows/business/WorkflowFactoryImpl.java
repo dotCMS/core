@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.workflows.business;
 
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.util.ConversionUtils;
@@ -15,19 +16,33 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.workflows.model.*;
+import com.dotmarketing.portlets.workflows.model.WorkFlowTaskFiles;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
+import com.dotmarketing.portlets.workflows.model.WorkflowComment;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
+import com.dotmarketing.portlets.workflows.model.WorkflowState;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
-import org.apache.commons.beanutils.BeanUtils;
-
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+import org.apache.commons.beanutils.BeanUtils;
 
 
 /**
@@ -171,6 +186,8 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			return this.convertScheme(map);
 		} else if (obj instanceof WorkflowHistory) {
 			return this.convertHistory(map);
+		} else if (obj instanceof WorkflowTask) {
+			return this.convertTask(map);
 		} else {
 			return this.convert(obj, map);
 		}
@@ -211,6 +228,22 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		BeanUtils.copyProperties(step, row);
 
 		return step;
+	}
+
+	private WorkflowTask convertTask(Map<String, Object> row)
+			throws IllegalAccessException, InvocationTargetException {
+
+		final WorkflowTask task = new WorkflowTask();
+		row.put("languageId", row.get("language_id"));
+		row.put("creationDate", row.get("creation_date"));
+		row.put("modDate", row.get("mod_date"));
+		row.put("dueDate", row.get("due_date"));
+		row.put("createdBy", row.get("created_by"));
+		row.put("assignedTo", row.get("assigned_to"));
+		row.put("belongsTo", row.get("belongs_to"));
+		BeanUtils.copyProperties(task, row);
+
+		return task;
 	}
 
 	/**
@@ -395,15 +428,14 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	@Override
 	public int getCountContentletsReferencingStep(WorkflowStep step) throws DotDataException{
-		int amount = 0;
+
 		final DotConnect db = new DotConnect();
 
 		// get step related assets
 		db.setSQL(sql.SELECT_COUNT_CONTENTLES_BY_STEP);
 		db.addParam(step.getId());
 		Map<String,Object> res = db.loadObjectResults().get(0);
-		amount=Integer.parseInt(String.valueOf(res.get("count")));
-		return amount;
+		return ConversionUtils.toInt(res.get("count"), 0);
 	}
 
 	@Override
@@ -471,10 +503,10 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 				HibernateUtil.rollbackTransaction();
 			}
 			Logger.error(this, "deleteWorkflowTask failed:" + e, e);
-			throw new DotDataException(e.toString());
+			throw new DotDataException(e);
 		}
 		finally {
-			cache.remove(c);
+			cache.remove(task);
 		}
 	}
 
@@ -570,27 +602,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return actions;
 	} // findActions.
 
-	@Override
-	public WorkflowScheme findDefaultScheme() throws DotDataException {
-		WorkflowScheme scheme = cache.getDefaultScheme();
-		if (scheme == null) {
-			try {
-				final DotConnect db = new DotConnect();
-				db.setSQL(sql.SELECT_DEFAULT_SCHEME);
-				try {
-					scheme = (WorkflowScheme) this.convertListToObjects(db.loadObjectResults(), WorkflowScheme.class).get(0);
-				} catch (final Exception ex) {
-
-					throw new DotDataException("default scheme does not exist");
-				}
-
-				cache.addDefaultScheme(scheme);
-			} catch (final Exception e) {
-				throw new DotDataException(e.getMessage(),e);
-			}
-		}
-		return scheme;
-	}
 
 	@Override
 	public Map<String, WorkflowActionClassParameter> findParamsForActionClass(WorkflowActionClass actionClass) throws DotDataException {
@@ -626,19 +637,18 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return scheme;
 	}
 
+
 	@Override
-	public List<WorkflowScheme> findSchemesForStruct(String structId) throws DotDataException {
-		List<WorkflowScheme> schemes = new ArrayList<>();
-		if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
-			schemes.add(this.findDefaultScheme());
-			schemes.add(this.findSystemWorkflow());
-			return schemes;
-		}
+	public List<WorkflowScheme> findSchemesForStruct(final String structId) throws DotDataException {
 
-		schemes = cache.getSchemesByStruct(structId);
+		List<WorkflowScheme> schemes = cache.getSchemesByStruct(structId);
 
-		if (schemes != null && !schemes.isEmpty()) {
-			return schemes;
+		if (schemes != null) {
+
+			// checks if any of the schemes has been invalidated (save recently and needs to refresh the schemes for the content type).
+			if (!schemes.stream().filter(scheme -> null == cache.getScheme(scheme.getId())).findFirst().isPresent()) {
+				return schemes;
+			}
 		}
 
 		final DotConnect db = new DotConnect();
@@ -646,20 +656,18 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		db.addParam(structId);
 		try {
 			schemes = this.convertListToObjects(db.loadObjectResults(), WorkflowScheme.class);
-			if(schemes.isEmpty()){
-				schemes.add(this.findDefaultScheme());
-			}
 		} catch (final Exception er) {
 			schemes = new ArrayList();
-			schemes.add(this.findDefaultScheme());
 		}
 
 		cache.addForStructure(structId, schemes);
+		schemes.stream().forEach(scheme -> cache.add(scheme));
 		return schemes;
 
 	}
 
-	private WorkflowScheme findSystemWorkflow() throws DotDataException {
+	@Override
+	public WorkflowScheme findSystemWorkflow() throws DotDataException {
 		return this.findScheme(WorkFlowFactory.SYSTEM_WORKFLOW_ID);
 	}
 
@@ -686,10 +694,9 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	@Override
-	public List<WorkflowStep> findStepsByContentlet(Contentlet contentlet) throws DotDataException {
+	public List<WorkflowStep> findStepsByContentlet(final Contentlet contentlet, final List<WorkflowScheme> schemes) throws DotDataException {
 		List<WorkflowStep> steps            = new ArrayList<>();
         List<WorkflowStep> currentSteps     = cache.getSteps(contentlet);
-		final List<WorkflowScheme> schemes  = this.findSchemesForStruct(contentlet.getContentTypeId());
 		String workflowTaskId        		= null;
 		List<Map<String, Object>> dbResults = null;
 
@@ -714,8 +721,11 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			if (step == null) {
 				try {
 					for(WorkflowScheme scheme : schemes) {
-						step = this.findSteps(scheme).get(0);
-						steps.add(step);
+						final List<WorkflowStep> schemeSteps = this.findSteps(scheme);
+						if(UtilMethods.isSet(schemeSteps)){
+						   step = schemeSteps.get(0);
+						   steps.add(step);
+						}
 					}
 					//Add to cache list of steps
 				} catch (final Exception e) {
@@ -763,24 +773,31 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	@Override
 	public WorkflowTask findTaskByContentlet(final Contentlet contentlet) throws DotDataException {
+
+		WorkflowTask task = null;
+
 		if (!UtilMethods.isSet(contentlet.getIdentifier()) || cache.is404(contentlet)) {
-			return new WorkflowTask();
+			return task;
 		}
 
-		WorkflowTask task = cache.getTask(contentlet);
+		task = cache.getTask(contentlet);
 
 		if (task == null) {
-			final HibernateUtil hu = new HibernateUtil(WorkflowTask.class);
-			hu.setQuery(
-					"from workflow_task in class com.dotmarketing.portlets.workflows.model.WorkflowTask where webasset = ? and language_id = ?");
-			hu.setParam(contentlet.getIdentifier());
-			hu.setParam(contentlet.getLanguageId());
-			task = (WorkflowTask) hu.load();
 
-			if (task != null && task.getId()!=null) {
-				cache.addTask(contentlet, task);
+			final DotConnect db = new DotConnect();
+			db.setSQL(WorkflowSQL.SELECT_TASK);
+			db.addParam(contentlet.getIdentifier());
+			db.addParam(contentlet.getLanguageId());
+
+			List<WorkflowTask> foundTasks = this
+					.convertListToObjects(db.loadObjectResults(), WorkflowTask.class);
+			if (null != foundTasks && !foundTasks.isEmpty()) {
+				task = foundTasks.get(0);
 			}
-			else{
+
+			if (null != task && null != task.getId()) {
+				cache.addTask(contentlet, task);
+			} else {
 				cache.add404Task(contentlet);
 			}
 		}
@@ -862,7 +879,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	 */
 	private DotConnect getWorkflowSqlQuery(WorkflowSearcher searcher, boolean counting) throws DotDataException {
 
-		final boolean isAdministrator = APILocator.getRoleAPI().doesUserHaveRole(searcher.getUser(), APILocator.getRoleAPI().loadCMSAdminRole());
 		DotConnect dc = new DotConnect();
 		final StringBuilder query = new StringBuilder();
 
@@ -1338,19 +1354,19 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.addParam(contentTypeInode);
 			db.loadResult();
 
+			final ImmutableList.Builder<WorkflowStep> steps = new ImmutableList.Builder<>();
 			for(String id : schemesIds) {
 				db.setSQL(sql.INSERT_SCHEME_FOR_STRUCT);
 				db.addParam(UUIDGenerator.generateUuid());
 				db.addParam(id);
 				db.addParam(contentTypeInode);
 				db.loadResult();
+
+				steps.addAll(this.findSteps(this.findScheme(id)));
 			}
 			// update all tasks for the content type and reset their step to
 			// null
-			db.setSQL(sql.UPDATE_STEPS_BY_STRUCT);
-			db.addParam((Object) null);
-			db.addParam(contentTypeInode);
-			db.loadResult();
+			this.cleanWorkflowTaskStatus(contentTypeInode,steps.build());
 
 			// we have to clear the saved steps/tasks for all contentlets using
 			// this workflow
@@ -1361,6 +1377,57 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		} catch (final Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
 			throw new DotDataException(e.getMessage(),e);
+		}
+	}
+
+	/**
+	 * Set workflow tasks with status null, for all the existing workflow task with the specified
+	 * contentTypeInode and not in the list of steps availables fot the content type schemes
+	 *
+	 * @param contentTypeInode Content Type Inode
+	 * @param steps List of valid Steps
+	 */
+	private void cleanWorkflowTaskStatus(final String contentTypeInode, List<WorkflowStep> steps)
+			throws DotDataException {
+		try {
+
+			String condition = "";
+			if (steps.size() > 0) {
+				condition = " and status not in (";
+				StringBuilder parameters = new StringBuilder();
+				for (WorkflowStep step : steps) {
+					parameters.append(", ?");
+				}
+				condition += parameters.toString().substring(1) + " )";
+			}
+
+			final DotConnect db = new DotConnect();
+			db.setSQL(sql.SELECT_TASK_STEPS_TO_CLEAN_BY_STRUCT + condition);
+			db.addParam(contentTypeInode);
+			if (steps.size() > 0) {
+				for (WorkflowStep step : steps) {
+					db.addParam(step.getId());
+				}
+			}
+			final List<WorkflowTask> tasks = this
+					.convertListToObjects(db.loadObjectResults(), WorkflowTask.class);
+
+			//clean cache
+			tasks.stream().forEach(task -> cache.remove(task));
+
+			db.setSQL(sql.UPDATE_STEPS_BY_STRUCT + condition);
+			db.addParam((Object) null);
+			db.addParam(contentTypeInode);
+			if (steps.size() > 0) {
+				for (WorkflowStep step : steps) {
+					db.addParam(step.getId());
+				}
+			}
+			db.loadResult();
+
+		} catch (final Exception e) {
+			Logger.error(this.getClass(), e.getMessage(), e);
+			throw new DotDataException(e.getMessage(), e);
 		}
 	}
 
@@ -1768,4 +1835,55 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		}
 	}
 
+	@Override
+	public List<WorkflowTask> findTasksByStep(final String stepId) throws DotDataException, DotSecurityException {
+		List<WorkflowTask> tasks;
+		DotConnect dc = new DotConnect();
+
+		try {
+			dc.setSQL(sql.SELECT_TASKS_BY_STEP);
+			dc.addParam(stepId);
+			tasks =  this.convertListToObjects(dc.loadObjectResults(), WorkflowTask.class);
+		} catch (DotDataException e) {
+			Logger.error(WorkFlowFactory.class,e.getMessage(),e);
+			throw new DotDataException(e.getMessage(), e);
+		}
+		return tasks;
+	}
+
+	@Override
+	public List<ContentType> findContentTypesByScheme(final WorkflowScheme scheme) throws DotDataException, DotSecurityException{
+		List<ContentType> contentTypes;
+		DotConnect dc = new DotConnect();
+		try {
+			dc.setSQL(sql.SELECT_STRUCTS_FOR_SCHEME);
+			dc.addParam(scheme.getId());
+			contentTypes =  this.convertListToObjects(dc.loadObjectResults(), ContentType.class);
+
+		} catch (DotDataException e) {
+			Logger.error(WorkFlowFactory.class,e.getMessage(),e);
+			throw new DotDataException(e.getMessage(), e);
+		}
+		return contentTypes;
+	}
+
+	@Override
+	public void deleteScheme(final WorkflowScheme scheme) throws DotDataException, DotSecurityException{
+		DotConnect dc = new DotConnect();
+		try {
+			//delete association of content types with the scheme
+			dc.setSQL(sql.DELETE_STRUCTS_FOR_SCHEME);
+			dc.addParam(scheme.getId());
+			dc.loadResult();
+
+			//delete the scheme
+			dc.setSQL(sql.DELETE_SCHEME);
+			dc.addParam(scheme.getId());
+			dc.loadResult();
+
+		} catch (DotDataException e) {
+			Logger.error(WorkFlowFactory.class,e.getMessage(),e);
+			throw new DotDataException(e.getMessage(), e);
+		}
+	}
 }

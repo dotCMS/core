@@ -360,19 +360,18 @@
 <!-- END Task Overview -->
 
 
-<div style="margin:40px 0;">
+<div>
 
 
 <!-- START Tabs -->
 	<div id="mainTabContainer" dolayout="false" dojoType="dijit.layout.TabContainer">
 		<div id="TabZero" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Preview") %>">
 
-			<jsp:include page="/html/portlet/ext/contentlet/view_contentlet_popup_inc.jsp"></jsp:include>
 
+			<div style="display: block; width:100%">
+			<div style="border:1px solid #ddd;padding: 10px;width:40%;float:right;">
 
-			<div style="border:1px solid #ddd;margin: 60px 0;">
-
-				<table class="listingTable">
+				<table class="listingTable" style="width:100%;position: relative;">
 					<tr>
 						<th><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Comments")) %></th>
 						<th>
@@ -415,14 +414,27 @@
 							  str_style2="class=\"alternate_2\"";
 							}
 							y++;
+
+							String postedBy = comment.getPostedBy();
+							try {
+
+								postedBy = APILocator.getUserAPI().loadUserById(comment.getPostedBy(), APILocator.systemUser(), false).getFullName();
+							} catch (Exception e) {
+
+								final Role role = APILocator.getRoleAPI().loadRoleById(comment.getPostedBy());
+								if (null != role) {
+
+								    postedBy = role.getName();
+								}
+							}
+
 					%>
 						<tr <%=str_style2 %>>
 							<td colspan="2">
-								<p>
-									<%= APILocator.getRoleAPI().loadRoleById(comment.getPostedBy()) == null ? "": APILocator.getRoleAPI().loadRoleById(comment.getPostedBy()).getName() %> &nbsp;(<%= DateUtil.prettyDateSince(comment.getCreationDate()) %>)<br/>
+									<%=postedBy%> &nbsp;(<%= DateUtil.prettyDateSince(comment.getCreationDate()) %>)<br/>
 
-									<div style="font-size: 10pt;margin:5px;margin-top:0px;"><%= comment.getComment() %><%if (commentsIt.hasNext()) { %><% } %></div>
-								</p>
+									<div style="margin:5px;margin-top:0px;"><%= comment.getComment() %><%if (commentsIt.hasNext()) { %><% } %></div>
+
 							</td>
 						</tr>
 					<% } %>
@@ -437,9 +449,11 @@
 
 				</table>
 			</div>
-
+			<div style="float:left;padding:10px;width:60%;">
+				<jsp:include page="/html/portlet/ext/contentlet/view_contentlet_popup_inc.jsp"></jsp:include>
+			</div>
 			<!-- END Comments -->
-
+		</div>
 		</div>
 	<!-- END Description Tab -->
 

@@ -1,8 +1,6 @@
 package com.dotcms.rest.api.v1.page;
 
 
-import com.dotcms.business.WrapInTransaction;
-import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.DefaultValue;
@@ -20,31 +18,22 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.api.v1.page.PageContainerForm.ContainerEntry;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
-import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.MultiTreeFactory;
-import com.dotmarketing.portlets.contentlet.business.DotLockException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
+import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
+import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
+import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRendered;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.personas.model.IPersona;
-import com.dotmarketing.portlets.personas.model.Persona;
-import com.dotmarketing.portlets.templates.business.TemplateAPI;
+import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -52,20 +41,12 @@ import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.WebKeys;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMap.Builder;
 import com.liferay.portal.model.User;
-import org.jetbrains.annotations.NotNull;
-
-import static java.awt.SystemColor.info;
 
 /**
  * Provides different methods to access information about HTML Pages in dotCMS. For example,
@@ -81,24 +62,21 @@ public class PageResource {
 
     private final PageResourceHelper pageResourceHelper;
     private final WebResource webResource;
-    private final TemplateAPI templateAPI;
-    private final PermissionAPI permissionAPI;
+    private final HTMLPageAssetRenderedAPI htmlPageAssetRenderedAPI;
 
     /**
      * Creates an instance of this REST end-point.
      */
     public PageResource() {
-        this(PageResourceHelper.getInstance(), new WebResource(), APILocator.getTemplateAPI(),
-                APILocator.getPermissionAPI());
+        this(PageResourceHelper.getInstance(), new WebResource(), APILocator.getHTMLPageAssetRenderedAPI());
     }
 
     @VisibleForTesting
     protected PageResource(final PageResourceHelper pageResourceHelper, final WebResource webResource,
-                           TemplateAPI templateAPI, PermissionAPI permissionAPI) {
+                           final HTMLPageAssetRenderedAPI htmlPageAssetRenderedAPI) {
         this.pageResourceHelper = pageResourceHelper;
         this.webResource = webResource;
-        this.templateAPI = templateAPI;
-        this.permissionAPI = permissionAPI;
+        this.htmlPageAssetRenderedAPI = htmlPageAssetRenderedAPI;
     }
 
     /**
@@ -130,19 +108,13 @@ public class PageResource {
         final User user = auth.getUser();
         Response res = null;
         try {
-            final PageView pageView = this.pageResourceHelper.getPageMetadata(request, response,
+            final PageView pageView = this.htmlPageAssetRenderedAPI.getPageMetadata(request, response,
                     user, uri, live);
-            final String json = this.pageResourceHelper.asJson(pageView);
-            final Response.ResponseBuilder responseBuilder = Response.ok(json);
+            final Response.ResponseBuilder responseBuilder = Response.ok(pageView);
             responseBuilder.header("Access-Control-Expose-Headers", "Authorization");
             responseBuilder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, " +
                     "Content-Type, " + "Accept, Authorization");
             res = responseBuilder.build();
-        } catch (JsonProcessingException e) {
-            final String errorMsg = "An error occurred when generating the JSON response (" + e
-                    .getMessage() + ")";
-            Logger.error(this, e.getMessage(), e);
-            res = ExceptionMapperUtil.createResponse(null, errorMsg);
         } catch (DotSecurityException e) {
             final String errorMsg = "The user does not have the required permissions (" + e
                     .getMessage() + ")";
@@ -191,19 +163,13 @@ public class PageResource {
         final User user = auth.getUser();
         Response res = null;
         try {
-            final PageView pageView = this.pageResourceHelper.getPageMetadataRendered(request,
+            final PageView pageView = this.htmlPageAssetRenderedAPI.getPageMetadataRendered(request,
                     response, user, uri, live);
-            final String json = this.pageResourceHelper.asJson(pageView);
-            final Response.ResponseBuilder responseBuilder = Response.ok(json);
+            final Response.ResponseBuilder responseBuilder = Response.ok(pageView);
             responseBuilder.header("Access-Control-Expose-Headers", "Authorization");
             responseBuilder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, " +
                     "Content-Type, " + "Accept, Authorization");
             res = responseBuilder.build();
-        } catch (JsonProcessingException e) {
-            final String errorMsg = "An error occurred when generating the JSON response (" + e
-                    .getMessage() + ")";
-            Logger.error(this, e.getMessage(), e);
-            res = ExceptionMapperUtil.createResponse(null, errorMsg);
         } catch (DotSecurityException e) {
             final String errorMsg = "The user does not have the required permissions (" + e
                     .getMessage() + ")";
@@ -246,51 +212,25 @@ public class PageResource {
         final PageMode mode = PageMode.get(modeStr);
         PageMode.setPageMode(request, mode);
         try {
-            final HTMLPageAsset page = (UUIDUtil.isUUID(uri)) ?
-                    (HTMLPageAsset) APILocator.getHTMLPageAssetAPI().findPage(uri, user, mode.respectAnonPerms) :
-                    this.pageResourceHelper.getPage(request, user, uri, mode);
 
-            if (page == null) {
-                Logger.error(this.getClass(),
-                        "Page does not exists on PageResource, page uri: " + uri);
-                return ExceptionMapperUtil.createResponse(Response.Status.NOT_FOUND);
+            if (deviceInode != null) {
+                request.getSession().setAttribute(WebKeys.CURRENT_DEVICE, deviceInode);
             }
 
-            final Builder<String, Object> responseMapBuilder = ImmutableMap.builder();
+            HTMLPageAssetRendered pageRendered = this.htmlPageAssetRenderedAPI.getPageRendered(request, response, user, uri, mode);
+            final Response.ResponseBuilder responseBuilder = Response.ok(pageRendered);
+            responseBuilder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, " +
+                    "Content-Type, " + "Accept, Authorization");
 
-            final Host host = APILocator.getHostAPI().find(page.getHost(), user, mode.respectAnonPerms);
+            final Host host = APILocator.getHostAPI().find(pageRendered.getPageInfo().getPage().getHost(), user, mode.respectAnonPerms);
             request.setAttribute(WebKeys.CURRENT_HOST, host);
             request.getSession().setAttribute(WebKeys.CURRENT_HOST, host);
 
-            final Template template = this.templateAPI.findWorkingTemplate(page.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false);
-
-            responseMapBuilder
-                    .put("html", this.pageResourceHelper.getPageRendered(page, request, response, user, mode))
-                    .put("page", this.pageResourceHelper.getPageMap(page, user))
-                    .put("containers", this.pageResourceHelper.getMappedContainers(template))
-                    .put("viewAs", createViewAsMap(request, user, deviceInode))
-                    .put("canCreateTemplate", APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("templates", user));
-
-            if (template.isDrawed()) {
-                responseMapBuilder.put("layout", DotTemplateTool.themeLayout(template.getInode()));
-            }
-
-            if (this.permissionAPI.doesUserHavePermission(template, PermissionLevel.READ.getType(), user, false)) {
-                responseMapBuilder.put("template",
-                    ImmutableMap.builder()
-                        .put("canEdit", this.permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(), user))
-                        .putAll(this.pageResourceHelper.asMap(template))
-                        .build());
-            }
-
-            final Response.ResponseBuilder responseBuilder = Response.ok(responseMapBuilder.build());
-            responseBuilder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, " +
-                    "Content-Type, " + "Accept, Authorization");
             res = responseBuilder.build();
-        } catch (JsonProcessingException e) {
-            final String errorMsg = "An error occurred when generating the JSON response (" + e.getMessage() + ")";
-            Logger.error(this, e.getMessage(), e);
-            res = ExceptionMapperUtil.createResponse(null, errorMsg);
+        } catch (HTMLPageAssetNotFoundException e) {
+            Logger.error(this.getClass(),
+                    "Page does not exists on PageResource, page uri: " + uri);
+            res = ExceptionMapperUtil.createResponse(Response.Status.NOT_FOUND);
         } catch (DotSecurityException e) {
             PageMode.setPageMode(request, PageMode.ADMIN_MODE);
             final String errorMsg = "The user does not have the required permissions (" + e.getMessage() + ")";
@@ -306,41 +246,6 @@ public class PageResource {
             res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
         return res;
-    }
-
-    private ImmutableMap<Object, Object> createViewAsMap(final HttpServletRequest request, final User user,
-                                                         final String deviceInode) throws DotDataException {
-
-        final Builder<Object, Object> builder = ImmutableMap.builder();
-
-        final Persona currentPersona = (Persona) this.pageResourceHelper.getCurrentPersona(request);
-
-        if (currentPersona != null) {
-            builder.put("persona", currentPersona.getMap());
-        }
-
-        builder.put("language", WebAPILocator.getLanguageWebAPI().getLanguage(request));
-
-        try {
-            final String currentDeviceId = deviceInode == null ?
-                    (String) request.getSession().getAttribute(WebKeys.CURRENT_DEVICE)
-                    : deviceInode;
-
-            if (currentDeviceId != null) {
-                final Contentlet device = APILocator.getContentletAPI().find(currentDeviceId, user, false);
-
-                if (device != null) {
-                    builder.put("device", device.getMap());
-                    request.getSession().setAttribute(WebKeys.CURRENT_DEVICE, deviceInode);
-                } else {
-                    request.getSession().removeAttribute(WebKeys.CURRENT_DEVICE);
-                }
-            }
-        } catch (DotSecurityException e) {
-            //In this case don't response with the device attribute
-        }
-
-        return builder.build();
     }
 
     /**
@@ -369,14 +274,13 @@ public class PageResource {
         Response res = null;
 
         try {
-            IHTMLPage page = this.pageResourceHelper.getPage(user, pageId);
+            final IHTMLPage page = this.pageResourceHelper.getPage(user, pageId);
             this.pageResourceHelper.saveTemplate(user, page, form);
 
-            final PageView pageView = this.pageResourceHelper.getPageMetadataRendered(request, response, user,
-                    page.getURI(), false);
-            final String json = this.pageResourceHelper.asJson(pageView);
-
-            res = Response.ok(new ResponseEntityView(json)).build();
+            final PageMode pageMode = PageMode.get(request);
+            final HTMLPageAssetRendered renderedPage = this.htmlPageAssetRenderedAPI.getPageRendered(request, response, user,
+                    (HTMLPageAsset) page, pageMode);
+            res = Response.ok(new ResponseEntityView(renderedPage)).build();
 
         } catch (DotSecurityException e) {
             final String errorMsg = String.format("DotSecurityException on PageResource.saveLayout, parameters:  %s, %s %s: ",

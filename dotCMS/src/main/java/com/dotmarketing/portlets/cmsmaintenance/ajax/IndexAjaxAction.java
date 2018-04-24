@@ -5,11 +5,11 @@ import com.dotcms.content.elasticsearch.business.DotIndexException;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexHelper;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.org.apache.commons.fileupload.FileItem;
-import com.dotcms.repackage.org.apache.commons.fileupload.FileItemFactory;
-import com.dotcms.repackage.org.apache.commons.fileupload.FileUploadException;
-import com.dotcms.repackage.org.apache.commons.fileupload.disk.DiskFileItemFactory;
-import com.dotcms.repackage.org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.FileItemFactory;
+import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.rest.api.v1.index.ESIndexResource;
 import com.dotmarketing.business.APILocator;
@@ -246,15 +246,17 @@ public class IndexAjaxAction extends AjaxAction {
 	}
 
 
-	public void updateReplicas(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {
+	public void updateReplicas(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		Map<String, String> map = getURIParams();
 		String indexName = indexHelper.getIndexNameOrAlias(map,"indexName","indexAlias",this.indexAPI);
 
 		int replicas = Integer.parseInt(map.get("replicas"));
 
-
-		APILocator.getESIndexAPI().updateReplicas(indexName, replicas);
-
+		try{
+			APILocator.getESIndexAPI().updateReplicas(indexName, replicas);
+		}catch (DotDataException e){
+			writeError(response, e.getMessage());
+		}
 	}
 
 

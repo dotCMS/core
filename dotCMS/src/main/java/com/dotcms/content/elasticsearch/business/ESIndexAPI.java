@@ -2,12 +2,18 @@ package com.dotcms.content.elasticsearch.business;
 
 import com.carrotsearch.hppc.cursors.ObjectCursor;
 import com.dotcms.cluster.ClusterUtils;
+import com.dotcms.cluster.business.ClusterAPI;
+import com.dotcms.cluster.business.ReplicasMode;
+import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.cluster.mbeans.Cluster;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.AdminLogger;
@@ -19,6 +25,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.ZipUtil;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.tools.zip.ZipEntry;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionFuture;
@@ -43,7 +50,6 @@ import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeResponse;
 import org.elasticsearch.action.admin.indices.open.OpenIndexRequest;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequestBuilder;
-import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsResponse;
 import org.elasticsearch.action.admin.indices.stats.IndexStats;
 import org.elasticsearch.action.admin.indices.stats.IndicesStatsResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
@@ -63,6 +69,7 @@ import org.elasticsearch.cluster.metadata.RepositoryMetaData;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
@@ -103,14 +110,15 @@ public class ESIndexAPI {
     private  final String MAPPING_MARKER = "mapping=";
     private  final String JSON_RECORD_DELIMITER = "---+||+-+-";
     private static final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
-    private  final int DEFAULT_HEARTBEAT_TIMEOUT = 1800; // 1800 seconds = 30 mins
 
     public static final String BACKUP_REPOSITORY = "backup";
-    private final String REPOSITORY_PATH = "es.path.repo";
+    private final String REPOSITORY_PATH = "path.repo";
 
 	final private ESClient esclient;
 	final private ESContentletIndexAPI iapi;
 	final private ESIndexHelper esIndexHelper;
+	private final ServerAPI serverAPI;
+	private final ClusterAPI clusterAPI;
 
 	public enum Status { ACTIVE("active"), INACTIVE("inactive"), PROCESSING("processing");
 		private final String status;
@@ -122,19 +130,24 @@ public class ESIndexAPI {
 		public String getStatus() {
 			return status;
 		}
-	};
+	}
 
 	public ESIndexAPI(){
 		this.esclient = new ESClient();
 		this.iapi = new ESContentletIndexAPI();
 		this.esIndexHelper = ESIndexHelper.INSTANCE;
+		this.serverAPI = APILocator.getServerAPI();
+		this.clusterAPI = APILocator.getClusterAPI();
 	}
 
 	@VisibleForTesting
-	protected ESIndexAPI(ESClient esclient, ESContentletIndexAPI iapi, ESIndexHelper esIndexHelper){
+	protected ESIndexAPI(final ESClient esclient, final ESContentletIndexAPI iapi, final ESIndexHelper esIndexHelper,
+						 final ServerAPI serverAPI, final ClusterAPI clusterAPI){
 		this.esclient = esclient;
 		this.iapi = iapi;
 		this.esIndexHelper = esIndexHelper;
+		this.serverAPI = serverAPI;
+		this.clusterAPI = clusterAPI;
 	}
 
     /**
@@ -380,7 +393,7 @@ public class ESIndexAPI {
 			// also let it go other servers
 			moveIndexBackToCluster(index);
 
-            ArrayList<String> list=new ArrayList<String>();
+            final List<String> list=new ArrayList<>();
             list.add(index);
             iapi.optimize(list);
 
@@ -451,26 +464,23 @@ public class ESIndexAPI {
 	 * @throws IOException
 	 * @throws DotDataException
 	 */
-	public  void clearIndex(String indexName) throws DotStateException, IOException, DotDataException{
+	public  void clearIndex(final String indexName) throws DotStateException, IOException, DotDataException{
 		if(indexName == null || !indexExists(indexName)){
 			throw new DotStateException("Index" + indexName + " does not exist");
 		}
 
         AdminLogger.log(this.getClass(), "clearIndex", "Trying to clear index: " + indexName);
 
-        Map<String, ClusterIndexHealth> map = getClusterHealth();
-		ClusterIndexHealth cih = map.get(indexName);
-		int shards = cih.getNumberOfShards();
-		int replicas = cih.getNumberOfReplicas();
-
-		String alias=getIndexAlias(indexName);
+		final ClusterIndexHealth cih = getClusterHealth().get(indexName);
+		final int shards = cih.getNumberOfShards();
+		final String alias=getIndexAlias(indexName);
 
 		iapi.delete(indexName);
 
 		if(UtilMethods.isSet(indexName) && indexName.indexOf("sitesearch") > -1) {
 			APILocator.getSiteSearchAPI().createSiteSearchIndex(indexName, alias, shards);
 		} else {
-			CreateIndexResponse res=createIndex(indexName, shards);
+			final CreateIndexResponse res=createIndex(indexName, shards);
 
 			try {
 				int w=0;
@@ -486,10 +496,6 @@ public class ESIndexAPI {
 		    createAlias(indexName, alias);
 		}
 
-		if(replicas > 0){
-			APILocator.getESIndexAPI().updateReplicas(indexName, replicas);
-		}
-
         AdminLogger.log(this.getClass(), "clearIndex", "Index: " + indexName + " cleared");
 	}
 
@@ -498,11 +504,11 @@ public class ESIndexAPI {
 	 * @param index
 	 * @throws IOException
 	 */
-	public  void moveIndexToLocalNode(String index) throws IOException {
-        Client client=new ESClient().getClient();
-//        String nodeName="dotCMS_" + Config.getStringProperty("DIST_INDEXATION_SERVER_ID");
-        String nodeName="dotCMS_" + APILocator.getServerAPI().readServerId();
-        UpdateSettingsResponse resp=client.admin().indices().updateSettings(
+	public  void moveIndexToLocalNode(final String index) throws IOException {
+        final Client client=new ESClient().getClient();
+        final String nodeName="dotCMS_" + APILocator.getServerAPI().readServerId();
+
+		client.admin().indices().updateSettings(
           new UpdateSettingsRequest(index).settings(
                 jsonBuilder().startObject()
                      .startObject("index")
@@ -517,36 +523,19 @@ public class ESIndexAPI {
 	 * @param index
 	 * @throws IOException
 	 */
-    public  void moveIndexBackToCluster(String index) throws IOException {
-        Client client=new ESClient().getClient();
-        int nreplicas=Config.getIntProperty("es.index.number_of_replicas",0);
-	
-	if (ClusterUtils.isESAutoWireReplicas()){
-		int serverCount;
+    public  void moveIndexBackToCluster(final String index) throws IOException {
+        final Client client=new ESClient().getClient();
+        final ReplicasMode replicasMode = clusterAPI.getReplicasMode();
 
-		try {
-			serverCount = APILocator.getServerAPI().getAliveServersIds().length;
-		} catch (DotDataException e) {
-			Logger.error(this.getClass(), "Error getting live server list for server count, using 1 as default.");
-			serverCount = 1;
-		}
-		// formula is (live server count (including the ones that are down but not yet timed out) - 1)
+		final XContentBuilder builder = jsonBuilder().startObject().startObject("index");
 
-		if(serverCount>0) {
-			nreplicas = serverCount - 1;
-		}  else {
-			nreplicas = 0;
-		}
-	}
-	   
-        UpdateSettingsResponse resp=client.admin().indices().updateSettings(
-          new UpdateSettingsRequest(index).settings(
-                jsonBuilder().startObject()
-                     .startObject("index")
-                        .field("number_of_replicas",nreplicas)
-                        .field("routing.allocation.include._name","*")
-                     .endObject()
-               .endObject().string(), XContentType.JSON)).actionGet();
+		builder.field("number_of_replicas",replicasMode.getNumberOfReplicas());
+		builder.field("auto_expand_replicas",replicasMode.getAutoExpandReplicas());
+
+        client.admin().indices().updateSettings(
+          new UpdateSettingsRequest(index).settings(builder
+				  .field("routing.allocation.include._name","*").endObject()
+				  .endObject().string(), XContentType.JSON)).actionGet();
     }
 
     /**
@@ -559,7 +548,10 @@ public class ESIndexAPI {
      * @throws ElasticsearchException
      * @throws IOException
      */
-	public synchronized CreateIndexResponse createIndex(String indexName, String settings, int shards) throws ElasticsearchException, IOException {
+	public synchronized CreateIndexResponse createIndex(final String indexName, String settings,
+			int shards) throws ElasticsearchException, IOException {
+
+		final ReplicasMode replicasMode = clusterAPI.getReplicasMode();
 
 		AdminLogger.log(this.getClass(), "createIndex",
 			"Trying to create index: " + indexName + " with shards: " + shards);
@@ -573,7 +565,7 @@ public class ESIndexAPI {
 		}
 		if(shards <1){
 			try{
-				shards = Config.getIntProperty("es.index.number_of_shards");
+				shards = Config.getIntProperty("es.index.number_of_shards", 2);
 			}catch(Exception e){}
 		}
 
@@ -587,24 +579,11 @@ public class ESIndexAPI {
 		}
 		Map map = new ObjectMapper().readValue(settings, LinkedHashMap.class);
 		map.put("number_of_shards", shards);
+		map.put("index.mapping.total_fields.limit",
+			Config.getIntProperty("ES_INDEX_MAPPING_TOTAL_FIELD_LIMITS", 5000));
 
-		if (ClusterUtils.isESAutoWireReplicas()){
-			int serverCount;
-
-			try {
-				serverCount = APILocator.getServerAPI().getAliveServersIds().length;
-			} catch (DotDataException e) {
-				Logger.error(this.getClass(), "Error getting live server list for server count, using 1 as default.");
-				Logger.debug(this.getClass(), e.getMessage(), e);
-				serverCount = 1;
-			}
-			// formula is (live server count (including the ones that are down but not yet timed out) - 1)
-
-			if(serverCount>0) {
-				map.put("auto_expand_replicas", "false");
-				map.put("number_of_replicas", serverCount - 1);
-			}
-		}
+		map.put("number_of_replicas",replicasMode.getNumberOfReplicas());
+		map.put("auto_expand_replicas",replicasMode.getAutoExpandReplicas());
 
 		// create actual index
 		CreateIndexRequestBuilder cirb = iac.prepareCreate(indexName).setSettings(map);
@@ -617,7 +596,9 @@ public class ESIndexAPI {
 	}
 
 
-	public synchronized CreateIndexResponse createIndex(String indexName, String settings, int shards, String type, String mapping) throws ElasticsearchException, IOException {
+	public synchronized CreateIndexResponse createIndex(final String indexName, String settings,
+			int shards, final String type, final String mapping)
+			throws ElasticsearchException, IOException {
 
 		//Seems like the method is not longer used
 		// but I still will add the log just in case
@@ -633,7 +614,7 @@ public class ESIndexAPI {
 		}
 		if(shards <1){
 			try{
-				shards = Config.getIntProperty("es.index.number_of_shards");
+				shards = Config.getIntProperty("es.index.number_of_shards", 2);
 			}catch(Exception e){}
 		}
 
@@ -666,7 +647,7 @@ public class ESIndexAPI {
 	public String getDefaultIndexSettings(int shards) throws IOException{
 		return jsonBuilder().startObject()
             .startObject("index")
-           	.field("number_of_shards",shards+"")
+           	.field("number_of_shards",shards)
             .startObject("analysis")
              .startObject("analyzer")
               .startObject("default")
@@ -703,28 +684,28 @@ public class ESIndexAPI {
 	 * @param replicas
 	 * @throws DotDataException
 	 */
-    public  synchronized void updateReplicas (String indexName, int replicas) throws DotDataException {
+    public synchronized void updateReplicas (final String indexName, final int replicas) throws DotDataException {
 
-    	if (ClusterUtils.isESAutoWireReplicas()){
-    		AdminLogger.log(this.getClass(),"updateReplicas", "Error on updateReplica. Replicas are configured to be handled by dotCMS.");
-    		throw new DotDataException("Error on updateReplica. Replicas are configured to be handled by dotCMS.");
-    	}
+		if (!ClusterUtils.isReplicasSet() || !StringUtils
+				.isNumeric(Config.getStringProperty("ES_INDEX_REPLICAS", null))) {
+			AdminLogger.log(this.getClass(), "updateReplicas",
+					"Replicas can only be updated when an Enterprise License is used and ES_INDEX_REPLICAS is set to a specific value.");
+			throw new DotDataException(
+					"Replicas can only be updated when an Enterprise License is used and ES_INDEX_REPLICAS is set to a specific value.");
+		}
 
     	AdminLogger.log(this.getClass(), "updateReplicas", "Trying to update replicas to index: " + indexName);
 
-    	Map<String,ClusterIndexHealth> idxs = getClusterHealth();
-		ClusterIndexHealth health = idxs.get( indexName);
+		final ClusterIndexHealth health = getClusterHealth().get( indexName);
 		if(health ==null){
 			return;
 		}
-		int curReplicas = health.getNumberOfReplicas();
+
+		final int curReplicas = health.getNumberOfReplicas();
 
 		if(curReplicas != replicas){
-
-
-			Map newSettings = new HashMap();
-	        newSettings.put("index.number_of_replicas", replicas+"");
-
+			final Map newSettings = new HashMap();
+	        newSettings.put("number_of_replicas", replicas);
 
 			UpdateSettingsRequestBuilder usrb = new ESClient().getClient().admin().indices().prepareUpdateSettings(indexName);
 			usrb.setSettings(newSettings);
@@ -857,7 +838,7 @@ public class ESIndexAPI {
 
 	/**
 	 * Creates a snapshot zip file using the index and creating a repository on
-	 * the es.path.repo location. This file structure will remain on the file system.
+	 * the path.repo location. This file structure will remain on the file system.
 	 * The snapshot name is usually the same as the index name.
 	 *
 	 * @param repositoryName
@@ -881,8 +862,8 @@ public class ESIndexAPI {
 		String fileName = indexName + "_" + DateUtil.format(new Date(), "yyyy-MM-dd_hh-mm-ss");
 		File toFile = null;
 		// creates specific backup path (if it shouldn't exist)
-		toFile = new File(
-				Config.getStringProperty(REPOSITORY_PATH, ConfigUtils.getBackupPath() + File.separator + "backup_repo"));
+
+		toFile = new File(client.settings().get(REPOSITORY_PATH));
 		if (!toFile.exists()) {
 			toFile.mkdirs();
 		}
@@ -1014,8 +995,7 @@ public class ESIndexAPI {
 		File outFile = null;
 		AdminLogger.log(this.getClass(), "uploadSnapshot", "Trying to restore snapshot index");
 		// creates specific backup path (if it shouldn't exist)
-		File toDirectory = new File(
-				Config.getStringProperty(REPOSITORY_PATH, ConfigUtils.getBackupPath() + File.separator + "backup_repo"));
+		File toDirectory = new File(esclient.getClient().settings().get(REPOSITORY_PATH));
 		if (!toDirectory.exists()) {
 			toDirectory.mkdirs();
 		}
@@ -1201,8 +1181,7 @@ public class ESIndexAPI {
 				Logger.error(this.getClass(), e.getMessage());
 			}
 			if (cleanUp) {
-				File toDelete = new File(Config.getStringProperty(REPOSITORY_PATH,
-						ConfigUtils.getBackupPath() + File.separator + "backup_repo"));
+				File toDelete = new File(client.settings().get(REPOSITORY_PATH));
 				try {
 					FileUtil.deleteDir(toDelete.getAbsolutePath());
 				} catch (IOException e) {
@@ -1213,5 +1192,9 @@ public class ESIndexAPI {
 			}
 		}
 		return result;
+	}
+
+	public String getRepositoryPath(){
+		return esclient.getClient().settings().get(REPOSITORY_PATH);
 	}
 }

@@ -171,8 +171,10 @@ public class ReloadableServletContainer extends HttpServlet implements Filter {
                 .register(CorsFilter.class)
                 .register(MyObjectMapperProvider.class)
                 .register(JacksonJaxbJsonProvider.class)
+                .register(HttpStatusCodeExceptionMapper.class)
                 .register(InvalidFormatExceptionMapper.class)
                 .register(JsonParseExceptionMapper.class)
+                .register(JsonMappingExceptionMapper.class)
                 .register(UnrecognizedPropertyExceptionMapper.class);
                 //.register(ExceptionMapper.class); // temporaly unregister since some services are expecting just a plain message as an error instead of a json, so to keep the compatibility we won't apply this change yet.
     }

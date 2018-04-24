@@ -70,16 +70,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
-import org.apache.commons.collections.MapUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsResponse;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.cluster.metadata.MappingMetaData;
-import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
@@ -87,6 +84,7 @@ import org.elasticsearch.index.query.functionscore.RandomScoreFunctionBuilder;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.ScriptSortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
@@ -103,6 +101,7 @@ import org.springframework.util.NumberUtils;
  */
 public class ESContentFactoryImpl extends ContentletFactory {
 
+    private static final String[] ES_FIELDS = {"inode", "identifier"};
     private ContentletCache cc ;
 	private ESClient client;
 	private LanguageAPI langAPI;
@@ -567,7 +566,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             // delete workflow task for contentlet
             WorkFlowFactory wff = FactoryLocator.getWorkFlowFactory();
             WorkflowTask wft = wff.findTaskByContentlet(con);
-            if ( InodeUtils.isSet(wft.getInode() ) ) {
+            if ( null != wft && InodeUtils.isSet(wft.getInode() ) ) {
                 wff.deleteWorkflowTask(wft);
             }
 
@@ -765,9 +764,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         QueryBuilder builder = QueryBuilders.matchAllQuery();
 
-        SearchResponse response = client.getClient().prepareSearch()
-                .setQuery( builder )
-                .setSize( limit ).setFrom( offset ).execute().actionGet();
+        SearchResponse response = client.getClient().prepareSearch().
+                setSource(SearchSourceBuilder.searchSource().
+                fetchSource(new String[] {"inode"}, null)).
+                setQuery( builder ).
+                setSize( limit ).setFrom( offset ).execute().actionGet();
         SearchHits hits = response.getHits();
         List<Contentlet> cons = new ArrayList<>();
 
@@ -807,13 +808,29 @@ public class ESContentFactoryImpl extends ContentletFactory {
         return cons;
 	}
 
+    @Override
+    protected List<Contentlet> findAllVersions(Identifier identifier) throws DotDataException, DotStateException, DotSecurityException {
+        return findAllVersions(identifier, true);
+    }
+
 	@Override
-	protected List<Contentlet> findAllVersions(Identifier identifier) throws DotDataException, DotStateException, DotSecurityException {
+	protected List<Contentlet> findAllVersions(Identifier identifier, boolean bringOldVersions) throws DotDataException, DotStateException, DotSecurityException {
 	    if(!InodeUtils.isSet(identifier.getInode()))
             return new ArrayList<Contentlet>();
 
         DotConnect dc = new DotConnect();
-        dc.setSQL("SELECT inode FROM contentlet WHERE identifier=? order by mod_date desc");
+        StringBuffer query = new StringBuffer();
+
+        if(bringOldVersions) {
+            query.append("SELECT inode FROM contentlet WHERE identifier=? order by mod_date desc");
+
+        } else {
+            query.append("SELECT inode FROM contentlet c INNER JOIN contentlet_version_info cvi "
+                    + "ON (c.inode = cvi.working_inode OR c.inode = cvi.live_inode) "
+                    + "WHERE c.identifier=? order by c.mod_date desc ");
+        }
+
+        dc.setSQL(query.toString());
         dc.addObject(identifier.getId());
         List<Map<String,Object>> list=dc.loadObjectResults();
         ArrayList<String> inodes=new ArrayList<String>(list.size());
@@ -871,6 +888,26 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 		}
 	}
+
+	@Override
+    protected Contentlet findContentletByIdentifierAnyLanguage(String identifier) throws DotDataException, DotSecurityException {
+        Contentlet contentlet = null;
+        final StringBuilder sb = new StringBuilder()
+                .append("SELECT c.inode FROM contentlet c, contentlet_version_info cvi ")
+                .append("WHERE c.identifier=? AND c.inode = cvi.working_inode ")
+                .append("AND cvi.deleted = ")
+                .append(DbConnectionFactory.getDBFalse());
+        final List<HashMap<String, String>> inodes = new DotConnect()
+                .setSQL(sb.toString())
+                .addParam(identifier)
+                .setMaxRows(1)
+                .getResults();
+        if (CollectionUtils.isNotEmpty(inodes)) {
+            final String inode = inodes.get(0).get("inode");
+            contentlet = find(inode);
+        }
+        return contentlet;
+    }
 
 	@Override
 	protected Contentlet findContentletForLanguage(long languageId, Identifier identifier) throws DotDataException {
@@ -1265,23 +1302,24 @@ public class ESContentFactoryImpl extends ContentletFactory {
      */
     private SearchRequestBuilder createRequest(Client client, String query, String sortBy) {
 
+        SearchSourceBuilder ssb = SearchSourceBuilder.searchSource();
 
-
+        ssb.fetchSource(ES_FIELDS, null);
 
         if(Config.getBooleanProperty("ELASTICSEARCH_USE_FILTERS_FOR_SEARCHING",false) && sortBy!=null && ! sortBy.toLowerCase().startsWith("score")) {
 
             if("random".equals(sortBy)){
-                return client.prepareSearch()
+                return client.prepareSearch().setSource(ssb)
                         .setQuery(QueryBuilders.functionScoreQuery(QueryBuilders.matchAllQuery(), new RandomScoreFunctionBuilder()))
                         .setPostFilter(QueryBuilders.queryStringQuery(query)); //Cache is handled internally.
             } else {
-                return client.prepareSearch()
+                return client.prepareSearch().setSource(ssb)
                         .setQuery(QueryBuilders.matchAllQuery())
                         .setPostFilter(QueryBuilders.queryStringQuery(query)); //Cache is handled internally.
             }
 
         } else {
-            return client.prepareSearch().setQuery(QueryBuilders.queryStringQuery(query));
+            return client.prepareSearch().setSource(ssb).setQuery(QueryBuilders.queryStringQuery(query));
         }
     }
 
@@ -1311,7 +1349,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
         try {
 
         	SearchRequestBuilder srb = createRequest(client, qq, sortBy);
-
         	srb.setIndices(indexToHit);
 
             if(limit>0)
@@ -1533,7 +1570,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
 	@Override
-    protected Contentlet save(Contentlet contentlet) throws DotDataException, DotStateException, DotSecurityException {
+    public Contentlet save(Contentlet contentlet) throws DotDataException, DotStateException, DotSecurityException {
 	    return save(contentlet,null);
 	}
 
@@ -2074,7 +2111,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         // Format yyyyMMddHHmmss
         replace = DateUtil.replaceDateTimeWithFormat(replace,
-                "\\\"?(\\d{1,2}\\d{1,2}\\d{4}\\d{1,2}\\d{1,2}\\d{1,2})\\\"?",
+                "\\\"?(\\d{4}\\d{2}\\d{2}\\d{2}\\d{2}\\d{2})\\\"?",
                 datetimeFormat.getPattern());
 
         // Format MM/dd/yyyy

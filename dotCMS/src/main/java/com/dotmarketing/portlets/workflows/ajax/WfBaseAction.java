@@ -11,6 +11,7 @@ import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageUtil;
 
+@Deprecated
 abstract class WfBaseAction extends AjaxAction {
 
 	public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {

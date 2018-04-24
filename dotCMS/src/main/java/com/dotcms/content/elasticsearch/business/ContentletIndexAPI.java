@@ -3,7 +3,9 @@ package com.dotcms.content.elasticsearch.business;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.action.bulk.BulkResponse;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -95,5 +97,19 @@ public interface ContentletIndexAPI {
 	public String getActiveIndexName(String type) throws DotDataException;
 
 	void indexContentList(List<Contentlet> contentToIndex, BulkRequestBuilder bulk, boolean reindexOnly) throws DotDataException;
+
+
+	/**
+	 * Same of indexContentList, just including a listener that will be call when the indexing is done.
+	 * @param contentToIndex
+	 * @param bulk
+	 * @param reindexOnly
+	 * @param listener
+	 * @throws DotDataException
+	 */
+	void indexContentList(final List<Contentlet> contentToIndex,
+								 final BulkRequestBuilder bulk,
+								 final boolean reindexOnly,
+								 ActionListener<BulkResponse> listener) throws  DotDataException;
 
 }

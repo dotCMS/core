@@ -3,25 +3,8 @@ package com.dotmarketing.portlets.contentlet.ajax;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
+import static com.dotcms.exception.ExceptionUtil.getRootCause;
 import com.dotcms.business.CloseDB;
-import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.PageContentType;
@@ -72,12 +55,13 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
-
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
@@ -96,6 +80,18 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -113,6 +109,8 @@ import org.jetbrains.annotations.NotNull;
  *
  */
 public class ContentletAjax {
+
+	private static final String CONTENT_TYPES_INODE_SEPARATOR = ",";
 
 	private java.text.DateFormat modDateFormat = java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.SHORT,
 			java.text.DateFormat.SHORT);
@@ -454,6 +452,15 @@ public class ContentletAjax {
 		        page, orderBy, perPage,currentUser, sess, modDateFrom, modDateTo);
 	}
 
+	public List searchContentlets(String[] structureInodes, List<String> fields, List<String> categories, boolean showDeleted,
+								  boolean filterSystemHost,  boolean filterUnpublish, boolean filterLocked, int page, int perPage,String orderBy, String modDateFrom,
+								  String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
+		String structureInodesJoined = String.join(CONTENT_TYPES_INODE_SEPARATOR, structureInodes);
+
+		return searchContentlets(structureInodesJoined, fields, categories, showDeleted, filterSystemHost, filterUnpublish, filterLocked,
+				page, perPage, orderBy, modDateFrom, modDateTo);
+	}
+
 	/**
 	 * This method is used by the backend to pull from lucene index the form widgets
 	 * if the widget doesn't exist then is created and also checks the user
@@ -537,12 +544,27 @@ public class ContentletAjax {
 		List<Object> headers = new ArrayList<Object>();
 		Map<String, Field> fieldsMapping = new HashMap<String, Field>();
 		Structure st = null;
-		if(!Structure.STRUCTURE_TYPE_ALL.equals(structureInode)){
+		if(!Structure.STRUCTURE_TYPE_ALL.equals(structureInode) && !hasContentTypesInodeSeparator(structureInode)){
 		    st = CacheLocator.getContentTypeCache().getStructureByInode(structureInode);
 		    lastSearchMap.put("structure", st);
 		    luceneQuery.append("+contentType:" + st.getVelocityVarName() + " ");
-		}
-		else {
+		} else if (!Structure.STRUCTURE_TYPE_ALL.equals(structureInode) && hasContentTypesInodeSeparator(structureInode)) {
+			luceneQuery.append("+contentType:(");
+
+			String[] structureInodes = structureInode.split(CONTENT_TYPES_INODE_SEPARATOR);
+
+			for (int i = 0; i < structureInodes.length; i++) {
+				st = CacheLocator.getContentTypeCache().getStructureByInode(structureInodes[i]);
+
+				if (i != 0) {
+					luceneQuery.append(" OR " + st.getVelocityVarName());
+				} else {
+					luceneQuery.append(st.getVelocityVarName());
+				}
+			}
+			luceneQuery.append(") ");
+
+		} else {
 		    for(int i=0;i<fields.size();i++){
 		        String x = fields.get(i);
 		        if(Structure.STRUCTURE_TYPE_ALL.equals(x)){
@@ -1082,10 +1104,15 @@ public class ContentletAjax {
 
 		return results;
 	}
+
+	private boolean hasContentTypesInodeSeparator(String structureInode) {
+		return structureInode.contains(CONTENT_TYPES_INODE_SEPARATOR);
+	}
+
 	@CloseDB
 	@NotNull
 	private JSONArray getAvailableWorkflowActionsJson(final User currentUser,
-													  final Contentlet contentlet) throws DotDataException {
+													  final Contentlet contentlet) throws DotDataException, DotSecurityException {
 
 		final List<WorkflowAction> workflowActions = new ArrayList<>();
 
@@ -1528,167 +1555,51 @@ public class ContentletAjax {
 			        }
 			    }
 			}
+	  }
+	  catch(DotLockException dse){
+		  String errorString = LanguageUtil.get(user,"message.content.locked");
+		  saveContentErrors.add(errorString);
+		  clearBinary = false;
+	  }
+	  catch(DotSecurityException dse){
+		  String errorString = LanguageUtil.get(user,"message.insufficient.permissions.to.save") + ". " + dse.getMessage();
+		  saveContentErrors.add(errorString);
+		  clearBinary = false;
+	  }
+	  catch ( PublishStateException pe ) {
+		  String errorString = LanguageUtil.get( user, pe.getMessage() );
+		  saveContentErrors.add( errorString );
+		  clearBinary = false;
+	  }
+	  catch ( DotLanguageException e ) {
+		  saveContentErrors.add( e.getMessage() );
+		  callbackData.put( "saveContentErrors", saveContentErrors );
+		  callbackData.put( "referer", referer );
+		  clearBinary = false;
+		  return callbackData;
+	  }
+	  catch(final Exception e){
+
+		  if (e instanceof DotContentletValidationException) {
+			  final DotContentletValidationException ve = DotContentletValidationException.class
+					  .cast(e);
+			  clearBinary = handleValidationException(user, ve, saveContentErrors);
+		  } else {
+			  final Throwable rootCause = getRootCause(e);
+			  if (rootCause instanceof DotContentletValidationException) {
+				  final DotContentletValidationException ve = DotContentletValidationException.class
+						  .cast(rootCause);
+				  clearBinary = handleValidationException(user, ve, saveContentErrors);
+			  } else {
+				  Logger.error(this, e.getMessage(), e);
+				  saveContentErrors.add(e.getMessage());
+				  callbackData.put("saveContentErrors", saveContentErrors);
+				  callbackData.put("referer", referer);
+				  clearBinary = false;
+				  return callbackData;
+			  }
+		  }
 		}
-
-		catch (DotContentletValidationException ve) {
-
-			if(ve instanceof FileAssetValidationException){
-				List<Field> reqs = ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_BADTYPE);
-				for (Field field : reqs) {
-					String errorString = LanguageUtil.get(user, ve.getMessage());
-					errorString = errorString.replace("{0}", field.getFieldName());
-					saveContentErrors.add(errorString);
-				}
-
-			}else{
-
-				if(ve.hasRequiredErrors()){
-					List<Field> reqs = ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_REQUIRED);
-					for (Field field : reqs) {
-						String errorString = LanguageUtil.get(user,"message.contentlet.required");
-						errorString = errorString.replace("{0}", field.getFieldName());
-						saveContentErrors.add(errorString);
-					}
-					clearBinary = false;
-				}
-
-				if(ve.hasLengthErrors()){
-					List<Field> reqs = ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_MAXLENGTH);
-					for (Field field : reqs) {
-						String errorString = LanguageUtil.get(user,"message.contentlet.maxlength");
-						errorString = errorString.replace("{0}", field.getFieldName());
-						errorString = errorString.replace("{1}", "255");
-						saveContentErrors.add(errorString);
-					}
-					clearBinary = false;
-				}
-
-				if(ve.hasPatternErrors()){
-					List<Field> reqs = ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_PATTERN);
-					for (Field field : reqs) {
-						String errorString = LanguageUtil.get(user,"message.contentlet.format");
-						errorString = errorString.replace("{0}", field.getFieldName());
-						saveContentErrors.add(errorString);
-					}
-					clearBinary = false;
-				}
-
-
-				if(ve.hasBadTypeErrors()){
-					List<Field> reqs = ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_BADTYPE);
-					for (Field field : reqs) {
-						String errorString = LanguageUtil.get(user,"message.contentlet.type");
-						errorString = errorString.replace("{0}", field.getFieldName());
-						saveContentErrors.add(errorString);
-					}
-					clearBinary = false;
-				}
-
-				if(ve.hasRelationshipErrors()){
-					StringBuffer sb = new StringBuffer("<br>");
-					Map<String,Map<Relationship,List<Contentlet>>> notValidRelationships = ve.getNotValidRelationship();
-					Set<String> auxKeys = notValidRelationships.keySet();
-					for(String key : auxKeys)
-					{
-						String errorMessage = "";
-						if(key.equals(DotContentletValidationException.VALIDATION_FAILED_REQUIRED_REL))
-						{
-							errorMessage = "<b>Required Relationship</b>";
-						}
-						else if(key.equals(DotContentletValidationException.VALIDATION_FAILED_INVALID_REL_CONTENT))
-						{
-							errorMessage = "<b>Invalid Relationship-Contentlet</b>";
-						}
-						else if(key.equals(DotContentletValidationException.VALIDATION_FAILED_BAD_REL))
-						{
-							errorMessage = "<b>Bad Relationship</b>";
-						}
-						else if(key.equals(DotContentletValidationException.VALIDATION_FAILED_BAD_CARDINALITY))
-						{
-							errorMessage = "<b>One to Many Relation Violated</b>";
-						}
-
-						sb.append(errorMessage + ":<br>");
-						Map<Relationship,List<Contentlet>> relationshipContentlets = notValidRelationships.get(key);
-
-						for(Entry<Relationship,List<Contentlet>> relationship : relationshipContentlets.entrySet())
-						{
-							sb.append(relationship.getKey().getRelationTypeValue() + ", ");
-						}
-						sb.append("<br>");
-					}
-					sb.append("<br>");
-
-					//need to update message to support multiple relationship validation errors
-					String errorString = LanguageUtil.get(user,"message.relationship.required_ext");
-					errorString = errorString.replace("{0}", sb.toString());
-					saveContentErrors.add(errorString);
-				}
-
-				if(ve.hasUniqueErrors()){
-					List<Field> reqs = ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_UNIQUE);
-					for (Field field : reqs) {
-						String errorString = LanguageUtil.get(user,"message.contentlet.unique");
-						errorString = errorString.replace("{0}", field.getFieldName());
-						saveContentErrors.add(errorString);
-					}
-					clearBinary = false;
-				}
-
-				if(ve.getMessage().contains("The content form submission data id different from the content which is trying to be edited")){
-					String errorString = LanguageUtil.get(user,"message.contentlet.invalid.form");
-					saveContentErrors.add(errorString);
-				}
-				
-				if(ve.getMessage().contains("message.contentlet.expired")){
-					String errorString = LanguageUtil.get(user,"message.contentlet.expired");
-					saveContentErrors.add(errorString);
-				}
-			}
-			if(saveContentErrors.size()==0){
-				saveContentErrors.add(ve.getMessage());
-			}
-
-		}
-		catch(DotLockException dse){
-			String errorString = LanguageUtil.get(user,"message.content.locked");
-			saveContentErrors.add(errorString);
-			clearBinary = false;
-		}
-		catch(DotSecurityException dse){
-			String errorString = LanguageUtil.get(user,"message.insufficient.permissions.to.save") + ". " + dse.getMessage();
-			saveContentErrors.add(errorString);
-			clearBinary = false;
-		}
-        catch ( PublishStateException pe ) {
-            String errorString = LanguageUtil.get( user, pe.getMessage() );
-            saveContentErrors.add( errorString );
-			clearBinary = false;
-        }
-		catch ( DotLanguageException e ) {
-            saveContentErrors.add( e.getMessage() );
-            callbackData.put( "saveContentErrors", saveContentErrors );
-            callbackData.put( "referer", referer );
-			clearBinary = false;
-            return callbackData;
-        }
-        catch ( Exception e ) {
-            Logger.error( this, e.getMessage(), e );
-            saveContentErrors.add( e.getMessage() );
-            callbackData.put( "saveContentErrors", saveContentErrors );
-            callbackData.put( "referer", referer );
-			clearBinary = false;
-            return callbackData;
-        }
-        catch (Throwable t) {
-			Logger.error(this, t.toString());
-			saveContentErrors.add(t.toString());
-			callbackData.put("saveContentErrors", saveContentErrors);
-			callbackData.put("referer", referer);
-			clearBinary = false;
-			return callbackData;
-		}
-
 		finally{
 			
 		    if(saveContentErrors.size()>0) {
@@ -1775,6 +1686,143 @@ public class ContentletAjax {
 
 		return callbackData;
 	}
+
+	/**
+	 * This code has been extracted into a separate method so we can use it when original exception has been wrapped within a Runtime Exception
+	 * @param user
+	 * @param ve
+	 * @param saveContentErrors
+	 * @return
+	 * @throws LanguageException
+	 */
+	private boolean handleValidationException(final User user,
+			final DotContentletValidationException ve, final List<String> saveContentErrors)
+			throws LanguageException {
+		boolean clearBinary = true;
+		if (ve instanceof FileAssetValidationException) {
+			final List<Field> reqs = ve.getNotValidFields()
+					.get(DotContentletValidationException.VALIDATION_FAILED_BADTYPE);
+			for (final Field field : reqs) {
+				String errorString = LanguageUtil.get(user, ve.getMessage());
+				errorString = errorString.replace("{0}", field.getFieldName());
+				saveContentErrors.add(errorString);
+			}
+
+		} else {
+
+			if (ve.hasRequiredErrors()) {
+				final List<Field> reqs = ve.getNotValidFields()
+						.get(DotContentletValidationException.VALIDATION_FAILED_REQUIRED);
+				for (final Field field : reqs) {
+					String errorString = LanguageUtil.get(user, "message.contentlet.required");
+					errorString = errorString.replace("{0}", field.getFieldName());
+					saveContentErrors.add(errorString);
+				}
+				clearBinary = false;
+			}
+
+			if (ve.hasLengthErrors()) {
+				final List<Field> reqs = ve.getNotValidFields()
+						.get(DotContentletValidationException.VALIDATION_FAILED_MAXLENGTH);
+				for (Field field : reqs) {
+					String errorString = LanguageUtil.get(user, "message.contentlet.maxlength");
+					errorString = errorString.replace("{0}", field.getFieldName());
+					errorString = errorString.replace("{1}", "255");
+					saveContentErrors.add(errorString);
+				}
+				clearBinary = false;
+			}
+
+			if (ve.hasPatternErrors()) {
+				List<Field> reqs = ve.getNotValidFields()
+						.get(DotContentletValidationException.VALIDATION_FAILED_PATTERN);
+				for (final Field field : reqs) {
+					String errorString = LanguageUtil.get(user, "message.contentlet.format");
+					errorString = errorString.replace("{0}", field.getFieldName());
+					saveContentErrors.add(errorString);
+				}
+				clearBinary = false;
+			}
+
+			if (ve.hasBadTypeErrors()) {
+				final List<Field> reqs = ve.getNotValidFields()
+						.get(DotContentletValidationException.VALIDATION_FAILED_BADTYPE);
+				for (final Field field : reqs) {
+					String errorString = LanguageUtil.get(user, "message.contentlet.type");
+					errorString = errorString.replace("{0}", field.getFieldName());
+					saveContentErrors.add(errorString);
+				}
+				clearBinary = false;
+			}
+
+			if (ve.hasRelationshipErrors()) {
+				StringBuilder sb = new StringBuilder("<br>");
+				final Map<String, Map<Relationship, List<Contentlet>>> notValidRelationships = ve
+						.getNotValidRelationship();
+				final Set<String> auxKeys = notValidRelationships.keySet();
+				for (final String key : auxKeys) {
+					String errorMessage = "";
+					if (key.equals(
+							DotContentletValidationException.VALIDATION_FAILED_REQUIRED_REL)) {
+						errorMessage = "<b>Required Relationship</b>";
+					} else if (key
+							.equals(DotContentletValidationException.VALIDATION_FAILED_INVALID_REL_CONTENT)) {
+						errorMessage = "<b>Invalid Relationship-Contentlet</b>";
+					} else if (key
+							.equals(DotContentletValidationException.VALIDATION_FAILED_BAD_REL)) {
+						errorMessage = "<b>Bad Relationship</b>";
+					} else if (key
+							.equals(DotContentletValidationException.VALIDATION_FAILED_BAD_CARDINALITY)) {
+						errorMessage = "<b>One to Many Relation Violated</b>";
+					}
+
+					sb.append(errorMessage).append(":<br>");
+					final Map<Relationship, List<Contentlet>> relationshipContentlets = notValidRelationships
+							.get(key);
+
+					for (final Entry<Relationship, List<Contentlet>> relationship : relationshipContentlets
+							.entrySet()) {
+						sb.append(relationship.getKey().getRelationTypeValue()).append(", ");
+					}
+					sb.append("<br>");
+				}
+				sb.append("<br>");
+
+				//need to update message to support multiple relationship validation errors
+				String errorString = LanguageUtil.get(user, "message.relationship.required_ext");
+				errorString = errorString.replace("{0}", sb.toString());
+				saveContentErrors.add(errorString);
+			}
+
+			if (ve.hasUniqueErrors()) {
+				final List<Field> reqs = ve.getNotValidFields()
+						.get(DotContentletValidationException.VALIDATION_FAILED_UNIQUE);
+				for (final Field field : reqs) {
+					String errorString = LanguageUtil.get(user, "message.contentlet.unique");
+					errorString = errorString.replace("{0}", field.getFieldName());
+					saveContentErrors.add(errorString);
+				}
+				clearBinary = false;
+			}
+
+			if (ve.getMessage().contains(
+					"The content form submission data id different from the content which is trying to be edited")) {
+				String errorString = LanguageUtil.get(user, "message.contentlet.invalid.form");
+				saveContentErrors.add(errorString);
+			}
+
+			if (ve.getMessage().contains("message.contentlet.expired")) {
+				String errorString = LanguageUtil.get(user, "message.contentlet.expired");
+				saveContentErrors.add(errorString);
+			}
+		}
+		if (saveContentErrors.size() == 0) {
+			saveContentErrors.add(ve.getMessage());
+		}
+		return clearBinary;
+	}
+
+
 	@CloseDB
 	//http://jira.dotmarketing.net/browse/DOTCMS-2273
 	public String cancelContentEdit(String workingContentletInode,String currentContentletInode,String referer,String language){

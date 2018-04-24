@@ -1,5 +1,6 @@
 package com.dotmarketing.factories;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -19,4 +20,7 @@ public interface MultiTreeAPI {
 
     Table<String, String, Set<String>> getPageMultiTrees(final IHTMLPage page, final boolean liveMode)
             throws DotDataException, DotSecurityException;
+
+    void updateMultiTree(final String pageId, final String containerId, final String oldRelationType,
+                                       final String newRelationType) throws DotDataException;
 }

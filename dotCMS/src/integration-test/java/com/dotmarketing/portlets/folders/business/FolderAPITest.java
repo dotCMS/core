@@ -54,7 +54,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FolderAPITest {
+public class FolderAPITest {//24 contentlets
 
 	private final static String LOGO_GIF_1 = "logo.gif";
 	private final static String LOGO_GIF_2 = "logo2.gif";
@@ -161,18 +161,18 @@ public class FolderAPITest {
 				break;
 			}
 		}
-		Contentlet contentAsset=new Contentlet();
-		contentAsset.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
-		contentAsset.setHost(host.getIdentifier());
-		contentAsset.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, page0Str);
-		contentAsset.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, page0Str);
-		contentAsset.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, page0Str);
-		contentAsset.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
-		contentAsset.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
-		contentAsset.setLanguageId(langId);
-		contentAsset.setFolder(ftest1.getInode());
-		contentAsset= contentletAPI.checkin(contentAsset, user, false);
-		contentletAPI.publish(contentAsset, user, false);
+		Contentlet contentAsset1=new Contentlet();
+		contentAsset1.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
+		contentAsset1.setHost(host.getIdentifier());
+		contentAsset1.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, page0Str);
+		contentAsset1.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, page0Str);
+		contentAsset1.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, page0Str);
+		contentAsset1.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
+		contentAsset1.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
+		contentAsset1.setLanguageId(langId);
+		contentAsset1.setFolder(ftest1.getInode());
+		contentAsset1 = contentletAPI.checkin(contentAsset1, user, false);
+		contentletAPI.publish(contentAsset1, user, false);
 		
 		/*adding menu link*/
 		final String linkStr="link";
@@ -204,18 +204,18 @@ public class FolderAPITest {
 
 		//adding page
 		final String page1Str="page1";
-		contentAsset=new Contentlet();
-		contentAsset.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
-		contentAsset.setHost(host.getIdentifier());
-		contentAsset.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, page1Str);
-		contentAsset.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, page1Str);
-		contentAsset.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, page1Str);
-		contentAsset.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
-		contentAsset.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
-		contentAsset.setLanguageId(langId);
-		contentAsset.setFolder(ftest2.getInode());
-		contentAsset= contentletAPI.checkin(contentAsset, user, false);
-		contentletAPI.publish(contentAsset, user, false);
+		Contentlet contentAsset2=new Contentlet();
+		contentAsset2.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
+		contentAsset2.setHost(host.getIdentifier());
+		contentAsset2.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, page1Str);
+		contentAsset2.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, page1Str);
+		contentAsset2.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, page1Str);
+		contentAsset2.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
+		contentAsset2.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
+		contentAsset2.setLanguageId(langId);
+		contentAsset2.setFolder(ftest2.getInode());
+		contentAsset2 = contentletAPI.checkin(contentAsset2, user, false);
+		contentletAPI.publish(contentAsset2, user, false);
 
 		/*Adding menu link*/
 		final String linkStr2="link2";
@@ -265,31 +265,31 @@ public class FolderAPITest {
 
 		//adding page
 		final String page2Str ="page2";
-		contentAsset=new Contentlet();
-		contentAsset.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
-		contentAsset.setHost(host.getIdentifier());
-		contentAsset.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, page2Str);
-		contentAsset.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, page2Str);
-		contentAsset.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, page2Str);
-		contentAsset.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
-		contentAsset.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
-		contentAsset.setLanguageId(langId);
-		contentAsset.setFolder(ftest3.getInode());
-		contentAsset= contentletAPI.checkin(contentAsset, user, false);
-		contentletAPI.publish(contentAsset, user, false);
+		Contentlet contentAsset4=new Contentlet();
+		contentAsset4.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
+		contentAsset4.setHost(host.getIdentifier());
+		contentAsset4.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, page2Str);
+		contentAsset4.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, page2Str);
+		contentAsset4.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, page2Str);
+		contentAsset4.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
+		contentAsset4.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
+		contentAsset4.setLanguageId(langId);
+		contentAsset4.setFolder(ftest3.getInode());
+		contentAsset4 = contentletAPI.checkin(contentAsset4, user, false);
+		contentletAPI.publish(contentAsset4, user, false);
 		
 		/*adding page content*/
 		final String title="movetest2";
-		Contentlet contentAsset2=new Contentlet();
+		Contentlet contentAsset5=new Contentlet();
 		st = StructureFactory.getStructureByVelocityVarName("webPageContent");
-		contentAsset2.setStructureInode(st.getInode());
-		contentAsset2.setHost(host.getIdentifier());
-		contentAsset2.setProperty("title", title);
-		contentAsset2.setLanguageId(langId);
-		contentAsset2.setProperty("body", title);
-		contentAsset2.setFolder(ftest1.getInode());
-		contentAsset2= contentletAPI.checkin(contentAsset2, user, false);
-		contentletAPI.publish(contentAsset2, user, false);
+		contentAsset5.setStructureInode(st.getInode());
+		contentAsset5.setHost(host.getIdentifier());
+		contentAsset5.setProperty("title", title);
+		contentAsset5.setLanguageId(langId);
+		contentAsset5.setProperty("body", title);
+		contentAsset5.setFolder(ftest1.getInode());
+		contentAsset5= contentletAPI.checkin(contentAsset5, user, false);
+		contentletAPI.publish(contentAsset5, user, false);
 		Container container =null;
 		final List<Container> containers = containerAPI.findContainersForStructure(st.getInode());
 		for(final Container c : containers){
@@ -299,7 +299,7 @@ public class FolderAPITest {
 			}
 		}
 		/*Relate content to page*/
-		final MultiTree m = new MultiTree(contentAsset.getIdentifier(), container.getIdentifier(), contentAsset2.getIdentifier());
+		final MultiTree m = new MultiTree(contentAsset4.getIdentifier(), container.getIdentifier(), contentAsset2.getIdentifier());
 		MultiTreeFactory.saveMultiTree(m);
 		
 
@@ -345,7 +345,19 @@ public class FolderAPITest {
 		
 		final List<MultiTree> mt= MultiTreeFactory.getMultiTrees(pages.get(0).getIdentifier());
 		Assert.assertTrue(mt.size() ==1 && mt.get(0).getParent2().equals(container.getIdentifier()) && mt.get(0).getChild().equals(contentAsset2.getIdentifier()) );
-		
+
+		contentletAPI.archive(contentAsset1,user,false);
+		contentletAPI.archive(contentAsset2,user,false);
+		contentletAPI.archive(contentAsset3,user,false);
+		contentletAPI.archive(contentAsset4,user,false);
+		contentletAPI.archive(contentAsset5,user,false);
+		contentletAPI.delete(contentAsset1,user,false);
+		contentletAPI.delete(contentAsset2,user,false);
+		contentletAPI.delete(contentAsset3,user,false);
+		contentletAPI.delete(contentAsset4,user,false);
+		contentletAPI.delete(contentAsset5,user,false);
+
+
 	}
 
 	/**
@@ -372,21 +384,21 @@ public class FolderAPITest {
 				break;
 			}
 		}
-		Contentlet contentAsset=new Contentlet();
-		contentAsset.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
-		contentAsset.setHost(host.getIdentifier());
-		contentAsset.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, pageStr);
-		contentAsset.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, pageStr);
-		contentAsset.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, pageStr);
-		contentAsset.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
-		contentAsset.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
-		contentAsset.setLanguageId(langId);
-		contentAsset.setFolder(ftest.getInode());
-		contentAsset= contentletAPI.checkin(contentAsset, user, false);
-		contentletAPI.publish(contentAsset, user, false);
+		Contentlet contentAsset1=new Contentlet();
+		contentAsset1.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
+		contentAsset1.setHost(host.getIdentifier());
+		contentAsset1.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, pageStr);
+		contentAsset1.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, pageStr);
+		contentAsset1.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, pageStr);
+		contentAsset1.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
+		contentAsset1.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
+		contentAsset1.setLanguageId(langId);
+		contentAsset1.setFolder(ftest.getInode());
+		contentAsset1 = contentletAPI.checkin(contentAsset1, user, false);
+		contentletAPI.publish(contentAsset1, user, false);
 
 		//copy page in same folder
-		contentletAPI.copyContentlet(contentAsset, ftest, user, false);
+		Contentlet contentAsset1Copy = contentletAPI.copyContentlet(contentAsset1, ftest, user, false);
 		
 		IHTMLPage page = htmlPageAssetAPI
 				.getPageByPath(ftest.getPath()+pageStr, host, languageAPI
@@ -409,30 +421,30 @@ public class FolderAPITest {
 
 		/*adding page with content*/
 		final String page1Str="mypage1";
-		contentAsset=new Contentlet();
-		contentAsset.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
-		contentAsset.setHost(host.getIdentifier());
-		contentAsset.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, page1Str);
-		contentAsset.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, page1Str);
-		contentAsset.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, page1Str);
-		contentAsset.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
-		contentAsset.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
-		contentAsset.setFolder(ftest1.getInode());
-		contentAsset= contentletAPI.checkin(contentAsset, user, false);
-		contentletAPI.publish(contentAsset, user, false);
+		Contentlet contentAsset2=new Contentlet();
+		contentAsset2.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
+		contentAsset2.setHost(host.getIdentifier());
+		contentAsset2.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, page1Str);
+		contentAsset2.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, page1Str);
+		contentAsset2.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, page1Str);
+		contentAsset2.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
+		contentAsset2.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
+		contentAsset2.setFolder(ftest1.getInode());
+		contentAsset2 = contentletAPI.checkin(contentAsset2, user, false);
+		contentletAPI.publish(contentAsset2, user, false);
 
 		/*Adding content*/
 		final String title="test1";
-		Contentlet contentAsset2=new Contentlet();
+		Contentlet contentAsset3=new Contentlet();
 		Structure st = StructureFactory.getStructureByVelocityVarName("webPageContent");
-		contentAsset2.setStructureInode(st.getInode());
-		contentAsset2.setHost(host.getIdentifier());
-		contentAsset2.setProperty("title", title);
-		contentAsset2.setLanguageId(langId);
-		contentAsset2.setProperty("body", title);
-		contentAsset2.setFolder(ftest1.getInode());
-		contentAsset2= contentletAPI.checkin(contentAsset2, user, false);
-		contentletAPI.publish(contentAsset2, user, false);
+		contentAsset3.setStructureInode(st.getInode());
+		contentAsset3.setHost(host.getIdentifier());
+		contentAsset3.setProperty("title", title);
+		contentAsset3.setLanguageId(langId);
+		contentAsset3.setProperty("body", title);
+		contentAsset3.setFolder(ftest1.getInode());
+		contentAsset3= contentletAPI.checkin(contentAsset3, user, false);
+		contentletAPI.publish(contentAsset3, user, false);
 		Container container =null;
 		List<Container> containers = containerAPI.findContainersForStructure(st.getInode());
 		for(Container c : containers){
@@ -442,24 +454,24 @@ public class FolderAPITest {
 			}
 		}
 		/*Relate content to page*/
-		MultiTree m = new MultiTree(contentAsset.getIdentifier(), container.getIdentifier(), contentAsset2.getIdentifier());
+		MultiTree m = new MultiTree(contentAsset2.getIdentifier(), container.getIdentifier(), contentAsset3.getIdentifier());
 		MultiTreeFactory.saveMultiTree(m);
 
 		/*Adding file asset to folder fcopy1*/
 		File destFile = testFolder.newFile(LOGO_GIF_1);
 		FileUtil.write(destFile, "helloworld");
 
-		Contentlet contentAsset3=new Contentlet();
+		Contentlet contentAsset4=new Contentlet();
 		st = StructureFactory.getStructureByVelocityVarName("FileAsset");
-		contentAsset3.setStructureInode(st.getInode());
-		contentAsset3.setHost(host.getIdentifier());
-		contentAsset3.setProperty(FileAssetAPI.FILE_NAME_FIELD, LOGO_GIF_1);
-		contentAsset3.setProperty(FileAssetAPI.BINARY_FIELD, destFile);
-		contentAsset3.setLanguageId(langId);
-		contentAsset3.setProperty(FileAssetAPI.TITLE_FIELD, LOGO_GIF_1);
-		contentAsset3.setFolder(ftest1.getInode());
-		contentAsset3= contentletAPI.checkin(contentAsset3, user, false);
-		contentletAPI.publish(contentAsset3, user, false);
+		contentAsset4.setStructureInode(st.getInode());
+		contentAsset4.setHost(host.getIdentifier());
+		contentAsset4.setProperty(FileAssetAPI.FILE_NAME_FIELD, LOGO_GIF_1);
+		contentAsset4.setProperty(FileAssetAPI.BINARY_FIELD, destFile);
+		contentAsset4.setLanguageId(langId);
+		contentAsset4.setProperty(FileAssetAPI.TITLE_FIELD, LOGO_GIF_1);
+		contentAsset4.setFolder(ftest1.getInode());
+		contentAsset4 = contentletAPI.checkin(contentAsset4, user, false);
+		contentletAPI.publish(contentAsset4, user, false);
 
 		/*Adding a link*/
 		final String linkStr="link1";
@@ -490,31 +502,31 @@ public class FolderAPITest {
 		destFile = testFolder.newFile(LOGO_GIF_2);
 		FileUtil.write(destFile, "helloworld");
 
-		Contentlet contentAsset4=new Contentlet();
-		st = StructureFactory.getStructureByVelocityVarName("FileAsset");
-		contentAsset4.setStructureInode(st.getInode());
-		contentAsset4.setHost(host.getIdentifier());
-		contentAsset4.setProperty(FileAssetAPI.FILE_NAME_FIELD, LOGO_GIF_2);
-		contentAsset4.setProperty(FileAssetAPI.BINARY_FIELD, destFile);
-		contentAsset4.setLanguageId(langId);
-		contentAsset4.setProperty(FileAssetAPI.TITLE_FIELD, LOGO_GIF_2);
-		contentAsset4.setFolder(ftest2.getInode());
-		contentAsset4= contentletAPI.checkin(contentAsset4, user, false);
-		contentletAPI.publish(contentAsset4, user, false);
-
-		final String pageStr2="page2";
 		Contentlet contentAsset5=new Contentlet();
-		contentAsset5.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
+		st = StructureFactory.getStructureByVelocityVarName("FileAsset");
+		contentAsset5.setStructureInode(st.getInode());
 		contentAsset5.setHost(host.getIdentifier());
-		contentAsset5.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, pageStr2);
-		contentAsset5.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, pageStr2);
-		contentAsset5.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, pageStr2);
-		contentAsset5.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
-		contentAsset5.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
+		contentAsset5.setProperty(FileAssetAPI.FILE_NAME_FIELD, LOGO_GIF_2);
+		contentAsset5.setProperty(FileAssetAPI.BINARY_FIELD, destFile);
 		contentAsset5.setLanguageId(langId);
+		contentAsset5.setProperty(FileAssetAPI.TITLE_FIELD, LOGO_GIF_2);
 		contentAsset5.setFolder(ftest2.getInode());
 		contentAsset5= contentletAPI.checkin(contentAsset5, user, false);
-		contentletAPI.publish(contentAsset5, user, false);
+		contentletAPI.publish(contentAsset5 , user, false);
+
+		final String pageStr2="page2";
+		Contentlet contentAsset6=new Contentlet();
+		contentAsset6.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
+		contentAsset6.setHost(host.getIdentifier());
+		contentAsset6.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, pageStr2);
+		contentAsset6.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, pageStr2);
+		contentAsset6.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, pageStr2);
+		contentAsset6.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
+		contentAsset6.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
+		contentAsset6.setLanguageId(langId);
+		contentAsset6.setFolder(ftest2.getInode());
+		contentAsset6 = contentletAPI.checkin(contentAsset6, user, false);
+		contentletAPI.publish(contentAsset6, user, false);
 		
 		/*Adding page and menu link to folder fcopy3*/
 		String linkStr2="link2";
@@ -542,33 +554,33 @@ public class FolderAPITest {
 		versionableAPI.setLive(link2);
 
 		final String pageStr3="page3";
-		Contentlet contentAsset6=new Contentlet();
-		contentAsset6.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
-		contentAsset6.setHost(host.getIdentifier());
-		contentAsset6.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, pageStr3);
-		contentAsset6.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, pageStr3);
-		contentAsset6.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, pageStr3);
-		contentAsset6.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
-		contentAsset6.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
-		contentAsset6.setLanguageId(langId);
-		contentAsset6.setFolder(ftest3.getInode());
-		contentAsset6= contentletAPI.checkin(contentAsset6, user, false);
-		contentletAPI.publish(contentAsset6, user, false);
-		
-		final String title3="test3";
 		Contentlet contentAsset7=new Contentlet();
-		st = StructureFactory.getStructureByVelocityVarName("webPageContent");
-		contentAsset7.setStructureInode(st.getInode());
+		contentAsset7.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
 		contentAsset7.setHost(host.getIdentifier());
-		contentAsset7.setProperty("title", title3);
+		contentAsset7.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, pageStr3);
+		contentAsset7.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, pageStr3);
+		contentAsset7.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, pageStr3);
+		contentAsset7.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
+		contentAsset7.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
 		contentAsset7.setLanguageId(langId);
-		contentAsset7.setProperty("body", title3);
-		contentAsset7.setFolder(ftest1.getInode());
-		contentAsset7= contentletAPI.checkin(contentAsset7, user, false);
+		contentAsset7.setFolder(ftest3.getInode());
+		contentAsset7 = contentletAPI.checkin(contentAsset7, user, false);
 		contentletAPI.publish(contentAsset7, user, false);
 		
+		final String title3="test3";
+		Contentlet contentAsset8=new Contentlet();
+		st = StructureFactory.getStructureByVelocityVarName("webPageContent");
+		contentAsset8.setStructureInode(st.getInode());
+		contentAsset8.setHost(host.getIdentifier());
+		contentAsset8.setProperty("title", title3);
+		contentAsset8.setLanguageId(langId);
+		contentAsset8.setProperty("body", title3);
+		contentAsset8.setFolder(ftest1.getInode());
+		contentAsset8 = contentletAPI.checkin(contentAsset8, user, false);
+		contentletAPI.publish(contentAsset8, user, false);
+		
 		/*Relate content to page*/
-		final MultiTree m2 = new MultiTree(contentAsset6.getIdentifier(), container.getIdentifier(), contentAsset7.getIdentifier());
+		final MultiTree m2 = new MultiTree(contentAsset7.getIdentifier(), container.getIdentifier(), contentAsset8.getIdentifier());
 		MultiTreeFactory.saveMultiTree(m2);
 		
 		/*Copy folder*/
@@ -588,7 +600,7 @@ public class FolderAPITest {
 		Assert.assertTrue(page != null && page.getTitle().contains(pageStr));
 
 		List<MultiTree> mt= MultiTreeFactory.getMultiTrees(page.getIdentifier());
-		Assert.assertTrue(mt.size() ==1 && mt.get(0).getParent2().equals(container.getIdentifier()) && mt.get(0).getChild().equals(contentAsset2.getIdentifier()) );
+		Assert.assertTrue(mt.size() ==1 && mt.get(0).getParent2().equals(container.getIdentifier()) && mt.get(0).getChild().equals(contentAsset3.getIdentifier()) );
 		Thread.sleep(3000);
 		List<FileAsset> files = fileAssetAPI
 				.findFileAssetsByFolder(newftest1, user, false);
@@ -622,7 +634,43 @@ public class FolderAPITest {
 		Assert.assertTrue(page != null && page.getTitle().contains(pageStr3));
 		
 		mt= MultiTreeFactory.getMultiTrees(page.getIdentifier());
-		Assert.assertTrue(mt.size() ==1 && mt.get(0).getParent2().equals(container.getIdentifier()) && mt.get(0).getChild().equals(contentAsset7.getIdentifier()) );
+		Assert.assertTrue(mt.size() ==1 && mt.get(0).getParent2().equals(container.getIdentifier()) && mt.get(0).getChild().equals(contentAsset8.getIdentifier()) );
+
+		for(Contentlet contentlet : folderAPI.getLiveContent(newftest1,user,false)){
+			contentletAPI.archive(contentlet,user,false);
+			contentletAPI.delete(contentlet,user,false);
+		}
+
+		for(Contentlet contentlet : folderAPI.getLiveContent(newftest2,user,false)){
+			contentletAPI.archive(contentlet,user,false);
+			contentletAPI.delete(contentlet,user,false);
+		}
+
+		for(Contentlet contentlet : folderAPI.getLiveContent(newftest3,user,false)){
+			contentletAPI.archive(contentlet,user,false);
+			contentletAPI.delete(contentlet,user,false);
+		}
+
+		contentletAPI.archive(contentAsset1,user,false);
+		contentletAPI.archive(contentAsset2,user,false);
+		contentletAPI.archive(contentAsset3,user,false);
+		contentletAPI.archive(contentAsset4,user,false);
+		contentletAPI.archive(contentAsset5,user,false);
+		contentletAPI.archive(contentAsset6,user,false);
+		contentletAPI.archive(contentAsset7,user,false);
+		contentletAPI.archive(contentAsset8,user,false);
+		contentletAPI.archive(contentAsset1Copy,user,false);
+
+
+		contentletAPI.delete(contentAsset1,user,false);
+		contentletAPI.delete(contentAsset2,user,false);
+		contentletAPI.delete(contentAsset3,user,false);
+		contentletAPI.delete(contentAsset4,user,false);
+		contentletAPI.delete(contentAsset5,user,false);
+		contentletAPI.delete(contentAsset6,user,false);
+		contentletAPI.delete(contentAsset7,user,false);
+		contentletAPI.delete(contentAsset8,user,false);
+		contentletAPI.delete(contentAsset1Copy,user,false);
 		
 	}
 
@@ -650,25 +698,27 @@ public class FolderAPITest {
 			}
 		}
 		/*create page content multilingual */
-		Contentlet contentAsset=new Contentlet();
-		contentAsset.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
-		contentAsset.setHost(host.getIdentifier());
-		contentAsset.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, pageStr);
-		contentAsset.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, pageStr);
-		contentAsset.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, pageStr);
-		contentAsset.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
-		contentAsset.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
-		contentAsset.setLanguageId(langId);
-		contentAsset.setFolder(ftest.getInode());
-		contentAsset= contentletAPI.checkin(contentAsset, user, false);
-		contentletAPI.publish(contentAsset, user, false);
+		Contentlet contentAsset1=new Contentlet();
+		contentAsset1.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
+		contentAsset1.setHost(host.getIdentifier());
+		contentAsset1.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, pageStr);
+		contentAsset1.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, pageStr);
+		contentAsset1.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, pageStr);
+		contentAsset1.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
+		contentAsset1.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
+		contentAsset1.setLanguageId(langId);
+		contentAsset1.setFolder(ftest.getInode());
+		contentAsset1 = contentletAPI.checkin(contentAsset1, user, false);
+		contentletAPI.publish(contentAsset1, user, false);
 
-		contentAsset.setLanguageId(langIdES);
-		contentAsset.setInode(null);
-		contentAsset= contentletAPI.checkin(contentAsset, user, false);
-		contentletAPI.publish(contentAsset, user, false);
+		contentAsset1.setLanguageId(langIdES);
+		contentAsset1.setInode(null);
+		contentAsset1 = contentletAPI.checkin(contentAsset1, user, false);
+		contentletAPI.publish(contentAsset1, user, false);
 		
 		folderAPI.delete(ftest, user, false);
+
+		contentletAPI.isInodeIndexed(contentAsset1.getInode());
 		
 		/*validate that the folder and pages were deleted*/
 		final Folder  folder = folderAPI.findFolderByPath(folderPath, host, user, false);
@@ -957,6 +1007,12 @@ public class FolderAPITest {
 			Assert.assertEquals(link.getIdentifier(), links.get(0).getIdentifier());
 			Assert.assertEquals(link.getInode(), links.get(0).getInode());
 		} finally {
+
+			if (contentAsset != null && contentAsset.getInode() != null) {
+				contentletAPI.archive(contentAsset, user, false);
+				contentletAPI.delete(contentAsset, user, false);
+			}
+
 			if (ftest != null) {
 				folderAPI.delete(ftest, user, false);
 			}
@@ -969,9 +1025,6 @@ public class FolderAPITest {
 				templateAPI.delete(template, user, false);
 			}
 
-			if (contentAsset != null && contentAsset.getInode() != null) {
-				contentletAPI.delete(contentAsset, user, false);
-			}
 		}
 
 	}

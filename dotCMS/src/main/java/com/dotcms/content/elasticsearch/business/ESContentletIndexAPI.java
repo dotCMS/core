@@ -1,12 +1,11 @@
 package com.dotcms.content.elasticsearch.business;
 
-import com.google.gson.Gson;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.tika.TikaUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -20,22 +19,10 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
-import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
-import org.elasticsearch.action.admin.indices.stats.IndexStats;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.client.IndicesAdminClient;
-import org.elasticsearch.common.xcontent.XContentType;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.reindex.BulkByScrollResponse;
-import org.elasticsearch.index.reindex.DeleteByQueryAction;
-
+import com.google.gson.Gson;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -49,6 +36,21 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.ActionResponse;
+import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
+import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
+import org.elasticsearch.action.admin.indices.stats.IndexStats;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.client.Client;
+import org.elasticsearch.client.IndicesAdminClient;
+import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.reindex.BulkByScrollResponse;
+import org.elasticsearch.index.reindex.DeleteByQueryAction;
 
 public class ESContentletIndexAPI implements ContentletIndexAPI{
 	private static final ESIndexAPI iapi  = new ESIndexAPI();
@@ -341,6 +343,28 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 		}
 	}
 
+
+	@Override
+	public void indexContentList(final List<Contentlet> contentToIndex,
+								 final BulkRequestBuilder bulk,
+								 final boolean reindexOnly,
+								 ActionListener<BulkResponse> listener) throws  DotDataException {
+
+		if(contentToIndex==null || contentToIndex.size()==0){
+			return;
+		}
+		Client client=new ESClient().getClient();
+		BulkRequestBuilder req = (bulk==null) ? client.prepareBulk() : bulk;
+		try {
+			indexContentletList(req, contentToIndex, reindexOnly);
+			if(bulk==null && req.numberOfActions()>0){
+				req.execute(listener);
+			}
+		} catch (DotStateException | DotSecurityException | DotMappingException e) {
+			throw new DotDataException (e.getMessage(), e);
+		}
+	}
+
 	private void indexContentletList(BulkRequestBuilder req, List<Contentlet> contentToIndex, boolean reindexOnly) throws DotStateException, DotDataException, DotSecurityException, DotMappingException {
 
 		if ( contentToIndex != null && !contentToIndex.isEmpty() ) {
@@ -351,13 +375,32 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 		// eliminate dups
 		Set<Contentlet> contentToIndexSet = new HashSet<>(contentToIndex);
 
+		/*
+		Verify if it is enabled the option to regenerate missing metadata files on reindex,
+		enabling this could affect greatly the performance of a reindex process.
+		 */
+		Boolean regenerateMissingMetadata = Config
+				.getBooleanProperty("regenerate.missing.metadata.on.reindex", false);
+
 		for(Contentlet con : contentToIndexSet) {
             String id=con.getIdentifier()+"_"+con.getLanguageId();
             IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
             Gson gson=new Gson();
             String mapping=null;
             try {
-                if(con.isWorking()) {
+
+				if (regenerateMissingMetadata) {
+					if (con.isLive() || con.isWorking()) {
+                        /*
+                        Before to reindex this Contentlet we need to verify if already have
+                        a metadata file (Applies only to file assets), if already have it we do nothing,
+                        if it is missing we parse the file asset and we generate it.
+                         */
+						new TikaUtils().generateMetaDataIfRequired(con);
+					}
+				}
+
+				if (con.isWorking()) {
                     mapping=gson.toJson(mappingAPI.toMap(con));
                     
                     if(!reindexOnly)

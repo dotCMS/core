@@ -3,6 +3,7 @@ package com.dotmarketing.portlets;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -53,6 +54,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
@@ -76,11 +78,11 @@ public class ContentletBaseTest extends IntegrationTestBase {
     protected static RelationshipAPI relationshipAPI;
     private static RoleAPI roleAPI;
     protected static PermissionAPI permissionAPI;
-    private static HostAPI hostAPI;
+    protected static HostAPI hostAPI;
     private static CategoryAPI categoryAPI;
     protected static ContainerAPI containerAPI;
     private static TemplateAPI templateAPI;
-    private static FolderAPI folderAPI;
+    protected static FolderAPI folderAPI;
 
     protected static User user;
     protected static List<Contentlet> contentlets;
@@ -199,12 +201,14 @@ public class ContentletBaseTest extends IntegrationTestBase {
         IntegrationTestInitService.getInstance().mockStrutsActionModule();
     }
 
-    //@AfterClass
+    @AfterClass
     public static void afterClass () throws Exception {
 
         //Delete the contentles
         for ( Contentlet contentlet : contentlets ) {
+            contentletAPI.archive(contentlet,user, false);
             contentletAPI.delete( contentlet, user, false );
+            contentlets.remove(contentlet);
         }
 
         //Delete the Templates
@@ -227,9 +231,10 @@ public class ContentletBaseTest extends IntegrationTestBase {
         for ( Structure structure : structures ) {
             List<Contentlet> structContent = contentletAPI.findByStructure( structure, user, false, 0, 0 );
             for ( Contentlet contentlet : structContent ) {
+                contentletAPI.archive(contentlet, user, false);
                 contentletAPI.delete( contentlet, user, false );
             }
-            APILocator.getStructureAPI().delete(structure, user);
+            contentTypeAPI.delete(new StructureTransformer(structure).from());
         }
 
         //Delete the identifiers

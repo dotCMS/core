@@ -2,7 +2,7 @@ package com.dotmarketing.webdav;
 
 
 import com.dotcms.enterprise.PasswordFactoryProxy;
-import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FileUtils;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;

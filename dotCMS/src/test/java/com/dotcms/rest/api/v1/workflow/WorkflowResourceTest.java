@@ -1,7 +1,18 @@
 package com.dotcms.rest.api.v1.workflow;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.dotcms.UnitTestBase;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
 import com.dotcms.repackage.org.jboss.util.Strings;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.InitDataObject;
@@ -20,16 +31,8 @@ import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.liferay.portal.model.User;
-import org.junit.Test;
-
 import javax.servlet.http.HttpServletRequest;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.*;
+import org.junit.Test;
 
 public class WorkflowResourceTest extends UnitTestBase {
 
@@ -63,7 +66,7 @@ public class WorkflowResourceTest extends UnitTestBase {
         final RoleAPI roleAPI = mock(RoleAPI.class);
         final ContentletAPI contentletAPI = mock(ContentletAPI.class);
 
-        final WorkflowHelper workflowHelper = new WorkflowHelper(workflowAPI, roleAPI, contentletAPI);
+        final WorkflowHelper workflowHelper = new WorkflowHelper(workflowAPI, roleAPI, contentletAPI, permissionAPI, WorkflowImportExportUtil.getInstance());
         final ContentHelper contentHelper = mock(ContentHelper.class) ;
         final WebResource webResource = mock(WebResource.class);
 
@@ -109,7 +112,7 @@ public class WorkflowResourceTest extends UnitTestBase {
     }
 
     @Test
-    public void testSaveNonExistingScheme() throws Exception {
+    public void testSaveExistingSchemeDupeName() throws Exception {
         final String uniqueSchemaName = "anyUniqueSchemaName";
         final String anyDesc = "anyDesc";
         final HttpServletRequest request = mock(HttpServletRequest.class);
@@ -128,7 +131,7 @@ public class WorkflowResourceTest extends UnitTestBase {
         final WorkflowResource workflowResource = mockWorkflowResource(true);
         final WorkflowSchemeForm workflowSchemeForm = new WorkflowSchemeForm.Builder().schemeArchived(true).schemeDescription(anyDesc).schemeName(uniqueSchemaName).build();
         final Response response = workflowResource.update(request, anyRandomSchemeId, workflowSchemeForm);
-        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        assertEquals(Status.NOT_FOUND.getStatusCode(), response.getStatus());
     }
 
 }

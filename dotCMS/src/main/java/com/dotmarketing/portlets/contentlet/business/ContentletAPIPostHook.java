@@ -89,6 +89,13 @@ public interface ContentletAPIPostHook {
 	public default void findContentletByIdentifier(String identifier, boolean live, long languageId, User user, boolean respectFrontendRoles,Contentlet returnValue){}
 
 	/**
+	 * Retrieves a contentlet from the database based on its identifier
+	 * @param identifier
+	 * @param returnValue - value returned by primary API Method
+	 */
+	public default void findContentletByIdentifierAnyLanguage (String identifier) { }
+
+	/**
 	 * Retrieves a contentlet list from the database based on a identifiers array
 	 * @param identifiers	Array of identifiers
 	 * @param live	Retrieves the live version if false retrieves the working version
@@ -820,6 +827,19 @@ public interface ContentletAPIPostHook {
 	 * @param returnValue - value returned by primary API Method 
 	 */
 	public default void findAllVersions(Identifier identifier, User user, boolean respectFrontendRoles,List<Contentlet> returnValue){}
+
+	/**
+	 * Retrieves all versions for a contentlet identifier
+	 * Note this method should not be used currently because it could pull too many versions.
+	 * @param identifier - Identifier object that belongs to a contentlet
+	 * @param bringOldVersions - boolean value which determines if old versions (non-live, non-working
+	 * 	should be brought here). @see copyContentlet method, which requires passing in only live/working
+	 * 	versions of contents to be copied
+	 * @param user - User in context who has triggered this call.
+	 * @param respectFrontendRoles - For permissions validations
+	 * @param returnValue - value returned by primary API Method
+	 */
+	public default void findAllVersions(Identifier identifier, boolean bringOldVersions, User user, boolean respectFrontendRoles,List<Contentlet> returnValue){}
 	
 	/**
 	 * Retrieves all versions for a contentlet identifier checked in by a real user meaning not the system user
@@ -1150,6 +1170,16 @@ public interface ContentletAPIPostHook {
 	 * @return
 	 */
 	public default void isInodeIndexed(String inode, boolean returnValue){}
+
+
+	/**
+	 * Method will time out after 30 seconds returning false
+	 * @param inode
+	 * @return
+	 */
+	public default boolean isInodeIndexedArchived(String inode) {
+		return true;
+	};
 
 	/**
 	 * 

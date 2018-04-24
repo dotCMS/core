@@ -42,7 +42,7 @@ import com.liferay.portal.model.User;
  * Date: 3/20/12
  * Time: 12:12 PM
  */
-public class ReindexIndexAPITest extends ContentletBaseTest {
+public class ReindexIndexAPITest{
 
     private static boolean respectFrontendRoles = false;
     protected static User user;
@@ -53,6 +53,7 @@ public class ReindexIndexAPITest extends ContentletBaseTest {
     protected static Host defaultHost;
     protected static Language lang;
     protected static Folder folder ;
+    protected static ContentletAPI contentletAPI;
 
 
     @BeforeClass
@@ -103,7 +104,6 @@ public class ReindexIndexAPITest extends ContentletBaseTest {
         map.put("body", "body");
 
 
-        //add 5 contentlets
         for(int i = 0;i<num;i++){
             map.put("title", i+ "indexFailTestTitle : ");
 
@@ -120,20 +120,12 @@ public class ReindexIndexAPITest extends ContentletBaseTest {
             contentletAPI.publish(content, user, respectFrontendRoles);
             assertTrue( content.isLive());
             origCons.add(content);
+            contentletAPI.isInodeIndexed(content.getInode(),true);
         }
-
 
         //commit it index
         HibernateUtil.closeSession();
 
-
-        // let any expected reindex finish
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
         for(Contentlet c : origCons){
 
             // are we good in the index?
@@ -173,6 +165,11 @@ public class ReindexIndexAPITest extends ContentletBaseTest {
         // make sure that the index is in the same state as before the failed transaction
         for(Contentlet c : origCons){
             assertTrue(contentletAPI.indexCount("+live:true +identifier:" +c.getIdentifier() + " +inode:" + c.getInode() , user, respectFrontendRoles)>0);
+        }
+
+        for(Contentlet c : origCons){
+            contentletAPI.archive(c,user,false);
+            contentletAPI.delete(c,user,false);
         }
 
     }

@@ -16,11 +16,13 @@
 <%@ page import="com.dotcms.contenttype.model.type.ContentType" %>
 <%@ page import="com.dotcms.contenttype.transform.contenttype.StructureTransformer" %>
 <%@ page import="com.dotmarketing.business.Layout" %>
+<%@ page import="com.liferay.portal.language.LanguageUtil"%>
 
 <%
     String containerIdentifier = request.getParameter("container_id");
     User user = PortalUtil.getUser(request);
-    Container container = (Container) APILocator.getVersionableAPI().findWorkingVersion(containerIdentifier, user, false);
+    Container container = (Container) APILocator.getVersionableAPI().findWorkingVersion(containerIdentifier,
+            APILocator.getUserAPI().getSystemUser(), false);
 
     List<ContentType> contentTypes = null;
     String baseTypeToAdd = request.getParameter("add");
@@ -30,14 +32,18 @@
     } else if (BaseContentType.FORM.name().equalsIgnoreCase(baseTypeToAdd)) {
         contentTypes = APILocator.getContentTypeAPI(user).findByType(BaseContentType.FORM);
     } else {
-        contentTypes = APILocator.getContainerAPI().getContentTypesInContainer(container);
-
+        contentTypes = APILocator.getContainerAPI().getContentTypesInContainer(user, container);
     }
 
     Layout contentLayout = APILocator.getLayoutAPI().findLayoutByName("Content");
 
     String containerStructures = "[";
     Integer count = 1;
+        containerStructures = containerStructures + "{";
+        containerStructures = containerStructures + "\"inode\": \"catchall\",";
+        containerStructures = containerStructures + "\"name\":" + "\"" + LanguageUtil.get(pageContext, "All") + "\",";
+        containerStructures = containerStructures + "\"variable\": \"catchall\"";
+        containerStructures = containerStructures + "},";
 
     for (ContentType contentType: contentTypes) {
         containerStructures = containerStructures + "{";
@@ -158,8 +164,12 @@
 
         dojo.addOnLoad(function () {
             contentSelector.show();
-        })
 
+            // Make sure is called after the show() is completed
+            setTimeout(() => {
+                contentSelector._doSearchPage1();
+            }, 0);
+        })
     </script>
 </head>
 <body>

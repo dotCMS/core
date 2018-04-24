@@ -2,6 +2,8 @@ package com.dotmarketing.business;
 
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.SystemEventsFactory;
+import com.dotcms.cluster.business.ClusterAPI;
+import com.dotcms.cluster.business.ClusterAPIImpl;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPIFactory;
 import com.dotcms.api.tree.TreeableAPI;
@@ -55,6 +57,7 @@ import com.dotcms.vanityurl.business.VanityUrlAPIImpl;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.business.VisitorAPIImpl;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.cluster.mbeans.Cluster;
 import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.business.portal.PortletAPIImpl;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
@@ -89,6 +92,8 @@ import com.dotmarketing.portlets.hostvariable.bussiness.HostVariableAPI;
 import com.dotmarketing.portlets.hostvariable.bussiness.HostVariableAPIImpl;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPIImpl;
+import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
+import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPIImpl;
 import com.dotmarketing.portlets.linkchecker.business.LinkCheckerAPI;
@@ -866,6 +871,26 @@ public class APILocator extends Locator<APIIndex>{
     }
 
 	/**
+	 * Creates a single instance of the {@link LanguageVariableAPI}
+	 *
+	 * @return The {@link LanguageVariableAPI} class.
+	 */
+	public static HTMLPageAssetRenderedAPI getHTMLPageAssetRenderedAPI() {
+		return (HTMLPageAssetRenderedAPI) getInstance(APIIndex.HTMLPAGE_ASSET_RENDERED_API);
+	}
+
+	/**
+	 * Creates a single instance of the {@link ClusterAPI}
+	 *
+	 * @return The {@link ClusterAPI} class.
+	 */
+	public static ClusterAPI getClusterAPI() {
+		return (ClusterAPI) getInstance(APIIndex.CLUSTER_API);
+	}
+
+
+
+	/**
 	 * Generates a unique instance of the specified dotCMS API.
 	 *
 	 * @param index
@@ -996,7 +1021,9 @@ enum APIIndex
 	LOCAL_SYSTEM_EVENTS_API,
 	LANGUAGE_VARIABLE_API,
 	VANITY_URLS_API,
-	MULTI_TREE_API;
+	MULTI_TREE_API,
+	HTMLPAGE_ASSET_RENDERED_API,
+	CLUSTER_API;
 
 	Object create() {
 		switch(this) {
@@ -1065,6 +1092,8 @@ enum APIIndex
     		case LANGUAGE_VARIABLE_API: return new LanguageVariableAPIImpl();
 			case LOCAL_SYSTEM_EVENTS_API: return LocalSystemEventsAPIFactory.getInstance().getLocalSystemEventsAPI();
 			case MULTI_TREE_API: return new MultiTreeAPIImpl();
+			case HTMLPAGE_ASSET_RENDERED_API: return new HTMLPageAssetRenderedAPIImpl();
+			case CLUSTER_API: return new ClusterAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

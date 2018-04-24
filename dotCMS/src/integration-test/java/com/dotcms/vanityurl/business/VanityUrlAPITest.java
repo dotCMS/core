@@ -109,6 +109,7 @@ public class VanityUrlAPITest {
         } finally {
             try {
                 if (contentlet1 != null) {
+                    contentletAPI.archive(contentlet1, user, false);
                     contentletAPI.delete(contentlet1, user, false);
                 }
             } catch (Exception e) {
@@ -194,10 +195,12 @@ public class VanityUrlAPITest {
         } finally {
             try {
                 if (contentlet1 != null) {
+                    contentletAPI.archive(contentlet1, user, false);
                     contentletAPI.delete(contentlet1, user, false);
                 }
 
                 if (contentlet2 != null) {
+                    contentletAPI.archive(contentlet2, user, false);
                     contentletAPI.delete(contentlet2, user, false);
                 }
             } catch (Exception e) {
@@ -245,6 +248,7 @@ public class VanityUrlAPITest {
         } finally {
             try {
                 if (contentlet1 != null) {
+                    contentletAPI.archive(contentlet1, user, false);
                     contentletAPI.delete(contentlet1, user, false);
                 }
             } catch (Exception e) {
@@ -316,6 +320,7 @@ public class VanityUrlAPITest {
             Assert.assertEquals("/testing"+currentTime, vanityURLCached.getUrl());
 
         }finally{
+            contentletAPI.archive(vanityURLContentlet, user, false);
             contentletAPI.delete(vanityURLContentlet, user, false);
         }
     }
@@ -374,6 +379,7 @@ public class VanityUrlAPITest {
             Assert.assertEquals(301, vanityURLCached.getResponse());
 
         }finally{
+            contentletAPI.archive(vanityURLContentlet, user, false);
             contentletAPI.delete(vanityURLContentlet, user, false);
         }
     }
@@ -430,6 +436,7 @@ public class VanityUrlAPITest {
                 assertEquals("message.vanity.url.error.invalidAction", e.getMessage());
             }
         } finally {
+            contentletAPI.archive(vanityURLContentlet, user, false);
             contentletAPI.delete(vanityURLContentlet, user, false);
         }
     }
@@ -1356,7 +1363,9 @@ public class VanityUrlAPITest {
 
 
         }finally{
+            contentletAPI.archive(vanityURLContentletDefaultHost, user, false);
             contentletAPI.delete(vanityURLContentletDefaultHost, user, false);
+            contentletAPI.archive(vanityURLContentletAllSites, user, false);
             contentletAPI.delete(vanityURLContentletAllSites, user, false);
         }
     }

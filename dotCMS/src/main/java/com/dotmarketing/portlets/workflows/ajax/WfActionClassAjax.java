@@ -21,6 +21,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
+@Deprecated
 public class WfActionClassAjax extends WfBaseAction {
 
 	private final UserWebAPI  userWebAPI     = WebAPILocator.getUserWebAPI();

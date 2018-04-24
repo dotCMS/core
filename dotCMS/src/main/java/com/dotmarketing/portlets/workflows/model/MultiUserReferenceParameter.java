@@ -24,6 +24,7 @@ import java.util.StringTokenizer;
 public class MultiUserReferenceParameter extends WorkflowActionletParameter {
 
     private static final long serialVersionUID = -6495451917397202347L;
+    public static final String CURRENT_USER_VALUE = "Current User";
 
     /**
      * Creates a new instance of this class.
@@ -57,7 +58,7 @@ public class MultiUserReferenceParameter extends WorkflowActionletParameter {
                     }
                 } else {
                     String error = null;
-                    if (isUserId(token)) {
+                    if (isUserId(token) || CURRENT_USER_VALUE.equalsIgnoreCase(token)) {
                         continue;
                     } else {
                         error = "Unable to find user with ID: " + token + "</br>";

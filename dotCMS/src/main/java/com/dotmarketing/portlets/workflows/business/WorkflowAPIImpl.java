@@ -1,41 +1,115 @@
 package com.dotmarketing.portlets.workflows.business;
 
+import com.dotcms.api.system.event.SystemMessageEventUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.FriendClass;
-import com.dotcms.util.ReflectionUtils;
+import com.dotcms.util.LicenseValiditySupplier;
+import com.dotcms.uuid.shorty.ShortyId;
+import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.*;
+import com.dotmarketing.exception.AlreadyExistException;
+import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.workflows.actionlet.*;
-import com.dotmarketing.portlets.workflows.model.*;
-import com.dotmarketing.util.*;
+import com.dotmarketing.portlets.workflows.MessageActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CheckURLAccessibilityActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CheckoutContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CommentOnWorkflowActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CopyActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.DeleteContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.EmailActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.FourEyeApproverActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.MultipleApproverActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.NotifyUsersActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.PushNowActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.ResetTaskActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SetValueActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.TranslationActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.TwitterActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
+import com.dotmarketing.portlets.workflows.model.WorkflowComment;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
+import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
+import com.dotmarketing.portlets.workflows.model.WorkflowState;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import org.osgi.framework.BundleContext;
-
-import java.util.*;
+import com.liferay.util.StringPool;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.concurrent.Future;
 import java.util.stream.IntStream;
+import org.apache.commons.lang.time.StopWatch;
+import org.osgi.framework.BundleContext;
 
 
 public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
-	private final List<Class> actionletClasses;
+	private final List<Class<? extends WorkFlowActionlet>> actionletClasses;
 
 	private static Map<String, WorkFlowActionlet> actionletMap;
 
@@ -43,21 +117,36 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	private final PermissionAPI  permissionAPI    = APILocator.getPermissionAPI();
 
-	private final RoleAPI roleAPI = APILocator.getRoleAPI();
+	private final RoleAPI roleAPI				  = APILocator.getRoleAPI();
+
+	private final UserAPI userAPI                 = APILocator.getUserAPI();
+
+	private final ShortyIdAPI shortyIdAPI		  = APILocator.getShortyAPI();
 
 	private final WorkflowStateFilter workflowStatusFilter =
 			new WorkflowStateFilter();
 
+	private final SystemMessageEventUtil systemMessageEventUtil =
+			SystemMessageEventUtil.getInstance();
+
 	// not very fancy, but the WorkflowImport is a friend of WorkflowAPI
 	private volatile FriendClass  friendClass = null;
+
+	//This by default tells if a license is valid or not.
+	private LicenseValiditySupplier licenseValiditySupplierSupplier = new LicenseValiditySupplier() {};
+
+	private final DotConcurrentFactory concurrentFactory = DotConcurrentFactory.getInstance();
+
+	private volatile List <Role> specialRolesHierarchy;
+
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public WorkflowAPIImpl() {
 
-		actionletClasses = new ArrayList<Class>();
+		actionletClasses = new ArrayList<>();
 
 		// Add default actionlet classes
-		actionletClasses	.addAll(Arrays.asList(new Class[] {
+		actionletClasses.addAll(Arrays.asList(
 				CommentOnWorkflowActionlet.class,
 				NotifyUsersActionlet.class,
 				ArchiveContentActionlet.class,
@@ -80,11 +169,26 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				TranslationActionlet.class,
 				SaveContentActionlet.class,
 				SaveContentAsDraftActionlet.class,
-				CopyActionlet.class
-		}));
+				CopyActionlet.class,
+				MessageActionlet.class
+		));
 
 		refreshWorkFlowActionletMap();
 		registerBundleService();
+	}
+
+	/**
+	 * This allows me to override the license supplier for testing purposes
+	 * @param licenseValiditySupplierSupplier
+	 */
+	@VisibleForTesting
+	public WorkflowAPIImpl(final LicenseValiditySupplier licenseValiditySupplierSupplier) {
+		this();
+		this.licenseValiditySupplierSupplier = licenseValiditySupplierSupplier;
+	}
+
+	public boolean hasValidLicense(){
+		return (licenseValiditySupplierSupplier.hasValidLicense());
 	}
 
 	private FriendClass getFriendClass () {
@@ -94,8 +198,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 				if (null == this.friendClass) {
 					this.friendClass =
-							new FriendClass(ReflectionUtils.getClassFor
-									("com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil"));
+							new FriendClass("com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil");
 				}
 			}
 		}
@@ -116,23 +219,56 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 	}
 
-	private void isUserAllowToModifiedWorkflow (final User user) {
+	/**
+	 * Converts the shortyId to long id
+	 * @param shortyId String
+	 * @return String id
+	 */
+	private String getLongId (final String shortyId, final ShortyIdAPI.ShortyInputType type) {
 
-		try {
-			// if the class calling the workflow api is not friend, so checks the validation
-			if (!this.getFriendClass().isFriend()) {
-				DotPreconditions.isTrue(
-						(LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level) &&
-								APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("workflow-schemes", user),
-						() -> "User " + user + " cannot access workflows ", NotAllowedUserWorkflowException.class);
-			}
-		} catch (DotDataException e) {
-			throw new NotAllowedUserWorkflowException(e);
-		}
+		// todo: if shortyId is more than 36 is a long id and does not need to check the shorty
+		final Optional<ShortyId> shortyIdOptional =
+				this.shortyIdAPI.getShorty(shortyId, type);
+
+		return shortyIdOptional.isPresent()?
+				shortyIdOptional.get().longId:shortyId;
+	} // getLongId.
+
+	private String getLongIdForScheme(final String schemeId) {
+		return this.getLongId(schemeId, ShortyIdAPI.ShortyInputType.WORKFLOW_SCHEME);
 	}
 
+
+    @Override
+    public void isUserAllowToModifiedWorkflow(final User user) {
+
+        // if the class calling the workflow api is not friend, so checks the validation
+        if (!this.getFriendClass().isFriend()) {
+            if (!hasValidLicense()) {
+                throw new InvalidLicenseException("Workflow-Schemes-License-required");
+            }
+
+            boolean hasAccessToPortlet = false;
+
+            try {
+                hasAccessToPortlet = (APILocator.getLayoutAPI()
+                        .doesUserHaveAccessToPortlet("workflow-schemes", user));
+            } catch (DotDataException e) {
+                Logger.error(this,
+                        "Unable to verify access to portlet : workflow-schemes for user with id: "
+                                + user.getUserId(), e);
+            }
+
+            if (!hasAccessToPortlet) {
+                throw new WorkflowPortletAccessException("Workflow-Portlet-Access-denied");
+            }
+        }
+
+    }
+
+	@Override
 	public WorkFlowActionlet newActionlet(String className) throws DotDataException {
-		for ( Class<WorkFlowActionlet> z : actionletClasses ) {
+		for ( Class<? extends WorkFlowActionlet> z : actionletClasses ) {
 			if ( z.getName().equals(className.trim())) {
 				try {
 					return z.newInstance();
@@ -146,35 +282,54 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return null;
 	}
 
-	public String addActionlet(Class workFlowActionletClass) {
+	@Override
+	public String addActionlet(final Class workFlowActionletClass) {
+
+		Logger.debug(this,
+				() -> "Adding actionlet class: " + workFlowActionletClass);
+
 		actionletClasses.add(workFlowActionletClass);
 		refreshWorkFlowActionletMap();
 		return workFlowActionletClass.getCanonicalName();
 	}
 
-	public void removeActionlet(String workFlowActionletName) {
-		WorkFlowActionlet actionlet = actionletMap.get(workFlowActionletName);
+	@Override
+	public void removeActionlet(final String workFlowActionletName) {
+
+		Logger.debug(this,
+				() -> "Removing actionlet: " + workFlowActionletName);
+
+		final WorkFlowActionlet actionlet = actionletMap.get(workFlowActionletName);
 		actionletClasses.remove(actionlet.getClass());
 		refreshWorkFlowActionletMap();
 	}
 
+	@Override
 	@CloseDBIfOpened
-	public List<WorkflowTask> searchTasks(WorkflowSearcher searcher) throws DotDataException {
+	public List<WorkflowTask> searchTasks(final WorkflowSearcher searcher) throws DotDataException {
 		return workFlowFactory.searchTasks(searcher);
 	}
 
+	@Override
 	@CloseDBIfOpened
-	public WorkflowTask findTaskByContentlet(Contentlet contentlet) throws DotDataException {
+	public WorkflowTask findTaskByContentlet(final Contentlet contentlet) throws DotDataException {
 		return workFlowFactory.findTaskByContentlet(contentlet);
 	}
 
+	@Override
 	@CloseDBIfOpened
-	public List<WorkflowStep> findStepsByContentlet(Contentlet contentlet) throws DotDataException{
-		return workFlowFactory.findStepsByContentlet(contentlet);
+	public List<WorkflowStep> findStepsByContentlet(final Contentlet contentlet) throws DotDataException{
+
+		final List<WorkflowScheme> schemes = hasValidLicense() ?
+				workFlowFactory.findSchemesForStruct(contentlet.getContentTypeId()) :
+				Arrays.asList(workFlowFactory.findSystemWorkflow()) ;
+		return workFlowFactory.findStepsByContentlet(contentlet, schemes);
 	}
 
+	@Override
 	@CloseDBIfOpened
-	public WorkflowStep findStepByContentlet(Contentlet contentlet) throws DotDataException {
+	public WorkflowStep findStepByContentlet(final Contentlet contentlet) throws DotDataException {
+
 		WorkflowStep step = null;
 		List<WorkflowStep> steps = findStepsByContentlet(contentlet);
 		if( null != steps && !steps.isEmpty() && steps.size() == 1) {
@@ -184,46 +339,58 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return step;
 	}
 
-	public boolean existSchemeIdOnSchemesList(String schemeId, List<WorkflowScheme> schemes){
-		return workFlowFactory.existSchemeIdOnSchemesList(schemeId, schemes);
+	@Override
+	public boolean existSchemeIdOnSchemesList(final String schemeId, final List<WorkflowScheme> schemes) {
+
+		return workFlowFactory.existSchemeIdOnSchemesList(this.getLongId(schemeId, ShortyIdAPI.ShortyInputType.WORKFLOW_SCHEME), schemes);
 	}
 
+	@Override
 	public WorkflowTask findTaskById(final String id) throws DotDataException {
+
 		return workFlowFactory.findWorkFlowTaskById(id);
 	}
 
+	@Override
 	@CloseDBIfOpened
 	public List<WorkflowScheme> findSchemes(final boolean showArchived) throws DotDataException {
+		if (!hasValidLicense()) {
+			return new ImmutableList.Builder<WorkflowScheme>().add(findSystemWorkflowScheme()).build();
+		}
 		return workFlowFactory.findSchemes(showArchived);
 	}
 
+
+	@Override
 	@CloseDBIfOpened
-	public WorkflowScheme findDefaultScheme() throws DotDataException {
-		return workFlowFactory.findDefaultScheme();
+	public WorkflowScheme findSystemWorkflowScheme() throws DotDataException {
+		return workFlowFactory.findSystemWorkflow();
 	}
 
+	@Override
 	@CloseDBIfOpened
-	public boolean isDefaultScheme(WorkflowScheme scheme) throws DotDataException {
-		if (scheme == null || scheme.getId() == null) {
-			return false;
+	public WorkflowScheme findScheme(final String id) throws DotDataException, DotSecurityException {
+
+		final String schemeId = this.getLongId(id, ShortyIdAPI.ShortyInputType.WORKFLOW_SCHEME);
+
+		if (!SYSTEM_WORKFLOW_ID.equals(schemeId)) {
+			if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
+				throw new InvalidLicenseException("Workflow-Schemes-License-required");
+			}
 		}
-		if (workFlowFactory.findDefaultScheme().getId().equals(scheme.getId())) {
-			return true;
-		}
-		return false;
+
+		return workFlowFactory.findScheme(schemeId);
 	}
 
-	@CloseDBIfOpened
-	public WorkflowScheme findScheme(String id) throws DotDataException {
-		return workFlowFactory.findScheme(id);
-	}
-
+	@Override
 	@WrapInTransaction
 	public void saveSchemesForStruct(final Structure contentType,
 									 final List<WorkflowScheme> schemes) throws DotDataException {
 
-
 		try {
+
+			Logger.debug(this, ()-> "Saving schemes: " + schemes +
+									", to the content type: " + contentType);
 
 			this.workFlowFactory.saveSchemesForStruct(contentType.getInode(), schemes);
 		} catch(DotDataException e){
@@ -231,79 +398,93 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 	}
 
+	@Override
 	@WrapInTransaction
 	public void saveSchemeIdsForContentType(final ContentType contentType,
 											final List<String> schemesIds) throws DotDataException {
 
 
 		try {
+
 			Logger.info(WorkflowAPIImpl.class, String.format("Saving Schemas: %s for Content type %s",
 					String.join(",", schemesIds), contentType.inode()));
 
-			workFlowFactory.saveSchemeIdsForContentType(contentType.inode(), schemesIds);
-		} catch(DotDataException e){
+			workFlowFactory.saveSchemeIdsForContentType(contentType.inode(),
+					schemesIds.stream().map(this::getLongIdForScheme).collect(CollectionsUtils.toImmutableList()));
+		} catch(DotDataException e) {
+
 			Logger.error(WorkflowAPIImpl.class, String.format("Error saving Schemas: %s for Content type %s",
 					String.join(",", schemesIds), contentType.inode()));
 		}
 	}
 
+
 	@CloseDBIfOpened
 	@Override
-	public List<WorkflowScheme> findSchemesForContentType(final ContentType contentType) throws DotDataException {
+	public List<WorkflowScheme> findSchemesForContentType(final ContentType contentType)
+			throws DotDataException {
 
 		final ImmutableList.Builder<WorkflowScheme> schemes =
 				new ImmutableList.Builder<>();
 
-		if (contentType == null || ! UtilMethods.isSet(contentType.inode())
-				|| LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
+		if (contentType == null || !UtilMethods.isSet(contentType.inode()) || !hasValidLicense()) {
 
-			schemes.add(findDefaultScheme());
+			schemes.add(this.findSystemWorkflowScheme());
 		} else {
 
 			try {
-
-				Logger.debug(this, "Finding the schemes for: " + contentType);
-				final List<WorkflowScheme> contentTypeSchemes =
-						this.workFlowFactory.findSchemesForStruct(contentType.inode());
-				if(contentTypeSchemes.isEmpty()){
-					schemes.add(findDefaultScheme());
-				} else {
+					Logger.debug(this, () -> "Finding the schemes for: " + contentType);
+					final List<WorkflowScheme> contentTypeSchemes = hasValidLicense() ?
+							this.workFlowFactory.findSchemesForStruct(contentType.inode()) :
+							Arrays.asList(workFlowFactory.findSystemWorkflow()) ;
 					schemes.addAll(contentTypeSchemes);
-				}
-			}
-			catch(Exception e) {
-				schemes.add(findDefaultScheme());
+			} catch(Exception e) {
+
+				Logger.debug(this,e.getMessage(),e);
 			}
 		}
 
 		return schemes.build();
 	} // findSchemesForContentType.
 
+	@Override
 	@CloseDBIfOpened
 	public List<WorkflowScheme> findSchemesForStruct(final Structure structure) throws DotDataException {
 
-        List<WorkflowScheme> schemes = new ArrayList<>();
-		if(structure ==null || ! UtilMethods.isSet(structure.getInode()) || LicenseUtil.getLevel() < LicenseLevel.STANDARD.level){
-			schemes.add(findDefaultScheme());
-			return schemes;
-		}
-		try{
-			schemes = workFlowFactory.findSchemesForStruct(structure.getInode());
-			if(schemes.isEmpty()){
-				schemes.add(findDefaultScheme());
+		final ImmutableList.Builder<WorkflowScheme> schemes =
+				new ImmutableList.Builder<>();
+
+		if(structure ==null || ! UtilMethods.isSet(structure.getInode()) || !hasValidLicense()) {
+
+			schemes.add(this.findSystemWorkflowScheme());
+		} else {
+
+			try {
+
+				if(hasValidLicense()) {
+
+					schemes.addAll(workFlowFactory.findSchemesForStruct(structure.getInode()));
+				} else {
+					schemes.add(workFlowFactory.findSystemWorkflow());
+				}
+			} catch (Exception e) {
+
+				Logger.debug(this, e.getMessage(), e);
 			}
-			return schemes;
 		}
-		catch(Exception e){
-			schemes.add(findDefaultScheme());
-			return schemes;
-		}
+
+		return schemes.build();
 	}
 
+	@Override
 	@WrapInTransaction
 	public void saveScheme(final WorkflowScheme scheme, final User user) throws DotDataException, AlreadyExistException {
 
 		this.isUserAllowToModifiedWorkflow(user);
+
+		if (UtilMethods.isSet(scheme.getId())) {
+			scheme.setId(this.getLongIdForScheme(scheme.getId()));
+		}
 
 		if (null != scheme && SYSTEM_WORKFLOW_ID.equals(scheme.getId())
 				&& scheme.isArchived()) {
@@ -316,9 +497,164 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	}
 
-	@WrapInTransaction
-	public void deleteScheme(final WorkflowScheme scheme, final User user) throws DotDataException {
+	@Override
+	public Future<WorkflowScheme> deleteScheme(final WorkflowScheme scheme, final User user)
+			throws DotDataException, DotSecurityException, AlreadyExistException {
 
+		this.isUserAllowToModifiedWorkflow(user);
+
+		if (null == scheme){
+			Logger.warn(this, "Can not delete a null workflow");
+			throw new DotWorkflowException("Can not delete a null workflow");
+		}
+		if( SYSTEM_WORKFLOW_ID.equals(scheme.getId()) || !scheme.isArchived()) {
+
+			Logger.warn(this,
+					"Can not delete workflow Id:" + scheme.getId() + ", name:" + scheme.getName());
+			throw new DotWorkflowException(
+					"Can not delete workflow Id:" + scheme.getId() + ", name:" + scheme.getName());
+		}
+
+		final DotSubmitter submitter = this.concurrentFactory.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
+		//Delete the Scheme in a separated thread
+		return submitter.submit(() -> deleteSchemeTask(scheme, user));
+	}
+
+	/**
+	 * This task allows to elimiminate the workflow scheme on a separate thread
+	 * @param scheme Workflow Scheme to be delete
+	 * @param user The user
+	 */
+	@WrapInTransaction
+	private WorkflowScheme deleteSchemeTask(final WorkflowScheme scheme, final User user) {
+		try {
+			final StopWatch stopWatch = new StopWatch();
+			stopWatch.start();
+			Logger.info(this, "Begin the Delete Workflow Scheme task. workflow Id:" + scheme.getId()
+					+ ", name:" + scheme.getName());
+
+			final List<WorkflowStep> steps = this.findSteps(scheme);
+			for (WorkflowStep step : steps) {
+				//delete workflow tasks
+				this.findTasksByStep(step.getId()).stream()
+						.forEach(task -> this.deleteWorkflowTaskWrapper(task, user));
+			}
+			//delete actions
+			this.findActions(scheme, user).stream()
+					.forEach(action -> this.deleteWorkflowActionWrapper(action, user));
+
+			//delete steps
+			steps.stream().forEach(step -> this.deleteWorkflowStepWrapper(step, user));
+
+			//delete scheme
+			this.workFlowFactory.deleteScheme(scheme);
+			SecurityLogger.logInfo(this.getClass(),
+					"The Workflow Scheme with id:" + scheme.getId() + ", name:" + scheme.getName()
+							+ " was deleted");
+
+			stopWatch.stop();
+			Logger.info(this, "Delete Workflow Scheme task DONE, duration:" +
+					DateUtil.millisToSeconds(stopWatch.getTime()) + " seconds");
+
+			this.systemMessageEventUtil.pushSimpleTextEvent
+					(LanguageUtil.get(user.getLocale(), "Workflow-deleted", scheme.getName()), user.getUserId());
+		} catch (Exception e) {
+			Logger.error(this.getClass(),
+					"Error deleting Scheme: " + scheme.getId() + ", name:" + scheme.getName() + ". "
+							+ e.getMessage(), e);
+			throw new DotRuntimeException(e);
+		}
+		return scheme;
+	}
+
+	/**
+	 * Wrap the delete Workflow Step method to be use by lambdas
+	 *
+	 * @param step The workflow step to be deleted
+	 * @param user The user
+	 * @throws DotRuntimeException
+	 */
+	@CloseDBIfOpened
+	private void deleteWorkflowStepWrapper(final WorkflowStep step, final User user)
+			throws DotRuntimeException {
+		try {
+			//delete step
+			this.deleteStep(step, user);
+		} catch (Exception e) {
+			throw new DotRuntimeException(e);
+		}
+	}
+
+	/**
+	 * Wrap the delete Workflow Action method to be use by lambdas
+	 *
+	 * @param action The workflow action to be deleted
+	 * @param user The user
+	 * @throws DotRuntimeException
+	 */
+	@CloseDBIfOpened
+	private void deleteWorkflowActionWrapper(final WorkflowAction action, final User user)
+			throws DotRuntimeException {
+		try {
+			//delete action
+			this.deleteAction(action,user);
+		} catch (Exception e) {
+			throw new DotRuntimeException(e);
+		}
+	}
+
+	/**
+	 * Wrap the delete Workflow Task method to be use by lambdas
+	 *
+	 * @param task The workflow task to be deleted
+	 * @param user The user
+	 * @throws DotRuntimeException
+	 */
+	@CloseDBIfOpened
+	private void deleteWorkflowTaskWrapper(final WorkflowTask task, final User user)
+			throws DotRuntimeException {
+		try {
+			//delete task comment
+			this.findWorkFlowComments(task).stream().forEach(this::deleteCommentWrapper);
+
+			//delete task history
+			this.findWorkflowHistory(task).stream().forEach(this::deleteWorkflowHistoryWrapper);
+
+			//delete task
+			this.deleteWorkflowTask(task, user);
+		} catch (Exception e) {
+			throw new DotRuntimeException(e);
+		}
+	}
+
+	/**
+	 * Wrap the delete Workflow Comment method to be use by lambdas
+	 * @param workflowComment The workflow comment object to be deleted
+	 * @throws DotRuntimeException
+	 */
+	@CloseDBIfOpened
+	private void deleteCommentWrapper(final WorkflowComment workflowComment)
+			throws DotRuntimeException{
+		try{
+			this.deleteComment(workflowComment);
+		}catch(Exception e){
+			throw new DotRuntimeException(e);
+		}
+	}
+
+	/**
+	 * Wrap the delete Workflow History method to be use by lambdas
+	 * @param workflowHistory The workflow History object to be deleted
+	 * @throws DotRuntimeException
+	 */
+	@CloseDBIfOpened
+	private void deleteWorkflowHistoryWrapper(final WorkflowHistory workflowHistory)
+			throws DotRuntimeException{
+		try{
+			this.deleteWorkflowHistory(workflowHistory);
+		}catch(Exception e){
+			throw new DotRuntimeException(e);
+		}
 	}
 
 	@CloseDBIfOpened
@@ -334,6 +670,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		DotPreconditions.isTrue(UtilMethods.isSet(step.getName()) && UtilMethods.isSet(step.getSchemeId()),
 				()-> "Step name and Scheme are required", DotStateException.class);
 
+		if (UtilMethods.isSet(step.getSchemeId())) {
+			step.setSchemeId(this.getLongIdForScheme(step.getSchemeId()));
+		}
+
+		if (UtilMethods.isSet(step.getId())) {
+			step.setId(this.getLongId(step.getId(), ShortyIdAPI.ShortyInputType.WORKFLOW_STEP));
+		}
+
 		workFlowFactory.saveStep(step);
 	}
 
@@ -345,7 +689,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		try {
 
 			// Checking for Next Step references
-			for(WorkflowStep otherStep : findSteps(findScheme(step.getSchemeId()))){
+			for(final WorkflowStep otherStep : findSteps(findScheme(step.getSchemeId()))){
 
 				/*
 				Verify we are not validating the next step is the step we want to delete.
@@ -369,6 +713,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 			this.workFlowFactory.deleteActions(step); // workflow_action_step
 			this.workFlowFactory.deleteStep(step);    // workflow_step
+			SecurityLogger.logInfo(this.getClass(),
+					"The Workflow Step with id:" + step.getId() + ", name:" + step.getName()
+							+ " was deleted");
+
 		} catch(Exception e){
 
 			throw new DotDataException(e.getMessage(), e);
@@ -376,25 +724,18 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@CloseDBIfOpened
-	private int getCountContentletsReferencingStep(WorkflowStep step) throws DotDataException{
+	private int getCountContentletsReferencingStep(final WorkflowStep step) throws DotDataException{
 		return workFlowFactory.getCountContentletsReferencingStep(step);
 	}
 
 	@WrapInTransaction
 	@Override
-	public void reorderStep(final WorkflowStep step, final int order, final User user) throws DotDataException, AlreadyExistException {
+	public void reorderStep(final WorkflowStep step, final int order, final User user) throws DotDataException, AlreadyExistException, DotSecurityException {
 
 		this.isUserAllowToModifiedWorkflow(user);
 
-		final List<WorkflowStep> steps;
-		final WorkflowScheme scheme = this.findScheme(step.getSchemeId());
-
-		try {
-
-			steps  = this.findSteps (scheme);
-		} catch (Exception e) {
-			throw new DotDataException(e.getLocalizedMessage(), e);
-		}
+		final WorkflowScheme scheme     = this.findScheme(step.getSchemeId());
+		final List<WorkflowStep> steps  = this.findSteps (scheme);
 
 		IntStream.range(0, steps.size())
 				.filter(i -> steps.get(i).getId().equals(step.getId()))
@@ -412,17 +753,22 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 	}
 
+	@Override
 	@WrapInTransaction
 	public void deleteComment(final WorkflowComment comment) throws DotDataException {
 
 		this.workFlowFactory.deleteComment(comment);
+		SecurityLogger.logInfo(this.getClass(),
+				"The Workflow Comment with id:" + comment.getId() + " was deleted.");
 	}
 
+	@Override
 	@CloseDBIfOpened
 	public List<WorkflowComment> findWorkFlowComments(WorkflowTask task) throws DotDataException {
 		return workFlowFactory.findWorkFlowComments(task);
 	}
 
+	@Override
 	@WrapInTransaction
 	public void saveComment(final WorkflowComment comment) throws DotDataException {
 
@@ -432,40 +778,52 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 	}
 
+	@Override
 	@CloseDBIfOpened
 	public List<WorkflowHistory> findWorkflowHistory(WorkflowTask task) throws DotDataException {
 		return workFlowFactory.findWorkflowHistory(task);
 	}
 
+	@Override
 	@WrapInTransaction
 	public void deleteWorkflowHistory(final WorkflowHistory history) throws DotDataException {
 
 		this.workFlowFactory.deleteWorkflowHistory(history);
+		SecurityLogger.logInfo(this.getClass(),
+				"The Workflow History with id:" + history.getId() + " was deleted.");
 	}
 
+	@Override
 	@WrapInTransaction
 	public void saveWorkflowHistory(final WorkflowHistory history) throws DotDataException {
 
 		this.workFlowFactory.saveWorkflowHistory(history);
 	}
 
+	@Override
 	@WrapInTransaction
-	public void deleteWorkflowTask(final WorkflowTask task, final User user) throws DotDataException {
+	public void deleteWorkflowTask(final WorkflowTask task, final User user)
+			throws DotDataException {
 
 		this.workFlowFactory.deleteWorkflowTask(task);
+		SecurityLogger.logInfo(this.getClass(),
+				"The Workflow Task with id:" + task.getId() + " was deleted.");
 	}
 
 	@CloseDBIfOpened
-	public WorkflowTask findWorkFlowTaskById(String id) throws DotDataException {
+	public WorkflowTask findWorkFlowTaskById(final String id) throws DotDataException {
 		return workFlowFactory.findWorkFlowTaskById(id);
 	}
 
+	@Override
 	@CloseDBIfOpened
-	public List<IFileAsset> findWorkflowTaskFilesAsContent(WorkflowTask task, User user) throws DotDataException {
-		List<Contentlet> contents =  workFlowFactory.findWorkflowTaskFilesAsContent(task, user);
+	public List<IFileAsset> findWorkflowTaskFilesAsContent(final WorkflowTask task, final User user) throws DotDataException {
+
+		final List<Contentlet> contents =  workFlowFactory.findWorkflowTaskFilesAsContent(task, user);
 		return APILocator.getFileAssetAPI().fromContentletsI(contents);
 	}
 
+	@Override
 	@WrapInTransaction
 	public void saveWorkflowTask(final WorkflowTask task) throws DotDataException {
 
@@ -479,18 +837,20 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		workFlowFactory.saveWorkflowTask(task);
 	}
 
+	@Override
 	@WrapInTransaction
-	public void saveWorkflowTask(WorkflowTask task, WorkflowProcessor processor) throws DotDataException {
+	public void saveWorkflowTask(final WorkflowTask task, final WorkflowProcessor processor) throws DotDataException {
+
 		this.saveWorkflowTask(task);
-		WorkflowHistory history = new WorkflowHistory();
+		final WorkflowHistory history = new WorkflowHistory();
 		history.setWorkflowtaskId(task.getId());
 		history.setActionId(processor.getAction().getId());
 		history.setCreationDate(new Date());
 		history.setMadeBy(processor.getUser().getUserId());
 		history.setStepId(processor.getNextStep().getId());
 
-		String comment = (UtilMethods.isSet(processor.getWorkflowMessage()))? processor.getWorkflowMessage() : "";
-		String nextAssignName = (UtilMethods.isSet(processor.getNextAssign()))? processor.getNextAssign().getName() : "";
+		final String comment = (UtilMethods.isSet(processor.getWorkflowMessage()))? processor.getWorkflowMessage()   : StringPool.BLANK;
+		final String nextAssignName = (UtilMethods.isSet(processor.getNextAssign()))? processor.getNextAssign().getName() : StringPool.BLANK;
 
 
 		try {
@@ -510,22 +870,26 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		saveWorkflowHistory(history);
 	}
 
+	@Override
 	@WrapInTransaction
 	public void attachFileToTask(WorkflowTask task, String fileInode) throws DotDataException {
 		workFlowFactory.attachFileToTask(task, fileInode);
 	}
 
+	@Override
 	@WrapInTransaction
 	public void removeAttachedFile(WorkflowTask task, String fileInode) throws DotDataException {
 		workFlowFactory.removeAttachedFile(task, fileInode);
 	}
 
+	@Override
 	@CloseDBIfOpened
 	public List<WorkflowAction> findActions(final WorkflowStep step, final User user) throws DotDataException,
 	DotSecurityException {
 		return findActions(step, user, null);
 	}
 
+	@Override
     @CloseDBIfOpened
     public List<WorkflowAction> findActions(final WorkflowStep step, final User user, final Permissionable permissionable) throws DotDataException,
             DotSecurityException {
@@ -537,24 +901,46 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         return filterActionsCollection(actions, user, true, permissionable);
     }
 
+	@Override
 	@CloseDBIfOpened
-	public List<WorkflowAction> findActions(final WorkflowScheme scheme, final User user) throws DotDataException,
+	public List<WorkflowAction> findActions(final WorkflowStep step, final Role role) throws DotDataException,
+           DotSecurityException {
+
+		if(null == step) {
+			return Collections.emptyList();
+		}
+		final List<WorkflowAction> actions = workFlowFactory.findActions(step);
+
+		return filterActionsCollection(actions, role);
+
+	}
+
+	@Override
+	@CloseDBIfOpened
+	public List<WorkflowAction> findActions(final WorkflowScheme scheme, final User user)
+			throws DotDataException,
 			DotSecurityException {
+		if (!SYSTEM_WORKFLOW_ID.equals(scheme.getId())) {
+			if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
+				throw new InvalidLicenseException("Workflow-Actions-License-required");
+			}
+		}
 
 		final List<WorkflowAction> actions = workFlowFactory.findActions(scheme);
 		return permissionAPI.filterCollection(actions,
 				PermissionAPI.PERMISSION_USE, true, user);
 	} // findActions.
-    
 
+	@Override
     @CloseDBIfOpened
-    public List<WorkflowAction> findActions(List<WorkflowStep> steps, User user) throws DotDataException,
+    public List<WorkflowAction> findActions(final List<WorkflowStep> steps, final User user) throws DotDataException,
 			DotSecurityException {
 		return findActions(steps, user, null);
 	}
 
+	@Override
 	@CloseDBIfOpened
-	public List<WorkflowAction> findActions(final List<WorkflowStep> steps,final User user, final Permissionable permissionable) throws DotDataException,
+	public List<WorkflowAction> findActions(final List<WorkflowStep> steps, final User user, final Permissionable permissionable) throws DotDataException,
 			DotSecurityException {
 		final ImmutableList.Builder<WorkflowAction> actions = new ImmutableList.Builder<>();
 		for(WorkflowStep step : steps) {
@@ -570,13 +956,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 * piece of content, based on how and who has the content locked and what workflow step the content
 	 * is in
 	 */
+	@Override
 	@CloseDBIfOpened
 	public List<WorkflowAction> findAvailableActions(final Contentlet contentlet, final User user)
 			throws DotDataException, DotSecurityException {
 
 		if(contentlet == null || contentlet.getStructure() ==null) {
 
-			Logger.debug(this, "the Contentlet: " + contentlet + " or their structure could be null");
+			Logger.debug(this, () -> "the Contentlet: " + contentlet + " or their structure could be null");
 			throw new DotStateException("content is null");
 		}
 
@@ -585,7 +972,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		if(Host.HOST_VELOCITY_VAR_NAME.equals(contentlet.getStructure().getVelocityVarName())) {
 
-			Logger.debug(this, "The contentlet: " +
+			Logger.debug(this, () -> "The contentlet: " +
 					contentlet.getIdentifier() + ", is a host. Returning zero available actions");
 
 			return Collections.emptyList();
@@ -601,7 +988,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 			canLock      = APILocator.getContentletAPI().canLock(contentlet, user);
 			isLocked     = isNew? true :  APILocator.getVersionableAPI().isLocked(contentlet);
-			isPublish    = isNew? false:  APILocator.getVersionableAPI().isLive(contentlet);
+			isPublish    = isNew? false:  APILocator.getVersionableAPI().hasLiveVersion(contentlet);
 			isArchived   = isNew? false:  APILocator.getVersionableAPI().isDeleted(contentlet);
 		} catch(Exception e) {
 
@@ -650,14 +1037,16 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 * @throws DotDataException
 	 * @throws AlreadyExistException
 	 */
+	@Override
 	@Deprecated
 	@WrapInTransaction
-	public void reorderAction(WorkflowAction action, int order) throws DotDataException, AlreadyExistException {
+	public void reorderAction(final WorkflowAction action, final int order) throws DotDataException, AlreadyExistException, DotSecurityException {
 
 		final WorkflowStep step = findStep(action.getStepId());
 		this.reorderAction(action, step, APILocator.systemUser(), order);
 	}
 
+	@Override
 	@WrapInTransaction
 	public void reorderAction(final WorkflowAction action,
 							  final WorkflowStep step,
@@ -692,21 +1081,42 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 	}
 
+	@Override
 	@CloseDBIfOpened
 	public WorkflowAction findAction(final String id, final User user) throws DotDataException, DotSecurityException {
 
-		return this.workFlowFactory.findAction(id);
+		final WorkflowAction workflowAction = this.workFlowFactory.findAction(this.getLongId(id, ShortyIdAPI.ShortyInputType.WORKFLOW_ACTION));
+		if(null != workflowAction){
+			if (!SYSTEM_WORKFLOW_ID.equals(workflowAction.getSchemeId())) {
+				if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
+					throw new InvalidLicenseException("Workflow-Actions-License-required");
+				}
+			}
+		}
+		return workflowAction;
 	}
 
+	@Override
 	@CloseDBIfOpened
 	public WorkflowAction findAction(final String actionId,
 									 final String stepId,
 									 final User user) throws DotDataException, DotSecurityException {
 
-		Logger.debug(this, "Finding the action: " + actionId + " for the step: " + stepId);
-		return this.workFlowFactory.findAction(actionId, stepId);
+		Logger.debug(this, ()->"Finding the action: " + actionId + " for the step: " + stepId);
+		final WorkflowAction workflowAction = this.workFlowFactory
+				.findAction(this.getLongId(actionId, ShortyIdAPI.ShortyInputType.WORKFLOW_ACTION),
+						this.getLongId(stepId, ShortyIdAPI.ShortyInputType.WORKFLOW_STEP));
+		if (null != workflowAction) {
+			if (!SYSTEM_WORKFLOW_ID.equals(workflowAction.getSchemeId())) {
+				if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
+					throw new InvalidLicenseException("Workflow-Actions-License-required");
+				}
+			}
+		}
+		return workflowAction;
 	}
 
+	@Override
 	@WrapInTransaction
 	public void saveAction(final WorkflowAction action,
 						   final List<Permission> permissions,
@@ -717,6 +1127,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				DoesNotExistException.class);
 
 		try {
+
+			if (UtilMethods.isSet(action.getSchemeId())) {
+				action.setSchemeId(this.getLongId(action.getSchemeId(), ShortyIdAPI.ShortyInputType.WORKFLOW_SCHEME));
+			}
+
+			if (UtilMethods.isSet(action.getId())) {
+				action.setId(this.getLongId(action.getId(), ShortyIdAPI.ShortyInputType.WORKFLOW_ACTION));
+			}
 
 			this.saveAction(action, user);
 
@@ -743,10 +1161,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	private boolean existsScheme(final String schemeId) {
 
 		boolean existsScheme = false;
-
 		try {
-
 			existsScheme = null != this.findScheme(schemeId);
+		} catch (InvalidLicenseException e){
+			throw e;
 		} catch (Exception e) {
 			existsScheme = false;
 		}
@@ -754,6 +1172,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return existsScheme;
 	}
 
+	@Override
 	@WrapInTransaction
 	public void saveAction(final String actionId, final String stepId,
 						   final User user, final int order) {
@@ -765,27 +1184,31 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		try {
 
-			Logger.debug(this, "Saving (doing the relationship) the actionId: " + actionId + ", stepId: " + stepId);
+			Logger.debug(this, () -> "Saving (doing the relationship) the actionId: " + actionId + ", stepId: " + stepId);
 
-			workflowAction = this.findAction(actionId, user);
-			workflowStep   = this.findStep  (stepId);
+			workflowAction = this.findAction(this.getLongId(actionId, ShortyIdAPI.ShortyInputType.WORKFLOW_ACTION), user);
 
 			if (null == workflowAction) {
 
-				Logger.debug(this, "The action: " + actionId + ", does not exists");
+				Logger.debug(this, () -> "The action: " + actionId + ", does not exists");
 				throw new DoesNotExistException("Workflow-does-not-exists-action");
 			}
 
+			workflowStep   = this.findStep  (this.getLongId(stepId, ShortyIdAPI.ShortyInputType.WORKFLOW_STEP));
+
 			if (null == workflowStep) {
 
-				Logger.debug(this, "The step: " + stepId + ", does not exists");
+				Logger.debug(this, () -> "The step: " + stepId + ", does not exists");
 				throw new DoesNotExistException("Workflow-does-not-exists-step");
 			}
 
 			this.workFlowFactory.saveAction(workflowAction, workflowStep, order);
-		} catch (DoesNotExistException  e) {
+		} catch (DoesNotExistException e) {
 
 			throw e;
+		} catch ( IndexOutOfBoundsException e){
+
+			throw new DoesNotExistException(e);
 		} catch (AlreadyExistException e) {
 
 			Logger.error(WorkflowAPIImpl.class, e.getMessage());
@@ -811,11 +1234,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 	} // saveAction.
 
+	@Override
 	@WrapInTransaction
 	public void saveAction(final String actionId, final String stepId, final User user) {
 
 		this.saveAction(actionId, stepId, user, 0);
 	} // saveAction.
+
 
 	@WrapInTransaction
 	private void saveAction(final WorkflowAction action, final User user) throws DotDataException, AlreadyExistException {
@@ -830,24 +1255,44 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			action.setShowOn(WorkflowAPI.DEFAULT_SHOW_ON);
 		}
 
+		action.setSchemeId(this.getLongIdForScheme(action.getSchemeId()));
+		if (UtilMethods.isSet(action.getId())) {
+			action.setId(this.getLongId(action.getId(), ShortyIdAPI.ShortyInputType.WORKFLOW_ACTION));
+		}
+
 		workFlowFactory.saveAction(action);
 	}
 
+	@Override
 	@CloseDBIfOpened
-	public WorkflowStep findStep(String id) throws DotDataException {
-		return workFlowFactory.findStep(id);
+	public WorkflowStep findStep(final String id) throws DotDataException, DotSecurityException {
+
+		final WorkflowStep step = workFlowFactory.findStep(this.getLongId(id, ShortyIdAPI.ShortyInputType.WORKFLOW_STEP));
+		if (!SYSTEM_WORKFLOW_ID.equals(step.getSchemeId())) {
+			if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
+
+				throw new InvalidLicenseException(
+						"You must have a valid license to see any available step.");
+			}
+		}
+		return step;
 	}
 
+	@Override
 	@WrapInTransaction
 	public void deleteAction(final WorkflowAction action, final User user) throws DotDataException, AlreadyExistException {
 
 		this.isUserAllowToModifiedWorkflow(user);
-		Logger.debug(this, "Removing the WorkflowAction: " + action.getId());
+		Logger.debug(this,
+				() -> "Removing the WorkflowAction: " + action.getId() + ", name:" + action
+						.getName());
 
 		final List<WorkflowActionClass> workflowActionClasses =
 				findActionClasses(action);
 
-		Logger.debug(this, "Removing the WorkflowActionClass, for action: " + action.getId());
+		Logger.debug(this,
+				() -> "Removing the WorkflowActionClass, for action: " + action.getId() + ", name:"
+						+ action.getName());
 
 		if(workflowActionClasses != null && workflowActionClasses.size() > 0) {
 			for(final WorkflowActionClass actionClass : workflowActionClasses) {
@@ -856,24 +1301,32 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 
 		Logger.debug(this,
-				"Removing the WorkflowAction and Step Dependencies, for action: " + action.getId());
+				() -> "Removing the WorkflowAction and Step Dependencies, for action: " + action
+						.getId() + ", name:" + action.getName());
 		this.workFlowFactory.deleteAction(action);
+		SecurityLogger.logInfo(this.getClass(),
+				"The Workflow Action with id:" + action.getId() + ", name:" + action.getName()
+						+ " was deleted");
+
 	}
 
+	@Override
 	@WrapInTransaction
 	public void deleteAction(final WorkflowAction action,
-							 final WorkflowStep step, User user) throws DotDataException, AlreadyExistException {
+							 final WorkflowStep step, final User user) throws DotDataException, AlreadyExistException {
 
 		this.isUserAllowToModifiedWorkflow(user);
-		Logger.debug(this, "Deleting the action: " + action.getId() +
+		Logger.debug(this, () -> "Deleting the action: " + action.getId() +
 					", from the step: " + step.getId());
 
 		this.workFlowFactory.deleteAction(action, step);
 
 	} // deleteAction.
 
+	@Override
 	@CloseDBIfOpened
-	public List<WorkflowActionClass> findActionClasses(WorkflowAction action) throws DotDataException {
+	public List<WorkflowActionClass> findActionClasses(final WorkflowAction action) throws DotDataException {
+
 		return  workFlowFactory.findActionClasses(action);
 	}
 
@@ -901,7 +1354,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					}
 
 					// get the included (shipped with) actionlet classes
-					for (Class<WorkFlowActionlet> z : actionletClasses) {
+					for (Class<? extends WorkFlowActionlet> z : actionletClasses) {
 						try {
 							actionletList.add(z.newInstance());
 						} catch (InstantiationException e) {
@@ -948,10 +1401,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 	}
 
-	public WorkFlowActionlet findActionlet(String clazz) throws DotRuntimeException {
+	@Override
+	public WorkFlowActionlet findActionlet(final String clazz) throws DotRuntimeException {
 		return getActionlets().get(clazz);
 	}
 
+	@Override
 	public List<WorkFlowActionlet> findActionlets() throws DotDataException {
 		List<WorkFlowActionlet> l = new ArrayList<WorkFlowActionlet>();
 		Map<String,WorkFlowActionlet>  m = getActionlets();
@@ -962,11 +1417,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	}
 
+	@Override
 	@CloseDBIfOpened
-	public WorkflowActionClass findActionClass(String id) throws DotDataException {
+	public WorkflowActionClass findActionClass(final String id) throws DotDataException {
 		return workFlowFactory.findActionClass(id);
 	}
 
+	@Override
 	@WrapInTransaction
 	public void deleteActionClass(final WorkflowActionClass actionClass, final User user) throws DotDataException, AlreadyExistException {
 
@@ -997,11 +1454,15 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					}
 				}
 			}
+			SecurityLogger.logInfo(this.getClass(),
+					"The Workflow Action Class with id:" + actionClass.getId() + " was deleted");
+
 		} catch (Exception e) {
 			throw new DotWorkflowException(e.getMessage(),e);
 		}
 	}
 
+	@Override
 	@WrapInTransaction
 	public void saveActionClass(final WorkflowActionClass actionClass, final User user) throws DotDataException, AlreadyExistException {
 
@@ -1009,6 +1470,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		this.workFlowFactory.saveActionClass(actionClass);
 	}
 
+	@Override
 	@WrapInTransaction
 	public void reorderActionClass(final WorkflowActionClass actionClass,
 								   final int order,
@@ -1071,11 +1533,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 	}
 
+	@Override
 	@CloseDBIfOpened
-	public Map<String, WorkflowActionClassParameter> findParamsForActionClass(WorkflowActionClass actionClass) throws  DotDataException{
+	public Map<String, WorkflowActionClassParameter> findParamsForActionClass(final WorkflowActionClass actionClass) throws  DotDataException {
+
 		return workFlowFactory.findParamsForActionClass(actionClass);
 	}
 
+	@Override
 	public void saveWorkflowActionClassParameters(final List<WorkflowActionClassParameter> params,
 												  final User user) throws DotDataException{
 
@@ -1098,7 +1563,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			}
 
 			if(localTransaction){
-				HibernateUtil.closeAndCommitTransaction();
+				HibernateUtil.commitTransaction();
 			}
 		} catch (Exception e) {
 			Logger.error(WorkflowAPIImpl.class,e.getMessage());
@@ -1113,7 +1578,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 	}
 
-	public WorkflowProcessor fireWorkflowPreCheckin(Contentlet contentlet, User user) throws DotDataException,DotWorkflowException, DotContentletValidationException{
+	@Override
+	public WorkflowProcessor fireWorkflowPreCheckin(final Contentlet contentlet, final User user) throws DotDataException,DotWorkflowException, DotContentletValidationException{
 		WorkflowProcessor processor = new WorkflowProcessor(contentlet, user);
 		if(!processor.inProcess()){
 			return processor;
@@ -1141,14 +1607,17 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return processor;
 	}
 
-	public void fireWorkflowPostCheckin(WorkflowProcessor processor) throws DotDataException,DotWorkflowException{
-		boolean local = false;
+	@Override
+	public void fireWorkflowPostCheckin(final WorkflowProcessor processor) throws DotDataException,DotWorkflowException{
+		boolean local 			= false;
+		boolean isNewConnection = false;
 
 		try{
 			if(!processor.inProcess()){
 				return;
 			}
 
+			isNewConnection    = !DbConnectionFactory.connectionExists();
 			local = HibernateUtil.startLocalTransactionIfNeeded();
 
 			processor.getContentlet().setStringProperty("wfActionId", processor.getAction().getId());
@@ -1167,15 +1636,18 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				}
 			}
 
-			this.saveWorkflowTask(processor);
+			if (!processor.abort()) {
 
-			if(UtilMethods.isSet(processor.getContentlet())){
-			    APILocator.getContentletAPI().refresh(processor.getContentlet());
+				this.saveWorkflowTask(processor);
+
+				if (UtilMethods.isSet(processor.getContentlet())) {
+					APILocator.getContentletAPI().refresh(processor.getContentlet());
+				}
 			}
+
 			if(local){
-				HibernateUtil.closeAndCommitTransaction();
+				HibernateUtil.commitTransaction();
 			}
-
 		} catch(Exception e) {
 			if(local){
 				HibernateUtil.rollbackTransaction();
@@ -1185,7 +1657,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
 			throw new DotWorkflowException(e.getMessage(), e);
 		} finally {
-			if(local){
+			if(isNewConnection){
 
 				HibernateUtil.closeSessionSilently();
 			}
@@ -1205,38 +1677,49 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	private void saveWorkflowTask(final WorkflowProcessor processor) throws DotDataException {
 
-		final WorkflowTask task = processor.getTask();
-		if(task != null){
-            Role r = roleAPI.getUserRole(processor.getUser());
-            if(task.isNew()){
+		WorkflowTask task = processor.getTask();
 
-            	DotPreconditions.isTrue(UtilMethods.isSet(processor.getContentlet().getIdentifier()),
-						() -> getWorkflowContentNeedsBeSaveMessage(processor.getUser()), DotWorkflowException.class);
+		if (null == task) {
+			task = new WorkflowTask();
+		}
 
-                task.setCreatedBy(r.getId());
-                task.setWebasset(processor.getContentlet().getIdentifier());
-                task.setLanguageId(processor.getContentlet().getLanguageId());
-                if(processor.getWorkflowMessage() != null){
-                    task.setDescription(processor.getWorkflowMessage());
-                }
-            }
-            task.setTitle(processor.getContentlet().getTitle());
-            task.setModDate(new Date());
-            if(processor.getNextAssign() != null)
-                task.setAssignedTo(processor.getNextAssign().getId());
-            task.setStatus(processor.getNextStep().getId());
+		final Role role = roleAPI.getUserRole(processor.getUser());
+		if (task.isNew()) {
 
-            saveWorkflowTask(task,processor);
-            if(processor.getWorkflowMessage() != null){
-                WorkflowComment comment = new WorkflowComment();
-                comment.setComment(processor.getWorkflowMessage());
+			DotPreconditions.isTrue(UtilMethods.isSet(processor.getContentlet()) && UtilMethods.isSet(processor.getContentlet().getIdentifier()),
+					() -> getWorkflowContentNeedsBeSaveMessage(processor.getUser()),
+					DotWorkflowException.class);
 
-                comment.setWorkflowtaskId(task.getId());
-                comment.setCreationDate(new Date());
-                comment.setPostedBy(r.getId());
-                saveComment(comment);
-            }
-        }
+			task.setCreatedBy(role.getId());
+			task.setWebasset(processor.getContentlet().getIdentifier());
+			task.setLanguageId(processor.getContentlet().getLanguageId());
+			if (processor.getWorkflowMessage() != null) {
+				task.setDescription(processor.getWorkflowMessage());
+			}
+		}
+		task.setTitle(processor.getContentlet().getTitle());
+		task.setModDate(new Date());
+		if (processor.getNextAssign() != null) {
+			task.setAssignedTo(processor.getNextAssign().getId());
+		}
+		task.setStatus(processor.getNextStep().getId());
+
+		saveWorkflowTask(task, processor);
+
+		if (null == processor.getTask()) {
+			processor.setTask(task); // when the content is new there might be the case than an action is waiting for the task in some commit listener
+		}
+
+		if (processor.getWorkflowMessage() != null) {
+			WorkflowComment comment = new WorkflowComment();
+			comment.setComment(processor.getWorkflowMessage());
+
+			comment.setWorkflowtaskId(task.getId());
+			comment.setCreationDate(new Date());
+			comment.setPostedBy(processor.getUser().getUserId());
+			saveComment(comment);
+		}
+
 	}
 
 	// todo: note; this method is not referer by anyone, should it be removed?
@@ -1276,6 +1759,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 
 		this.validateAction (contentlet, dependencies.getModUser());
+		this.checkShorties (contentlet);
 
 		final WorkflowProcessor processor = this.fireWorkflowPreCheckin(contentlet, dependencies.getModUser());
 
@@ -1285,6 +1769,15 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return processor.getContentlet();
 	} // fireContentWorkflow
 
+	private void checkShorties(final Contentlet contentlet) {
+
+		final String actionId = contentlet.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY);
+		if(UtilMethods.isSet(actionId)) {
+
+			contentlet.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, this.getLongId(actionId, ShortyIdAPI.ShortyInputType.WORKFLOW_ACTION));
+		}
+	}
+
 	private void validateAction(final Contentlet contentlet, final User user) throws DotDataException {
 
 		final String actionId = contentlet.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY);
@@ -1293,6 +1786,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 			try {
 
+				// validates the action belongs to the scheme
 				final WorkflowAction action 	   = this.findAction(actionId, user);
 				final List<WorkflowScheme> schemes = this.findSchemesForContentType(contentlet.getContentType());
 
@@ -1300,7 +1794,31 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 					if (!schemes.stream().anyMatch(scheme -> scheme.getId().equals(action.getSchemeId()))) {
 
-						throw new DotDataException("Invalid-Action-Scheme-Error");
+						throw new IllegalArgumentException("Invalid-Action-Scheme-Error");
+					}
+				}
+
+				// if we are on a step, validates that the action belongs to this step
+				final WorkflowTask   workflowTask   = this.findTaskByContentlet(contentlet);
+
+				if (null != workflowTask && null != workflowTask.getStatus()) {
+
+					if (null == this.findAction(action.getId(), workflowTask.getStatus(), user)) {
+
+						throw new IllegalArgumentException("Invalid-Action-Step-Error");
+					}
+				} else {  // if the content is not in any step (may be is new), will check the first step.
+
+					// we are sure in this moment that the scheme id on the action is in the list.
+					final WorkflowScheme  scheme = schemes.stream().filter
+							(aScheme -> aScheme.getId().equals(action.getSchemeId())).findFirst().get();
+
+					final Optional<WorkflowStep> workflowStepOptional = this.findFirstStep(scheme);
+
+					if (!workflowStepOptional.isPresent() ||
+							null == this.findAction(action.getId(), workflowStepOptional.get().getId(), user)) {
+
+						throw new IllegalArgumentException("Invalid-Action-Step-Error");
 					}
 				}
 			} catch (DotSecurityException e) {
@@ -1309,8 +1827,20 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 	} // validateAction.
 
+	/**
+	 * Finds the first step of the scheme, it is an optional so can be present or not depending if the scheme is not empty.
+ 	 * @param scheme WorkflowScheme
+	 * @return Optional WorkflowStep
+	 * @throws DotDataException
+	 */
+	private Optional<WorkflowStep> findFirstStep (final WorkflowScheme  scheme) throws DotDataException {
 
-	public WorkflowProcessor fireWorkflowNoCheckin(Contentlet contentlet, User user) throws DotDataException,DotWorkflowException, DotContentletValidationException{
+		return this.workFlowFactory
+				.findSteps(scheme).stream().findFirst();
+	}
+
+	@Override
+	public WorkflowProcessor fireWorkflowNoCheckin(final Contentlet contentlet, final User user) throws DotDataException,DotWorkflowException, DotContentletValidationException{
 
 		WorkflowProcessor processor = fireWorkflowPreCheckin(contentlet, user);
 
@@ -1319,37 +1849,218 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	}
 
+	@Override
     @CloseDBIfOpened
-	public int countTasks(WorkflowSearcher searcher)  throws DotDataException{
+	public int countTasks(final WorkflowSearcher searcher)  throws DotDataException{
 		return workFlowFactory.countTasks(searcher);
 	}
 
-	public void copyWorkflowActionClassParameter(WorkflowActionClassParameter from, WorkflowActionClass to) throws DotDataException{
-		workFlowFactory.copyWorkflowActionClassParameter(from, to);
-	}
-	public void copyWorkflowActionClass(WorkflowActionClass from, WorkflowAction to) throws DotDataException{
-		workFlowFactory.copyWorkflowActionClass(from, to);
-	}
-	public void copyWorkflowAction(WorkflowAction from, WorkflowStep to) throws DotDataException{
-		workFlowFactory.copyWorkflowAction(from, to);
-	}
-	public void copyWorkflowStep(WorkflowStep from, WorkflowScheme to) throws DotDataException{
-		workFlowFactory.copyWorkflowStep(from, to);
+	@WrapInTransaction
+	@Override
+	public List<WorkflowActionClassParameter> copyWorkflowActionClassParameters(final Collection<WorkflowActionClassParameter> fromParams,
+																		  final WorkflowActionClass to,
+																		  final User user) throws DotDataException {
+
+		final List<WorkflowActionClassParameter> params = new ArrayList<>();
+
+		for (final WorkflowActionClassParameter from : fromParams) {
+
+			final WorkflowActionClassParameter param = new WorkflowActionClassParameter();
+
+			Logger.debug(this, () -> "Copying the WorkflowActionClassParameter: " + from.getId());
+
+			param.setActionClassId(to.getActionId());
+			param.setKey		  (from.getKey());
+			param.setValue		  (from.getValue());
+
+			params.add(param);
+		}
+
+		this.saveWorkflowActionClassParameters(params, user);
+
+		return params;
 	}
 
+	@WrapInTransaction
+	@Override
+	public WorkflowActionClass copyWorkflowActionClass(final WorkflowActionClass from,
+													   final WorkflowAction to,
+													   final User user) throws DotDataException, AlreadyExistException {
+
+		final WorkflowActionClass actionClass = new WorkflowActionClass();
+
+		Logger.debug(this, ()-> "Copying the WorkflowActionClass: " + from.getId() +
+							", name: " + from.getName());
+
+		actionClass.setClazz   (from.getClazz());
+		actionClass.setOrder   (from.getOrder());
+		actionClass.setName    (from.getName());
+		actionClass.setActionId(to.getId());
+
+		this.saveActionClass(actionClass, user);
+
+		return actionClass;
+	}
+
+	@WrapInTransaction
+	@Override
+	public WorkflowAction copyWorkflowAction(final WorkflowAction from,
+											 final WorkflowScheme to,
+											 final User user) throws DotDataException, AlreadyExistException, DotSecurityException {
+
+		Logger.debug(this, ()-> "Copying the WorkflowAction: " + from.getId() +
+				", name: " + from.getName());
+
+		final WorkflowAction action = new WorkflowAction();
+
+		action.setSchemeId   (to.getId());
+		action.setAssignable (from.isAssignable());
+		action.setCommentable(from.isCommentable());
+		action.setCondition  (from.getCondition());
+		action.setName		 (from.getName());
+		action.setShowOn	 (from.getShowOn());
+		action.setNextAssign (from.getNextAssign());
+		action.setNextStep	 (from.getNextStep());
+		action.setOrder		 (from.getOrder());
+		action.setOwner		 (from.getOwner());
+		action.setRoleHierarchyForAssign(from.isRoleHierarchyForAssign());
+
+		this.saveAction(action, user);
+
+		final List<Permission> permissionsFrom =
+				this.permissionAPI.getPermissions(from);
+
+		for (final Permission permissionfrom: permissionsFrom) {
+
+			this.permissionAPI.save(new Permission(permissionfrom.getType(), action.getPermissionId(),
+							permissionfrom.getRoleId(), permissionfrom.getPermission(), permissionfrom.isBitPermission()),
+					action, user, false);
+		}
+
+		return action;
+	}
+
+	@WrapInTransaction
+	@Override
+	public WorkflowStep copyWorkflowStep(final WorkflowStep from,
+										 final WorkflowScheme to,
+										 final User user) throws DotDataException, AlreadyExistException {
+
+		Logger.debug(this, ()-> "Copying the WorkflowStep: " + from.getId() +
+				", name: " + from.getName());
+
+		final WorkflowStep step = new WorkflowStep();
+
+		step.setSchemeId   		(to.getId());
+		step.setMyOrder    		(from.getMyOrder());
+		step.setCreationDate	(new Date());
+		step.setEnableEscalation(from.isEnableEscalation());
+		step.setName		 	(from.getName());
+		step.setEscalationAction(from.getEscalationAction());
+		step.setEscalationTime  (from.getEscalationTime());
+		step.setResolved	 	(from.isResolved());
+
+		this.saveStep(step, user);
+
+		return step;
+	}
+
+	@WrapInTransaction
+	@Override
+	public WorkflowScheme deepCopyWorkflowScheme(final WorkflowScheme from, final User user,
+												 final Optional<String> optionalName) throws DotDataException, AlreadyExistException, DotSecurityException {
+
+		// 1) create the scheme with a copy_name_timestamp
+		// 2) get the stepsFrom and do a copy with the same name
+		// 3) get the scheme actions and copy with a diff id
+		// 4) add action class and parameters
+		// 4) associate the stepsFrom to the actions.
+		this.isUserAllowToModifiedWorkflow(user);
+
+		final WorkflowScheme scheme    = new WorkflowScheme();
+
+		Logger.debug(this, ()-> "Copying a new scheme from: "
+				+ from.getId() + ", name= " + from.getName());
+
+		scheme.setName(optionalName.isPresent() && UtilMethods.isSet(optionalName.get())?optionalName.get():from.getName() + "_" + System.currentTimeMillis());
+		scheme.setArchived(from.isArchived());
+		scheme.setCreationDate(new Date());
+		scheme.setDescription(from.getDescription());
+		scheme.setModDate(new Date());
+
+		this.saveScheme(scheme, user);
+
+		final Map<String, WorkflowStep> steps		  = new HashMap<>();
+		final List<WorkflowStep> 	    stepsFrom 	  = this.findSteps(from);
+		for (final WorkflowStep step : stepsFrom) {
+
+			Logger.debug(this, ()-> "Copying a new step from: "
+					+ step.getId() + ", name= " + step.getName());
+
+			steps.put(step.getId(), this.copyWorkflowStep(step, scheme, user));
+		}
+
+		final Map<String, WorkflowAction> actions	   = new HashMap<>();
+		final List<WorkflowAction> 		  actionsFrom  = this.findActions(from, user);
+
+		for (final WorkflowAction action : actionsFrom) {
+
+			Logger.debug(this, ()-> "Copying a new action from: "
+					+ action.getId() + ", name= " + action.getName());
+
+			actions.put(action.getId(), this.copyWorkflowAction(action, scheme, user));
+		}
+
+		for (final WorkflowStep step : stepsFrom) {
+
+			int   actionOrder 						= 0;
+			final List<WorkflowAction>  actionSteps =
+					this.findActions(step, user);
+
+			for (final WorkflowAction action : actionSteps) {
+
+				final String stepId   = steps.get(step.getId()).getId();
+				final String actionId = actions.get(action.getId()).getId();
+
+				this.saveAction(actionId, stepId, user, actionOrder++);
+			}
+		}
+
+		for (final WorkflowAction action : actionsFrom) {
+
+			final List<WorkflowActionClass> workflowActionClasses =
+					this.findActionClasses(action);
+
+			for (final WorkflowActionClass fromActionClass : workflowActionClasses) {
+
+				final WorkflowActionClass actionClass =
+						this.copyWorkflowActionClass(fromActionClass, actions.get(action.getId()), user);
+				final  Map<String, WorkflowActionClassParameter> classParameterMap =
+						this.findParamsForActionClass(fromActionClass);
+
+				this.copyWorkflowActionClassParameters(classParameterMap.values(), actionClass, user);
+			}
+		}
+
+		return scheme;
+	}
+
+	@Override
 	@CloseDBIfOpened
-	public List<WorkflowTask> searchAllTasks(WorkflowSearcher searcher) throws DotDataException {
+	public List<WorkflowTask> searchAllTasks(final WorkflowSearcher searcher) throws DotDataException {
 		return workFlowFactory.searchAllTasks(searcher);
 	}
 
+	@Override
 	@CloseDBIfOpened
-	public WorkflowHistory retrieveLastStepAction(String taskId) throws DotDataException {
+	public WorkflowHistory retrieveLastStepAction(final String taskId) throws DotDataException {
 
 		return workFlowFactory.retrieveLastStepAction(taskId);
 	}
 
+	@Override
 	@CloseDBIfOpened
-	public WorkflowAction findEntryAction(Contentlet contentlet, User user)  throws DotDataException, DotSecurityException {
+	public WorkflowAction findEntryAction(final Contentlet contentlet, final User user)  throws DotDataException, DotSecurityException {
 		WorkflowScheme scheme = null;
 		List<WorkflowScheme> schemes = findSchemesForStruct(contentlet.getStructure());
 		if(null !=  schemes && schemes.size() ==1){
@@ -1392,13 +2103,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@CloseDBIfOpened
 	@Override
-	public WorkflowScheme findSchemeByName(String schemaName) throws DotDataException {
+	public WorkflowScheme findSchemeByName(final String schemaName) throws DotDataException {
 		return workFlowFactory.findSchemeByName(schemaName);
 	}
 
 	@WrapInTransaction
 	@Override
-	public void deleteWorkflowActionClassParameter(WorkflowActionClassParameter param) throws DotDataException, AlreadyExistException {
+	public void deleteWorkflowActionClassParameter(final WorkflowActionClassParameter param) throws DotDataException, AlreadyExistException {
 		workFlowFactory.deleteWorkflowActionClassParameter(param);
 
 	}
@@ -1415,8 +2126,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 * @throws DotSecurityException 
 	 */
 	@WrapInTransaction
-	public void updateUserReferences(String userId, String userRoleId, String replacementUserId, String replacementUserRoleId)throws DotDataException, DotSecurityException{
-		workFlowFactory.updateUserReferences(userId, userRoleId, replacementUserId,replacementUserRoleId);
+	@Override
+	public void updateUserReferences(final String userId, final String userRoleId,
+									 final String replacementUserId, final String replacementUserRoleId) throws DotDataException, DotSecurityException {
+
+		workFlowFactory.updateUserReferences(userId, userRoleId, replacementUserId, replacementUserRoleId);
 	}
 
 	/**
@@ -1429,8 +2143,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 * @throws DotSecurityException 
 	 */
 	@WrapInTransaction
-	public void updateStepReferences(String stepId, String replacementStepId) throws DotDataException, DotSecurityException {
-		workFlowFactory.updateStepReferences(stepId, replacementStepId);
+	@Override
+	public void updateStepReferences(final String stepId, final String replacementStepId) throws DotDataException, DotSecurityException {
+		workFlowFactory.updateStepReferences(this.getLongId(stepId, ShortyIdAPI.ShortyInputType.WORKFLOW_STEP), this.getLongId(replacementStepId, ShortyIdAPI.ShortyInputType.WORKFLOW_STEP));
 	}
 
     /**
@@ -1483,6 +2198,129 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 
 		return permissionables;
+	}
+
+	/**
+	 * Filters the list of actions to display according to the role passed
+	 * @param actions the actions to filter by role
+	 * @param role the role selected
+	 * @return the list of actions once the filter operation has taken place
+	 * @throws DotDataException
+	 */
+	@CloseDBIfOpened
+	private List<WorkflowAction> filterActionsCollection(final List<WorkflowAction> actions, final Role role) throws DotDataException {
+
+		final List<WorkflowAction> permissionables = new ArrayList<>(actions);
+		if (permissionables.isEmpty()) {
+			return permissionables;
+		}
+
+		//First try to determine if we're dealing with a role directly mapped to a user.
+		try {
+			final User user = userAPI.loadUserById(role.getRoleKey());
+			return filterActionsCollection(permissionables, user,true, null);
+		}catch (Exception nsu){
+			Logger.debug(this, () -> "Unable to determine role belongs to a user.");
+		}
+
+		final Iterator<WorkflowAction> workflowActionIterator = permissionables.iterator();
+
+		final List<Role> specialRolesHierarchy = getSpecialRolesHierarchy();
+		final int index = specialRolesHierarchy.indexOf(role);
+		//Determine if we're dealing with a special role
+		if(index >= 0){
+			//If so.. get a sublist preserving the precedence. so we can apply a filter with the resulting piece of hierarchy.
+			final List<Role> rolesSubset = specialRolesHierarchy.subList(index, specialRolesHierarchy.size());
+			while (workflowActionIterator.hasNext()) {
+				final WorkflowAction wa = workflowActionIterator.next();
+				if (!hasAnyRolePermission(wa, rolesSubset)) {
+					workflowActionIterator.remove();
+				}
+			}
+			return permissionables;
+		}
+
+		//Perform filter for regular roles
+		final Set<Role> roles = collectChildRoles(role);
+		while (workflowActionIterator.hasNext()) {
+			final WorkflowAction wa = workflowActionIterator.next();
+			if (!hasAnyRolePermission(wa, roles)) {
+				workflowActionIterator.remove();
+			}
+		}
+
+		return permissionables;
+	}
+
+
+	/**
+	 * Returns an immutable list with the Hierarchy of special roles according to the permission precedence.
+	 * This means that the position roles[i] has more precedence than roles[i+1]
+	 * @return a list of special roles ordered by permission precedence.
+	 * @throws DotDataException
+	 */
+	private List<Role> getSpecialRolesHierarchy() throws DotDataException {
+		if (specialRolesHierarchy == null) {
+			synchronized (this) {
+				if (specialRolesHierarchy == null) {
+					final Role anyWhoCanEditPermisionsContent = roleAPI
+							.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_PERMISSIONS_ROLE_KEY);
+					final Role anyWhoCanPublishContent = roleAPI
+							.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_PUBLISH_ROLE_KEY);
+					final Role anyWhoCanEditContent = roleAPI
+							.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_ROLE_KEY);
+					final Role anyWhoCanViewContent = roleAPI
+							.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_VIEW_ROLE_KEY);
+
+					// Do not alter the order of the Elements on the list. It is tied to the logic!!
+					specialRolesHierarchy = ImmutableList
+							.of(anyWhoCanEditPermisionsContent, anyWhoCanPublishContent,
+									anyWhoCanEditContent, anyWhoCanViewContent);
+				}
+			}
+		}
+		return specialRolesHierarchy;
+	}
+
+	/**
+	 * Gathers all child roles recursively.
+	 * @param selectedRole parent role passed
+	 * @return returns a set of roles including the one initially passed as parameter.
+	 */
+	private Set<Role> collectChildRoles(final Role selectedRole) {
+		final Set<Role> collectedRoles = new HashSet<>();
+		collectedRoles.add(selectedRole);
+		try {
+				final List<String> childrenIds = selectedRole.getRoleChildren();
+				if (UtilMethods.isSet(childrenIds)) {
+					for (final String childRoleId : childrenIds) {
+						final Role childRole = roleAPI.loadRoleById(childRoleId);
+						collectedRoles.addAll(
+								collectChildRoles(childRole)
+						);
+					}
+				}
+		} catch (Exception e) {
+			Logger.error(this, "Error collecting children roles ", e);
+		}
+
+		return collectedRoles;
+	}
+
+	/**
+	 * Given a set roles this method verifies if an action has access to at least one of them.
+	 * @param wa the workflow action to examine
+	 * @param roles the roles to apply
+	 * @return true if any of the roles is met by the action
+	 * @throws DotDataException
+	 */
+	private boolean hasAnyRolePermission(final WorkflowAction wa,final Iterable<Role> roles) throws DotDataException{
+        for(final Role role:roles){
+			if (permissionAPI.doesRoleHavePermission(wa, PermissionAPI.PERMISSION_USE, role)) {
+                return true;
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -1563,11 +2401,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return false;
 	}
 
+	@Override
     @CloseDBIfOpened
     public WorkflowAction findActionRespectingPermissions(final String id, final Permissionable permissionable,
             final User user) throws DotDataException, DotSecurityException {
 
-        final WorkflowAction action = workFlowFactory.findAction(id);
+        final WorkflowAction action = workFlowFactory.findAction(this.getLongId(id, ShortyIdAPI.ShortyInputType.WORKFLOW_ACTION));
 
         DotPreconditions.isTrue(
                 hasSpecialWorkflowPermission(user, true, permissionable, action) ||
@@ -1580,13 +2419,15 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         return action;
     }
 
+	@Override
     @CloseDBIfOpened
     public WorkflowAction findActionRespectingPermissions(final String actionId,
             final String stepId, final Permissionable permissionable,
             final User user) throws DotDataException, DotSecurityException {
 
-        Logger.debug(this, "Finding the action: " + actionId + " for the step: " + stepId);
-        final WorkflowAction action = this.workFlowFactory.findAction(actionId, stepId);
+        Logger.debug(this, () -> "Finding the action: " + actionId + " for the step: " + stepId);
+        final WorkflowAction action = this.workFlowFactory.findAction(this.getLongId(actionId, ShortyIdAPI.ShortyInputType.WORKFLOW_ACTION),
+				this.getLongId(stepId, ShortyIdAPI.ShortyInputType.WORKFLOW_STEP));
         if (null != action) {
 
             DotPreconditions.isTrue(
@@ -1600,43 +2441,76 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         return action;
     }
 
+	/**
+	 * Returns the actions associted to the content type if there's no license. only actions
+	 * associated with the system workflow will be returned.
+	 *
+	 * @param contentType ContentType to be processed
+	 * @param user The current User
+	 */
+	@Override
 	@CloseDBIfOpened
-	public List<WorkflowAction> findAvailableDefaultActionsByContentType(ContentType contentType, User user)
+	public List<WorkflowAction> findAvailableDefaultActionsByContentType(final ContentType contentType,
+			final User user)
 			throws DotDataException, DotSecurityException {
 
 		DotPreconditions.isTrue(this.permissionAPI.
-						doesUserHavePermission(contentType, PermissionAPI.PERMISSION_READ, user,true),
+						doesUserHavePermission(contentType, PermissionAPI.PERMISSION_READ, user, true),
 				() -> "User " + user + " cannot read content type " + contentType.name(),
 				DotSecurityException.class);
 
 		List<WorkflowScheme> schemes = findSchemesForContentType(contentType);
-		return findAvailableDefaultActionsBySchemes(schemes, APILocator.getUserAPI().getSystemUser());
+
+		if (!hasValidLicense()) {
+			//When no License, we only allow the system workflow
+			final WorkflowScheme systemWorkflow = schemes.stream()
+					.filter(WorkflowScheme::isSystem).findFirst()
+					.orElse(workFlowFactory.findSystemWorkflow());
+			schemes = new ImmutableList.Builder<WorkflowScheme>().add(systemWorkflow).build();
+
+		}
+		return findAvailableDefaultActionsBySchemes(schemes,
+				APILocator.getUserAPI().getSystemUser());
 	}
 
-
+	@Override
 	@CloseDBIfOpened
-	public List<WorkflowAction> findAvailableDefaultActionsBySchemes(List<WorkflowScheme> schemes, User user)
+	public List<WorkflowAction> findAvailableDefaultActionsBySchemes(final List<WorkflowScheme> schemes, final User user)
 			throws DotDataException, DotSecurityException{
 		final ImmutableList.Builder<WorkflowAction> actions = new ImmutableList.Builder<>();
 		for(WorkflowScheme scheme: schemes){
-			List<WorkflowStep> steps = findSteps(scheme);
+			final List<WorkflowStep> steps = findSteps(scheme);
 			actions.addAll(findActions(steps.get(0), user));
 		}
 		return actions.build();
 
 	}
 
+	@Override
 	@CloseDBIfOpened
-	public List<WorkflowAction> findInitialAvailableActionsByContentType(ContentType contentType, User user)
-			throws DotDataException, DotSecurityException{
+	public List<WorkflowAction> findInitialAvailableActionsByContentType(final ContentType contentType, final User user)
+			throws DotDataException, DotSecurityException {
 		final ImmutableList.Builder<WorkflowAction> actions = new ImmutableList.Builder<>();
 		final List<WorkflowScheme> schemes = findSchemesForContentType(contentType);
 		for(WorkflowScheme scheme: schemes){
-			List<WorkflowStep> steps = findSteps(scheme);
-			actions.addAll(findActions(steps.stream().findFirst().orElse(null), user));
+			final List<WorkflowStep> steps = findSteps(scheme);
+			actions.addAll(findActions(steps.stream().findFirst().orElse(null), user, contentType));
 		}
 
 		return actions.build();
+	}
+
+	@CloseDBIfOpened
+	public List<WorkflowTask> findTasksByStep(final String stepId) throws DotDataException, DotSecurityException{
+		return this.workFlowFactory.findTasksByStep(this.getLongId(stepId, ShortyIdAPI.ShortyInputType.WORKFLOW_STEP));
+	}
+
+	@Override
+	@WrapInTransaction
+	public void archive(final WorkflowScheme scheme, final User user)
+			throws DotDataException, AlreadyExistException {
+		scheme.setArchived(Boolean.TRUE);
+		saveScheme(scheme, user);
 	}
 
 }

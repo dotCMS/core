@@ -100,6 +100,15 @@ public interface ContentletAPIPreHook {
     }
 
 	/**
+	 * Retrieves a contentlet from the database based on its identifier
+	 * @param identifier
+	 * @return
+	 */
+	public default boolean findContentletByIdentifierAnyLanguage (String identifier) {
+		return true;
+	}
+
+	/**
 	 * Retrieves a contentlet list from the database based on a identifiers array
 	 * @param identifiers	Array of identifiers
 	 * @param live	Retrieves the live version if false retrieves the working version
@@ -965,6 +974,21 @@ public interface ContentletAPIPreHook {
 	public default boolean findAllVersions(Identifier identifier, User user, boolean respectFrontendRoles){
       return true;
     }
+
+	/**
+	 * Retrieves all versions for a contentlet identifier.
+	 * Note: This method could pull too many versions.
+	 * @param identifier - Identifier object that belongs to a contentlet
+	 * @param bringOldVersions - boolean value which determines if old versions (non-live, non-working
+	 * 	should be brought here). @see copyContentlet method, which requires passing in only live/working
+	 * 	versions of contents to be copied
+	 * @param user - User in context who has triggered this call.
+	 * @param respectFrontendRoles - For permissions validations
+	 * @return
+	 */
+	public default boolean findAllVersions(Identifier identifier, boolean bringOldVersions, User user, boolean respectFrontendRoles){
+		return true;
+	}
 	
 	/**
 	 * Retrieves all versions for a contentlet identifier checked in by a real user meaning not the system user
@@ -1365,6 +1389,16 @@ public interface ContentletAPIPreHook {
 	public default boolean isInodeIndexed(String inode){
       return true;
     }
+
+
+	/**
+	 * Method will time out after 30 seconds returning false
+	 * @param inode
+	 * @return
+	 */
+	public default boolean isInodeIndexedArchived(String inode) {
+		return true;
+	};
 
 	/**
 	 * 

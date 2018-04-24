@@ -23,8 +23,7 @@
 package org.apache.commons.fileupload;
 
 import java.io.File;
-
-import com.dotcms.repackage.org.apache.commons.fileupload.disk.DiskFileItem;
+import org.apache.commons.fileupload.disk.DiskFileItem;
 
 /**
  * <a href="LiferayFileItem.java.html"><b><i>View Source</i></b></a>
