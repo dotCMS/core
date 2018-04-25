@@ -1,5 +1,6 @@
-package com.dotcms.rest.api.v1.authentication.theme;
+package com.dotcms.rest.api.v1.theme;
 
+import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
@@ -8,19 +9,19 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.theme.business.ThemeAPI;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import org.junit.Test;
-import org.springframework.ui.context.Theme;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-
+import java.io.IOException;
+import java.util.Map;
 import java.util.List;
 
 import static com.dotcms.util.CollectionsUtils.list;
@@ -47,7 +48,7 @@ public class ThemeResourceTest {
      * Should: Should create the follow lucene query: +parentpath:/application/themes/* +title:template.vtl host:[host_id]
      */
     @Test
-    public void testFindThemesWithHostId() throws DotDataException, DotSecurityException {
+    public void testFindThemesWithHostId() throws DotDataException, DotSecurityException, IOException {
         final String hostId = "1";
 
         final WebResource webResource = mock(WebResource.class);
@@ -77,6 +78,17 @@ public class ThemeResourceTest {
         when(folder_1.getName()).thenReturn(FOLDER_1);
         when(folder_2.getName()).thenReturn(FOLDER_2);
 
+        when(host_1.getMap()).thenReturn(ImmutableMap.<String, Object> builder()
+            .put("property_1", "value_1")
+            .put("property_2", "value_2")
+            .build()
+        );
+        when(host_2.getMap()).thenReturn(ImmutableMap.<String, Object> builder()
+                .put("property_1", "value_3")
+                .put("property_2", "value_4")
+                .build()
+        );
+
         when(initDataObject.getUser()).thenReturn(user);
         when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
         when(userAPI.getSystemUser()).thenReturn(systemUser);
@@ -87,16 +99,18 @@ public class ThemeResourceTest {
         when(hostAPI.find(HOST_2, systemUser, false)).thenReturn(host_2);
         when(folderAPI.find(FOLDER_2, systemUser, false)).thenReturn(folder_2);
 
-        final ThemeResource themeResource = new ThemeResource(themeAPI, userAPI, hostAPI, folderAPI, webResource);
+        final ThemeResource themeResource = new ThemeResource(themeAPI, hostAPI, folderAPI, userAPI, webResource);
         final Response response = themeResource.findThemes(request, hostId);
 
-        final List<ThemeView> themes = (List<ThemeView>) response.getEntity();
+        List responseEntity = new ObjectMapper().readValue(response.getEntity().toString().getBytes(), List.class);
 
-        assertEquals(2, themes.size());
-        assertEquals(themes.get(0).getName(), FOLDER_1);
-        assertEquals(themes.get(0).getHost(), host_1);
-        assertEquals(themes.get(1).getName(), FOLDER_2);
-        assertEquals(themes.get(1).getHost(), host_2);
+        assertEquals(2, responseEntity.size());
+        assertEquals("folder_1", ((Map) responseEntity.get(0)).get("name"));
+        assertEquals("value_1", ((Map) ((Map) responseEntity.get(0)).get("host")).get("property_1"));
+        assertEquals("value_2", ((Map) ((Map) responseEntity.get(0)).get("host")).get("property_2"));
+        assertEquals("folder_2", ((Map) responseEntity.get(1)).get("name"));
+        assertEquals("value_3", ((Map) ((Map) responseEntity.get(1)).get("host")).get("property_1"));
+        assertEquals("value_4", ((Map) ((Map) responseEntity.get(1)).get("host")).get("property_2"));
     }
 
     /**
@@ -106,7 +120,7 @@ public class ThemeResourceTest {
      * Should: Should create the follow lucene query: +parentpath:/application/themes/* +title:template.vtl host:[current_host]
      */
     @Test
-    public void testFindThemesDefaultHostId() throws DotDataException, DotSecurityException {
+    public void testFindThemesDefaultHostId() throws DotDataException, DotSecurityException, IOException {
         final String hostId = "1";
 
         final WebResource webResource = mock(WebResource.class);
@@ -137,6 +151,17 @@ public class ThemeResourceTest {
         when(folder_1.getName()).thenReturn(FOLDER_1);
         when(folder_2.getName()).thenReturn(FOLDER_2);
 
+        when(host_1.getMap()).thenReturn(ImmutableMap.<String, Object> builder()
+                .put("property_1", "value_1")
+                .put("property_2", "value_2")
+                .build()
+        );
+        when(host_2.getMap()).thenReturn(ImmutableMap.<String, Object> builder()
+                .put("property_1", "value_3")
+                .put("property_2", "value_4")
+                .build()
+        );
+
         when(initDataObject.getUser()).thenReturn(user);
         when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
         when(userAPI.getSystemUser()).thenReturn(systemUser);
@@ -150,16 +175,18 @@ public class ThemeResourceTest {
         when(request.getSession()).thenReturn(session);
         when(session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID)).thenReturn(hostId);
 
-        final ThemeResource themeResource = new ThemeResource(themeAPI, userAPI, hostAPI, folderAPI, webResource);
+        final ThemeResource themeResource = new ThemeResource(themeAPI, hostAPI, folderAPI, userAPI, webResource);
         final Response response = themeResource.findThemes(request, null);
 
-        final List<ThemeView> themes = (List<ThemeView>) response.getEntity();
+        List responseEntity = new ObjectMapper().readValue(response.getEntity().toString().getBytes(), List.class);
 
-        assertEquals(2, themes.size());
-        assertEquals(themes.get(0).getName(), FOLDER_1);
-        assertEquals(themes.get(0).getHost(), host_1);
-        assertEquals(themes.get(1).getName(), FOLDER_2);
-        assertEquals(themes.get(1).getHost(), host_2);
+        assertEquals(2, responseEntity.size());
+        assertEquals("folder_1", ((Map) responseEntity.get(0)).get("name"));
+        assertEquals("value_1", ((Map) ((Map) responseEntity.get(0)).get("host")).get("property_1"));
+        assertEquals("value_2", ((Map) ((Map) responseEntity.get(0)).get("host")).get("property_2"));
+        assertEquals("folder_2", ((Map) responseEntity.get(1)).get("name"));
+        assertEquals("value_3", ((Map) ((Map) responseEntity.get(1)).get("host")).get("property_1"));
+        assertEquals("value_4", ((Map) ((Map) responseEntity.get(1)).get("host")).get("property_2"));
     }
 
     /**
@@ -194,7 +221,7 @@ public class ThemeResourceTest {
             assertTrue(false);
         }
 
-        final ThemeResource themeResource = new ThemeResource(themeAPI, userAPI, hostAPI, folderAPI, webResource);
+        final ThemeResource themeResource = new ThemeResource(themeAPI, hostAPI, folderAPI, userAPI, webResource);
 
         try {
             Response response = themeResource.findThemes(request, hostId);

@@ -1,14 +1,11 @@
 package com.dotmarketing.portlets.htmlpages.theme.business;
 
-import com.dotcms.rest.api.v1.authentication.theme.ThemeResource;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.liferay.portal.model.User;
 import org.junit.Test;
-
-import javax.servlet.http.HttpServletRequest;
 
 import java.util.List;
 
