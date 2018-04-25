@@ -92,7 +92,7 @@ describe('DotEditContentComponent', () => {
         });
 
         DOTTestBed.configureTestingModule({
-                declarations: [DotEditContentComponent, MockDotEditContentViewAsToolbarComponent, MockDotWhatsChangedComponent],
+            declarations: [DotEditContentComponent, MockDotEditContentViewAsToolbarComponent, MockDotWhatsChangedComponent],
             imports: [
                 DialogModule,
                 BrowserAnimationsModule,
@@ -284,11 +284,26 @@ describe('DotEditContentComponent', () => {
             expect(viewAsToolbar).not.toBeNull();
         });
 
-        it('should set the page wrapper dimensions based on device', () => {
+        it('should NOT set configuration skin for the content', () => {
+            fixture.detectChanges();
             const pageWrapper: DebugElement = de.query(By.css('.dot-edit__page-wrapper'));
+            expect(pageWrapper.classes['dot-edit__page-wrapper--deviced']).toBeFalsy();
+        });
+
+        it('should set configuration skin for the content', () => {
             component.pageState.viewAs.device = mockDotDevice;
             fixture.detectChanges();
-            expect(pageWrapper.styles).toEqual({ width: mockDotDevice.cssWidth + 'px', height: mockDotDevice.cssHeight + 'px' });
+            const pageWrapper: DebugElement = de.query(By.css('.dot-edit__page-wrapper'));
+
+            expect(pageWrapper.classes['dot-edit__page-wrapper--deviced']).toBeTruthy();
+        });
+
+        it('should set the page wrapper dimensions based on device', () => {
+            const pageWrapper: DebugElement = de.query(By.css('.dot-edit__page-wrapper'));
+            const editIframe: DebugElement = de.query(By.css('.dot-edit__iframe'));
+            component.pageState.viewAs.device = mockDotDevice;
+            fixture.detectChanges();
+            expect(editIframe.styles).toEqual({ width: mockDotDevice.cssWidth + 'px', height: mockDotDevice.cssHeight + 'px' });
             expect(pageWrapper.nativeElement.classList.contains('dot-edit__page-wrapper--deviced')).toBe(true);
         });
 
@@ -510,7 +525,6 @@ describe('DotEditContentComponent', () => {
     });
 
     describe('handle switch site', () => {
-
         beforeEach(() => {
             component.pageState = null;
             fixture.detectChanges();
@@ -599,7 +613,6 @@ describe('DotEditContentComponent', () => {
         });
 
         describe('listen load-edit-mode-page event', () => {
-
             beforeEach(() => {
                 route.parent.parent.data = Observable.of({
                     content: new DotRenderedPageState(mockUser, mockDotRenderedPage, PageMode.EDIT)
@@ -616,7 +629,7 @@ describe('DotEditContentComponent', () => {
                 const customEvent = document.createEvent('CustomEvent');
                 customEvent.initCustomEvent('ng-event', false, false, {
                     name: 'load-edit-mode-page',
-                    data:  {
+                    data: {
                         ...mockDotRenderedPage,
                         page: {
                             ...mockDotRenderedPage.page,
@@ -642,13 +655,13 @@ describe('DotEditContentComponent', () => {
                 const customEvent = document.createEvent('CustomEvent');
                 customEvent.initCustomEvent('ng-event', false, false, {
                     name: 'load-edit-mode-page',
-                    data:  mockDotRenderedPage
+                    data: mockDotRenderedPage
                 });
                 document.dispatchEvent(customEvent);
 
                 expect(dotEditPageDataService.set).toHaveBeenCalledWith(
-                    new DotRenderedPageState(mockUser, mockDotRenderedPage, PageMode.EDIT));
-
+                    new DotRenderedPageState(mockUser, mockDotRenderedPage, PageMode.EDIT)
+                );
 
                 expect(dotRouterService.goToEditPage).toHaveBeenCalledWith(mockDotRenderedPage.page.pageURI);
             });
@@ -660,7 +673,7 @@ describe('DotEditContentComponent', () => {
                 const customEvent = document.createEvent('CustomEvent');
                 customEvent.initCustomEvent('ng-event', false, false, {
                     name: 'load-edit-mode-page',
-                    data:  mockDotRenderedPage
+                    data: mockDotRenderedPage
                 });
                 document.dispatchEvent(customEvent);
 

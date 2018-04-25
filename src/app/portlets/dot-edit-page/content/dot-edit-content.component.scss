@@ -18,6 +18,7 @@
 
     &--deviced {
         padding: $basic-padding * 2 0;
+        justify-content: center;
     }
 }
 
@@ -54,4 +55,62 @@
 */
 ::ng-deep .ui-unselectable-text .dot-edit__contentlet-iframe {
     pointer-events: none;
+}
+
+.dot-edit__device-wrapper {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+
+    .dot-edit__page-wrapper--deviced & {
+        flex-grow: 0;
+        border-radius: 10px;
+        border: 2px solid #ddd;
+        box-shadow: 4px 4px 15px rgba(0, 0, 0, 0.1);
+        background: rgba(255,255,255,1);
+        background: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(240,240,240,1) 100%);
+        filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#f0f0f0', GradientType=1);
+        margin: 0 auto;
+        padding: 0 10px;
+
+        &:before {
+            content: '';
+            display: block;
+            height: 5px;
+            width: 70px;
+            border: 1px solid #ddd;
+            background-color: #e6e6e6;
+            border-radius: 3px;
+            margin: 35px auto;
+        }
+
+        &:after {
+            content: '';
+            display: block;
+            height: 45px;
+            width: 45px;
+            border: 1px solid #ddd;
+            background-color: #e6e6e6;
+            border-radius: 45px;
+            margin: 15px auto 20px auto;
+            background: rgba(242,239,242,1);
+            background: linear-gradient(135deg, rgba(242,239,242,1) 0%, rgba(242,239,242,1) 9%, rgba(255,255,255,1) 76%, rgba(255,255,255,1) 100%);
+            filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#f2eff2', endColorstr='#ffffff', GradientType=1);
+        }
+    }
+}
+
+.dot-edit__page-device-info {
+    padding: $basic-padding;
+    text-align: center;
+    border-bottom: 1px solid $gray-light;
+}
+
+.dot-edit__page-device-name {
+    font-weight: bold;
+    margin-right: $basic-padding * 2;
+}
+
+.dot-edit__page-device-dimensions {
+    word-spacing: $basic-padding;
 }
