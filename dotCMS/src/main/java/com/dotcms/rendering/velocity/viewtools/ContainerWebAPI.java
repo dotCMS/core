@@ -40,7 +40,7 @@ public class ContainerWebAPI implements ViewTool {
 	private static HttpServletRequest request;
     private Context ctx;
     private ViewContext viewContext;
-	private User backuser;
+	 User backuser;
 	private final PermissionAPI permissionAPI;
 	private final ContainerAPI containerAPI;
 	private final UserAPI userAPI;
