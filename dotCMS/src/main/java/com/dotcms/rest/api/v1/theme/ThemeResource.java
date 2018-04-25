@@ -101,9 +101,9 @@ public class ThemeResource {
         return res;
     }
 
-    private String asJson(List<Contentlet> themes) throws JsonProcessingException {
-        ObjectMapper mapper = new ObjectMapper();
-        SimpleModule module = new SimpleModule();
+    private String asJson(final  List<Contentlet> themes) throws JsonProcessingException {
+        final  ObjectMapper mapper = new ObjectMapper();
+        final  SimpleModule module = new SimpleModule();
         module.addSerializer(Contentlet.class, new ThemeSerializer(hostAPI, folderAPI, userAPI));
         mapper.registerModule(module);
 

@@ -178,7 +178,7 @@ public class ThemeResourceTest {
         final ThemeResource themeResource = new ThemeResource(themeAPI, hostAPI, folderAPI, userAPI, webResource);
         final Response response = themeResource.findThemes(request, null);
 
-        List responseEntity = new ObjectMapper().readValue(response.getEntity().toString().getBytes(), List.class);
+        final List responseEntity = new ObjectMapper().readValue(response.getEntity().toString().getBytes(), List.class);
 
         assertEquals(2, responseEntity.size());
         assertEquals("folder_1", ((Map) responseEntity.get(0)).get("name"));
@@ -224,7 +224,7 @@ public class ThemeResourceTest {
         final ThemeResource themeResource = new ThemeResource(themeAPI, hostAPI, folderAPI, userAPI, webResource);
 
         try {
-            Response response = themeResource.findThemes(request, hostId);
+            final Response response = themeResource.findThemes(request, hostId);
             assertTrue(false);
         }catch (ForbiddenException e) {
             assertTrue(true);

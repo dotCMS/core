@@ -35,9 +35,9 @@ public class ThemeAPIImplTest {
 
         when(contentletAPI.search(query, 0, -1, null, user, false)).thenReturn(themesExpected);
 
-        ThemeAPIImpl themeAPI = new ThemeAPIImpl(contentletAPI);
+        final ThemeAPIImpl themeAPI = new ThemeAPIImpl(contentletAPI);
 
-        List<Contentlet> themes = themeAPI.findAll(user, "1");
+        final List<Contentlet> themes = themeAPI.findAll(user, "1");
 
         assertEquals(themesExpected, themes);
     }
@@ -57,9 +57,9 @@ public class ThemeAPIImplTest {
 
         when(contentletAPI.search(query, 0, -1, null, user, false)).thenReturn(themesExpected);
 
-        ThemeAPIImpl themeAPI = new ThemeAPIImpl(contentletAPI);
+        final ThemeAPIImpl themeAPI = new ThemeAPIImpl(contentletAPI);
 
-        List<Contentlet> themes = themeAPI.findAll(user, null);
+        final List<Contentlet> themes = themeAPI.findAll(user, null);
 
         assertEquals(themesExpected, themes);
     }
@@ -76,12 +76,12 @@ public class ThemeAPIImplTest {
         final ContentletAPI contentletAPI = mock(ContentletAPI.class);
         final User user = mock(User.class);
 
-        DotSecurityException exception = new DotSecurityException("");
+        final DotSecurityException exception = new DotSecurityException("");
 
         try {
             when(contentletAPI.search(query, 0, -1, null, user, false)).thenThrow(exception);
 
-            ThemeAPIImpl themeAPI = new ThemeAPIImpl(contentletAPI);
+            final ThemeAPIImpl themeAPI = new ThemeAPIImpl(contentletAPI);
 
             themeAPI.findAll(user, null);
             assertTrue(false);
@@ -102,12 +102,12 @@ public class ThemeAPIImplTest {
         final ContentletAPI contentletAPI = mock(ContentletAPI.class);
         final User user = mock(User.class);
 
-        DotDataException exception = new DotDataException("");
+        final DotDataException exception = new DotDataException("");
 
         try {
             when(contentletAPI.search(query, 0, -1, null, user, false)).thenThrow(exception);
 
-            ThemeAPIImpl themeAPI = new ThemeAPIImpl(contentletAPI);
+            final ThemeAPIImpl themeAPI = new ThemeAPIImpl(contentletAPI);
 
             themeAPI.findAll(user, null);
             assertTrue(false);

@@ -42,8 +42,8 @@ public class ThemeSerializer extends JsonSerializer<Contentlet> {
     }
 
     @Override
-    public void serialize(Contentlet contentlet, JsonGenerator jsonGenerator,
-                          SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
+    public void serialize(final Contentlet contentlet, final JsonGenerator jsonGenerator,
+                          final SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
 
         final String folderId = contentlet.getFolder();
         final String themeHostId = contentlet.getHost();

@@ -23,12 +23,12 @@ public class ThemeAPIImpl implements ThemeAPI {
     }
 
     @VisibleForTesting
-    ThemeAPIImpl(ContentletAPI contentletAPI) {
+    ThemeAPIImpl(final ContentletAPI contentletAPI) {
         this.contentletAPI = contentletAPI;
     }
 
     @Override
-    public List<Contentlet> findAll(User user, String hostId) throws DotSecurityException, DotDataException {
+    public List<Contentlet> findAll(final User user, final String hostId) throws DotSecurityException, DotDataException {
         final String query = String.format(hostId == null ? LUCENE_QUERY_WITH_OUT_HOST : LUCENE_QUERY_WITH_HOST, hostId);
         return contentletAPI.search(query, 0, -1, null, user, false);
     }
