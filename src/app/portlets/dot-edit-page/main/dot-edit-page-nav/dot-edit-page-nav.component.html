@@ -2,8 +2,9 @@
     <li *ngFor="let item of model | async">
         <div *ngIf="!item.needsEntepriseLicense;then basic else enterprise"></div>
         <ng-template #basic>
-            <a class="edit-page-nav__item" [class.edit-page-nav__item--disabled]="item.disabled" routerLinkActive="{{ !item.disabled ? 'edit-page-nav__item--active' : '' }}"
-                [routerLink]="!item.disabled ? item.link : null" [queryParams]="route.queryParams | async">
+            <a class="edit-page-nav__item"
+                [ngClass]="{'edit-page-nav__item--disabled': item.disabled, 'edit-page-nav__item--active': item.link === this.route.snapshot.firstChild.url[0].path}"
+                [routerLink]="!item.disabled ? ['./' + item.link] : null" [queryParams]="route.queryParams | async">
                 <i class="{{ item.icon }}"></i>
                 <span class="edit-page-nav__item-text">{{ item.label }}</span>
             </a>

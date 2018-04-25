@@ -12,6 +12,7 @@ import { mockDotRenderedPage } from './../../../../test/dot-rendered-page.mock';
 import { mockUser } from './../../../../test/login-service.mock';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs/Observable';
+import { ActivatedRoute } from '@angular/router';
 
 @Injectable()
 class MockDotLicenseService {
@@ -40,7 +41,21 @@ describe('DotEditPageNavComponent', () => {
                 declarations: [DotEditPageNavComponent],
                 providers: [
                     { provide: DotMessageService, useValue: messageServiceMock },
-                    { provide: DotLicenseService, useClass: MockDotLicenseService }
+                    { provide: DotLicenseService, useClass: MockDotLicenseService },
+                    {
+                        provide: ActivatedRoute,
+                        useValue: {
+                            snapshot: {
+                                firstChild: {
+                                    url: [
+                                        {
+                                            path: 'content'
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
                 ]
             }).compileComponents();
         })
@@ -72,6 +87,11 @@ describe('DotEditPageNavComponent', () => {
                 expect(iconClass).toEqual(icons[index]);
                 expect(item.nativeElement.textContent).toContain(labels[index]);
             });
+        });
+
+        it('should have correct item active', () => {
+            const activeItem = fixture.debugElement.query(By.css('.edit-page-nav__item--active'));
+            expect(activeItem.nativeElement.innerText).toContain('Content');
         });
     });
 

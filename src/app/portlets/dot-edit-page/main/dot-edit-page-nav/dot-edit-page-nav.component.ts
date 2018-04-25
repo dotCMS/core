@@ -12,7 +12,7 @@ interface DotEditPageNavItem {
     disabled: boolean;
     icon: string;
     label: string;
-    link: string[];
+    link: string;
 }
 
 @Component({
@@ -24,7 +24,7 @@ export class DotEditPageNavComponent implements OnInit {
     @Input() pageState: DotRenderedPageState;
     model: Observable<DotEditPageNavItem[]>;
 
-    constructor(public route: ActivatedRoute, private dotMessageService: DotMessageService, private dotLicenseService: DotLicenseService) {}
+    constructor(private dotLicenseService: DotLicenseService, public dotMessageService: DotMessageService, public route: ActivatedRoute) {}
 
     ngOnInit(): void {
         this.model = this.dotMessageService
@@ -53,7 +53,7 @@ export class DotEditPageNavComponent implements OnInit {
                 disabled: false,
                 icon: 'fa fa-file-text',
                 label: this.dotMessageService.get('editpage.toolbar.nav.content'),
-                link: ['./content']
+                link: 'content'
             }
         ];
 
@@ -72,7 +72,7 @@ export class DotEditPageNavComponent implements OnInit {
             disabled: this.canGoToLayout(dotRenderedPage),
             icon: this.getTemplateItemIcon(dotRenderedPage.template),
             label: this.getTemplateItemLabel(dotRenderedPage.template),
-            link: ['./layout']
+            link: 'layout'
         };
     }
 
