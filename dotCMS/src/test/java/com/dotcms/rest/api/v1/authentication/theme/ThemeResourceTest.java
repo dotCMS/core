@@ -13,8 +13,10 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpages.theme.business.ThemeAPI;
 import com.liferay.portal.model.User;
 import org.junit.Test;
+import org.springframework.ui.context.Theme;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -47,7 +49,6 @@ public class ThemeResourceTest {
     @Test
     public void testFindThemesWithHostId() throws DotDataException, DotSecurityException {
         final String hostId = "1";
-        final String luceneQuery = String.format("+parentpath:/application/themes/* +title:template.vtl host:%s", hostId);
 
         final WebResource webResource = mock(WebResource.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
@@ -55,7 +56,7 @@ public class ThemeResourceTest {
         final User systemUser = mock(User.class);
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final UserAPI userAPI = mock(UserAPI.class);
-        final ContentletAPI contentletAPI = mock(ContentletAPI.class);
+        final ThemeAPI themeAPI = mock(ThemeAPI.class);
         final HostAPI hostAPI = mock(HostAPI.class);
         final FolderAPI folderAPI = mock(FolderAPI.class);
 
@@ -79,18 +80,17 @@ public class ThemeResourceTest {
         when(initDataObject.getUser()).thenReturn(user);
         when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
         when(userAPI.getSystemUser()).thenReturn(systemUser);
-        when(contentletAPI.search(luceneQuery, 0, -1, null, user, false))
-                .thenReturn(contentlets);
+        when(themeAPI.findAll(user, hostId)).thenReturn(contentlets);
 
         when(hostAPI.find(HOST_1, systemUser, false)).thenReturn(host_1);
         when(folderAPI.find(FOLDER_1, systemUser, false)).thenReturn(folder_1);
         when(hostAPI.find(HOST_2, systemUser, false)).thenReturn(host_2);
         when(folderAPI.find(FOLDER_2, systemUser, false)).thenReturn(folder_2);
 
-        ThemeResource themeResource = new ThemeResource(contentletAPI, userAPI, hostAPI, folderAPI, webResource);
-        Response response = themeResource.findThemes(request, hostId);
+        final ThemeResource themeResource = new ThemeResource(themeAPI, userAPI, hostAPI, folderAPI, webResource);
+        final Response response = themeResource.findThemes(request, hostId);
 
-        List<ThemeView> themes = (List<ThemeView>) response.getEntity();
+        final List<ThemeView> themes = (List<ThemeView>) response.getEntity();
 
         assertEquals(2, themes.size());
         assertEquals(themes.get(0).getName(), FOLDER_1);
@@ -108,7 +108,6 @@ public class ThemeResourceTest {
     @Test
     public void testFindThemesDefaultHostId() throws DotDataException, DotSecurityException {
         final String hostId = "1";
-        final String luceneQuery = String.format("+parentpath:/application/themes/* +title:template.vtl host:%s", hostId);
 
         final WebResource webResource = mock(WebResource.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
@@ -117,7 +116,7 @@ public class ThemeResourceTest {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final HttpSession session = mock(HttpSession.class);
         final UserAPI userAPI = mock(UserAPI.class);
-        final ContentletAPI contentletAPI = mock(ContentletAPI.class);
+        final ThemeAPI themeAPI = mock(ThemeAPI.class);
         final HostAPI hostAPI = mock(HostAPI.class);
         final FolderAPI folderAPI = mock(FolderAPI.class);
 
@@ -141,8 +140,7 @@ public class ThemeResourceTest {
         when(initDataObject.getUser()).thenReturn(user);
         when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
         when(userAPI.getSystemUser()).thenReturn(systemUser);
-        when(contentletAPI.search(luceneQuery, 0, -1, null, user, false))
-                .thenReturn(contentlets);
+        when(themeAPI.findAll(user, hostId )).thenReturn(contentlets);
 
         when(hostAPI.find(HOST_1, systemUser, false)).thenReturn(host_1);
         when(folderAPI.find(FOLDER_1, systemUser, false)).thenReturn(folder_1);
@@ -152,10 +150,10 @@ public class ThemeResourceTest {
         when(request.getSession()).thenReturn(session);
         when(session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID)).thenReturn(hostId);
 
-        ThemeResource themeResource = new ThemeResource(contentletAPI, userAPI, hostAPI, folderAPI, webResource);
-        Response response = themeResource.findThemes(request, null);
+        final ThemeResource themeResource = new ThemeResource(themeAPI, userAPI, hostAPI, folderAPI, webResource);
+        final Response response = themeResource.findThemes(request, null);
 
-        List<ThemeView> themes = (List<ThemeView>) response.getEntity();
+        final List<ThemeView> themes = (List<ThemeView>) response.getEntity();
 
         assertEquals(2, themes.size());
         assertEquals(themes.get(0).getName(), FOLDER_1);
@@ -173,7 +171,6 @@ public class ThemeResourceTest {
     @Test
     public void testFindThemesThrowForbidenException() throws DotDataException {
         final String hostId = "1";
-        final String luceneQuery = String.format("+parentpath:/application/themes/* +title:template.vtl host:%s", hostId);
 
         final WebResource webResource = mock(WebResource.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
@@ -181,7 +178,7 @@ public class ThemeResourceTest {
         final User systemUser = mock(User.class);
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final UserAPI userAPI = mock(UserAPI.class);
-        final ContentletAPI contentletAPI = mock(ContentletAPI.class);
+        final ThemeAPI themeAPI = mock(ThemeAPI.class);
         final HostAPI hostAPI = mock(HostAPI.class);
         final FolderAPI folderAPI = mock(FolderAPI.class);
 
@@ -191,13 +188,13 @@ public class ThemeResourceTest {
         when(userAPI.getSystemUser()).thenReturn(systemUser);
 
         try {
-            when(contentletAPI.search(luceneQuery, 0, -1, null, user, false))
+            when(themeAPI.findAll(user, hostId))
                     .thenThrow(new DotSecurityException(""));
         } catch (DotSecurityException e) {
             assertTrue(false);
         }
 
-        ThemeResource themeResource = new ThemeResource(contentletAPI, userAPI, hostAPI, folderAPI, webResource);
+        final ThemeResource themeResource = new ThemeResource(themeAPI, userAPI, hostAPI, folderAPI, webResource);
 
         try {
             Response response = themeResource.findThemes(request, hostId);

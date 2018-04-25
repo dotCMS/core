@@ -26,6 +26,7 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpages.theme.business.ThemeAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
@@ -38,27 +39,26 @@ import java.util.List;
 /**
  * Provides different methods to access information about Themes in dotCMS.
  */
-@Path("/v1/theme")
+@Path("/v1/themes")
 public class ThemeResource {
 
-    private static final String LUCENE_QUERY = "+parentpath:/application/themes/* +title:template.vtl host:%s";
 
-    private final ContentletAPI contentletAPI;
+    private final ThemeAPI themeAPI;
     private final UserAPI userAPI;
     private final HostAPI hostAPI;
     private final FolderAPI folderAPI;
     private final WebResource webResource;
 
     public ThemeResource() {
-        this(APILocator.getContentletAPI(), APILocator.getUserAPI(), APILocator.getHostAPI(), APILocator.getFolderAPI(),
+        this(APILocator.getThemeAPI(), APILocator.getUserAPI(), APILocator.getHostAPI(), APILocator.getFolderAPI(),
                 new WebResource());
     }
 
     @VisibleForTesting
-    public ThemeResource(final ContentletAPI contentletAPI, final UserAPI userAPI, final HostAPI hostAPI,
+    public ThemeResource(final ThemeAPI themeAPI, final UserAPI userAPI, final HostAPI hostAPI,
                          final FolderAPI folderAPI, final WebResource webResource) {
 
-        this.contentletAPI = contentletAPI;
+        this.themeAPI = themeAPI;
         this.userAPI = userAPI;
         this.hostAPI = hostAPI;
         this.folderAPI = folderAPI;
@@ -77,32 +77,34 @@ public class ThemeResource {
     public final Response findThemes(@Context final HttpServletRequest request,
                                      @QueryParam("hostId") final String hostId) {
 
+        Logger.debug(this,
+                "Getting the themes for the hostId: " + hostId);
+
         final InitDataObject initData = this.webResource.init(null, true, request, true, null);
         final User user = initData.getUser();
 
-        final String hostIdForSearch = hostId != null ?
+        final String hostIdToSearch = hostId != null ?
                 hostId :
                 (String) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
 
-        final String query = String.format(LUCENE_QUERY, hostIdForSearch);
         Response res = null;
 
         try {
-            final Collection<ThemeView> themes = new ArrayList<>();
+            final Collection<ThemeView> themeViews = new ArrayList<>();
             final User systemUser = userAPI.getSystemUser();
-            final List<Contentlet> contentlets = contentletAPI.search(query, 0, -1, null, user, false);
+            final List<Contentlet> themes = themeAPI.findAll(user, hostIdToSearch);
 
-            for (final Contentlet contentlet : contentlets) {
+            for (final Contentlet contentlet : themes) {
                 final String folderId = contentlet.getFolder();
                 final String themeHostId = contentlet.getHost();
 
                 final Host host = hostAPI.find(themeHostId, systemUser, false);
                 final Folder folder = folderAPI.find(folderId, systemUser, false);
 
-                themes.add(new ThemeView(folder.getName(), host));
+                themeViews.add(new ThemeView(folder.getName(), host));
             }
 
-            return Response.ok(themes).build();
+            return Response.ok(themeViews).build();
         } catch (DotSecurityException e) {
             final String errorMsg = "The user does not have the required permissions (" + e
                     .getMessage() + ")";
