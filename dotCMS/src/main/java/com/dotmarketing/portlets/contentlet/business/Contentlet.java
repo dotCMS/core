@@ -20,7 +20,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.commons.beanutils.converters.DateConverter;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.builder.ToStringBuilder;
@@ -29,6 +31,11 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 public class Contentlet extends WebAsset implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
+    static {
+        final DateConverter converter = new DateConverter(null);
+        ConvertUtils.register(converter, java.util.Date.class);
+    }
 
     private FieldAPI fAPI = APILocator.getFieldAPI();
 
@@ -1612,9 +1619,14 @@ public class Contentlet extends WebAsset implements Serializable {
 				value = ((String)value).replace("\\u", "${esc.b}u");
 			}
 			*/
-
-			PropertyUtils.setProperty(this, f.getFieldContentlet(), value);
-		}catch(IllegalArgumentException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e){
+			BeanUtils.setProperty(this, f.getFieldContentlet(), value);
+		}catch(IllegalArgumentException iae){
+			Logger.error(this, "Unable to set the contentlet field.");
+			throw new DotRuntimeException("Unable to set the contentlet field.", iae);
+		} catch (IllegalAccessException e) {
+			Logger.error(this, "Unable to set the contentlet field.");
+			throw new DotRuntimeException("Unable to set the contentlet field.", e);
+		} catch (InvocationTargetException e) {
 			Logger.error(this, "Unable to set the contentlet field.");
 			throw new DotRuntimeException("Unable to set the contentlet field.", e);
 		}
