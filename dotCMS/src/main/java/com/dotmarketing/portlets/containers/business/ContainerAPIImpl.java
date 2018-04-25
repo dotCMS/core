@@ -2,9 +2,11 @@ package com.dotmarketing.portlets.containers.business;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.transform.TransformerLocator;
 
 import com.dotmarketing.beans.ContainerStructure;
@@ -34,16 +36,11 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import com.liferay.portal.model.User;
@@ -351,20 +348,82 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	
     @CloseDBIfOpened
     @Override
-    public List<ContentType> getContentTypesInContainer(Container container) throws DotStateException, DotDataException, DotSecurityException  {
+    public List<ContentType> getContentTypesInContainer(final Container container)
+			throws DotStateException, DotDataException, DotSecurityException {
 
-        List<ContainerStructure> csList =  getContainerStructures(container);
-        List<ContentType> cTypeList = new ArrayList<ContentType>();
+		final List<ContainerStructure>  containerList = getContainerStructures(container);
 
-        for (ContainerStructure cs : csList) {
-            ContentType type = APILocator.getContentTypeAPI(APILocator.systemUser()).find(cs.getStructureId());
-            if(type==null) continue;
-            cTypeList.add(type);
-        }
-        
-        return cTypeList.stream().sorted(Comparator.comparing(ContentType::name)).collect(Collectors.toList());
+		final List<ContentType> contentTypeList = new ArrayList<>();
+		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+
+		for (final ContainerStructure containerStructure : containerList) {
+			try {
+				final ContentType type = contentTypeAPI.find(containerStructure.getStructureId());
+
+				if(type == null) {
+					continue;
+				}
+
+				contentTypeList.add(type);
+			} catch (DotSecurityException e) {
+				continue;
+			}
+		}
+
+		return contentTypeList.stream()
+				.sorted(Comparator.comparing(ContentType::name))
+				.collect(CollectionsUtils.toImmutableList());
     }
-    
+
+	/**
+	 * Return the {@link ContentType} that can be add by user into a specific {@link Container}
+	 *
+	 * @param user
+	 * @param container
+	 * @return
+	 * @throws DotStateException
+	 * @throws DotDataException
+	 */
+	@CloseDBIfOpened
+	@Override
+	public List<ContentType> getContentTypesInContainer(final User user, final Container container) throws
+			DotStateException, DotDataException {
+
+		try {
+			final List<ContainerStructure>  containerStructureList = getContainerStructures(container);
+			final List<ContentType> contentTypeList = new ArrayList<>();
+			ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+			PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+
+			for (final ContainerStructure containerStructure : containerStructureList) {
+				try {
+					final ContentType type = contentTypeAPI.find(containerStructure.getStructureId());
+
+					if(type == null) {
+						continue;
+					}
+
+					final boolean hasPermission = permissionAPI.doesUserHavePermission(type, PermissionAPI.PERMISSION_READ, user, false);
+
+					if (!hasPermission){
+						continue;
+					}
+
+					contentTypeList.add(type);
+				} catch (DotSecurityException e) {
+					continue;
+				}
+			}
+
+			return contentTypeList.stream()
+					.sorted(Comparator.comparing(ContentType::name))
+					.collect(CollectionsUtils.toImmutableList());
+
+		} catch (DotSecurityException e) {
+			return Collections.EMPTY_LIST;
+		}
+	}
+
     @Deprecated
 	public List<Structure> getStructuresInContainer(Container container) throws DotStateException, DotDataException, DotSecurityException  {
         return new StructureTransformer(getContentTypesInContainer(container)).asStructureList();

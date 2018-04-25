@@ -56,6 +56,7 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import org.apache.lucene.queryparser.classic.QueryParser;
 
 /**
  * This filter handles all requests regarding URL Maps. These URL maps on
@@ -207,7 +208,7 @@ public class URLMapFilter implements Filter {
                         }
                         query.append("+").append(structure.getVelocityVarName()).append(".")
                                 .append(fieldMatches.get(counter)).append(":")
-                                .append(value).append(" ");
+                                .append(QueryParser.escape(value)).append(" ");
                         counter++;
                     }
 

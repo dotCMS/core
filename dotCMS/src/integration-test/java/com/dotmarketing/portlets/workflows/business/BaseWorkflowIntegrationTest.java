@@ -14,6 +14,7 @@ import com.dotmarketing.util.Logger;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Utility class that provides useful methods to create and modify Workflows in dotCMS.
@@ -179,7 +180,13 @@ public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
 
         scheme.setArchived(true);
         workflowAPI.saveScheme(scheme, APILocator.systemUser());
-        workflowAPI.deleteScheme(scheme, APILocator.systemUser());
+
+        try {
+            workflowAPI.deleteScheme(scheme, APILocator.systemUser()).get();
+        } catch (InterruptedException | ExecutionException e) {
+            Logger.error(BaseWorkflowIntegrationTest.class, e.getMessage(), e);
+        }
+
     }
 
     protected long getEnglishLanguageId() {

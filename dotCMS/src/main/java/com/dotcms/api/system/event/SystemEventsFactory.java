@@ -8,6 +8,7 @@ import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.notifications.bean.Notification;
+import com.dotcms.repackage.javax.ws.rs.HEAD;
 import com.dotcms.rest.api.v1.system.websocket.SystemEventsWebSocketEndPoint;
 import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPI;
 import com.dotcms.util.ConversionUtils;
@@ -178,10 +179,8 @@ public class SystemEventsFactory implements Serializable {
 				Logger.error(this, msg, e);
 				throw new DotDataException(msg, e);
 			} finally {
-
-				if (isNewConnection) {
-
-					DbConnectionFactory.closeSilently();
+				if (localTransaction && isNewConnection) {
+					HibernateUtil.closeSessionSilently();
 				}
 			}
 		}

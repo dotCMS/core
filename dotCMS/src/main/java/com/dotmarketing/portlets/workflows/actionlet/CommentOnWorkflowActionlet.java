@@ -9,6 +9,7 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
@@ -72,11 +73,21 @@ public class CommentOnWorkflowActionlet extends WorkFlowActionlet {
 
         this.setRole(processor, comment);
         this.processCommentValue(processor, commentParam, comment);
-        comment.setWorkflowtaskId(processor.getTask().getId());
 
-        if (processor.getTask().isNew()) {
+        if (null != processor.getTask()) { // if the content is new the
+
+            comment.setWorkflowtaskId(processor.getTask().getId());
+        }
+
+        if (null == processor.getTask() || processor.getTask().isNew()) {
             try {
                 HibernateUtil.addAsyncCommitListener(() -> {
+
+                    if (!UtilMethods.isSet(comment.getWorkflowtaskId())) {
+
+                        comment.setWorkflowtaskId(processor.getTask().getId());
+                    }
+
                     this.saveComment(contentlet, comment);
                 });
             } catch (DotHibernateException e1) {
@@ -94,12 +105,9 @@ public class CommentOnWorkflowActionlet extends WorkFlowActionlet {
 
     private void setRole(final WorkflowProcessor processor,
                          final WorkflowComment comment) {
-        Role role;
-
         try {
-            role = APILocator.getRoleAPI().getUserRole(processor.getUser());
-            comment.setPostedBy(role.getId());
-        } catch (DotDataException e1) {
+            comment.setPostedBy(processor.getUser().getUserId());
+        } catch (Exception e1) {
             throw new WorkflowActionFailureException("unable to load role:" + processor.getUser(), e1);
         }
     }

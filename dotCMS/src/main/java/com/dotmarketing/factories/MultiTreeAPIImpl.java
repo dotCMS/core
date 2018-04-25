@@ -104,4 +104,9 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
         }
     }
+
+    public void updateMultiTree(final String pageId, final String containerId, final String oldRelationType,
+                         final String newRelationType) throws DotDataException {
+        MultiTreeFactory.updateMultiTree(pageId, containerId, oldRelationType, newRelationType);
+    }
 }

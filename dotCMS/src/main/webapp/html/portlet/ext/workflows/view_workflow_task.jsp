@@ -414,11 +414,24 @@
 							  str_style2="class=\"alternate_2\"";
 							}
 							y++;
+
+							String postedBy = comment.getPostedBy();
+							try {
+
+								postedBy = APILocator.getUserAPI().loadUserById(comment.getPostedBy(), APILocator.systemUser(), false).getFullName();
+							} catch (Exception e) {
+
+								final Role role = APILocator.getRoleAPI().loadRoleById(comment.getPostedBy());
+								if (null != role) {
+
+								    postedBy = role.getName();
+								}
+							}
+
 					%>
 						<tr <%=str_style2 %>>
 							<td colspan="2">
-<%=comment.getPostedBy() %>
-									<%= APILocator.getRoleAPI().loadRoleById(comment.getPostedBy()) == null ? "": APILocator.getRoleAPI().loadRoleById(comment.getPostedBy()).getName() %> &nbsp;(<%= DateUtil.prettyDateSince(comment.getCreationDate()) %>)<br/>
+									<%=postedBy%> &nbsp;(<%= DateUtil.prettyDateSince(comment.getCreationDate()) %>)<br/>
 
 									<div style="margin:5px;margin-top:0px;"><%= comment.getComment() %><%if (commentsIt.hasNext()) { %><% } %></div>
 

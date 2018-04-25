@@ -26,6 +26,7 @@ import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -60,7 +61,8 @@ public class PageResourceHelper implements Serializable {
     private final HostAPI hostAPI = APILocator.getHostAPI();
     private final LanguageAPI langAPI = APILocator.getLanguageAPI();
     private final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
-
+    private final UserAPI userAPI = APILocator.getUserAPI();
+    private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
     /**
      * Private constructor
@@ -170,8 +172,29 @@ public class PageResourceHelper implements Serializable {
         
         try {
             final Host host = getHost(pageForm.getHostId(), user);
-            Template template = getTemplate(page, user, pageForm);
+            final User systemUser = userAPI.getSystemUser();
+            final Template template = getTemplate(page, systemUser, pageForm);
+            final boolean hasPermission = template.isAnonymous() ?
+                    permissionAPI.doesUserHavePermission(page, PermissionLevel.EDIT.getType(), user) :
+                    permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(), user);
+
+            if (!hasPermission) {
+                throw new DotSecurityException("The user doesn't have permission to EDIT");
+            }
+
             template.setDrawed(true);
+
+            pageForm.getChanges().forEach(containerUUIDChanged -> {
+                final ContainerUUID old = containerUUIDChanged.getOld();
+                final ContainerUUID aNew = containerUUIDChanged.getNew();
+
+                try {
+                    multiTreeAPI.updateMultiTree(page.getIdentifier(), old.getIdentifier(), old.getUUID(), aNew.getUUID());
+                } catch (DotDataException e) {
+                    Logger.error(this.getClass(),"Exception on saveTemplate exception message: " + e.getMessage(), e);
+                }
+            });
+
             return this.templateAPI.saveTemplate(template, host, user, false);
         } catch (Exception e) {
             throw new DotRuntimeException(e);
@@ -183,10 +206,11 @@ public class PageResourceHelper implements Serializable {
         return this.saveTemplate(null, user, pageForm);
     }
 
-    private Template getTemplate(IHTMLPage page, User user, PageForm form) throws DotDataException, DotSecurityException {
+    private Template getTemplate(final IHTMLPage page, final User user, final PageForm form)
+            throws DotDataException, DotSecurityException {
 
         final Template oldTemplate = this.templateAPI.findWorkingTemplate(page.getTemplateId(), user, false);
-        Template saveTemplate;
+        final Template saveTemplate;
 
         if (UtilMethods.isSet(oldTemplate) && (!form.isAnonymousLayout() || oldTemplate.isAnonymous())) {
             saveTemplate = oldTemplate;

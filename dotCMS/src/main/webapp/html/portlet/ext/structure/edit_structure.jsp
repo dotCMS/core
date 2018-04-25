@@ -64,7 +64,7 @@
 		wfSchemes = APILocator.getWorkflowAPI().findSchemes(false);
 	}
 	else{
-		wfSchemes.add(APILocator.getWorkflowAPI().findDefaultScheme());
+		wfSchemes.add(APILocator.getWorkflowAPI().findSystemWorkflowScheme());
 	}
 	List<WorkflowScheme> stWorkflowSchemes = APILocator.getWorkflowAPI().findSchemesForStruct(structure);
 
@@ -686,7 +686,7 @@
 											<%} %>
 										</select>
 										<%}else{ %>
-										<input type="hidden" name="workflowScheme" value="<%=APILocator.getWorkflowAPI().findDefaultScheme().getId()%>"><%=LanguageUtil.get(pageContext, "Only-Default-Scheme-is-available-in-Community") %>
+										<input type="hidden" name="workflowScheme" value="<%=APILocator.getWorkflowAPI().findSystemWorkflowScheme().getId()%>"><%=LanguageUtil.get(pageContext, "Only-Default-Scheme-is-available-in-Community") %>
 										<%} %>
 									</dd>
 								</dl>

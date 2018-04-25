@@ -2,6 +2,8 @@ package com.dotmarketing.business;
 
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.SystemEventsFactory;
+import com.dotcms.cluster.business.ClusterAPI;
+import com.dotcms.cluster.business.ClusterAPIImpl;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPIFactory;
 import com.dotcms.api.tree.TreeableAPI;
@@ -55,6 +57,7 @@ import com.dotcms.vanityurl.business.VanityUrlAPIImpl;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.business.VisitorAPIImpl;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.cluster.mbeans.Cluster;
 import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.business.portal.PortletAPIImpl;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
@@ -887,6 +890,15 @@ public class APILocator extends Locator<APIIndex>{
 		return (ThemeAPI) getInstance(APIIndex.THEME_API);
 	}
 
+	/*
+	 * Creates a single instance of the {@link ClusterAPI}
+	 *
+	 * @return The {@link ClusterAPI} class.
+	 */
+	public static ClusterAPI getClusterAPI() {
+		return (ClusterAPI) getInstance(APIIndex.CLUSTER_API);
+	}
+
 	/**
 	 * Generates a unique instance of the specified dotCMS API.
 	 *
@@ -1020,7 +1032,9 @@ enum APIIndex
 	VANITY_URLS_API,
 	MULTI_TREE_API,
 	HTMLPAGE_ASSET_RENDERED_API,
-	THEME_API;
+	THEME_API,
+	CLUSTER_API;
+
 
 	Object create() {
 		switch(this) {
@@ -1091,6 +1105,7 @@ enum APIIndex
 			case MULTI_TREE_API: return new MultiTreeAPIImpl();
 			case HTMLPAGE_ASSET_RENDERED_API: return new HTMLPageAssetRenderedAPIImpl();
 			case THEME_API: return new ThemeAPIImpl();
+			case CLUSTER_API: return new ClusterAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}
