@@ -9,6 +9,8 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.util.Logger;
+
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -252,6 +254,11 @@ public class LocalTransactionAndCloseDBIfOpenedFactoryTest extends IntegrationTe
     }
 
     private void update() throws DotDataException {
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            Logger.error(this, "Not able to sleep", e);
+        }
         dc.executeUpdate(SQL_INSERT,
                 "test" + System.currentTimeMillis(), 1);
     }

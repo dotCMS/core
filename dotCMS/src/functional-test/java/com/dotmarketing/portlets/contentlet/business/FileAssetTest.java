@@ -55,6 +55,7 @@ public class FileAssetTest {
   	  	User systemUser = APILocator.getUserAPI().getSystemUser();
   	  	Contentlet result = contentletAPI.findContentletByIdentifier(fileInSpanish.getIdentifier(), false, spanish, systemUser , false);
   	  	contentletAPI.publish(result, systemUser, false);
+  	  	contentletAPI.isInodeIndexed(fileInSpanish.getInode());
 		result = contentletAPI.findContentletByIdentifier(fileInSpanish.getIdentifier(), true, spanish, systemUser , false);
 		contentletAPI.isInodeIndexed(fileInSpanish.getInode(),true);
 

@@ -1,11 +1,11 @@
 package com.dotmarketing.portlets.osgi.AJAX;
 
-import com.dotcms.repackage.org.apache.commons.fileupload.FileItemFactory;
-import com.dotcms.repackage.org.apache.commons.fileupload.FileItemIterator;
-import com.dotcms.repackage.org.apache.commons.fileupload.FileItemStream;
-import com.dotcms.repackage.org.apache.commons.fileupload.FileUploadException;
-import com.dotcms.repackage.org.apache.commons.fileupload.disk.DiskFileItemFactory;
-import com.dotcms.repackage.org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.commons.fileupload.FileItemFactory;
+import org.apache.commons.fileupload.FileItemIterator;
+import org.apache.commons.fileupload.FileItemStream;
+import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.OSGIUtil;
