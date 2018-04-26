@@ -11,12 +11,9 @@ import com.dotcms.repackage.javax.ws.rs.container.ContainerResponseFilter;
 import com.dotcms.repackage.javax.ws.rs.core.MultivaluedMap;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
 
 import java.io.IOException;
 import java.lang.annotation.Annotation;
@@ -63,7 +60,7 @@ public class HeaderFilter implements ContainerResponseFilter {
 								Cacheable.class.cast(annotation).cc());
 					},
 					Permissions.class,
-					this::applyEditable,
+					this::applyPermisionable,
 
 					NoCache.class,
 					(final Annotation annotation, final MultivaluedMap<String, Object> headers, final ContainerRequestContext requestContext,
@@ -114,10 +111,10 @@ public class HeaderFilter implements ContainerResponseFilter {
 		}
     } // filter.
 
-	private void applyEditable (final Annotation annotation,
-						final MultivaluedMap<String, Object> headers,
-						final ContainerRequestContext requestContext,
-				   		final ContainerResponseContext responseContext) {
+	private void applyPermisionable(final Annotation annotation,
+									final MultivaluedMap<String, Object> headers,
+									final ContainerRequestContext requestContext,
+									final ContainerResponseContext responseContext) {
 
     	final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
 
@@ -145,6 +142,6 @@ public class HeaderFilter implements ContainerResponseFilter {
 
 			}
 		}
-	} // applyEditable.
+	} // applyPermisionable.
 } // E:O:F:HeaderFilter.
  
