@@ -71,8 +71,7 @@ public class CommentOnWorkflowActionlet extends WorkFlowActionlet {
         final WorkflowComment              comment      = new WorkflowComment();
         final Contentlet                   contentlet   = processor.getContentlet();
 
-        //this.setRole(processor, comment);
-        comment.setPostedBy(processor.getUser().getFullName());
+        this.setRole(processor, comment);
         this.processCommentValue(processor, commentParam, comment);
 
         if (null != processor.getTask()) { // if the content is new the
@@ -106,12 +105,9 @@ public class CommentOnWorkflowActionlet extends WorkFlowActionlet {
 
     private void setRole(final WorkflowProcessor processor,
                          final WorkflowComment comment) {
-        Role role;
-
         try {
-            role = APILocator.getRoleAPI().getUserRole(processor.getUser());
-            comment.setPostedBy(role.getId());
-        } catch (DotDataException e1) {
+            comment.setPostedBy(processor.getUser().getUserId());
+        } catch (Exception e1) {
             throw new WorkflowActionFailureException("unable to load role:" + processor.getUser(), e1);
         }
     }

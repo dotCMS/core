@@ -508,7 +508,7 @@ public class UserAPITest extends IntegrationTestBase {
 
 		List<WorkflowComment> comments = workflowAPI.findWorkFlowComments(task);
 		for(WorkflowComment comm : comments){
-			assertTrue(comm.getPostedBy().equals(newUserUserRole.getId()));
+			assertTrue(comm.getPostedBy().equals(userToDelete.getUserId()));
 		}
 
 		assertTrue(container.getOwner().equals(userToDelete.getUserId()));
@@ -583,7 +583,7 @@ public class UserAPITest extends IntegrationTestBase {
 
 			comments = workflowAPI.findWorkFlowComments(task);
 			for(WorkflowComment comm : comments){
-				assertTrue(comm.getPostedBy().equals(replacementUserUserRole.getId()));
+				assertTrue(comm.getPostedBy().equals(replacementUser.getUserId()));
 			}
 		}
 

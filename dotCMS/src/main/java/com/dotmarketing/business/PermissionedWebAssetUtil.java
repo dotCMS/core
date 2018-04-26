@@ -273,21 +273,24 @@ public class PermissionedWebAssetUtil {
 
 	/**
 	 * Will execute the query to get assetIds with required permission
-	 * @param tablesToJoin - This would be the tables to include in where ie... "template,inode,indentifier"
+	 * @param tablesToJoin - This would be the tables to include in where ie... "template,inode,identifier"
+	 * @param permissionType - This includes a list of permissionable Classes to look for.
 	 * @param assetWhereClause - ie... "inode.identifier = identifier.inode and inode.inode = template.inode and template.title LIKE '%mytitle%'"
 	 * @param colToSelect ie.. template.inode
 	 * @param colToJoinAssetIdTo The column and table to joing the asset_id or inode_id from permission tables to ie.. identifier.inode
-	 * @param orderByClause - ie... template.name ASC   make sure to capitalize the ASC or DESC
-	 * @param offset
-	 * @param limit
-	 * @param requiredTypePermission
+	 * @param assetWhereClause - ie... template.name ASC   make sure to capitalize the ASC or DESC
+	 * @param columnsToOrderBy - Sorting criteria
+	 * @param offset - For Pagination purposes
+	 * @param limit - For Pagination Purposes
+	 * @param requiredTypePermission - Minimum Permission Level requested to user in context for assets determined in tablesToJoin and permissionType
+	 * @see PermissionAPI for more details on which permissions levels may be available
 	 * @param respectFrontendRoles
 	 * @param user
 	 * @return
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	private static List<String> queryForAssetIds(String tablesToJoin,String[] permissionType ,String colToSelect, String colToJoinAssetIdTo, String assetWhereClause, List<ColumnItem> columnsToOrderBy, int offset, int limit, int requiredTypePermission, boolean respectFrontendRoles, User user) throws DotDataException,DotSecurityException {
+	private static List<String> queryForAssetIds(String tablesToJoin, String[] permissionType ,String colToSelect, String colToJoinAssetIdTo, String assetWhereClause, List<ColumnItem> columnsToOrderBy, int offset, int limit, int requiredTypePermission, boolean respectFrontendRoles, User user) throws DotDataException,DotSecurityException {
 		Role anonRole;
 		Role frontEndUserRole;
 		Role adminRole;
@@ -447,7 +450,7 @@ public class PermissionedWebAssetUtil {
 			limitOffsetSQL = limitResults ? "WHERE LINENUM BETWEEN " + (offset<=0?offset:offset+1) + " AND " + (offset + limit) : "";
 			sql = permissionRefSQL.toString() + (UtilMethods.isSet(individualPermissionSQL.toString())?" UNION " +individualPermissionSQL.toString():"") +" ) " + limitOffsetSQL + " ORDER BY " + orderByClauseWithAlias ;
 		}else if(DbConnectionFactory.isMsSql()){
-			limitOffsetSQL = limitResults ? "AS MyDerivedTable WHERE MyDerivedTable.LINENUM BETWEEN " + (offset<=0?offset:offset+1)  + " AND " + (offset + limit) : "";
+			limitOffsetSQL = limitResults ? "AS MyDerivedTable WHERE MyDerivedTable.LINENUM BETWEEN " + (offset<=0?offset:offset+1)  + " AND " + (offset + limit) : "AS results";
 			sql = permissionRefSQL.toString() + (UtilMethods.isSet(individualPermissionSQL.toString())?" UNION " +individualPermissionSQL.toString():"") +" ) " + limitOffsetSQL + " ORDER BY " + orderByClauseWithAlias;
 		}else{
 			limitOffsetSQL = limitResults ? " LIMIT " +  limit + " OFFSET " + offset : "";
