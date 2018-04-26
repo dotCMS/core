@@ -15,7 +15,6 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.*;
 import com.dotmarketing.factories.EmailFactory;
@@ -51,7 +50,6 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.liferay.util.servlet.SessionMessages;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.tools.ant.taskdefs.Sleep;
 
 import javax.servlet.http.HttpServletRequest;
 import java.text.DateFormat;
