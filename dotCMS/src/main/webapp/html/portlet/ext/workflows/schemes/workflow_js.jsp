@@ -420,12 +420,17 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
                 url : "/api/v1/workflow/schemes/import",
                 postData: fileText,
                 timeout : 30000,
-                handleAs : "json",
                 headers: { "Content-Type": "application/json"},
-                load : function(data) {
-                    schemeAdmin.importSuccess(data);
-                }, error : function(error) {
-                    showDotCMSSystemMessage(error, true);
+                handle : function(dataOrError, ioArgs) {
+                    if (ioArgs.xhr.status != 200) {
+                        if (ioArgs.xhr.getResponseHeader("error-message")) {
+                            schemeAdmin.importError(ioArgs.xhr.getResponseHeader("error-message"));
+                        } else {
+                            schemeAdmin.importError("<%=LanguageUtil.get(pageContext, "Unable-to-import-Scheme")%>");
+                        }
+                    } else {
+                        schemeAdmin.importSuccess(dataOrError);
+                    }
                 }
             };
 
@@ -438,6 +443,9 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
         mainAdmin.refresh();
         showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Workflow-Scheme-Imported")%>");
 
+    },
+    importError : function(message) {
+        showDotCMSSystemMessage(message, true);
     }
 
 });

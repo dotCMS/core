@@ -1,9 +1,5 @@
 package com.dotmarketing.factories;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.util.IntegrationTestInitService;
 
@@ -18,6 +14,8 @@ import java.util.List;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 public class MultiTreeFactoryTest extends IntegrationTestBase {
     
@@ -130,14 +128,6 @@ public class MultiTreeFactoryTest extends IntegrationTestBase {
         
         MultiTree mt2 = MultiTreeFactory.getMultiTree(mt.getHtmlPage(), mt.getContainer(), mt.getContentlet(), mt.getRelationType());
         assertTrue("multiTree save and get equals", mt.equals(mt2));
-        
-        
-        
-        
-        
-        
-
-        
     }
     
     
@@ -209,5 +199,26 @@ public class MultiTreeFactoryTest extends IntegrationTestBase {
         assertTrue(multiTrees.isEmpty());
 
         MultiTreeFactory.deleteMultiTree(mt);
+    }
+
+    @Test
+    public void testUpdateMultiTree_GivenSomeMultiTreeWithRelationType_ShouldUpdateRelationType() throws Exception {
+        final String NEW_RELATION_TYPE = "New Relation Type";
+        final String containerId = CONTAINER + "0";
+        final String relationType = RELATION_TYPE + "0";
+
+        MultiTreeFactory.updateMultiTree(PAGE, containerId, relationType, NEW_RELATION_TYPE);
+        List<MultiTree> multiTrees = MultiTreeFactory.getMultiTrees(PAGE, containerId, relationType);
+
+        assertTrue(multiTrees.isEmpty());
+
+        List<MultiTree> multiTreesNewRelationType = MultiTreeFactory.getMultiTrees(PAGE, containerId, NEW_RELATION_TYPE);
+
+        assertFalse(multiTreesNewRelationType.isEmpty());
+        assertTrue(multiTreesNewRelationType.size() == 5);
+
+        for (MultiTree multiTree : multiTreesNewRelationType) {
+            assertEquals(NEW_RELATION_TYPE, multiTree.getRelationType());
+        }
     }
 }

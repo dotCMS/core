@@ -66,7 +66,7 @@ public class ESUtils {
 
 		String yamlPath = System.getenv("ES_PATH_CONF");
 		if (!UtilMethods.isSet(yamlPath) || !FileUtil.exists(yamlPath)){
-			//Get elasticsearch-ext.yml from default location
+			//Get elasticsearch-override.yml from default location
 			yamlPath = getESPathHome() + File.separator + ES_CONFIG_DIR +  File.separator + ES_EXT_YML_FILE;
 		} else{
 			//Otherwise, get parent directory from the ES_PATH_CONF
