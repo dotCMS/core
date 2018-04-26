@@ -19,7 +19,9 @@ class TestHostComponent {
     constructor() {
         this.group = new FormGroup({
             sidebar: new FormControl({
-                sidebar: 'left'
+                location: 'left',
+                containers: [],
+                width: ''
             })
         });
     }
@@ -46,6 +48,13 @@ describe('DotLayoutSidebarComponent', () => {
         fixture = DOTTestBed.createComponent(DotLayoutSidebarComponent);
         comp = fixture.componentInstance;
         de = fixture.debugElement;
+
+        comp.value = {
+            location: 'left',
+            containers: [],
+            width: ''
+        };
+
         fixture.detectChanges();
     });
 
@@ -56,7 +65,6 @@ describe('DotLayoutSidebarComponent', () => {
 
         dotLayoutPropertiesItem.change.subscribe((value) => (res = value));
         layoutPropertyItemEl.click();
-
         spyOn(comp, 'propagateChange');
         comp.setValue(true, 'left');
 
@@ -102,14 +110,22 @@ describe('DotLayoutSidebarComponent', () => {
         hostComponentfixture = DOTTestBed.createComponent(TestHostComponent);
         de = hostComponentfixture.debugElement.query(By.css('dot-layout-property-sidebar'));
         const component: DotLayoutSidebarComponent = de.componentInstance;
-        comp.value = '';
+        component.value = {
+            location: '',
+            containers: [],
+            width: ''
+        };
 
         spyOn(component, 'writeValue');
         comp.setValue(true, 'left');
         hostComponentfixture.detectChanges();
 
-        expect(comp.value).toEqual('left');
-        expect(component.writeValue).toHaveBeenCalledWith({ sidebar: 'left' });
+        expect(comp.value.location).toEqual('left');
+        expect(component.writeValue).toHaveBeenCalledWith({
+            location: 'left',
+            containers: [],
+            width: ''
+        });
     });
 
     xit('should show selected left or right based on the sidebar location value', () => {});

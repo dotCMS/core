@@ -2,6 +2,7 @@ import { DotMessageService } from '../../../../../../api/services/dot-messages-s
 import { DotLayoutPropertiesItemComponent } from '../dot-layout-properties-item/dot-layout-properties-item.component';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { Component, forwardRef, ViewChild, OnInit } from '@angular/core';
+import { DotLayoutSideBar } from '../../../../shared/models/dot-layout-sidebar.model';
 
 @Component({
     selector: 'dot-layout-property-sidebar',
@@ -17,7 +18,7 @@ import { Component, forwardRef, ViewChild, OnInit } from '@angular/core';
 export class DotLayoutSidebarComponent implements ControlValueAccessor, OnInit {
     @ViewChild('propertyItemLeft') propertyItemLeft: DotLayoutPropertiesItemComponent;
     @ViewChild('propertyItemRight') propertyItemRight: DotLayoutPropertiesItemComponent;
-    value: string;
+    value: DotLayoutSideBar;
 
     constructor(public dotMessageService: DotMessageService) {}
 
@@ -31,7 +32,7 @@ export class DotLayoutSidebarComponent implements ControlValueAccessor, OnInit {
 
     /**
      * Write a new value to the property item
-     * @param {any} value
+     * @param {any} DotLayoutSideBar
      * @memberof DotLayoutSidebarComponent
      */
     writeValue(value): void {
@@ -50,14 +51,14 @@ export class DotLayoutSidebarComponent implements ControlValueAccessor, OnInit {
         if (value && location === 'left') {
             this.propertyItemLeft.setChecked();
             this.propertyItemRight.setUnchecked();
-        }
-
-        if (value && location === 'right') {
+        } else if (value && location === 'right') {
             this.propertyItemLeft.setUnchecked();
             this.propertyItemRight.setChecked();
+        } else {
+            this.value.containers = [];
         }
 
-        this.value = value ? location : '';
+        this.value.location = value ? location : '';
         this.propagateChange(this.value);
     }
 

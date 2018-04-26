@@ -6,7 +6,7 @@ import { DotActionButtonModule } from './../../../../../../view/components/_comm
 import { mockDotRenderedPage } from './../../../../../../test/dot-rendered-page.mock';
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { DebugElement } from '@angular/core';
+import { DebugElement, Component, Input } from '@angular/core';
 
 import { DotLayoutDesignerComponent } from './dot-layout-designer.component';
 import { FormBuilder } from '@angular/forms';
@@ -14,27 +14,40 @@ import { DOTTestBed } from '../../../../../../test/dot-test-bed';
 import { DotSidebarPropertiesModule } from '../../../components/dot-sidebar-properties/dot-sidebar-properties.module';
 import { LoginServiceMock } from '../../../../../../test/login-service.mock';
 import { LoginService } from 'dotcms-js/dotcms-js';
+import { DotEditLayoutSidebarModule } from '../../../components/dot-edit-layout-sidebar/dot-edit-layout-sidebar.module';
+import { MockDotMessageService } from '../../../../../../test/dot-message-service.mock';
+import { DotMessageService } from '../../../../../../api/services/dot-messages-service';
 
 describe('DotLayoutDesignerComponent', () => {
     let component: DotLayoutDesignerComponent;
     let fixture: ComponentFixture<DotLayoutDesignerComponent>;
 
-    beforeEach(
-        async(() => {
-            DOTTestBed.configureTestingModule({
-                imports: [DotSidebarPropertiesModule, DotActionButtonModule, DotEditLayoutGridModule, BrowserAnimationsModule],
-                declarations: [DotLayoutDesignerComponent],
-                providers: [
-                    DotEditLayoutService,
-                    TemplateContainersCacheService,
-                    {
-                        provide: LoginService,
-                        useClass: LoginServiceMock
-                    }
-                ]
-            });
-        })
-    );
+    beforeEach(async(() => {
+        const messageServiceMock = new MockDotMessageService({
+            'editpage.layout.designer.header': 'HEADER',
+            'editpage.layout.designer.footer': 'FOOTER'
+        });
+
+        DOTTestBed.configureTestingModule({
+            imports: [
+                DotSidebarPropertiesModule,
+                DotActionButtonModule,
+                DotEditLayoutGridModule,
+                BrowserAnimationsModule,
+                DotEditLayoutSidebarModule
+            ],
+            declarations: [DotLayoutDesignerComponent],
+            providers: [
+                DotEditLayoutService,
+                TemplateContainersCacheService,
+                {
+                    provide: LoginService,
+                    useClass: LoginServiceMock
+                },
+                { provide: DotMessageService, useValue: messageServiceMock }
+            ]
+        });
+    }));
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotLayoutDesignerComponent);
@@ -111,11 +124,11 @@ describe('DotLayoutDesignerComponent', () => {
                     header: true,
                     footer: true,
                     body: mockDotRenderedPage.layout.body,
-                    sidebar: new FormBuilder().group({
+                    sidebar: {
                         location: '',
                         containers: [],
                         width: 'small'
-                    })
+                    }
                 });
                 fixture.detectChanges();
             });
@@ -130,29 +143,38 @@ describe('DotLayoutDesignerComponent', () => {
                 expect(footerElem).toBeTruthy();
             });
 
+            it('should have the right label for the Header', () => {
+                const headerSelector = fixture.debugElement.query(By.css('.dot-layout-designer__header'));
+                expect(headerSelector.nativeElement.outerText).toBe('HEADER');
+            });
+
+            it('should have the right label for the Footer', () => {
+                const headerSelector = fixture.debugElement.query(By.css('.dot-layout-designer__footer'));
+                expect(headerSelector.nativeElement.outerText).toBe('FOOTER');
+            });
+
             describe('sidebar size and position', () => {
                 beforeEach(() => {
                     component.group = new FormBuilder().group({
                         ...mockDotRenderedPage.layout,
-                        sidebar: new FormBuilder().group({
+                        sidebar: {
                             location: 'left',
                             containers: [],
                             width: 'small'
-                        })
+                        }
                     });
                     fixture.detectChanges();
                 });
 
                 it('should show', () => {
-                    const sidebar: DebugElement = fixture.debugElement.query(By.css('[class^="dot-layout-designer__sidebar"]'));
+                    const sidebar: DebugElement = fixture.debugElement.query(By.css('.dot-layout-designer__sidebar--left'));
                     expect(sidebar).toBeTruthy();
                 });
 
                 it('should show sidebar position correctly', () => {
                     const positions = ['left', 'right'];
-
-                    positions.forEach(position => {
-                        component.group.get('sidebar').get('location').setValue(position);
+                    positions.forEach((position) => {
+                        component.group.get('sidebar').value.location = position;
                         fixture.detectChanges();
                         const sidebar: DebugElement = fixture.debugElement.query(By.css(`.dot-layout-designer__sidebar--${position}`));
                         expect(sidebar).toBeTruthy(position);
@@ -162,8 +184,8 @@ describe('DotLayoutDesignerComponent', () => {
                 it('it should set sidebar size correctly', () => {
                     const sizes = ['small', 'medium', 'large'];
 
-                    sizes.forEach(size => {
-                        component.group.get('sidebar').get('width').setValue(size);
+                    sizes.forEach((size) => {
+                        component.group.get('sidebar').value.width = size;
                         fixture.detectChanges();
                         const sidebar: DebugElement = fixture.debugElement.query(By.css(`.dot-layout-designer__sidebar--${size}`));
                         expect(sidebar).toBeTruthy(size);

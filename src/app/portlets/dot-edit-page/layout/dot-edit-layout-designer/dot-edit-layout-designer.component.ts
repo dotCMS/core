@@ -14,6 +14,7 @@ import { DotEditLayoutService } from '../../shared/services/dot-edit-layout.serv
 import { DotGlobalMessageService } from '../../../../view/components/_common/dot-global-message/dot-global-message.service';
 import { DotRenderedPage } from '../../shared/models/dot-rendered-page.model';
 import { LoginService } from 'dotcms-js/core/login.service';
+import { DotLayoutSideBar } from '../../shared/models/dot-layout-sidebar.model';
 
 @Component({
     selector: 'dot-edit-layout-designer',
@@ -199,20 +200,13 @@ export class DotEditLayoutDesignerComponent implements OnInit {
             });
     }
 
-    private createSidebarForm() {
-        if (this.pageState.layout.sidebar) {
-            return this.fb.group({
-                location: this.pageState.layout.sidebar.location,
-                containers: this.fb.array(this.pageState.layout.sidebar.containers || []),
-                width: this.pageState.layout.sidebar.width
-            });
-        } else {
-            return this.fb.group({
-                location: '',
-                containers: [],
-                width: 'small'
-            });
-        }
+    // tslint:disable-next-line:cyclomatic-complexity
+    private createSidebarForm(): DotLayoutSideBar {
+        return {
+            location: this.pageState.layout.sidebar.location || '',
+            containers: this.pageState.layout.sidebar.containers || [],
+            width: this.pageState.layout.sidebar.width || 'small'
+        };
     }
 
     private shouldShowDialog(): boolean {

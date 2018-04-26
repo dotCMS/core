@@ -4,10 +4,11 @@ import { DotEditLayoutGridComponent } from './dot-edit-layout-grid.component';
 import { NgGridModule } from 'angular2-grid';
 import { DotActionButtonModule } from '../../../../../view/components/_common/dot-action-button/dot-action-button.module';
 import { DotContainerSelectorModule } from '../../../../../view/components/dot-container-selector/dot-container-selector.module';
+import { ButtonModule } from 'primeng/primeng';
 
 @NgModule({
     declarations: [DotEditLayoutGridComponent],
-    imports: [CommonModule, NgGridModule, DotActionButtonModule, DotContainerSelectorModule],
+    imports: [CommonModule, NgGridModule, DotActionButtonModule, DotContainerSelectorModule, ButtonModule],
     exports: [DotEditLayoutGridComponent],
     providers: []
 })

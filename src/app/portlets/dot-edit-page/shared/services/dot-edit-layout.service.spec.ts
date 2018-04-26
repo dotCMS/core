@@ -3,6 +3,9 @@ import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DotLayoutGridBox } from '../../shared/models/dot-layout-grid-box.model';
 import { DotLayoutBody } from '../../shared/models/dot-layout-body.model';
 import { TemplateContainersCacheService } from '../../template-containers-cache.service';
+import { DotPageContainer } from '../models/dot-page-container.model';
+import { mockDotContainers } from '../../../../test/dot-rendered-page.mock';
+import { DotContainerColumnBox } from '../models/dot-container-column-box.model';
 
 describe('DotEditLayoutService', () => {
     const containers = {
@@ -201,8 +204,27 @@ describe('DotEditLayoutService', () => {
 
         expect(layoutBody.rows.length).toEqual(1);
         expect(layoutBody.rows[0].columns.length).toEqual(2, 'create two columns');
-        expect(layoutBody.rows[0].columns[1].containers.length).toEqual(2, 'reate two containers');
+        expect(layoutBody.rows[0].columns[1].containers.length).toEqual(2, 'create two containers');
         expect(layoutBody.rows[0].columns[1].leftOffset).toEqual(9, 'set leftOffset to 9');
         expect(layoutBody.rows[0].columns[1].width).toEqual(4, 'create 4 containers for the first row');
+    });
+
+    it('should transform the Sidebar data to ContainerColumnBox to export the data', () => {
+        const rawContainers = [
+            {
+                identifier: mockDotContainers[0].container.identifier,
+                uuid: '1234567890'
+            },
+            {
+                identifier: mockDotContainers[1].container.identifier,
+                uuid: '1234567891'
+            }
+        ];
+
+        const containerColumnBox: DotContainerColumnBox[] = dotEditLayoutService.getDotLayoutSidebar(rawContainers);
+        delete containerColumnBox[0].uuid;
+        delete containerColumnBox[1].uuid;
+
+        expect(containerColumnBox).toEqual(mockDotContainers);
     });
 });

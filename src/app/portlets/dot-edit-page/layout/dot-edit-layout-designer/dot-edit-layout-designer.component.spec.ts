@@ -274,8 +274,7 @@ describe('DotEditLayoutDesignerComponent', () => {
 
         it('should have a sidebar containers', () => {
             fixture.detectChanges();
-
-            expect(component.form.get('layout.sidebar.containers').value).toEqual([
+            expect(component.form.value.layout.sidebar.containers).toEqual([
                 {
                     identifier: 'fc193c82-8c32-4abe-ba8a-49522328c93e',
                     uuid: 'LEGACY_RELATION_TYPE'

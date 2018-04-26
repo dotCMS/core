@@ -1,24 +1,19 @@
-<div class="container-selector">
-    <div class="container-selector__header">
-        <dot-searchable-dropdown
-            (change)="containerChange($event)"
-            (filterChange)="handleFilterChange($event)"
-            (pageChange)="handlePageChange($event)"
-            [data]="currentContainers"
-            [pageLinkSize]="5"
-            [rows]="paginationService.paginationPerPage"
-            [totalRecords]="paginationService.totalRecords"
-            [labelPropertyName]="['name', 'parentPermissionable.hostname']"
-            placeholder="{{ dotMessageService.get('editpage.container.add.label') }}"
-            persistentPlaceholder="true"
-            [multiple]="multiple">
-        </dot-searchable-dropdown>
-        <button class="container-selector__header-remove" type="button" pButton icon="fa-close" (click)="remove.emit($event)"></button>
-    </div>
-    <ul class="container-selector__list">
-        <li *ngFor="let dotContainerColumnBox of selectedContainersList; let i = index" class="container-selector__list-item">
-            <button pButton icon="fa-trash" type="button" (click)="removeContainerItem(i)"></button>
-            {{ dotContainerColumnBox.container?.name }}
-        </li>
-    </ul>
-</div>
+<dot-searchable-dropdown
+    (change)="containerChange($event)"
+    (filterChange)="handleFilterChange($event)"
+    (pageChange)="handlePageChange($event)"
+    [data]="currentContainers"
+    [pageLinkSize]="5"
+    [rows]="paginationService.paginationPerPage"
+    [totalRecords]="paginationService.totalRecords"
+    [labelPropertyName]="['name', 'parentPermissionable.hostname']"
+    placeholder="{{ dotMessageService.get('editpage.container.add.label') }}"
+    persistentPlaceholder="true"
+    [multiple]="multiple">
+</dot-searchable-dropdown>
+<ul class="container-selector__list">
+    <li *ngFor="let dotContainerColumnBox of data; let i = index" class="container-selector__list-item">
+        <button pButton icon="fa-trash" type="button" (click)="removeContainerItem(i)"></button>
+        {{ dotContainerColumnBox.container?.name }}
+    </li>
+</ul>

@@ -4,4 +4,38 @@
 :host {
     display: block;
     width: 100%;
+
+    ::ng-deep {
+        dot-container-selector {
+            height: auto;
+            margin-left: $basic-padding * 2;
+            margin-right: $basic-padding * 2;
+
+            dot-searchable-dropdown button {
+                margin: $basic-padding 0;
+            }
+
+            dot-searchable-dropdown button,
+            dot-searchable-dropdown button:hover {
+                box-shadow: none;
+            }
+
+            .container-selector__list {
+                height: 140px;
+                margin-top: $basic-padding;
+            }
+        }
+    }
+}
+
+.box {
+    background: linear-gradient(to bottom, $gray-lightest-x 0, $gray-lightest-x 48px, $white 48px, $white 100%);
+    border: 1px solid $gray-light;
+    height: 206px;
+}
+
+.box__remove {
+    margin: $basic-padding $basic-padding * 2;
+    position: absolute;
+    right: 0;
 }

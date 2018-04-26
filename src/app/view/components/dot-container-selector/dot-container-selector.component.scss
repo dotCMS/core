@@ -1,35 +1,12 @@
 @import 'variables';
 @import 'mixins';
 
-.container-selector {
-    height: 206px;
-    border: 1px solid $gray-light;
-    background-color: $white;
-
-    .ui-button[iconButton] {
-        [class^='ui-button-icon'] {
-            color: $body-font-color;
-        }
-    }
-
-    searchable-dropdown .ui-button,
-    searchable-dropdown .ui-button:hover {
-        box-shadow: none;
-    }
-}
-
-.container-selector__header {
-    height: 48px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: $basic-padding $basic-padding * 2;
-    background-color: $gray-lightest-x;
+:host {
+    display: block;
 }
 
 .container-selector__list {
-    height: 140px;
-    margin: $basic-padding $basic-padding * 3 $basic-padding $basic-padding;
+    margin: 0;
     overflow-x: hidden;
     padding: 0;
 }
@@ -37,7 +14,12 @@
 .container-selector__list-item {
     @include naked-list;
     border-top: 1px solid $gray-lighter;
+    color: $black;
+    font-size: $font-size-medium;
+    overflow: hidden;
     padding: $basic-padding / 2 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 
     &:first-child {
         border-top: none;

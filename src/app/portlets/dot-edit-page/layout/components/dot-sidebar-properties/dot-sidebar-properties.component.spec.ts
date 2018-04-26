@@ -5,10 +5,14 @@ import { DotMessageService } from '../../../../../api/services/dot-messages-serv
 import { By } from '@angular/platform-browser';
 import { DotSidebarPropertiesComponent } from './dot-sidebar-properties.component';
 import { OverlayPanelModule } from 'primeng/primeng';
+import { DotEventsService } from '../../../../../api/services/dot-events/dot-events.service';
+import { DebugElement } from '@angular/core';
 
 describe('DotSidebarPropertiesComponent', () => {
     let component: DotSidebarPropertiesComponent;
     let fixture: ComponentFixture<DotSidebarPropertiesComponent>;
+    let de: DebugElement;
+    let dotEventsService: DotEventsService;
 
     beforeEach(() => {
         const messageServiceMock = new MockDotMessageService({
@@ -25,7 +29,9 @@ describe('DotSidebarPropertiesComponent', () => {
         });
 
         fixture = DOTTestBed.createComponent(DotSidebarPropertiesComponent);
+        de = fixture.debugElement;
         component = fixture.componentInstance;
+        dotEventsService = de.injector.get(DotEventsService);
     });
 
     it('should has an overlay panel', () => {
@@ -49,5 +55,19 @@ describe('DotSidebarPropertiesComponent', () => {
 
         button.nativeElement.click();
         expect(component.overlay.toggle).toHaveBeenCalledTimes(1);
+    });
+
+    it('should hide overlay panel when a sidebar size property is clicked', () => {
+        spyOn(component.overlay, 'hide');
+        const radioButtons = fixture.debugElement.query(By.css('.dot-sidebar-properties__radio-buttons-container'));
+        radioButtons.children[0].nativeElement.click();
+        expect(component.overlay.hide).toHaveBeenCalledTimes(1);
+    });
+
+    it('should send a layout-sidebar-change notification when a sidebar size property is clicked', () => {
+        spyOn(dotEventsService, 'notify');
+        const radioButtons = fixture.debugElement.query(By.css('.dot-sidebar-properties__radio-buttons-container'));
+        radioButtons.children[0].nativeElement.click();
+        expect(dotEventsService.notify).toHaveBeenCalledWith('layout-sidebar-change');
     });
 });
