@@ -109,15 +109,15 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		this.matchResultsTextValue = this.matchResultsText.value;
 		!isNg && this.dialog.hide();
         dojo.parser.parse(this.search_fields_table);
-        
-        if (isNg) {
+        if (isNg && this.containerStructures[0].inode && this.containerStructures[0].inode !== 'catchall' ) {
             this.addContentletButton.style.display = "block";
         }
 	},
 
 	displayStructureFields: function (structureInode) {
 		this.structureInode = structureInode;
-		StructureAjax.getStructureDetails(this.structureInode,dojo.hitch(this, this._structureDetailsCallback));
+        StructureAjax.getStructureDetails(this.structureInode,dojo.hitch(this, this._structureDetailsCallback));
+        this.addContentletButton.style.display = structureInode === 'catchall' ? 'none' : 'block';
 	},
 
 	show: function () {

@@ -3874,8 +3874,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
             if(property.getValue() == null)
                 continue;
-            if((!property.getKey().equals("recurrence"))&&!(property.getValue() instanceof String || property.getValue() instanceof Boolean ||property.getValue() instanceof File || property.getValue() instanceof Float || property.getValue() instanceof Integer || property.getValue() instanceof Date || property.getValue() instanceof Long || property.getValue() instanceof List || property.getValue() instanceof BigDecimal || property.getValue() instanceof Short)){
-                throw new DotContentletStateException("The map contains an invalid value");
+            if((!property.getKey().equals("recurrence"))&&!(property.getValue() instanceof String || property.getValue() instanceof Boolean ||property.getValue() instanceof File || property.getValue() instanceof Float || property.getValue() instanceof Integer || property.getValue() instanceof Date || property.getValue() instanceof Long || property.getValue() instanceof List || property.getValue() instanceof BigDecimal || property.getValue() instanceof Short || property.getValue() instanceof Double)){
+                throw new DotContentletStateException("The map contains an invalid value: " + property.getValue().getClass());
             }
         }
 

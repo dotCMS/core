@@ -1,12 +1,15 @@
 package com.dotmarketing.quartz;
 
+import com.dotcms.util.CloseUtils;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import java.sql.Connection;
 import java.sql.SQLException;
-
 import javax.sql.DataSource;
-
 import net.sourceforge.jtds.jdbc.ConnectionJDBC2;
-
 import org.quartz.JobDetail;
 import org.quartz.JobPersistenceException;
 import org.quartz.ObjectAlreadyExistsException;
@@ -19,15 +22,14 @@ import org.quartz.spi.ClassLoadHelper;
 import org.quartz.spi.SchedulerSignaler;
 import org.quartz.utils.ConnectionProvider;
 import org.quartz.utils.DBConnectionManager;
-import org.springframework.jdbc.datasource.DataSourceUtils;
 
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-
+/**
+ *
+ * @author root
+ * @since Mar 22nd, 2012
+ */
 public class DotJobStore extends JobStoreCMT {
+
 	@Override
 	public void storeJobAndTrigger(SchedulingContext ctxt, JobDetail newJob, Trigger newTrigger) throws ObjectAlreadyExistsException, JobPersistenceException {
 		super.storeJobAndTrigger(ctxt, newJob, newTrigger);
@@ -47,7 +49,6 @@ public class DotJobStore extends JobStoreCMT {
 		setDataSource(TX_DATA_SOURCE_PREFIX + getInstanceName());
 		setDontSetAutoCommitFalse(true);
 
-//		String serverName = Config.getStringProperty("DIST_INDEXATION_SERVER_ID");
 		String serverName = APILocator.getServerAPI().readServerId();
 		if(!UtilMethods.isSet(serverName)){
 			serverName = "dotCMSServer";
@@ -58,7 +59,7 @@ public class DotJobStore extends JobStoreCMT {
 				TX_DATA_SOURCE_PREFIX + getInstanceName(),
 				new ConnectionProvider() {
 					public Connection getConnection() throws SQLException {
-						return DataSourceUtils.doGetConnection(dataSource);
+						return dataSource.getConnection();
 					}
 					public void shutdown() {
 						// Do nothing - a Spring-managed DataSource has its own lifecycle.
@@ -75,7 +76,9 @@ public class DotJobStore extends JobStoreCMT {
 				new ConnectionProvider() {
 					public Connection getConnection() throws SQLException {
 						Connection c = nonTxDataSourceToUse.getConnection();
-						c.setTransactionIsolation(ConnectionJDBC2.TRANSACTION_READ_COMMITTED);
+						if (ConnectionJDBC2.TRANSACTION_READ_COMMITTED != c.getTransactionIsolation()) {
+							c.setTransactionIsolation(ConnectionJDBC2.TRANSACTION_READ_COMMITTED);
+						}
 						return  c;
 					}
 					public void shutdown() {
@@ -154,6 +157,8 @@ public class DotJobStore extends JobStoreCMT {
 	}
 
 	protected void closeConnection(Connection con) {
-		DataSourceUtils.releaseConnection(con, this.dataSource);
+		DbConnectionFactory.closeSilently();
+		CloseUtils.closeQuietly(con);
 	}
+
 }

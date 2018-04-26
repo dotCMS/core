@@ -26,7 +26,7 @@ public class ViewAsPageStatusSerializer extends JsonSerializer<ViewAsPageStatus>
         viewAsMapBuilder.put("language", viewAsPageStatus.getLanguage());
 
         if (viewAsPageStatus.getDevice() != null) {
-            viewAsMapBuilder.put("device", viewAsPageStatus.getDevice());
+            viewAsMapBuilder.put("device", viewAsPageStatus.getDevice().getMap());
         }
 
         jsonGenerator.writeObject(viewAsMapBuilder.build());

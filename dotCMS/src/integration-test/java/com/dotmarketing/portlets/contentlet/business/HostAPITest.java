@@ -212,7 +212,7 @@ public class HostAPITest {
     }
     
     @Test
-    public void search() throws Exception {
+    public void givenSearch_whenNewHost_thenFindsNewHost() throws Exception {
     	User user=APILocator.getUserAPI().getSystemUser();
     	/*
     	 * Get the current Default host
