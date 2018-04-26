@@ -1,17 +1,20 @@
+<%@page import="com.dotcms.contenttype.model.type.ContentType"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.business.Role"%>
 <%@page import="com.dotmarketing.portlets.workflows.business.WorkflowAPI"%>
-<%@page import="com.dotmarketing.portlets.workflows.model.WorkflowAction"%>
 <%@page
-        import="com.dotmarketing.portlets.workflows.model.WorkflowScheme"%>
-<%@page import="com.dotmarketing.portlets.workflows.model.WorkflowStep"%>
+        import="com.dotmarketing.portlets.workflows.model.WorkflowAction"%>
+<%@page import="com.dotmarketing.portlets.workflows.model.WorkflowScheme"%>
 <%@page
-        import="com.dotmarketing.util.UtilMethods"%>
+        import="com.dotmarketing.portlets.workflows.model.WorkflowStep"%>
+<%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
-<%@page import="java.util.List"%>
+<%@ page import="com.liferay.portal.model.User" %>
+<%@ page import="java.util.List" %>
 
 
 <%
+    final User systemUser = APILocator.getUserAPI().getSystemUser();
     final WorkflowAPI wapi = APILocator.getWorkflowAPI();
     final String schemeId = request.getParameter("schemeId");
     final WorkflowScheme scheme = UtilMethods.isSet(pageContext.getAttribute("scheme")) ? WorkflowScheme.class.cast(pageContext.getAttribute("scheme")) : wapi.findScheme(schemeId);
@@ -22,13 +25,24 @@
     if(UtilMethods.isSet(roleId)){
        role = APILocator.getRoleAPI().loadRoleById(roleId);
     }
+
+    ContentType contentType = null;
+    final String contentTypeId = request.getParameter("contentTypeId");
+    if(UtilMethods.isSet(contentTypeId)){
+       contentType = APILocator.getContentTypeAPI(systemUser).find(contentTypeId);
+    }
+
 %>
 
 
 <%for(WorkflowStep step : steps){ %>
 <%
 
-  final List<WorkflowAction> actions = UtilMethods.isSet(role) ? wapi.findActions(step, role) : wapi.findActions(step, APILocator.getUserAPI().getSystemUser());
+  final List<WorkflowAction> actions = (
+          (UtilMethods.isSet(role) && UtilMethods.isSet(contentType))
+          ? wapi.findActions(step, role, contentType)
+          : wapi.findActions(step, systemUser)
+  );
 
 %>
 <div class="list-wrapper wfStepInDrag" id="stepID<%=step.getId()%>">

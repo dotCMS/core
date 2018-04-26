@@ -1,21 +1,20 @@
-<%@page import="java.util.HashSet"%>
-<%@page import="java.util.Set"%>
-<%@page import="com.dotmarketing.portlets.workflows.model.WorkflowAction"%>
-<%@page import="com.dotmarketing.util.UtilMethods"%>
-<%@page
-	import="com.dotmarketing.portlets.workflows.business.WorkflowAPI"%>
-<%@page import="com.dotmarketing.portlets.workflows.model.WorkflowStep"%>
-<%@page
-	import="com.dotmarketing.portlets.workflows.model.WorkflowScheme"%>
+<%@page import="com.dotcms.contenttype.model.type.ContentType"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
-<%@page import="java.util.List"%>
+<%@page import="com.dotmarketing.portlets.workflows.business.WorkflowAPI"%>
+<%@page import="com.dotmarketing.portlets.workflows.model.WorkflowScheme"%>
+<%@page import="com.dotmarketing.portlets.workflows.model.WorkflowStep"%>
+<%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
+<%@page import="java.util.Iterator"%>
+<%@page import="java.util.List"%>
 
 <%
-	WorkflowAPI wapi = APILocator.getWorkflowAPI();
-	String schemeId  = request.getParameter("schemeId");
-	WorkflowScheme scheme          = wapi.findScheme(schemeId);
+	final WorkflowAPI wapi = APILocator.getWorkflowAPI();
+
+	final String schemeId = request.getParameter("schemeId");
+	final WorkflowScheme scheme = wapi.findScheme(schemeId);
 	final List<WorkflowStep> steps = wapi.findSteps(scheme);
+	final List<ContentType> contentTypes = wapi.findContentTypesForScheme(scheme);
 
 	pageContext.setAttribute("scheme",scheme);
 %>
@@ -116,19 +115,79 @@
                 style: "width: 80%",
                 required:false,
                 onClick:function(){
-                    var select = dijit.byId("whoCanUseSelect");
-                    select.set("displayedValue","");
-                    select.loadDropDown();
+                    var whoCanUseSelect = dijit.byId("whoCanUseSelect");
+                    whoCanUseSelect.set("displayedValue","");
+                    whoCanUseSelect.loadDropDown();
                 },onChange:function (item) {
 
-                    var select = dijit.byId("whoCanUseSelect");
-                    var roleId = select.getValue();
-                    stepAdmin.filterSteps(schemeId, roleId);
+                    var whoCanUseSelect = dijit.byId("whoCanUseSelect");
+                    var roleId = whoCanUseSelect.getValue();
+                    var contentTypeSelect = dijit.byId("contentTypeSelect");
+
+                    //We clean up the value displayed in the content type box in any of the following cases
+				    // No need to have a content type if we're showing it all (meaning no filters are applied)
+                    if('' == roleId || 'All' == roleId){
+                       contentTypeSelect.set("displayedValue","");
+					} else {
+                        var whoCanUseDisplayedVal = whoCanUseSelect.get("displayedValue");
+                        if (whoCanUseDisplayedVal) {
+                            //if we pick a special role we clean the content type box
+                            if (whoCanUseDisplayedVal.indexOf('Anyone who can') >= 0) {
+                                contentTypeSelect.set("displayedValue","");
+                            }
+                        }
+					}
+                    var contentTypeId = contentTypeSelect.getValue();
+
+                    if(roleId){
+                        stepAdmin.filterSteps(schemeId, roleId, contentTypeId);
+                    }
 
                 }
             },
             "filterByWhoCanUseSelect");
         dijit.byId("whoCanUseSelect").set("displayedValue","All");
+
+        var stateStore = new dojo.store.Memory({
+            data: [
+                <%
+                   final Iterator<ContentType> contentTypeIterator = contentTypes.iterator();
+				   while (contentTypeIterator.hasNext()){
+                      final ContentType contentType = contentTypeIterator.next();
+                      %>
+                       {name:"<%=contentType.name()%>" , id:"<%=contentType.id()%>" }
+				      <%
+				      if (contentTypeIterator.hasNext()){
+                         %>,<%
+				      }
+				   }
+                %>
+            ]
+        });
+
+        var filterByContentTypeSelect = new dijit.form.FilteringSelect({
+                id: "contentTypeSelect",
+                name: "contentTypeSelect",
+                store: stateStore,
+                pageSize:30,
+                searchDelay:300,
+                style: "width: 80%",
+                required:false,
+                onClick:function(){
+
+                },onChange:function (item) {
+
+                    var whoCanUseSelect = dijit.byId("whoCanUseSelect");
+                    var roleId = whoCanUseSelect.getValue();
+                    var contentTypeSelect = dijit.byId("contentTypeSelect");
+                    var contentTypeId = contentTypeSelect.getValue();
+
+                    stepAdmin.filterSteps(schemeId, roleId, contentTypeId);
+
+                }
+            },
+            "filterByContentTypeSelect");
+
 	});
 
 </script>
@@ -151,6 +210,11 @@
 		<div class="inline-form">
 			<input id="filterByWhoCanUseSelect"/>
 			<label font-size:85%; for="filterByWhoCanUseSelect"><%=LanguageUtil.get(pageContext, "Filter-By-Who-Can-Use")%>
+			</label>
+		</div>
+		<div class="inline-form">
+			<input id="filterByContentTypeSelect"/>
+			<label font-size:85%; for="filterByContentTypeSelect"><%=LanguageUtil.get(pageContext, "Filter-By-Content-Type")%>
 			</label>
 		</div>
 	</div>

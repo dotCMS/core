@@ -30,7 +30,7 @@ dojo.declare(
     }
 );
 
-
+dojo.require("dojo.store.Memory");
 
 
 
@@ -671,12 +671,12 @@ dojo.declare("dotcms.dijit.workflows.StepAdmin", null, {
 			}
 		}
 	},
-    filterSteps:function(schemeId,roleId){
+    filterSteps:function(schemeId, roleId, contentType){
 
         var targetNode = dojo.byId("wfStepInDragContainer");
 
 		var xhrArgs = {
-		   url: "/html/portlet/ext/workflows/schemes/view_steps_filtered.jsp?schemeId="+schemeId+"&roleId="+roleId,
+		   url: "/html/portlet/ext/workflows/schemes/view_steps_filtered.jsp?schemeId="+schemeId+"&roleId="+roleId+"&contentTypeId="+contentType,
 		   async:true,
 		   load: function(markup){
                targetNode.innerHTML = markup;
