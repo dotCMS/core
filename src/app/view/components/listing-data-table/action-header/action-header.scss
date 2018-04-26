@@ -39,7 +39,7 @@
 .action-header__primary-button {
     opacity: 1;
     position: absolute;
-    left: $basic-padding * 2;
+    right: $basic-padding * 2;
     top: 0;
     transform: translateY(0);
     transition: background-color 100ms, transform 0.2s ease, opacity 0.2s ease;
@@ -51,7 +51,7 @@
     background: $white;
     display: flex;
     height: 60px;
-    padding-left: 80px;
+    padding-left: $basic-padding * 2;
     transform: translateY(0px);
     transition: transform 0.2s ease;
 
