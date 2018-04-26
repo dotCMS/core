@@ -13,6 +13,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -48,8 +49,9 @@ public class WfRoleStoreAjax extends WfBaseAction {
 
         }
 
-        boolean includeFake = UtilMethods.isSet(request.getParameter( "includeFake" ))&&request.getParameter( "includeFake" ).equals("true");
-        boolean includeWorkflowRoles = UtilMethods.isSet(request.getParameter( "includeWfRoles" ))&&request.getParameter( "includeWfRoles" ).equals("true");
+        final boolean includeFake = UtilMethods.isSet(request.getParameter( "includeFake" ))&&request.getParameter( "includeFake" ).equals("true");
+        final boolean includeWorkflowRoles = UtilMethods.isSet(request.getParameter( "includeWfRoles" ))&&request.getParameter( "includeWfRoles" ).equals("true");
+        final boolean includeLabelAll = UtilMethods.isSet(request.getParameter( "includeLabelAll" ))&&request.getParameter( "includeLabelAll" ).equals("true");
 
         try {
             final Role cmsAnonOrig = APILocator.getRoleAPI().loadCMSAnonymousRole();
@@ -73,7 +75,7 @@ public class WfRoleStoreAjax extends WfBaseAction {
                             roleList.add( cmsAnon );
                         else
                             roleList.add( r );
-                        response.getWriter().write( rolesToJson( roleList, includeFake ) );
+                        response.getWriter().write( rolesToJson( roleList, includeFake, includeLabelAll ) );
                         return;
                     }
                 } catch ( Exception e ) {
@@ -121,7 +123,7 @@ public class WfRoleStoreAjax extends WfBaseAction {
             }
             //x = x.replaceAll("identifier", "x");
             response.setContentType("application/json");
-            response.getWriter().write( rolesToJson( roleList, includeFake ) );
+            response.getWriter().write( rolesToJson( roleList, includeFake, includeLabelAll ) );
 
         } catch ( Exception e ) {
             Logger.error( WfRoleStoreAjax.class, e.getMessage(), e );
@@ -175,7 +177,7 @@ public class WfRoleStoreAjax extends WfBaseAction {
             }
 
             response.setContentType("application/json");
-            response.getWriter().write( rolesToJson( roleList, includeFake ) );
+            response.getWriter().write( rolesToJson( roleList, includeFake, false ) );
         } catch ( Exception e ) {
             Logger.error( WfRoleStoreAjax.class, e.getMessage(), e );
         }
@@ -183,7 +185,7 @@ public class WfRoleStoreAjax extends WfBaseAction {
 
     }
 
-    private String rolesToJson ( List<Role> roles, boolean includeFake ) throws IOException, DotDataException, LanguageException {
+    private String rolesToJson ( List<Role> roles, boolean includeFake, boolean includeLabelAll ) throws IOException, DotDataException, LanguageException {
 
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure( DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false );
@@ -194,10 +196,17 @@ public class WfRoleStoreAjax extends WfBaseAction {
         Map<String, Object> map = null;
 
         if(includeFake) {
-        	map = new HashMap<String, Object>();
-	        map.put( "name", "" );
+        	map = new HashMap<>();
+	        map.put( "name", StringPool.BLANK );
 	        map.put( "id", 0 );
 	        list.add( map );
+        }
+
+        if(includeLabelAll) {
+            map = new HashMap<>();
+            map.put( "name", "All" );
+            map.put( "id", StringPool.BLANK);
+            list.add( map );
         }
 
         User defaultUser = APILocator.getUserAPI().getDefaultUser();

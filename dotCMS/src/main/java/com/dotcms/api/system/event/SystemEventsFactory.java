@@ -8,6 +8,7 @@ import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.notifications.bean.Notification;
+import com.dotcms.repackage.javax.ws.rs.HEAD;
 import com.dotcms.rest.api.v1.system.websocket.SystemEventsWebSocketEndPoint;
 import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPI;
 import com.dotcms.util.ConversionUtils;
@@ -43,7 +44,7 @@ import java.util.Map;
 public class SystemEventsFactory implements Serializable {
 
 	public static final String EVENTS_THREAD_POOL_SUBMITTER_NAME = "events";
-	private final DotSubmitter dotSubmitter		  = DotConcurrentFactory.getInstance().getSubmitter(EVENTS_THREAD_POOL_SUBMITTER_NAME);
+	private final DotConcurrentFactory concurrentFactory		 = DotConcurrentFactory.getInstance();
 	private final SystemEventsDAO systemEventsDAO = new SystemEventsDAOImpl();
 	private final SystemEventsAPI systemEventsAPI = new SystemEventsAPIImpl();
 
@@ -87,7 +88,7 @@ public class SystemEventsFactory implements Serializable {
 	 * @return The {@link DotSubmitter} instance.
 	 */
 	public DotSubmitter getDotSubmitter() {
-		return this.dotSubmitter;
+		return this.concurrentFactory.getSubmitter(EVENTS_THREAD_POOL_SUBMITTER_NAME);
 	}
 
 	/**
@@ -110,10 +111,10 @@ public class SystemEventsFactory implements Serializable {
 	private final class SystemEventsAPIImpl implements SystemEventsAPI {
 
 		private final ConversionUtils conversionUtils 			  = ConversionUtils.INSTANCE;
-		private final DotSubmitter    dotSubmitter 	 			  = getDotSubmitter();
 		private final SystemEventsDAO systemEventsDAO 			  = getSystemEventsDAO();
 		private final MarshalUtils    marshalUtils 	 			  = MarshalFactory.getInstance().getMarshalUtils();
 		private final ServerAPI 	  serverAPI		  			  = APILocator.getServerAPI();
+		private final DotConcurrentFactory concurrentFactory	  = DotConcurrentFactory.getInstance();
 		private final WebSocketContainerAPI webSocketContainerAPI = APILocator.getWebSocketContainerAPI();
 
 		/**
@@ -178,10 +179,8 @@ public class SystemEventsFactory implements Serializable {
 				Logger.error(this, msg, e);
 				throw new DotDataException(msg, e);
 			} finally {
-
-				if (isNewConnection) {
-
-					DbConnectionFactory.closeSilently();
+				if (localTransaction && isNewConnection) {
+					HibernateUtil.closeSessionSilently();
 				}
 			}
 		}
@@ -199,12 +198,13 @@ public class SystemEventsFactory implements Serializable {
 		@Override
 		public void pushAsync(final SystemEventType event, final Payload payload) throws DotDataException {
 
+			final DotSubmitter dotSubmitter = this.concurrentFactory.getSubmitter(EVENTS_THREAD_POOL_SUBMITTER_NAME);
 			// if by any reason the submitter couldn't be created, sends the message syn
-			if (null == this.dotSubmitter) {
+			if (null == dotSubmitter) {
 				Logger.debug(this, "Sending a message: " + event + "sync, it seems the dotSubmitter could not be created");
 				this.push(event, payload);
 			} else {
-				this.dotSubmitter.execute(() -> {
+				dotSubmitter.execute(() -> {
 
 					try {
 

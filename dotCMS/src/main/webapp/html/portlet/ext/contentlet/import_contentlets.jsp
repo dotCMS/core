@@ -308,7 +308,7 @@
 										<%= LanguageUtil.get(pageContext, "Workflow-Action")%>
 									</dt>
 									<dd>
-										<select dojoType="dijit.form.FilteringSelect" name="workflowActionId" id="workflowActionId" store="actionStore" value="<%= UtilMethods.isSet(form.getWorkflowActionId()) ? form.getWorkflowActionId() : "" %>" >
+										<select dojoType="dijit.form.FilteringSelect" name="workflowActionId" id="workflowActionId" required="false" store="actionStore" value="<%= UtilMethods.isSet(form.getWorkflowActionId()) ? form.getWorkflowActionId() : "" %>" >
 										</select>
 									</dd>
 								</dl>

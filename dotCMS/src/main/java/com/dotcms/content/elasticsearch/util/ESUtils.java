@@ -25,7 +25,7 @@ public class ESUtils {
 	public static final String ES_PATH_HOME_DEFAULT_VALUE = "WEB-INF/elasticsearch";
 	private static final String ES_CONFIG_DIR = "config";
 	private static final String ES_YML_FILE = "elasticsearch.yml";
-	private static final String ES_EXT_YML_FILE = "elasticsearch-ext.yml";
+	private static final String ES_EXT_YML_FILE = "elasticsearch-override.yml";
 
 	public static String escape(final String text) {
 
@@ -66,7 +66,7 @@ public class ESUtils {
 
 		String yamlPath = System.getenv("ES_PATH_CONF");
 		if (!UtilMethods.isSet(yamlPath) || !FileUtil.exists(yamlPath)){
-			//Get elasticsearch-ext.yml from default location
+			//Get elasticsearch-override.yml from default location
 			yamlPath = getESPathHome() + File.separator + ES_CONFIG_DIR +  File.separator + ES_EXT_YML_FILE;
 		} else{
 			//Otherwise, get parent directory from the ES_PATH_CONF

@@ -180,9 +180,11 @@ dojo.declare("dotcms.dijit.workflows.MainAdmin", null, {
 dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 	baseJsp : "/html/portlet/ext/workflows/schemes/view_schemes.jsp",
 	editJsp : "/html/portlet/ext/workflows/schemes/edit_scheme.jsp",
+    importJsp : "/html/portlet/ext/workflows/schemes/import_scheme.jsp",
 	showArchived : false,
 	crumbTitle:"<%=LanguageUtil.get(pageContext, "Schemes")%>",
 	addEditDiv:"wfEditSchemeDia",
+    importDiv:"wfImportSchemeDia",
 	constructor : function() {
 
 	},
@@ -266,27 +268,31 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 		;
 
 	},
-	copyScheme : function(schemeId) {
+	copyScheme : function(schemeId, name) {
+
+		var optionalName = prompt ("<%=LanguageUtil.get(pageContext, "Workflow-Name")%>", name);
 
 		var xhrArgs = {
-			url: "/api/v1/workflow/schemes/" + schemeId + "/copy",
+			url: "/api/v1/workflow/schemes/" + schemeId + "/copy?name=" + optionalName,
 			timeout : 30000,
 			handle : function(dataOrError, ioArgs) {
-				if (dojo.isString(dataOrError)) {
-					if (dataOrError.indexOf("FAILURE") == 0) {
-						schemeAdmin.copyError(dataOrError);
-					} else {
-						schemeAdmin.copySuccess(dataOrError);
-					}
-				} else {
-					this.copyError("<%=LanguageUtil.get(pageContext, "Unable-to-copy-Scheme")%>");
-				}
+						if (ioArgs.xhr.status != 200) {
+
+							if (ioArgs.xhr.getResponseHeader("error-message")) {
+								schemeAdmin.copyError(ioArgs.xhr.getResponseHeader("error-message"));
+							} else {
+								schemeAdmin.copyError("<%=LanguageUtil.get(pageContext, "Unable-to-copy-Scheme")%>");
+							}
+						} else {
+
+							schemeAdmin.copySuccess(dataOrError);
+						}
 			}
 		};
 		dojo.xhrPost(xhrArgs);
 		return;
 	},
-		deleteScheme : function(schemeId) {
+    deleteScheme : function(schemeId) {
 
         if(!confirm("<%=LanguageUtil.get(pageContext, "Confirm-Delete-Scheme")%>")){
             return;
@@ -337,7 +343,110 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 	},
 	copyError : function(message) {
 		showDotCMSSystemMessage(message, true);
-	}
+	},
+
+    exportScheme : function(schemeId) {
+
+        var xhrArgs = {
+            url: "/api/v1/workflow/schemes/"+schemeId+"/export",
+            timeout : 30000,
+            handleAs: "json",
+            load: function(data) {
+                 schemeAdmin.downloadFile(schemeId, data);
+            }, error : function(error) {
+                 showDotCMSSystemMessage(error, true);
+            }
+        };
+        dojo.xhrGet(xhrArgs);
+        return;
+    },
+    downloadFile : function (schemeId, data) {
+        var blob = new Blob([JSON.stringify(data.entity)], {type: 'application/json'});
+        var url = URL.createObjectURL(blob);
+
+        let a = document.createElement("a");
+        a.style = "display: none";
+        document.body.appendChild(a);
+
+        a.href = url;
+        a.download = 'scheme_'+schemeId+'.json';
+        a.click();
+        window.URL.revokeObjectURL(url);
+    },
+
+    showImport : function(schemeId) {
+        var myCp = dijit.byId("wfImportSchemeCp");
+        if (myCp) {
+            myCp.destroyRecursive(false);
+        }
+        var href = this.importJsp;
+
+        myCp = new dijit.layout.ContentPane({
+            id : "wfImportSchemeCp",
+            parseOnLoad : true,
+        });
+
+        var dia = dijit.byId(this.importDiv);
+        if(dia){
+            dia.destroyRecursive(false);
+        }
+
+        dia = new dijit.Dialog({
+            id : this.importDiv,
+            title : "<%=LanguageUtil.get(pageContext, "Import-Workflow-Scheme")%>",
+            draggable : false
+        });
+
+        myCp.attr("href", href)
+        myCp.placeAt(this.importDiv)
+        dia.show();
+    },
+    hideImport : function() {
+        var dialog = dijit.byId(this.importDiv);
+        dialog.hide();
+    },
+    importScheme : function() {
+
+        if(!confirm("<%=LanguageUtil.get(pageContext, "Confirm-Import-Scheme")%>")){
+            return;
+        }
+
+        var fileReader = new FileReader();
+        fileReader.readAsText(document.getElementById("schemejsonfile").files[0]);
+        fileReader.onload = function (fileReaderEvent, fileText) {
+            var fileText = fileReaderEvent.target.result;
+
+            var xhrArgs = {
+                url : "/api/v1/workflow/schemes/import",
+                postData: fileText,
+                timeout : 30000,
+                headers: { "Content-Type": "application/json"},
+                handle : function(dataOrError, ioArgs) {
+                    if (ioArgs.xhr.status != 200) {
+                        if (ioArgs.xhr.getResponseHeader("error-message")) {
+                            schemeAdmin.importError(ioArgs.xhr.getResponseHeader("error-message"));
+                        } else {
+                            schemeAdmin.importError("<%=LanguageUtil.get(pageContext, "Unable-to-import-Scheme")%>");
+                        }
+                    } else {
+                        schemeAdmin.importSuccess(dataOrError);
+                    }
+                }
+            };
+
+            dojo.xhrPost(xhrArgs);
+        }
+        return;
+    },
+    importSuccess : function(message) {
+        schemeAdmin.hideImport();
+        mainAdmin.refresh();
+        showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Workflow-Scheme-Imported")%>");
+
+    },
+    importError : function(message) {
+        showDotCMSSystemMessage(message, true);
+    }
 
 });
 
@@ -397,13 +506,13 @@ dojo.declare("dotcms.dijit.workflows.StepAdmin", null, {
 
 		return;
 	},
-	
+
 	showAddNewStep : function (){
 		var dia = dijit.byId("addNewStepDia");
 		if(dia){
 			dia.destroyRecursive();
 		}
-		
+
 		dia = new dijit.Dialog({
 				content: '<div class="inline-form"><%=LanguageUtil.get(pageContext, "Name")%>:&nbsp;<input type="text" name="stepName" id="stepName" dojoType="dijit.form.ValidationTextBox"  required="true" value="" maxlength="255">&nbsp;<button dojoType="dijit.form.Button" onClick="stepAdmin.addStep()" iconClass="addIcon" id="Save-new-step"><%=LanguageUtil.get(pageContext, "Add")%></button></div>',
 				id			:	"addNewStepDia",
@@ -416,12 +525,12 @@ dojo.declare("dotcms.dijit.workflows.StepAdmin", null, {
 			});
 
 		dia.show();
-	
-	
+
+
 	},
-	
-	
-	
+
+
+
 	addSuccess : function (data){
 		mainAdmin.refresh();
 		showDotCMSSystemMessage("Added");
@@ -569,7 +678,26 @@ dojo.declare("dotcms.dijit.workflows.StepAdmin", null, {
 				x.hide();
 			}
 		}
-	}
+	},
+    filterSteps:function(schemeId,roleId){
+
+        var targetNode = dojo.byId("wfStepInDragContainer");
+
+		var xhrArgs = {
+		   url: "/html/portlet/ext/workflows/schemes/view_steps_filtered.jsp?schemeId="+schemeId+"&roleId="+roleId,
+		   async:true,
+		   load: function(markup){
+               targetNode.innerHTML = markup;
+		   },
+		   error: function(error){
+                console.log(error);
+                showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Unable-to-load-Scheme")%>", true);
+		   }
+		};
+		// Call the asynchronous xhrGet
+		var deferred = dojo.xhrGet(xhrArgs);
+
+    }
 
 });
 
@@ -638,7 +766,7 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 		}
 		return ;
 	},
-	
+
 	findStepId : function (ele){
 		var parent = ele;
 		while (true) {
@@ -652,7 +780,7 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 		}
 		return ;
 	},
-	
+
 	findActionId : function (ele){
 		var parent = ele;
 		while (true) {
@@ -679,19 +807,19 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 		}
 		return ;
 	},
-	
+
 	deleteActionForStep : function (ele){
 
 		var stepId = this.findStepId(ele);
 		var actionId = this.findActionId(ele);
 
 
-		
+
 		let matches = document.querySelectorAll('.x' + actionId );
 
 		// we only confirm if this is the last instance of the action
-		
-		
+
+
 		var deleteUrl = "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfActionAjax?cmd=deleteActionForStep&actionId=" + actionId + "&stepId=" + stepId ;
 		if(matches.length ==1){
 			if(!confirm("<%=LanguageUtil.get(pageContext, "Confirm-Delete-Action")%>")){
@@ -713,9 +841,9 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 
 					} else {
 						var die  =actionAdmin.findActionDiv(ele);
-						
+
 						die.parentNode.removeChild(die);
-						
+
 						actionAdmin.deleteSuccess(dataOrError);
 					}
 				} else {
@@ -784,7 +912,7 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 		}
 	},
 	copyOrReorderAction : function(ele) {
-	
+
 		let stepId = this.findStepId(ele);
 		let stepDiv = this.findStepDiv(ele);
 		let actionDiv = this.findActionDiv(ele);
@@ -819,7 +947,7 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 	};
 
 	dojo.xhrPost(xhrArgs);
-	
+
 	},
 	saveAction : function(schemeId) {
 
@@ -1145,7 +1273,7 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
 							showDotCMSSystemMessage(dataOrError, true);
 						}
 						else{
-							// We need to reorder the "Action Classes" array when an element is moved to a 
+							// We need to reorder the "Action Classes" array when an element is moved to a
 							// different position
 							actionClassAdmin.moveFromActionClasses(nodes[0].id.replace("myRow", ""), order);
 						}
@@ -1213,6 +1341,7 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
 
 var myRoleReadStore = new dotcms.dojo.data.RoleReadStore({nodeId: "actionAssignToSelect"});
 var myRoleReadStore2 = new dotcms.dojo.data.RoleReadStore({nodeId: "whoCanUseSelect",includeWfRoles: "true"});
+var myRoleReadStoreFilter = new dotcms.dojo.data.RoleReadStore({nodeId: "whoCanUseSelect", includeWfRoles: "true", includeLabelAll:true});
 
 var myIconStore = new dojo.data.ItemFileReadStore({data:
 	<%@ include file="/html/portlet/ext/workflows/schemes/workflow_icons.json" %>

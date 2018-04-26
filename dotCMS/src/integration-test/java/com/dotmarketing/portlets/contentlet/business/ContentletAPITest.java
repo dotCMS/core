@@ -1,52 +1,21 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import static com.dotcms.util.CollectionsUtils.map;
-import static java.io.File.separator;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import com.dotcms.content.business.DotMappingException;
-import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
-import com.dotcms.contenttype.model.field.DataTypes;
-import com.dotcms.contenttype.model.field.DateTimeField;
-import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.ImmutableBinaryField;
-import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.datagen.ContainerDataGen;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.FileAssetDataGen;
-import com.dotcms.datagen.FolderDataGen;
-import com.dotcms.datagen.HTMLPageDataGen;
-import com.dotcms.datagen.StructureDataGen;
-import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.*;
 import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.beans.Permission;
-import com.dotmarketing.beans.Tree;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotCacheException;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.RelationshipAPI;
+import com.dotmarketing.beans.*;
+import com.dotmarketing.business.*;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -75,39 +44,12 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.model.Tag;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.nio.charset.Charset;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapterImpl;
@@ -115,6 +57,19 @@ import org.apache.velocity.runtime.parser.node.SimpleNode;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.*;
+import java.nio.charset.Charset;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
+
+import static com.dotcms.util.CollectionsUtils.map;
+import static java.io.File.separator;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
 
 /**
  * Created by Jonathan Gamba.
@@ -568,19 +523,30 @@ public class ContentletAPITest extends ContentletBaseTest {
         // when we call copy it saves all the versions in the new location. but it should
         // do it in older-to-newer order. because the last save will be the asset_name in the
         // identifier and the data that will have the "working" (or live) version.
-        Contentlet copy = contentletAPI.copyContentlet(file, host2, user, false);
+        Contentlet copy = contentletAPI.copyContentlet(file, host1, user, false);
         Identifier copyIdent = APILocator.getIdentifierAPI().find(copy);
         
         copy = contentletAPI.findContentletByIdentifier(copyIdent.getId(), false, defLang, user, false);
-        
+
         assertEquals("hello20_copy.txt",copyIdent.getAssetName());
         assertEquals("hello20_copy.txt",copy.getStringProperty(FileAssetAPI.FILE_NAME_FIELD));
         assertEquals("hello20_copy.txt",copy.getBinary(FileAssetAPI.BINARY_FIELD).getName());
         assertEquals("this is the content of the file", FileUtils.readFileToString(copy.getBinary(FileAssetAPI.BINARY_FIELD)));
+
+        Contentlet copy2 = contentletAPI.copyContentlet(file, host2, user, false);
+        Identifier copyIdent2 = APILocator.getIdentifierAPI().find(copy2);
+
+        assertEquals("hello20.txt",copyIdent2.getAssetName());
+        assertEquals("hello20.txt",copy2.getStringProperty(FileAssetAPI.FILE_NAME_FIELD));
+        assertEquals("hello20.txt",copy2.getBinary(FileAssetAPI.BINARY_FIELD).getName());
+        assertEquals("this is the content of the file", FileUtils.readFileToString(copy2.getBinary(FileAssetAPI.BINARY_FIELD)));
+
         contentletAPI.archive(file,user,false);
         contentletAPI.delete(file,user,false);
         contentletAPI.archive(copy,user,false);
         contentletAPI.delete(copy,user,false);
+        contentletAPI.archive(copy2,user,false);
+        contentletAPI.delete(copy2,user,false);
         contentletAPI.archive(host1,user,false);
         contentletAPI.delete(host1,user,false);
         contentletAPI.archive(host2,user,false);
@@ -2065,7 +2031,7 @@ public class ContentletAPITest extends ContentletBaseTest {
      * https://github.com/dotCMS/dotCMS/issues/1763
      */
     @Test
-    public void testPubExpDatesFromIdentifier() throws Exception {
+    public void testUpdatePublishExpireDatesFromIdentifier() throws Exception {
         final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         // set up a structure with pub/exp variables
         Structure testStructure = createStructure( "JUnit Test Structure_" + String.valueOf( new Date().getTime() ) + "zzzvv", "junit_test_structure_" + String.valueOf( new Date().getTime() ) + "zzzvv" );
@@ -2080,7 +2046,9 @@ public class ContentletAPITest extends ContentletBaseTest {
         StructureFactory.saveStructure(testStructure);
 
         // some dates to play with
-        Date d1= new Date();
+
+        String date = "2222-08-11 10:20:56";
+        Date d1= dateFormat.parse(date);
         Date d2=new Date(d1.getTime()+60000L);
         Date d3=new Date(d2.getTime()+60000L);
         Date d4=new Date(d3.getTime()+60000L);
@@ -2508,6 +2476,103 @@ public class ContentletAPITest extends ContentletBaseTest {
 		FolderDataGen.remove(testFolder);
 		TemplateDataGen.remove(template);
 		
+    }
+
+    /*
+    Creates one content with 3 versions in English and 3 versions Spanish. Delete the Spanish one,
+    should delete all the versions in Spanish not only the live/working version.
+     */
+    @Test
+    public void testDelete_GivenMultiLangMultiVersionContent_WhenDeletingOneSpanishVersion_ShouldDeleteAllSpanishVersions() throws Exception{
+        // languages
+        int english = 1;
+        int spanish = 2;
+
+        ContentType contentType = null;
+        com.dotcms.contenttype.model.field.Field textField1 = null;
+        com.dotcms.contenttype.model.field.Field textField2 = null;
+
+        Contentlet contentletEnglish = null;
+        Contentlet contentletSpanish = null;
+
+        try {
+            //Create Content Type.
+            contentType = ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
+                    .description("Test ContentType Two Text Fields")
+                    .host(defaultHost.getIdentifier())
+                    .name("Test ContentType Two Text Fields")
+                    .owner("owner")
+                    .variable("testContentTypeWithTwoTextFields")
+                    .build();
+
+            contentType = contentTypeAPI.save(contentType);
+
+            //Creating Text Field.
+            textField1 = ImmutableTextField.builder()
+                    .name("Title")
+                    .variable("title")
+                    .contentTypeId(contentType.id())
+                    .dataType(DataTypes.TEXT)
+                    .build();
+
+            textField1 = fieldAPI.save(textField1, user);
+
+            //Creating Text Field.
+            textField2 = ImmutableTextField.builder()
+                    .name("Body")
+                    .variable("body")
+                    .contentTypeId(contentType.id())
+                    .dataType(DataTypes.TEXT)
+                    .build();
+
+            textField2 = fieldAPI.save(textField2, user);
+
+            contentletEnglish = new ContentletDataGen(contentType.id()).languageId(english).nextPersisted();
+            //new Version
+            contentletEnglish = contentletAPI.find(contentletEnglish.getInode(),user,false);
+            contentletEnglish.setInode("");
+            contentletEnglish = contentletAPI.checkin(contentletEnglish,user,false);
+            //new Version
+            contentletEnglish = contentletAPI.find(contentletEnglish.getInode(),user,false);
+            contentletEnglish.setInode("");
+            contentletEnglish = contentletAPI.checkin(contentletEnglish,user,false);
+
+            Identifier contentletIdentifier = APILocator.getIdentifierAPI().find(contentletEnglish.getIdentifier());
+
+            int quantityVersions = contentletAPI.findAllVersions(contentletIdentifier,user,false).size();
+
+            assertEquals(3,quantityVersions);
+
+            contentletSpanish = contentletAPI.find(contentletEnglish.getInode(),user,false);
+            contentletSpanish.setInode("");
+            contentletSpanish.setLanguageId(spanish);
+            contentletSpanish = contentletAPI.checkin(contentletSpanish, user, false);
+            //new Version
+            contentletSpanish = contentletAPI.find(contentletSpanish.getInode(),user,false);
+            contentletSpanish.setInode("");
+            contentletSpanish.setLanguageId(spanish);
+            contentletSpanish = contentletAPI.checkin(contentletSpanish, user, false);
+            //new Version
+            contentletSpanish = contentletAPI.find(contentletSpanish.getInode(),user,false);
+            contentletSpanish.setInode("");
+            contentletSpanish.setLanguageId(spanish);
+            contentletSpanish = contentletAPI.checkin(contentletSpanish, user, false);
+
+            quantityVersions = contentletAPI.findAllVersions(contentletIdentifier,user,false).size();
+
+            assertEquals(6,quantityVersions);
+
+            contentletAPI.archive(contentletSpanish,user,false);
+            contentletAPI.delete(contentletSpanish,user,false);
+
+            quantityVersions = contentletAPI.findAllVersions(contentletIdentifier,user,false).size();
+
+            assertEquals(3,quantityVersions);
+
+        }finally {
+            contentTypeAPI.delete(contentType);
+        }
+
     }
 
     /**

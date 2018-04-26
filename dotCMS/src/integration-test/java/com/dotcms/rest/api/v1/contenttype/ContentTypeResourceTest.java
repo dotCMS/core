@@ -33,6 +33,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.workflow.helper.WorkflowHelper;
+import com.dotmarketing.business.PermissionAPI;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.liferay.portal.model.User;
@@ -164,8 +165,10 @@ public class ContentTypeResourceTest {
 		final PaginationUtil paginationUtil = mock(PaginationUtil.class);
 		when(paginationUtil.getPage(request, user, filter, page, perPage, orderBy, direction.toString())).thenReturn(responseExpected);
 
+		final PermissionAPI permissionAPI = mock(PermissionAPI.class);
 
-		final ContentTypeResource resource = new ContentTypeResource(new ContentTypeHelper(), webResource, paginationUtil, WorkflowHelper.getInstance());
+		final ContentTypeResource resource = new ContentTypeResource
+				(new ContentTypeHelper(), webResource, paginationUtil, WorkflowHelper.getInstance(), permissionAPI);
 		Response response = null;
 
 		RestUtilTest.verifySuccessResponse(

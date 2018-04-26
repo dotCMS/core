@@ -1,6 +1,7 @@
 package com.dotcms.publisher.business;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.environment.bean.Environment;
@@ -16,7 +17,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -30,20 +30,11 @@ import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.apache.commons.lang.StringUtils;
-import org.quartz.JobDataMap;
-import org.quartz.JobDetail;
-import org.quartz.ObjectAlreadyExistsException;
-import org.quartz.Scheduler;
-import org.quartz.SimpleTrigger;
-import org.quartz.Trigger;
+import org.quartz.*;
+
+import java.util.*;
+import java.util.Calendar;
 
 /**
  * Provides utility methods to interact with asset information added to the
@@ -58,11 +49,11 @@ import org.quartz.Trigger;
  */
 public class PublisherAPIImpl extends PublisherAPI{
 
-	private PublishQueueMapper mapper = null;
+	private final PublishQueueMapper mapper;
 
 	private static PublisherAPIImpl instance= null;
 
-	private LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
+	private final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
 
 	/**
 	 * Returns a single instance of this class.
@@ -159,20 +150,20 @@ public class PublisherAPIImpl extends PublisherAPI{
 	 *             An error occurred during the analysis of data that is being
 	 *             added to the queue.
 	 */
-    private Map<String, Object> addAssetsToQueue(List<String> identifiers, String bundleId, Date operationDate, User user, long operationType, DeliveryStrategy deliveryStrategy) throws DotPublisherException {
+	@WrapInTransaction
+    private Map<String, Object> addAssetsToQueue(final List<String> identifiers,
+												 final String bundleId,
+												 final Date operationDate,
+												 final User user,
+												 final long operationType,
+												 final DeliveryStrategy deliveryStrategy) throws DotPublisherException {
+
         //Map to store the results and errors adding Assets to que Queue
-        Map<String, Object> resultMap = new HashMap<String, Object>();
-        List<String> errorsList = new ArrayList<String>();
+        final Map<String, Object> resultMap = new HashMap<String, Object>();
+        final List<String> errorsList = new ArrayList<String>();
 
     	  if ( identifiers != null ) {
     		  String idToProcess = null;
-    		  boolean localTransaction = false;
-
-    		  try {
-    			  localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
-    		  } catch(DotDataException dde) {
-    			  throw new DotPublisherException("Error starting Transaction", dde);
-    		  }
 
               try {
 				  Collection<String> assets = getAssets(bundleId);
@@ -277,25 +268,11 @@ public class PublisherAPIImpl extends PublisherAPI{
                       dc.loadResult();
                       PushPublishLogger.log(getClass(), "Asset added to Push Publish Queue. Action: "+action+", Asset Type: " + type + ", Asset Id: " + identifier, bundleId, user);
                   }
-
-                  if(localTransaction) {
-                      HibernateUtil.closeAndCommitTransaction();
-                  }
               } catch ( Exception e ) {
-                  if(localTransaction) {
-                      try {
-                          HibernateUtil.rollbackTransaction();
-                      } catch ( DotHibernateException e1 ) {
-                          Logger.error( PublisherAPIImpl.class, e.getMessage(), e1 );
-                      }
-                  }
+
                   Logger.error( PublisherAPIImpl.class, e.getMessage(), e );
                   throw new DotPublisherException( "Unable to add element " + idToProcess + " to publish queue table: " + e.getMessage(), e );
-              } finally {
-				  if(localTransaction) {
-				  	HibernateUtil.closeSessionSilently();
-				  }
-			  }
+              }
 		  }
 
     	  Map<String, Object> dataMap = CollectionsUtils.map("deliveryStrategy", deliveryStrategy);
@@ -308,9 +285,25 @@ public class PublisherAPIImpl extends PublisherAPI{
 		  resultMap.put( "total", identifiers != null ? identifiers.size() : 0 );
 
 		  //Triggering event listener
-		  localSystemEventsAPI.asyncNotify(new AddedToQueueEvent(getQueueElementsByBundleId(bundleId)));
-		  return resultMap;
+		  try {
+
+			  HibernateUtil.addAsyncCommitListener(() -> this.sendQueueElements(bundleId), 1000);
+		  } catch (DotHibernateException e) {
+			  Logger.error(this, e.getMessage(), e);
+		  }
+
+		return resultMap;
     }
+
+    private void sendQueueElements (final String bundleId) {
+
+		try {
+
+			this.localSystemEventsAPI.asyncNotify(new AddedToQueueEvent(getQueueElementsByBundleId(bundleId)));
+		} catch (DotPublisherException e) {
+			Logger.error(this, e.getMessage(), e);
+		}
+	}
 
     @Override
     public void firePublisherQueueNow(Map<String, Object> dataMap){
@@ -434,8 +427,9 @@ public class PublisherAPIImpl extends PublisherAPI{
 
     private static final String TREE_QUERY = "select * from tree where child = ? or parent = ?";
 
+    @CloseDBIfOpened
     @Override
-	public List<Map<String,Object>> getContentTreeMatrix(String id) throws DotPublisherException {
+	public List<Map<String,Object>> getContentTreeMatrix(final String id) throws DotPublisherException {
 		List<Map<String,Object>> res = null;
 		DotConnect dc=new DotConnect();
 		dc.setSQL(TREE_QUERY);
@@ -456,8 +450,9 @@ public class PublisherAPIImpl extends PublisherAPI{
     		+ "join contentlet_version_info on contentlet_version_info.identifier = multi_tree.child where multi_tree.child = ? "
     		+ "and page_version.deleted = ? and container_version_info.deleted = ? and contentlet_version_info.deleted = ?";
 
+	@CloseDBIfOpened
 	@Override
-	public List<Map<String,Object>> getContentMultiTreeMatrix(String id) throws DotPublisherException {
+	public List<Map<String,Object>> getContentMultiTreeMatrix(final String id) throws DotPublisherException {
 		List<Map<String,Object>> res = null;
 		DotConnect dc=new DotConnect();
 		dc.setSQL(MULTI_TREE_QUERY);
@@ -481,6 +476,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			"where p.bundle_id = a.bundle_id "+
 			"and a.status = ? ";
 
+	@CloseDBIfOpened
 	@Override
 	public List<Map<String,Object>> getQueueElementsByStatus(Status status) throws DotPublisherException {
 		try{
@@ -534,6 +530,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			"FROM publishing_queue p, publishing_queue_audit a " +
 			"where p.bundle_id = a.bundle_id group by bundle_id ";
 
+	@CloseDBIfOpened
 	@Override
 	public List<Map<String,Object>> getQueueElementsGroupByBundleId() throws DotPublisherException {
 		try{
@@ -546,6 +543,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 		}
 	}
 
+	@CloseDBIfOpened
 	@Override
 	public List<Map<String,Object>> getQueueElementsGroupByBundleId(String offset, String limit) throws DotPublisherException {
 		try{
@@ -565,6 +563,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 
 	private static final String COUNTBUNDLES="select count(distinct(bundle_id)) as bundle_count from publishing_queue where publish_date is not null";
 
+	@CloseDBIfOpened
 	@Override
 	public Integer countQueueBundleIds() throws DotPublisherException {
 		DotConnect dc = new DotConnect();
@@ -581,7 +580,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 
 	@Override
 	@CloseDBIfOpened
-	public List<Map<String,Object>> getQueueBundleIds(int limit, int offest) throws DotPublisherException {
+	public List<Map<String,Object>> getQueueBundleIds(final int limit, final int offest) throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
 			dc.setSQL(ETBUNDLES);
@@ -644,6 +643,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 	private static final String COUNTENTRIESGROUPED="select count(distinct(bundle_id)) as count from publishing_queue ";
 
 	@Override
+	@CloseDBIfOpened
 	public Integer countQueueElementsGroupByBundleId() throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
@@ -657,8 +657,9 @@ public class PublisherAPIImpl extends PublisherAPI{
 
 	private static final String GETENTRY="select * from publishing_queue where asset = ?";
 
+	@CloseDBIfOpened
 	@Override
-	public List<PublishQueueElement> getQueueElementsByAsset(String asset) throws DotPublisherException {
+	public List<PublishQueueElement> getQueueElementsByAsset(final String asset) throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
 			dc.setSQL(GETENTRY);
@@ -677,44 +678,28 @@ public class PublisherAPIImpl extends PublisherAPI{
 	 */
 	private static final String UPDATEELEMENTFROMQUEUESQL="UPDATE publishing_queue SET last_try=?, num_of_tries=?, in_error=?, last_results=? where id=?";
 
+	@WrapInTransaction
 	@Override
-	public void updateElementStatusFromPublishQueueTable(long id, Date last_try,int num_of_tries, boolean in_error,String last_results ) throws DotPublisherException {
+	public void updateElementStatusFromPublishQueueTable(final long id,
+														 final Date lastTry,
+														 final int numOfTries,
+														 final boolean inError,
+														 final String lastResults ) throws DotPublisherException {
 
-		boolean localTransaction = false;
 
 		try {
-			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
-		} catch(DotDataException dde) {
-			throw new DotPublisherException("Error starting Transaction", dde);
-		}
-
-		try{
-			DotConnect dc = new DotConnect();
+			final DotConnect dc = new DotConnect();
 			dc.setSQL(UPDATEELEMENTFROMQUEUESQL);
-			dc.addParam(last_try);
-			dc.addParam(num_of_tries);
-			dc.addParam(in_error);
-			dc.addParam(last_results);
+			dc.addParam(lastTry);
+			dc.addParam(numOfTries);
+			dc.addParam(inError);
+			dc.addParam(lastResults);
 			dc.addParam(id);
 			dc.loadResult();
+		} catch(Exception e) {
 
-			if(localTransaction){
-                HibernateUtil.closeAndCommitTransaction();
-            }
-		}catch(Exception e){
-		    if(localTransaction) {
-    			try {
-    				HibernateUtil.rollbackTransaction();
-    			} catch (DotHibernateException e1) {
-    				Logger.error(PublisherAPIImpl.class,e.getMessage(),e1);
-    			}
-		    }
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to update element "+id+" :"+e.getMessage(), e);
-		} finally {
-			if(localTransaction) {
-				HibernateUtil.closeSessionSilently();
-			}
 		}
 	}
 
@@ -726,22 +711,16 @@ public class PublisherAPIImpl extends PublisherAPI{
 	private static final String DELETE_ELEMENT_IN_LANGUAGE_FROM_QUEUE = "DELETE FROM publishing_queue WHERE asset = ? AND language_id = ?";
 
 	@Override
-	public void deleteElementFromPublishQueueTable(String identifier) throws DotPublisherException{
+	public void deleteElementFromPublishQueueTable(final String identifier) throws DotPublisherException{
 		deleteElementFromPublishQueueTable(identifier, 0);
 	}
 
+	@WrapInTransaction
 	@Override
-	public void deleteElementFromPublishQueueTable(String identifier, long languageId) throws DotPublisherException{
-		boolean localTransaction = false;
-
-		try {
-			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
-		} catch(DotDataException dde) {
-			throw new DotPublisherException("Error starting Transaction", dde);
-		}
+	public void deleteElementFromPublishQueueTable(final String identifier, final long languageId) throws DotPublisherException{
 
 		try{
-			DotConnect dc = new DotConnect();
+			final DotConnect dc = new DotConnect();
 			if (languageId > 0) {
 				dc.setSQL(DELETE_ELEMENT_IN_LANGUAGE_FROM_QUEUE);
 				dc.addParam(identifier);
@@ -751,24 +730,10 @@ public class PublisherAPIImpl extends PublisherAPI{
 				dc.addParam(identifier);
 			}
 			dc.loadResult();
-
-			if(localTransaction) {
-			    HibernateUtil.closeAndCommitTransaction();
-			}
 		}catch(Exception e){
-			if(localTransaction) {
-			    try {
-			        HibernateUtil.rollbackTransaction();
-			    } catch (DotHibernateException e1) {
-			        Logger.error(PublisherAPIImpl.class,e.getMessage(),e1);
-			    }
-			}
+
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to delete element "+identifier+" :"+e.getMessage(), e);
-		} finally {
-			if(localTransaction) {
-				HibernateUtil.closeSessionSilently();
-			}
 		}
 	}
 
@@ -777,76 +742,36 @@ public class PublisherAPIImpl extends PublisherAPI{
 	 */
 	private static final String DELETEELEMENTSFROMQUEUESQL="DELETE FROM publishing_queue where bundle_id=?";
 
+	@WrapInTransaction
 	@Override
-	public void deleteElementsFromPublishQueueTable(String bundleId) throws DotPublisherException{
-		boolean localTransaction = false;
-
-		try {
-			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
-		} catch(DotDataException dde) {
-			throw new DotPublisherException("Error starting Transaction", dde);
-		}
+	public void deleteElementsFromPublishQueueTable(final String bundleId) throws DotPublisherException{
 
 		try{
-			DotConnect dc = new DotConnect();
+			final DotConnect dc = new DotConnect();
 			dc.setSQL(DELETEELEMENTSFROMQUEUESQL);
 			dc.addParam(bundleId);
 			dc.loadResult();
-
-			if(localTransaction) {
-			    HibernateUtil.closeAndCommitTransaction();
-			}
 		}catch(Exception e){
-		    if(localTransaction) {
-    			try {
-    				HibernateUtil.rollbackTransaction();
-    			} catch (DotHibernateException e1) {
-    				Logger.error(PublisherAPIImpl.class,e.getMessage(),e1);
-    			}
-		    }
+
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to delete element(s) "+bundleId+" :"+e.getMessage(), e);
-		} finally {
-			if(localTransaction) {
-				HibernateUtil.closeSessionSilently();
-			}
 		}
 	}
 
 	private static final String DELETEALLELEMENTFROMQUEUESQL="DELETE FROM publishing_queue";
 
+	@WrapInTransaction
 	@Override
 	public void deleteAllElementsFromPublishQueueTable() throws DotPublisherException{
-		boolean localTransaction = false;
-
-		try {
-			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
-		} catch(DotDataException dde) {
-			throw new DotPublisherException("Error starting Transaction", dde);
-		}
 
 		try{
-			DotConnect dc = new DotConnect();
+			final DotConnect dc = new DotConnect();
 			dc.setSQL(DELETEALLELEMENTFROMQUEUESQL);
 			dc.loadResult();
+		} catch(Exception e){
 
-			if(localTransaction) {
-                HibernateUtil.closeAndCommitTransaction();
-            }
-		}catch(Exception e){
-		    if(localTransaction) {
-    			try {
-    				HibernateUtil.rollbackTransaction();
-    			} catch (DotHibernateException e1) {
-    				Logger.error(PublisherAPIImpl.class,e.getMessage(),e1);
-    			}
-		    }
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to delete elements :"+e.getMessage(), e);
-		} finally {
-			if(localTransaction) {
-				HibernateUtil.closeSessionSilently();
-			}
 		}
 	}
 
@@ -880,10 +805,11 @@ public class PublisherAPIImpl extends PublisherAPI{
     .append("and contentlet_version_info.deleted = ?) ")
     .append("group by multi_tree.child, multi_tree.parent1, multi_tree.parent2, multi_tree.relation_type, multi_tree.tree_order").toString();
 
+	@CloseDBIfOpened
 	@Override
-	public List<Map<String, Object>> getContainerMultiTreeMatrix(String id) throws DotPublisherException {
+	public List<Map<String, Object>> getContainerMultiTreeMatrix(final String id) throws DotPublisherException {
 		List<Map<String,Object>> res;
-		DotConnect dc=new DotConnect();
+		final DotConnect dc=new DotConnect();
 		dc.setSQL(MULTI_TREE_CONTAINER_QUERY);
 		dc.addParam(id);
 		dc.addParam(Boolean.FALSE);
@@ -908,13 +834,14 @@ public class PublisherAPIImpl extends PublisherAPI{
 		return res;
 	}
 
+	@WrapInTransaction
 	@Override
-	public void publishBundleAssets(String bundleId, Date publishDate)
+	public void publishBundleAssets(final String bundleId, final Date publishDate)
 			throws DotPublisherException {
 
 		// update the already existing assets in the queue list with the publish operation and publish date
 
-		DotConnect dc = new DotConnect();
+		final DotConnect dc = new DotConnect();
         dc.setSQL( "UPDATE publishing_queue SET operation = ?, publish_date = ? where bundle_id = ?" );
         dc.addParam(ADD_OR_UPDATE_ELEMENT);
         dc.addParam(publishDate);
@@ -926,16 +853,16 @@ public class PublisherAPIImpl extends PublisherAPI{
 			Logger.error(getClass(), "Error updating bundles in publishing queue");
 			throw new DotPublisherException("Error updating bundles in publishing queue", e);
 		}
-
 	}
 
+	@WrapInTransaction
 	@Override
-	public void unpublishBundleAssets(String bundleId, Date expireDate)
+	public void unpublishBundleAssets(final String bundleId, final Date expireDate)
 			throws DotPublisherException {
 
 		// update the already existing assets in the queue list with the unpublish operation and expiration date
 
-		DotConnect dc = new DotConnect();
+		final DotConnect dc = new DotConnect();
         dc.setSQL( "UPDATE publishing_queue SET operation = ?, publish_date = ? where bundle_id = ?" );
         dc.addParam(DELETE_ELEMENT);
         dc.addParam(expireDate);
@@ -947,12 +874,12 @@ public class PublisherAPIImpl extends PublisherAPI{
 			Logger.error(getClass(), "Error updating bundles in publishing queue");
 			throw new DotPublisherException("Error updating bundles in publishing queue", e);
 		}
-
 	}
 
+	@WrapInTransaction
 	@Override
-	public void publishAndExpireBundleAssets(String bundleId, Date publishDate,
-			Date expireDate, User user) throws DotPublisherException {
+	public void publishAndExpireBundleAssets(final String bundleId, final Date publishDate,
+											 final Date expireDate, final User user) throws DotPublisherException {
 
 		// update the already existing assets in the queue list with the publish operation and publish date
 
@@ -977,7 +904,6 @@ public class PublisherAPIImpl extends PublisherAPI{
 	    	APILocator.getBundleAPI().saveBundle(deleteBundle, envsToSendTo);
 
 	        addContentsToUnpublish( ids, deleteBundle.getId(), expireDate, user );
-
 		} catch (DotDataException e) {
 			throw new DotPublisherException(e);
 		}

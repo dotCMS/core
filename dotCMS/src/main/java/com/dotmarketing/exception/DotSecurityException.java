@@ -15,5 +15,8 @@ public class DotSecurityException extends Exception {
 		this(message);
 		super.initCause(e);
 	}
-	
+
+	public DotSecurityException(Throwable cause) {
+		super(cause);
+	}
 }

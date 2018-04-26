@@ -1,11 +1,27 @@
 package com.dotcms.rest.api.v1.workflow;
 
+import static com.dotcms.exception.ExceptionUtil.BAD_REQUEST_EXCEPTIONS;
+import static com.dotcms.exception.ExceptionUtil.NOT_FOUND_EXCEPTIONS;
+import static com.dotcms.exception.ExceptionUtil.SECURITY_EXCEPTIONS;
+import static com.dotcms.exception.ExceptionUtil.causedBy;
+import static com.dotcms.exception.ExceptionUtil.getRootCause;
+import static com.dotcms.rest.ResponseEntityView.OK;
+import static com.dotcms.util.CollectionsUtils.map;
+
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
-import com.dotcms.repackage.javax.ws.rs.*;
+import com.dotcms.repackage.javax.ws.rs.DELETE;
+import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.POST;
+import com.dotcms.repackage.javax.ws.rs.PUT;
+import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
+import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.QueryParam;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.InitDataObject;
@@ -15,7 +31,16 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotcms.workflow.form.*;
+import com.dotcms.workflow.form.FireActionForm;
+import com.dotcms.workflow.form.WorkflowActionForm;
+import com.dotcms.workflow.form.WorkflowActionStepBean;
+import com.dotcms.workflow.form.WorkflowActionStepForm;
+import com.dotcms.workflow.form.WorkflowReorderBean;
+import com.dotcms.workflow.form.WorkflowReorderWorkflowActionStepForm;
+import com.dotcms.workflow.form.WorkflowSchemeForm;
+import com.dotcms.workflow.form.WorkflowSchemeImportObjectForm;
+import com.dotcms.workflow.form.WorkflowStepAddForm;
+import com.dotcms.workflow.form.WorkflowStepUpdateForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -23,6 +48,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
@@ -38,15 +64,11 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-
-import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
-
-import static com.dotcms.exception.ExceptionUtil.*;
-import static com.dotcms.rest.ResponseEntityView.OK;
-import static com.dotcms.util.CollectionsUtils.map;
+import javax.servlet.http.HttpServletRequest;
 
 @SuppressWarnings("serial")
 @Path("/v1/workflow")
@@ -102,7 +124,7 @@ public class WorkflowResource {
     private Response createUnAuthorizedResponse (final Exception e) {
 
         SecurityLogger.logInfo(this.getClass(), e.getMessage());
-        return ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
+        return ExceptionMapperUtil.createResponse(e, Status.FORBIDDEN);
     }
 
     private Response mapExceptionResponse(final Exception e){
@@ -113,6 +135,17 @@ public class WorkflowResource {
 
         if(causedBy(e, NOT_FOUND_EXCEPTIONS)){
             return ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+        }
+
+        if(e instanceof DotContentletValidationException){
+            final DotContentletValidationException ve = DotContentletValidationException.class.cast(e);
+            return ExceptionMapperUtil.createResponse(Status.BAD_REQUEST, ve);
+        }
+
+        final Throwable rootCause = getRootCause(e);
+        if( rootCause instanceof DotContentletValidationException){
+           final DotContentletValidationException ve = DotContentletValidationException.class.cast(rootCause);
+           return ExceptionMapperUtil.createResponse(Status.BAD_REQUEST, ve);
         }
 
         if(causedBy(e, BAD_REQUEST_EXCEPTIONS)){
@@ -572,7 +605,7 @@ public class WorkflowResource {
             return Response.ok(new ResponseEntityView(OK)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
-                    "NotAllowedUserWorkflowException on reorderStep, stepId: " + stepId +
+                    "WorkflowPortletAccessException on reorderStep, stepId: " + stepId +
                             ", exception message: " + e.getMessage(), e);
             return mapExceptionResponse(e);
         }
@@ -594,7 +627,7 @@ public class WorkflowResource {
             return Response.ok(new ResponseEntityView(step)).build();
         } catch (Exception e) {
             Logger.error(this.getClass(),
-                    "NotAllowedUserWorkflowException on updateStep, stepId: " + stepId +
+                    "WorkflowPortletAccessException on updateStep, stepId: " + stepId +
                             ", exception message: " + e.getMessage(), e);
             return mapExceptionResponse(e);
         }
@@ -788,6 +821,8 @@ public class WorkflowResource {
 
             Logger.debug(this, "Importing the workflow schemes");
 
+            this.workflowAPI.isUserAllowToModifiedWorkflow(initDataObject.getUser());
+
             exportObject = new WorkflowSchemeImportExportObject();
             exportObject.setSchemes(workflowSchemeImportForm.getWorkflowImportObject().getSchemes());
             exportObject.setSteps  (workflowSchemeImportForm.getWorkflowImportObject().getSteps());
@@ -854,8 +889,8 @@ public class WorkflowResource {
     } // exportScheme.
 
     /**
-     * Do an export of the scheme with all dependencies to rebuild it (such as steps and actions)
-     * in addition the permission (who can use) will be also returned.
+     * Do a deep copy of the scheme including steps, action, permissions and so on.
+     * You can include a query string name, to include the scheme name
      * @param request  HttpServletRequest
      * @param schemeId String
      * @return Response
@@ -865,8 +900,9 @@ public class WorkflowResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response copy(@Context final HttpServletRequest request,
-                               @PathParam("schemeId") final String schemeId) {
+    public final Response copyScheme(@Context final HttpServletRequest request,
+                               @PathParam("schemeId") final String schemeId,
+                               @QueryParam("name") final String name) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
@@ -880,8 +916,8 @@ public class WorkflowResource {
             response     = Response.ok(new ResponseEntityView(
                     this.workflowAPI.deepCopyWorkflowScheme(
                             this.workflowAPI.findScheme(schemeId),
-                            initDataObject.getUser())
-                    )).build(); // 200
+                            initDataObject.getUser(), Optional.of(name)))
+                    ).build(); // 200
         } catch (Exception e){
             Logger.error(this.getClass(),
                     "Exception on exportScheme, Error exporting the schemes", e);

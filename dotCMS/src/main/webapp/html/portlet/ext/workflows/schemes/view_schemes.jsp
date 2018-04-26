@@ -10,7 +10,6 @@
 <%
 
 	WorkflowAPI wapi = APILocator.getWorkflowAPI();
-	WorkflowScheme defaultScheme = wapi.findDefaultScheme();
 	boolean showArchived = (request.getParameter("showArchived") != null);
 	List<WorkflowScheme> schemes = wapi.findSchemes(showArchived);
 
@@ -35,6 +34,10 @@
 				</div>
 			</div>
 	    	<div class="portlet-toolbar__actions-secondary">
+				<button dojoType="dijit.form.Button"
+						onClick="schemeAdmin.showImport();return false;" iconClass="addIcon">
+					<%=LanguageUtil.get(pageContext, "Import-Workflow-Scheme")%>
+				</button>
 	    		<button dojoType="dijit.form.Button"
 					onClick="schemeAdmin.showAddEdit();return false;" iconClass="addIcon">
 					<%=LanguageUtil.get(pageContext, "Add-Workflow-Scheme")%>

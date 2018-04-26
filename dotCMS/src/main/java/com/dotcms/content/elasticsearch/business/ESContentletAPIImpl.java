@@ -131,6 +131,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -513,13 +514,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
 
             //Generate a System Event for this publish operation
-            HibernateUtil.addCommitListener(new FlushCacheRunnable() {
-                @Override
-                public void run() {
-
-                    contentletSystemEventUtil.pushPublishEvent(contentlet);
-                }
-            });
+            HibernateUtil.addAsyncCommitListener(
+                    () -> this.contentletSystemEventUtil.pushPublishEvent(contentlet), 1000);
 
             if ( localTransaction ) {
                 HibernateUtil.closeAndCommitTransaction();
@@ -1788,7 +1784,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                     //TODO we still have several things that need cleaning here:
                     //TODO https://github.com/dotCMS/core/issues/9146
-                    contentFactory.delete(Arrays.asList(new Contentlet[]{con}), false);
+                    Identifier identifier = APILocator.getIdentifierAPI().find(con.getIdentifier());
+                    List<Contentlet> allVersionsList = findAllVersions(identifier,user,false);
+                    List <Contentlet> contentletsLanguageList  = allVersionsList.stream().
+                            filter(contentlet -> contentlet.getLanguageId()==con.getLanguageId()).collect(Collectors.toList());
+                    contentFactory.delete(contentletsLanguageList, false);
 
                     for (Contentlet contentlet : contentlets) {
                         try {
@@ -1810,13 +1810,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private void sendDeleteEvent (final Contentlet contentlet) throws DotHibernateException {
 
-        HibernateUtil.addCommitListener(new FlushCacheRunnable() {
-            @Override
-            public void run() {
-
-                contentletSystemEventUtil.pushDeleteEvent(contentlet);
-            }
-        });
+        HibernateUtil.addAsyncCommitListener(() -> this.contentletSystemEventUtil.pushDeleteEvent(contentlet), 1000);
     }
 
     /**
@@ -2082,13 +2076,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 new ContentletLoader().invalidate(contentlet);
 
                 publishRelatedHtmlPages(contentlet);
-                HibernateUtil.addCommitListener(new FlushCacheRunnable() {
-                    @Override
-                    public void run() {
-
-                        contentletSystemEventUtil.pushArchiveEvent(workingContentlet);
-                    }
-                });
+                HibernateUtil.addAsyncCommitListener(() -> this.contentletSystemEventUtil.pushArchiveEvent(workingContentlet), 1000);
             } else {
 
                 throw new DotContentletStateException("Contentlet is locked: Unable to archive");
@@ -2369,14 +2357,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             new ContentletLoader().invalidate(contentlet, PageMode.LIVE);
             publishRelatedHtmlPages(contentlet);
 
-            HibernateUtil.addCommitListener(new FlushCacheRunnable() {
-                @Override
-                public void run() {
-
-                    contentletSystemEventUtil.pushUnpublishEvent(contentlet);
-                }
-            });
-
+            HibernateUtil.addAsyncCommitListener(() -> this.contentletSystemEventUtil.pushUnpublishEvent(contentlet), 1000);
 
             /*
             Triggers a local system event when this contentlet commit listener is executed,
@@ -2464,13 +2445,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             new ContentletLoader().invalidate(contentlet);
             publishRelatedHtmlPages(contentlet);
 
-            HibernateUtil.addCommitListener(new FlushCacheRunnable() {
-                @Override
-                public void run() {
-
-                    contentletSystemEventUtil.pushUnArchiveEvent(contentlet);
-                }
-            });
+            HibernateUtil.addAsyncCommitListener(() -> this.contentletSystemEventUtil.pushUnArchiveEvent(contentlet), 1000);
         } catch(DotDataException | DotStateException| DotSecurityException e) {
             ActivityLogger.logInfo(getClass(), "Error Unarchiving Content", "StartDate: " +contentPushPublishDate+ "; "
                     + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
@@ -3552,13 +3527,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private void pushSaveEvent (final Contentlet eventContentlet, final boolean eventCreateNewVersion) throws DotHibernateException {
 
-        HibernateUtil.addCommitListener(new FlushCacheRunnable() {
-            @Override
-            public void run() {
-
-                contentletSystemEventUtil.pushSaveEvent(eventContentlet, eventCreateNewVersion);
-            }
-        });
+        HibernateUtil.addAsyncCommitListener(() -> this.contentletSystemEventUtil.pushSaveEvent(eventContentlet, eventCreateNewVersion), 100);
     }
 
     private List<Category> getExistingContentCategories(Contentlet contentlet)
@@ -3905,7 +3874,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
             if(property.getValue() == null)
                 continue;
-            if((!property.getKey().equals("recurrence"))&&!(property.getValue() instanceof String || property.getValue() instanceof Boolean ||property.getValue() instanceof File || property.getValue() instanceof Float || property.getValue() instanceof Integer || property.getValue() instanceof Date || property.getValue() instanceof Long || property.getValue() instanceof List)){
+            if((!property.getKey().equals("recurrence"))&&!(property.getValue() instanceof String || property.getValue() instanceof Boolean ||property.getValue() instanceof File || property.getValue() instanceof Float || property.getValue() instanceof Integer || property.getValue() instanceof Date || property.getValue() instanceof Long || property.getValue() instanceof List || property.getValue() instanceof BigDecimal || property.getValue() instanceof Short)){
                 throw new DotContentletStateException("The map contains an invalid value");
             }
         }
@@ -5344,13 +5313,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private void sendCopyEvent (final Contentlet contentlet) throws DotHibernateException {
 
-        HibernateUtil.addCommitListener(new FlushCacheRunnable() {
-            @Override
-            public void run() {
-
-                contentletSystemEventUtil.pushCopyEvent(contentlet);
-            }
-        });
+        HibernateUtil.addAsyncCommitListener(() -> this.contentletSystemEventUtil.pushCopyEvent(contentlet), 1000);
     }
 
     @WrapInTransaction

@@ -71,16 +71,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsResponse;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.cluster.metadata.MappingMetaData;
-import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
@@ -88,6 +84,7 @@ import org.elasticsearch.index.query.functionscore.RandomScoreFunctionBuilder;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.ScriptSortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
@@ -104,6 +101,7 @@ import org.springframework.util.NumberUtils;
  */
 public class ESContentFactoryImpl extends ContentletFactory {
 
+    private static final String[] ES_FIELDS = {"inode", "identifier"};
     private ContentletCache cc ;
 	private ESClient client;
 	private LanguageAPI langAPI;
@@ -766,9 +764,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         QueryBuilder builder = QueryBuilders.matchAllQuery();
 
-        SearchResponse response = client.getClient().prepareSearch()
-                .setQuery( builder )
-                .setSize( limit ).setFrom( offset ).execute().actionGet();
+        SearchResponse response = client.getClient().prepareSearch().
+                setSource(SearchSourceBuilder.searchSource().
+                fetchSource(new String[] {"inode"}, null)).
+                setQuery( builder ).
+                setSize( limit ).setFrom( offset ).execute().actionGet();
         SearchHits hits = response.getHits();
         List<Contentlet> cons = new ArrayList<>();
 
@@ -1302,23 +1302,24 @@ public class ESContentFactoryImpl extends ContentletFactory {
      */
     private SearchRequestBuilder createRequest(Client client, String query, String sortBy) {
 
+        SearchSourceBuilder ssb = SearchSourceBuilder.searchSource();
 
-
+        ssb.fetchSource(ES_FIELDS, null);
 
         if(Config.getBooleanProperty("ELASTICSEARCH_USE_FILTERS_FOR_SEARCHING",false) && sortBy!=null && ! sortBy.toLowerCase().startsWith("score")) {
 
             if("random".equals(sortBy)){
-                return client.prepareSearch()
+                return client.prepareSearch().setSource(ssb)
                         .setQuery(QueryBuilders.functionScoreQuery(QueryBuilders.matchAllQuery(), new RandomScoreFunctionBuilder()))
                         .setPostFilter(QueryBuilders.queryStringQuery(query)); //Cache is handled internally.
             } else {
-                return client.prepareSearch()
+                return client.prepareSearch().setSource(ssb)
                         .setQuery(QueryBuilders.matchAllQuery())
                         .setPostFilter(QueryBuilders.queryStringQuery(query)); //Cache is handled internally.
             }
 
         } else {
-            return client.prepareSearch().setQuery(QueryBuilders.queryStringQuery(query));
+            return client.prepareSearch().setSource(ssb).setQuery(QueryBuilders.queryStringQuery(query));
         }
     }
 
@@ -1348,7 +1349,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
         try {
 
         	SearchRequestBuilder srb = createRequest(client, qq, sortBy);
-
         	srb.setIndices(indexToHit);
 
             if(limit>0)

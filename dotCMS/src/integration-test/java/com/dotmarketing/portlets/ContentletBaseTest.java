@@ -390,7 +390,9 @@ public class ContentletBaseTest extends IntegrationTestBase {
                 value = wysiwygValue;
             } else if ( field.getFieldType().equals( Field.FieldType.TAG.toString() ) ) {
                 value = "Test Tag";
-            } else if ( field.getFieldType().equals( Field.FieldType.DATE.toString() ) || field.getFieldType().equals( Field.FieldType.DATE_TIME.toString() ) ) {
+            } else if ( field.getFieldType().equals( Field.FieldType.DATE.toString())
+                || field.getFieldType().equals( Field.FieldType.TIME.toString())
+                || field.getFieldType().equals( Field.FieldType.DATE_TIME.toString() ) ) {
                 value = new Date();
             } else if ( field.getFieldType().equals( Field.FieldType.BINARY.toString() ) ) {
             	try {

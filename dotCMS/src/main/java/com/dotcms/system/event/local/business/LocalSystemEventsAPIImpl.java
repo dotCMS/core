@@ -25,10 +25,9 @@ class LocalSystemEventsAPIImpl implements LocalSystemEventsAPI {
     public static final String NO_ANY_SUBSCRIBERS_ASSOCIATED_TO_THE_EVENT_TYPE = "No subscriber associated to the event type: ";
 
     private final ConcurrentMap<Class<?>, CopyOnWriteArrayList<EventSubscriber>>  eventSubscriberByEventTypeMap;
-    private final DotSubmitter dotSubmitter;
     private final EventSubscriberFinder eventSubscriberFinder;
     private volatile EventSubscriber<OrphanEvent> orphanEventSubscriber;
-
+    private final DotConcurrentFactory dotConcurrentFactory;
     public LocalSystemEventsAPIImpl () {
 
         this(new ConcurrentHashMap<>(), DotConcurrentFactory.getInstance(),
@@ -43,7 +42,7 @@ class LocalSystemEventsAPIImpl implements LocalSystemEventsAPI {
                                     final EventSubscriber<OrphanEvent> orphanEventSubscriber) {
 
         this.eventSubscriberByEventTypeMap = eventSubscriberByEventTypeMap;
-        this.dotSubmitter                  = dotConcurrentFactory.getSubmitter(LOCAL_SYSTEM_EVENTS_THREAD_POOL_SUBMITTER_NAME);
+        this.dotConcurrentFactory          = dotConcurrentFactory;
         this.eventSubscriberFinder         = eventSubscriberFinder;
         this.orphanEventSubscriber         = orphanEventSubscriber;
     }
@@ -188,7 +187,8 @@ class LocalSystemEventsAPIImpl implements LocalSystemEventsAPI {
     @Override
     public void asyncNotify(final Object event) {
 
-        this.dotSubmitter.submit(()-> this.notify(event));
+        final DotSubmitter dotSubmitter = this.dotConcurrentFactory.getSubmitter(LOCAL_SYSTEM_EVENTS_THREAD_POOL_SUBMITTER_NAME);
+        dotSubmitter.submit(()-> this.notify(event));
     } // asyncNotify.
 
 

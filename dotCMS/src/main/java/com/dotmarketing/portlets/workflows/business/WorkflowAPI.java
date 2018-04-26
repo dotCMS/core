@@ -4,6 +4,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -13,8 +14,17 @@ import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
-import com.dotmarketing.portlets.workflows.model.*;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
+import com.dotmarketing.portlets.workflows.model.WorkflowComment;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
+import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
 import com.dotmarketing.portlets.workflows.model.WorkflowState;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.liferay.portal.model.User;
 
 import java.util.*;
@@ -32,7 +42,7 @@ public interface WorkflowAPI {
 	public WorkFlowActionlet newActionlet(String className) throws DotDataException;
 
 	/**
-	 * If the user is not allowed to modified workflow, will throw {@link NotAllowedUserWorkflowException}
+	 * If the user is not allowed to modified workflow, will throw {@link WorkflowPortletAccessException}
 	 * @param user
 	 */
 	void isUserAllowToModifiedWorkflow (final User user);
@@ -176,10 +186,6 @@ public interface WorkflowAPI {
 	public void  saveWorkflowTask(WorkflowTask task) throws DotDataException;
 
 	public List<WorkflowScheme> findSchemes(boolean showArchived) throws DotDataException;
-
-	public WorkflowScheme findDefaultScheme() throws DotDataException;
-
-	public boolean isDefaultScheme(WorkflowScheme scheme) throws DotDataException;
 
 	public WorkflowScheme findScheme(String id) throws DotDataException, DotSecurityException;
 
@@ -340,6 +346,18 @@ public interface WorkflowAPI {
 	public List<WorkflowAction> findActions(WorkflowStep step, User user, Permissionable permissionable) throws DotDataException,
 			DotSecurityException;
 
+
+	/**
+	 * Find the list of Workflow Actions available for the role that is passed
+	 * @param step
+	 * @param role
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public List<WorkflowAction> findActions(WorkflowStep step, Role role) throws DotDataException,
+			DotSecurityException;
+
 	/**
 	 * Find the {@link WorkflowAction} associated to the {@link WorkflowScheme}
 	 * @param scheme {@link WorkflowScheme}
@@ -484,10 +502,12 @@ public interface WorkflowAPI {
 
 	/**
 	 * Do a deep copy of the scheme, copying the steps, actions, etc.
-	 * @param from WorkflowScheme
+	 * @param from WorkflowScheme scheme from you want to do the copy
+	 * @param user User user that is creating the copy
+	 * @param optionalName Optional String  optional name for the scheme.
 	 * @throws DotDataException
 	 */
-	public WorkflowScheme deepCopyWorkflowScheme(WorkflowScheme from, final User user) throws DotDataException, AlreadyExistException, DotSecurityException;
+	public WorkflowScheme deepCopyWorkflowScheme(WorkflowScheme from, final User user, final Optional<String> optionalName) throws DotDataException, AlreadyExistException, DotSecurityException;
 
     public java.util.List<WorkflowTask> searchAllTasks(WorkflowSearcher searcher) throws DotDataException;
 
@@ -601,4 +621,12 @@ public interface WorkflowAPI {
 	 * @throws DotDataException
 	 */
 	public WorkflowScheme findSystemWorkflowScheme() throws DotDataException;
+
+	/**
+	 * Archive the specified workflow scheme
+	 *
+	 * @param scheme Workflow scheme to archive
+	 */
+	public void archive(WorkflowScheme scheme, User user)
+			throws DotDataException, AlreadyExistException;
 }

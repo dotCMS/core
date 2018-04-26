@@ -106,7 +106,7 @@
 
 <script type="text/javascript">
 
-    function solrAddCheckUncheckAll() {
+    function addCheckUncheckAll() {
         var check = false;
         if (dijit.byId("add_all").checked) {
             check = true;
@@ -172,7 +172,7 @@
 		<tr>
 
 			<th style="width:30px;text-align: center" align="center">
-				<input dojoType="dijit.form.CheckBox" type="checkbox" <%=disabled%> name="add_all" value="all" id="add_all" onclick="solrAddCheckUncheckAll()" />
+				<input dojoType="dijit.form.CheckBox" type="checkbox" <%=disabled%> name="add_all" value="all" id="add_all" onclick="addCheckUncheckAll()" />
 			</th>
 			<th colspan="2">
                 <% if (enterprise && endPoints) {%>
@@ -220,7 +220,7 @@
 			<%if(end < total){
 				long next=(end < total?end:total);
 			%>
-				<td align="right" width="33%" ><button class="solr_right" dojoType="dijit.form.Button" onClick="doLucenePagination(<%=next%>,<%=limit%>);return false;" iconClass="nextIcon"><%= LanguageUtil.get(pageContext, "publisher_Next") %></button></td>
+				<td align="right" width="33%" ><button style="float: right;" dojoType="dijit.form.Button" onClick="doLucenePagination(<%=next%>,<%=limit%>);return false;" iconClass="nextIcon"><%= LanguageUtil.get(pageContext, "publisher_Next") %></button></td>
 			<%}else{ %>
 				<td  width="33%" >&nbsp;</td>
 			<%} %>

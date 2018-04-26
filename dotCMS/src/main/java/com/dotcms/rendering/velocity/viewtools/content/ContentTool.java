@@ -1,7 +1,6 @@
 package com.dotcms.rendering.velocity.viewtools.content;
 
 import java.io.StringWriter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -30,7 +29,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.liferay.portal.model.User;
 
@@ -409,8 +407,11 @@ public class ContentTool implements ViewTool {
 			
 			query=addPersonalizationToQuery(query);
 			String sort = secondarySort==null ? "score" : "score " + secondarySort;
-			return pull(query, offset, limit, sort);
-			
+			if (offset > 0){
+				return pullPerPage(query, offset, limit, sort);
+			}else{
+				return pull(query, offset, limit, sort);
+			}
 		}
 		catch(Throwable ex) {
             if(Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
@@ -482,7 +483,6 @@ public class ContentTool implements ViewTool {
 		if(query.indexOf(" tags:")>-1){
 			return query;
 		}
-		
 
 		StringWriter buff  = new StringWriter().append(query);
 		Visitor visitor = opt.get();
@@ -491,31 +491,19 @@ public class ContentTool implements ViewTool {
 		if(p==null && (tags==null || tags.size()==0)){
 			return query;
 		}
-		
-		
-		
+
 		int maxBoost = Config.getIntProperty("PULLPERSONALIZED_PERSONA_WEIGHT", 100);
 		
 		if(tags.size()>0){
 			maxBoost = tags.get(0).getCount() + maxBoost;
 		}
 		if(p!=null){
-			buff.append(" tags:" + p.getKeyTag().toLowerCase() + "*^" + maxBoost);
+			buff.append(" tags:\"" + p.getKeyTag().toLowerCase() + "\"^" + maxBoost);
 		}
 		
 		for(AccruedTag tag : tags){
-			buff.append(" tags:" + tag.getTag().toLowerCase() + "*^" + (tag.getCount()+1) + " ");
+			buff.append(" tags:\"" + tag.getTag().toLowerCase() + "\"^" + (tag.getCount()+1) + " ");
 		}
-		
-
-		
-		
-		
-		
-	
-		
-		
-		
 
 	  	return buff.toString();
 	}
