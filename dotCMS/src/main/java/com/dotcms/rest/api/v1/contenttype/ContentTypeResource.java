@@ -14,8 +14,7 @@ import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
-import com.dotcms.rest.annotation.InitRequestRequired;
-import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.annotation.*;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.PaginationUtil;
@@ -24,6 +23,7 @@ import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
@@ -256,9 +256,14 @@ public class ContentTypeResource implements Serializable {
 			final ContentType type = tapi.find(idOrVar);
 			resultMap.putAll(new JsonContentTypeTransformer(type).mapObject());
 			resultMap.put("workflows", 		 this.workflowHelper.findSchemesByContentType(type.id(), initData.getUser()));
-			resultMap.put("editable",        this.permissionAPI.doesUserHavePermission(type, PermissionAPI.PERMISSION_WRITE, initData.getUser()));
 
-			response = Response.ok(new ResponseEntityView(resultMap)).build();
+			final Response.ResponseBuilder builder = Response.ok(new ResponseEntityView(resultMap));
+			if ("true".equalsIgnoreCase(req.getParameter("permissionable"))) {
+
+				builder.header(HeaderFilter.PERMISSIONS, PermissionsUtil.getInstance().getPermissionsArray(type, initData.getUser()));
+			}
+
+			response = builder.build();
 		} catch (DotSecurityException e) {
 			throw new ForbiddenException(e);
 		} catch (NotFoundInDbException nfdb2) {
