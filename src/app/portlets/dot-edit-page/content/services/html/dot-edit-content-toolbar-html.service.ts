@@ -2,6 +2,11 @@ import { Injectable } from '@angular/core';
 import { DotMessageService } from '../../../../../api/services/dot-messages-service';
 import { DotDOMHtmlUtilService } from './dot-dom-html-util.service';
 
+interface DotAddMenuItem {
+    id: string;
+    message: string;
+}
+
 /**
  * Service to generate the markup related with the Toolbars and sub-menu for containers.
  */
@@ -23,24 +28,33 @@ export class DotEditContentToolbarHtmlService {
                     'editpage.content.container.menu.form'
                 ])
                 .subscribe(
-                    (res) => {
-                        if (res.length === 0) {
+                    (messages: string[]) => {
+                        if (messages.length === 0) {
                             reject();
                         }
 
                         try {
                             const containers = Array.from(doc.querySelectorAll('div[data-dot-object="container"]'));
                             containers.forEach((container: HTMLElement) => {
-                                const isContainerDisabled = container.dataset.dotCanAdd === 'false';
+                                const items: DotAddMenuItem[] = container.dataset.dotCanAdd
+                                    .split(',')
+                                    .filter((item: string) => item.length)
+                                    .map((item: string) => {
+                                        item = item.toLowerCase();
 
-                                if (isContainerDisabled) {
+                                        return {
+                                            id: item,
+                                            message: messages[`editpage.content.container.menu.${item}`]
+                                        };
+                                    });
+
+                                if (!items.length) {
                                     container.classList.add('disabled');
                                 }
 
                                 const containerToolbar = document.createElement('div');
                                 containerToolbar.classList.add('dotedit-container__toolbar');
-
-                                containerToolbar.innerHTML = this.getContainerToolbarHtml(res, container, isContainerDisabled);
+                                containerToolbar.innerHTML = this.getContainerToolbarHtml(items, container);
 
                                 container.parentNode.insertBefore(containerToolbar, container);
                             });
@@ -65,8 +79,8 @@ export class DotEditContentToolbarHtmlService {
                     'editpage.content.contentlet.menu.remove'
                 ])
                 .subscribe(
-                    (res) => {
-                        if (res.length === 0) {
+                    (messages: any) => {
+                        if (!Object.keys(messages).length) {
                             reject();
                         }
 
@@ -76,9 +90,9 @@ export class DotEditContentToolbarHtmlService {
                                 const contentletToolbar = document.createElement('div');
                                 contentletToolbar.classList.add('dotedit-contentlet__toolbar');
 
-                                (this.dragLabel = res['editpage.content.contentlet.menu.drag']),
-                                    (this.editLabel = res['editpage.content.contentlet.menu.edit']),
-                                    (this.removeLabel = res['editpage.content.contentlet.menu.remove']);
+                                (this.dragLabel = messages['editpage.content.contentlet.menu.drag']),
+                                    (this.editLabel = messages['editpage.content.contentlet.menu.edit']),
+                                    (this.removeLabel = messages['editpage.content.contentlet.menu.remove']);
 
                                 contentletToolbar.innerHTML = this.getContentButton(
                                     contentlet.dataset.dotIdentifier,
@@ -119,49 +133,39 @@ export class DotEditContentToolbarHtmlService {
             ${this.dotDOMHtmlUtilService.getButtomHTML(this.removeLabel, 'dotedit-contentlet__remove', dataset)}`;
     }
 
-    private getContainerToolbarHtml(langMessages: string[], container: HTMLElement, isContainerDisabled: boolean): string {
+    private getContainerToolbarHtml(items: DotAddMenuItem[], container: HTMLElement): string {
+        const isContainerDisabled = !items.length;
+
         let result = `
             <button
                 type="button"
                 role="button"
                 class="dotedit-container__add"
-                aria-label="${langMessages['editpage.content.container.action.add']}"
+                aria-label="${this.dotMessageService.get('editpage.content.container.action.add')}"
                 data-dot-identifier="${container.dataset.dotIdentifier}"
                 ${isContainerDisabled ? 'disabled' : ''}>
-                ${langMessages['editpage.content.container.action.add']}
+                ${this.dotMessageService.get('editpage.content.container.action.add')}
             </button>
         `;
 
         if (!isContainerDisabled) {
             result += `<div class="dotedit-container__menu">
                     <ul>
-                        <li class="dotedit-container__menu-item">
-                            <a
-                                data-dot-add="content"
-                                data-dot-identifier="${container.dataset.dotIdentifier}"
-                                data-dot-uuid="${container.dataset.dotUuid}"
-                                role="button">
-                                ${langMessages['editpage.content.container.menu.content']}
-                            </a>
-                        </li>
-                        <li class="dotedit-container__menu-item">
-                            <a
-                                data-dot-add="widget"
-                                data-dot-identifier="${container.dataset.dotIdentifier}"
-                                data-dot-uuid="${container.dataset.dotUuid}"
-                                role="button">
-                                ${langMessages['editpage.content.container.menu.widget']}
-                            </a>
-                        </li>
-                        <li class="dotedit-container__menu-item">
-                            <a
-                                data-dot-add="form"
-                                data-dot-identifier="${container.dataset.dotIdentifier}"
-                                data-dot-uuid="${container.dataset.dotUuid}"
-                                role="button">
-                                ${langMessages['editpage.content.container.menu.form']}
-                            </a>
-                        </li>
+                        ${
+                            items.map((item: DotAddMenuItem) => {
+                                return `
+                                    <li class="dotedit-container__menu-item">
+                                        <a
+                                            data-dot-add="${item.id}"
+                                            data-dot-identifier="${container.dataset.dotIdentifier}"
+                                            data-dot-uuid="${container.dataset.dotUuid}"
+                                            role="button">
+                                            ${item.message}
+                                        </a>
+                                    </li>
+                                `;
+                            }).join('')
+                        }
                     </ul>
                 </div>
             `;

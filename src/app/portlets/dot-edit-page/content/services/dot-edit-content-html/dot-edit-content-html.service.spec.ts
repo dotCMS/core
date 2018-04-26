@@ -25,13 +25,13 @@ describe('DotEditContentHtmlService', () => {
             </script>
         </head>
         <body>
-            <div data-dot-object="container" data-dot-identifier="123" data-dot-uuid="456">
+            <div data-dot-object="container" data-dot-identifier="123" data-dot-uuid="456" data-dot-can-add="CONTENT">
                 <div data-dot-object="contentlet" data-dot-identifier="456" data-dot-inode="456">
                     <div class="large-column"></div>
                 </div>
             </div>
 
-            <div data-dot-object="container" data-dot-identifier="321" data-dot-uuid="654">
+            <div data-dot-object="container" data-dot-identifier="321" data-dot-uuid="654" data-dot-can-add="CONTENT">
                 <div data-dot-object="contentlet" data-dot-identifier="456" data-dot-inode="456">
                     <div class="large-column"></div>
                 </div>

@@ -39,34 +39,71 @@ describe('DotEditContentToolbarHtmlService', () => {
             beforeEach(() => {
                 testDoc = document.implementation.createDocument('http://www.w3.org/1999/xhtml', 'html', null);
                 dummyContainer = testDoc.createElement('div');
-                const htmlElement: HTMLHtmlElement = testDoc.getElementsByTagName('html')[0];
-                dummyContainer.innerHTML = `
-                    <div data-dot-object="container">
-                        <div data-dot-object="contentlet">
-                            <div class="large-column"></div>
+            });
+
+            describe('button', () => {
+                beforeEach(() => {
+                    dummyContainer.innerHTML = `
+                        <div data-dot-object="container" data-dot-can-add="CONTENT,WIDGET,FORM">
+                            <div data-dot-object="contentlet">
+                                <div class="large-column"></div>
+                            </div>
                         </div>
-                    </div>
-                `;
-                htmlElement.appendChild(dummyContainer);
-                dotEditContentToolbarHtmlService.addContainerToolbar(testDoc);
+                    `;
+                    const htmlElement: HTMLHtmlElement = testDoc.getElementsByTagName('html')[0];
+                    htmlElement.appendChild(dummyContainer);
+                    dotEditContentToolbarHtmlService.addContainerToolbar(testDoc);
+                });
 
-                containerEl = testDoc.querySelector('[data-dot-object="container"]');
-                addButtonEl = testDoc.querySelector('.dotedit-container__add');
-                menuItems = testDoc.querySelectorAll('.dotedit-container__menu-item');
+                it('should create container toolbar', () => {
+                    containerEl = testDoc.querySelector('[data-dot-object="container"]');
+                    expect(containerEl).not.toBe(null);
+                    expect(containerEl.classList.contains('disabled')).toBe(false);
+                });
+
+                it('should have add button', () => {
+                    addButtonEl = testDoc.querySelector('.dotedit-container__add');
+                    expect(addButtonEl).not.toBe(null);
+                    expect(addButtonEl.attributes.getNamedItem('disabled')).toEqual(null);
+                });
             });
 
-            it('should create container toolbar', () => {
-                expect(containerEl).not.toBe(null);
-                expect(containerEl.classList.contains('disabled')).toBe(false);
-            });
+            describe('actions', () => {
+                it('should have content, widget and form', () => {
+                    dummyContainer.innerHTML = '<div data-dot-object="container" data-dot-can-add="CONTENT,WIDGET,FORM"></div>';
+                    const htmlElement: HTMLHtmlElement = testDoc.getElementsByTagName('html')[0];
+                    htmlElement.appendChild(dummyContainer);
+                    dotEditContentToolbarHtmlService.addContainerToolbar(testDoc);
+                    menuItems = testDoc.querySelectorAll('.dotedit-container__menu-item a');
+                    const menuItemsLabels = Array.from(menuItems).map(item => item.textContent.replace(/\s/g, ''));
 
-            it('should have add button', () => {
-                expect(addButtonEl).not.toBe(null);
-                expect(addButtonEl.attributes.getNamedItem('disabled')).toEqual(null);
-            });
+                    expect(menuItemsLabels).toEqual(['Content', 'Widget', 'Form']);
+                    expect(menuItems.length).toEqual(3);
+                });
 
-            it('should have actions', () => {
-                expect(menuItems.length).toEqual(3);
+                it('should have widget and form', () => {
+                    dummyContainer.innerHTML = '<div data-dot-object="container" data-dot-can-add="WIDGET,FORM"></div>';
+                    const htmlElement: HTMLHtmlElement = testDoc.getElementsByTagName('html')[0];
+                    htmlElement.appendChild(dummyContainer);
+                    dotEditContentToolbarHtmlService.addContainerToolbar(testDoc);
+                    menuItems = testDoc.querySelectorAll('.dotedit-container__menu-item a');
+                    const menuItemsLabels = Array.from(menuItems).map(item => item.textContent.replace(/\s/g, ''));
+
+                    expect(menuItemsLabels).toEqual(['Widget', 'Form']);
+                    expect(menuItems.length).toEqual(2);
+                });
+
+                it('should have widget', () => {
+                    dummyContainer.innerHTML = '<div data-dot-object="container" data-dot-can-add="WIDGET"></div>';
+                    const htmlElement: HTMLHtmlElement = testDoc.getElementsByTagName('html')[0];
+                    htmlElement.appendChild(dummyContainer);
+                    dotEditContentToolbarHtmlService.addContainerToolbar(testDoc);
+                    menuItems = testDoc.querySelectorAll('.dotedit-container__menu-item a');
+                    const menuItemsLabels = Array.from(menuItems).map(item => item.textContent.replace(/\s/g, ''));
+
+                    expect(menuItemsLabels).toEqual(['Widget']);
+                    expect(menuItems.length).toEqual(1);
+                });
             });
         });
 
@@ -74,7 +111,7 @@ describe('DotEditContentToolbarHtmlService', () => {
             beforeEach(() => {
                 const htmlElement: HTMLHtmlElement = testDoc.getElementsByTagName('html')[0];
                 dummyContainer.innerHTML = `
-                    <div data-dot-object="container" data-dot-can-add="false">
+                    <div data-dot-object="container" data-dot-can-add="">
                         <div data-dot-object="contentlet">
                             <div class="large-column"></div>
                         </div>
