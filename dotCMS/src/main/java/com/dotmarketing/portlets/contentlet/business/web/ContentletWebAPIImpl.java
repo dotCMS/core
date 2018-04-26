@@ -51,6 +51,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.liferay.util.servlet.SessionMessages;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.tools.ant.taskdefs.Sleep;
 
 import javax.servlet.http.HttpServletRequest;
 import java.text.DateFormat;
@@ -188,7 +189,11 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 	private void pushSaveEvent (final Contentlet eventContentlet, final boolean eventCreateNewVersion) throws DotHibernateException {
 
-		HibernateUtil.addAsyncCommitListener(() -> this.contentletSystemEventUtil.pushSaveEvent(eventContentlet, eventCreateNewVersion), 1000);
+		HibernateUtil.addAsyncCommitListener(() -> {
+			if (APILocator.getContentletAPI().isInodeIndexed(eventContentlet.getInode())) {
+				this.contentletSystemEventUtil.pushSaveEvent(eventContentlet, eventCreateNewVersion);
+			}
+		} , 1000);
 	}
 
 
