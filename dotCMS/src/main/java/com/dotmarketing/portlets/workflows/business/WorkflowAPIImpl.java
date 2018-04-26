@@ -833,6 +833,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					}
 				}
 			}
+
+			if(processor.getNextAssign() != null)
+				task.setAssignedTo(processor.getNextAssign().getId());
+			task.setStatus(processor.getNextStep().getId());
+
 			saveWorkflowTask(task,processor);
 			if(UtilMethods.isSet(processor.getContentlet())){
 			    APILocator.getContentletAPI().refresh(processor.getContentlet());
