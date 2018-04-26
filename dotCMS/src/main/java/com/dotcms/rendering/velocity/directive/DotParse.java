@@ -31,9 +31,7 @@ public class DotParse extends DotDirective {
 
   private final String hostIndicator = "//";
   private final String EDIT_ICON =
-      "<div class='dot_parseIcon'><a href='javascript:window.top.document.getElementById(\"detailFrame\").contentWindow.editFile(\"${_dotParseInode}\");' title='${_dotParsePath}'><span class='editIcon'></span></a></div>";
-
-
+          "<div data-dot-object='vtl-file' data-dot-inode='%s' data-dot-url='%s' data-dot-can-edit='%s'></div>";
 
   @Override
   public final String getName() {
@@ -110,12 +108,9 @@ public class DotParse extends DotDirective {
       
       // add the edit control if we have run through a page render
       if (!context.containsKey("dontShowIcon") &&
-              PageMode.EDIT_MODE == params.mode &&
-              (request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE)!=null) &&
-              APILocator.getPermissionAPI().doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user)) {
-
-          final String editIcon = EDIT_ICON.replace("${_dotParseInode}", contentlet.getInode()).replace("${_dotParsePath}",
-              id.getURI());
+              PageMode.EDIT_MODE == params.mode ) {
+          final String editIcon = String.format(EDIT_ICON, contentlet.getInode(), id.getURI(),
+                  APILocator.getPermissionAPI().doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user));
           writer.append(editIcon);
       }
 
