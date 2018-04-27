@@ -27,6 +27,7 @@ import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.annotation.Permissions;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.ForbiddenException;
@@ -101,7 +102,7 @@ public class WorkflowResource {
     }
 
     @VisibleForTesting
-        WorkflowResource(final WorkflowHelper workflowHelper,
+    WorkflowResource(final WorkflowHelper workflowHelper,
                                final ContentHelper    contentHelper,
                                final WorkflowAPI      workflowAPI,
                                final ContentletAPI    contentletAPI,
@@ -290,6 +291,7 @@ public class WorkflowResource {
     @Path("/actions/{actionId}")
     @JSONP
     @NoCache
+    @Permissions
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findAction(@Context final HttpServletRequest request,
                                      @PathParam("actionId") final String actionId) {

@@ -180,7 +180,7 @@ public  class WebResource {
      *
      * @return the login user or the login as user if exist any
      */
-    private User getCurrentUser(HttpServletRequest request, Map<String, String> paramsMap, boolean rejectWhenNoUser) {
+    public User getCurrentUser(HttpServletRequest request, Map<String, String> paramsMap, boolean rejectWhenNoUser) {
 
         User user = null;
         HttpSession session = request.getSession();
