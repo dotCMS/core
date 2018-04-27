@@ -222,7 +222,8 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 		dia = new dijit.Dialog({
 			id			:	this.addEditDiv,
 			title		: 	"<%=LanguageUtil.get(pageContext, "Edit-Scheme")%>",
-			draggable	:	false
+			style        : "width:500px;height:400px",
+			draggable	:	true
 		});
 
 
@@ -252,7 +253,6 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 				handle : function(dataOrError, ioArgs) {
 					if (dojo.isString(dataOrError)) {
 						if (dataOrError.indexOf("FAILURE") == 0) {
-
 							schemeAdmin.saveError(dataOrError);
 						} else {
 							schemeAdmin.saveSuccess(dataOrError);
@@ -317,7 +317,9 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
     },
 	saveSuccess : function(message) {
 		var dialog = dijit.byId(schemeAdmin.addEditDiv);
-		dialog.hide();
+        if(dialog != undefined){
+            dialog.hide();
+        }
 		mainAdmin.refresh();
 		showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Workflow-Scheme-saved")%>");
 
@@ -328,8 +330,11 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 	},
     deleteSuccess : function(message) {
         var dialog = dijit.byId(schemeAdmin.addEditDiv);
-        dialog.hide();
+        if(dialog != undefined){
+            dialog.hide();
+        }
         schemeAdmin.show();
+        mainAdmin.refresh();
         showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Workflow-Scheme-deleted")%>");
     },
     deleteError : function(message) {
@@ -337,7 +342,9 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
     },
 	copySuccess : function(message) {
 		var dialog = dijit.byId(schemeAdmin.addEditDiv);
-		dialog.hide();
+        if(dialog != undefined){
+            dialog.hide();
+        }
 		schemeAdmin.show();
 		showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Workflow-Scheme-copied")%>");
 	},

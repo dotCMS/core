@@ -28,7 +28,7 @@ public class WorkflowTaskForm extends ValidatorForm
     String belongsTo;
     String title;
     String description;
-    int status;
+    String status;
     String webasset = "";
 
         
@@ -115,12 +115,12 @@ public class WorkflowTaskForm extends ValidatorForm
     }
 
 
-    public int getStatus() {
+    public String getStatus() {
         return status;
     }
 
 
-    public void setStatus(int status) {
+    public void setStatus(String status) {
         this.status = status;
     }
 
