@@ -60,7 +60,7 @@ public class ContainerWebAPIIntegrationTest extends IntegrationTestBase {
 
     private static User createUser() throws DotDataException, DotSecurityException {
         HibernateUtil.startTransaction();
-        User user = APILocator.getUserAPI().createUser("new.user@test.com", "new.user@test.com");
+        final User user = APILocator.getUserAPI().createUser("new.user@test.com", "new.user@test.com");
         user.setFirstName("Test-11962");
         user.setLastName("User-11962");
 
@@ -76,10 +76,10 @@ public class ContainerWebAPIIntegrationTest extends IntegrationTestBase {
         user = createUser();
         container = this.createContainer(user, adminUser);
 
-        VelocityContext velocityContext = mock(VelocityContext.class);
-        HttpServletRequest request = mock(HttpServletRequest.class);
-        ViewContext viewContext = mock(ViewContext.class);
-        HttpSession session = mock(HttpSession.class);
+        final VelocityContext velocityContext = mock(VelocityContext.class);
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final ViewContext viewContext = mock(ViewContext.class);
+        final HttpSession session = mock(HttpSession.class);
 
         when(viewContext.getVelocityContext()).thenReturn(velocityContext);
         when(viewContext.getRequest()).thenReturn(request);
@@ -94,7 +94,7 @@ public class ContainerWebAPIIntegrationTest extends IntegrationTestBase {
 
     @Test
     public void testDoesUserHasPermissionToAddWidget_GivenUserWithoutPermission_ShouldReturnFalse() throws DotDataException, DotSecurityException {
-        boolean doesUserHasPermissionToAddWidget = containerWebAPI.doesUserHasPermissionToAddWidget(container.getInode());
+        final boolean doesUserHasPermissionToAddWidget = containerWebAPI.doesUserHasPermissionToAddWidget(container.getInode());
         assertFalse(doesUserHasPermissionToAddWidget);
     }
 
@@ -102,7 +102,7 @@ public class ContainerWebAPIIntegrationTest extends IntegrationTestBase {
     public void testDoesUserHasPermissionToAddWidget_GivenUserWithPermission_ShouldReturnTrue() throws DotDataException, DotSecurityException {
         this.addPermissionToBaseType(BaseContentType.WIDGET);
 
-        boolean doesUserHasPermissionToAddWidget = containerWebAPI.doesUserHasPermissionToAddWidget(container.getInode());
+        final boolean doesUserHasPermissionToAddWidget = containerWebAPI.doesUserHasPermissionToAddWidget(container.getInode());
 
         assertTrue(doesUserHasPermissionToAddWidget);
     }
@@ -110,20 +110,20 @@ public class ContainerWebAPIIntegrationTest extends IntegrationTestBase {
     @Test
     public void testDoesUserHasPermissionToAddForm_GivenUserWithPermission_ShouldReturnTrue() throws DotDataException, DotSecurityException {
         this.addPermissionToBaseType(BaseContentType.FORM);
-        boolean doesUserHasPermissionToAddForm = containerWebAPI.doesUserHasPermissionToAddForm(container.getInode());
+        final boolean doesUserHasPermissionToAddForm = containerWebAPI.doesUserHasPermissionToAddForm(container.getInode());
 
         assertTrue(doesUserHasPermissionToAddForm);
     }
 
     @Test
     public void testDoesUserHasPermissionToAddForm_GivenUserWithoutPermission_ShouldReturnFalse() throws DotDataException, DotSecurityException {
-        boolean doesUserHasPermissionToAddForm = containerWebAPI.doesUserHasPermissionToAddForm(container.getInode());
+        final  boolean doesUserHasPermissionToAddForm = containerWebAPI.doesUserHasPermissionToAddForm(container.getInode());
         assertFalse(doesUserHasPermissionToAddForm);
     }
 
     @Test
     public void testGetBaseContentTypeUserHasPermissionToAdd_GivenUserWithoutPermission_ShouldReturnEmptyString() throws DotDataException, DotSecurityException {
-        String baseContentTypeUserHasPermissionToAdd = containerWebAPI.getBaseContentTypeUserHasPermissionToAdd(container.getInode());
+        final String baseContentTypeUserHasPermissionToAdd = containerWebAPI.getBaseContentTypeUserHasPermissionToAdd(container.getInode());
         assertEquals("", baseContentTypeUserHasPermissionToAdd);
     }
 
@@ -131,7 +131,7 @@ public class ContainerWebAPIIntegrationTest extends IntegrationTestBase {
     public void testGetBaseContentTypeUserHasPermissionToAdd_GivenUserWithWidgetPermission_ShouldReturnWidgetString() throws DotDataException, DotSecurityException {
         this.addPermissionToBaseType(BaseContentType.WIDGET);
 
-        String baseContentTypeUserHasPermissionToAdd = containerWebAPI.getBaseContentTypeUserHasPermissionToAdd(container.getInode());
+        final String baseContentTypeUserHasPermissionToAdd = containerWebAPI.getBaseContentTypeUserHasPermissionToAdd(container.getInode());
         assertEquals("WIDGET", baseContentTypeUserHasPermissionToAdd);
     }
 
@@ -139,7 +139,7 @@ public class ContainerWebAPIIntegrationTest extends IntegrationTestBase {
     public void testGetBaseContentTypeUserHasPermissionToAdd_GivenUserWithFormPermission_ShouldReturnFormString() throws DotDataException, DotSecurityException {
         this.addPermissionToBaseType(BaseContentType.FORM);
 
-        String baseContentTypeUserHasPermissionToAdd = containerWebAPI.getBaseContentTypeUserHasPermissionToAdd(container.getInode());
+        final String baseContentTypeUserHasPermissionToAdd = containerWebAPI.getBaseContentTypeUserHasPermissionToAdd(container.getInode());
         assertEquals("FORM", baseContentTypeUserHasPermissionToAdd);
     }
 
@@ -148,8 +148,8 @@ public class ContainerWebAPIIntegrationTest extends IntegrationTestBase {
         this.addPermissionToBaseType(BaseContentType.FORM);
         this.addPermissionToBaseType(BaseContentType.WIDGET);
 
-        String baseContentTypeUserHasPermissionToAdd = containerWebAPI.getBaseContentTypeUserHasPermissionToAdd(container.getInode());
-        List<String> baseContentTypes = Arrays.asList(baseContentTypeUserHasPermissionToAdd.split(","));
+        final String baseContentTypeUserHasPermissionToAdd = containerWebAPI.getBaseContentTypeUserHasPermissionToAdd(container.getInode());
+        final List<String> baseContentTypes = Arrays.asList(baseContentTypeUserHasPermissionToAdd.split(","));
 
         assertEquals(2, baseContentTypes.size());
         assertTrue(baseContentTypes.contains("WIDGET"));
@@ -157,15 +157,16 @@ public class ContainerWebAPIIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
-    public void testGetBaseContentTypeUserHasPermissionToAdd_GivenUserWithWidgetFormContentPermission_ShouldReturnWidgetFormContentString() throws DotDataException, DotSecurityException {
+    public void testGetBaseContentTypeUserHasPermissionToAdd_GivenUserWithWidgetFormContentPermission_ShouldReturnWidgetFormContentString()
+            throws DotDataException, DotSecurityException {
         this.addPermissionToBaseType(BaseContentType.FORM);
         this.addPermissionToBaseType(BaseContentType.WIDGET);
 
-        ContentType documentContent = APILocator.getContentTypeAPI(user).find("Document");
+        final ContentType documentContent = APILocator.getContentTypeAPI(user).find("Document");
         this.addPermission(documentContent.inode(), documentContent);
 
-        String baseContentTypeUserHasPermissionToAdd = containerWebAPI.getBaseContentTypeUserHasPermissionToAdd(container.getInode());
-        List<String> baseContentTypes = Arrays.asList(baseContentTypeUserHasPermissionToAdd.split(","));
+        final String baseContentTypeUserHasPermissionToAdd = containerWebAPI.getBaseContentTypeUserHasPermissionToAdd(container.getInode());
+        final List<String> baseContentTypes = Arrays.asList(baseContentTypeUserHasPermissionToAdd.split(","));
 
         assertEquals(3, baseContentTypes.size());
         assertTrue(baseContentTypes.contains("WIDGET"));
@@ -178,18 +179,19 @@ public class ContainerWebAPIIntegrationTest extends IntegrationTestBase {
         HibernateUtil.startTransaction();
         APILocator.getContainerAPI().delete(container, adminUser, false);
         APILocator.getUserAPI().delete(user, adminUser, false);
-       HibernateUtil.commitTransaction();
+        HibernateUtil.commitTransaction();
     }
 
     private void addPermissionToBaseType(BaseContentType baseContentType) throws DotSecurityException, DotDataException {
-        ContentType widget = APILocator.getContentTypeAPI(adminUser).findByType(baseContentType).get(0);
+        final ContentType widget = APILocator.getContentTypeAPI(adminUser).findByType(baseContentType).get(0);
         this.addPermission(widget.inode(), widget);
     }
 
-    private void addPermission(String permissionableInode, Permissionable permissionable) throws DotDataException, DotSecurityException {
-        Role role = APILocator.getRoleAPI().getUserRole(user);
+    private void addPermission(final String permissionableInode, final Permissionable permissionable)
+            throws DotDataException, DotSecurityException {
+        final Role role = APILocator.getRoleAPI().getUserRole(user);
 
-        Permission permission = new Permission();
+        final Permission permission = new Permission();
         permission.setPermission(PermissionAPI.PERMISSION_READ);
         permission.setInode(permissionableInode);
         permission.setRoleId(role.getId());
@@ -197,27 +199,29 @@ public class ContainerWebAPIIntegrationTest extends IntegrationTestBase {
         APILocator.getPermissionAPI().save(permission, permissionable, adminUser, false);
     }
 
-    private Container createContainer(User user, User adminUser) throws DotDataException, DotSecurityException {
-        HibernateUtil.startTransaction();
-        Host defaultHost = APILocator.getHostAPI().findDefaultHost( user, false );
-        ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+    private Container createContainer(final User user, final User adminUser) throws DotDataException,
+            DotSecurityException {
 
-        Container container = new Container();
+        HibernateUtil.startTransaction();
+        final Host defaultHost = APILocator.getHostAPI().findDefaultHost( user, false );
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+
+        final Container container = new Container();
         container.setFriendlyName("test container");
         container.setTitle("this is the title");
         container.setMaxContentlets(5);
         container.setPreLoop("preloop code");
         container.setPostLoop("postloop code");
 
-        List<ContainerStructure> containerStructures = new ArrayList<ContainerStructure>();
+        final List<ContainerStructure> containerStructures = new ArrayList<ContainerStructure>();
 
-        ContainerStructure containerStructure = new ContainerStructure();
+        final ContainerStructure containerStructure = new ContainerStructure();
         containerStructure.setStructureId(contentTypeAPI.find("Document").inode());
         containerStructure.setCode("this is the code");
 
         containerStructures.add(containerStructure);
 
-        Container containerSaved = APILocator.getContainerAPI().save(container, containerStructures, defaultHost, adminUser, false);
+        final Container containerSaved = APILocator.getContainerAPI().save(container, containerStructures, defaultHost, adminUser, false);
 
         HibernateUtil.commitTransaction();
 

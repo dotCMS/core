@@ -159,7 +159,7 @@ public class ContainerWebAPI implements ViewTool {
 			return false;
 		} else {
 			try {
-				List<ContentType> contentTypesInContainer = APILocator.getContentTypeAPI(backuser).findByType(BaseContentType.WIDGET);
+				final List<ContentType> contentTypesInContainer = APILocator.getContentTypeAPI(backuser).findByType(BaseContentType.WIDGET);
 				return contentTypesInContainer != null && !contentTypesInContainer.isEmpty();
 			} catch (DotSecurityException e) {
 				//This exception should never happend
@@ -180,7 +180,7 @@ public class ContainerWebAPI implements ViewTool {
 			return false;
 		} else {
 			try {
-				List<ContentType> contentTypesInContainer = APILocator.getContentTypeAPI(backuser).findByType(BaseContentType.FORM);
+				final List<ContentType> contentTypesInContainer = APILocator.getContentTypeAPI(backuser).findByType(BaseContentType.FORM);
 				return contentTypesInContainer != null && !contentTypesInContainer.isEmpty();
 			} catch (DotSecurityException e) {
 				//This exception should never happend
@@ -192,7 +192,7 @@ public class ContainerWebAPI implements ViewTool {
 	}
 
 	public String getBaseContentTypeUserHasPermissionToAdd(final String containerInode) throws DotDataException {
-		Collection<String> baseContentTypesNames = list();
+		final Collection<String> baseContentTypesNames = list();
 
 		if(this.doesUserHasPermissionToAddContent(containerInode)) {
 			baseContentTypesNames.add(BaseContentType.CONTENT.toString());
