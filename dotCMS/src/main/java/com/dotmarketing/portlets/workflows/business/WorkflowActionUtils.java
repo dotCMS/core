@@ -20,8 +20,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import org.apache.commons.lang3.BooleanUtils;
 
-class WorkflowPermissionsHelper {
+class WorkflowActionUtils {
 
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
@@ -29,7 +30,7 @@ class WorkflowPermissionsHelper {
 
     private final UserAPI userAPI = APILocator.getUserAPI();
 
-    private volatile List<Role> specialRolesHierarchy;
+    private final List<Role> specialRolesHierarchy;
 
     private final Role anyWhoCanViewContentRole;
     private final Role anyWhoCanEditContentRole;
@@ -38,7 +39,7 @@ class WorkflowPermissionsHelper {
 
     private final Role cmsAdminRole;
 
-    WorkflowPermissionsHelper() throws DotDataException {
+    WorkflowActionUtils() throws DotDataException {
         anyWhoCanViewContentRole = roleAPI
                 .loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_VIEW_ROLE_KEY);
         anyWhoCanEditContentRole = roleAPI
@@ -71,11 +72,13 @@ class WorkflowPermissionsHelper {
             final Permissionable permissionable) throws DotDataException {
 
         if ((user != null) && roleAPI.doesUserHaveRole(user, cmsAdminRole)) {
+            Logger.debug(this, () -> "user:" + user.getUserId() + " has an admin role. returning all actions." );
             return actions;
         }
 
-        List<WorkflowAction> permissionables = new ArrayList<>(actions);
+        final List<WorkflowAction> permissionables = new ArrayList<>(actions);
         if (permissionables.isEmpty()) {
+            Logger.debug(this, () -> " No actions were passed. " );
             return permissionables;
         }
 
@@ -85,12 +88,13 @@ class WorkflowPermissionsHelper {
             boolean hasPermission = false;
             if (null != permissionable) {
                 // Validate if the action has one of the workflow special roles
-                hasPermission = hasSpecialWorkflowPermission(user, respectFrontEndRoles,
-                        permissionable, action);
+                final boolean doesHavePermission = hasSpecialWorkflowPermission(user, respectFrontEndRoles, permissionable, action);
+                Logger.debug(this, () -> " Trying special roles for action "+action.getName()+" had permissions:" + BooleanUtils.toStringYesNo(doesHavePermission));
+                hasPermission = doesHavePermission;
             }
-            // Validate if has other rolers permissions
-            if (permissionAPI.doesUserHavePermission(action, PermissionAPI.PERMISSION_USE, user,
-                    respectFrontEndRoles)) {
+            // Validate if has other role permissions
+            if (doesUserHavePermission(action, PermissionAPI.PERMISSION_USE, user, respectFrontEndRoles)) {
+                Logger.debug(this, () -> " Trying other roles for action "+action.getName()+" had permissions: yes");
                 hasPermission = true;
             }
             if (!hasPermission) {
@@ -115,6 +119,7 @@ class WorkflowPermissionsHelper {
 
         final List<WorkflowAction> permissionables = new ArrayList<>(actions);
         if (permissionables.isEmpty()) {
+            Logger.debug(this, () -> " No actions were passed. " );
             return permissionables;
         }
 
@@ -123,6 +128,7 @@ class WorkflowPermissionsHelper {
             final User user = userAPI.loadUserById(role.getRoleKey());
             //if we're performing a filter on a role that is mapped to a user. Lets say Chris Publisher
             //for that reason we have a user, with assigned roles etc..
+            Logger.debug(this, () -> " Role :" + role.getName() + " is mapped to a user, filtering based on user permissions." );
             return filterActions(permissionables, user, false, permissionable);
         } catch (Exception nsu) {
             Logger.debug(this, () -> "Unable to determine role belongs to a user.");
@@ -134,6 +140,7 @@ class WorkflowPermissionsHelper {
         final int index = specialRolesHierarchy.indexOf(role);
         //Determine if we're dealing with a special role
         if (index >= 0) {
+            Logger.debug(this, () -> " Filtering by special roles." );
             //If so.. get a sublist preserving the precedence. so we can apply a filter with the resulting piece of hierarchy.
             final List<Role> rolesSublist = specialRolesHierarchy
                     .subList(index, specialRolesHierarchy.size());
@@ -141,7 +148,7 @@ class WorkflowPermissionsHelper {
                 final WorkflowAction workflowAction = workflowActionIterator.next();
                 //So special roles do not take into account a permissionable instance, they can only be applied on the action.
                 //So this is an exact match lookup. The action has or doesn't have the special role. That's it.
-                if (!hasAnyRolePermission(workflowAction, rolesSublist)) {
+                if (!isAnyRolePresent(workflowAction, rolesSublist)) {
                     workflowActionIterator.remove();
                 }
             }
@@ -149,10 +156,11 @@ class WorkflowPermissionsHelper {
         }
 
         //Perform filter for regular roles
-        final Set<Role> roles = collectChildRoles(role);
+        Logger.debug(this, () -> " Filtering by regular roles. " );
+        final Set<Role> collectedRoles = collectChildRoles(role);
         while (workflowActionIterator.hasNext()) {
             final WorkflowAction workflowAction = workflowActionIterator.next();
-            if (!hasAnyRolePermission(workflowAction, roles, permissionable)) {
+            if (!isAnyRolePresent(workflowAction, collectedRoles, permissionable)) {
                 workflowActionIterator.remove();
             }
         }
@@ -190,12 +198,12 @@ class WorkflowPermissionsHelper {
      * Given a set roles this method verifies if an action has access to at least one of them.
      *
      * @param workflowAction the workflow action to examine
-     * @param roles the roles to apply
+     * @param collectedRoles the roles to apply
      * @return true if any of the roles is met by the action
      */
-    private boolean hasAnyRolePermission(final WorkflowAction workflowAction, final Iterable<Role> roles)
+    private boolean isAnyRolePresent(final WorkflowAction workflowAction, final Iterable<Role> collectedRoles)
             throws DotDataException {
-        for (final Role role : roles) {
+        for (final Role role : collectedRoles) {
             if (isRolePresent(workflowAction, role)) {
                 return true;
             }
@@ -205,19 +213,21 @@ class WorkflowPermissionsHelper {
 
     /**
      * Given a set roles an action and a permissionable. This method verifies that at least one of
-     * the roles is present on the actions and the permissionable
+     * the roles is present. But the role must be resent in both the actions and the permissionable instance.
      */
-    private boolean hasAnyRolePermission(final WorkflowAction workflowAction,
+    private boolean isAnyRolePresent(final WorkflowAction workflowAction,
             final Iterable<Role> collectedRoles, final Permissionable permissionable)
             throws DotDataException {
         //When no permissionable is available we simply rely on the validation of the role being present on the action.
         if (permissionable == null) {
-            return hasAnyRolePermission(workflowAction, collectedRoles);
+            return isAnyRolePresent(workflowAction, collectedRoles);
         }
         //if there's a permissionable we need to perform a double check.
         //We need to make sure the role is present on the action and on the permissionable.
         for (final Role role : collectedRoles) {
-            return (isRolePresent(workflowAction, role) && isRolePresent(permissionable, role));
+            if (isRolePresent(workflowAction, role) && isRolePresent(permissionable, role)){
+                return true;
+            }
         }
         return false;
     }
@@ -242,7 +252,7 @@ class WorkflowPermissionsHelper {
      */
     @CloseDBIfOpened
     boolean hasSpecialWorkflowPermission(final User user, final boolean respectFrontEndRoles,
-            Permissionable permissionable, WorkflowAction action) throws DotDataException {
+            final Permissionable permissionable, final WorkflowAction action) throws DotDataException {
 
         if (isRolePresent(action, anyWhoCanViewContentRole)) {
             return doesUserHavePermission(permissionable,
@@ -267,22 +277,22 @@ class WorkflowPermissionsHelper {
      * Return true if the user have over the permissionable the specified permission.
      *
      * @param permissionable the ContentType or contentlet to validate
-     * @param permissiontype The type of permission to validate
+     * @param permissionType The type of permission to validate
      * @param user The User over who the permissions are going to be validate
      * @param respectFrontEndRoles boolean indicating if the frontend roles should be repected
      * @return true if the user have permissions, false if not
      */
     @CloseDBIfOpened
     private boolean doesUserHavePermission(final Permissionable permissionable,
-            final int permissiontype, final User user, final boolean respectFrontEndRoles) throws DotDataException {
+            final int permissionType, final User user, final boolean respectFrontEndRoles) throws DotDataException {
         if (permissionable instanceof Contentlet && !InodeUtils
                 .isSet(permissionable.getPermissionId())) {
             if (permissionAPI.doesUserHavePermission(((Contentlet) permissionable).getContentType(),
-                    permissiontype, user, respectFrontEndRoles)) {
+                    permissionType, user, respectFrontEndRoles)) {
                 return true;
             }
         } else {
-            if (permissionAPI.doesUserHavePermission(permissionable, permissiontype, user,
+            if (permissionAPI.doesUserHavePermission(permissionable, permissionType, user,
                     respectFrontEndRoles)) {
                 return true;
             }
@@ -290,7 +300,7 @@ class WorkflowPermissionsHelper {
         return false;
     }
 
-    private List<Role> getSpecialRolesByPrecedence() throws DotDataException {
+    private List<Role> getSpecialRolesByPrecedence() {
         return specialRolesHierarchy;
     }
 

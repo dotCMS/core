@@ -133,7 +133,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	private static final boolean RESPECT_FRONTEND_ROLES = true;
 
-	private final WorkflowPermissionsHelper permissionsHelper;
+	private final WorkflowActionUtils workflowActionUtils;
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public WorkflowAPIImpl() {
@@ -172,7 +172,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		registerBundleService();
 
 		try {
-			permissionsHelper = new WorkflowPermissionsHelper();
+			workflowActionUtils = new WorkflowActionUtils();
 		} catch (DotDataException e) {
 			throw new DotRuntimeException(e);
 		}
@@ -461,6 +461,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         try {
 			return workFlowFactory.findContentTypesByScheme(workflowScheme);
 		}catch(Exception e){
+			Logger.debug(this,e.getMessage(),e);
             throw new DoesNotExistException(e);
 		}
 	}
@@ -916,7 +917,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			return Collections.emptyList();
 		}
         final List<WorkflowAction> actions = workFlowFactory.findActions(step);
-        return permissionsHelper.filterActions(actions, user, RESPECT_FRONTEND_ROLES, permissionable);
+        return workflowActionUtils
+				.filterActions(actions, user, RESPECT_FRONTEND_ROLES, permissionable);
     }
 
 	@Override
@@ -929,7 +931,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 		final List<WorkflowAction> actions = workFlowFactory.findActions(step);
 
-		return permissionsHelper.filterActions(actions, role, permissionable);
+		return workflowActionUtils.filterActions(actions, role, permissionable);
 
 	}
 
@@ -965,7 +967,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			actions.addAll(workFlowFactory.findActions(step));
 		}
 
-		return permissionsHelper.filterActions(actions.build(), user, RESPECT_FRONTEND_ROLES, permissionable);
+		return workflowActionUtils
+				.filterActions(actions.build(), user, RESPECT_FRONTEND_ROLES, permissionable);
 	}
 
 
@@ -2174,7 +2177,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         final WorkflowAction action = workFlowFactory.findAction(this.getLongId(id, ShortyIdAPI.ShortyInputType.WORKFLOW_ACTION));
 
         DotPreconditions.isTrue(
-                permissionsHelper.hasSpecialWorkflowPermission(user, RESPECT_FRONTEND_ROLES, permissionable, action) ||
+                workflowActionUtils
+						.hasSpecialWorkflowPermission(user, RESPECT_FRONTEND_ROLES, permissionable, action) ||
                         this.permissionAPI
                                 .doesUserHavePermission(action, PermissionAPI.PERMISSION_USE, user,
                                         RESPECT_FRONTEND_ROLES),
@@ -2196,7 +2200,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         if (null != action) {
 
             DotPreconditions.isTrue(
-                    permissionsHelper.hasSpecialWorkflowPermission(user, RESPECT_FRONTEND_ROLES, permissionable, action) ||
+                    workflowActionUtils.hasSpecialWorkflowPermission(user, RESPECT_FRONTEND_ROLES, permissionable, action) ||
                             this.permissionAPI
                                     .doesUserHavePermission(action, PermissionAPI.PERMISSION_USE, user, true),
                     () -> "User " + user + " cannot read action " + action.getName(),
