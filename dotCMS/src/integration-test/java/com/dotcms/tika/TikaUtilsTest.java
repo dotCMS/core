@@ -15,8 +15,8 @@ public class TikaUtilsTest{
 
     @Test
     public void testGetConfiguredMetadataFields() throws DotDataException {
-        TikaUtils tikaUtils = new TikaUtils();
-        Set<String>  fields = tikaUtils.getConfiguredMetadataFields();
+        final TikaUtils tikaUtils = new TikaUtils();
+        final Set<String>  fields = tikaUtils.getConfiguredMetadataFields();
 
         Assert.assertNotNull(fields);
         Assert.assertTrue(!fields.isEmpty());
