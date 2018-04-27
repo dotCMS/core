@@ -74,7 +74,7 @@ public class ContainerWebAPIIntegrationTest extends IntegrationTestBase {
     @Before
     public void prepareEachTest() throws Exception {
         user = createUser();
-        container = this.createContainer(user, adminUser);
+        container = this.createContainer(adminUser);
 
         final VelocityContext velocityContext = mock(VelocityContext.class);
         final HttpServletRequest request = mock(HttpServletRequest.class);
@@ -177,8 +177,15 @@ public class ContainerWebAPIIntegrationTest extends IntegrationTestBase {
     @After
     public void cleanUp() throws Exception {
         HibernateUtil.startTransaction();
-        APILocator.getContainerAPI().delete(container, adminUser, false);
-        APILocator.getUserAPI().delete(user, adminUser, false);
+
+        if (user != null) {
+            APILocator.getUserAPI().delete(user, adminUser, false);
+        }
+
+        if (container != null) {
+            APILocator.getContainerAPI().delete(container, adminUser, false);
+        }
+
         HibernateUtil.commitTransaction();
     }
 
@@ -199,12 +206,12 @@ public class ContainerWebAPIIntegrationTest extends IntegrationTestBase {
         APILocator.getPermissionAPI().save(permission, permissionable, adminUser, false);
     }
 
-    private Container createContainer(final User user, final User adminUser) throws DotDataException,
+    private Container createContainer(final User adminUser) throws DotDataException,
             DotSecurityException {
 
         HibernateUtil.startTransaction();
-        final Host defaultHost = APILocator.getHostAPI().findDefaultHost( user, false );
-        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+        final Host defaultHost = APILocator.getHostAPI().findDefaultHost( adminUser, false );
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(adminUser);
 
         final Container container = new Container();
         container.setFriendlyName("test container");
