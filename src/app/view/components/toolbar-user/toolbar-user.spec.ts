@@ -11,51 +11,61 @@ import { LoginAsComponent } from './../login-as/login-as';
 import { GravatarComponent } from './../_common/gravatar/gravatar.component';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture } from '@angular/core/testing';
-import { DebugElement } from '@angular/core';
+import { DebugElement, Injectable } from '@angular/core';
 import { async } from '@angular/core/testing';
 
 import { LoginService } from 'dotcms-js/core/login.service';
 
 import { DOTTestBed } from '../../../test/dot-test-bed';
-import { DotIframeService } from '../_common/iframe/service/dot-iframe/dot-iframe.service';
 import { LoginServiceMock, mockAuth } from '../../../test/login-service.mock';
 import { ToolbarUserComponent } from './toolbar-user';
+import { DotNavigationService } from '../dot-navigation/dot-navigation.service';
 
+@Injectable()
+class MockDotNavigationService {
+    goToFirstPortlet = jasmine.createSpy('goToFirstPortlet');
+}
 describe('ToolbarUserComponent', () => {
     let comp: ToolbarUserComponent;
     let fixture: ComponentFixture<ToolbarUserComponent>;
     let de: DebugElement;
     let el: HTMLElement;
-    let dotIframeService: DotIframeService;
     let dotDropdownComponent: DotDropdownComponent;
+    let dotNavigationService: DotNavigationService;
 
-    beforeEach(
-        async(() => {
-            DOTTestBed.configureTestingModule({
-                declarations: [
-                    DotDropdownComponent,
-                    GravatarComponent,
-                    LoginAsComponent,
-                    MyAccountComponent,
-                    SearchableDropdownComponent,
-                    ToolbarUserComponent,
-                    MaterialDesignTextfieldDirective
-                ],
-                providers: [{ provide: LoginService, useClass: LoginServiceMock }, IframeOverlayService, GravatarService, Jsonp],
-                imports: [DataListModule, OverlayPanelModule, BrowserAnimationsModule]
-            });
+    beforeEach(async(() => {
+        DOTTestBed.configureTestingModule({
+            declarations: [
+                DotDropdownComponent,
+                GravatarComponent,
+                LoginAsComponent,
+                MyAccountComponent,
+                SearchableDropdownComponent,
+                ToolbarUserComponent,
+                MaterialDesignTextfieldDirective
+            ],
+            providers: [
+                { provide: LoginService, useClass: LoginServiceMock },
+                {
+                    provide: DotNavigationService,
+                    useClass: MockDotNavigationService
+                },
+                IframeOverlayService,
+                GravatarService,
+                Jsonp
+            ],
+            imports: [DataListModule, OverlayPanelModule, BrowserAnimationsModule]
+        });
 
-            fixture = DOTTestBed.createComponent(ToolbarUserComponent);
-            comp = fixture.componentInstance;
-            de = fixture.debugElement;
-            el = de.nativeElement;
+        fixture = DOTTestBed.createComponent(ToolbarUserComponent);
+        comp = fixture.componentInstance;
+        de = fixture.debugElement;
+        el = de.nativeElement;
 
-            dotIframeService = de.injector.get(DotIframeService);
-            spyOn(dotIframeService, 'reload');
-        })
-    );
+        dotNavigationService = de.injector.get(DotNavigationService);
+    }));
 
-    it('should call reload on iframe service when logout as happen', () => {
+    it('should call redirect to the first porlet when logout as happen', () => {
         comp.auth = mockAuth;
         fixture.detectChanges();
 
@@ -66,6 +76,6 @@ describe('ToolbarUserComponent', () => {
         const logoutAsLink = de.query(By.css('#dot-toolbar-user-link-logout-as'));
         logoutAsLink.nativeElement.click();
 
-        expect(dotIframeService.reload).toHaveBeenCalledTimes(1);
+        expect(dotNavigationService.goToFirstPortlet).toHaveBeenCalledTimes(1);
     });
 });

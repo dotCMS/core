@@ -1,4 +1,3 @@
-import { DotIframeService } from './../_common/iframe/service/dot-iframe/dot-iframe.service';
 import { BaseComponent } from '../_common/_base/base-component';
 import { Component, Output, EventEmitter, Input, ViewEncapsulation, OnInit } from '@angular/core';
 import { LoginService, User } from 'dotcms-js/dotcms-js';
@@ -6,6 +5,7 @@ import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { PaginatorService } from '../../../api/services/paginator';
 import { FormGroup, FormBuilder, FormControl, Validators } from '@angular/forms';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
+import { DotNavigationService } from '../dot-navigation/dot-navigation.service';
 
 @Component({
     encapsulation: ViewEncapsulation.None,
@@ -24,11 +24,11 @@ export class LoginAsComponent extends BaseComponent implements OnInit {
 
     constructor(
         dotMessageService: DotMessageService,
-        private dotIframeService: DotIframeService,
         private fb: FormBuilder,
         private loginService: LoginService,
         public paginationService: PaginatorService,
-        private iframeOverlayService: IframeOverlayService
+        private iframeOverlayService: IframeOverlayService,
+        private dotNavigationService: DotNavigationService
     ) {
         super(['Change', 'cancel', 'password', 'loginas.select.loginas.user', 'login-as'], dotMessageService);
     }
@@ -57,8 +57,7 @@ export class LoginAsComponent extends BaseComponent implements OnInit {
                 if (data) {
                     this.close();
                     this.iframeOverlayService.hide();
-
-                    this.dotIframeService.reload();
+                    this.dotNavigationService.goToFirstPortlet();
                 }
             },
             (response) => {

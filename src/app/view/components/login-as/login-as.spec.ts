@@ -1,7 +1,7 @@
 import { mockUser, LoginServiceMock } from './../../../test/login-service.mock';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, async } from '@angular/core/testing';
-import { DebugElement } from '@angular/core';
+import { DebugElement, Injectable } from '@angular/core';
 import { LoginAsComponent } from './login-as';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { DOTTestBed } from '../../../test/dot-test-bed';
@@ -15,7 +15,12 @@ import { InputTextModule } from 'primeng/primeng';
 import { ReactiveFormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
-import { DotIframeService } from '../_common/iframe/service/dot-iframe/dot-iframe.service';
+import { DotNavigationService } from '../dot-navigation/dot-navigation.service';
+
+@Injectable()
+class MockDotNavigationService {
+    goToFirstPortlet = jasmine.createSpy('goToFirstPortlet');
+}
 
 describe('LoginAsComponent', () => {
     let comp: LoginAsComponent;
@@ -23,7 +28,7 @@ describe('LoginAsComponent', () => {
     let de: DebugElement;
     let el: HTMLElement;
     let paginatorService: PaginatorService;
-    let dotIframeService: DotIframeService;
+    let dotNavigationService: DotNavigationService;
 
     const users: User[] = [
         {
@@ -36,48 +41,49 @@ describe('LoginAsComponent', () => {
         }
     ];
 
-    beforeEach(
-        async(() => {
-            const messageServiceMock = new MockDotMessageService({
-                Change: 'Change',
-                cancel: 'cancel',
-                'login-as': 'login-as',
-                'loginas.select.loginas.user': 'loginas.select.loginas.user',
-                password: 'password'
-            });
+    beforeEach(async(() => {
+        const messageServiceMock = new MockDotMessageService({
+            Change: 'Change',
+            cancel: 'cancel',
+            'login-as': 'login-as',
+            'loginas.select.loginas.user': 'loginas.select.loginas.user',
+            password: 'password'
+        });
 
-            DOTTestBed.configureTestingModule({
-                declarations: [LoginAsComponent],
-                imports: [
-                    ...SEARCHABLE_NGFACES_MODULES,
-                    BrowserAnimationsModule,
-                    InputTextModule,
-                    ReactiveFormsModule,
-                    SearchableDropDownModule
-                ],
-                providers: [
-                    { provide: DotMessageService, useValue: messageServiceMock },
-                    { provide: LoginService, useClass: LoginServiceMock },
-                    {
-                        provide: ActivatedRoute,
-                        useValue: { params: Observable.from([{ id: '1234' }]) }
-                    },
-                    PaginatorService,
-                    IframeOverlayService
-                ]
-            });
+        DOTTestBed.configureTestingModule({
+            declarations: [LoginAsComponent],
+            imports: [
+                ...SEARCHABLE_NGFACES_MODULES,
+                BrowserAnimationsModule,
+                InputTextModule,
+                ReactiveFormsModule,
+                SearchableDropDownModule
+            ],
+            providers: [
+                { provide: DotMessageService, useValue: messageServiceMock },
+                { provide: LoginService, useClass: LoginServiceMock },
+                {
+                    provide: DotNavigationService,
+                    useClass: MockDotNavigationService
+                },
+                {
+                    provide: ActivatedRoute,
+                    useValue: { params: Observable.from([{ id: '1234' }]) }
+                },
+                PaginatorService,
+                IframeOverlayService
+            ]
+        });
 
-            fixture = DOTTestBed.createComponent(LoginAsComponent);
-            comp = fixture.componentInstance;
-            de = fixture.debugElement;
-            el = de.nativeElement;
+        fixture = DOTTestBed.createComponent(LoginAsComponent);
+        comp = fixture.componentInstance;
+        de = fixture.debugElement;
+        el = de.nativeElement;
 
-            paginatorService = de.injector.get(PaginatorService);
-            spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of(users));
-            dotIframeService = de.injector.get(DotIframeService);
-            spyOn(dotIframeService, 'reload');
-        })
-    );
+        paginatorService = de.injector.get(PaginatorService);
+        spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of(users));
+        dotNavigationService = de.injector.get(DotNavigationService);
+    }));
 
     it('should load the first page', () => {
         comp.ngOnInit();
@@ -108,7 +114,7 @@ describe('LoginAsComponent', () => {
         expect(paginatorService.filter).toEqual('new filter');
     });
 
-    it('should call reload on iframe service when login as happen', () => {
+    it('should call redirect to the first porlet when login as happen', () => {
         /*
             TODO: need to revisit this component, too much going on to init
         */
@@ -120,6 +126,6 @@ describe('LoginAsComponent', () => {
 
         const button = de.query(By.css('#dot-login-as-button-change'));
         button.nativeElement.click();
-        expect(dotIframeService.reload).toHaveBeenCalledTimes(1);
+        expect(dotNavigationService.goToFirstPortlet).toHaveBeenCalledTimes(1);
     });
 });
