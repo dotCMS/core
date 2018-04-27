@@ -126,7 +126,7 @@
 
                     //We clean up the value displayed in the content type box in any of the following cases
 				    // No need to have a content type if we're showing it all (meaning no filters are applied)
-                    if('' == roleId || 'All' == roleId){
+                    if('' == roleId){ //When selcting 'All' we clear contentType
                        contentTypeSelect.set("displayedValue","");
 					} else {
                         var whoCanUseDisplayedVal = whoCanUseSelect.get("displayedValue");
@@ -138,10 +138,7 @@
                         }
 					}
                     var contentTypeId = contentTypeSelect.getValue();
-
-                    if(roleId){
-                        stepAdmin.filterSteps(schemeId, roleId, contentTypeId);
-                    }
+                    stepAdmin.filterSteps(schemeId, roleId, contentTypeId);
 
                 }
             },

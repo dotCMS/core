@@ -39,7 +39,7 @@
 <%
 
   final List<WorkflowAction> actions = (
-          (UtilMethods.isSet(role) && UtilMethods.isSet(contentType))
+        UtilMethods.isSet(role)
           ? wapi.findActions(step, role, contentType)
           : wapi.findActions(step, systemUser)
   );

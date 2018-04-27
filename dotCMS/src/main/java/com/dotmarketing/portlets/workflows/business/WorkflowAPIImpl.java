@@ -99,6 +99,7 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.Future;
 import java.util.stream.IntStream;
+import javax.annotation.Nullable;
 import org.apache.commons.lang.time.StopWatch;
 import org.osgi.framework.BundleContext;
 
@@ -923,7 +924,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@Override
 	@CloseDBIfOpened
-	public List<WorkflowAction> findActions(final WorkflowStep step, final Role role, final Permissionable permissionable) throws DotDataException,
+	public List<WorkflowAction> findActions(final WorkflowStep step, final Role role, @Nullable final Permissionable permissionable) throws DotDataException,
            DotSecurityException {
 
 		if(null == step) {
