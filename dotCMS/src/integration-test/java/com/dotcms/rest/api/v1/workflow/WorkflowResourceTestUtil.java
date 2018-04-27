@@ -355,7 +355,7 @@ public abstract class WorkflowResourceTestUtil {
 
         final WorkflowSchemeImportObjectForm exportObjectForm =
                 new WorkflowSchemeImportObjectForm(
-                        new WorkflowSchemeImportExportObjectView(schemes, steps, actions,
+                        new WorkflowSchemeImportExportObjectView(WorkflowResource.VERSION, schemes, steps, actions,
                                 actionSteps, Collections.emptyList(), Collections.emptyList()),
                         permissions);
 

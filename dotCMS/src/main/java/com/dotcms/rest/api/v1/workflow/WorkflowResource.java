@@ -74,7 +74,7 @@ import javax.servlet.http.HttpServletRequest;
 @Path("/v1/workflow")
 public class WorkflowResource {
 
-
+    public  final static String VERSION = "1.0";
     private final WorkflowHelper   workflowHelper;
     private final ContentHelper    contentHelper;
     private final WebResource      webResource;
@@ -878,7 +878,7 @@ public class WorkflowResource {
             exportObject = this.workflowImportExportUtil.buildExportObject(Arrays.asList(scheme));
             permissions  = this.workflowHelper.getActionsPermissions(exportObject.getActions());
             response     = Response.ok(new ResponseEntityView(
-                    map("workflowExportObject", new WorkflowSchemeImportExportObjectView(exportObject),
+                    map("workflowExportObject", new WorkflowSchemeImportExportObjectView(VERSION, exportObject),
                             "permissions", permissions))).build(); // 200
         } catch (Exception e){
             Logger.error(this.getClass(),
