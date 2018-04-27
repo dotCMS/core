@@ -63,7 +63,7 @@ public class VelocityEditMode extends VelocityModeHandler {
         Context context = VelocityUtil.getWebContext(request, response);
         long langId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
         IHTMLPage htmlPage = VelocityUtil.getPage(id, langId, mode.showLive);
-        new PageContextBuilder(htmlPage, user, PageMode.PREVIEW_MODE).addAll(context);
+        new PageContextBuilder(htmlPage, user, PageMode.EDIT_MODE).addAll(context);
 
         context.put("dotPageContent", new ContentMap(((Contentlet) htmlPage), user, mode, host, context));
 

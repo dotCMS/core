@@ -7,14 +7,12 @@
 
 
 #macro(editContentlet $CONTENT_INODE)
-	## No container inode is passed because a contentlet is edited no added to the container
-	#set($_containerInode = "")
-	#if($EDIT_MODE)
-		#set($_hasPermission = $contents.doesUserHasPermission($CONTENT_INODE, 2, $EDIT_MODE))
-		#if($_hasPermission)
-			<a href="javascript:window.top.document.getElementById('detailFrame').contentWindow.editContentlet('$_containerInode', '$CONTENT_INODE'); " class="dotEditListBox">$languagewebapi.getFromUserLanguage("modes.Edit-Content")</a>
-		#end
-	#end
+    ## No container inode is passed because a contentlet is edited no added to the container
+    #set($_containerInode = "")
+    #if($EDIT_MODE)
+        #set($_hasPermission = $contents.doesUserHasPermission($CONTENT_INODE, 2, $EDIT_MODE))
+    <div data-dot-object='edit-content' data-dot-inode='$CONTENT_INODE'  data-dot-can-edit='$_hasPermission'></div>
+    #end
 #end
 
 #macro(addContentlet $STRUCTURE_INODE $CONTENT_NAME)
