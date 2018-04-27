@@ -5225,8 +5225,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             try {
                 permissionAPI.copyPermissions(contentlet, newContentlet);
             } catch (Exception e) {
-                Logger.warn(this, "Cannot insert Permission Reference of copied content. Process should continue" );
-                Logger.debug(this, "Cannot insert Permission Reference of copied content.", e);
+                Logger.warn(this, "Cannot insert Permission Reference of copied content. Process should continue. " + e.getMessage());
             }
 
             //Using a map to make sure one identifier per page.
