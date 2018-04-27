@@ -8,6 +8,9 @@ import java.util.Set;
 import org.junit.Assert;
 import org.junit.Test;
 
+/**
+ * @author nollymar
+ */
 public class TikaUtilsTest{
 
     @Test
@@ -21,9 +24,9 @@ public class TikaUtilsTest{
 
     @Test
     public void test_FilterMetadataFields_WhenMapEmpty_ReturnsEmptyMap() throws DotDataException {
-        TikaUtils tikaUtils = new TikaUtils();
-        Map<String, Object> metaMap = new HashMap<>();
-        Set<String> fields  = new HashSet<>();
+        final TikaUtils tikaUtils = new TikaUtils();
+        final Map<String, Object> metaMap = new HashMap<>();
+        final Set<String> fields  = new HashSet<>();
         fields.add("width");
         tikaUtils.filterMetadataFields(metaMap, fields);
 
@@ -33,8 +36,8 @@ public class TikaUtilsTest{
 
     @Test
     public void test_FilterMetadataFields_WhenFieldsArrayIsEmpty_DoesNotModifyTheMap() throws DotDataException {
-        TikaUtils tikaUtils = new TikaUtils();
-        Map<String, Object> metaMap = new HashMap<>();
+        final TikaUtils tikaUtils = new TikaUtils();
+        final Map<String, Object> metaMap = new HashMap<>();
 
         metaMap.put("content", "Test to filter metadata fields");
         metaMap.put("width", "300px");
@@ -48,9 +51,9 @@ public class TikaUtilsTest{
 
     @Test
     public void test_FilterMetadataFields_WhenFieldExistsInMap_ReturnsMapWithTheField() throws DotDataException {
-        TikaUtils tikaUtils = new TikaUtils();
-        Set<String> fields  = new HashSet<>();
-        Map<String, Object> metaMap = new HashMap<>();
+        final TikaUtils tikaUtils = new TikaUtils();
+        final Set<String> fields  = new HashSet<>();
+        final Map<String, Object> metaMap = new HashMap<>();
 
         fields.add("width");
         fields.add("size");
@@ -66,9 +69,9 @@ public class TikaUtilsTest{
 
     @Test
     public void test_FilterMetadataFields_WhenFieldMatchesRegex_ReturnsMapWithTheField() throws DotDataException {
-        TikaUtils tikaUtils = new TikaUtils();
-        Map<String, Object> metaMap = new HashMap<>();
-        Set<String> fields  = new HashSet<>();
+        final TikaUtils tikaUtils = new TikaUtils();
+        final Map<String, Object> metaMap = new HashMap<>();
+        final Set<String> fields  = new HashSet<>();
 
         fields.add("wid.*");
         fields.add("size");
@@ -84,9 +87,9 @@ public class TikaUtilsTest{
 
     @Test
     public void test_FilterMetadataFields_WhenFieldIsWildcard_ReturnsMapWithAllFields() throws DotDataException {
-        TikaUtils tikaUtils = new TikaUtils();
-        Map<String, Object> metaMap = new HashMap<>();
-        Set<String> fields  = new HashSet<>();
+        final TikaUtils tikaUtils = new TikaUtils();
+        final Map<String, Object> metaMap = new HashMap<>();
+        final Set<String> fields  = new HashSet<>();
 
         fields.add("*");
 
