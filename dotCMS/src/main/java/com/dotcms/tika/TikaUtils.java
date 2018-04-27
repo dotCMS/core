@@ -246,7 +246,7 @@ public class TikaUtils {
      * @return
      */
     private boolean checkIfFieldMatches(final String key, final Set<String> configFieldsSet){
-        Predicate<String> condition = e -> key.matches(e);
+        final Predicate<String> condition = e -> key.matches(e);
         return configFieldsSet.stream().anyMatch(condition);
     }
 
