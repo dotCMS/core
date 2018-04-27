@@ -53,7 +53,6 @@ import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -795,11 +794,11 @@ public class WorkflowAPITest extends IntegrationTestBase {
         actions = workflowAPI.findActions(steps, reviewerUser);
         assertTrue(null != actions && actions.size() == 2);
 
-        actions = workflowAPI.findActions(workflowScheme1Step2, reviewer);
+        actions = workflowAPI.findActions(workflowScheme1Step2, reviewer, null);
         assertNotNull(actions);
         assertTrue(actions.size() == 1);
 
-        actions = workflowAPI.findActions(workflowScheme3Step2, contributor);
+        actions = workflowAPI.findActions(workflowScheme3Step2, contributor, null);
         assertNotNull(actions);
         assertTrue(actions.size() == 1);
 
