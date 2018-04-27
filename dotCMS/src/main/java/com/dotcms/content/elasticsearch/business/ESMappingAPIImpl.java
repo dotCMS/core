@@ -13,6 +13,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
+import com.dotcms.tika.TikaUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -45,6 +46,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.ThreadSafeSimpleDateFormat;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.StringPool;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -293,7 +295,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 					String lvar=con.getStructure().getVelocityVarName().toLowerCase();
 
-					mlowered.put(lvar+".metadata_content", contentData);
+					mlowered.put(FileAssetAPI.META_DATA_FIELD.toLowerCase() + StringPool.PERIOD + "content", contentData);
 					sw.append(contentData).append(' ');
 				}
 			}
@@ -405,6 +407,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		StringBuilder keyNameBuilder;
 		String keyName;
 		String keyNameText;
+
+		final TikaUtils tikaUtils = new TikaUtils();
+
 		for (Field f : fields) {
 
 			keyNameBuilder = new StringBuilder(st.getVelocityVarName()).append(".")
@@ -483,10 +488,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 									&& st.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET;
 					if(!fileMetadata || LicenseUtil.getLevel()>= LicenseLevel.STANDARD.level) {
 
-						m.put(keyName, valueObj);
 						Map<String,Object> keyValueMap = KeyValueFieldUtil.JSONValueToHashMap((String)valueObj);
 
-						Set<String> allowedFields=null;
+						Set<String> allowedFields = new HashSet<>();
 						if(fileMetadata) {
 							// http://jira.dotmarketing.net/browse/DOTCMS-7243
 							List<FieldVariable> fieldVariables=APILocator.getFieldAPI().getFieldVariablesForField(
@@ -499,26 +503,15 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 										allowedFields.add(n.trim().toLowerCase());
 								}
 							}
-							// aditional fields from the configuration file
-							String configFields=Config.getStringProperty("INDEX_METADATA_FIELDS", "");
-							if(configFields.trim().length()>0) {
-								String[] names=configFields.split(",");
-								if(names.length>0 && allowedFields==null)
-									allowedFields=new HashSet<>();
-								for(String n : names)
-									allowedFields.add(n.trim().toLowerCase());
-							}
-						}
 
-						if (keyValueMap != null && !keyValueMap.isEmpty()) {
-							for (final String key : keyValueMap.keySet()) {
-								if (allowedFields == null || allowedFields
-										.contains(key.toLowerCase())) {
-									m.put(keyName + "_" + key, keyValueMap.get(key).toString());
-								}
-							}
-						}
+							allowedFields
+									.addAll(tikaUtils.getConfiguredMetadataFields());
 
+							tikaUtils.filterMetadataFields(keyValueMap, allowedFields);
+
+							keyValueMap.forEach((k, v) -> m
+									.put(FileAssetAPI.META_DATA_FIELD.toLowerCase() + StringPool.PERIOD + k, v));
+						}
 					}
 				} else if(f.getFieldType().equals(Field.FieldType.TAG.toString())) {
 
