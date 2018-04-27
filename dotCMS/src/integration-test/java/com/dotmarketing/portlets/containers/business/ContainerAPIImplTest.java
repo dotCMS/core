@@ -122,17 +122,7 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
                 .build();
 
 
-        ContentType contentTypeSaved = APILocator.getContentTypeAPI(user).save(contentType);
-
-        /*Permission permission = new Permission();
-        permission.setPermission(PermissionAPI.PERMISSION_PUBLISH);
-        permission.setInode(contentTypeSaved.inode());
-        Role role = APILocator.getRoleAPI().loadRolesForUser(user.getUserId()).get(0);
-        permission.setRoleId(role.getId());
-        APILocator.getPermissionAPI().save(permission, contentTypeSaved, user, false);
-        */
-
-        return contentTypeSaved;
+        return APILocator.getContentTypeAPI(user).save(contentType);
     }
 
 }
