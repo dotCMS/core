@@ -224,7 +224,7 @@ public class WorkflowResourceIntegrationTest {
 
             final WorkflowSchemeImportObjectForm exportObjectForm =
                     new WorkflowSchemeImportObjectForm(
-                            new WorkflowSchemeImportExportObjectView(schemes,steps,actions,actionSteps,Collections.emptyList(),Collections.emptyList()),
+                            new WorkflowSchemeImportExportObjectView(WorkflowResource.VERSION,schemes,steps,actions,actionSteps,Collections.emptyList(),Collections.emptyList()),
                             permissions);
 
             final Response importResponse = workflowResource.importScheme(request, exportObjectForm);

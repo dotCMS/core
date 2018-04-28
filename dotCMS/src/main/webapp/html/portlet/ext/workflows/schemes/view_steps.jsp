@@ -137,20 +137,38 @@
 
 
 <div class="portlet-toolbar">
-
-	<div class="portlet-toolbar__actions-primary showPointer" onClick="schemeAdmin.showAddEdit('<%=scheme.getId()%>');">
+    <div class="portlet-toolbar__actions-primary">
+	<div class="showPointer">
 		<input type="hidden" name="cmd" value="save">
 		<input type="hidden" name="schemeId" value="<%=UtilMethods.webifyString(scheme.getId())%>">
 		<div>
-			<h2 style="border-bottom:dotted 1px gray;"><%=UtilMethods.webifyString(scheme.getName())%> &nbsp; &nbsp; <span class="editIcon" style="float: right;"></span></h2>
-			<p><%=UtilMethods.webifyString(scheme.getDescription())%></p>
+
+			
+			<div class="showPointer" onClick="schemeAdmin.show()"  style="float: left;">
+			 <h2 style="border-bottom:dotted 1px white;"><%=LanguageUtil.get(pageContext, "Workflow-Schemes")%></h2>
+			 <p>&nbsp;</p>
+			</div> 
+			
+			<div style="float: left;">
+			&nbsp; &rarr; &nbsp;
+			</div>
+			<div onClick="schemeAdmin.showAddEdit('<%=scheme.getId()%>');" style="float: left;">
+			 <h2 style="border-bottom:dotted 1px gray;"><%=UtilMethods.webifyString(scheme.getName())%></h2>
+			 <p><%=UtilMethods.webifyString(scheme.getDescription())%></p>
+			</div>
+            <div style="float: left;">&nbsp;
+            <span class="editIcon"></span>
+            </div>
+	
+			
 		</div>
 	</div>
-
+    </div>
 	<div class="portlet-toolbar__info">
 		<div class="inline-form">
+			<label font-size:85%; for="filterByWhoCanUseSelect"><%=LanguageUtil.get(pageContext, "Filter-By-Who-Can-Use")%> : 
 			<input id="filterByWhoCanUseSelect"/>
-			<label font-size:85%; for="filterByWhoCanUseSelect"><%=LanguageUtil.get(pageContext, "Filter-By-Who-Can-Use")%>
+			
 			</label>
 		</div>
 	</div>
