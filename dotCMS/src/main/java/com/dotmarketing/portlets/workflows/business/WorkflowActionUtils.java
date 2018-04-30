@@ -95,15 +95,12 @@ class WorkflowActionUtils {
                         + " had permissions:" + BooleanUtils.toStringYesNo(doesHavePermission));
                 hasPermission = doesHavePermission;
             }
-            //No need to perform any further checks, we already know we don't have permission
-            if (!hasPermission) {
-                // Validate if has other role permissions
-                if (doesUserHavePermission(action, PermissionAPI.PERMISSION_USE, user,
-                        respectFrontEndRoles)) {
-                    Logger.debug(this, () -> " Trying other roles for action " + action.getName()
-                            + " had permissions: yes");
-                    hasPermission = true;
-                }
+            // Validate if has other role permissions
+            if (doesUserHavePermission(action, PermissionAPI.PERMISSION_USE, user,
+                    respectFrontEndRoles)) {
+                Logger.debug(this, () -> " Trying other roles for action " + action.getName()
+                        + " had permissions: yes");
+                hasPermission = true;
             }
 
             if (!hasPermission) {
