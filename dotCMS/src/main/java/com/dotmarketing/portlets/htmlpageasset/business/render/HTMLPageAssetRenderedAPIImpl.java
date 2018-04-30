@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render;
 
+import com.dotcms.rendering.velocity.services.PageContextBuilder;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotmarketing.beans.ContainerStructure;
@@ -177,7 +178,9 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         List<ContainerRendered> containers = null;
 
         if (isRendered) {
-            final Context velocityContext = VelocityUtil.getWebContext(request, response);
+            final Context velocityContext  = new PageContextBuilder(page, systemUser, mode).addAll(VelocityUtil.getWebContext(request, response));
+            
+
             containers = this.containerRenderedBuilder.getContainersRendered(page, velocityContext, mode);
         } else {
             containers = this.containerRenderedBuilder.getContainers(page, mode);
@@ -185,7 +188,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
         Map<String, ContainerRendered> mappedContainers = containers.stream()
                 .collect(Collectors.toMap(
-                        containerRendered -> containerRendered.getContainer().getIdentifier(),
+                        containerRendered -> containerRendered.getContainer().getIdentifier() + "_" +containerRendered.getUuid() ,
                         containerRendered -> containerRendered
                 ));
 
