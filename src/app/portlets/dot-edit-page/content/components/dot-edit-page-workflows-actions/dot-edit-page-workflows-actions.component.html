@@ -1,8 +1,10 @@
-<p-splitButton 
-    flat 
+<button pButton
+    flat
     class="edit-page-toolbar__actions"
+    (click)="menu.toggle($event)"
     [label]="label"
-    [model]="workflowsMenuActions | async"
     [disabled]="!actionsAvailable">
-</p-splitButton>
+</button>
+
+<p-menu [model]="actions | async" #menu popup="popup" appendTo="body"></p-menu>
 

@@ -66,7 +66,7 @@ describe('DotEditLayoutSidebarComponent', () => {
         expect(headerSelector.nativeElement.outerText).toBe('Sidebar');
     });
 
-    fit('should call the write value and transform the containers data', () => {
+    it('should call the write value and transform the containers data', () => {
         const mockResponse = mockDotContainers;
 
         hostComponentfixture.componentInstance.form = new FormGroup({

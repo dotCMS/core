@@ -3,7 +3,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DebugElement, Component, Input } from '@angular/core';
 import { By } from '@angular/platform-browser';
-import { SplitButton } from 'primeng/primeng';
+import { SplitButton, MenuModule, Menu } from 'primeng/primeng';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { DotWorkflowServiceMock, mockWorkflowsActions } from '../../../../../test/dot-workflow-service.mock';
 import { mockDotPage } from '../../../../../test/dot-rendered-page.mock';
@@ -45,15 +45,20 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
     beforeEach(
         async(() => {
             testbed = DOTTestBed.configureTestingModule({
-                imports: [RouterTestingModule, BrowserAnimationsModule],
+                imports: [RouterTestingModule, BrowserAnimationsModule, MenuModule],
                 declarations: [DotEditPageWorkflowsActionsComponent, TestHostComponent],
                 providers: [
                     {
                         provide: DotWorkflowService,
                         useClass: DotWorkflowServiceMock
                     },
-                    { provide: DotMessageService, useValue: messageServiceMock },
-                    { provide: LoginService, useClass: LoginServiceMock },
+                    {
+                        provide: DotMessageService,
+                        useValue: messageServiceMock },
+                    {
+                        provide: LoginService,
+                        useClass: LoginServiceMock
+                    },
                     DotHttpErrorManagerService,
                     DotRouterService
                 ]
@@ -86,22 +91,11 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
             });
 
             it('should have a workflow actions element', () => {
-                expect(true).toBeTruthy();
-            });
-
-            it('should have a workflow actions element', () => {
                 expect(actionButton).toBeTruthy();
             });
 
             it('should have a workflow actions with label "ACTIONS"', () => {
                 expect(actionButton.nativeElement.textContent).toContain('ACTIONS');
-            });
-
-            it('should set action split buttons params', () => {
-                const actionsButton: SplitButton = actionButton.componentInstance;
-                expect(actionsButton.model[0].label).toEqual('Assign Workflow');
-                expect(actionsButton.model[1].label).toEqual('Save');
-                expect(actionsButton.model[2].label).toEqual('Save / Publish');
             });
 
             it('should get workflow actions when page changes"', () => {
@@ -180,8 +174,27 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
             });
 
             it('should be disabled', () => {
-                expect(actionButton.componentInstance.disabled).toBe(true);
+                expect(actionButton.nativeElement.disabled).toBe(true);
             });
+        });
+    });
+
+    describe('menu', () => {
+        let menu: Menu;
+
+        beforeEach(() => {
+            fixture.detectChanges();
+            menu = de.query(By.css('p-menu')).componentInstance;
+        });
+
+        it('should have menu', () => {
+            expect(menu).not.toBe(null);
+        });
+
+        it('should set actions', () => {
+            expect(menu.model[0].label).toEqual('Assign Workflow');
+            expect(menu.model[1].label).toEqual('Save');
+            expect(menu.model[2].label).toEqual('Save / Publish');
         });
     });
 });
