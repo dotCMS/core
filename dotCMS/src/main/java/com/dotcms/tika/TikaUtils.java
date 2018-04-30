@@ -222,7 +222,7 @@ public class TikaUtils {
             return new HashSet<>(Arrays.asList( configFields.split(",")));
 
         }
-        return Collections.EMPTY_SET;
+        return Collections.emptySet();
     }
 
     /**

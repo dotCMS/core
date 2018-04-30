@@ -293,8 +293,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 					String contentData=APILocator.getFileAssetAPI().getContentMetadataAsString(contentMeta);
 
-					String lvar=con.getStructure().getVelocityVarName().toLowerCase();
-
 					mlowered.put(FileAssetAPI.META_DATA_FIELD.toLowerCase() + StringPool.PERIOD + "content", contentData);
 					sw.append(contentData).append(' ');
 				}
