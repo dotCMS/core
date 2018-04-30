@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.htmlpageasset.business.render;
 
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.beans.ContainerStructure;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.portlets.containers.model.Container;
 
 import java.io.Serializable;
@@ -24,7 +25,7 @@ public class ContainerRendered implements Serializable {
     private final Container container;
     private final List<ContainerStructure> containerStructures;
     private String rendered;
-
+    private final String uuid;
     /**
      * Creates a new instance of the ContainerRendered.
      *
@@ -32,9 +33,9 @@ public class ContainerRendered implements Serializable {
      * @param containerStructures The list of {@link ContainerStructure} relationships.
      *                           the browser.
      */
-    public ContainerRendered(final Container container, final List<ContainerStructure> containerStructures) {
+    public ContainerRendered(final Container container, final List<ContainerStructure> containerStructures, final String uuid) {
         this.container = container;
-
+        this.uuid=(uuid==null) ? MultiTree.LEGACY_RELATION_TYPE : uuid;
         if (containerStructures != null) {
             this.containerStructures = ImmutableList.copyOf(containerStructures);
         } else {
@@ -83,5 +84,9 @@ public class ContainerRendered implements Serializable {
      */
     public void setRendered(final String rendered) {
         this.rendered = rendered;
+    }
+
+    public String getUuid() {
+        return uuid;
     }
 }

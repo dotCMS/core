@@ -178,9 +178,9 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
         if (isRendered) {
             final Context velocityContext = VelocityUtil.getWebContext(request, response);
-            containers = this.containerRenderedBuilder.getContainersRendered(template, velocityContext, mode);
+            containers = this.containerRenderedBuilder.getContainersRendered(page, velocityContext, mode);
         } else {
-            containers = this.containerRenderedBuilder.getContainers(template);
+            containers = this.containerRenderedBuilder.getContainers(page, mode);
         }
 
         Map<String, ContainerRendered> mappedContainers = containers.stream()
