@@ -21,6 +21,7 @@ import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
@@ -63,7 +64,6 @@ public class TemplateAjax {
 				filter = filter.replaceAll("\\?", "");
 			}
 
-
 			if(UtilMethods.isSet(query.get("hostId"))) {
 			    int startF=start;
 			    int countF=count;
@@ -84,6 +84,12 @@ public class TemplateAjax {
 				fullListTemplates.addAll(templateAPI.findTemplatesUserCanUse(user, host.getHostname(), filter, true, startF, countF));
 				totalTemplates.addAll(templateAPI.findTemplatesUserCanUse(user, host.getHostname(), filter, true, 0, 1000));
 
+			}
+
+			if (UtilMethods.isSet(query.get("templateSelected"))) {
+				Template templateSelected = templateAPI.findWorkingTemplate(query.get("templateSelected"), user, respectFrontendRoles);
+				fullListTemplates.add(templateSelected);
+				totalTemplates.add(templateSelected);
 			}
 
 			//doesn't currently respect archived
@@ -114,12 +120,6 @@ public class TemplateAjax {
 			}
 		}
 
-//		totalTemplates = templateAPI.findTemplatesAssignedTo(host);
-//		if(start >= list.size()) start =  list.size() - 1;
-//		if(start < 0)  start  = 0;
-//		if(start + count >= list.size()) count = list.size() - start;
-//		List<Map<String, Object>> templates = list.subList(start, start + count);
-
 		results.put("totalResults", totalTemplates.size());
 
 		results.put("list", list);
@@ -144,7 +144,17 @@ public class TemplateAjax {
 			}
 		}
 		Map<String, Object> templateMap = template.getMap();
-		if(parentHost != null) {
+
+		if (template.isAnonymous()){
+			try {
+				String customLayoutTemplateLabel = LanguageUtil.get("editpage.properties.template.custom.label");
+				templateMap.put("fullTitle", customLayoutTemplateLabel);
+				templateMap.put("htmlTitle", customLayoutTemplateLabel);
+			} catch (LanguageException e) {
+				Logger.error(this.getClass(),
+						"Exception on buildTemplateMap exception message: " + e.getMessage(), e);
+			}
+		} else if(parentHost != null) {
 			templateMap.put("hostName", parentHost.getHostname());
 			templateMap.put("hostId", parentHost.getIdentifier());
 			templateMap.put("fullTitle",   templateMap.get("title") + " (" + parentHost.getHostname() + ")" );

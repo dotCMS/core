@@ -35,7 +35,8 @@ function getTemplateCallBack(data) {
 
 dojo.ready(function(){
     var templateStore=new dotcms.dojo.data.TemplateReadStore({ 
-        hostId: "$request.getSession().getAttribute('CMS_SELECTED_HOST_ID')" 
+        hostId: "$request.getSession().getAttribute('CMS_SELECTED_HOST_ID')",
+        templateSelected: dojo.byId("template").value
     });
 
     window.top._templateStore=templateStore;
@@ -62,7 +63,6 @@ dojo.ready(function(){
     if (val != undefined && val != "0"){
     	TemplateAjax.fetchTemplateImage(val, dojo.hitch(getTemplateCallBack));
     }
-   
 });
 </script>
 
