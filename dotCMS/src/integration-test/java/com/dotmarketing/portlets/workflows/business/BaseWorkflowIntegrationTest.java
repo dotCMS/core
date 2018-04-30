@@ -333,7 +333,7 @@ public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
         }
     }
 
-    static ContentType insertContentType(User user, String contentTypeName,
+    static ContentType insertContentType(final User user, final String contentTypeName,
             BaseContentType baseType)
             throws DotDataException, DotSecurityException {
 
@@ -343,11 +343,9 @@ public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
                 .name(contentTypeName).owner("owner")
                 .variable("velocityVarName" + contentTypeName);
 
-        ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
-        ContentType type = builder.build();
-        type = contentTypeAPI.save(type);
-
-        return type;
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+        final ContentType type = builder.build();
+        return contentTypeAPI.save(type);
     }
 
 
@@ -355,13 +353,11 @@ public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
             final BaseContentType baseContentType, final int permission, final String roleId)
             throws DotDataException, DotSecurityException {
 
-        PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
-        ContentType contentType = insertContentType(APILocator.systemUser(), contentTypeName,
-                baseContentType);
+        final ContentType contentType = insertContentType(APILocator.systemUser(), contentTypeName, baseContentType);
 
-        Permission p = new Permission(contentType.getPermissionId(), roleId,
-                permission, true);
+        Permission p = new Permission(contentType.getPermissionId(), roleId, permission, true);
         permissionAPI.save(p, contentType, APILocator.systemUser(), true);
 
         p = new Permission(Contentlet.class.getCanonicalName(), contentType.getPermissionId(),

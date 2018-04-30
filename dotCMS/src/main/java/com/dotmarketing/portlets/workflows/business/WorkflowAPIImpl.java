@@ -132,7 +132,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	private final DotConcurrentFactory concurrentFactory = DotConcurrentFactory.getInstance();
 
-	private static final boolean RESPECT_FRONTEND_ROLES = true;
+	private static final boolean RESPECT_FRONTEND_ROLES = WorkflowActionUtils.RESPECT_FRONTEND_ROLES;
 
 	private final WorkflowActionUtils workflowActionUtils;
 

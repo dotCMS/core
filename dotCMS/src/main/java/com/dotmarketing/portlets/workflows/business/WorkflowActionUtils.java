@@ -24,6 +24,8 @@ import org.apache.commons.lang3.BooleanUtils;
 
 class WorkflowActionUtils {
 
+    static final boolean RESPECT_FRONTEND_ROLES = true;
+
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
     private final RoleAPI roleAPI = APILocator.getRoleAPI();
@@ -135,7 +137,7 @@ class WorkflowActionUtils {
             //if we're performing a filter on a role that is mapped to a user. Lets say Chris Publisher
             //for that reason we have a user, with assigned roles etc..
             Logger.debug(this, () -> " Role :" + role.getName() + " is mapped to a user, filtering based on user permissions." );
-            return filterActions(permissionables, user, false, permissionable);
+            return filterActions(permissionables, user, RESPECT_FRONTEND_ROLES, permissionable);
         } catch (Exception nsu) {
             Logger.debug(this, () -> "Unable to determine role belongs to a user.");
         }
@@ -237,7 +239,9 @@ class WorkflowActionUtils {
         //if there's a permissionable we need to perform a double check.
         //We need to make sure the role is present on the action and on the permissionable.
         for (final Role role : collectedRoles) {
-            if ((isRolePresent(workflowAction, role) && isRolePresent(permissionable, role)) || hasSpecialWorkflowPermission(role,true ,permissionable, workflowAction)){
+            if ((isRolePresent(workflowAction, role) && isRolePresent(permissionable, role))
+                    || hasSpecialWorkflowPermission(role, RESPECT_FRONTEND_ROLES, permissionable,
+                    workflowAction)) {
                 return true;
             }
         }
