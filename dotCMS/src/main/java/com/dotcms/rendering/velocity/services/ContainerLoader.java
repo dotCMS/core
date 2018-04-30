@@ -286,7 +286,7 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
             if (mode == PageMode.EDIT_MODE) {
                 sb.append("#if($" +  SHOW_PRE_POST_LOOP + ")");
                 sb.append("</div>");
-                sb.append("#end ");
+                sb.append("#end");
             }
 
 
@@ -294,7 +294,7 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
             if (UtilMethods.isSet(container.getPostLoop())) {
                 sb.append("#if($" +  SHOW_PRE_POST_LOOP + ")");
                 sb.append(container.getPostLoop());
-                sb.append("#end ");
+                sb.append("#end");
             }
 
             // end if maxContentlets >0
