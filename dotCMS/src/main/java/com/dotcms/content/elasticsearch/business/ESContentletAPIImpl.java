@@ -2756,9 +2756,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
         relationshipsData.setRelationshipsRecords(relationshipsRecords);
         for(Entry<Relationship, List<Contentlet>> relEntry : contentRelationships.entrySet()) {
             Relationship relationship = (Relationship) relEntry.getKey();
-            boolean hasParent = FactoryLocator.getRelationshipFactory().isParent(relationship, st);
+            boolean isParent = FactoryLocator.getRelationshipFactory().isParent(relationship, st);
+            boolean isChildren = FactoryLocator.getRelationshipFactory().isChild(relationship, st);
+            if (isParent && isChildren) {
+                isParent = false;
+            }
             ContentletRelationshipRecords
-                records = relationshipsData.new ContentletRelationshipRecords(relationship, hasParent);
+                records = relationshipsData.new ContentletRelationshipRecords(relationship, isParent);
             records.setRecords(relEntry.getValue());
             relationshipsRecords.add(records);
         }
