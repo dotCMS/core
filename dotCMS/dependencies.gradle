@@ -58,7 +58,7 @@ dependencies {
     compile group: 'org.apache.logging.log4j', name: 'log4j-web', version: '2.8.2'
 
     compile group: 'com.dotcms.lib', name: 'dot.fileupload-ext', version:'ukv_3'
-    compile group: 'com.dotcms.lib', name: 'dot.fop', version:'0.20.1_3'
+    compile group: 'fop', name: 'fop', version:'0.20.3'
     compile group: 'com.dotcms.lib', name: 'dot.gif89', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.google', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.groovy-all', version:'2.3.2_3'
@@ -147,7 +147,6 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.Verisign', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.wbmp', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.woodstox-core-lgpl', version:'4.2.0_2'
-    compile group: 'com.dotcms.lib', name: 'dot.xalan', version:'2.7.0_2'
     compile group: 'com.dotcms.lib', name: 'dot.xpp3-min', version:'1.1.4c_2'
     compile group: 'com.dotcms.lib', name: 'dot.slf4j-api', version:'1.7.12_2'
     compile group: 'com.dotcms.lib', name: 'dot.slf4j-jcl', version:'1.7.12_2'
