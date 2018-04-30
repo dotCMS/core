@@ -72,13 +72,14 @@ class WorkflowActionUtils {
             final Permissionable permissionable) throws DotDataException {
 
         if ((user != null) && roleAPI.doesUserHaveRole(user, cmsAdminRole)) {
-            Logger.debug(this, () -> "user:" + user.getUserId() + " has an admin role. returning all actions." );
+            Logger.debug(this, () -> "user:" + user.getUserId()
+                    + " has an admin role. returning all actions.");
             return actions;
         }
 
         final List<WorkflowAction> permissionables = new ArrayList<>(actions);
         if (permissionables.isEmpty()) {
-            Logger.debug(this, () -> " No actions were passed. " );
+            Logger.debug(this, () -> " No actions were passed. ");
             return permissionables;
         }
 
@@ -88,15 +89,23 @@ class WorkflowActionUtils {
             boolean hasPermission = false;
             if (null != permissionable) {
                 // Validate if the action has one of the workflow special roles
-                final boolean doesHavePermission = hasSpecialWorkflowPermission(user, respectFrontEndRoles, permissionable, action);
-                Logger.debug(this, () -> " Trying special roles for action "+action.getName()+" had permissions:" + BooleanUtils.toStringYesNo(doesHavePermission));
+                final boolean doesHavePermission = hasSpecialWorkflowPermission(user,
+                        respectFrontEndRoles, permissionable, action);
+                Logger.debug(this, () -> " Trying special roles for action " + action.getName()
+                        + " had permissions:" + BooleanUtils.toStringYesNo(doesHavePermission));
                 hasPermission = doesHavePermission;
             }
-            // Validate if has other role permissions
-            if (doesUserHavePermission(action, PermissionAPI.PERMISSION_USE, user, respectFrontEndRoles)) {
-                Logger.debug(this, () -> " Trying other roles for action "+action.getName()+" had permissions: yes");
-                hasPermission = true;
+            //No need to perform any further checks, we already know we don't have permission
+            if (!hasPermission) {
+                // Validate if has other role permissions
+                if (doesUserHavePermission(action, PermissionAPI.PERMISSION_USE, user,
+                        respectFrontEndRoles)) {
+                    Logger.debug(this, () -> " Trying other roles for action " + action.getName()
+                            + " had permissions: yes");
+                    hasPermission = true;
+                }
             }
+
             if (!hasPermission) {
                 actionsIterator.remove();
             }
@@ -225,7 +234,7 @@ class WorkflowActionUtils {
         //if there's a permissionable we need to perform a double check.
         //We need to make sure the role is present on the action and on the permissionable.
         for (final Role role : collectedRoles) {
-            if (isRolePresent(workflowAction, role) && isRolePresent(permissionable, role)){
+            if ((isRolePresent(workflowAction, role) && isRolePresent(permissionable, role)) || hasSpecialWorkflowPermission(role,true ,permissionable, workflowAction)){
                 return true;
             }
         }
@@ -300,9 +309,49 @@ class WorkflowActionUtils {
         return false;
     }
 
+    @CloseDBIfOpened
+    boolean hasSpecialWorkflowPermission(final Role role, final boolean respectFrontEndRoles,
+            final Permissionable permissionable, final WorkflowAction action) throws DotDataException {
+
+        if (isRolePresent(action, anyWhoCanViewContentRole)) {
+            return doesRoleHavePermission(permissionable,
+                    PermissionAPI.PERMISSION_READ, role, respectFrontEndRoles);
+        }
+        if (isRolePresent(action, anyWhoCanEditContentRole)) {
+            return doesRoleHavePermission(permissionable,
+                    PermissionAPI.PERMISSION_WRITE, role, respectFrontEndRoles);
+        }
+        if (isRolePresent(action, anyWhoCanPublishContentRole)) {
+            return doesRoleHavePermission(permissionable,
+                    PermissionAPI.PERMISSION_PUBLISH, role, respectFrontEndRoles);
+        }
+        if (isRolePresent(action, anyWhoCanEditPermisionsContentRole)) {
+            return doesRoleHavePermission(permissionable,
+                    PermissionAPI.PERMISSION_EDIT_PERMISSIONS, role, respectFrontEndRoles);
+        }
+        return false;
+    }
+
+    @CloseDBIfOpened
+    private boolean doesRoleHavePermission(final Permissionable permissionable,
+            final int permissionType, final Role role, final boolean respectFrontEndRoles) throws DotDataException {
+        if (permissionable instanceof Contentlet && !InodeUtils
+                .isSet(permissionable.getPermissionId())) {
+            if (permissionAPI.doesRoleHavePermission(((Contentlet) permissionable).getContentType(),
+                    permissionType, role, respectFrontEndRoles)) {
+                return true;
+            }
+        } else {
+            if (permissionAPI.doesRoleHavePermission(permissionable, permissionType, role,
+                    respectFrontEndRoles)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private List<Role> getSpecialRolesByPrecedence() {
         return specialRolesHierarchy;
     }
-
 
 }
