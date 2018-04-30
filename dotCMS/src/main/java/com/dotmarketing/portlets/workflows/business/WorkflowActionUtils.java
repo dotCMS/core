@@ -140,8 +140,8 @@ class WorkflowActionUtils {
             Logger.debug(this, () -> "Unable to determine role belongs to a user.");
         }
 
-        if ((role != null) && (role.equals(cmsAdminRole) || role.getRoleKey()
-                .equals(cmsAdminRole.getRoleKey()))) {
+        if ((role != null) && (role.equals(cmsAdminRole) || cmsAdminRole.getRoleKey()
+                .equals(role.getRoleKey()))) {
             Logger.debug(this, () -> "Admin role. returning all actions.");
             return actions;
         }

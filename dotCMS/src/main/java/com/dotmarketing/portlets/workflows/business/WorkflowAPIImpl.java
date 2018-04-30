@@ -892,13 +892,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@Override
 	@WrapInTransaction
-	public void attachFileToTask(final WorkflowTask task, String fileInode) throws DotDataException {
+	public void attachFileToTask(final WorkflowTask task, final String fileInode) throws DotDataException {
 		workFlowFactory.attachFileToTask(task, fileInode);
 	}
 
 	@Override
 	@WrapInTransaction
-	public void removeAttachedFile(final WorkflowTask task, String fileInode) throws DotDataException {
+	public void removeAttachedFile(final WorkflowTask task, final String fileInode) throws DotDataException {
 		workFlowFactory.removeAttachedFile(task, fileInode);
 	}
 

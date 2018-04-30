@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.workflows.business;
 
+import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -802,6 +803,39 @@ public class WorkflowAPITest extends IntegrationTestBase {
         assertNotNull(actions);
         assertTrue(actions.size() == 1);
 
+    }
+
+    @Test
+    public void findActionsRestrictedByPermission() throws DotDataException, DotSecurityException {
+        ContentType contentTypeForPublisher = null;
+        ContentType contentTypeForContributor = null;
+        try {
+            final String ctVisibleByPublisher = "CTVisibleByPublisher" + System.currentTimeMillis();
+            contentTypeForPublisher = createContentTypeAndAssignPermissions(ctVisibleByPublisher,
+                    BaseContentType.CONTENT, editPermission, publisher.getId());
+
+            //Actions visible by contributor
+            final List<WorkflowAction> actionsVisibleByContributor1 = workflowAPI.findActions(workflowScheme3Step2, contributor, contentTypeForPublisher);
+            assertNotNull(actionsVisibleByContributor1);
+            assertTrue(actionsVisibleByContributor1.size() == 0);
+
+            final String ctVisibleByContributor = "CTVisibleByContributor" + System.currentTimeMillis();
+            contentTypeForContributor = createContentTypeAndAssignPermissions(ctVisibleByContributor,
+                    BaseContentType.CONTENT, editPermission, contributor.getId());
+
+            final List<WorkflowAction> actionsVisibleByContributor2 = workflowAPI.findActions(workflowScheme3Step2, contributor, contentTypeForContributor);
+            assertNotNull(actionsVisibleByContributor2);
+            assertTrue(actionsVisibleByContributor2.size() == 1);
+
+        } finally {
+            if(contentTypeForPublisher != null){
+                APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentTypeForPublisher);
+            }
+
+            if(contentTypeForContributor != null){
+                APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentTypeForContributor);
+            }
+        }
     }
 
     /**
