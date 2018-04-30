@@ -30,8 +30,9 @@ public class HTMLPageAssetRenderedSerializer extends JsonSerializer<HTMLPageAsse
                 .put("containers", htmlPageAssetRendered.getContainers()
                         .stream()
                         .collect(Collectors.toMap(
-                                containerRendered -> containerRendered.getContainer().getIdentifier() +"_" + containerRendered.getUuid(),
-                                containerRendered -> containerRendered
+                                containerRendered -> containerRendered.getContainer().getIdentifier() ,
+                                containerRendered -> containerRendered,
+                                (c1,c2)->c1
                         ))
                 )
                 .put("viewAs", htmlPageAssetRendered.getViewAs())

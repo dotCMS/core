@@ -165,7 +165,7 @@ public class PageResource {
         try {
             final PageView pageView = this.htmlPageAssetRenderedAPI.getPageMetadataRendered(request,
                     response, user, uri, live);
-            final Response.ResponseBuilder responseBuilder = Response.ok(pageView);
+            final Response.ResponseBuilder responseBuilder = Response.ok(pageView.toJson());
             responseBuilder.header("Access-Control-Expose-Headers", "Authorization");
             responseBuilder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, " +
                     "Content-Type, " + "Accept, Authorization");

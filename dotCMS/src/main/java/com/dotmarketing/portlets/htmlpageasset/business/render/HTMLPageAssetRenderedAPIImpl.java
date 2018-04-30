@@ -175,24 +175,29 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             layout = DotTemplateTool.themeLayout(template.getInode());
         }
 
-        List<ContainerRendered> containers = null;
-
+        final List<ContainerRendered> containers = this.containerRenderedBuilder.getContainers(template);
+        Map<String, ContainerRendered> containersNotRendered = containers.stream()
+                .collect(Collectors.toMap(
+                        containerRendered -> containerRendered.getContainer().getIdentifier(),
+                        containerRendered -> containerRendered,
+                        (c1,c2) ->c1
+                ));
+        
+        Map<String, String> containersRendered = new HashMap<>();
+        
         if (isRendered) {
             final Context velocityContext  = new PageContextBuilder(page, systemUser, mode).addAll(VelocityUtil.getWebContext(request, response));
-            
-
-            containers = this.containerRenderedBuilder.getContainersRendered(page, velocityContext, mode);
-        } else {
-            containers = this.containerRenderedBuilder.getContainers(page, mode);
-        }
-
-        Map<String, ContainerRendered> mappedContainers = containers.stream()
+            final List<ContainerRendered> containersToRender = this.containerRenderedBuilder.getContainersRendered(page, velocityContext, mode);
+            containersRendered = containersToRender
+                .stream()
                 .collect(Collectors.toMap(
-                        containerRendered -> containerRendered.getContainer().getIdentifier() + "_" +containerRendered.getUuid() ,
-                        containerRendered -> containerRendered
-                ));
+                        containerToRender -> containerToRender.getContainer().getIdentifier() + "_" +containerToRender.getUuid() ,
+                        containerToRender -> containerToRender.getRendered())
+                );
+        } 
 
-        return new PageView(site, template, mappedContainers, page, layout);
+
+        return new PageView(site, template, containersNotRendered,containersRendered, page, layout);
     }
 
     private Host resolveSite(final HttpServletRequest request, final User user) throws DotDataException, DotSecurityException {

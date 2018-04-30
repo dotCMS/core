@@ -18,5 +18,7 @@ abstract class ContentletMixIn {
 
     @JsonIgnore
     public abstract Structure getStructure();
-
+    
+    @JsonIgnore
+    public abstract Structure getMap();
 }

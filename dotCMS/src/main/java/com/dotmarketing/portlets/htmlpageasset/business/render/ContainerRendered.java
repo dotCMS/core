@@ -42,7 +42,9 @@ public class ContainerRendered implements Serializable {
             this.containerStructures = ImmutableList.of();
         }
     }
-
+    public ContainerRendered(final Container container, final List<ContainerStructure> containerStructures) {
+        this(container, containerStructures, null);
+    }
     /**
      * Returns the page container.
      *

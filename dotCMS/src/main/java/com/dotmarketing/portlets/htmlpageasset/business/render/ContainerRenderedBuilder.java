@@ -10,6 +10,8 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.templates.business.TemplateAPI;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.VelocityUtil;
 
@@ -28,12 +30,28 @@ import com.liferay.portal.model.User;
 public class ContainerRenderedBuilder {
 
     private final UserAPI userAPI;
+    private final TemplateAPI templateAPI;
     private final ContainerAPI containerAPI;
 
     public ContainerRenderedBuilder() {
         userAPI = APILocator.getUserAPI();
-
+        templateAPI = APILocator.getTemplateAPI();
         containerAPI = APILocator.getContainerAPI();
+    }
+
+    public List<ContainerRendered> getContainers(final Template template)
+            throws DotSecurityException, DotDataException {
+        final User systemUser = this.userAPI.getSystemUser();
+        final List<Container> templateContainers = this.templateAPI.getContainersInTemplate(template, systemUser,
+                false);
+
+        final List<ContainerRendered> containers = new ArrayList<>();
+        for (final Container container : templateContainers) {
+            final List<ContainerStructure> containerStructures = this.containerAPI.getContainerStructures(container);
+            containers.add(new ContainerRendered(container, containerStructures));
+        }
+
+        return containers;
     }
 
     public List<ContainerRendered> getContainers(final HTMLPageAsset page,PageMode mode)

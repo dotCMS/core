@@ -103,7 +103,7 @@ public class HTMLPageAssetRenderedBuilder {
         return new HTMLPageAssetRendered()
             .setHtml(this.getPageHTML())
             .setPageInfo(htmlPageAssetInfo)
-            .setContainers(this.containerRenderedBuilder.getContainersRendered(htmlPageAssetInfo.getPage(), velocityContext, mode))
+            .setContainers(this.containerRenderedBuilder.getContainers(this.htmlPageAsset, mode))
             .setLayout(template.isDrawed() ? DotTemplateTool.themeLayout(template.getInode()) :  null)
             .setViewAs(this.getViewAsStatus())
             .setCanCreateTemplate(layoutAPI.doesUserHaveAccessToPortlet("templates", user))
