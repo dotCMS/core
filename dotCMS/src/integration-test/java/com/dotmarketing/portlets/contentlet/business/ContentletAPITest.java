@@ -4051,8 +4051,8 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertNotNull(result);
         assertFalse(result.isEmpty());
         assertFalse(result.stream().anyMatch(
-                e -> !(e.getStringProperty("fileName").contains("jpg") || e
-                        .getStringProperty("fileName").contains("jpeg"))));
+                e -> !(e.getStringProperty("fileName").toLowerCase().endsWith("jpg") || e
+                        .getStringProperty("fileName").toLowerCase().endsWith("jpeg"))));
     }
 
     private File getBinaryAsset(String inode, String varName, String binaryName) {
