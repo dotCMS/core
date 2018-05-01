@@ -704,7 +704,13 @@ public class ContentletAjax {
 									metakey = StringUtils.camelCaseLower(metakey);
 									String metaVal = "*" +splitter[splitter.length-1]+"*";
 									fieldValue = metakey + ":" + metaVal;
-									luceneQuery.append("+" + st.getVelocityVarName() + "." + fieldVelocityVarName + "." + fieldValue.toString().replaceAll(specialCharsToEscapeForMetaData, "\\\\$1") + " ");
+
+									if (fieldVelocityVarName.equals(FileAssetAPI.META_DATA_FIELD)){
+										luceneQuery.append("+" + fieldVelocityVarName + "." + fieldValue.toString().replaceAll(specialCharsToEscapeForMetaData, "\\\\$1") + " ");
+									}else{
+										luceneQuery.append("+" + st.getVelocityVarName() + "." + fieldVelocityVarName + "." + fieldValue.toString().replaceAll(specialCharsToEscapeForMetaData, "\\\\$1") + " ");
+									}
+
 								} catch (Exception e) {
 									Logger.debug(this, "An error occured when processing field name '" + fieldbcontentname + "'");
 								}

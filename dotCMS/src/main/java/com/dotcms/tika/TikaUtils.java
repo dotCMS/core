@@ -8,7 +8,6 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
@@ -27,8 +26,13 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.Predicate;
 import java.util.zip.GZIPOutputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 
@@ -201,13 +205,49 @@ public class TikaUtils {
             metaMap.put(FileAssetAPI.SIZE_FIELD, String.valueOf(binFile.length()));
         }
 
-        //Getting the original content's map
-        final Map<String, Object> additionProps = getAdditionalProperties(inode);
-        for (final Map.Entry<String, Object> entry : additionProps.entrySet()) {
-            metaMap.put(entry.getKey().toLowerCase(), entry.getValue().toString().toLowerCase());
-        }
+        filterMetadataFields(metaMap, getConfiguredMetadataFields());
 
         return metaMap;
+    }
+
+    /**
+     * Reads INDEX_METADATA_FIELDS from configuration
+     * @return
+     */
+    public Set<String> getConfiguredMetadataFields(){
+        final String configFields=Config.getStringProperty("INDEX_METADATA_FIELDS", null);
+
+        if (UtilMethods.isSet(configFields)) {
+
+            return new HashSet<>(Arrays.asList( configFields.split(",")));
+
+        }
+        return Collections.emptySet();
+    }
+
+    /**
+     * Filters fields from a map given a set of fields to be kept
+     * @param metaMap
+     * @param configFieldsSet
+     */
+    public void filterMetadataFields(final Map<String, ? extends Object> metaMap, final Set<String> configFieldsSet){
+
+        if (UtilMethods.isSet(metaMap) && UtilMethods.isSet(configFieldsSet)) {
+            metaMap.entrySet()
+                    .removeIf(entry -> !configFieldsSet.contains("*")
+                            && !checkIfFieldMatches(entry.getKey(), configFieldsSet));
+        }
+    }
+
+    /**
+     * Verifies if a string matches in a set of regex/strings
+     * @param key
+     * @param configFieldsSet
+     * @return
+     */
+    private boolean checkIfFieldMatches(final String key, final Set<String> configFieldsSet){
+        final Predicate<String> condition = e -> key.matches(e);
+        return configFieldsSet.stream().anyMatch(condition);
     }
 
     /**
@@ -295,21 +335,6 @@ public class TikaUtils {
                 return writeMetadata(contentReader, contentMetadataFile);
             }
         }
-    }
-
-    /**
-     * Returns a {@link Map} that includes original content's map entries and also special entries for string
-     * representation of the values of binary, category fields and also tags
-     */
-    private Map<String, Object> getAdditionalProperties(final String inode) {
-        Map<String, Object> additionProps = new HashMap<>();
-        try {
-            additionProps = ContentletUtil.getContentPrintableMap(this.systemUser,
-                    APILocator.getContentletAPI().find(inode, this.systemUser, true));
-        } catch (Exception e) {
-            Logger.error(this, "Unable to add additional metadata to map", e);
-        }
-        return additionProps;
     }
 
     /**

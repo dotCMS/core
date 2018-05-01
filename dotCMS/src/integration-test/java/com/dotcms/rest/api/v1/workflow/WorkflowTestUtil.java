@@ -5,25 +5,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
 
-import com.dotcms.contenttype.business.ContentTypeAPI;
-import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.workflow.form.WorkflowActionForm;
 import com.dotcms.workflow.form.WorkflowSchemeForm;
 import com.dotcms.workflow.form.WorkflowSchemeImportObjectForm;
 import com.dotcms.workflow.form.WorkflowStepAddForm;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
@@ -32,7 +22,6 @@ import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject;
 import com.dotmarketing.util.UUIDGenerator;
-import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -45,7 +34,7 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.RandomStringUtils;
 
-public abstract class WorkflowResourceTestUtil {
+public abstract class WorkflowTestUtil {
 
     static final String ADMIN_DEFAULT_ID = "dotcms.org.1";
     static final String ADMIN_DEFAULT_MAIL = "admin@dotcms.com";
@@ -192,44 +181,6 @@ public abstract class WorkflowResourceTestUtil {
         final ResponseEntityView findResponseEv = ResponseEntityView.class
                 .cast(findResponse.getEntity());
         return List.class.cast(findResponseEv.getEntity());
-    }
-
-    static ContentType insertContentType(User user, String contentTypeName,
-            BaseContentType baseType)
-            throws DotDataException, DotSecurityException {
-
-        ContentTypeBuilder builder = ContentTypeBuilder.builder(baseType.immutableClass())
-                .description("description")
-                .expireDateVar(null).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
-                .name(contentTypeName).owner("owner")
-                .variable("velocityVarName" + contentTypeName);
-
-        ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
-        ContentType type = builder.build();
-        type = contentTypeAPI.save(type);
-
-        return type;
-    }
-
-
-    static ContentType createContentTypeAndAssignPermissions(final String contentTypeName,
-            final BaseContentType baseContentType, final int permission, final String roleId)
-            throws DotDataException, DotSecurityException {
-
-        PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-
-        ContentType contentType = insertContentType(APILocator.systemUser(), contentTypeName,
-                baseContentType);
-
-        Permission p = new Permission(contentType.getPermissionId(), roleId,
-                permission, true);
-        permissionAPI.save(p, contentType, APILocator.systemUser(), true);
-
-        p = new Permission(Contentlet.class.getCanonicalName(), contentType.getPermissionId(),
-                roleId, permission, true);
-        permissionAPI.save(p, contentType, APILocator.systemUser(), true);
-
-        return contentType;
     }
 
 

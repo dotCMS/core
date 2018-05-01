@@ -4042,6 +4042,19 @@ public class ContentletAPITest extends ContentletBaseTest {
         }
     }
 
+    @Test
+    public void testSearchFileAssetByMetadata() throws DotSecurityException, DotDataException {
+
+        final String query = "+contentType:FileAsset +metaData.contentType:*image/jpeg*";
+        List<Contentlet> result = contentletAPI.search(query, 100, 0, null, user, false);
+
+        assertNotNull(result);
+        assertFalse(result.isEmpty());
+        assertFalse(result.stream().anyMatch(
+                e -> !(e.getStringProperty("fileName").toLowerCase().endsWith("jpg") || e
+                        .getStringProperty("fileName").toLowerCase().endsWith("jpeg"))));
+    }
+
     private File getBinaryAsset(String inode, String varName, String binaryName) {
 
         FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
