@@ -5,7 +5,6 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
-import com.dotcms.repackage.org.jboss.util.Strings;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -37,6 +36,7 @@ import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 
+import com.liferay.util.StringPool;
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 
@@ -480,7 +480,7 @@ public class StructureAjax {
             Map<String, Object> structureDetails = new HashMap<String, Object>();
             structureDetails.put("inode", Structure.STRUCTURE_TYPE_ALL);
             structureDetails.put("name", LanguageUtil.get(user, "all"));
-            structureDetails.put("velocityVarName", Strings.EMPTY);
+            structureDetails.put("velocityVarName", StringPool.BLANK);
             return structureDetails;
         }
 
