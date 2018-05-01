@@ -81,8 +81,6 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.jaxws-api', version:'2.2.9_2'
     compile group: 'com.dotcms.lib', name: 'dot.jaxws-rt', version:'2.2.8_2'
     compile group: 'com.dotcms.lib', name: 'dot.jazzy-core', version:'ukv_2'
-    compile group: 'com.dotcms.lib', name: 'dot.jboss-common-core', version:'2.2.3.GA_2'
-    compile group: 'com.dotcms.lib', name: 'dot.jbosscache-core', version:'3.2.5.GA_2'
     compile group: 'com.dotcms.lib', name: 'dot.jcaptcha-mod', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.jempbox', version:'1.6.0_2'
     compile group: 'com.dotcms.lib', name: 'dot.jep', version:'2.4.1_2'

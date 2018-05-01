@@ -13,7 +13,6 @@ import static org.mockito.Mockito.when;
 import com.dotcms.UnitTestBase;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
-import com.dotcms.repackage.org.jboss.util.Strings;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -31,6 +30,7 @@ import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import javax.servlet.http.HttpServletRequest;
 import org.junit.Test;
 
@@ -48,7 +48,7 @@ public class WorkflowResourceTest extends UnitTestBase {
 
     @Test(expected = ValidationException.class)
     public void testEmptySchemaParameters() {
-        new WorkflowSchemeForm.Builder().schemeName(Strings.EMPTY).build();
+        new WorkflowSchemeForm.Builder().schemeName(StringPool.BLANK).build();
     }
 
     @SuppressWarnings("unchecked")
