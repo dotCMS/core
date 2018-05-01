@@ -55,8 +55,6 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.google', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.groovy-all', version:'2.3.2_3'
     compile group: 'com.dotcms.lib', name: 'dot.guava', version:'11.0.1_2'
-    compile group: 'com.dotcms.lib', name: 'dot.hadoop-dev-core', version:'0.20.3_2'
-    compile group: 'com.dotcms.lib', name: 'dot.hadoop-dev-tools', version:'0.20.3_2'
     compile group: 'com.hazelcast', name: 'hazelcast-all', version: '3.9.2'
     compile group: 'com.dotcms.lib', name: 'dot.hibernate', version:'2.1.7_3'
     compile group: 'com.dotcms.lib', name: 'dot.httpbridge', version:'ukv_2'
