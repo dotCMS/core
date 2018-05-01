@@ -2342,7 +2342,7 @@ create table workflow_scheme(
     entry_action_id NVARCHAR(36),
     mod_date datetime
 );
-alter table workflow_scheme add constraint unique_workflow_scheme_name unique (name);
+
 
 create table workflow_step(
     id NVARCHAR(36) primary key,

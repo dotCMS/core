@@ -1293,10 +1293,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 		final DotConnect db = new DotConnect();
 		try {
-			WorkflowScheme schemeWithSameName = findSchemeByName(scheme.getName());
-			if(UtilMethods.isSet(schemeWithSameName) && UtilMethods.isSet(schemeWithSameName.getId()) && !schemeWithSameName.getId().equals(scheme.getId())){
-				throw new AlreadyExistException("Already exist a scheme with the same name ("+schemeWithSameName.getName()+"). Create different schemes with the same name is not allowed. Please change your workflow scheme name.");
-			}
+
 			if (isNew) {
 
 				db.setSQL(sql.INSERT_SCHEME);

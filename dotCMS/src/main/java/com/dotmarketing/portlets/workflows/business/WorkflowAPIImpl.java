@@ -226,7 +226,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 */
 	private String getLongId (final String shortyId, final ShortyIdAPI.ShortyInputType type) {
 
-		// todo: if shortyId is more than 36 is a long id and does not need to check the shorty
 		final Optional<ShortyId> shortyIdOptional =
 				this.shortyIdAPI.getShorty(shortyId, type);
 
