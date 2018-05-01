@@ -3,14 +3,12 @@ package com.dotmarketing.portlets.templates.model;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import com.dotcms.contenttype.transform.JsonTransformer;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.WebAsset;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.PermissionSummary;
-import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -323,4 +321,10 @@ public class Template extends WebAsset implements Serializable, Comparable {
             return super.toString();
         }
     }
+
+	public Map<String, Object> getMap () throws DotStateException, DotDataException, DotSecurityException {
+		Map<String, Object> map = super.getMap();
+		map.put("anonymous", this.isAnonymous());
+		return map;
+	}
 }

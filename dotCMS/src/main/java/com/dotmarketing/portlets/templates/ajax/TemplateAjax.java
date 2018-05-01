@@ -77,23 +77,25 @@ public class TemplateAjax {
                     fullListTemplates.add(t);
                     totalTemplates.add(t);
                     countF=count-1;
+
+					if (UtilMethods.isSet(query.get("templateSelected"))) {
+						Template templateSelected = templateAPI.findWorkingTemplate(query.get("templateSelected"),
+								APILocator.getUserAPI().getSystemUser(), respectFrontendRoles);
+						fullListTemplates.add(templateSelected);
+						totalTemplates.add(templateSelected);
+					}
                 }
 			    else {
 			        startF=start-1;
 			    }
+
 				fullListTemplates.addAll(templateAPI.findTemplatesUserCanUse(user, host.getHostname(), filter, true, startF, countF));
 				totalTemplates.addAll(templateAPI.findTemplatesUserCanUse(user, host.getHostname(), filter, true, 0, 1000));
 
 			}
 
-			if (UtilMethods.isSet(query.get("templateSelected"))) {
-				Template templateSelected = templateAPI.findWorkingTemplate(query.get("templateSelected"), user, respectFrontendRoles);
-				fullListTemplates.add(templateSelected);
-				totalTemplates.add(templateSelected);
-			}
-
 			//doesn't currently respect archived
-			if(fullListTemplates.size() ==0){
+			if(fullListTemplates.size() == 0){
 				fullListTemplates.addAll(templateAPI.findTemplatesUserCanUse(user,"", filter,true, start, start>0?count:count+1));
 				totalTemplates.addAll(templateAPI.findTemplatesUserCanUse(user,"", filter,true, 0, 1000));
 			}
