@@ -237,9 +237,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         List<Contentlet> matches = new ArrayList<Contentlet>();
         if (relationship.getParentStructureInode().equalsIgnoreCase(stInode)) {
             matches = dbRelatedContent(relationship, contentlet, true);
-        }
-
-        if (matches.isEmpty() && relationship.getChildStructureInode().equalsIgnoreCase(stInode)) {
+        } else if (relationship.getChildStructureInode().equalsIgnoreCase(stInode)) {
             matches = dbRelatedContent(relationship, contentlet, false);
         }
         return matches;
