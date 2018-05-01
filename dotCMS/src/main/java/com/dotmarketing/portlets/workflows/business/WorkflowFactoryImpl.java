@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.workflows.business;
 
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.util.ConversionUtils;
@@ -171,6 +172,11 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	 * @throws InvocationTargetException
 	 */
 	private Object convertMaptoObject(Map<String, Object> map, Class clazz) throws InstantiationException, IllegalAccessException, InvocationTargetException {
+
+		if(ContentType.class.equals(clazz)){
+			//Content type is an abstract class therefore it can not be instantiated directly
+			return new DbContentTypeTransformer(map).from();
+		}
 
 		final Object obj = clazz.newInstance();
 
