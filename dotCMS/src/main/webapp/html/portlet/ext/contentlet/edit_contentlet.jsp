@@ -498,12 +498,11 @@ dojo.addOnLoad(function () {
 
 			<jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_basic_properties.jsp" />
 
-			<div class="content-edit-actions">
-				<%--<h3><%=LanguageUtil.get(pageContext, "Actions") %></h3>--%>
+
 				<div id="contentletActionsHanger">
 					<%@ include file="/html/portlet/ext/contentlet/contentlet_actions_inc.jsp" %>
 				</div>
-			</div>
+
 
 			<div class="content-edit-workflow">
 				<% if(null != wfSteps && wfSteps.size() ==1){
