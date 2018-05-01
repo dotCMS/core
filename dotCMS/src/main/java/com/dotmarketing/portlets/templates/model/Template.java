@@ -323,7 +323,7 @@ public class Template extends WebAsset implements Serializable, Comparable {
     }
 
 	public Map<String, Object> getMap () throws DotStateException, DotDataException, DotSecurityException {
-		Map<String, Object> map = super.getMap();
+		final Map<String, Object> map = super.getMap();
 		map.put("anonymous", this.isAnonymous());
 		return map;
 	}

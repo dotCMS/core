@@ -79,7 +79,7 @@ public class TemplateAjax {
                     countF=count-1;
 
 					if (UtilMethods.isSet(query.get("templateSelected"))) {
-						Template templateSelected = templateAPI.findWorkingTemplate(query.get("templateSelected"),
+						final Template templateSelected = templateAPI.findWorkingTemplate(query.get("templateSelected"),
 								APILocator.getUserAPI().getSystemUser(), respectFrontendRoles);
 						fullListTemplates.add(templateSelected);
 						totalTemplates.add(templateSelected);
@@ -145,11 +145,11 @@ public class TemplateAjax {
 				Logger.warn(this, "Could not find host for template = " + template.getIdentifier());
 			}
 		}
-		Map<String, Object> templateMap = template.getMap();
+		final Map<String, Object> templateMap = template.getMap();
 
 		if (template.isAnonymous()){
 			try {
-				String customLayoutTemplateLabel = LanguageUtil.get("editpage.properties.template.custom.label");
+				final String customLayoutTemplateLabel = LanguageUtil.get("editpage.properties.template.custom.label");
 				templateMap.put("fullTitle", customLayoutTemplateLabel);
 				templateMap.put("htmlTitle", customLayoutTemplateLabel);
 			} catch (LanguageException e) {
