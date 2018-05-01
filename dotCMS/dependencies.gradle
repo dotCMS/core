@@ -133,7 +133,6 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.trove', version:'1.0.2_2'
     compile group: 'com.dotcms.lib', name: 'dot.twitter4j-core', version:'3.0.3_2'
     compile group: 'com.dotcms.lib', name: 'dot.util-taglib', version:'ukv_2'
-    compile group: 'com.dotcms.lib', name: 'dot.Verisign', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.wbmp', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.woodstox-core-lgpl', version:'4.2.0_2'
     compile group: 'com.dotcms.lib', name: 'dot.xpp3-min', version:'1.1.4c_2'
