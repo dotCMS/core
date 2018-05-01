@@ -1810,7 +1810,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private void sendDeleteEvent (final Contentlet contentlet) throws DotHibernateException {
 
-        HibernateUtil.addAsyncCommitListener(() -> this.contentletSystemEventUtil.pushDeleteEvent(contentlet), 1000);
+        HibernateUtil.addAsyncCommitListener(
+                () -> {
+
+                    this.isInodeIndexed(contentlet.getInode());
+                    this.contentletSystemEventUtil.pushDeleteEvent(contentlet);
+                }, 1000);
     }
 
     /**
