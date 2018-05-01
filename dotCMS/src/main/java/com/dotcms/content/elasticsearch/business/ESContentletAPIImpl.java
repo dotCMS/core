@@ -2494,7 +2494,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(!rels.contains(relationship)){
             throw new DotContentletStateException("Contentlet: " + (contentlet != null ? contentlet.getInode() : "Unknown") + " does not have passed in relationship");
         }
-        List<Contentlet> cons = relationshipAPI.dbRelatedContent(relationship, contentlet);
+        List<Contentlet> cons = relationshipAPI.dbRelatedContent(relationship, contentlet, hasParent);
         cons = permissionAPI.filterCollection(cons, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
         FactoryLocator.getRelationshipFactory().deleteByContent(contentlet, relationship, cons);
 

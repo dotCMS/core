@@ -237,12 +237,15 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         List<Contentlet> matches = new ArrayList<Contentlet>();
         if (relationship.getParentStructureInode().equalsIgnoreCase(stInode)) {
             matches = dbRelatedContent(relationship, contentlet, true);
-        } else if (relationship.getChildStructureInode().equalsIgnoreCase(stInode)) {
+        }
+
+        if (matches.isEmpty() && relationship.getChildStructureInode().equalsIgnoreCase(stInode)) {
             matches = dbRelatedContent(relationship, contentlet, false);
         }
         return matches;
     }
 
+    @Override
     public  List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet,
             boolean hasParent) throws  DotDataException {
         return dbRelatedContent (relationship, contentlet, hasParent, false, "tree_order");
