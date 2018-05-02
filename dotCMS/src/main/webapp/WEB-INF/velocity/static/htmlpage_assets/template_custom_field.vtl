@@ -63,10 +63,14 @@ dojo.ready(function(){
     if (val != undefined && val != "0"){
     	TemplateAjax.fetchTemplateImage(val, dojo.hitch(getTemplateCallBack));
     }
+
+    var currentTemplateIdElement = dojo.byId("currentTemplateId");
+    currentTemplateIdElement.value = val;
 });
 </script>
 
 <div id="templateHolder"></div>
+<input id="currentTemplateId" type="hidden" name="currentTemplateId" value=""/>
 <div>
     <img id="templateThumbnailHolder" src="/html/images/shim.gif" alt="Template Thumbnail"/>
 </div>
