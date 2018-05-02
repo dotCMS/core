@@ -1475,15 +1475,15 @@ public class ContentletAjax {
                      }
                     PageMode.setPageMode(req, contentLocked, iCanLock);
 
-					final String beforeTemplateId = (String) contentletFormData.get("currentTemplateId");
+					final String previousTemplateId = (String) contentletFormData.get("currentTemplateId");
 
-					if (UtilMethods.isSet(beforeTemplateId) && !beforeTemplateId.equals(page.getTemplateId())) {
+					if (UtilMethods.isSet(previousTemplateId) && !previousTemplateId.equals(page.getTemplateId())) {
 						final User systemUser = APILocator.systemUser();
-						final Template beforeTemplate = APILocator.getTemplateAPI().findWorkingTemplate(beforeTemplateId,
+						final Template previousTemplate = APILocator.getTemplateAPI().findWorkingTemplate(previousTemplateId,
 								systemUser, false);
 
-						if (beforeTemplate.isAnonymous()) {
-							APILocator.getTemplateAPI().delete(beforeTemplate, systemUser, false);
+						if (previousTemplate.isAnonymous()) {
+							APILocator.getTemplateAPI().delete(previousTemplate, systemUser, false);
 						}
 					}
                 }
