@@ -1962,7 +1962,6 @@ create table workflow_scheme(
 	entry_action_id varchar(36),
 	mod_date timestamp
 );
-alter table workflow_scheme add constraint unique_workflow_scheme_name unique (name);
 
 create table workflow_step(
 	id varchar(36) primary key,
