@@ -5250,8 +5250,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if(!UtilMethods.isSet(newIdentifier))
                 newIdentifier = newContentlet.getIdentifier();
 
-            permissionAPI.copyPermissions(contentlet, newContentlet);
-
+            try {
+                permissionAPI.copyPermissions(contentlet, newContentlet);
+            } catch (Exception e) {
+                Logger.warn(this, "Cannot insert Permission Reference of copied content. Process should continue. " + e.getMessage());
+            }
 
             //Using a map to make sure one identifier per page.
             //Avoiding multi languages pages.
