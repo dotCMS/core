@@ -141,6 +141,7 @@ describe('DotNavigationService', () => {
     });
 
     it('should reload navigation, set menu and NOT redirect to first portlet (portlet is in menu)', () => {
+        dotRouterService.previousSavedURL = 'hello/url2';
         spyOn(dotMenuService, 'reloadMenu').and.returnValue(Observable.of(mockMenu));
         spyOn(dotMenuService, 'isPortletInMenu').and.returnValue(Observable.of(true));
         spyOn(dotNavigationService, 'goToFirstPortlet');

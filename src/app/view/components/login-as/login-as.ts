@@ -51,7 +51,6 @@ export class LoginAsComponent extends BaseComponent implements OnInit {
     doLoginAs(): void {
         const password: string = this.form.value.password;
         const user: User = this.form.value.loginAsUser;
-
         this.loginService.loginAs({ user: user, password: password }).subscribe(
             (data) => {
                 if (data) {

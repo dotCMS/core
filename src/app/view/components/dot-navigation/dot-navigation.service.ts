@@ -12,6 +12,8 @@ import { LoginService } from 'dotcms-js/dotcms-js';
 import { DotMenu, DotMenuItem } from '../../../shared/models/navigation';
 import { DotMenuService } from '../../../api/services/dot-menu.service';
 import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
+import { DotIframeService } from '../_common/iframe/service/dot-iframe/dot-iframe.service';
+import { filter, mergeMap } from 'rxjs/operators';
 
 @Injectable()
 export class DotNavigationService {
@@ -23,6 +25,7 @@ export class DotNavigationService {
         private dotcmsEventsService: DotcmsEventsService,
         private loginService: LoginService,
         private location: PlatformLocation,
+        private dotIframeService: DotIframeService,
         private router: Router
     ) {
         this.router.events
@@ -39,9 +42,11 @@ export class DotNavigationService {
         });
 
         this.loginService.auth$
-            .filter((auth: Auth) => !!(auth.loginAsUser || auth.user))
-            .mergeMap(() =>
-                this.reloadNavigation().filter((isPortletInMenu: boolean) => !isPortletInMenu && !this.dotRouterService.previousSavedURL)
+            .pipe(
+                filter((auth: Auth) => !!(auth.loginAsUser || auth.user)),
+                mergeMap(() => {
+                    return this.reloadNavigation().filter(() => !this.dotRouterService.previousSavedURL);
+                })
             )
             .subscribe(() => {
                 this.goToFirstPortlet();
@@ -59,7 +64,12 @@ export class DotNavigationService {
                 return this.dotRouterService.gotoPortlet(link);
             })
             .toPromise()
-            .then((isRouted: Promise<boolean>) => isRouted);
+            .then((isRouted: Promise<boolean>) => {
+                if (!isRouted) {
+                    this.reloadIframePage();
+                }
+                return isRouted;
+            });
     }
 
     /**
@@ -92,17 +102,16 @@ export class DotNavigationService {
      * @returns {Observable<DotMenu[]>}
      * @memberof DotNavigationService
      */
-    reloadNavigation(): Observable<boolean> {
-        return this.dotMenuService
-            .reloadMenu()
-            .do((menu: DotMenu[]) => {
-                this.setMenu(menu);
-            })
-            .mergeMap(() =>
-                this.dotMenuService.isPortletInMenu(
-                    this.dotRouterService.currentPortlet.id || this.dotRouterService.getPortletId(this.location.hash)
-                )
-            );
+    reloadNavigation(): Observable<DotMenu[]> {
+        return this.dotMenuService.reloadMenu().do((menu: DotMenu[]) => {
+            this.setMenu(menu);
+        });
+    }
+
+    private reloadIframePage(): void {
+        if (this.router.url.indexOf('c/') > -1) {
+            this.dotIframeService.reload();
+        }
     }
 
     private extractFirtsMenuLink(menus: DotMenu[]): string {
