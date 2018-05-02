@@ -73,6 +73,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
@@ -1490,7 +1491,6 @@ public class ContentletAjax {
                 if(contentlet.isHTMLPage()) {
                     HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
                     callbackData.put("htmlPageReferer", page.getURI() + "?" + WebKeys.HTMLPAGE_LANGUAGE + "=" + page.getLanguageId() + "&host_id=" + page.getHost());
-                    HttpSession session = req.getSession();
                     boolean contentLocked = false;
                     boolean iCanLock = false;
                     
@@ -1503,6 +1503,17 @@ public class ContentletAjax {
                      }
                     PageMode.setPageMode(req, contentLocked, iCanLock);
 
+					final String previousTemplateId = (String) contentletFormData.get("currentTemplateId");
+
+					if (UtilMethods.isSet(previousTemplateId) && !previousTemplateId.equals(page.getTemplateId())) {
+						final User systemUser = APILocator.systemUser();
+						final Template previousTemplate = APILocator.getTemplateAPI().findWorkingTemplate(previousTemplateId,
+								systemUser, false);
+
+						if (previousTemplate.isAnonymous()) {
+							APILocator.getTemplateAPI().delete(previousTemplate, systemUser, false);
+						}
+					}
                 }
 
 			}
