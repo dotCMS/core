@@ -101,7 +101,6 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.jstl', version:'1.0.5_2'
     compile group: 'com.dotcms.lib', name: 'dot.jta', version:'1.1_2'
     compile group: 'com.dotcms.lib', name: 'dot.jxl', version:'2.6_2'
-    compile group: 'com.dotcms.lib', name: 'dot.jython', version:'2.2.1_2'
     compile group: 'com.dotcms.lib', name: 'dot.ldap', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.lesscss', version:'1.5.1-SNAPSHOT_3'
     compile group: 'com.dotcms.lib', name: 'dot.mail-ejb', version:'ukv_2'
