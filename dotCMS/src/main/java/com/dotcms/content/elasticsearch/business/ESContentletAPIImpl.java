@@ -1813,7 +1813,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         HibernateUtil.addAsyncCommitListener(
                 () -> {
 
-                    this.isInodeIndexed(contentlet.getInode());
                     this.contentletSystemEventUtil.pushDeleteEvent(contentlet);
                 }, 1000);
     }
