@@ -200,7 +200,13 @@ public class TikaUtils {
                 logError(binFile, e);
             }
         } catch (Exception e) {
-            logError(binFile, e);
+
+            if (e.getClass().getCanonicalName()
+                    .equals(TikaProxyService.EXCEPTION_ZERO_BYTE_FILE_EXCEPTION)) {
+                logWarning(binFile, e);
+            } else {
+                logError(binFile, e);
+            }
         } finally {
             metaMap.put(FileAssetAPI.SIZE_FIELD, String.valueOf(binFile.length()));
         }
@@ -384,12 +390,6 @@ public class TikaUtils {
         }
     }
 
-    private void logError(final File binFile, Exception e) {
-        Logger.error(this.getClass(),
-                String.format("Could not parse file metadata for file [%s] [%s]",
-                        binFile.getAbsolutePath(), e.getMessage()), e);
-    }
-
     /**
      * normalize metadata from various filetypes this method will return an
      * array of metadata keys that we can use to normalize the values in our
@@ -419,6 +419,18 @@ public class TikaUtils {
             }
         }
         return translateMeta;
+    }
+
+    private void logWarning(final File binFile, Exception e) {
+        Logger.warn(this.getClass(),
+                String.format("Could not parse file metadata for file [%s] [%s]",
+                        binFile.getAbsolutePath(), e.getMessage()));
+    }
+
+    private void logError(final File binFile, Exception e) {
+        Logger.error(this.getClass(),
+                String.format("Could not parse file metadata for file [%s] [%s]",
+                        binFile.getAbsolutePath(), e.getMessage()), e);
     }
 
 }
