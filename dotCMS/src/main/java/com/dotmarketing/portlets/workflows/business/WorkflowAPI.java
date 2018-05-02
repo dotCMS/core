@@ -200,6 +200,14 @@ public interface WorkflowAPI {
 	public List<WorkflowScheme> findSchemesForContentType(ContentType contentType) throws DotDataException;
 
 	/**
+	 * find all content types associated to a workflow
+	 * @param workflowScheme
+	 * @return
+	 * @throws DotDataException
+	 */
+	public List<ContentType> findContentTypesForScheme(WorkflowScheme workflowScheme);
+
+	/**
 	 * Save an scheme
 	 * @param scheme {@link WorkflowScheme}
 	 * @param user   {@link User}
@@ -351,11 +359,12 @@ public interface WorkflowAPI {
 	 * Find the list of Workflow Actions available for the role that is passed
 	 * @param step
 	 * @param role
+     * @param permissionable
 	 * @return
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public List<WorkflowAction> findActions(WorkflowStep step, Role role) throws DotDataException,
+	public List<WorkflowAction> findActions(WorkflowStep step, Role role, Permissionable permissionable) throws DotDataException,
 			DotSecurityException;
 
 	/**

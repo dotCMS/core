@@ -10,7 +10,6 @@ import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.repackage.org.apache.hadoop.mapred.lib.Arrays;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -26,6 +25,7 @@ import org.junit.Test;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Arrays;
 
 import static org.junit.Assert.*;
 

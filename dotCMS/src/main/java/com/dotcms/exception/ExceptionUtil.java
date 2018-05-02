@@ -12,6 +12,7 @@ import static com.dotmarketing.portlets.contentlet.business.DotContentletValidat
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ValidationException;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
@@ -52,7 +53,7 @@ public class ExceptionUtil {
             .of(NotFoundInDbException.class, DoesNotExistException.class);
 
     public static final Set<Class<? extends Throwable>> BAD_REQUEST_EXCEPTIONS = ImmutableSet
-            .of(AlreadyExistException.class, IllegalArgumentException.class, ValidationException.class);
+            .of(AlreadyExistException.class, IllegalArgumentException.class, ValidationException.class, BadRequestException.class);
 
 
     private ExceptionUtil () {}
