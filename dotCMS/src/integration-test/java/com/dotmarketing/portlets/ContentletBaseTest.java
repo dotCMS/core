@@ -568,7 +568,8 @@ public class ContentletBaseTest extends IntegrationTestBase {
          * @return
          * @throws DotDataException
          */
-    protected static Relationship createRelationShip ( String parentStructureInode, String childStrunctureInode, boolean required, int cardinality) throws DotDataException {
+    protected static Relationship createRelationShip ( String parentStructureInode, String childStrunctureInode,
+            boolean required, final int cardinality) throws DotDataException {
 
         Relationship relationship = new Relationship();
         //Set Parent Info
@@ -612,18 +613,19 @@ public class ContentletBaseTest extends IntegrationTestBase {
      * @param structure
      * @return
      */
-    protected static ContentletRelationships createContentletRelationships ( Relationship relationship,
-            Contentlet contentlet, Structure structure, List<Contentlet> contentRelationships, Boolean hasParent ) {
+    protected static ContentletRelationships createContentletRelationships ( final Relationship relationship,
+            final Contentlet contentlet, final Structure structure, final List<Contentlet> contentRelationships,
+                                                                             final Boolean hasParent ) {
 
         //Create the contentlet relationships
-        ContentletRelationships contentletRelationships = new ContentletRelationships( contentlet );
+        final ContentletRelationships contentletRelationships = new ContentletRelationships( contentlet );
 
-        boolean internalHasParent = hasParent!=null
+        final boolean internalHasParent = hasParent!=null
             ? hasParent
             : FactoryLocator.getRelationshipFactory().isParent( relationship, structure );
 
         //Adding the relationships records
-        ContentletRelationships.ContentletRelationshipRecords contentletRelationshipRecords =
+        final ContentletRelationships.ContentletRelationshipRecords contentletRelationshipRecords =
             contentletRelationships.new ContentletRelationshipRecords( relationship, internalHasParent );
         contentletRelationshipRecords.setRecords( contentRelationships );
 

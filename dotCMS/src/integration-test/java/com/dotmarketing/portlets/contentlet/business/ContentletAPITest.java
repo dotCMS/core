@@ -1684,64 +1684,76 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test
     public void deleteRelatedContent () throws DotSecurityException, DotDataException {
 
-        //First lets create a test structure
-        Structure testStructure = createStructure( "JUnit Test Structure_" + String.valueOf( new Date().getTime() ), "junit_test_structure_" + String.valueOf( new Date().getTime() ) );
+        Structure testStructure = null;
+        Relationship testRelationship = null;
 
-        //Now a new test contentlets
-        Contentlet baseContentlet = createContentlet( testStructure, null, false );
-        Contentlet contentToRelateAsChild = createContentlet( testStructure, null, false );
-        Contentlet contentToRelateAsParent = createContentlet( testStructure, null, false );
+        try {
+            //First lets create a test structure
+            testStructure =
+                createStructure("JUnit Test Structure_" + String.valueOf(new Date().getTime()),
+                    "junit_test_structure_" + String.valueOf(new Date().getTime()));
 
-        //Create the relationship
-        Relationship testRelationship = createRelationShip( testStructure.getInode(), testStructure.getInode(),
-            false, 1 );
+            //Now a new test contentlets
+            Contentlet baseContentlet = createContentlet(testStructure, null, false);
+            Contentlet contentToRelateAsChild = createContentlet(testStructure, null, false);
+            Contentlet contentToRelateAsParent = createContentlet(testStructure, null, false);
 
-        //Relate content as child
-        List<Contentlet> childrenList = new ArrayList<>();
-        childrenList.add( contentToRelateAsChild );
-        ContentletRelationships childrenRelationships = createContentletRelationships( testRelationship,
-            baseContentlet, testStructure, childrenList, true );
+            //Create the relationship
+            testRelationship = createRelationShip(testStructure.getInode(), testStructure.getInode(),
+                false, 1);
 
-        //Relate content as parent
-        List<Contentlet> parentList = new ArrayList<>();
-        parentList.add( contentToRelateAsParent );
-        ContentletRelationships parentRelationshis = createContentletRelationships( testRelationship,
-            baseContentlet, testStructure, parentList, false );
+            //Relate content as child
+            List<Contentlet> childrenList = new ArrayList<>();
+            childrenList.add(contentToRelateAsChild);
+            ContentletRelationships childrenRelationships = createContentletRelationships(testRelationship,
+                baseContentlet, testStructure, childrenList, true);
 
-        //Relate contents to our test contentlet
-        for ( ContentletRelationships.ContentletRelationshipRecords contentletRelationshipRecords : childrenRelationships.getRelationshipsRecords() ) {
-            contentletAPI.relateContent( baseContentlet, contentletRelationshipRecords, user, false );
+            //Relate content as parent
+            List<Contentlet> parentList = new ArrayList<>();
+            parentList.add(contentToRelateAsParent);
+            ContentletRelationships parentRelationshis = createContentletRelationships(testRelationship,
+                baseContentlet, testStructure, parentList, false);
+
+            //Relate contents to our test contentlet
+            for (final ContentletRelationships.ContentletRelationshipRecords contentletRelationshipRecords : childrenRelationships
+                .getRelationshipsRecords()) {
+                contentletAPI.relateContent(baseContentlet, contentletRelationshipRecords, user, false);
+            }
+
+            //Relate contents to our test contentlet
+            for (ContentletRelationships.ContentletRelationshipRecords contentletRelationshipRecords : parentRelationshis
+                .getRelationshipsRecords()) {
+                contentletAPI.relateContent(baseContentlet, contentletRelationshipRecords, user, false);
+            }
+
+            // Let's delete only the children (1 child)
+            contentletAPI.deleteRelatedContent(baseContentlet, testRelationship, true, user, false);
+
+            // we should have only one content (1 parent) since we just deleted the one child
+            List<Contentlet> foundContentlets = relationshipAPI.dbRelatedContent(testRelationship, baseContentlet,
+                false);
+            assertTrue(!foundContentlets.isEmpty() && foundContentlets.size() == 1);
+
+            // Let's now delete the parent
+            contentletAPI.deleteRelatedContent(baseContentlet, testRelationship, false, user, false);
+
+            // we should get no content back for both hasParent `true` and `false` since the one child and one parent were deleted
+            foundContentlets = relationshipAPI.dbRelatedContent(testRelationship, baseContentlet, false);
+            assertTrue(!UtilMethods.isSet(foundContentlets));
+
+            foundContentlets = relationshipAPI.dbRelatedContent(testRelationship, baseContentlet, true);
+            assertTrue(foundContentlets == null || foundContentlets.isEmpty());
+        } finally {
+            if (testRelationship != null) {
+                relationshipAPI.delete(testRelationship);
+            }
+            if(testStructure!=null) {
+                APILocator.getStructureAPI().delete(testStructure, user);
+            }
         }
-
-        //Relate contents to our test contentlet
-        for ( ContentletRelationships.ContentletRelationshipRecords contentletRelationshipRecords : parentRelationshis.getRelationshipsRecords() ) {
-            contentletAPI.relateContent( baseContentlet, contentletRelationshipRecords, user, false );
-        }
-
-        // Let's delete only the children (1 child)
-        contentletAPI.deleteRelatedContent( baseContentlet, testRelationship, true, user, false );
-
-        // we should have only one content (1 parent) since we just deleted the one child
-        List<Contentlet> foundContentlets = relationshipAPI.dbRelatedContent(testRelationship, baseContentlet,
-            false);
-        assertTrue( !foundContentlets.isEmpty() && foundContentlets.size() == 1);
-
-        // Let's now delete the parent
-        contentletAPI.deleteRelatedContent( baseContentlet, testRelationship, false, user, false );
-
-        // we should get no content back for both hasParent `true` and `false` since the one child and one parent were deleted
-        foundContentlets = relationshipAPI.dbRelatedContent(testRelationship, baseContentlet, false);
-        assertTrue( foundContentlets == null || foundContentlets.isEmpty() );
-
-        foundContentlets = relationshipAPI.dbRelatedContent(testRelationship, baseContentlet, true);
-        assertTrue( foundContentlets == null || foundContentlets.isEmpty() );
-
-
-        if (testRelationship != null) {
-            relationshipAPI.delete(testRelationship);
-        }
-        APILocator.getStructureAPI().delete(testStructure, user);
     }
+
+
 
     /**
      * Testing {@link ContentletAPI#deleteRelatedContent(com.dotmarketing.portlets.contentlet.model.Contentlet, com.dotmarketing.portlets.structure.model.Relationship, boolean, com.liferay.portal.model.User, boolean)}
