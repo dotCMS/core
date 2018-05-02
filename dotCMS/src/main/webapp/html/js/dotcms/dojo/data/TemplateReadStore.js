@@ -9,9 +9,11 @@ dojo.declare("dotcms.dojo.data.TemplateReadStore", null, {
 	currentRequest: null,
 	includeArchived: false,
 	includeTemplate: null,
+    templateSelected: '',
 
 	constructor: function (options) {
 		this.hostId = options.hostId;
+		this.templateSelected = options.templateSelected;
 		window.top._dotTemplateStore = this;
 	},
 
@@ -77,7 +79,11 @@ dojo.declare("dotcms.dojo.data.TemplateReadStore", null, {
 		if(this.includeTemplate) {
 			keywordArgs.queryOptions.includeTemplate = this.includeTemplate;
 		}
-		
+
+		if (this.templateSelected) {
+            keywordArgs.query.templateSelected = this.templateSelected;
+		}
+
 		if((keywordArgs.query.fullTitle == '' || 
 				keywordArgs.query.fullTitle=='undefined' || 
 				keywordArgs.query.fullTitle.indexOf('*')===-1) 
