@@ -598,8 +598,8 @@ public class ContentletBaseTest extends IntegrationTestBase {
      * @param structure
      * @return
      */
-    protected static ContentletRelationships createContentletRelationships ( Relationship relationship,
-         Contentlet contentlet, Structure structure, List<Contentlet> contentRelationships ) {
+    protected static ContentletRelationships createContentletRelationships ( final Relationship relationship,
+         final Contentlet contentlet, final Structure structure, final List<Contentlet> contentRelationships ) {
         return createContentletRelationships(relationship, contentlet, structure, contentRelationships, null);
     }
 
