@@ -1742,7 +1742,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             assertTrue(!UtilMethods.isSet(foundContentlets));
 
             foundContentlets = relationshipAPI.dbRelatedContent(testRelationship, baseContentlet, true);
-            assertTrue(foundContentlets == null || foundContentlets.isEmpty());
+            assertTrue(!UtilMethods.isSet(foundContentlets));
         } finally {
             if (testRelationship != null) {
                 relationshipAPI.delete(testRelationship);
