@@ -36,6 +36,10 @@
         "target": "http://localhost:8080",
         "changeOrigin": false
     },
+    "/DOTSASS": {
+        "target": "http://localhost:8080",
+        "changeOrigin": false
+    },
     "/application": {
         "target": "http://localhost:8080",
         "changeOrigin": false

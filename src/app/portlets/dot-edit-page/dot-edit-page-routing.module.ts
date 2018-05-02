@@ -23,7 +23,6 @@ const dotEditPage: Routes = [
             {
                 loadChildren: 'app/portlets/dot-edit-page/content/dot-edit-content.module#DotEditContentModule',
                 path: 'content'
-
             },
             {
                 loadChildren: 'app/portlets/dot-edit-page/layout/dot-edit-layout.module#DotEditLayoutModule',

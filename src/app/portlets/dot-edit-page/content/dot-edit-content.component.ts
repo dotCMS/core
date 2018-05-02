@@ -2,7 +2,6 @@ import { ActivatedRoute } from '@angular/router';
 import { Component, OnInit, ViewChild, ElementRef, NgZone, OnDestroy } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
-import { Subscription } from 'rxjs/Subscription';
 import { Observable } from 'rxjs/Observable';
 
 import * as _ from 'lodash';
@@ -29,13 +28,15 @@ import { PageMode } from '../shared/models/page-mode.enum';
 import { DotRenderedPage } from '../shared/models/dot-rendered-page.model';
 import { DotEditPageDataService } from '../shared/services/dot-edit-page-resolver/dot-edit-page-data.service';
 import { Subject } from 'rxjs/Subject';
+import { OnSaveDeactivate } from '../../../shared/dot-save-on-deactivate-service/save-on-deactivate';
+import { DotDialog } from '../../../shared/models/dot-confirmation/dot-confirmation.model';
 
 @Component({
     selector: 'dot-edit-content',
     templateUrl: './dot-edit-content.component.html',
     styleUrls: ['./dot-edit-content.component.scss']
 })
-export class DotEditContentComponent implements OnInit, OnDestroy {
+export class DotEditContentComponent implements OnInit, OnDestroy, OnSaveDeactivate {
     @ViewChild('iframe') iframe: ElementRef;
 
     contentletActionsUrl: SafeResourceUrl;
@@ -84,6 +85,41 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     ngOnDestroy(): void {
         this.destroy$.next(true);
         this.destroy$.complete();
+    }
+
+    /**
+     * Indicate is there are changes in the model of the component
+     * @returns {boolean}
+     * @memberof DotEditContentComponent
+     */
+    shouldSaveBefore(): boolean {
+        return this.isModelUpdated;
+    }
+
+    /**
+     * Handler of what to do if the user decide to save changes when leaving the route
+     * @returns {Observable<string>}
+     * @memberof DotEditContentComponent
+     */
+    onDeactivateSave(): Observable<boolean> {
+        return this.pageServiceSave()
+            .map(() =>  true)
+            .catch((error: ResponseView) => {
+                this.dotHttpErrorManagerService.handle(error);
+                return Observable.of(false);
+            });
+    }
+
+    /**
+     * Get messages of save warning dialog.
+     * @returns {DotDialog}
+     * @memberof DotEditContentComponent
+     */
+    getSaveWarningMessages(): DotDialog {
+        return {
+            header: this.dotMessageService.get('editpage.content.save.changes.confirmation.header'),
+            message: this.dotMessageService.get('editpage.content.save.changes.confirmation.message')
+        };
     }
 
     /**
@@ -142,13 +178,10 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
      */
     saveContent(): void {
         this.dotGlobalMessageService.loading(this.dotMessageService.get('dot.common.message.saving'));
-        this.dotEditPageService
-            .save(this.pageState.page.identifier, this.dotEditContentHtmlService.getContentModel())
-            .takeUntil(this.destroy$)
-            .subscribe(() => {
-                this.dotGlobalMessageService.display(this.dotMessageService.get('dot.common.message.saved'));
-                this.setOriginalValue();
-            });
+        this.pageServiceSave().subscribe(() => {
+            this.dotGlobalMessageService.display(this.dotMessageService.get('dot.common.message.saved'));
+            this.setOriginalValue();
+        });
     }
 
     /**
@@ -182,7 +215,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         const editContentletIframeEl = $event.target;
         if (editContentletIframeEl.contentDocument.body.innerHTML !== '') {
             editContentletIframeEl.contentWindow.focus();
-            editContentletIframeEl.contentWindow.addEventListener('keydown', (event) => {
+            editContentletIframeEl.contentWindow.addEventListener('keydown', event => {
                 if (event.key === 'Escape') {
                     this.ngZone.run(() => {
                         this.dialogTitle = null;
@@ -208,6 +241,10 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
             .subscribe((pageState: DotRenderedPageState) => {
                 this.setPageState(pageState);
             });
+    }
+
+    private pageServiceSave(): Observable<string> {
+        return this.dotEditPageService.save(this.pageState.page.identifier, this.dotEditContentHtmlService.getContentModel()).take(1);
     }
 
     private addContentlet($event: any): void {
@@ -266,7 +303,9 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                 'editpage.content.contentlet.remove.confirmation_message.header',
                 'editpage.content.contentlet.add.content',
                 'dot.common.message.saving',
-                'dot.common.message.saved'
+                'dot.common.message.saved',
+                'editpage.content.save.changes.confirmation.header',
+                'editpage.content.save.changes.confirmation.message'
             ])
             .take(1)
             .subscribe();
@@ -401,9 +440,9 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
 
     private subscribePageModelChange(): void {
         this.dotEditContentHtmlService.pageModelChange
-            .filter((model) => model.length)
+            .filter(model => model.length)
             .takeUntil(this.destroy$)
-            .subscribe((model) => {
+            .subscribe(model => {
                 if (this.originalValue) {
                     this.ngZone.run(() => {
                         this.isModelUpdated = !_.isEqual(model, this.originalValue);

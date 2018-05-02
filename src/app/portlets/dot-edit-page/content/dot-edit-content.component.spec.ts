@@ -88,7 +88,9 @@ describe('DotEditContentComponent', () => {
             'editpage.content.steal.lock.confirmation_message.header': 'Are you sure?',
             'editpage.content.steal.lock.confirmation_message.message': 'This page is locked by bla bla',
             'editpage.content.steal.lock.confirmation_message.reject': 'Lock',
-            'editpage.content.steal.lock.confirmation_message.accept': 'Cancel'
+            'editpage.content.steal.lock.confirmation_message.accept': 'Cancel',
+            'editpage.content.save.changes.confirmation.header': 'Save header',
+            'editpage.content.save.changes.confirmation.message': 'Save message'
         });
 
         DOTTestBed.configureTestingModule({
@@ -679,6 +681,45 @@ describe('DotEditContentComponent', () => {
 
                 expect(dotEditPageDataService.set).not.toHaveBeenCalled();
                 expect(dotRouterService.goToEditPage).not.toHaveBeenCalled();
+            });
+        });
+    });
+
+    describe('implementation of OnSaveDeactivate', () => {
+        let dotEditPageService: DotEditPageService;
+
+        beforeEach(() => {
+            dotEditPageService = de.injector.get(DotEditPageService);
+            fixture.detectChanges();
+        });
+
+        it('should return true in the isModelUpdated', () => {
+            component.isModelUpdated = true;
+            expect(component.shouldSaveBefore()).toBeTruthy();
+        });
+
+        it('should return false in the isModelUpdated', () => {
+            expect(component.shouldSaveBefore()).toBeFalsy();
+        });
+
+        it('should call the save endpoint', () => {
+            spyOn(dotEditPageService, 'save').and.returnValue(Observable.of(true));
+            spyOn(dotEditContentHtmlService, 'getContentModel').and.returnValue({});
+            component.onDeactivateSave();
+            expect(dotEditPageService.save).toHaveBeenCalledTimes(1);
+        });
+
+        it('should return header and message labels', () => {
+            expect(component.getSaveWarningMessages()).toEqual({header: 'Save header', message: 'Save message'});
+        });
+
+        it('should handle the error on save and return false', () => {
+            spyOn(dotHttpErrorManagerService, 'handle');
+            spyOn(dotEditContentHtmlService, 'getContentModel').and.callFake( response => {});
+            spyOn(dotEditPageService, 'save').and.returnValue(Observable.throw('error'));
+            component.onDeactivateSave().subscribe( value => {
+                expect(value).toBeFalsy();
+                expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
             });
         });
     });
