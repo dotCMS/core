@@ -523,33 +523,6 @@
 	</portlet>
 
 	<portlet>
-		<portlet-name>reports</portlet-name>
-		<display-name>Report Manager</display-name>
-		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
-		<init-param>
-			<name>view-action</name>
-			<value>/ext/report/view_reports</value>
-		</init-param>
-		<expiration-cache>0</expiration-cache>
-		<supports>
-			<mime-type>text/html</mime-type>
-		</supports>
-		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-		<security-role-ref>
-			<role-name>CMS Administrator</role-name>
-		</security-role-ref>
-		<security-role-ref>
-			<role-name>Report Administrator</role-name>
-		</security-role-ref>
-		<security-role-ref>
-			<role-name>Report Editor</role-name>
-		</security-role-ref>
-		<security-role-ref>
-			<role-name>Report Viewer</role-name>
-		</security-role-ref>
-	</portlet>
-
-	<portlet>
 		<portlet-name>calendar</portlet-name>
 		<display-name>Calendar of Events</display-name>
 		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>

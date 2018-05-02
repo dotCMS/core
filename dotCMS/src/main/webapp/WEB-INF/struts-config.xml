@@ -945,20 +945,6 @@
       </action>
       <!-- Schedulers Management -->
 
-	<!-- Reporter -->
-      <action path="/ext/report/view_reports" type="com.dotmarketing.portlets.report.action.ViewReportsAction">
-         <forward name="portlet.ext.report.view_reports" path="portlet.ext.report.view_reports" />
-         <forward name="portlet.ext.report.view" path="portlet.ext.report.view" />
-      </action>
-      <action path="/ext/report/edit_report" type="com.dotmarketing.portlets.report.action.EditReportAction" name="ReportForm" scope="request" input="portlet.ext.report.edit_report" validate="false">
-         <forward name="portlet.ext.report.edit_report" path="portlet.ext.report.edit_report" />
-      </action>
-      <action path="/ext/report/run_report" type="com.dotmarketing.portlets.report.action.RunReportAction">
-         <forward name="portlet.ext.report.run_report" path="portlet.ext.report.run_report" />
-         <forward name="portlet.ext.report.get_parameters" path="portlet.ext.report.get_parameters" />
-      </action>
-      <!-- Reporter -->
-
       <!-- Events Calendar Manager -->
       <action path="/ext/calendar/view_calendar" type="com.dotmarketing.portlets.calendar.action.ViewCalendarAction">
          <forward name="portlet.ext.calendar.view" path="portlet.ext.calendar.view" />
