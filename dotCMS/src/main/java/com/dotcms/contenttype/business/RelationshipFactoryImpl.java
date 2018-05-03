@@ -234,13 +234,13 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
     @Override
     public  List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet) throws DotDataException {
         String stInode = contentlet.getStructure().getInode();
-        List<Contentlet> matches = new ArrayList<Contentlet>();
-        if (relationship.getParentStructureInode().equalsIgnoreCase(stInode)) {
-            matches = dbRelatedContent(relationship, contentlet, true);
-        } else if (relationship.getChildStructureInode().equalsIgnoreCase(stInode)) {
-            matches = dbRelatedContent(relationship, contentlet, false);
-        }
-        return matches;
+
+        boolean selfJoinRelationship = relationship.getParentStructureInode().equalsIgnoreCase(stInode)
+            && relationship.getChildStructureInode().equalsIgnoreCase(stInode);
+
+        boolean hasParent = !selfJoinRelationship && relationship.getParentStructureInode().equalsIgnoreCase(stInode);
+
+        return dbRelatedContent(relationship, contentlet, hasParent);
     }
 
     @Override
