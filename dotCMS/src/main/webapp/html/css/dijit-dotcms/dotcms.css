@@ -6961,7 +6961,7 @@ select[multiple]:hover {
   border-bottom: 1px solid #ECEDEE;
   border-collapse: collapse;
   font-size: 13px;
-  margin: 0 auto 16px auto;
+  margin: 0 auto 64px auto;
   width: 100%;
 }
 #listing-table p:last-child, .dojoxUploaderFileListTable p:last-child, .listingTable p:last-child {
@@ -10927,11 +10927,10 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .view-actions {
-  height: 800px;
   padding-left: 24px;
 }
 .view-actions .container-fluid, .view-actions .container-fluid > .row:last-child, .view-actions > form, .view-actions .view-actions__permissions, .view-actions .view-actions__sub-actions {
-  height: 100%;
+  height: 90vh;
 }
 
 .view-actions__back-btn {
@@ -11103,6 +11102,15 @@ a.category_higlighted, a.tag_higlighted {
 .file-selector-tree__container {
   width: 900px;
   height: 500px;
+}
+
+.file-selector-tree__pagination.portlet-pagination {
+  background: #FFFFFF;
+  padding: 16px;
+  position: absolute;
+  width: 100%;
+  bottom: 0px;
+  margin: 0;
 }
 
 .file-selector-tree__loading,
