@@ -420,4 +420,36 @@ describe('DotEditLayoutDesignerComponent', () => {
             });
         });
     });
+
+    describe('edit layout No sidebars', () => {
+        beforeEach(() => {
+            component.pageState = new DotRenderedPageState(
+                mockUser,
+                {
+                    ...mockDotRenderedPage,
+                    template: null,
+                    canCreateTemplate: false
+                },
+                null
+            );
+            component.pageState.layout.sidebar = null;
+            fixture.detectChanges();
+        });
+
+        it('should not break when sidebar property in layout is null', () => {
+            expect(component.form.value).toEqual({
+                title: null,
+                layout: {
+                    body: mockDotRenderedPage.layout.body,
+                    header: mockDotRenderedPage.layout.header,
+                    footer: mockDotRenderedPage.layout.footer,
+                    sidebar: {
+                        location: '',
+                        containers: [],
+                        width: 'small'
+                    }
+                }
+            });
+        });
+    });
 });

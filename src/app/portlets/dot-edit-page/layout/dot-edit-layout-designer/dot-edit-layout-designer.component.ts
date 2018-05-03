@@ -203,9 +203,9 @@ export class DotEditLayoutDesignerComponent implements OnInit {
     // tslint:disable-next-line:cyclomatic-complexity
     private createSidebarForm(): DotLayoutSideBar {
         return {
-            location: this.pageState.layout.sidebar.location || '',
-            containers: this.pageState.layout.sidebar.containers || [],
-            width: this.pageState.layout.sidebar.width || 'small'
+            location: this.pageState.layout.sidebar ? this.pageState.layout.sidebar.location : '',
+            containers: this.pageState.layout.sidebar ? this.pageState.layout.sidebar.containers : [],
+            width: this.pageState.layout.sidebar ? this.pageState.layout.sidebar.width : 'small'
         };
     }
 
