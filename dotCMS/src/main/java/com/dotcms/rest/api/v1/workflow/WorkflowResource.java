@@ -27,6 +27,7 @@ import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.annotation.Permissions;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.ForbiddenException;
@@ -74,7 +75,7 @@ import javax.servlet.http.HttpServletRequest;
 @Path("/v1/workflow")
 public class WorkflowResource {
 
-
+    public  final static String VERSION = "1.0";
     private final WorkflowHelper   workflowHelper;
     private final ContentHelper    contentHelper;
     private final WebResource      webResource;
@@ -101,7 +102,7 @@ public class WorkflowResource {
     }
 
     @VisibleForTesting
-        WorkflowResource(final WorkflowHelper workflowHelper,
+    WorkflowResource(final WorkflowHelper workflowHelper,
                                final ContentHelper    contentHelper,
                                final WorkflowAPI      workflowAPI,
                                final ContentletAPI    contentletAPI,
@@ -290,6 +291,7 @@ public class WorkflowResource {
     @Path("/actions/{actionId}")
     @JSONP
     @NoCache
+    @Permissions
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findAction(@Context final HttpServletRequest request,
                                      @PathParam("actionId") final String actionId) {
@@ -878,7 +880,7 @@ public class WorkflowResource {
             exportObject = this.workflowImportExportUtil.buildExportObject(Arrays.asList(scheme));
             permissions  = this.workflowHelper.getActionsPermissions(exportObject.getActions());
             response     = Response.ok(new ResponseEntityView(
-                    map("workflowExportObject", new WorkflowSchemeImportExportObjectView(exportObject),
+                    map("workflowExportObject", new WorkflowSchemeImportExportObjectView(VERSION, exportObject),
                             "permissions", permissions))).build(); // 200
         } catch (Exception e){
             Logger.error(this.getClass(),

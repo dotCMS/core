@@ -1,11 +1,11 @@
 package com.dotcms.rest.api.v1.workflow;
 
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.CURRENT_STEP;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.actionName;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.addSteps;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.createScheme;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.createWorkflowActions;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.doCleanUp;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.CURRENT_STEP;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.actionName;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.addSteps;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.createScheme;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.createWorkflowActions;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.doCleanUp;
 import static com.dotmarketing.business.Role.ADMINISTRATOR;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;

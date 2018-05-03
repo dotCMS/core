@@ -1,17 +1,17 @@
 package com.dotcms.rest.api.v1.workflow;
 
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.ADMIN_DEFAULT_ID;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.ADMIN_DEFAULT_MAIL;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.ADMIN_NAME;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.CURRENT_STEP;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.actionName;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.addSteps;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.createScheme;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.createWorkflowActions;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.doCleanUp;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.findSchemes;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.findSteps;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.schemeName;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.ADMIN_DEFAULT_ID;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.ADMIN_DEFAULT_MAIL;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.ADMIN_NAME;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.CURRENT_STEP;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.actionName;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.addSteps;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.createScheme;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.createWorkflowActions;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.doCleanUp;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.findSchemes;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.findSteps;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.schemeName;
 import static com.dotmarketing.business.Role.ADMINISTRATOR;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -224,7 +224,7 @@ public class WorkflowResourceIntegrationTest {
 
             final WorkflowSchemeImportObjectForm exportObjectForm =
                     new WorkflowSchemeImportObjectForm(
-                            new WorkflowSchemeImportExportObjectView(schemes,steps,actions,actionSteps,Collections.emptyList(),Collections.emptyList()),
+                            new WorkflowSchemeImportExportObjectView(WorkflowResource.VERSION,schemes,steps,actions,actionSteps,Collections.emptyList(),Collections.emptyList()),
                             permissions);
 
             final Response importResponse = workflowResource.importScheme(request, exportObjectForm);
@@ -318,7 +318,7 @@ public class WorkflowResourceIntegrationTest {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         WorkflowSchemeForm form = new WorkflowSchemeForm.Builder().schemeDescription("lol").schemeArchived(false).schemeName(updatedName).build();
         final Response updateResponse = workflowResource.update(request,savedScheme1.getId(), form);
-        assertEquals(Status.BAD_REQUEST.getStatusCode(), updateResponse.getStatus());
+        assertEquals(Status.OK.getStatusCode(), updateResponse.getStatus());
     }
 
     @Test

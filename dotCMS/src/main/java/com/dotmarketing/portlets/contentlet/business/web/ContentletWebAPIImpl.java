@@ -15,7 +15,6 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.*;
 import com.dotmarketing.factories.EmailFactory;
@@ -188,7 +187,11 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 	private void pushSaveEvent (final Contentlet eventContentlet, final boolean eventCreateNewVersion) throws DotHibernateException {
 
-		HibernateUtil.addAsyncCommitListener(() -> this.contentletSystemEventUtil.pushSaveEvent(eventContentlet, eventCreateNewVersion), 1000);
+		HibernateUtil.addAsyncCommitListener(() -> {
+			if (APILocator.getContentletAPI().isInodeIndexed(eventContentlet.getInode())) {
+				this.contentletSystemEventUtil.pushSaveEvent(eventContentlet, eventCreateNewVersion);
+			}
+		} , 1000);
 	}
 
 

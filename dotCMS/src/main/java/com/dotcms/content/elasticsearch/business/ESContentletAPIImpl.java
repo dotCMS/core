@@ -1810,7 +1810,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private void sendDeleteEvent (final Contentlet contentlet) throws DotHibernateException {
 
-        HibernateUtil.addAsyncCommitListener(() -> this.contentletSystemEventUtil.pushDeleteEvent(contentlet), 1000);
+        HibernateUtil.addAsyncCommitListener(
+                () -> {
+
+                    this.contentletSystemEventUtil.pushDeleteEvent(contentlet);
+                }, 1000);
     }
 
     /**
@@ -2008,7 +2012,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @WrapInTransaction
     @Override
-    public void archive(Contentlet contentlet, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException {
+    public void archive(final Contentlet contentlet, final User user, final boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException {
         logContentletActivity(contentlet, "Archiving Content", user);
         try {
 
@@ -2016,8 +2020,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
             }
             if(!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)){
-                throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown")
-                        + " does not have permission to edit the contentlet");
+                throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown") + " does not " +
+                        "have permission to edit the contentlet with Identifier [" + contentlet.getIdentifier() + "]");
             }
             final Contentlet workingContentlet = findContentletByIdentifier(contentlet.getIdentifier(), false, contentlet.getLanguageId(), user, respectFrontendRoles);
             Contentlet liveContentlet = null;
@@ -2078,12 +2082,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 publishRelatedHtmlPages(contentlet);
                 HibernateUtil.addAsyncCommitListener(() -> this.contentletSystemEventUtil.pushArchiveEvent(workingContentlet), 1000);
             } else {
-
-                throw new DotContentletStateException("Contentlet is locked: Unable to archive");
+                throw new DotContentletStateException("Contentlet with Identifier '" + contentlet.getIdentifier() +
+                        "' must be unlocked before being archived");
             }
 
         } catch(DotDataException | DotStateException| DotSecurityException e) {
-            logContentletActivity(contentlet, "Error Archiving Content", user);
+            final String errorMsg = "Error archiving content with Identifier [" + contentlet.getIdentifier() + "]: "
+                    + e.getMessage();
+            Logger.warn(this, errorMsg);
+            logContentletActivity(contentlet, errorMsg, user);
             throw e;
         }
         logContentletActivity(contentlet, "Content Archived", user);
@@ -2101,7 +2108,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         }
         if(stateError){
-            throw new DotContentletStateException("Unable to archive one or more contentlets because it is locked");
+            throw new DotContentletStateException("Unable to archive contentlets because one or more are locked");
         }
 
     }
@@ -2491,7 +2498,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(!rels.contains(relationship)){
             throw new DotContentletStateException("Contentlet: " + (contentlet != null ? contentlet.getInode() : "Unknown") + " does not have passed in relationship");
         }
-        List<Contentlet> cons = relationshipAPI.dbRelatedContent(relationship, contentlet);
+        List<Contentlet> cons = relationshipAPI.dbRelatedContent(relationship, contentlet, hasParent);
         cons = permissionAPI.filterCollection(cons, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
         FactoryLocator.getRelationshipFactory().deleteByContent(contentlet, relationship, cons);
 
@@ -4171,7 +4178,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             } catch (Exception e) {
                 if(e instanceof FileAssetValidationException)
                     throw (FileAssetValidationException)e ;
-                throw new FileAssetValidationException("Unable to validate field: " + FileAssetAPI.BINARY_FIELD,e);
+                throw new FileAssetValidationException("Unable to validate field: " + FileAssetAPI.BINARY_FIELD + " " +
+                        "in contentlet [" + (contentlet != null ? contentlet.getIdentifier() : "Unknown/New") + "]", e);
             }
             if(fileNameExists){
                 DotContentletValidationException cve = new FileAssetValidationException("message.contentlet.fileasset.filename.already.exists");
@@ -4216,7 +4224,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     String path = folder.getInode().equals(FolderAPI.SYSTEM_FOLDER)?"/"+url:folderId.getPath()+url;
                     Identifier htmlpage = APILocator.getIdentifierAPI().find(host, path);
                     if(htmlpage!=null && InodeUtils.isSet(htmlpage.getId()) && !htmlpage.getId().equals(contentlet.getIdentifier()) && htmlpage.getAssetType().equals("htmlpage") ){
-                        DotContentletValidationException cve = new FileAssetValidationException("Page URL already exists." + url);
+                        DotContentletValidationException cve = new FileAssetValidationException("Page URL in contentlet [" + (contentlet != null ? contentlet.getIdentifier() : "Unknown/New") + "] already exists: " + url);
                         cve.addBadTypeField(st.getFieldVar(HTMLPageAssetAPI.URL_FIELD));
                         throw cve;
                     }
@@ -4226,7 +4234,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             }
             catch(DotDataException | DotSecurityException | IllegalArgumentException e){
-                DotContentletValidationException cve = new FileAssetValidationException(" URL is invalid");
+                DotContentletValidationException cve = new FileAssetValidationException("URL in contentlet [" + (contentlet != null ? contentlet.getIdentifier() : "Unknown/New") + "] is invalid: " + contentlet.getStringProperty(HTMLPageAssetAPI.URL_FIELD));
                 cve.addBadTypeField(st.getFieldVar(HTMLPageAssetAPI.URL_FIELD));
                 throw cve;
             }
@@ -4246,40 +4254,41 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 if(isFieldTypeString(field)){
                     if(!(o instanceof String)){
                         cve.addBadTypeField(field);
-                        Logger.error(this, "For field [" + field.getVelocityVarName() + "] a text contentlet must be of type String");
+                        Logger.warn(this, "Value of field [" + field.getVelocityVarName() + "] must be of type String");
                     }
                 }else if(isFieldTypeDate(field)){
                     if(!(o instanceof Date)){
                         cve.addBadTypeField(field);
-                        Logger.error(this, "For field [" + field.getVelocityVarName() + "] a date contentlet must be of type Date");
+                        Logger.warn(this, "Value of field [" + field.getVelocityVarName() + "] must be of type Date");
                     }
                 }else if(isFieldTypeBoolean(field)){
                     if(!(o instanceof Boolean)){
                         cve.addBadTypeField(field);
-                        Logger.error(this, "For field [" + field.getVelocityVarName() + "] a bool contentlet must be of type Boolean");
+                        Logger.warn(this, "Value of field [" + field.getVelocityVarName() + "] must be of type Boolean");
                     }
                 }else if(isFieldTypeFloat(field)){
                     if(!(o instanceof Float)){
                         cve.addBadTypeField(field);
-                        Logger.error(this, "For field [" + field.getVelocityVarName() + "] a float contentlet must be of type Float");
+                        Logger.warn(this, "Value of field [" + field.getVelocityVarName() + "] must be of type Float");
                         hasError = true;
                         continue;
                     }
                 }else if(isFieldTypeLong(field)){
                     if(!(o instanceof Long || o instanceof Integer)){
                         cve.addBadTypeField(field);
-                        Logger.error(this, "For field [" + field.getVelocityVarName() + "] a integer contentlet must be of type Long or Integer");
+                        Logger.warn(this, "Value of field [" + field.getVelocityVarName() + "] must be of type Long or Integer");
                     }
                     //  binary field validation
                 }else if(isFieldTypeBinary(field)){
                     if(!(o instanceof java.io.File)){
                         cve.addBadTypeField(field);
-                        Logger.error(this, "For field [" + field.getVelocityVarName() + "] a binary contentlet field must be of type File");
+                        Logger.warn(this, "Value of field [" + field.getVelocityVarName() + "] must be of type File");
                     }
                 }else if(isFieldTypeSystem(field) || isFieldTypeConstant(field)){
+                	// Do not validate system or constant field values
                 }else{
-                    Logger.error(this,"Found an unknown field type : This should never happen!!!");
-                    throw new DotContentletStateException("Unknown field type");
+                    Logger.warn(this,"Found an unknown field type : This should never happen!!!");
+                    throw new DotContentletStateException("Field [" + field.getVelocityVarName() + "] has an unknown type");
                 }
             }
             if (field.isRequired()) {
@@ -4288,6 +4297,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     if(!UtilMethods.isSet(s1.trim()) || (field.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())) && s1.equals("{}")) {
                         cve.addRequiredField(field);
                         hasError = true;
+                        Logger.warn(this, "String Field [" + field.getVelocityVarName() + "] is required");
                         continue;
                     }
                 }
@@ -4296,6 +4306,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     if(!UtilMethods.isSet(s1.trim())||s1.trim().contains("-removed-")) {
                         cve.addRequiredField(field);
                         hasError = true;
+                        Logger.warn(this, "File Field [" + field.getVelocityVarName() + "] is required");
                         continue;
                     }
                 }
@@ -4308,16 +4319,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 }else{
                                     cve.addRequiredField(field);
                                     hasError = true;
+                                    Logger.warn(this, "Date/Time in CT Field [" + field.getVelocityVarName() + "] is" +
+                                            " required");
                                     continue;
                                 }
                             }else{
                                 cve.addRequiredField(field);
                                 hasError = true;
+                                Logger.warn(this, "Date/Time expire Field [" + field.getVelocityVarName() + "] is required");
                                 continue;
                             }
                         }else{
                             cve.addRequiredField(field);
                             hasError = true;
+                            Logger.warn(this, "Date/Time Field [" + field.getVelocityVarName() + "] is required");
                             continue;
                         }
                     }
@@ -4326,6 +4341,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     if( cats == null || cats.size() == 0 ) {
                         cve.addRequiredField(field);
                         hasError = true;
+                        Logger.warn(this, "Category Field [" + field.getVelocityVarName() + "] is required (empty)");
                         continue;
                     }
                     try {
@@ -4346,6 +4362,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             if(!found) {
                                 cve.addRequiredField(field);
                                 hasError = true;
+                                Logger.warn(this, "Category Field [" + field.getVelocityVarName() + "] is required (values not found)");
                                 continue;
                             }
                         }
@@ -4358,11 +4375,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     if (!UtilMethods.isSet(contentlet.getHost()) && !UtilMethods.isSet(contentlet.getFolder())) {
                         cve.addRequiredField(field);
                         hasError = true;
+                        Logger.warn(this, "Site or Folder Field [" + field.getVelocityVarName() + "] is required");
                         continue;
                     }
                 } else if(!UtilMethods.isSet(o)) {
                     cve.addRequiredField(field);
                     hasError = true;
+                    Logger.warn(this, "Field [" + field.getVelocityVarName() + "] is required");
                     continue;
                 }
                 if(field.getFieldType().equals(Field.FieldType.IMAGE.toString()) || field.getFieldType().equals(Field.FieldType.FILE.toString())){
@@ -4371,6 +4390,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         if(n.longValue() == 0){
                             cve.addRequiredField(field);
                             hasError = true;
+                            Logger.warn(this, "Image Field (as number) [" + field.getVelocityVarName() + "] is required");
                             continue;
                         }
                     }else if(o instanceof String){
@@ -4378,6 +4398,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         if(s.trim().equals("0")){
                             cve.addRequiredField(field);
                             hasError = true;
+                            Logger.warn(this, "Image Field (as String) [" + field.getVelocityVarName() + "] is required");
                             continue;
                         }
                     }
@@ -4388,6 +4409,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         if (s.trim().toLowerCase().equals("<br>")){
                             cve.addRequiredField(field);
                             hasError = true;
+                            Logger.warn(this, "WYSIWYG Field [" + field.getVelocityVarName() + "] is required");
                             continue;
                         }
                     }
@@ -4412,8 +4434,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     try {
                         contentlets = searchIndex(buffy.toString(), -1, 0, "inode", APILocator.getUserAPI().getSystemUser(), false);
                     } catch (Exception e) {
-                        Logger.error(this, e.getMessage(),e);
-                        throw new DotContentletValidationException(e.getMessage(),e);
+                    	final String errorMsg = "Unique field [" + field.getVelocityVarName() + "] could not be validated: " + e.getMessage();
+                        Logger.warn(this, errorMsg, e);
+                        throw new DotContentletValidationException(errorMsg, e);
                     }
                     int size = contentlets.size();
                     if(size > 0 && !hasError){
@@ -4443,22 +4466,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                     {
                                         cve.addUniqueField(field);
                                         hasError = true;
-                                        Logger.error(this, "The value of field [" + field.getVelocityVarName() + "] must be unique.");
+                                        Logger.warn(this, "Field [" + field.getVelocityVarName() + "] must be unique");
                                         break;
                                     }
                                 }
                             }else{
                                 cve.addUniqueField(field);
                                 hasError = true;
-                                Logger.error(this, "The value of field [" + field.getVelocityVarName() + "] must be unique.");
+                                Logger.warn(this, "Field [" + field.getVelocityVarName() + "] must be unique");
                                 break;
                             }
                         }
                     }
                 } catch (DotDataException e) {
-                    Logger.error(this,"Unable to get contentlets for Content Type: " + contentlet.getStructure().getName() ,e);
+                    Logger.warn(this,"Unable to get contentlets for Content Type: " + contentlet.getStructure().getName(), e);
                 } catch (DotSecurityException e) {
-                    Logger.error(this,"Unable to get contentlets for Content Type: " + contentlet.getStructure().getName() ,e);
+                    Logger.warn(this,"Unable to get contentlets for Content Type: " + contentlet.getStructure().getName(), e);
                 }
             }
             String dataType = (field.getFieldContentlet() != null) ? field.getFieldContentlet().replaceAll("[0-9]*", "") : "";
@@ -4467,12 +4490,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 try{
                     s = (String)o;
                 }catch (Exception e) {
-                    Logger.error(this,"Unable to get string value for text field in contentlet",e);
+                    Logger.warn(this,"Unable to get string value for text field in contentlet", e);
                     continue;
                 }
                 if (s.length() > 255) {
                     hasError = true;
                     cve.addMaxLengthField(field);
+                    Logger.warn(this,"String field value is greater than 255 characters");
                     continue;
                 }
             }
@@ -4486,6 +4510,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         if (!match) {
                             hasError = true;
                             cve.addPatternField(field);
+                            Logger.warn(this, "Field with number regex [" + field.getVelocityVarName() + "] does not " +
+                                    "match");
                             continue;
                         }
                     }else if(o instanceof String && UtilMethods.isSet(((String)o).trim())){
@@ -4494,6 +4520,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         if (!match) {
                             hasError = true;
                             cve.addPatternField(field);
+                            Logger.warn(this, "Field with string regex [" + field.getVelocityVarName() + "] does not " +
+                                    "match");
                             continue;
                         }
                     }

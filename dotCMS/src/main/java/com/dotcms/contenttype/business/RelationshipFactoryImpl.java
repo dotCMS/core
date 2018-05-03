@@ -243,6 +243,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         return matches;
     }
 
+    @Override
     public  List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet,
             boolean hasParent) throws  DotDataException {
         return dbRelatedContent (relationship, contentlet, hasParent, false, "tree_order");

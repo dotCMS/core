@@ -16,6 +16,8 @@ import java.nio.file.Path;
  */
 public interface TikaProxyService extends Serializable {
 
+    String EXCEPTION_ZERO_BYTE_FILE_EXCEPTION = "org.apache.tika.exception.ZeroByteFileException";
+
     /**
      * Get the value associated to a metadata name. If many values are assiociated
      * to the specified name, then the first one is returned.

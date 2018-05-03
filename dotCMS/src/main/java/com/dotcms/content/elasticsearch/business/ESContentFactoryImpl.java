@@ -1994,21 +1994,28 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     tempStructureVarName = clause.substring(0, clause.indexOf('.'));
                     tempStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(tempStructureVarName);
 
-                    List<Field> tempStructureFields = new ArrayList<>(FieldsCache.getFieldsByStructureVariableName(tempStructure.getVelocityVarName()));
+                    if (UtilMethods.isSet(tempStructure) && UtilMethods.isSet(tempStructure.getVelocityVarName())) {
+                        List<Field> tempStructureFields = new ArrayList<>(FieldsCache
+                                .getFieldsByStructureVariableName(
+                                        tempStructure.getVelocityVarName()));
 
-                    for (int pos = 0; pos < tempStructureFields.size();) {
+                        for (int pos = 0; pos < tempStructureFields.size(); ) {
 
-                        if (tempStructureFields.get(pos).getFieldType().equals(Field.FieldType.DATE_TIME.toString()) ||
-                                tempStructureFields.get(pos).getFieldType().equals(Field.FieldType.DATE.toString()) ||
-                                tempStructureFields.get(pos).getFieldType().equals(Field.FieldType.TIME.toString())) {
-                            ++pos;
-                        } else {
-                            tempStructureFields.remove(pos);
+                            if (tempStructureFields.get(pos).getFieldType()
+                                    .equals(Field.FieldType.DATE_TIME.toString()) ||
+                                    tempStructureFields.get(pos).getFieldType()
+                                            .equals(Field.FieldType.DATE.toString()) ||
+                                    tempStructureFields.get(pos).getFieldType()
+                                            .equals(Field.FieldType.TIME.toString())) {
+                                ++pos;
+                            } else {
+                                tempStructureFields.remove(pos);
+                            }
+
                         }
 
+                        dateFields.addAll(tempStructureFields);
                     }
-
-                    dateFields.addAll(tempStructureFields);
                 }
             }
 

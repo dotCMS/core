@@ -22,7 +22,6 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.AlreadyExistException;
@@ -75,7 +74,6 @@ import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
@@ -92,9 +90,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -103,6 +99,7 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.Future;
 import java.util.stream.IntStream;
+import javax.annotation.Nullable;
 import org.apache.commons.lang.time.StopWatch;
 import org.osgi.framework.BundleContext;
 
@@ -118,8 +115,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	private final PermissionAPI  permissionAPI    = APILocator.getPermissionAPI();
 
 	private final RoleAPI roleAPI				  = APILocator.getRoleAPI();
-
-	private final UserAPI userAPI                 = APILocator.getUserAPI();
 
 	private final ShortyIdAPI shortyIdAPI		  = APILocator.getShortyAPI();
 
@@ -137,8 +132,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	private final DotConcurrentFactory concurrentFactory = DotConcurrentFactory.getInstance();
 
-	private volatile List <Role> specialRolesHierarchy;
+	private static final boolean RESPECT_FRONTEND_ROLES = WorkflowActionUtils.RESPECT_FRONTEND_ROLES;
 
+	private final WorkflowActionUtils workflowActionUtils;
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public WorkflowAPIImpl() {
@@ -175,6 +171,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		refreshWorkFlowActionletMap();
 		registerBundleService();
+
+		try {
+			workflowActionUtils = new WorkflowActionUtils();
+		} catch (DotDataException e) {
+			throw new DotRuntimeException(e);
+		}
 	}
 
 	/**
@@ -226,7 +228,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 */
 	private String getLongId (final String shortyId, final ShortyIdAPI.ShortyInputType type) {
 
-		// todo: if shortyId is more than 36 is a long id and does not need to check the shorty
 		final Optional<ShortyId> shortyIdOptional =
 				this.shortyIdAPI.getShorty(shortyId, type);
 
@@ -283,7 +284,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@Override
-	public String addActionlet(final Class workFlowActionletClass) {
+	public String addActionlet(final Class<? extends WorkFlowActionlet> workFlowActionletClass) {
 
 		Logger.debug(this,
 				() -> "Adding actionlet class: " + workFlowActionletClass);
@@ -447,6 +448,24 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return schemes.build();
 	} // findSchemesForContentType.
 
+
+	@Override
+	@CloseDBIfOpened
+	public List<ContentType> findContentTypesForScheme(final WorkflowScheme workflowScheme) {
+
+		if (!SYSTEM_WORKFLOW_ID.equals(workflowScheme.getId())) {
+			if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
+				throw new InvalidLicenseException("Workflow-Schemes-License-required");
+			}
+		}
+        try {
+			return workFlowFactory.findContentTypesByScheme(workflowScheme);
+		}catch(Exception e){
+			Logger.debug(this,e.getMessage(),e);
+            throw new DoesNotExistException(e);
+		}
+	}
+
 	@Override
 	@CloseDBIfOpened
 	public List<WorkflowScheme> findSchemesForStruct(final Structure structure) throws DotDataException {
@@ -534,17 +553,17 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					+ ", name:" + scheme.getName());
 
 			final List<WorkflowStep> steps = this.findSteps(scheme);
-			for (WorkflowStep step : steps) {
+			for (final WorkflowStep step : steps) {
 				//delete workflow tasks
-				this.findTasksByStep(step.getId()).stream()
+				this.findTasksByStep(step.getId())
 						.forEach(task -> this.deleteWorkflowTaskWrapper(task, user));
 			}
 			//delete actions
-			this.findActions(scheme, user).stream()
+			this.findActions(scheme, user)
 					.forEach(action -> this.deleteWorkflowActionWrapper(action, user));
 
 			//delete steps
-			steps.stream().forEach(step -> this.deleteWorkflowStepWrapper(step, user));
+			steps.forEach(step -> this.deleteWorkflowStepWrapper(step, user));
 
 			//delete scheme
 			this.workFlowFactory.deleteScheme(scheme);
@@ -615,10 +634,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			throws DotRuntimeException {
 		try {
 			//delete task comment
-			this.findWorkFlowComments(task).stream().forEach(this::deleteCommentWrapper);
+			this.findWorkFlowComments(task).forEach(this::deleteCommentWrapper);
 
 			//delete task history
-			this.findWorkflowHistory(task).stream().forEach(this::deleteWorkflowHistoryWrapper);
+			this.findWorkflowHistory(task).forEach(this::deleteWorkflowHistoryWrapper);
 
 			//delete task
 			this.deleteWorkflowTask(task, user);
@@ -658,7 +677,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@CloseDBIfOpened
-	public List<WorkflowStep> findSteps(WorkflowScheme scheme) throws DotDataException {
+	public List<WorkflowStep> findSteps(final WorkflowScheme scheme) throws DotDataException {
 		return workFlowFactory.findSteps(scheme);
 	}
 
@@ -780,7 +799,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@Override
 	@CloseDBIfOpened
-	public List<WorkflowHistory> findWorkflowHistory(WorkflowTask task) throws DotDataException {
+	public List<WorkflowHistory> findWorkflowHistory(final WorkflowTask task) throws DotDataException {
 		return workFlowFactory.findWorkflowHistory(task);
 	}
 
@@ -872,13 +891,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@Override
 	@WrapInTransaction
-	public void attachFileToTask(WorkflowTask task, String fileInode) throws DotDataException {
+	public void attachFileToTask(final WorkflowTask task, final String fileInode) throws DotDataException {
 		workFlowFactory.attachFileToTask(task, fileInode);
 	}
 
 	@Override
 	@WrapInTransaction
-	public void removeAttachedFile(WorkflowTask task, String fileInode) throws DotDataException {
+	public void removeAttachedFile(final WorkflowTask task, final String fileInode) throws DotDataException {
 		workFlowFactory.removeAttachedFile(task, fileInode);
 	}
 
@@ -898,12 +917,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			return Collections.emptyList();
 		}
         final List<WorkflowAction> actions = workFlowFactory.findActions(step);
-        return filterActionsCollection(actions, user, true, permissionable);
+        return workflowActionUtils
+				.filterActions(actions, user, RESPECT_FRONTEND_ROLES, permissionable);
     }
 
 	@Override
 	@CloseDBIfOpened
-	public List<WorkflowAction> findActions(final WorkflowStep step, final Role role) throws DotDataException,
+	public List<WorkflowAction> findActions(final WorkflowStep step, final Role role, @Nullable final Permissionable permissionable) throws DotDataException,
            DotSecurityException {
 
 		if(null == step) {
@@ -911,7 +931,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 		final List<WorkflowAction> actions = workFlowFactory.findActions(step);
 
-		return filterActionsCollection(actions, role);
+		return workflowActionUtils.filterActions(actions, role, permissionable);
 
 	}
 
@@ -928,7 +948,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		final List<WorkflowAction> actions = workFlowFactory.findActions(scheme);
 		return permissionAPI.filterCollection(actions,
-				PermissionAPI.PERMISSION_USE, true, user);
+				PermissionAPI.PERMISSION_USE, RESPECT_FRONTEND_ROLES, user);
 	} // findActions.
 
 	@Override
@@ -947,7 +967,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			actions.addAll(workFlowFactory.findActions(step));
 		}
 
-		return filterActionsCollection(actions.build(), user, true, permissionable);
+		return workflowActionUtils
+				.filterActions(actions.build(), user, RESPECT_FRONTEND_ROLES, permissionable);
 	}
 
 
@@ -2089,7 +2110,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				entryAction = wfAction;
 		}
 
-		if (!permissionAPI.doesUserHavePermission(entryAction, PermissionAPI.PERMISSION_USE, user, true)) {
+		if (!permissionAPI.doesUserHavePermission(entryAction, PermissionAPI.PERMISSION_USE, user, RESPECT_FRONTEND_ROLES)) {
 			throw new DotSecurityException("User " + user + " cannot read action " + entryAction.getName());
 		}
 		return entryAction;
@@ -2148,259 +2169,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		workFlowFactory.updateStepReferences(this.getLongId(stepId, ShortyIdAPI.ShortyInputType.WORKFLOW_STEP), this.getLongId(replacementStepId, ShortyIdAPI.ShortyInputType.WORKFLOW_STEP));
 	}
 
-    /**
-     * Filter the list of actions to display according to the user logged permissions
-     * @param actions List of action to filter
-     * @param user User to validate
-     * @param respectFrontEndRoles indicates if should respect frontend roles
-     * @param permissionable ContentType or contentlet to validate special workflow roles
-     * @return List<WorkflowAction>
-     * @throws DotDataException
-     */
-    @CloseDBIfOpened
-	private List<WorkflowAction> filterActionsCollection(final List<WorkflowAction> actions,
-			final User user, final boolean respectFrontEndRoles,
-			final Permissionable permissionable) throws DotDataException {
-
-
-		if ((user != null) && roleAPI.doesUserHaveRole(user, roleAPI.loadCMSAdminRole())) {
-			return actions;
-		}
-
-		List<WorkflowAction> permissionables = new ArrayList<>(actions);
-		if(permissionables.isEmpty()){
-			return permissionables;
-		}
-
-		WorkflowAction action;
-		int i = 0;
-
-		while (i < permissionables.size()) {
-			action = permissionables.get(i);
-			boolean havePermission = false;
-			if(null != permissionable) {
-				/* Validate if the action has one of the workflow special roles*/
-                havePermission = hasSpecialWorkflowPermission(user, respectFrontEndRoles, permissionable,
-                        action);
-
-			}
-			/* Validate if has other rolers permissions */
-			if(permissionAPI.doesUserHavePermission(action, PermissionAPI.PERMISSION_USE, user, respectFrontEndRoles)){
-				havePermission=true;
-			}
-
-			/* Remove the action if the user dont have permission */
-			if(!havePermission){
-				permissionables.remove(i);
-			}else {
-				++i;
-			}
-		}
-
-		return permissionables;
-	}
-
-	/**
-	 * Filters the list of actions to display according to the role passed
-	 * @param actions the actions to filter by role
-	 * @param role the role selected
-	 * @return the list of actions once the filter operation has taken place
-	 * @throws DotDataException
-	 */
-	@CloseDBIfOpened
-	private List<WorkflowAction> filterActionsCollection(final List<WorkflowAction> actions, final Role role) throws DotDataException {
-
-		final List<WorkflowAction> permissionables = new ArrayList<>(actions);
-		if (permissionables.isEmpty()) {
-			return permissionables;
-		}
-
-		//First try to determine if we're dealing with a role directly mapped to a user.
-		try {
-			final User user = userAPI.loadUserById(role.getRoleKey());
-			return filterActionsCollection(permissionables, user,true, null);
-		}catch (Exception nsu){
-			Logger.debug(this, () -> "Unable to determine role belongs to a user.");
-		}
-
-		final Iterator<WorkflowAction> workflowActionIterator = permissionables.iterator();
-
-		final List<Role> specialRolesHierarchy = getSpecialRolesHierarchy();
-		final int index = specialRolesHierarchy.indexOf(role);
-		//Determine if we're dealing with a special role
-		if(index >= 0){
-			//If so.. get a sublist preserving the precedence. so we can apply a filter with the resulting piece of hierarchy.
-			final List<Role> rolesSubset = specialRolesHierarchy.subList(index, specialRolesHierarchy.size());
-			while (workflowActionIterator.hasNext()) {
-				final WorkflowAction wa = workflowActionIterator.next();
-				if (!hasAnyRolePermission(wa, rolesSubset)) {
-					workflowActionIterator.remove();
-				}
-			}
-			return permissionables;
-		}
-
-		//Perform filter for regular roles
-		final Set<Role> roles = collectChildRoles(role);
-		while (workflowActionIterator.hasNext()) {
-			final WorkflowAction wa = workflowActionIterator.next();
-			if (!hasAnyRolePermission(wa, roles)) {
-				workflowActionIterator.remove();
-			}
-		}
-
-		return permissionables;
-	}
-
-
-	/**
-	 * Returns an immutable list with the Hierarchy of special roles according to the permission precedence.
-	 * This means that the position roles[i] has more precedence than roles[i+1]
-	 * @return a list of special roles ordered by permission precedence.
-	 * @throws DotDataException
-	 */
-	private List<Role> getSpecialRolesHierarchy() throws DotDataException {
-		if (specialRolesHierarchy == null) {
-			synchronized (this) {
-				if (specialRolesHierarchy == null) {
-					final Role anyWhoCanEditPermisionsContent = roleAPI
-							.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_PERMISSIONS_ROLE_KEY);
-					final Role anyWhoCanPublishContent = roleAPI
-							.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_PUBLISH_ROLE_KEY);
-					final Role anyWhoCanEditContent = roleAPI
-							.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_ROLE_KEY);
-					final Role anyWhoCanViewContent = roleAPI
-							.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_VIEW_ROLE_KEY);
-
-					// Do not alter the order of the Elements on the list. It is tied to the logic!!
-					specialRolesHierarchy = ImmutableList
-							.of(anyWhoCanEditPermisionsContent, anyWhoCanPublishContent,
-									anyWhoCanEditContent, anyWhoCanViewContent);
-				}
-			}
-		}
-		return specialRolesHierarchy;
-	}
-
-	/**
-	 * Gathers all child roles recursively.
-	 * @param selectedRole parent role passed
-	 * @return returns a set of roles including the one initially passed as parameter.
-	 */
-	private Set<Role> collectChildRoles(final Role selectedRole) {
-		final Set<Role> collectedRoles = new HashSet<>();
-		collectedRoles.add(selectedRole);
-		try {
-				final List<String> childrenIds = selectedRole.getRoleChildren();
-				if (UtilMethods.isSet(childrenIds)) {
-					for (final String childRoleId : childrenIds) {
-						final Role childRole = roleAPI.loadRoleById(childRoleId);
-						collectedRoles.addAll(
-								collectChildRoles(childRole)
-						);
-					}
-				}
-		} catch (Exception e) {
-			Logger.error(this, "Error collecting children roles ", e);
-		}
-
-		return collectedRoles;
-	}
-
-	/**
-	 * Given a set roles this method verifies if an action has access to at least one of them.
-	 * @param wa the workflow action to examine
-	 * @param roles the roles to apply
-	 * @return true if any of the roles is met by the action
-	 * @throws DotDataException
-	 */
-	private boolean hasAnyRolePermission(final WorkflowAction wa,final Iterable<Role> roles) throws DotDataException{
-        for(final Role role:roles){
-			if (permissionAPI.doesRoleHavePermission(wa, PermissionAPI.PERMISSION_USE, role)) {
-                return true;
-			}
-		}
-		return false;
-	}
-
-	/**
-	 * Return true if the action has one of the workflow action roles and if the user has  any of
-	 * those permission over the content or content type
-	 * @param user User to validate
-	 * @param respectFrontEndRoles indicates if should respect frontend roles
-	 * @param permissionable ContentType or contentlet to validate special workflow roles
-	 * @param action The action to validate
-	 * @return true if the user has one of the special workflow action role permissions, false if not
-	 * @throws DotDataException
-	 */
-	@CloseDBIfOpened
-	private boolean hasSpecialWorkflowPermission(User user, boolean respectFrontEndRoles,
-			Permissionable permissionable, WorkflowAction action) throws DotDataException {
-
-		Role anyWhoCanViewContent = roleAPI
-				.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_VIEW_ROLE_KEY);
-		Role anyWhoCanEditContent = roleAPI
-				.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_ROLE_KEY);
-		Role anyWhoCanPublishContent = roleAPI
-				.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_PUBLISH_ROLE_KEY);
-		Role anyWhoCanEditPermisionsContent = roleAPI
-				.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_PERMISSIONS_ROLE_KEY);
-
-		if (permissionAPI
-				.doesRoleHavePermission(action, PermissionAPI.PERMISSION_USE,
-						anyWhoCanViewContent)) {
-			return validateUserPermissionsOnPermissionable(permissionable,
-					PermissionAPI.PERMISSION_READ, user, respectFrontEndRoles);
-		}
-		if (permissionAPI
-				.doesRoleHavePermission(action, PermissionAPI.PERMISSION_USE,
-						anyWhoCanEditContent)) {
-			return validateUserPermissionsOnPermissionable(permissionable,
-					PermissionAPI.PERMISSION_WRITE, user, respectFrontEndRoles);
-		}
-		if (permissionAPI
-				.doesRoleHavePermission(action, PermissionAPI.PERMISSION_USE,
-						anyWhoCanPublishContent)) {
-			return validateUserPermissionsOnPermissionable(permissionable,
-					PermissionAPI.PERMISSION_PUBLISH, user, respectFrontEndRoles);
-		}
-		if (permissionAPI
-				.doesRoleHavePermission(action, PermissionAPI.PERMISSION_USE,
-						anyWhoCanEditPermisionsContent)) {
-			return validateUserPermissionsOnPermissionable(permissionable,
-					PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user, respectFrontEndRoles);
-		}
-		return false;
-	}
-
-	/**
-	 * Return true if the user have over the permissionable the specified
-	 * permission.
-	 * @param permissionable the ContentType or contentlet to validate
-	 * @param permissiontype The type of permission to validate
-	 * @param user           The User over who the permissions are going to be validate
-	 * @param respectFrontEndRoles boolean indicating if the frontend roles should be repected
-	 * @return true if the user have permissions, false if not
-	 * @throws DotDataException
-	 */
-	@CloseDBIfOpened
-	private boolean validateUserPermissionsOnPermissionable(Permissionable permissionable,
-			int permissiontype, User user, boolean respectFrontEndRoles) throws DotDataException {
-		if (permissionable instanceof Contentlet && !InodeUtils
-				.isSet(permissionable.getPermissionId())) {
-			if (permissionAPI.doesUserHavePermission(((Contentlet) permissionable).getContentType(),
-					permissiontype, user, respectFrontEndRoles)) {
-				return true;
-			}
-		} else {
-			if (permissionAPI.doesUserHavePermission(permissionable, permissiontype, user,
-					respectFrontEndRoles)) {
-				return true;
-			}
-		}
-		return false;
-	}
-
 	@Override
     @CloseDBIfOpened
     public WorkflowAction findActionRespectingPermissions(final String id, final Permissionable permissionable,
@@ -2409,10 +2177,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         final WorkflowAction action = workFlowFactory.findAction(this.getLongId(id, ShortyIdAPI.ShortyInputType.WORKFLOW_ACTION));
 
         DotPreconditions.isTrue(
-                hasSpecialWorkflowPermission(user, true, permissionable, action) ||
+                workflowActionUtils
+						.hasSpecialWorkflowPermission(user, RESPECT_FRONTEND_ROLES, permissionable, action) ||
                         this.permissionAPI
                                 .doesUserHavePermission(action, PermissionAPI.PERMISSION_USE, user,
-                                        true),
+                                        RESPECT_FRONTEND_ROLES),
                 () -> "User " + user + " cannot read action " + action.getName(),
                 DotSecurityException.class);
 
@@ -2431,7 +2200,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         if (null != action) {
 
             DotPreconditions.isTrue(
-                    hasSpecialWorkflowPermission(user, true, permissionable, action) ||
+                    workflowActionUtils.hasSpecialWorkflowPermission(user, RESPECT_FRONTEND_ROLES, permissionable, action) ||
                             this.permissionAPI
                                     .doesUserHavePermission(action, PermissionAPI.PERMISSION_USE, user, true),
                     () -> "User " + user + " cannot read action " + action.getName(),
