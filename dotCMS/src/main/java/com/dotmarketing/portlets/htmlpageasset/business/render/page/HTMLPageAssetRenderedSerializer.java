@@ -18,48 +18,26 @@ import java.util.stream.Collectors;
 /**
  * Json serializer of {@link HTMLPageAssetRendered}
  */
-public class HTMLPageAssetRenderedSerializer extends JsonSerializer<HTMLPageAssetRendered> {
+public class HTMLPageAssetRenderedSerializer extends PageViewSerializer {
+
     @Override
-    public void serialize(HTMLPageAssetRendered htmlPageAssetRendered, JsonGenerator jsonGenerator,
-                          SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
+    protected ImmutableMap<String, Object> getObjectMap(PageView pageView) {
+        HTMLPageAssetRendered htmlPageAssetRendered = (HTMLPageAssetRendered) pageView;
 
-        final Template template = htmlPageAssetRendered.getTemplate();
+        Map<String, Object> objectMap = super.getObjectMap(pageView);
+
+        Map<String, Object> pageMap = (Map<String, Object>) objectMap.get("page");
+        pageMap.put("rendered", htmlPageAssetRendered.getHtml());
+
+        Map<String, Object> templateMap = (Map<String, Object>) objectMap.get("template");
+        templateMap.put("canEdit", htmlPageAssetRendered.isCanEditTemplate());
+
         final ImmutableMap.Builder<String, Object> responseMapBuilder = ImmutableMap.<String, Object> builder()
-                .put("html", htmlPageAssetRendered.getHtml())
-                .put("page", htmlPageAssetRendered.getPageInfo())
-                .put("containers", htmlPageAssetRendered.getContainers()
-                        .stream()
-                        .collect(Collectors.toMap(
-                                containerRendered -> containerRendered.getContainer().getIdentifier(),
-                                containerRendered -> containerRendered
-                        ))
-                )
+                .putAll(objectMap)
                 .put("viewAs", htmlPageAssetRendered.getViewAs())
-                .put("canCreateTemplate", htmlPageAssetRendered.isCanCreateTemplate())
-                .put("template", ImmutableMap.builder()
-                        .put("canEdit", htmlPageAssetRendered.isCanEditTemplate())
-                        .putAll(this.asMap(template))
-                        .build()
-                );
+                .put("canCreateTemplate", htmlPageAssetRendered.isCanCreateTemplate());
 
-
-        if (htmlPageAssetRendered.getLayout() != null) {
-            responseMapBuilder.put("layout", htmlPageAssetRendered.getLayout());
-        }
-
-        jsonGenerator.writeObject(responseMapBuilder.build());
+        return responseMapBuilder.build();
     }
 
-    private Map<Object, Object> asMap(final Object object)  {
-        final ObjectWriter objectWriter = JsonMapper.mapper.writer().withDefaultPrettyPrinter();
-
-        try {
-            String json = objectWriter.writeValueAsString(object);
-            Map map = JsonMapper.mapper.readValue(new CharArrayReader(json.toCharArray()), Map.class);
-            map.values().removeIf(Objects::isNull);
-            return map;
-        } catch (IOException e) {
-            throw new DotRuntimeException(e);
-        }
-    }
 }

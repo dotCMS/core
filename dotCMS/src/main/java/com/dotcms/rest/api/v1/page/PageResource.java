@@ -108,8 +108,8 @@ public class PageResource {
         final User user = auth.getUser();
         Response res = null;
         try {
-            final PageView pageView = this.htmlPageAssetRenderedAPI.getPageMetadata(request, response,
-                    user, uri, live);
+            final PageView pageView = this.htmlPageAssetRenderedAPI.getPageMetadata(request, response, user, uri,
+                    PageMode.get(request));
             final Response.ResponseBuilder responseBuilder = Response.ok(pageView);
             responseBuilder.header("Access-Control-Expose-Headers", "Authorization");
             responseBuilder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, " +
@@ -133,91 +133,40 @@ public class PageResource {
         return res;
     }
 
-    /**
-     * Returns the JSON representation of the specified HTML Page, i.e., the source code of the
-     * rendered page.
-     * <p>
-     * <pre>
-     * Format:
-     * http://localhost:8080/api/v1/page/render/{page-url}
-     * <br/>
-     * Example:
-     * http://localhost:8080/api/v1/page/render/about-us/locations/index
-     * </pre>
-     *
-     * @param request  The {@link HttpServletRequest} object.
-     * @param response The {@link HttpServletResponse} object.
-     * @param uri      The path to the HTML Page whose information will be retrieved.
-     * @param live     If it is false look for live and working page version, otherwise just look for live version,
-     *                 true is the default value
-     * @return All the <b>rendered</b> objects on an associated HTML Page.
-     */
+
     @NoCache
     @GET
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/render/{uri: .*}")
-    public Response renderPageObject(@Context final HttpServletRequest request, @Context final
-    HttpServletResponse response, @PathParam("uri") final String uri, @QueryParam("live") @DefaultValue("true")  final boolean live) {
-        // Force authentication
-        final InitDataObject auth = webResource.init(false, request, true);
-        final User user = auth.getUser();
-        Response res = null;
-        try {
-            final PageView pageView = this.htmlPageAssetRenderedAPI.getPageMetadataRendered(request,
-                    response, user, uri, live);
-            final Response.ResponseBuilder responseBuilder = Response.ok(pageView);
-            responseBuilder.header("Access-Control-Expose-Headers", "Authorization");
-            responseBuilder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, " +
-                    "Content-Type, " + "Accept, Authorization");
-            res = responseBuilder.build();
-        } catch (DotSecurityException e) {
-            final String errorMsg = "The user does not have the required permissions (" + e
-                    .getMessage() + ")";
-            Logger.error(this, errorMsg, e);
-            throw new ForbiddenException(e);
-        } catch (DotDataException e) {
-            final String errorMsg = "An error occurred when accessing the page information (" + e
-                    .getMessage() + ")";
-            Logger.error(this, e.getMessage(), e);
-            res = ExceptionMapperUtil.createResponse(null, errorMsg);
-        } catch (Exception e) {
-            final String errorMsg = "An internal error occurred (" + e.getMessage() + ")";
-            Logger.error(this, errorMsg, e);
-            res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-        }
-        return res;
-    }
-    
-
-    @NoCache
-    @GET
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Path("/renderHTML/{uri: .*}")
     public Response renderHTMLOnly(@Context final HttpServletRequest request,
                                    @Context final HttpServletResponse response,
                                    @PathParam("uri") final String uri,
-                                   @QueryParam("mode") @DefaultValue("LIVE_ADMIN") final String modeStr,
+                                   @QueryParam("mode") @DefaultValue("LIVE_ADMIN") final String modeParam,
                                    @QueryParam(WebKeys.CMS_PERSONA_PARAMETER) final String personaId,
                                    @QueryParam("language_id") final String languageId,
-                                   @QueryParam("device_inode") final String deviceInode) {
+                                   @QueryParam("device_inode") final String deviceInode,
+                                   @QueryParam("live") final Boolean live) {
 
-        Logger.debug(this, String.format("Rendering page: uri -> %s mode-> %s language -> persona ->", uri, modeStr,
-                languageId, personaId));
+        Logger.debug(this, String.format(
+                "Rendering page: uri -> %s mode-> %s language -> persona -> %s device_inode -> %s live -> %b",
+                uri, modeParam, languageId, personaId, deviceInode, live));
 
         // Force authentication
         final InitDataObject auth = webResource.init(false, request, true);
         final User user = auth.getUser();
         Response res = null;
 
+        final String modeStr = modeParam != null ? modeParam : (live ? PageMode.LIVE : PageMode.PREVIEW_MODE).toString();
         final PageMode mode = PageMode.get(modeStr);
         PageMode.setPageMode(request, mode);
+
         try {
 
             if (deviceInode != null) {
                 request.getSession().setAttribute(WebKeys.CURRENT_DEVICE, deviceInode);
             }
 
-            HTMLPageAssetRendered pageRendered = this.htmlPageAssetRenderedAPI.getPageRendered(request, response, user, uri, mode);
+            PageView pageRendered = this.htmlPageAssetRenderedAPI.getPageRendered(request, response, user, uri, mode);
             final Response.ResponseBuilder responseBuilder = Response.ok(pageRendered);
             responseBuilder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, " +
                     "Content-Type, " + "Accept, Authorization");
@@ -278,7 +227,7 @@ public class PageResource {
             this.pageResourceHelper.saveTemplate(user, page, form);
 
             final PageMode pageMode = PageMode.get(request);
-            final HTMLPageAssetRendered renderedPage = this.htmlPageAssetRenderedAPI.getPageRendered(request, response, user,
+            final PageView renderedPage = this.htmlPageAssetRenderedAPI.getPageRendered(request, response, user,
                     (HTMLPageAsset) page, pageMode);
             res = Response.ok(new ResponseEntityView(renderedPage)).build();
 
