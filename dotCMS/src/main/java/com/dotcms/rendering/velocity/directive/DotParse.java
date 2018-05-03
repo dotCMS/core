@@ -31,7 +31,7 @@ public class DotParse extends DotDirective {
 
   private final String hostIndicator = "//";
   private final String EDIT_ICON =
-          "<div data-dot-object='vtl-file' data-dot-inode='%s' data-dot-url='%s' data-dot-can-edit='%s'></div>";
+          "<div data-dot-object='vtl-file' data-dot-inode='%s' data-dot-url='%s' data-dot-can-read='%s' data-dot-can-edit='%s'></div>";
 
   @Override
   public final String getName() {
@@ -110,7 +110,8 @@ public class DotParse extends DotDirective {
       if (!context.containsKey("dontShowIcon") &&
               PageMode.EDIT_MODE == params.mode ) {
           final String editIcon = String.format(EDIT_ICON, contentlet.getInode(), id.getURI(),
-                  APILocator.getPermissionAPI().doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user));
+                  APILocator.getPermissionAPI().doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user),
+                  APILocator.getPermissionAPI().doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user));
           writer.append(editIcon);
       }
 
