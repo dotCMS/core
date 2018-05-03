@@ -554,16 +554,22 @@ public class ContentletBaseTest extends IntegrationTestBase {
         return createRelationShip( structure.getInode(), structure.getInode(), required );
     }
 
-    /**
-     * Creates a Relationship object for a later use in the tests
-     *
-     * @param parentStructureInode
-     * @param childStrunctureInode
-     * @param required
-     * @return
-     * @throws DotDataException 
-     */
-    protected static Relationship createRelationShip ( String parentStructureInode, String childStrunctureInode, boolean required ) throws DotDataException {
+    protected static Relationship createRelationShip ( String parentStructureInode, String childStrunctureInode, boolean required) throws DotDataException {
+        return createRelationShip(parentStructureInode, childStrunctureInode, required, 0);
+    }
+
+
+        /**
+         * Creates a Relationship object for a later use in the tests
+         *
+         * @param parentStructureInode
+         * @param childStrunctureInode
+         * @param required
+         * @return
+         * @throws DotDataException
+         */
+    protected static Relationship createRelationShip ( String parentStructureInode, String childStrunctureInode,
+            boolean required, final int cardinality) throws DotDataException {
 
         Relationship relationship = new Relationship();
         //Set Parent Info
@@ -576,7 +582,7 @@ public class ContentletBaseTest extends IntegrationTestBase {
         relationship.setChildRequired( required );
         //Set general info
         relationship.setRelationTypeValue( "parent-child" );
-        relationship.setCardinality( 0 );
+        relationship.setCardinality(cardinality);
 
         //Save it
         FactoryLocator.getRelationshipFactory().save( relationship );
@@ -592,15 +598,35 @@ public class ContentletBaseTest extends IntegrationTestBase {
      * @param structure
      * @return
      */
-    protected static ContentletRelationships createContentletRelationships ( Relationship relationship, Contentlet contentlet, Structure structure, List<Contentlet> contentRelationships ) {
+    protected static ContentletRelationships createContentletRelationships ( final Relationship relationship,
+         final Contentlet contentlet, final Structure structure, final List<Contentlet> contentRelationships ) {
+        return createContentletRelationships(relationship, contentlet, structure, contentRelationships, null);
+    }
+
+
+
+    /**
+     * Creates a ContentletRelationships object for a later use in the tests
+     *
+     * @param relationship
+     * @param contentlet
+     * @param structure
+     * @return
+     */
+    protected static ContentletRelationships createContentletRelationships ( final Relationship relationship,
+            final Contentlet contentlet, final Structure structure, final List<Contentlet> contentRelationships,
+                                                                             final Boolean hasParent ) {
 
         //Create the contentlet relationships
-        ContentletRelationships contentletRelationships = new ContentletRelationships( contentlet );
+        final ContentletRelationships contentletRelationships = new ContentletRelationships( contentlet );
 
-        boolean hasParent = FactoryLocator.getRelationshipFactory().isParent( relationship, structure );
+        final boolean internalHasParent = hasParent!=null
+            ? hasParent
+            : FactoryLocator.getRelationshipFactory().isParent( relationship, structure );
 
         //Adding the relationships records
-        ContentletRelationships.ContentletRelationshipRecords contentletRelationshipRecords = contentletRelationships.new ContentletRelationshipRecords( relationship, hasParent );
+        final ContentletRelationships.ContentletRelationshipRecords contentletRelationshipRecords =
+            contentletRelationships.new ContentletRelationshipRecords( relationship, internalHasParent );
         contentletRelationshipRecords.setRecords( contentRelationships );
 
         List<ContentletRelationships.ContentletRelationshipRecords> relationshipsRecords = new ArrayList<ContentletRelationships.ContentletRelationshipRecords>();

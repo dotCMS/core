@@ -457,27 +457,6 @@
 		    <property column="mod_date" length="23" name="modDate" type="java.util.Date" />
 		</joined-subclass>
 
-		<joined-subclass name="com.dotmarketing.portlets.report.model.Report" table="report_asset">
-			<key column="inode" />
-			<property column="report_name" length="255" name="reportName" type="string" not-null="true" />
-			<property column="report_description" length="1000" name="reportDescription" type="string" not-null="true" />
-			<property column="requires_input" name="requiresInput" type="boolean" />
-			<property column="ds" length="100" name="ds" type="string" not-null="true" />
-			<property column="web_form_report" name="webFormReport" type="boolean" />
-		</joined-subclass>
-
-		<joined-subclass name="com.dotmarketing.portlets.report.model.ReportParameter" table="report_parameter">
-			<key column="inode" />
-			<property name="reportInode" type="string" >
-				<column name="report_inode" length="36" unique-key="reportParameteridx1"/>
-			</property>
-			<property column="parameter_description" length="1000" name="description" type="string" />
-			<property name="name" length="100" type="string" >
-				<column name="parameter_name" unique-key="reportParameteridx1"/>
-			</property>
-			<property column="class_type" name="classType" length="250" type="string" />
-			<property column="default_value" length="4000" name="defaultValue" type="string"  />
-		</joined-subclass>
 
 
 

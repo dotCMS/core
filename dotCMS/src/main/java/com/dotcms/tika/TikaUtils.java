@@ -8,7 +8,6 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
@@ -27,8 +26,13 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.Predicate;
 import java.util.zip.GZIPOutputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 
@@ -189,25 +193,70 @@ public class TikaUtils {
 
             }
         } catch (IOException ioExc) {
-            try {
-                //On error lets try a fallback operation
-                metaMap = fallbackParse(binFile, contentMetadataFile, ioExc);
-            } catch (Exception e) {
-                logError(binFile, e);
+            if (isZeroByteFileException(ioExc.getCause())) {
+                logWarning(binFile, ioExc.getCause());
+            } else {
+                try {
+                    //On error lets try a fallback operation
+                    metaMap = fallbackParse(binFile, contentMetadataFile, ioExc);
+                } catch (Exception e) {
+                    logError(binFile, e);
+                }
             }
         } catch (Exception e) {
-            logError(binFile, e);
+
+            if (isZeroByteFileException(e)) {
+                logWarning(binFile, e);
+            } else {
+                logError(binFile, e);
+            }
         } finally {
             metaMap.put(FileAssetAPI.SIZE_FIELD, String.valueOf(binFile.length()));
         }
 
-        //Getting the original content's map
-        final Map<String, Object> additionProps = getAdditionalProperties(inode);
-        for (final Map.Entry<String, Object> entry : additionProps.entrySet()) {
-            metaMap.put(entry.getKey().toLowerCase(), entry.getValue().toString().toLowerCase());
-        }
+        filterMetadataFields(metaMap, getConfiguredMetadataFields());
 
         return metaMap;
+    }
+
+    /**
+     * Reads INDEX_METADATA_FIELDS from configuration
+     * @return
+     */
+    public Set<String> getConfiguredMetadataFields(){
+        final String configFields=Config.getStringProperty("INDEX_METADATA_FIELDS", null);
+
+        if (UtilMethods.isSet(configFields)) {
+
+            return new HashSet<>(Arrays.asList( configFields.split(",")));
+
+        }
+        return Collections.emptySet();
+    }
+
+    /**
+     * Filters fields from a map given a set of fields to be kept
+     * @param metaMap
+     * @param configFieldsSet
+     */
+    public void filterMetadataFields(final Map<String, ? extends Object> metaMap, final Set<String> configFieldsSet){
+
+        if (UtilMethods.isSet(metaMap) && UtilMethods.isSet(configFieldsSet)) {
+            metaMap.entrySet()
+                    .removeIf(entry -> !configFieldsSet.contains("*")
+                            && !checkIfFieldMatches(entry.getKey(), configFieldsSet));
+        }
+    }
+
+    /**
+     * Verifies if a string matches in a set of regex/strings
+     * @param key
+     * @param configFieldsSet
+     * @return
+     */
+    private boolean checkIfFieldMatches(final String key, final Set<String> configFieldsSet){
+        final Predicate<String> condition = e -> key.matches(e);
+        return configFieldsSet.stream().anyMatch(condition);
     }
 
     /**
@@ -298,21 +347,6 @@ public class TikaUtils {
     }
 
     /**
-     * Returns a {@link Map} that includes original content's map entries and also special entries for string
-     * representation of the values of binary, category fields and also tags
-     */
-    private Map<String, Object> getAdditionalProperties(final String inode) {
-        Map<String, Object> additionProps = new HashMap<>();
-        try {
-            additionProps = ContentletUtil.getContentPrintableMap(this.systemUser,
-                    APILocator.getContentletAPI().find(inode, this.systemUser, true));
-        } catch (Exception e) {
-            Logger.error(this, "Unable to add additional metadata to map", e);
-        }
-        return additionProps;
-    }
-
-    /**
      * Detects the media type of the given file. The type detection is
      * based on the document content and a potential known file extension.
      *
@@ -359,12 +393,6 @@ public class TikaUtils {
         }
     }
 
-    private void logError(final File binFile, Exception e) {
-        Logger.error(this.getClass(),
-                String.format("Could not parse file metadata for file [%s] [%s]",
-                        binFile.getAbsolutePath(), e.getMessage()), e);
-    }
-
     /**
      * normalize metadata from various filetypes this method will return an
      * array of metadata keys that we can use to normalize the values in our
@@ -394,6 +422,23 @@ public class TikaUtils {
             }
         }
         return translateMeta;
+    }
+
+    private boolean isZeroByteFileException(Throwable exception) {
+        return null != exception && exception.getClass().getCanonicalName()
+                .equals(TikaProxyService.EXCEPTION_ZERO_BYTE_FILE_EXCEPTION);
+    }
+
+    private void logWarning(final File binFile, Throwable exception) {
+        Logger.warn(this.getClass(),
+                String.format("Could not parse file metadata for file [%s] [%s]",
+                        binFile.getAbsolutePath(), exception.getMessage()));
+    }
+
+    private void logError(final File binFile, Throwable exception) {
+        Logger.error(this.getClass(),
+                String.format("Could not parse file metadata for file [%s] [%s]",
+                        binFile.getAbsolutePath(), exception.getMessage()), exception);
     }
 
 }

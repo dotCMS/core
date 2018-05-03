@@ -24,6 +24,9 @@ public interface RelationshipAPI {
 
   List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet) throws DotDataException;
 
+  List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet,
+                                    boolean hasParent) throws  DotDataException;
+
   void deleteByContent(Contentlet contentlet, Relationship relationship, List<Contentlet> relatedContentlets)
       throws DotDataException;
 

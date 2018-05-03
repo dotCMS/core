@@ -1,7 +1,5 @@
 package com.dotcms.workflow.helper;
 
-import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -9,23 +7,13 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.v1.workflow.WorkflowDefaultActionView;
-import com.dotcms.workflow.form.IWorkflowStepForm;
-import com.dotcms.workflow.form.WorkflowActionForm;
-import com.dotcms.workflow.form.WorkflowActionStepBean;
-import com.dotcms.workflow.form.WorkflowReorderBean;
-import com.dotcms.workflow.form.WorkflowSchemeForm;
-import com.dotcms.workflow.form.WorkflowStepAddForm;
-import com.dotcms.workflow.form.WorkflowStepUpdateForm;
+import com.dotcms.workflow.form.*;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.exception.AlreadyExistException;
-import com.dotmarketing.exception.DoesNotExistException;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.exception.InvalidLicenseException;
+import com.dotmarketing.exception.*;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet;
@@ -42,16 +30,16 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang.time.StopWatch;
+
+import java.io.IOException;
+import java.util.*;
+
+import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
 
 
 /**
@@ -110,7 +98,14 @@ public class WorkflowHelper {
         stopWatch.start();
         Logger.debug(this, () -> "Starting the scheme import");
 
-        this.checkSchemeNames (workflowExportObject.getSchemes());
+        final Set<String> schemeIds =
+                this.checkIfSchemeExists (workflowExportObject.getSchemes());
+        final Set<String> stepIds =
+                this.checkSteps (schemeIds, workflowExportObject.getSteps());
+        final Set<String> actionIds =
+                this.checkActions (schemeIds, workflowExportObject.getActions(), user);
+        this.checkActionSteps (workflowExportObject.getActionSteps(), stepIds, actionIds, user);
+
         this.workflowImportExportUtil.importWorkflowExport(workflowExportObject, user);
 
         stopWatch.stop();
@@ -136,22 +131,148 @@ public class WorkflowHelper {
         Logger.debug(this, () -> "Ended the action permissions import, in: " + DateUtil.millisToSeconds(stopWatch.getTime()));
     } // importScheme.
 
-    private void checkSchemeNames(final List<WorkflowScheme> schemes) throws AlreadyExistException, DotDataException {
+    private void checkActionSteps(final List<Map<String, String>> actionSteps,
+                                  final Set<String> stepIds,
+                                  final Set<String> actionIds,
+                                  final User user) throws AlreadyExistException {
 
-        for (final WorkflowScheme scheme : schemes) {
+        for (final Map<String, String> actionStep : actionSteps) {
 
-            final WorkflowScheme schemeWithSameName =
-                    this.workflowAPI.findSchemeByName(scheme.getName());
+            final String stepId   = actionStep.get("stepId");
+            final String actionId = actionStep.get("actionId");
 
-            if(UtilMethods.isSet(schemeWithSameName)
-                    && UtilMethods.isSet(schemeWithSameName.getId())
-                    && !schemeWithSameName.getId().equals(scheme.getId())) {
+            WorkflowAction repeatAction = null;
+            try {
+                repeatAction =
+                        this.workflowAPI.findAction(actionId, user);
+            } catch (Exception e) {
+                repeatAction = null;
+            }
 
-                throw new AlreadyExistException("Already exist a scheme with the same name ("+schemeWithSameName.getName()
-                        +"). Create different schemes with the same name is not allowed. Please change your workflow scheme name.");
+            if(null != repeatAction) {
+
+                throw new AlreadyExistException("Already exist an action with the same id ("+repeatAction.getId()
+                        +"). Create different action with the same id is not allowed. Please change your workflow action id.");
+            }
+
+            if (!actionIds.contains(actionId)) {
+
+                throw new IllegalArgumentException("Does not exists the action " + actionId + " on the request ");
+            }
+
+            // step
+            WorkflowStep repeatStep = null;
+            try {
+                repeatStep =
+                        this.workflowAPI.findStep(stepId);
+            } catch (Exception e) {
+                repeatStep = null;
+            }
+
+            if(null != repeatStep) {
+
+                throw new AlreadyExistException("Already exist a step with the same id ("+repeatStep.getId()
+                        +"). Create different step with the same id is not allowed. Please change your workflow step id.");
+            }
+
+            if (!stepIds.contains(stepId)) {
+
+                throw new IllegalArgumentException("Does not exists the step " + stepId + " on the request ");
             }
         }
     }
+
+    private Set<String> checkActions(final Set<String> schemeIds, final List<WorkflowAction> actions, final User user) throws AlreadyExistException {
+
+        final ImmutableSet.Builder<String> setBuilder = new ImmutableSet.Builder<>();
+
+        for (final WorkflowAction action : actions) {
+
+            WorkflowAction repeatAction = null;
+            try {
+                repeatAction =
+                        this.workflowAPI.findAction(action.getId(), user);
+            } catch (Exception e) {
+                repeatAction = null;
+            }
+
+            if(null != repeatAction) {
+
+                throw new AlreadyExistException("Already exist an action with the same id ("+repeatAction.getId()
+                        +"). Create different action with the same id is not allowed. Please change your workflow action id.");
+            }
+
+            if (!schemeIds.contains(action.getSchemeId())) {
+
+                throw new IllegalArgumentException("Does not exists the scheme " + action.getSchemeId() + " on the action "+ action.getId()
+                        +". Create a action with a right scheme id.");
+            }
+
+            setBuilder.add(action.getId());
+        }
+
+        return setBuilder.build();
+    }
+
+    private Set<String> checkSteps(final Set<String> schemeIds, final List<WorkflowStep> steps) throws AlreadyExistException {
+
+        final ImmutableSet.Builder<String> setBuilder = new ImmutableSet.Builder<>();
+
+        for (final WorkflowStep step : steps) {
+
+            WorkflowStep repeatStep = null;
+            try {
+                repeatStep =
+                        this.workflowAPI.findStep(step.getId());
+            } catch (Exception e) {
+                repeatStep = null;
+            }
+
+            if(null != repeatStep) {
+
+                throw new AlreadyExistException("Already exist a step with the same id ("+repeatStep.getId()
+                        +"). Create different step with the same id is not allowed. Please change your workflow step id.");
+            }
+
+            if (!schemeIds.contains(step.getSchemeId())) {
+
+                throw new IllegalArgumentException("Does not exists the scheme " + step.getSchemeId() + " on the step "+ step.getId()
+                        +". Create a step with a right scheme id.");
+            }
+
+            setBuilder.add(step.getId());
+        }
+
+        return setBuilder.build();
+    }
+
+    private Set<String> checkIfSchemeExists(final List<WorkflowScheme> schemes) throws AlreadyExistException {
+
+
+        final ImmutableSet.Builder<String> setBuilder = new ImmutableSet.Builder<>();
+
+        for (final WorkflowScheme scheme : schemes) {
+
+            WorkflowScheme repeatScheme = null;
+            try {
+                repeatScheme =
+                        this.workflowAPI.findScheme(scheme.getId());
+            } catch (Exception e) {
+                repeatScheme = null;
+            }
+
+            if(null != repeatScheme) {
+
+                throw new AlreadyExistException("Already exist a scheme with the same id ("+repeatScheme.getId()
+                        +"). Create different schemes with the same id is not allowed. Please change your workflow scheme id.");
+            }
+
+            setBuilder.add(scheme.getId());
+        }
+
+        return setBuilder.build();
+    }
+
 
     /**
      * Finds the available actions for an inode and user.

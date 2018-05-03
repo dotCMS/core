@@ -109,7 +109,7 @@ public class WorkflowImportExportUtil {
 
 	@WrapInTransaction
 	public void importWorkflowExport(final WorkflowSchemeImportExportObject importer,
-									 final User user) throws IOException {
+									 final User user) throws IOException, DotDataException {
 
 		final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
 
@@ -159,6 +159,7 @@ public class WorkflowImportExportUtil {
 
 		} catch (Exception e) {// Catch exception if any
 			Logger.error(this.getClass(), "Error: " + e.getMessage(), e);
+			throw new DotDataException(e);
 		}
 	}
 

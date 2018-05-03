@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.workflows.business;
 
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.util.ConversionUtils;
@@ -171,6 +172,11 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	 * @throws InvocationTargetException
 	 */
 	private Object convertMaptoObject(Map<String, Object> map, Class clazz) throws InstantiationException, IllegalAccessException, InvocationTargetException {
+
+		if(ContentType.class.equals(clazz)){
+			//Content type is an abstract class therefore it can not be instantiated directly
+			return new DbContentTypeTransformer(map).from();
+		}
 
 		final Object obj = clazz.newInstance();
 
@@ -1293,10 +1299,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 		final DotConnect db = new DotConnect();
 		try {
-			WorkflowScheme schemeWithSameName = findSchemeByName(scheme.getName());
-			if(UtilMethods.isSet(schemeWithSameName) && UtilMethods.isSet(schemeWithSameName.getId()) && !schemeWithSameName.getId().equals(scheme.getId())){
-				throw new AlreadyExistException("Already exist a scheme with the same name ("+schemeWithSameName.getName()+"). Create different schemes with the same name is not allowed. Please change your workflow scheme name.");
-			}
+
 			if (isNew) {
 
 				db.setSQL(sql.INSERT_SCHEME);

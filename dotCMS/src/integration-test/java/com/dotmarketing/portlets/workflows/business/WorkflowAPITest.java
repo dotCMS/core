@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.workflows.business;
 
+import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -53,7 +54,6 @@ import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -795,14 +795,47 @@ public class WorkflowAPITest extends IntegrationTestBase {
         actions = workflowAPI.findActions(steps, reviewerUser);
         assertTrue(null != actions && actions.size() == 2);
 
-        actions = workflowAPI.findActions(workflowScheme1Step2, reviewer);
+        actions = workflowAPI.findActions(workflowScheme1Step2, reviewer, null);
         assertNotNull(actions);
         assertTrue(actions.size() == 1);
 
-        actions = workflowAPI.findActions(workflowScheme3Step2, contributor);
+        actions = workflowAPI.findActions(workflowScheme3Step2, contributor, null);
         assertNotNull(actions);
         assertTrue(actions.size() == 1);
 
+    }
+
+    @Test
+    public void findActionsRestrictedByPermission() throws DotDataException, DotSecurityException {
+        ContentType contentTypeForPublisher = null;
+        ContentType contentTypeForContributor = null;
+        try {
+            final String ctVisibleByPublisher = "CTVisibleByPublisher" + System.currentTimeMillis();
+            contentTypeForPublisher = createContentTypeAndAssignPermissions(ctVisibleByPublisher,
+                    BaseContentType.CONTENT, editPermission, publisher.getId());
+
+            //Actions visible by contributor
+            final List<WorkflowAction> actionsVisibleByContributor1 = workflowAPI.findActions(workflowScheme3Step2, contributor, contentTypeForPublisher);
+            assertNotNull(actionsVisibleByContributor1);
+            assertTrue(actionsVisibleByContributor1.size() == 0);
+
+            final String ctVisibleByContributor = "CTVisibleByContributor" + System.currentTimeMillis();
+            contentTypeForContributor = createContentTypeAndAssignPermissions(ctVisibleByContributor,
+                    BaseContentType.CONTENT, editPermission, contributor.getId());
+
+            final List<WorkflowAction> actionsVisibleByContributor2 = workflowAPI.findActions(workflowScheme3Step2, contributor, contentTypeForContributor);
+            assertNotNull(actionsVisibleByContributor2);
+            assertTrue(actionsVisibleByContributor2.size() == 1);
+
+        } finally {
+            if(contentTypeForPublisher != null){
+                APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentTypeForPublisher);
+            }
+
+            if(contentTypeForContributor != null){
+                APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentTypeForContributor);
+            }
+        }
     }
 
     /**

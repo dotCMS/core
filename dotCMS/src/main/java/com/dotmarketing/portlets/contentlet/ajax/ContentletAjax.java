@@ -3,7 +3,28 @@ package com.dotmarketing.portlets.contentlet.ajax;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
+
 import static com.dotcms.exception.ExceptionUtil.getRootCause;
+
+
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
+import java.util.Set;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+
 import com.dotcms.business.CloseDB;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -52,6 +73,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
@@ -704,7 +726,13 @@ public class ContentletAjax {
 									metakey = StringUtils.camelCaseLower(metakey);
 									String metaVal = "*" +splitter[splitter.length-1]+"*";
 									fieldValue = metakey + ":" + metaVal;
-									luceneQuery.append("+" + st.getVelocityVarName() + "." + fieldVelocityVarName + "." + fieldValue.toString().replaceAll(specialCharsToEscapeForMetaData, "\\\\$1") + " ");
+
+									if (fieldVelocityVarName.equals(FileAssetAPI.META_DATA_FIELD)){
+										luceneQuery.append("+" + fieldVelocityVarName + "." + fieldValue.toString().replaceAll(specialCharsToEscapeForMetaData, "\\\\$1") + " ");
+									}else{
+										luceneQuery.append("+" + st.getVelocityVarName() + "." + fieldVelocityVarName + "." + fieldValue.toString().replaceAll(specialCharsToEscapeForMetaData, "\\\\$1") + " ");
+									}
+
 								} catch (Exception e) {
 									Logger.debug(this, "An error occured when processing field name '" + fieldbcontentname + "'");
 								}
@@ -1124,7 +1152,7 @@ public class ContentletAjax {
         }
 
 		final JSONArray wfActionMapList = new JSONArray();
-
+        final boolean showScheme = (workflowActions!=null) ?  workflowActions.stream().collect(Collectors.groupingBy(WorkflowAction::getSchemeId)).size()>1 : false;
 		for (WorkflowAction action : workflowActions) {
 
             boolean hasPushPublishActionlet = false;
@@ -1153,8 +1181,9 @@ public class ContentletAjax {
                 wfActionMap.put("hasPushPublishActionlet", hasPushPublishActionlet);
 
                 try {
-
-                    wfActionMap.put("wfActionNameStr", LanguageUtil.get(currentUser, action.getName()) +" ( "+LanguageUtil.get(currentUser,wfScheme.getName())+" )");
+                    final String actionNameStr = (showScheme) ? LanguageUtil.get(currentUser, action.getName()) +" ( "+LanguageUtil.get(currentUser,wfScheme.getName())+" )" : LanguageUtil.get(currentUser, action.getName());
+                    
+                    wfActionMap.put("wfActionNameStr", actionNameStr);
                 } catch (LanguageException e) {
                     Logger.error(this, "Could not load language key : " + action.getName());
                 }
@@ -1462,7 +1491,6 @@ public class ContentletAjax {
                 if(contentlet.isHTMLPage()) {
                     HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
                     callbackData.put("htmlPageReferer", page.getURI() + "?" + WebKeys.HTMLPAGE_LANGUAGE + "=" + page.getLanguageId() + "&host_id=" + page.getHost());
-                    HttpSession session = req.getSession();
                     boolean contentLocked = false;
                     boolean iCanLock = false;
                     
@@ -1475,6 +1503,17 @@ public class ContentletAjax {
                      }
                     PageMode.setPageMode(req, contentLocked, iCanLock);
 
+					final String previousTemplateId = (String) contentletFormData.get("currentTemplateId");
+
+					if (UtilMethods.isSet(previousTemplateId) && !previousTemplateId.equals(page.getTemplateId())) {
+						final User systemUser = APILocator.systemUser();
+						final Template previousTemplate = APILocator.getTemplateAPI().findWorkingTemplate(previousTemplateId,
+								systemUser, false);
+
+						if (previousTemplate.isAnonymous()) {
+							APILocator.getTemplateAPI().delete(previousTemplate, systemUser, false);
+						}
+					}
                 }
 
 			}

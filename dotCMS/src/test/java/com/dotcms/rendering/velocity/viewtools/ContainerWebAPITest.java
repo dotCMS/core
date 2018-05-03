@@ -63,7 +63,7 @@ public class ContainerWebAPITest {
 
     @Test
     public void doesUserHasPermissionToAddContentWithNullParameter() throws DotDataException {
-        containerWebAPI.doesUserHasPermissionToAddContent(null);
+        assertFalse(containerWebAPI.doesUserHasPermissionToAddContent(null));
     }
 
     @Test
