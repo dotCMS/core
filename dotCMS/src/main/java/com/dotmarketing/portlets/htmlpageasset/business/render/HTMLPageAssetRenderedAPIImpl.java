@@ -71,8 +71,8 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
     }
 
     @Override
-    public PageView getPageRendered(HttpServletRequest request, HttpServletResponse response, User user,
-                                                 String pageUri, PageMode pageMode)
+    public PageView getPageRendered(final HttpServletRequest request, final HttpServletResponse response,
+                                    final User user, final String pageUri, final PageMode pageMode)
             throws DotDataException, DotSecurityException {
 
         final Host host = resolveSite(request, user);

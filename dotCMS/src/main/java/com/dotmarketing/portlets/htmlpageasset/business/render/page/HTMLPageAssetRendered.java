@@ -27,20 +27,20 @@ import java.util.stream.Collectors;
  */
 @JsonSerialize(using = HTMLPageAssetRenderedSerializer.class)
 public class HTMLPageAssetRendered extends PageView {
-    private String html;
-    private boolean canCreateTemplate;
-    private boolean canEditTemplate;
-    private ViewAsPageStatus viewAs;
+    private final String html;
+    private final boolean canCreateTemplate;
+    private final boolean canEditTemplate;
+    private final ViewAsPageStatus viewAs;
 
-    public HTMLPageAssetRendered(Host site,
-                                 Template template,
-                                 List<ContainerRendered> containers,
-                                 HTMLPageAssetInfo page,
-                                 TemplateLayout layout,
-                                 String html,
-                                 boolean canCreateTemplate,
-                                 boolean canEditTemplate,
-                                 ViewAsPageStatus viewAs) {
+    public HTMLPageAssetRendered(final Host site,
+                                 final Template template,
+                                 final List<ContainerRendered> containers,
+                                 final HTMLPageAssetInfo page,
+                                 final TemplateLayout layout,
+                                 final String html,
+                                 final boolean canCreateTemplate,
+                                 final boolean canEditTemplate,
+                                 final ViewAsPageStatus viewAs) {
 
         super(site, template, containers, page, layout);
         this.html = html;

@@ -97,22 +97,22 @@ public class HTMLPageAssetRenderedBuilder {
         final ContentletVersionInfo info = APILocator.getVersionableAPI().
                 getContentletVersionInfo(htmlPageAsset.getIdentifier(), htmlPageAsset.getLanguageId());
 
-        HTMLPageAssetInfo htmlPageAssetInfo = getHTMLPageAssetInfo(info);
+        final HTMLPageAssetInfo htmlPageAssetInfo = getHTMLPageAssetInfo(info);
         final Template template = getTemplate();
-        TemplateLayout layout = template.isDrawed() ? DotTemplateTool.themeLayout(template.getInode()) : null;
+        final TemplateLayout layout = template.isDrawed() ? DotTemplateTool.themeLayout(template.getInode()) : null;
 
         if (!rendered) {
-            List<ContainerRendered> containers = this.containerRenderedBuilder.getContainers(template);
+            final List<ContainerRendered> containers = this.containerRenderedBuilder.getContainers(template);
             return new PageView(site, template, containers, htmlPageAssetInfo, layout);
         } else {
             final PageMode mode = PageMode.get(request);
             final Context velocityContext = VelocityUtil.getWebContext(request, response);
 
-            List<ContainerRendered> containers = this.containerRenderedBuilder.getContainersRendered(template,
+            final List<ContainerRendered> containers = this.containerRenderedBuilder.getContainersRendered(template,
                     velocityContext, mode);
-            boolean canCreateTemplates = layoutAPI.doesUserHaveAccessToPortlet("templates", user);
-            String pageHTML = this.getPageHTML();
-            boolean canEditTemplate = this.permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(), user);
+            final boolean canCreateTemplates = layoutAPI.doesUserHaveAccessToPortlet("templates", user);
+            final String pageHTML = this.getPageHTML();
+            final boolean canEditTemplate = this.permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(), user);
 
             return new HTMLPageAssetRendered(site, template, containers, htmlPageAssetInfo, layout, pageHTML,
                     canCreateTemplates, canEditTemplate, this.getViewAsStatus()
@@ -122,8 +122,8 @@ public class HTMLPageAssetRenderedBuilder {
 
     private Template getTemplate() throws DotDataException {
         try {
-            PageMode mode = PageMode.get(request);
-            User systemUser = APILocator.getUserAPI().getSystemUser();
+            final PageMode mode = PageMode.get(request);
+            final User systemUser = APILocator.getUserAPI().getSystemUser();
 
             return mode.showLive ?
                     (Template) this.versionableAPI.findLiveVersion(htmlPageAsset.getTemplateId(), systemUser, mode.respectAnonPerms) :
@@ -133,7 +133,7 @@ public class HTMLPageAssetRenderedBuilder {
         }
     }
 
-    private HTMLPageAssetInfo getHTMLPageAssetInfo(ContentletVersionInfo info) throws DotDataException {
+    private HTMLPageAssetInfo getHTMLPageAssetInfo(final ContentletVersionInfo info) throws DotDataException {
         HTMLPageAssetInfo htmlPageAssetInfo = new HTMLPageAssetInfo()
             .setPage(this.htmlPageAsset)
             .setWorkingInode(info.getWorkingInode())
@@ -154,7 +154,7 @@ public class HTMLPageAssetRenderedBuilder {
         return htmlPageAssetInfo;
     }
 
-    private String getLockedByUserName(ContentletVersionInfo info) throws DotDataException {
+    private String getLockedByUserName(final ContentletVersionInfo info) throws DotDataException {
         try {
             return userAPI.loadUserById(info.getLockedBy()).getFullName();
         } catch (DotSecurityException e) {

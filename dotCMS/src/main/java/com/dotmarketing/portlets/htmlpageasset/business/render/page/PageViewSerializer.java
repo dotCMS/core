@@ -23,19 +23,19 @@ import java.util.stream.Collectors;
 public class PageViewSerializer extends JsonSerializer<PageView> {
 
     @Override
-    public void serialize(PageView pageView, JsonGenerator jsonGenerator,
-                          SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
+    public void serialize(final PageView pageView, final JsonGenerator jsonGenerator,
+                          final SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
         final ObjectWriter objectWriter = JsonMapper.mapper.writer().withDefaultPrettyPrinter();
-        ImmutableMap.Builder<String, Object> builder = new ImmutableMap.Builder<>();
+        final ImmutableMap.Builder<String, Object> builder = new ImmutableMap.Builder<>();
         builder.putAll(getObjectMap(pageView));
-        String json = objectWriter.writeValueAsString(builder.build());
+        final String json = objectWriter.writeValueAsString(builder.build());
         jsonGenerator.writeRaw(json);
     }
 
     protected Map<String, Object> getObjectMap(PageView pageView) {
         final Template template = pageView.getTemplate();
 
-        Map pageViewMap = new HashMap<String, Object>();
+        final Map pageViewMap = new HashMap<String, Object>();
         pageViewMap.put("page", this.asMap(pageView.getPageInfo()));
         pageViewMap.put("containers", pageView.getContainers()
                 .stream()
@@ -57,8 +57,8 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
         final ObjectWriter objectWriter = JsonMapper.mapper.writer().withDefaultPrettyPrinter();
 
         try {
-            String json = objectWriter.writeValueAsString(object);
-            Map map = JsonMapper.mapper.readValue(new CharArrayReader(json.toCharArray()), Map.class);
+            final String json = objectWriter.writeValueAsString(object);
+            final Map map = JsonMapper.mapper.readValue(new CharArrayReader(json.toCharArray()), Map.class);
             map.values().removeIf(Objects::isNull);
             return map;
         } catch (IOException e) {

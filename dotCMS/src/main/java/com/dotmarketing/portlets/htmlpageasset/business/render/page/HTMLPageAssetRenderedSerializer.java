@@ -22,14 +22,14 @@ public class HTMLPageAssetRenderedSerializer extends PageViewSerializer {
 
     @Override
     protected ImmutableMap<String, Object> getObjectMap(PageView pageView) {
-        HTMLPageAssetRendered htmlPageAssetRendered = (HTMLPageAssetRendered) pageView;
+        final HTMLPageAssetRendered htmlPageAssetRendered = (HTMLPageAssetRendered) pageView;
 
-        Map<String, Object> objectMap = super.getObjectMap(pageView);
+        final Map<String, Object> objectMap = super.getObjectMap(pageView);
 
-        Map<String, Object> pageMap = (Map<String, Object>) objectMap.get("page");
+        final Map<String, Object> pageMap = (Map<String, Object>) objectMap.get("page");
         pageMap.put("rendered", htmlPageAssetRendered.getHtml());
 
-        Map<String, Object> templateMap = (Map<String, Object>) objectMap.get("template");
+        final Map<String, Object> templateMap = (Map<String, Object>) objectMap.get("template");
         templateMap.put("canEdit", htmlPageAssetRendered.isCanEditTemplate());
 
         final ImmutableMap.Builder<String, Object> responseMapBuilder = ImmutableMap.<String, Object> builder()
