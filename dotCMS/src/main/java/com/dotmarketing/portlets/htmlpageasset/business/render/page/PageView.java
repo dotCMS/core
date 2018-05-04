@@ -10,10 +10,11 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -32,15 +33,15 @@ import java.util.Map;
  * @version 4.2
  * @since Oct 6, 2017
  */
-@JsonSerialize(as = PageView.Serializer.class)
+@JsonSerialize(using = PageViewSerializer.class)
 public class PageView implements Serializable {
 
     private static final long serialVersionUID = 1642131505258302751L;
 
     private final Host site;
     private final Template template;
-    private final Map<String, ContainerRendered> containers;
-    private final HTMLPageAsset page;
+    private final List<ContainerRendered> containers;
+    private final HTMLPageAssetInfo htmlPageAssetInfo;
     private final TemplateLayout layout;
 
     /**
@@ -53,12 +54,16 @@ public class PageView implements Serializable {
      * @param page       The {@link HTMLPageAsset} object.
      * @param layout     The {@link TemplateLayout} that specifies the design of the template.
      */
-    public PageView(final Host site, final Template template, final Map<String, ContainerRendered> containers,
-                    final HTMLPageAsset page, final TemplateLayout layout) {
+    PageView(final Host site,
+             final Template template,
+             final List<ContainerRendered> containers,
+             final HTMLPageAssetInfo page,
+             final TemplateLayout layout) {
+
         this.site = site;
         this.template = template;
         this.containers = containers;
-        this.page = page;
+        this.htmlPageAssetInfo = page;
         this.layout = layout;
     }
 
@@ -94,7 +99,7 @@ public class PageView implements Serializable {
      *
      * @return The map of Containers.
      */
-    public Map<String, ContainerRendered> getContainers() {
+    public List<ContainerRendered>  getContainers() {
         return this.containers;
     }
 
@@ -103,22 +108,13 @@ public class PageView implements Serializable {
      *
      * @return The {@link HTMLPageAsset}.
      */
-    public HTMLPageAsset getPage() {
-        return this.page;
+    public HTMLPageAssetInfo getPageInfo() {
+        return this.htmlPageAssetInfo;
     }
 
     @Override
     public String toString() {
         return "PageView{" + "site=" + site + ", template=" + template + ", containers=" +
-                containers + ", page=" + page + ", layout=" + layout + '}';
-    }
-
-    class Serializer extends JsonSerializer<PageView> {
-        @Override
-        public void serialize(PageView pageView, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
-            final ObjectWriter objectWriter = JsonMapper.mapper.writer().withDefaultPrettyPrinter();
-            String json = objectWriter.writeValueAsString(pageView);
-            jsonGenerator.writeRaw(json);
-        }
+                containers + ", page=" + htmlPageAssetInfo.getPage() + ", layout=" + layout + '}';
     }
 }
