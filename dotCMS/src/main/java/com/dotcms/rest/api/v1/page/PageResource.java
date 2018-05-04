@@ -138,7 +138,7 @@ public class PageResource {
     @GET
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/render/{uri: .*}")
-    public Response renderHTMLOnly(@Context final HttpServletRequest request,
+    public Response render(@Context final HttpServletRequest request,
                                    @Context final HttpServletResponse response,
                                    @PathParam("uri") final String uri,
                                    @QueryParam("mode") @DefaultValue("LIVE_ADMIN") final String modeParam,
