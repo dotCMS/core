@@ -120,6 +120,18 @@ public class HTMLPageAssetRenderedBuilder {
         }
     }
 
+    @CloseDB
+    public String getPageHTML() throws DotSecurityException, DotDataException {
+
+        final PageMode mode = PageMode.get(request);
+
+        if(mode.isAdmin ) {
+            APILocator.getPermissionAPI().checkPermission(htmlPageAsset, PermissionLevel.READ, user);
+        }
+
+        return VelocityModeHandler.modeHandler(mode, request, response, htmlPageAsset.getURI(), site).eval();
+    }
+
     private Template getTemplate() throws DotDataException {
         try {
             final PageMode mode = PageMode.get(request);
@@ -169,18 +181,6 @@ public class HTMLPageAssetRenderedBuilder {
         } catch (DotLockException e) {
             return false;
         }
-    }
-
-    @CloseDB
-    private String getPageHTML() throws DotSecurityException, DotDataException {
-
-        final PageMode mode = PageMode.get(request);
-
-        if(mode.isAdmin ) {
-            APILocator.getPermissionAPI().checkPermission(htmlPageAsset, PermissionLevel.READ, user);
-        }
-
-        return VelocityModeHandler.modeHandler(mode, request, response, htmlPageAsset.getURI(), site).eval();
     }
 
     private ViewAsPageStatus getViewAsStatus()

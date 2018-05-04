@@ -103,6 +103,20 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .build(true);
     }
 
+    public String getPageHtml(HttpServletRequest request, HttpServletResponse response, User user, String uri,
+                              PageMode mode) throws DotSecurityException, DotDataException {
+        final Host host = resolveSite(request, user);
+        final HTMLPageAsset page = getHtmlPageAsset(user, uri, mode, host);
+
+        return new HTMLPageAssetRenderedBuilder()
+                .setHtmlPageAsset(page)
+                .setUser(user)
+                .setRequest(request)
+                .setResponse(response)
+                .setSite(host)
+                .getPageHTML();
+    }
+
     private HTMLPageAsset getHtmlPageAsset(User user, String uri, PageMode mode, Host host) throws DotDataException, DotSecurityException {
         final String pageUri = (UUIDUtil.isUUID(uri) ||( uri.length()>0 && '/' == uri.charAt(0))) ? uri : ("/" + uri);
 

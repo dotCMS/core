@@ -355,4 +355,47 @@ public class PageResource {
 
         return res;
     }
+
+    @NoCache
+    @GET
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Path("/renderHTML/{uri: .*}")
+    public Response renderHTMLOnly(@Context final HttpServletRequest request,
+                                   @Context final HttpServletResponse response,
+                                   @PathParam("uri") final String uri,
+                                   @QueryParam("mode") @DefaultValue("LIVE_ADMIN") final String modeStr) {
+
+        Logger.debug(this, String.format("Rendering page: uri -> %s mode-> %s", uri, modeStr));
+
+        // Force authentication
+        final InitDataObject auth = webResource.init(false, request, true);
+        final User user = auth.getUser();
+        Response res = null;
+
+        final PageMode mode = PageMode.get(modeStr);
+        PageMode.setPageMode(request, mode);
+        try {
+
+            final String html = this.htmlPageAssetRenderedAPI.getPageHtml(request, response, user, uri, mode);
+            final Response.ResponseBuilder responseBuilder = Response.ok(html);
+            responseBuilder.header("Access-Control-Expose-Headers", "Authorization");
+            responseBuilder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, " +
+                    "Content-Type, " + "Accept, Authorization");
+            res = responseBuilder.build();
+        } catch (DotSecurityException e) {
+            PageMode.setPageMode(request, PageMode.ADMIN_MODE);
+            final String errorMsg = "The user does not have the required permissions (" + e.getMessage() + ")";
+            Logger.error(this, errorMsg, e);
+            res = ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
+        } catch (DotDataException e) {
+            final String errorMsg = "An error occurred when accessing the page information (" + e.getMessage() + ")";
+            Logger.error(this, e.getMessage(), e);
+            res = ExceptionMapperUtil.createResponse(null, errorMsg);
+        } catch (Exception e) {
+            final String errorMsg = "An internal error occurred (" + e.getMessage() + ")";
+            Logger.error(this, errorMsg, e);
+            res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+        return res;
+    }
 }

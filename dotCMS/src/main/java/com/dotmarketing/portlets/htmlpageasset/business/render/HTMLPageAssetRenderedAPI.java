@@ -62,4 +62,6 @@ public interface HTMLPageAssetRenderedAPI {
     public PageView getPageMetadata(final HttpServletRequest request, final HttpServletResponse
             response, final User user, final String uri, PageMode pageMode) throws DotSecurityException,
             DotDataException;
+
+    public String getPageHtml(HttpServletRequest request, HttpServletResponse response, User user, String uri, PageMode mode) throws DotSecurityException, DotDataException;
 }
