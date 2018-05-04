@@ -207,6 +207,7 @@ export class DotEditContentHtmlService {
 
     private addContentToolBars(): void {
         const doc = this.getEditPageDocument();
+
         this.dotEditContentToolbarHtmlService
             .addContainerToolbar(doc)
             .then(() => {
@@ -271,22 +272,24 @@ export class DotEditContentHtmlService {
     }
 
     private bindContainersEvents(): void {
-        const addButtons = Array.from(this.getEditPageDocument().querySelectorAll('.dotedit-container__add:not([disabled])'));
-        addButtons.forEach((button: Node) => {
-            const parent = button.parentElement;
-            const menuItems = Array.from(parent.querySelectorAll('.dotedit-container__menu-item a'));
+        const addButtons = Array.from(this.getEditPageDocument().querySelectorAll('.dotedit-menu__button:not([disabled])'));
 
-            this.bindEventToAddContentSubMenu(button);
+        addButtons.forEach((button: HTMLElement) => {
+            const menuList = button.nextElementSibling;
+            const menuItems = Array.from(menuList.querySelectorAll('.dotedit-menu__item a'));
+
+            this.bindEventToSubMenu(button);
+
             menuItems.forEach((menuItem: HTMLElement) => {
-                this.bindButtonsEvent(menuItem, 'add');
+                this.bindButtonsEvent(menuItem, menuItem.dataset.dotAction);
             });
         });
     }
 
-    private bindEventToAddContentSubMenu(button: Node): void {
+    private bindEventToSubMenu(button: HTMLElement): void {
         button.addEventListener('click', (_event) => {
-            this.closeContainersToolBarMenu(button.parentElement);
-            button.parentElement.classList.toggle('active');
+            this.closeContainersToolBarMenu(button.nextElementSibling);
+            button.nextElementSibling.classList.toggle('active');
         });
     }
 
@@ -295,7 +298,7 @@ export class DotEditContentHtmlService {
 
         doc.addEventListener('click', ($event: MouseEvent) => {
             const target = <HTMLElement>$event.target;
-            if (!target.classList.contains('dotedit-container__add')) {
+            if (!target.classList.contains('dotedit-menu__button')) {
                 this.closeContainersToolBarMenu();
             }
         });
@@ -303,7 +306,7 @@ export class DotEditContentHtmlService {
 
     private closeContainersToolBarMenu(activeElement?: Node): void {
         const doc = this.getEditPageDocument();
-        const activeToolBarMenus = Array.from(doc.querySelectorAll('.dotedit-container__toolbar.active'));
+        const activeToolBarMenus = Array.from(doc.querySelectorAll('.dotedit-menu__list.active'));
         activeToolBarMenus.forEach((toolbar: HTMLElement) => {
             if (activeElement !== toolbar) {
                 toolbar.classList.remove('active');

@@ -74,8 +74,8 @@ describe('DotEditContentToolbarHtmlService', () => {
                     const htmlElement: HTMLHtmlElement = testDoc.getElementsByTagName('html')[0];
                     htmlElement.appendChild(dummyContainer);
                     dotEditContentToolbarHtmlService.addContainerToolbar(testDoc);
-                    menuItems = testDoc.querySelectorAll('.dotedit-container__menu-item a');
-                    const menuItemsLabels = Array.from(menuItems).map(item => item.textContent.replace(/\s/g, ''));
+                    menuItems = testDoc.querySelectorAll('.dotedit-menu__item a');
+                    const menuItemsLabels = Array.from(menuItems).map((item) => item.textContent.replace(/\s/g, ''));
 
                     expect(menuItemsLabels).toEqual(['Content', 'Widget', 'Form']);
                     expect(menuItems.length).toEqual(3);
@@ -86,8 +86,8 @@ describe('DotEditContentToolbarHtmlService', () => {
                     const htmlElement: HTMLHtmlElement = testDoc.getElementsByTagName('html')[0];
                     htmlElement.appendChild(dummyContainer);
                     dotEditContentToolbarHtmlService.addContainerToolbar(testDoc);
-                    menuItems = testDoc.querySelectorAll('.dotedit-container__menu-item a');
-                    const menuItemsLabels = Array.from(menuItems).map(item => item.textContent.replace(/\s/g, ''));
+                    menuItems = testDoc.querySelectorAll('.dotedit-menu__item a');
+                    const menuItemsLabels = Array.from(menuItems).map((item) => item.textContent.replace(/\s/g, ''));
 
                     expect(menuItemsLabels).toEqual(['Widget', 'Form']);
                     expect(menuItems.length).toEqual(2);
@@ -98,8 +98,8 @@ describe('DotEditContentToolbarHtmlService', () => {
                     const htmlElement: HTMLHtmlElement = testDoc.getElementsByTagName('html')[0];
                     htmlElement.appendChild(dummyContainer);
                     dotEditContentToolbarHtmlService.addContainerToolbar(testDoc);
-                    menuItems = testDoc.querySelectorAll('.dotedit-container__menu-item a');
-                    const menuItemsLabels = Array.from(menuItems).map(item => item.textContent.replace(/\s/g, ''));
+                    menuItems = testDoc.querySelectorAll('.dotedit-menu__item a');
+                    const menuItemsLabels = Array.from(menuItems).map((item) => item.textContent.replace(/\s/g, ''));
 
                     expect(menuItemsLabels).toEqual(['Widget']);
                     expect(menuItems.length).toEqual(1);
@@ -122,7 +122,7 @@ describe('DotEditContentToolbarHtmlService', () => {
 
                 containerEl = testDoc.querySelector('[data-dot-object="container"]');
                 addButtonEl = testDoc.querySelector('.dotedit-container__add');
-                menuItems = testDoc.querySelectorAll('.dotedit-container__menu-item');
+                menuItems = testDoc.querySelectorAll('.dotedit-menu__item');
             });
 
             it('should create container toolbar disabled', () => {
@@ -142,31 +142,64 @@ describe('DotEditContentToolbarHtmlService', () => {
     });
 
     describe('contentlet toolbar', () => {
+        let htmlElement: HTMLHtmlElement;
+
         beforeEach(() => {
             testDoc = document.implementation.createDocument('http://www.w3.org/1999/xhtml', 'html', null);
             dummyContainer = testDoc.createElement('div');
-            const htmlElement: HTMLHtmlElement = testDoc.getElementsByTagName('html')[0];
-            dummyContainer.innerHTML = `
-                <div data-dot-object="container">
-                    <div data-dot-object="contentlet" data-dot-can-edit="false">
-                        <div class="large-column"></div>
+            htmlElement = testDoc.getElementsByTagName('html')[0];
+        });
+
+        describe('default', () => {
+            beforeEach(() => {
+                dummyContainer.innerHTML = `
+                    <div data-dot-object="container">
+                        <div data-dot-object="contentlet" data-dot-can-edit="false">
+                            <div class="large-column"></div>
+                        </div>
                     </div>
-                </div>
-            `;
-            htmlElement.appendChild(dummyContainer);
-            dotEditContentToolbarHtmlService.addContentletMarkup(testDoc);
+                `;
+                htmlElement.appendChild(dummyContainer);
+                dotEditContentToolbarHtmlService.addContentletMarkup(testDoc);
+            });
+
+            it('should create buttons', () => {
+                expect(testDoc.querySelectorAll('.dotedit-contentlet__drag').length).toEqual(1);
+                expect(testDoc.querySelectorAll('.dotedit-contentlet__edit').length).toEqual(1);
+                expect(testDoc.querySelectorAll('.dotedit-contentlet__remove').length).toEqual(1);
+                expect(testDoc.querySelectorAll('.dotedit-contentlet__code').length).toEqual(0);
+            });
+
+            it('should have edit button disabled', () => {
+                expect(testDoc.querySelector('.dotedit-contentlet__edit').classList.contains('dotedit-contentlet__disabled')).toBe(true);
+            });
+
+            xit('should bind events');
         });
 
-        it('should create buttons', () => {
-            expect(testDoc.querySelectorAll('.dotedit-contentlet__drag').length).toEqual(1);
-            expect(testDoc.querySelectorAll('.dotedit-contentlet__edit').length).toEqual(1);
-            expect(testDoc.querySelectorAll('.dotedit-contentlet__remove').length).toEqual(1);
-        });
+        describe('with vtl files', () => {
+            beforeEach(() => {
+                dummyContainer.innerHTML = `
+                    <div data-dot-object="container">
+                        <div data-dot-object="contentlet" data-dot-can-edit="false">
+                            <div data-dot-object="vtl-file" data-dot-inode="123" data-dot-url="/news/personalized-news-listing.vtl" data-dot-can-edit="true"></div>
+                            <div class="large-column"></div>
+                        </div>
+                    </div>
+                `;
+                htmlElement.appendChild(dummyContainer);
+                dotEditContentToolbarHtmlService.addContentletMarkup(testDoc);
+            });
 
-        it('should have edit button disabled', () => {
-            expect(testDoc.querySelector('.dotedit-contentlet__edit').classList.contains('dotedit-contentlet__disabled')).toBe(true);
-        });
+            it('should have button', () => {
+                expect(testDoc.querySelectorAll('.dotedit-contentlet__code').length).toEqual(1);
+            });
 
-        xit('should bind events');
+            it('should have submenu link', () => {
+                const links = testDoc.querySelectorAll('.dotedit-menu__item a');
+                expect(links.length).toEqual(1);
+                expect(links[0].textContent).toEqual('personalized-news-listing.vtl');
+            });
+        });
     });
 });

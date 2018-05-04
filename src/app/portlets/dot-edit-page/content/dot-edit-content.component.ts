@@ -234,9 +234,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy, OnSaveDeactiv
     reload(): void {
         this.dotPageStateService
             .get(this.route.snapshot.queryParams.url)
-            .catch((err: ResponseView) => {
-                return this.errorHandler(err);
-            })
+            .catch((err: ResponseView) => this.errorHandler(err))
             .takeUntil(this.destroy$)
             .subscribe((pageState: DotRenderedPageState) => {
                 this.setPageState(pageState);
@@ -273,10 +271,40 @@ export class DotEditContentComponent implements OnInit, OnDestroy, OnSaveDeactiv
 
         this.dotMenuService
             .getDotMenuId('content')
-            .takeUntil(this.destroy$)
+            .take(1)
             .subscribe((portletId: string) => {
-                // tslint:disable-next-line:max-line-length
-                const url = `/c/portal/layout?p_l_id=${portletId}&p_p_id=content&p_p_action=1&p_p_state=maximized&p_p_mode=view&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_content_cmd=edit&inode=${$event.dataset.dotInode}&referer=%2Fc%2Fportal%2Flayout%3Fp_l_id%3D${portletId}%26p_p_id%3Dcontent%26p_p_action%3D1%26p_p_state%3Dmaximized%26_content_struts_action%3D%2Fext%2Fcontentlet%2Fview_contentlets`;
+                const url = [
+                    `/c/portal/layout`,
+                    `?p_l_id=${portletId}`,
+                    `&p_p_id=content`,
+                    `&p_p_action=1`,
+                    `&p_p_state=maximized`,
+                    `&_content_inode=${$event.dataset.dotInode}`,
+                    `&_content_cmd=edit`,
+                    `&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet`
+                ].join('');
+
+                // TODO: this will get the title of the contentlet but will need and update to the endpoint to do it
+                this.dialogTitle = 'Edit Contentlet';
+                this.loadDialogEditor(url);
+            });
+    }
+
+    private editCode($event: any) {
+        this.dotMenuService
+            .getDotMenuId('site-browser')
+            .take(1)
+            .subscribe((portletId: string) => {
+                const url = [
+                    `/c/portal/layout`,
+                    `?p_l_id=${portletId}`,
+                    `&p_p_id=site-browser`,
+                    `&p_p_action=1`,
+                    `&p_p_state=maximized`,
+                    `&_site_browser_inode=${$event.dataset.dotInode}`,
+                    `&_site_browser_cmd=edit`,
+                    `&_site_browser_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet`
+                ].join('');
 
                 // TODO: this will get the title of the contentlet but will need and update to the endpoint to do it
                 this.showDialog = true;
@@ -313,6 +341,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy, OnSaveDeactiv
     private iframeActionsHandler(event: any): Function {
         const eventsHandlerMap = {
             edit: this.editContentlet.bind(this),
+            code: this.editCode.bind(this),
             add: this.addContentlet.bind(this),
             remove: this.removeContentlet.bind(this),
             cancel: this.closeDialog.bind(this),
