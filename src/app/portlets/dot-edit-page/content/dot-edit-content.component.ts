@@ -284,8 +284,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy, OnSaveDeactiv
                     `&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet`
                 ].join('');
 
-                // TODO: this will get the title of the contentlet but will need and update to the endpoint to do it
-                this.dialogTitle = 'Edit Contentlet';
                 this.loadDialogEditor(url);
             });
     }
