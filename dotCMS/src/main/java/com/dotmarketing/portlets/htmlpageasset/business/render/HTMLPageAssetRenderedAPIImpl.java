@@ -103,8 +103,8 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .build(true);
     }
 
-    public String getPageHtml(HttpServletRequest request, HttpServletResponse response, User user, String uri,
-                              PageMode mode) throws DotSecurityException, DotDataException {
+    public String getPageHtml(final HttpServletRequest request, final HttpServletResponse response, final User user,
+                              final String uri, final PageMode mode) throws DotSecurityException, DotDataException {
         final Host host = resolveSite(request, user);
         final HTMLPageAsset page = getHtmlPageAsset(user, uri, mode, host);
 
@@ -117,10 +117,12 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .getPageHTML();
     }
 
-    private HTMLPageAsset getHtmlPageAsset(User user, String uri, PageMode mode, Host host) throws DotDataException, DotSecurityException {
+    private HTMLPageAsset getHtmlPageAsset(final User user, final String uri, final PageMode mode, final Host host)
+            throws DotDataException, DotSecurityException {
+
         final String pageUri = (UUIDUtil.isUUID(uri) ||( uri.length()>0 && '/' == uri.charAt(0))) ? uri : ("/" + uri);
 
-        HTMLPageAsset htmlPageAsset = (UUIDUtil.isUUID(pageUri)) ?
+        final HTMLPageAsset htmlPageAsset = (UUIDUtil.isUUID(pageUri)) ?
                 (HTMLPageAsset) this.htmlPageAssetAPI.findPage(pageUri, user, mode.respectAnonPerms) :
                 (HTMLPageAsset) this.htmlPageAssetAPI.getPageByPath(pageUri, host, this.languageAPI.getDefaultLanguage().getId(), mode.showLive);
 

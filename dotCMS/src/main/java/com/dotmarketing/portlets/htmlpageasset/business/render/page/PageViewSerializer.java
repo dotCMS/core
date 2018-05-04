@@ -32,7 +32,7 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
         jsonGenerator.writeRaw(json);
     }
 
-    protected Map<String, Object> getObjectMap(PageView pageView) {
+    protected Map<String, Object> getObjectMap(final PageView pageView) {
         final Template template = pageView.getTemplate();
 
         final Map pageViewMap = new HashMap<String, Object>();

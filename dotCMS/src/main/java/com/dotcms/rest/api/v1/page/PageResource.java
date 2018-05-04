@@ -166,7 +166,7 @@ public class PageResource {
                 request.getSession().setAttribute(WebKeys.CURRENT_DEVICE, deviceInode);
             }
 
-            PageView pageRendered = this.htmlPageAssetRenderedAPI.getPageRendered(request, response, user, uri, mode);
+            final PageView pageRendered = this.htmlPageAssetRenderedAPI.getPageRendered(request, response, user, uri, mode);
             final Response.ResponseBuilder responseBuilder = Response.ok(pageRendered);
             responseBuilder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, " +
                     "Content-Type, " + "Accept, Authorization");
