@@ -37,7 +37,8 @@ export const mockDotPage: DotPage = {
     systemHost: false,
     type: '',
     uri: '',
-    versionType: ''
+    versionType: '',
+    rendered: '<html></html>',
 };
 
 export const mockDotLayout: DotLayout = {
@@ -99,7 +100,6 @@ export const mockDotTemplateLayout: DotTemplate = {
 
 export const mockDotRenderedPage: DotRenderedPage = {
     containers: mockDotContainers,
-    html: '<html></html>',
     layout: mockDotLayout,
     page: mockDotPage,
     template: mockDotTemplate,

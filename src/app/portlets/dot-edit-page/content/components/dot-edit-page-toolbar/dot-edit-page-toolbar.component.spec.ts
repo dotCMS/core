@@ -127,9 +127,9 @@ describe('DotEditPageToolbarComponent', () => {
                     shortyLive: '',
                     shortyWorking: '',
                     workingInode: '',
-                    lockedBy: null
+                    lockedBy: null,
+                    rendered: '',
                 },
-                html: '',
                 layout: mockDotLayout,
                 canCreateTemplate: true,
                 viewAs: null
@@ -354,7 +354,6 @@ describe('DotEditPageToolbarComponent', () => {
             mockUser,
             {
                 page: unpublishedPage,
-                html: '',
                 layout: mockDotLayout,
                 canCreateTemplate: true,
                 viewAs: null

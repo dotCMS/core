@@ -6,8 +6,10 @@ import { DotRenderedPage } from '../portlets/dot-edit-page/shared/models/dot-ren
 import { mockDotLayout, mockDotPage } from './dot-rendered-page.mock';
 
 const mockDotRenderedPage: DotRenderedPage = {
-    page: mockDotPage,
-    html: '',
+    page: {
+        ...mockDotPage,
+        rendered: ''
+    },
     layout: mockDotLayout,
     canCreateTemplate: true,
     viewAs: null

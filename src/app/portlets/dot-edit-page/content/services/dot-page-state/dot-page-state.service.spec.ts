@@ -78,7 +78,7 @@ describe('DotPageStateService', () => {
             );
 
             expect(lastConnection[0].request.url).toContain('/api/content/lock/inode/999');
-            expect(lastConnection[1].request.url).toContain('/api/v1/page/renderHTML/an/url/test?mode=ADMIN_MODE');
+            expect(lastConnection[1].request.url).toContain('/api/v1/page/render/an/url/test?mode=ADMIN_MODE');
         });
 
         it('should set a page unlocked and preview mode', () => {
@@ -118,7 +118,7 @@ describe('DotPageStateService', () => {
             );
 
             expect(lastConnection[0].request.url).toContain('/api/content/unlock/inode/999');
-            expect(lastConnection[1].request.url).toContain('/api/v1/page/renderHTML/an/url/test?mode=PREVIEW');
+            expect(lastConnection[1].request.url).toContain('/api/v1/page/render/an/url/test?mode=PREVIEW');
         });
 
         it('should set a page preview mode and keep the lock', () => {
@@ -143,7 +143,7 @@ describe('DotPageStateService', () => {
                 )
             );
 
-            expect(lastConnection[0].request.url).toContain('/api/v1/page/renderHTML/an/url/test?mode=PREVIEW');
+            expect(lastConnection[0].request.url).toContain('/api/v1/page/render/an/url/test?mode=PREVIEW');
             expect(lastConnection[1]).toBeUndefined();
         });
     });
@@ -170,7 +170,7 @@ describe('DotPageStateService', () => {
                 )
             );
 
-            expect(lastConnection[0].request.url).toContain('/api/v1/page/renderHTML/hello/world?mode=EDIT_MODE');
+            expect(lastConnection[0].request.url).toContain('/api/v1/page/render/hello/world?mode=EDIT_MODE');
         });
 
         describe('locked by another user', () => {
@@ -199,7 +199,7 @@ describe('DotPageStateService', () => {
                         })
                     )
                 );
-                expect(lastConnection[0].request.url).toContain('/api/v1/page/renderHTML/test/123?mode=EDIT_MODE');
+                expect(lastConnection[0].request.url).toContain('/api/v1/page/render/test/123?mode=EDIT_MODE');
             });
 
             it('should get a locked page and set default state locked by another user', () => {
@@ -219,7 +219,7 @@ describe('DotPageStateService', () => {
                         })
                     )
                 );
-                expect(lastConnection[0].request.url).toContain('/api/v1/page/renderHTML/hola/mundo?mode=EDIT_MODE');
+                expect(lastConnection[0].request.url).toContain('/api/v1/page/render/hola/mundo?mode=EDIT_MODE');
             });
         });
     });

@@ -68,4 +68,5 @@ export interface DotPage {
     shortyLive: string;
     shortyWorking: string;
     workingInode: string;
+    rendered?: string;
 }

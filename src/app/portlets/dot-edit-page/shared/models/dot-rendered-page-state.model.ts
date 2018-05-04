@@ -35,7 +35,7 @@ export class DotRenderedPageState {
     }
 
     get html(): string {
-        return this.dotRenderedPage.html;
+        return this.dotRenderedPage.page.rendered;
     }
 
     get layout(): DotLayout {
@@ -66,11 +66,11 @@ export class DotRenderedPageState {
         this.dotRenderedPage = dotRenderedPageState;
     }
 
-    private getPageMode(page: DotPage, locked: boolean): PageMode {
-        return locked && page.canLock ? PageMode.EDIT : PageMode.PREVIEW;
+    private getPageMode(page: DotPage, locked: boolean, lockedByAnotherUser: boolean): PageMode {
+        return (locked && !lockedByAnotherUser) ? PageMode.EDIT : PageMode.PREVIEW;
     }
 
     private getDefaultMode(lockedByAnotherUser: boolean, page: DotPage, locked: boolean): PageMode {
-        return lockedByAnotherUser ? PageMode.PREVIEW : this.getPageMode(page, locked);
+        return lockedByAnotherUser ? PageMode.PREVIEW : this.getPageMode(page, locked, lockedByAnotherUser);
     }
 }

@@ -80,7 +80,7 @@ export class DotRenderHTMLService {
         return this.coreWebService
             .requestView({
                 method: RequestMethod.Get,
-                url: `v1/page/renderHTML/${options.url.replace(/^\//, '')}`,
+                url: `v1/page/render/${options.url.replace(/^\//, '')}`,
                 params: params
             })
             .pluck('bodyJsonObject');

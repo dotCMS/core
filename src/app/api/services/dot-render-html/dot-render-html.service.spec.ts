@@ -47,7 +47,7 @@ describe('DotRenderHTMLService', () => {
                 })
             )
         );
-        expect(lastConnection[0].request.url).toContain('/api/v1/page/renderHTML/about-us?mode=EDIT_MODE');
+        expect(lastConnection[0].request.url).toContain('/api/v1/page/render/about-us?mode=EDIT_MODE');
         expect(result).toEqual(mockDotRenderedPage);
     });
 
@@ -62,7 +62,7 @@ describe('DotRenderHTMLService', () => {
                 })
             )
         );
-        expect(lastConnection[0].request.url).toContain('/api/v1/page/renderHTML/about-us?mode=PREVIEW_MODE');
+        expect(lastConnection[0].request.url).toContain('/api/v1/page/render/about-us?mode=PREVIEW_MODE');
         expect(result).toEqual(mockDotRenderedPage);
     });
 
@@ -73,7 +73,7 @@ describe('DotRenderHTMLService', () => {
         lastConnection[0].mockRespond(new Response(new ResponseOptions({
             body: mockDotRenderedPage
         })));
-        expect(lastConnection[0].request.url).toContain('/api/v1/page/renderHTML/about-us?mode=ADMIN_MODE');
+        expect(lastConnection[0].request.url).toContain('/api/v1/page/render/about-us?mode=ADMIN_MODE');
         expect(result).toEqual(mockDotRenderedPage);
     });
 
@@ -92,7 +92,7 @@ describe('DotRenderHTMLService', () => {
                 })
             )
         );
-        expect(lastConnection[0].request.url).toContain('/api/v1/page/renderHTML/about-us?mode=EDIT_MODE');
+        expect(lastConnection[0].request.url).toContain('/api/v1/page/render/about-us?mode=EDIT_MODE');
         expect(result).toEqual(mockDotRenderedPage);
     });
 });
