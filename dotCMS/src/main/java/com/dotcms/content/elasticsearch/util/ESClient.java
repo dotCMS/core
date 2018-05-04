@@ -176,7 +176,9 @@ public class ESClient {
         final XContentBuilder builder = jsonBuilder().startObject()
                 .startObject("index");
 
-        builder.field("number_of_replicas",replicasMode.getNumberOfReplicas());
+        if(replicasMode.getNumberOfReplicas()>-1) {
+            builder.field("number_of_replicas", replicasMode.getNumberOfReplicas());
+        }
         builder.field("auto_expand_replicas",replicasMode.getAutoExpandReplicas()).endObject();
 
         settingsRequest.settings(builder.endObject().string(), XContentType.JSON);
