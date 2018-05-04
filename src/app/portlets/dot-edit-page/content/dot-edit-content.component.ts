@@ -44,7 +44,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy, OnSaveDeactiv
         height: null,
         width: null
     };
-    dialogTitle: string;
+    showDialog: boolean;
     isModelUpdated = false;
     pageState: DotRenderedPageState;
     showWhatsChanged = false;
@@ -128,7 +128,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy, OnSaveDeactiv
      * @memberof DotEditContentComponent
      */
     onHideDialog(): void {
-        this.dialogTitle = null;
+        this.showDialog = false;
         this.contentletActionsUrl = null;
     }
 
@@ -218,7 +218,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy, OnSaveDeactiv
             editContentletIframeEl.contentWindow.addEventListener('keydown', event => {
                 if (event.key === 'Escape') {
                     this.ngZone.run(() => {
-                        this.dialogTitle = null;
+                        this.showDialog = false;
                     });
                 }
             });
@@ -253,14 +253,14 @@ export class DotEditContentComponent implements OnInit, OnDestroy, OnSaveDeactiv
             uuid: $event.dataset.dotUuid
         };
         this.dotEditContentHtmlService.setContainterToAppendContentlet(container);
-        this.dialogTitle = this.dotMessageService.get('editpage.content.contentlet.add.content');
+        this.showDialog = true;
         this.loadDialogEditor(
             `/html/ng-contentlet-selector.jsp?ng=true&container_id=${$event.dataset.dotIdentifier}&add=${$event.dataset.dotAdd}`
         );
     }
 
     private closeDialog(): void {
-        this.dialogTitle = null;
+        this.showDialog = false;
         this.contentletActionsUrl = null;
     }
 
@@ -279,7 +279,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy, OnSaveDeactiv
                 const url = `/c/portal/layout?p_l_id=${portletId}&p_p_id=content&p_p_action=1&p_p_state=maximized&p_p_mode=view&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_content_cmd=edit&inode=${$event.dataset.dotInode}&referer=%2Fc%2Fportal%2Flayout%3Fp_l_id%3D${portletId}%26p_p_id%3Dcontent%26p_p_action%3D1%26p_p_state%3Dmaximized%26_content_struts_action%3D%2Fext%2Fcontentlet%2Fview_contentlets`;
 
                 // TODO: this will get the title of the contentlet but will need and update to the endpoint to do it
-                this.dialogTitle = 'Edit Contentlet';
+                this.showDialog = true;
                 this.loadDialogEditor(url);
             });
     }
@@ -301,7 +301,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy, OnSaveDeactiv
             .getMessages([
                 'editpage.content.contentlet.remove.confirmation_message.message',
                 'editpage.content.contentlet.remove.confirmation_message.header',
-                'editpage.content.contentlet.add.content',
                 'dot.common.message.saving',
                 'dot.common.message.saved',
                 'editpage.content.save.changes.confirmation.header',

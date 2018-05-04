@@ -33,6 +33,11 @@
 
 .dot-edit__page-dialog ::ng-deep {
     .ui-dialog {
+
+        .ui-dialog-titlebar{
+            padding: 0;
+        }
+
         .ui-dialog-content {
             height: 100% !important;
             padding: 0;
@@ -46,7 +51,7 @@
 
 .dot-edit__contentlet-iframe {
     width: 100%;
-    height: calc(100% - 44px);
+    height: 100%;
 }
 
 /*

@@ -31,9 +31,8 @@
 <p-dialog class="dot-edit__page-dialog"
     (onHide)="onHideDialog($event)"
     [draggable]="false"
-    [header]="dialogTitle"
     [height]="dialogSize.height"
-    [visible]="!!dialogTitle"
+    [visible]="showDialog"
     [width]="dialogSize.width"
     dismissableMask="true"
     modal="true">

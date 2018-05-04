@@ -590,7 +590,7 @@ describe('DotEditContentComponent', () => {
 
             describe('load iFrame content', () => {
                 beforeEach(() => {
-                    component.dialogTitle = 'test';
+                    component.showDialog = true;
                     event.target.contentDocument.body.innerHTML = '<html>';
                     component.onContentletActionLoaded(event);
                 });
@@ -601,15 +601,15 @@ describe('DotEditContentComponent', () => {
                     expect(event.target.contentWindow.ngEditContentletEvents).toBeDefined();
                 });
 
-                it('should capture Escape key and clear dialogTitle', () => {
+                it('should capture Escape key and set to false showDialog', () => {
                     keypressFunction({ key: 'Escape' });
-                    expect(component.dialogTitle).toEqual(null);
+                    expect(component.showDialog).toEqual(false);
                 });
 
-                it('should capture other key and do not clear dialogTitle', () => {
+                it('should capture other key and do not change the state of showDialog', () => {
                     component.onContentletActionLoaded(event);
                     keypressFunction({ key: 'other' });
-                    expect(component.dialogTitle).toEqual('test');
+                    expect(component.showDialog).toEqual(true);
                 });
             });
         });
