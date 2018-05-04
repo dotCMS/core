@@ -47,6 +47,10 @@ export class DotRouterService {
         this.router.navigate(['/public/login'], parameters);
     }
 
+    goToSiteBrowser(): void {
+        this.router.navigate(['/c/site-browser']);
+    }
+
     goToURL(url: string): void {
         this.router.navigate([url]);
     }
