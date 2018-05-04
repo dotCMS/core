@@ -149,8 +149,11 @@ export const EDIT_PAGE_CSS = `
     }
 
     .dotedit-contentlet__toolbar button {
-        margin-right: 8px;
         background-color: ${white};
+    }
+
+    .dotedit-contentlet__toolbar > * {
+        margin-right: 8px;
     }
 
     .dotedit-contentlet__toolbar .dotedit-contentlet__disabled {
@@ -253,11 +256,22 @@ export const EDIT_PAGE_CSS = `
 
     .dotedit-menu__item a:hover {
         background-color: #e7e7e7;
+        text-decoration: none;
     }
 
     .dotedit-menu__item a,
     .dotedit-menu__item a:visited {
         color: inherit;
         text-decoration: none;
+    }
+
+    .dotedit-menu__item--disabled a,
+    .dotedit-menu__item--disabled a:hover,
+    .dotedit-menu__item--disabled a:active,
+    .dotedit-menu__item--disabled a:focus,
+    .dotedit-menu__item--disabled a:visited {
+        color: ${grayLight};
+        pointer-events: none;
+        cursor: not-allowed;
     }
 `;

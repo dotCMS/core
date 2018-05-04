@@ -178,28 +178,53 @@ describe('DotEditContentToolbarHtmlService', () => {
         });
 
         describe('with vtl files', () => {
-            beforeEach(() => {
-                dummyContainer.innerHTML = `
-                    <div data-dot-object="container">
-                        <div data-dot-object="contentlet" data-dot-can-edit="false">
-                            <div data-dot-object="vtl-file" data-dot-inode="123" data-dot-url="/news/personalized-news-listing.vtl" data-dot-can-edit="true"></div>
-                            <div class="large-column"></div>
+
+            describe('enabled', () => {
+                beforeEach(() => {
+                    dummyContainer.innerHTML = `
+                        <div data-dot-object="container">
+                            <div data-dot-object="contentlet" data-dot-can-edit="false">
+                                <div data-dot-object="vtl-file" data-dot-inode="123" data-dot-url="/news/personalized-news-listing.vtl" data-dot-can-edit="true"></div>
+                                <div class="large-column"></div>
+                            </div>
                         </div>
-                    </div>
-                `;
-                htmlElement.appendChild(dummyContainer);
-                dotEditContentToolbarHtmlService.addContentletMarkup(testDoc);
+                    `;
+                    htmlElement.appendChild(dummyContainer);
+                    dotEditContentToolbarHtmlService.addContentletMarkup(testDoc);
+                });
+
+                it('should have button', () => {
+                    expect(testDoc.querySelectorAll('.dotedit-contentlet__code').length).toEqual(1);
+                });
+
+                it('should have submenu link', () => {
+                    const links = testDoc.querySelectorAll('.dotedit-menu__item a');
+                    expect(links.length).toEqual(1);
+                    expect(links[0].textContent).toEqual('personalized-news-listing.vtl');
+                });
             });
 
-            it('should have button', () => {
-                expect(testDoc.querySelectorAll('.dotedit-contentlet__code').length).toEqual(1);
+            describe('disabled', () => {
+                beforeEach(() => {
+                    dummyContainer.innerHTML = `
+                        <div data-dot-object="container">
+                            <div data-dot-object="contentlet" data-dot-can-edit="false">
+                                <div data-dot-object="vtl-file" data-dot-inode="123" data-dot-url="/news/personalized-news-listing.vtl" data-dot-can-edit="false"></div>
+                                <div class="large-column"></div>
+                            </div>
+                        </div>
+                    `;
+                    htmlElement.appendChild(dummyContainer);
+                    dotEditContentToolbarHtmlService.addContentletMarkup(testDoc);
+                });
+
+                it('should have submenu link', () => {
+                    const links = testDoc.querySelectorAll('.dotedit-menu__item');
+                    expect(links.length).toEqual(1);
+                    expect(links[0].classList.contains('dotedit-menu__item--disabled')).toBe(true);
+                });
             });
 
-            it('should have submenu link', () => {
-                const links = testDoc.querySelectorAll('.dotedit-menu__item a');
-                expect(links.length).toEqual(1);
-                expect(links[0].textContent).toEqual('personalized-news-listing.vtl');
-            });
         });
     });
 });

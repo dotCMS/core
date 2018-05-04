@@ -4,6 +4,7 @@ import { DotDOMHtmlUtilService } from './dot-dom-html-util.service';
 
 interface DotEditPopupMenuItem {
     label: string;
+    disabled?: boolean;
     dataset: {
         [propName: string]: string;
     };
@@ -149,6 +150,7 @@ export class DotEditContentToolbarHtmlService {
             },
             items: vtls.map((vtl: HTMLElement) => {
                 return {
+                    disabled: vtl.dataset.dotCanEdit === 'false',
                     label: vtl.dataset.dotUrl.split('/').slice(-1)[0],
                     dataset: {
                         action: 'code',
@@ -217,8 +219,8 @@ export class DotEditContentToolbarHtmlService {
                 ${items
                     .map((item: DotEditPopupMenuItem) => {
                         return `
-                            <li class="dotedit-menu__item">
-                                <a ${this.getDotEditPopupMenuItemDataSet(item.dataset)} role="button">${item.label}</a>
+                            <li class="dotedit-menu__item ${item.disabled ? 'dotedit-menu__item--disabled' : ''}">
+                                <a href="#" ${this.getDotEditPopupMenuItemDataSet(item.dataset)} role="button">${item.label}</a>
                             </li>
                         `;
                     })
