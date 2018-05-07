@@ -112,7 +112,7 @@
                 store: myRoleReadStoreFilter,
                 pageSize:30,
                 searchDelay:300,
-                style: "width: 80%",
+                style: "width: 80%; margin-left: 5px;",
                 required:false,
                 onClick:function(){
                     var whoCanUseSelect = dijit.byId("whoCanUseSelect");
@@ -168,7 +168,7 @@
                 store: stateStore,
                 pageSize:30,
                 searchDelay:300,
-                style: "width: 80%",
+                style: "width: 80%; margin-left: 5px;",
                 required:false,
                 onClick:function(){
 
@@ -222,14 +222,11 @@
     </div>
 	<div class="portlet-toolbar__info">
 		<div class="inline-form">
-			<label font-size:85%; for="filterByWhoCanUseSelect"><%=LanguageUtil.get(pageContext, "Filter-By-Who-Can-Use")%> : 
-			<input id="filterByWhoCanUseSelect"/>
-			
+			<label style="display: flex;" font-size:85%; for="filterByWhoCanUseSelect"><%=LanguageUtil.get(pageContext, "Filter-By-Who-Can-Use")%>:
+			    <input id="filterByWhoCanUseSelect"/>
 			</label>
-		</div>
-		<div class="inline-form">
-			<input id="filterByContentTypeSelect"/>
-			<label font-size:85%; for="filterByContentTypeSelect"><%=LanguageUtil.get(pageContext, "Filter-By-Content-Type")%>
+			<label style="display: flex;" font-size:85%; for="filterByContentTypeSelect"><%=LanguageUtil.get(pageContext, "Filter-By-Content-Type")%>:
+				<input id="filterByContentTypeSelect"/>
 			</label>
 		</div>
 	</div>
