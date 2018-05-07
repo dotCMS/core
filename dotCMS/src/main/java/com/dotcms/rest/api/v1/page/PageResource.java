@@ -221,12 +221,6 @@ public class PageResource {
 
         Logger.debug(this, String.format("Saving layout: pageId -> %s layout-> %s", pageId, form.getLayout()));
 
-        if (LicenseManager.getInstance().isCommunity()) {
-
-            Logger.warn(this, String.format("License required to save layout: pageId -> %s layout-> %s", pageId, form.getLayout()));
-            throw new LicenseRequiredException();
-        }
-
         final InitDataObject auth = webResource.init(false, request, true);
         final User user = auth.getUser();
 
@@ -257,12 +251,7 @@ public class PageResource {
                     e.getClass().getCanonicalName(), request, pageId, form);
             Logger.error(this, errorMsg, e);
             res = ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
-        } catch (IOException e) {
-            final String errorMsg = String.format("IOException on PageResource.saveLayout, parameters:  %s, %s %s: ",
-                    request, pageId, form);
-            Logger.error(this, errorMsg, e);
-            res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-        }
+        } 
 
         return res;
     }

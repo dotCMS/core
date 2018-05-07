@@ -14,7 +14,7 @@ public class LicenseRequiredException extends HttpStatusCodeException {
         this("Need an enterprise license to run this functionality.");
     }
 
-    public LicenseRequiredException(String message) {
+    public LicenseRequiredException(final String message) {
         super(Response.Status.FORBIDDEN, ERROR_KEY, message);
     }
 }

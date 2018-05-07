@@ -3,8 +3,10 @@ package com.dotmarketing.portlets.templates.business;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 
+import com.dotcms.rest.exception.LicenseRequiredException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -188,6 +190,13 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	@WrapInTransaction
 	public Template saveTemplate(Template template, Host destination, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		boolean existingId=false, existingInode=false;
+
+		if (template.isAnonymous() && LicenseManager.getInstance().isCommunity()) {
+
+			Logger.warn(this, String.format("License required to save layout: template -> %s", template));
+			throw new LicenseRequiredException();
+		}
+
 	    if(UtilMethods.isSet(template.getIdentifier())) {
 		    Identifier ident=APILocator.getIdentifierAPI().find(template.getIdentifier());
 		    existingId = ident==null || !UtilMethods.isSet(ident.getId());
