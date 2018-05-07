@@ -5,22 +5,15 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
- * Restricts the JSON conversion of specific data in the Contentlet object.
+ * Restricts the JSON conversion of specific data in the {@link com.dotmarketing.portlets.templates.model.Template} object.
  *
- * @author Will Ezell
- * @version 4.2
- * @since Oct 9, 2017
  */
-abstract class ContentletMixIn {
+abstract class WebAssetMixIn {
 
     @JsonIgnore
     public abstract Permissionable getParentPermissionable();
 
     @JsonIgnore
-    public abstract Structure getStructure();
-
-    @JsonIgnore
     public abstract Structure getMap();
-
 
 }

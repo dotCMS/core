@@ -22,6 +22,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.personas.model.IPersona;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -36,6 +37,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -53,6 +55,7 @@ public class HTMLPageAssetRenderedBuilder {
     private final TemplateAPI templateAPI;
     private final ContentletAPI contentletAPI;
     private final LayoutAPI layoutAPI;
+    private final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
 
     private final ContainerRenderedBuilder containerRenderedBuilder;
 
@@ -90,37 +93,59 @@ public class HTMLPageAssetRenderedBuilder {
         return this;
     }
 
-    public HTMLPageAssetRendered build() throws DotDataException, IOException, DotSecurityException {
+    public PageView build(final boolean rendered) throws DotDataException, DotSecurityException {
         final ContentletVersionInfo info = APILocator.getVersionableAPI().
                 getContentletVersionInfo(htmlPageAsset.getIdentifier(), htmlPageAsset.getLanguageId());
 
-        HTMLPageAssetInfo htmlPageAssetInfo = getHTMLPageAssetInfo(info);
+        final HTMLPageAssetInfo htmlPageAssetInfo = getHTMLPageAssetInfo(info);
         final Template template = getTemplate();
+        final TemplateLayout layout = template.isDrawed() ? DotTemplateTool.themeLayout(template.getInode()) : null;
+
+        if (!rendered) {
+            final List<ContainerRendered> containers = this.containerRenderedBuilder.getContainers(template);
+            return new PageView(site, template, containers, htmlPageAssetInfo, layout);
+        } else {
+            final PageMode mode = PageMode.get(request);
+            final Context velocityContext = VelocityUtil.getWebContext(request, response);
+
+            final List<ContainerRendered> containers = this.containerRenderedBuilder.getContainersRendered(template,
+                    velocityContext, mode);
+            final boolean canCreateTemplates = layoutAPI.doesUserHaveAccessToPortlet("templates", user);
+            final String pageHTML = this.getPageHTML();
+            final boolean canEditTemplate = this.permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(), user);
+
+            return new HTMLPageAssetRendered(site, template, containers, htmlPageAssetInfo, layout, pageHTML,
+                    canCreateTemplates, canEditTemplate, this.getViewAsStatus()
+            );
+        }
+    }
+
+    @CloseDB
+    public String getPageHTML() throws DotSecurityException, DotDataException {
 
         final PageMode mode = PageMode.get(request);
-        final Context velocityContext = VelocityUtil.getWebContext(request, response);
 
-        return new HTMLPageAssetRendered()
-            .setHtml(this.getPageHTML())
-            .setPageInfo(htmlPageAssetInfo)
-            .setContainers(this.containerRenderedBuilder.getContainersRendered(template, velocityContext, mode))
-            .setLayout(template.isDrawed() ? DotTemplateTool.themeLayout(template.getInode()) :  null)
-            .setViewAs(this.getViewAsStatus())
-            .setCanCreateTemplate(layoutAPI.doesUserHaveAccessToPortlet("templates", user))
-            .setCanEditTemplate(this.permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(), user))
-            .setTemplate(template);
+        if(mode.isAdmin ) {
+            APILocator.getPermissionAPI().checkPermission(htmlPageAsset, PermissionLevel.READ, user);
+        }
+
+        return VelocityModeHandler.modeHandler(mode, request, response, htmlPageAsset.getURI(), site).eval();
     }
 
     private Template getTemplate() throws DotDataException {
         try {
-            return this.templateAPI.findWorkingTemplate(htmlPageAsset.getTemplateId(),
-                    APILocator.getUserAPI().getSystemUser(), false);
+            final PageMode mode = PageMode.get(request);
+            final User systemUser = APILocator.getUserAPI().getSystemUser();
+
+            return mode.showLive ?
+                    (Template) this.versionableAPI.findLiveVersion(htmlPageAsset.getTemplateId(), systemUser, mode.respectAnonPerms) :
+                    (Template) this.versionableAPI.findWorkingVersion(htmlPageAsset.getTemplateId(), systemUser, mode.respectAnonPerms);
         } catch (DotSecurityException e) {
             return null;
         }
     }
 
-    private HTMLPageAssetInfo getHTMLPageAssetInfo(ContentletVersionInfo info) throws DotDataException {
+    private HTMLPageAssetInfo getHTMLPageAssetInfo(final ContentletVersionInfo info) throws DotDataException {
         HTMLPageAssetInfo htmlPageAssetInfo = new HTMLPageAssetInfo()
             .setPage(this.htmlPageAsset)
             .setWorkingInode(info.getWorkingInode())
@@ -141,7 +166,7 @@ public class HTMLPageAssetRenderedBuilder {
         return htmlPageAssetInfo;
     }
 
-    private String getLockedByUserName(ContentletVersionInfo info) throws DotDataException {
+    private String getLockedByUserName(final ContentletVersionInfo info) throws DotDataException {
         try {
             return userAPI.loadUserById(info.getLockedBy()).getFullName();
         } catch (DotSecurityException e) {
@@ -156,20 +181,6 @@ public class HTMLPageAssetRenderedBuilder {
         } catch (DotLockException e) {
             return false;
         }
-    }
-
-
-
-    @CloseDB
-    private String getPageHTML() throws DotSecurityException, DotDataException, IOException {
-
-        final PageMode mode = PageMode.get(request);
-
-        if(mode.isAdmin ) {
-            APILocator.getPermissionAPI().checkPermission(htmlPageAsset, PermissionLevel.READ, user);
-        }
-
-        return VelocityModeHandler.modeHandler(mode, request, response, htmlPageAsset.getURI(), site).eval();
     }
 
     private ViewAsPageStatus getViewAsStatus()

@@ -1,5 +1,8 @@
 package com.dotcms.rest.api.v1.contenttype;
 
+import static com.dotcms.util.CollectionsUtils.imap;
+import static com.dotcms.util.CollectionsUtils.list;
+
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -13,13 +16,13 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.LocaleUtil;
-
-import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
-import java.util.*;
-
-import static com.dotcms.util.CollectionsUtils.imap;
-import static com.dotcms.util.CollectionsUtils.list;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Contentlet helper.
@@ -69,7 +72,7 @@ public class ContentTypeHelper implements Serializable {
         final InitDataObject initData = this.webResource.init(null, true, request, true, null); // should logged in
         final User user = initData.getUser();
 
-        List<ContentType> types = APILocator.getContentTypeAPI(user, true).findAll();
+        List<ContentType> types = APILocator.getContentTypeAPI(user, false).findAll();
         List<BaseContentTypesView> result = list();
 
 

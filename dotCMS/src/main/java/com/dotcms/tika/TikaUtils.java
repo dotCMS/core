@@ -123,7 +123,7 @@ public class TikaUtils {
 
                 final File binFile = APILocator.getContentletAPI()
                         .getBinaryFile(contentlet.getInode(), FileAssetAPI.BINARY_FIELD,
-                                APILocator.getUserAPI().getSystemUser());
+                                this.systemUser);
                 if (binFile != null) {
 
                     //Parse the metadata from this file
@@ -193,16 +193,19 @@ public class TikaUtils {
 
             }
         } catch (IOException ioExc) {
-            try {
-                //On error lets try a fallback operation
-                metaMap = fallbackParse(binFile, contentMetadataFile, ioExc);
-            } catch (Exception e) {
-                logError(binFile, e);
+            if (isZeroByteFileException(ioExc.getCause())) {
+                logWarning(binFile, ioExc.getCause());
+            } else {
+                try {
+                    //On error lets try a fallback operation
+                    metaMap = fallbackParse(binFile, contentMetadataFile, ioExc);
+                } catch (Exception e) {
+                    logError(binFile, e);
+                }
             }
         } catch (Exception e) {
 
-            if (e.getClass().getCanonicalName()
-                    .equals(TikaProxyService.EXCEPTION_ZERO_BYTE_FILE_EXCEPTION)) {
+            if (isZeroByteFileException(e)) {
                 logWarning(binFile, e);
             } else {
                 logError(binFile, e);
@@ -293,7 +296,7 @@ public class TikaUtils {
                     String lowered = new String(buf);
                     lowered = lowered.toLowerCase();
                     bytes = lowered.getBytes(StandardCharsets.UTF_8);
-                    out.write(bytes, 0, count);
+                    out.write(bytes, 0, bytes.length);
                     numOfChunks--;
                 } while ((count = fullText.read(buf)) > 0 && numOfChunks > 0);
             } finally {
@@ -421,16 +424,21 @@ public class TikaUtils {
         return translateMeta;
     }
 
-    private void logWarning(final File binFile, Exception e) {
-        Logger.warn(this.getClass(),
-                String.format("Could not parse file metadata for file [%s] [%s]",
-                        binFile.getAbsolutePath(), e.getMessage()));
+    private boolean isZeroByteFileException(Throwable exception) {
+        return null != exception && exception.getClass().getCanonicalName()
+                .equals(TikaProxyService.EXCEPTION_ZERO_BYTE_FILE_EXCEPTION);
     }
 
-    private void logError(final File binFile, Exception e) {
+    private void logWarning(final File binFile, Throwable exception) {
+        Logger.warn(this.getClass(),
+                String.format("Could not parse file metadata for file [%s] [%s]",
+                        binFile.getAbsolutePath(), exception.getMessage()));
+    }
+
+    private void logError(final File binFile, Throwable exception) {
         Logger.error(this.getClass(),
                 String.format("Could not parse file metadata for file [%s] [%s]",
-                        binFile.getAbsolutePath(), e.getMessage()), e);
+                        binFile.getAbsolutePath(), exception.getMessage()), exception);
     }
 
 }

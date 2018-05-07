@@ -8,6 +8,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRendered;
+import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
 
@@ -46,7 +47,7 @@ public class VelocityNavigateEditMode extends VelocityEditMode {
     @Override
     public void serve(final OutputStream out) throws DotDataException, IOException, DotSecurityException {
         final User user = APILocator.getLoginServiceAPI().getLoggedInUser();
-        final HTMLPageAssetRendered htmlPageAssetRendered = htmlPageAssetRenderedAPI.getPageRendered(this.request,
+        final PageView htmlPageAssetRendered = htmlPageAssetRenderedAPI.getPageRendered(this.request,
                 this.response, user, this.uri, PageMode.EDIT_MODE);
         final ObjectWriter objectWriter = new ObjectMapper().writer().withDefaultPrettyPrinter();
         final String renderedPageString = objectWriter.writeValueAsString(htmlPageAssetRendered)
