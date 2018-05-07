@@ -39,9 +39,9 @@ public class PermissionedWebAssetUtil {
 
 	/**
 	 * THIS METHOD WILL HIT DB AT LEAST ONCE. It loads the templatesIds to load then trys to load from Cache or go back
-	 * to DB using Hibernate to load the ones not in cache with a single Hibernate query (if there are more then 500 it will actually go back to 
-	 * db for each 500 as it does an IN (..)).  
-	 * NOTE: Returns working templates 
+	 * to DB using Hibernate to load the ones not in cache with a single Hibernate query (if there are more then 500 it will actually go back to
+	 * db for each 500 as it does an IN (..)).
+	 * NOTE: Returns working templates
 	 * @param searchString - Can be null or empty. Can be used as a filter. Will Search Template TITLE and Host (if searchHost is True)
 	 * @param dbColSort - Name of the DB Column to sort by. If left null or empty will sort by template name by default
 	 * @param offset
@@ -50,9 +50,11 @@ public class PermissionedWebAssetUtil {
 	 * @param user
 	 * @param respectFrontEndPermissions
 	 * @return
-	 * @throws DotSecurityException 
-	 * @throws DotDataException 
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 * @deprecated use {@link com.dotmarketing.portlets.templates.business.TemplateAPI#findTemplatesUserCanUse(User, String, String, boolean, int, int)} instead
 	 */
+	@Deprecated
 	public static List<Template> findTemplatesForLimitedUser(String searchString, String hostName, boolean searchHost,String dbColSort ,int offset, int limit,int permission, User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException{
 		//		PermissionAPI perAPI = APILocator.getPermissionAPI();
 		//		UserAPI uAPI = APILocator.getUserAPI();
@@ -103,7 +105,7 @@ public class PermissionedWebAssetUtil {
 
 		List<String> tIds = queryForAssetIds("template, identifier, inode, template_version_info ",
 		        new String[] {Template.class.getCanonicalName(), TemplateLayout.class.getCanonicalName()},
-		        "template.inode", 
+		        "template.inode",
 		        "identifier.id",
 		        "template.identifier = identifier.id and inode.inode = template.inode and " +
 		            "identifier.id=template_version_info.identifier and template_version_info.working_inode=template.inode and " +
@@ -153,13 +155,13 @@ public class PermissionedWebAssetUtil {
 		List<ContentType> listContentTypes = APILocator.getContentTypeAPI(user).search(searchString,baseType, dbColSort, limit, offset);
 		return new StructureTransformer(listContentTypes).asStructureList();
 	}
-	
+
 	/**
 	 * Returns the list of {@link Container} objects that the current user has
 	 * access to. This will retrieve a final list of results with a single
 	 * query, instead of programmatically traversing the total list of
 	 * containers and then filtering it to get the permissioned objects from it.
-	 * 
+	 *
 	 * @param searchString
 	 *            - Can be null or empty. It is used as a filter to search for
 	 *            container's "title".
@@ -192,7 +194,11 @@ public class PermissionedWebAssetUtil {
 	 * @throws DotSecurityException
 	 *             - If the current user does not have permission to perform the
 	 *             required operation.
+	 *
+	 * @deprecated use {@link com.dotmarketing.portlets.containers.business.ContainerAPI#findContainers(User, boolean, Map, String, String, String, String, int, int, String)} instead
+	 *
 	 */
+	@Deprecated
 	public static List<Container> findContainersForLimitedUser(
 			String searchString, String hostName, boolean searchHost,
 			String dbColSort, int offset, int limit, int permission, User user,
