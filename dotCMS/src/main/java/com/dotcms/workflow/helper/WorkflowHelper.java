@@ -1,5 +1,8 @@
 package com.dotcms.workflow.helper;
 
+import static com.dotcms.rest.api.v1.authentication.ResponseUtil.getFormattedMessage;
+import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -7,13 +10,23 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.v1.workflow.WorkflowDefaultActionView;
-import com.dotcms.workflow.form.*;
+import com.dotcms.workflow.form.IWorkflowStepForm;
+import com.dotcms.workflow.form.WorkflowActionForm;
+import com.dotcms.workflow.form.WorkflowActionStepBean;
+import com.dotcms.workflow.form.WorkflowReorderBean;
+import com.dotcms.workflow.form.WorkflowSchemeForm;
+import com.dotcms.workflow.form.WorkflowStepAddForm;
+import com.dotcms.workflow.form.WorkflowStepUpdateForm;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.exception.*;
+import com.dotmarketing.exception.AlreadyExistException;
+import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet;
@@ -33,13 +46,18 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang.time.StopWatch;
 
-import java.io.IOException;
-import java.util.*;
-
-import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
+//import static com.dotcms.rest.api.v1.authentication.ResponseUtil.*;
 
 
 /**
@@ -314,12 +332,14 @@ public class WorkflowHelper {
     public WorkflowAction findAction(final String actionId, final User user) throws DotDataException, DotSecurityException{
 
         if (!UtilMethods.isSet(actionId)) {
-            throw new IllegalArgumentException("Missing required parameter actionId.");
+            final String exceptionMessage = getFormattedMessage(user.getLocale(),"Workflow-required-param-actionId",actionId);
+            throw new IllegalArgumentException(exceptionMessage);
         }
 
         final WorkflowAction action = this.workflowAPI.findAction(actionId, user);
         if(action == null){
-           throw new DoesNotExistException("Workflow-does-not-exists-action");
+           final String exceptionMessage = getFormattedMessage(user.getLocale(),"Workflow-does-not-exists-action-by-actionId",actionId);
+           throw new DoesNotExistException(exceptionMessage);
         }
         return action;
     }
@@ -335,13 +355,20 @@ public class WorkflowHelper {
      */
     public WorkflowAction findAction(final String actionId, final String stepId, final User user) throws DotDataException, DotSecurityException{
 
-        if (!UtilMethods.isSet(actionId) || !UtilMethods.isSet(stepId)) {
-            throw new IllegalArgumentException("Missing required parameter actionId or stepId.");
+        if (!UtilMethods.isSet(actionId)) {
+            final String exceptionMessage = getFormattedMessage(user.getLocale(),"Workflow-required-param-actionId",actionId);
+            throw new IllegalArgumentException(exceptionMessage);
+        }
+
+        if (!UtilMethods.isSet(stepId)) {
+            final String exceptionMessage = getFormattedMessage(user.getLocale(),"Workflow-required-param-stepId",stepId);
+            throw new IllegalArgumentException(exceptionMessage);
         }
 
         final WorkflowAction action = this.workflowAPI.findAction(actionId, stepId, user);
         if(action == null){
-            throw new DoesNotExistException("Workflow-does-not-exists-action");
+            final String exceptionMessage = getFormattedMessage(user.getLocale(),"Workflow-does-not-exists-action-by-actionId-stepId",actionId, stepId);
+            throw new DoesNotExistException(exceptionMessage);
         }
         return action;
     }
@@ -432,17 +459,15 @@ public class WorkflowHelper {
                             final User user)  {
 
         final WorkflowStep step;
-
         try {
-
             Logger.debug(this, () -> "Looking for the stepId: " + stepId);
             step = this.workflowAPI.findStep(stepId);
-
             Logger.debug(this, () -> "Reordering the stepId: "  + stepId +
-                            ", order: " + order);
+                    ", order: " + order);
             this.workflowAPI.reorderStep(step, order, user);
+        }catch (DoesNotExistException dne){
+            throw dne;
         } catch (DotDataException | AlreadyExistException | DotSecurityException e) {
-
             Logger.error(this, e.getMessage());
             Logger.debug(this, e.getMessage(), e);
             throw new DotWorkflowException(e.getMessage(), e);
@@ -898,6 +923,30 @@ public class WorkflowHelper {
     } // findActionsByScheme.
 
     /**
+     * This method performs an additional check to verify if the action we're attempting to update truly exists
+     * if it does not a new DoesNotExistException is thrown
+     * if the action is valid the regular saveAction takes place
+     * @param actionId String
+     * @param workflowActionForm WorkflowActionForm
+     * @param user User
+     * @return WorkflowAction
+     */
+    @WrapInTransaction
+    public WorkflowAction updateAction(final String actionId, final WorkflowActionForm workflowActionForm, final User user) {
+        WorkflowAction action = null;
+        try {
+            if(workflowAPI.findAction(actionId, user) != null){
+               action = saveAction(actionId, workflowActionForm, user);
+            } else {
+                throw new DoesNotExistException("Workflow-does-not-exists-action");
+            }
+        } catch (DotDataException | DotSecurityException e) {
+            throw new DotWorkflowException(e.getMessage(), e);
+        }
+        return action;
+    }
+
+    /**
      * Save a WorkflowActionForm returning the WorkflowAction created.
      * A WorkflowActionForm can send a stepId in that case the Action will be associated to the Step in the same transaction.
      * @param actionId When present an update operation takes place otherwise an insert is executed
@@ -905,7 +954,7 @@ public class WorkflowHelper {
      * @return WorkflowAction (workflow action created)
      */
     @WrapInTransaction
-    public WorkflowAction save (final String actionId, final WorkflowActionForm workflowActionForm, final User user) {
+    public WorkflowAction saveAction(final String actionId, final WorkflowActionForm workflowActionForm, final User user) {
 
         String actionNextAssign     = workflowActionForm.getActionNextAssign();
         if (actionNextAssign != null && actionNextAssign.startsWith("role-")) {
@@ -992,9 +1041,9 @@ public class WorkflowHelper {
      * @param user
      * @return
      */
-    public WorkflowAction save (final WorkflowActionForm workflowActionForm, final User user) {
+    public WorkflowAction saveAction(final WorkflowActionForm workflowActionForm, final User user) {
         final String actionId = workflowActionForm.getActionId();
-        return save(actionId, workflowActionForm, user);
+        return saveAction(actionId, workflowActionForm, user);
     }
 
     @WrapInTransaction

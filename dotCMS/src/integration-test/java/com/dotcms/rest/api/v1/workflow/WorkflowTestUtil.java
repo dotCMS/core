@@ -79,7 +79,7 @@ public abstract class WorkflowTestUtil {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final WorkflowSchemeForm form = new WorkflowSchemeForm.Builder()
                 .schemeName(randomSchemaName).schemeDescription("").schemeArchived(false).build();
-        final Response saveResponse = workflowResource.save(request, form);
+        final Response saveResponse = workflowResource.saveScheme(request, form);
         assertEquals(Response.Status.OK.getStatusCode(), saveResponse.getStatus());
         final ResponseEntityView savedEv = ResponseEntityView.class.cast(saveResponse.getEntity());
         return WorkflowScheme.class.cast(savedEv.getEntity());
@@ -152,7 +152,7 @@ public abstract class WorkflowTestUtil {
                             whoCanUse(Arrays.asList("")).
                             actionCondition("").
                             build();
-            final Response saveActionResponse = workflowResource.save(saveActionRequest, form);
+            final Response saveActionResponse = workflowResource.saveAction(saveActionRequest, form);
             assertEquals(Response.Status.OK.getStatusCode(), saveActionResponse.getStatus());
             final ResponseEntityView savedActionEv = ResponseEntityView.class
                     .cast(saveActionResponse.getEntity());
