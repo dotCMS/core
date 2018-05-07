@@ -10,7 +10,6 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
-import com.dotmarketing.business.PermissionedWebAssetUtil;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -99,8 +98,8 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 
 	@SuppressWarnings("unchecked")
-	public List<Template> findTemplatesUserCanUse(User user, String hostName, String query,boolean searchHost ,int offset, int limit) throws DotDataException, DotSecurityException {
-		return PermissionedWebAssetUtil.findTemplatesForLimitedUser(query, hostName, searchHost, "title", offset, limit, PermissionAPI.PERMISSION_READ, user, false);
+	public List<Template> findTemplatesUserCanUse(User user, String hostId, String query,boolean searchHost ,int offset, int limit) throws DotDataException, DotSecurityException {
+		return findTemplates(user, false, null, hostId, null,null, null, offset, limit, "title");
 	}
 
 	public void delete(Template template) throws DotDataException {
