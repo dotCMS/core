@@ -25,7 +25,6 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
-import com.dotmarketing.factories.WebAssetFactory;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
