@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.page;
 
 
+import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.DefaultValue;
@@ -20,6 +21,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
+import com.dotcms.rest.exception.LicenseRequiredException;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 
@@ -167,7 +169,7 @@ public class PageResource {
             }
 
             final PageView pageRendered = this.htmlPageAssetRenderedAPI.getPageRendered(request, response, user, uri, mode);
-            final Response.ResponseBuilder responseBuilder = Response.ok(pageRendered);
+            final Response.ResponseBuilder responseBuilder = Response.ok(new ResponseEntityView(pageRendered));
             responseBuilder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, " +
                     "Content-Type, " + "Accept, Authorization");
 
@@ -217,6 +219,14 @@ public class PageResource {
                                @PathParam("pageId") final String pageId,
                                final PageForm form) {
 
+        Logger.debug(this, String.format("Saving layout: pageId -> %s layout-> %s", pageId, form.getLayout()));
+
+        if (LicenseManager.getInstance().isCommunity()) {
+
+            Logger.warn(this, String.format("License required to save layout: pageId -> %s layout-> %s", pageId, form.getLayout()));
+            throw new LicenseRequiredException();
+        }
+
         final InitDataObject auth = webResource.init(false, request, true);
         final User user = auth.getUser();
 
@@ -229,6 +239,7 @@ public class PageResource {
             final PageMode pageMode = PageMode.get(request);
             final PageView renderedPage = this.htmlPageAssetRenderedAPI.getPageRendered(request, response, user,
                     (HTMLPageAsset) page, pageMode);
+
             res = Response.ok(new ResponseEntityView(renderedPage)).build();
 
         } catch (DotSecurityException e) {
@@ -270,6 +281,7 @@ public class PageResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/layout")
     public Response saveLayout(@Context final HttpServletRequest request, final PageForm form) {
+
         final InitDataObject auth = webResource.init(false, request, true);
         final User user = auth.getUser();
 

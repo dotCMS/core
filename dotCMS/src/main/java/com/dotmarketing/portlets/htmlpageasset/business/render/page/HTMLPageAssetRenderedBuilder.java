@@ -1,6 +1,8 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
 import com.dotcms.business.CloseDB;
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.visitor.domain.Visitor;
@@ -99,7 +101,8 @@ public class HTMLPageAssetRenderedBuilder {
 
         final HTMLPageAssetInfo htmlPageAssetInfo = getHTMLPageAssetInfo(info);
         final Template template = getTemplate();
-        final TemplateLayout layout = template.isDrawed() ? DotTemplateTool.themeLayout(template.getInode()) : null;
+        final TemplateLayout layout = template.isDrawed() && !LicenseManager.getInstance().isCommunity()
+                ? DotTemplateTool.themeLayout(template.getInode()) : null;
 
         if (!rendered) {
             final List<ContainerRendered> containers = this.containerRenderedBuilder.getContainers(template);
