@@ -552,9 +552,8 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 				&& roleAPI.doesUserHaveRole(user, roleAPI.loadCMSAdminRole())) {
 			return containerFactory.findAllContainers();
 		} else {
-			return PermissionedWebAssetUtil.findContainersForLimitedUser(null,
-					null, true, "title", 0, -1, PermissionAPI.PERMISSION_READ,
-					user, false);
+
+			return containerFactory.findContainers(user, false, null, null, null,null, null, 0, -1, "title ASC");
 		}
 	}
 

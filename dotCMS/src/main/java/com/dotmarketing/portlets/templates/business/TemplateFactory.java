@@ -15,7 +15,7 @@ public interface TemplateFactory {
 
 	List<Template> findTemplatesAssignedTo(Host parentHost, final boolean includeArchived) throws DotDataException;
 		
-	List<Template> findTemplatesUserCanUse(User user, String hostName, String query,boolean searchHost, int offset, int limit) throws DotDataException, DotSecurityException ;
+	List<Template> findTemplatesUserCanUse(User user, String hostId, String query,boolean searchHost, int offset, int limit) throws DotDataException, DotSecurityException ;
 
 	void delete(Template template) throws DotDataException;
 	
