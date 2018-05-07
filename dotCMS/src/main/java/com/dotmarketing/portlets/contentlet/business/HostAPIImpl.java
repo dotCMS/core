@@ -751,7 +751,7 @@ public class HostAPIImpl implements HostAPI {
         if(host != null){
             hostCache.remove(host);
         }
-        Contentlet c = APILocator.getContentletAPI().find(host.getInode(), user, respectFrontendRoles);
+        final Contentlet contentlet = APILocator.getContentletAPI().find(host.getInode(), user, respectFrontendRoles);
         //retrieve all hosts that have this current host as tag storage host
         List<Host> hosts = retrieveHostsPerTagStorage(host.getIdentifier(), user);
         for(Host h: hosts) {
@@ -767,12 +767,22 @@ public class HostAPIImpl implements HostAPI {
                 }
             }
         }
-        APILocator.getContentletAPI().archive(c, user, respectFrontendRoles);
+        APILocator.getContentletAPI().archive(contentlet, user, respectFrontendRoles);
         host.setModDate(new Date ());
         hostCache.clearAliasCache();
 
-        systemEventsAPI.pushAsync(SystemEventType.ARCHIVE_SITE, new Payload(c, Visibility.PERMISSION,
-                String.valueOf(PermissionAPI.PERMISSION_READ)));
+        HibernateUtil.addAsyncCommitListener(() -> this.sendArchiveSiteSystemEvent(contentlet), 1000);
+    }
+
+    private void sendArchiveSiteSystemEvent (final Contentlet contentlet) {
+
+        try {
+            APILocator.getContentletAPI().isInodeIndexedArchived(contentlet.getInode());
+            this.systemEventsAPI.pushAsync(SystemEventType.ARCHIVE_SITE, new Payload(contentlet, Visibility.PERMISSION,
+                    String.valueOf(PermissionAPI.PERMISSION_READ)));
+        } catch (DotDataException e) {
+            Logger.error(this, e.getMessage(), e);
+        }
     }
 
     @Override

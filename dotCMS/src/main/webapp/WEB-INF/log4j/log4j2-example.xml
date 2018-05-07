@@ -183,9 +183,6 @@
         <Logger name="org.apache.nutch" level="info" additivity="false">
             <AppenderRef ref="sitesearch"/>
         </Logger>
-        <Logger name="com.dotcms.repackage.org.apache.hadoop" level="info" additivity="false">
-            <AppenderRef ref="sitesearch"/>
-        </Logger>
         <Logger name="com.dotmarketing.util.AdminLogger" level="info" additivity="false">
             <AppenderRef ref="adminaudit"/>
         </Logger>

@@ -19,7 +19,6 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
-import com.dotmarketing.portlets.report.model.Report;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -136,10 +135,7 @@ public class InodeUtils {
 			return Container.class;
 		} else if (type.equals("links")) {
 			return Link.class;
-		} else if (type.equals("report_asset")) {
-			return Report.class;
-		} else {
-
+		} else  {
 			return Inode.class;
 		}
 

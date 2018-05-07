@@ -287,7 +287,7 @@ public class ContentTypeResource implements Serializable {
 		Response response = null;
 
 		try {
-			List<BaseContentTypesView> types = contentTypeHelper.getTypes(request);
+			final List<BaseContentTypesView> types = contentTypeHelper.getTypes(request);
 			response = Response.ok(new ResponseEntityView(types)).build();
 		} catch (Exception e) { // this is an unknown error, so we report as a 500.
 

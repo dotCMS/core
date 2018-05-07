@@ -1810,7 +1810,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private void sendDeleteEvent (final Contentlet contentlet) throws DotHibernateException {
 
-        HibernateUtil.addAsyncCommitListener(() -> this.contentletSystemEventUtil.pushDeleteEvent(contentlet), 1000);
+        HibernateUtil.addAsyncCommitListener(
+                () -> {
+
+                    this.contentletSystemEventUtil.pushDeleteEvent(contentlet);
+                }, 1000);
     }
 
     /**
@@ -2494,7 +2498,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(!rels.contains(relationship)){
             throw new DotContentletStateException("Contentlet: " + (contentlet != null ? contentlet.getInode() : "Unknown") + " does not have passed in relationship");
         }
-        List<Contentlet> cons = relationshipAPI.dbRelatedContent(relationship, contentlet);
+        List<Contentlet> cons = relationshipAPI.dbRelatedContent(relationship, contentlet, hasParent);
         cons = permissionAPI.filterCollection(cons, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
         FactoryLocator.getRelationshipFactory().deleteByContent(contentlet, relationship, cons);
 
@@ -2758,8 +2762,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
         List<ContentletRelationshipRecords> relationshipsRecords = new ArrayList<ContentletRelationshipRecords>();
         relationshipsData.setRelationshipsRecords(relationshipsRecords);
         for(Entry<Relationship, List<Contentlet>> relEntry : contentRelationships.entrySet()) {
-            Relationship relationship = (Relationship) relEntry.getKey();
+            Relationship relationship = relEntry.getKey();
             boolean hasParent = FactoryLocator.getRelationshipFactory().isParent(relationship, st);
+            boolean hasChildren = FactoryLocator.getRelationshipFactory().isChild(relationship, st);
+
+            // self-join (same CT for parent and child) relationships return true to both, so since we can't
+            // determine if it's parent or child we always assume child (e.g. Coming from the Content REST API)
+            if (hasParent && hasChildren) {
+                hasParent = false;
+            }
             ContentletRelationshipRecords
                 records = relationshipsData.new ContentletRelationshipRecords(relationship, hasParent);
             records.setRecords(relEntry.getValue());

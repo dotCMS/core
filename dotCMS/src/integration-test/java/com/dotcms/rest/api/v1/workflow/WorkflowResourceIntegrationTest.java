@@ -318,7 +318,7 @@ public class WorkflowResourceIntegrationTest {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         WorkflowSchemeForm form = new WorkflowSchemeForm.Builder().schemeDescription("lol").schemeArchived(false).schemeName(updatedName).build();
         final Response updateResponse = workflowResource.update(request,savedScheme1.getId(), form);
-        assertEquals(Status.BAD_REQUEST.getStatusCode(), updateResponse.getStatus());
+        assertEquals(Status.OK.getStatusCode(), updateResponse.getStatus());
     }
 
     @Test

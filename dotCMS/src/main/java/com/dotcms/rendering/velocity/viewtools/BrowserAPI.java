@@ -31,6 +31,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 
@@ -107,6 +108,7 @@ public class BrowserAPI {
                 }
             }
 
+
             try {
                 if (permissions.contains(PERMISSION_READ)) {
                     boolean hasPushPublishActionlet = false;
@@ -114,6 +116,7 @@ public class BrowserAPI {
                         skip=true;
                         return;
                     }
+                    final boolean showScheme = (wfActions!=null) ?  wfActions.stream().collect(Collectors.groupingBy(WorkflowAction::getSchemeId)).size()>1 : false;
                     
                     for (WorkflowAction action : wfActions) {
                         List<WorkflowActionClass> actionlets = APILocator
@@ -128,8 +131,13 @@ public class BrowserAPI {
                                 || UtilMethods.isSet(action.getCondition()));
                         wfActionMap.put("requiresCheckout",
                                 action.requiresCheckout());
-                        wfActionMap.put("wfActionNameStr",
-                                LanguageUtil.get(user, action.getName())+" ( "+LanguageUtil.get(user,wfScheme.getName())+" )");
+                        
+                        final String actionNameStr = (showScheme) ? LanguageUtil.get(user, action.getName()) +" ( "+LanguageUtil.get(user,wfScheme.getName())+" )" : LanguageUtil.get(user, action.getName());
+                        
+                        
+                        
+                        
+                        wfActionMap.put("wfActionNameStr",actionNameStr);
                         for (WorkflowActionClass actionlet : actionlets) {
                             if (actionlet
                                     .getActionlet()
