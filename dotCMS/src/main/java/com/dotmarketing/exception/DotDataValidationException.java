@@ -2,7 +2,7 @@ package com.dotmarketing.exception;
 
 public class DotDataValidationException extends DotDataException {
 
-    public DotDataValidationException(String message) {
+    public DotDataValidationException(final String message) {
         super(message);
     }
 }

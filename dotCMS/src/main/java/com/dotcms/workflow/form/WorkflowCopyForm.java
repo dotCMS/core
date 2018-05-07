@@ -9,9 +9,9 @@ import com.dotcms.rest.api.Validated;
 public class WorkflowCopyForm extends Validated {
 
     @Size(min = 2, max = 100)
-    private String name;
+    private final String name;
 
-    public WorkflowCopyForm(WorkflowCopyForm.Builder builder) {
+    public WorkflowCopyForm(final WorkflowCopyForm.Builder builder) {
       this.name = builder.name;
       checkValid();
     }
@@ -25,7 +25,7 @@ public class WorkflowCopyForm extends Validated {
         @JsonProperty(required = true)
         private String name;
 
-        public Builder name(String name) {
+        public Builder name(final String name) {
             this.name = name;
             return this;
         }

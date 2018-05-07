@@ -466,6 +466,8 @@ public class WorkflowHelper {
                     ", order: " + order);
             this.workflowAPI.reorderStep(step, order, user);
         }catch (DoesNotExistException dne){
+            Logger.error(this, dne.getMessage());
+            Logger.debug(this, dne.getMessage(), dne);
             throw dne;
         } catch (DotDataException | AlreadyExistException | DotSecurityException e) {
             Logger.error(this, e.getMessage());

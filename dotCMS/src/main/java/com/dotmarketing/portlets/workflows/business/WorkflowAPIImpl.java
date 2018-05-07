@@ -734,7 +734,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 				final String validationExceptionMessage = LanguageUtil.format(user.getLocale(),
 						"Workflow-delete-step-reference-by-contentlet-error",
-						new String[]{step.getName(), ""+countContentletsReferencingStep}, false);
+						new String[]{step.getName(), Integer.toString(countContentletsReferencingStep)}, false);
 				throw new DotDataValidationException(validationExceptionMessage);
 			}
 
