@@ -54,6 +54,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy, OnSaveDeactiv
 
     constructor(
         private dotDialogService: DotDialogService,
+        private dotEditPageDataService: DotEditPageDataService,
         private dotEditPageService: DotEditPageService,
         private dotGlobalMessageService: DotGlobalMessageService,
         private dotHttpErrorManagerService: DotHttpErrorManagerService,
@@ -63,11 +64,10 @@ export class DotEditContentComponent implements OnInit, OnDestroy, OnSaveDeactiv
         private dotRouterService: DotRouterService,
         private ngZone: NgZone,
         private route: ActivatedRoute,
-        private sanitizer: DomSanitizer,
         private siteService: SiteService,
         public dotEditContentHtmlService: DotEditContentHtmlService,
         public dotLoadingIndicatorService: DotLoadingIndicatorService,
-        private dotEditPageDataService: DotEditPageDataService
+        public sanitizer: DomSanitizer
     ) {}
 
     ngOnInit() {
@@ -127,7 +127,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy, OnSaveDeactiv
      *
      * @memberof DotEditContentComponent
      */
-    onHideDialog(): void {
+    closeDialog(): void {
         this.showDialog = false;
         this.contentletActionsUrl = null;
     }
@@ -251,15 +251,9 @@ export class DotEditContentComponent implements OnInit, OnDestroy, OnSaveDeactiv
             uuid: $event.dataset.dotUuid
         };
         this.dotEditContentHtmlService.setContainterToAppendContentlet(container);
-        this.showDialog = true;
         this.loadDialogEditor(
             `/html/ng-contentlet-selector.jsp?ng=true&container_id=${$event.dataset.dotIdentifier}&add=${$event.dataset.dotAdd}`
         );
-    }
-
-    private closeDialog(): void {
-        this.showDialog = false;
-        this.contentletActionsUrl = null;
     }
 
     private editContentlet($event: any): void {
@@ -267,6 +261,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy, OnSaveDeactiv
             identifier: $event.container.dotIdentifier,
             uuid: $event.container.dotUuid
         };
+
         this.dotEditContentHtmlService.setContainterToEditContentlet(container);
 
         this.dotMenuService
@@ -283,7 +278,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy, OnSaveDeactiv
                     `&_content_cmd=edit`,
                     `&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet`
                 ].join('');
-
                 this.loadDialogEditor(url);
             });
     }
@@ -303,9 +297,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy, OnSaveDeactiv
                     `&_site_browser_cmd=edit`,
                     `&_site_browser_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet`
                 ].join('');
-
-                // TODO: this will get the title of the contentlet but will need and update to the endpoint to do it
-                this.showDialog = true;
                 this.loadDialogEditor(url);
             });
     }
@@ -370,8 +361,9 @@ export class DotEditContentComponent implements OnInit, OnDestroy, OnSaveDeactiv
     }
 
     private loadDialogEditor(url: string): void {
-        this.setDialogSize();
         this.contentletActionsUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
+        this.setDialogSize();
+        this.showDialog = true;
     }
 
     private subscribeIframeCustomEvents(): void {
