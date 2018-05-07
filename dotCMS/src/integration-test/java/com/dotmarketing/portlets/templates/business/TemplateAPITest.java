@@ -334,8 +334,8 @@ public class TemplateAPITest extends IntegrationTestBase {
             }
 
             //This method should only return Templates, no Layouts
-            templates = PermissionedWebAssetUtil.findTemplatesForLimitedUser(null, null, false, "title",
-                                                        0, 1000, 0, user, false);
+            templates = templateAPI.findTemplatesUserCanUse(user, null, null, false,
+                                                        0, 1000);
 
             assertFalse(templates.isEmpty());
             for (final Template temp : templates) {

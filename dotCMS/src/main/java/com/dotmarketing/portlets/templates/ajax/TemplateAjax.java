@@ -89,8 +89,8 @@ public class TemplateAjax {
 			        startF=start-1;
 			    }
 
-				fullListTemplates.addAll(templateAPI.findTemplatesUserCanUse(user, host.getHostname(), filter, true, startF, countF));
-				totalTemplates.addAll(templateAPI.findTemplatesUserCanUse(user, host.getHostname(), filter, true, 0, 1000));
+				fullListTemplates.addAll(templateAPI.findTemplatesUserCanUse(user, host.getIdentifier(), filter, true, startF, countF));
+				totalTemplates.addAll(templateAPI.findTemplatesUserCanUse(user, host.getIdentifier(), filter, true, 0, 1000));
 
 			}
 
