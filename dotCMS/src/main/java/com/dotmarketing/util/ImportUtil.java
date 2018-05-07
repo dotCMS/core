@@ -1334,12 +1334,13 @@ public class ImportUtil {
                                             .workflowActionId(executeWfAction.getId())
                                             .workflowActionComments("")
                                             .workflowAssignKey("")
-                                            .categories(new ArrayList<Category>(categories))
+                                            .categories(new ArrayList<>(categories))
                                             .generateSystemEvent(Boolean.FALSE).build());
                         } else {
                             // If the User doesn't have permissions to execute the wfActionId or
                             // not action Id is set on the CSV/Import select box then use the old
                             // checking method
+                            cont.setProperty(Contentlet.DONT_VALIDATE_ME, true);
                             cont = conAPI.checkin(cont, contentletRelationships,
                                     new ArrayList<>(categories), contentTypePermissions,
                                     user, false);
