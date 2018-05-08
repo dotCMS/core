@@ -503,7 +503,7 @@ public interface WorkflowAPI {
 	Contentlet fireContentWorkflow(Contentlet contentlet, ContentletDependencies dependencies) throws DotDataException;
 
 	/**
-	 * Validates if the action of the Contentlet in going to execute belongs to the step of the
+	 * Validates if the Workflow Action the Contentlet is going to execute belongs to the step of the
 	 * Contentlet and also if the action belongs to one of the schemes associated to the
 	 * Content Type of the Contentlet.
 	 * This method does not validate the permissions execution of the Workflow Action.
