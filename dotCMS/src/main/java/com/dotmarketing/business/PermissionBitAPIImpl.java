@@ -395,18 +395,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		}
 		String inode ="";
         List<String> ids= new ArrayList<String>();
-        String s = permissionable.toString();
-        
-        if(s.contains("formId=")){
-                String[] st = s.split(",");
-                for(String str : st){
-                        str = str.trim();
-                        if(str.contains("formId=")){
-                                inode = str.substring(7);
-                        }
-                }
-        }
-        
+
         if(inode != ""){
                 PermissionAPI pAPI;
                 pAPI = APILocator.getPermissionAPI();
