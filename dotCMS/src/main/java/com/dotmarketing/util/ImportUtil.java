@@ -1341,6 +1341,7 @@ public class ImportUtil {
                             // not action Id is set on the CSV/Import select box then use the old
                             // checking method
                             cont.setProperty(Contentlet.DONT_VALIDATE_ME, true);
+                            cont.setProperty(Contentlet.DISABLE_WORKFLOW, true);
                             cont = conAPI.checkin(cont, contentletRelationships,
                                     new ArrayList<>(categories), contentTypePermissions,
                                     user, false);
