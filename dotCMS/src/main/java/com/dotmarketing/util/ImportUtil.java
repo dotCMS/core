@@ -716,7 +716,7 @@ public class ImportUtil {
                     }
                 }else if(field.getFieldType().equals(Field.FieldType.IMAGE.toString()) || field.getFieldType().equals(Field.FieldType.FILE.toString())) {
                     String filePath = value;
-                    if (field.getFieldType().equals(Field.FieldType.IMAGE.toString())
+                    if (Field.FieldType.IMAGE.toString().equals(field.getFieldType())
                             && !UtilMethods.isImage(filePath)) {
                         //Add Warning the File isn't is an image
                         if(UtilMethods.isSet(filePath)){
@@ -1454,7 +1454,8 @@ public class ImportUtil {
      */
     private static void setActionWarning(HashMap<String, List<String>> results,
             Contentlet contentlet,
-            User user, int lineNumber, String generalErrorKey, String specificErrorMessage)
+            final User user, final int lineNumber, final String generalErrorKey,
+            final String specificErrorMessage)
             throws LanguageException {
 
         results.get("warnings")
@@ -1467,7 +1468,8 @@ public class ImportUtil {
         contentlet.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, null);
     }
 
-    private static Object validateDateTypes(int lineNumber, Field field, String value,
+    private static Object validateDateTypes(final int lineNumber, final Field field,
+            final String value,
             Object valueObj) {
         if (field.getFieldContentlet().startsWith("date")) {
             if (UtilMethods.isSet(value)) {
