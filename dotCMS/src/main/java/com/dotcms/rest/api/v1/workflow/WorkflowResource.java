@@ -713,7 +713,7 @@ public class WorkflowResource {
 
             return  (null == contentlet || contentlet.getMap().isEmpty())?
                         ExceptionMapperUtil.createResponse
-                                (null, LanguageUtil.get("contentlet-was-not-found"), Response.Status.NOT_FOUND):
+                                ((Object) null, LanguageUtil.get("contentlet-was-not-found"), Response.Status.NOT_FOUND):
 
                         Response.ok(new ResponseEntityView(
                                 this.workflowAPI.fireContentWorkflow(contentlet,
