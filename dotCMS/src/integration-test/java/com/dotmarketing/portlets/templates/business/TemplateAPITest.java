@@ -355,7 +355,6 @@ public class TemplateAPITest extends IntegrationTestBase {
     public void testFindTemplatesUserCanUse_IncludeUniqueFilter_ShouldListOnlyOneResult() throws Exception {
         Template template = null;
         Template anotherTemplate = null;
-        Template layout = null;
         try {
 
             template = new Template();
@@ -381,9 +380,6 @@ public class TemplateAPITest extends IntegrationTestBase {
             }
             if (anotherTemplate != null) {
                 templateAPI.delete(anotherTemplate, user, false);
-            }
-            if (layout != null) {
-                templateAPI.delete(layout, user, false);
             }
         }
     }
