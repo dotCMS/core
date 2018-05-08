@@ -27,8 +27,8 @@ import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
-import com.dotcms.rest.annotation.Permissions;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.annotation.Permissions;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
@@ -36,6 +36,7 @@ import com.dotcms.workflow.form.FireActionForm;
 import com.dotcms.workflow.form.WorkflowActionForm;
 import com.dotcms.workflow.form.WorkflowActionStepBean;
 import com.dotcms.workflow.form.WorkflowActionStepForm;
+import com.dotcms.workflow.form.WorkflowCopyForm;
 import com.dotcms.workflow.form.WorkflowReorderBean;
 import com.dotcms.workflow.form.WorkflowReorderWorkflowActionStepForm;
 import com.dotcms.workflow.form.WorkflowSchemeForm;
@@ -46,6 +47,7 @@ import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -122,12 +124,23 @@ public class WorkflowResource {
 
     }
 
+    /**
+     * In case of an invalid access attempt this will fulfill the response so it can be interpreted by a front-end consumer
+     * @param e Exception
+     * @return Response
+     */
     private Response createUnAuthorizedResponse (final Exception e) {
 
         SecurityLogger.logInfo(this.getClass(), e.getMessage());
         return ExceptionMapperUtil.createResponse(e, Status.FORBIDDEN);
     }
 
+    /**
+     * In case of an invalid access attempt this will fulfill the response so it can be interpreted by a front-end consumer
+     * Takes an exception and tries to find the most appropriate match code to send an error response.
+     * @param e Exception
+     * @return Response
+     */
     private Response mapExceptionResponse(final Exception e){
 
         if(causedBy(e, SECURITY_EXCEPTIONS)){
@@ -411,7 +424,7 @@ public class WorkflowResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response save(@Context final HttpServletRequest request,
+    public final Response saveAction(@Context final HttpServletRequest request,
                                final WorkflowActionForm workflowActionForm) {
 
         final InitDataObject initDataObject = this.webResource.init
@@ -421,7 +434,7 @@ public class WorkflowResource {
         try {
 
             Logger.debug(this, "Saving new workflow action: " + workflowActionForm.getActionName());
-            newAction = this.workflowHelper.save(workflowActionForm, initDataObject.getUser());
+            newAction = this.workflowHelper.saveAction(workflowActionForm, initDataObject.getUser());
             return Response.ok(new ResponseEntityView(newAction)).build(); // 200
 
         }  catch (final Exception e) {
@@ -434,6 +447,13 @@ public class WorkflowResource {
 
     } // save
 
+    /**
+     * Updates an existing action
+     * @param request HttpServletRequest
+     * @param actionId String
+     * @param workflowActionForm WorkflowActionStepForm
+     * @return Response
+     */
     @PUT
     @Path("/actions/{actionId}")
     @JSONP
@@ -446,7 +466,7 @@ public class WorkflowResource {
         final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
         try {
             Logger.debug(this, "Updating action with id: " + actionId);
-            final WorkflowAction workflowAction = this.workflowHelper.save( actionId, workflowActionForm, initDataObject.getUser());
+            final WorkflowAction workflowAction = this.workflowHelper.updateAction(actionId, workflowActionForm, initDataObject.getUser());
             return Response.ok(new ResponseEntityView(workflowAction)).build(); // 200
         } catch (final Exception e) {
             Logger.error(this.getClass(),
@@ -459,8 +479,8 @@ public class WorkflowResource {
 
     /**
      * Saves an action into a step
-     * @param request                   HttpServletRequest
-     * @param workflowActionStepForm    WorkflowActionStepForm
+     * @param request HttpServletRequest
+     * @param workflowActionStepForm WorkflowActionStepForm
      * @return Response
      */
     @POST
@@ -492,8 +512,8 @@ public class WorkflowResource {
 
     /**
      * Deletes a step
-     * @param request                   HttpServletRequest
-     * @param stepId                   String
+     * @param request HttpServletRequest
+     * @param stepId String
      * @return Response
      */
     @DELETE
@@ -615,6 +635,13 @@ public class WorkflowResource {
     } // reorderStep
 
 
+    /**
+     * Updates an existing step
+     * @param request HttpServletRequest
+     * @param stepId String
+     * @param stepForm WorkflowStepUpdateForm
+     * @return Response
+     */
     @PUT
     @Path("/steps/{stepId}")
     @JSONP
@@ -636,6 +663,12 @@ public class WorkflowResource {
         }
     } // reorderStep
 
+    /**
+     * Creates a new step into a workflow
+     * @param request HttpServletRequest
+     * @param newStepForm WorkflowStepAddForm
+     * @return Response
+     */
     @POST
     @Path("/steps")
     @JSONP
@@ -658,6 +691,12 @@ public class WorkflowResource {
     }
 
 
+    /**
+     * Retrieves a step given its id.
+     * @param request HttpServletRequest
+     * @param stepId String
+     * @return Response
+     */
     @GET
     @Path("/steps/{stepId}")
     @JSONP
@@ -679,12 +718,20 @@ public class WorkflowResource {
     }
 
 
+    /**
+     * Fires a workflow action
+     * @param request HttpServletRequest
+     * @param inode String
+     * @param actionId String
+     * @param fireActionForm FireActionForm
+     * @return Response
+     */
     @PUT
     @Path("/actions/{actionId}/fire")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response fire(@Context final HttpServletRequest request,
+    public final Response fireAction(@Context final HttpServletRequest request,
                                @QueryParam("inode")            final String inode,
                                @NotNull @PathParam("actionId") final String actionId,
                                final FireActionForm fireActionForm) {
@@ -711,11 +758,10 @@ public class WorkflowResource {
                 contentlet.setStringProperty("forcePush", fireActionForm.getForcePush());
             }
 
-            return  (null == contentlet || contentlet.getMap().isEmpty())?
-                        ExceptionMapperUtil.createResponse
-                                (null, LanguageUtil.get("contentlet-was-not-found"), Response.Status.NOT_FOUND):
-
-                        Response.ok(new ResponseEntityView(
+            if(null == contentlet || contentlet.getMap().isEmpty()){
+                throw new DoesNotExistException("contentlet-was-not-found");
+            }
+                       return Response.ok(new ResponseEntityView(
                                 this.workflowAPI.fireContentWorkflow(contentlet,
                                     new ContentletDependencies.Builder()
                                         .respectAnonymousPermissions(PageMode.get(request).respectAnonPerms)
@@ -735,6 +781,13 @@ public class WorkflowResource {
         }
     } // fire.
 
+    /**
+     * Internal utility to populate a contentlet from a given form object
+     * @param fireActionForm FireActionForm
+     * @param user User
+     * @return Contentlet
+     * @throws DotSecurityException
+     */
     private Contentlet populateContentlet(final FireActionForm fireActionForm, final User user) throws DotSecurityException {
 
         final Contentlet contentlet = this.contentHelper.populateContentletFromMap
@@ -804,7 +857,8 @@ public class WorkflowResource {
     /**
      * Do an export of the scheme with all dependencies to rebuild it (such as steps and actions)
      * in addition the permission (who can use) will be also returned.
-     * @param request  HttpServletRequest
+     * @param request HttpServletRequest
+     * @param workflowSchemeImportForm WorkflowSchemeImportObjectForm
      * @return Response
      */
     @POST
@@ -896,6 +950,7 @@ public class WorkflowResource {
      * You can include a query string name, to include the scheme name
      * @param request  HttpServletRequest
      * @param schemeId String
+     * @param name String
      * @return Response
      */
     @POST
@@ -905,21 +960,28 @@ public class WorkflowResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response copyScheme(@Context final HttpServletRequest request,
                                @PathParam("schemeId") final String schemeId,
-                               @QueryParam("name") final String name) {
+                               @QueryParam("name") final String name,
+                               final WorkflowCopyForm workflowCopyForm) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
         Response response;
-        WorkflowSchemeImportExportObject exportObject;
-        List<Permission>                 permissions;
 
         try {
+            final Optional<String> workflowName = (
+                    UtilMethods.isSet(name) ? Optional.of(name) :
+                            (
+                                    UtilMethods.isSet(workflowCopyForm) ? Optional
+                                            .of(workflowCopyForm.getName()) :
+                                            Optional.empty()
+                            )
+            );
 
             Logger.debug(this, "Copying the workflow scheme: " + schemeId);
             response     = Response.ok(new ResponseEntityView(
                     this.workflowAPI.deepCopyWorkflowScheme(
                             this.workflowAPI.findScheme(schemeId),
-                            initDataObject.getUser(), Optional.of(name)))
+                            initDataObject.getUser(), workflowName))
                     ).build(); // 200
         } catch (Exception e){
             Logger.error(this.getClass(),
@@ -1031,16 +1093,16 @@ public class WorkflowResource {
     /**
      * Creates a new scheme
      *
-     * @param request
-     * @param workflowSchemeForm
-     * @return
+     * @param request HttpServletRequest
+     * @param workflowSchemeForm WorkflowSchemeForm
+     * @return Response
      */
     @POST
     @Path("/schemes")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response save(@Context final HttpServletRequest request,
+    public final Response saveScheme(@Context final HttpServletRequest request,
                                final WorkflowSchemeForm workflowSchemeForm) {
         final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
         Logger.debug(this, "Saving scheme named: " + workflowSchemeForm.getSchemeName());
@@ -1056,17 +1118,16 @@ public class WorkflowResource {
 
     /**
      * Updates an existing scheme
-     *
-     * @param request
-     * @param workflowSchemeForm
-     * @return
+     * @param request HttpServletRequest
+     * @param workflowSchemeForm WorkflowSchemeForm
+     * @return Response
      */
     @PUT
     @Path("/schemes/{schemeId}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response update(@Context final HttpServletRequest request,
+    public final Response updateScheme(@Context final HttpServletRequest request,
                                  @PathParam("schemeId") final String schemeId,
                                  final WorkflowSchemeForm workflowSchemeForm) {
         final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
@@ -1081,10 +1142,9 @@ public class WorkflowResource {
     }
 
     /**
-     * Delete an existing scheme
-     *
-     * @param request
-     * @return
+     * Deletes an existing scheme
+     * @param request HttpServletRequest
+     * @return Response
      */
     @DELETE
     @Path("/schemes/{schemeId}")

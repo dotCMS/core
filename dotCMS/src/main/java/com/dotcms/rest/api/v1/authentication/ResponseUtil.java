@@ -56,7 +56,7 @@ public class ResponseUtil implements Serializable {
      * @param messageArguments (Optional) if the message require some argument
      * @return
      */
-    public String getFormattedMessage(Locale locale, String messageKey, Object... messageArguments) {
+    public static String getFormattedMessage(Locale locale, String messageKey, Object... messageArguments) {
         String message;
         try {
             message = (UtilMethods.isSet(locale)) ?
@@ -65,7 +65,7 @@ public class ResponseUtil implements Serializable {
 
             return MessageFormat.format(message, messageArguments);
         } catch (LanguageException e) {
-            Logger.error(AuthenticationHelper.class, e.getMessage(), e);
+            Logger.error(ResponseUtil.class, e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
