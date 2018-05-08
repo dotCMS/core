@@ -1426,7 +1426,8 @@ public class ImportUtil {
      * Validates if Action associated to the Contentlet can be executed validating permissions
      * and the step of the Contentlet
      */
-    private static WorkflowAction validateWorkflowAction(User user, Contentlet contentlet)
+    private static WorkflowAction validateWorkflowAction(final User user,
+            final Contentlet contentlet)
             throws DotDataException {
 
         WorkflowAction executeWfAction;
