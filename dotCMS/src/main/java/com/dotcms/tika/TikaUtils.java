@@ -123,7 +123,7 @@ public class TikaUtils {
 
                 final File binFile = APILocator.getContentletAPI()
                         .getBinaryFile(contentlet.getInode(), FileAssetAPI.BINARY_FIELD,
-                                APILocator.getUserAPI().getSystemUser());
+                                this.systemUser);
                 if (binFile != null) {
 
                     //Parse the metadata from this file
@@ -296,7 +296,7 @@ public class TikaUtils {
                     String lowered = new String(buf);
                     lowered = lowered.toLowerCase();
                     bytes = lowered.getBytes(StandardCharsets.UTF_8);
-                    out.write(bytes, 0, count);
+                    out.write(bytes, 0, bytes.length);
                     numOfChunks--;
                 } while ((count = fullText.read(buf)) > 0 && numOfChunks > 0);
             } finally {

@@ -38,6 +38,7 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -1032,6 +1033,74 @@ public class ContentletAPITest extends ContentletBaseTest {
         if (testRelationship != null) {
             relationshipAPI.delete(testRelationship);
         }
+    }
+
+    @Test
+    public void testCreateSelfJoinedRelationship_contentletAddedAsChild () throws DotDataException, DotSecurityException {
+
+        Contentlet parent = null;
+        Contentlet child = null;
+        Structure structure = null;
+        Relationship selfRelationship = null;
+
+        try {
+            //Get Default Language
+            Language language = languageAPI.getDefaultLanguage();
+
+            //Create a Structure
+            structure = createStructure(
+                    "JUnit Test Structure_" + String.valueOf(new Date().getTime()),
+                    "junit_test_structure_" + String.valueOf(new Date().getTime()));
+
+            //Create the Contentlets
+            parent = createContentlet(structure, language, false);
+            child = createContentlet(structure, language, false);
+
+            //Create the Self contained relationship
+            selfRelationship = createRelationShip(structure.getInode(),
+                    structure.getInode(), false);
+
+            //Create the contentlet relationships
+            List<Contentlet> contentRelationships = new ArrayList<>();
+            contentRelationships.add(child);
+
+            //Relate the content
+            contentletAPI
+                    .relateContent(parent, selfRelationship, contentRelationships, user, false);
+
+            //Find all the relationships for this contentlet
+            ContentletRelationships contentletRelationships = contentletAPI
+                    .getAllRelationships(parent.getInode(), user, false);
+
+            //Validations
+            assertNotNull(contentletRelationships);
+            assertTrue(contentletRelationships.getRelationshipsRecords() != null
+                    && !contentletRelationships.getRelationshipsRecords().isEmpty());
+            for (ContentletRelationshipRecords record : contentletRelationships
+                    .getRelationshipsRecords()) {
+                if (record.isHasParent()) {
+                    assertNotNull(record.getRecords());
+                }
+            }
+        } finally {
+
+            //Clean up
+            if (parent != null) {
+                contentletAPI.archive(parent, user, false);
+                contentletAPI.delete(parent, user, false);
+            }
+            if (child != null) {
+                contentletAPI.archive(child, user, false);
+                contentletAPI.delete(child, user, false);
+            }
+            if (selfRelationship != null) {
+                relationshipAPI.delete(selfRelationship);
+            }
+            if (structure != null) {
+                APILocator.getStructureAPI().delete(structure, user);
+            }
+        }
+
     }
 
     /**

@@ -526,7 +526,9 @@ public class ESIndexAPI {
 
 		final XContentBuilder builder = jsonBuilder().startObject().startObject("index");
 
-		builder.field("number_of_replicas",replicasMode.getNumberOfReplicas());
+		if(replicasMode.getNumberOfReplicas()>-1) {
+			builder.field("number_of_replicas", replicasMode.getNumberOfReplicas());
+		}
 		builder.field("auto_expand_replicas",replicasMode.getAutoExpandReplicas());
 
         client.admin().indices().updateSettings(
@@ -579,7 +581,9 @@ public class ESIndexAPI {
 		map.put("index.mapping.total_fields.limit",
 			Config.getIntProperty("ES_INDEX_MAPPING_TOTAL_FIELD_LIMITS", 5000));
 
-		map.put("number_of_replicas",replicasMode.getNumberOfReplicas());
+		if(replicasMode.getNumberOfReplicas()>-1) {
+			map.put("number_of_replicas", replicasMode.getNumberOfReplicas());
+		}
 		map.put("auto_expand_replicas",replicasMode.getAutoExpandReplicas());
 
 		// create actual index
