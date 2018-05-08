@@ -599,7 +599,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			actions =  this.convertListToObjects(db.loadObjectResults(), WorkflowAction.class);
 
 			if(actions == null) {
-				actions= new ArrayList<WorkflowAction>();
+				actions = new ArrayList<>();
 			}
 
 			cache.addActions(scheme, actions);
@@ -635,7 +635,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 				scheme = (WorkflowScheme) this.convertListToObjects(db.loadObjectResults(), WorkflowScheme.class).get(0);
 				cache.add(scheme);
 			} catch (final IndexOutOfBoundsException e) {
-				throw new DoesNotExistException(e.getMessage(), e);
+				throw new DoesNotExistException("Workflow-does-not-exists-scheme");
 			} catch (final Exception e) {
 				throw new DotDataException(e.getMessage(), e);
 			}
@@ -693,8 +693,12 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			final DotConnect db = new DotConnect();
 			db.setSQL(sql.SELECT_STEP);
 			db.addParam(id);
-			step = (WorkflowStep) this.convertListToObjects(db.loadObjectResults(), WorkflowStep.class).get(0);
-			cache.add(step);
+			try{
+			  step = (WorkflowStep) this.convertListToObjects(db.loadObjectResults(), WorkflowStep.class).get(0);
+			  cache.add(step);
+			}catch (IndexOutOfBoundsException e){
+				throw new DoesNotExistException("Workflow-does-not-exists-step");
+			}
 		}
 		return step;
 	}

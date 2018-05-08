@@ -46,7 +46,7 @@ public interface TemplateAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	List<Template> findTemplatesUserCanUse(User user, String hostName,  String query, boolean searchHost, int offset, int limit) throws DotDataException, DotSecurityException;
+	List<Template> findTemplatesUserCanUse(User user, String hostId,  String query, boolean searchHost, int offset, int limit) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Retrieves the working version of a template given its identifier

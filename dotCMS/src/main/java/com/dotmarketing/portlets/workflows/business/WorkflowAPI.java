@@ -446,7 +446,7 @@ public interface WorkflowAPI {
 	 */
 	void saveAction(String actionId, String stepId, User user, int order);
 
-	public WorkflowStep findStep(String id) throws DotDataException, DotSecurityException;
+	public WorkflowStep findStep(String id) throws DotDataException;
 
 	/**
 	 * Deletes the action associated to the scheme
