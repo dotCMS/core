@@ -369,7 +369,7 @@ public class TemplateAPITest extends IntegrationTestBase {
             anotherTemplate.setBody("<html><body> Empty Template </body></html>");
             anotherTemplate = templateAPI.saveTemplate(anotherTemplate, host, user, false);
 
-            List<Template> filteredTemplates = APILocator.getTemplateAPI().findTemplatesUserCanUse(user, host.getIdentifier(), uniqueString, true,0, 1000);
+            final List<Template> filteredTemplates = APILocator.getTemplateAPI().findTemplatesUserCanUse(user, host.getIdentifier(), uniqueString, true,0, 1000);
 
             assertEquals(1, filteredTemplates.size());
             assertEquals(uniqueTitle, filteredTemplates.get(0).getTitle());
