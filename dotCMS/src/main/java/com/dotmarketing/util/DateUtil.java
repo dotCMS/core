@@ -614,7 +614,8 @@ public class DateUtil {
 		try {
 			Thread.sleep(millis);
 		} catch (InterruptedException e) {
-			e.printStackTrace();
+
+			Logger.error(DateUtil.class, e.getMessage(), e);
 		}
 	}
 }

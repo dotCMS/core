@@ -5575,7 +5575,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     private boolean isInodeIndexedWithQuery(String luceneQuery) {
-        return isInodeIndexedWithQuery(luceneQuery, -1);
+
+        return this.isInodeIndexedArchived(luceneQuery, -1);
     }
 
     private boolean isInodeIndexedWithQuery(String luceneQuery, int secondsToWait) {
