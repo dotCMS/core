@@ -10,6 +10,7 @@ import static com.dotmarketing.portlets.contentlet.business.DotContentletValidat
 import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_REQUIRED_REL;
 import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_UNIQUE;
 
+import com.dotmarketing.exception.DotDataValidationException;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotcms.rest.exception.BadRequestException;
@@ -47,13 +48,17 @@ public class ExceptionUtil {
 
     public static final Set<Class<? extends Throwable>> SECURITY_EXCEPTIONS = ImmutableSet
             .of(SecurityException.class, DotSecurityException.class,
-                    InvalidLicenseException.class,WorkflowPortletAccessException.class);
+                InvalidLicenseException.class,WorkflowPortletAccessException.class);
 
     public static final Set<Class<? extends Throwable>> NOT_FOUND_EXCEPTIONS = ImmutableSet
             .of(NotFoundInDbException.class, DoesNotExistException.class);
 
     public static final Set<Class<? extends Throwable>> BAD_REQUEST_EXCEPTIONS = ImmutableSet
-            .of(AlreadyExistException.class, IllegalArgumentException.class, ValidationException.class, BadRequestException.class);
+            .of(AlreadyExistException.class,
+                IllegalArgumentException.class,
+                DotDataValidationException.class,
+                ValidationException.class,
+                BadRequestException.class);
 
 
     private ExceptionUtil () {}

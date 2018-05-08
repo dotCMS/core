@@ -261,6 +261,7 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 						this.saveError("<%=LanguageUtil.get(pageContext, "Unable-to-save-Scheme")%>");
 
 					}
+                    schemeAdmin.show(); // refresh so changes can be seen
 				}
 			});
 
@@ -287,6 +288,7 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 
 							schemeAdmin.copySuccess(dataOrError);
 						}
+                        schemeAdmin.show(); // refresh so changes can be seen
 			}
 		};
 		dojo.xhrPost(xhrArgs);
@@ -308,7 +310,7 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
                         schemeAdmin.deleteSuccess(dataOrError);
                      }
                 } else {
-                    this.deleteError("<%=LanguageUtil.get(pageContext, "Unable-to-delete-Scheme")%>");
+                    schemeAdmin.deleteError("<%=LanguageUtil.get(pageContext, "Unable-to-delete-Scheme")%>");
                 }
             }
         };
@@ -320,7 +322,6 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
         if(dialog != undefined){
             dialog.hide();
         }
-		mainAdmin.refresh();
 		showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Workflow-Scheme-saved")%>");
 
 	},
