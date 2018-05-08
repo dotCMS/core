@@ -23,6 +23,8 @@ import { DotMenuService } from '../../../api/services/dot-menu.service';
 import { ContentTypesFormComponent } from '../form';
 import { mockResponseView } from '../../../test/response-view.mock';
 import { DotHttpErrorManagerService } from '../../../api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { HotkeysService } from 'angular2-hotkeys';
+import { TestHotkeysMock } from '../../../test/hotkeys-service.mock';
 
 @Component({
     selector: 'dot-content-type-fields-drop-zone',
@@ -77,13 +79,31 @@ const getConfig = (route) => {
             TestContentTypesFormComponent,
             TestContentTypeLayoutComponent
         ],
-        imports: [RouterTestingModule, BrowserAnimationsModule],
+        imports: [
+            RouterTestingModule.withRoutes([
+                {
+                    path: 'content-types-angular',
+                    component: ContentTypesEditComponent
+                }
+            ]),
+            BrowserAnimationsModule
+        ],
         providers: [
-            { provide: LoginService, useClass: LoginServiceMock },
-            { provide: DotMessageService, useValue: messageServiceMock },
+            {
+                provide: LoginService,
+                useClass: LoginServiceMock
+            },
+            {
+                provide: DotMessageService,
+                useValue: messageServiceMock
+            },
             {
                 provide: ActivatedRoute,
                 useValue: { data: Observable.of(route) }
+            },
+            {
+                provide: HotkeysService,
+                useValue: testHotKeysMock
             },
             CrudService,
             FieldService,
@@ -94,12 +114,6 @@ const getConfig = (route) => {
     };
 };
 
-const configCreateMode = getConfig({
-    contentType: {
-        baseType: 'CONTENT'
-    }
-});
-
 let comp: ContentTypesEditComponent;
 let fixture: ComponentFixture<ContentTypesEditComponent>;
 let de: DebugElement;
@@ -108,9 +122,17 @@ let crudService: CrudService;
 let location: Location;
 let dotRouterService: DotRouterService;
 let dotHttpErrorManagerService: DotHttpErrorManagerService;
+let testHotKeysMock: TestHotkeysMock;
 
 describe('ContentTypesEditComponent create mode', () => {
     beforeEach(async(() => {
+        testHotKeysMock = new TestHotkeysMock();
+        const configCreateMode = getConfig({
+            contentType: {
+                baseType: 'CONTENT'
+            }
+        });
+
         DOTTestBed.configureTestingModule(configCreateMode);
 
         fixture = DOTTestBed.createComponent(ContentTypesEditComponent);
@@ -118,10 +140,10 @@ describe('ContentTypesEditComponent create mode', () => {
         de = fixture.debugElement;
         el = de.nativeElement;
 
-        crudService = fixture.debugElement.injector.get(CrudService);
-        location = fixture.debugElement.injector.get(Location);
-        dotRouterService = fixture.debugElement.injector.get(DotRouterService);
-        dotHttpErrorManagerService = fixture.debugElement.injector.get(DotHttpErrorManagerService);
+        crudService = de.injector.get(CrudService);
+        location = de.injector.get(Location);
+        dotRouterService = de.injector.get(DotRouterService);
+        dotHttpErrorManagerService = de.injector.get(DotHttpErrorManagerService);
 
         fixture.detectChanges();
     }));
@@ -154,6 +176,15 @@ describe('ContentTypesEditComponent create mode', () => {
         expect(comp.cancelForm).toHaveBeenCalledTimes(1);
         expect(comp.show).toBe(false);
         expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/content-types-angular');
+    });
+
+    it('should close dialog and redirect on esc key', () => {
+        spyOn(comp, 'cancelForm').and.callThrough();
+
+        testHotKeysMock.callback(['esc']);
+        fixture.detectChanges();
+
+        expect(comp.cancelForm).toHaveBeenCalledTimes(1);
     });
 
     it('should NOT have dot-content-type-layout', () => {
