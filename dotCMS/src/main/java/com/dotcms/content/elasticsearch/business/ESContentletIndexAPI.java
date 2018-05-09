@@ -357,7 +357,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 		BulkRequestBuilder req = (bulk==null) ? client.prepareBulk() : bulk;
 		try {
 			indexContentletList(req, contentToIndex, reindexOnly);
-			if(bulk==null && req.numberOfActions()>0){
+			if(bulk==null && req.numberOfActions()>0) {
 				req.execute(listener);
 			}
 		} catch (DotStateException | DotSecurityException | DotMappingException e) {

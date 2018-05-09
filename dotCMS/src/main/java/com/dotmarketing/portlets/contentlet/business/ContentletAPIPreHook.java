@@ -1400,6 +1400,10 @@ public interface ContentletAPIPreHook {
 		return true;
 	};
 
+	default boolean isInodeIndexedArchived(String inode, int secondsToWait) {
+		return true;
+	}
+
 	/**
 	 * 
 	 * @param inode
