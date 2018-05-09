@@ -73,7 +73,16 @@
 							<%}else{ %>
 								<strike><%=scheme.getName()%></strike>
 							<%} %>
-							<div style="font-weight:normal;font-size:12px;"><%=UtilMethods.webifyString(scheme.getDescription())%></div>
+
+							(<a href="/api/v1/workflow/schemes/<%=scheme.getId()%>/export" target="_blank" onclick="event.stopPropagation();">json</a>)
+
+							<div style="font-weight:normal;font-size:12px;">
+								<%=UtilMethods.webifyString(scheme.getDescription())%>
+							</div>
+							<div style="font-weight:normal;font-size:12px;">
+								<%=LanguageUtil.get(pageContext, "Identity")%>:	<%=APILocator.getShortyAPI().shortify(scheme.getId()) %>
+
+							</div>
 						</div>
 						<ol class="wfStepsList">
 							<%if(steps!= null && steps.size() > 0){ %>
