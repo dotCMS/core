@@ -18,6 +18,7 @@ import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.StringPool;
@@ -65,6 +66,7 @@ public class LogoutResource implements Serializable {
                                  @Context final HttpServletResponse response) {
 
         Response res = null;
+        String   url = null;
 
         try {
 
@@ -76,9 +78,15 @@ public class LogoutResource implements Serializable {
             if(null != user){
             	SecurityLogger.logInfo(this.getClass(), "User " + user.getFullName() + " (" + user.getUserId() + ") has logged out from IP: " + request.getRemoteAddr());
             }
-            res = Response.ok(new ResponseEntityView("Logout successfully"))
+
+            url = Config.getStringProperty("logout.url", StringPool.BLANK);
+
+            res = UtilMethods.isSet(url)?
+                    Response.ok(new ResponseEntityView("Logout successfully"))
                     .header("url", Config.getStringProperty("logout.url", StringPool.BLANK))
-                    .build(); // 200
+                    .build(): // 200
+                    Response.ok(new ResponseEntityView("Logout successfully"))
+                    .build();
 
         } catch (DotSecurityException e) {
             throw new ForbiddenException(e);
