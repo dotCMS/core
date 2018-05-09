@@ -16,9 +16,11 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
+import com.liferay.util.StringPool;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -74,7 +76,9 @@ public class LogoutResource implements Serializable {
             if(null != user){
             	SecurityLogger.logInfo(this.getClass(), "User " + user.getFullName() + " (" + user.getUserId() + ") has logged out from IP: " + request.getRemoteAddr());
             }
-            res = Response.ok(new ResponseEntityView("Logout successfully")).build(); // 200
+            res = Response.ok(new ResponseEntityView("Logout successfully"))
+                    .header("url", Config.getStringProperty("logout.url", StringPool.BLANK))
+                    .build(); // 200
 
         } catch (DotSecurityException e) {
             throw new ForbiddenException(e);
