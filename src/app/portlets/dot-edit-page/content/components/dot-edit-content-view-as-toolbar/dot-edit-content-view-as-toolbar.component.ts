@@ -28,7 +28,7 @@ export class DotEditContentViewAsToolbarComponent implements OnInit, OnChanges {
     ngOnInit(): void {
         this.whatsChangedMessage = this.dotMessageService
             .getMessages(['dot.common.whats.changed'])
-            .map((messages: string[]) => messages[0]);
+            .map((messages: string[]) => messages['dot.common.whats.changed']);
     }
 
     ngOnChanges(changes: SimpleChanges): void {
