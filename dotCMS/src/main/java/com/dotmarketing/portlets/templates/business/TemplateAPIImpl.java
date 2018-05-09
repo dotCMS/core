@@ -188,7 +188,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 
 	@WrapInTransaction
-	public Template saveTemplate(Template template, Host destination, User user, boolean respectFrontendRoles)
+	public Template saveTemplate(final Template template, final Host destination, final User user, final boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
 
 		boolean existingId=false, existingInode=false;

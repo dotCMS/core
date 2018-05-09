@@ -14,7 +14,7 @@ public class InvalidLicenseExceptionMapper implements com.dotcms.repackage.javax
     private static final String ERROR_KEY = "dotcms.api.error.license.required";
 
     @Override
-    public Response toResponse(InvalidLicenseException exception) {
+    public Response toResponse(final InvalidLicenseException exception) {
         Logger.warn(this.getClass(), exception.getMessage(), exception);
 
         return ExceptionMapperUtil.createResponse(exception, ERROR_KEY, Response.Status.FORBIDDEN);
