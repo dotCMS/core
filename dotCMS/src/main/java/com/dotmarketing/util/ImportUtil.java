@@ -1460,8 +1460,8 @@ public class ImportUtil {
             throws LanguageException {
 
         results.get("warnings")
-                .add(LanguageUtil.get(user, "Line--") + " " + lineNumber + ". " +
-                        LanguageUtil.get(user, generalErrorKey)
+                .add(LanguageUtil.get(user, "Line--") + " " + lineNumber + ". "
+                        + LanguageUtil.get(user, generalErrorKey) + " "
                         + specificErrorMessage);
         // if the user doesn't have access to the action then removed it from
         // the content to avoid troubles executing the action set on the
