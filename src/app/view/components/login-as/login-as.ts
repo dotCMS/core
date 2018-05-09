@@ -1,5 +1,5 @@
 import { BaseComponent } from '../_common/_base/base-component';
-import { Component, Output, EventEmitter, Input, ViewEncapsulation, OnInit } from '@angular/core';
+import { Component, Output, EventEmitter, Input, ViewEncapsulation, OnInit, ElementRef, ViewChild } from '@angular/core';
 import { LoginService, User } from 'dotcms-js/dotcms-js';
 import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { PaginatorService } from '../../../api/services/paginator';
@@ -17,10 +17,12 @@ import { DotNavigationService } from '../dot-navigation/dot-navigation.service';
 export class LoginAsComponent extends BaseComponent implements OnInit {
     @Output() cancel = new EventEmitter<boolean>();
     @Input() visible: boolean;
+    @ViewChild('password') passwordElem: ElementRef;
 
     form: FormGroup;
     needPassword = false;
     userCurrentPage: User[];
+    errorMessage: string;
 
     constructor(
         dotMessageService: DotMessageService,
@@ -30,7 +32,17 @@ export class LoginAsComponent extends BaseComponent implements OnInit {
         private iframeOverlayService: IframeOverlayService,
         private dotNavigationService: DotNavigationService
     ) {
-        super(['Change', 'cancel', 'password', 'loginas.select.loginas.user', 'login-as'], dotMessageService);
+        super(
+            [
+                'Change',
+                'cancel',
+                'loginas.select.loginas.user',
+                'loginas.input.loginas.password',
+                'loginas.error.wrong-credentials',
+                'login-as'
+            ],
+            dotMessageService
+        );
     }
 
     ngOnInit(): void {
@@ -49,6 +61,7 @@ export class LoginAsComponent extends BaseComponent implements OnInit {
     }
 
     doLoginAs(): void {
+        this.errorMessage = '';
         const password: string = this.form.value.password;
         const user: User = this.form.value.loginAsUser;
         this.loginService.loginAs({ user: user, password: password }).subscribe(
@@ -60,11 +73,11 @@ export class LoginAsComponent extends BaseComponent implements OnInit {
                 }
             },
             (response) => {
-                // TODO: Replace the alert below with a modal error message.
                 if (response.entity) {
-                    alert(response.errorsMessages);
+                    this.errorMessage = response.errorsMessages;
                 } else {
-                    alert(response);
+                    this.errorMessage = this.i18nMessages['loginas.error.wrong-credentials'];
+                    this.passwordElem.nativeElement.focus();
                 }
             }
         );

@@ -127,4 +127,20 @@ describe('LoginAsComponent', () => {
         button.nativeElement.click();
         expect(loginService.loginAs).toHaveBeenCalledTimes(1);
     });
+
+    it('should focus on Password input after an Error haapens in "loginAs" in "LoginService"', () => {
+        spyOn(loginService, 'loginAs').and.returnValue(Observable.throw({ message: 'Error' }));
+        comp.visible = true;
+        comp.needPassword = true;
+        comp.ngOnInit();
+        fixture.detectChanges();
+        comp.form.get('loginAsUser').setValue(mockUser);
+        comp.form.get('password').setValue('password');
+        fixture.detectChanges();
+        const button = de.query(By.css('#dot-login-as-button-change'));
+        const passwordInputElem = de.query(By.css('#dot-login-as-password'));
+        spyOn(passwordInputElem.nativeElement, 'focus');
+        button.nativeElement.click();
+        expect(passwordInputElem.nativeElement.focus).toHaveBeenCalled();
+    });
 });

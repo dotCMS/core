@@ -1,12 +1,16 @@
 @import 'mixins';
 @import 'variables';
 
+:host p-dialog {
+    overflow: visible;
+}
+
 .login-as {
     input[type='password'] {
         width: 100%;
     }
 }
 
-:host p-dialog {
-    overflow: visible;
+.error-message {
+    color: $red;
 }
