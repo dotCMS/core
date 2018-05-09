@@ -7,6 +7,8 @@ import static com.dotcms.util.HttpRequestDataUtil.getHostname;
 import static com.dotmarketing.util.WebKeys.*;
 
 import com.dotmarketing.util.Constants;
+import com.dotmarketing.util.Logger;
+
 import java.io.Serializable;
 import java.util.Locale;
 import java.util.Map;
@@ -16,7 +18,12 @@ import javax.servlet.http.HttpServletRequest;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.rest.api.v1.system.websocket.SystemEventsWebSocketEndPoint;
+
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
+
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.util.ReleaseInfo;
@@ -49,6 +56,7 @@ public class ConfigurationHelper implements Serializable {
 	public static final String VERSION = "version";
 	public static final String BUILD_DATE = "buildDate";
 	public static final String EMAIL_REGEX = "emailRegex";
+	public static final String PRIMARY_COLOR = "primaryColor";
 	public static ConfigurationHelper INSTANCE = new ConfigurationHelper();
 
 	/**
@@ -71,6 +79,14 @@ public class ConfigurationHelper implements Serializable {
 	 */
 	public Map<String, Object> getConfigProperties(final HttpServletRequest request, final Locale locale) throws LanguageException {
 
+	    String primaryColor = "#0e80cb";
+	    
+
+        try {
+            primaryColor= APILocator.getCompanyAPI().getCompany().getSize();
+        } catch (SystemException | PortalException e) {
+            Logger.warn(this.getClass(), "unable to get color:" +e.getMessage());
+        }
 
 		return map(
 				DOTCMS_WEBSOCKET_PROTOCOL,
@@ -106,7 +122,8 @@ public class ConfigurationHelper implements Serializable {
 						VERSION,           ReleaseInfo.getVersion(),
 						BUILD_DATE,        ReleaseInfo.getBuildDateString()
 				),
-				EMAIL_REGEX, Constants.REG_EX_EMAIL
+				EMAIL_REGEX, Constants.REG_EX_EMAIL,
+				PRIMARY_COLOR,primaryColor
 		);
 	}
 
