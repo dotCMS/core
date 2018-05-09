@@ -80,7 +80,7 @@
 								<%=UtilMethods.webifyString(scheme.getDescription())%>
 							</div>
 							<div style="font-weight:normal;font-size:12px;">
-								<%=APILocator.getShortyAPI().shortify(scheme.getId()) %>
+								<%=LanguageUtil.get(pageContext, "Identity")%>:	<%=APILocator.getShortyAPI().shortify(scheme.getId()) %>
 
 							</div>
 						</div>
