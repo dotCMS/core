@@ -68,7 +68,7 @@ public class ResponseEntityView implements Serializable {
         this.permissions     = Collections.EMPTY_LIST;
     }
 
-    public ResponseEntityView(final Object entity, String... permissions) {
+    public ResponseEntityView(final Object entity, final String... permissions) {
 
         this.errors          = Collections.EMPTY_LIST;
         this.messages        = Collections.EMPTY_LIST;
@@ -128,7 +128,7 @@ public class ResponseEntityView implements Serializable {
     }
 
     public ResponseEntityView(final Object entity, final List<ErrorEntity> errors,
-                              final List<MessageEntity> messages, final Map<String, String> i18nMessagesMap, List<String> permissions) {
+                              final List<MessageEntity> messages, final Map<String, String> i18nMessagesMap, final List<String> permissions) {
 
         this.errors          = errors;
         this.messages        = messages;
