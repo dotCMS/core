@@ -17,6 +17,7 @@ import com.google.common.collect.ImmutableMap;
 
 import java.io.CharArrayReader;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -34,7 +35,7 @@ public class HTMLPageAssetRendered extends PageView {
 
     public HTMLPageAssetRendered(final Host site,
                                  final Template template,
-                                 final List<ContainerRendered> containers,
+                                 final Collection<ContainerRendered> containers,
                                  final HTMLPageAssetInfo page,
                                  final TemplateLayout layout,
                                  final String html,

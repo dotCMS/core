@@ -1,28 +1,33 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render;
 
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
+import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRenderedBuilder;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.model.User;
 import org.apache.velocity.context.Context;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 /**
  * Builder of {@link ContainerRendered}
@@ -39,47 +44,53 @@ public class ContainerRenderedBuilder {
         containerAPI = APILocator.getContainerAPI();
     }
 
-    public List<ContainerRendered> getContainers(final Template template)
+    public Collection<ContainerRendered> getContainers(final Template template, PageMode mode)
             throws DotSecurityException, DotDataException {
+        return getContainersRendered(template, null, mode);
+    }
+
+    public Collection<ContainerRendered> getContainersRendered(final Template template, final Context velocityContext,
+                                                         PageMode mode)
+
+            throws DotSecurityException, DotDataException {
+
         final User systemUser = this.userAPI.getSystemUser();
-        final List<Container> templateContainers = this.templateAPI.getContainersInTemplate(template, systemUser,
-                false);
+        final TemplateLayout layout = DotTemplateTool.themeLayout(template.getInode());
+        final List<ContainerUUID> containersUUID = this.templateAPI.getContainersUUID(layout);
 
-        final List<ContainerRendered> containers = new ArrayList<>();
-        for (final Container container : templateContainers) {
-            final List<ContainerStructure> containerStructures = this.containerAPI.getContainerStructures(container);
-            containers.add(new ContainerRendered(container, containerStructures));
-        }
+        Map<String, List<ContainerUUID>> groupByContainerID = containersUUID.stream().collect(Collectors.groupingBy(ContainerUUID::getIdentifier));
 
-        return containers;
-    }
-
-    public List<ContainerRendered> getContainersRendered(final Template template, final Context velocityContext,
-                                                         PageMode mode )
-
-            throws DotSecurityException, DotDataException {
-
-        List<ContainerRendered> containers = this.getContainers(template);
-        renderContainer(containers, velocityContext, mode);
-        return containers;
-    }
-
-    private void renderContainer(final List<ContainerRendered> containers, final Context velocityContext, PageMode mode )
-            throws DotSecurityException, DotDataException {
-
-
-        for (final ContainerRendered containerView : containers) {
-            final Container container = containerView.getContainer();
-            VelocityResourceKey key = new VelocityResourceKey(container, mode);
-
+        return groupByContainerID.entrySet().stream().map(entry -> {
+            String containerId = entry.getKey();
             try {
+                final Container container = (mode.showLive) ?
+                        (Container) APILocator.getVersionableAPI().findLiveVersion(containerId, systemUser, false) :
+                        (Container) APILocator.getVersionableAPI().findWorkingVersion(containerId, systemUser, false);
 
-                final String rendered = VelocityUtil.mergeTemplate(key.path, velocityContext);
-                containerView.setRendered(rendered);
-            } catch (Exception e) {
-                throw new DotDataException(String.format("Container '%s' could not be " +
-                        "rendered via " + "Velocity.", container.getIdentifier()), e);
+                final List<ContainerStructure> containerStructures = this.containerAPI.getContainerStructures(container);
+
+                Map<String, String> containersRendered = null;
+
+                if (velocityContext != null) {
+                    containersRendered = entry.getValue().stream()
+                            .map(containerUUID -> containerUUID.getUUID())
+                            .collect(Collectors.toMap(uuid -> "uuid-" + uuid, uuid -> {
+                                VelocityResourceKey key = new VelocityResourceKey(container, uuid, mode);
+
+                                try {
+                                    return VelocityUtil.mergeTemplate(key.path, velocityContext);
+                                } catch (Exception e) {
+                                    throw new DotRuntimeException(String.format("Container '%s' could not be " +
+                                            "rendered via " + "Velocity.", container.getIdentifier()), e);
+                                }
+                            }));
+                }
+
+                return new ContainerRendered(container, containerStructures, containersRendered);
+            } catch (DotDataException | DotSecurityException e) {
+                Logger.error(ContainerRenderedBuilder.class, e.getMessage());
+                throw new DotRuntimeException(e);
             }
-        }
+        }).collect(Collectors.toList());
     }
 }

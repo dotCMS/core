@@ -258,33 +258,35 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
                 sb.append("$formCode");
             sb.append("#else");
 
-                for (int i = 0; i < csList.size(); i++) {
-                    ContainerStructure cs = csList.get(i);
-                    String ifelse = (i == 0) ? "if" : "elseif";
-                    sb.append("#" + ifelse + "($ContentletStructure ==\"" + cs.getStructureId() + "\")");
-                    sb.append(cs.getCode());
-                }
-                if (csList.size() > 0) {
-                    sb.append("#end");
-                }
+            for (int i = 0; i < csList.size(); i++) {
+                ContainerStructure cs = csList.get(i);
+                String ifelse = (i == 0) ? "if" : "elseif";
+                sb.append("#" + ifelse + "($ContentletStructure ==\"" + cs.getStructureId() + "\")");
+                sb.append(cs.getCode());
+            }
+            if (csList.size() > 0) {
+                sb.append("#end");
+            }
                 // ### END BODY ###
+            sb.append("#end");
+
+            if (mode.showLive) {
                 sb.append("#end");
-            
-               if (mode.showLive) {
-                    sb.append("#end");
-                }
-     
-    
+            }
+
+
                // end content dot-data-content
-               if (mode == PageMode.EDIT_MODE) {
-                   sb.append("</div>");
-               }
+            if (mode == PageMode.EDIT_MODE) {
+               sb.append("</div>");
+            }
                 // ##End of foreach loop
-                sb.append("#end");
+            sb.append("#end");
                 
             // end content dot-data-container
             if (mode == PageMode.EDIT_MODE) {
+                sb.append("#if($" +  SHOW_PRE_POST_LOOP + ")");
                 sb.append("</div>");
+                sb.append("#end");
             }
 
 
@@ -292,7 +294,7 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
             if (UtilMethods.isSet(container.getPostLoop())) {
                 sb.append("#if($" +  SHOW_PRE_POST_LOOP + ")");
                 sb.append(container.getPostLoop());
-                sb.append("#end ");
+                sb.append("#end");
             }
 
             // end if maxContentlets >0

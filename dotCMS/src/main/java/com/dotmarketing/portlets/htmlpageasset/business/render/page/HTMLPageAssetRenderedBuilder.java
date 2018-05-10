@@ -35,10 +35,7 @@ import org.apache.velocity.context.Context;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * Builder of {@link HTMLPageAssetRendered}
@@ -100,15 +97,15 @@ public class HTMLPageAssetRenderedBuilder {
         final HTMLPageAssetInfo htmlPageAssetInfo = getHTMLPageAssetInfo(info);
         final Template template = getTemplate();
         final TemplateLayout layout = template.isDrawed() ? DotTemplateTool.themeLayout(template.getInode()) : null;
+        final PageMode mode = PageMode.get(request);
 
         if (!rendered) {
-            final List<ContainerRendered> containers = this.containerRenderedBuilder.getContainers(template);
+            final Collection<ContainerRendered> containers = this.containerRenderedBuilder.getContainers(template, mode);
             return new PageView(site, template, containers, htmlPageAssetInfo, layout);
         } else {
-            final PageMode mode = PageMode.get(request);
-            final Context velocityContext = VelocityUtil.getWebContext(request, response);
 
-            final List<ContainerRendered> containers = this.containerRenderedBuilder.getContainersRendered(template,
+            final Context velocityContext = VelocityUtil.getWebContext(request, response);
+            final Collection<ContainerRendered> containers = this.containerRenderedBuilder.getContainersRendered(template,
                     velocityContext, mode);
             final boolean canCreateTemplates = layoutAPI.doesUserHaveAccessToPortlet("templates", user);
             final String pageHTML = this.getPageHTML();
