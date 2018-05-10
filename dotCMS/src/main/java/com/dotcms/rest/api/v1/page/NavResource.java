@@ -150,7 +150,7 @@ public class NavResource {
         navMap.put("languageId", nav.getLanguageId());
         navMap.put("order", nav.getOrder());
         navMap.put("type", nav.getType());
-
+        navMap.put("hash", nav.hashCode());
         
         if (currentDepth < maxDepth) {
             List<Map<String, Object>> childs = new ArrayList<>();
