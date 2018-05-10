@@ -9,10 +9,9 @@ import java.lang.annotation.Target;
 
 /**
  * Add this annotation if you are returning as an entity on the {@link com.dotcms.rest.ResponseEntityView} a {@link com.dotmarketing.business.Permissionable}
- * and wants a header called permissionable, such as
- * <i>header:permissionable: [WRITE, PUBLISH, EDITPERMISSION]</i> that are the permissions that the request user has.
+ * and wants to populate the ResponseEntityView.permissions automatically,
  * Note: we avoid the READ since if you are getting the Permissions it means you can read it.
- * By default the request will need a query string called permissionable=true in order to include the header or not.
+ * By default the request will need a query string called include_permissions=true in order to include the permissions on the response or not.
  * However you can change it by queryParam (optional)
  *
  */
@@ -20,6 +19,6 @@ import java.lang.annotation.Target;
 @Target({ ElementType.TYPE, ElementType.METHOD })
 @Retention(value = RetentionPolicy.RUNTIME)
 public @interface Permissions {
-    String queryParam() default "includepermissions";
+    String queryParam() default "include_permissions";
 }
 
