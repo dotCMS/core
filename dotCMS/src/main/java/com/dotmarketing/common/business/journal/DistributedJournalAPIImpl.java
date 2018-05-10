@@ -6,9 +6,11 @@ package com.dotmarketing.common.business.journal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 
 import java.sql.Connection;
@@ -146,5 +148,23 @@ public class DistributedJournalAPIImpl<T> implements DistributedJournalAPI<T> {
 	public void resetServerForReindexEntry ( List<IndexJournal<T>> recordsToModify ) throws DotDataException {
 		distributedJournalFactory.resetServerForReindexEntry(recordsToModify);
 	}
+
+    @Override
+    public void addIdentifierReindex(String id) throws DotDataException {
+        distributedJournalFactory.addIdentifierReindex(id);
+        
+    }
+
+    @Override
+    public void addContentletReindex(Contentlet con) throws DotDataException {
+        this.addIdentifierReindex(con.getIdentifier());
+        
+    }
+
+    @Override
+    public void addIdentifierReindex(Identifier id) throws DotDataException {
+        this.addIdentifierReindex(id.getId());
+        
+    }
 
 }

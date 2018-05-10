@@ -4,8 +4,10 @@ import java.sql.Connection;
 import java.util.List;
 
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI.DateType;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Config;
 
@@ -178,5 +180,8 @@ public abstract class DistributedJournalFactory<T> {
 	 * @throws DotDataException
 	 */
 	protected abstract void refreshContentUnderFolderPath ( String hostId, String folderPath ) throws DotDataException;
+
+    protected abstract void addIdentifierReindex(String id) throws DotDataException;
+
 
 }

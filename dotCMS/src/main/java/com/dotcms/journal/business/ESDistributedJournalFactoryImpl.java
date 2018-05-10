@@ -1,16 +1,6 @@
 package com.dotcms.journal.business;
 
-import java.sql.CallableStatement;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import oracle.jdbc.OracleTypes;
+import com.dotcms.business.CloseDBIfOpened;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -26,6 +16,19 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+
+import java.sql.CallableStatement;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import oracle.jdbc.OracleTypes;
 
 /**
  * Provides access to all the routines associated to the re-indexation process 
@@ -81,7 +84,25 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
 
 
     }
+    
+    @CloseDBIfOpened
+    @Override
+    protected void addIdentifierReindex(final String id) throws DotDataException {
+        assert (id != null);
 
+        final String sql =
+                "insert into dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action, time_entered) values (?, ?, ?, ?, ?)";
+        new DotConnect().setSQL(sql)
+            .addParam(id)
+            .addParam(id)
+            .addParam(REINDEX_JOURNAL_PRIORITY_STRUCTURE_REINDEX)
+            .addParam(REINDEX_ACTION_REINDEX_OBJECT)
+            .addParam(new Date())
+            .loadResult();
+
+    }
+    
+    @CloseDBIfOpened
     @Override
     protected void addStructureReindexEntries(T structureInode)
             throws DotDataException {
@@ -99,7 +120,7 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
             Logger.fatal(this,"Error  unlocking the reindex journal table" +  ex);
         }
     }
-
+    @CloseDBIfOpened
     @Override
     protected boolean areRecordsLeftToIndex() throws DotDataException {
 
