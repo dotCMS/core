@@ -20,6 +20,6 @@ import java.lang.annotation.Target;
 @Target({ ElementType.TYPE, ElementType.METHOD })
 @Retention(value = RetentionPolicy.RUNTIME)
 public @interface Permissions {
-    String queryParam() default "permissionable";
+    String queryParam() default "includepermissions";
 }
 

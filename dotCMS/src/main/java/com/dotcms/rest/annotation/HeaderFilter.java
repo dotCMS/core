@@ -9,6 +9,8 @@ import com.dotcms.repackage.javax.ws.rs.container.ContainerRequestContext;
 import com.dotcms.repackage.javax.ws.rs.container.ContainerResponseContext;
 import com.dotcms.repackage.javax.ws.rs.container.ContainerResponseFilter;
 import com.dotcms.repackage.javax.ws.rs.core.MultivaluedMap;
+import com.dotcms.rest.ErrorEntity;
+import com.dotcms.rest.MessageEntity;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotmarketing.business.Permissionable;
@@ -36,7 +38,6 @@ public class HeaderFilter implements ContainerResponseFilter {
 	private final WebResource webResource					= new WebResource();
 	public static final String ACCESS_CONTROL_ALLOW_ORIGIN  = "Access-Control-Allow-Origin";
 	public static final String CACHE_CONTROL    			= "Cache-Control";
-	public static final String PERMISSIONS					= "permissions";
 	public static final String NO_CACHE_CONTROL 			= "no-cache, no-store, must-revalidate";
 	public static final String PRAGMA 						= "Pragma";
 	public static final String NO_CACHE 					= "no-cache";
@@ -60,7 +61,7 @@ public class HeaderFilter implements ContainerResponseFilter {
 								Cacheable.class.cast(annotation).cc());
 					},
 					Permissions.class,
-					this::applyPermisionable,
+					this::applyPermissionable,
 
 					NoCache.class,
 					(final Annotation annotation, final MultivaluedMap<String, Object> headers, final ContainerRequestContext requestContext,
@@ -111,7 +112,7 @@ public class HeaderFilter implements ContainerResponseFilter {
 		}
     } // filter.
 
-	private void applyPermisionable(final Annotation annotation,
+	private void applyPermissionable(final Annotation annotation,
 									final MultivaluedMap<String, Object> headers,
 									final ContainerRequestContext requestContext,
 									final ContainerResponseContext responseContext) {
@@ -133,15 +134,17 @@ public class HeaderFilter implements ContainerResponseFilter {
 
 					if (null != user) {
 
-						headers.add(PERMISSIONS, this.permissionsUtil.getPermissionsArray
-								(Permissionable.class.cast(ResponseEntityView.class.cast(entity).getEntity()), user));
+						final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(entity);
+						responseContext.setEntity(new ResponseEntityView
+								(responseEntityView.getEntity(), responseEntityView.getErrors(),
+										responseEntityView.getMessages(), responseEntityView.getI18nMessagesMap(),
+										Arrays.asList(this.permissionsUtil.getPermissionsArray(Permissionable.class.cast(responseEntityView.getEntity()), user))));
 					}
 				} catch (Exception e) {
 					Logger.debug(this, e.getMessage(), e);
 				}
-
 			}
 		}
-	} // applyPermisionable.
+	} // applyPermissionable.
 } // E:O:F:HeaderFilter.
  
