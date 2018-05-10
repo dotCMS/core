@@ -1,27 +1,5 @@
 package com.dotmarketing.util;
 
-import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
-import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.liferay.util.StringPool;
-import io.bit3.jsass.importer.Import;
-import java.io.IOException;
-import java.io.Reader;
-import java.io.StringWriter;
-import java.sql.Timestamp;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -46,6 +24,7 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
@@ -55,9 +34,28 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Provides utility methods to import content into dotCMS. The data source is a
@@ -267,7 +265,7 @@ public class ImportUtil {
                                 HibernateUtil.startTransaction();
                             }
                         } catch ( DotRuntimeException ex ) {
-                            String errorMessage = ex.getMessage();
+                            String errorMessage = LanguageUtil.get(user, ex.getMessage());
                             if(errorMessage.indexOf("Line #") == -1){
                                 errorMessage = "Line #"+lineNumber+" "+errorMessage;
                             }
@@ -621,41 +619,11 @@ public class ImportUtil {
                 String value = line[column];
                 Object valueObj = value;
                 if (field.getFieldType().equals(Field.FieldType.DATE.toString())) {
-                    if (field.getFieldContentlet().startsWith("date")) {
-                        if(UtilMethods.isSet(value)) {
-                            try { valueObj = parseExcelDate(value) ;} catch (ParseException e) {
-                                throw new DotRuntimeException("Line #" + lineNumber + " contains errors, Column: " + field.getVelocityVarName() +
-                                        ", value: " + value + ", couldn't be parsed as any of the following supported formats: " +
-                                        printSupportedDateFormats());
-                            }
-                        } else {
-                            valueObj = null;
-                        }
-                    }
+                    valueObj = validateDateTypes(lineNumber, field, value, valueObj);
                 } else if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
-                    if (field.getFieldContentlet().startsWith("date")) {
-                        if(UtilMethods.isSet(value)) {
-                            try { valueObj = parseExcelDate(value) ;} catch (ParseException e) {
-                                throw new DotRuntimeException("Line #" + lineNumber + " contains errors, Column: " + field.getVelocityVarName() +
-                                        ", value: " + value + ", couldn't be parsed as any of the following supported formats: " +
-                                        printSupportedDateFormats());
-                            }
-                        } else {
-                            valueObj = null;
-                        }
-                    }
+                    valueObj = validateDateTypes(lineNumber, field, value, valueObj);
                 } else if (field.getFieldType().equals(Field.FieldType.TIME.toString())) {
-                    if (field.getFieldContentlet().startsWith("date")) {
-                        if(UtilMethods.isSet(value)) {
-                            try { valueObj = parseExcelDate(value) ;} catch (ParseException e) {
-                                throw new DotRuntimeException("Line #" + lineNumber + " contains errors, Column: " + field.getVelocityVarName() +
-                                        ", value: " + value + ", couldn't be parsed as any of the following supported formats: " +
-                                        printSupportedDateFormats());
-                            }
-                        } else {
-                            valueObj = null;
-                        }
-                    }
+                    valueObj = validateDateTypes(lineNumber, field, value, valueObj);
                 } else if (field.getFieldType().equals(Field.FieldType.CATEGORY.toString()) || field.getFieldType().equals(Field.FieldType.CATEGORIES_TAB.toString())) {
                     valueObj = value;
                     if(UtilMethods.isSet(value)) {
@@ -668,53 +636,44 @@ public class ImportUtil {
                             categories.add(cat);
                         }
                     }
-                }
-                else if (field.getFieldType().equals(Field.FieldType.CHECKBOX.toString()) ||
+                } else if (field.getFieldType().equals(Field.FieldType.CHECKBOX.toString()) ||
                         field.getFieldType().equals(Field.FieldType.SELECT.toString()) ||
                         field.getFieldType().equals(Field.FieldType.MULTI_SELECT.toString()) ||
                         field.getFieldType().equals(Field.FieldType.RADIO.toString())
                         ) {
                     valueObj = value;
-                    if(UtilMethods.isSet(value))
-                    {
+                    if (UtilMethods.isSet(value)) {
                         String fieldEntriesString = field.getValues()!=null ? field.getValues() : "";
                         String[] fieldEntries = fieldEntriesString.split("\n");
                         boolean found = false;
-                        for(String fieldEntry : fieldEntries)
-                        {
+                        for (String fieldEntry : fieldEntries) {
                             String[] splittedValue = fieldEntry.split("\\|");
                             String entryValue = splittedValue[splittedValue.length - 1].trim();
 
-                            if(entryValue.equals(value) || value.contains(entryValue))
-                            {
+                            if (entryValue.equals(value) || value.contains(entryValue)) {
                                 found = true;
                                 break;
                             }
                         }
-                        if(!found)
-                        {
+                        if (!found) {
                             throw new DotRuntimeException("Line #" + lineNumber + " contains errors, Column: " + field.getVelocityVarName() +
                                     ", value: " + value + ", invalid value found, line will be ignored.");
                         }
-                    }
-                    else {
+                    } else {
                         valueObj = null;
                     }
-                }
-                else if (field.getFieldType().equals(Field.FieldType.TEXT.toString())) {
+                } else if (field.getFieldType().equals(Field.FieldType.TEXT.toString())) {
                     if (value.length() > 255) {
                         valueObj = value.substring(0, 255);
                     }
                 } else if (field.getFieldType().equals(Field.FieldType.TEXT_AREA.toString()) || field.getFieldType().equals(Field.FieldType.WYSIWYG.toString())) {
                     valueObj = value;
-                }
-                else if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
+                } else if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
                     Identifier identifier = null;
                     valueObj = null;
                     try{
                         identifier = APILocator.getIdentifierAPI().findFromInode(value);
-                    }
-                    catch(DotStateException dse){
+                    } catch (DotStateException dse) {
                         Logger.debug(ImportUtil.class, dse.getMessage());
                     }
                     if(identifier != null && InodeUtils.isSet(identifier.getInode())){
@@ -729,8 +688,7 @@ public class ImportUtil {
                         for(String y : arr){
                             if(UtilMethods.isSet(y) && hostName == null){
                                 hostName = y;
-                            }
-                            else if(UtilMethods.isSet(y)){
+                            } else if (UtilMethods.isSet(y)) {
                                 path.append(y);
                                 path.append("/");
                             }
@@ -744,11 +702,10 @@ public class ImportUtil {
                             }
                             headersIncludeHostField = true;
                         }
-                    }
-                    else{
+                    } else {
                         Host h = APILocator.getHostAPI().findByName(value, user, false);
                         if(UtilMethods.isSet(h)){
-                            valueObj=h.getIdentifier();	
+                            valueObj = h.getIdentifier();
                             headersIncludeHostField = true;
                         }
                     }
@@ -759,8 +716,8 @@ public class ImportUtil {
                     }
                 }else if(field.getFieldType().equals(Field.FieldType.IMAGE.toString()) || field.getFieldType().equals(Field.FieldType.FILE.toString())) {
                     String filePath = value;
-                    if(field.getFieldType().equals(Field.FieldType.IMAGE.toString()) && !UtilMethods.isImage(filePath))
-                    {
+                    if (Field.FieldType.IMAGE.toString().equals(field.getFieldType())
+                            && !UtilMethods.isImage(filePath)) {
                         //Add Warning the File isn't is an image
                         if(UtilMethods.isSet(filePath)){
                             String localLineMessage = LanguageUtil.get(user, "Line--");
@@ -768,16 +725,12 @@ public class ImportUtil {
                             results.get("warnings").add(localLineMessage + lineNumber + ". " + noImageFileMessage);
                         }
                         valueObj = null;
-                    }
-                    else
-                    {
+                    } else {
                         //check if the path is relative to this host or not
                         Host fileHost = hostAPI.find(currentHostId, user, false);
-                        if(filePath.indexOf(":") > -1)
-                        {
+                        if (filePath.contains(":")) {
                             String[] fileInfo = filePath.split(":");
-                            if(fileInfo.length == 2)
-                            {
+                            if (fileInfo.length == 2) {
                                 Host fileHostAux = hostAPI.findByName(fileInfo[0], user, false);
                                 fileHost = (UtilMethods.isSet(fileHostAux) ? fileHostAux : fileHost);
                                 filePath = fileInfo[1];
@@ -797,8 +750,7 @@ public class ImportUtil {
                             }
                         }
                     }
-                }
-                else {
+                } else {
                     valueObj = Config.getBooleanProperty("CONTENT_ESCAPE_HTML_TEXT",true) ? UtilMethods.escapeUnicodeCharsForHTML(value) : value;
                 }
                 values.put(column, valueObj);
@@ -814,46 +766,42 @@ public class ImportUtil {
             }
 
             //Find the relationships and their related contents
-            HashMap<Relationship,List<Contentlet>> csvRelationshipRecordsParentOnly = new HashMap<Relationship,List<Contentlet>>();
-            HashMap<Relationship,List<Contentlet>> csvRelationshipRecordsChildOnly = new HashMap<Relationship,List<Contentlet>>();
-            HashMap<Relationship,List<Contentlet>> csvRelationshipRecords = new HashMap<Relationship,List<Contentlet>>();
+            HashMap<Relationship, List<Contentlet>> csvRelationshipRecordsParentOnly = new HashMap<>();
+            HashMap<Relationship, List<Contentlet>> csvRelationshipRecordsChildOnly = new HashMap<>();
+            HashMap<Relationship, List<Contentlet>> csvRelationshipRecords = new HashMap<>();
             for (Integer column : relationships.keySet()) {
                 Relationship relationship = relationships.get(column);
                 String relatedQuery = line[column];
-                List<Contentlet> relatedContentlets = new ArrayList<Contentlet>();
+                List<Contentlet> relatedContentlets = new ArrayList<>();
                 boolean error = false;
-                if(UtilMethods.isSet(relatedQuery))
-                {
+                if (UtilMethods.isSet(relatedQuery)) {
                     relatedContentlets = conAPI.checkoutWithQuery(relatedQuery, user, false);
 
                     //validate if the contenlet retrieved are from the correct typ
-                    if(FactoryLocator.getRelationshipFactory().isParent(relationship,contentType))
-                    {
-                        for(Contentlet contentlet : relatedContentlets)
-                        {
+                    if (FactoryLocator.getRelationshipFactory()
+                            .isParent(relationship, contentType)) {
+                        for (Contentlet contentlet : relatedContentlets) {
                             Structure relatedStructure = contentlet.getStructure();
-                            if(!(FactoryLocator.getRelationshipFactory().isChild(relationship,relatedStructure)))
-                            {
+                            if (!(FactoryLocator.getRelationshipFactory()
+                                    .isChild(relationship, relatedStructure))) {
                                 error = true;
                                 break;
                             }
                         }
                     }
-                    if(FactoryLocator.getRelationshipFactory().isChild(relationship,contentType))
-                    {
-                        for(Contentlet contentlet : relatedContentlets)
-                        {
+                    if (FactoryLocator.getRelationshipFactory()
+                            .isChild(relationship, contentType)) {
+                        for (Contentlet contentlet : relatedContentlets) {
                             Structure relatedStructure = contentlet.getStructure();
-                            if(!(FactoryLocator.getRelationshipFactory().isParent(relationship,relatedStructure)))
-                            {
+                            if (!(FactoryLocator.getRelationshipFactory()
+                                    .isParent(relationship, relatedStructure))) {
                                 error = true;
                                 break;
                             }
                         }
                     }
                 }
-                if(!error)
-                {
+                if (!error) {
                     //If no error add the relatedContentlets
                     if(onlyChild.get(column)) {
                         csvRelationshipRecordsChildOnly.put(relationship, relatedContentlets);
@@ -862,9 +810,7 @@ public class ImportUtil {
                     } else {
                         csvRelationshipRecords.put(relationship, relatedContentlets);
                     }
-                }
-                else
-                {
+                } else {
                     //else add the error message
                     String localLineMessage = LanguageUtil.get(user, "Line--");
                     String structureDoesNoMatchMessage = LanguageUtil.get(user, "the-structure-does-not-match-the-relationship");
@@ -873,13 +819,14 @@ public class ImportUtil {
             }
 
             //Searching contentlets to be updated by key fields
-            List<Contentlet> contentlets = new ArrayList<Contentlet>();
+            List<Contentlet> contentlets = new ArrayList<>();
             String conditionValues = "";
 
             int identifierFieldIndex = -1;
             try {
                 identifierFieldIndex = Integer.parseInt( results.get( "identifiers" ).get( 0 ) );
             } catch ( Exception e ) {
+                Logger.debug(ImportUtil.class, e.getMessage(), e);
             }
 
             String identifier = null;
@@ -888,12 +835,13 @@ public class ImportUtil {
             }
 
             StringBuffer buffy = new StringBuffer();
-            buffy.append( "+structureName:" + contentType.getVelocityVarName() + " +working:true +deleted:false" );
+            buffy.append("+structureName:").append(contentType.getVelocityVarName())
+                    .append(" +working:true +deleted:false");
 
             Logger.info(ImportUtil.class,"Identifier is set: " + UtilMethods.isSet( identifier ));
             Logger.info(ImportUtil.class,"Keyfields size: " + keyFields.size());
             if ( UtilMethods.isSet( identifier ) ) {
-                buffy.append( " +identifier:" + identifier );
+                buffy.append(" +identifier:").append(identifier);
 
                 List<ContentletSearch> contentsSearch = conAPI.searchIndex( buffy.toString(), 0, -1, null, user, true );
 
@@ -916,7 +864,7 @@ public class ImportUtil {
                     Object value = values.get(column);
                     String text;
                     if (value instanceof Date || value instanceof Timestamp) {
-                        SimpleDateFormat formatter = null;
+                        SimpleDateFormat formatter;
                         if(field.getFieldType().equals(Field.FieldType.DATE.toString())){
                             text = DATE_FIELD_FORMAT.format((Date)value);
                         }else if(field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())){
@@ -937,9 +885,14 @@ public class ImportUtil {
                         throw new DotRuntimeException("Line #" + lineNumber + " key field " + field.getVelocityVarName() + " is required since it was defined as a key\n");
                     }else{
                         if(field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
-                            buffy.append(" +(conhost:" + text + " conFolder:" + text+")");
+                            buffy.append(" +(conhost:").append(text).append(" conFolder:")
+                                    .append(text).append(")");
                         } else {
-                            buffy.append(" +" + contentType.getVelocityVarName() + "." + field.getVelocityVarName() + ":" + (escapeLuceneSpecialCharacter(text).contains(" ")?"\""+escapeLuceneSpecialCharacter(text)+"\"":escapeLuceneSpecialCharacter(text)));
+                            buffy.append(" +").append(contentType.getVelocityVarName()).append(".")
+                                    .append(field.getVelocityVarName()).append(":")
+                                    .append(escapeLuceneSpecialCharacter(text).contains(" ") ? "\""
+                                            + escapeLuceneSpecialCharacter(text) + "\""
+                                            : escapeLuceneSpecialCharacter(text));
                         }
                         conditionValues += conditionValues + value + "-";
                     }
@@ -954,10 +907,10 @@ public class ImportUtil {
                                 }
                             }
                             if(chosenArr.length==count){
-                                choosenKeyField.append(", " + field.getVelocityVarName());
+                                choosenKeyField.append(", ").append(field.getVelocityVarName());
                             }
                         }else{
-                            choosenKeyField.append(", " + field.getVelocityVarName());
+                            choosenKeyField.append(", ").append(field.getVelocityVarName());
                         }
                     }
 
@@ -1090,7 +1043,7 @@ public class ImportUtil {
                 contentlets.add( newCont );
             } else {
                 if ( isMultilingual || UtilMethods.isSet( identifier ) ) {
-                    List<Contentlet> multilingualContentlets = new ArrayList<Contentlet>();
+                    List<Contentlet> multilingualContentlets = new ArrayList<>();
 
                     for ( Contentlet contentlet : contentlets ) {
                         if ( contentlet.getLanguageId() == language ) {
@@ -1142,8 +1095,7 @@ public class ImportUtil {
                 }
             }
 
-            for (Contentlet cont : contentlets)
-            {
+            for (Contentlet cont : contentlets) {
                 int wfActionIdIndex = -1;
                 try {
                     if (null != results.get(Contentlet.WORKFLOW_ACTION_KEY)) {
@@ -1154,7 +1106,7 @@ public class ImportUtil {
                     Logger.warn(ImportUtil.class, e.getMessage());
                 }
 
-                String wfActionIdStr = null;
+                String wfActionIdStr;
                 if ( -1 < wfActionIdIndex ) {
                     wfActionIdStr = line[wfActionIdIndex];
                     if(UtilMethods.isSet(wfActionIdStr)) {
@@ -1183,8 +1135,7 @@ public class ImportUtil {
                             }
                             cont.setHost(folder.getHostId());
                             cont.setFolder(value.toString());
-                        }
-                        else if(host != null) {
+                        } else if (host != null) {
                             if (!permissionAPI.doesUserHavePermission(host,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user)) {
                                 throw new DotSecurityException("User has no Add Children Permissions on selected host");
                             }
@@ -1216,11 +1167,11 @@ public class ImportUtil {
                 if(UtilMethods.isSet(cont.getIdentifier())){
 
                     List<Field> structureFields = FieldsCache.getFieldsByStructureInode(contentType.getInode());
-                    List<Field> categoryFields = new ArrayList<Field>();
-                    List<Field> nonHeaderCategoryFields = new ArrayList<Field>();
-                    List<Category> nonHeaderParentCats = new ArrayList<Category>();
-                    List<Category> categoriesToRetain = new ArrayList<Category>();
-                    List<Category> categoriesOnWorkingContent = new ArrayList<Category>();
+                    List<Field> categoryFields = new ArrayList<>();
+                    List<Field> nonHeaderCategoryFields = new ArrayList<>();
+                    List<Category> nonHeaderParentCats = new ArrayList<>();
+                    List<Category> categoriesToRetain = new ArrayList<>();
+                    List<Category> categoriesOnWorkingContent = new ArrayList<>();
 
                     for(Field field : structureFields){
                         if(field.getFieldType().equals(Field.FieldType.CATEGORY.toString()) || field.getFieldType().equals(Field.FieldType.CATEGORIES_TAB.toString()))
@@ -1278,23 +1229,20 @@ public class ImportUtil {
                 boolean ignoreLine = false;
                 if(!uniqueFieldBeans.isEmpty()){
                     ignoreLine =
-                        validateUniqueFields(user, results, lineNumber, language, counters, uniqueFieldBeans,
-                            uniqueFields);
+                            validateUniqueFields(user, results, lineNumber, language, counters,
+                                    uniqueFieldBeans,
+                                    uniqueFields);
                 }
 
                 if(!ignoreLine){
                     //Check the new contentlet with the validator
-                    try
-                    {
-                        conAPI.validateContentlet(cont,new ArrayList<Category>(categories));
-                    }
-                    catch(DotContentletValidationException ex)
-                    {
+                    try {
+                        conAPI.validateContentlet(cont, new ArrayList<>(categories));
+                    } catch (DotContentletValidationException ex) {
                         StringBuffer sb = new StringBuffer("Line #" + lineNumber + " contains errors\n");
                         HashMap<String,List<Field>> errors = (HashMap<String,List<Field>>) ex.getNotValidFields();
                         Set<String> keys = errors.keySet();
-                        for(String key : keys)
-                        {
+                        for (String key : keys) {
                             sb.append(key + ": ");
                             List<Field> fields = errors.get(key);
                             int count = 0;
@@ -1310,9 +1258,52 @@ public class ImportUtil {
                         throw new DotRuntimeException(sb.toString());
                     }
 
+                    /*
+                    Validating the action to execute
+                     */
+                    WorkflowAction executeWfAction = null;
+                    boolean userCanExecuteAction = false;
+                    // Check if the CSV file have set an actionId to execute and if the user
+                    // have permission to execute the action
+                    if (UtilMethods
+                            .isSet(cont.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY))) {
+
+                        try {
+                            executeWfAction = validateWorkflowAction(user, cont);
+                        } catch (Exception e) {
+                            setActionWarning(results, cont, user, lineNumber,
+                                    "message.import.contentlet.invalid.action.found.in.csv",
+                                    e.getMessage());
+                        }
+
+                        if (null != executeWfAction && UtilMethods
+                                .isSet(executeWfAction.getId())) {
+                            userCanExecuteAction = true;
+                        }
+                    }
+
+                    //If the CSV line doesn't have set a wfActionId or the user doesn't have
+                    // permission to execute this action then check if and action was set int
+                    // the import dropdown
+                    if (!userCanExecuteAction && UtilMethods.isSet(wfActionId)) {
+
+                        try {
+                            cont.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, wfActionId);
+                            executeWfAction = validateWorkflowAction(user, cont);
+                        } catch (Exception e) {
+                            setActionWarning(results, cont, user, lineNumber,
+                                    "message.import.contentlet.invalid.action.selected",
+                                    e.getMessage());
+                        }
+
+                        if (null != executeWfAction && UtilMethods
+                                .isSet(executeWfAction.getId())) {
+                            userCanExecuteAction = true;
+                        }
+                    }
+
                     //If not preview save the contentlet
-                    if (!preview)
-                    {
+                    if (!preview) {
                         cont.setLowIndexPriority(true);
                         //Load the old relationShips and add the new ones
                         ContentletRelationships contentletRelationships = conAPI.getAllRelationships(cont);
@@ -1333,54 +1324,6 @@ public class ImportUtil {
                         }
                         //END Load the old relationShips and add the new ones
 
-                        WorkflowAction executeWfAction = null;
-                        boolean userCanExecuteAction = false;
-                        // Check if the CSV file have set an actionId to execute and if the user
-                        // have permission to execute the action
-                        if (UtilMethods
-                                .isSet(cont.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY))) {
-                            try {
-                                executeWfAction = workflowAPI.findActionRespectingPermissions(
-                                        cont.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY),
-                                        cont, user);
-                            } catch (DotSecurityException e) {
-                                Logger.error(ImportUtil.class,
-                                        "User doesn't have permissions to execute wfActionId:"
-                                                + cont
-                                                .getStringProperty(Contentlet.WORKFLOW_ACTION_KEY)
-                                                + ". " + e.getMessage(), e);
-                            }
-
-                            if (null != executeWfAction && UtilMethods
-                                    .isSet(executeWfAction.getId())) {
-                                userCanExecuteAction = true;
-                            } else {
-                                // if the user doesn't have access to the action then removed it from
-                                // the content to avoid troubles executing the action set on the
-                                // dropdown or on the checkin
-                                cont.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, null);
-                            }
-                        }
-
-                        //If the CSV line doesn't have set a wfActionId or the user doesn't have
-                        // permission to execute this action then check if and action was set int
-                        // the import dropdown
-                        if (!userCanExecuteAction && UtilMethods.isSet(wfActionId)) {
-                            try {
-                                executeWfAction = workflowAPI
-                                        .findActionRespectingPermissions(wfActionId, cont, user);
-                            } catch (DotSecurityException e) {
-                                Logger.warn(ImportUtil.class,
-                                        "User doesn't have permissions to execute wfActionId:"
-                                                + wfActionId + ". " + e.getMessage(), e);
-                            }
-
-                            if (null != executeWfAction && UtilMethods
-                                    .isSet(executeWfAction.getId())) {
-                                userCanExecuteAction = true;
-                            }
-                        }
-
                         if (userCanExecuteAction) {
 
                             cont = workflowAPI.fireContentWorkflow(cont,
@@ -1391,14 +1334,16 @@ public class ImportUtil {
                                             .workflowActionId(executeWfAction.getId())
                                             .workflowActionComments("")
                                             .workflowAssignKey("")
-                                            .categories(new ArrayList<Category>(categories))
+                                            .categories(new ArrayList<>(categories))
                                             .generateSystemEvent(Boolean.FALSE).build());
                         } else {
                             // If the User doesn't have permissions to execute the wfActionId or
                             // not action Id is set on the CSV/Import select box then use the old
                             // checking method
+                            cont.setProperty(Contentlet.DONT_VALIDATE_ME, true);
+                            cont.setProperty(Contentlet.DISABLE_WORKFLOW, true);
                             cont = conAPI.checkin(cont, contentletRelationships,
-                                    new ArrayList<Category>(categories), contentTypePermissions,
+                                    new ArrayList<>(categories), contentTypePermissions,
                                     user, false);
 
                             if (Config.getBooleanProperty(
@@ -1427,8 +1372,7 @@ public class ImportUtil {
                                             hostId = Host.SYSTEM_HOST;
                                         else
                                             hostId = host.getIdentifier();
-                                    }
-                                    else{
+                                    } else {
                                         hostId = Host.SYSTEM_HOST;
                                     }
                                     for (String tagName : tags) {
@@ -1440,8 +1384,7 @@ public class ImportUtil {
                                             Logger.error(ImportUtil.class, "Unable to import tags: " + e.getMessage());
                                         }
                                     }
-                                }
-                                else {
+                                } else {
                                     for (String tagName : tags)
                                         try {
                                             if ( tagName != null && !tagName.trim().isEmpty() ) {
@@ -1477,6 +1420,76 @@ public class ImportUtil {
             Logger.error(ImportUtil.class,e.getMessage(),e);
             throw new DotRuntimeException(e.getMessage(),e);
         }
+    }
+
+    /**
+     * Validates if Action associated to the Contentlet can be executed validating permissions
+     * and the step of the Contentlet
+     */
+    private static WorkflowAction validateWorkflowAction(final User user,
+            final Contentlet contentlet)
+            throws DotDataException {
+
+        WorkflowAction executeWfAction;
+        String actionId = contentlet.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY);
+        try {
+
+            //Validate the permissions over the action to execute
+            executeWfAction = workflowAPI
+                    .findActionRespectingPermissions(actionId, contentlet, user);
+
+            //Validate if the action we want to execute is in the right step
+            workflowAPI.validateActionStepAndWorkflow(contentlet, user);
+        } catch (DotSecurityException e) {
+            throw new DotDataException("User doesn't have permissions to execute wfActionId:"
+                    + actionId + ". " + e.getMessage(), e);
+        } catch (DotDataException | IllegalArgumentException e) {
+            throw new DotDataException(e.getMessage(), e);
+        }
+
+        return executeWfAction;
+    }
+
+    /**
+     * Sets a warning message related to the Action associated to the Contentlet
+     */
+    private static void setActionWarning(HashMap<String, List<String>> results,
+            Contentlet contentlet,
+            final User user, final int lineNumber, final String generalErrorKey,
+            final String specificErrorMessage)
+            throws LanguageException {
+
+        results.get("warnings")
+                .add(LanguageUtil.get(user, "Line--") + " " + lineNumber + ". "
+                        + LanguageUtil.get(user, generalErrorKey) + " "
+                        + specificErrorMessage);
+        // if the user doesn't have access to the action then removed it from
+        // the content to avoid troubles executing the action set on the
+        // dropdown or on the checkin
+        contentlet.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, null);
+    }
+
+    private static Object validateDateTypes(final int lineNumber, final Field field,
+            final String value,
+            Object valueObj) {
+        if (field.getFieldContentlet().startsWith("date")) {
+            if (UtilMethods.isSet(value)) {
+                try {
+                    valueObj = parseExcelDate(value);
+                } catch (ParseException e) {
+                    throw new DotRuntimeException(
+                            "Line #" + lineNumber + " contains errors, Column: " + field
+                                    .getVelocityVarName() +
+                                    ", value: " + value
+                                    + ", couldn't be parsed as any of the following supported formats: "
+                                    +
+                                    printSupportedDateFormats());
+                }
+            } else {
+                valueObj = null;
+            }
+        }
+        return valueObj;
     }
 
     /**

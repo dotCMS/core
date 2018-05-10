@@ -66,7 +66,11 @@ apply plugin: 'war'
 apply plugin: 'org.unbroken-dome.test-sets'
 apply plugin: 'idea'
 apply plugin: 'eclipse'
-
+eclipse {
+    project {
+        name = 'dotcms_5'
+    }
+}
 
 // In this section you declare where to find the dependencies of your project.
 repositories {

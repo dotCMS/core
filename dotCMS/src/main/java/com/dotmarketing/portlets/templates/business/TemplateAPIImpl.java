@@ -70,8 +70,8 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	}
 
 	@CloseDBIfOpened
-	public List<Template> findTemplatesUserCanUse(User user, String hostName, String query, boolean searchHost,int offset, int limit) throws DotDataException, DotSecurityException {
-		return FactoryLocator.getTemplateFactory().findTemplatesUserCanUse(user, hostName, query, searchHost, offset, limit);
+	public List<Template> findTemplatesUserCanUse(User user, String hostId, String query, boolean searchHost,int offset, int limit) throws DotDataException, DotSecurityException {
+		return FactoryLocator.getTemplateFactory().findTemplatesUserCanUse(user, hostId, query, searchHost, offset, limit);
 	}
 
 	@WrapInTransaction

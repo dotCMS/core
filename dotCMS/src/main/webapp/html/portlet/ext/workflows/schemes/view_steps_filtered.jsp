@@ -51,7 +51,8 @@
             <div class="showPointer wfStepTitleDivs handle" onClick="stepAdmin.showStepEdit('<%=step.getId()%>')">
                 <span style="border-bottom:dotted 1px #fff;"><%=step.getName() %></span>
                 <span style="font-weight:normal;display:inline-block;">
-					<%=step.isResolved() ? "(" +  LanguageUtil.get(pageContext, "resolved") + ")" : "" %>
+					(<%=step.isResolved() ? LanguageUtil.get(pageContext, "resolved") + " | " : "" %>
+                    <a style="color:white;" href="/api/v1/workflow/steps/<%=step.getId()%>" target="_blank" onclick="event.stopPropagation();">json</a>)
 				</span>
             </div>
             <div class="clear"></div>

@@ -1,5 +1,11 @@
 package com.dotcms.util;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.DataTypes;
@@ -48,31 +54,21 @@ import com.dotmarketing.util.ImportUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
 
 /**
  * Verifies that the Content Importer/Exporter feature is working as expected.
@@ -702,7 +698,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
      *
      * a) on testA, the CSV file doesn't have set a wfActionId
      * b) on testB, the User doesn't have permission to execute the wfActionId set on the CSV and/or
-     * c) ont testC, the User doesn' have permisssion to set execute the action Id set on the dropdown
+     * c) ont testC, the User doesn't have permission to set execute the action Id set on the dropdown
      *
      */
     @Test
@@ -749,8 +745,15 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                                     -1, -1, reader,
                                     saveAsDraftAction.getId());
             //Validations
-            validate(results, false, false, false);
-            assertEquals(results.get("warnings").size(), 0);
+            validate(results, false, false, true);
+            /*
+            Validate we are warning the user that does not have the proper permissions to
+            execute the action selected in the Actions dropdown or the one found in the CSV file.
+             */
+            assertEquals(results.get("warnings").size(), 5);
+            for (String warning : results.get("warnings")) {
+                validateNoPermissionsWarning(warning);
+            }
             assertEquals(results.get("errors").size(), 0);
 
             final List<Contentlet> savedData = contentletAPI
@@ -772,10 +775,10 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
      * Import file saving the content with the right action except for the second one that should
      * use the dropdown action. In the following way:
      *
-     * a) the testD should be saved with the rigth action and go to step 1
-     * b) on testE, the User doesn' have permisssion to execute the action Id and should be using the
+     * a) the testD should be saved with the right action and go to step 1
+     * b) on testE, the User doesn't have permission to execute the action Id and should be using the
      * dropdown action and go to step 3
-     * c) the testD should be saved with the rigth action and go to step 3
+     * c) the testD should be saved with the right action and go to step 3
      */
     @Test
     public void importFileWithwfActionIdAndPartialPermissionsOnActionId_success_when_importLinesWithPartialCheckinMethod()
@@ -821,8 +824,13 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                                     -1, -1, reader,
                                     saveAsDraftAction.getId());
             //Validations
-            validate(results, false, false, false);
-            assertEquals(results.get("warnings").size(), 0);
+            validate(results, false, false, true);
+            /*
+            Validate we are warning the user that does not have the proper permissions to
+            execute the action selected in the Actions dropdown.
+             */
+            assertEquals(results.get("warnings").size(), 1);
+            validateNoPermissionsWarning(results.get("warnings").get(0));
             assertEquals(results.get("errors").size(), 0);
 
             final List<Contentlet> savedData = contentletAPI
@@ -851,10 +859,10 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
      * Import file saving the content with the right action except for the second one that should
      * use the old checking. In the following way:
      *
-     * a) the testG should be saved with the rigth action and go to step 1
-     * b) on testH, the User doesn't have permisssion to execute the action Id and should be using
+     * a) the testG should be saved with the right action and go to step 1
+     * b) on testH, the User doesn't have permission to execute the action Id and should be using
      * the old checkin and no step associated
-     * c) the testI should be saved with the rigth action and go to step 3
+     * c) the testI should be saved with the right action and go to step 3
      */
     @Test
     public void importFileWithwfActionIdAndPartialPermissionsOnActionId_success_when_importLinesWithActionsId_ExceptoOneWithCheckinMethod()
@@ -899,8 +907,13 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                                     -1, -1, reader,
                                     null);
             //Validations
-            validate(results, false, false, false);
-            assertEquals(results.get("warnings").size(), 0);
+            validate(results, false, false, true);
+            /*
+            Validate we are warning the user that does not have the proper permissions to
+            execute the action passed in the CSV file.
+             */
+            assertEquals(results.get("warnings").size(), 1);
+            validateNoPermissionsWarning(results.get("warnings").get(0));
             assertEquals(results.get("errors").size(), 0);
 
             final List<Contentlet> savedData = contentletAPI
@@ -1070,7 +1083,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             List<Contentlet> savedData = contentletAPI
                     .findByStructure(contentType.inode(), user, false, 0, 0);
             assertNotNull(savedData);
-            assertTrue(savedData.size() == 3);
+            assertEquals(3, savedData.size());
             for (final Contentlet cont : savedData) {
                 final WorkflowTask task = workflowAPI.findTaskByContentlet(cont);
                 if (cont.getStringProperty(TITLE_FIELD_NAME).startsWith(testM)) {
@@ -1119,7 +1132,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             savedData = contentletAPI
                     .findByStructure(contentType.inode(), user, false, 0, 0);
             assertNotNull(savedData);
-            assertTrue(savedData.size() == 3);
+            assertEquals(3, savedData.size());
             for (final Contentlet cont : savedData) {
                 final WorkflowTask task = workflowAPI.findTaskByContentlet(cont);
                 if (cont.getStringProperty(TITLE_FIELD_NAME).startsWith(testM)) {
@@ -1234,6 +1247,10 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                 Arrays.asList(schemeStepActionResult2.getScheme()));
 
         return contentType;
+    }
+
+    private void validateNoPermissionsWarning(String warning) {
+        assertTrue(warning.contains("User doesn't have permissions to execute"));
     }
 
     /**
