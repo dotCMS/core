@@ -9,8 +9,6 @@ import com.dotcms.repackage.javax.ws.rs.container.ContainerRequestContext;
 import com.dotcms.repackage.javax.ws.rs.container.ContainerResponseContext;
 import com.dotcms.repackage.javax.ws.rs.container.ContainerResponseFilter;
 import com.dotcms.repackage.javax.ws.rs.core.MultivaluedMap;
-import com.dotcms.rest.ErrorEntity;
-import com.dotcms.rest.MessageEntity;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotmarketing.business.Permissionable;
@@ -60,7 +58,7 @@ public class HeaderFilter implements ContainerResponseFilter {
 						headers.add(CACHE_CONTROL,
 								Cacheable.class.cast(annotation).cc());
 					},
-					Permissions.class,
+					IncludePermissions.class,
 					this::applyPermissionable,
 
 					NoCache.class,
@@ -120,7 +118,7 @@ public class HeaderFilter implements ContainerResponseFilter {
     	final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
 
     	if (null != request && "true".equalsIgnoreCase
-				(request.getParameter(Permissions.class.cast(annotation).queryParam())) && responseContext.hasEntity()) {
+				(request.getParameter(IncludePermissions.class.cast(annotation).queryParam())) && responseContext.hasEntity()) {
 
 			final Object entity = responseContext.getEntity();
 

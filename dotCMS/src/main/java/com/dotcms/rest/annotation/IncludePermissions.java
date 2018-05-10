@@ -18,7 +18,7 @@ import java.lang.annotation.Target;
 @NameBinding
 @Target({ ElementType.TYPE, ElementType.METHOD })
 @Retention(value = RetentionPolicy.RUNTIME)
-public @interface Permissions {
+public @interface IncludePermissions {
     String queryParam() default "include_permissions";
 }
 
