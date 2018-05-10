@@ -3,6 +3,8 @@ package com.dotcms.rest.api.v1.index;
 import com.dotcms.business.CloseDBIfOpened;
 import com.google.gson.Gson;
 
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.elasticsearch.business.DotIndexException;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
@@ -23,6 +25,8 @@ import com.dotcms.repackage.javax.ws.rs.Path;
 import com.dotcms.repackage.javax.ws.rs.PathParam;
 import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.WebApplicationException;
+import com.dotcms.repackage.javax.ws.rs.container.AsyncResponse;
+import com.dotcms.repackage.javax.ws.rs.container.Suspended;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -64,9 +68,12 @@ import java.nio.file.Files;
 import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.servlet.http.HttpServletRequest;
 
+import static com.dotcms.concurrent.DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL;
 import static com.dotcms.util.DotPreconditions.checkArgument;
 
 /**
@@ -302,18 +309,15 @@ public class ESIndexResource {
 
             final File snapshotFile = this.indexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", indexName);
 			final InputStream in = Files.newInputStream(snapshotFile.toPath());
-			StreamingOutput stream = new StreamingOutput() {
-				@Override
-				public void write(OutputStream os) throws IOException, WebApplicationException {
-					try {
-						ByteStreams.copy(in, os);
-					} finally {
-						// clean up
-						indexAPI.deleteRepository(ESIndexAPI.BACKUP_REPOSITORY, true);
-						snapshotFile.delete();
-					}
-				}
-			};
+			StreamingOutput stream = os -> {
+                try {
+                    ByteStreams.copy(in, os);
+                } finally {
+                    // clean up
+                    indexAPI.deleteRepository(ESIndexAPI.BACKUP_REPOSITORY, true);
+                    snapshotFile.delete();
+                }
+            };
 			return Response.ok(stream)
 					.header("Content-Disposition", "attachment; filename=\"" + indexName + ".zip\"")
 					.header("Content-Type", "application/zip").build();
@@ -343,31 +347,36 @@ public class ESIndexResource {
     @Path("/restoresnapshot/{params:.*}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public Response snapshotIndex(@Context HttpServletRequest request,
-            @FormDataParam("file") InputStream inputFile, @FormDataParam("file") FormDataContentDisposition inputFileDetail, @PathParam("params") String params) {
+    public Response restoreSnapshotIndex(@Context HttpServletRequest request,
+                                         @Suspended final AsyncResponse asyncResponse,
+                                         @FormDataParam("file") InputStream inputFile,
+                                         @FormDataParam("file") FormDataContentDisposition inputFileDetail,
+                                         @PathParam("params") String params) {
 
         try {
         	checkArgument(inputFile != null);
-        	InitDataObject init=auth(params,request);
-            if(inputFile!=null) {
-            	if(this.indexAPI.uploadSnapshot(inputFile)){
-            		return Response.ok(new MessageEntity("Success")).build();
-            	}
-            }
+        	auth(params,request);
+
+            DotSubmitter submitter = DotConcurrentFactory.getInstance().getSubmitter(DOT_SYSTEM_THREAD_POOL);
+
+            submitter.submit(() -> {
+                Response response = null;
+                try {
+                    if(this.indexAPI.uploadSnapshot(inputFile)){
+                        response = Response.ok(new MessageEntity("Snapshot restored successfully")).build();
+                    }
+                } catch (InterruptedException | ExecutionException | IOException e) {
+                    response = this.responseUtil.getErrorResponse(request, Response.Status.SERVICE_UNAVAILABLE, Locale.getDefault(), null, "snapshot.upload.failed");
+                }
+
+                asyncResponse.resume(response);
+            });
             return this.responseUtil.getErrorResponse(request, Response.Status.SERVICE_UNAVAILABLE, Locale.getDefault(), null, "snapshot.upload.failed");
 
         }catch (SecurityException sec) {
             return this.responseUtil.getErrorResponse(request, Response.Status.UNAUTHORIZED, Locale.getDefault(), null, "authentication-failed");
         }catch(IllegalArgumentException iar){
         	return this.responseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, Locale.getDefault(), null, "snapshot.wrong.arguments");
-        }catch(IOException ex) {
-        	return this.responseUtil.getErrorResponse(request, Response.Status.INTERNAL_SERVER_ERROR, Locale.getDefault(), null, "snapshot.io.writing.fail");
-        }catch(ExecutionException exc){
-        	return this.responseUtil.getErrorResponse(request, Response.Status.INTERNAL_SERVER_ERROR, Locale.getDefault(), null, "snapshot.fail.during.execution");
-        }catch(SnapshotRestoreException exc){
-        	return this.responseUtil.getErrorResponse(request, Response.Status.INTERNAL_SERVER_ERROR, Locale.getDefault(), null, "snapshot.fail");
-        }catch(InterruptedException exi){
-        	return this.responseUtil.getErrorResponse(request, Response.Status.SERVICE_UNAVAILABLE, Locale.getDefault(), null, "snapshot.upload.failed");
         }catch(Exception ex){
         	return this.responseUtil.getErrorResponse(request, Response.Status.INTERNAL_SERVER_ERROR, Locale.getDefault(), null, "snapshot.error");
         }
