@@ -282,7 +282,7 @@ public class WorkflowHelper {
             if(null != repeatScheme) {
 
                 throw new AlreadyExistException("Already exist a scheme with the same id ("+repeatScheme.getId()
-                        +"). Create different schemes with the same id is not allowed. Please change your workflow scheme id.");
+                        +"). Create different schemes with the same id is not allowed.");
             }
 
             setBuilder.add(scheme.getId());
