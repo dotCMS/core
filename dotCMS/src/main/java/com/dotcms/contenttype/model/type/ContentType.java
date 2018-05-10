@@ -233,6 +233,7 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
         PermissionableProxy host = new PermissionableProxy();
         host.setIdentifier(this.host());
         host.setInode(this.host());
+        host.setType(Host.class.getCanonicalName());
         return host;
       } else {
         return APILocator.getFolderAPI().find(this.folder(), APILocator.systemUser(), false);
