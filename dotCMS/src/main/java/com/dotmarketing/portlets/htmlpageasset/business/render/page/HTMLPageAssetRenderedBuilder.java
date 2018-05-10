@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
 import com.dotcms.business.CloseDB;
+import com.dotcms.rendering.velocity.services.PageContextBuilder;
 import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.visitor.domain.Visitor;
@@ -106,9 +107,9 @@ public class HTMLPageAssetRenderedBuilder {
             return new PageView(site, template, containers, htmlPageAssetInfo, layout);
         } else {
             final PageMode mode = PageMode.get(request);
-            final Context velocityContext = VelocityUtil.getWebContext(request, response);
 
-            final List<ContainerRendered> containers = this.containerRenderedBuilder.getContainersRendered(template,
+            final Context velocityContext  = new PageContextBuilder(htmlPageAssetInfo.getPage(), user, mode).addAll(VelocityUtil.getWebContext(request, response));
+            final List<ContainerRendered> containers = this.containerRenderedBuilder.getContainersRendered(htmlPageAssetInfo.getPage(),
                     velocityContext, mode);
             final boolean canCreateTemplates = layoutAPI.doesUserHaveAccessToPortlet("templates", user);
             final String pageHTML = this.getPageHTML();

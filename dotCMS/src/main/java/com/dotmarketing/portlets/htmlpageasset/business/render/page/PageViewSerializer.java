@@ -41,7 +41,8 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
                 .stream()
                 .collect(Collectors.toMap(
                         containerRendered -> containerRendered.getContainer().getIdentifier(),
-                        containerRendered -> containerRendered
+                        containerRendered -> containerRendered,
+                        (c1, c2) -> c1
                 ))
         );
         pageViewMap.put("template", this.asMap(template));

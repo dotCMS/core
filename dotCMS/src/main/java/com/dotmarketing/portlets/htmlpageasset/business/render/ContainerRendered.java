@@ -2,10 +2,14 @@ package com.dotmarketing.portlets.htmlpageasset.business.render;
 
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.beans.ContainerStructure;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.portlets.containers.model.Container;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.collections.map.HashedMap;
 
 /**
  * Represents the information of the {@link Container} and its respective
@@ -23,8 +27,19 @@ public class ContainerRendered implements Serializable {
 
     private final Container container;
     private final List<ContainerStructure> containerStructures;
-    private String rendered;
 
+    private final String uuid;
+    private final Map<String, String> renders = new HashedMap();
+    
+    public ContainerRendered(final Container container, final List<ContainerStructure> containerStructures, final String uuid) {
+        this.container = container;
+        this.uuid=(uuid==null) ? MultiTree.LEGACY_RELATION_TYPE : uuid;
+        if (containerStructures != null) {
+            this.containerStructures = ImmutableList.copyOf(containerStructures);
+        } else {
+            this.containerStructures = ImmutableList.of();
+        }
+    }
     /**
      * Creates a new instance of the ContainerRendered.
      *
@@ -33,13 +48,7 @@ public class ContainerRendered implements Serializable {
      *                           the browser.
      */
     public ContainerRendered(final Container container, final List<ContainerStructure> containerStructures) {
-        this.container = container;
-
-        if (containerStructures != null) {
-            this.containerStructures = ImmutableList.copyOf(containerStructures);
-        } else {
-            this.containerStructures = ImmutableList.of();
-        }
+        this(container, containerStructures, null);
     }
 
     /**
@@ -56,8 +65,8 @@ public class ContainerRendered implements Serializable {
      *
      * @return The HTML representation of the container.
      */
-    public String getRendered() {
-        return rendered;
+    public Map<String, String> getRendered() {
+        return renders;
     }
 
     /**
@@ -73,7 +82,7 @@ public class ContainerRendered implements Serializable {
     @Override
     public String toString() {
         return "ContainerRendered{" + "container=" + container + ", containerStructures=" +
-                containerStructures + ", rendered='" + rendered + '\'' + '}';
+                containerStructures + ", rendered='" + renders + '\'' + '}';
     }
 
     /**
@@ -81,7 +90,10 @@ public class ContainerRendered implements Serializable {
      *
      * @param rendered
      */
-    public void setRendered(final String rendered) {
-        this.rendered = rendered;
+    public void addRender(final String uuid, final String rendered) {
+        this.renders.put(uuid, rendered);
+    }
+    public String getUuid() {
+        return uuid;
     }
 }
