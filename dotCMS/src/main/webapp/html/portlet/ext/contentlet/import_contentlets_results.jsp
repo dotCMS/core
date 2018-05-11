@@ -11,13 +11,7 @@
 <!--  Initialization Code -->
 <% 
 	HashMap<String, List<String>> processResults = (HashMap<String, List<String>>) request.getAttribute("importResults");
-	
 %>
-
-<script type='text/javascript'>
-
-</script>
-
 
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
 	<liferay:param name="box_title" value="<%= LanguageUtil.get(pageContext, \"import-contentlets-results\") %>" />
@@ -26,20 +20,28 @@
 		<h3 style="margin-bottom:20px;"><%= LanguageUtil.get(pageContext, "import-contentlets-results") %></h3>
 			
 		<%if(processResults != null && !processResults.isEmpty()){%>
+			<%
+				List<String> resultMessages = processResults.get("results");
+			%>
 			<div style="padding:5px;">
 				<span class="workflowIcon"></span>
-				<b><%= LanguageUtil.get(pageContext, "Success") %></b>
+				<%if(resultMessages != null && !resultMessages.isEmpty()){%>
+					<b><%= LanguageUtil.get(pageContext, "Success") %></b>
+				<%} else {%>
+					<b><%= LanguageUtil.get(pageContext, "message.import.process.executing.in.background") %></b>
+				<%}%>
 			</div>
-			<ul class="withBullets" style="margin-bottom:10px;">
-				<%
-					List<String> messages = processResults.get("results");
-					for (String message : messages) {
-			    %>
-			    		<li><%= message %></li>
-			    <%
-					}
-				%>		
-			</ul>
+			<%if(resultMessages != null && !resultMessages.isEmpty()){%>
+				<ul class="withBullets" style="margin-bottom:10px;">
+					<%
+						for (String message : resultMessages) {
+					%>
+							<li><%= message %></li>
+					<%
+						}
+					%>
+				</ul>
+			<%}%>
 			<div style="padding:30px;">
 				<%= LanguageUtil.get(pageContext, "Import-in-Background") %>
 			</div>
@@ -48,7 +50,7 @@
 				<span class="closeIcon"></span>
 				<b><%= LanguageUtil.get(pageContext, "oops") %></b>
 			</div>
-			<div style="padding-left:30px;padding-right:30;">
+			<div style="padding-left:30px;padding-right:30px;">
 				<%= LanguageUtil.get(pageContext, "Import-Duplicate-Prevention") %>
 			</div>
 		<%} %>				
@@ -70,13 +72,3 @@
 	</button>
 </div>
 </liferay:box>
-
-
-
-
-
-
-
-
-
-

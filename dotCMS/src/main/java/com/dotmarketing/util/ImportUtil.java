@@ -1096,9 +1096,14 @@ public class ImportUtil {
             }
 
             for (Contentlet cont : contentlets) {
+
+                //Clean up any existing workflow action
+                cont.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, null);
+
                 int wfActionIdIndex = -1;
                 try {
-                    if (null != results.get(Contentlet.WORKFLOW_ACTION_KEY)) {
+                    List<String> workflowActionKey = results.get(Contentlet.WORKFLOW_ACTION_KEY);
+                    if (null != workflowActionKey && !workflowActionKey.isEmpty()) {
                         wfActionIdIndex = Integer
                                 .parseInt(results.get(Contentlet.WORKFLOW_ACTION_KEY).get(0));
                     }
