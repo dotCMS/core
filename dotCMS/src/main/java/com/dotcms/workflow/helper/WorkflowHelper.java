@@ -137,7 +137,7 @@ public class WorkflowHelper {
             action = this.workflowAPI.findAction(permission.getInode(), user);
             if (null != action) {
 
-                this.permissionAPI.save(permission, action, user, false);
+                this.permissionAPI.save(permission, action, APILocator.getUserAPI().getSystemUser(), false);
             } else {
 
                 throw new DoesNotExistException("The action: " + action + " on the permission: "
