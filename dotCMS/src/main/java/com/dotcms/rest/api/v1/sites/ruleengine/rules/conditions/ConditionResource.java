@@ -88,7 +88,7 @@ public class ConditionResource {
             return Response.ok(restCondition).build();
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
-        } catch (DotSecurityException | InvalidLicenseException e) {
+        } catch (DotSecurityException e) {
             throw new ForbiddenException(e, e.getMessage());
         } 
     }
@@ -163,7 +163,7 @@ public class ConditionResource {
             return Response.status(HttpStatus.SC_NO_CONTENT).build();
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
-        } catch (DotSecurityException | InvalidLicenseException e) {
+        } catch (DotSecurityException e) {
             throw new ForbiddenException(e, e.getMessage());
         }
     }
@@ -193,7 +193,7 @@ public class ConditionResource {
         } catch (DotDataException e) {
             // @todo ggranum: These messages potentially expose internal details to consumers, via response headers. See Note 1 in HttpStatusCodeException.
             throw new BadRequestException(e, e.getMessage());
-        } catch (DotSecurityException | InvalidLicenseException e) {
+        } catch (DotSecurityException  e) {
             throw new ForbiddenException(e, e.getMessage());
         }
     }
@@ -206,7 +206,7 @@ public class ConditionResource {
             return condition.getId();
         }  catch (DotDataException | DotRuntimeException | RuleConstructionFailedException e ) {
             throw new BadRequestException(e, e.getMessage());
-        } catch (DotSecurityException | InvalidLicenseException e) {
+        } catch (DotSecurityException e) {
             throw new ForbiddenException(e, e.getMessage());
         }
     }
@@ -222,7 +222,7 @@ public class ConditionResource {
             return condition.getId();
         } catch (DotDataException | DotRuntimeException | RuleConstructionFailedException e) {
             throw new BadRequestException(e, e.getMessage());
-        } catch (DotSecurityException | InvalidLicenseException e) {
+        } catch (DotSecurityException  e) {
             throw new ForbiddenException(e, e.getMessage());
         }
     }

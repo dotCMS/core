@@ -758,19 +758,21 @@ public class WorkflowResource {
                 contentlet.setStringProperty("forcePush", fireActionForm.getForcePush());
             }
 
+
             if(null == contentlet || contentlet.getMap().isEmpty()){
                 throw new DoesNotExistException("contentlet-was-not-found");
             }
-                       return Response.ok(new ResponseEntityView(
-                                this.workflowAPI.fireContentWorkflow(contentlet,
-                                    new ContentletDependencies.Builder()
-                                        .respectAnonymousPermissions(PageMode.get(request).respectAnonPerms)
-                                        .workflowActionId(actionId)
-                                        .workflowActionComments((null != fireActionForm)?fireActionForm.getComments():null)
-                                        .workflowAssignKey((null != fireActionForm)?fireActionForm.getAssign():null)
-                                        .modUser(initDataObject.getUser()).build())
-                                )
-                        ).build(); // 200
+
+           return Response.ok(new ResponseEntityView(
+                    this.workflowAPI.fireContentWorkflow(contentlet,
+                        new ContentletDependencies.Builder()
+                            .respectAnonymousPermissions(PageMode.get(request).respectAnonPerms)
+                            .workflowActionId(actionId)
+                            .workflowActionComments((null != fireActionForm)?fireActionForm.getComments():null)
+                            .workflowAssignKey((null != fireActionForm)?fireActionForm.getAssign():null)
+                            .modUser(initDataObject.getUser()).build())
+                    )
+            ).build(); // 200
         } catch (Exception e) {
 
             Logger.error(this.getClass(),

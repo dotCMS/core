@@ -29,7 +29,7 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
         final ImmutableMap.Builder<String, Object> builder = new ImmutableMap.Builder<>();
         builder.putAll(getObjectMap(pageView));
         final String json = objectWriter.writeValueAsString(builder.build());
-        jsonGenerator.writeRaw(json);
+        jsonGenerator.writeRawValue(json);
     }
 
     protected Map<String, Object> getObjectMap(final PageView pageView) {
