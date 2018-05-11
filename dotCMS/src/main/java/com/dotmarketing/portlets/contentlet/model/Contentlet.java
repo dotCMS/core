@@ -997,6 +997,20 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
         return isSystemHost == null ? false : isSystemHost;
     }
 
+	/**
+	 * Sets the workflow action id the Contentlet is going to execute
+	 */
+	public void setActionId(String actionId) {
+		this.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, actionId);
+	}
+
+	/**
+	 * Returns the workflow action id the Contentlet is going to execute
+	 */
+	public String getActionId() {
+		return this.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY);
+	}
+
     /**
      * 
      * @throws DotDataException

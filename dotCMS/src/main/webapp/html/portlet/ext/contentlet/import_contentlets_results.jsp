@@ -19,19 +19,19 @@
 	<div class="shadowBox headerBox" style="width:600px;margin:auto;padding:10px 20px;margin-bottom:20px;">
 		<h3 style="margin-bottom:20px;"><%= LanguageUtil.get(pageContext, "import-contentlets-results") %></h3>
 			
-		<%if(processResults != null && !processResults.isEmpty()){%>
+		<%if(UtilMethods.isSet(processResults)){%>
 			<%
 				List<String> resultMessages = processResults.get("results");
 			%>
 			<div style="padding:5px;">
 				<span class="workflowIcon"></span>
-				<%if(resultMessages != null && !resultMessages.isEmpty()){%>
+				<%if(UtilMethods.isSet(resultMessages)){%>
 					<b><%= LanguageUtil.get(pageContext, "Success") %></b>
 				<%} else {%>
 					<b><%= LanguageUtil.get(pageContext, "message.import.process.executing.in.background") %></b>
 				<%}%>
 			</div>
-			<%if(resultMessages != null && !resultMessages.isEmpty()){%>
+			<%if(UtilMethods.isSet(resultMessages)){%>
 				<ul class="withBullets" style="margin-bottom:10px;">
 					<%
 						for (String message : resultMessages) {

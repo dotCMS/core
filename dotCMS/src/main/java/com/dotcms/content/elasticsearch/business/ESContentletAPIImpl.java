@@ -3971,7 +3971,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     private void copyWorkflowProperties(Contentlet contentlet, Map<String, Object> properties) {
-        contentlet.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY,
+        contentlet.setActionId(
                 (String) properties.get(Contentlet.WORKFLOW_ACTION_KEY));
         contentlet.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY,
                 (String) properties.get(Contentlet.WORKFLOW_COMMENTS_KEY));

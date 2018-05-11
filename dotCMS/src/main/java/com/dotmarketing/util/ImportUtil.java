@@ -1098,12 +1098,12 @@ public class ImportUtil {
             for (Contentlet cont : contentlets) {
 
                 //Clean up any existing workflow action
-                cont.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, null);
+                cont.setActionId(null);
 
                 int wfActionIdIndex = -1;
                 try {
                     List<String> workflowActionKey = results.get(Contentlet.WORKFLOW_ACTION_KEY);
-                    if (null != workflowActionKey && !workflowActionKey.isEmpty()) {
+                    if (UtilMethods.isSet(workflowActionKey)) {
                         wfActionIdIndex = Integer
                                 .parseInt(results.get(Contentlet.WORKFLOW_ACTION_KEY).get(0));
                     }
@@ -1115,7 +1115,7 @@ public class ImportUtil {
                 if ( -1 < wfActionIdIndex ) {
                     wfActionIdStr = line[wfActionIdIndex];
                     if(UtilMethods.isSet(wfActionIdStr)) {
-                        cont.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, wfActionIdStr);
+                        cont.setActionId(wfActionIdStr);
                     }
                 }
 
@@ -1271,7 +1271,7 @@ public class ImportUtil {
                     // Check if the CSV file have set an actionId to execute and if the user
                     // have permission to execute the action
                     if (UtilMethods
-                            .isSet(cont.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY))) {
+                            .isSet(cont.getActionId())) {
 
                         try {
                             executeWfAction = validateWorkflowAction(user, cont);
@@ -1293,7 +1293,7 @@ public class ImportUtil {
                     if (!userCanExecuteAction && UtilMethods.isSet(wfActionId)) {
 
                         try {
-                            cont.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, wfActionId);
+                            cont.setActionId(wfActionId);
                             executeWfAction = validateWorkflowAction(user, cont);
                         } catch (Exception e) {
                             setActionWarning(results, cont, user, lineNumber,
@@ -1436,7 +1436,7 @@ public class ImportUtil {
             throws DotDataException {
 
         WorkflowAction executeWfAction;
-        String actionId = contentlet.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY);
+        String actionId = contentlet.getActionId();
         try {
 
             //Validate the permissions over the action to execute
@@ -1471,7 +1471,7 @@ public class ImportUtil {
         // if the user doesn't have access to the action then removed it from
         // the content to avoid troubles executing the action set on the
         // dropdown or on the checkin
-        contentlet.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, null);
+        contentlet.setActionId(null);
     }
 
     private static Object validateDateTypes(final int lineNumber, final Field field,
