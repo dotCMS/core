@@ -48,6 +48,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
@@ -377,13 +378,13 @@ public class WorkflowResourceLicenseIntegrationTest {
         final String adminRoleId = adminRole.getId();
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final int numSteps = 2;
-        final WorkflowScheme savedScheme = createScheme(licenseWorkflowResource);
+        final WorkflowScheme savedScheme = LocalTransaction.wrapReturn(() -> createScheme(licenseWorkflowResource));
         assertNotNull(savedScheme);
-        final List<WorkflowStep> workflowSteps = addSteps(licenseWorkflowResource, savedScheme,
-                numSteps);
+        final List<WorkflowStep> workflowSteps =
+                LocalTransaction.wrapReturn(() -> addSteps(licenseWorkflowResource, savedScheme,numSteps));
 
-        final List<WorkflowAction> actions = createWorkflowActions(licenseWorkflowResource,
-                savedScheme, adminRoleId, workflowSteps);
+        final List<WorkflowAction> actions =
+                LocalTransaction.wrapReturn(() -> createWorkflowActions(licenseWorkflowResource, savedScheme, adminRoleId, workflowSteps));
         assertEquals(2, actions.size());
 
         final WorkflowStep firstStep = workflowSteps.get(0);

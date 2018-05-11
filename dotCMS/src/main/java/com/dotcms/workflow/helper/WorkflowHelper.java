@@ -406,6 +406,9 @@ public class WorkflowHelper {
             Logger.debug(this, () -> "Looking for the actionId: "
                     + workflowReorderActionStepForm.getActionId());
             action = this.workflowAPI.findAction(workflowReorderActionStepForm.getActionId(), user);
+        } catch (InvalidLicenseException e) {
+            Logger.debug(this, e.getMessage(), e);
+            throw e;
         } catch (Exception e) {
             Logger.error(this, e.getMessage());
             Logger.debug(this, e.getMessage(), e);
