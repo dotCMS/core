@@ -1098,7 +1098,7 @@ public class ImportUtil {
             for (Contentlet cont : contentlets) {
 
                 //Clean up any existing workflow action
-                cont.setActionId(null);
+                cont.resetActionId();
 
                 int wfActionIdIndex = -1;
                 try {
@@ -1471,7 +1471,7 @@ public class ImportUtil {
         // if the user doesn't have access to the action then removed it from
         // the content to avoid troubles executing the action set on the
         // dropdown or on the checkin
-        contentlet.setActionId(null);
+        contentlet.resetActionId();
     }
 
     private static Object validateDateTypes(final int lineNumber, final Field field,

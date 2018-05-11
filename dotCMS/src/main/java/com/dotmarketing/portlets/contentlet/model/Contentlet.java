@@ -1000,9 +1000,16 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	/**
 	 * Sets the workflow action id the Contentlet is going to execute
 	 */
-	public void setActionId(String actionId) {
-		this.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, actionId);
-	}
+    public void setActionId(String actionId) {
+        this.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, actionId);
+    }
+
+    /**
+     * Sets to null the workflow action id in the Contentlet
+     */
+    public void resetActionId() {
+        this.setActionId(null);
+    }
 
 	/**
 	 * Returns the workflow action id the Contentlet is going to execute
