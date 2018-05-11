@@ -316,7 +316,7 @@ public class ESIndexResource {
 
             final File snapshotFile = this.indexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", indexName);
 			final InputStream in = Files.newInputStream(snapshotFile.toPath());
-			StreamingOutput stream = os -> {
+			final StreamingOutput stream = os -> {
                 try {
                     ByteStreams.copy(in, os);
                 } finally {
@@ -345,11 +345,11 @@ public class ESIndexResource {
     @Path("/restoresnapshot/{params:.*}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public Response restoreSnapshotIndex(@Context HttpServletRequest request,
+    public Response restoreSnapshotIndex(@Context final HttpServletRequest request,
                                          @Suspended final AsyncResponse asyncResponse,
-                                         @FormDataParam("file") InputStream inputFile,
-                                         @FormDataParam("file") FormDataContentDisposition inputFileDetail,
-                                         @PathParam("params") String params) {
+                                         @FormDataParam("file") final InputStream inputFile,
+                                         @FormDataParam("file") final FormDataContentDisposition inputFileDetail,
+                                         @PathParam("params") final String params) {
 
         try {
         	checkArgument(inputFile != null);
@@ -365,8 +365,9 @@ public class ESIndexResource {
                         response = Response.ok(new MessageEntity(LanguageUtil.get(user.getLocale(),
                             "snapshot.upload.success"))).build();
                     }
-                } catch (InterruptedException | ExecutionException | IOException | LanguageException e) {
-                    response = this.responseUtil.getErrorResponse(request, Response.Status.SERVICE_UNAVAILABLE, user.getLocale(), null, "snapshot.upload.failed");
+                } catch (Exception e) {
+                    Logger.error(this, "Exception trying to restore index snapshot:" + e.getMessage(), e);
+                    response = ResponseUtil.mapExceptionResponse(e);
                 }
 
                 asyncResponse.resume(response);
