@@ -21,10 +21,8 @@ public class Task04365RelationshipUniqueConstraint extends AbstractJDBCStartupTa
     public String getH2Script() {
         StringBuilder builder = new StringBuilder()
             //Delete duplicates
-            .append("DELETE R1 ")
-            .append("FROM relationship AS R1, relationship AS R2 ")
-            .append("WHERE R1.inode < R2.inode ")
-            .append("AND R1.relation_type_value = R2.relation_type_value; ")
+            .append("DELETE FROM relationship WHERE inode NOT IN ( ")
+            .append("  SELECT MAX (inode) FROM relationship GROUP BY relation_type_value ); ")
 
             //Create Unique Key
             .append("ALTER TABLE relationship ADD CONSTRAINT unique_relation_type_value UNIQUE (relation_type_value); ");
