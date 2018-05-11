@@ -5,7 +5,6 @@ import { DotEditPageMainComponent } from './main/dot-edit-page-main/dot-edit-pag
 // tslint:disable-next-line:max-line-length
 import { DotLegacyTemplateAdditionalActionsComponent } from './layout/components/dot-template-additional-actions/dot-legacy-template-additional-actions-iframe/dot-legacy-template-additional-actions-iframe.component';
 import { DotEditPageResolver } from './shared/services/dot-edit-page-resolver/dot-edit-page-resolver.service';
-import { DotEditLayoutGuardService } from './shared/services/dot-edit-layout-guard/dot-edit-layout-guard.service';
 
 const dotEditPage: Routes = [
     {
@@ -26,8 +25,7 @@ const dotEditPage: Routes = [
             },
             {
                 loadChildren: 'app/portlets/dot-edit-page/layout/dot-edit-layout.module#DotEditLayoutModule',
-                path: 'layout',
-                canActivate: [DotEditLayoutGuardService]
+                path: 'layout'
             }
         ]
     },

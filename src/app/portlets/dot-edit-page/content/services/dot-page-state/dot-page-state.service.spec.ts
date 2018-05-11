@@ -72,7 +72,9 @@ describe('DotPageStateService', () => {
             lastConnection[1].mockRespond(
                 new Response(
                     new ResponseOptions({
-                        body: mockDotRenderedPage
+                        body: {
+                            entity: mockDotRenderedPage
+                        }
                     })
                 )
             );
@@ -112,7 +114,9 @@ describe('DotPageStateService', () => {
             lastConnection[1].mockRespond(
                 new Response(
                     new ResponseOptions({
-                        body: mockDotRenderedPageTest
+                        body: {
+                            entity: mockDotRenderedPageTest
+                        }
                     })
                 )
             );
@@ -138,7 +142,9 @@ describe('DotPageStateService', () => {
             lastConnection[0].mockRespond(
                 new Response(
                     new ResponseOptions({
-                        body: mockDotRenderedPage
+                        body: {
+                            entity: mockDotRenderedPage
+                        }
                     })
                 )
             );
@@ -164,7 +170,9 @@ describe('DotPageStateService', () => {
                 new Response(
                     new ResponseOptions({
                         body: {
-                            page: noLockedByPage
+                            entity: {
+                                page: noLockedByPage
+                            }
                         }
                     })
                 )
@@ -195,7 +203,9 @@ describe('DotPageStateService', () => {
                 lastConnection[0].mockRespond(
                     new Response(
                         new ResponseOptions({
-                            body: mockDotRenderedPage
+                            body: {
+                                entity: mockDotRenderedPage
+                            }
                         })
                     )
                 );
@@ -215,7 +225,9 @@ describe('DotPageStateService', () => {
                 lastConnection[0].mockRespond(
                     new Response(
                         new ResponseOptions({
-                            body: mockDotRenderedPage
+                            body: {
+                                entity: mockDotRenderedPage
+                            }
                         })
                     )
                 );
@@ -233,7 +245,9 @@ describe('DotPageStateService', () => {
             lastConnection[0].mockRespond(
                 new Response(
                     new ResponseOptions({
-                        body: mockDotRenderedPage
+                        body: {
+                            entity: mockDotRenderedPage
+                        }
                     })
                 )
             );
@@ -251,7 +265,9 @@ describe('DotPageStateService', () => {
             lastConnection[0].mockRespond(
                 new Response(
                     new ResponseOptions({
-                        body: mockDotRenderedPage
+                        body: {
+                            entity: mockDotRenderedPage
+                        }
                     })
                 )
             );
@@ -278,7 +294,9 @@ describe('DotPageStateService', () => {
             lastConnection[0].mockRespond(
                 new Response(
                     new ResponseOptions({
-                        body: mockDotRenderedPage
+                        body: {
+                            entity: mockDotRenderedPage
+                        }
                     })
                 )
             );
@@ -296,7 +314,9 @@ describe('DotPageStateService', () => {
             lastConnection[0].mockRespond(
                 new Response(
                     new ResponseOptions({
-                        body: mockDotRenderedPage
+                        body: {
+                            entity: mockDotRenderedPage
+                        }
                     })
                 )
             );

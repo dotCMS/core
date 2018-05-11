@@ -43,7 +43,9 @@ describe('DotRenderHTMLService', () => {
         lastConnection[0].mockRespond(
             new Response(
                 new ResponseOptions({
-                    body: mockDotRenderedPage
+                    body: {
+                        entity: mockDotRenderedPage
+                    }
                 })
             )
         );
@@ -58,7 +60,9 @@ describe('DotRenderHTMLService', () => {
         lastConnection[0].mockRespond(
             new Response(
                 new ResponseOptions({
-                    body: mockDotRenderedPage
+                    body: {
+                        entity: mockDotRenderedPage
+                    }
                 })
             )
         );
@@ -71,7 +75,9 @@ describe('DotRenderHTMLService', () => {
         editPageService.getLive('about-us').subscribe((renderedPage: DotRenderedPage) => result = renderedPage);
 
         lastConnection[0].mockRespond(new Response(new ResponseOptions({
-            body: mockDotRenderedPage
+            body: {
+                entity: mockDotRenderedPage
+            }
         })));
         expect(lastConnection[0].request.url).toContain('/api/v1/page/render/about-us?mode=ADMIN_MODE');
         expect(result).toEqual(mockDotRenderedPage);
@@ -88,7 +94,9 @@ describe('DotRenderHTMLService', () => {
         lastConnection[0].mockRespond(
             new Response(
                 new ResponseOptions({
-                    body: mockDotRenderedPage
+                    body: {
+                        entity: mockDotRenderedPage
+                    }
                 })
             )
         );

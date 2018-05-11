@@ -1,5 +1,5 @@
 import { DotDialogService } from '../dot-dialog/dot-dialog.service';
-import { LoginService } from 'dotcms-js/dotcms-js';
+import { LoginService, ResponseView } from 'dotcms-js/dotcms-js';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DotRouterService } from '../dot-router/dot-router.service';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -7,6 +7,7 @@ import { DotMessageService } from '../dot-messages-service';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { DotHttpErrorManagerService } from './dot-http-error-manager.service';
 import { mockResponseView } from '../../../test/response-view.mock';
+import { Headers } from '@angular/http';
 
 describe('DotHttpErrorManagerService', () => {
     let service: DotHttpErrorManagerService;
@@ -19,7 +20,9 @@ describe('DotHttpErrorManagerService', () => {
         'dot.common.http.error.403.header': '403 Header',
         'dot.common.http.error.403.message': '403 Message',
         'dot.common.http.error.500.header': '500 Header',
-        'dot.common.http.error.500.message': '500 Message'
+        'dot.common.http.error.500.message': '500 Message',
+        'dot.common.http.error.403.license.message': 'license message',
+        'dot.common.http.error.403.license.header': 'license header'
     });
 
     beforeEach(() => {
@@ -117,4 +120,28 @@ describe('DotHttpErrorManagerService', () => {
             header: '500 Header'
         });
     });
+
+
+    it('should handle license error', () => {
+        spyOn(dotDialogService, 'alert');
+        const headers = new Headers({
+            'error-key': 'dotcms.api.error.license.required'
+        });
+
+        const responseView: ResponseView = mockResponseView(403);
+        responseView.response.headers = headers;
+
+        service.handle(responseView).subscribe(res => {
+            result = res;
+        });
+
+        expect(result).toEqual({
+            redirected: false,
+        });
+        expect(dotDialogService.alert).toHaveBeenCalledWith({
+            message: 'license message',
+            header:  'license header'
+        });
+    });
+
 });

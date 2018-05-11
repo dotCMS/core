@@ -83,7 +83,7 @@ export class DotRenderHTMLService {
                 url: `v1/page/render/${options.url.replace(/^\//, '')}`,
                 params: params
             })
-            .pluck('bodyJsonObject');
+            .pluck('entity');
     }
 
     private setOptionalViewAsParams(viewAsConfig: DotEditPageViewAs) {

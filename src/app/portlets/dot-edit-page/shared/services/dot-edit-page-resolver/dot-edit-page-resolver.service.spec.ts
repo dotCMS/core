@@ -82,6 +82,21 @@ describe('DotEditPageResolver', () => {
             });
         });
 
+        it('should return a DotRenderedPageState valid object when layout is null', () => {
+            const mockDotRenderedPageState: DotRenderedPageState = new DotRenderedPageState(
+                mockUser,
+                {
+                    ...mockDotRenderedPage,
+                    layout: null
+                }
+            );
+            spyOn(dotPageStateService, 'get').and.returnValue(Observable.of(mockDotRenderedPageState));
+
+            resolver.resolve(route).subscribe((res) => {
+                expect(res).toEqual(mockDotRenderedPageState);
+            });
+        });
+
         it('should return handle 403', () => {
             const fake403Response = mockResponseView(403);
 
@@ -143,6 +158,27 @@ describe('DotEditPageResolver', () => {
                 }
             )));
 
+
+            spyOn(dotHttpErrorManagerService, 'handle').and.returnValue(Observable.of({
+                redirected: false
+            }));
+
+            spyOn(dotRouterService, 'gotoPortlet');
+
+            resolver.resolve(route).subscribe();
+            expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/c/site-browser');
+
+        });
+
+
+        it('should trigger 403 error when try to go to layout because layout is null', () => {
+            spyOn(dotPageStateService, 'get').and.returnValue(Observable.of(new DotRenderedPageState(
+                mockUser,
+                {
+                    ...mockDotRenderedPage,
+                    layout: null
+                }
+            )));
 
             spyOn(dotHttpErrorManagerService, 'handle').and.returnValue(Observable.of({
                 redirected: false

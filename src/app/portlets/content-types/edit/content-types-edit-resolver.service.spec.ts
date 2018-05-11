@@ -26,6 +26,7 @@ describe('ContentTypeEditResolver', () => {
     let router: ActivatedRouteSnapshot;
     let contentTypeEditResolver: ContentTypeEditResolver;
     let dotRouterService: DotRouterService;
+    let dotHttpErrorManagerService: DotHttpErrorManagerService;
 
     beforeEach(
         async(() => {
@@ -47,6 +48,7 @@ describe('ContentTypeEditResolver', () => {
             router = testbed.get(ActivatedRouteSnapshot);
             contentTypeEditResolver = testbed.get(ContentTypeEditResolver);
             dotRouterService = testbed.get(DotRouterService);
+            dotHttpErrorManagerService = testbed.get(DotHttpErrorManagerService);
         })
     );
 
@@ -71,6 +73,10 @@ describe('ContentTypeEditResolver', () => {
     it('should redirect to content-types if content type it\'s not found', () => {
         activatedRouteSnapshotMock.paramMap.get = () => 'invalid-id';
 
+        spyOn(dotHttpErrorManagerService, 'handle').and.returnValue(Observable.of({
+            redirected: false
+        }));
+
         spyOn(dotRouterService, 'gotoPortlet');
 
         spyOn(crudService, 'getDataById').and.returnValue(Observable.throw({
@@ -82,9 +88,7 @@ describe('ContentTypeEditResolver', () => {
             }
         }));
 
-        contentTypeEditResolver.resolve(activatedRouteSnapshotMock).subscribe((fakeContentType: any) => {
-            expect(fakeContentType).toEqual(null);
-        });
+        contentTypeEditResolver.resolve(activatedRouteSnapshotMock).subscribe();
 
         expect(crudService.getDataById).toHaveBeenCalledWith('v1/contenttype', 'invalid-id');
         expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/content-types-angular', true);
@@ -92,6 +96,10 @@ describe('ContentTypeEditResolver', () => {
 
     it('should get and return null and go to home', () => {
         activatedRouteSnapshotMock.paramMap.get = () => '123';
+
+        spyOn(dotHttpErrorManagerService, 'handle').and.returnValue(Observable.of({
+            redirected: false
+        }));
         spyOn(dotRouterService, 'gotoPortlet');
         spyOn(crudService, 'getDataById').and.returnValue(Observable.throw({
             bodyJsonObject: {
@@ -102,9 +110,7 @@ describe('ContentTypeEditResolver', () => {
             }
         }));
 
-        contentTypeEditResolver.resolve(activatedRouteSnapshotMock).subscribe((res: any) => {
-            expect(res).toBeNull();
-        });
+        contentTypeEditResolver.resolve(activatedRouteSnapshotMock).subscribe();
         expect(crudService.getDataById).toHaveBeenCalledWith('v1/contenttype', '123');
         expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/content-types-angular', true);
     });

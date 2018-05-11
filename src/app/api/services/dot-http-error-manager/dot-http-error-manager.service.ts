@@ -7,6 +7,8 @@ import { Observable } from 'rxjs/Observable';
 import { ResponseView, LoginService, HttpCode } from 'dotcms-js/dotcms-js';
 
 import { DotDialogService } from '../dot-dialog';
+import { Response, Headers } from '@angular/http';
+import { take, switchMap } from 'rxjs/operators';
 
 export interface DotHttpErrorHandled {
     redirected: boolean;
@@ -21,22 +23,23 @@ export interface DotHttpErrorHandled {
  */
 @Injectable()
 export class DotHttpErrorManagerService {
+
+    private readonly errorHandlers;
+
     constructor(
         private dotDialogService: DotDialogService,
         private dotMessageService: DotMessageService,
         private loginService: LoginService,
         private dotRouterService: DotRouterService
     ) {
-        this.dotMessageService
-            .getMessages([
-                'dot.common.http.error.403.header',
-                'dot.common.http.error.403.message',
-                'dot.common.http.error.404.header',
-                'dot.common.http.error.404.message',
-                'dot.common.http.error.500.header',
-                'dot.common.http.error.500.message'
-            ])
-            .subscribe();
+
+        if (!this.errorHandlers) {
+            this.errorHandlers = {};
+            this.errorHandlers[HttpCode.NOT_FOUND] = this.handleNotFound.bind(this);
+            this.errorHandlers[HttpCode.UNAUTHORIZED] = this.handleUnathorized.bind(this);
+            this.errorHandlers[HttpCode.FORBIDDEN] = this.handleForbidden.bind(this);
+            this.errorHandlers[HttpCode.SERVER_ERROR] = this.handleServerError.bind(this);
+        }
     }
 
     /**
@@ -47,26 +50,41 @@ export class DotHttpErrorManagerService {
      * @memberof DotHttpErrorManagerService
      */
     handle(err: ResponseView): Observable<DotHttpErrorHandled> {
-        const result: DotHttpErrorHandled = {
-            redirected: this.callErrorHandler(err.response.status)
-        };
+        return this.getMessages().pipe(
+            switchMap(() => {
+                const result: DotHttpErrorHandled = {
+                    redirected: this.callErrorHandler(err.response)
+                };
 
-        if (err['bodyJsonObject'].error) {
-            result.forbidden = this.contentletIsForbidden(err['bodyJsonObject'].error);
-        }
+                if (err['bodyJsonObject'].error) {
+                    result.forbidden = this.contentletIsForbidden(err['bodyJsonObject'].error);
+                }
 
-        return Observable.of(result);
+                return Observable.of(result);
+            })
+        );
     }
 
-    private callErrorHandler(code: HttpCode): boolean {
-        const errors = {};
+    private getMessages(): Observable<any> {
+        return this.dotMessageService.getMessages([
+            'dot.common.http.error.403.header',
+            'dot.common.http.error.403.message',
+            'dot.common.http.error.404.header',
+            'dot.common.http.error.404.message',
+            'dot.common.http.error.500.header',
+            'dot.common.http.error.500.message',
+            'dot.common.http.error.403.license.message',
+            'dot.common.http.error.403.license.header'
+        ]).pipe(
+            take(1)
+        );
+    }
 
-        errors[HttpCode.NOT_FOUND] = this.handleNotFound.bind(this);
-        errors[HttpCode.UNAUTHORIZED] = this.handleUnathorized.bind(this);
-        errors[HttpCode.FORBIDDEN] = this.handleForbidden.bind(this);
-        errors[HttpCode.SERVER_ERROR] = this.handleServerError.bind(this);
-
-        return errors[code]();
+    private callErrorHandler(response: Response): boolean {
+        const code = response.status;
+        return code === HttpCode.FORBIDDEN ?
+            this.isLicenseError(response) ? this.handleLicense() : this.handleForbidden() :
+            this.errorHandlers[code]();
     }
 
     private contentletIsForbidden(error: string): boolean {
@@ -76,10 +94,22 @@ export class DotHttpErrorManagerService {
         );
     }
 
+    private isLicenseError(response: Response): boolean {
+        return response.headers && response.headers.get('error-key') === 'dotcms.api.error.license.required';
+    }
+
     private handleForbidden(): boolean {
         this.dotDialogService.alert({
             message: this.dotMessageService.get('dot.common.http.error.403.message'),
             header: this.dotMessageService.get('dot.common.http.error.403.header')
+        });
+        return false;
+    }
+
+    private handleLicense(): boolean {
+        this.dotDialogService.alert({
+            message: this.dotMessageService.get('dot.common.http.error.403.license.message'),
+            header: this.dotMessageService.get('dot.common.http.error.403.license.header')
         });
         return false;
     }
