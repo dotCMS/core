@@ -26,6 +26,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
@@ -240,7 +241,13 @@ public class PageContextBuilder {
                     // sets contentletlist with all the files to load per
                     // container
                     ctxMap.put("contentletList" + c.getIdentifier() + uniqueId, contentlist);
-                    
+
+                    if (ContainerUUID.UUID_DEFAULT_VALUE.equals(uniqueId)) {
+                        ctxMap.put("contentletList" + c.getIdentifier() + "1", contentlist);
+                    } else  if ("1".equals(uniqueId)) {
+                        ctxMap.put("contentletList" + c.getIdentifier() + ContainerUUID.UUID_DEFAULT_VALUE, contentlist);
+                    }
+
                     ctxMap.put("totalSize" + c.getIdentifier() + uniqueId, new Integer(contentlets.size()));
 
                 }
