@@ -80,8 +80,11 @@ public class TemplateAjax {
 					if (UtilMethods.isSet(query.get("templateSelected"))) {
 						final Template templateSelected = templateAPI.findWorkingTemplate(query.get("templateSelected"),
 								APILocator.getUserAPI().getSystemUser(), respectFrontendRoles);
-						fullListTemplates.add(templateSelected);
-						totalTemplates.add(templateSelected);
+
+						if (templateSelected.isAnonymous()) {
+							fullListTemplates.add(templateSelected);
+							totalTemplates.add(templateSelected);
+						}
 					}
                 }
 			    else {

@@ -193,8 +193,6 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
                 .append(uuid)
                 .append(")");
 
-
-
             // sb.append("\n#if($webapi.canParseContent($contentletId,"+EDIT_MODE+")) ");
             sb.append("#set($_show_working_=false)");
 

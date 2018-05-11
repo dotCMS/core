@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render;
 
+import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.portlets.containers.model.Container;
