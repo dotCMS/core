@@ -15,7 +15,6 @@ import com.dotmarketing.quartz.job.CalendarReminderThread;
 import com.dotmarketing.quartz.job.CleanUnDeletedUsersJob;
 import com.dotmarketing.quartz.job.ContentFromEmailJob;
 import com.dotmarketing.quartz.job.ContentReindexerThread;
-import com.dotmarketing.quartz.job.ContentReviewThread;
 import com.dotmarketing.quartz.job.DeleteOldClickstreams;
 import com.dotmarketing.quartz.job.DistReindexJournalCleanupThread;
 import com.dotmarketing.quartz.job.DistReindexJournalCleanupThread2;
@@ -95,42 +94,6 @@ public class DotInitScheduler {
 			CronTrigger trigger;
 			Calendar calendar;
 			boolean isNew;
-
-		        if(Config.getBooleanProperty("ENABLE_CONTENT_REVIEW_THREAD")) {
-				try {
-					isNew = false;
-
-					try {
-						if ((job = sched.getJobDetail("ContentReviewJob", DOTCMS_JOB_GROUP_NAME)) == null) {
-							job = new JobDetail("ContentReviewJob", DOTCMS_JOB_GROUP_NAME, ContentReviewThread.class);
-							isNew = true;
-						}
-					} catch (SchedulerException se) {
-						sched.deleteJob("ContentReviewJob", DOTCMS_JOB_GROUP_NAME);
-						job = new JobDetail("ContentReviewJob", DOTCMS_JOB_GROUP_NAME, ContentReviewThread.class);
-						isNew = true;
-					}
-					calendar = GregorianCalendar.getInstance();
-					calendar.add(Calendar.SECOND, Config.getIntProperty("EXEC_INIT_DELAY"));
-					trigger = new CronTrigger("trigger3", "group3", "ContentReviewJob", DOTCMS_JOB_GROUP_NAME, calendar.getTime(), null, Config.getStringProperty("CONTENT_REVIEW_THREAD_CRON_EXPRESSION"));
-					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
-					sched.addJob(job, true);
-
-					if (isNew)
-						sched.scheduleJob(trigger);
-					else
-						sched.rescheduleJob("trigger3", "group3", trigger);
-				} catch (Exception e) {
-					Logger.info(DotInitScheduler.class, e.toString());
-				}
-			} else {
-		        Logger.info(DotInitScheduler.class, "Content Review Cron Thread schedule disabled on this server");
-		        Logger.info(DotInitScheduler.class, "Deleting ContentReviewJob Job");
-				if ((job = sched.getJobDetail("ContentReviewJob", DOTCMS_JOB_GROUP_NAME)) != null) {
-					sched.deleteJob("ContentReviewJob", DOTCMS_JOB_GROUP_NAME);
-				}
-			}
-
 
 	        try {
 	        	//Register cluster MBean
