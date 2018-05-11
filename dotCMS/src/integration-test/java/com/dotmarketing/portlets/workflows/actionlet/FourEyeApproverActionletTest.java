@@ -157,7 +157,7 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
                 contentlet1.isLive());
 
         // Set the appropriate workflow action to the contentlet
-        contentlet1.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY,
+        contentlet1.setActionId(
                 schemeStepActionResult.getAction().getId());
         contentlet1.setStringProperty("title", "Test Save");
         contentlet1.setStringProperty("txt", "Test Save Text");
@@ -209,7 +209,7 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
                 contentlet1.isLive());
 
         // Set the appropriate workflow action to the contentlet
-        contentlet1.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY,
+        contentlet1.setActionId(
                 schemeStepActionResult.getAction().getId());
         contentlet1.setStringProperty("title", "Test Save");
         contentlet1.setStringProperty("txt", "Test Save Text");
@@ -249,7 +249,7 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
         Assert.assertFalse("The contentlet cannot be live, it has just been created.",
                 contentlet1.isLive());
 
-        contentlet1.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY,
+        contentlet1.setActionId(
                 schemeStepActionResult.getAction().getId());
         contentlet1.setStringProperty("title", "Test Save");
         contentlet1.setStringProperty("txt", "Test Save Text");
