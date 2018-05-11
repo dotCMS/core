@@ -53,6 +53,9 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.User;
 
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.admin.indices.stats.IndexStats;
@@ -100,7 +103,7 @@ public class ESIndexResource {
 	}
 
 	@VisibleForTesting
-	protected ESIndexResource(ESIndexAPI indexAPI, ESIndexHelper indexHelper, ResponseUtil responseUtil,
+	ESIndexResource(ESIndexAPI indexAPI, ESIndexHelper indexHelper, ResponseUtil responseUtil,
 			WebResource webResource, LayoutAPI layoutAPI, IndiciesAPI indiciesAPI) {
 		this.indexAPI = indexAPI;
 		this.indexHelper = indexHelper;
@@ -214,10 +217,11 @@ public class ESIndexResource {
     /**
      * Restore index backup
      * @param inputFile input file stream
-     * @param inpurFileDetail input file details
+     * @param inputFileDetail input file details
      * @param params optional parameters
      * @return response status
-     * @deprecated  As of 2016-10-12, replaced by {@link #snapshotIndex(request, inputFile, inputFileDetail ,params)}
+     * @deprecated  As of 2016-10-12, replaced by {@link #restoreSnapshotIndex(HttpServletRequest, AsyncResponse,
+     * InputStream, FormDataContentDisposition, String)}
      */
     @PUT
     @Path("/restore/{params:.*}")
@@ -287,14 +291,17 @@ public class ESIndexResource {
      */
     @GET
     @Path("/snapshot/{params:.*}")
-    @Produces("application/zip")
+    @Produces({"application/zip", MediaType.APPLICATION_JSON})
     public Response snapshotIndex(@Context HttpServletRequest request, @PathParam("params") String params) {
+
     	try {
         	checkArgument(params != null);
-        	InitDataObject init = auth(params,request);
-            String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),this.indexAPI);
+            InitDataObject initDataObject = auth(params,request);
+            final User user = initDataObject.getUser();
+            String indexName = this.indexHelper.getIndexNameOrAlias(initDataObject.getParamsMap(),this.indexAPI);
+
             if(!UtilMethods.isSet(indexName)){
-            	return this.responseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, Locale.getDefault(), null, "snapshot.wrong.arguments");
+            	return this.responseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, user.getLocale(), null, "snapshot.wrong.arguments");
             }
 
             if("live".equalsIgnoreCase(indexName) || "working".equalsIgnoreCase(indexName)){
@@ -321,18 +328,9 @@ public class ESIndexResource {
 			return Response.ok(stream)
 					.header("Content-Disposition", "attachment; filename=\"" + indexName + ".zip\"")
 					.header("Content-Type", "application/zip").build();
-    	} catch (SecurityException sec) {
-    		Logger.error(this.getClass(), "Access denied", sec);
-            return this.responseUtil.getErrorResponse(request, Response.Status.UNAUTHORIZED, Locale.getDefault(), null, "authentication-failed");
-        } catch (ElasticsearchException esx){
-            Logger.error(this.getClass(), "Elastic search exception ", esx);
-            return this.responseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, Locale.getDefault(), null, "snapshot.wrong.arguments");
-        } catch(IllegalArgumentException iar){
-        	Logger.error(this.getClass(), "Invalid request", iar);
-        	return this.responseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, Locale.getDefault(), null, "snapshot.wrong.arguments");
-        } catch (Exception de) {
-            Logger.error(this, "Error on snapshot. URI: "+request.getRequestURI(),de);
-            return this.responseUtil.getErrorResponse(request, Response.Status.INTERNAL_SERVER_ERROR, Locale.getDefault(), null, "snapshot.error");
+    	} catch (Exception e) {
+            Logger.error(this.getClass(),"Exception trying to download index snapshot: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
     }
 
@@ -355,7 +353,8 @@ public class ESIndexResource {
 
         try {
         	checkArgument(inputFile != null);
-        	auth(params,request);
+        	InitDataObject initDataObject = auth(params,request);
+        	final User user = initDataObject.getUser();
 
             DotSubmitter submitter = DotConcurrentFactory.getInstance().getSubmitter(DOT_SYSTEM_THREAD_POOL);
 
@@ -363,22 +362,20 @@ public class ESIndexResource {
                 Response response = null;
                 try {
                     if(this.indexAPI.uploadSnapshot(inputFile)){
-                        response = Response.ok(new MessageEntity("Snapshot restored successfully")).build();
+                        response = Response.ok(new MessageEntity(LanguageUtil.get(user.getLocale(),
+                            "snapshot.upload.success"))).build();
                     }
-                } catch (InterruptedException | ExecutionException | IOException e) {
-                    response = this.responseUtil.getErrorResponse(request, Response.Status.SERVICE_UNAVAILABLE, Locale.getDefault(), null, "snapshot.upload.failed");
+                } catch (InterruptedException | ExecutionException | IOException | LanguageException e) {
+                    response = this.responseUtil.getErrorResponse(request, Response.Status.SERVICE_UNAVAILABLE, user.getLocale(), null, "snapshot.upload.failed");
                 }
 
                 asyncResponse.resume(response);
             });
-            return this.responseUtil.getErrorResponse(request, Response.Status.SERVICE_UNAVAILABLE, Locale.getDefault(), null, "snapshot.upload.failed");
+            return this.responseUtil.getErrorResponse(request, Response.Status.SERVICE_UNAVAILABLE, user.getLocale(), null, "snapshot.upload.failed");
 
-        }catch (SecurityException sec) {
-            return this.responseUtil.getErrorResponse(request, Response.Status.UNAUTHORIZED, Locale.getDefault(), null, "authentication-failed");
-        }catch(IllegalArgumentException iar){
-        	return this.responseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, Locale.getDefault(), null, "snapshot.wrong.arguments");
-        }catch(Exception ex){
-        	return this.responseUtil.getErrorResponse(request, Response.Status.INTERNAL_SERVER_ERROR, Locale.getDefault(), null, "snapshot.error");
+        } catch (Exception e) {
+            Logger.error(this.getClass(),"Exception trying to restore index snapshot: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
     }
 
@@ -419,12 +416,9 @@ public class ESIndexResource {
                 APILocator.getESIndexAPI().clearIndex(indexName);
             }
             return Response.ok().build();
-        } catch (DotSecurityException sec) {
-            SecurityLogger.logInfo(this.getClass(), "Access denied on clearIndex from "+request.getRemoteAddr());
-            return Response.status(Status.UNAUTHORIZED).build();
-        } catch (Exception de) {
-            Logger.error(this, "Error on clearIndex. URI: "+request.getRequestURI(),de);
-            return Response.serverError().build();
+        } catch (Exception e) {
+            Logger.error(this.getClass(),"Exception trying to clear index: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
     }
 
@@ -438,12 +432,9 @@ public class ESIndexResource {
                 APILocator.getESIndexAPI().delete(indexName);
             }
             return Response.ok().build();
-        } catch (DotSecurityException sec) {
-            SecurityLogger.logInfo(this.getClass(), "Access denied on deleteIndex from "+request.getRemoteAddr());
-            return Response.status(Status.UNAUTHORIZED).build();
-        } catch (Exception de) {
-            Logger.error(this, "Error on deleteIndex. URI: "+request.getRequestURI(),de);
-            return Response.serverError().build();
+        } catch (Exception e) {
+            Logger.error(this.getClass(),"Exception trying to delete index: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
     }
 
@@ -457,12 +448,9 @@ public class ESIndexResource {
             activateIndex(indexName);
 
             return Response.ok().build();
-        } catch (DotSecurityException sec) {
-            SecurityLogger.logInfo(this.getClass(), "Access denied on activate from "+request.getRemoteAddr());
-            return Response.status(Status.UNAUTHORIZED).build();
-        } catch (Exception de) {
-            Logger.error(this, "Error on activate. URI: "+request.getRequestURI(),de);
-            return Response.serverError().build();
+        } catch (Exception e) {
+            Logger.error(this.getClass(),"Exception trying to activate index: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
     }
 
@@ -476,12 +464,9 @@ public class ESIndexResource {
             deactivateIndex(indexName);
 
             return Response.ok().build();
-        } catch (DotSecurityException sec) {
-            SecurityLogger.logInfo(this.getClass(), "Access denied on deactivateIndex from "+request.getRemoteAddr());
-            return Response.status(Status.UNAUTHORIZED).build();
-        } catch (Exception de) {
-            Logger.error(this, "Error on deactivateIndex. URI: "+request.getRequestURI(),de);
-            return Response.serverError().build();
+        } catch (Exception e) {
+            Logger.error(this.getClass(),"Exception trying to deactivate index: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
     }
 
@@ -495,15 +480,12 @@ public class ESIndexResource {
             APILocator.getESIndexAPI().updateReplicas(indexName, replicas);
 
             return Response.ok().build();
-        } catch (DotSecurityException sec) {
-            SecurityLogger.logInfo(this.getClass(), "Access denied on updateReplica from "+request.getRemoteAddr());
-            return Response.status(Status.UNAUTHORIZED).build();
-        }catch(DotDataException dt){
+        } catch(DotDataException dt){
         	Logger.error(this, dt.getMessage());
         	throw new BadRequestException(dt, dt.getMessage());
-        } catch (Exception de) {
-            Logger.error(this, "Error on updateReplica. URI: "+request.getRequestURI(),de);
-            return Response.serverError().build();
+        } catch (Exception e) {
+            Logger.error(this.getClass(),"Exception trying to update index replicas: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
     }
 
@@ -516,12 +498,9 @@ public class ESIndexResource {
             APILocator.getESIndexAPI().closeIndex(indexName);
 
             return Response.ok().build();
-        } catch (DotSecurityException sec) {
-            SecurityLogger.logInfo(this.getClass(), "Access denied on closeIndex from "+request.getRemoteAddr());
-            return Response.status(Status.UNAUTHORIZED).build();
-        } catch (Exception de) {
-            Logger.error(this, "Error on closeIndex. URI: "+request.getRequestURI(),de);
-            return Response.serverError().build();
+        } catch (Exception e) {
+            Logger.error(this.getClass(),"Exception trying to open index: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
     }
 
@@ -534,12 +513,9 @@ public class ESIndexResource {
             APILocator.getESIndexAPI().openIndex(indexName);
 
             return Response.ok().build();
-        } catch (DotSecurityException sec) {
-            SecurityLogger.logInfo(this.getClass(), "Access denied on openIndex from "+request.getRemoteAddr());
-            return Response.status(Status.UNAUTHORIZED).build();
-        } catch (Exception de) {
-            Logger.error(this, "Error on openIndex. URI: "+request.getRequestURI(),de);
-            return Response.serverError().build();
+        } catch (Exception e) {
+            Logger.error(this.getClass(),"Exception trying to open index: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
     }
 
@@ -554,12 +530,9 @@ public class ESIndexResource {
             ResourceResponse responseResource = new ResourceResponse( init.getParamsMap() );
 
             return responseResource.response( APILocator.getContentletIndexAPI().getActiveIndexName( init.getParamsMap().get( "type" ) ) );
-        } catch (DotSecurityException sec) {
-            SecurityLogger.logInfo(this.getClass(), "Access denied on getActive from "+request.getRemoteAddr());
-            return Response.status(Status.UNAUTHORIZED).build();
-        } catch (Exception de) {
-            Logger.error(this, "Error on getActive. URI: "+request.getRequestURI(),de);
-            return Response.serverError().build();
+        } catch (Exception e) {
+            Logger.error(this.getClass(),"Exception trying to get active index: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
     }
 
@@ -575,12 +548,9 @@ public class ESIndexResource {
 
             String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias",this.indexAPI);
             return responseResource.response( Long.toString( indexDocumentCount( indexName ) ) );
-        } catch (DotSecurityException sec) {
-            SecurityLogger.logInfo(this.getClass(), "Access denied on getDocumentCount from "+request.getRemoteAddr());
-            return Response.status(Status.UNAUTHORIZED).build();
-        } catch (Exception de) {
-            Logger.error(this, "Error on getDocumentCount. URI: "+request.getRequestURI(),de);
-            return Response.serverError().build();
+        } catch (Exception e) {
+            Logger.error(this.getClass(),"Exception trying to get document count: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
     }
 
@@ -595,12 +565,9 @@ public class ESIndexResource {
             ResourceResponse responseResource = new ResourceResponse( init.getParamsMap() );
 
             return responseResource.response( new Gson().toJson( APILocator.getContentletIndexAPI().listDotCMSIndices() ) );
-        } catch (DotSecurityException sec) {
-            SecurityLogger.logInfo(this.getClass(), "Access denied on indexList from "+request.getRemoteAddr());
-            return Response.status(Status.UNAUTHORIZED).build();
-        } catch (Exception de) {
-            Logger.error(this, "Error on indexList. URI: "+request.getRequestURI(),de);
-            return Response.serverError().build();
+        } catch (Exception e) {
+            Logger.error(this.getClass(),"Exception trying to list indices: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
     }
 }

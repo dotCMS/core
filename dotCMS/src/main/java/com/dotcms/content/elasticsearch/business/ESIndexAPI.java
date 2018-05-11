@@ -1005,8 +1005,7 @@ public class ESIndexAPI {
 		//File outFile = new File(toDirectory.getParent() + File.separator + snapshotName);
 		FileUtils.copyStreamToFile(outFile, inputFile, null);
 		ZipFile zipIn = new ZipFile(outFile);
-		boolean response = uploadSnapshot(zipIn, toDirectory.getAbsolutePath(), cleanRepository);		
-		return response;		
+		return uploadSnapshot(zipIn, toDirectory.getAbsolutePath(), cleanRepository);
 	}
 
 	/**
