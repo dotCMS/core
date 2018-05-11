@@ -53,6 +53,8 @@ public interface RelationshipAPI {
 
   void delete(Relationship relationship) throws DotDataException;
 
+  void deleteKeepTrees(Relationship relationship) throws DotDataException;
+
   void addRelationship(String parent, String child, String relationType) throws DotDataException;
 
 
