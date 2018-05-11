@@ -100,7 +100,9 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 	@SuppressWarnings("unchecked")
 	public List<Template> findTemplatesUserCanUse(User user, String hostId, String query,boolean searchHost ,int offset, int limit) throws DotDataException, DotSecurityException {
-		return findTemplates(user, false, Collections.singletonMap("title", query.toLowerCase()), hostId, null,null, null, offset, limit, "title");
+		return findTemplates(user, false,
+				UtilMethods.isSet(query) ? Collections.singletonMap("title", query.toLowerCase())
+						: null, hostId, null, null, null, offset, limit, "title");
 	}
 
 	public void delete(Template template) throws DotDataException {
