@@ -137,7 +137,7 @@ public class WorkflowHelper {
             action = this.workflowAPI.findAction(permission.getInode(), user);
             if (null != action) {
 
-                this.permissionAPI.save(permission, action, user, false);
+                this.permissionAPI.save(permission, action, APILocator.getUserAPI().getSystemUser(), false);
             } else {
 
                 throw new DoesNotExistException("The action: " + action + " on the permission: "
@@ -282,7 +282,7 @@ public class WorkflowHelper {
             if(null != repeatScheme) {
 
                 throw new AlreadyExistException("Already exist a scheme with the same id ("+repeatScheme.getId()
-                        +"). Create different schemes with the same id is not allowed. Please change your workflow scheme id.");
+                        +"). Create different schemes with the same id is not allowed.");
             }
 
             setBuilder.add(scheme.getId());

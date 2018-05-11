@@ -447,13 +447,19 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
         return;
     },
     importSuccess : function(message) {
+		try {
+			dijit.byId('importWorkflowErrors').hide();
+		} catch (e) {
+			console.error(e);
+		}
         schemeAdmin.hideImport();
         mainAdmin.refresh();
         showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Workflow-Scheme-Imported")%>");
-
     },
     importError : function(message) {
-        showDotCMSSystemMessage(message, true);
+		var errorDisplayElement = dijit.byId('importWorkflowErrors');
+		dojo.byId('importWorkflowExceptionData').innerHTML = "<ul><li>"+message+"</li></ul>";
+		errorDisplayElement.show();
     }
 
 });

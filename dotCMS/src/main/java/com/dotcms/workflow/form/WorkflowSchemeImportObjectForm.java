@@ -18,7 +18,7 @@ public class WorkflowSchemeImportObjectForm extends Validated {
 
     @JsonCreator
     public WorkflowSchemeImportObjectForm(
-            @JsonProperty("workflowImportObject") final WorkflowSchemeImportExportObjectView workflowImportObject,
+            @JsonProperty("workflowObject") final WorkflowSchemeImportExportObjectView workflowImportObject,
             @JsonProperty("permissions")          final List<Permission> permissions) {
 
         this.workflowImportObject = workflowImportObject;

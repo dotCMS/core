@@ -934,7 +934,7 @@ public class WorkflowResource {
             exportObject = this.workflowImportExportUtil.buildExportObject(Arrays.asList(scheme));
             permissions  = this.workflowHelper.getActionsPermissions(exportObject.getActions());
             response     = Response.ok(new ResponseEntityView(
-                    map("workflowExportObject", new WorkflowSchemeImportExportObjectView(VERSION, exportObject),
+                    map("workflowObject", new WorkflowSchemeImportExportObjectView(VERSION, exportObject),
                             "permissions", permissions))).build(); // 200
         } catch (Exception e){
             Logger.error(this.getClass(),
