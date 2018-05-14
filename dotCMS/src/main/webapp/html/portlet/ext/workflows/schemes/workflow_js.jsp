@@ -222,7 +222,7 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 		dia = new dijit.Dialog({
 			id			:	this.addEditDiv,
 			title		: 	"<%=LanguageUtil.get(pageContext, "Edit-Scheme")%>",
-			style        : "width:550px;height:550px",
+			style        : "width:550px;height:560px",
 			draggable	:	true
 		});
 
@@ -269,6 +269,24 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 		;
 
 	},
+
+    unArchiveScheme : function() {
+        var archived = dojo.byId("schemeArchived");
+        archived.value="false"
+        this.saveAddEdit();
+    },
+	
+	
+	    archiveScheme : function() {
+        var archived = dojo.byId("schemeArchived");
+        archived.value="true"
+        this.saveAddEdit();
+
+
+    },
+	
+	
+	
 	copyScheme : function(schemeId, name) {
 
 		var optionalName = prompt ("<%=LanguageUtil.get(pageContext, "Workflow-Name")%>", name);
