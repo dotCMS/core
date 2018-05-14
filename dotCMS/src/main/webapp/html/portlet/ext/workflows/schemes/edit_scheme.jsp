@@ -31,14 +31,15 @@
 	<input type="hidden" id="schemeArchived" name="schemeArchived" value="<%=(scheme.isArchived()) ? "true" : "false"%>">
 	<input type="hidden" id="schemeId" name="schemeId" value="<%=UtilMethods.webifyString(scheme.getId())%>">
 	<!-- START Listing Results -->
-	<div class="form-horizontal">
-       <%if(scheme.isArchived()){%>
-           <div style="padding:10px;margin-bottom:10px;font-weight: bold;color:maroon;border:1px solid maroon; ">
+    <%if(scheme.isArchived()){%>
+            <div style="padding:10px;margin-bottom:10px;text-align:center;font-weight: bold;color:maroon; ">
                 <h3>
                 <%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Archived"))%>
                </h3>
            </div>
-       <%} %>
+     <%} %>
+	<div class="form-horizontal" <%if(scheme.isArchived()){%>style="opacity: .6"<%} %>>
+
 
 
 		<dl>
@@ -48,7 +49,7 @@
 			<dd>
 				<input type="text" name="schemeName" id="schemeName"
 					   dojoType="dijit.form.ValidationTextBox"  required="true"
-					   value="<%=UtilMethods.webifyString(scheme.getName())%>"
+					   value="<%=UtilMethods.webifyString(scheme.getName())%>" <%if(scheme.isArchived()){%>readonly="true"<%} %>
 					   maxlength="255" style="width:250px;<%if(scheme.isArchived()){%>;text-decoration:line-through;<%}%>">
 			</dd>
 		</dl>
@@ -72,7 +73,7 @@
 			</dt>
 			<dd>
 				<input type="textarea" name="schemeDescription"
-					   id="schemeDescription" dojoType="dijit.form.Textarea"
+					   id="schemeDescription" dojoType="dijit.form.Textarea" <%if(scheme.isArchived()){%>readonly="true"<%} %>
 					   value="<%=UtilMethods.webifyString(scheme.getDescription())%>" style="width:250px; height:100px;min-height:100px;max-height:100px;">
 			</dd>
 		</dl>
@@ -80,12 +81,12 @@
 		
 			<dl>
 				<dt>
-					<label for=""><%if(!contentTypes.isEmpty()) { %><%=contentTypes.size() %><%} %> <%=LanguageUtil.get(pageContext, "structures")%>:</label>
+					<label style="<%if(scheme.isNew()){%>color:silver<%}%>"><%if(!contentTypes.isEmpty()) { %><%=contentTypes.size() %><%} %> <%=LanguageUtil.get(pageContext, "structures")%>:</label>
 				</dt>
 	
 				<dd class="wf-content-types">
 	
-		            <div style="margin:auto;width:250px;height:147px;overflow: auto; border:1px solid silver">
+		            <div style="margin:auto;width:250px;height:147px;overflow: auto; border:1px solid <%if(!scheme.isNew()){%>silver<%}else{%>#dddddd<% }%>">
 		                   <%for(final ContentType contentType : contentTypes) { %>
 			                    <div style="" class="structure-content-type-listing" onclick="window.parent.location='/dotAdmin/#/content-types-angular/edit/<%=contentType.id()%>'" >
 			                      
@@ -94,7 +95,7 @@
 			                    </div>
 		                   <% }%>
 		                   <%if(contentTypes.isEmpty()) { %>
-		                      <div style="padding:10px;"> 
+		                      <div style="padding:10px; <%if(scheme.isNew()){%>color:#dddddd<%}%>"> 
 		                          <%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "none"))%>
 		                      </div>
 		                   <%} %>
@@ -123,7 +124,6 @@
         <button dojoType="dijit.form.Button" onClick='schemeAdmin.archiveScheme("<%=UtilMethods.webifyString(scheme.getId())%>")' iconClass="archiveIcon"  type="button">
             <%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Archive"))%>
         </button>
-		
 		<%} %>
 		&nbsp; &nbsp; 
 		<button dojoType="dijit.form.Button" onClick='schemeAdmin.saveAddEdit()' iconClass="saveIcon" type="button">
