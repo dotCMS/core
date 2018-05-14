@@ -28,7 +28,7 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.annotation.Permissions;
+import com.dotcms.rest.annotation.IncludePermissions;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
@@ -259,7 +259,7 @@ public class WorkflowResource {
     @Path("/actions/{actionId}")
     @JSONP
     @NoCache
-    @Permissions
+    @IncludePermissions
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findAction(@Context final HttpServletRequest request,
                                      @PathParam("actionId") final String actionId) {
