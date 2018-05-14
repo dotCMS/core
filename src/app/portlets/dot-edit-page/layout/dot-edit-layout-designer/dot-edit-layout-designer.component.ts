@@ -116,7 +116,7 @@ export class DotEditLayoutDesignerComponent implements OnInit {
      *
      * @memberof DotEditLayoutDesignerComponent
      */
-    saveLayout(_event): void {
+    saveLayout(): void {
         this.dotGlobalMessageService.loading(this.dotMessageService.get('dot.common.message.saving'));
         const dotLayout: DotLayout = this.form.value;
         this.pageViewService.save(this.pageState.page.identifier, dotLayout).subscribe(

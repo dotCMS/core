@@ -23,8 +23,7 @@ import { DotSaveOnDeactivateService } from '../../../shared/dot-save-on-deactiva
 const routes: Routes = [
     {
         component: DotEditContentComponent,
-        path: '',
-        canDeactivate: [DotSaveOnDeactivateService]
+        path: ''
     }
 ];
 

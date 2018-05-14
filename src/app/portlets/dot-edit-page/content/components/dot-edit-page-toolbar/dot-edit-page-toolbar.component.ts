@@ -39,7 +39,6 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
     ngOnInit() {
         this.dotMessageService
             .getMessages([
-                'editpage.toolbar.primary.action',
                 'editpage.toolbar.edit.page',
                 'editpage.toolbar.preview.page',
                 'editpage.toolbar.live.page',

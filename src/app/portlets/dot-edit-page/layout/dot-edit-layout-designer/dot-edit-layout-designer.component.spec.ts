@@ -67,13 +67,7 @@ const testConfigObject = {
         MockDotLayoutDesignerComponent,
         MockDotLayoutPropertiesComponent
     ],
-    imports: [
-        DotEditLayoutGridModule,
-        RouterTestingModule,
-        DotActionButtonModule,
-        FormsModule,
-        FieldValidationMessageModule
-    ],
+    imports: [DotEditLayoutGridModule, RouterTestingModule, DotActionButtonModule, FormsModule, FieldValidationMessageModule],
     providers: [
         DotDialogService,
         LoginService,
@@ -87,17 +81,15 @@ const testConfigObject = {
 };
 
 describe('DotEditLayoutDesignerComponent', () => {
-    beforeEach(
-        async(() => {
-            DOTTestBed.configureTestingModule({
-                ...testConfigObject,
-                providers: [...testConfigObject.providers]
-            });
+    beforeEach(async(() => {
+        DOTTestBed.configureTestingModule({
+            ...testConfigObject,
+            providers: [...testConfigObject.providers]
+        });
 
-            fixture = DOTTestBed.createComponent(DotEditLayoutDesignerComponent);
-            component = fixture.componentInstance;
-        })
-    );
+        fixture = DOTTestBed.createComponent(DotEditLayoutDesignerComponent);
+        component = fixture.componentInstance;
+    }));
 
     describe('edit layout', () => {
         beforeEach(() => {

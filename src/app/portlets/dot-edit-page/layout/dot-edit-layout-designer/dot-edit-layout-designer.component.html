@@ -1,4 +1,4 @@
-<form [formGroup]="form" (ngSubmit)="saveLayout($event)" novalidate class="dot-edit-layout__form">
+<form [formGroup]="form" (ngSubmit)="saveLayout()" novalidate class="dot-edit-layout__form">
     <div class="dot-edit-layout__toolbar">
         <h3 class="dot-edit-layout__page-title" *ngIf="!saveAsTemplate">{{ pageState.page.title }}</h3>
         <input #templateName pInputText type="text" class="dot-edit-layout__toolbar-template-name" placeholder="{{ dotMessageService.get('editpage.layout.toolbar.template.name') }} *" *ngIf="saveAsTemplate" formControlName="title">

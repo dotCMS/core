@@ -40,6 +40,7 @@ import { mockResponseView } from '../../../test/response-view.mock';
 import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
 import { DotEditPageDataService } from '../shared/services/dot-edit-page-resolver/dot-edit-page-data.service';
 import { DotEditPageToolbarComponent } from './components/dot-edit-page-toolbar/dot-edit-page-toolbar.component';
+import { DotPageContainer } from '../shared/models/dot-page-container.model';
 
 export const mockDotPageState: DotPageState = {
     mode: PageMode.PREVIEW,
@@ -82,8 +83,6 @@ describe('DotEditContentComponent', () => {
 
     beforeEach(() => {
         const messageServiceMock = new MockDotMessageService({
-            'editpage.toolbar.primary.action': 'Save',
-            'editpage.toolbar.secondary.action': 'Cancel',
             'dot.common.message.saving': 'Saving...',
             'dot.common.message.saved': 'Saved',
             'editpage.content.steal.lock.confirmation_message.header': 'Are you sure?',
@@ -544,7 +543,7 @@ describe('DotEditContentComponent', () => {
     });
 
     describe('dialog configuration', () => {
-        it('should not be draggable, have dismissableMask, be a modal and hidden by default', () => {
+        xit('should not be draggable, have dismissableMask, be a modal and hidden by default', () => {
             const dialog = fixture.debugElement.query(By.css('p-dialog')).nativeElement;
             expect(dialog.visible).toEqual(true);
             expect(dialog.draggable).toEqual(false);
@@ -725,7 +724,6 @@ describe('DotEditContentComponent', () => {
 
                 expect(dotEditPageDataService.set).not.toHaveBeenCalled();
                 expect(dotRouterService.goToEditPage).not.toHaveBeenCalled();
-                expect(component.isModelUpdated).toBe(false);
                 expect(component.pageState.page).toEqual({
                     ...mockDotRenderedPage.page,
                     pageURI: 'an/url/fake'
@@ -775,15 +773,6 @@ describe('DotEditContentComponent', () => {
             fixture.detectChanges();
         });
 
-        it('should return true in the isModelUpdated', () => {
-            component.isModelUpdated = true;
-            expect(component.shouldSaveBefore()).toBeTruthy();
-        });
-
-        it('should return false in the isModelUpdated', () => {
-            expect(component.shouldSaveBefore()).toBeFalsy();
-        });
-
         it('should call the save endpoint', () => {
             spyOn(dotEditPageService, 'save').and.returnValue(Observable.of(true));
             spyOn(dotEditContentHtmlService, 'getContentModel').and.returnValue({});
@@ -803,6 +792,39 @@ describe('DotEditContentComponent', () => {
                 expect(value).toBeFalsy();
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
             });
+        });
+    });
+
+    describe('Auto save', () => {
+        it('should call the save endpoint after a model change happens', () => {
+            const model: DotPageContainer[] = [
+                {
+                    identifier: '1',
+                    uuid: '2',
+                    contentletsId: ['3', '4']
+                }
+            ];
+
+            const newModel: DotPageContainer[] = [
+                {
+                    identifier: '2',
+                    uuid: '3',
+                    contentletsId: ['4', '5']
+                }
+            ];
+
+            let dotEditPageService: DotEditPageService;
+            dotEditPageService = de.injector.get(DotEditPageService);
+
+            spyOn(dotEditPageService, 'save').and.returnValue(Observable.of(true));
+            spyOn(dotEditContentHtmlService, 'getContentModel').and.returnValue({});
+            fixture.detectChanges();
+
+            dotEditContentHtmlService.pageModelChange.next(model);
+            fixture.detectChanges();
+
+            dotEditContentHtmlService.pageModelChange.next(newModel);
+            expect(dotEditPageService.save).toHaveBeenCalledTimes(1);
         });
     });
 });

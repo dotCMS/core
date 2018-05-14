@@ -31,7 +31,6 @@
 
     <div class="ui-toolbar-group-right">
         <!-- Only show the button in edit mode -->
-        <button pButton flat class="edit-page-toolbar__save" *ngIf="mode === 0" [disabled]="!canSave" [label]="dotMessageService.get('editpage.toolbar.primary.action')" (click)="save.emit($event)"></button>
         <dot-edit-page-workflows-actions [page]="pageState.page" [label]="dotMessageService.get('editpage.toolbar.primary.workflow.actions')" (fired)="handleActionFired()"></dot-edit-page-workflows-actions>
     </div>
 </p-toolbar>
