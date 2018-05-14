@@ -135,7 +135,6 @@ import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
@@ -5161,15 +5160,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             newContentlet.setFolder(folder != null?folder.getInode(): null);
             newContentlet.setLowIndexPriority(contentlet.isLowIndexPriority());
             if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET){
-                if(StringUtils.isBlank(copySuffix.trim())) {
-                    // We don't need to append a suffix to the file name
-                    newContentlet.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, newContentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD));
-                } else {
-                    // Append COPY suffix to the file name
-                    final String fldNameNoExt = UtilMethods.getFileName(newContentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD));
-                    final String fldfileExt = UtilMethods.getFileExtension(newContentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD));
-                    newContentlet.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, fldNameNoExt + copySuffix + "." + fldfileExt);
-                }
+
+                final String newName = generateCopyName(newContentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD), copySuffix);
+                newContentlet.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, newName);
+
             }
 
             List <Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
@@ -5186,9 +5180,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         srcFile = getBinaryFile(contentlet.getInode(), tempField.getVelocityVarName(), user);
                         if(srcFile != null) {
                             if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET){
-                                final String nameNoExt=UtilMethods.getFileName(srcFile.getName());
-                                final String fileExt=UtilMethods.getFileExtension(srcFile.getName());
-                                fieldValue = nameNoExt + copySuffix.trim() + "." + fileExt;
+                                fieldValue = generateCopyName(srcFile.getName(), copySuffix);
                             }else{
                                 fieldValue=srcFile.getName();
                             }
@@ -5239,7 +5231,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE){
                 Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
                 if(UtilMethods.isSet(identifier) && UtilMethods.isSet(identifier.getAssetName())){
-                    final String newAssetName = identifier.getAssetName() + copySuffix.trim();
+                    final String newAssetName = generateCopyName(identifier.getAssetName(), copySuffix);
                     newContentlet.setProperty(HTMLPageAssetAPI.URL_FIELD, newAssetName);
                 } else {
                     Logger.warn(this, "Unable to get URL from Contentlet " + contentlet);
@@ -5344,6 +5336,23 @@ public class ESContentletAPIImpl implements ContentletAPI {
         this.sendCopyEvent(resultContentlet);
 
         return resultContentlet;
+    }
+
+    private String generateCopyName(final String originalName, final String copySuffix) {
+        final String copyName;
+        if (StringUtils.isBlank(copySuffix)) {
+            copyName = originalName;
+        } else {
+            final String assetNameNoExt = UtilMethods.getFileName(originalName);
+            final String assetNameExt = UtilMethods.getFileExtension(originalName);
+            if (UtilMethods.isSet(assetNameExt)) {
+                copyName = assetNameNoExt + copySuffix.trim() + "." + assetNameExt;
+            } else {
+                copyName = originalName + copySuffix;
+            }
+        }
+        Logger.debug(this,"new copy file will be named: "+copyName);
+        return copyName;
     }
 
     private void sendCopyEvent (final Contentlet contentlet) throws DotHibernateException {

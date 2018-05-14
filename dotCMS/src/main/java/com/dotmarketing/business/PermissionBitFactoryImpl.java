@@ -1101,30 +1101,32 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		if(!isHost && !isFolder && !isCategory && !isContentType) {
 			return;
 		}
-		HostAPI hostAPI = APILocator.getHostAPI();
-		Host systemHost = hostAPI.findSystemHost();
-		DotConnect dc = new DotConnect();
+		final HostAPI hostAPI = APILocator.getHostAPI();
+		final Host systemHost = hostAPI.findSystemHost();
+		final DotConnect dc = new DotConnect();
 
 		boolean ran01=false,ran02=false,ran03=false,ran04=false,
 		        ran06=false,ran07=false,ran08=false,ran09=false,ran10=false;
 
-		List<Map<String, Object>> idsToClear = new ArrayList<Map<String, Object>>();
-		List<Permission> permissions = filterOnlyInheritablePermissions(loadPermissions(permissionable), parentPermissionableId);
-		for(Permission p : permissions) {
+		final List<Map<String, Object>> idsToClear = new ArrayList<>();
+		final List<Permission> permissions = filterOnlyInheritablePermissions(loadPermissions(permissionable), parentPermissionableId);
+		for(final Permission p : permissions) {
 
 			if (isHost || isFolder) {
 
-				Host parentHost = null;
+				final Contentlet parentHost;
 				if(isFolder)
 					try {
 						parentHost = hostAPI.findParentHost((Folder)permissionable, APILocator.getUserAPI().getSystemUser(), false);
 					} catch (DotSecurityException e) {
 						Logger.error(this, e.getMessage(), e);
+						//If this initialization fails we better bubble up the exception. otherwise will still fail with a NPE.
+						throw new DotDataException(e);
 					}
-				else
-					parentHost = (Host)permissionable;
-
-				String path = isFolder ? APILocator.getIdentifierAPI().find((Folder) permissionable).getPath() : "";
+				else {
+					parentHost = (Contentlet) permissionable;
+				}
+				final String path = isFolder ? APILocator.getIdentifierAPI().find((Folder) permissionable).getPath() : "";
 
 				// Only if permissions were updated to a host != to the system
 				// host
