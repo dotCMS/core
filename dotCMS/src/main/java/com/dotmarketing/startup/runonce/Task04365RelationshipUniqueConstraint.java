@@ -33,6 +33,10 @@ public class Task04365RelationshipUniqueConstraint extends AbstractJDBCStartupTa
             .append("DELETE FROM relationship WHERE inode NOT IN ( ")
             .append("  SELECT MAX (inode) FROM relationship GROUP BY relation_type_value ); ")
 
+            //Delete orphaned inodes
+            .append("DELETE FROM inode WHERE inode.type = 'relationship' AND NOT EXISTS (")
+            .append("  SELECT 1 FROM relationship WHERE inode.inode = relationship.inode); ")
+
             //Create Unique Key
             .append("ALTER TABLE relationship ADD CONSTRAINT unique_relation_type_value UNIQUE (relation_type_value); ");
         return builder.toString();
@@ -46,6 +50,10 @@ public class Task04365RelationshipUniqueConstraint extends AbstractJDBCStartupTa
             .append("USING relationship R2 ")
             .append("WHERE R1.inode < R2.inode ")
             .append("AND R1.relation_type_value = R2.relation_type_value; ")
+
+            //Delete orphaned inodes
+            .append("DELETE FROM inode WHERE inode.type = 'relationship' AND NOT EXISTS (")
+            .append("  SELECT 1 FROM relationship WHERE inode.inode = relationship.inode); ")
 
             //Create Unique Key
             .append("ALTER TABLE relationship ADD CONSTRAINT unique_relation_type_value UNIQUE (relation_type_value); ");
@@ -61,6 +69,10 @@ public class Task04365RelationshipUniqueConstraint extends AbstractJDBCStartupTa
             .append("WHERE R1.inode < R2.inode ")
             .append("AND R1.relation_type_value = R2.relation_type_value; ")
 
+            //Delete orphaned inodes
+            .append("DELETE FROM inode WHERE inode.type = 'relationship' AND NOT EXISTS (")
+            .append("  SELECT 1 FROM relationship WHERE inode.inode = relationship.inode); ")
+
             //Create Unique Key
             .append("ALTER TABLE relationship ADD CONSTRAINT unique_relation_type_value UNIQUE (relation_type_value); ");
         return builder.toString();
@@ -75,6 +87,10 @@ public class Task04365RelationshipUniqueConstraint extends AbstractJDBCStartupTa
             .append("  From relationship ) R1  ")
             .append("WHERE R1.rowNumber > 1; ")
 
+            //Delete orphaned inodes
+            .append("DELETE FROM inode WHERE inode.type = 'relationship' AND NOT EXISTS (")
+            .append("  SELECT 1 FROM relationship WHERE inode.inode = relationship.inode); ")
+
             //Create Unique Key
             .append("ALTER TABLE relationship ADD CONSTRAINT unique_relation_type_value UNIQUE (relation_type_value); ");
         return builder.toString();
@@ -88,7 +104,11 @@ public class Task04365RelationshipUniqueConstraint extends AbstractJDBCStartupTa
             .append("WHERE R1.ROWID > ANY ( ")
             .append("  SELECT R2.ROWID ")
             .append("  FROM relationship R2 ")
-            .append("  WHERE R1.relation_type_value = R2.relation_type_value ); ");
+            .append("  WHERE R1.relation_type_value = R2.relation_type_value ); ")
+
+            //Delete orphaned inodes
+            .append("DELETE FROM inode WHERE inode.type = 'relationship' AND NOT EXISTS (")
+            .append("  SELECT 1 FROM relationship WHERE inode.inode = relationship.inode); ");
 
             //Create Unique Key deferred to method executeUpgrade below, because DML and DDL require different connections
         return builder.toString();
