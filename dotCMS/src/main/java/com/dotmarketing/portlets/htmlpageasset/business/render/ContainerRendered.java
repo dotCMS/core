@@ -35,7 +35,7 @@ public class ContainerRendered implements Serializable {
      *                           the browser.
      */
     public ContainerRendered(final Container container, final List<ContainerStructure> containerStructures,
-                             Map<String, String> rendered) {
+                             final Map<String, String> rendered) {
         this.container = container;
 
         if (containerStructures != null) {

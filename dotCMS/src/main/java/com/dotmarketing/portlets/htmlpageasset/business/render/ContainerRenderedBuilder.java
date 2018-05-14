@@ -44,7 +44,7 @@ public class ContainerRenderedBuilder {
         containerAPI = APILocator.getContainerAPI();
     }
 
-    public Collection<ContainerRendered> getContainers(final Template template, PageMode mode)
+    public Collection<ContainerRendered> getContainers(final Template template, final PageMode mode)
             throws DotSecurityException, DotDataException {
         return getContainersRendered(template, null, mode);
     }
@@ -63,10 +63,11 @@ public class ContainerRenderedBuilder {
         final TemplateLayout layout =  DotTemplateTool.themeLayout(template.getInode());
         final List<ContainerUUID> containersUUID = this.templateAPI.getContainersUUID(layout);
 
-        Map<String, List<ContainerUUID>> groupByContainerID = containersUUID.stream().collect(Collectors.groupingBy(ContainerUUID::getIdentifier));
+        final Map<String, List<ContainerUUID>> groupByContainerID =
+                containersUUID.stream().collect(Collectors.groupingBy(ContainerUUID::getIdentifier));
 
         return groupByContainerID.entrySet().stream().map(entry -> {
-            String containerId = entry.getKey();
+            final String containerId = entry.getKey();
             try {
                 final Container container = (mode.showLive) ?
                         (Container) APILocator.getVersionableAPI().findLiveVersion(containerId, systemUser, false) :
@@ -80,7 +81,7 @@ public class ContainerRenderedBuilder {
                     containersRendered = entry.getValue().stream()
                             .map(containerUUID -> containerUUID.getUUID())
                             .collect(Collectors.toMap(uuid -> "uuid-" + uuid, uuid -> {
-                                VelocityResourceKey key = new VelocityResourceKey(container, uuid, mode);
+                                final VelocityResourceKey key = new VelocityResourceKey(container, uuid, mode);
 
                                 try {
                                     return VelocityUtil.mergeTemplate(key.path, velocityContext);

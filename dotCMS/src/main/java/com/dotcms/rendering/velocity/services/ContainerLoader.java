@@ -282,7 +282,9 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
                 
             // end content dot-data-container
             if (mode == PageMode.EDIT_MODE) {
-                sb.append("#if($" +  SHOW_PRE_POST_LOOP + ")");
+                sb.append("#if($");
+                sb.append(SHOW_PRE_POST_LOOP);
+                sb.append(")");
                 sb.append("</div>");
                 sb.append("#end");
             }
