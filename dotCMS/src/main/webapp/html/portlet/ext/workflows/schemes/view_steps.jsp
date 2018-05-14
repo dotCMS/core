@@ -193,58 +193,53 @@
 
 
 <div class="portlet-toolbar">
-    <div class="portlet-toolbar__actions-primary">
-	<div class="showPointer">
-		<input type="hidden" name="cmd" value="save">
-		<input type="hidden" name="schemeId" value="<%=UtilMethods.webifyString(scheme.getId())%>">
-		<div>
 
-			
-			<div class="showPointer" onClick="schemeAdmin.show()"  style="float: left;">
-			 <h2 style="border-bottom:dotted 1px white;"><%=LanguageUtil.get(pageContext, "Workflow-Schemes")%></h2>
-			 <p>&nbsp;</p>
-			</div> 
-			
-			<div style="float: left;">
-			&nbsp; &rarr; &nbsp;
-			</div>
-			<div onClick="schemeAdmin.showAddEdit('<%=scheme.getId()%>');" style="float: left;">
-			 <h2 style="border-bottom:dotted 1px gray;"><%=UtilMethods.webifyString(scheme.getName())%></h2>
-			 <p><%=UtilMethods.webifyString(scheme.getDescription())%></p>
-			</div>
-            <div style="float: left;">&nbsp;
-            <span class="editIcon"></span>
-            </div>
+	    <div style="float:left">
+			<input type="hidden" name="cmd" value="save">
+			<input type="hidden" name="schemeId" value="<%=UtilMethods.webifyString(scheme.getId())%>">
 	
-			
+			<div class="showPointer" onClick="schemeAdmin.show()"  style="float: left;">
+			     <h2 style="border-bottom:dotted 1px white;"><%=LanguageUtil.get(pageContext, "Workflow-Schemes")%></h2>
+	
+			</div> 
+			<div style="float: left;">
+			     &nbsp; &rarr; &nbsp;
+			</div>
+			<div onClick="schemeAdmin.showAddEdit('<%=scheme.getId()%>');" style="float: left;" class="showPointer" >
+			     <h2 style="border-bottom:dotted 1px gray;"><%=UtilMethods.webifyString(scheme.getName())%></h2>
+			     <!--  <%=UtilMethods.webifyString(scheme.getDescription())%> -->
+			</div>
+	        <div style="float: left;">&nbsp;
+	            <span class="showPointer" href="#" onclick="schemeAdmin.showAddEdit('<%=scheme.getId()%>');"><i class="fa fa-pencil" aria-hidden="true"></i></span>
+	        </div>
 		</div>
-	</div>
-    </div>
-	<div class="portlet-toolbar__info">
-		<div class="inline-form">
-			<label style="display: flex;" font-size:85%; for="filterByWhoCanUseSelect"><%=LanguageUtil.get(pageContext, "Filter-By-Who-Can-Use")%>:
-			    <input id="filterByWhoCanUseSelect"/>
-			</label>
-			<label style="display: flex;" font-size:85%; for="filterByContentTypeSelect"><%=LanguageUtil.get(pageContext, "Filter-By-Content-Type")%>:
-				<input id="filterByContentTypeSelect"/>
-			</label>
+		<div style="float:left">
+			<div class="inline-form">
+				<label style="display: flex;" font-size:85%; for="filterByWhoCanUseSelect"><%=LanguageUtil.get(pageContext, "Filter-By-Who-Can-Use")%>:
+				    <input id="filterByWhoCanUseSelect"/>
+				</label> &nbsp; 
+				<label style="display: flex;" font-size:85%; for="filterByContentTypeSelect"><%=LanguageUtil.get(pageContext, "Filter-By-Content-Type")%>:
+					<input id="filterByContentTypeSelect"/>
+				</label>
+			</div>
 		</div>
-	</div>
+	
+		<div style="float:right">
+			<!-- ADD STEP -->
+			<button dojoType="dijit.form.Button"
+					onClick="schemeAdmin.exportScheme('<%=scheme.getId()%>');return false;" iconClass="addIcon">
+				<%=LanguageUtil.get(pageContext, "Export-Workflow-Scheme")%>
+			</button>
+		   <!-- ADD STEP -->
+		</div>
 
-	<div class="portlet-toolbar__actions-secondary">
-		<!-- ADD STEP -->
-		<button dojoType="dijit.form.Button"
-				onClick="schemeAdmin.exportScheme('<%=scheme.getId()%>');return false;" iconClass="addIcon">
-			<%=LanguageUtil.get(pageContext, "Export-Workflow-Scheme")%>
-		</button>
-	   <!-- ADD STEP -->
-	</div>
 </div>
 
 
 
 <!-- Workflow Steps -->
 <div class="board-wrapper">
+<div style="display:block; padding-left:35px;padding-bottom:10px;color: gray;"><%=UtilMethods.webifyString(scheme.getDescription())%></div>
 	<div class="board-main-content">
 		<div class="board-canvas">
 			<div class="" id="wfStepInDragContainer">

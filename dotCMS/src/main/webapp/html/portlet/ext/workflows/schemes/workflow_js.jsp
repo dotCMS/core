@@ -222,7 +222,7 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 		dia = new dijit.Dialog({
 			id			:	this.addEditDiv,
 			title		: 	"<%=LanguageUtil.get(pageContext, "Edit-Scheme")%>",
-			style        : "width:500px;height:400px",
+			style        : "width:550px;height:550px",
 			draggable	:	true
 		});
 

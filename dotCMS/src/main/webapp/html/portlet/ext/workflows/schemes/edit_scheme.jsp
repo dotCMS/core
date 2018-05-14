@@ -79,29 +79,24 @@
 			</dd>
 		</dl>
 		<%if(!contentTypes.isEmpty()) { %>
-		<dl>
-			<dt>
-				<label for=""><%=LanguageUtil.get(pageContext, "structures")%>:</label>
-			</dt>
-
-			<dd class="wf-content-types">
-
-				<select name="contentTypes<%=schemeShortyId%>" id="contentTypes<%=schemeShortyId%>"  style="width: 50%;"
-						labelType="html" dojoType="dijit.form.FilteringSelect">
-
-					<%for(final ContentType contentType : contentTypes) { %>
-					<option value="/dotAdmin/#/content-types-angular/edit/<%=contentType.id()%>">
-						<%=contentType.name()%>
-					</option>
-					<% }%>
-				</select>
-				<button dojoType="dijit.form.Button"
-						onClick="window.open(dijit.byId('contentTypes<%=schemeShortyId%>').getValue(),'_blank');"
-						iconClass="addIcon">
-					<%=LanguageUtil.get(pageContext, "contenttypes.action.edit")%>
-				</button>
-			</dd>
-		</dl>
+			<dl>
+				<dt>
+					<label for=""><%=contentTypes.size() %> <%=LanguageUtil.get(pageContext, "structures")%>:</label>
+				</dt>
+	
+				<dd class="wf-content-types">
+	
+		            <div style="margin:auto;width:250px;height:147px;overflow: auto; border:1px solid silver">
+		                   <%for(final ContentType contentType : contentTypes) { %>
+			                    <div style="" class="structure-content-type-listing" >
+			                       <a href="/dotAdmin/#/content-types-angular/edit/<%=contentType.id()%>" target="_parent">
+			                            <%=contentType.name()%>
+			                        </a>
+			                    </div>
+		                   <% }%>
+		            </div>
+				</dd>		
+			</dl>
 		<%} %>
 
 	</div>
