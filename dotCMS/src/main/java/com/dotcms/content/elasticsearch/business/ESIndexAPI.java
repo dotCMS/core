@@ -12,6 +12,7 @@ import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
@@ -921,7 +922,7 @@ public class ESIndexAPI {
 				List<String> indices = snapshot.indices();
 				for(String index: indices){
 					if(!isIndexClosed(index)){
-						throw new ElasticsearchException("Index \"" + index + "\"is not closed and can not be restored");
+						throw new DotStateException("Index \"" + index + "\" is not closed and can not be restored");
 					}
 				}
 			}
@@ -1005,8 +1006,7 @@ public class ESIndexAPI {
 		//File outFile = new File(toDirectory.getParent() + File.separator + snapshotName);
 		FileUtils.copyStreamToFile(outFile, inputFile, null);
 		ZipFile zipIn = new ZipFile(outFile);
-		boolean response = uploadSnapshot(zipIn, toDirectory.getAbsolutePath(), cleanRepository);		
-		return response;		
+		return uploadSnapshot(zipIn, toDirectory.getAbsolutePath(), cleanRepository);
 	}
 
 	/**
