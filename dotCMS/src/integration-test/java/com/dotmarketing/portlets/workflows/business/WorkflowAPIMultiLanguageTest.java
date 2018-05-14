@@ -160,7 +160,7 @@ public class WorkflowAPIMultiLanguageTest extends BaseWorkflowIntegrationTest {
         contentletAPI.isInodeIndexed(contentletSpanish1.getInode());
 
         // triggering the save content action (action1) for the english content
-        contentletEng1.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY,
+        contentletEng1.setActionId(
                 WorkflowAPIMultiLanguageTest.schemeStepActionResult1.getAction().getId());
 
         final WorkflowProcessor processor1  =
@@ -171,7 +171,7 @@ public class WorkflowAPIMultiLanguageTest extends BaseWorkflowIntegrationTest {
         contentletAPI.isInodeIndexed(processor1.getContentlet().getInode());
 
         // triggering the save content as draft action (action 2) for the spanish content (
-        contentletSpanish1.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY,
+        contentletSpanish1.setActionId(
                 WorkflowAPIMultiLanguageTest.workflowAction2.getId());
 
         final WorkflowProcessor processor2  =

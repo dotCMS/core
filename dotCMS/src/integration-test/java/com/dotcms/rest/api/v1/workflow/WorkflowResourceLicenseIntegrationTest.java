@@ -48,6 +48,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
@@ -155,7 +156,7 @@ public class WorkflowResourceLicenseIntegrationTest {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final WorkflowSchemeForm form = new WorkflowSchemeForm.Builder()
                 .schemeName(randomSchemaName).schemeDescription("").schemeArchived(false).build();
-        final Response saveResponse = nonLicenseWorkflowResource.save(request, form);
+        final Response saveResponse = nonLicenseWorkflowResource.saveScheme(request, form);
         assertEquals(Status.FORBIDDEN.getStatusCode(), saveResponse.getStatus());
         assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE,saveResponse.getHeaderString("access-control"));
     }
@@ -301,7 +302,7 @@ public class WorkflowResourceLicenseIntegrationTest {
         assertNotNull(savedScheme);
         final HttpServletRequest request = mock(HttpServletRequest.class);
         WorkflowSchemeForm form = new WorkflowSchemeForm.Builder().schemeDescription("lol").schemeArchived(false).schemeName(updatedName).build();
-        final Response updateResponse = nonLicenseWorkflowResource.update(request,savedScheme.getId(), form);
+        final Response updateResponse = nonLicenseWorkflowResource.updateScheme(request,savedScheme.getId(), form);
         assertEquals(Status.FORBIDDEN.getStatusCode(), updateResponse.getStatus());
         assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE, updateResponse.getHeaderString("access-control"));
     }
@@ -377,13 +378,13 @@ public class WorkflowResourceLicenseIntegrationTest {
         final String adminRoleId = adminRole.getId();
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final int numSteps = 2;
-        final WorkflowScheme savedScheme = createScheme(licenseWorkflowResource);
+        final WorkflowScheme savedScheme = LocalTransaction.wrapReturn(() -> createScheme(licenseWorkflowResource));
         assertNotNull(savedScheme);
-        final List<WorkflowStep> workflowSteps = addSteps(licenseWorkflowResource, savedScheme,
-                numSteps);
+        final List<WorkflowStep> workflowSteps =
+                LocalTransaction.wrapReturn(() -> addSteps(licenseWorkflowResource, savedScheme,numSteps));
 
-        final List<WorkflowAction> actions = createWorkflowActions(licenseWorkflowResource,
-                savedScheme, adminRoleId, workflowSteps);
+        final List<WorkflowAction> actions =
+                LocalTransaction.wrapReturn(() -> createWorkflowActions(licenseWorkflowResource, savedScheme, adminRoleId, workflowSteps));
         assertEquals(2, actions.size());
 
         final WorkflowStep firstStep = workflowSteps.get(0);
@@ -428,7 +429,7 @@ public class WorkflowResourceLicenseIntegrationTest {
                         actionCondition("").
                         build();
 
-        final Response findResponse = nonLicenseWorkflowResource.save(request,form);
+        final Response findResponse = nonLicenseWorkflowResource.saveAction(request,form);
         assertEquals(Status.FORBIDDEN.getStatusCode(), findResponse.getStatus());
         assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE, findResponse.getHeaderString("access-control"));
     }
@@ -535,7 +536,7 @@ public class WorkflowResourceLicenseIntegrationTest {
     public void Copy_Invalid_License() throws Exception {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final WorkflowScheme savedScheme = createScheme(licenseWorkflowResource);
-        final Response findResponse = nonLicenseWorkflowResource.copyScheme(request, savedScheme.getId(), savedScheme.getName()  + "_copy");
+        final Response findResponse = nonLicenseWorkflowResource.copyScheme(request, savedScheme.getId(), savedScheme.getName()  + "_copy", null);
         assertEquals(Status.FORBIDDEN.getStatusCode(), findResponse.getStatus());
         assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE, findResponse.getHeaderString("access-control"));
     }

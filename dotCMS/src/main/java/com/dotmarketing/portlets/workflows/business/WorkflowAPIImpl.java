@@ -5,6 +5,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
+import com.dotmarketing.exception.DotDataValidationException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.CollectionsUtils;
@@ -717,17 +718,24 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				if (!otherStep.getId().equals(step.getId())) {
 					for(WorkflowAction action : findActions(otherStep, APILocator.getUserAPI().getSystemUser())){
 
-                        if(action.getNextStep().equals(step.getId())) {
-                            throw new DotDataException("</br> <b> Step : '" + step.getName() + "' is being referenced by </b> </br></br>" +
-                                    " Step : '"+otherStep.getName() + "' ->  Action : '" + action.getName() + "' </br></br>");
-                        }
-                    }
+						if (action.getNextStep().equals(step.getId())) {
+							final String validationExceptionMessage = LanguageUtil.format(user.getLocale(),
+									"Workflow-delete-step-reference-by-step-error",
+									new String[]{step.getName(), otherStep.getName(),
+											action.getName()}, false);
+							throw new DotDataValidationException(validationExceptionMessage);
+						}
+					}
 				}
 			}
 			
 			final int countContentletsReferencingStep = getCountContentletsReferencingStep(step);
 			if(countContentletsReferencingStep > 0){
-				throw new DotDataException("</br> <b> Step : '" + step.getName() + "' is being referenced by: "+countContentletsReferencingStep+" contenlet(s)</b> </br></br>");
+
+				final String validationExceptionMessage = LanguageUtil.format(user.getLocale(),
+						"Workflow-delete-step-reference-by-contentlet-error",
+						new String[]{step.getName(), Integer.toString(countContentletsReferencingStep)}, false);
+				throw new DotDataValidationException(validationExceptionMessage);
 			}
 
 			this.workFlowFactory.deleteActions(step); // workflow_action_step
@@ -1074,10 +1082,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 							  final User user,
 							  final int order) throws DotDataException, AlreadyExistException {
 
-		List<WorkflowAction> actions = null;
-		final List<WorkflowAction> newActions = new ArrayList<WorkflowAction>();
-
 		this.isUserAllowToModifiedWorkflow(user);
+		final List<WorkflowAction> actions;
 
 		try {
 			actions = findActions(step, user);
@@ -1085,11 +1091,21 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			throw new DotDataException(e.getLocalizedMessage());
 		}
 
+		//if the user is not allowed to see actions. No exception is thrown.
+		//We need to ensure we're not dealing with an empty collection.
+		if (!UtilMethods.isSet(actions)) {
+			Logger.debug(WorkflowAPIImpl.class,
+					() -> "Empty actions retrieved for step `" + step.getId() + "` and user `"
+							+ user.getUserId() + "` no reorder will be perform.");
+			return;
+		}
+
+		final List<WorkflowAction> newActions = new ArrayList<>(actions.size());
+
 		final int normalizedOrder =
 				(order < 0) ? 0 : (order >= actions.size()) ? actions.size()-1 : order;
-		for (int i = 0; i < actions.size(); i++) {
+		for (final WorkflowAction currentAction : actions) {
 
-			final WorkflowAction currentAction = actions.get(i);
 			if (action.equals(currentAction)) {
 				continue;
 			}
@@ -1286,7 +1302,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@Override
 	@CloseDBIfOpened
-	public WorkflowStep findStep(final String id) throws DotDataException, DotSecurityException {
+	public WorkflowStep findStep(final String id) throws DotDataException {
 
 		final WorkflowStep step = workFlowFactory.findStep(this.getLongId(id, ShortyIdAPI.ShortyInputType.WORKFLOW_STEP));
 		if (!SYSTEM_WORKFLOW_ID.equals(step.getSchemeId())) {
@@ -1768,7 +1784,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public Contentlet fireContentWorkflow(final Contentlet contentlet, final ContentletDependencies dependencies) throws DotDataException {
 
 		if(UtilMethods.isSet(dependencies.getWorkflowActionId())){
-			contentlet.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, dependencies.getWorkflowActionId());
+			contentlet.setActionId(dependencies.getWorkflowActionId());
 		}
 
 		if(UtilMethods.isSet(dependencies.getWorkflowActionComments())){
@@ -1779,7 +1795,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, dependencies.getWorkflowAssignKey());
 		}
 
-		this.validateAction (contentlet, dependencies.getModUser());
+		this.validateActionStepAndWorkflow(contentlet, dependencies.getModUser());
 		this.checkShorties (contentlet);
 
 		final WorkflowProcessor processor = this.fireWorkflowPreCheckin(contentlet, dependencies.getModUser());
@@ -1792,16 +1808,19 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	private void checkShorties(final Contentlet contentlet) {
 
-		final String actionId = contentlet.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY);
+		final String actionId = contentlet.getActionId();
 		if(UtilMethods.isSet(actionId)) {
 
-			contentlet.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, this.getLongId(actionId, ShortyIdAPI.ShortyInputType.WORKFLOW_ACTION));
+			contentlet.setActionId(this.getLongId(actionId, ShortyIdAPI.ShortyInputType.WORKFLOW_ACTION));
 		}
 	}
 
-	private void validateAction(final Contentlet contentlet, final User user) throws DotDataException {
+	@CloseDBIfOpened
+	@Override
+	public void validateActionStepAndWorkflow(final Contentlet contentlet, final User user)
+			throws DotDataException {
 
-		final String actionId = contentlet.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY);
+		final String actionId = contentlet.getActionId();
 
 		if (null != actionId) {
 
@@ -1811,13 +1830,18 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				final WorkflowAction action 	   = this.findAction(actionId, user);
 				final List<WorkflowScheme> schemes = this.findSchemesForContentType(contentlet.getContentType());
 
-				if (null != action && null != schemes) {
+				if(!UtilMethods.isSet(action)){
+                    throw new DoesNotExistException("Workflow-does-not-exists-action");
+				}
+
+				if(!UtilMethods.isSet(schemes)){
+					throw new DoesNotExistException("Workflow-does-not-exists-schemes-by-content-type");
+				}
 
 					if (!schemes.stream().anyMatch(scheme -> scheme.getId().equals(action.getSchemeId()))) {
-
-						throw new IllegalArgumentException("Invalid-Action-Scheme-Error");
+						throw new IllegalArgumentException(LanguageUtil
+								.get(user.getLocale(), "Invalid-Action-Scheme-Error", actionId));
 					}
-				}
 
 				// if we are on a step, validates that the action belongs to this step
 				final WorkflowTask   workflowTask   = this.findTaskByContentlet(contentlet);
@@ -1826,7 +1850,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 					if (null == this.findAction(action.getId(), workflowTask.getStatus(), user)) {
 
-						throw new IllegalArgumentException("Invalid-Action-Step-Error");
+						throw new IllegalArgumentException(LanguageUtil
+								.get(user.getLocale(), "Invalid-Action-Step-Error", actionId));
 					}
 				} else {  // if the content is not in any step (may be is new), will check the first step.
 
@@ -1839,10 +1864,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					if (!workflowStepOptional.isPresent() ||
 							null == this.findAction(action.getId(), workflowStepOptional.get().getId(), user)) {
 
-						throw new IllegalArgumentException("Invalid-Action-Step-Error");
+						throw new IllegalArgumentException(LanguageUtil
+								.get(user.getLocale(), "Invalid-Action-Step-Error", actionId));
 					}
 				}
-			} catch (DotSecurityException e) {
+			} catch (DotSecurityException | LanguageException e) {
 				throw new DotDataException(e);
 			}
 		}

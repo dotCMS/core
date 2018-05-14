@@ -5,6 +5,8 @@
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="java.util.List"%>
+<%@ page import="com.dotcms.contenttype.model.type.ContentType" %>
+<%@ page import="java.util.Collections" %>
 
 <%
 	WorkflowAPI wapi = APILocator.getWorkflowAPI();
@@ -12,15 +14,17 @@
 	WorkflowScheme scheme = new WorkflowScheme();
 
 	List<WorkflowStep> steps;
-	WorkflowStep firstStep = null;
+	List<ContentType> contentTypes = Collections.emptyList();
 	try {
 		scheme = wapi.findScheme(schemeId);
 		steps = wapi.findSteps(scheme);
-		firstStep = steps.get(0);
+		contentTypes =
+				wapi.findContentTypesForScheme(scheme);
 	} catch (Exception e) {
 	}
-%>
 
+	final String schemeShortyId = APILocator.getShortyAPI().shortify(scheme.getId());
+%>
 
 <div dojoType="dijit.form.Form" id="addEditSchemeForm" jsId="addEditSchemeForm" encType="multipart/form-data" action="/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfSchemeAjax" method="POST">
 	<input type="hidden" id="cmd" name="cmd" value="save">
@@ -35,9 +39,11 @@
 			</dt>
 			<dd>
 				<strong>
-					<a onclick="this.parentNode.innerHTML='<%=scheme.getId()%>'; return false;" href="#"><%=APILocator.getShortyAPI().shortify(scheme.getId()) %></a>
+					<a onclick="this.parentNode.innerHTML='<%=scheme.getId()%>'; return false;" href="#"><%=schemeShortyId %></a>
 				</strong>
+				(<a href="/api/v1/workflow/schemes/<%=scheme.getId()%>/export" target="_blank" onclick="event.stopPropagation();">json</a>)
 			</dd>
+
 		</dl>
 		<%}%>
 
@@ -47,9 +53,9 @@
 			</dt>
 			<dd>
 				<input type="text" name="schemeName" id="schemeName"
-					dojoType="dijit.form.ValidationTextBox"  required="true" 
-					value="<%=UtilMethods.webifyString(scheme.getName())%>"
-					maxlength="255" style="width:250px">
+					   dojoType="dijit.form.ValidationTextBox"  required="true"
+					   value="<%=UtilMethods.webifyString(scheme.getName())%>"
+					   maxlength="255" style="width:250px">
 			</dd>
 		</dl>
 		<dl>
@@ -58,8 +64,8 @@
 			</dt>
 			<dd>
 				<input type="textarea" name="schemeDescription"
-					id="schemeDescription" dojoType="dijit.form.Textarea"
-					value="<%=UtilMethods.webifyString(scheme.getDescription())%>" style="width:250px; height:100px;min-height:100px;max-height:100px;">
+					   id="schemeDescription" dojoType="dijit.form.Textarea"
+					   value="<%=UtilMethods.webifyString(scheme.getDescription())%>" style="width:250px; height:100px;min-height:100px;max-height:100px;">
 			</dd>
 		</dl>
 		<dl>
@@ -68,27 +74,38 @@
 			</dt>
 			<dd>
 				<input type="checkbox" name="schemeArchived"
-					id="schemeArchived" dojoType="dijit.form.CheckBox" value="true"
+					   id="schemeArchived" dojoType="dijit.form.CheckBox" value="true"
 					<%=(scheme.isArchived()) ? "checked='true'" : ""%>>
 			</dd>
 		</dl>
-		<%if(firstStep !=null){ %>
-			<dl>
-				<dt>
-					<label for=""><%=LanguageUtil.get(pageContext, "Initial-Step")%>:</label>
-				</dt>
-				<dd>
-					<%if(firstStep !=null){ %>
-						<%=firstStep.getName() %>
-					<%}else{ %>
-						<%=LanguageUtil.get(pageContext, "Save-Scheme-First") %>
-					<%} %>
-				</dd>
-			</dl>
+		<%if(!contentTypes.isEmpty()) { %>
+		<dl>
+			<dt>
+				<label for=""><%=LanguageUtil.get(pageContext, "structures")%>:</label>
+			</dt>
+
+			<dd class="wf-content-types">
+
+				<select name="contentTypes<%=schemeShortyId%>" id="contentTypes<%=schemeShortyId%>"  style="width: 50%;"
+						labelType="html" dojoType="dijit.form.FilteringSelect">
+
+					<%for(final ContentType contentType : contentTypes) { %>
+					<option value="/dotAdmin/#/content-types-angular/edit/<%=contentType.id()%>">
+						<%=contentType.name()%>
+					</option>
+					<% }%>
+				</select>
+				<button dojoType="dijit.form.Button"
+						onClick="window.open(dijit.byId('contentTypes<%=schemeShortyId%>').getValue(),'_blank');"
+						iconClass="addIcon">
+					<%=LanguageUtil.get(pageContext, "contenttypes.action.edit")%>
+				</button>
+			</dd>
+		</dl>
 		<%} %>
 
 	</div>
-			
+
 	<div class="buttonRow" style="margin-top: 20px;">
 		<button dojoType="dijit.form.Button" onClick='schemeAdmin.saveAddEdit()' iconClass="saveIcon" type="button">
 			<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save"))%>
@@ -104,7 +121,7 @@
 		</button>
 		<%}%>
 		<button dojoType="dijit.form.Button"
-			onClick='schemeAdmin.hideAddEdit()' class="dijitButtonFlat" type="button">
+				onClick='schemeAdmin.hideAddEdit()' class="dijitButtonFlat" type="button">
 			<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel"))%>
 		</button>
 	</div>

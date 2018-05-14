@@ -236,7 +236,7 @@ public class WorkflowResourceIntegrationTest {
             final Map importSchemeMap = Map.class.cast(exportEntityView.getEntity());
             assertNotNull(importSchemeMap);
 
-            final WorkflowSchemeImportExportObjectView exportObject = (WorkflowSchemeImportExportObjectView) importSchemeMap.get("workflowExportObject");
+            final WorkflowSchemeImportExportObjectView exportObject = (WorkflowSchemeImportExportObjectView) importSchemeMap.get("workflowObject");
             final List<Permission> permissionsExported = (List<Permission>) importSchemeMap.get("permissions");
 
             assertNotNull(exportObject);
@@ -302,7 +302,7 @@ public class WorkflowResourceIntegrationTest {
         assertNotNull(savedScheme);
         final HttpServletRequest request = mock(HttpServletRequest.class);
         WorkflowSchemeForm form = new WorkflowSchemeForm.Builder().schemeDescription("lol").schemeArchived(false).schemeName(updatedName).build();
-        final Response updateResponse = workflowResource.update(request,savedScheme.getId(), form);
+        final Response updateResponse = workflowResource.updateScheme(request,savedScheme.getId(), form);
         assertEquals(Response.Status.OK.getStatusCode(), updateResponse.getStatus());
         final ResponseEntityView updateSchemeEntityView = ResponseEntityView.class.cast(updateResponse.getEntity());
         final WorkflowScheme updatedScheme = WorkflowScheme.class.cast(updateSchemeEntityView.getEntity());
@@ -317,7 +317,7 @@ public class WorkflowResourceIntegrationTest {
         final String updatedName = savedScheme2.getName();
         final HttpServletRequest request = mock(HttpServletRequest.class);
         WorkflowSchemeForm form = new WorkflowSchemeForm.Builder().schemeDescription("lol").schemeArchived(false).schemeName(updatedName).build();
-        final Response updateResponse = workflowResource.update(request,savedScheme1.getId(), form);
+        final Response updateResponse = workflowResource.updateScheme(request,savedScheme1.getId(), form);
         assertEquals(Status.OK.getStatusCode(), updateResponse.getStatus());
     }
 
@@ -603,7 +603,7 @@ public class WorkflowResourceIntegrationTest {
         //test archive scheme
         WorkflowSchemeForm form = new WorkflowSchemeForm.Builder().schemeDescription("Delete scheme").schemeArchived(true).schemeName(savedScheme.getName()).build();
         final HttpServletRequest request5 = mock(HttpServletRequest.class);
-        final Response updateResponse = workflowResource.update(request5,savedScheme.getId(), form);
+        final Response updateResponse = workflowResource.updateScheme(request5,savedScheme.getId(), form);
         assertEquals(Response.Status.OK.getStatusCode(), updateResponse.getStatus());
 
         //test delete scheme

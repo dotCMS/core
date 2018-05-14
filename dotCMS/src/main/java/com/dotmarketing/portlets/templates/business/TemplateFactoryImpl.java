@@ -33,6 +33,7 @@ import com.liferay.portal.model.User;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -99,7 +100,9 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 	@SuppressWarnings("unchecked")
 	public List<Template> findTemplatesUserCanUse(User user, String hostId, String query,boolean searchHost ,int offset, int limit) throws DotDataException, DotSecurityException {
-		return findTemplates(user, false, null, hostId, null,null, null, offset, limit, "title");
+		return findTemplates(user, false,
+				UtilMethods.isSet(query) ? Collections.singletonMap("title", query.toLowerCase())
+						: null, hostId, null, null, null, offset, limit, "title");
 	}
 
 	public void delete(Template template) throws DotDataException {

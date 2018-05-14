@@ -132,7 +132,7 @@ public class PageResourceHelper implements Serializable {
 
     public Template saveTemplate(final User user, IHTMLPage htmlPageAsset, final PageForm pageForm)
 
-            throws BadRequestException, DotDataException, DotSecurityException, IOException {
+            throws BadRequestException, DotDataException, DotSecurityException {
 
         try {
             
@@ -148,7 +148,7 @@ public class PageResourceHelper implements Serializable {
             }
 
             return templateSaved;
-        } catch (Exception e) {
+        } catch (BadRequestException | DotDataException | DotSecurityException e) {
             throw new DotRuntimeException(e);
         }
     }
@@ -166,8 +166,9 @@ public class PageResourceHelper implements Serializable {
 
     }
 
+    @WrapInTransaction
     public Template saveTemplate(final IHTMLPage page, final User user, final PageForm pageForm)
-            throws BadRequestException, DotDataException, DotSecurityException, IOException {
+            throws BadRequestException, DotDataException, DotSecurityException {
 
         
         try {
@@ -196,7 +197,7 @@ public class PageResourceHelper implements Serializable {
             });
 
             return this.templateAPI.saveTemplate(template, host, user, false);
-        } catch (Exception e) {
+        } catch (BadRequestException | DotDataException | DotSecurityException e) {
             throw new DotRuntimeException(e);
         }
     }

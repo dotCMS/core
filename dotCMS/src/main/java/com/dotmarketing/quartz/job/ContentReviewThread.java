@@ -118,7 +118,7 @@ public class ContentReviewThread implements Runnable, Job {
     					WorkflowEmailUtil.sendWorkflowEmail(processor, to, LanguageUtil.get(PublicCompanyFactory.getDefaultCompany(), "Please-review-this-content-comment"), LanguageUtil.get(PublicCompanyFactory.getDefaultCompany(), "Please-review-this-content-email"), true);
                 	}else{
                 		// Creating a Content Review Task
-                		cont.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, wapi.findEntryAction(cont, systemUser).getId());
+                		cont.setActionId(wapi.findEntryAction(cont, systemUser).getId());
                 		if(UtilMethods.isSet(cont.getStructure().getReviewerRole()) && !cont.getStructure().getReviewerRole().equalsIgnoreCase("0"))
                 			cont.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, cont.getStructure().getReviewerRole());
                 		cont.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY, "Content \"" + UtilHTML.escapeHTMLSpecialChars(cont.getTitle().trim()) + 

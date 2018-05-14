@@ -26,8 +26,12 @@ import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.liferay.portal.model.User;
-
-import java.util.*;
+import java.util.Collection;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Future;
 
 public interface WorkflowAPI {
@@ -442,7 +446,7 @@ public interface WorkflowAPI {
 	 */
 	void saveAction(String actionId, String stepId, User user, int order);
 
-	public WorkflowStep findStep(String id) throws DotDataException, DotSecurityException;
+	public WorkflowStep findStep(String id) throws DotDataException;
 
 	/**
 	 * Deletes the action associated to the scheme
@@ -498,6 +502,14 @@ public interface WorkflowAPI {
 	 */
 	Contentlet fireContentWorkflow(Contentlet contentlet, ContentletDependencies dependencies) throws DotDataException;
 
+	/**
+	 * Validates if the Workflow Action the Contentlet is going to execute belongs to the step of the
+	 * Contentlet and also if the action belongs to one of the schemes associated to the
+	 * Content Type of the Contentlet.
+	 * This method does not validate the permissions execution of the Workflow Action.
+	 */
+	public void validateActionStepAndWorkflow(final Contentlet contentlet, final User user)
+			throws DotDataException;
 
 	public WorkflowProcessor fireWorkflowNoCheckin(Contentlet contentlet, User user) throws DotDataException,DotWorkflowException, DotContentletValidationException;
 

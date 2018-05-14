@@ -183,7 +183,7 @@ public class ConditionGroupResource  {
             return Response.status(HttpStatus.SC_NO_CONTENT).build();
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
-        } catch (DotSecurityException | InvalidLicenseException e) {
+        } catch (DotSecurityException e) {
             throw new ForbiddenException(e, e.getMessage());
         }
 
@@ -214,7 +214,7 @@ public class ConditionGroupResource  {
         } catch (DotDataException e) {
             // @todo ggranum: These messages potentially expose internal details to consumers, via response headers. See Note 1 in HttpStatusCodeException.
             throw new BadRequestException(e, e.getMessage());
-        } catch (DotSecurityException | InvalidLicenseException e) {
+        } catch (DotSecurityException e) {
             throw new ForbiddenException(e, e.getMessage());
         }
     }
@@ -237,7 +237,7 @@ public class ConditionGroupResource  {
 
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
-        } catch (DotSecurityException | InvalidLicenseException e) {
+        } catch (DotSecurityException e) {
             throw new ForbiddenException(e, e.getMessage());
         }
     }
@@ -254,7 +254,7 @@ public class ConditionGroupResource  {
             // @todo ggranum: These messages potentially expose internal details to consumers,
             // @todo via response headers. See Note 1 in HttpStatusCodeException.
             throw new BadRequestException(e, e.getMessage());
-        } catch (DotSecurityException | InvalidLicenseException e) {
+        } catch (DotSecurityException e) {
             throw new ForbiddenException(e, e.getMessage());
         }
     }
@@ -267,7 +267,7 @@ public class ConditionGroupResource  {
             return conditionGroup.getId();
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
-        } catch (DotSecurityException | InvalidLicenseException e) {
+        } catch (DotSecurityException e) {
             throw new ForbiddenException(e, e.getMessage());
         }
     }
@@ -281,7 +281,7 @@ public class ConditionGroupResource  {
             return conditionGroup.getId();
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
-        } catch (DotSecurityException | InvalidLicenseException e) {
+        } catch (DotSecurityException e) {
             throw new ForbiddenException(e, e.getMessage());
         }
     }
