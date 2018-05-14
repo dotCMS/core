@@ -16,7 +16,7 @@ public class SecurityException extends WebApplicationException {
 	}
 
 	public SecurityException(String msg, Response.Status status) {
-		super(Response.status(status).entity(msg).type("text/plain").build());
+		super(msg, Response.status(status).entity(msg).type("text/plain").build());
 	}
 
 }

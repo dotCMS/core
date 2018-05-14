@@ -125,51 +125,6 @@ public class WorkflowResource {
     }
 
     /**
-     * In case of an invalid access attempt this will fulfill the response so it can be interpreted by a front-end consumer
-     * @param e Exception
-     * @return Response
-     */
-    private Response createUnAuthorizedResponse (final Exception e) {
-
-        SecurityLogger.logInfo(this.getClass(), e.getMessage());
-        return ExceptionMapperUtil.createResponse(e, Status.FORBIDDEN);
-    }
-
-    /**
-     * In case of an invalid access attempt this will fulfill the response so it can be interpreted by a front-end consumer
-     * Takes an exception and tries to find the most appropriate match code to send an error response.
-     * @param e Exception
-     * @return Response
-     */
-    private Response mapExceptionResponse(final Exception e){
-
-        if(causedBy(e, SECURITY_EXCEPTIONS)){
-            return this.createUnAuthorizedResponse(e);
-        }
-
-        if(causedBy(e, NOT_FOUND_EXCEPTIONS)){
-            return ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
-        }
-
-        if(e instanceof DotContentletValidationException){
-            final DotContentletValidationException ve = DotContentletValidationException.class.cast(e);
-            return ExceptionMapperUtil.createResponse(Status.BAD_REQUEST, ve);
-        }
-
-        final Throwable rootCause = getRootCause(e);
-        if( rootCause instanceof DotContentletValidationException){
-           final DotContentletValidationException ve = DotContentletValidationException.class.cast(rootCause);
-           return ExceptionMapperUtil.createResponse(Status.BAD_REQUEST, ve);
-        }
-
-        if(causedBy(e, BAD_REQUEST_EXCEPTIONS)){
-            return ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
-        }
-
-        return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-    }
-
-    /**
      * Returns all schemes non-archived associated to a content type. 401 if the user does not have permission.
      * @param request  HttpServletRequest
      * @param contentTypeId String content type id to get the schemes associated to it, is this is null return
@@ -196,7 +151,7 @@ public class WorkflowResource {
             return Response.ok(new ResponseEntityView(schemes)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),"Exception on findSchemes exception message: " + e.getMessage(), e);
-            return mapExceptionResponse(e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
     } // findSchemes.
 
@@ -233,7 +188,7 @@ public class WorkflowResource {
             Logger.error(this.getClass(),
                     "Exception on findAllSchemesAndSchemesByContentType exception message: " + e
                             .getMessage(), e);
-            return mapExceptionResponse(e);
+            return ResponseUtil.mapExceptionResponse(e);
 
         }
     } // findAllSchemesAndSchemesByContentType.
@@ -261,7 +216,7 @@ public class WorkflowResource {
             return Response.ok(new ResponseEntityView(steps)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),"Exception on findAllSchemesAndSchemesByContentType exception message: " + e.getMessage(), e);
-            return mapExceptionResponse(e);
+            return ResponseUtil.mapExceptionResponse(e);
 
         }
     } // findSteps.
@@ -290,7 +245,7 @@ public class WorkflowResource {
             Logger.error(this.getClass(),
                     "Exception on findStepsByScheme, contentlet inode: " + inode +
                             ", exception message: " + e.getMessage(), e);
-            return mapExceptionResponse(e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
     } // findAvailableActions.
 
@@ -319,7 +274,7 @@ public class WorkflowResource {
             Logger.error(this.getClass(),
                     "Exception on findAction, actionId: " + actionId +
                             ", exception message: " + e.getMessage(), e);
-            return mapExceptionResponse(e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
 
     } // findAction.
@@ -350,7 +305,7 @@ public class WorkflowResource {
             Logger.error(this.getClass(),
                     "Exception on findAction, actionId: " + actionId +
                             ", exception message: " + e.getMessage(), e);
-            return mapExceptionResponse(e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
     } // findActionByStep.
 
@@ -381,7 +336,7 @@ public class WorkflowResource {
             Logger.error(this.getClass(),
                     "Exception on findActionsByStep, stepId: " + stepId +
                             ", exception message: " + e.getMessage(), e);
-            return mapExceptionResponse(e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
     } // findActionByStep.
 
@@ -409,7 +364,7 @@ public class WorkflowResource {
             Logger.error(this.getClass(),
                     "Exception on findActionsByScheme, schemeId: " + schemeId +
                             ", exception message: " + e.getMessage(), e);
-            return mapExceptionResponse(e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
     } // findActionsByScheme.
 
@@ -442,7 +397,7 @@ public class WorkflowResource {
             Logger.error(this.getClass(),
                     "Exception on save, workflowActionForm: " + workflowActionForm +
                             ", exception message: " + e.getMessage(), e);
-            return mapExceptionResponse(e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
 
     } // save
@@ -472,7 +427,7 @@ public class WorkflowResource {
             Logger.error(this.getClass(),
                     "Exception on updateAction, actionId: " +actionId+", workflowActionForm: " + workflowActionForm +
                             ", exception message: " + e.getMessage(), e);
-            return mapExceptionResponse(e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
 
     } // deleteAction
@@ -505,7 +460,7 @@ public class WorkflowResource {
             Logger.error(this.getClass(),
                     "Exception on updateAction, stepId: "+stepId+", saveActionToStep: " + workflowActionStepForm +
                             ", exception message: " + e.getMessage(), e);
-            return mapExceptionResponse(e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
 
     } // saveAction
@@ -536,7 +491,7 @@ public class WorkflowResource {
             Logger.error(this.getClass(),
                     "Exception on deleteStep, stepId: " + stepId +
                             ", exception message: " + e.getMessage(), e);
-            return mapExceptionResponse(e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
     } // deleteStep
 
@@ -567,7 +522,7 @@ public class WorkflowResource {
             Logger.error(this.getClass(),
                     "Exception on deleteAction, actionId: "+actionId+", stepId: " + stepId +
                             ", exception message: " + e.getMessage(), e);
-            return mapExceptionResponse(e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
 
     } // deleteAction
@@ -598,7 +553,7 @@ public class WorkflowResource {
             Logger.error(this.getClass(),
                     "Exception on deleteAction, action: " + actionId +
                             ", exception message: " + e.getMessage(), e);
-            return mapExceptionResponse(e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
 
     } // deleteAction
@@ -630,7 +585,7 @@ public class WorkflowResource {
             Logger.error(this.getClass(),
                     "WorkflowPortletAccessException on reorderStep, stepId: " + stepId +
                             ", exception message: " + e.getMessage(), e);
-            return mapExceptionResponse(e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
     } // reorderStep
 
@@ -659,7 +614,7 @@ public class WorkflowResource {
             Logger.error(this.getClass(),
                     "WorkflowPortletAccessException on updateStep, stepId: " + stepId +
                             ", exception message: " + e.getMessage(), e);
-            return mapExceptionResponse(e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
     } // reorderStep
 
@@ -686,7 +641,7 @@ public class WorkflowResource {
             Logger.error(this.getClass(),
                     "Exception on addStep, stepId: " + schemeId +
                             ", exception message: " + e.getMessage(), e);
-            return mapExceptionResponse(e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
     }
 
@@ -713,7 +668,7 @@ public class WorkflowResource {
             Logger.error(this.getClass(),
                     "Exception on findStepById, stepId: " + stepId +
                             ", exception message: " + e.getMessage(), e);
-            return mapExceptionResponse(e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
     }
 
@@ -779,7 +734,7 @@ public class WorkflowResource {
                     "Exception on firing, workflow action: " + actionId +
                             ", inode: " + inode, e);
 
-            return mapExceptionResponse(e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
     } // fire.
 
@@ -852,7 +807,7 @@ public class WorkflowResource {
             Logger.error(this.getClass(),
                     "Exception on reorderAction, workflowReorderActionStepForm: " + workflowReorderActionStepForm +
                             ", exception message: " + e.getMessage(), e);
-            return mapExceptionResponse(e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
     } // reorderAction
 
@@ -899,7 +854,7 @@ public class WorkflowResource {
 
             Logger.error(this.getClass(),
                     "Exception on importScheme, Error importing schemes", e);
-            return mapExceptionResponse(e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
 
         return response;
@@ -941,7 +896,7 @@ public class WorkflowResource {
         } catch (Exception e){
             Logger.error(this.getClass(),
                     "Exception on exportScheme, Error exporting the schemes", e);
-            return mapExceptionResponse(e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
 
         return response;
@@ -988,7 +943,7 @@ public class WorkflowResource {
         } catch (Exception e){
             Logger.error(this.getClass(),
                     "Exception on exportScheme, Error exporting the schemes", e);
-            return mapExceptionResponse(e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
 
         return response;
@@ -1018,7 +973,7 @@ public class WorkflowResource {
         } catch (Exception e) {
             Logger.error(this.getClass(),
                     "Exception on find Available Default Actions exception message: " + e.getMessage(), e);
-            return mapExceptionResponse(e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
 
     } // findAvailableDefaultActionsByContentType.
@@ -1054,7 +1009,7 @@ public class WorkflowResource {
             Logger.error(this.getClass(),
                     "Exception on find Available Default Actions exception message: " + e
                             .getMessage(), e);
-            return mapExceptionResponse(e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
     } // findAvailableDefaultActionsBySchemes.
 
@@ -1088,7 +1043,7 @@ public class WorkflowResource {
                     "Exception on findInitialAvailableActionsByContentType, content type id: "
                             + contentTypeId +
                             ", exception message: " + e.getMessage(), e);
-            return mapExceptionResponse(e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
     } // findInitialAvailableActionsByContentType.
 
@@ -1113,7 +1068,7 @@ public class WorkflowResource {
             return Response.ok(new ResponseEntityView(scheme)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(), "Exception on save, schema named: " + workflowSchemeForm.getSchemeName() + ", exception message: " + e.getMessage(), e);
-            return mapExceptionResponse(e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
     }
 
@@ -1139,7 +1094,7 @@ public class WorkflowResource {
             return Response.ok(new ResponseEntityView(scheme)).build(); // 200
         }  catch (Exception e) {
             Logger.error(this.getClass(), "Exception attempting to update schema identified by : " +schemeId + ", exception message: " + e.getMessage(), e);
-            return mapExceptionResponse(e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
     }
 
@@ -1162,7 +1117,7 @@ public class WorkflowResource {
             return Response.ok(new ResponseEntityView(OK)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(), "Exception attempting to delete schema identified by : " +schemeId + ", exception message: " + e.getMessage(), e);
-            return mapExceptionResponse(e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
     }
 
