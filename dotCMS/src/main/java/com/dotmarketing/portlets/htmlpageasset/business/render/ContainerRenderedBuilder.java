@@ -55,7 +55,12 @@ public class ContainerRenderedBuilder {
             throws DotSecurityException, DotDataException {
 
         final User systemUser = this.userAPI.getSystemUser();
-        final TemplateLayout layout = DotTemplateTool.themeLayout(template.getInode());
+
+        if (!template.isDrawed()) {
+            return Collections.EMPTY_LIST;
+        }
+
+        final TemplateLayout layout =  DotTemplateTool.themeLayout(template.getInode());
         final List<ContainerUUID> containersUUID = this.templateAPI.getContainersUUID(layout);
 
         Map<String, List<ContainerUUID>> groupByContainerID = containersUUID.stream().collect(Collectors.groupingBy(ContainerUUID::getIdentifier));
