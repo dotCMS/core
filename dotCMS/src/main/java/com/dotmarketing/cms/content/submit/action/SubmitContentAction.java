@@ -20,7 +20,6 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.CaptchaUtil;
 import com.dotmarketing.util.DNSUtil;
 import com.dotmarketing.util.EmailUtils;
 import com.dotmarketing.util.Logger;
@@ -30,7 +29,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.UserLocalManagerUtil;
-import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.UploadServletRequest;
@@ -80,8 +78,6 @@ public class SubmitContentAction extends SecureAction{
 		UploadServletRequest uploadReq = (UploadServletRequest) request;
 		Host host = hostWebAPI.getCurrentHost(request);
 
-		boolean useCaptcha = false;
-		boolean useAudioCaptcha =false;
 		boolean autoPublish = false;
 		String moderatorRole="";
 		List<Field> imageFields = new ArrayList<Field>();
@@ -123,11 +119,7 @@ public class SubmitContentAction extends SecureAction{
 				options = PublicEncryptionFactory.decryptString(options);
 				String[] opt = options.split(";");
 				for(String text: opt){
-					if(text.indexOf("contentUseCaptcha") != -1){
-						useCaptcha = Boolean.parseBoolean(text.substring(text.indexOf("=")+1));
-					}else if(text.indexOf("contentUseAudioCaptcha") != -1){
-						useAudioCaptcha = Boolean.parseBoolean(text.substring(text.indexOf("=")+1));
-					}else if(text.indexOf("contentAutoPublish") != -1){
+					if(text.indexOf("contentAutoPublish") != -1){
 						autoPublish = Boolean.parseBoolean(text.substring(text.indexOf("=")+1));
 					}else if(text.indexOf("contentModeration") != -1){
 						moderatorRole = text.substring(text.indexOf("=")+1);
@@ -225,41 +217,6 @@ public class SubmitContentAction extends SecureAction{
 			}
 
 			params=paramsBuff.toString();
-
-			/*
-			 * Checking for captcha
-			 */
-			if(useCaptcha){
-
-				if(!CaptchaUtil.isValidImageCaptcha(request)){
-					User user = com.liferay.portal.util.PortalUtil.getUser(request);
-					String mes=LanguageUtil.get(user, "org.dotcms.frontend.content.submission.captcha.validation.image");
-					mes = mes.replace(":", "");
-					errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("message.contentlet.required", mes));
-					saveMessages(session, errors);
-					if(errors.size() > 0 && UtilMethods.isSet(params)){
-						referrer=referrer+"?"+params.substring(1);
-						af = new ActionForward(referrer);
-						af.setRedirect(true);
-					}
-					return af;
-				}
-
-			}
-
-			if(useAudioCaptcha){
-
-				if(!CaptchaUtil.isValidAudioCaptcha(request)){
-					errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("message.contentlet.required","Validation Sound"));
-					saveMessages(session, errors);
-					if(errors.size() > 0 && UtilMethods.isSet(params)){
-						referrer=referrer+"?"+params.substring(1);
-						af = new ActionForward(referrer);
-						af.setRedirect(true);
-					}
-					return af;
-				}
-			}
 
 			/**
 			 * Get Categories
