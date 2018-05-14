@@ -1,7 +1,5 @@
 package com.dotmarketing.cms.comment.struts;
 
-import com.dotcms.repackage.com.octo.captcha.service.CaptchaServiceException;
-import com.dotcms.repackage.nl.captcha.Captcha;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
@@ -10,13 +8,11 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.CaptchaUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 import org.apache.struts.action.ActionError;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
@@ -46,29 +42,11 @@ public class CommentsForm extends ValidatorForm
 	private String contentInode;
 	private String userId;
 	private String referrer;
-	private String captcha;
-	private String audioCaptcha;
 
 	//Configuration Variables
 	private boolean commentAutoPublish;
-	private boolean commentUseCaptcha;
 	private boolean commentStripHtml;
 	private boolean commentForceLogin;
-	private boolean commentUseAudioCaptcha;
-	
-	/**
-	 * @return the commentUseAudioCaptcha
-	 */
-	public boolean isCommentUseAudioCaptcha() {
-		return commentUseAudioCaptcha;
-	}
-
-	/**
-	 * @param commentUseAudioCaptcha the commentUseAudioCaptcha to set
-	 */
-	public void setCommentUseAudioCaptcha(boolean commentUseAudioCaptcha) {
-		this.commentUseAudioCaptcha = commentUseAudioCaptcha;
-	}
 
 	/*
 	 * This field was added to create workflow task over the
@@ -90,10 +68,8 @@ public class CommentsForm extends ValidatorForm
 		website = "";
 		notify = false;
 		comment = "";
-		accept = false;		
-		captcha = "";
+		accept = false;
 		commentsModeration="";
-		audioCaptcha = "";
 	}
 
 	public boolean isAccept() {
@@ -149,12 +125,6 @@ public class CommentsForm extends ValidatorForm
 	public void setReferrer(String referrer) {
 		this.referrer = referrer;
 	}
-	public String getCaptcha() {
-		return captcha;
-	}
-	public void setCaptcha(String captcha) {
-		this.captcha = captcha;
-	}
 
 	public String getWebsite() {
 		return website;
@@ -168,11 +138,7 @@ public class CommentsForm extends ValidatorForm
 	{
 		ContentletAPI conAPI = APILocator.getContentletAPI();
 		ActionErrors errors = new ActionErrors(); 
-		Contentlet parentContentlet = new Contentlet();	
-		HttpSession session = request.getSession();
-        Captcha captchaSession = (Captcha) session.getAttribute(Captcha.NAME);
-		//We need to remove the captcha info from the session.
-		session.removeAttribute(Captcha.NAME);
+		Contentlet parentContentlet = new Contentlet();
 
         try{
 			parentContentlet = conAPI.find(contentInode, APILocator.getUserAPI().getSystemUser(), true);
@@ -218,33 +184,6 @@ public class CommentsForm extends ValidatorForm
 		{
 			errors.add(ActionErrors.GLOBAL_ERROR, new ActionError("message.contentlet.required","Accept"));
 		}
-
-        if ( commentUseCaptcha ) {
-            if ( !UtilMethods.isSet( captcha ) || !UtilMethods.isSet( captchaSession ) || !captcha.equals( captchaSession.getAnswer() ) ) {
-                errors.add( ActionErrors.GLOBAL_ERROR, new ActionError( "message.contentlet.required", "Validation Image" ) );
-            }
-        }
-
-        if(commentUseAudioCaptcha && !UtilMethods.isSet(captchaSession)){
-         
-			Boolean isResponseCorrect =Boolean.FALSE;
-			String captchaId = request.getSession().getId();  
-			if(UtilMethods.isSet(audioCaptcha) && UtilMethods.isSet(captchaId)){
-				try {
-//					isResponseCorrect = CaptchaServiceSingleton.getInstance().validateResponseForID(captchaId,
-//							audioCaptcha);
-					
-					isResponseCorrect = CaptchaUtil.isValidAudioCaptcha(request);
-				} catch (CaptchaServiceException e) {
-					Logger.error(CommentsForm.class, "An error ocurred trying to validate audio captcha", e);
-				}
-			 }
-		
-			if(!isResponseCorrect){
-				errors.add(ActionErrors.GLOBAL_ERROR, new ActionError("message.contentlet.required","Validation Sound"));
-			}
-
-		}
 		return errors;
 	}
 
@@ -284,14 +223,6 @@ public class CommentsForm extends ValidatorForm
 	public void setCommentStripHtml(boolean commentStripHtml) {
 		this.commentStripHtml = commentStripHtml;
 	}
-
-	public boolean isCommentUseCaptcha() {
-		return commentUseCaptcha;
-	}
-
-	public void setCommentUseCaptcha(boolean commentUseCaptcha) {
-		this.commentUseCaptcha = commentUseCaptcha;
-	}
 	
 	/**
 	 * Get the role name of the role to assign the comment workflow
@@ -313,14 +244,6 @@ public class CommentsForm extends ValidatorForm
 	 */
 	public void setCommentsModeration(String commentsModeration) {
 		this.commentsModeration = commentsModeration;
-	}
-
-	public String getAudioCaptcha() {
-		return audioCaptcha;
-	}
-
-	public void setAudioCaptcha(String audioCaptcha) {
-		this.audioCaptcha = audioCaptcha;
 	}
 	
 	public String getActiveDiv(){

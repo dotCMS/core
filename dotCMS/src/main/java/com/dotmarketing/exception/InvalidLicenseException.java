@@ -6,6 +6,10 @@ package com.dotmarketing.exception;
  */
 public class InvalidLicenseException extends RuntimeException {
 
+    public InvalidLicenseException() {
+        this("Need an enterprise license to run this functionality.");
+    }
+
     public InvalidLicenseException ( String message ) {
         super(message);
     }

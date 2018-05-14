@@ -18,7 +18,6 @@ import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -33,6 +32,7 @@ import com.dotmarketing.portlets.links.business.MenuLinkAPI;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
@@ -745,28 +745,34 @@ public class HostAPIImpl implements HostAPI {
 
     @Override
     @WrapInTransaction
-    public void archive(Host host, User user, boolean respectFrontendRoles)
+    public void archive(final Host host, final User user,
+                        final boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException,
             DotContentletStateException {
-        if(host != null){
+
+        if(host != null) {
+
             hostCache.remove(host);
         }
-        final Contentlet contentlet = APILocator.getContentletAPI().find(host.getInode(), user, respectFrontendRoles);
+
+        final Contentlet contentlet = APILocator.getContentletAPI().find
+                (host.getInode(), user, respectFrontendRoles);
         //retrieve all hosts that have this current host as tag storage host
-        List<Host> hosts = retrieveHostsPerTagStorage(host.getIdentifier(), user);
-        for(Host h: hosts) {
-            if(h.getIdentifier() != null){
-                if(!h.getIdentifier().equals(host.getIdentifier())){
+        final List<Host> hosts = retrieveHostsPerTagStorage(host.getIdentifier(), user);
+        for(Host hostItem: hosts) {
+            if(hostItem.getIdentifier() != null){
+                if(!hostItem.getIdentifier().equals(host.getIdentifier())){
                     //prevents changing tag storage for archived host.
                     //the tag storage will change for all hosts which tag storage is archived host
                     // Apparently this code updates all other hosts setting their own self as tag storage
-                    h.setTagStorage(h.getIdentifier());
+                    hostItem.setTagStorage(hostItem.getIdentifier());
                     //So In order to avoid an exception updating a host that could be archived we're gonna tell the API to skip validation.
-                    h.getMap().put(Contentlet.DONT_VALIDATE_ME, true);
-                    h = save(h, user, true);
+                    hostItem.getMap().put(Contentlet.DONT_VALIDATE_ME, true);
+                    hostItem = save(hostItem, user, true);
                 }
             }
         }
+
         APILocator.getContentletAPI().archive(contentlet, user, respectFrontendRoles);
         host.setModDate(new Date ());
         hostCache.clearAliasCache();
@@ -787,19 +793,35 @@ public class HostAPIImpl implements HostAPI {
 
     @Override
     @WrapInTransaction
-    public void unarchive(Host host, User user, boolean respectFrontendRoles)
+    public void unarchive(final Host host, final User user, final boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException,
             DotContentletStateException {
-        if(host != null){
+
+        if(host != null) {
+
             hostCache.remove(host);
         }
-        Contentlet c = APILocator.getContentletAPI().find(host.getInode(), user, respectFrontendRoles);
-        APILocator.getContentletAPI().unarchive(c, user, respectFrontendRoles);
+
+        final Contentlet contentlet = APILocator.getContentletAPI()
+                .find(host.getInode(), user, respectFrontendRoles);
+        APILocator.getContentletAPI().unarchive(contentlet, user, respectFrontendRoles);
         host.setModDate(new Date ());
         hostCache.clearAliasCache();
+        HibernateUtil.addAsyncCommitListener(() -> this.sendUnArchiveSiteSystemEvent(contentlet), 1000);
+    }
 
-        systemEventsAPI.pushAsync(SystemEventType.UN_ARCHIVE_SITE, new Payload(c, Visibility.PERMISSION,
-                String.valueOf(PermissionAPI.PERMISSION_READ)));
+    private void sendUnArchiveSiteSystemEvent (final Contentlet contentlet) {
+
+        try {
+            
+            DateUtil.sleep(DateUtil.SECOND_MILLIS * 2);
+
+            systemEventsAPI.pushAsync(SystemEventType.UN_ARCHIVE_SITE, new Payload(contentlet, Visibility.PERMISSION,
+                        String.valueOf(PermissionAPI.PERMISSION_READ)));
+
+        } catch (DotDataException e) {
+            Logger.error(this, e.getMessage(), e);
+        }
     }
 
 

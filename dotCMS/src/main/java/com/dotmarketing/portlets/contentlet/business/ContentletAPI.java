@@ -1452,6 +1452,14 @@ public interface ContentletAPI {
     public boolean isInodeIndexedArchived(String inode);
 
 	/**
+	 * Method checks if a content inode belongs to an archived and indexed content
+	 * @param inode
+	 * @param secondsToWait - how long to wait before timing out
+	 * @return Boolean value
+	 */
+	public boolean isInodeIndexedArchived(String inode, int secondsToWait);
+
+	/**
 	 * Method will update hostInode of content to SYSTEM_HOST
 	 * @param hostIdentifier
 	 * @throws DotSecurityException 

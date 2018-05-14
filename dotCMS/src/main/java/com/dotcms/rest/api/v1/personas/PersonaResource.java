@@ -98,8 +98,6 @@ public class PersonaResource {
             return personaAPI.find(personaId, user, true);
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
-        } catch (InvalidLicenseException e) {
-            throw new ForbiddenException(e, e.getMessage());
         } catch (DotSecurityException e) {
             throw new ForbiddenException(e);
         }
@@ -110,8 +108,6 @@ public class PersonaResource {
             return personaAPI.getPersonas(host, true, false, user, true);
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
-        } catch (InvalidLicenseException e) {
-            throw new ForbiddenException(e, e.getMessage());
         } catch (DotSecurityException e) {
             throw new ForbiddenException(e);
         }

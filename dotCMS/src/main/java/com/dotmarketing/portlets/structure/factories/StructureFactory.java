@@ -25,7 +25,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.PermissionedWebAssetUtil;
 
 
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
@@ -687,6 +686,8 @@ public class StructureFactory {
 
 
 	public static List<Structure> findStructuresUserCanUse(User user, String query, Integer structureType, int offset, int limit) throws DotDataException, DotSecurityException {
-		return PermissionedWebAssetUtil.findStructuresForLimitedUser(query, structureType, "name", offset, limit, PermissionAPI.PERMISSION_READ, user, false);
+		BaseContentType baseType = BaseContentType.getBaseContentType(structureType);
+		List<ContentType> listContentTypes = APILocator.getContentTypeAPI(user).search(query,baseType, "name", limit, offset);
+		return new StructureTransformer(listContentTypes).asStructureList();
 	}
 }

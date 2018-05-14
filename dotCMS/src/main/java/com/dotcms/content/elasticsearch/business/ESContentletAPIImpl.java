@@ -3,6 +3,9 @@ package com.dotcms.content.elasticsearch.business;
 import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
 
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.DotMappingException;
@@ -2451,7 +2454,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             new ContentletLoader().invalidate(contentlet);
             publishRelatedHtmlPages(contentlet);
 
-            HibernateUtil.addAsyncCommitListener(() -> this.contentletSystemEventUtil.pushUnArchiveEvent(contentlet), 1000);
+            HibernateUtil.addAsyncCommitListener(() -> this.sendUnArchiveContentSystemEvent(contentlet), 1000);
         } catch(DotDataException | DotStateException| DotSecurityException e) {
             ActivityLogger.logInfo(getClass(), "Error Unarchiving Content", "StartDate: " +contentPushPublishDate+ "; "
                     + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
@@ -2462,8 +2465,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
         ActivityLogger.logInfo(getClass(), "Content Unarchived", "StartDate: " +contentPushPublishDate+ "; "
                 + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
                 + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
+    }
 
+    private void sendUnArchiveContentSystemEvent (final Contentlet contentlet) {
 
+            APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode());
+            this.contentletSystemEventUtil.pushUnArchiveEvent(contentlet);
     }
 
     // todo: should be in a transaction.
@@ -3963,7 +3970,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     private void copyWorkflowProperties(Contentlet contentlet, Map<String, Object> properties) {
-        contentlet.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY,
+        contentlet.setActionId(
                 (String) properties.get(Contentlet.WORKFLOW_ACTION_KEY));
         contentlet.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY,
                 (String) properties.get(Contentlet.WORKFLOW_COMMENTS_KEY));
@@ -5559,11 +5566,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public boolean isInodeIndexedArchived(String inode){
 
+        return isInodeIndexedArchived(inode, -1);
+    }
+
+    @Override
+    public boolean isInodeIndexedArchived(String inode, int secondsToWait) {
+
         if (!UtilMethods.isSet(inode)) {
             Logger.warn(this, "Requested Inode is not indexed because Inode is not set");
         }
 
-        return isInodeIndexedWithQuery("+inode:" + inode + String.format(" +deleted:%s",true));
+        return isInodeIndexedWithQuery("+inode:" + inode + String.format(" +deleted:%s",true), secondsToWait);
     }
 
     private boolean isInodeIndexedWithQuery(String luceneQuery) {

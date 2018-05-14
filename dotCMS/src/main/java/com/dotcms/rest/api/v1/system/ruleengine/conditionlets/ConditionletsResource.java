@@ -143,7 +143,7 @@ public class ConditionletsResource {
                            .collect(Collectors.toMap(restCondition -> restCondition.id, Function.identity()));
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
-        } catch (DotSecurityException | InvalidLicenseException e) {
+        } catch (DotSecurityException  e) {
             throw new ForbiddenException(e, e.getMessage());
         }
     }

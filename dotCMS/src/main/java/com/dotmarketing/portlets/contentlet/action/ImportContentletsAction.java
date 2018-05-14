@@ -201,8 +201,8 @@ public class ImportContentletsAction extends DotPortletAction {
 						try {
 							Logger.debug(this, "Calling Process File Method");
 							
-							Reader reader = null;
-							CsvReader csvreader = null;
+							Reader reader;
+							CsvReader csvreader;
 							String[] csvHeaders = null;
 							int languageCodeHeaderColumn = -1;
 							int countryCodeHeaderColumn = -1;
@@ -238,10 +238,9 @@ public class ImportContentletsAction extends DotPortletAction {
 							
 			
 							HashMap<String, List<String>> importresults=null;
-							if(importSession.equals((String) session.getAttribute("importSession") )){
+							if(importSession.equals(session.getAttribute("importSession"))){
 								session.removeAttribute("importSession");
 								importresults=_processFile(importId, req, res, config, form, user, csvHeaders, csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader);
-								
 							}
 											
 							List<String> counters= importresults .get("counters");
@@ -272,11 +271,11 @@ public class ImportContentletsAction extends DotPortletAction {
 						}
 					}
 				};
-				t.start();
-				req.setAttribute("previewResults", (HashMap<String, List<String>>) session.getAttribute("previewResults"));
-				session.removeAttribute("previewResults");
-				req.setAttribute("importId", importId);
-				setForward(req, "portlet.ext.contentlet.import_contentlets_preview");
+				 t.start();
+				 req.setAttribute("previewResults", session.getAttribute("previewResults"));
+				 session.removeAttribute("previewResults");
+				 req.setAttribute("importId", importId);
+				 setForward(req, "portlet.ext.contentlet.import_contentlets_preview");
 			}		
 		}else  if(cmd != null && cmd.equals("downloadCSVTemplate")){
 			_downloadCSVTemplate(req, res,config,form);

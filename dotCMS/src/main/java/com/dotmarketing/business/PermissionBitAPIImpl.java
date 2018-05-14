@@ -22,10 +22,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Inode;
-import com.dotmarketing.beans.Permission;
-import com.dotmarketing.beans.WebAsset;
+import com.dotmarketing.beans.*;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -393,36 +390,6 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 				Logger.error(this, "Roleid should be a long : ",e);
 			}
 		}
-		String inode ="";
-        List<String> ids= new ArrayList<String>();
-        String s = permissionable.toString();
-        
-        if(s.contains("formId=")){
-                String[] st = s.split(",");
-                for(String str : st){
-                        str = str.trim();
-                        if(str.contains("formId=")){
-                                inode = str.substring(7);
-                        }
-                }
-        }
-        
-        if(inode != ""){
-                PermissionAPI pAPI;
-                pAPI = APILocator.getPermissionAPI();
-                List<Role> role = pAPI.getRoles(inode, PermissionAPI.PERMISSION_READ + PermissionAPI.PERMISSION_EDIT + PermissionAPI.PERMISSION_PUBLISH, "", 0, 10, true);
-                if(role.size() > 0){
-                        for (Role r : role) {
-                                ids.add(r.getId());
-                        }
-                }
-        }
-        if(ids.size() > 0){
-                for(String sId : ids){
-                        userRoleIds.contains(sId);
-                        return true;
-                }
-        }
         
         if(!respectFrontendRoles) {
 			List<String> frontEndRoles = new ArrayList<String>(3);
@@ -1339,12 +1306,27 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		boolean isFolder = false;
 		Host host = null;
 		Folder folder = null;
-		if(permissionable instanceof Host){
-			isHost = true;
-			host = (Host)permissionable;
-		}else if(permissionable instanceof Folder){
-			isFolder = true;
-			folder = (Folder)permissionable;
+		try {
+
+			if(this.isHost(permissionable)){
+
+				isHost = true;
+				host = (permissionable instanceof PermissionableProxy)?
+						APILocator.getHostAPI()
+							.find(permissionable.getPermissionId(), APILocator.systemUser(),false):
+						(Host) permissionable;
+
+			} else if(this.isFolder(permissionable)){
+
+				isFolder = true;
+				folder = (permissionable instanceof PermissionableProxy)?
+						APILocator.getFolderAPI()
+								.find(permissionable.getPermissionId(), APILocator.systemUser(), false):
+						(Folder) permissionable;
+			}
+		} catch (DotSecurityException e) {
+
+			throw new DotDataException(e);
 		}
 
 
@@ -1446,6 +1428,20 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			return true;
 		}
 		return false;
+	}
+
+	private boolean isFolder(final Permissionable permissionable) {
+		
+		return permissionable instanceof Folder ||
+				(null != permissionable && permissionable instanceof PermissionableProxy
+						&& Folder.class.getName().equals(PermissionableProxy.class.cast(permissionable).getType()));
+	}
+
+	private boolean isHost(final Permissionable permissionable) {
+
+		return permissionable instanceof Host ||
+				(null != permissionable && permissionable instanceof PermissionableProxy
+						&& Host.class.getName().equals(PermissionableProxy.class.cast(permissionable).getType()));
 	}
 
 	@Override
