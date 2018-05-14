@@ -88,10 +88,10 @@
 	
 		            <div style="margin:auto;width:250px;height:147px;overflow: auto; border:1px solid silver">
 		                   <%for(final ContentType contentType : contentTypes) { %>
-			                    <div style="" class="structure-content-type-listing" >
-			                       <a href="/dotAdmin/#/content-types-angular/edit/<%=contentType.id()%>" target="_parent">
+			                    <div style="" class="structure-content-type-listing" onclick="window.parent.location='/dotAdmin/#/content-types-angular/edit/<%=contentType.id()%>'" >
+			                      
 			                            <%=contentType.name()%>
-			                        </a>
+			                 
 			                    </div>
 		                   <% }%>
 		            </div>
