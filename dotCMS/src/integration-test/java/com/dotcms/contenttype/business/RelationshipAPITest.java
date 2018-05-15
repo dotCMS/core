@@ -28,8 +28,8 @@ public class RelationshipAPITest extends IntegrationTestBase {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    @Test
-    public void test_create_unique_relationships () throws DotDataException, DotSecurityException {
+    @Test (expected = DotDataException.class)
+    public void testSave_RelationshipWithNonUniqueRelationTypeValue_ShouldThrowException () throws DotDataException, DotSecurityException {
 
         Relationship relationship = null;
         Structure structure = null;
@@ -61,18 +61,13 @@ public class RelationshipAPITest extends IntegrationTestBase {
             duplicated.setParentStructureInode(structure.getInode());
             duplicated.setChildStructureInode(structure.getInode());
 
-            DotDataException exception = null;
-            try {
-                APILocator.getRelationshipAPI().save(duplicated);
-            } catch (DotDataException ex) {
-                exception = ex;
-            }
-            //Assert an exception will be thrown because the relationship is duplicated
-            Assert.assertNotNull(exception);
-
+            //An exception will be thrown because the relationship is duplicated
+            //See method declaration, it is expecting this DotDataException
+            APILocator.getRelationshipAPI().save(duplicated);
 
         } finally {
-            //This connection is useless after the Unique violation exception
+            //The current connection is useless after the Unique violation exception.
+            //Need to close it, so the API opens a new one when cleaning up
             DbConnectionFactory.closeConnection();
 
             if (relationship != null) {

@@ -53,6 +53,11 @@ public interface RelationshipAPI {
 
   void delete(Relationship relationship) throws DotDataException;
 
+  /**
+   * Method to delete a relationship, but keep the TypeValue in Tree and multitree
+   * @param relationship to be deleted
+   * @throws DotDataException
+   */
   void deleteKeepTrees(Relationship relationship) throws DotDataException;
 
   void addRelationship(String parent, String child, String relationType) throws DotDataException;
