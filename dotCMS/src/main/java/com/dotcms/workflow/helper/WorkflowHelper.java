@@ -54,6 +54,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Future;
+
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang.time.StopWatch;
 
@@ -1274,19 +1276,22 @@ public class WorkflowHelper {
      * Delete an existing scheme
      * @param schemeId The id of the Scheme to be deleted
      * @param user The User that want to delete the scheme
+     * @return Future {@link WorkflowScheme}
      * @throws AlreadyExistException
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    public void delete(final String schemeId, final User user) throws AlreadyExistException, DotDataException, DotSecurityException {
+    public Future<WorkflowScheme> delete(final String schemeId, final User user)
+            throws AlreadyExistException, DotDataException, DotSecurityException {
 
         final WorkflowScheme scheme = this.workflowAPI.findScheme(schemeId);
+
         if(null != scheme) {
-            this.workflowAPI.deleteScheme(scheme, user);
-        }else{
+            return this.workflowAPI.deleteScheme(scheme, user);
+        } else {
             throw new DoesNotExistException("Workflow-does-not-exists-scheme");
         }
-    }
+    } // delete.
 
 
 } // E:O:F:WorkflowHelper.
