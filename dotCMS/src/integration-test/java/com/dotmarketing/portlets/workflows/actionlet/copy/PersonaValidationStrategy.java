@@ -9,8 +9,8 @@ import java.util.Map;
 public class PersonaValidationStrategy extends AbstractContentletValidationStrategy {
 
     AssertionStrategy photoAssertion = (final Contentlet original, final Contentlet copy) -> {
-        final String originalValue = (String) original.get("value");
-        final String copyValue = (String) copy.get("value");
+        final String originalValue = (String) original.get("photo");
+        final String copyValue = (String) copy.get("photo");
         assertEquals("value", originalValue, copyValue);
     };
 

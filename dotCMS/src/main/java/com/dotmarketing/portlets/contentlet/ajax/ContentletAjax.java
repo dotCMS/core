@@ -849,10 +849,7 @@ public class ContentletAjax {
 		PaginatedArrayList <Contentlet> hits = new PaginatedArrayList <Contentlet>();
 		long totalHits=0;
 		try{
-			hits = (PaginatedArrayList<Contentlet>) conAPI.search(luceneQuery.toString(), perPage + 1, offset, orderBy, currentUser,
-
-
-					false);
+			hits = (PaginatedArrayList<Contentlet>) conAPI.search(luceneQuery.toString(), perPage + 1, offset, orderBy, currentUser, false);
 			totalHits = hits.getTotalResults();
 		}catch (Exception pe) {
 			Logger.error(ContentletAjax.class, "Unable to execute Lucene Query", pe);

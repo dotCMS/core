@@ -1114,14 +1114,13 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 			if (isHost || isFolder) {
 
-				final Contentlet parentHost;
+				Contentlet parentHost = null;
 				if(isFolder)
 					try {
 						parentHost = hostAPI.findParentHost((Folder)permissionable, APILocator.getUserAPI().getSystemUser(), false);
 					} catch (DotSecurityException e) {
 						Logger.error(this, e.getMessage(), e);
 						//If this initialization fails we better bubble up the exception. otherwise will still fail with a NPE.
-						throw new DotDataException(e);
 					}
 				else {
 					parentHost = (Contentlet) permissionable;
