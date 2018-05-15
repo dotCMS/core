@@ -20,3 +20,10 @@
     </div>
 
 </div>
+
+<div id="importWorkflowErrors" style="display: none;" dojoType="dijit.Dialog" class="content-edit__dialog-error" title="<%= LanguageUtil.get(pageContext, "error") %>">
+    <div dojoType="dijit.layout.ContentPane" id="importWorkflowExceptionData" hasShadow="true"></div>
+    <div class="content-edit__dialog-error-actions">
+        <button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="dijit.byId('importWorkflowErrors').hide()" type="button"><%= LanguageUtil.get(pageContext, "close") %></button>
+    </div>
+</div>

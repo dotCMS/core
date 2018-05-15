@@ -1784,7 +1784,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public Contentlet fireContentWorkflow(final Contentlet contentlet, final ContentletDependencies dependencies) throws DotDataException {
 
 		if(UtilMethods.isSet(dependencies.getWorkflowActionId())){
-			contentlet.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, dependencies.getWorkflowActionId());
+			contentlet.setActionId(dependencies.getWorkflowActionId());
 		}
 
 		if(UtilMethods.isSet(dependencies.getWorkflowActionComments())){
@@ -1808,10 +1808,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	private void checkShorties(final Contentlet contentlet) {
 
-		final String actionId = contentlet.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY);
+		final String actionId = contentlet.getActionId();
 		if(UtilMethods.isSet(actionId)) {
 
-			contentlet.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, this.getLongId(actionId, ShortyIdAPI.ShortyInputType.WORKFLOW_ACTION));
+			contentlet.setActionId(this.getLongId(actionId, ShortyIdAPI.ShortyInputType.WORKFLOW_ACTION));
 		}
 	}
 
@@ -1820,7 +1820,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public void validateActionStepAndWorkflow(final Contentlet contentlet, final User user)
 			throws DotDataException {
 
-		final String actionId = contentlet.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY);
+		final String actionId = contentlet.getActionId();
 
 		if (null != actionId) {
 

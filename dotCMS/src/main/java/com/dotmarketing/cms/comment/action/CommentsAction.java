@@ -262,8 +262,8 @@ public class CommentsAction extends SecureAction {
 
 			// new workflows
 			if(UtilMethods.isSet(commentsOptions.get("commentsModeration"))){
-				if(!UtilMethods.isSet(contentletComment.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY)))
-						contentletComment.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, APILocator.getWorkflowAPI().findEntryAction(contentletComment, user).getId());
+				if(!UtilMethods.isSet(contentletComment.getActionId()))
+						contentletComment.setActionId(APILocator.getWorkflowAPI().findEntryAction(contentletComment, user).getId());
 				contentletComment.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY, commentsForm.getComment());
 			}
 

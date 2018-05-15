@@ -135,7 +135,7 @@ public class CopyActionletTest extends BaseWorkflowIntegrationTest {
         CopyActionletTest.contentlet              = contentlet1;
 
         // triggering the copy action
-        contentlet1.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY,
+        contentlet1.setActionId(
                 this.schemeStepActionResult.getAction().getId());
         contentlet1.setBoolProperty(CopyActionlet.NOTIFY_SYNC_COPY_EVENT,
                 true);

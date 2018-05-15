@@ -63,7 +63,7 @@ public class ActionletsResource {
             return actionlets.stream().map(transform.appToRestFn()).collect(Collectors.toMap(restAction -> restAction.id, Function.identity()));
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
-        } catch (DotSecurityException | InvalidLicenseException e) {
+        } catch (DotSecurityException e) {
             throw new ForbiddenException(e, e.getMessage());
         }
     }

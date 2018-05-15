@@ -30,22 +30,18 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
-import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRendered;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.WebKeys;
 
 import java.io.IOException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.liferay.portal.model.User;
 
 /**
@@ -167,7 +163,7 @@ public class PageResource {
             }
 
             final PageView pageRendered = this.htmlPageAssetRenderedAPI.getPageRendered(request, response, user, uri, mode);
-            final Response.ResponseBuilder responseBuilder = Response.ok(pageRendered);
+            final Response.ResponseBuilder responseBuilder = Response.ok(new ResponseEntityView(pageRendered));
             responseBuilder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, " +
                     "Content-Type, " + "Accept, Authorization");
 
@@ -217,6 +213,8 @@ public class PageResource {
                                @PathParam("pageId") final String pageId,
                                final PageForm form) {
 
+        Logger.debug(this, String.format("Saving layout: pageId -> %s layout-> %s", pageId, form.getLayout()));
+
         final InitDataObject auth = webResource.init(false, request, true);
         final User user = auth.getUser();
 
@@ -229,6 +227,7 @@ public class PageResource {
             final PageMode pageMode = PageMode.get(request);
             final PageView renderedPage = this.htmlPageAssetRenderedAPI.getPageRendered(request, response, user,
                     (HTMLPageAsset) page, pageMode);
+
             res = Response.ok(new ResponseEntityView(renderedPage)).build();
 
         } catch (DotSecurityException e) {
@@ -246,11 +245,6 @@ public class PageResource {
                     e.getClass().getCanonicalName(), request, pageId, form);
             Logger.error(this, errorMsg, e);
             res = ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
-        } catch (IOException e) {
-            final String errorMsg = String.format("IOException on PageResource.saveLayout, parameters:  %s, %s %s: ",
-                    request, pageId, form);
-            Logger.error(this, errorMsg, e);
-            res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 
         return res;
@@ -270,6 +264,7 @@ public class PageResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/layout")
     public Response saveLayout(@Context final HttpServletRequest request, final PageForm form) {
+
         final InitDataObject auth = webResource.init(false, request, true);
         final User user = auth.getUser();
 

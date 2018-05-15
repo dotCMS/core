@@ -236,7 +236,7 @@ public class WorkflowResourceIntegrationTest {
             final Map importSchemeMap = Map.class.cast(exportEntityView.getEntity());
             assertNotNull(importSchemeMap);
 
-            final WorkflowSchemeImportExportObjectView exportObject = (WorkflowSchemeImportExportObjectView) importSchemeMap.get("workflowExportObject");
+            final WorkflowSchemeImportExportObjectView exportObject = (WorkflowSchemeImportExportObjectView) importSchemeMap.get("workflowObject");
             final List<Permission> permissionsExported = (List<Permission>) importSchemeMap.get("permissions");
 
             assertNotNull(exportObject);

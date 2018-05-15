@@ -23,13 +23,13 @@
     Role role = null;
     final String roleId = request.getParameter("roleId");
     if(UtilMethods.isSet(roleId)){
-       role = APILocator.getRoleAPI().loadRoleById(roleId);
+        role = APILocator.getRoleAPI().loadRoleById(roleId);
     }
 
     ContentType contentType = null;
     final String contentTypeId = request.getParameter("contentTypeId");
     if(UtilMethods.isSet(contentTypeId)){
-       contentType = APILocator.getContentTypeAPI(systemUser).find(contentTypeId);
+        contentType = APILocator.getContentTypeAPI(systemUser).find(contentTypeId);
     }
 
 %>
@@ -38,11 +38,11 @@
 <%for(WorkflowStep step : steps){ %>
 <%
 
-  final List<WorkflowAction> actions = (
-        UtilMethods.isSet(role)
-          ? wapi.findActions(step, role, contentType)
-          : wapi.findActions(step, systemUser)
-  );
+    final List<WorkflowAction> actions = (
+            UtilMethods.isSet(role)
+                    ? wapi.findActions(step, role, contentType)
+                    : wapi.findActions(step, systemUser)
+    );
 
 %>
 <div class="list-wrapper wfStepInDrag" id="stepID<%=step.getId()%>">
@@ -51,8 +51,7 @@
             <div class="showPointer wfStepTitleDivs handle" onClick="stepAdmin.showStepEdit('<%=step.getId()%>')">
                 <span style="border-bottom:dotted 1px #fff;"><%=step.getName() %></span>
                 <span style="font-weight:normal;display:inline-block;">
-					(<%=step.isResolved() ? LanguageUtil.get(pageContext, "resolved") + " | " : "" %>
-                    <a style="color:white;" href="/api/v1/workflow/steps/<%=step.getId()%>" target="_blank" onclick="event.stopPropagation();">json</a>)
+					<%=step.isResolved() ? "(" + LanguageUtil.get(pageContext, "resolved") + ")": "" %>
 				</span>
             </div>
             <div class="clear"></div>

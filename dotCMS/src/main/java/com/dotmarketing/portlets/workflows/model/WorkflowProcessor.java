@@ -125,7 +125,7 @@ public class WorkflowProcessor {
 			}
 			task = getWorkflowAPI().findTaskByContentlet(contentlet);
 
-			String workflowActionId = contentlet.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY);
+			String workflowActionId = contentlet.getActionId();
 			if (UtilMethods.isSet(workflowActionId)) {
 				action = findAction(contentlet, workflowActionId);
 			}
@@ -197,7 +197,7 @@ public class WorkflowProcessor {
 			} catch (Exception ex) {
 				throw new DotWorkflowException(
 						LanguageUtil.get(this.user, "message.workflow.error.invalid.action")
-								+ contentlet.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY), ex);
+								+ contentlet.getActionId(), ex);
 			}
 		}
 
