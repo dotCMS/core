@@ -270,22 +270,17 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 
 	},
 
-    unArchiveScheme : function() {
-        var archived = dojo.byId("schemeArchived");
-        archived.value="false"
-        this.saveAddEdit();
-    },
+    	unArchiveScheme : function() {
+        	var archived = dojo.byId("schemeArchived");
+        	archived.value="false"
+        	this.saveAddEdit();
+    	},
 	
-	
-	    archiveScheme : function() {
-        var archived = dojo.byId("schemeArchived");
-        archived.value="true"
-        this.saveAddEdit();
-
-
-    },
-	
-	
+    	archiveScheme : function() {
+        	var archived = dojo.byId("schemeArchived");
+        	archived.value="true"
+        	this.saveAddEdit();
+    	},
 	
 	copyScheme : function(schemeId, name) {
 
