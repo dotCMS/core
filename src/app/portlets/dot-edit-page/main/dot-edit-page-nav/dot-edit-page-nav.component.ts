@@ -13,6 +13,7 @@ interface DotEditPageNavItem {
     icon: string;
     label: string;
     link: string;
+    tooltip?: string;
 }
 
 @Component({
@@ -32,7 +33,8 @@ export class DotEditPageNavComponent implements OnInit {
                 'editpage.toolbar.nav.content',
                 'editpage.toolbar.nav.layout',
                 'editpage.toolbar.nav.code',
-                'editpage.toolbar.nav.license.enterprise.only'
+                'editpage.toolbar.nav.license.enterprise.only',
+                'editpage.toolbar.nav.layout.advance.disabled'
             ])
             .mergeMap(() => {
                 return this.dotLicenseService.isEnterpriseLicense();
@@ -43,7 +45,9 @@ export class DotEditPageNavComponent implements OnInit {
     }
 
     private canGoToLayout(dotRenderedPage: DotRenderedPage): boolean {
-        return !dotRenderedPage.page.canEdit;
+        // Right now we only allowing users to edit layout, so no templates or advanced template can be edit from here.
+        // https://github.com/dotCMS/core-web/pull/589
+        return dotRenderedPage.page.canEdit && dotRenderedPage.template.drawed;
     }
 
     private getNavItems(dotRenderedPage: DotRenderedPage, enterpriselicense: boolean): DotEditPageNavItem[] {
@@ -54,25 +58,23 @@ export class DotEditPageNavComponent implements OnInit {
                 icon: 'fa fa-file-text',
                 label: this.dotMessageService.get('editpage.toolbar.nav.content'),
                 link: 'content'
-            }
+            },
+            this.getTemplateNavItem(dotRenderedPage, enterpriselicense)
         ];
-
-        // Right now we only allowing users to edit layout, so no templates or advanced template can be edit from here.
-        // https://github.com/dotCMS/core-web/pull/589
-        if (dotRenderedPage.layout) {
-            result.push(this.getTemplateNavItem(dotRenderedPage, enterpriselicense));
-        }
 
         return result;
     }
 
     private getTemplateNavItem(dotRenderedPage: DotRenderedPage, enterpriselicense: boolean): DotEditPageNavItem {
+        // Right now we only allowing users to edit layout, so no templates or advanced template can be edit from here.
+        // https://github.com/dotCMS/core-web/pull/589
         return {
             needsEntepriseLicense: !enterpriselicense,
-            disabled: this.canGoToLayout(dotRenderedPage),
-            icon: this.getTemplateItemIcon(dotRenderedPage.template),
+            disabled: !this.canGoToLayout(dotRenderedPage),
+            icon: 'fa fa-th-large',
             label: this.getTemplateItemLabel(dotRenderedPage.template),
-            link: 'layout'
+            link: 'layout',
+            tooltip: dotRenderedPage.template.drawed ? null : this.dotMessageService.get('editpage.toolbar.nav.layout.advance.disabled')
         };
     }
 
@@ -82,7 +84,7 @@ export class DotEditPageNavComponent implements OnInit {
 
     private getTemplateItemLabel(template: DotTemplate): string {
         return this.dotMessageService.get(
-            !template ? 'editpage.toolbar.nav.layout' : template.drawed ? 'editpage.toolbar.nav.layout' : 'editpage.toolbar.nav.code'
+            !template ? 'editpage.toolbar.nav.layout' : 'editpage.toolbar.nav.layout'
         );
     }
 }
