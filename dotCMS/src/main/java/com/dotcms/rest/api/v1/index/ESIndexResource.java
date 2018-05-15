@@ -1,30 +1,14 @@
 package com.dotcms.rest.api.v1.index;
 
 import com.dotcms.business.CloseDBIfOpened;
-import com.google.gson.Gson;
-
-import com.dotcms.concurrent.DotConcurrentFactory;
-import com.dotcms.concurrent.DotSubmitter;
-import com.dotcms.content.elasticsearch.business.DotIndexException;
-import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
-import com.dotcms.content.elasticsearch.business.ESIndexHelper;
-import com.dotcms.content.elasticsearch.business.IndiciesAPI;
+import com.dotcms.content.elasticsearch.business.*;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.io.ByteStreams;
-import com.dotcms.repackage.javax.ws.rs.Consumes;
-import com.dotcms.repackage.javax.ws.rs.DELETE;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.POST;
-import com.dotcms.repackage.javax.ws.rs.PUT;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.Produces;
-import com.dotcms.repackage.javax.ws.rs.WebApplicationException;
+import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.container.AsyncResponse;
 import com.dotcms.repackage.javax.ws.rs.container.Suspended;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
@@ -41,42 +25,32 @@ import com.dotcms.rest.ResourceResponse;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.exception.ServiceUnavailableException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.LayoutAPI;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.gson.Gson;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-
-import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.admin.indices.stats.IndexStats;
 import org.elasticsearch.action.admin.indices.stats.IndicesStatsResponse;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.snapshots.SnapshotRestoreException;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.Date;
-import java.util.Locale;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
-import javax.servlet.http.HttpServletRequest;
-
-import static com.dotcms.concurrent.DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL;
 import static com.dotcms.util.DotPreconditions.checkArgument;
 
 /**
@@ -256,7 +230,7 @@ public class ESIndexResource {
      * @param request
      * @param params
      * @return zip file
-     * @deprecated  As of 2016-10-12, replaced by {@link #snapshotIndex(request,params)}
+     * @deprecated  As of 2016-10-12, replaced by {@link #snapshotIndex(HttpServletRequest, String)}
      */
     @GET
     @Path("/download/{params:.*}")
@@ -356,25 +330,33 @@ public class ESIndexResource {
         	InitDataObject initDataObject = auth(params,request);
         	final User user = initDataObject.getUser();
 
-            DotSubmitter submitter = DotConcurrentFactory.getInstance().getSubmitter(DOT_SYSTEM_THREAD_POOL);
+        	ResponseUtil.handleAsyncResponse(
+        	        () -> {
 
-            submitter.submit(() -> {
-                Response response = null;
-                try {
-                    if(this.indexAPI.uploadSnapshot(inputFile)){
-                        response = Response.ok(new MessageEntity(LanguageUtil.get(user.getLocale(),
-                            "snapshot.upload.success"))).build();
-                    }
-                } catch (Exception e) {
-                    Logger.error(this, "Exception trying to restore index snapshot:" + e.getMessage(), e);
-                    response = ResponseUtil.mapExceptionResponse(e);
-                }
+                        try {
 
-                asyncResponse.resume(response);
-            });
+                            if(this.indexAPI.uploadSnapshot(inputFile)){
+                                return new MessageEntity(LanguageUtil.get(user.getLocale(),
+                                        "snapshot.upload.success"));
+                            }
+
+                            throw new ServiceUnavailableException("snapshot.upload.failed");
+                        } catch (InterruptedException | LanguageException | ExecutionException | IOException e) {
+
+                            Logger.error(ESIndexResource.class, e.getMessage(), e);
+                            throw new ServiceUnavailableException("snapshot.upload.failed");
+                        }
+                    },
+                    (Throwable e) -> {
+
+                        Logger.error(this, "Exception trying to restore index snapshot:" + e.getMessage(), e);
+                        return ResponseUtil.mapExceptionResponse(e);
+                    },
+                    asyncResponse);
+
             return this.responseUtil.getErrorResponse(request, Response.Status.SERVICE_UNAVAILABLE, user.getLocale(), null, "snapshot.upload.failed");
-
         } catch (Exception e) {
+
             Logger.error(this.getClass(),"Exception trying to restore index snapshot: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
         }

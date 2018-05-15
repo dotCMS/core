@@ -28,24 +28,19 @@
 
 <div dojoType="dijit.form.Form" id="addEditSchemeForm" jsId="addEditSchemeForm" encType="multipart/form-data" action="/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfSchemeAjax" method="POST">
 	<input type="hidden" id="cmd" name="cmd" value="save">
+	<input type="hidden" id="schemeArchived" name="schemeArchived" value="<%=(scheme.isArchived()) ? "true" : "false"%>">
 	<input type="hidden" id="schemeId" name="schemeId" value="<%=UtilMethods.webifyString(scheme.getId())%>">
 	<!-- START Listing Results -->
-	<div class="form-horizontal">
+    <%if(scheme.isArchived()){%>
+            <div style="padding:10px;margin-bottom:10px;text-align:center;font-weight: bold;color:maroon; ">
+                <h3>
+                <%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Archived"))%>
+               </h3>
+           </div>
+     <%} %>
+	<div class="form-horizontal" <%if(scheme.isArchived()){%>style="opacity: .6"<%} %>>
 
-		<%if(!scheme.isNew()){%>
-		<dl>
-			<dt>
-				<label for=""><%=LanguageUtil.get(pageContext, "Scheme")%> <%=LanguageUtil.get(pageContext, "Id")%>:</label>
-			</dt>
-			<dd>
-				<strong>
-					<a onclick="this.parentNode.innerHTML='<%=scheme.getId()%>'; return false;" href="#"><%=schemeShortyId %></a>
-				</strong>
-				(<a href="/api/v1/workflow/schemes/<%=scheme.getId()%>/export" target="_blank" onclick="event.stopPropagation();">json</a>)
-			</dd>
 
-		</dl>
-		<%}%>
 
 		<dl>
 			<dt>
@@ -54,72 +49,86 @@
 			<dd>
 				<input type="text" name="schemeName" id="schemeName"
 					   dojoType="dijit.form.ValidationTextBox"  required="true"
-					   value="<%=UtilMethods.webifyString(scheme.getName())%>"
-					   maxlength="255" style="width:250px">
+					   value="<%=UtilMethods.webifyString(scheme.getName())%>" <%if(scheme.isArchived()){%>readonly="true"<%} %>
+					   maxlength="255" style="width:250px;<%if(scheme.isArchived()){%>;text-decoration:line-through;<%}%>">
 			</dd>
 		</dl>
+        <%if(!scheme.isNew()){%>
+	        <dl>
+	            <dt>
+	                <label for=""><%=LanguageUtil.get(pageContext, "Scheme")%> <%=LanguageUtil.get(pageContext, "Id")%>:</label>
+	            </dt>
+	            <dd>
+	                <strong>
+	                    <a onclick="this.parentNode.innerHTML='<%=scheme.getId()%>'; return false;" href="#"><%=schemeShortyId %></a>
+	                </strong>
+	                (<a href="/api/v1/workflow/schemes/<%=scheme.getId()%>/export" target="_blank" onclick="event.stopPropagation();">json</a>)
+	            </dd>
+	
+	        </dl>
+        <%}%>
 		<dl>
 			<dt>
 				<label for=""><%=LanguageUtil.get(pageContext, "Description")%>:</label>
 			</dt>
 			<dd>
 				<input type="textarea" name="schemeDescription"
-					   id="schemeDescription" dojoType="dijit.form.Textarea"
+					   id="schemeDescription" dojoType="dijit.form.Textarea" <%if(scheme.isArchived()){%>readonly="true"<%} %>
 					   value="<%=UtilMethods.webifyString(scheme.getDescription())%>" style="width:250px; height:100px;min-height:100px;max-height:100px;">
 			</dd>
 		</dl>
-		<dl>
-			<dt>
-				<label for=""><%=LanguageUtil.get(pageContext, "Archived")%>:</label>
-			</dt>
-			<dd>
-				<input type="checkbox" name="schemeArchived"
-					   id="schemeArchived" dojoType="dijit.form.CheckBox" value="true"
-					<%=(scheme.isArchived()) ? "checked='true'" : ""%>>
-			</dd>
-		</dl>
-		<%if(!contentTypes.isEmpty()) { %>
-		<dl>
-			<dt>
-				<label for=""><%=LanguageUtil.get(pageContext, "structures")%>:</label>
-			</dt>
 
-			<dd class="wf-content-types">
+		
+			<dl>
+				<dt>
+					<label style="<%if(scheme.isNew()){%>color:silver<%}%>"><%if(!contentTypes.isEmpty()) { %><%=contentTypes.size() %><%} %> <%=LanguageUtil.get(pageContext, "structures")%>:</label>
+				</dt>
+	
+				<dd class="wf-content-types">
+	
+		            <div style="margin:auto;width:250px;height:147px;overflow: auto; border:1px solid <%if(!scheme.isNew()){%>silver<%}else{%>#dddddd<% }%>">
+		                   <%for(final ContentType contentType : contentTypes) { %>
+			                    <div style="" class="structure-content-type-listing" onclick="window.parent.location='/dotAdmin/#/content-types-angular/edit/<%=contentType.id()%>'" >
+			                      
+			                            <%=contentType.name()%>
+			                 
+			                    </div>
+		                   <% }%>
+		                   <%if(contentTypes.isEmpty()) { %>
+		                      <div style="padding:10px; <%if(scheme.isNew()){%>color:#dddddd<%}%>"> 
+		                          <%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "none"))%>
+		                      </div>
+		                   <%} %>
+		            </div>
+				</dd>		
+			</dl>
 
-				<select name="contentTypes<%=schemeShortyId%>" id="contentTypes<%=schemeShortyId%>"  style="width: 50%;"
-						labelType="html" dojoType="dijit.form.FilteringSelect">
-
-					<%for(final ContentType contentType : contentTypes) { %>
-					<option value="/dotAdmin/#/content-types-angular/edit/<%=contentType.id()%>">
-						<%=contentType.name()%>
-					</option>
-					<% }%>
-				</select>
-				<button dojoType="dijit.form.Button"
-						onClick="window.open(dijit.byId('contentTypes<%=schemeShortyId%>').getValue(),'_blank');"
-						iconClass="addIcon">
-					<%=LanguageUtil.get(pageContext, "contenttypes.action.edit")%>
-				</button>
-			</dd>
-		</dl>
-		<%} %>
 
 	</div>
 
-	<div class="buttonRow" style="margin-top: 20px;">
-		<button dojoType="dijit.form.Button" onClick='schemeAdmin.saveAddEdit()' iconClass="saveIcon" type="button">
-			<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save"))%>
-		</button>
+	<div class="buttonRow" style="position:absolute;bottom:20px;left:20px;right:20px; margin-top: 10px;">
+
 		<%if(!scheme.isNew()){%>
 		<button dojoType="dijit.form.Button" onClick='schemeAdmin.copyScheme("<%=UtilMethods.webifyString(scheme.getId())%>", "<%=UtilMethods.webifyString(scheme.getName())%>")' iconClass="saveIcon" type="button">
 			<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Copy"))%>
 		</button>
 		<%}%>
 		<%if(scheme.isArchived()){%>
-		<button dojoType="dijit.form.Button" onClick='schemeAdmin.deleteScheme("<%=UtilMethods.webifyString(scheme.getId())%>")' iconClass="deleteIcon" type="button">
+        <button dojoType="dijit.form.Button" onClick='schemeAdmin.unArchiveScheme("<%=UtilMethods.webifyString(scheme.getId())%>")' iconClass="archiveIcon"  type="button">
+            <%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unarchive"))%>
+        </button>
+		<button dojoType="dijit.form.Button" onClick='schemeAdmin.deleteScheme("<%=UtilMethods.webifyString(scheme.getId())%>")' iconClass="deleteIcon" style="background:black;color:white" type="button">
 			<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete"))%>
 		</button>
-		<%}%>
+		<%}else{%>
+        <button dojoType="dijit.form.Button" onClick='schemeAdmin.archiveScheme("<%=UtilMethods.webifyString(scheme.getId())%>")' iconClass="archiveIcon"  type="button">
+            <%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Archive"))%>
+        </button>
+		<%} %>
+		&nbsp; &nbsp; 
+		<button dojoType="dijit.form.Button" onClick='schemeAdmin.saveAddEdit()' iconClass="saveIcon" type="button">
+            <%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save"))%>
+        </button>
 		<button dojoType="dijit.form.Button"
 				onClick='schemeAdmin.hideAddEdit()' class="dijitButtonFlat" type="button">
 			<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel"))%>

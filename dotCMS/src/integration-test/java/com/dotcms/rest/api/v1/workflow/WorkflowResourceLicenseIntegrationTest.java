@@ -22,11 +22,13 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.repackage.javax.ws.rs.container.AsyncResponse;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
 import com.dotcms.rest.ContentHelper;
@@ -165,9 +167,15 @@ public class WorkflowResourceLicenseIntegrationTest {
     public void Delete_Scheme_Invalid_License(){
         final WorkflowScheme savedScheme = createScheme(licenseWorkflowResource);
         final HttpServletRequest request1 = mock(HttpServletRequest.class);
-        final Response response = nonLicenseWorkflowResource.delete(request1,savedScheme.getId());
-        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
-        assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE,response.getHeaderString("access-control"));
+        final AsyncResponse asyncResponse = mock(AsyncResponse.class);
+        doAnswer(arg2 -> {
+            final Response response =  (Response) arg2;
+            assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
+            assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE,response.getHeaderString("access-control"));
+            return true;
+        }).when(asyncResponse).resume(Object.class);
+        nonLicenseWorkflowResource.deleteScheme(request1, asyncResponse, savedScheme.getId());
+
     }
 
     @Test

@@ -346,4 +346,13 @@ ol.wfStepsList li{padding:8px 16px;margin:0 10px; list-style:decimal;  list-styl
     	border:1px dotted silver;
 }
 
-
+.structure-content-type-listing{
+	padding:10px;border-bottom:1px solid silver;cursor: pointer;background: white;
+	
+}
+.structure-content-type-listing:hover {
+	background:#DBEBF9;
+	}
+.structure-content-type-listing a{
+    text-decoration:none;
+    }

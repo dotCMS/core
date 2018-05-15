@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.workflow;
 
+
 import static com.dotcms.rest.ResponseEntityView.OK;
 import static com.dotcms.util.CollectionsUtils.map;
 
@@ -13,6 +14,8 @@ import com.dotcms.repackage.javax.ws.rs.Path;
 import com.dotcms.repackage.javax.ws.rs.PathParam;
 import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.QueryParam;
+import com.dotcms.repackage.javax.ws.rs.container.AsyncResponse;
+import com.dotcms.repackage.javax.ws.rs.container.Suspended;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -1089,7 +1092,7 @@ public class WorkflowResource {
     }
 
     /**
-     * Deletes an existing scheme
+     * Deletes an existing scheme (the response is async)
      * @param request HttpServletRequest
      * @return Response
      */
@@ -1098,17 +1101,20 @@ public class WorkflowResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response delete(@Context final HttpServletRequest request,
-            @PathParam("schemeId") final String schemeId) {
+    public final void deleteScheme(@Context final HttpServletRequest request,
+                                       @Suspended final AsyncResponse asyncResponse,
+                                       @PathParam("schemeId") final String schemeId) {
+
         final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
         Logger.debug(this, "Deleting scheme with id: " + schemeId);
         try {
-            this.workflowHelper.delete(schemeId, initDataObject.getUser());
-            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+
+            ResponseUtil.handleAsyncResponse(
+                    this.workflowHelper.delete(schemeId, initDataObject.getUser()), asyncResponse);
         } catch (Exception e) {
             Logger.error(this.getClass(), "Exception attempting to delete schema identified by : " +schemeId + ", exception message: " + e.getMessage(), e);
-            return ResponseUtil.mapExceptionResponse(e);
+            asyncResponse.resume(ResponseUtil.mapExceptionResponse(e));
         }
-    }
+    } // deleteScheme.
 
 } // E:O:F:WorkflowResource.
