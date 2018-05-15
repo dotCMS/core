@@ -1,6 +1,8 @@
 package com.dotcms.rest.api.v1.authentication;
 
-import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotSubmitter;
+import com.dotcms.repackage.javax.ws.rs.container.AsyncResponse;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ErrorResponseHelper;
 import com.dotcms.rest.exception.SecurityException;
@@ -16,14 +18,13 @@ import com.liferay.portal.model.User;
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.text.MessageFormat;
-import java.util.Collections;
 import java.util.Locale;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
-import static com.dotcms.exception.ExceptionUtil.BAD_REQUEST_EXCEPTIONS;
-import static com.dotcms.exception.ExceptionUtil.NOT_FOUND_EXCEPTIONS;
-import static com.dotcms.exception.ExceptionUtil.SECURITY_EXCEPTIONS;
-import static com.dotcms.exception.ExceptionUtil.causedBy;
-import static com.dotcms.exception.ExceptionUtil.getRootCause;
+import static com.dotcms.exception.ExceptionUtil.*;
 
 /**
  * Just a helper to encapsulate AuthenticationResource functionality.
@@ -88,7 +89,7 @@ public class ResponseUtil implements Serializable {
      * @param e Exception
      * @return Response
      */
-    public static Response mapExceptionResponse(final Exception e){
+    public static Response mapExceptionResponse(final Throwable e){
         // case for non-authenticated users (bad credentials)
         if(causedBy(e, SecurityException.class)){
             return createNonAuthenticatedResponse(e);
@@ -125,7 +126,7 @@ public class ResponseUtil implements Serializable {
      * @param e Exception
      * @return Response
      */
-    private static Response createUnAuthorizedResponse (final Exception e) {
+    private static Response createUnAuthorizedResponse (final Throwable e) {
 
         SecurityLogger.logInfo(ResponseUtil.class, e.getMessage());
         return ExceptionMapperUtil.createResponse(e, Response.Status.FORBIDDEN);
@@ -136,10 +137,50 @@ public class ResponseUtil implements Serializable {
      * @param e Exception
      * @return Response
      */
-    private static Response createNonAuthenticatedResponse (final Exception e) {
+    private static Response createNonAuthenticatedResponse (final Throwable e) {
 
         SecurityLogger.logInfo(ResponseUtil.class, e.getMessage());
         return ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
     }
+
+    /**
+     * Handles the async response for a future
+     * @param future {@link Future}
+     * @param asyncResponse {@link AsyncResponse}
+     * @param <T>
+     */
+    public static <T> void  handleAsyncResponse (final Future<T> future, final AsyncResponse asyncResponse) {
+
+        handleAsyncResponse(() -> DotConcurrentFactory.get(future), asyncResponse);
+    } // handleAsyncResponse
+
+    /**
+     * Handles the async response for a supplier
+     * @param supplier {@link Supplier}
+     * @param asyncResponse {@link AsyncResponse}
+     * @param <T>
+     */
+    public static <T> void  handleAsyncResponse (final Supplier<T> supplier, final AsyncResponse asyncResponse) {
+
+        handleAsyncResponse(supplier, ResponseUtil::mapExceptionResponse, asyncResponse);
+    } // handleAsyncResponse
+
+    /**
+     * Handles the async response for a supplier
+     * @param supplier {@link Supplier}
+     * @param asyncResponse {@link AsyncResponse}
+     * @param <T>
+     */
+    public static <T> void  handleAsyncResponse (final Supplier<T> supplier, final Function<Throwable, Response> errorHandler, final AsyncResponse asyncResponse) {
+
+        final DotSubmitter dotSubmitter = DotConcurrentFactory.getInstance()
+                .getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
+        final CompletableFuture<T> completableFuture =
+                CompletableFuture.supplyAsync(supplier, dotSubmitter);
+
+        completableFuture.thenApply(asyncResponse::resume)
+                .exceptionally(e -> asyncResponse.resume(errorHandler.apply(e)));
+    } // handleAsyncResponse
+
 
 } // E:O:F:ResponseUtil.

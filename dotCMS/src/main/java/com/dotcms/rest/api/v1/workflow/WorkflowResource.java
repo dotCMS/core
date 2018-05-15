@@ -1,10 +1,6 @@
 package com.dotcms.rest.api.v1.workflow;
 
-import static com.dotcms.exception.ExceptionUtil.BAD_REQUEST_EXCEPTIONS;
-import static com.dotcms.exception.ExceptionUtil.NOT_FOUND_EXCEPTIONS;
-import static com.dotcms.exception.ExceptionUtil.SECURITY_EXCEPTIONS;
-import static com.dotcms.exception.ExceptionUtil.causedBy;
-import static com.dotcms.exception.ExceptionUtil.getRootCause;
+
 import static com.dotcms.rest.ResponseEntityView.OK;
 import static com.dotcms.util.CollectionsUtils.map;
 
@@ -18,20 +14,20 @@ import com.dotcms.repackage.javax.ws.rs.Path;
 import com.dotcms.repackage.javax.ws.rs.PathParam;
 import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.QueryParam;
+import com.dotcms.repackage.javax.ws.rs.container.AsyncResponse;
+import com.dotcms.repackage.javax.ws.rs.container.Suspended;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
-import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.IncludePermissions;
+import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.ForbiddenException;
-import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.workflow.form.FireActionForm;
 import com.dotcms.workflow.form.WorkflowActionForm;
 import com.dotcms.workflow.form.WorkflowActionStepBean;
@@ -51,7 +47,6 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
@@ -62,7 +57,6 @@ import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
@@ -479,13 +473,12 @@ public class WorkflowResource {
     public final Response deleteStep(@Context final HttpServletRequest request,
                                      @PathParam("stepId") final String stepId) {
 
-        this.webResource.init
+        final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
 
         try {
-
             Logger.debug(this, "Deleting the step: " + stepId);
-            this.workflowHelper.deleteStep(stepId);
+            this.workflowHelper.deleteStep(stepId, initDataObject.getUser());
             return Response.ok(new ResponseEntityView(OK)).build(); // 200
         } catch (final Exception e) {
             Logger.error(this.getClass(),
@@ -1099,7 +1092,7 @@ public class WorkflowResource {
     }
 
     /**
-     * Deletes an existing scheme
+     * Deletes an existing scheme (the response is async)
      * @param request HttpServletRequest
      * @return Response
      */
@@ -1108,17 +1101,20 @@ public class WorkflowResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response delete(@Context final HttpServletRequest request,
-            @PathParam("schemeId") final String schemeId) {
+    public final void deleteScheme(@Context final HttpServletRequest request,
+                                       @Suspended final AsyncResponse asyncResponse,
+                                       @PathParam("schemeId") final String schemeId) {
+
         final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
         Logger.debug(this, "Deleting scheme with id: " + schemeId);
         try {
-            this.workflowHelper.delete(schemeId, initDataObject.getUser());
-            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+
+            ResponseUtil.handleAsyncResponse(
+                    this.workflowHelper.delete(schemeId, initDataObject.getUser()), asyncResponse);
         } catch (Exception e) {
             Logger.error(this.getClass(), "Exception attempting to delete schema identified by : " +schemeId + ", exception message: " + e.getMessage(), e);
-            return ResponseUtil.mapExceptionResponse(e);
+            asyncResponse.resume(ResponseUtil.mapExceptionResponse(e));
         }
-    }
+    } // deleteScheme.
 
 } // E:O:F:WorkflowResource.

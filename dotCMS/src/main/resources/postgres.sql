@@ -1351,7 +1351,8 @@ create table relationship (
    parent_required bool,
    child_required bool,
    fixed bool,
-   primary key (inode)
+   primary key (inode),
+   unique (relation_type_value)
 );
 create table folder (
    inode varchar(36) not null,

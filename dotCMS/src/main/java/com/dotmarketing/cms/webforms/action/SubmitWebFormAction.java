@@ -1,7 +1,6 @@
 package com.dotmarketing.cms.webforms.action;
 
 import com.dotcms.enterprise.PasswordFactoryProxy;
-import com.dotcms.repackage.nl.captcha.Captcha;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.UserProxy;
@@ -80,54 +79,6 @@ public final class SubmitWebFormAction extends SecureAction {
 			return null;
 			
 		}
-
-		//Checking for captcha
-		boolean useCaptcha = Config.getBooleanProperty("FORCE_CAPTCHA",true);
-		if(!useCaptcha){
-			useCaptcha = new Boolean(request.getParameter("useCaptcha")).booleanValue();
-		}
-		
-		String captcha = request.getParameter("captcha");
-		if (useCaptcha) {
-		    Captcha captchaObj = (Captcha) session.getAttribute(Captcha.NAME);
-			//We need to remove the captcha info from the session.
-			session.removeAttribute(Captcha.NAME);
-
-            String captchaSession=captchaObj!=null ? captchaObj.getAnswer() : null;
-            
-			if(captcha ==null && Config.getBooleanProperty("FORCE_CAPTCHA",true)){
-				response.getWriter().write("Captcha is required to submit this form ( FORCE_CAPTCHA=true ).<br>To change this, edit the dotmarketing-config.properties and set FORCE_CAPTCHA=false");
-				return null;
-			}
-			
-			
-			if(!UtilMethods.isSet(captcha) || !UtilMethods.isSet(captchaSession) || !captcha.equals(captchaSession)) {
-				errors.add(Globals.ERROR_KEY, new ActionMessage("message.contentlet.required", "Validation Image"));
-				request.setAttribute(Globals.ERROR_KEY, errors);
-				session.setAttribute(Globals.ERROR_KEY, errors);
-				String queryString = request.getQueryString();
-				String invalidCaptchaURL = request.getParameter("invalidCaptchaReturnUrl");
-				if(!UtilMethods.isSet(invalidCaptchaURL)) {
-					invalidCaptchaURL = errorURL;
-				}
-				invalidCaptchaURL = invalidCaptchaURL.replaceAll("\\s", " ");
-				ActionForward af = new ActionForward();
-					af.setRedirect(true);
-					if (UtilMethods.isSet(queryString)) {
-						
-						af.setPath(invalidCaptchaURL + "?" + queryString + "&error=Validation-Image");
-					} else {
-						af.setPath(invalidCaptchaURL + "?error=Validation-Image");
-					}
-			
-
-				
-				return af;
-			}
-			
-		}
-
-
 
 		Map<String, Object> parameters = null;
 		if (request instanceof UploadServletRequest)

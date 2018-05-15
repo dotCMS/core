@@ -85,8 +85,8 @@ public class WfStepAjax extends WfBaseAction {
 		final String stepId = request.getParameter("stepId");
 
 		try {
-
-			this.workflowHelper.deleteStep (stepId);
+			final User user   = this.userWebAPI.getUser(request);
+			this.workflowHelper.deleteStep (stepId, user);
 		} catch (Exception e) {
 			Logger.error(this.getClass(),e.getMessage());
 			Logger.debug(this.getClass(),e.getMessage(),e);
