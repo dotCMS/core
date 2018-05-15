@@ -9,7 +9,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 

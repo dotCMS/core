@@ -22,6 +22,8 @@ public interface RelationshipAPI {
 
   List<Relationship> byContentType(ContentTypeIf type) throws DotDataException;
 
+  List<Relationship> byContentType(ContentTypeIf type, String orderBy);
+
   List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet) throws DotDataException;
 
   List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet,
