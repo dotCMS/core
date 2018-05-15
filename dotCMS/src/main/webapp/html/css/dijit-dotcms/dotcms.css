@@ -6961,7 +6961,7 @@ select[multiple]:hover {
   border-bottom: 1px solid #ECEDEE;
   border-collapse: collapse;
   font-size: 13px;
-  margin: 0 auto 64px auto;
+  margin: 0 auto 16px auto;
   width: 100%;
 }
 #listing-table p:last-child, .dojoxUploaderFileListTable p:last-child, .listingTable p:last-child {
@@ -9888,13 +9888,13 @@ dd .buttonCaption {
 
 /* PORTLET STYLES 2.0 */
 .portlet-main {
-  padding: 16px 0;
+  padding: 24px 0;
 }
 .portlet-main .dijitTabPaneWrapper .dijitContentPane .dijitContentPane {
   padding: 0;
 }
 .portlet-sidebar {
-  padding: 16px 16px 0;
+  padding: 37px 16px 0 16px;
 }
 .portlet-sidebar-wrapper {
   background-color: #FAFAFA;
