@@ -3720,9 +3720,16 @@ public class ContentletAPITest extends ContentletBaseTest {
         } finally {
             contentletAPI.archive(blogContent, user, false);
             contentletAPI.delete(blogContent, user, false);
-            for(Contentlet c : relatedContent){
-                contentletAPI.archive(c, user, false);
-                contentletAPI.delete(c, user, false);
+
+            if(UtilMethods.isSet(relatedContent)) {
+                relatedContent.forEach(content -> {
+                    try {
+                        contentletAPI.archive(content, user, false);
+                        contentletAPI.delete(content, user, false);
+                    } catch (DotDataException | DotSecurityException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
             }
         }
     }
