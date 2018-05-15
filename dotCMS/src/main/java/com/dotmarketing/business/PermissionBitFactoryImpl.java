@@ -1120,7 +1120,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						parentHost = hostAPI.findParentHost((Folder)permissionable, APILocator.getUserAPI().getSystemUser(), false);
 					} catch (DotSecurityException e) {
 						Logger.error(this, e.getMessage(), e);
-						//If this initialization fails we better bubble up the exception. otherwise will still fail with a NPE.
 					}
 				else {
 					parentHost = (Contentlet) permissionable;
