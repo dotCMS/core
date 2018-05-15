@@ -1353,7 +1353,8 @@ create table relationship (
    parent_required number(1,0),
    child_required number(1,0),
    fixed number(1,0),
-   primary key (inode)
+   primary key (inode),
+   unique (relation_type_value)
 );
 create table folder (
    inode varchar2(36) not null,
