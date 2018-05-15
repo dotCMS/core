@@ -2832,8 +2832,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
         synchronized (syncMe) {
 
             if(contentRelationships==null) {
-                contentRelationships = getExistingContentRelationships(contentlet);
+                contentRelationships = getAllRelationships(contentlet);
             }
+
 
             if(cats==null) {
                 cats = getExistingContentCategories(contentlet);
@@ -3557,30 +3558,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
             cats = categoryAPI.getParents(workingCon, APILocator.getUserAPI().getSystemUser(), true);
         }
         return cats;
-    }
-
-    private ContentletRelationships getExistingContentRelationships(Contentlet contentlet)
-        throws DotDataException, DotSecurityException {
-        Map<Relationship, List<Contentlet>> contentRelationships;
-
-        Identifier ident=null;
-        if(InodeUtils.isSet(contentlet.getIdentifier()))
-            ident = APILocator.getIdentifierAPI().find(contentlet);
-
-        //If contentlet is not new
-        if(ident!=null && InodeUtils.isSet(ident.getId()) && contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) != null) {
-            Contentlet workingCon = findWorkingContentlet(contentlet);
-            if(workingCon != null) {
-                contentRelationships = findContentRelationships(workingCon);
-            } else {
-                contentRelationships = findContentRelationships(contentlet);
-            }
-        } else {
-            contentRelationships = findContentRelationships(contentlet);
-        }
-
-        return getContentletRelationshipsFromMap(contentlet, contentRelationships);
-
     }
 
     private void throwSecurityException(final Contentlet contentlet,
