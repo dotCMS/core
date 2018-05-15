@@ -3660,6 +3660,8 @@ public class ContentletAPITest extends ContentletBaseTest {
             blogContent = contentletAPI.checkin(blogContent, relationships, categories, null, user,
                 false);
 
+            contentletAPI.isInodeIndexed(blogContent.getInode());
+
             List<Contentlet> relatedContentFromDB = relationshipAPI.dbRelatedContent(relationship, blogContent);
 
             assertTrue(relatedContentFromDB.containsAll(relatedContent));
@@ -3697,6 +3699,8 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             blogContent = contentletAPI.checkin(blogContent, relationships,
                 categories, null, user, false, false);
+
+            contentletAPI.isInodeIndexed(blogContent.getInode());;
 
             Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
 
@@ -3743,6 +3747,8 @@ public class ContentletAPITest extends ContentletBaseTest {
             blogContent = contentletAPI.checkin(blogContent, relationshipsMap, categories,
                 null, user,false);
 
+            contentletAPI.isInodeIndexed(blogContent.getInode());
+
             Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
 
             Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent,
@@ -3787,6 +3793,8 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             blogContent = contentletAPI.checkin(blogContent, relationshipsMap, categories, user,false);
 
+            contentletAPI.isInodeIndexed(blogContent.getInode());
+
             Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
 
             Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent,
@@ -3830,6 +3838,8 @@ public class ContentletAPITest extends ContentletBaseTest {
                 relationships.getRelationshipsRecords().get(0).getRecords());
 
             blogContent = contentletAPI.checkin(blogContent, relationshipsMap, categories, user,false);
+
+            contentletAPI.isInodeIndexed(blogContent.getInode());
 
             Contentlet reCheckedinContent = contentletAPI.checkinWithoutVersioning(blogContent,
                 null, null, null, user, false);
@@ -3879,6 +3889,8 @@ public class ContentletAPITest extends ContentletBaseTest {
             blogContent = contentletAPI.checkin(blogContent, relationshipsMap, categories,
                 null, user,false);
 
+            contentletAPI.isInodeIndexed(blogContent.getInode());
+
             Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
 
             Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent,
@@ -3920,6 +3932,8 @@ public class ContentletAPITest extends ContentletBaseTest {
                 relationships.getRelationshipsRecords().get(0).getRecords());
 
             blogContent = contentletAPI.checkin(blogContent, relationshipsMap, categories, user,false);
+
+            contentletAPI.isInodeIndexed(blogContent.getInode());
 
             Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
 
@@ -3964,6 +3978,8 @@ public class ContentletAPITest extends ContentletBaseTest {
                 relationships.getRelationshipsRecords().get(0).getRecords());
 
             blogContent = contentletAPI.checkin(blogContent, relationshipsMap, categories, user,false);
+
+            contentletAPI.isInodeIndexed(blogContent.getInode());
 
             Contentlet reCheckedinContent = contentletAPI.checkinWithoutVersioning(blogContent,
                 new HashMap<>(), null, null, user, false);
