@@ -21,7 +21,6 @@ public class WfSchemeAjax extends WfBaseAction {
 
     private final UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
 
-
     public void action(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {}
 
     public void save(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -42,8 +41,8 @@ public class WfSchemeAjax extends WfBaseAction {
             final User user = this.userWebAPI.getUser(request);
             final WorkflowHelper helper = WorkflowHelper.getInstance();
 
-            String x = saveScheme(schemeId, schemeForm, user);
-            response.getWriter().println(x);
+            String responseMessage = saveScheme(schemeId, schemeForm, user);
+            response.getWriter().println(responseMessage);
         } catch (Exception e) {
             Logger.error(this.getClass(), e.getMessage(), e);
             writeError(response, e.getMessage());
@@ -55,11 +54,9 @@ public class WfSchemeAjax extends WfBaseAction {
     private String saveScheme(String schemeId, WorkflowSchemeForm schemeForm, User user)
             throws DotDataException, AlreadyExistException, DotSecurityException {
 
-
         final WorkflowHelper helper = WorkflowHelper.getInstance();
         helper.saveOrUpdate(schemeId, schemeForm, user);
         return "SUCCESS";
     }
-
 
 }
