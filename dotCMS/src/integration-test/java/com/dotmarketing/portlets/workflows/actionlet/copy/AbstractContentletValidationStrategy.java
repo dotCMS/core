@@ -19,7 +19,9 @@ import org.apache.commons.lang.StringUtils;
 
 public abstract class AbstractContentletValidationStrategy {
 
-    public final void apply(Contentlet original, Contentlet copy) {
+    private static final String SYSYEM = "system";
+
+    public final void apply(final Contentlet original, final Contentlet copy) {
         final Map<String, AssertionStrategy> assertionsMap = getAssertionsToApply();
         final Set<String> propertyNames = assertionsMap.keySet();
         for (final String propertyName : propertyNames) {
@@ -65,7 +67,7 @@ public abstract class AbstractContentletValidationStrategy {
         final String originalModUser = (String) original.get("modUser");
         final String copyModUser = (String) copy.get("modUser");
         assertEquals(copyModUser, "system");
-        if (!"system".equals(originalModUser)) {
+        if (!SYSYEM.equals(originalModUser)) {
             assertNotEquals("modUser", originalModUser, copyModUser);
         }
     };
@@ -130,7 +132,7 @@ public abstract class AbstractContentletValidationStrategy {
         assertEquals("email", originalValue, copyValue);
     };
 
-    private ImmutableMap<String, AssertionStrategy> commonAssertionsMap = ImmutableMap.<String, AssertionStrategy>builder()
+    private final ImmutableMap<String, AssertionStrategy> commonAssertionsMap = ImmutableMap.<String, AssertionStrategy>builder()
             .put(Contentlet.IDENTIFIER_KEY, notEqualIdentifierAssertion)
             .put(Contentlet.INODE_KEY, equalInodeAssertion)
             .put(Contentlet.LANGUAGEID_KEY, languageAssertion)

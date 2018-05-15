@@ -144,7 +144,7 @@ public class CopyActionletTest extends BaseWorkflowIntegrationTest {
         APILocator.getLocalSystemEventsAPI()
                 .subscribe(CopyActionletEvent.class, new EventSubscriber<CopyActionletEvent>() {
                     @Override
-                    public void notify(CopyActionletEvent event) {
+                    public void notify(final CopyActionletEvent event) {
                         contentletCopy = event.getCopyContentlet();
                     }
                 });
@@ -206,7 +206,7 @@ public class CopyActionletTest extends BaseWorkflowIntegrationTest {
 
 
     @Test
-    public void testCopyContent() throws Exception {
+    public void Test_Copy_Content_Expect_Success() throws Exception {
         final User systemUser = APILocator.systemUser();
         final Map<Contentlet, Contentlet> originalAndCopyMap = new HashMap<>();
         try {

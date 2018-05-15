@@ -3,9 +3,6 @@ package com.dotcms.content.elasticsearch.business;
 import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
 
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
-import com.dotcms.api.system.event.Payload;
-import com.dotcms.api.system.event.SystemEventType;
-import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.DotMappingException;
@@ -14,6 +11,7 @@ import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotcms.notifications.bean.NotificationLevel;
@@ -5166,7 +5164,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             newContentlet.setHost(host != null?host.getIdentifier(): (folder!=null? folder.getHostId() : contentlet.getHost()));
             newContentlet.setFolder(folder != null?folder.getInode(): null);
             newContentlet.setLowIndexPriority(contentlet.isLowIndexPriority());
-            if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET){
+            if(BaseContentType.FILEASSET.equals(contentlet.getContentType().baseType())){
 
                 final String newName = generateCopyName(newContentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD), copySuffix);
                 newContentlet.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, newName);
@@ -5186,7 +5184,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     try {
                         srcFile = getBinaryFile(contentlet.getInode(), tempField.getVelocityVarName(), user);
                         if(srcFile != null) {
-                            if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET){
+                            if(BaseContentType.FILEASSET.equals(contentlet.getContentType().baseType())){
                                 fieldValue = generateCopyName(srcFile.getName(), copySuffix);
                             }else{
                                 fieldValue=srcFile.getName();
@@ -5235,7 +5233,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             //Set URL in the new contentlet because is needed to create Identifier in EscontentletAPI.
-            if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE){
+            if(BaseContentType.HTMLPAGE.equals(contentlet.getContentType().baseType())){
                 Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
                 if(UtilMethods.isSet(identifier) && UtilMethods.isSet(identifier.getAssetName())){
                     final String newAssetName = generateCopyName(identifier.getAssetName(), copySuffix);
