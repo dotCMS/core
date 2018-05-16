@@ -3,35 +3,30 @@ package com.dotcms.util.pagination;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
 
-import java.util.Collection;
+import java.io.Serializable;
 import java.util.Map;
+import static com.dotcms.util.CollectionsUtils.map;
+
 
 /**
  * Define the methods to get handle a pagination request
  */
 public interface Paginator<T> {
 
-
+    public static final String ORDER_BY_PARAM_NAME = "ORDER_BY";
+    public static final String ORDER_DIRECTION_PARAM_NAME = "ORDER_DIRECTION";
+    public static final String DEFAULT_FILTER_PARAM_NAME = "FILTER";
+    
     /**
      * Return a set of items for a page
      *
      * @param user user to filter
-     * @param filter extra filter parameter
      * @param limit Number of items to return
      * @param offset offset
-     * @param orderby field to order
-     * @param direction If the order is Asc or Desc
+     * @param params extra params for pagination, if include field_name: value then the result is filter for the value
+     *               also can include orderBy and orderDirection parameters
      * @return
      */
-    public abstract PaginatedArrayList<T> getItems(User user, String filter, int limit, int offset,
-                                                   String orderby, OrderDirection direction, Map<String, Object> extraParams) throws PaginationException;
-
-    default PaginatedArrayList<T> getItems(User user, String filter, int limit, int offset){
-        return getItems(user, filter,  limit,  offset, null, null);
-    }
-
-    default PaginatedArrayList<T> getItems(User user, String filter, int limit, int offset, String orderby,
-                                   OrderDirection direction){
-        return getItems(user, filter,  limit,  offset, orderby, direction, null);
-    }
+    public abstract PaginatedArrayList<T> getItems(User user, int limit, int offset, Map<String, Object> params)
+            throws PaginationException;
 }

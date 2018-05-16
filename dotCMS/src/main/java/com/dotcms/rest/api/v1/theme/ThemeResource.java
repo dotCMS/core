@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.theme;
 
 import com.dotcms.repackage.com.fasterxml.jackson.core.JsonProcessingException;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectWriter;
+import com.dotcms.util.PaginationUtil;
 import com.dotmarketing.portlets.htmlpages.theme.business.ThemeSerializer;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
@@ -69,7 +70,10 @@ public class ThemeResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findThemes(@Context final HttpServletRequest request,
-                                     @QueryParam("hostId") final String hostId) {
+                                     @QueryParam("hostId") final String hostId,
+                                     //@QueryParam(PaginationUtil.PAGE) final int page,
+                                     @QueryParam(PaginationUtil.PER_PAGE) @DefaultValue("-1") final int perPage,
+                                     @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) String direction) {
 
         Logger.debug(this,
                 "Getting the themes for the hostId: " + hostId);
