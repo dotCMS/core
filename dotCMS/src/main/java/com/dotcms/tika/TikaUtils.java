@@ -1,6 +1,7 @@
 package com.dotcms.tika;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.osgi.OSGIConstants;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
@@ -10,7 +11,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.OSGIUtil;
@@ -131,7 +131,7 @@ public class TikaUtils {
     public boolean generateMetaData(Contentlet contentlet, boolean force)
             throws DotSecurityException, DotDataException {
 
-        if (contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) {
+        if (BaseContentType.FILEASSET.equals(contentlet.getContentType().baseType())) {
 
             //See if we have content metadata file
             final File contentMeta = APILocator.getFileAssetAPI()
