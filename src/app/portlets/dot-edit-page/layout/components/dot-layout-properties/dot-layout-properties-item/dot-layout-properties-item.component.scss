@@ -12,37 +12,32 @@
 
     &.property-item__footer {
         svg {
-            transform: rotate(180deg);
+            transform: rotate(90deg);
         }
     }
 
     &.property-item__sidebar-left {
         svg {
-            transform: rotate(270deg);
+            transform: rotate(180deg);
         }
     }
 
-    &.property-item__sidebar-right {
+    &.property-item__header {
         svg {
-            transform: rotate(90deg);
+            transform: rotate(270deg);
+
         }
-    }
-}
-
-.property-item__icon {
-    width: 24px;
-    height: 24px;
-
-    & > g {
-        stroke: $gray-light;
-        fill: none;
     }
 }
 
 .property-item__icon--selected {
-    & > g {
-        stroke: $white;
-        fill: $brand-primary;
+    rect {
+        stroke: $blue;
+        fill: $blue-lighter;
+    }
+
+    path {
+        fill: $blue
     }
 }
 
