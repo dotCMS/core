@@ -11,6 +11,7 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Relationship;
 
+import com.dotmarketing.util.UUIDGenerator;
 import java.util.List;
 
 // THIS IS A FAKE API SO PEOPLE CAN FIND AND USE THE RELATIONSHIPFACTORY
@@ -117,6 +118,13 @@ public class RelationshipAPIImpl implements RelationshipAPI {
     @WrapInTransaction
     @Override
     public void save(Relationship relationship, String inode) throws DotDataException {
+        this.relationshipFactory.save(relationship, inode);
+    }
+
+    @WrapInTransaction
+    @Override
+    public void create(Relationship relationship) throws DotDataException {
+        final String inode = UUIDGenerator.generateUuid();
         this.relationshipFactory.save(relationship, inode);
     }
 

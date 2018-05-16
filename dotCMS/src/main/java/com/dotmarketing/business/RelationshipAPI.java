@@ -41,9 +41,26 @@ public interface RelationshipAPI {
   List<Tree> relatedContentTrees(Relationship relationship, Contentlet contentlet, boolean hasParent)
       throws DotDataException;
 
+
+  /**
+   * Save or Update the relationship depending on whether the relationship inode exists
+   * @param relationship
+   * @throws DotDataException
+   */
   void save(Relationship relationship) throws DotDataException;
 
+  /**
+   * Saves the relationship with the inode provided
+   * @param relationship
+   * @throws DotDataException
+   */
   void save(Relationship relationship, String inode) throws DotDataException;
+
+  /**
+   * Creates a new relationship, generating a new inode as primary key
+   * @throws DotDataException
+   */
+  void create(Relationship relationship) throws DotDataException;
 
   boolean sameParentAndChild(Relationship rel);
 
