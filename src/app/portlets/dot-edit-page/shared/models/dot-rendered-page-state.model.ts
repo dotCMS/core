@@ -22,7 +22,7 @@ export class DotRenderedPageState {
         this._state = {
             locked: locked,
             lockedByAnotherUser: lockedByAnotherUser,
-            mode: mode || this.getDefaultMode(lockedByAnotherUser, dotRenderedPage.page, locked)
+            mode: mode || this.getDefaultMode(lockedByAnotherUser, locked)
         };
     }
 
@@ -66,11 +66,11 @@ export class DotRenderedPageState {
         this.dotRenderedPage = dotRenderedPageState;
     }
 
-    private getPageMode(page: DotPage, locked: boolean, lockedByAnotherUser: boolean): PageMode {
+    private getPageMode(locked: boolean, lockedByAnotherUser: boolean): PageMode {
         return (locked && !lockedByAnotherUser) ? PageMode.EDIT : PageMode.PREVIEW;
     }
 
-    private getDefaultMode(lockedByAnotherUser: boolean, page: DotPage, locked: boolean): PageMode {
-        return lockedByAnotherUser ? PageMode.PREVIEW : this.getPageMode(page, locked, lockedByAnotherUser);
+    private getDefaultMode(lockedByAnotherUser: boolean, locked: boolean): PageMode {
+        return lockedByAnotherUser ? PageMode.PREVIEW : this.getPageMode(locked, lockedByAnotherUser);
     }
 }

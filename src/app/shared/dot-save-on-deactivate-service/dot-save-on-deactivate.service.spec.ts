@@ -1,7 +1,7 @@
 import { DotSaveOnDeactivateService } from './dot-save-on-deactivate.service';
 import { DotDialogService } from '../../api/services/dot-dialog/dot-dialog.service';
 import { DOTTestBed } from '../../test/dot-test-bed';
-import { LoginService, ResponseView } from 'dotcms-js/dotcms-js';
+import { LoginService } from 'dotcms-js/dotcms-js';
 import { LoginServiceMock } from '../../test/login-service.mock';
 import { OnSaveDeactivate } from './save-on-deactivate';
 import { DotDialog } from '../models/dot-confirmation/dot-confirmation.model';

@@ -6,7 +6,7 @@ import { DotActionButtonModule } from './../../../../../../view/components/_comm
 import { mockDotRenderedPage } from './../../../../../../test/dot-rendered-page.mock';
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { DebugElement, Component, Input } from '@angular/core';
+import { DebugElement } from '@angular/core';
 
 import { DotLayoutDesignerComponent } from './dot-layout-designer.component';
 import { FormBuilder } from '@angular/forms';

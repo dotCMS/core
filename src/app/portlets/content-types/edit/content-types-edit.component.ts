@@ -189,7 +189,7 @@ export class ContentTypesEditComponent implements OnInit {
     }
 
     private handleHttpError(err: ResponseView) {
-        this.dotHttpErrorManagerService.handle(err).subscribe((handled: DotHttpErrorHandled) => {
+        this.dotHttpErrorManagerService.handle(err).subscribe((_handled: DotHttpErrorHandled) => {
             this.dotRouterService.gotoPortlet('/content-types-angular');
         });
     }

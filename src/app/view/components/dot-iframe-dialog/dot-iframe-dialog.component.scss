@@ -1,0 +1,23 @@
+.dialog ::ng-deep {
+    .ui-dialog {
+        width: 90%;
+
+        .ui-dialog-titlebar {
+            padding: 0;
+        }
+
+        .ui-dialog-content {
+            height: 100% !important;
+            padding: 0;
+        }
+
+        .ui-dialog-titlebar-close {
+            display: none;
+        }
+    }
+}
+
+.dialog__iframe {
+    width: 100%;
+    height: 100%;
+}

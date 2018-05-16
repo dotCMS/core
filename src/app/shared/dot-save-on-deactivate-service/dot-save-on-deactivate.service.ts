@@ -9,7 +9,7 @@ import { DotDialogService } from '../../api/services/dot-dialog/dot-dialog.servi
 export class DotSaveOnDeactivateService implements CanDeactivate<OnSaveDeactivate> {
     constructor(private dotDialogService: DotDialogService) {}
 
-    canDeactivate(component: OnSaveDeactivate, route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> {
+    canDeactivate(component: OnSaveDeactivate, _route: ActivatedRouteSnapshot, _state: RouterStateSnapshot): Observable<boolean> {
         if (component.shouldSaveBefore()) {
             return Observable.create((observer: Observer<boolean>) => {
                 this.dotDialogService.confirm({

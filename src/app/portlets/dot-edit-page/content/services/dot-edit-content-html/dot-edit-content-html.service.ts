@@ -13,7 +13,7 @@ import { DotPageContent } from '../../../shared/models/dot-page-content.model';
 import { DotDialogService } from '../../../../../api/services/dot-dialog/dot-dialog.service';
 import { DotMessageService } from '../../../../../api/services/dot-messages-service';
 
-enum Action {
+export enum DotContentletAction {
     EDIT,
     ADD
 }
@@ -27,7 +27,7 @@ export class DotEditContentHtmlService {
 
     currentContainer: DotPageContainer;
 
-    private currentAction: Action;
+    private currentAction: DotContentletAction;
 
     constructor(
         private dotContainerContentletService: DotContainerContentletService,
@@ -151,7 +151,7 @@ export class DotEditContentHtmlService {
                 .getContentletToContainer(this.currentContainer, contentlet)
                 .subscribe((contentletHtml: string) => {
                     this.renderHTMLToContentlet(contentletEl, contentletHtml);
-                    this.currentContainer = null;
+                    this.currentAction = DotContentletAction.EDIT;
                 });
         }
     }
@@ -164,7 +164,7 @@ export class DotEditContentHtmlService {
      */
     setContainterToAppendContentlet(pageContainer: DotPageContainer): void {
         this.currentContainer = pageContainer;
-        this.currentAction = Action.ADD;
+        this.currentAction = DotContentletAction.ADD;
     }
 
     /**
@@ -175,7 +175,7 @@ export class DotEditContentHtmlService {
      */
     setContainterToEditContentlet(pageContainer: DotPageContainer): void {
         this.currentContainer = pageContainer;
-        this.currentAction = Action.EDIT;
+        this.currentAction = DotContentletAction.EDIT;
     }
 
     /**
@@ -372,31 +372,22 @@ export class DotEditContentHtmlService {
         const contentletEventsMap = {
             // When an user create or edit a contentlet from the jsp
             save: (contentletEvent: any) => {
-                if (this.currentAction === Action.ADD) {
+                if (this.currentAction === DotContentletAction.ADD) {
                     this.renderAddedContentlet(contentletEvent.data);
-                } else if (this.currentAction === Action.EDIT) {
+                } else if (this.currentAction === DotContentletAction.EDIT) {
                     this.renderEditedContentlet(contentletEvent.data);
                 }
-                this.iframeActions.next({
-                    name: 'close'
-                });
             },
             // When a user select a content from the search jsp
             select: (contentletEvent: any) => {
                 this.renderAddedContentlet(contentletEvent.data);
                 this.iframeActions.next({
-                    name: 'close'
+                    name: 'select'
                 });
             },
             // When a user drang and drop a contentlet in the iframe
             relocate: (contentletEvent: any) => {
                 this.renderRelocatedContentlet(contentletEvent.data);
-            },
-            // When user cancel the edition of a contentlet.
-            cancel: (_contentletEvent: any) => {
-                this.iframeActions.next({
-                    name: 'close'
-                });
             }
         };
 

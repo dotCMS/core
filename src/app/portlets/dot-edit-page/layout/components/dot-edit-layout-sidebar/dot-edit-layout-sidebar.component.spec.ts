@@ -1,12 +1,11 @@
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { Component, DebugElement } from '@angular/core';
-import { ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { DotContainerSelectorModule } from '../../../../../view/components/dot-container-selector/dot-container-selector.module';
 import { DotEditLayoutSidebarComponent } from './dot-edit-layout-sidebar.component';
 import { DotEditLayoutService } from '../../../shared/services/dot-edit-layout.service';
-import { DotEventsService } from '../../../../../api/services/dot-events/dot-events.service';
 import { DotLayoutSideBar } from '../../../shared/models/dot-layout-sidebar.model';
 import { FormControl, FormGroup } from '@angular/forms';
 import { DotMessageService } from '../../../../../api/services/dot-messages-service';

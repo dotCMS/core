@@ -20,33 +20,31 @@ describe('IframeComponent', () => {
     let iframeEl: DebugElement;
     let dotIframeService: DotIframeService;
 
-    beforeEach(
-        async(() => {
-            DOTTestBed.configureTestingModule({
-                declarations: [IframeComponent, DotLoadingIndicatorComponent, SafePipe],
-                imports: [RouterTestingModule],
-                providers: [
-                    DotLoadingIndicatorService,
-                    IframeOverlayService,
-                    {
-                        provide: LoginService,
-                        useClass: LoginServiceMock
-                    }
-                ]
-            });
+    beforeEach(async(() => {
+        DOTTestBed.configureTestingModule({
+            declarations: [IframeComponent, DotLoadingIndicatorComponent, SafePipe],
+            imports: [RouterTestingModule],
+            providers: [
+                DotLoadingIndicatorService,
+                IframeOverlayService,
+                {
+                    provide: LoginService,
+                    useClass: LoginServiceMock
+                }
+            ]
+        });
 
-            fixture = DOTTestBed.createComponent(IframeComponent);
-            comp = fixture.componentInstance;
-            de = fixture.debugElement;
+        fixture = DOTTestBed.createComponent(IframeComponent);
+        comp = fixture.componentInstance;
+        de = fixture.debugElement;
 
-            dotIframeService = de.injector.get(DotIframeService);
+        dotIframeService = de.injector.get(DotIframeService);
 
-            comp.isLoading = false;
-            comp.src = 'etc/etc?hello=world';
-            fixture.detectChanges();
-            iframeEl = de.query(By.css('iframe'));
-        })
-    );
+        comp.isLoading = false;
+        comp.src = 'etc/etc?hello=world';
+        fixture.detectChanges();
+        iframeEl = de.query(By.css('iframe'));
+    }));
 
     it('should have iframe element', () => {
         expect(iframeEl).toBeTruthy();
@@ -74,4 +72,45 @@ describe('IframeComponent', () => {
         expect(comp.iframeElement.nativeElement.contentWindow.location.reload).toHaveBeenCalledTimes(1);
     });
 
+    describe('bind iframe events', () => {
+        beforeEach(() => {
+            comp.iframeElement.nativeElement = {
+                contentWindow: {
+                    document: {
+                        body: {
+                            innerHTML: '<html></html>'
+                        },
+                        addEventListener: jasmine.createSpy('docAddEventListener'),
+                        removeEventListener: jasmine.createSpy('docRemoveEventListener')
+                    },
+                    addEventListener: jasmine.createSpy('addEventListener'),
+                    removeEventListener: jasmine.createSpy('removeEventListener')
+                }
+            };
+        });
+
+        it('should remove and add listener on load', () => {
+            iframeEl.triggerEventHandler('load', {});
+
+            expect(comp.iframeElement.nativeElement.contentWindow.removeEventListener).toHaveBeenCalledWith(
+                'keydown',
+                jasmine.any(Function)
+            );
+            expect(comp.iframeElement.nativeElement.contentWindow.document.removeEventListener).toHaveBeenCalledWith(
+                'ng-event',
+                jasmine.any(Function)
+            );
+
+            expect(comp.iframeElement.nativeElement.contentWindow.addEventListener).toHaveBeenCalledWith(
+                'keydown',
+                jasmine.any(Function)
+            );
+            expect(comp.iframeElement.nativeElement.contentWindow.document.addEventListener).toHaveBeenCalledWith(
+                'ng-event',
+                jasmine.any(Function)
+            );
+        });
+    });
+
+    xit('should trigger keydown', () => {});
 });

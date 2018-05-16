@@ -7,7 +7,7 @@ import { Observable } from 'rxjs/Observable';
 import { ResponseView, LoginService, HttpCode } from 'dotcms-js/dotcms-js';
 
 import { DotDialogService } from '../dot-dialog';
-import { Response, Headers } from '@angular/http';
+import { Response } from '@angular/http';
 import { take, switchMap } from 'rxjs/operators';
 
 export interface DotHttpErrorHandled {

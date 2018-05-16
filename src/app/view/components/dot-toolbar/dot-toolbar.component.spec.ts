@@ -9,7 +9,6 @@ import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.s
 import { DotNavigationService } from '../dot-navigation/dot-navigation.service';
 import { SiteServiceMock, mockSites } from '../../../test/site-service.mock';
 import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
-import { SiteSelectorComponent } from '../../../view/components/_common/site-selector/site-selector.component';
 
 @Injectable()
 class MockDotNavigationService {}
@@ -48,11 +47,6 @@ class MockToolbarUsersComponent {}
     template: ''
 })
 class MockToolbarAddContentletComponent {}
-
-@Injectable()
-class MockSiteService {
-    switchSite() {}
-}
 
 @Injectable()
 class MockDotRouterService {

@@ -10,6 +10,7 @@ import { DotContentletService } from '../../../../../api/services/dot-contentlet
 import { DotLoadingIndicatorService } from '../dot-loading-indicator/dot-loading-indicator.service';
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { DotRouterService } from '../../../../../api/services/dot-router/dot-router.service';
+import { DotIframeEventsHandler } from './services/iframe-events-handler.service';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
@@ -20,17 +21,19 @@ export class IframePortletLegacyComponent implements OnInit {
     url: BehaviorSubject<string> = new BehaviorSubject('');
     isLoading = false;
 
+
     constructor(
         private contentletService: DotContentletService,
         private dotLoadingIndicatorService: DotLoadingIndicatorService,
         private dotMenuService: DotMenuService,
         private dotRouterService: DotRouterService,
         private dotcmsEventsService: DotcmsEventsService,
-        private ngZone: NgZone,
         private route: ActivatedRoute,
+        private dotIframeEventsHandler: DotIframeEventsHandler,
         public loggerService: LoggerService,
         public siteService: SiteService
-    ) {}
+    ) {
+    }
 
     ngOnInit(): void {
         this.dotRouterService.portletReload$.subscribe((portletId: string) => {
@@ -47,21 +50,13 @@ export class IframePortletLegacyComponent implements OnInit {
     }
 
     /**
-     * Handle the iframe load
+     * Handle the custom events emmited by the iframe
      *
      * @param {any} $event
      * @memberof IframePortletLegacyComponent
      */
-    onLoad($event): void {
-        Observable.fromEvent($event.target.contentWindow.document, 'ng-event').subscribe((event: any) => {
-            if (event.detail.name === 'edit-page') {
-                this.dotLoadingIndicatorService.show();
-
-                this.ngZone.run(() => {
-                    this.dotRouterService.goToEditPage(event.detail.data.url);
-                });
-            }
-        });
+    onCustomEvent($event: CustomEvent): void {
+        this.dotIframeEventsHandler.handle($event);
     }
 
     /**

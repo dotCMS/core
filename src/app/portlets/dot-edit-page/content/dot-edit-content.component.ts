@@ -4,7 +4,6 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import { Observable } from 'rxjs/Observable';
 
-import * as _ from 'lodash';
 import { SiteService, ResponseView } from 'dotcms-js/dotcms-js';
 
 import { DotDialogService } from '../../../api/services/dot-dialog';
@@ -17,7 +16,6 @@ import {
     DotHttpErrorHandled
 } from '../../../api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotLoadingIndicatorService } from '../../../view/components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
-import { DotMenuService } from '../../../api/services/dot-menu.service';
 import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { DotPageContainer } from '../shared/models/dot-page-container.model';
 import { DotPageContent } from '../shared/models/dot-page-content.model';
@@ -28,9 +26,16 @@ import { PageMode } from '../shared/models/page-mode.enum';
 import { DotRenderedPage } from '../shared/models/dot-rendered-page.model';
 import { DotEditPageDataService } from '../shared/services/dot-edit-page-resolver/dot-edit-page-data.service';
 import { Subject } from 'rxjs/Subject';
-import { OnSaveDeactivate } from '../../../shared/dot-save-on-deactivate-service/save-on-deactivate';
-import { DotDialog } from '../../../shared/models/dot-confirmation/dot-confirmation.model';
+import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 
+/**
+ * Edit content page component, render the html of a page and bind all events to make it ediable.
+ *
+ * @export
+ * @class DotEditContentComponent
+ * @implements {OnInit}
+ * @implements {OnDestroy}
+ */
 @Component({
     selector: 'dot-edit-content',
     templateUrl: './dot-edit-content.component.html',
@@ -40,23 +45,18 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     @ViewChild('iframe') iframe: ElementRef;
 
     contentletActionsUrl: SafeResourceUrl;
-    dialogSize = {
-        height: null,
-        width: null
-    };
-    showDialog: boolean;
     pageState: DotRenderedPageState;
     showWhatsChanged = false;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
+        private dotContentletEditorService: DotContentletEditorService,
         private dotDialogService: DotDialogService,
         private dotEditPageDataService: DotEditPageDataService,
         private dotEditPageService: DotEditPageService,
         private dotGlobalMessageService: DotGlobalMessageService,
         private dotHttpErrorManagerService: DotHttpErrorManagerService,
-        private dotMenuService: DotMenuService,
         private dotMessageService: DotMessageService,
         private dotPageStateService: DotPageStateService,
         private dotRouterService: DotRouterService,
@@ -73,7 +73,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
 
         this.getMessages();
         this.setInitalData();
-        this.setDialogSize();
         this.subscribeSwitchSite();
         this.subscribeIframeCustomEvents();
         this.subscribeIframeActions();
@@ -83,42 +82,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     ngOnDestroy(): void {
         this.destroy$.next(true);
         this.destroy$.complete();
-    }
-
-    /**
-     * Handler of what to do if the user decide to save changes when leaving the route
-     * @returns {Observable<string>}
-     * @memberof DotEditContentComponent
-     */
-    onDeactivateSave(): Observable<boolean> {
-        return this.pageServiceSave()
-            .map(() =>  true)
-            .catch((error: ResponseView) => {
-                this.dotHttpErrorManagerService.handle(error);
-                return Observable.of(false);
-            });
-    }
-
-    /**
-     * Get messages of save warning dialog.
-     * @returns {DotDialog}
-     * @memberof DotEditContentComponent
-     */
-    getSaveWarningMessages(): DotDialog {
-        return {
-            header: this.dotMessageService.get('editpage.content.save.changes.confirmation.header'),
-            message: this.dotMessageService.get('editpage.content.save.changes.confirmation.message')
-        };
-    }
-
-    /**
-     * Callback when dialog hide
-     *
-     * @memberof DotEditContentComponent
-     */
-    closeDialog(): void {
-        this.showDialog = false;
-        this.contentletActionsUrl = null;
     }
 
     /**
@@ -184,27 +147,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Bind events on "contentlet Actions" iFrame loaded in the dialog.
-     *
-     * @param $event
-     * @memberof DotEditContentComponent
-     */
-    onContentletActionLoaded($event: any): void {
-        const editContentletIframeEl = $event.target;
-        if (editContentletIframeEl.contentDocument.body.innerHTML !== '') {
-            editContentletIframeEl.contentWindow.focus();
-            editContentletIframeEl.contentWindow.addEventListener('keydown', event => {
-                if (event.key === 'Escape') {
-                    this.ngZone.run(() => {
-                        this.showDialog = false;
-                    });
-                }
-            });
-            editContentletIframeEl.contentWindow.ngEditContentletEvents = this.dotEditContentHtmlService.contentletEvents;
-        }
-    }
-
-    /**
      * Reload the edit page
      *
      * @memberof DotEditContentComponent
@@ -236,9 +178,18 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
             uuid: $event.dataset.dotUuid
         };
         this.dotEditContentHtmlService.setContainterToAppendContentlet(container);
-        this.loadDialogEditor(
-            `/html/ng-contentlet-selector.jsp?ng=true&container_id=${$event.dataset.dotIdentifier}&add=${$event.dataset.dotAdd}`
-        );
+
+        this.dotContentletEditorService.add({
+            data: {
+                container: $event.dataset.dotIdentifier,
+                baseTypes: $event.dataset.dotAdd,
+            },
+            events: {
+                load: (event) => {
+                    event.target.contentWindow.ngEditContentletEvents = this.dotEditContentHtmlService.contentletEvents;
+                }
+            }
+        });
     }
 
     private editContentlet($event: any): void {
@@ -248,42 +199,16 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         };
 
         this.dotEditContentHtmlService.setContainterToEditContentlet(container);
-
-        this.dotMenuService
-            .getDotMenuId('content')
-            .take(1)
-            .subscribe((portletId: string) => {
-                const url = [
-                    `/c/portal/layout`,
-                    `?p_l_id=${portletId}`,
-                    `&p_p_id=content`,
-                    `&p_p_action=1`,
-                    `&p_p_state=maximized`,
-                    `&_content_inode=${$event.dataset.dotInode}`,
-                    `&_content_cmd=edit`,
-                    `&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet`
-                ].join('');
-                this.loadDialogEditor(url);
-            });
-    }
-
-    private editCode($event: any) {
-        this.dotMenuService
-            .getDotMenuId('site-browser')
-            .take(1)
-            .subscribe((portletId: string) => {
-                const url = [
-                    `/c/portal/layout`,
-                    `?p_l_id=${portletId}`,
-                    `&p_p_id=site-browser`,
-                    `&p_p_action=1`,
-                    `&p_p_state=maximized`,
-                    `&_site_browser_inode=${$event.dataset.dotInode}`,
-                    `&_site_browser_cmd=edit`,
-                    `&_site_browser_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet`
-                ].join('');
-                this.loadDialogEditor(url);
-            });
+        this.dotContentletEditorService.edit({
+            data: {
+                inode: $event.dataset.dotInode,
+            },
+            events: {
+                load: (event) => {
+                    event.target.contentWindow.ngEditContentletEvents = this.dotEditContentHtmlService.contentletEvents;
+                }
+            }
+        });
     }
 
     private errorHandler(err: ResponseView): Observable<DotRenderedPageState> {
@@ -315,11 +240,12 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     private iframeActionsHandler(event: any): Function {
         const eventsHandlerMap = {
             edit: this.editContentlet.bind(this),
-            code: this.editCode.bind(this),
+            code: this.editContentlet.bind(this),
             add: this.addContentlet.bind(this),
             remove: this.removeContentlet.bind(this),
-            cancel: this.closeDialog.bind(this),
-            close: this.closeDialog.bind(this),
+            select: () => {
+                this.dotContentletEditorService.clear();
+            },
             save: () => {}
         };
 
@@ -343,12 +269,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                         });
                 }
             });
-    }
-
-    private loadDialogEditor(url: string): void {
-        this.contentletActionsUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
-        this.setDialogSize();
-        this.showDialog = true;
     }
 
     private subscribeIframeCustomEvents(): void {
@@ -397,13 +317,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         }
     }
 
-    private setDialogSize(): void {
-        this.dialogSize = {
-            width: window.innerWidth - 200,
-            height: window.innerHeight - 100
-        };
-    }
-
     private subscribeIframeActions(): void {
         this.dotEditContentHtmlService.iframeActions.takeUntil(this.destroy$).subscribe((contentletEvent: any) => {
             this.ngZone.run(() => {
@@ -433,9 +346,9 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     private subscribePageModelChange(): void {
         this.dotEditContentHtmlService.pageModelChange
             .skip(1)
-            .filter(model => model.length)
+            .filter((model: any) => model.length)
             .takeUntil(this.destroy$)
-            .subscribe((model) => {
+            .subscribe(() => {
                 this.ngZone.run(() => {
                     this.saveContent();
                 });

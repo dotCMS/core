@@ -1,11 +1,9 @@
 <dot-loading-indicator fullscreen="true"></dot-loading-indicator>
-
 <dot-edit-page-toolbar
     (changeState)="statePageHandler($event)"
     (actionFired)="reload()"
     (save)="saveContent()"
     [pageState]="pageState"
-    [canSave]="isModelUpdated"
     class="dot-edit__toolbar">
 </dot-edit-page-toolbar>
 <dot-edit-content-view-as-toolbar
@@ -27,14 +25,3 @@
         <iframe #iframe width="100%" height="100%" frameborder="0" class="dot-edit__iframe" (load)="onLoad($event)" [ngStyle]="{'width': pageState.viewAs.device ? pageState.viewAs.device.cssWidth + 'px' : '', 'height': pageState.viewAs.device ? pageState.viewAs.device.cssHeight + 'px' : ''}"></iframe>
     </div>
 </div>
-
-<p-dialog class="dot-edit__page-dialog"
-    (onHide)="closeDialog($event)"
-    [draggable]="false"
-    [height]="dialogSize.height"
-    [visible]="showDialog"
-    [width]="dialogSize.width"
-    dismissableMask="true"
-    modal="true">
-    <iframe class="dot-edit__contentlet-iframe" *ngIf="contentletActionsUrl" [src]="contentletActionsUrl" frameborder="0" (load)="onContentletActionLoaded($event)"></iframe>
-</p-dialog>

@@ -1,5 +1,5 @@
 import { fakeAsync, tick } from '@angular/core/testing';
-import { DotEditContentHtmlService } from './dot-edit-content-html.service';
+import { DotEditContentHtmlService, DotContentletAction } from './dot-edit-content-html.service';
 import { DotEditContentToolbarHtmlService } from '../html/dot-edit-content-toolbar-html.service';
 import { DotContainerContentletService } from '../dot-container-contentlet.service';
 import { DotDragDropAPIHtmlService } from '../html/dot-drag-drop-api-html.service';
@@ -65,7 +65,7 @@ describe('DotEditContentHtmlService', () => {
             DotDialogService,
             { provide: DotMessageService, useValue: messageServiceMock }
         ]);
-        this.dotEditContentHtmlService = this.injector.get(DotEditContentHtmlService);
+        this.dotEditContentHtmlService = <DotEditContentHtmlService>this.injector.get(DotEditContentHtmlService);
         this.dotEditContentToolbarHtmlService = this.injector.get(DotEditContentToolbarHtmlService);
 
         fakeIframeEl = document.createElement('iframe');
@@ -170,11 +170,10 @@ describe('DotEditContentHtmlService', () => {
         };
 
         this.dotEditContentHtmlService.currentContainer = currentContainer;
+        this.dotEditContentHtmlService.currentAction = DotContentletAction.ADD;
 
         const dotEditContentToolbarHtmlService = this.injector.get(DotContainerContentletService);
-        spyOn(dotEditContentToolbarHtmlService, 'getContentletToContainer').and.returnValue(
-            Observable.of('<i>testing</i>')
-        );
+        spyOn(dotEditContentToolbarHtmlService, 'getContentletToContainer').and.returnValue(Observable.of('<i>testing</i>'));
 
         const contentlet: DotPageContent = {
             identifier: '67',
@@ -187,12 +186,21 @@ describe('DotEditContentHtmlService', () => {
 
         this.dotEditContentHtmlService.renderAddedContentlet(contentlet);
 
-        expect(dotEditContentToolbarHtmlService.getContentletToContainer).toHaveBeenCalledWith(
-            currentContainer,
-            contentlet
+        expect(this.dotEditContentHtmlService.currentAction === DotContentletAction.EDIT).toBe(
+            true,
+            'update the action after content creation'
         );
 
-        expect(this.dotEditContentHtmlService.currentContainer).toBeNull('currentContainer must be null');
+        expect(dotEditContentToolbarHtmlService.getContentletToContainer).toHaveBeenCalledWith(currentContainer, contentlet);
+
+        expect(this.dotEditContentHtmlService.currentContainer).toEqual(
+            {
+                identifier: '123',
+                uuid: '456'
+            },
+            'currentContainer must be the same after add content'
+        );
+
         expect(currentModel).toEqual('testing', 'should tigger model change event');
     });
 
@@ -206,9 +214,7 @@ describe('DotEditContentHtmlService', () => {
         this.dotEditContentHtmlService.currentContainer = currentContainer;
 
         const dotEditContentToolbarHtmlService = this.injector.get(DotContainerContentletService);
-        spyOn(dotEditContentToolbarHtmlService, 'getContentletToContainer').and.returnValue(
-            Observable.of('<i>testing</i>')
-        );
+        spyOn(dotEditContentToolbarHtmlService, 'getContentletToContainer').and.returnValue(Observable.of('<i>testing</i>'));
 
         const dotDialogService = this.injector.get(DotDialogService);
         spyOn(dotDialogService, 'alert');
@@ -250,19 +256,11 @@ describe('DotEditContentHtmlService', () => {
         };
 
         const dotEditContentToolbarHtmlService = this.injector.get(DotContainerContentletService);
-        spyOn(dotEditContentToolbarHtmlService, 'getContentletToContainer').and.returnValue(
-            Observable.of('<i>testing</i>')
-        );
+        spyOn(dotEditContentToolbarHtmlService, 'getContentletToContainer').and.returnValue(Observable.of('<i>testing</i>'));
 
         this.dotEditContentHtmlService.renderEditedContentlet(contentlet);
 
-        expect(dotEditContentToolbarHtmlService.getContentletToContainer).toHaveBeenCalledWith(
-            currentContainer,
-            contentlet
-        );
-        expect(dotEditContentToolbarHtmlService.getContentletToContainer).toHaveBeenCalledWith(
-            anotherContainer,
-            contentlet
-        );
+        expect(dotEditContentToolbarHtmlService.getContentletToContainer).toHaveBeenCalledWith(currentContainer, contentlet);
+        expect(dotEditContentToolbarHtmlService.getContentletToContainer).toHaveBeenCalledWith(anotherContainer, contentlet);
     });
 });
