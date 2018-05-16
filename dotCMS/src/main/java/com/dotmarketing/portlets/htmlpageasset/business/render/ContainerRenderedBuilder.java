@@ -54,8 +54,6 @@ public class ContainerRenderedBuilder {
 
             throws DotSecurityException, DotDataException {
 
-        final User systemUser = this.userAPI.getSystemUser();
-
         if (!template.isDrawed()) {
             return Collections.EMPTY_LIST;
         }
@@ -69,28 +67,12 @@ public class ContainerRenderedBuilder {
         return groupByContainerID.entrySet().stream().map(entry -> {
             final String containerId = entry.getKey();
             try {
-                final Container container = (mode.showLive) ?
-                        (Container) APILocator.getVersionableAPI().findLiveVersion(containerId, systemUser, false) :
-                        (Container) APILocator.getVersionableAPI().findWorkingVersion(containerId, systemUser, false);
+                final Container container = getContainer(mode, containerId);
 
                 final List<ContainerStructure> containerStructures = this.containerAPI.getContainerStructures(container);
 
-                Map<String, String> containersRendered = null;
-
-                if (velocityContext != null) {
-                    containersRendered = entry.getValue().stream()
-                            .map(containerUUID -> containerUUID.getUUID())
-                            .collect(Collectors.toMap(uuid -> "uuid-" + uuid, uuid -> {
-                                final VelocityResourceKey key = new VelocityResourceKey(container, uuid, mode);
-
-                                try {
-                                    return VelocityUtil.mergeTemplate(key.path, velocityContext);
-                                } catch (Exception e) {
-                                    throw new DotRuntimeException(String.format("Container '%s' could not be " +
-                                            "rendered via " + "Velocity.", container.getIdentifier()), e);
-                                }
-                            }));
-                }
+                Map<String, String> containersRendered = velocityContext != null ?
+                        render(velocityContext, mode, entry.getValue(), container): null;
 
                 return new ContainerRendered(container, containerStructures, containersRendered);
             } catch (DotDataException | DotSecurityException e) {
@@ -98,5 +80,29 @@ public class ContainerRenderedBuilder {
                 throw new DotRuntimeException(e);
             }
         }).collect(Collectors.toList());
+    }
+
+    private Container getContainer(PageMode mode, String containerId) throws DotDataException, DotSecurityException {
+        final User systemUser = this.userAPI.getSystemUser();
+
+        return (mode.showLive) ?
+                    (Container) APILocator.getVersionableAPI().findLiveVersion(containerId, systemUser, false) :
+                    (Container) APILocator.getVersionableAPI().findWorkingVersion(containerId, systemUser, false);
+    }
+
+    private Map<String, String> render(Context velocityContext, PageMode mode, Collection <ContainerUUID> uuids,
+                                         Container container) {
+        return uuids.stream()
+                .map(containerUUID -> containerUUID.getUUID())
+                .collect(Collectors.toMap(uuid -> "uuid-" + uuid, uuid -> {
+                    final VelocityResourceKey key = new VelocityResourceKey(container, uuid, mode);
+
+                    try {
+                        return VelocityUtil.mergeTemplate(key.path, velocityContext);
+                    } catch (Exception e) {
+                        throw new DotRuntimeException(String.format("Container '%s' could not be " +
+                                "rendered via " + "Velocity.", container.getIdentifier()), e);
+                    }
+                }));
     }
 }
