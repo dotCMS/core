@@ -27,14 +27,18 @@ import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.*;
@@ -317,13 +321,33 @@ public class WorkflowResourceIntegrationTest {
         final List<WorkflowStep> workflowSteps = addSteps(workflowResource, savedScheme, numSteps);
         assertFalse(workflowSteps.isEmpty());
         final HttpServletRequest removeStepRequest = mock(HttpServletRequest.class);
-        int count = 0;
-        for(final WorkflowStep ws: workflowSteps){
-            Response deleteStepResponse = workflowResource.deleteStep(removeStepRequest, ws.getId());
-            assertEquals(Response.Status.OK.getStatusCode(), deleteStepResponse.getStatus());
-            count++;
+
+        final CountDownLatch countDownLatch = new CountDownLatch(workflowSteps.size());
+        final AtomicInteger count = new AtomicInteger(0);
+        for(final WorkflowStep workflowStep: workflowSteps){
+            final AsyncResponse asyncResponse = new MockAsyncResponse((arg) -> {
+
+                countDownLatch.countDown();
+                final Response deleteStepResponse = (Response)arg;
+                assertEquals(Response.Status.OK.getStatusCode(), deleteStepResponse.getStatus());
+                count.addAndGet(1);
+                return true;
+            }, arg -> {
+                countDownLatch.countDown();
+                fail("Error on deleting step");
+                return true;
+            });
+
+            workflowResource.deleteStep(removeStepRequest, asyncResponse, workflowStep.getId());
         }
-        assertEquals(count,numSteps);
+
+        try {
+            countDownLatch.await();
+            assertEquals(count.get(), numSteps);
+        } catch (InterruptedException e) {
+            fail(e.getMessage());
+        }
+
     }
 
     @Test

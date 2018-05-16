@@ -5,10 +5,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import oracle.jdbc.OracleTypes;
 
@@ -480,6 +477,18 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
         dc.addParam(folderPath+"%");
         dc.loadResult();
     }
+
+    @Override
+    protected void addIdentifierReindex(final String identifier) throws DotDataException {
+
+         new DotConnect().setSQL("insert into dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action, time_entered) values (?, ?, ?, ?, ?)")
+                           .addParam(identifier)
+                            .addParam(identifier)
+                            .addParam(REINDEX_JOURNAL_PRIORITY_STRUCTURE_REINDEX)
+                            .addParam(REINDEX_ACTION_REINDEX_OBJECT)
+                            .addParam(new Date())
+                            .loadResult();
+    } // addIdentifierReindex.
 
     @Override
     protected void refreshContentUnderHost(Host host) throws DotDataException {

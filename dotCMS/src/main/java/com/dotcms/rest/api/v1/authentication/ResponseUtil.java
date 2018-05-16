@@ -5,6 +5,7 @@ import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.repackage.javax.ws.rs.container.AsyncResponse;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ErrorResponseHelper;
+import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
@@ -151,7 +152,7 @@ public class ResponseUtil implements Serializable {
      */
     public static <T> void  handleAsyncResponse (final Future<T> future, final AsyncResponse asyncResponse) {
 
-        handleAsyncResponse(() -> DotConcurrentFactory.get(future), asyncResponse);
+        handleAsyncResponse(() -> Response.ok(new ResponseEntityView(DotConcurrentFactory.get(future))).build(), asyncResponse);
     } // handleAsyncResponse
 
     /**

@@ -590,7 +590,7 @@ public class WorkflowHelper {
      * @param stepId String
      */
     @WrapInTransaction
-    public void deleteStep(final String stepId) throws DotSecurityException, DotDataException {
+    public Future<WorkflowStep> deleteStep(final String stepId) throws DotSecurityException, DotDataException {
 
         if (!UtilMethods.isSet(stepId)) {
             throw new IllegalArgumentException("Missing required parameter stepId.");
@@ -606,7 +606,7 @@ public class WorkflowHelper {
         if (null != workflowStep) {
             try {
                 Logger.debug(this, "deleting step: " + stepId);
-                this.workflowAPI.deleteStep(workflowStep, APILocator.systemUser());
+                return this.workflowAPI.deleteStep(workflowStep, APILocator.systemUser());
             } catch (DotDataException e) {
                 Logger.error(this, e.getMessage());
                 Logger.debug(this, e.getMessage(), e);

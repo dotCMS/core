@@ -25,6 +25,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -450,14 +451,14 @@ public class WorkflowResource {
      * Deletes a step
      * @param request HttpServletRequest
      * @param stepId String
-     * @return Response
      */
     @DELETE
     @Path("/steps/{stepId}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response deleteStep(@Context final HttpServletRequest request,
+    public final void deleteStep(@Context final HttpServletRequest request,
+                                     @Suspended final AsyncResponse asyncResponse,
                                      @PathParam("stepId") final String stepId) {
 
         this.webResource.init
@@ -466,13 +467,12 @@ public class WorkflowResource {
         try {
 
             Logger.debug(this, "Deleting the step: " + stepId);
-            this.workflowHelper.deleteStep(stepId);
-            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+            ResponseUtil.handleAsyncResponse(this.workflowHelper.deleteStep(stepId), asyncResponse);
         } catch (final Exception e) {
             Logger.error(this.getClass(),
                     "Exception on deleteStep, stepId: " + stepId +
                             ", exception message: " + e.getMessage(), e);
-            return ResponseUtil.mapExceptionResponse(e);
+            asyncResponse.resume(ResponseUtil.mapExceptionResponse(e));
         }
     } // deleteStep
 

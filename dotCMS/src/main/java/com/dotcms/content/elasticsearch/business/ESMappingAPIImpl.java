@@ -39,6 +39,9 @@ import com.dotmarketing.portlets.structure.model.FieldVariable;
 import com.dotmarketing.portlets.structure.model.KeyValueFieldUtil;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
@@ -168,23 +171,24 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	 *
 	 * Jun 7, 2013 - 3:47:26 PM
 	 */
-	public Map<String,Object> toMap(Contentlet con) throws DotMappingException {
+	public Map<String,Object> toMap(final Contentlet contentlet) throws DotMappingException {
+
 		try {
 
 			final Map<String,Object> contentletMap = new HashMap();
-			final Map<String,Object> mlowered=new HashMap();
-			loadCategories(con, contentletMap);
-			loadFields(con, contentletMap);
-			loadPermissions(con, contentletMap);
-			loadRelationshipFields(con, contentletMap);
+			final Map<String,Object> mlowered	   = new HashMap();
+			loadCategories(contentlet, contentletMap);
+			loadFields(contentlet, contentletMap);
+			loadPermissions(contentlet, contentletMap);
+			loadRelationshipFields(contentlet, contentletMap);
 
-			Identifier ident = APILocator.getIdentifierAPI().find(con);
-			ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), con.getLanguageId());
-			Structure st=CacheLocator.getContentTypeCache().getStructureByInode(con.getStructureInode());
+			Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
+			ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), contentlet.getLanguageId());
+			Structure st=CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getStructureInode());
 
 			Folder conFolder=APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), ident.getHostId(), APILocator.getUserAPI().getSystemUser(), false);
 
-			contentletMap.put(ESMappingConstants.TITLE, con.getTitle());
+			contentletMap.put(ESMappingConstants.TITLE, contentlet.getTitle());
 			contentletMap.put(ESMappingConstants.STRUCTURE_NAME, st.getVelocityVarName()); // marked for DEPRECATION
 			contentletMap.put(ESMappingConstants.CONTENT_TYPE, st.getVelocityVarName());
 			contentletMap.put(ESMappingConstants.STRUCTURE_TYPE, st.getStructureType()); // marked for DEPRECATION
@@ -192,42 +196,30 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			contentletMap.put(ESMappingConstants.BASE_TYPE, st.getStructureType());
 			contentletMap.put(ESMappingConstants.BASE_TYPE + TEXT, Integer.toString(st.getStructureType()));
 			contentletMap.put(ESMappingConstants.TYPE, ESMappingConstants.CONTENT);
-			contentletMap.put(ESMappingConstants.INODE, con.getInode());
-			contentletMap.put(ESMappingConstants.MOD_DATE, elasticSearchDateTimeFormat.format(con.getModDate()));
-			contentletMap.put(ESMappingConstants.MOD_DATE + TEXT, datetimeFormat.format(con.getModDate()));
-			contentletMap.put(ESMappingConstants.OWNER, con.getOwner()==null ? "0" : con.getOwner());
-			contentletMap.put(ESMappingConstants.MOD_USER, con.getModUser());
-			contentletMap.put(ESMappingConstants.LIVE, con.isLive());
-			contentletMap.put(ESMappingConstants.LIVE + TEXT, Boolean.toString(con.isLive()));
-			contentletMap.put(ESMappingConstants.WORKING, con.isWorking());
-			contentletMap.put(ESMappingConstants.WORKING + TEXT, Boolean.toString(con.isWorking()));
-			contentletMap.put(ESMappingConstants.LOCKED, con.isLocked());
-			contentletMap.put(ESMappingConstants.LOCKED + TEXT, Boolean.toString(con.isLocked()));
-			contentletMap.put(ESMappingConstants.DELETED, con.isArchived());
-			contentletMap.put(ESMappingConstants.DELETED + TEXT, Boolean.toString(con.isArchived()));
-			contentletMap.put(ESMappingConstants.LANGUAGE_ID, con.getLanguageId());
-			contentletMap.put(ESMappingConstants.LANGUAGE_ID + TEXT, Long.toString(con.getLanguageId()));
+			contentletMap.put(ESMappingConstants.INODE, contentlet.getInode());
+			contentletMap.put(ESMappingConstants.MOD_DATE, elasticSearchDateTimeFormat.format(contentlet.getModDate()));
+			contentletMap.put(ESMappingConstants.MOD_DATE + TEXT, datetimeFormat.format(contentlet.getModDate()));
+			contentletMap.put(ESMappingConstants.OWNER, contentlet.getOwner()==null ? "0" : contentlet.getOwner());
+			contentletMap.put(ESMappingConstants.MOD_USER, contentlet.getModUser());
+			contentletMap.put(ESMappingConstants.LIVE, contentlet.isLive());
+			contentletMap.put(ESMappingConstants.LIVE + TEXT, Boolean.toString(contentlet.isLive()));
+			contentletMap.put(ESMappingConstants.WORKING, contentlet.isWorking());
+			contentletMap.put(ESMappingConstants.WORKING + TEXT, Boolean.toString(contentlet.isWorking()));
+			contentletMap.put(ESMappingConstants.LOCKED, contentlet.isLocked());
+			contentletMap.put(ESMappingConstants.LOCKED + TEXT, Boolean.toString(contentlet.isLocked()));
+			contentletMap.put(ESMappingConstants.DELETED, contentlet.isArchived());
+			contentletMap.put(ESMappingConstants.DELETED + TEXT, Boolean.toString(contentlet.isArchived()));
+			contentletMap.put(ESMappingConstants.LANGUAGE_ID, contentlet.getLanguageId());
+			contentletMap.put(ESMappingConstants.LANGUAGE_ID + TEXT, Long.toString(contentlet.getLanguageId()));
 			contentletMap.put(ESMappingConstants.IDENTIFIER, ident.getId());
 			contentletMap.put(ESMappingConstants.CONTENTLET_HOST, ident.getHostId());
-			contentletMap.put(ESMappingConstants.CONTENTLET_FOLER, conFolder!=null && InodeUtils.isSet(conFolder.getInode()) ? conFolder.getInode() : con.getFolder());
+			contentletMap.put(ESMappingConstants.CONTENTLET_FOLER, conFolder!=null && InodeUtils.isSet(conFolder.getInode()) ? conFolder.getInode() : contentlet.getFolder());
 			contentletMap.put(ESMappingConstants.PARENT_PATH, ident.getParentPath());
 			contentletMap.put(ESMappingConstants.PATH, ident.getPath());
 			// makes shorties searchable regardless of length
 			contentletMap.put(ESMappingConstants.SHORT_ID, ident.getId().replace("-", ""));
-			contentletMap.put(ESMappingConstants.SHORT_INODE, con.getInode().replace("-", ""));
-			try{
-				WorkflowTask task = APILocator.getWorkflowAPI().findTaskByContentlet(con);
-				if(task!=null && task.getId()!=null){
-					contentletMap.put(ESMappingConstants.WORKFLOW_CREATED_BY, task.getCreatedBy());
-					contentletMap.put(ESMappingConstants.WORKFLOW_ASSIGN, task.getAssignedTo());
-					contentletMap.put(ESMappingConstants.WORKFLOW_STEP, task.getStatus());
-					contentletMap.put(ESMappingConstants.WORKFLOW_MOD_DATE, elasticSearchDateTimeFormat.format(task.getModDate()));
-					contentletMap.put(ESMappingConstants.WORKFLOW_MOD_DATE + TEXT, datetimeFormat.format(task.getModDate()));
-				}
-			}
-			catch(DotDataException e){
-				Logger.error(this.getClass(), "unable to add workflow info to index:" + e, e);
-			}
+			contentletMap.put(ESMappingConstants.SHORT_INODE, contentlet.getInode().replace("-", ""));
+			this.addWorkflowTaskDataToContentlet(contentlet, contentletMap);
 
 			if(UtilMethods.isSet(ident.getSysPublishDate())) {
 				contentletMap.put(ESMappingConstants.PUBLISH_DATE, elasticSearchDateTimeFormat.format(ident.getSysPublishDate()));
@@ -253,13 +245,13 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 			String urlMap = null;
 			try{
-				urlMap = APILocator.getContentletAPI().getUrlMapForContentlet(con, APILocator.getUserAPI().getSystemUser(), true);
+				urlMap = APILocator.getContentletAPI().getUrlMapForContentlet(contentlet, APILocator.getUserAPI().getSystemUser(), true);
 				if(urlMap != null){
 					contentletMap.put(ESMappingConstants.URL_MAP,urlMap );
 				}
 			}
 			catch(Exception e){
-				Logger.warn(this.getClass(), "Cannot get URLMap for contentlet.id : " + ((ident != null) ? ident.getId() : con) + " , reason: "+e.getMessage());
+				Logger.warn(this.getClass(), "Cannot get URLMap for contentlet.id : " + ((ident != null) ? ident.getId() : contentlet) + " , reason: "+e.getMessage());
 				throw new DotRuntimeException(urlMap, e);
 			}
 
@@ -286,9 +278,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 
 
-			if(con.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
+			if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
 				// see if we have content metadata
-				File contentMeta=APILocator.getFileAssetAPI().getContentMetadataFile(con.getInode());
+				File contentMeta=APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode());
 				if(contentMeta.exists() && contentMeta.length()>0) {
 
 					String contentData=APILocator.getFileAssetAPI().getContentMetadataAsString(contentMeta);
@@ -299,9 +291,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			}
 
 			//The url is now stored under the identifier for html pages, so we need to index that also.
-			if(con.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE){
-				mlowered.put(con.getStructure().getVelocityVarName().toLowerCase() + ".url", ident.getAssetName());
-				mlowered.put(con.getStructure().getVelocityVarName().toLowerCase() + ".url_dotraw", ident.getAssetName());
+			if(contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE){
+				mlowered.put(contentlet.getStructure().getVelocityVarName().toLowerCase() + ".url", ident.getAssetName());
+				mlowered.put(contentlet.getStructure().getVelocityVarName().toLowerCase() + ".url_dotraw", ident.getAssetName());
 				sw.append(ident.getAssetName());
 			}
 
@@ -310,6 +302,40 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			return mlowered;
 		} catch (Exception e) {
 			throw new DotMappingException(e.getMessage(), e);
+		}
+	}
+
+	/**
+	 * Adds the current workflow task to the contentlet in order to be reindexed.
+	 * @param contentlet {@link Contentlet}
+	 * @param contentletMap {@link Map}
+	 */
+	protected void addWorkflowTaskDataToContentlet(final Contentlet contentlet,
+												 final Map<String, Object> contentletMap) {
+		try {
+
+			final WorkflowAPI  workflowAPI = APILocator.getWorkflowAPI();
+			final WorkflowTask task 	   = workflowAPI.findTaskByContentlet(contentlet);
+			if(task!=null && task.getId()!=null) {
+
+				final String stepId = task.getStatus();
+				contentletMap.put(ESMappingConstants.WORKFLOW_CREATED_BY, task.getCreatedBy());
+				contentletMap.put(ESMappingConstants.WORKFLOW_ASSIGN, task.getAssignedTo());
+				contentletMap.put(ESMappingConstants.WORKFLOW_STEP, task.getStatus());
+				contentletMap.put(ESMappingConstants.WORKFLOW_MOD_DATE, elasticSearchDateTimeFormat.format(task.getModDate()));
+				contentletMap.put(ESMappingConstants.WORKFLOW_MOD_DATE + TEXT, datetimeFormat.format(task.getModDate()));
+
+				if (UtilMethods.isSet(stepId)) {
+
+					final WorkflowStep step = workflowAPI.findStep(stepId);
+					if(step != null && step.getId() != null) {
+
+						contentletMap.put(ESMappingConstants.WORKFLOW_SCHEME, step.getSchemeId());
+					}
+				}
+			}
+		} catch(DotDataException e){
+			Logger.error(this.getClass(), "unable to add workflow info to index:" + e, e);
 		}
 	}
 

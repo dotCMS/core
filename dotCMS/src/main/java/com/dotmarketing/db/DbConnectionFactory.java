@@ -80,6 +80,26 @@ public class DbConnectionFactory {
         return Types.VARCHAR;
     }
 
+    /**
+     * Set the connection to the default datasource, this is specially useful when you fire a thread but you want to keep the new thread on the same transaction
+     * @param connection {@link Connection}
+     * @throws SQLException
+     */
+    public static synchronized void setCurrentConnection(final Connection connection) throws SQLException {
+
+        if (null != connection && !connection.isClosed()) {
+
+            HashMap<String, Connection> connectionsList = connectionsHolder.get();
+
+            if (connectionsList == null) {
+                connectionsList = new HashMap<>();
+                connectionsHolder.set(connectionsList);
+            }
+
+            connectionsList.put(Constants.DATABASE_DEFAULT_DATASOURCE, connection);
+        }
+    }
+
     public enum DataBaseType {
         POSTGRES, MySQL, MSSQL, ORACLE, H2;
     }
