@@ -24,7 +24,7 @@ public class Sidebar extends ContainerHolder implements Serializable{
     public Sidebar(@JsonProperty("containers") List<ContainerUUID> containers,
                    @JsonProperty("location") final String location,
                    @JsonProperty("width") final String width,
-                   @JsonProperty("widthPercent") final int widthPercent) {
+                   @JsonProperty("widthPercent") final Integer widthPercent) {
         super(containers);
 
         this.location = location;
