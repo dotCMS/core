@@ -14,6 +14,7 @@ import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonSerial
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -40,7 +41,7 @@ public class PageView implements Serializable {
 
     private final Host site;
     private final Template template;
-    private final List<ContainerRendered> containers;
+    private final Collection<ContainerRendered> containers;
     private final HTMLPageAssetInfo htmlPageAssetInfo;
     private final TemplateLayout layout;
 
@@ -56,7 +57,7 @@ public class PageView implements Serializable {
      */
     PageView(final Host site,
              final Template template,
-             final List<ContainerRendered> containers,
+             final Collection<ContainerRendered> containers,
              final HTMLPageAssetInfo page,
              final TemplateLayout layout) {
 
@@ -99,7 +100,7 @@ public class PageView implements Serializable {
      *
      * @return The map of Containers.
      */
-    public List<ContainerRendered>  getContainers() {
+    public Collection<ContainerRendered>  getContainers() {
         return this.containers;
     }
 
