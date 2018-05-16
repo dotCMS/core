@@ -1,9 +1,19 @@
 package com.dotcms.rest.api.v1.workflow;
 
-import com.dotcms.concurrent.DotConcurrentFactory;
+
+import static com.dotcms.rest.ResponseEntityView.OK;
+import static com.dotcms.util.CollectionsUtils.map;
+
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
-import com.dotcms.repackage.javax.ws.rs.*;
+import com.dotcms.repackage.javax.ws.rs.DELETE;
+import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.POST;
+import com.dotcms.repackage.javax.ws.rs.PUT;
+import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
+import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.QueryParam;
 import com.dotcms.repackage.javax.ws.rs.container.AsyncResponse;
 import com.dotcms.repackage.javax.ws.rs.container.Suspended;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
@@ -14,11 +24,21 @@ import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
-import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.IncludePermissions;
+import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.ForbiddenException;
-import com.dotcms.workflow.form.*;
+import com.dotcms.workflow.form.FireActionForm;
+import com.dotcms.workflow.form.WorkflowActionForm;
+import com.dotcms.workflow.form.WorkflowActionStepBean;
+import com.dotcms.workflow.form.WorkflowActionStepForm;
+import com.dotcms.workflow.form.WorkflowCopyForm;
+import com.dotcms.workflow.form.WorkflowReorderBean;
+import com.dotcms.workflow.form.WorkflowReorderWorkflowActionStepForm;
+import com.dotcms.workflow.form.WorkflowSchemeForm;
+import com.dotcms.workflow.form.WorkflowSchemeImportObjectForm;
+import com.dotcms.workflow.form.WorkflowStepAddForm;
+import com.dotcms.workflow.form.WorkflowStepUpdateForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -38,21 +58,14 @@ import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.util.concurrent.Futures;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-
-import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 import java.util.function.Supplier;
-
-import static com.dotcms.rest.ResponseEntityView.OK;
-import static com.dotcms.util.CollectionsUtils.map;
+import javax.servlet.http.HttpServletRequest;
 
 @SuppressWarnings("serial")
 @Path("/v1/workflow")
@@ -460,13 +473,12 @@ public class WorkflowResource {
     public final Response deleteStep(@Context final HttpServletRequest request,
                                      @PathParam("stepId") final String stepId) {
 
-        this.webResource.init
+        final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
 
         try {
-
             Logger.debug(this, "Deleting the step: " + stepId);
-            this.workflowHelper.deleteStep(stepId);
+            this.workflowHelper.deleteStep(stepId, initDataObject.getUser());
             return Response.ok(new ResponseEntityView(OK)).build(); // 200
         } catch (final Exception e) {
             Logger.error(this.getClass(),

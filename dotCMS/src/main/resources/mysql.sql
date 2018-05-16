@@ -1357,7 +1357,8 @@ create table relationship (
    parent_required tinyint(1),
    child_required tinyint(1),
    fixed tinyint(1),
-   primary key (inode)
+   primary key (inode),
+   unique (relation_type_value)
 );
 create table folder (
    inode varchar(36) not null,

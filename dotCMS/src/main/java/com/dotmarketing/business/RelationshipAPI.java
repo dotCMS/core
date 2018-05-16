@@ -22,6 +22,8 @@ public interface RelationshipAPI {
 
   List<Relationship> byContentType(ContentTypeIf type) throws DotDataException;
 
+  List<Relationship> byContentType(ContentTypeIf type, String orderBy);
+
   List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet) throws DotDataException;
 
   List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet,
@@ -52,6 +54,13 @@ public interface RelationshipAPI {
   boolean isParent(Relationship rel, ContentTypeIf st);
 
   void delete(Relationship relationship) throws DotDataException;
+
+  /**
+   * Method to delete a relationship, but keep the TypeValue in Tree and multitree
+   * @param relationship to be deleted
+   * @throws DotDataException
+   */
+  void deleteKeepTrees(Relationship relationship) throws DotDataException;
 
   void addRelationship(String parent, String child, String relationType) throws DotDataException;
 

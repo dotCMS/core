@@ -8,6 +8,7 @@
                 <input type="hidden" name="hostField" dojoAttachPoint="hostField" value=""/>
                 <input type="hidden" name="folderField" dojoAttachPoint="folderField" value=""/>
                 <div class="sideMenuWrapper">
+
                     <input type="hidden" name="structure_inode" dojoAttachPoint="structure_inode" value="strInode">
                     <div dojoAttachPoint="structures_select"></div>
                     <div dojoAttachPoint="search_languages_table"></div>
@@ -29,7 +30,8 @@
             <div class="portlet-main">
                 <div dojoAttachPoint="contentWrapper">
                     <div class="portlet-toolbar">
-                        <div dojoAttachPoint="matchingResultsDiv" style="display: none"><%= LanguageUtil.get(pageContext, "Results") %></div>
+                        <div dojoAttachPoint="matchingResultsDiv" class="portlet-toolbar__matching-results" style="display: none"><%= LanguageUtil.get(pageContext, "Results") %></div>
+                        <div id='addContentTypeDropdown'></div>
                         <div dojoAttachPoint="addContentletButton" class="portlet-toolbar__add-contentlet" style="display: none">
                             <button dojoType="dijit.form.Button" onClick="addNewContentlet()"><%= LanguageUtil.get(pageContext, "Add-New-Content") %></button>
                         </div>
