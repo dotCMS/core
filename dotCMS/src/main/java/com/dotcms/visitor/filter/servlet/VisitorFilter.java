@@ -31,7 +31,6 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 
@@ -45,7 +44,6 @@ public class VisitorFilter implements Filter {
     private final static String CMS_HOME_PAGE = "/cmsHomePage";
     public  final static  String VANITY_URL_ATTRIBUTE="VANITY_URL_ATTRIBUTE";
     public  final static  String DOTPAGE_PROCESSING_TIME="DOTPAGE_PROCESSING_TIME";
-    private final VisitorLogger logImpl;
 
 
 
@@ -57,15 +55,6 @@ public class VisitorFilter implements Filter {
     @VisibleForTesting
     protected VisitorFilter(final VanityUrlHandlerResolver vanityUrlHandlerResolver, final CMSUrlUtil urlUtil,
             final HostWebAPI hostWebAPI, final LanguageWebAPI languageWebAPI, final UserWebAPI userWebAPI) {
-
-        
-        this.logImpl = new VisitorLogger() {
-            @Override
-            public void log(HttpServletRequest request, HttpServletResponse response) throws JsonProcessingException {
-                Logger.info(this.getClass(), "VisitorLogger  Started");
-            }
-        }.getVisitorLoggerImpl();
-        
         
         this.urlUtil = urlUtil;
         this.languageWebAPI = languageWebAPI;
@@ -88,7 +77,7 @@ public class VisitorFilter implements Filter {
                 chain.doFilter(req, res);
                 setVanityAsAttribute(request);
                 request.setAttribute(DOTPAGE_PROCESSING_TIME, System.currentTimeMillis() - startTime);
-                logImpl.log(request, response);
+                VisitorLogger.log(request, response);
             } catch (Exception e) {
                 Logger.error(this.getClass(), e.getMessage(), e);
                 return;
