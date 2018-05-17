@@ -52,6 +52,7 @@ public interface RelationshipAPI {
   /**
    * Saves the relationship with the inode provided
    * @param relationship
+   * @param inode
    * @throws DotDataException
    */
   void save(Relationship relationship, String inode) throws DotDataException;
