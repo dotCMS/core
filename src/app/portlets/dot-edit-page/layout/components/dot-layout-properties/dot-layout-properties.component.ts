@@ -1,11 +1,12 @@
 import { DotMessageService } from '../../../../../api/services/dot-messages-service';
 import { FormGroup } from '@angular/forms';
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, ViewEncapsulation } from '@angular/core';
 
 @Component({
     selector: 'dot-layout-properties',
     templateUrl: './dot-layout-properties.component.html',
-    styleUrls: ['./dot-layout-properties.component.scss']
+    styleUrls: ['./dot-layout-properties.component.scss'],
+    encapsulation: ViewEncapsulation.None
 })
 export class DotLayoutPropertiesComponent implements OnInit {
     @Input() group: FormGroup;

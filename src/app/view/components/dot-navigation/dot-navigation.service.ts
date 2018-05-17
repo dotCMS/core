@@ -29,8 +29,7 @@ export class DotNavigationService {
         private router: Router
     ) {
         this.router.events
-            .filter((event) => event instanceof NavigationEnd && !this.dotRouterService.isPublicPage())
-            .take(1)
+            .filter(event => event instanceof NavigationEnd && !this.dotRouterService.isPublicPage())
             .subscribe((_event: NavigationEnd) => {
                 this.dotMenuService.loadMenu().subscribe((menu: DotMenu[]) => {
                     this.setMenu(menu);
@@ -125,7 +124,8 @@ export class DotNavigationService {
         return menu.map((menuGroup: DotMenu, menuIndex: number) => {
             menuGroup.menuItems.forEach((menuItem: DotMenuItem) => {
                 menuItem.menuLink = menuItem.angular ? menuItem.url : this.getMenuLink(menuItem.id);
-                menuGroup.isOpen = this.isFirstMenuActive(currentUrl, menuIndex) || this.isMenuItemCurrentUrl(currentUrl, menuItem.id);
+                menuGroup.isOpen =
+                    menuGroup.isOpen || this.isFirstMenuActive(currentUrl, menuIndex) || this.isMenuItemCurrentUrl(currentUrl, menuItem.id);
             });
             return menuGroup;
         });
