@@ -591,15 +591,14 @@
 	}
 
 	function editContentlet (objId, userId, referer, live, working, write) {
-		//if (write=="1") {
-			var loc = '';
-			loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=' + objId + '&referer=' + encodeURIComponent(referer);
-			if(inFrame){
-				window.location = loc;
-			}else{
-				top.location = loc;
-			}
-		//}
+        var customEvent = document.createEvent("CustomEvent");
+        customEvent.initCustomEvent("ng-event", false, false,  {
+            name: "edit-contentlet",
+            data: {
+                inode: objId
+            }
+        });
+        document.dispatchEvent(customEvent);
 	}
 
 	function publishContentlet (objId, userId, referer, live, working, write, contentStructureType, structure_id) {

@@ -81,16 +81,15 @@
     }
 
     function cancelEditCallback(callbackData){
-        if (ngEditContentletEvents) {
-            //scenario when creating a new content.
-            if (workingContentletInode === ''){
-                window.history.back();
-            }else{
-                ngEditContentletEvents.next({
-                    name: 'cancel'
-                });
-            }
+        if (ngEditContentletEvents && workingContentletInode === '') {
+            window.history.back();
         } else {
+            var customEvent = document.createEvent("CustomEvent");
+            customEvent.initCustomEvent("ng-event", false, false,  {
+                name: "close"
+            });
+            document.dispatchEvent(customEvent);
+
             if (callbackData.indexOf("referer") != -1) {
                 var sourceReferer = callbackData.substring(callbackData.indexOf("referer"));
                 sourceReferer = sourceReferer.split("referer").slice(1).join("referer").slice(1);

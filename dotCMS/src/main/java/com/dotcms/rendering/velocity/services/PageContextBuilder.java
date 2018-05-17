@@ -14,18 +14,16 @@ import com.dotcms.repackage.com.ibm.icu.text.SimpleDateFormat;
 
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
@@ -38,7 +36,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.apache.velocity.context.Context;
 
@@ -240,7 +237,13 @@ public class PageContextBuilder {
                     // sets contentletlist with all the files to load per
                     // container
                     ctxMap.put("contentletList" + c.getIdentifier() + uniqueId, contentlist);
-                    
+
+                    if (ContainerUUID.UUID_LEGACY_VALUE.equals(uniqueId)) {
+                        ctxMap.put("contentletList" + c.getIdentifier() + ContainerUUID.UUID_DEFAULT_VALUE, contentlist);
+                    } else  if (ContainerUUID.UUID_DEFAULT_VALUE.equals(uniqueId)) {
+                        ctxMap.put("contentletList" + c.getIdentifier() + ContainerUUID.UUID_LEGACY_VALUE, contentlist);
+                    }
+
                     ctxMap.put("totalSize" + c.getIdentifier() + uniqueId, new Integer(contentlets.size()));
 
                 }
