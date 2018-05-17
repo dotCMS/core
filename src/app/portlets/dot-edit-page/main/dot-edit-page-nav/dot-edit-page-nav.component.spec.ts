@@ -17,7 +17,7 @@ import { ActivatedRoute } from '@angular/router';
 
 @Injectable()
 class MockDotLicenseService {
-    isEnterpriseLicense(): Observable<boolean> {
+    isEnterprise(): Observable<boolean> {
         return Observable.of(false);
     }
 }
@@ -108,7 +108,7 @@ describe('DotEditPageNavComponent', () => {
             const { layout, ...noLayoutPage } = mockDotRenderedPage;
             fixture.componentInstance.pageState = new DotRenderedPageState(mockUser, noLayoutPage, null);
             component.model = undefined;
-            spyOn(dotLicenseService, 'isEnterpriseLicense').and.returnValue(Observable.of(true));
+            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(Observable.of(true));
             fixture.detectChanges();
             const menuListItemsUpdated = fixture.debugElement.queryAll(By.css('.edit-page-nav__item'));
             expect(menuListItems[1].nativeElement.classList).toContain('edit-page-nav__item--disabled');
@@ -148,7 +148,7 @@ describe('DotEditPageNavComponent', () => {
         });
 
         it('should have layout option disabled and cant edit message when template is advance and license is enterprise', () => {
-            spyOn(dotLicenseService, 'isEnterpriseLicense').and.returnValue(Observable.of(true));
+            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(Observable.of(true));
 
             component.model = undefined;
             fixture.componentInstance.pageState = new DotRenderedPageState(
@@ -206,7 +206,7 @@ describe('DotEditPageNavComponent', () => {
             });
         });
 
-        describe('license Community', () => {
+        describe('license community', () => {
             it('should have layout option disabled because user does not has a proper license', () => {
                 const menuListItems = fixture.debugElement.queryAll(By.css('.edit-page-nav__item'));
                 expect(menuListItems[1].nativeElement.classList).toContain('edit-page-nav__item--disabled');
@@ -219,10 +219,10 @@ describe('DotEditPageNavComponent', () => {
             });
         });
 
-        describe('license Enterprise', () => {
+        describe('license enterprise', () => {
             beforeEach(() => {
                 dotLicenseService = de.injector.get(DotLicenseService);
-                spyOn(dotLicenseService, 'isEnterpriseLicense').and.returnValue(Observable.of(true));
+                spyOn(dotLicenseService, 'isEnterprise').and.returnValue(Observable.of(true));
                 fixture.detectChanges();
             });
 

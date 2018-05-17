@@ -7,6 +7,7 @@ import { DotRenderedPageState } from '../../../shared/models/dot-rendered-page-s
 import { PageMode } from '../../../shared/models/page-mode.enum';
 import { DotMessageService } from '../../../../../api/services/dot-messages-service';
 import { Observable } from 'rxjs/Observable';
+import { DotLicenseService } from '../../../../../api/services/dot-license/dot-license.service';
 
 @Component({
     selector: 'dot-edit-content-view-as-toolbar',
@@ -17,16 +18,18 @@ export class DotEditContentViewAsToolbarComponent implements OnInit, OnChanges {
     @Output() changeViewAs = new EventEmitter<DotEditPageViewAs>();
     @Output() whatschange = new EventEmitter<boolean>();
 
+    isEnterpriseLicense$: Observable<boolean>;
     isPreview: boolean;
-    whatsChangedMessage: Observable<string>;
+    whatsChangedMessage$: Observable<string>;
 
     private value: DotEditPageViewAs;
     private _pageState: DotRenderedPageState;
 
-    constructor(private dotMessageService: DotMessageService) {}
+    constructor(private dotMessageService: DotMessageService, private dotLicenseService: DotLicenseService) {}
 
     ngOnInit(): void {
-        this.whatsChangedMessage = this.dotMessageService
+        this.isEnterpriseLicense$ = this.dotLicenseService.isEnterprise();
+        this.whatsChangedMessage$ = this.dotMessageService
             .getMessages(['dot.common.whats.changed'])
             .map((messages: string[]) => messages['dot.common.whats.changed']);
     }

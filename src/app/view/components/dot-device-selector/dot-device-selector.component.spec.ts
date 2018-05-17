@@ -62,7 +62,7 @@ describe('DotDeviceSelectorComponent', () => {
 
     it('should add Default Device as first position', () => {
         fixture.detectChanges();
-        component.devicesOptions.subscribe((devices: DotDevice[]) => {
+        component.options.subscribe((devices: DotDevice[]) => {
             expect(devices[0]).toEqual(defaultDevice);
         });
     });

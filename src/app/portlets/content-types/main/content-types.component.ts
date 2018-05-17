@@ -77,7 +77,7 @@ export class ContentTypesPortletComponent implements OnInit {
         Observable.forkJoin(
             this.dotMessageService.getMessages(this.i18nKeys),
             this.dotContentletService.getAllContentTypes(),
-            this.dotLicenseService.isEnterpriseLicense(),
+            this.dotLicenseService.isEnterprise(),
             this.pushPublishService.getEnvironments().map((environments: DotEnvironment[]) => !!environments.length)
         ).subscribe((res) => {
             const baseTypes: StructureTypeView[] = res[1];

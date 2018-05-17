@@ -32,7 +32,7 @@ describe('DotLicenseService', () => {
     });
 
     it('should call the BE with correct endpoint url and method', () => {
-        this.dotLicenseService.isEnterpriseLicense().subscribe();
+        this.dotLicenseService.isEnterprise().subscribe();
         mockConnectionLicenseResponse(100);
 
         expect(lastConnection.request.method).toBe(0); // 0 is GET method
@@ -41,7 +41,7 @@ describe('DotLicenseService', () => {
 
     it('should return a false response because license is 100 = Community', () => {
         let result;
-        this.dotLicenseService.isEnterpriseLicense().subscribe((res) => (result = res));
+        this.dotLicenseService.isEnterprise().subscribe((res) => (result = res));
         mockConnectionLicenseResponse(100);
 
         expect(result).toBe(false);
@@ -49,7 +49,7 @@ describe('DotLicenseService', () => {
 
     it('should return a true response because license is equal to 200', () => {
         let result: boolean;
-        this.dotLicenseService.isEnterpriseLicense().subscribe((res) => (result = res));
+        this.dotLicenseService.isEnterprise().subscribe((res) => (result = res));
         mockConnectionLicenseResponse(200);
 
         expect(result).toBe(true);
@@ -57,7 +57,7 @@ describe('DotLicenseService', () => {
 
     it('should return a true response because license is equal to 400', () => {
         let result: boolean;
-        this.dotLicenseService.isEnterpriseLicense().subscribe((res) => (result = res));
+        this.dotLicenseService.isEnterprise().subscribe((res) => (result = res));
         mockConnectionLicenseResponse(400);
 
         expect(result).toBe(true);

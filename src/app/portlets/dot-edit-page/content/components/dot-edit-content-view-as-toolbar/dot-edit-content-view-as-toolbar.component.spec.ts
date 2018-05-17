@@ -25,6 +25,8 @@ import { DotPersonaSelectorComponent } from '../../../../../view/components/dot-
 import { DotLanguageSelectorComponent } from '../../../../../view/components/dot-language-selector/dot-language-selector.component';
 import { PageMode } from '../../../shared/models/page-mode.enum';
 import { LoginService } from 'dotcms-js/dotcms-js';
+import { DotLicenseService } from '../../../../../api/services/dot-license/dot-license.service';
+import { of } from 'rxjs/observable/of';
 
 @Component({
     selector: 'dot-test-host',
@@ -72,6 +74,7 @@ describe('DotEditContentViewAsToolbarComponent', () => {
     let languageSelector: DotLanguageSelectorComponent;
     let deviceSelector: DotDeviceSelectorComponent;
     let personaSelector: DotPersonaSelectorComponent;
+    let dotLicenseService: DotLicenseService;
 
     beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
@@ -84,6 +87,7 @@ describe('DotEditContentViewAsToolbarComponent', () => {
             ],
             imports: [BrowserAnimationsModule],
             providers: [
+                DotLicenseService,
                 {
                     provide: DotDevicesService,
                     useClass: DotDevicesServiceMock
@@ -107,122 +111,150 @@ describe('DotEditContentViewAsToolbarComponent', () => {
     beforeEach(() => {
         fixtureHost = DOTTestBed.createComponent(DotTestHostComponent);
         componentHost = fixtureHost.componentInstance;
-
         de = fixtureHost.debugElement.query(By.css('dot-edit-content-view-as-toolbar'));
         component = de.componentInstance;
-        languageSelector = de.query(By.css('dot-language-selector')).componentInstance;
-        deviceSelector = de.query(By.css('dot-device-selector')).componentInstance;
-        personaSelector = de.query(By.css('dot-persona-selector')).componentInstance;
-
-        spyOn(component, 'changePersonaHandler').and.callThrough();
-        spyOn(component, 'changeDeviceHandler').and.callThrough();
-        spyOn(component, 'changeLanguageHandler').and.callThrough();
-        spyOn(component.changeViewAs, 'emit');
-
-        componentHost.pageState = new DotRenderedPageState(mockUser, JSON.parse(JSON.stringify(mockDotRenderedPage)));
+        dotLicenseService = de.injector.get(DotLicenseService);
     });
 
-    it('should have Persona selector', () => {
-        expect(personaSelector).not.toBeNull();
-    });
+    describe('community license', () => {
+        beforeEach(() => {
+            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
+            spyOn(component.changeViewAs, 'emit');
 
-    it('should emit changes in Personas', () => {
-        fixtureHost.detectChanges();
-        personaSelector.selected.emit(mockDotPersona);
+            componentHost.pageState = new DotRenderedPageState(mockUser, JSON.parse(JSON.stringify(mockDotRenderedPage)));
 
-        expect(component.changePersonaHandler).toHaveBeenCalledWith(mockDotPersona);
-        expect(component.changeViewAs.emit).toHaveBeenCalledWith({
-            language: mockDotLanguage,
-            persona: mockDotPersona
+            fixtureHost.detectChanges();
+        });
+
+        it('should have only language', () => {
+            expect(de.query(By.css('dot-language-selector'))).not.toBeNull();
+            expect(de.query(By.css('dot-device-selector'))).toBeFalsy();
+            expect(de.query(By.css('dot-persona-selector'))).toBeFalsy();
         });
     });
 
-    it('should have Device selector', () => {
-        expect(deviceSelector).not.toBeNull();
-    });
+    describe('enterprise license', () => {
+        beforeEach(() => {
+            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
+            spyOn(component, 'changePersonaHandler').and.callThrough();
+            spyOn(component, 'changeDeviceHandler').and.callThrough();
+            spyOn(component, 'changeLanguageHandler').and.callThrough();
+            spyOn(component.changeViewAs, 'emit');
 
-    it('should emit changes in Device', () => {
-        fixtureHost.detectChanges();
-        deviceSelector.selected.emit(mockDotDevice);
+            componentHost.pageState = new DotRenderedPageState(mockUser, JSON.parse(JSON.stringify(mockDotRenderedPage)));
 
-        expect(component.changeDeviceHandler).toHaveBeenCalledWith(mockDotDevice);
-        expect(component.changeViewAs.emit).toHaveBeenCalledWith({
-            language: mockDotLanguage,
-            device: mockDotDevice
+            fixtureHost.detectChanges();
+
+            languageSelector = de.query(By.css('dot-language-selector')).componentInstance;
+            deviceSelector = de.query(By.css('dot-device-selector')).componentInstance;
+            personaSelector = de.query(By.css('dot-persona-selector')).componentInstance;
         });
-    });
 
-    it('should have Language selector', () => {
-        expect(languageSelector).not.toBeNull();
-    });
-
-    it('should emit changes in Language', () => {
-        const testlanguage: DotLanguage = {
-            id: 2,
-            languageCode: 'es',
-            countryCode: 'es',
-            language: 'test',
-            country: 'test'
-        };
-        fixtureHost.detectChanges();
-        languageSelector.selected.emit(testlanguage);
-
-        expect(component.changeLanguageHandler).toHaveBeenCalledWith(testlanguage);
-        expect(component.changeViewAs.emit).toHaveBeenCalledWith({ language: testlanguage });
-    });
-
-    it('should propagate the values to the selector components on init', () => {
-        componentHost.pageState = new DotRenderedPageState(mockUser, {
-            ...mockDotRenderedPage,
-            viewAs: mockDotEditPageViewAs
+        it('should have persona selector', () => {
+            expect(personaSelector).not.toBeNull();
         });
-        fixtureHost.detectChanges();
 
-        expect(languageSelector.value).toEqual(mockDotEditPageViewAs.language);
-        expect(deviceSelector.value).toEqual(mockDotEditPageViewAs.device);
-        expect(personaSelector.value).toEqual(mockDotEditPageViewAs.persona);
-    });
+        it('should emit changes in personas', () => {
+            personaSelector.selected.emit(mockDotPersona);
 
-    it('should not have what\'s change checkbox', () => {
-        componentHost.pageState = new DotRenderedPageState(mockUser, {
-            ...mockDotRenderedPage,
-            page: {
-                ...mockDotRenderedPage.page,
-                lockedBy: '123'
-            }
+            expect(component.changePersonaHandler).toHaveBeenCalledWith(mockDotPersona);
+            expect(component.changeViewAs.emit).toHaveBeenCalledWith({
+                language: mockDotLanguage,
+                persona: mockDotPersona
+            });
         });
-        fixtureHost.detectChanges();
-        const whatsChanged: DebugElement = de.query(By.css('p-checkbox'));
-        expect(whatsChanged).toBe(null);
-    });
 
-    it('should have what\'s change checkbox', () => {
-        componentHost.pageState = new DotRenderedPageState(mockUser, JSON.parse(JSON.stringify(mockDotRenderedPage)), PageMode.PREVIEW);
-        fixtureHost.detectChanges();
-        const whatsChanged: DebugElement = de.query(By.css('p-checkbox'));
-        expect(whatsChanged).toBeTruthy();
+        it('should have Device selector', () => {
+            expect(deviceSelector).not.toBeNull();
+        });
+
+        it('should emit changes in Device', () => {
+            fixtureHost.detectChanges();
+            deviceSelector.selected.emit(mockDotDevice);
+
+            expect(component.changeDeviceHandler).toHaveBeenCalledWith(mockDotDevice);
+            expect(component.changeViewAs.emit).toHaveBeenCalledWith({
+                language: mockDotLanguage,
+                device: mockDotDevice
+            });
+        });
+
+        it('should have Language selector', () => {
+            expect(languageSelector).not.toBeNull();
+        });
+
+        it('should emit changes in Language', () => {
+            const testlanguage: DotLanguage = {
+                id: 2,
+                languageCode: 'es',
+                countryCode: 'es',
+                language: 'test',
+                country: 'test'
+            };
+            fixtureHost.detectChanges();
+            languageSelector.selected.emit(testlanguage);
+
+            expect(component.changeLanguageHandler).toHaveBeenCalledWith(testlanguage);
+            expect(component.changeViewAs.emit).toHaveBeenCalledWith({ language: testlanguage });
+        });
+
+        it('should propagate the values to the selector components on init', () => {
+            componentHost.pageState = new DotRenderedPageState(mockUser, {
+                ...mockDotRenderedPage,
+                viewAs: mockDotEditPageViewAs
+            });
+            fixtureHost.detectChanges();
+
+            expect(languageSelector.value).toEqual(mockDotEditPageViewAs.language);
+            expect(deviceSelector.value).toEqual(mockDotEditPageViewAs.device);
+            expect(personaSelector.value).toEqual(mockDotEditPageViewAs.persona);
+        });
     });
 
     describe('what\'s change event', () => {
         let whatsChanged: DebugElement;
-        beforeEach(() => {
-            spyOn(component.whatschange, 'emit');
-            componentHost.pageState = new DotRenderedPageState(mockUser, JSON.parse(JSON.stringify(mockDotRenderedPage)), PageMode.PREVIEW);
+
+        it('should not have what\'s change checkbox', () => {
+            componentHost.pageState = new DotRenderedPageState(mockUser, {
+                ...mockDotRenderedPage,
+                page: {
+                    ...mockDotRenderedPage.page,
+                    lockedBy: '123'
+                }
+            });
             fixtureHost.detectChanges();
-
             whatsChanged = de.query(By.css('p-checkbox'));
+            expect(whatsChanged).toBe(null);
         });
 
-        it('should emit what\'s change in true', () => {
-            whatsChanged.triggerEventHandler('onChange', true);
-            expect(component.whatschange.emit).toHaveBeenCalledTimes(1);
-            expect(component.whatschange.emit).toHaveBeenCalledWith(true);
-        });
+        describe('events', () => {
+            beforeEach(() => {
+                spyOn(component.whatschange, 'emit');
+                componentHost.pageState = new DotRenderedPageState(
+                    mockUser,
+                    JSON.parse(JSON.stringify(mockDotRenderedPage)),
+                    PageMode.PREVIEW
+                );
+                fixtureHost.detectChanges();
 
-        it('should emit what\'s change in false', () => {
-            whatsChanged.triggerEventHandler('onChange', false);
-            expect(component.whatschange.emit).toHaveBeenCalledTimes(1);
-            expect(component.whatschange.emit).toHaveBeenCalledWith(false);
+                whatsChanged = de.query(By.css('p-checkbox'));
+            });
+
+            it('should have what\'s change checkbox', () => {
+                expect(whatsChanged).toBeTruthy();
+            });
+
+            it('should emit what\'s change in true', () => {
+                whatsChanged.triggerEventHandler('onChange', true);
+                expect(component.whatschange.emit).toHaveBeenCalledTimes(1);
+                expect(component.whatschange.emit).toHaveBeenCalledWith(true);
+            });
+
+            it('should emit what\'s change in false', () => {
+                whatsChanged.triggerEventHandler('onChange', false);
+                expect(component.whatschange.emit).toHaveBeenCalledTimes(1);
+                expect(component.whatschange.emit).toHaveBeenCalledWith(false);
+            });
         });
     });
 });

@@ -22,7 +22,7 @@ export class DotLicenseService {
      * @returns {Observable<boolean>}
      * @memberof DotLicenseService
      */
-    isEnterpriseLicense(): Observable<boolean> {
+    isEnterprise(): Observable<boolean> {
         return this.getLicense()
             .map((license) => license['level'] >= 200);
     }

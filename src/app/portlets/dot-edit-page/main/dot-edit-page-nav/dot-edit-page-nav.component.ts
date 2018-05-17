@@ -54,7 +54,7 @@ export class DotEditPageNavComponent implements OnChanges {
             ])
             .pipe(
                 mergeMap(() => {
-                    return this.dotLicenseService.isEnterpriseLicense();
+                    return this.dotLicenseService.isEnterprise();
                 }),
                 map((isEnterpriseLicense: boolean) => {
                     this.isEnterpriseLicense = isEnterpriseLicense;

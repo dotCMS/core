@@ -1,8 +1,8 @@
 <p-dropdown class="tiny invert"
-    [options]="personasOptions | async"
-    dataKey="identifier"
-    optionLabel="name"
-    [style]="{'width':'auto'}"
+    (onChange)="change($event.value)"
     [(ngModel)]="value"
-    (onChange)="change($event.value)">
+    [options]="options | async"
+    [style]="{'width':'auto'}"
+    dataKey="identifier"
+    optionLabel="name">
 </p-dropdown>

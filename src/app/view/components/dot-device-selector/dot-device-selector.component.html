@@ -1,7 +1,8 @@
-<p-dropdown class="tiny invert" [options]="devicesOptions | async"
-    optionLabel="name"
-    dataKey="inode"
+<p-dropdown class="tiny invert"
+    (onChange)="change($event.value)"
     [(ngModel)]="value"
+    [options]="options | async"
     [style]="{'width':'auto'}"
-    (onChange)="change($event.value)">
+    dataKey="inode"
+    optionLabel="name">
 </p-dropdown>

@@ -28,7 +28,7 @@ class MockDotContentletService {
 
 @Injectable()
 class MockDotLicenseService {
-    isEnterpriseLicense(): Observable<boolean> {
+    isEnterprise(): Observable<boolean> {
         return Observable.of(true);
     }
 }
@@ -176,7 +176,7 @@ describe('ContentTypesPortletComponent', () => {
     });
 
     it('should have ONLY remove action because is community license', () => {
-        spyOn(dotLicenseService, 'isEnterpriseLicense').and.returnValue(Observable.of(false));
+        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(Observable.of(false));
 
         fixture.detectChanges();
         expect(

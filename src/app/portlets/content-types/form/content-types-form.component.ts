@@ -199,7 +199,7 @@ export class ContentTypesFormComponent implements OnInit {
     }
 
     private initWorkflowField(): void {
-        this.dotLicenseService.isEnterpriseLicense()
+        this.dotLicenseService.isEnterprise()
             .subscribe((isEnterpriseLicense: boolean) => {
                 this.updateWorkflowFormControl(isEnterpriseLicense);
             });

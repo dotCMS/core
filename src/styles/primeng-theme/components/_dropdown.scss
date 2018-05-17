@@ -110,13 +110,6 @@ p-dropdown {
             }
         }
 
-        &.ui-state-disabled {
-            .ui-inputtext {
-                color: $white;
-                opacity: $field-disabled-opacity;
-            }
-        }
-
         .ui-dropdown {
             &:not(.ui-state-disabled) {
                 &:hover,
@@ -132,17 +125,14 @@ p-dropdown {
             }
 
             &.ui-state-disabled {
-                .ui-dropdown-trigger {
+                .ui-inputtext,
+                .ui-dropdown-trigger,
+                .ui-dropdown-label:hover {
                     color: $white;
-                    opacity: $field-disabled-opacity;
+                    opacity: 0.4;
                 }
 
-                .ui-dropdown-label {
-                    &:hover {
-                        color: $white;
-                        opacity: $field-disabled-opacity;
-                    }
-                }
+
             }
         }
     }
