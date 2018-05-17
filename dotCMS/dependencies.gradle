@@ -306,7 +306,7 @@ dependencies {
 	compile group: 'com.twelvemonkeys.imageio', name: 'imageio-icns', version:'3.2.1'
 	compile group: 'com.twelvemonkeys.imageio', name: 'imageio-pcx', version:'3.2.1'
 	compile group: 'com.twelvemonkeys.imageio', name: 'imageio-thumbsdb', version:'3.2.1'
-	compile group: 'com.twelvemonkeys.imageio', name: 'imageio-batik', version:'3.2.1'
+	compile group: 'com.twelvemonkeys.imageio', name: 'imageio-batik', version:'3.3.2'
 	compile group: 'com.twelvemonkeys.imageio', name: 'imageio-clippath', version:'3.2.1'
     compile group: 'com.twelvemonkeys.servlet', name: 'servlet', version:'3.2.1'
     compile 'com.github.ben-manes.caffeine:caffeine:2.4.0'
@@ -380,7 +380,6 @@ dependencies {
 
     compile group: 'org.apache.xmlgraphics', name: 'batik-rasterizer', version:'1.8'
 
-    compile group: 'org.apache.xmlgraphics', name: 'batik-anim', version:'1.8'
     compile (group: 'org.apache.xmlgraphics', name: 'xmlgraphics-commons', version:'1.5') {
         exclude(group: 'commons-logging')
     }
