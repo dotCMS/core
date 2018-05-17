@@ -82,6 +82,7 @@ public class VisitorLoggerTest {
         Assert.assertTrue(result.stream()
                 .filter(constructor -> constructor.getDeclaringClass().getName()
                         .equals(CustomCharacterTest.class.getName())).findAny().isPresent());
+        VisitorLogger.removeConstructor(CustomCharacterTest.class);
     }
 
     @Test
