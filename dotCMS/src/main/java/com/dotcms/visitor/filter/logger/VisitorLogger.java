@@ -6,6 +6,7 @@ import com.dotcms.visitor.business.VisitorAPIImpl;
 import com.dotcms.visitor.filter.characteristics.*;
 import com.dotmarketing.exception.DotRuntimeException;
 
+import com.dotmarketing.logConsole.model.LogMapper;
 import com.dotmarketing.util.Logger;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -71,7 +72,8 @@ public class VisitorLogger {
      */
     public static void log(final HttpServletRequest request, final HttpServletResponse response) {
 
-        if (!shouldLog(request, response)) {
+        if (!shouldLog(request, response) || !LogMapper.getInstance()
+                .isLogEnabled(VisitorLogger.VISITOR_LOG_BASE_NAME)) {
             return;
         }
         // clear after every request

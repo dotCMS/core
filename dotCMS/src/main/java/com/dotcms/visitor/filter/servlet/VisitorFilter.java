@@ -68,25 +68,24 @@ public class VisitorFilter implements Filter {
     public void doFilter(final ServletRequest req, final ServletResponse res, final FilterChain chain)
             throws IOException, ServletException {
 
-        if (LogMapper.getInstance().isLogEnabled(VisitorLogger.VISITOR_LOG_BASE_NAME)){
-            final boolean isNewConnection = !DbConnectionFactory.connectionExists();
-            final HttpServletRequest request = (HttpServletRequest) req;
-            final HttpServletResponse response = (HttpServletResponse) res;
-            try {
-                long startTime = System.currentTimeMillis();
-                chain.doFilter(req, res);
-                setVanityAsAttribute(request);
-                request.setAttribute(DOTPAGE_PROCESSING_TIME, System.currentTimeMillis() - startTime);
-                VisitorLogger.log(request, response);
-            } catch (Exception e) {
-                Logger.error(this.getClass(), e.getMessage(), e);
-                return;
-            } finally {
-                if (isNewConnection) {
-                    DbConnectionFactory.closeSilently();
-                }
+        final boolean isNewConnection = !DbConnectionFactory.connectionExists();
+        final HttpServletRequest request = (HttpServletRequest) req;
+        final HttpServletResponse response = (HttpServletResponse) res;
+        try {
+            long startTime = System.currentTimeMillis();
+            chain.doFilter(req, res);
+            setVanityAsAttribute(request);
+            request.setAttribute(DOTPAGE_PROCESSING_TIME, System.currentTimeMillis() - startTime);
+            VisitorLogger.log(request, response);
+        } catch (Exception e) {
+            Logger.error(this.getClass(), e.getMessage(), e);
+            return;
+        } finally {
+            if (isNewConnection) {
+                DbConnectionFactory.closeSilently();
             }
         }
+
     }
 
     public void destroy() {
