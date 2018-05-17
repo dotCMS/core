@@ -15,26 +15,17 @@ public class RulesEngineCharacter extends AbstractCharacter {
         String rulesRequest = null;
         String rulesSession = null;
         if (request.getAttribute(WebKeys.RULES_ENGINE_FIRE_LIST) != null) {
-            FiredRulesList firedRulesList = request.getAttribute(WebKeys.RULES_ENGINE_FIRE_LIST) == null 
-                    ? new FiredRulesList()
-                    : (FiredRulesList) request.getAttribute(WebKeys.RULES_ENGINE_FIRE_LIST);
+            FiredRulesList firedRulesList = (FiredRulesList) request.getAttribute(WebKeys.RULES_ENGINE_FIRE_LIST);
             rulesRequest =
                     String.join(" ", firedRulesList.values().stream().map(FiredRule::getRuleID).collect(Collectors.toList()));
             getMap().put("rulesRequest", rulesRequest);
         }
         if (request.getSession().getAttribute(WebKeys.RULES_ENGINE_FIRE_LIST) != null) {
-            FiredRulesList firedRulesList =
-                    request.getSession().getAttribute(WebKeys.RULES_ENGINE_FIRE_LIST) == null 
-                    ? new FiredRulesList()
-                    : (FiredRulesList) request.getSession().getAttribute(WebKeys.RULES_ENGINE_FIRE_LIST);
+            FiredRulesList firedRulesList = (FiredRulesList) request.getSession().getAttribute(WebKeys.RULES_ENGINE_FIRE_LIST);
             rulesSession =
                     String.join(" ", firedRulesList.values().stream().map(FiredRule::getRuleID).collect(Collectors.toList()));
             getMap().put("rulesSession", rulesSession);
         }
-
-
-
-
     }
 
 }
