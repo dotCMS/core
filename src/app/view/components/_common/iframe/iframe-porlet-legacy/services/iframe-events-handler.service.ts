@@ -27,8 +27,16 @@ export class DotIframeEventsHandler {
         }
     }
 
-    handle(event: CustomEvent) {
-        this.handlers[event.detail.name](event);
+    /**
+     * Handle custom events from the iframe portlets
+     *
+     * @param {CustomEvent} event
+     * @memberof DotIframeEventsHandler
+     */
+    handle(event: CustomEvent): void {
+        if (this.handlers[event.detail.name]) {
+            this.handlers[event.detail.name](event);
+        }
     }
 
     private createContentlet($event: CustomEvent): void {
