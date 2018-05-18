@@ -89,6 +89,8 @@ public class VisitorFilter implements Filter {
                     DbConnectionFactory.closeSilently();
                 }
             }
+        }else{
+            chain.doFilter(req, res);
         }
     }
 
