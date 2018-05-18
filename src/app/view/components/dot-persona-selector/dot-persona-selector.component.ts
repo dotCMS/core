@@ -23,7 +23,13 @@ export class DotPersonaSelectorComponent implements OnInit {
             .getMessages(['modes.persona.no.persona'])
             .pipe(
                 mergeMap((messages: string[]) =>
-                    this.dotPersonasService.get().pipe(map((personas: DotPersona[]) => this.setOptions(messages, personas)))
+                    this.dotPersonasService
+                        .get()
+                        .pipe(
+                            map((personas: DotPersona[]) =>
+                                this.setOptions(this.dotMessageService.get('modes.persona.no.persona'), personas)
+                            )
+                        )
                 )
             );
     }
@@ -36,7 +42,7 @@ export class DotPersonaSelectorComponent implements OnInit {
         this.selected.emit(persona);
     }
 
-    private setOptions(messages: any[], personas: DotPersona[]): DotPersona[] {
-        return [{ name: messages['modes.persona.no.persona'], identifier: '0' }, ...personas];
+    private setOptions(message: string, personas: DotPersona[]): DotPersona[] {
+        return [{ name: message, identifier: '0' }, ...personas];
     }
 }

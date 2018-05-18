@@ -21,8 +21,14 @@ export class DotDeviceSelectorComponent implements OnInit {
     ngOnInit() {
         this.options = this.dotMessageService
             .getMessages(['editpage.viewas.default.device'])
-            .mergeMap((messages: string[]) =>
-                this.dotDevicesService.get().pipe(map((devices: DotDevice[]) => this.setOptions(messages, devices)))
+            .mergeMap(() =>
+                this.dotDevicesService
+                    .get()
+                    .pipe(
+                        map((devices: DotDevice[]) =>
+                            this.setOptions(this.dotMessageService.get('editpage.viewas.default.device'), devices)
+                        )
+                    )
             );
     }
 
@@ -34,10 +40,10 @@ export class DotDeviceSelectorComponent implements OnInit {
         this.selected.emit(device);
     }
 
-    private setOptions(messages: any[], devices: DotDevice[]): DotDevice[] {
+    private setOptions(message: string, devices: DotDevice[]): DotDevice[] {
         return [
             {
-                name: messages['editpage.viewas.default.device'],
+                name: message,
                 cssHeight: '',
                 cssWidth: '',
                 inode: '0'
