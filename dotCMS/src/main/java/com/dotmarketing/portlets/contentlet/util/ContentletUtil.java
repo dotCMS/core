@@ -36,8 +36,7 @@ public class ContentletUtil {
 			FieldType.TAB_DIVIDER.toString(),
 			FieldType.COLUMN.toString(),
 			FieldType.ROW.toString(),
-			FieldType.BUTTON.toString(),
-			FieldType.HIDDEN.toString()
+			FieldType.BUTTON.toString()
 	);
 
 
