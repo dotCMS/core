@@ -1,6 +1,8 @@
 
 package com.dotcms.visitor.filter.servlet;
 
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.vanityurl.handler.VanityUrlHandlerResolver;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
@@ -68,24 +70,26 @@ public class VisitorFilter implements Filter {
     public void doFilter(final ServletRequest req, final ServletResponse res, final FilterChain chain)
             throws IOException, ServletException {
 
-        final boolean isNewConnection = !DbConnectionFactory.connectionExists();
-        final HttpServletRequest request = (HttpServletRequest) req;
-        final HttpServletResponse response = (HttpServletResponse) res;
-        try {
-            long startTime = System.currentTimeMillis();
-            chain.doFilter(req, res);
-            setVanityAsAttribute(request);
-            request.setAttribute(DOTPAGE_PROCESSING_TIME, System.currentTimeMillis() - startTime);
-            VisitorLogger.log(request, response);
-        } catch (Exception e) {
-            Logger.error(this.getClass(), e.getMessage(), e);
-            return;
-        } finally {
-            if (isNewConnection) {
-                DbConnectionFactory.closeSilently();
+        if(LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level) {
+            final boolean isNewConnection = !DbConnectionFactory.connectionExists();
+            final HttpServletRequest request = (HttpServletRequest) req;
+            final HttpServletResponse response = (HttpServletResponse) res;
+            try {
+                long startTime = System.currentTimeMillis();
+                chain.doFilter(req, res);
+                setVanityAsAttribute(request);
+                request.setAttribute(DOTPAGE_PROCESSING_TIME,
+                        System.currentTimeMillis() - startTime);
+                VisitorLogger.log(request, response);
+            } catch (Exception e) {
+                Logger.error(this.getClass(), e.getMessage(), e);
+                return;
+            } finally {
+                if (isNewConnection) {
+                    DbConnectionFactory.closeSilently();
+                }
             }
         }
-
     }
 
     public void destroy() {
