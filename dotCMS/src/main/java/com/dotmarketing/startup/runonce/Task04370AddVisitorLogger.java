@@ -11,7 +11,7 @@ import java.sql.SQLException;
  * This upgrade task inserts into DB and enables a new visitor logger
  * @author nollymar
  */
-public class Task04365AddVisitorLogger implements StartupTask {
+public class Task04370AddVisitorLogger implements StartupTask {
 
     public boolean forceRun() {
         return true;
