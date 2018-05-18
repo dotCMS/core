@@ -1,12 +1,9 @@
 package com.dotcms.rest.api.v1.theme;
 
-import com.dotcms.repackage.com.fasterxml.jackson.core.JsonProcessingException;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectWriter;
 import com.dotcms.util.JsonProcessingRuntimeException;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.PaginationException;
-import com.dotcms.util.pagination.Paginator;
 import com.dotcms.util.pagination.ThemePaginator;
 import com.dotmarketing.portlets.htmlpages.theme.business.ThemeSerializer;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,22 +16,17 @@ import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.htmlpages.theme.business.ThemeAPI;
 import com.dotmarketing.util.Logger;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.module.SimpleModule;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.List;
 import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.map;

@@ -1,12 +1,10 @@
 package com.dotcms.util.pagination;
 
-import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.htmlpages.theme.business.ThemeAPIImpl;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
 import org.junit.Test;
