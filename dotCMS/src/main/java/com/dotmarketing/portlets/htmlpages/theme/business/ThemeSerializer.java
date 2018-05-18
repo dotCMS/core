@@ -37,7 +37,7 @@ public class ThemeSerializer extends JsonSerializer<Contentlet> {
         try {
             this.systemUser = userAPI.getSystemUser();
         } catch (DotDataException e) {
-        throw new DotRuntimeException(e);
+            throw new DotRuntimeException(e);
         }
     }
 

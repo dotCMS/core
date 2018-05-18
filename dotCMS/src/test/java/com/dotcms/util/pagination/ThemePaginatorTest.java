@@ -12,6 +12,7 @@ import com.liferay.portal.model.User;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
@@ -36,18 +37,25 @@ public class ThemePaginatorTest {
         final String query = "+parentpath:/application/themes/* +title:template.vtl +conhost:1";
         final ContentletAPI contentletAPI = mock(ContentletAPI.class);
         final User user = mock(User.class);
-        final PaginatedArrayList<Contentlet> themesExpected = new PaginatedArrayList<Contentlet>();
-        themesExpected.setTotalResults(1);
-        themesExpected.addAll(list(mock(Contentlet.class)));
+        final PaginatedArrayList<ContentletSearch> contentletSearchList = new PaginatedArrayList<>();
+        contentletSearchList.addAll(list(createContentSerachMock("1"), createContentSerachMock("2"),
+                createContentSerachMock("3")));
+        final List<Contentlet> contentlets = list(mock(Contentlet.class), mock(Contentlet.class),
+                mock(Contentlet.class));
 
-        when(contentletAPI.search(query, 0, -1, null, user, false)).thenReturn(themesExpected);
+        when(contentletAPI.searchIndex(query, 0, -1, "parentPath asc", user, false))
+                .thenReturn(contentletSearchList);
+
+        when(contentletAPI.findContentlets(list("1", "2", "3"))).thenReturn(contentlets);
 
         final ThemePaginator themePaginator = new ThemePaginator(contentletAPI);
+        Map<String, Object> params = map(ThemePaginator.HOST_ID_PARAMETER_NAME, "1");
+        final PaginatedArrayList<Contentlet> themes = themePaginator.getItems(user, 0, -1, params);
 
-        final PaginatedArrayList<Contentlet> themes = themePaginator.getItems(user, null, -1, 0, null,
-                OrderDirection.ASC, map(ThemePaginator.HOST_ID_PARAMETER_NAME, "1"));
-
-        assertEquals(themesExpected, themes);
+        assertEquals(contentlets.size(), themes.size());
+        assertEquals(contentlets.get(0), themes.get(0));
+        assertEquals(contentlets.get(1), themes.get(1));
+        assertEquals(contentlets.get(2), themes.get(2));
     }
 
     /**
@@ -56,20 +64,30 @@ public class ThemePaginatorTest {
      * Given: a hostId null
      * Should: return all the themes
      */
-    /*public void findThemesWithoutHostId() throws DotSecurityException, DotDataException {
+    @Test
+    public void findThemesWithoutHostId() throws DotSecurityException, DotDataException {
         final String query = "+parentpath:/application/themes/* +title:template.vtl";
         final ContentletAPI contentletAPI = mock(ContentletAPI.class);
         final User user = mock(User.class);
-        final List<Contentlet> themesExpected = list(mock(Contentlet.class));
+        final PaginatedArrayList<ContentletSearch> contentletSearchList = new PaginatedArrayList<>();
+        contentletSearchList.addAll(list(createContentSerachMock("1"), createContentSerachMock("2"),
+                createContentSerachMock("3")));
+        final List<Contentlet> contentlets = list(mock(Contentlet.class), mock(Contentlet.class),
+                mock(Contentlet.class));
 
-        when(contentletAPI.search(query, 0, -1, null, user, false)).thenReturn(themesExpected);
+        when(contentletAPI.searchIndex(query, 0, -1, "parentPath asc", user, false))
+                .thenReturn(contentletSearchList);
 
-        final ThemeAPIImpl themeAPI = new ThemeAPIImpl(contentletAPI);
+        when(contentletAPI.findContentlets(list("1", "2", "3"))).thenReturn(contentlets);
 
-        final List<Contentlet> themes = themeAPI.findAll(user, null);
+        final ThemePaginator themePaginator = new ThemePaginator(contentletAPI);
+        final PaginatedArrayList<Contentlet> themes = themePaginator.getItems(user, 0, -1, null);
 
-        assertEquals(themesExpected, themes);
-    }*/
+        assertEquals(contentlets.size(), themes.size());
+        assertEquals(contentlets.get(0), themes.get(0));
+        assertEquals(contentlets.get(1), themes.get(1));
+        assertEquals(contentlets.get(2), themes.get(2));
+    }
 
     /**
      * Test of {@link ThemeAPIImpl#findAll(User, String)}
@@ -77,7 +95,8 @@ public class ThemePaginatorTest {
      * Given: throw a DotSecurityException
      * Should: throw a DotSecurityException
      */
-    /*public void findThemesThrowDotSecurityException() throws  DotDataException {
+    @Test
+    public void findThemesThrowDotSecurityException() throws DotDataException, DotSecurityException {
         final String query = "+parentpath:/application/themes/* +title:template.vtl";
         final ContentletAPI contentletAPI = mock(ContentletAPI.class);
         final User user = mock(User.class);
@@ -85,16 +104,17 @@ public class ThemePaginatorTest {
         final DotSecurityException exception = new DotSecurityException("");
 
         try {
-            when(contentletAPI.search(query, 0, -1, null, user, false)).thenThrow(exception);
+            when(contentletAPI.searchIndex(query, 0, -1, "parentPath asc", user, false))
+                    .thenThrow(exception);
 
-            final ThemeAPIImpl themeAPI = new ThemeAPIImpl(contentletAPI);
+            final ThemePaginator themePaginator = new ThemePaginator(contentletAPI);
 
-            themeAPI.findAll(user, null);
+            themePaginator.getItems(user, 0, -1, null);
             assertTrue(false);
-        } catch(DotSecurityException e){
-            assertTrue(true);
+        } catch(PaginationException e){
+            assertEquals(exception, e.getCause());
         }
-    }*/
+    }
 
     /**
      * Test of {@link ThemeAPIImpl#findAll(User, String)}
@@ -102,7 +122,8 @@ public class ThemePaginatorTest {
      * Given: throw a DotDataException
      * Should: throw a DotDataException
      */
-    /*public void findThemesThrowDotDataException() throws  DotSecurityException {
+    @Test
+    public void findThemesThrowDotDataException() throws DotSecurityException, DotDataException {
         final String query = "+parentpath:/application/themes/* +title:template.vtl";
         final ContentletAPI contentletAPI = mock(ContentletAPI.class);
         final User user = mock(User.class);
@@ -110,43 +131,17 @@ public class ThemePaginatorTest {
         final DotDataException exception = new DotDataException("");
 
         try {
-            when(contentletAPI.search(query, 0, -1, null, user, false)).thenThrow(exception);
+            when(contentletAPI.searchIndex(query, 0, -1, "parentPath asc", user, false))
+                    .thenThrow(exception);
 
-            final ThemeAPIImpl themeAPI = new ThemeAPIImpl(contentletAPI);
+            final ThemePaginator themePaginator = new ThemePaginator(contentletAPI);
 
-            themeAPI.findAll(user, null);
+            themePaginator.getItems(user, 0, -1, null);
             assertTrue(false);
-        } catch(DotDataException e){
-            assertTrue(true);
+        } catch(PaginationException e){
+            assertEquals(exception, e.getCause());
         }
-    }*/
-
-    /**
-     * Test of {@link ThemeAPIImpl#find(User, String, int, int, OrderDirection)}
-     *
-     * Given: OrderDirection.ASC
-     * Should: parentPath asc sortby
-     */
-    /*public void findOrderAsc() throws DotDataException, DotSecurityException {
-        final String hostId = "1";
-        final int limit = 10;
-        final int offset = 11;
-        final String query = "+parentpath:/application/themes/* +title:template.vtl +conhost:1";
-        final ContentletAPI contentletAPI = mock(ContentletAPI.class);
-        final User user = mock(User.class);
-        final List<ContentletSearch> contentletSearchList = list(createContentSerachMock("1"),
-                createContentSerachMock("2"), createContentSerachMock("3"));
-        final List<Contentlet> contentletListExpected = list(mock(Contentlet.class), mock(Contentlet.class), mock(Contentlet.class));
-
-        when(contentletAPI.searchIndex(query, limit, offset, "parentPath asc", user, false))
-                .thenReturn(contentletSearchList);
-        when(contentletAPI.findContentlets(list("1", "2", "3"))).thenReturn(contentletListExpected);
-
-        final ThemeAPIImpl themeAPI = new ThemeAPIImpl(contentletAPI);
-
-        final List<Contentlet> themes = themeAPI.find(user, hostId, limit, offset, OrderDirection.ASC);
-        assertEquals(contentletListExpected, themes);
-    }*/
+    }
 
     /**
      * Test of {@link ThemeAPIImpl#find(User, String, int, int, OrderDirection)}
@@ -154,53 +149,70 @@ public class ThemePaginatorTest {
      * Given: OrderDirection.DESC
      * Should: parentPath desc sortby
      */
-    /*public void findOrderDesc() throws DotDataException, DotSecurityException {
-        final String hostId = "1";
-        final int limit = 10;
-        final int offset = 11;
+    @Test
+    public void findOrderDesc() throws DotDataException, DotSecurityException {
         final String query = "+parentpath:/application/themes/* +title:template.vtl +conhost:1";
         final ContentletAPI contentletAPI = mock(ContentletAPI.class);
         final User user = mock(User.class);
-        final List<ContentletSearch> contentletSearchList = list(createContentSerachMock("1"),
-                createContentSerachMock("2"), createContentSerachMock("3"));
-        final List<Contentlet> contentletListExpected = list(mock(Contentlet.class), mock(Contentlet.class), mock(Contentlet.class));
+        final PaginatedArrayList<ContentletSearch> contentletSearchList = new PaginatedArrayList<>();
+        contentletSearchList.addAll(list(createContentSerachMock("1"), createContentSerachMock("2"),
+                createContentSerachMock("3")));
+        final List<Contentlet> contentlets = list(mock(Contentlet.class), mock(Contentlet.class),
+                mock(Contentlet.class));
 
-        when(contentletAPI.searchIndex(query, limit, offset, "parentPath desc", user, false))
+        when(contentletAPI.searchIndex(query, 0, -1, "parentPath desc", user, false))
                 .thenReturn(contentletSearchList);
-        when(contentletAPI.findContentlets(list("1", "2", "3"))).thenReturn(contentletListExpected);
 
-        final ThemeAPIImpl themeAPI = new ThemeAPIImpl(contentletAPI);
+        when(contentletAPI.findContentlets(list("1", "2", "3"))).thenReturn(contentlets);
 
-        final List<Contentlet> themes = themeAPI.find(user, hostId, limit, offset, OrderDirection.DESC);
-        assertEquals(contentletListExpected, themes);
-    }*/
+        final ThemePaginator themePaginator = new ThemePaginator(contentletAPI);
+        Map<String, Object> params = map(
+                ThemePaginator.HOST_ID_PARAMETER_NAME, "1",
+                Paginator.ORDER_DIRECTION_PARAM_NAME, OrderDirection.DESC
+        );
+        final PaginatedArrayList<Contentlet> themes = themePaginator.getItems(user, 0, -1, params);
+
+        assertEquals(contentlets.size(), themes.size());
+        assertEquals(contentlets.get(0), themes.get(0));
+        assertEquals(contentlets.get(1), themes.get(1));
+        assertEquals(contentlets.get(2), themes.get(2));
+    }
 
     /**
      * Test of {@link ThemeAPIImpl#find(User, String, int, int, OrderDirection)}
      *
-     * Given: hostId null and any OrderDirection
+     * Given: hostId null and OrderDirection DESC
      * Should: return list of contents
      */
-    /*public void findOrderAscWithHostIdNull() throws DotDataException, DotSecurityException {
-        final String hostId = null;
-        final int limit = 10;
-        final int offset = 11;
+    @Test
+    public void findOrderAscWithHostIdNull() throws DotDataException, DotSecurityException {
         final String query = "+parentpath:/application/themes/* +title:template.vtl";
         final ContentletAPI contentletAPI = mock(ContentletAPI.class);
         final User user = mock(User.class);
-        final List<ContentletSearch> contentletSearchList = list(createContentSerachMock("1"),
-                createContentSerachMock("2"), createContentSerachMock("3"));
-        final List<Contentlet> contentletListExpected = list(mock(Contentlet.class), mock(Contentlet.class), mock(Contentlet.class));
+        final PaginatedArrayList<ContentletSearch> contentletSearchList = new PaginatedArrayList<>();
+        contentletSearchList.addAll(list(createContentSerachMock("1"), createContentSerachMock("2"),
+                createContentSerachMock("3")));
+        final List<Contentlet> contentlets = list(mock(Contentlet.class), mock(Contentlet.class),
+                mock(Contentlet.class));
 
-        when(contentletAPI.searchIndex(query, limit, offset, "parentPath asc", user, false))
+        when(contentletAPI.searchIndex(query, 0, -1, "parentPath desc", user, false))
                 .thenReturn(contentletSearchList);
-        when(contentletAPI.findContentlets(list("1", "2", "3"))).thenReturn(contentletListExpected);
 
-        final ThemeAPIImpl themeAPI = new ThemeAPIImpl(contentletAPI);
+        when(contentletAPI.findContentlets(list("1", "2", "3"))).thenReturn(contentlets);
 
-        final List<Contentlet> themes = themeAPI.find(user, hostId, limit, offset, OrderDirection.ASC);
-        assertEquals(contentletListExpected, themes);
-    }*/
+        final ThemePaginator themePaginator = new ThemePaginator(contentletAPI);
+
+        Map<String, Object> params = map(
+                Paginator.ORDER_DIRECTION_PARAM_NAME, OrderDirection.DESC
+        );
+
+        final PaginatedArrayList<Contentlet> themes = themePaginator.getItems(user, 0, -1, params);
+
+        assertEquals(contentlets.size(), themes.size());
+        assertEquals(contentlets.get(0), themes.get(0));
+        assertEquals(contentlets.get(1), themes.get(1));
+        assertEquals(contentlets.get(2), themes.get(2));
+    }
 
     private ContentletSearch createContentSerachMock(String contentInode) {
         ContentletSearch mockContentletSearch = mock(ContentletSearch.class);

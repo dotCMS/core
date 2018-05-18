@@ -1,5 +1,6 @@
 package com.dotcms.util.pagination;
 
+import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.model.ContentletSearch;
@@ -7,9 +8,15 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+
 import static com.dotcms.util.CollectionsUtils.map;
+import static org.mockito.Mockito.when;
+
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -31,7 +38,7 @@ public class ThemePaginator implements Paginator<Contentlet> {
     }
 
     @VisibleForTesting
-    public ThemePaginator(final ContentletAPI contentletAPI) {
+    ThemePaginator(final ContentletAPI contentletAPI) {
         this.contentletAPI = contentletAPI;
     }
 
@@ -48,6 +55,7 @@ public class ThemePaginator implements Paginator<Contentlet> {
         final String sortBy = String.format("parentPath %s", direction.toString().toLowerCase());
 
         try {
+
             PaginatedArrayList<ContentletSearch> contentletSearches = (PaginatedArrayList<ContentletSearch>)
                     contentletAPI.searchIndex(query, limit, offset, sortBy, user, false);
 
