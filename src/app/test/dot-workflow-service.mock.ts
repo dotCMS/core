@@ -104,8 +104,9 @@ export class DotWorkflowServiceMock {
         return Observable.of(_.cloneDeep(mockWorkflows));
     }
 
-    getDefault(): Observable<DotWorkflow> {
-        return Observable.of(_.cloneDeep(mockWorkflows[0]));
+    getSystem(): Observable<DotWorkflow> {
+        const systemWorkflow = mockWorkflows.filter((workflow: DotWorkflow) => workflow.system);
+        return Observable.of(_.cloneDeep(systemWorkflow[0]));
     }
 
     getContentWorkflowActions(_inode: string): Observable<DotWorkflowAction[]> {

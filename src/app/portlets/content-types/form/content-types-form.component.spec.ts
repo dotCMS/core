@@ -555,7 +555,7 @@ describe('ContentTypesFormComponent', () => {
                 fixed: null,
                 folder: null,
                 system: null,
-                workflow: ['85c1515c-c4f3-463c-bac2-860b8fcacc34']
+                workflow: ['d61a59e1-a49c-46f2-a929-db2b4bfa88b2']
             });
         });
         it('should submit form correctly on Enter', () => {
@@ -573,7 +573,7 @@ describe('ContentTypesFormComponent', () => {
                 fixed: null,
                 folder: null,
                 system: null,
-                workflow: ['85c1515c-c4f3-463c-bac2-860b8fcacc34']
+                workflow: ['d61a59e1-a49c-46f2-a929-db2b4bfa88b2']
             });
         });
     });

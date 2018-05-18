@@ -4,6 +4,7 @@ import { Observable } from 'rxjs/Observable';
 import { RequestMethod } from '@angular/http';
 import { DotWorkflow } from '../../../shared/models/dot-workflow/dot-workflow.model';
 import { DotWorkflowAction } from '../../../shared/models/dot-workflow-action/dot-workflow-action.model';
+import { switchMap, take } from 'rxjs/operators';
 
 /**
  * Provide util methods to get Workflows.
@@ -30,15 +31,16 @@ export class DotWorkflowService {
     }
 
     /**
-     * Get the default workflow
+     * Get the System default workflow
      *
      * @returns {Observable<DotWorkflow>}
      * @memberof DotWorkflowService
      */
-    getDefault(): Observable<DotWorkflow> {
-        return this.get()
-            .switchMap((workflows: DotWorkflow[]) => workflows.filter((workflow: DotWorkflow) => workflow.defaultScheme))
-            .take(1);
+    getSystem(): Observable<DotWorkflow> {
+        return this.get().pipe(
+            switchMap((workflows: DotWorkflow[]) => workflows.filter((workflow: DotWorkflow) => workflow.system)),
+            take(1)
+        );
     }
 
     /**

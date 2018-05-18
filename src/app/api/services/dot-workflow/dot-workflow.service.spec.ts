@@ -111,9 +111,9 @@ describe('DotWorkflowService', () => {
     });
 
     it('should get default workflow', () => {
-        spyOn(this.dotWorkflowService, 'get').and.returnValue(Observable.of(mockWorkflows));
-        this.dotWorkflowService.getDefault().subscribe(workflow => {
-            expect(workflow).toEqual(mockWorkflows[0]);
+        const defaultSystemWorkflow = mockWorkflows.filter((workflow) => workflow.system);
+        this.dotWorkflowService.getSystem().subscribe(workflow => {
+            expect(workflow).toEqual(defaultSystemWorkflow[0]);
         });
     });
 
