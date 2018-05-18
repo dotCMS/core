@@ -94,7 +94,6 @@
         .portlet-toolbar__matching-results{
             margin: 0 auto;
             align-self: start;
-
         }
     </style>
 
