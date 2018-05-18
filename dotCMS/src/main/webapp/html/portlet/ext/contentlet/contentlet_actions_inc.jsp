@@ -135,7 +135,7 @@ for(WorkflowAction action : wfActions){
 	<div style="margin-top:20px">
 		<a onClick="cancelEdit();">
 			<span class="cancelIcon"></span>
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel")) %>
+			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Close")) %>
 		</a>
 	</div>
 </div>

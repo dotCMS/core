@@ -235,31 +235,4 @@ public class PageResourceHelper implements Serializable {
             throw new DotRuntimeException(e);
         }
     }
-
-    public Contentlet getContentlet(final User user, final PageMode mode, final Language id, final String contentletId)
-            throws DotDataException, DotSecurityException {
-
-        final ShortyId contentShorty = APILocator.getShortyAPI()
-                .getShorty(contentletId)
-                .orElseGet(() -> {
-                    throw new ResourceNotFoundException("Can't find contentlet:" + contentletId);
-                });
-
-        return APILocator.getContentletAPI()
-                .findContentletByIdentifier(contentShorty.longId, mode.showLive, id.getId(), user, mode.isAdmin);
-    }
-
-    public Container getContainer(final String containerId, final User user, final PageMode mode)
-            throws DotDataException, DotSecurityException {
-
-        final ShortyId containerShorty = APILocator.getShortyAPI()
-                .getShorty(containerId)
-                .orElseGet(() -> {
-                    throw new ResourceNotFoundException("Can't find Container:" + containerId);
-                });
-        return (mode.showLive) ? (Container) APILocator.getVersionableAPI()
-                .findLiveVersion(containerShorty.longId, user, !mode.isAdmin)
-                : (Container) APILocator.getVersionableAPI()
-                .findWorkingVersion(containerShorty.longId, user, !mode.isAdmin);
-    }
 }
