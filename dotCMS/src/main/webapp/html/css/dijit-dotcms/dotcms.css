@@ -4233,14 +4233,12 @@ html, body {
 }
 
 .dijitTab {
-  height: 42px;
+  height: 40px;
   background-color: #fff;
-  color: #161616;
-  padding: 0 24px;
+  color: #5B5B5B;
+  padding: 0 10px 16px;
   position: relative;
-  border-width: 5px 1px 0 1px;
-  border-style: solid;
-  border-color: #ECEDEE;
+  text-transform: uppercase;
 }
 .dijitTab .tabLabel {
   line-height: 37px;
@@ -4249,18 +4247,19 @@ html, body {
   top: 0;
 }
 .dijitTab.dijitClosable {
-  padding-right: 32px;
+  padding-right: 10px 16px8px;
 }
 .dijitTabPaneWrapper .dijitContentPane {
-  padding: 24px;
+  padding: 10px 16px;
   overflow: visible;
 }
 .dijitTabChecked, .dijitTabChecked.dijitTabCheckedHover {
   background-color: #fff;
-  border-width: 5px 1px 0 1px;
+  border-width: 0 0 3px;
   border-style: solid;
-  border-color: #0E80CB #ECEDEE transparent #ECEDEE;
-  height: 43px;
+  border-color: #0E80CB;
+  color: #0E80CB;
+  height: 40px;
 }
 .dijitTabCloseIcon {
   width: 13px;
@@ -4296,15 +4295,17 @@ html, body {
 }
 .dijitTabHover {
   background-color: #fff;
-  color: #161616;
+  border-width: 0 0 3px;
+  border-style: solid;
+  border-color: #0E80CB;
 }
 .dijitTabDisabled {
   background-color: #fff;
   color: #C5C5C5;
 }
 .dijitTab.tabStripButton {
-  height: 42px !important;
-  width: 42px;
+  height: 40px !important;
+  width: 40px;
   background-color: #fff;
 }
 .dijitTab.tabStripButton .dijitTabStripSlideLeftIcon:before {
@@ -4395,17 +4396,15 @@ html, body {
   border-bottom: none;
 }
 .dijitTabContainerTop-tabs, .dijitTabContainerBottom-tabs {
-  height: 44px;
+  height: 42px;
   border: none;
 }
 .dijitTabListContainer-top, .dijitTabListContainer-bottom {
   -moz-box-sizing: content-box;
   -webkit-box-sizing: content-box;
   box-sizing: content-box;
-  border-width: 0 0 1px;
-  border-style: solid;
-  border-color: #ECEDEE;
-  height: 42px !important;
+  box-shadow: -2px 2px 2px #C5C5C5;
+  height: 40px !important;
   overflow: visible;
 }
 .dijitTabListContainer-bottom .dijitTabListWrapper {
@@ -4413,19 +4412,19 @@ html, body {
 }
 .dijitTabListContainer-bottom .dijitTabChecked {
   top: -1px;
-  height: 44px;
+  height: 42px;
 }
 .dijitTabContainerNested .dijitTab {
   background: none;
   border: none;
 }
 .dijitTabContainerNested .dijitTab.dijitTabChecked {
-  height: 44px;
+  height: 42px;
   border-bottom: solid 1px #5B5B5B;
 }
 .dijitTabContainerNested .dijitTabContainerTop-container {
   border: none;
-  padding: 0 24px;
+  padding: 0 10px 16px;
 }
 
 .dijitTooltip {
@@ -6661,10 +6660,7 @@ select[multiple]:hover {
   padding: 0;
 }
 .dijitDropDownActionButton.dijitDropDownButtonHover {
-  background-color: #fff;
-}
-.dijitDropDownActionButton.dijitDropDownButtonHover .actionIcon, .dijitDropDownActionButton.dijitDropDownButtonHover .fa-plus {
-  color: #161616;
+  background-color: #0b629b;
 }
 .dijitDropDownActionButton.dijitDropDownButtonDisabled {
   background-color: #ECEDEE;
@@ -6961,7 +6957,7 @@ select[multiple]:hover {
   border-bottom: 1px solid #ECEDEE;
   border-collapse: collapse;
   font-size: 13px;
-  margin: 0 auto 16px auto;
+  margin: 0 auto 64px auto;
   width: 100%;
 }
 #listing-table p:last-child, .dojoxUploaderFileListTable p:last-child, .listingTable p:last-child {
@@ -9894,7 +9890,7 @@ dd .buttonCaption {
   padding: 0;
 }
 .portlet-sidebar {
-  padding: 37px 16px 0 16px;
+  padding: 24px 16px 0 16px;
 }
 .portlet-sidebar-wrapper {
   background-color: #FAFAFA;
@@ -10416,7 +10412,7 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .content-edit__main {
-  margin: 16px 220px 0 0;
+  margin: 16px 203px 0 0;
   position: relative;
   width: auto;
   z-index: 1;
