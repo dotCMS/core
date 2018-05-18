@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.util;
 
+import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cache.FieldsCache;
@@ -10,6 +11,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.InodeUtils;
@@ -26,7 +28,23 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class ContentletUtil {
-	
+
+	private static final ImmutableSet<String> fieldTypesToExcludeFromImportExport = ImmutableSet.of(
+			FieldType.LINE_DIVIDER.toString(),
+			FieldType.FILE.toString(),
+			FieldType.IMAGE.toString(),
+			FieldType.TAB_DIVIDER.toString(),
+			FieldType.COLUMN.toString(),
+			FieldType.ROW.toString(),
+			FieldType.BUTTON.toString(),
+			FieldType.HIDDEN.toString()
+	);
+
+
+	public static boolean isFieldTypeAllowedOnImportExport(final Field field){
+		return !fieldTypesToExcludeFromImportExport.contains(field.getFieldType());
+	}
+
 	//http://jira.dotmarketing.net/browse/DOTCMS-3393
 	public static Map<String, Object> getHostFolderInfo(String hostFolderId, User user) throws DotDataException, DotSecurityException {
 		String hostName = "";
