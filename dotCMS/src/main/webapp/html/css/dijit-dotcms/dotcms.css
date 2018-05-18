@@ -6661,10 +6661,7 @@ select[multiple]:hover {
   padding: 0;
 }
 .dijitDropDownActionButton.dijitDropDownButtonHover {
-  background-color: #fff;
-}
-.dijitDropDownActionButton.dijitDropDownButtonHover .actionIcon, .dijitDropDownActionButton.dijitDropDownButtonHover .fa-plus {
-  color: #161616;
+  background-color: #0b629b;
 }
 .dijitDropDownActionButton.dijitDropDownButtonDisabled {
   background-color: #ECEDEE;
@@ -9894,7 +9891,7 @@ dd .buttonCaption {
   padding: 0;
 }
 .portlet-sidebar {
-  padding: 37px 16px 0 16px;
+  padding: 24px 16px 0 16px;
 }
 .portlet-sidebar-wrapper {
   background-color: #FAFAFA;
