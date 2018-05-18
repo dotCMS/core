@@ -115,7 +115,7 @@ describe('DotEditContentHtmlService', () => {
             uuid: '456'
         });
 
-        this.dotEditContentHtmlService.contentletEvents.next({
+        this.dotEditContentHtmlService.contentletEvents$.next({
             name: 'save',
             data: {
                 identifier: '123'
@@ -135,7 +135,7 @@ describe('DotEditContentHtmlService', () => {
 
         spyOn(this.dotEditContentHtmlService, 'renderEditedContentlet');
 
-        this.dotEditContentHtmlService.contentletEvents.next({
+        this.dotEditContentHtmlService.contentletEvents$.next({
             name: 'save',
             data: {
                 identifier: '456'
@@ -150,7 +150,7 @@ describe('DotEditContentHtmlService', () => {
     it('should relocate contentlet', () => {
         spyOn(this.dotEditContentHtmlService, 'renderRelocatedContentlet');
 
-        this.dotEditContentHtmlService.contentletEvents.next({
+        this.dotEditContentHtmlService.contentletEvents$.next({
             name: 'relocate',
             data: {
                 identifier: '456'
@@ -182,7 +182,7 @@ describe('DotEditContentHtmlService', () => {
             baseType: 'CONTENT'
         };
 
-        this.dotEditContentHtmlService.pageModelChange.subscribe((model) => (currentModel = model));
+        this.dotEditContentHtmlService.pageModel$.subscribe((model) => (currentModel = model));
 
         this.dotEditContentHtmlService.renderAddedContentlet(contentlet);
 
@@ -226,7 +226,7 @@ describe('DotEditContentHtmlService', () => {
             baseType: 'CONTENT'
         };
 
-        this.dotEditContentHtmlService.pageModelChange.subscribe((model) => (currentModel = model));
+        this.dotEditContentHtmlService.pageModel$.subscribe((model) => (currentModel = model));
 
         this.dotEditContentHtmlService.renderAddedContentlet(contentlet);
 

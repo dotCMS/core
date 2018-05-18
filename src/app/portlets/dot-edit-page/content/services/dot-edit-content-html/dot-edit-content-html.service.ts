@@ -17,15 +17,14 @@ export enum DotContentletAction {
     EDIT,
     ADD
 }
+
 @Injectable()
 export class DotEditContentHtmlService {
-    contentletEvents: Subject<any> = new Subject();
-    iframeActions: Subject<any> = new Subject();
-    iframe: ElementRef;
-
-    pageModelChange: Subject<any> = new Subject();
-
+    contentletEvents$: Subject<any> = new Subject();
     currentContainer: DotPageContainer;
+    iframe: ElementRef;
+    iframeActions$: Subject<any> = new Subject();
+    pageModel$: Subject<DotPageContainer[]> = new Subject();
 
     private currentAction: DotContentletAction;
 
@@ -38,7 +37,7 @@ export class DotEditContentHtmlService {
         private dotDialogService: DotDialogService,
         private dotMessageService: DotMessageService
     ) {
-        this.contentletEvents.subscribe((contentletEvent: any) => {
+        this.contentletEvents$.subscribe((contentletEvent: any) => {
             this.handlerContentletEvents(contentletEvent.name)(contentletEvent);
         });
 
@@ -57,9 +56,9 @@ export class DotEditContentHtmlService {
         return new Promise((resolve, _reject) => {
             this.iframe = iframeEl;
             const iframeElement = this.getEditPageIframe();
-            iframeElement.contentWindow[MODEL_VAR_NAME] = this.pageModelChange;
-            iframeElement.contentWindow.contentletEvents = this.contentletEvents;
             iframeElement.addEventListener('load', () => {
+                iframeElement.contentWindow[MODEL_VAR_NAME] = this.pageModel$;
+                iframeElement.contentWindow.contentletEvents = this.contentletEvents$;
                 resolve(true);
             });
             // Load content after bind 'load' event.
@@ -95,7 +94,7 @@ export class DotEditContentHtmlService {
             }"] div[data-dot-inode="${content.inode}"]`
         );
         contenletEl.remove();
-        this.pageModelChange.next(this.getContentModel());
+        this.pageModel$.next(this.getContentModel());
     }
 
     /**
@@ -184,7 +183,7 @@ export class DotEditContentHtmlService {
      * @returns {*}
      * @memberof DotEditContentHtmlService
      */
-    getContentModel(): any {
+    getContentModel(): DotPageContainer[] {
         return this.getEditPageIframe().contentWindow.getDotNgModel();
     }
 
@@ -263,7 +262,7 @@ export class DotEditContentHtmlService {
             const target = <HTMLElement>$event.target;
             const container = <HTMLElement>target.closest('div[data-dot-object="container"]');
 
-            this.iframeActions.next({
+            this.iframeActions$.next({
                 name: type,
                 dataset: target.dataset,
                 container: container ? container.dataset : null
@@ -381,7 +380,7 @@ export class DotEditContentHtmlService {
             // When a user select a content from the search jsp
             select: (contentletEvent: any) => {
                 this.renderAddedContentlet(contentletEvent.data);
-                this.iframeActions.next({
+                this.iframeActions$.next({
                     name: 'select'
                 });
             },
@@ -426,7 +425,7 @@ export class DotEditContentHtmlService {
         this.appendNewContentlets(contentletContentEl, contentletHtml);
 
         // Update the model with the recently added contentlet
-        this.pageModelChange.next(this.getContentModel());
+        this.pageModel$.next(this.getContentModel());
     }
 
     private renderRelocatedContentlet(relocateInfo: any): void {

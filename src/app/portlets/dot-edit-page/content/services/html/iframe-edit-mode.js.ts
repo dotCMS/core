@@ -90,8 +90,6 @@ export const EDIT_PAGE_JS = `
             });
         }
     })
-
-    window.getDotNgModel = getDotNgModel;
 })();
 `;
 

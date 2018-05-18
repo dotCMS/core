@@ -498,7 +498,7 @@ describe('DotEditContentComponent', () => {
                 name: 'remove'
             };
 
-            spyOn(dotEditContentHtmlService, 'contentletEvents').and.returnValue(Observable.of(mockResEvent));
+            spyOn(dotEditContentHtmlService, 'contentletEvents$').and.returnValue(Observable.of(mockResEvent));
             spyOn(dotEditContentHtmlService, 'removeContentlet').and.callFake(() => {});
 
             spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
@@ -555,7 +555,7 @@ describe('DotEditContentComponent', () => {
             beforeEach(() => {
                 spyOn(dotContentletEditorService, 'add').and.callThrough();
 
-                dotEditContentHtmlService.iframeActions.next({
+                dotEditContentHtmlService.iframeActions$.next({
                     name: 'add',
                     dataset: {
                         dotAdd: 'content,widget',
@@ -603,7 +603,7 @@ describe('DotEditContentComponent', () => {
             beforeEach(() => {
                 spyOn(dotContentletEditorService, 'edit').and.callThrough();
 
-                dotEditContentHtmlService.iframeActions.next({
+                dotEditContentHtmlService.iframeActions$.next({
                     name: 'edit',
                     container: {
                         dotIdentifier: '123',
@@ -652,7 +652,7 @@ describe('DotEditContentComponent', () => {
             it('should close dialog on select contentlet', () => {
                 spyOn(dotContentletEditorService, 'clear').and.callThrough();
 
-                dotEditContentHtmlService.iframeActions.next({
+                dotEditContentHtmlService.iframeActions$.next({
                     name: 'select'
                 });
 
@@ -781,10 +781,10 @@ describe('DotEditContentComponent', () => {
             spyOn(dotEditContentHtmlService, 'getContentModel').and.returnValue({});
             fixture.detectChanges();
 
-            dotEditContentHtmlService.pageModelChange.next(model);
+            dotEditContentHtmlService.pageModel$.next(model);
             fixture.detectChanges();
 
-            dotEditContentHtmlService.pageModelChange.next(newModel);
+            dotEditContentHtmlService.pageModel$.next(newModel);
             expect(dotEditPageService.save).toHaveBeenCalledTimes(2);
         });
     });
