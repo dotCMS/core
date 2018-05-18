@@ -6958,7 +6958,7 @@ select[multiple]:hover {
   border-bottom: 1px solid #ECEDEE;
   border-collapse: collapse;
   font-size: 13px;
-  margin: 0 auto 64px auto;
+  margin: 0 auto 16px auto;
   width: 100%;
 }
 #listing-table p:last-child, .dojoxUploaderFileListTable p:last-child, .listingTable p:last-child {
