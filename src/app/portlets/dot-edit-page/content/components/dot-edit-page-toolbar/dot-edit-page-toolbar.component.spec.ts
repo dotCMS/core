@@ -33,10 +33,9 @@ class MockWorkflowActionsComponent {
 
 @Component({
     selector: 'dot-test-host-component',
-    template: `<dot-edit-page-toolbar [canSave]="canSave" [pageState]="pageState"></dot-edit-page-toolbar>`
+    template: `<dot-edit-page-toolbar [pageState]="pageState"></dot-edit-page-toolbar>`
 })
 class TestHostComponent {
-    @Input() canSave: boolean;
     @Input() pageState: DotRenderedPageState;
 }
 
@@ -195,22 +194,6 @@ describe('DotEditPageToolbarComponent', () => {
         fixture.detectChanges();
 
         expect(component.lockerModel).toBeFalsy();
-    });
-
-    it('should hide the save button in preview mode', () => {
-        fixture.detectChanges();
-        const primaryAction: DebugElement = de.query(By.css('.edit-page-toolbar__save'));
-
-        expect(primaryAction).toBeFalsy();
-    });
-
-    it('should hide the save button in live mode', () => {
-        fixture.componentInstance.pageState.state.mode = PageMode.LIVE;
-
-        fixture.detectChanges();
-        const primaryAction: DebugElement = de.query(By.css('.edit-page-toolbar__save'));
-
-        expect(primaryAction).toBeFalsy();
     });
 
     it('should have lock page component and no warn class', () => {

@@ -91,7 +91,6 @@ export const EDIT_PAGE_JS = `
         }
     })
 
-    window.${MODEL_VAR_NAME}.next(getDotNgModel());
     window.getDotNgModel = getDotNgModel;
 })();
 `;

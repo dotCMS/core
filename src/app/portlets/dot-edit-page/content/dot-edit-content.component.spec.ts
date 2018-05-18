@@ -429,7 +429,6 @@ describe('DotEditContentComponent', () => {
                 lockedByAnotherUser: false
             });
             expect(component.pageState.page).toEqual(customMockDotRenderedPage.page);
-            expect(dotGlobalMessageService.display).toHaveBeenCalledTimes(2);
             expect(dotEditContentHtmlService.initEditMode).toHaveBeenCalledWith('<html></html>', component.iframe);
         });
 
@@ -454,7 +453,6 @@ describe('DotEditContentComponent', () => {
                 locked: true,
                 lockedByAnotherUser: true
             });
-            expect(dotGlobalMessageService.display).toHaveBeenCalledTimes(2);
             expect(dotEditContentHtmlService.initEditMode).not.toHaveBeenCalled();
             expect(dotEditContentHtmlService.renderPage).toHaveBeenCalledWith('<html></html>', component.iframe);
         });
@@ -787,7 +785,7 @@ describe('DotEditContentComponent', () => {
             fixture.detectChanges();
 
             dotEditContentHtmlService.pageModelChange.next(newModel);
-            expect(dotEditPageService.save).toHaveBeenCalledTimes(1);
+            expect(dotEditPageService.save).toHaveBeenCalledTimes(2);
         });
     });
 });

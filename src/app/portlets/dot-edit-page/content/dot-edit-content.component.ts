@@ -100,22 +100,12 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
      * @memberof DotEditContentComponent
      */
     statePageHandler(newState: DotPageState): void {
-        const showGlobalMessage = newState.locked !== undefined;
-
-        if (showGlobalMessage) {
-            this.dotGlobalMessageService.display(this.dotMessageService.get('dot.common.message.saving'));
-        }
-
         this.dotPageStateService
             .set(this.pageState.page, newState)
             .takeUntil(this.destroy$)
             .subscribe(
                 (pageState: DotRenderedPageState) => {
                     this.setPageState(pageState);
-
-                    if (showGlobalMessage) {
-                        this.dotGlobalMessageService.display(this.dotMessageService.get('dot.common.message.saved'));
-                    }
                 },
                 (err: ResponseView) => {
                     this.handleSetPageStateFailed(err);
@@ -345,7 +335,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
 
     private subscribePageModelChange(): void {
         this.dotEditContentHtmlService.pageModelChange
-            .skip(1)
             .filter((model: any) => model.length)
             .takeUntil(this.destroy$)
             .subscribe(() => {
