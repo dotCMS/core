@@ -132,7 +132,7 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
         SaveContentActionletTest.contentlet              = contentlet1;
 
         // triggering the save content action
-        contentlet1.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY,
+        contentlet1.setActionId(
                 this.schemeStepActionResult.getAction().getId());
         contentlet1.setStringProperty("title", "Test Save 2");
         contentlet1.setStringProperty("txt",   "Test Save Text 2");

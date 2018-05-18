@@ -126,7 +126,18 @@ public final class ExceptionMapperUtil {
      * @param status {@link Response}
      * @return Response
      */
-    public static Response  createResponse(final Exception exception, final Response.Status status){
+    public static Response  createResponse(final Throwable exception, final Response.Status status){
+
+        return createResponse(exception, null, status);
+    }
+
+    /***
+     * Creates an response based on a status and exception
+     * @param exception {@link Exception}
+     * @param status {@link Response}
+     * @return Response
+     */
+    public static Response  createResponse(final Throwable exception, final String key, final Response.Status status){
         //Create the message.
         final String message = getI18NMessage(exception.getMessage());
 
@@ -141,6 +152,7 @@ public final class ExceptionMapperUtil {
                     .entity(map("message", message,
                             "stacktrace", errors))
                     .header("error-message", message)
+                    .header("error-key", key)
                     .header("access-control", getAccessControlHeader(exception))
                     .build();
         }
@@ -150,6 +162,7 @@ public final class ExceptionMapperUtil {
                 .status(status)
                 .entity(map("message", message))
                 .header("error-message", message)
+                .header("error-key", key)
                 .header("access-control", getAccessControlHeader(exception))
                 .build();
     }
@@ -193,7 +206,7 @@ public final class ExceptionMapperUtil {
      * @param e
      * @return
      */
-    private static String getAccessControlHeader(final Exception e){
+    private static String getAccessControlHeader(final Throwable e){
 
         final Throwable rootCause = getRootCause(e);
 

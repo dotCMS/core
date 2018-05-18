@@ -179,7 +179,7 @@ public class RuleResource {
             return Response.status(HttpStatus.SC_NO_CONTENT).build();
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
-        } catch (DotSecurityException | InvalidLicenseException e) {
+        } catch (DotSecurityException e) {
             throw new ForbiddenException(e, e.getMessage());
         } finally {
             HibernateUtil.closeSessionSilently();
@@ -206,7 +206,7 @@ public class RuleResource {
         } catch (DotDataException e) {
             // @todo ggranum: These messages potentially expose internal details to consumers, via response headers. See Note 1 in HttpStatusCodeException.
             throw new BadRequestException(e, e.getMessage());
-        } catch (DotSecurityException | InvalidLicenseException e) {
+        } catch (DotSecurityException e) {
             throw new ForbiddenException(e, e.getMessage());
         }
     }
@@ -232,7 +232,7 @@ public class RuleResource {
 
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
-        } catch (DotSecurityException | InvalidLicenseException e) {
+        } catch (DotSecurityException e) {
             throw new ForbiddenException(e, e.getMessage());
         }
     }
@@ -251,7 +251,7 @@ public class RuleResource {
             return rule.getId();
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
-        } catch (DotSecurityException | InvalidLicenseException e) {
+        } catch (DotSecurityException e) {
             throw new ForbiddenException(e, e.getMessage());
         }
     }
@@ -267,7 +267,7 @@ public class RuleResource {
             return rule.getId();
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
-        } catch (DotSecurityException | InvalidLicenseException e) {
+        } catch (DotSecurityException e) {
             throw new ForbiddenException(e, e.getMessage());
         }
     }

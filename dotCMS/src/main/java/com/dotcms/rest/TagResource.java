@@ -59,8 +59,6 @@ public class TagResource {
             return tagAPI.getAllTags();
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
-        } catch (InvalidLicenseException e) {
-            throw new ForbiddenException(e, e.getMessage());
         }
     }
 }

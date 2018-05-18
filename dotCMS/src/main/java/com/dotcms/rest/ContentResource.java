@@ -983,7 +983,7 @@ public class ContentResource {
                     .findAvailableActions(contentlet, init.getUser())) {
                 if (init.getParamsMap().containsKey(action.getName().toLowerCase())) {
 
-                    contentlet.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, action.getId());
+                    contentlet.setActionId(action.getId());
 
                     if (action.isCommentable()) {
                         String comment = init.getParamsMap()

@@ -22,11 +22,13 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.repackage.javax.ws.rs.container.AsyncResponse;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
 import com.dotcms.rest.ContentHelper;
@@ -48,6 +50,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
@@ -164,9 +167,15 @@ public class WorkflowResourceLicenseIntegrationTest {
     public void Delete_Scheme_Invalid_License(){
         final WorkflowScheme savedScheme = createScheme(licenseWorkflowResource);
         final HttpServletRequest request1 = mock(HttpServletRequest.class);
-        final Response response = nonLicenseWorkflowResource.delete(request1,savedScheme.getId());
-        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
-        assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE,response.getHeaderString("access-control"));
+        final AsyncResponse asyncResponse = mock(AsyncResponse.class);
+        doAnswer(arg2 -> {
+            final Response response =  (Response) arg2;
+            assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
+            assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE,response.getHeaderString("access-control"));
+            return true;
+        }).when(asyncResponse).resume(Object.class);
+        nonLicenseWorkflowResource.deleteScheme(request1, asyncResponse, savedScheme.getId());
+
     }
 
     @Test
@@ -377,13 +386,13 @@ public class WorkflowResourceLicenseIntegrationTest {
         final String adminRoleId = adminRole.getId();
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final int numSteps = 2;
-        final WorkflowScheme savedScheme = createScheme(licenseWorkflowResource);
+        final WorkflowScheme savedScheme = LocalTransaction.wrapReturn(() -> createScheme(licenseWorkflowResource));
         assertNotNull(savedScheme);
-        final List<WorkflowStep> workflowSteps = addSteps(licenseWorkflowResource, savedScheme,
-                numSteps);
+        final List<WorkflowStep> workflowSteps =
+                LocalTransaction.wrapReturn(() -> addSteps(licenseWorkflowResource, savedScheme,numSteps));
 
-        final List<WorkflowAction> actions = createWorkflowActions(licenseWorkflowResource,
-                savedScheme, adminRoleId, workflowSteps);
+        final List<WorkflowAction> actions =
+                LocalTransaction.wrapReturn(() -> createWorkflowActions(licenseWorkflowResource, savedScheme, adminRoleId, workflowSteps));
         assertEquals(2, actions.size());
 
         final WorkflowStep firstStep = workflowSteps.get(0);

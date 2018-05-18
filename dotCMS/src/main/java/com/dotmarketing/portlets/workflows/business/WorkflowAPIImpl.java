@@ -58,7 +58,6 @@ import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SetValueActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.TranslationActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.TwitterActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
@@ -157,7 +156,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				ResetTaskActionlet.class,
 				MultipleApproverActionlet.class,
 				FourEyeApproverActionlet.class,
-				TwitterActionlet.class,
 				PushPublishActionlet.class,
 				CheckURLAccessibilityActionlet.class,
                 EmailActionlet.class,
@@ -1784,7 +1782,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public Contentlet fireContentWorkflow(final Contentlet contentlet, final ContentletDependencies dependencies) throws DotDataException {
 
 		if(UtilMethods.isSet(dependencies.getWorkflowActionId())){
-			contentlet.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, dependencies.getWorkflowActionId());
+			contentlet.setActionId(dependencies.getWorkflowActionId());
 		}
 
 		if(UtilMethods.isSet(dependencies.getWorkflowActionComments())){
@@ -1808,10 +1806,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	private void checkShorties(final Contentlet contentlet) {
 
-		final String actionId = contentlet.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY);
+		final String actionId = contentlet.getActionId();
 		if(UtilMethods.isSet(actionId)) {
 
-			contentlet.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, this.getLongId(actionId, ShortyIdAPI.ShortyInputType.WORKFLOW_ACTION));
+			contentlet.setActionId(this.getLongId(actionId, ShortyIdAPI.ShortyInputType.WORKFLOW_ACTION));
 		}
 	}
 
@@ -1820,7 +1818,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public void validateActionStepAndWorkflow(final Contentlet contentlet, final User user)
 			throws DotDataException {
 
-		final String actionId = contentlet.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY);
+		final String actionId = contentlet.getActionId();
 
 		if (null != actionId) {
 

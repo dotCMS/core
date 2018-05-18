@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.contentlet.action;
 
+import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isFieldTypeAllowedOnImportExport;
+
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -32,7 +34,6 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.model.ContentletSearch;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -1968,15 +1969,9 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				writer.print(",countryCode");
 				for (Field field : contentTypeFields) {
 					//we cannot export fields of these types
-					if (field.getFieldType().equals(Field.FieldType.BUTTON.toString()) ||
-							field.getFieldType().equals(Field.FieldType.FILE.toString()) ||
-							field.getFieldType().equals(Field.FieldType.IMAGE.toString()) ||
-							field.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString()) ||
-							field.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString()) ||
-							field.getFieldType().equals(Field.FieldType.HIDDEN.toString())) {
-						continue;
+					if(isFieldTypeAllowedOnImportExport(field)){
+						writer.print("," + field.getVelocityVarName());
 					}
-					writer.print("," + field.getVelocityVarName());
 				}
 
 				writer.print("\r\n");
@@ -1990,14 +1985,10 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 					for (Field field : contentTypeFields) {
 						try {
 							//we cannot export fields of these types
-							if (field.getFieldType().equals(Field.FieldType.BUTTON.toString()) ||
-									field.getFieldType().equals(Field.FieldType.FILE.toString()) ||
-									field.getFieldType().equals(Field.FieldType.IMAGE.toString()) ||
-									field.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString()) ||
-									field.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString()) ||
-									field.getFieldType().equals(Field.FieldType.HIDDEN.toString())) {
-								continue;
+							if(!isFieldTypeAllowedOnImportExport(field)){
+                               continue;
 							}
+
 							Object value = "";
 							if(conAPI.getFieldValue(content,field) != null) {
 								value = conAPI.getFieldValue(content,field);

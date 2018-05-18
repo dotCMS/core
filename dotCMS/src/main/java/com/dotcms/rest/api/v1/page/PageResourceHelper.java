@@ -132,7 +132,7 @@ public class PageResourceHelper implements Serializable {
 
     public Template saveTemplate(final User user, IHTMLPage htmlPageAsset, final PageForm pageForm)
 
-            throws BadRequestException, DotDataException, DotSecurityException, IOException {
+            throws BadRequestException, DotDataException, DotSecurityException {
 
         try {
             
@@ -148,7 +148,7 @@ public class PageResourceHelper implements Serializable {
             }
 
             return templateSaved;
-        } catch (Exception e) {
+        } catch (BadRequestException | DotDataException | DotSecurityException e) {
             throw new DotRuntimeException(e);
         }
     }
@@ -166,8 +166,9 @@ public class PageResourceHelper implements Serializable {
 
     }
 
+    @WrapInTransaction
     public Template saveTemplate(final IHTMLPage page, final User user, final PageForm pageForm)
-            throws BadRequestException, DotDataException, DotSecurityException, IOException {
+            throws BadRequestException, DotDataException, DotSecurityException {
 
         
         try {
@@ -196,7 +197,7 @@ public class PageResourceHelper implements Serializable {
             });
 
             return this.templateAPI.saveTemplate(template, host, user, false);
-        } catch (Exception e) {
+        } catch (BadRequestException | DotDataException | DotSecurityException e) {
             throw new DotRuntimeException(e);
         }
     }
@@ -233,32 +234,5 @@ public class PageResourceHelper implements Serializable {
         } catch (DotDataException | DotSecurityException | PortalException | SystemException e) {
             throw new DotRuntimeException(e);
         }
-    }
-
-    public Contentlet getContentlet(final User user, final PageMode mode, final Language id, final String contentletId)
-            throws DotDataException, DotSecurityException {
-
-        final ShortyId contentShorty = APILocator.getShortyAPI()
-                .getShorty(contentletId)
-                .orElseGet(() -> {
-                    throw new ResourceNotFoundException("Can't find contentlet:" + contentletId);
-                });
-
-        return APILocator.getContentletAPI()
-                .findContentletByIdentifier(contentShorty.longId, mode.showLive, id.getId(), user, mode.isAdmin);
-    }
-
-    public Container getContainer(final String containerId, final User user, final PageMode mode)
-            throws DotDataException, DotSecurityException {
-
-        final ShortyId containerShorty = APILocator.getShortyAPI()
-                .getShorty(containerId)
-                .orElseGet(() -> {
-                    throw new ResourceNotFoundException("Can't find Container:" + containerId);
-                });
-        return (mode.showLive) ? (Container) APILocator.getVersionableAPI()
-                .findLiveVersion(containerShorty.longId, user, !mode.isAdmin)
-                : (Container) APILocator.getVersionableAPI()
-                .findWorkingVersion(containerShorty.longId, user, !mode.isAdmin);
     }
 }

@@ -508,8 +508,8 @@ public class SubmitContentUtil {
 		 */
 		if(UtilMethods.isSet(moderatorRole)){
 
-			if(!UtilMethods.isSet(contentlet.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY)))
-				contentlet.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, APILocator.getWorkflowAPI().findEntryAction(contentlet, user).getId());
+			if(!UtilMethods.isSet(contentlet.getActionId()))
+				contentlet.setActionId(APILocator.getWorkflowAPI().findEntryAction(contentlet, user).getId());
 
 			String contentletTitle = "";
 

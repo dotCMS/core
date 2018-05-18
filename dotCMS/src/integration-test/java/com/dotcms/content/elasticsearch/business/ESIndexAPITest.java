@@ -215,7 +215,7 @@ public class ESIndexAPITest {
 	 * @throws InterruptedException
 	 * @throws ExecutionException
 	 */
-	@Test(expected = ElasticsearchException.class)
+	@Test(expected = DotStateException.class)
 	public void uploadSnapshotTest_alreadyExistingIndex() throws IOException, InterruptedException, ExecutionException{
 		String indexName = getLiveIndex();
 		File snapshot = null;

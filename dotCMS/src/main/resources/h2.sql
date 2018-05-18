@@ -1520,7 +1520,8 @@ create table relationship (
    parent_required bit,
    child_required bit,
    fixed bit,
-   primary key (inode)
+   primary key (inode),
+   unique (relation_type_value)
 );
 create table folder (
    inode varchar(36) not null,

@@ -1583,7 +1583,8 @@ create table relationship (
    parent_required tinyint null,
    child_required tinyint null,
    fixed tinyint null,
-   primary key (inode)
+   primary key (inode),
+   unique (relation_type_value)
 );
 create table folder (
    inode NVARCHAR(36) not null,
