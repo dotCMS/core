@@ -86,18 +86,16 @@ public class ESUtils {
 
 			if(LicenseUtil.getLevel()<= LicenseLevel.STANDARD.level) {
 
-				final String transportTCPPortOverride =
+				String transportTCPPort =
 					overrideSettings.get(ServerPort.ES_TRANSPORT_TCP_PORT.getPropertyName());
 
-				String transportTCPPort = transportTCPPortOverride;
-
-				if(!UtilMethods.isSet(transportTCPPortOverride)) {
+				if(!UtilMethods.isSet(transportTCPPort)) {
 					transportTCPPort = getTransportTCPPortFromDefaultSettings();
 				}
 
-				transportTCPPort = UtilMethods.isSet(transportTCPPort)
-					?transportTCPPort
-					:ServerPort.ES_TRANSPORT_TCP_PORT.getDefaultValue();
+				if(!UtilMethods.isSet(transportTCPPort)) {
+					transportTCPPort = ServerPort.ES_TRANSPORT_TCP_PORT.getDefaultValue();
+				}
 
 				overrideSettings.put(ES_ZEN_UNICAST_HOSTS, "localhost:"+transportTCPPort);
 			}
@@ -105,9 +103,9 @@ public class ESUtils {
 		} else if(LicenseUtil.getLevel()<= LicenseLevel.STANDARD.level) {
 			String transportTCPPort = getTransportTCPPortFromDefaultSettings();
 
-			transportTCPPort = UtilMethods.isSet(transportTCPPort)
-				?transportTCPPort
-				:ServerPort.ES_TRANSPORT_TCP_PORT.getDefaultValue();
+			if(!UtilMethods.isSet(transportTCPPort)) {
+				transportTCPPort = ServerPort.ES_TRANSPORT_TCP_PORT.getDefaultValue();
+			}
 
 			settings = Settings.builder().put(ES_ZEN_UNICAST_HOSTS, "localhost:"+transportTCPPort);
 		}
