@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.dotmarketing.util.PageMode;
 import com.google.common.collect.Lists;
 import org.elasticsearch.cluster.routing.allocation.decider.Decision;
 
@@ -392,10 +393,15 @@ public class MultiTreeFactory {
         try {
             List<Contentlet> contentlets = APILocator.getContentletAPIImpl()
                 .findContentlets(Lists.newArrayList(inodes));
+
+            PageLoader pageLoader = new PageLoader();
+
             for (Contentlet pageContent : contentlets) {
                 IHTMLPage htmlPage = APILocator.getHTMLPageAssetAPI()
                     .fromContentlet(pageContent);
-               new PageLoader().invalidate(htmlPage);
+
+                pageLoader.invalidate(htmlPage, PageMode.EDIT_MODE);
+                pageLoader.invalidate(htmlPage, PageMode.PREVIEW_MODE);
             }
         } catch (DotStateException | DotSecurityException e) {
             Logger.warn(MultiTreeFactory.class, "unable to refresh page cache:" + e.getMessage());
