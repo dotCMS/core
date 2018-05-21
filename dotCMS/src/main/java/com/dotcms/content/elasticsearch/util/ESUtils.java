@@ -82,7 +82,7 @@ public class ESUtils {
 		final Path settingsPath = Paths.get(overrideYamlPath);
 
 		if (Files.exists(settingsPath)) {
-			Builder overrideSettings =  Settings.builder().loadFromPath(settingsPath);
+			final Builder overrideSettings =  Settings.builder().loadFromPath(settingsPath);
 
 			if(LicenseUtil.getLevel()<= LicenseLevel.STANDARD.level) {
 
@@ -116,7 +116,7 @@ public class ESUtils {
 	private static String getTransportTCPPortFromDefaultSettings() throws IOException {
 		final String defaultYamlPath = getYamlConfiguration();
 
-		Builder defaultSettings = Settings.builder().
+		final Builder defaultSettings = Settings.builder().
 			loadFromStream(defaultYamlPath, ESUtils.class.getResourceAsStream(defaultYamlPath), false);
 
 		return defaultSettings.get(ServerPort.ES_TRANSPORT_TCP_PORT.getPropertyName());
