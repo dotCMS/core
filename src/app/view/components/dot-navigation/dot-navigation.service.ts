@@ -122,7 +122,6 @@ export class DotNavigationService {
         const currentUrl = this.location.hash;
 
         return menu.map((menuGroup: DotMenu, menuIndex: number) => {
-            menuGroup.isOpen = false;
             menuGroup.menuItems.forEach((menuItem: DotMenuItem) => {
                 menuItem.menuLink = menuItem.angular ? menuItem.url : this.getMenuLink(menuItem.id);
                 menuGroup.isOpen =
