@@ -30,7 +30,7 @@
             <div class="portlet-main">
                 <div dojoAttachPoint="contentWrapper">
                     <div class="portlet-toolbar">
-                        <div dojoAttachPoint="matchingResultsDiv" class="portlet-toolbar__matching-results" style="display: none"><%= LanguageUtil.get(pageContext, "Results") %></div>
+                        <div dojoAttachPoint="matchingResultsDiv" class="portlet-toolbar__matching-results" style="visibility: hidden"><%= LanguageUtil.get(pageContext, "Results") %></div>
                         <div id='addContentTypeDropdown'></div>
                         <div dojoAttachPoint="addContentletButton" class="portlet-toolbar__add-contentlet" style="display: none">
                             <button dojoType="dijit.form.Button" onClick="addNewContentlet()"><%= LanguageUtil.get(pageContext, "Add-New-Content") %></button>
