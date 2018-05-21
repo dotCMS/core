@@ -229,7 +229,7 @@ public class TaskLocatorUtil {
 		ret.add(Task04355SystemEventAddServerIdColumn.class);
 		ret.add(Task04360WorkflowSchemeDropUniqueNameConstraint.class);
 		ret.add(Task04365RelationshipUniqueConstraint.class);
-
+		ret.add(Task04370AddVisitorLogger.class);
 		return ret;
 	}
 

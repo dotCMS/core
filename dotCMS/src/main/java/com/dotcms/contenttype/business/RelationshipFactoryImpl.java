@@ -129,7 +129,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
 		Relationship rel = null;
 		try {
 			rel = cache.getRelationshipByName(typeValue);
-			if(rel != null)
+			if(rel != null && rel.getRelationTypeValue().equals(typeValue))
 				return rel;
 		} catch (DotCacheException e) {
 			Logger.debug(this.getClass(), "Unable to access the cache to obtaion the relationship", e);

@@ -2,6 +2,7 @@ package com.dotcms.util;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Calendar;
@@ -200,6 +201,32 @@ public class GeoIp2CityDbUtil {
 	}
 
 	/**
+	 * Returns the continent the specified IP address belongs to.
+	 *
+	 * @param ipAddress
+	 * 				- The IP address to get information from.
+	 * @return
+	 * @throws IOException
+	 * 				If the connection to the GeoIP2 service could not be
+	 *              established, or the result object could not be created.
+	 * @throws GeoIp2Exception
+	 * 				If the IP address is not present in the service database.
+	 */
+	public String getContinent(String ipAddress) throws IOException, GeoIp2Exception {
+		InetAddress inetAddress = InetAddress.getByName(ipAddress);
+		CityResponse city = getDatabaseReader().city(inetAddress);
+		return city.getContinent().getCode();
+	}
+
+
+	private com.dotcms.repackage.com.maxmind.geoip2.record.Location getLocation(String ipAddress)
+			throws IOException, GeoIp2Exception {
+		InetAddress inetAddress = InetAddress.getByName(ipAddress);
+		CityResponse city = getDatabaseReader().city(inetAddress);
+		return city.getLocation();
+	}
+
+	/**
 	 * returns an instance of {@code Location} from ip address
 	 * @param ipAddress the ip address to represent
 	 * @return the location
@@ -209,10 +236,37 @@ public class GeoIp2CityDbUtil {
      */
 	public Location getLocationByIp(String ipAddress)
 			throws IOException, GeoIp2Exception {
-		InetAddress inetAddress = InetAddress.getByName(ipAddress);
-		CityResponse city = getDatabaseReader().city(inetAddress);
-		com.dotcms.repackage.com.maxmind.geoip2.record.Location location = city.getLocation();
+		com.dotcms.repackage.com.maxmind.geoip2.record.Location location = getLocation(ipAddress);
 		return new Location(location.getLatitude(), location.getLongitude());
+	}
+
+	/**
+	 * returns a String representation (Latitude, Longitude) of {@code Location} from ip address
+	 *
+	 *
+	 * @param ipAddress the ip address to represent
+	 * @return the location
+	 * @throws IOException if the connection to the GeoIP2 service could not be established, or the
+	 *         result object could not be created.
+	 * @throws GeoIp2Exception if the IP address is not present in the service database.
+	 */
+	public String getLocationAsString(String ipAddress) throws IOException, GeoIp2Exception {
+
+		com.dotcms.repackage.com.maxmind.geoip2.record.Location location = getLocation(ipAddress);
+		if(location==null) return null;
+		StringWriter sw = new StringWriter();
+		try {
+			sw.append(String.valueOf(location.getLatitude()));
+		} catch (Exception e) {
+			sw.append(0d + ",");
+		}
+		sw.append(",");
+		try {
+			sw.append(String.valueOf(location.getLongitude()));
+		} catch (Exception e) {
+			sw.append(0d + ",");
+		}
+		return sw.toString();
 	}
 
 	/**
@@ -259,6 +313,13 @@ public class GeoIp2CityDbUtil {
 		CityResponse city = getDatabaseReader().city(inetAddress);
 		String zone = city.getLocation().getTimeZone();
 		return TimeZone.getTimeZone(zone);
+	}
+
+	public String getCompany() throws UnknownHostException, IOException, GeoIp2Exception {
+		//TODO: Replace ukn
+		// DomainResponse res = GeoIp2CityDbUtil.reader.domain(inetAddress);
+		// return res.getDomain();
+		return "ukn";
 	}
 
 	/**
