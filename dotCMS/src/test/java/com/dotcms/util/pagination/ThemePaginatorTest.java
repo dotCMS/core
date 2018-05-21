@@ -164,7 +164,7 @@ public class ThemePaginatorTest {
         when(contentletAPI.findContentlets(list("1", "2", "3"))).thenReturn(contentlets);
 
         final ThemePaginator themePaginator = new ThemePaginator(contentletAPI);
-        Map<String, Object> params = map(
+        final Map<String, Object> params = map(
                 ThemePaginator.HOST_ID_PARAMETER_NAME, "1",
                 Paginator.ORDER_DIRECTION_PARAM_NAME, OrderDirection.DESC
         );

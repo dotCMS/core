@@ -146,7 +146,7 @@ public class ThemeResourceTest {
         when(request.getSession()).thenReturn(session);
         when(session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID)).thenReturn(hostId);
 
-        Map<String, Object> params = map(
+        final Map<String, Object> params = map(
                 ThemePaginator.HOST_ID_PARAMETER_NAME, hostId,
                 Paginator.DEFAULT_FILTER_PARAM_NAME, null,
                 Paginator.ORDER_BY_PARAM_NAME, null,

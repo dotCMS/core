@@ -170,7 +170,7 @@ public class PaginationUtil {
 
 		if (extraParams != null) {
 			for (final Map.Entry<String, Object> paramEntry : extraParams.entrySet()) {
-				Object value = paramEntry.getValue() instanceof String ?
+				final Object value = paramEntry.getValue() instanceof String ?
 						SQLUtil.sanitizeParameter((String) paramEntry.getValue()) :
 						paramEntry.getValue();
 

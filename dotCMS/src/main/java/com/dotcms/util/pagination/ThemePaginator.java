@@ -46,7 +46,7 @@ public class ThemePaginator implements Paginator<Contentlet> {
     public PaginatedArrayList<Contentlet> getItems(final User user, final int limit, final int offset,
                                                    final Map<String, Object> params) throws PaginationException {
 
-        OrderDirection direction =  params != null && params.get(ORDER_DIRECTION_PARAM_NAME) != null ?
+        final OrderDirection direction =  params != null && params.get(ORDER_DIRECTION_PARAM_NAME) != null ?
                 (OrderDirection) params.get(ORDER_DIRECTION_PARAM_NAME) :
                 OrderDirection.ASC;
 

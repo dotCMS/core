@@ -77,7 +77,8 @@ public class ThemeResource {
                                      @QueryParam("hostId") final String hostId,
                                      @QueryParam(PaginationUtil.PAGE) final int page,
                                      @QueryParam(PaginationUtil.PER_PAGE) @DefaultValue("-1") final int perPage,
-                                     @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) String direction) throws Throwable {
+                                     @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction)
+            throws Throwable {
 
         Logger.debug(this,
                 "Getting the themes for the hostId: " + hostId);
