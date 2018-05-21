@@ -12,7 +12,7 @@ import org.apache.commons.lang.StringUtils;
 /**
  * Paginator util for Host
  */
-public class SitePaginator implements Paginator<Host> {
+public class SitePaginator implements PaginatorOrdered<Host> {
     public static final String ARCHIVED_PARAMETER_NAME = "archive";
     public static final  String LIVE_PARAMETER_NAME = "live";
     public static final  String SYSTEM_PARAMETER_NAME = "system";
