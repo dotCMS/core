@@ -1,5 +1,8 @@
 package com.dotcms.content.elasticsearch.util;
 
+import com.dotcms.cluster.bean.ServerPort;
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.base.CharMatcher;
@@ -15,14 +18,16 @@ import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.settings.Settings.Builder;
 
+import static com.dotcms.content.elasticsearch.util.ESClient.ES_ZEN_UNICAST_HOSTS;
+
 public class ESUtils {
 
-	public static final String ES_PATH_HOME = "es.path.home";
+	private static final String ES_PATH_HOME = "es.path.home";
 	// Query util methods
 	@VisibleForTesting
 	static final String[] SPECIAL_CHARS = new String[] { "+", "-", "&&", "||", "!", "(", ")", "{", "}", "[", "]", "^", "\"", "?",
 			":", "\\" };
-	public static final String ES_PATH_HOME_DEFAULT_VALUE = "WEB-INF/elasticsearch";
+	private static final String ES_PATH_HOME_DEFAULT_VALUE = "WEB-INF/elasticsearch";
 	private static final String ES_CONFIG_DIR = "config";
 	private static final String ES_YML_FILE = "elasticsearch.yml";
 	private static final String ES_EXT_YML_FILE = "elasticsearch-override.yml";
@@ -43,7 +48,7 @@ public class ESUtils {
 		return escapedText;
 	}
 
-	public static String getESPathHome() {
+	static String getESPathHome() {
 		String esPathHome = Config
 				.getStringProperty(ESUtils.ES_PATH_HOME, ESUtils.ES_PATH_HOME_DEFAULT_VALUE);
 
@@ -53,7 +58,7 @@ public class ESUtils {
 		return esPathHome;
 	}
 
-	public static String getYamlConfiguration(){
+	static String getYamlConfiguration(){
 		final String yamlPath = System.getenv("ES_PATH_CONF");
 		if (UtilMethods.isSet(yamlPath)  && FileUtil.exists(yamlPath)){
 			return yamlPath;
@@ -62,21 +67,63 @@ public class ESUtils {
 		}
 	}
 
-	public static Builder getExtSettingsBuilder() throws IOException {
+	static Builder getExtSettingsBuilder() throws IOException {
 
-		String yamlPath = System.getenv("ES_PATH_CONF");
-		if (!UtilMethods.isSet(yamlPath) || !FileUtil.exists(yamlPath)){
+		Builder settings = Settings.builder();
+
+		String overrideYamlPath = System.getenv("ES_PATH_CONF");
+		if (!UtilMethods.isSet(overrideYamlPath) || !FileUtil.exists(overrideYamlPath)) {
 			//Get elasticsearch-override.yml from default location
-			yamlPath = getESPathHome() + File.separator + ES_CONFIG_DIR +  File.separator + ES_EXT_YML_FILE;
-		} else{
+			overrideYamlPath = getESPathHome() + File.separator + ES_CONFIG_DIR + File.separator + ES_EXT_YML_FILE;
+		} else {
 			//Otherwise, get parent directory from the ES_PATH_CONF
-			yamlPath = new File(yamlPath).getParent() + File.separator + ES_EXT_YML_FILE;
+			overrideYamlPath = new File(overrideYamlPath).getParent() + File.separator + ES_EXT_YML_FILE;
 		}
-		final Path settingsPath = Paths.get(yamlPath);
-		if (Files.exists(settingsPath)){
-			return Settings.builder().loadFromPath(settingsPath);
+		final Path settingsPath = Paths.get(overrideYamlPath);
+
+		if (Files.exists(settingsPath)) {
+			Builder overrideSettings =  Settings.builder().loadFromPath(settingsPath);
+
+			if(LicenseUtil.getLevel()<= LicenseLevel.STANDARD.level) {
+
+				final String transportTCPPortOverride =
+					overrideSettings.get(ServerPort.ES_TRANSPORT_TCP_PORT.getPropertyName());
+
+				String transportTCPPort = transportTCPPortOverride;
+
+				if(!UtilMethods.isSet(transportTCPPortOverride)) {
+					transportTCPPort = getTransportTCPPortFromDefaultSettings();
+				}
+
+				transportTCPPort = UtilMethods.isSet(transportTCPPort)
+					?transportTCPPort
+					:ServerPort.ES_TRANSPORT_TCP_PORT.getDefaultValue();
+
+				overrideSettings.put(ES_ZEN_UNICAST_HOSTS, "localhost:"+transportTCPPort);
+			}
+			settings = overrideSettings;
+		} else if(LicenseUtil.getLevel()<= LicenseLevel.STANDARD.level) {
+			String transportTCPPort = getTransportTCPPortFromDefaultSettings();
+
+			transportTCPPort = UtilMethods.isSet(transportTCPPort)
+				?transportTCPPort
+				:ServerPort.ES_TRANSPORT_TCP_PORT.getDefaultValue();
+
+			settings = Settings.builder().put(ES_ZEN_UNICAST_HOSTS, "localhost:"+transportTCPPort);
 		}
-		return Settings.builder();
+
+		return settings;
 	}
-	
+
+	private static String getTransportTCPPortFromDefaultSettings() throws IOException {
+		String transportTCPPort;
+		final String defaultYamlPath = getYamlConfiguration();
+
+		Builder defaultSettings = Settings.builder().
+			loadFromStream(defaultYamlPath, ESUtils.class.getResourceAsStream(defaultYamlPath), false);
+
+		transportTCPPort = defaultSettings.get(ServerPort.ES_TRANSPORT_TCP_PORT.getPropertyName());
+		return transportTCPPort;
+	}
+
 }
