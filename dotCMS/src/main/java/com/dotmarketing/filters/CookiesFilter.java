@@ -11,7 +11,6 @@ import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.util.CookieKeys;
 import com.liferay.util.CookieUtil;
 import java.io.IOException;
@@ -65,16 +64,8 @@ public class CookiesFilter implements Filter {
 				final Cookie jsessionCookie = optionalCookie.get();
 				jsessionCookie.setMaxAge(0);
 			}
-
 			//Now we need to force the browser to make a new request to take the user to the login page
-			//We'll attempt sending it to the same page the request come from.
-			final String referer = request.getHeader("referer");
-			if(!UtilMethods.isSet(referer)){
-				//If no referer header is set we'll use this old but still valid url
-				request.getRequestDispatcher("/c/destroy.jsp").forward(request, response);
-			} else {
-				response.sendRedirect(referer);
-			}
+			request.getRequestDispatcher("/c").forward(request, response);
 
 		} catch (Exception e){
 			throw new ServletException(e);
