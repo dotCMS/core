@@ -55,6 +55,6 @@ newman run ($postmanCollectionJSONPath)
 2- Go to the variables tab and change the value [Image](https://screencast.com/t/zZPEKAuI8ra)
 3- Click to update
 
-Here a doc to see how works each endpoint: 
->Workflow Resource: https://goo.gl/JKrWr4
->Pages Resource: https://goo.gl/ExjFGM
+## Documentation: 
+* Workflow Resource: https://goo.gl/JKrWr4
+* Pages Resource: https://goo.gl/ExjFGM
