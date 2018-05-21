@@ -47,7 +47,7 @@ public class ThemePaginatorTest {
         when(contentletAPI.findContentlets(list("1", "2", "3"))).thenReturn(contentlets);
 
         final ThemePaginator themePaginator = new ThemePaginator(contentletAPI);
-        Map<String, Object> params = map(ThemePaginator.HOST_ID_PARAMETER_NAME, "1");
+        final Map<String, Object> params = map(ThemePaginator.HOST_ID_PARAMETER_NAME, "1");
         final PaginatedArrayList<Contentlet> themes = themePaginator.getItems(user, 0, -1, params);
 
         assertEquals(contentlets.size(), themes.size());
@@ -212,8 +212,8 @@ public class ThemePaginatorTest {
         assertEquals(contentlets.get(2), themes.get(2));
     }
 
-    private ContentletSearch createContentSerachMock(String contentInode) {
-        ContentletSearch mockContentletSearch = mock(ContentletSearch.class);
+    private ContentletSearch createContentSerachMock(final String contentInode) {
+        final ContentletSearch mockContentletSearch = mock(ContentletSearch.class);
 
         when(mockContentletSearch.getInode()).thenReturn(contentInode);
 

@@ -68,8 +68,6 @@ public class ThemeResourceTest {
 
     private  PaginatedArrayList<Contentlet> contentlets;
 
-    private List expected = list();
-
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Before
@@ -120,7 +118,7 @@ public class ThemeResourceTest {
     public void testFindThemesWithHostId() throws Throwable {
         final String hostId = "1";
 
-        Map<String, Object> params = map(
+        final Map<String, Object> params = map(
                 ThemePaginator.HOST_ID_PARAMETER_NAME, hostId,
                 Paginator.DEFAULT_FILTER_PARAM_NAME, null,
                 Paginator.ORDER_BY_PARAM_NAME, null,
@@ -191,11 +189,11 @@ public class ThemeResourceTest {
         }
     }
 
-    protected void checkSuccessResponse(Response response) throws IOException {
-        String responseString = response.getEntity().toString();
-        JsonNode jsonNode = objectMapper.readTree(responseString);
+    protected void checkSuccessResponse(final Response response) throws IOException {
+        final String responseString = response.getEntity().toString();
+        final JsonNode jsonNode = objectMapper.readTree(responseString);
 
-        List<JsonNode> responseList = CollectionsUtils.asList(jsonNode.get("entity").elements());
+        final List<JsonNode> responseList = CollectionsUtils.asList(jsonNode.get("entity").elements());
         assertEquals(2, responseList.size());
         assertEquals("folder_1", responseList.get(0).get("name").asText());
         assertEquals("value_1", responseList.get(0).get("host").get("property_1").asText());

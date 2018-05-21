@@ -90,7 +90,7 @@ public class ThemeResource {
                 (String) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
 
         try {
-            Map<String, Object> params = map(
+            final Map<String, Object> params = map(
                 ThemePaginator.HOST_ID_PARAMETER_NAME, hostIdToSearch
             );
 

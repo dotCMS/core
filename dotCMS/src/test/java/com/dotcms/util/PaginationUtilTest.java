@@ -51,7 +51,7 @@ public class PaginationUtilTest {
         final long totalRecords = 10;
         final StringBuffer baseURL = new StringBuffer("/baseURL");
 
-        String headerLink = "</baseURL?filter=filter&per_page=5&orderby=name&page=1&direction=ASC>;rel=\"first\",</baseURL?filter=filter&per_page=5&orderby=name&page=2&direction=ASC>;rel=\"last\",</baseURL?filter=filter&per_page=5&orderby=name&page=pageValue&direction=ASC>;rel=\"x-page\",</baseURL?filter=filter&per_page=5&orderby=name&page=1&direction=ASC>;rel=\"prev\"";
+        final String headerLink = "</baseURL?filter=filter&per_page=5&orderby=name&page=1&direction=ASC>;rel=\"first\",</baseURL?filter=filter&per_page=5&orderby=name&page=2&direction=ASC>;rel=\"last\",</baseURL?filter=filter&per_page=5&orderby=name&page=pageValue&direction=ASC>;rel=\"x-page\",</baseURL?filter=filter&per_page=5&orderby=name&page=1&direction=ASC>;rel=\"prev\"";
 
         final PaginatedArrayList items = new PaginatedArrayList<>();
         items.add(new PaginationUtilModeTest("testing"));
@@ -59,7 +59,7 @@ public class PaginationUtilTest {
 
         when( req.getRequestURL() ).thenReturn( baseURL );
 
-        Map<String, Object> params = map(
+        final Map<String, Object> params = map(
                 Paginator.DEFAULT_FILTER_PARAM_NAME, filter,
                 Paginator.ORDER_BY_PARAM_NAME, orderBy,
                 Paginator.ORDER_DIRECTION_PARAM_NAME, direction
@@ -69,9 +69,9 @@ public class PaginationUtilTest {
 
         final Response response = paginationUtil.getPage(req, user, filter, page, perPage, orderBy, direction, map());
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        String responseString = response.getEntity().toString();
-        JsonNode jsonNode = objectMapper.readTree(responseString);
+        final ObjectMapper objectMapper = new ObjectMapper();
+        final String responseString = response.getEntity().toString();
+        final JsonNode jsonNode = objectMapper.readTree(responseString);
 
         assertEquals( "testing", jsonNode.get("entity").elements().next().get("testing").asText() );
         assertEquals( response.getHeaderString("X-Pagination-Per-Page"), String.valueOf( perPage ) );

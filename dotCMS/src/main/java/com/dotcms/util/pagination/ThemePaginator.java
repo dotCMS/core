@@ -56,14 +56,14 @@ public class ThemePaginator implements Paginator<Contentlet> {
 
         try {
 
-            PaginatedArrayList<ContentletSearch> contentletSearches = (PaginatedArrayList<ContentletSearch>)
+            final PaginatedArrayList<ContentletSearch> contentletSearches = (PaginatedArrayList<ContentletSearch>)
                     contentletAPI.searchIndex(query, limit, offset, sortBy, user, false);
 
-            List<String>  inodes = contentletSearches.stream()
+            final List<String>  inodes = contentletSearches.stream()
                     .map(contentletSearch -> contentletSearch.getInode())
                     .collect(Collectors.toList());
 
-            PaginatedArrayList<Contentlet> result = new PaginatedArrayList();
+            final PaginatedArrayList<Contentlet> result = new PaginatedArrayList();
             result.setTotalResults(contentletSearches.getTotalResults());
             result.setQuery(query);
             result.addAll(contentletAPI.findContentlets(inodes));

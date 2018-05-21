@@ -132,9 +132,9 @@ public class PaginationUtil {
 		final int perPageValue = perPage == 0 ? perPageDefault : perPage;
 		final int minIndex = getMinIndex(pageValue, perPageValue);
 
-		String sanitizefilter = filter != null ? SQLUtil.sanitizeParameter(filter) : null;
+		final String sanitizefilter = filter != null ? SQLUtil.sanitizeParameter(filter) : null;
 
-		Map<String, Object> params = getParameters(sanitizefilter, orderBy, direction, extraParams);
+		final Map<String, Object> params = getParameters(sanitizefilter, orderBy, direction, extraParams);
 
 		PaginatedArrayList items = paginator.getItems(user, perPageValue, minIndex, params);
 
@@ -158,15 +158,18 @@ public class PaginationUtil {
 		}
 	}
 
-	protected Map<String, Object> getParameters(String filter, String orderBy, OrderDirection direction, Map<String, Object> extraParams) {
-		Map<String, Object> params = map(
+	protected Map<String, Object> getParameters(final String filter,
+												final String orderBy,
+												final OrderDirection direction,
+												final Map<String, Object> extraParams) {
+		final Map<String, Object> params = map(
 				Paginator.DEFAULT_FILTER_PARAM_NAME, filter,
 				Paginator.ORDER_BY_PARAM_NAME, orderBy,
 				Paginator.ORDER_DIRECTION_PARAM_NAME, direction != null ? direction : OrderDirection.ASC
 		);
 
 		if (extraParams != null) {
-			for (Map.Entry<String, Object> paramEntry : extraParams.entrySet()) {
+			for (final Map.Entry<String, Object> paramEntry : extraParams.entrySet()) {
 				Object value = paramEntry.getValue() instanceof String ?
 						SQLUtil.sanitizeParameter((String) paramEntry.getValue()) :
 						paramEntry.getValue();

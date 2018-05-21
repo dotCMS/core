@@ -5,7 +5,7 @@ package com.dotcms.util;
  */
 public class JsonProcessingRuntimeException extends RuntimeException {
 
-    public JsonProcessingRuntimeException (Throwable rootCause) {
+    public JsonProcessingRuntimeException (final Throwable rootCause) {
         super(rootCause);
     }
 }
