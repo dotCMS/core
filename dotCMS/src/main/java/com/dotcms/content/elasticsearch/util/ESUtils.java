@@ -114,14 +114,12 @@ public class ESUtils {
 	}
 
 	private static String getTransportTCPPortFromDefaultSettings() throws IOException {
-		String transportTCPPort;
 		final String defaultYamlPath = getYamlConfiguration();
 
 		Builder defaultSettings = Settings.builder().
 			loadFromStream(defaultYamlPath, ESUtils.class.getResourceAsStream(defaultYamlPath), false);
 
-		transportTCPPort = defaultSettings.get(ServerPort.ES_TRANSPORT_TCP_PORT.getPropertyName());
-		return transportTCPPort;
+		return defaultSettings.get(ServerPort.ES_TRANSPORT_TCP_PORT.getPropertyName());
 	}
 
 }
