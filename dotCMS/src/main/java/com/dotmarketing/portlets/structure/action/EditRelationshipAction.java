@@ -5,8 +5,9 @@ import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotmarketing.beans.Tree;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.DotValidationException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -109,7 +110,7 @@ public class EditRelationshipAction extends DotPortletAction {
 		String inodeString = req.getParameter("inode");
 		if(InodeUtils.isSet(inodeString))
 		{
-			relationship = FactoryLocator.getRelationshipFactory().byInode(inodeString);
+			relationship = APILocator.getRelationshipAPI().byInode(inodeString);
 		}
 		else
 		{
@@ -180,7 +181,7 @@ public class EditRelationshipAction extends DotPortletAction {
 					BeanUtils.copyProperties(relationship,relationshipForm);
 
 					if (!relationshipTypeValue.equals(relationship.getRelationTypeValue())) {
-						Relationship oRel = FactoryLocator.getRelationshipFactory().byTypeValue(relationshipTypeValue);
+						Relationship oRel = APILocator.getRelationshipAPI().byTypeValue(relationshipTypeValue);
 						if (InodeUtils.isSet(oRel.getInode()) && !oRel.getInode().equalsIgnoreCase(relationship.getInode())) {
 							String message = "error.relationship.same.relation.exist";
 							SessionMessages.add(req, "error",message);
@@ -195,7 +196,7 @@ public class EditRelationshipAction extends DotPortletAction {
 					}
 
 					//saves this relationship
-					FactoryLocator.getRelationshipFactory().save(relationship);
+					APILocator.getRelationshipAPI().save(relationship);
 
 					String message = "message.relationship.saved";
 					SessionMessages.add(req, "message",message);
@@ -208,6 +209,9 @@ public class EditRelationshipAction extends DotPortletAction {
 				SessionMessages.add(req, "error", message);
 				return false;
 			}
+		}
+		catch (DotValidationException ve) {
+			SessionMessages.add(req, "error", ve.getMessage());
 		}
 		catch(Exception ex)
 		{
@@ -223,7 +227,7 @@ public class EditRelationshipAction extends DotPortletAction {
 		TreeFactory.deleteTreesByRelationType(relationship.getRelationTypeValue());
 		
 		try {
-          FactoryLocator.getRelationshipFactory().delete(relationship);
+          APILocator.getRelationshipAPI().delete(relationship);
         } catch (DotDataException e) {
           throw new DotHibernateException(e.getMessage(),e);
         }
