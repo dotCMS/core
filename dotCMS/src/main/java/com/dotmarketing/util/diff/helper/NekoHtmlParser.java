@@ -18,7 +18,7 @@ package com.dotmarketing.util.diff.helper;
 
 import java.io.IOException;
 
-import org.apache.xerces.parsers.SAXParser;
+import com.dotcms.repackage.org.cyberneko.html.parsers.SAXParser;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;

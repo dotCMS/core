@@ -1353,7 +1353,8 @@ create table relationship (
    parent_required number(1,0),
    child_required number(1,0),
    fixed number(1,0),
-   primary key (inode)
+   primary key (inode),
+   unique (relation_type_value)
 );
 create table folder (
    inode varchar2(36) not null,
@@ -2304,6 +2305,7 @@ create table indicies (
   insert into log_mapper (ENABLED,LOG_NAME,DESCRIPTION) values ('1','dotcms-security.log','Log users login activity into dotCMS.');
   insert into log_mapper (ENABLED,LOG_NAME,DESCRIPTION) values ('1','dotcms-adminaudit.log','Log Admin activity on dotCMS.');
   insert into log_mapper (ENABLED,LOG_NAME,DESCRIPTION) values ('1','dotcms-pushpublish.log','Log Push Publishing activity on dotCMS.');
+  insert into log_mapper (ENABLED,LOG_NAME,DESCRIPTION) values ('1','visitor-v3.log','Log Visitor Filter activity on dotCMS.');
 
 create index idx_identifier_perm on identifier (asset_type,host_inode);
 

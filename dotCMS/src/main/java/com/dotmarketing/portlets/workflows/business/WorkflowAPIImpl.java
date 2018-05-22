@@ -7,6 +7,7 @@ import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.javax.ws.rs.HEAD;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
@@ -44,6 +45,7 @@ import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.stream.IntStream;
+
 
 
 public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
@@ -101,7 +103,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				ResetTaskActionlet.class,
 				MultipleApproverActionlet.class,
 				FourEyeApproverActionlet.class,
-				TwitterActionlet.class,
 				PushPublishActionlet.class,
 				CheckURLAccessibilityActionlet.class,
                 EmailActionlet.class,

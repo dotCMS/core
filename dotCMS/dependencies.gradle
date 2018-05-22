@@ -73,7 +73,6 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.jaxws-api', version:'2.2.9_2'
     compile group: 'com.dotcms.lib', name: 'dot.jaxws-rt', version:'2.2.8_2'
     compile group: 'com.dotcms.lib', name: 'dot.jazzy-core', version:'ukv_2'
-    compile group: 'com.dotcms.lib', name: 'dot.jcaptcha-mod', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.jempbox', version:'1.6.0_2'
     compile group: 'com.dotcms.lib', name: 'dot.jep', version:'2.4.1_2'
     compile group: 'com.dotcms.lib', name: 'dot.jersey-client', version:'2.22.1_4'
@@ -117,7 +116,6 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.quartz-all', version:'1.8.6_2'
     compile group: 'com.dotcms.lib', name: 'dot.rhino', version:'1.7R4_2'
     compile group: 'com.dotcms.lib', name: 'dot.secure-filter', version:'ukv_2'
-    compile group: 'com.dotcms.lib', name: 'dot.simplecaptcha', version:'1.2.1_2'
     compile group: 'com.dotcms.lib', name: 'dot.snappy-java', version:'1.0.4.1_2'
     compile group: 'com.dotcms.lib', name: 'dot.stax2-api', version:'3.1.1_2'
     compile group: 'com.dotcms.lib', name: 'dot.Tidy', version:'ukv_2'
@@ -308,7 +306,7 @@ dependencies {
 	compile group: 'com.twelvemonkeys.imageio', name: 'imageio-icns', version:'3.2.1'
 	compile group: 'com.twelvemonkeys.imageio', name: 'imageio-pcx', version:'3.2.1'
 	compile group: 'com.twelvemonkeys.imageio', name: 'imageio-thumbsdb', version:'3.2.1'
-	compile group: 'com.twelvemonkeys.imageio', name: 'imageio-batik', version:'3.2.1'
+	compile group: 'com.twelvemonkeys.imageio', name: 'imageio-batik', version:'3.3.2'
 	compile group: 'com.twelvemonkeys.imageio', name: 'imageio-clippath', version:'3.2.1'
     compile group: 'com.twelvemonkeys.servlet', name: 'servlet', version:'3.2.1'
     compile 'com.github.ben-manes.caffeine:caffeine:2.4.0'
@@ -382,7 +380,6 @@ dependencies {
 
     compile group: 'org.apache.xmlgraphics', name: 'batik-rasterizer', version:'1.8'
 
-    compile group: 'org.apache.xmlgraphics', name: 'batik-anim', version:'1.8'
     compile (group: 'org.apache.xmlgraphics', name: 'xmlgraphics-commons', version:'1.5') {
         exclude(group: 'commons-logging')
     }

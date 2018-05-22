@@ -21,7 +21,7 @@ import static com.dotcms.util.CollectionsUtils.list;
 /**
  * Paginator util for User
  */
-public class UserPaginator implements Paginator<Map<String, Object>> {
+public class UserPaginator implements PaginatorOrdered<Map<String, Object>> {
     private final UserAPI userAPI;
     private final RoleAPI roleAPI;
 

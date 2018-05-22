@@ -1884,11 +1884,15 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         }
 
         var loc='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="new" /></portlet:actionURL>&selectedStructure=' + selected +'&folder='+folderInode+'&referer=' + escape(refererVar);
-        if(inFrame){
-            window.location = loc;
-        }else{
-            top.location = loc;
-        }
+        
+        var customEvent = document.createEvent("CustomEvent");
+        customEvent.initCustomEvent("ng-event", false, false,  {
+            name: "create-contentlet",
+            data: {
+                url: loc
+            }
+        });
+        document.dispatchEvent(customEvent);
     }
 
 

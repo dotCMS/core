@@ -13,10 +13,11 @@ import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.annotation.IncludePermissions;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.annotation.Permissions;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.ForbiddenException;
+import com.dotcms.util.DotPreconditions;
 import com.dotcms.workflow.form.*;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.beans.Permission;
@@ -236,7 +237,7 @@ public class WorkflowResource {
     @Path("/actions/{actionId}")
     @JSONP
     @NoCache
-    @Permissions
+    @IncludePermissions
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findAction(@Context final HttpServletRequest request,
                                      @PathParam("actionId") final String actionId) {
@@ -364,7 +365,7 @@ public class WorkflowResource {
         WorkflowAction newAction;
 
         try {
-
+            DotPreconditions.notNull(workflowActionForm,"Expected Request body was empty.");
             Logger.debug(this, "Saving new workflow action: " + workflowActionForm.getActionName());
             newAction = this.workflowHelper.saveAction(workflowActionForm, initDataObject.getUser());
             return Response.ok(new ResponseEntityView(newAction)).build(); // 200
@@ -397,6 +398,7 @@ public class WorkflowResource {
 
         final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
         try {
+            DotPreconditions.notNull(workflowActionForm,"Expected Request body was empty.");
             Logger.debug(this, "Updating action with id: " + actionId);
             final WorkflowAction workflowAction = this.workflowHelper.updateAction(actionId, workflowActionForm, initDataObject.getUser());
             return Response.ok(new ResponseEntityView(workflowAction)).build(); // 200
@@ -427,7 +429,7 @@ public class WorkflowResource {
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
         try {
-
+            DotPreconditions.notNull(workflowActionStepForm,"Expected Request body was empty.");
             Logger.debug(this, "Saving a workflow action " + workflowActionStepForm.getActionId()
                     + " in to a step: " + stepId);
             this.workflowHelper.saveActionToStep(new WorkflowActionStepBean.Builder().stepId(stepId)
@@ -456,13 +458,12 @@ public class WorkflowResource {
                                      @Suspended final AsyncResponse asyncResponse,
                                      @PathParam("stepId") final String stepId) {
 
-        this.webResource.init
+        final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
 
         try {
-
             Logger.debug(this, "Deleting the step: " + stepId);
-            ResponseUtil.handleAsyncResponse(this.workflowHelper.deleteStep(stepId), asyncResponse);
+            ResponseUtil.handleAsyncResponse(this.workflowHelper.deleteStep(stepId, initDataObject.getUser()), asyncResponse);
         } catch (final Exception e) {
             Logger.error(this.getClass(),
                     "Exception on deleteStep, stepId: " + stepId +
@@ -584,6 +585,7 @@ public class WorkflowResource {
         final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
         Logger.debug(this, "updating step for scheme with stepId: " + stepId);
         try {
+            DotPreconditions.notNull(stepForm,"Expected Request body was empty.");
             final WorkflowStep step = this.workflowHelper.updateStep(stepId, stepForm, initDataObject.getUser());
             return Response.ok(new ResponseEntityView(step)).build();
         } catch (Exception e) {
@@ -607,15 +609,17 @@ public class WorkflowResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response addStep(@Context final HttpServletRequest request,
                                   final WorkflowStepAddForm newStepForm) {
-        final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
-        final String schemeId = newStepForm.getSchemeId();
-        Logger.debug(this, "updating step for scheme with schemeId: " + schemeId);
+        String schemeId = null;
         try {
+            DotPreconditions.notNull(newStepForm,"Expected Request body was empty.");
+            schemeId = newStepForm.getSchemeId();
+            final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
+            Logger.debug(this, "updating step for scheme with schemeId: " + schemeId);
             final WorkflowStep step = this.workflowHelper.addStep(newStepForm, initDataObject.getUser());
             return Response.ok(new ResponseEntityView(step)).build();
         } catch (final Exception e) {
             Logger.error(this.getClass(),
-                    "Exception on addStep, stepId: " + schemeId +
+                    "Exception on addStep, schemeId: " + schemeId +
                             ", exception message: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
         }
@@ -654,7 +658,8 @@ public class WorkflowResource {
      * @param request HttpServletRequest
      * @param inode String
      * @param actionId String
-     * @param fireActionForm FireActionForm
+     * @param fireActionForm FireActionForm This param is mandatory only is the inode isn't sent
+     * (if an inode is set, this param is not ignored).
      * @return Response
      */
     @PUT
@@ -672,14 +677,14 @@ public class WorkflowResource {
 
         try {
 
-            Logger.debug(this, "Firing workflow action: " + actionId +
-                            ", inode: " + inode);
-
-            final Contentlet contentlet = (UtilMethods.isSet(inode))?
-                        this.contentletAPI.find(inode, initDataObject.getUser(), false):
-                        this.populateContentlet(fireActionForm, initDataObject.getUser());
-
-            if (null != contentlet && null != fireActionForm) {
+            final Contentlet contentlet;
+            //if inode is set we use it to look up a contentlet
+            if(UtilMethods.isSet(inode)) {
+               contentlet = this.contentletAPI.find(inode, initDataObject.getUser(), false);
+            } else {
+                //otherwise the information must be grabbed from the request body.
+                DotPreconditions.notNull(fireActionForm,"When no inode is sent the info on the Request body becomes mandatory.");
+                contentlet = this.populateContentlet(fireActionForm, initDataObject.getUser());
                 contentlet.setStringProperty("wfPublishDate", fireActionForm.getPublishDate());
                 contentlet.setStringProperty("wfPublishTime", fireActionForm.getPublishTime());
                 contentlet.setStringProperty("wfExpireDate", fireActionForm.getExpireDate());
@@ -688,20 +693,24 @@ public class WorkflowResource {
                 contentlet.setStringProperty("whereToSend", fireActionForm.getWhereToSend());
                 contentlet.setStringProperty("forcePush", fireActionForm.getForcePush());
             }
-
+            Logger.debug(this, "Firing workflow action: " + actionId + ", inode: " + inode);
 
             if(null == contentlet || contentlet.getMap().isEmpty()){
                 throw new DoesNotExistException("contentlet-was-not-found");
             }
 
-           return Response.ok(new ResponseEntityView(
-                    this.workflowAPI.fireContentWorkflow(contentlet,
-                        new ContentletDependencies.Builder()
-                            .respectAnonymousPermissions(PageMode.get(request).respectAnonPerms)
-                            .workflowActionId(actionId)
-                            .workflowActionComments((null != fireActionForm)?fireActionForm.getComments():null)
-                            .workflowAssignKey((null != fireActionForm)?fireActionForm.getAssign():null)
-                            .modUser(initDataObject.getUser()).build())
+            final ContentletDependencies.Builder formBuilder = new ContentletDependencies.Builder();
+            formBuilder.respectAnonymousPermissions(PageMode.get(request).respectAnonPerms).
+                    workflowActionId(actionId).modUser(initDataObject.getUser());
+
+            if(fireActionForm != null) {
+                formBuilder.workflowActionComments(fireActionForm.getComments())
+                        .workflowAssignKey(fireActionForm.getAssign());
+            }
+
+            return Response.ok(
+                    new ResponseEntityView(
+                       this.workflowAPI.fireContentWorkflow(contentlet, formBuilder.build())
                     )
             ).build(); // 200
         } catch (Exception e) {
@@ -721,7 +730,8 @@ public class WorkflowResource {
      * @return Contentlet
      * @throws DotSecurityException
      */
-    private Contentlet populateContentlet(final FireActionForm fireActionForm, final User user) throws DotSecurityException {
+    private Contentlet populateContentlet(final FireActionForm fireActionForm, final User user)
+            throws DotSecurityException {
 
         final Contentlet contentlet = this.contentHelper.populateContentletFromMap
                 (new Contentlet(), fireActionForm.getContentletFormData());
@@ -731,7 +741,7 @@ public class WorkflowResource {
             String message = "no-permissions-contenttype";
 
             try {
-                message =LanguageUtil.get(user.getLocale(),
+                message = LanguageUtil.get(user.getLocale(),
                         message, user.getUserId(), contentlet.getContentType().id());
             } catch (LanguageException e) {
                 throw new ForbiddenException(message);
@@ -741,7 +751,8 @@ public class WorkflowResource {
         };
 
         try {
-            if (!this.permissionAPI.doesUserHavePermission(contentlet.getContentType(), PermissionAPI.PERMISSION_READ, user, false)) {
+            if (!this.permissionAPI.doesUserHavePermission(contentlet.getContentType(),
+                    PermissionAPI.PERMISSION_READ, user, false)) {
                 throw new DotSecurityException(errorMessageSupplier.get());
             }
         } catch (DotDataException e) {
@@ -771,7 +782,7 @@ public class WorkflowResource {
                 (null, true, request, true, null);
 
         try {
-
+            DotPreconditions.notNull(workflowReorderActionStepForm,"Expected Request body was empty.");
             Logger.debug(this, "Doing reordering of: " + workflowReorderActionStepForm);
             this.workflowHelper.reorderAction(
                     new WorkflowReorderBean.Builder().stepId(stepId).actionId(actionId)
@@ -805,15 +816,14 @@ public class WorkflowResource {
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
         Response response;
-        final WorkflowSchemeImportExportObject exportObject;
 
         try {
-
+            DotPreconditions.notNull(workflowSchemeImportForm,"Expected Request body was empty.");
             Logger.debug(this, "Importing the workflow schemes");
 
             this.workflowAPI.isUserAllowToModifiedWorkflow(initDataObject.getUser());
 
-            exportObject = new WorkflowSchemeImportExportObject();
+            final WorkflowSchemeImportExportObject exportObject = new WorkflowSchemeImportExportObject();
             exportObject.setSchemes(workflowSchemeImportForm.getWorkflowImportObject().getSchemes());
             exportObject.setSteps  (workflowSchemeImportForm.getWorkflowImportObject().getSteps());
             exportObject.setActions(workflowSchemeImportForm.getWorkflowImportObject().getActions());
@@ -884,6 +894,7 @@ public class WorkflowResource {
      * @param request  HttpServletRequest
      * @param schemeId String
      * @param name String
+     * @param workflowCopyForm (Optional param. use it to set any specifics on the new scheme)
      * @return Response
      */
     @POST
@@ -1038,12 +1049,14 @@ public class WorkflowResource {
     public final Response saveScheme(@Context final HttpServletRequest request,
                                final WorkflowSchemeForm workflowSchemeForm) {
         final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
-        Logger.debug(this, "Saving scheme named: " + workflowSchemeForm.getSchemeName());
         try {
+            DotPreconditions.notNull(workflowSchemeForm,"Expected Request body was empty.");
+            Logger.debug(this, "Saving scheme named: " + workflowSchemeForm.getSchemeName());
             final WorkflowScheme scheme = this.workflowHelper.saveOrUpdate(null, workflowSchemeForm, initDataObject.getUser());
             return Response.ok(new ResponseEntityView(scheme)).build(); // 200
         } catch (Exception e) {
-            Logger.error(this.getClass(), "Exception on save, schema named: " + workflowSchemeForm.getSchemeName() + ", exception message: " + e.getMessage(), e);
+            final String schemeName = workflowSchemeForm == null ? "" : workflowSchemeForm.getSchemeName();
+            Logger.error(this.getClass(), "Exception on save, schema named: " + schemeName + ", exception message: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
         }
     }
@@ -1066,6 +1079,7 @@ public class WorkflowResource {
         final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
         Logger.debug(this, "Updating scheme with id: " + schemeId);
         try {
+            DotPreconditions.notNull(workflowSchemeForm,"Expected Request body was empty.");
             final WorkflowScheme scheme = this.workflowHelper.saveOrUpdate(schemeId, workflowSchemeForm, initDataObject.getUser());
             return Response.ok(new ResponseEntityView(scheme)).build(); // 200
         }  catch (Exception e) {

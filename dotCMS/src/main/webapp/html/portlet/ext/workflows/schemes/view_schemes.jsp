@@ -23,7 +23,6 @@
 		<div class="portlet-toolbar" >
 			<div class="showPointer" onClick="schemeAdmin.show()"  style="float: left;">
 				<h2 style="border-bottom:dotted 1px white;"><%=LanguageUtil.get(pageContext, "Workflow-Schemes")%></h2>
-				<p>&nbsp;</p>
 			</div>
 			<div style="float: right;padding-right:10px;">
 

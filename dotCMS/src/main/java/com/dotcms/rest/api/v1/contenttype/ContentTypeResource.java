@@ -259,13 +259,9 @@ public class ContentTypeResource implements Serializable {
 			resultMap.putAll(new JsonContentTypeTransformer(type).mapObject());
 			resultMap.put("workflows", 		 this.workflowHelper.findSchemesByContentType(type.id(), initData.getUser()));
 
-			final Response.ResponseBuilder builder = Response.ok(new ResponseEntityView(resultMap));
-			if ("true".equalsIgnoreCase(req.getParameter("permissionable"))) {
-
-				builder.header(HeaderFilter.PERMISSIONS, PermissionsUtil.getInstance().getPermissionsArray(type, initData.getUser()));
-			}
-
-			response = builder.build();
+			response = ("true".equalsIgnoreCase(req.getParameter("include_permissions")))?
+					Response.ok(new ResponseEntityView(resultMap, PermissionsUtil.getInstance().getPermissionsArray(type, initData.getUser()))).build():
+					Response.ok(new ResponseEntityView(resultMap)).build();
 		} catch (DotSecurityException e) {
 			throw new ForbiddenException(e);
 		} catch (NotFoundInDbException nfdb2) {

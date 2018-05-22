@@ -27,10 +27,8 @@ import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
-import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
-import org.apache.commons.lang3.mutable.MutableInt;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -44,10 +42,9 @@ import java.util.stream.Collectors;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.*;
 import static com.dotmarketing.business.Role.ADMINISTRATOR;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.Matchers.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class WorkflowResourceIntegrationTest {
 
@@ -600,8 +597,7 @@ public class WorkflowResourceIntegrationTest {
         final AsyncResponse asyncResponse = new MockAsyncResponse(
                 (arg) -> {
             final Response deleteSchemeResponse = (Response)arg;
-
-            assertEquals(Status.INTERNAL_SERVER_ERROR.getStatusCode(), deleteSchemeResponse.getStatus());
+            assertEquals(Status.FORBIDDEN.getStatusCode(), deleteSchemeResponse.getStatus());
 
             //test archive scheme
             WorkflowSchemeForm form = new WorkflowSchemeForm.Builder().schemeDescription("Delete scheme").schemeArchived(true).schemeName(savedScheme.getName()).build();

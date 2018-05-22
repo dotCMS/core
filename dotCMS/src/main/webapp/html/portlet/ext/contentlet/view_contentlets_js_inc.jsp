@@ -710,7 +710,17 @@
 			addNewContentlet(structureInode);
 		}
 
-
+        function dispatchCreateContentletEvent(url) {
+            var customEvent = document.createEvent("CustomEvent");
+            customEvent.initCustomEvent("ng-event", false, false,  {
+                name: "create-contentlet",
+                data: {
+                    url: url
+                }
+            });
+            document.dispatchEvent(customEvent);
+            dijit.byId("selectStructureDiv").hide();
+        }
 
 
         function addNewContentlet(structureInode){
@@ -722,7 +732,6 @@
 				return;
 			}
           else if(structureInode == '<%=calendarEventSt.getInode() %>'){
-
                 var href = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
                 href += "<portlet:param name='struts_action' value='/ext/calendar/edit_event' />";
                 href += "<portlet:param name='cmd' value='new' />";
@@ -731,9 +740,8 @@
                 href += "</portlet:actionURL>";
                 href += "&selectedStructure=" + structureInode ;
                 href += "&lang=" + getSelectedLanguageId();
-                window.location=href;
+                dispatchCreateContentletEvent(href);
           }else{
-
                 var href = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
                 href += "<portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' />";
                 href += "<portlet:param name='cmd' value='new' />";
@@ -742,7 +750,7 @@
                 href += "</portlet:actionURL>";
                 href += "&selectedStructure=" + structureInode ;
                 href += "&lang=" + getSelectedLanguageId();
-                window.location=href;
+                dispatchCreateContentletEvent(href)
           }
         }
 

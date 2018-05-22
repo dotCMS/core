@@ -91,18 +91,19 @@
             margin-right: 16px;
         }
 
-        .portlet-toolbar__add-contentlet {
-            margin-left: auto;
+        .portlet-toolbar__matching-results{
+            margin: 0 auto;
+            align-self: start;
         }
     </style>
 
     <script type="text/javascript">
     
     var _dotSelectedStructure = '<%=contentTypes.get(0).id()%>';
-        function addNewContentlet() {
+        function addNewContentlet(iNode) {
             var href = "/c/portal/layout?p_l_id=<%=contentLayout.getId()%>&p_p_id=content&p_p_action=1&p_p_state=maximized&p_p_mode=view";
             href += "&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_content_cmd=new";
-            href += "&selectedStructure=" + _dotSelectedStructure + "&lang=1";
+            href += "&selectedStructure=" + (iNode || _dotSelectedStructure) + "&lang=1";
             window.location = href;
         }
 
@@ -132,6 +133,18 @@
 
         function isInodeSet(x) {
             return (x && x != undefined && x != "" && x.length > 15);
+        }
+
+        function loadAddContentTypePrimaryMenu() {
+            var addContentDropdown = '<div data-dojo-type="dijit/form/DropDownButton" data-dojo-props=\'iconClass:"fa-plus", class:"dijitDropDownActionButton"\'><span></span>';
+            addContentDropdown+= '<ul data-dojo-type="dijit/Menu" >';
+            var addContentTypePrimaryMenu =  document.getElementById('addContentTypeDropdown');
+            for ( var i = 1; contentSelector.containerStructures.length > i; i++) {
+                addContentDropdown+= '<li data-dojo-type="dijit/MenuItem" onClick="addNewContentlet(\'' + contentSelector.containerStructures[i].inode + '\')">' + contentSelector.containerStructures[i].name + '</li>';
+            }
+            addContentDropdown+='</ul></div>';
+            addContentTypePrimaryMenu.innerHTML= addContentDropdown;
+            dojo.parser.parse(addContentTypePrimaryMenu);
         }
 
 
@@ -164,7 +177,7 @@
 
         dojo.addOnLoad(function () {
             contentSelector.show();
-
+            loadAddContentTypePrimaryMenu();
             // Make sure is called after the show() is completed
             setTimeout(() => {
                 contentSelector._doSearchPage1();
