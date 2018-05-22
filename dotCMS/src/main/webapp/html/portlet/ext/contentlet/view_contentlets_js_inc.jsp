@@ -1495,6 +1495,21 @@
                         fieldsValues[fieldsValues.length] = "conFolder";
                         fieldsValues[fieldsValues.length] = folderValue;
                 }
+
+                let schemeId = dijit.byId("scheme_id").getValue();
+                if ("catchall"!= schemeId) {
+
+                    fieldsValues[fieldsValues.length] = "wfscheme";
+                    fieldsValues[fieldsValues.length] = schemeId;
+                }
+
+                let stepId = dijit.byId("step_id").getValue();
+                if ("catchall"!= stepId) {
+
+                    fieldsValues[fieldsValues.length] = "wfstep";
+                    fieldsValues[fieldsValues.length] = stepId;
+                }
+
                 var allField = dijit.byId("allFieldTB").getValue();
 
 				if (allField != undefined && allField.length>0 ) {
@@ -2000,6 +2015,10 @@
         }
 
         function clearSearch () {
+
+
+                dijit.byId("structure_inode").set("value",'catchall');
+                dijit.byId("scheme_id").set("value",'catchall');
      			dijit.byId("showingSelect").set("value", "all");
      			dijit.byId("allFieldTB").set("value", "");
 

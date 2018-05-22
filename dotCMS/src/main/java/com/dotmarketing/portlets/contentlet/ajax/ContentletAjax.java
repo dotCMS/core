@@ -7,6 +7,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 import static com.dotcms.exception.ExceptionUtil.getRootCause;
 
 
+import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import java.io.File;
@@ -560,6 +561,8 @@ public class ContentletAjax {
 
 		if (UtilMethods.isSet(sess)) {
 			sess.setAttribute(WebKeys.CONTENTLET_LAST_SEARCH, lastSearchMap);
+            sess.setAttribute(ESMappingConstants.WORKFLOW_SCHEME, null);
+            sess.setAttribute(ESMappingConstants.WORKFLOW_STEP, null);
 		}
 
 		Map<String, String> fieldsSearch = new HashMap<String, String>();
@@ -675,7 +678,23 @@ public class ContentletAjax {
 							Logger.error(ContentletAjax.class,e.getMessage(),e);
 						}
 					}
-				}else {
+				} else if (ESMappingConstants.WORKFLOW_SCHEME.equalsIgnoreCase(fieldName)) {
+
+					try {
+						luceneQuery.append("+(" + ESMappingConstants.WORKFLOW_SCHEME + ":" + fieldValue + "*) ");
+						sess.setAttribute(ESMappingConstants.WORKFLOW_SCHEME, fieldValue);
+					} catch (Exception e) {
+						Logger.error(ContentletAjax.class,e.getMessage(),e);
+					}
+				} else if (ESMappingConstants.WORKFLOW_STEP.equalsIgnoreCase(fieldName)) {
+
+					try {
+						luceneQuery.append("+(" + ESMappingConstants.WORKFLOW_STEP + ":" + fieldValue + "*) ");
+                        sess.setAttribute(ESMappingConstants.WORKFLOW_STEP, fieldValue);
+					} catch (Exception e) {
+						Logger.error(ContentletAjax.class,e.getMessage(),e);
+					}
+				} else {
 						String fieldbcontentname="";
 						String fieldVelocityVarName = "";
 						Boolean isStructField=false;

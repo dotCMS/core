@@ -1,6 +1,5 @@
 package com.dotcms.rest.api.v1.workflow;
 
-import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.repackage.javax.ws.rs.*;
@@ -25,7 +24,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -39,7 +37,6 @@ import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.util.concurrent.Futures;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -48,8 +45,6 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 import java.util.function.Supplier;
 
 import static com.dotcms.rest.ResponseEntityView.OK;
@@ -197,7 +192,7 @@ public class WorkflowResource {
             final List<WorkflowStep> steps = this.workflowHelper.findSteps(schemeId);
             return Response.ok(new ResponseEntityView(steps)).build(); // 200
         } catch (Exception e) {
-            Logger.error(this.getClass(),"Exception on findAllSchemesAndSchemesByContentType exception message: " + e.getMessage(), e);
+            Logger.error(this.getClass(),"Exception on findStepsByScheme exception message: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
 
         }
