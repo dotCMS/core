@@ -18,7 +18,7 @@ import com.liferay.portal.model.User;
 /**
  * Category paginator
  */
-public class CategoriesPaginator implements Paginator<Category> {
+public class CategoriesPaginator implements PaginatorOrdered<Category> {
 
     private final CategoryAPI categoryAPI;
     private final AtomicInteger lastTotalRecords =  new AtomicInteger(0);

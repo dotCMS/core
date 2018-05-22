@@ -20,7 +20,6 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.image.reader.SVGImageReaderSpi;
 import com.dotmarketing.portlets.contentlet.business.BinaryContentExporter;
 import com.dotmarketing.portlets.contentlet.business.BinaryContentExporterException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -133,8 +132,7 @@ public class BinaryExporterServlet extends HttpServlet {
 		}
 		ImageIO.scanForPlugins();
         final IIORegistry registry = IIORegistry.getDefaultInstance();
-        registry.deregisterServiceProvider(registry.getServiceProviderByClass(com.twelvemonkeys.imageio.plugins.svg.SVGImageReaderSpi.class));
-        registry.registerServiceProvider(new SVGImageReaderSpi());
+        registry.registerServiceProvider(registry.getServiceProviderByClass(com.twelvemonkeys.imageio.plugins.svg.SVGImageReaderSpi.class));
 	}
 
 	private static final long serialVersionUID = 1L;

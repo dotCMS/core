@@ -719,6 +719,7 @@
                 }
             });
             document.dispatchEvent(customEvent);
+            dijit.byId("selectStructureDiv").hide();
         }
 
 

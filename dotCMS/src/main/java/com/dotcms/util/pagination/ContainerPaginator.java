@@ -21,7 +21,7 @@ import static com.dotcms.util.CollectionsUtils.map;
 /**
  * Handle {@link com.dotmarketing.portlets.containers.model.Container} pagination
  */
-public class ContainerPaginator implements Paginator<Container> {
+public class ContainerPaginator implements PaginatorOrdered<Container> {
 
     public static final String HOST_PARAMETER_ID = "host";
 

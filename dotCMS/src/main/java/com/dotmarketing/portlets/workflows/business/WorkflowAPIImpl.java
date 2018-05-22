@@ -528,9 +528,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		if( SYSTEM_WORKFLOW_ID.equals(scheme.getId()) || !scheme.isArchived()) {
 
 			Logger.warn(this,
-					"Can not delete workflow Id:" + scheme.getId() + ", name:" + scheme.getName());
-			throw new DotWorkflowException(
-					"Can not delete workflow Id:" + scheme.getId() + ", name:" + scheme.getName());
+					"Attempt made by user "+user.getUserId()+" to delete system workflow.");
+			throw new DotSecurityException(
+					"Can not delete workflow System Workflow.");
 		}
 
 		final DotSubmitter submitter = this.concurrentFactory.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
