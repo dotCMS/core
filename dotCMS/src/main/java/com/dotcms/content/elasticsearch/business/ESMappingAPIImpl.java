@@ -428,15 +428,13 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				}
 
 				Object valueObj = con.get(f.getVelocityVarName());
-				if(valueObj == null){
-					valueObj = "";
-				}
+
 				if (f.getFieldContentlet().startsWith(ESMappingConstants.FIELD_TYPE_SECTION_DIVIDER)) {
 					valueObj = "";
 				}
 
 				if(!UtilMethods.isSet(valueObj)) {
-					m.put(keyName, "");
+					m.put(keyName, null);
 				}
 				else if(f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_TIME)) {
 					try{
