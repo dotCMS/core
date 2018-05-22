@@ -57,7 +57,6 @@ import com.dotcms.vanityurl.business.VanityUrlAPIImpl;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.business.VisitorAPIImpl;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.cluster.mbeans.Cluster;
 import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.business.portal.PortletAPIImpl;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
@@ -94,8 +93,6 @@ import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPIImpl;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl;
-import com.dotmarketing.portlets.htmlpages.theme.business.ThemeAPI;
-import com.dotmarketing.portlets.htmlpages.theme.business.ThemeAPIImpl;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPIImpl;
 import com.dotmarketing.portlets.linkchecker.business.LinkCheckerAPI;
@@ -881,15 +878,6 @@ public class APILocator extends Locator<APIIndex>{
 		return (HTMLPageAssetRenderedAPI) getInstance(APIIndex.HTMLPAGE_ASSET_RENDERED_API);
 	}
 
-	/**
-	 * Creates a single instance of the {@link com.dotmarketing.portlets.htmlpages.theme.business.ThemeAPI}
-	 *
-	 * @return The {@link LanguageVariableAPI} class.
-	 */
-	public static ThemeAPI getThemeAPI() {
-		return (ThemeAPI) getInstance(APIIndex.THEME_API);
-	}
-
 	/*
 	 * Creates a single instance of the {@link ClusterAPI}
 	 *
@@ -1032,7 +1020,6 @@ enum APIIndex
 	VANITY_URLS_API,
 	MULTI_TREE_API,
 	HTMLPAGE_ASSET_RENDERED_API,
-	THEME_API,
 	CLUSTER_API;
 
 
@@ -1104,7 +1091,6 @@ enum APIIndex
 			case LOCAL_SYSTEM_EVENTS_API: return LocalSystemEventsAPIFactory.getInstance().getLocalSystemEventsAPI();
 			case MULTI_TREE_API: return new MultiTreeAPIImpl();
 			case HTMLPAGE_ASSET_RENDERED_API: return new HTMLPageAssetRenderedAPIImpl();
-			case THEME_API: return new ThemeAPIImpl();
 			case CLUSTER_API: return new ClusterAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);

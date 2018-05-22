@@ -4,11 +4,15 @@ import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotmarketing.util.WebKeys.DOTCMS_PAGINATION_LINKS;
 import static com.dotmarketing.util.WebKeys.DOTCMS_PAGINATION_ROWS;
 
+import com.dotcms.repackage.com.fasterxml.jackson.core.JsonProcessingException;
+import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
+import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectWriter;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.Paginator;
 import com.dotmarketing.common.util.SQLUtil;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
@@ -22,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.StringUtils;
+import org.apache.velocity.runtime.Runtime;
 
 /**
  * Utility class to the pagination elements and filter
@@ -46,8 +51,6 @@ public class PaginationUtil {
 	private static final String PAGINATION_TOTAL_ENTRIES_HEADER_NAME = "X-Pagination-Total-Entries";
 	public static final String PAGE_VALUE_TEMPLATE = "pageValue";
 
-	private Paginator paginator;
-
 	private static final String LINK_TEMPLATE = "<{URL}>;rel=\"{relValue}\"";
 
 	private static final String  FIRST_REL_VALUE = "first";
@@ -56,13 +59,21 @@ public class PaginationUtil {
 	private static final String  NEXT_REL_VALUE = "next";
 	private static final String  PAGE_REL_VALUE = "x-page";
 
-	private int perPageDefault;
-	private int nLinks;
+	private final Paginator paginator;
+	private final int perPageDefault;
+	private final int nLinks;
+
+	private final ObjectWriter objectWriter;
 
 	public PaginationUtil(Paginator paginator){
+		this(paginator, new ObjectMapper());
+	}
+
+	public PaginationUtil(final Paginator paginator, final ObjectMapper mapper){
 		this.paginator = paginator;
 		perPageDefault = Config.getIntProperty(DOTCMS_PAGINATION_ROWS, 10);
 		nLinks = Config.getIntProperty(DOTCMS_PAGINATION_LINKS, 5);
+		this.objectWriter = mapper.writer().withDefaultPrettyPrinter();
 	}
 
 	/**
@@ -114,14 +125,18 @@ public class PaginationUtil {
 	 * @return
 	 */
 	public Response getPage(final HttpServletRequest req, final User user, final String filter, final int page,
-							final int perPage, final String orderBy, final OrderDirection direction, final Map<String, Object> extraParams) {
+							final int perPage, final String orderBy, final OrderDirection direction,
+							final Map<String, Object> extraParams) {
 
 		final int pageValue = page == 0 ? FIRST_PAGE_INDEX : page;
 		final int perPageValue = perPage == 0 ? perPageDefault : perPage;
 		final int minIndex = getMinIndex(pageValue, perPageValue);
-		final String sanitizefilter = SQLUtil.sanitizeParameter(filter);
 
-		PaginatedArrayList items = paginator.getItems(user, sanitizefilter, perPageValue, minIndex, orderBy, direction, extraParams);
+		final String sanitizefilter = filter != null ? SQLUtil.sanitizeParameter(filter) : null;
+
+		final Map<String, Object> params = getParameters(sanitizefilter, orderBy, direction, extraParams);
+
+		PaginatedArrayList items = paginator.getItems(user, perPageValue, minIndex, params);
 
 		items =  !UtilMethods.isSet(items) ? new PaginatedArrayList() : items;
 		final long totalRecords = items.getTotalResults();
@@ -129,14 +144,40 @@ public class PaginationUtil {
 		final String linkHeaderValue = getHeaderValue(req.getRequestURL().toString(), sanitizefilter, pageValue, perPageValue,
 				totalRecords, orderBy, direction, extraParams);
 
-		return Response.
-				ok(new ResponseEntityView((Object) items))
-				.header(LINK_HEADER_NAME, linkHeaderValue)
-				.header(PAGINATION_PER_PAGE_HEADER_NAME, perPageValue)
-				.header(PAGINATION_CURRENT_PAGE_HEADER_NAME, pageValue)
-				.header(PAGINATION_MAX_LINK_PAGES_HEADER_NAME, nLinks)
-				.header(PAGINATION_TOTAL_ENTRIES_HEADER_NAME, totalRecords)
-				.build();
+		try {
+			return Response.
+                    ok(objectWriter.writeValueAsString(new ResponseEntityView((Object) items)))
+                    .header(LINK_HEADER_NAME, linkHeaderValue)
+                    .header(PAGINATION_PER_PAGE_HEADER_NAME, perPageValue)
+                    .header(PAGINATION_CURRENT_PAGE_HEADER_NAME, pageValue)
+                    .header(PAGINATION_MAX_LINK_PAGES_HEADER_NAME, nLinks)
+                    .header(PAGINATION_TOTAL_ENTRIES_HEADER_NAME, totalRecords)
+                    .build();
+		} catch (JsonProcessingException e) {
+			throw new JsonProcessingRuntimeException(e);
+		}
+	}
+
+	protected Map<String, Object> getParameters(final String filter,
+												final String orderBy,
+												final OrderDirection direction,
+												final Map<String, Object> extraParams) {
+		final Map<String, Object> params = map(
+				Paginator.DEFAULT_FILTER_PARAM_NAME, filter,
+				Paginator.ORDER_BY_PARAM_NAME, orderBy,
+				Paginator.ORDER_DIRECTION_PARAM_NAME, direction != null ? direction : OrderDirection.ASC
+		);
+
+		if (extraParams != null) {
+			for (final Map.Entry<String, Object> paramEntry : extraParams.entrySet()) {
+				final Object value = paramEntry.getValue() instanceof String ?
+						SQLUtil.sanitizeParameter((String) paramEntry.getValue()) :
+						paramEntry.getValue();
+
+				params.put(paramEntry.getKey(), value);
+			}
+		}
+		return params;
 	}
 
 
