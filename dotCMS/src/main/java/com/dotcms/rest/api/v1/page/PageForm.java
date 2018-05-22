@@ -124,6 +124,10 @@ class PageForm {
 
         private TemplateLayout getTemplateLayout() throws BadRequestException {
 
+            if (layout == null) {
+                throw new BadRequestException("layout is required");
+            }
+
             try {
                 this.setContainersUUID();
                 final String layoutString = MAPPER.writeValueAsString(layout);
@@ -136,7 +140,17 @@ class PageForm {
         private void setContainersUUID() {
             final List<ContainerUUIDChanged> changes = new ArrayList<>();
             final Map<String, Long> maxUUIDByContainer = new HashMap<>();
-            final List<Map<String, Map>> rows = (List<Map<String, Map>>) ((Map<String, Object>) layout.get("body")).get("rows");
+            final Map<String, Object> body = (Map<String, Object>) layout.get("body");
+
+            if (body == null) {
+                throw new BadRequestException("body attribute is required");
+            }
+
+            final List<Map<String, Map>> rows = (List<Map<String, Map>>) body.get("rows");
+
+            if (rows == null) {
+                throw new BadRequestException("body has to have at least one row");
+            }
 
             rows.stream()
                     .map(row -> (List<Map<String, Map>>) row.get("columns"))
@@ -172,13 +186,8 @@ class PageForm {
         }
 
         public PageForm build(){
-            TemplateLayout templateLayout = getTemplateLayout();
 
-            if (templateLayout == null) {
-                throw new BadRequestException("Layout is required");
-            }
-
-            return new PageForm(themeId, title, hostId, templateLayout, changes);
+            return new PageForm(themeId, title, hostId, getTemplateLayout(), changes);
         }
     }
 }

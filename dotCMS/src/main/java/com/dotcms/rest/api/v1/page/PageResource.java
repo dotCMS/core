@@ -112,9 +112,12 @@ public class PageResource {
                     "Content-Type, " + "Accept, Authorization");
             res = responseBuilder.build();
         } catch (HTMLPageAssetNotFoundException e) {
-            Logger.error(this, e.getMessage(), e);
+            String messageFormat =
+                    "HTMLPageAssetNotFoundException on PageResource.loadJson, parameters: request -> %s, uri -> %s live -> %s: ";
+            final String errorMsg = String.format(messageFormat, request, uri, live);
+            Logger.error(this, errorMsg, e);
             res = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
-        }catch (Exception e) {
+        } catch (Exception e) {
             final String errorMsg = "An internal error occurred (" + e.getMessage() + ")";
             Logger.error(this, errorMsg, e);
             res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
@@ -189,8 +192,9 @@ public class PageResource {
 
             res = responseBuilder.build();
         } catch (HTMLPageAssetNotFoundException e) {
-            Logger.error(this.getClass(),
-                    "Page does not exists on PageResource, page uri: " + uri);
+            final String errorMsg = String.format("HTMLPageAssetNotFoundException on PageResource.render, parameters:  %s, %s %s: ",
+                    request, uri, modeParam);
+            Logger.error(this, errorMsg, e);
             res = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
         } catch (Exception e) {
             final String errorMsg = "An internal error occurred (" + e.getMessage() + ")";
@@ -220,7 +224,12 @@ public class PageResource {
                                @PathParam("pageId") final String pageId,
                                final PageForm form) throws DotSecurityException {
 
-        Logger.debug(this, String.format("Saving layout: pageId -> %s layout-> %s", pageId, form.getLayout()));
+        Logger.debug(this, String.format("Saving layout: pageId -> %s layout-> %s", pageId,
+                form != null ? form.getLayout() : null));
+
+        if (form == null) {
+            throw new BadRequestException("Layout is required");
+        }
 
         final InitDataObject auth = webResource.init(false, request, true);
         final User user = auth.getUser();
@@ -230,12 +239,6 @@ public class PageResource {
         try {
             final IHTMLPage page = this.pageResourceHelper.getPage(user, pageId);
 
-            if (page == null) {
-                String message = String.format("Page does not exists on PageResource, page page ID: %s", pageId);
-                Logger.error(this.getClass(), message);
-                return ExceptionMapperUtil.createResponse((Object) null, message, Response.Status.NOT_FOUND);
-            }
-
             this.pageResourceHelper.saveTemplate(user, page, form);
 
             final PageMode pageMode = PageMode.get(request);
@@ -244,8 +247,8 @@ public class PageResource {
 
             res = Response.ok(new ResponseEntityView(renderedPage)).build();
 
-        } catch(NotFoundException e) {
-            final String errorMsg = String.format("NotFoundException on PageResource.saveLayout, parameters:  %s, %s %s: ",
+        } catch(HTMLPageAssetNotFoundException e) {
+            final String errorMsg = String.format("HTMLPageAssetNotFoundException on PageResource.saveLayout, parameters:  %s, %s %s: ",
                     request, pageId, form);
             Logger.error(this, errorMsg, e);
             res = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
@@ -334,21 +337,29 @@ public class PageResource {
                                      final PageContainerForm pageContainerForm)
             throws DotSecurityException, DotDataException {
 
-        Logger.debug(this, String.format("Saving page's content: %s", pageContainerForm.getRequestJson()));
+        Logger.debug(this, String.format("Saving page's content: %s",
+                pageContainerForm != null ? pageContainerForm.getRequestJson() : null));
 
-        final InitDataObject initData = webResource.init(true, req, true);
-        final User user = initData.getUser();
-        Response res = null;
-
-        final IHTMLPage page = pageResourceHelper.getPage(user, pageId);
-        if (page == null) {
-            return ExceptionMapperUtil.createResponse(Response.Status.BAD_REQUEST);
+        if (pageContainerForm == null) {
+            throw new BadRequestException("Layout is required");
         }
 
-        APILocator.getPermissionAPI().checkPermission(page, PermissionLevel.EDIT, user);
-        pageResourceHelper.saveContent(pageId, pageContainerForm.getContainerEntries());
+        try {
+            final InitDataObject initData = webResource.init(true, req, true);
+            final User user = initData.getUser();
 
-        return Response.ok(new ResponseEntityView("ok")).build();
+            final IHTMLPage page = pageResourceHelper.getPage(user, pageId);
+
+            APILocator.getPermissionAPI().checkPermission(page, PermissionLevel.EDIT, user);
+            pageResourceHelper.saveContent(pageId, pageContainerForm.getContainerEntries());
+
+            return Response.ok(new ResponseEntityView("ok")).build();
+        } catch(HTMLPageAssetNotFoundException e) {
+            final String errorMsg = String.format("HTMLPageAssetNotFoundException on PageResource.addContent, pageId: %s: ",
+                    pageId);
+            Logger.error(this, errorMsg, e);
+            return ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+        }
     }
 
     /**
@@ -361,12 +372,13 @@ public class PageResource {
      */
     @NoCache
     @GET
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({"application/html", "application/javascript"})
     @Path("/renderHTML/{uri: .*}")
     public Response renderHTMLOnly(@Context final HttpServletRequest request,
                                    @Context final HttpServletResponse response,
                                    @PathParam("uri") final String uri,
-                                   @QueryParam("mode") @DefaultValue("LIVE_ADMIN") final String modeStr) {
+                                   @QueryParam("mode") @DefaultValue("LIVE_ADMIN") final String modeStr)
+            throws DotDataException, DotSecurityException {
 
         Logger.debug(this, String.format("Rendering page: uri -> %s mode-> %s", uri, modeStr));
 
@@ -386,13 +398,13 @@ public class PageResource {
                     "Content-Type, " + "Accept, Authorization");
             res = responseBuilder.build();
         } catch (HTMLPageAssetNotFoundException e) {
-            Logger.error(this, e.getMessage(), e);
-            res = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
-        } catch (Exception e) {
-            final String errorMsg = "An internal error occurred (" + e.getMessage() + ")";
+            String messageFormat =
+                    "HTMLPageAssetNotFoundException on PageResource.renderHTMLOnly, parameters: request -> %s, uri -> %s mode -> %s: ";
+            final String errorMsg = String.format(messageFormat, request, uri, mode);
             Logger.error(this, errorMsg, e);
-            res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+            res = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
         }
+
         return res;
     }
 }
