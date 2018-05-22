@@ -111,17 +111,10 @@ public class PageResource {
             responseBuilder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, " +
                     "Content-Type, " + "Accept, Authorization");
             res = responseBuilder.build();
-        } catch (DotSecurityException e) {
-            final String errorMsg = "The user does not have the required permissions (" + e
-                    .getMessage() + ")";
-            Logger.error(this, errorMsg, e);
-            throw new ForbiddenException(e);
-        } catch (DotDataException e) {
-            final String errorMsg = "An error occurred when accessing the page information (" + e
-                    .getMessage() + ")";
+        } catch (HTMLPageAssetNotFoundException e) {
             Logger.error(this, e.getMessage(), e);
-            res = ExceptionMapperUtil.createResponse(null, errorMsg);
-        } catch (Exception e) {
+            res = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+        }catch (Exception e) {
             final String errorMsg = "An internal error occurred (" + e.getMessage() + ")";
             Logger.error(this, errorMsg, e);
             res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
@@ -130,6 +123,29 @@ public class PageResource {
     }
 
 
+    /**
+     * Returns the metadata in JSON format of the objects that make up an HTML Page in the system including page's and
+     * containers html code rendered
+     *
+     * <pre>
+     * Format:
+     * http://localhost:8080/api/v1/page/render/{page-url}
+     * <br/>
+     * Example:
+     * http://localhost:8080/api/v1/page/render/about-us/locations/index
+     * </pre>
+     *
+     * @param request The {@link HttpServletRequest} object.
+     * @param response The {@link HttpServletResponse} object.
+     * @param uri The path to the HTML Page whose information will be retrieved.
+     * @param mode {@link PageMode} to render the page
+     * @param personaId persona identifier if it is null take the current persona to render
+     * @param languageId language identifier if it is null take the current language to render
+     * @param deviceInode device identifier if it is null take the current device to render
+     * @param live If it is false look for live and working page version, otherwise just look for live version,
+     *                 true is the default value
+     * @return
+     */
     @NoCache
     @GET
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -175,16 +191,7 @@ public class PageResource {
         } catch (HTMLPageAssetNotFoundException e) {
             Logger.error(this.getClass(),
                     "Page does not exists on PageResource, page uri: " + uri);
-            res = ExceptionMapperUtil.createResponse(Response.Status.NOT_FOUND);
-        } catch (DotSecurityException e) {
-            PageMode.setPageMode(request, PageMode.ADMIN_MODE);
-            final String errorMsg = "The user does not have the required permissions (" + e.getMessage() + ")";
-            Logger.error(this, errorMsg, e);
-            throw new ForbiddenException(e);
-        } catch (DotDataException e) {
-            final String errorMsg = "An error occurred when accessing the page information (" + e.getMessage() + ")";
-            Logger.error(this, e.getMessage(), e);
-            res = ExceptionMapperUtil.createResponse(null, errorMsg);
+            res = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
         } catch (Exception e) {
             final String errorMsg = "An internal error occurred (" + e.getMessage() + ")";
             Logger.error(this, errorMsg, e);
@@ -211,7 +218,7 @@ public class PageResource {
     public Response saveLayout(@Context final HttpServletRequest request,
                                @Context final HttpServletResponse response,
                                @PathParam("pageId") final String pageId,
-                               final PageForm form) {
+                               final PageForm form) throws DotSecurityException {
 
         Logger.debug(this, String.format("Saving layout: pageId -> %s layout-> %s", pageId, form.getLayout()));
 
@@ -222,6 +229,13 @@ public class PageResource {
 
         try {
             final IHTMLPage page = this.pageResourceHelper.getPage(user, pageId);
+
+            if (page == null) {
+                String message = String.format("Page does not exists on PageResource, page page ID: %s", pageId);
+                Logger.error(this.getClass(), message);
+                return ExceptionMapperUtil.createResponse((Object) null, message, Response.Status.NOT_FOUND);
+            }
+
             this.pageResourceHelper.saveTemplate(user, page, form);
 
             final PageMode pageMode = PageMode.get(request);
@@ -230,11 +244,6 @@ public class PageResource {
 
             res = Response.ok(new ResponseEntityView(renderedPage)).build();
 
-        } catch (DotSecurityException e) {
-            final String errorMsg = String.format("DotSecurityException on PageResource.saveLayout, parameters:  %s, %s %s: ",
-                    request, pageId, form);
-            Logger.error(this, errorMsg, e);
-            throw new ForbiddenException(e);
         } catch(NotFoundException e) {
             final String errorMsg = String.format("NotFoundException on PageResource.saveLayout, parameters:  %s, %s %s: ",
                     request, pageId, form);
@@ -263,7 +272,7 @@ public class PageResource {
     @POST
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/layout")
-    public Response saveLayout(@Context final HttpServletRequest request, final PageForm form) {
+    public Response saveLayout(@Context final HttpServletRequest request, final PageForm form) throws DotDataException {
 
         final InitDataObject auth = webResource.init(false, request, true);
         final User user = auth.getUser();
@@ -280,7 +289,7 @@ public class PageResource {
                     request, form);
             Logger.error(this, errorMsg, e);
             throw new ForbiddenException(e);
-        } catch (BadRequestException | DotDataException e) {
+        } catch (BadRequestException e) {
             final String errorMsg = String.format("%s on PageResource.saveLayout, parameters:  %s, %s: ",
                     e.getClass().getCanonicalName(), request, form);
             Logger.error(this, errorMsg, e);
@@ -322,7 +331,8 @@ public class PageResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("{pageId}/content")
     public final Response addContent(@Context final HttpServletRequest req, @PathParam("pageId") final String pageId,
-                                     final PageContainerForm pageContainerForm) {
+                                     final PageContainerForm pageContainerForm)
+            throws DotSecurityException, DotDataException {
 
         Logger.debug(this, String.format("Saving page's content: %s", pageContainerForm.getRequestJson()));
 
@@ -330,27 +340,25 @@ public class PageResource {
         final User user = initData.getUser();
         Response res = null;
 
-        try {
-            final IHTMLPage page = pageResourceHelper.getPage(user, pageId);
-            if (page == null) {
-                return ExceptionMapperUtil.createResponse(Response.Status.BAD_REQUEST);
-            }
-
-            APILocator.getPermissionAPI().checkPermission(page, PermissionLevel.EDIT, user);
-            pageResourceHelper.saveContent(pageId, pageContainerForm.getContainerEntries());
-
-            res = Response.ok(new ResponseEntityView("ok")).build();
-        } catch (DotSecurityException e) {
-            Logger.error(this, e.getMessage(), e);
-            throw new ForbiddenException(e);
-        } catch (DotDataException e) {
-            res = ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
-            Logger.error(this, e.getMessage(), e);
+        final IHTMLPage page = pageResourceHelper.getPage(user, pageId);
+        if (page == null) {
+            return ExceptionMapperUtil.createResponse(Response.Status.BAD_REQUEST);
         }
 
-        return res;
+        APILocator.getPermissionAPI().checkPermission(page, PermissionLevel.EDIT, user);
+        pageResourceHelper.saveContent(pageId, pageContainerForm.getContainerEntries());
+
+        return Response.ok(new ResponseEntityView("ok")).build();
     }
 
+    /**
+     *
+     * @param request
+     * @param response
+     * @param uri
+     * @param modeStr
+     * @return
+     */
     @NoCache
     @GET
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -377,15 +385,9 @@ public class PageResource {
             responseBuilder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, " +
                     "Content-Type, " + "Accept, Authorization");
             res = responseBuilder.build();
-        } catch (DotSecurityException e) {
-            PageMode.setPageMode(request, PageMode.ADMIN_MODE);
-            final String errorMsg = "The user does not have the required permissions (" + e.getMessage() + ")";
-            Logger.error(this, errorMsg, e);
-            res = ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
-        } catch (DotDataException e) {
-            final String errorMsg = "An error occurred when accessing the page information (" + e.getMessage() + ")";
+        } catch (HTMLPageAssetNotFoundException e) {
             Logger.error(this, e.getMessage(), e);
-            res = ExceptionMapperUtil.createResponse(null, errorMsg);
+            res = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
         } catch (Exception e) {
             final String errorMsg = "An internal error occurred (" + e.getMessage() + ")";
             Logger.error(this, errorMsg, e);

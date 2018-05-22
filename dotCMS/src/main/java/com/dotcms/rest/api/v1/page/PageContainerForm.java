@@ -6,6 +6,7 @@ import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonDeserializer;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonNode;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.repackage.jersey.repackaged.com.google.common.collect.ImmutableList;
+import com.dotcms.rest.exception.BadRequestException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -48,6 +49,11 @@ public class PageContainerForm {
                 throws IOException {
 
             final JsonNode jsonNode = jsonParser.readValueAsTree();
+
+            if (!jsonNode.elements().hasNext()) {
+                throw new BadRequestException("");
+            }
+
             final List<ContainerEntry> entries = new ArrayList<>();
 
             for (final JsonNode jsonElement : jsonNode) {

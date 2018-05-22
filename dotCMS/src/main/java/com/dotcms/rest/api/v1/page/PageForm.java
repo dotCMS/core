@@ -8,6 +8,7 @@ import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.core.JsonProcessingException;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
+import com.dotcms.rest.api.Validated;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
@@ -84,18 +85,15 @@ class PageForm {
         private static final ObjectMapper MAPPER = new ObjectMapper();
 
         @JsonProperty
-        @NotNull
         private String themeId;
 
         @JsonProperty
         private String title;
 
         @JsonProperty
-        @NotNull
         private String hostId;
 
-        @JsonProperty
-        @NotNull
+        @JsonProperty(required = true)
         private Map<String, Object> layout;
 
         @JsonIgnore
@@ -174,7 +172,13 @@ class PageForm {
         }
 
         public PageForm build(){
-            return new PageForm(themeId, title, hostId, getTemplateLayout(), changes);
+            TemplateLayout templateLayout = getTemplateLayout();
+
+            if (templateLayout == null) {
+                throw new BadRequestException("Layout is required");
+            }
+
+            return new PageForm(themeId, title, hostId, templateLayout, changes);
         }
     }
 }
