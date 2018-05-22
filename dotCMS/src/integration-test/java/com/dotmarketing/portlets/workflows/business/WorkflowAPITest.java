@@ -1286,7 +1286,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
 		     * Validate that step2 could not be deleted
 		     */
             try {
-                workflowAPI.deleteStep(step2, user);
+                workflowAPI.deleteStep(step2, user).get();
             } catch (Exception e) {
 			/*
 			 * Should enter here with this exception
@@ -1297,7 +1297,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
 		    /*
 		     * Validate correct deletion of step1
 		     */
-            workflowAPI.deleteStep(step1, user);
+            workflowAPI.deleteStep(step1, user).get();
 
 		    /*
 		     * Validate that the step 1 was deleted from the scheme
@@ -1310,7 +1310,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
 		     * Validate that step2 could not be deleted
 		     */
             try {
-                workflowAPI.deleteStep(step2, user);
+                workflowAPI.deleteStep(step2, user).get();
             } catch (Exception e) {
 			/*
 			 * Should enter here with this exception
@@ -1335,7 +1335,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             contentTypeAPI.delete(st);
             ws.setArchived(true);
             workflowAPI.saveScheme(ws, user);
-            workflowAPI.deleteStep(step2, user);
+            workflowAPI.deleteStep(step2, user).get();
             workflowAPI.deleteScheme(ws, user).get();
         }
     }

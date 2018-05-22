@@ -6,9 +6,11 @@ package com.dotmarketing.common.business.journal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 
 import java.sql.Connection;
@@ -135,6 +137,27 @@ public class DistributedJournalAPIImpl<T> implements DistributedJournalAPI<T> {
 	@WrapInTransaction
 	public void refreshContentUnderFolderPath ( String hostId, String folderPath ) throws DotDataException {
 		distributedJournalFactory.refreshContentUnderFolderPath(hostId, folderPath);
+	}
+
+	@WrapInTransaction
+	@Override
+	public void addIdentifierReindex(final String id) throws DotDataException {
+
+		this.distributedJournalFactory.addIdentifierReindex(id);
+	}
+
+	@WrapInTransaction
+	@Override
+	public void addContentletReindex(final Contentlet contentlet) throws DotDataException {
+
+		this.distributedJournalFactory.addIdentifierReindex(contentlet.getIdentifier());
+	}
+
+	@WrapInTransaction
+	@Override
+	public void addIdentifierReindex(final Identifier identifier) throws DotDataException {
+
+		this.distributedJournalFactory.addIdentifierReindex(identifier.getId());
 	}
 
 	@WrapInTransaction

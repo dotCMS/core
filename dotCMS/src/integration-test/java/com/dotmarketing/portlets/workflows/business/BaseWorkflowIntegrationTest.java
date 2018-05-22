@@ -183,7 +183,11 @@ public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
         final List<WorkflowStep> workflowSteps = workflowAPI.findSteps(scheme);
         for (final WorkflowStep step : workflowSteps) {
 
-            workflowAPI.deleteStep(step, APILocator.systemUser());
+            try {
+                workflowAPI.deleteStep(step, APILocator.systemUser()).get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw new DotDataException(e);
+            }
         }
 
         scheme.setArchived(true);

@@ -15,10 +15,7 @@ import static com.dotcms.rest.exception.mapper.ExceptionMapperUtil.ACCESS_CONTRO
 import static com.dotcms.rest.exception.mapper.ExceptionMapperUtil.ACCESS_CONTROL_HEADER_PERMISSION_VIOLATION;
 import static com.dotmarketing.business.Role.ADMINISTRATOR;
 import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
@@ -28,6 +25,7 @@ import static org.mockito.Mockito.when;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.mock.response.MockAsyncResponse;
 import com.dotcms.repackage.javax.ws.rs.container.AsyncResponse;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
@@ -252,10 +250,20 @@ public class WorkflowResourceLicenseIntegrationTest {
         assertFalse(workflowSteps.isEmpty());
         final HttpServletRequest removeStepRequest = mock(HttpServletRequest.class);
 
-        for(final WorkflowStep ws: workflowSteps){
-           final Response deleteStepResponse = nonLicenseWorkflowResource.deleteStep(removeStepRequest, ws.getId());
-           assertEquals(Status.FORBIDDEN.getStatusCode(), deleteStepResponse.getStatus());
-           assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE,deleteStepResponse.getHeaderString("access-control"));
+        for(final WorkflowStep workflowStep: workflowSteps){
+
+            final AsyncResponse asyncResponse = new MockAsyncResponse((arg) -> {
+
+                final Response deleteStepResponse = (Response)arg;
+                assertEquals(Status.FORBIDDEN.getStatusCode(), deleteStepResponse.getStatus());
+                assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE,deleteStepResponse.getHeaderString("access-control"));
+                return true;
+            }, arg -> {
+                fail("Error on deleting step");
+                return true;
+            });
+
+            nonLicenseWorkflowResource.deleteStep(removeStepRequest, asyncResponse, workflowStep.getId());
         }
     }
 

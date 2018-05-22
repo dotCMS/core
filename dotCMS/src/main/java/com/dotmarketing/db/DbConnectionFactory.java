@@ -80,6 +80,7 @@ public class DbConnectionFactory {
         return Types.VARCHAR;
     }
 
+    
     public enum DataBaseType {
         POSTGRES, MySQL, MSSQL, ORACLE, H2;
     }

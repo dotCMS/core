@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Future;
+import java.util.function.Consumer;
 
 public interface WorkflowAPI {
 
@@ -231,11 +232,24 @@ public interface WorkflowAPI {
 	 */
 	public Future<WorkflowScheme> deleteScheme(WorkflowScheme scheme, User user) throws DotDataException, DotSecurityException, AlreadyExistException;
 
+	/**
+	 * Find the steps associated to the scheme
+	 * @param scheme {@link WorkflowScheme}
+	 * @return List of {@link WorkflowStep}
+	 * @throws DotDataException
+	 */
 	public List<WorkflowStep> findSteps(WorkflowScheme scheme) throws DotDataException;
 
 	public void saveStep(WorkflowStep step, User user) throws DotDataException, AlreadyExistException;
 
-	public void deleteStep(WorkflowStep step, User user) throws DotDataException;
+    /**
+     * Delete a step with all dependencies: actions, actionlets and tasks.
+     * @param step WorkflowStep   from the step to delete the action
+     * @param user The current User
+     * @return Future {@link WorkflowStep} the process runs async, returns a future with the steps deleted.
+     * @throws DotDataException
+     */
+	public Future<WorkflowStep> deleteStep(WorkflowStep step, User user) throws DotDataException;
 
 	/**
 	 * This method makes the reorder for the step, reordering the rest of the steps too.
@@ -414,7 +428,14 @@ public interface WorkflowAPI {
 	 */
 	public void saveSchemesForStruct(Structure struc, List<WorkflowScheme> schemes) throws DotDataException;
 
-	public void saveSchemeIdsForContentType(final ContentType contentType, List<String> schemesIds) throws DotDataException;
+	/**
+	 * This method associate a list of Workflow Schemes to a Content Type
+	 * @param contentType {@link ContentType}
+	 * @param schemesIds {@link List} list of scheme ids
+	 * @throws DotDataException
+	 */
+	public void saveSchemeIdsForContentType(final ContentType contentType,
+											final List<String> schemesIds) throws DotDataException;
 
 	/**
 	 * Saves an single action the action is associated to the schema by default
