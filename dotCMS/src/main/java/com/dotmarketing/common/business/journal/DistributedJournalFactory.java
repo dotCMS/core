@@ -179,4 +179,10 @@ public abstract class DistributedJournalFactory<T> {
 	 */
 	protected abstract void refreshContentUnderFolderPath ( String hostId, String folderPath ) throws DotDataException;
 
+	/**
+	 * Adds an identifier to be reindexed.
+	 * @param id String
+	 * @throws DotDataException
+	 */
+	protected abstract void addIdentifierReindex(String id) throws DotDataException;
 }

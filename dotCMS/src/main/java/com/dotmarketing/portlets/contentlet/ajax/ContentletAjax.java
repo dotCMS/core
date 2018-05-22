@@ -1,11 +1,7 @@
 package com.dotmarketing.portlets.contentlet.ajax;
 
-import static com.dotcms.exception.ExceptionUtil.getRootCause;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-
 import com.dotcms.business.CloseDB;
+import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.PageContentType;
@@ -17,20 +13,11 @@ import com.dotcms.util.LogTime;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.PublishStateException;
+import com.dotmarketing.business.*;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotLanguageException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.*;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -59,19 +46,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.PaginatedArrayList;
-import com.dotmarketing.util.RegEX;
-import com.dotmarketing.util.RegExMatch;
-import com.dotmarketing.util.StringUtils;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilHTML;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
@@ -82,20 +57,18 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import org.jetbrains.annotations.NotNull;
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
+
+import static com.dotcms.exception.ExceptionUtil.getRootCause;
+import static com.dotmarketing.business.PermissionAPI.*;
 
 /**
  * This class handles the communication between the view and the back-end
@@ -541,6 +514,8 @@ public class ContentletAjax {
 
 		if (UtilMethods.isSet(sess)) {
 			sess.setAttribute(WebKeys.CONTENTLET_LAST_SEARCH, lastSearchMap);
+            sess.setAttribute(ESMappingConstants.WORKFLOW_SCHEME, null);
+            sess.setAttribute(ESMappingConstants.WORKFLOW_STEP, null);
 		}
 
 		Map<String, String> fieldsSearch = new HashMap<String, String>();
@@ -656,7 +631,23 @@ public class ContentletAjax {
 							Logger.error(ContentletAjax.class,e.getMessage(),e);
 						}
 					}
-				}else {
+				} else if (ESMappingConstants.WORKFLOW_SCHEME.equalsIgnoreCase(fieldName)) {
+
+					try {
+						luceneQuery.append("+(" + ESMappingConstants.WORKFLOW_SCHEME + ":" + fieldValue + "*) ");
+						sess.setAttribute(ESMappingConstants.WORKFLOW_SCHEME, fieldValue);
+					} catch (Exception e) {
+						Logger.error(ContentletAjax.class,e.getMessage(),e);
+					}
+				} else if (ESMappingConstants.WORKFLOW_STEP.equalsIgnoreCase(fieldName)) {
+
+					try {
+						luceneQuery.append("+(" + ESMappingConstants.WORKFLOW_STEP + ":" + fieldValue + "*) ");
+                        sess.setAttribute(ESMappingConstants.WORKFLOW_STEP, fieldValue);
+					} catch (Exception e) {
+						Logger.error(ContentletAjax.class,e.getMessage(),e);
+					}
+				} else {
 						String fieldbcontentname="";
 						String fieldVelocityVarName = "";
 						Boolean isStructField=false;
