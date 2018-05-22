@@ -124,17 +124,28 @@ public class RelationshipAPIImpl implements RelationshipAPI {
         this.relationshipFactory.save(relationship, inode);
     }
 
-    private void checkReadOnlyFields(Relationship relationship, String inode) {
-        if (UtilMethods.isSet(inode)) {
+    private void checkReadOnlyFields(final Relationship relationship, final String inode) {
+        if (UtilMethods.isSet(inode) && UtilMethods.isSet(relationship)) {
 
             //Check if the relationship already exists
             Relationship currentRelationship = this.relationshipFactory.byInode(inode);
             if (UtilMethods.isSet(currentRelationship) && UtilMethods.isSet(currentRelationship.getInode())) {
 
+                //Check the parent has not been changed
+                if (!relationship.getParentStructureInode().equals(currentRelationship.getParentStructureInode())) {
+                    throw new DotValidationException("error.relationship.parent.structure.cannot.be.changed");
+                }
+
+                //Check the child has not been changed
+                if (!relationship.getChildStructureInode().equals(currentRelationship.getChildStructureInode())) {
+                    throw new DotValidationException("error.relationship.child.structure.cannot.be.changed");
+                }
+
                 //Check the typeValue has not been changed
                 if (!relationship.getRelationTypeValue().equals(currentRelationship.getRelationTypeValue())) {
                     throw new DotValidationException("error.relationship.type.value.cannot.be.changed");
                 }
+
             }
         }
     }
