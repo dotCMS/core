@@ -211,11 +211,13 @@ public class EditRelationshipAction extends DotPortletAction {
 			}
 		}
 		catch (DotValidationException ve) {
+			Logger.debug(EditRelationshipAction.class, ve.toString());
 			SessionMessages.add(req, "error", ve.getMessage());
 		}
 		catch(Exception ex)
 		{
-			Logger.debug(EditRelationshipAction.class,ex.toString());
+			Logger.warn(EditRelationshipAction.class,ex.toString());
+			SessionMessages.add(req, "error", ex.getMessage());
 		}
 		return false;
 	}

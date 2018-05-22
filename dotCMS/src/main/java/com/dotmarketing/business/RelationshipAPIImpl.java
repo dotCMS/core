@@ -125,7 +125,7 @@ public class RelationshipAPIImpl implements RelationshipAPI {
     }
 
     private void checkReadOnlyFields(Relationship relationship, String inode) {
-        if (UtilMethods.isSet(relationship.getInode())) {
+        if (UtilMethods.isSet(inode)) {
 
             //Check if the relationship already exists
             Relationship currentRelationship = this.relationshipFactory.byInode(inode);
