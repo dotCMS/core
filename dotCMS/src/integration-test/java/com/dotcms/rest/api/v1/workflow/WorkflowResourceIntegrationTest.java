@@ -597,7 +597,7 @@ public class WorkflowResourceIntegrationTest {
         final AsyncResponse asyncResponse = new MockAsyncResponse(
                 (arg) -> {
             final Response deleteSchemeResponse = (Response)arg;
-            assertEquals(Status.FORBIDDEN.getStatusCode(), deleteSchemeResponse.getStatus());
+            assertEquals(Status.INTERNAL_SERVER_ERROR.getStatusCode(), deleteSchemeResponse.getStatus());
 
             //test archive scheme
             WorkflowSchemeForm form = new WorkflowSchemeForm.Builder().schemeDescription("Delete scheme").schemeArchived(true).schemeName(savedScheme.getName()).build();
