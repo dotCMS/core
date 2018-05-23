@@ -1,7 +1,5 @@
 package com.dotcms.workflow.helper;
 
-import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -9,23 +7,13 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.v1.workflow.WorkflowDefaultActionView;
-import com.dotcms.workflow.form.IWorkflowStepForm;
-import com.dotcms.workflow.form.WorkflowActionForm;
-import com.dotcms.workflow.form.WorkflowActionStepBean;
-import com.dotcms.workflow.form.WorkflowReorderBean;
-import com.dotcms.workflow.form.WorkflowSchemeForm;
-import com.dotcms.workflow.form.WorkflowStepAddForm;
-import com.dotcms.workflow.form.WorkflowStepUpdateForm;
+import com.dotcms.workflow.form.*;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.exception.AlreadyExistException;
-import com.dotmarketing.exception.DoesNotExistException;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.exception.InvalidLicenseException;
+import com.dotmarketing.exception.*;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet;
@@ -42,16 +30,18 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang.time.StopWatch;
+
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.Future;
+
+import static com.dotcms.rest.api.v1.authentication.ResponseUtil.getFormattedMessage;
+import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
 
 
 /**
@@ -110,7 +100,14 @@ public class WorkflowHelper {
         stopWatch.start();
         Logger.debug(this, () -> "Starting the scheme import");
 
-        this.checkSchemeNames (workflowExportObject.getSchemes());
+        final Set<String> schemeIds =
+                this.checkIfSchemeExists (workflowExportObject.getSchemes());
+        final Set<String> stepIds =
+                this.checkSteps (schemeIds, workflowExportObject.getSteps());
+        final Set<String> actionIds =
+                this.checkActions (schemeIds, workflowExportObject.getActions(), user);
+        this.checkActionSteps (workflowExportObject.getActionSteps(), stepIds, actionIds, user);
+
         this.workflowImportExportUtil.importWorkflowExport(workflowExportObject, user);
 
         stopWatch.stop();
@@ -124,7 +121,7 @@ public class WorkflowHelper {
             action = this.workflowAPI.findAction(permission.getInode(), user);
             if (null != action) {
 
-                this.permissionAPI.save(permission, action, user, false);
+                this.permissionAPI.save(permission, action, APILocator.getUserAPI().getSystemUser(), false);
             } else {
 
                 throw new DoesNotExistException("The action: " + action + " on the permission: "
@@ -136,22 +133,148 @@ public class WorkflowHelper {
         Logger.debug(this, () -> "Ended the action permissions import, in: " + DateUtil.millisToSeconds(stopWatch.getTime()));
     } // importScheme.
 
-    private void checkSchemeNames(final List<WorkflowScheme> schemes) throws AlreadyExistException, DotDataException {
+    private void checkActionSteps(final List<Map<String, String>> actionSteps,
+                                  final Set<String> stepIds,
+                                  final Set<String> actionIds,
+                                  final User user) throws AlreadyExistException {
 
-        for (final WorkflowScheme scheme : schemes) {
+        for (final Map<String, String> actionStep : actionSteps) {
 
-            final WorkflowScheme schemeWithSameName =
-                    this.workflowAPI.findSchemeByName(scheme.getName());
+            final String stepId   = actionStep.get("stepId");
+            final String actionId = actionStep.get("actionId");
 
-            if(UtilMethods.isSet(schemeWithSameName)
-                    && UtilMethods.isSet(schemeWithSameName.getId())
-                    && !schemeWithSameName.getId().equals(scheme.getId())) {
+            WorkflowAction repeatAction = null;
+            try {
+                repeatAction =
+                        this.workflowAPI.findAction(actionId, user);
+            } catch (Exception e) {
+                repeatAction = null;
+            }
 
-                throw new AlreadyExistException("Already exist a scheme with the same name ("+schemeWithSameName.getName()
-                        +"). Create different schemes with the same name is not allowed. Please change your workflow scheme name.");
+            if(null != repeatAction) {
+
+                throw new AlreadyExistException("Already exist an action with the same id ("+repeatAction.getId()
+                        +"). Create different action with the same id is not allowed. Please change your workflow action id.");
+            }
+
+            if (!actionIds.contains(actionId)) {
+
+                throw new IllegalArgumentException("Does not exists the action " + actionId + " on the request ");
+            }
+
+            // step
+            WorkflowStep repeatStep = null;
+            try {
+                repeatStep =
+                        this.workflowAPI.findStep(stepId);
+            } catch (Exception e) {
+                repeatStep = null;
+            }
+
+            if(null != repeatStep) {
+
+                throw new AlreadyExistException("Already exist a step with the same id ("+repeatStep.getId()
+                        +"). Create different step with the same id is not allowed. Please change your workflow step id.");
+            }
+
+            if (!stepIds.contains(stepId)) {
+
+                throw new IllegalArgumentException("Does not exists the step " + stepId + " on the request ");
             }
         }
     }
+
+    private Set<String> checkActions(final Set<String> schemeIds, final List<WorkflowAction> actions, final User user) throws AlreadyExistException {
+
+        final ImmutableSet.Builder<String> setBuilder = new ImmutableSet.Builder<>();
+
+        for (final WorkflowAction action : actions) {
+
+            WorkflowAction repeatAction = null;
+            try {
+                repeatAction =
+                        this.workflowAPI.findAction(action.getId(), user);
+            } catch (Exception e) {
+                repeatAction = null;
+            }
+
+            if(null != repeatAction) {
+
+                throw new AlreadyExistException("Already exist an action with the same id ("+repeatAction.getId()
+                        +"). Create different action with the same id is not allowed. Please change your workflow action id.");
+            }
+
+            if (!schemeIds.contains(action.getSchemeId())) {
+
+                throw new IllegalArgumentException("Does not exists the scheme " + action.getSchemeId() + " on the action "+ action.getId()
+                        +". Create a action with a right scheme id.");
+            }
+
+            setBuilder.add(action.getId());
+        }
+
+        return setBuilder.build();
+    }
+
+    private Set<String> checkSteps(final Set<String> schemeIds, final List<WorkflowStep> steps) throws AlreadyExistException {
+
+        final ImmutableSet.Builder<String> setBuilder = new ImmutableSet.Builder<>();
+
+        for (final WorkflowStep step : steps) {
+
+            WorkflowStep repeatStep = null;
+            try {
+                repeatStep =
+                        this.workflowAPI.findStep(step.getId());
+            } catch (Exception e) {
+                repeatStep = null;
+            }
+
+            if(null != repeatStep) {
+
+                throw new AlreadyExistException("Already exist a step with the same id ("+repeatStep.getId()
+                        +"). Create different step with the same id is not allowed. Please change your workflow step id.");
+            }
+
+            if (!schemeIds.contains(step.getSchemeId())) {
+
+                throw new IllegalArgumentException("Does not exists the scheme " + step.getSchemeId() + " on the step "+ step.getId()
+                        +". Create a step with a right scheme id.");
+            }
+
+            setBuilder.add(step.getId());
+        }
+
+        return setBuilder.build();
+    }
+
+    private Set<String> checkIfSchemeExists(final List<WorkflowScheme> schemes) throws AlreadyExistException {
+
+
+        final ImmutableSet.Builder<String> setBuilder = new ImmutableSet.Builder<>();
+
+        for (final WorkflowScheme scheme : schemes) {
+
+            WorkflowScheme repeatScheme = null;
+            try {
+                repeatScheme =
+                        this.workflowAPI.findScheme(scheme.getId());
+            } catch (Exception e) {
+                repeatScheme = null;
+            }
+
+            if(null != repeatScheme) {
+
+                throw new AlreadyExistException("Already exist a scheme with the same id ("+repeatScheme.getId()
+                        +"). Create different schemes with the same id is not allowed.");
+            }
+
+            setBuilder.add(scheme.getId());
+        }
+
+        return setBuilder.build();
+    }
+
 
     /**
      * Finds the available actions for an inode and user.
@@ -193,12 +316,14 @@ public class WorkflowHelper {
     public WorkflowAction findAction(final String actionId, final User user) throws DotDataException, DotSecurityException{
 
         if (!UtilMethods.isSet(actionId)) {
-            throw new IllegalArgumentException("Missing required parameter actionId.");
+            final String exceptionMessage = getFormattedMessage(user.getLocale(),"Workflow-required-param-actionId",actionId);
+            throw new IllegalArgumentException(exceptionMessage);
         }
 
         final WorkflowAction action = this.workflowAPI.findAction(actionId, user);
         if(action == null){
-           throw new DoesNotExistException("Workflow-does-not-exists-action");
+           final String exceptionMessage = getFormattedMessage(user.getLocale(),"Workflow-does-not-exists-action-by-actionId",actionId);
+           throw new DoesNotExistException(exceptionMessage);
         }
         return action;
     }
@@ -214,13 +339,20 @@ public class WorkflowHelper {
      */
     public WorkflowAction findAction(final String actionId, final String stepId, final User user) throws DotDataException, DotSecurityException{
 
-        if (!UtilMethods.isSet(actionId) || !UtilMethods.isSet(stepId)) {
-            throw new IllegalArgumentException("Missing required parameter actionId or stepId.");
+        if (!UtilMethods.isSet(actionId)) {
+            final String exceptionMessage = getFormattedMessage(user.getLocale(),"Workflow-required-param-actionId",actionId);
+            throw new IllegalArgumentException(exceptionMessage);
+        }
+
+        if (!UtilMethods.isSet(stepId)) {
+            final String exceptionMessage = getFormattedMessage(user.getLocale(),"Workflow-required-param-stepId",stepId);
+            throw new IllegalArgumentException(exceptionMessage);
         }
 
         final WorkflowAction action = this.workflowAPI.findAction(actionId, stepId, user);
         if(action == null){
-            throw new DoesNotExistException("Workflow-does-not-exists-action");
+            final String exceptionMessage = getFormattedMessage(user.getLocale(),"Workflow-does-not-exists-action-by-actionId-stepId",actionId, stepId);
+            throw new DoesNotExistException(exceptionMessage);
         }
         return action;
     }
@@ -258,8 +390,9 @@ public class WorkflowHelper {
             Logger.debug(this, () -> "Looking for the actionId: "
                     + workflowReorderActionStepForm.getActionId());
             action = this.workflowAPI.findAction(workflowReorderActionStepForm.getActionId(), user);
-        } catch (InvalidLicenseException e){
-            throw new DotSecurityException(e);
+        } catch (InvalidLicenseException e) {
+            Logger.debug(this, e.getMessage(), e);
+            throw e;
         } catch (Exception e) {
             Logger.error(this, e.getMessage());
             Logger.debug(this, e.getMessage(), e);
@@ -311,17 +444,17 @@ public class WorkflowHelper {
                             final User user)  {
 
         final WorkflowStep step;
-
         try {
-
             Logger.debug(this, () -> "Looking for the stepId: " + stepId);
             step = this.workflowAPI.findStep(stepId);
-
             Logger.debug(this, () -> "Reordering the stepId: "  + stepId +
-                            ", order: " + order);
+                    ", order: " + order);
             this.workflowAPI.reorderStep(step, order, user);
+        }catch (DoesNotExistException dne){
+            Logger.error(this, dne.getMessage());
+            Logger.debug(this, dne.getMessage(), dne);
+            throw dne;
         } catch (DotDataException | AlreadyExistException | DotSecurityException e) {
-
             Logger.error(this, e.getMessage());
             Logger.debug(this, e.getMessage(), e);
             throw new DotWorkflowException(e.getMessage(), e);
@@ -439,7 +572,7 @@ public class WorkflowHelper {
      * @param stepId String
      */
     @WrapInTransaction
-    public void deleteStep(final String stepId) throws DotSecurityException, DotDataException {
+    public Future<WorkflowStep> deleteStep(final String stepId, final User user) throws DotSecurityException, DotDataException {
 
         if (!UtilMethods.isSet(stepId)) {
             throw new IllegalArgumentException("Missing required parameter stepId.");
@@ -455,7 +588,7 @@ public class WorkflowHelper {
         if (null != workflowStep) {
             try {
                 Logger.debug(this, "deleting step: " + stepId);
-                this.workflowAPI.deleteStep(workflowStep, APILocator.systemUser());
+                return this.workflowAPI.deleteStep(workflowStep, user);
             } catch (DotDataException e) {
                 Logger.error(this, e.getMessage());
                 Logger.debug(this, e.getMessage(), e);
@@ -777,6 +910,30 @@ public class WorkflowHelper {
     } // findActionsByScheme.
 
     /**
+     * This method performs an additional check to verify if the action we're attempting to update truly exists
+     * if it does not a new DoesNotExistException is thrown
+     * if the action is valid the regular saveAction takes place
+     * @param actionId String
+     * @param workflowActionForm WorkflowActionForm
+     * @param user User
+     * @return WorkflowAction
+     */
+    @WrapInTransaction
+    public WorkflowAction updateAction(final String actionId, final WorkflowActionForm workflowActionForm, final User user) {
+        WorkflowAction action = null;
+        try {
+            if(workflowAPI.findAction(actionId, user) != null){
+               action = saveAction(actionId, workflowActionForm, user);
+            } else {
+                throw new DoesNotExistException("Workflow-does-not-exists-action");
+            }
+        } catch (DotDataException | DotSecurityException e) {
+            throw new DotWorkflowException(e.getMessage(), e);
+        }
+        return action;
+    }
+
+    /**
      * Save a WorkflowActionForm returning the WorkflowAction created.
      * A WorkflowActionForm can send a stepId in that case the Action will be associated to the Step in the same transaction.
      * @param actionId When present an update operation takes place otherwise an insert is executed
@@ -784,7 +941,7 @@ public class WorkflowHelper {
      * @return WorkflowAction (workflow action created)
      */
     @WrapInTransaction
-    public WorkflowAction save (final String actionId, final WorkflowActionForm workflowActionForm, final User user) {
+    public WorkflowAction saveAction(final String actionId, final WorkflowActionForm workflowActionForm, final User user) {
 
         String actionNextAssign     = workflowActionForm.getActionNextAssign();
         if (actionNextAssign != null && actionNextAssign.startsWith("role-")) {
@@ -871,9 +1028,9 @@ public class WorkflowHelper {
      * @param user
      * @return
      */
-    public WorkflowAction save (final WorkflowActionForm workflowActionForm, final User user) {
+    public WorkflowAction saveAction(final WorkflowActionForm workflowActionForm, final User user) {
         final String actionId = workflowActionForm.getActionId();
-        return save(actionId, workflowActionForm, user);
+        return saveAction(actionId, workflowActionForm, user);
     }
 
     @WrapInTransaction
@@ -1101,19 +1258,22 @@ public class WorkflowHelper {
      * Delete an existing scheme
      * @param schemeId The id of the Scheme to be deleted
      * @param user The User that want to delete the scheme
+     * @return Future {@link WorkflowScheme}
      * @throws AlreadyExistException
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    public void delete(final String schemeId, final User user) throws AlreadyExistException, DotDataException, DotSecurityException {
+    public Future<WorkflowScheme> delete(final String schemeId, final User user)
+            throws AlreadyExistException, DotDataException, DotSecurityException {
 
         final WorkflowScheme scheme = this.workflowAPI.findScheme(schemeId);
+
         if(null != scheme) {
-            this.workflowAPI.deleteScheme(scheme, user);
-        }else{
+            return this.workflowAPI.deleteScheme(scheme, user);
+        } else {
             throw new DoesNotExistException("Workflow-does-not-exists-scheme");
         }
-    }
+    } // delete.
 
 
 } // E:O:F:WorkflowHelper.

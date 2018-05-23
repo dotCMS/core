@@ -1457,36 +1457,6 @@
 	</definition>
 	<!-- Schedulers -->
 
-	<!-- reports -->
-	<definition name="portlet.ext.report.view" extends="portal">
-		<put name="content" value="/portlet/ext/report/view.jsp" />
-	</definition>
-
-	<definition name="portlet.ext.report" extends="portal">
-		<put name="portlet_sub_nav"
-			value="/portlet/ext/report/sub_nav.jsp" />
-	</definition>
-
-	<definition name="portlet.ext.report.view_reports"
-		extends="portlet.ext.report">
-		<put name="content"
-			value="/portlet/ext/report/view_reports.jsp" />
-	</definition>
-	<definition name="portlet.ext.report.edit_report"
-		extends="portlet.ext.report">
-		<put name="content" value="/portlet/ext/report/edit_report.jsp" />
-	</definition>
-	<definition name="portlet.ext.report.run_report"
-		extends="portlet.ext.report">
-		<put name="content" value="/portlet/ext/report/run_reports.jsp" />
-	</definition>
-	<definition name="portlet.ext.report.get_parameters"
-		extends="portlet.ext.report">
-		<put name="content"
-			value="/portlet/ext/report/get_parameters.jsp" />
-	</definition>
-	<!-- reports -->
-
 	<!-- calendar -->
 	<definition name="portlet.ext.calendar.view" extends="portal">
 		<put name="portlet_sub_nav" value="/portlet/ext/calendar/sub_nav.jsp" />

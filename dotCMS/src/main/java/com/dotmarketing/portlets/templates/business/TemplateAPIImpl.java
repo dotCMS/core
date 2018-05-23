@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.templates.business;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 
 import com.dotmarketing.beans.Host;
@@ -22,6 +23,7 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -68,8 +70,8 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	}
 
 	@CloseDBIfOpened
-	public List<Template> findTemplatesUserCanUse(User user, String hostName, String query, boolean searchHost,int offset, int limit) throws DotDataException, DotSecurityException {
-		return FactoryLocator.getTemplateFactory().findTemplatesUserCanUse(user, hostName, query, searchHost, offset, limit);
+	public List<Template> findTemplatesUserCanUse(User user, String hostId, String query, boolean searchHost,int offset, int limit) throws DotDataException, DotSecurityException {
+		return FactoryLocator.getTemplateFactory().findTemplatesUserCanUse(user, hostId, query, searchHost, offset, limit);
 	}
 
 	@WrapInTransaction
@@ -186,8 +188,17 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 
 	@WrapInTransaction
-	public Template saveTemplate(Template template, Host destination, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+	public Template saveTemplate(final Template template, final Host destination, final User user, final boolean respectFrontendRoles)
+			throws DotDataException, DotSecurityException {
+
 		boolean existingId=false, existingInode=false;
+
+		if (template.isAnonymous() && LicenseManager.getInstance().isCommunity()) {
+
+			Logger.warn(this, String.format("License required to save layout: template -> %s", template));
+			throw new InvalidLicenseException();
+		}
+
 	    if(UtilMethods.isSet(template.getIdentifier())) {
 		    Identifier ident=APILocator.getIdentifierAPI().find(template.getIdentifier());
 		    existingId = ident==null || !UtilMethods.isSet(ident.getId());

@@ -1,0 +1,393 @@
+{
+	"info": {
+		"_postman_id": "0c79bf9c-6227-409f-ace2-423fce92af54",
+		"name": "Page Resource Documentation",
+		"description": "Provides different methods to access information about HTML Pages in dotCMS. For example,\nusers of this end-point can get the metadata of an HTML Page (i.e., information about the\ndifferent data structures that make up a page), the final render of a page, etc.\n\n@Path(\"/v1/page\")",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Load Json",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "1c741cde-3a18-46ac-84c9-c28fb17f845a",
+						"type": "text/javascript",
+						"exec": [
+							"",
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"",
+							"",
+							"pm.test(\"Include template\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"template\");",
+							"});",
+							"",
+							"pm.test(\"Inlude layout\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"layout\");",
+							"});",
+							"",
+							"pm.test(\"Include Containers\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"containers\");",
+							"});",
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/page/json/about-us/index",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"page",
+						"json",
+						"about-us",
+						"index"
+					]
+				},
+				"description": "Returns the metadata in JSON format of the objects that make up an HTML Page in the system.\n\n@Path(\"/json/{page-url}\")\n     \n     "
+			},
+			"response": []
+		},
+		{
+			"name": "Render Page",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "22f6bdce-233a-4c44-9c0b-104ce314362e",
+						"type": "text/javascript",
+						"exec": [
+							"",
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"",
+							"",
+							"pm.test(\"Response body contains\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"rendered\");",
+							"});",
+							"",
+							"pm.test(\"Response body contains\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"uuid-1\");",
+							"});",
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/page/render/about-us/index",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"page",
+						"render",
+						"about-us",
+						"index"
+					]
+				},
+				"description": "Returns the page rendered\n\n@Path(\"/render/{uri: .*}\")\n"
+			},
+			"response": []
+		},
+		{
+			"name": "Layout",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "63adc218-5d09-43f5-9298-29a015edbedc",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"",
+							"",
+							"pm.test(\"Response body contains\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"rendered\");",
+							"});",
+							"",
+							"pm.test(\"Response body contains\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"uuid-1\");",
+							"});",
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"title\":null,\"layout\":{\"body\":{\"rows\":[{\"columns\":[{\"leftOffset\":1,\"width\":7,\"containers\":[{\"identifier\":\"56bd55ea-b04b-480d-9e37-5d6f9217dcc3\",\"uuid\":\"1\"}]},{\"leftOffset\":8,\"width\":4,\"containers\":[{\"identifier\":\"5363c6c6-5ba0-4946-b7af-cf875188ac2e\",\"uuid\":\"1\"}]}]}]},\"header\":true,\"footer\":true,\"sidebar\":{\"location\":\"\",\"containers\":[],\"width\":\"small\"}}}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/page/c12fe7e6-d338-49d5-973b-2d974d57015b/layout",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"page",
+						"c12fe7e6-d338-49d5-973b-2d974d57015b",
+						"layout"
+					]
+				},
+				"description": "Save a template and link it with a page, If the page already has a anonymous template linked then it is updated,\notherwise a new template is created and the old link template remains unchanged\n\n@Path(\"/{pageId}/layout\")"
+			},
+			"response": []
+		},
+		{
+			"name": "Add Content",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "78a8ed85-648a-4a40-b82a-be6079b4bf96",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"",
+							"",
+							"pm.test(\"Response body contains\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"ok\");",
+							"});",
+							"",
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[{\"id\":\"56bd55ea-b04b-480d-9e37-5d6f9217dcc3\",\"uuid\":\"1\",\"contentlets\":[\"767509b1-2392-4661-a16b-e0e31ce27719\",\"3c30df49-ea78-417a-93ce-631cd25bc66c\"]},{\"id\":\"5363c6c6-5ba0-4946-b7af-cf875188ac2e\",\"uuid\":\"1\",\"contentlets\":[\"2efc77b4-a54f-479b-8a81-a133b9e6da04\",\"5aef0c62-b7d6-4805-9e7c-77a67f4822f3\",\"66d47ebf-7b11-4076-85b0-b6c8c373d000\"]}]"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/page/c12fe7e6-d338-49d5-973b-2d974d57015b/content",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"page",
+						"c12fe7e6-d338-49d5-973b-2d974d57015b",
+						"content"
+					]
+				},
+				"description": "Update all the content's page. Receive a json object\n\n@Path(\"{pageId}/content\")"
+			},
+			"response": []
+		},
+		{
+			"name": "Render HTML Page ONLY",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "5e4435c4-6647-4389-8671-eafb5c1e5df3",
+						"type": "text/javascript",
+						"exec": [
+							"",
+							"",
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"",
+							"",
+							"pm.test(\"Include template\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"template\");",
+							"});",
+							"",
+							"pm.test(\"Inlude layout\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"layout\");",
+							"});",
+							"",
+							"",
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/page/renderHTML/about-us/our-team/index",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"page",
+						"renderHTML",
+						"about-us",
+						"our-team",
+						"index"
+					]
+				},
+				"description": "Returns only the HTML page rendered\n\n@Path(\"/renderHTML/{uri: .*}\")"
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "74946878-1f93-4078-95c8-6d7d8a536fba",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "b7e209f9-3e62-49a1-9d1a-c66500708b2d",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}

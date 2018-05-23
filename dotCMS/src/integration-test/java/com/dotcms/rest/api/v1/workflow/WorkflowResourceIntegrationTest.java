@@ -1,28 +1,7 @@
 package com.dotcms.rest.api.v1.workflow;
 
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.ADMIN_DEFAULT_ID;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.ADMIN_DEFAULT_MAIL;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.ADMIN_NAME;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.CURRENT_STEP;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.actionName;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.addSteps;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.createScheme;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.createWorkflowActions;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.doCleanUp;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.findSchemes;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.findSteps;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.schemeName;
-import static com.dotmarketing.business.Role.ADMINISTRATOR;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
+import com.dotcms.mock.response.MockAsyncResponse;
+import com.dotcms.repackage.javax.ws.rs.container.AsyncResponse;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
 import com.dotcms.rest.ContentHelper;
@@ -31,11 +10,7 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotcms.workflow.form.WorkflowActionForm;
-import com.dotcms.workflow.form.WorkflowActionStepForm;
-import com.dotcms.workflow.form.WorkflowSchemeForm;
-import com.dotcms.workflow.form.WorkflowSchemeImportObjectForm;
-import com.dotcms.workflow.form.WorkflowStepUpdateForm;
+import com.dotcms.workflow.form.*;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -54,20 +29,22 @@ import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.*;
+import static com.dotmarketing.business.Role.ADMINISTRATOR;
+import static org.junit.Assert.*;
+import static org.mockito.Matchers.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class WorkflowResourceIntegrationTest {
 
@@ -224,7 +201,7 @@ public class WorkflowResourceIntegrationTest {
 
             final WorkflowSchemeImportObjectForm exportObjectForm =
                     new WorkflowSchemeImportObjectForm(
-                            new WorkflowSchemeImportExportObjectView(schemes,steps,actions,actionSteps,Collections.emptyList(),Collections.emptyList()),
+                            new WorkflowSchemeImportExportObjectView(WorkflowResource.VERSION,schemes,steps,actions,actionSteps,Collections.emptyList(),Collections.emptyList()),
                             permissions);
 
             final Response importResponse = workflowResource.importScheme(request, exportObjectForm);
@@ -236,7 +213,7 @@ public class WorkflowResourceIntegrationTest {
             final Map importSchemeMap = Map.class.cast(exportEntityView.getEntity());
             assertNotNull(importSchemeMap);
 
-            final WorkflowSchemeImportExportObjectView exportObject = (WorkflowSchemeImportExportObjectView) importSchemeMap.get("workflowExportObject");
+            final WorkflowSchemeImportExportObjectView exportObject = (WorkflowSchemeImportExportObjectView) importSchemeMap.get("workflowObject");
             final List<Permission> permissionsExported = (List<Permission>) importSchemeMap.get("permissions");
 
             assertNotNull(exportObject);
@@ -302,7 +279,7 @@ public class WorkflowResourceIntegrationTest {
         assertNotNull(savedScheme);
         final HttpServletRequest request = mock(HttpServletRequest.class);
         WorkflowSchemeForm form = new WorkflowSchemeForm.Builder().schemeDescription("lol").schemeArchived(false).schemeName(updatedName).build();
-        final Response updateResponse = workflowResource.update(request,savedScheme.getId(), form);
+        final Response updateResponse = workflowResource.updateScheme(request,savedScheme.getId(), form);
         assertEquals(Response.Status.OK.getStatusCode(), updateResponse.getStatus());
         final ResponseEntityView updateSchemeEntityView = ResponseEntityView.class.cast(updateResponse.getEntity());
         final WorkflowScheme updatedScheme = WorkflowScheme.class.cast(updateSchemeEntityView.getEntity());
@@ -317,8 +294,8 @@ public class WorkflowResourceIntegrationTest {
         final String updatedName = savedScheme2.getName();
         final HttpServletRequest request = mock(HttpServletRequest.class);
         WorkflowSchemeForm form = new WorkflowSchemeForm.Builder().schemeDescription("lol").schemeArchived(false).schemeName(updatedName).build();
-        final Response updateResponse = workflowResource.update(request,savedScheme1.getId(), form);
-        assertEquals(Status.BAD_REQUEST.getStatusCode(), updateResponse.getStatus());
+        final Response updateResponse = workflowResource.updateScheme(request,savedScheme1.getId(), form);
+        assertEquals(Status.OK.getStatusCode(), updateResponse.getStatus());
     }
 
     @Test
@@ -341,13 +318,33 @@ public class WorkflowResourceIntegrationTest {
         final List<WorkflowStep> workflowSteps = addSteps(workflowResource, savedScheme, numSteps);
         assertFalse(workflowSteps.isEmpty());
         final HttpServletRequest removeStepRequest = mock(HttpServletRequest.class);
-        int count = 0;
-        for(final WorkflowStep ws: workflowSteps){
-            Response deleteStepResponse = workflowResource.deleteStep(removeStepRequest, ws.getId());
-            assertEquals(Response.Status.OK.getStatusCode(), deleteStepResponse.getStatus());
-            count++;
+
+        final CountDownLatch countDownLatch = new CountDownLatch(workflowSteps.size());
+        final AtomicInteger count = new AtomicInteger(0);
+        for(final WorkflowStep workflowStep: workflowSteps){
+            final AsyncResponse asyncResponse = new MockAsyncResponse((arg) -> {
+
+                countDownLatch.countDown();
+                final Response deleteStepResponse = (Response)arg;
+                assertEquals(Response.Status.OK.getStatusCode(), deleteStepResponse.getStatus());
+                count.addAndGet(1);
+                return true;
+            }, arg -> {
+                countDownLatch.countDown();
+                fail("Error on deleting step");
+                return true;
+            });
+
+            workflowResource.deleteStep(removeStepRequest, asyncResponse, workflowStep.getId());
         }
-        assertEquals(count,numSteps);
+
+        try {
+            countDownLatch.await();
+            assertEquals(count.get(), numSteps);
+        } catch (InterruptedException e) {
+            fail(e.getMessage());
+        }
+
     }
 
     @Test
@@ -573,6 +570,7 @@ public class WorkflowResourceIntegrationTest {
         final WorkflowAction firstAction = actions.get(0);
 
         final HttpServletRequest request1 = mock(HttpServletRequest.class);
+
         //assign the first action to the second step
         final Response saveActionToStepResponse = workflowResource.saveActionToStep(
                 request1, secondStep.getId(),
@@ -596,22 +594,34 @@ public class WorkflowResourceIntegrationTest {
         assertEquals(firstAction.getId(),actionByStep.getId());
 
         //test delete without archive
+        final AsyncResponse asyncResponse = new MockAsyncResponse(
+                (arg) -> {
+            final Response deleteSchemeResponse = (Response)arg;
+            assertEquals(Status.INTERNAL_SERVER_ERROR.getStatusCode(), deleteSchemeResponse.getStatus());
+
+            //test archive scheme
+            WorkflowSchemeForm form = new WorkflowSchemeForm.Builder().schemeDescription("Delete scheme").schemeArchived(true).schemeName(savedScheme.getName()).build();
+            final HttpServletRequest request5 = mock(HttpServletRequest.class);
+            final Response updateResponse = workflowResource.updateScheme(request5,savedScheme.getId(), form);
+            assertEquals(Response.Status.OK.getStatusCode(), updateResponse.getStatus());
+
+            //test delete scheme
+            final AsyncResponse asyncResponse2 = new MockAsyncResponse(
+                    arg2 -> {
+                        final Response deleteSchemeResponse2 =(Response) arg2;
+                        assertEquals(Status.OK.getStatusCode(), deleteSchemeResponse2.getStatus());
+                        return true;
+                    },
+                    (arg2) -> true
+            );
+            final HttpServletRequest request6 = mock(HttpServletRequest.class);
+            workflowResource.deleteScheme(request6, asyncResponse2, savedScheme.getId());
+
+            return true;
+        }, (arg) -> true);
+
         final HttpServletRequest request4 = mock(HttpServletRequest.class);
-        final Response deleteSchemeResponse = workflowResource.delete(request4, savedScheme.getId());
-        assertEquals(Status.INTERNAL_SERVER_ERROR.getStatusCode(), deleteSchemeResponse.getStatus());
-
-        //test archive scheme
-        WorkflowSchemeForm form = new WorkflowSchemeForm.Builder().schemeDescription("Delete scheme").schemeArchived(true).schemeName(savedScheme.getName()).build();
-        final HttpServletRequest request5 = mock(HttpServletRequest.class);
-        final Response updateResponse = workflowResource.update(request5,savedScheme.getId(), form);
-        assertEquals(Response.Status.OK.getStatusCode(), updateResponse.getStatus());
-
-        //test delete scheme
-        final HttpServletRequest request6 = mock(HttpServletRequest.class);
-        final Response deleteSchemeResponse2 = workflowResource.delete(request6, savedScheme.getId());
-        assertEquals(Status.OK.getStatusCode(), deleteSchemeResponse2.getStatus());
-
-
+        workflowResource.deleteScheme(request4, asyncResponse, savedScheme.getId());
     }
 
 }

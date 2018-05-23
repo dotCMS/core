@@ -26,9 +26,14 @@ import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.liferay.portal.model.User;
-
-import java.util.*;
+import java.util.Collection;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Future;
+import java.util.function.Consumer;
 
 public interface WorkflowAPI {
 
@@ -200,6 +205,14 @@ public interface WorkflowAPI {
 	public List<WorkflowScheme> findSchemesForContentType(ContentType contentType) throws DotDataException;
 
 	/**
+	 * find all content types associated to a workflow
+	 * @param workflowScheme
+	 * @return
+	 * @throws DotDataException
+	 */
+	public List<ContentType> findContentTypesForScheme(WorkflowScheme workflowScheme);
+
+	/**
 	 * Save an scheme
 	 * @param scheme {@link WorkflowScheme}
 	 * @param user   {@link User}
@@ -219,11 +232,24 @@ public interface WorkflowAPI {
 	 */
 	public Future<WorkflowScheme> deleteScheme(WorkflowScheme scheme, User user) throws DotDataException, DotSecurityException, AlreadyExistException;
 
+	/**
+	 * Find the steps associated to the scheme
+	 * @param scheme {@link WorkflowScheme}
+	 * @return List of {@link WorkflowStep}
+	 * @throws DotDataException
+	 */
 	public List<WorkflowStep> findSteps(WorkflowScheme scheme) throws DotDataException;
 
 	public void saveStep(WorkflowStep step, User user) throws DotDataException, AlreadyExistException;
 
-	public void deleteStep(WorkflowStep step, User user) throws DotDataException;
+    /**
+     * Delete a step with all dependencies: actions, actionlets and tasks.
+     * @param step WorkflowStep   from the step to delete the action
+     * @param user The current User
+     * @return Future {@link WorkflowStep} the process runs async, returns a future with the steps deleted.
+     * @throws DotDataException
+     */
+	public Future<WorkflowStep> deleteStep(WorkflowStep step, User user) throws DotDataException;
 
 	/**
 	 * This method makes the reorder for the step, reordering the rest of the steps too.
@@ -351,11 +377,12 @@ public interface WorkflowAPI {
 	 * Find the list of Workflow Actions available for the role that is passed
 	 * @param step
 	 * @param role
+     * @param permissionable
 	 * @return
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public List<WorkflowAction> findActions(WorkflowStep step, Role role) throws DotDataException,
+	public List<WorkflowAction> findActions(WorkflowStep step, Role role, Permissionable permissionable) throws DotDataException,
 			DotSecurityException;
 
 	/**
@@ -401,7 +428,14 @@ public interface WorkflowAPI {
 	 */
 	public void saveSchemesForStruct(Structure struc, List<WorkflowScheme> schemes) throws DotDataException;
 
-	public void saveSchemeIdsForContentType(final ContentType contentType, List<String> schemesIds) throws DotDataException;
+	/**
+	 * This method associate a list of Workflow Schemes to a Content Type
+	 * @param contentType {@link ContentType}
+	 * @param schemesIds {@link List} list of scheme ids
+	 * @throws DotDataException
+	 */
+	public void saveSchemeIdsForContentType(final ContentType contentType,
+											final List<String> schemesIds) throws DotDataException;
 
 	/**
 	 * Saves an single action the action is associated to the schema by default
@@ -433,7 +467,7 @@ public interface WorkflowAPI {
 	 */
 	void saveAction(String actionId, String stepId, User user, int order);
 
-	public WorkflowStep findStep(String id) throws DotDataException, DotSecurityException;
+	public WorkflowStep findStep(String id) throws DotDataException;
 
 	/**
 	 * Deletes the action associated to the scheme
@@ -489,6 +523,14 @@ public interface WorkflowAPI {
 	 */
 	Contentlet fireContentWorkflow(Contentlet contentlet, ContentletDependencies dependencies) throws DotDataException;
 
+	/**
+	 * Validates if the Workflow Action the Contentlet is going to execute belongs to the step of the
+	 * Contentlet and also if the action belongs to one of the schemes associated to the
+	 * Content Type of the Contentlet.
+	 * This method does not validate the permissions execution of the Workflow Action.
+	 */
+	public void validateActionStepAndWorkflow(final Contentlet contentlet, final User user)
+			throws DotDataException;
 
 	public WorkflowProcessor fireWorkflowNoCheckin(Contentlet contentlet, User user) throws DotDataException,DotWorkflowException, DotContentletValidationException;
 

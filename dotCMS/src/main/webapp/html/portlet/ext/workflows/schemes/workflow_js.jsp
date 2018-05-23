@@ -30,7 +30,7 @@ dojo.declare(
     }
 );
 
-
+dojo.require("dojo.store.Memory");
 
 
 
@@ -222,7 +222,8 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 		dia = new dijit.Dialog({
 			id			:	this.addEditDiv,
 			title		: 	"<%=LanguageUtil.get(pageContext, "Edit-Scheme")%>",
-			draggable	:	false
+			style        : "width:550px;height:560px",
+			draggable	:	true
 		});
 
 
@@ -252,7 +253,6 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 				handle : function(dataOrError, ioArgs) {
 					if (dojo.isString(dataOrError)) {
 						if (dataOrError.indexOf("FAILURE") == 0) {
-
 							schemeAdmin.saveError(dataOrError);
 						} else {
 							schemeAdmin.saveSuccess(dataOrError);
@@ -261,6 +261,7 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 						this.saveError("<%=LanguageUtil.get(pageContext, "Unable-to-save-Scheme")%>");
 
 					}
+                    schemeAdmin.show(); // refresh so changes can be seen
 				}
 			});
 
@@ -268,6 +269,19 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 		;
 
 	},
+
+    	unArchiveScheme : function() {
+        	var archived = dojo.byId("schemeArchived");
+        	archived.value="false"
+        	this.saveAddEdit();
+    	},
+	
+    	archiveScheme : function() {
+        	var archived = dojo.byId("schemeArchived");
+        	archived.value="true"
+        	this.saveAddEdit();
+    	},
+	
 	copyScheme : function(schemeId, name) {
 
 		var optionalName = prompt ("<%=LanguageUtil.get(pageContext, "Workflow-Name")%>", name);
@@ -287,6 +301,7 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 
 							schemeAdmin.copySuccess(dataOrError);
 						}
+                        schemeAdmin.show(); // refresh so changes can be seen
 			}
 		};
 		dojo.xhrPost(xhrArgs);
@@ -308,7 +323,7 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
                         schemeAdmin.deleteSuccess(dataOrError);
                      }
                 } else {
-                    this.deleteError("<%=LanguageUtil.get(pageContext, "Unable-to-delete-Scheme")%>");
+                    schemeAdmin.deleteError("<%=LanguageUtil.get(pageContext, "Unable-to-delete-Scheme")%>");
                 }
             }
         };
@@ -317,8 +332,9 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
     },
 	saveSuccess : function(message) {
 		var dialog = dijit.byId(schemeAdmin.addEditDiv);
-		dialog.hide();
-		mainAdmin.refresh();
+        if(dialog != undefined){
+            dialog.hide();
+        }
 		showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Workflow-Scheme-saved")%>");
 
 	},
@@ -328,8 +344,11 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 	},
     deleteSuccess : function(message) {
         var dialog = dijit.byId(schemeAdmin.addEditDiv);
-        dialog.hide();
+        if(dialog != undefined){
+            dialog.hide();
+        }
         schemeAdmin.show();
+        mainAdmin.refresh();
         showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Workflow-Scheme-deleted")%>");
     },
     deleteError : function(message) {
@@ -337,7 +356,9 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
     },
 	copySuccess : function(message) {
 		var dialog = dijit.byId(schemeAdmin.addEditDiv);
-		dialog.hide();
+        if(dialog != undefined){
+            dialog.hide();
+        }
 		schemeAdmin.show();
 		showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Workflow-Scheme-copied")%>");
 	},
@@ -439,13 +460,19 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
         return;
     },
     importSuccess : function(message) {
+		try {
+			dijit.byId('importWorkflowErrors').hide();
+		} catch (e) {
+			console.error(e);
+		}
         schemeAdmin.hideImport();
         mainAdmin.refresh();
         showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Workflow-Scheme-Imported")%>");
-
     },
     importError : function(message) {
-        showDotCMSSystemMessage(message, true);
+		var errorDisplayElement = dijit.byId('importWorkflowErrors');
+		dojo.byId('importWorkflowExceptionData').innerHTML = "<ul><li>"+message+"</li></ul>";
+		errorDisplayElement.show();
     }
 
 });
@@ -679,12 +706,12 @@ dojo.declare("dotcms.dijit.workflows.StepAdmin", null, {
 			}
 		}
 	},
-    filterSteps:function(schemeId,roleId){
+    filterSteps:function(schemeId, roleId, contentType){
 
         var targetNode = dojo.byId("wfStepInDragContainer");
 
 		var xhrArgs = {
-		   url: "/html/portlet/ext/workflows/schemes/view_steps_filtered.jsp?schemeId="+schemeId+"&roleId="+roleId,
+		   url: "/html/portlet/ext/workflows/schemes/view_steps_filtered.jsp?schemeId="+schemeId+"&roleId="+roleId+"&contentTypeId="+contentType,
 		   async:true,
 		   load: function(markup){
                targetNode.innerHTML = markup;

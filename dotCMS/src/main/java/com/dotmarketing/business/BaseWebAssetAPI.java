@@ -1,6 +1,3 @@
-/**
- *
- */
 package com.dotmarketing.business;
 
 import com.dotcms.business.WrapInTransaction;
@@ -19,6 +16,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.MultiTreeFactory;
@@ -40,13 +38,12 @@ import java.util.UUID;
 import com.liferay.portal.model.User;
 
 /**
- * @author jtesser
- * All methods in the BaseWebAssetAPI should be protected or private. The BaseWebAssetAPI is intended to be extended by other APIs for WebAsset Objects.
- * This api will eventually fade out when all web assets move to content
+ * All methods in the BaseWebAssetAPI should be protected or private. The BaseWebAssetAPI is intended to be extended by
+ * other APIs for WebAsset Objects. This api will eventually fade out when all web assets move to content.
  *
+ * @author jtesser
  */
 public abstract class BaseWebAssetAPI extends BaseInodeAPI {
-
 
 	/**
 	 * Save the asset.
@@ -73,7 +70,6 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 		// create new identifier, without URI
 		Identifier id = APILocator.getIdentifierAPI().createNew(webasset, (Host)null);
 		id.setOwner(userId);
-		//HibernateUtil.saveOrUpdate(id);
 		APILocator.getIdentifierAPI().save(id);
 
 		webasset.setIdentifier(id.getId());
@@ -93,7 +89,6 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 		id.setOwner(userId);
 		// set the identifier on the inode for future reference.
 		// and for when we get rid of identifiers all together
-		//HibernateUtil.saveOrUpdate(id);
 		APILocator.getIdentifierAPI().save(id);
 
 		webasset.setIdentifier(id.getId());
@@ -111,12 +106,8 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 	protected void createAsset(WebAsset webasset, String userId, Identifier identifier, boolean working) throws DotDataException, DotStateException, DotSecurityException {
 		webasset.setModDate(new java.util.Date());
 		webasset.setModUser(userId);
-		// persists the webasset
-		//save(webasset);
 
 		// adds asset to the existing identifier
-		//identifier.addChild(webasset);
-		//webasset.addParent(identifier);
 		webasset.setIdentifier(identifier.getInode());
 
 		save(webasset);
@@ -144,13 +135,6 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 		if (!InodeUtils.isSet(id.getInode())) {
 			throw new DotDataException("Identifier not found!");
 		}
-		/*WebAsset oldWebAsset = (WebAsset) APILocator.getVersionableAPI().findWorkingVersion(id, user, respectAnonPermissions);
-
-		if (!InodeUtils.isSet(oldWebAsset.getInode())) {
-			throw new DotDataException("Working copy of id: " + id.getAssetType() + ":" + id.getInode() + " not found!");
-		}*/
-		//oldWebAsset.setWorking(false);
-		//newWebAsset.setWorking(true);
 
 		//save(oldWebAsset);
 		newWebAsset.setIdentifier(id.getId());
@@ -173,8 +157,6 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 		   parent.addChild(webasset);
 
 		// adds asset to the existing identifier
-		//identifier.addChild(webasset);
-		//webasset.addParent(identifier);
 		webasset.setIdentifier(identifier.getInode());
 
 		save(webasset);
@@ -183,79 +165,25 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 		    APILocator.getVersionableAPI().setWorking(webasset);
 	}
 
-	/**
-	 * This method save the new asset as the new working version and change the
-	 * current working as an old version.
-	 *
-	 * @param newWebAsset
-	 *            New webasset version to be converted as the working asset.
-	 * @return The current working webasset (The new version), after the method
-	 *         execution is must use this class as the working asset instead the
-	 *         class you give as parameter.
-	 * @throws DotDataException
-	 *             The method throw an exception when the new asset identifier
-	 *             or the working folder cannot be found.
-	 */
-
-	/*
-	protected WebAsset saveAsset(WebAsset newWebAsset, Identifier id) throws DotDataException {
-		if (!InodeUtils.isSet(id.getInode())) {
-			throw new DotDataException("Web asset Identifier not found!");
-		}
-		WebAsset currWebAsset = null;
-
-		// gets the current working asset
-		currWebAsset = (WebAsset) APILocator.getVersionableAPI().findWorkingVersion(id, newWebAsset.getClass());
-
-		if (!InodeUtils.isSet(currWebAsset.getInode())) {
-			throw new DotDataException("Working copy not found!");
-		}
-
-		WebAsset workingAsset = null;
-
-		try {
-			workingAsset = swapAssets(currWebAsset, newWebAsset);
-		} catch (Exception e) {
-			throw new DotRuntimeException(e.getMessage(), e);
-		}
-
-		// Check
-		List workingAssets = null;
-		// gets the current working asset
-			workingAssets = APILocator.getVersionableAPI().findWorkingVersion(id, workingAsset.getClass());
-
-		// if there is more than one working asset
-		if (workingAssets.size() > 1) {
-			Iterator iter = workingAssets.iterator();
-			while (iter.hasNext()) {
-				WebAsset webAsset = (WebAsset) iter.next();
-				if (webAsset.getInode() != workingAsset.getInode()) {
-					webAsset.setWorking(false);
-					save(webAsset);
-				}
-			}
-		}
-
-		return workingAsset;
-	}
-	*/
-
 	protected boolean isAbstractAsset(WebAsset asset) {
 		if (asset instanceof Container || asset instanceof Template)
 			return true;
 		return false;
 	}
 
-    /**
-     * This method totally removes an asset from the cms.
-     *
-     * @param currWebAsset
-     * @return true if the asset was sucessfully removed.
-     * @throws DotSecurityException
-     * @throws DotDataException
-     */
+	/**
+	 * Deletes the specified {@link WebAsset} and all of its versions object from the system.
+	 *
+	 * @param currWebAsset The asset that will be deleted.
+	 *
+	 * @return Returns {@code true} if the asset was successfully removed. Otherwise, returns {@code false}.
+	 *
+	 * @throws DotSecurityException An error occurred when validating user permissions.
+	 * @throws DotDataException     An error occurred when interacting with the data source.
+	 */
 	public static boolean deleteAsset(WebAsset currWebAsset) throws DotSecurityException, DotDataException{
 		boolean returnValue = false;
+		final String errorMsg = "An error occurred deleting asset '%s' with Identifier [%s]: ";
 		try
 		{
 			if (!UtilMethods.isSet(currWebAsset) || !InodeUtils.isSet(currWebAsset.getInode()))
@@ -338,18 +266,20 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 
 			//### Delete the Identifier ###
 			returnValue = true;
-		}
-		catch(DotHibernateException ex){
-			Logger.warn(BaseWebAssetAPI.class, ex.getMessage(),ex);
+		} catch(DotHibernateException ex){
+			Logger.warn(BaseWebAssetAPI.class, String.format(errorMsg, currWebAsset.getTitle(), currWebAsset.getIdentifier()) + ex.getMessage(), ex);
+			ex.setMessage(String.format(errorMsg, currWebAsset.getTitle(), currWebAsset.getIdentifier()) + ex.getMessage());
 			throw ex;
-		}
-		catch(DotDataException ex){
-			Logger.warn(BaseWebAssetAPI.class, ex.getMessage(),ex);
+		} catch(DotDataException ex){
+			Logger.warn(BaseWebAssetAPI.class, String.format(errorMsg, currWebAsset.getTitle(), currWebAsset.getIdentifier()) + ex.getMessage(), ex);
+			ex.setMessage(String.format(errorMsg, currWebAsset.getTitle(), currWebAsset.getIdentifier()) + ex.getMessage());
 			throw ex;
-		}
-		catch(DotSecurityException ex){
-			Logger.warn(BaseWebAssetAPI.class, ex.getMessage(),ex);
-			throw ex;
+		} catch(DotSecurityException ex){
+			Logger.warn(BaseWebAssetAPI.class, String.format(errorMsg, currWebAsset.getTitle(), currWebAsset.getIdentifier()) + ex.getMessage(), ex);
+			throw new DotSecurityException(String.format(errorMsg, currWebAsset.getTitle(), currWebAsset.getIdentifier()) + ex.getMessage(), ex);
+		} catch (DotRuntimeException ex) {
+			Logger.warn(BaseWebAssetAPI.class, String.format(errorMsg, currWebAsset.getTitle(), currWebAsset.getIdentifier()) + ex.getMessage(), ex);
+			throw new DotRuntimeException(String.format(errorMsg, currWebAsset.getTitle(), currWebAsset.getIdentifier()) + ex.getMessage(), ex);
 		}
 		return returnValue;
 	}
@@ -464,4 +394,5 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 
 	    return before - after;
 	}
+
 }

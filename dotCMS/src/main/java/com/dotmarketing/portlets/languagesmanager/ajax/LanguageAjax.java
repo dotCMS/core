@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.languagesmanager.ajax;
 
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
-import com.dotcms.repackage.org.jboss.util.Strings;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -18,6 +17,7 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 
+import com.liferay.util.StringPool;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -206,11 +206,11 @@ public class LanguageAjax {
 		if(withAllOption) {
 		    Map<String, String> map = new HashMap<String, String>();
 		    map.put("title", sLanguage);
-            map.put("languageCode", Strings.EMPTY);
+            map.put("languageCode", StringPool.BLANK);
             map.put("language", LanguageUtil.get(uWebAPI.getLoggedInUser(request), "all"));
-            map.put("countryCode", Strings.EMPTY);
-            map.put("country", Strings.EMPTY);
-            map.put("id", Strings.EMPTY);
+            map.put("countryCode", StringPool.BLANK);
+            map.put("country", StringPool.BLANK);
+            map.put("id", StringPool.BLANK);
             langList.add(map);
 		}
 		

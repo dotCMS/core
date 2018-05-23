@@ -1,16 +1,16 @@
 package com.dotcms.tika;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.osgi.OSGIConstants;
+import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.OSGIUtil;
@@ -27,8 +27,13 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.Predicate;
 import java.util.zip.GZIPOutputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 
@@ -99,27 +104,59 @@ public class TikaUtils {
     /**
      * Verifies if the Contentlet is a File asset in order to identify if it
      * is missing a metadata file, if the metadata does not exist this method
-     * parses the file asset and generates it, this operation also implies a save
-     * operation to the Contentlet in order to save the parsed metadata info.
+     * parses the file asset and generates it, <strong>this operation also implies a save
+     * operation to the Contentlet in order to save the parsed metadata info</strong>.
      *
-     * @param contentlet Content to validate if have or not a metadata file
+     * @param contentlet Content parse in order to extract the metadata info
+     * @return True if a metadata file was generated.
+     */
+    public boolean generateMetaData(Contentlet contentlet)
+            throws DotDataException, DotSecurityException {
+        return generateMetaData(contentlet, false);
+    }
+
+
+    /**
+     * Verifies if the Contentlet is a File asset in order to parse it and generate a metadata
+     * file for it, <strong>this operation also implies a save operation to the Contentlet
+     * in order to save the parsed metadata info</strong>.
+     *
+     * @param contentlet Content parse in order to extract the metadata info
+     * @param force If <strong>false</strong> we will try to parse and generate the metadata file
+     * only if a metadata file does NOT already exist. If <strong>true</strong> we delete the
+     * existing metadata file in order to force a parse and generation of the metadata file.
+     * @return True if a metadata file was generated.
      */
     @CloseDBIfOpened
-    public Boolean generateMetaDataIfRequired(Contentlet contentlet)
+    public boolean generateMetaData(Contentlet contentlet, boolean force)
             throws DotSecurityException, DotDataException {
 
-        if (contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) {
+        if (BaseContentType.FILEASSET.equals(contentlet.getContentType().baseType())) {
 
             //See if we have content metadata file
             final File contentMeta = APILocator.getFileAssetAPI()
                     .getContentMetadataFile(contentlet.getInode());
+
+            /*
+            If we want to force the parse of the file and the generation of the metadata file
+            we need to delete the existing one first.
+             */
+            if (force && contentMeta.exists()) {
+                try {
+                    contentMeta.delete();
+                } catch (Exception e) {
+                    Logger.error(this.getClass(),
+                            String.format("Unable to delete existing metadata file [%s] [%s]",
+                                    contentMeta.getAbsolutePath(), e.getMessage()), e);
+                }
+            }
 
             //If the metadata file does not exist we need to parse and get the metadata for the file
             if (!contentMeta.exists()) {
 
                 final File binFile = APILocator.getContentletAPI()
                         .getBinaryFile(contentlet.getInode(), FileAssetAPI.BINARY_FIELD,
-                                APILocator.getUserAPI().getSystemUser());
+                                this.systemUser);
                 if (binFile != null) {
 
                     //Parse the metadata from this file
@@ -189,25 +226,70 @@ public class TikaUtils {
 
             }
         } catch (IOException ioExc) {
-            try {
-                //On error lets try a fallback operation
-                metaMap = fallbackParse(binFile, contentMetadataFile, ioExc);
-            } catch (Exception e) {
-                logError(binFile, e);
+            if (isZeroByteFileException(ioExc.getCause())) {
+                logWarning(binFile, ioExc.getCause());
+            } else {
+                try {
+                    //On error lets try a fallback operation
+                    metaMap = fallbackParse(binFile, contentMetadataFile, ioExc);
+                } catch (Exception e) {
+                    logError(binFile, e);
+                }
             }
         } catch (Exception e) {
-            logError(binFile, e);
+
+            if (isZeroByteFileException(e)) {
+                logWarning(binFile, e);
+            } else {
+                logError(binFile, e);
+            }
         } finally {
             metaMap.put(FileAssetAPI.SIZE_FIELD, String.valueOf(binFile.length()));
         }
 
-        //Getting the original content's map
-        final Map<String, Object> additionProps = getAdditionalProperties(inode);
-        for (final Map.Entry<String, Object> entry : additionProps.entrySet()) {
-            metaMap.put(entry.getKey().toLowerCase(), entry.getValue().toString().toLowerCase());
-        }
+        filterMetadataFields(metaMap, getConfiguredMetadataFields());
 
         return metaMap;
+    }
+
+    /**
+     * Reads INDEX_METADATA_FIELDS from configuration
+     * @return
+     */
+    public Set<String> getConfiguredMetadataFields(){
+        final String configFields=Config.getStringProperty("INDEX_METADATA_FIELDS", null);
+
+        if (UtilMethods.isSet(configFields)) {
+
+            return new HashSet<>(Arrays.asList( configFields.split(",")));
+
+        }
+        return Collections.emptySet();
+    }
+
+    /**
+     * Filters fields from a map given a set of fields to be kept
+     * @param metaMap
+     * @param configFieldsSet
+     */
+    public void filterMetadataFields(final Map<String, ? extends Object> metaMap, final Set<String> configFieldsSet){
+
+        if (UtilMethods.isSet(metaMap) && UtilMethods.isSet(configFieldsSet)) {
+            metaMap.entrySet()
+                    .removeIf(entry -> !configFieldsSet.contains("*")
+                            && !checkIfFieldMatches(entry.getKey(), configFieldsSet));
+        }
+    }
+
+    /**
+     * Verifies if a string matches in a set of regex/strings
+     * @param key
+     * @param configFieldsSet
+     * @return
+     */
+    private boolean checkIfFieldMatches(final String key, final Set<String> configFieldsSet){
+        final Predicate<String> condition = e -> key.matches(e);
+        return configFieldsSet.stream().anyMatch(condition);
     }
 
     /**
@@ -247,7 +329,7 @@ public class TikaUtils {
                     String lowered = new String(buf);
                     lowered = lowered.toLowerCase();
                     bytes = lowered.getBytes(StandardCharsets.UTF_8);
-                    out.write(bytes, 0, count);
+                    out.write(bytes, 0, bytes.length);
                     numOfChunks--;
                 } while ((count = fullText.read(buf)) > 0 && numOfChunks > 0);
             } finally {
@@ -258,7 +340,10 @@ public class TikaUtils {
             Create an empty file if count == 0, there is no content but it is a record
             that we already try to process this file. If the file already exist do nothing
              */
-            prepareMetaDataFile(contentMetadataFile);
+            if (!contentMetadataFile.exists()) {
+                prepareMetaDataFile(contentMetadataFile);
+                FileUtils.writeStringToFile(contentMetadataFile, "NO_METADATA");
+            }
         }
 
         //Creating the meta data map to use by our content
@@ -295,21 +380,6 @@ public class TikaUtils {
                 return writeMetadata(contentReader, contentMetadataFile);
             }
         }
-    }
-
-    /**
-     * Returns a {@link Map} that includes original content's map entries and also special entries for string
-     * representation of the values of binary, category fields and also tags
-     */
-    private Map<String, Object> getAdditionalProperties(final String inode) {
-        Map<String, Object> additionProps = new HashMap<>();
-        try {
-            additionProps = ContentletUtil.getContentPrintableMap(this.systemUser,
-                    APILocator.getContentletAPI().find(inode, this.systemUser, true));
-        } catch (Exception e) {
-            Logger.error(this, "Unable to add additional metadata to map", e);
-        }
-        return additionProps;
     }
 
     /**
@@ -359,12 +429,6 @@ public class TikaUtils {
         }
     }
 
-    private void logError(final File binFile, Exception e) {
-        Logger.error(this.getClass(),
-                String.format("Could not parse file metadata for file [%s] [%s]",
-                        binFile.getAbsolutePath(), e.getMessage()), e);
-    }
-
     /**
      * normalize metadata from various filetypes this method will return an
      * array of metadata keys that we can use to normalize the values in our
@@ -394,6 +458,23 @@ public class TikaUtils {
             }
         }
         return translateMeta;
+    }
+
+    private boolean isZeroByteFileException(Throwable exception) {
+        return null != exception && exception.getClass().getCanonicalName()
+                .equals(TikaProxyService.EXCEPTION_ZERO_BYTE_FILE_EXCEPTION);
+    }
+
+    private void logWarning(final File binFile, Throwable exception) {
+        Logger.warn(this.getClass(),
+                String.format("Could not parse file metadata for file [%s] [%s]",
+                        binFile.getAbsolutePath(), exception.getMessage()));
+    }
+
+    private void logError(final File binFile, Throwable exception) {
+        Logger.error(this.getClass(),
+                String.format("Could not parse file metadata for file [%s] [%s]",
+                        binFile.getAbsolutePath(), exception.getMessage()), exception);
     }
 
 }

@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.business.web;
 
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
@@ -15,7 +16,6 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.*;
 import com.dotmarketing.factories.EmailFactory;
@@ -102,93 +102,84 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		return saveContent(contentletFormData, isAutoSave, isCheckin, user, false);
 	}
 
-	public String saveContent(Map<String, Object> contentletFormData,
-			  boolean isAutoSave, boolean isCheckin, User user, boolean generateSystemEvent) throws DotContentletValidationException, Exception {
+	@WrapInTransaction
+	public String saveContent(final Map<String, Object> contentletFormData,
+			  final boolean isAutoSave, final boolean isCheckin, final User user, final boolean generateSystemEvent) throws DotContentletValidationException, Exception {
 
 
-		HttpServletRequest req =WebContextFactory.get().getHttpServletRequest();
-
-		Logger.debug(this, "############################# Contentlet");
-
-		boolean autocommit=DbConnectionFactory.getConnection().getAutoCommit();
-
-		if(autocommit)
-		    HibernateUtil.startTransaction();
+		final HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+		Logger.debug(this, () -> "############################# Contentlet");
 
 		try {
-			Logger.debug(this, "Calling Retrieve method");
 
+			Logger.debug(this, () -> "Calling Retrieve method");
 			_retrieveWebAsset(contentletFormData, user);
-
 		} catch (Exception ae) {
-			_handleException(ae,autocommit);
+
+			_handleException(ae);
 			throw new Exception(ae.getMessage());
 		}
 
-		Contentlet contentlet;
-		final boolean isNew = isNew(contentletFormData);
+		Contentlet contentlet = null;
+		final boolean isNew   = isNew(contentletFormData);
 
 		try {
 
-			Logger.debug(this, "Calling Save Method");
-			try{
-				_saveWebAsset(contentletFormData,isAutoSave,isCheckin,user, generateSystemEvent);
-			}catch (DotContentletValidationException ce) {
-				if(!isAutoSave)
-				SessionMessages.add(req, "message.contentlet.save.error");
-				throw ce;
+			Logger.debug(this, () -> "Calling Save Method");
 
-			}catch (Exception ce) {
-				if(!isAutoSave)
-				SessionMessages.add(req, "message.contentlet.save.error");
+			try {
+
+				_saveWebAsset(contentletFormData, isAutoSave, isCheckin, user, generateSystemEvent);
+			} catch (Exception ce) {
+				if (!isAutoSave)
+					SessionMessages.add(req, "message.contentlet.save.error");
 				throw ce;
 			}
 
-			Logger.debug(this, "HTMLPage inode=" + contentletFormData.get("htmlpage_inode"));
-			Logger.debug(this, "Container inode=" + contentletFormData.get("contentcontainer_inode"));
+			Logger.debug(this, () -> "HTMLPage inode=" + contentletFormData.get("htmlpage_inode"));
+			Logger.debug(this, () -> "Container inode=" + contentletFormData.get("contentcontainer_inode"));
 
-            if ( InodeUtils.isSet( (String) contentletFormData.get( "htmlpage_inode" ) )
-                    && InodeUtils.isSet( (String) contentletFormData.get( "contentcontainer_inode" ) ) ) {
+			if (InodeUtils.isSet((String) contentletFormData.get("htmlpage_inode"))
+					&& InodeUtils.isSet((String) contentletFormData.get("contentcontainer_inode"))) {
 
-                try {
-                    Logger.debug( this, "I'm setting my contentlet parents" );
-                    _addToParents( contentletFormData, user, isAutoSave );
-                } catch ( DotSecurityException e ) {
-                    throw new DotSecurityException( e.getMessage() );
-                } catch ( Exception ae ) {
-                    throw ae;
-                }
-            }
+				try {
 
+					Logger.debug(this, () -> "I'm setting my contentlet parents");
+					_addToParents(contentletFormData, user, isAutoSave);
+				} catch (DotSecurityException e) {
+					throw new DotSecurityException(e.getMessage());
+				} catch (Exception ae) {
+					throw ae;
+				}
+			}
 
 			contentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
 
 			// finally we unlock the asset as the lock attribute is
 			// attached to the identifier rather than contentlet as
 			// before DOTCMS-6383
-		    //conAPI.unlock(cont, user, false);
-			this.pushSaveEvent(contentlet, isNew);
+			//conAPI.unlock(cont, user, false);
+			if (null != contentlet) {
+				this.pushSaveEvent(contentlet, isNew);
+			}
 		} catch (Exception ae) {
 			contentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
 			//conAPI.refresh(cont);
-			_handleException(ae,autocommit);
+			_handleException(ae);
 			throw ae;
 		}
 
-		if(autocommit) {
-			HibernateUtil.closeAndCommitTransaction();
-		}
-
-
 		contentletFormData.put("cache_control", "0");
-
-
 		return ((contentlet!=null) ? contentlet.getInode() : null);
 	}
 
 	private void pushSaveEvent (final Contentlet eventContentlet, final boolean eventCreateNewVersion) throws DotHibernateException {
 
-		HibernateUtil.addAsyncCommitListener(() -> this.contentletSystemEventUtil.pushSaveEvent(eventContentlet, eventCreateNewVersion), 1000);
+		HibernateUtil.addAsyncCommitListener(() -> {
+			if (APILocator.getContentletAPI().isInodeIndexed(eventContentlet.getInode())) {
+				this.contentletSystemEventUtil.pushSaveEvent(eventContentlet, eventCreateNewVersion);
+			}
+		} , 1000);
 	}
 
 
@@ -842,19 +833,12 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		}
 	}
 
-	private void _handleException(Exception ae, boolean autocommit) {
+	private void _handleException(final Exception ae) {
 		
 		if(!(ae instanceof DotContentletValidationException) && !(ae instanceof DotLanguageException)){
 			Logger.warn(this, ae.toString(), ae);
-		}else{
+		} else {
 			Logger.debug(this, ae.toString(), ae);
-		}
-
-		try {
-		    if(autocommit)
-		        HibernateUtil.rollbackTransaction();
-		} catch (DotHibernateException e) {
-			Logger.error(this, e.getMessage());
 		}
 	}
 
@@ -973,7 +957,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 			if (validReferences.size() > 0) {
 				ContentChangeNotificationThread notificationThread =
-					this.new ContentChangeNotificationThread (contentlet, validReferences, contentURL, hostAPI.getCurrentHost(req).getHostname());
+					this.new ContentChangeNotificationThread(contentlet, validReferences, contentURL, hostAPI.getCurrentHost(req).getHostname());
 				notificationThread.start();
 			}
 

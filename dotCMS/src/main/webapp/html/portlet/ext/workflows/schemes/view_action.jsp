@@ -186,6 +186,8 @@
 						<strong>
 							<a onclick="this.parentNode.innerHTML='<%=actionId%>'; return false;" href="#"><%=APILocator.getShortyAPI().shortify(actionId) %></a>
 						</strong>
+
+						(<a href="/api/v1/workflow/actions/<%=actionId%>" target="_blank">json</a>)
 					</p>
 				</div>
 			</div>

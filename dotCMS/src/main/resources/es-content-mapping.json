@@ -1,11 +1,6 @@
 {
     "content": {
         "date_detection": true,
-        "_source": {
-            "excludes": [
-                "metadata.*"
-            ]
-        },
         "dynamic_date_formats": [
             "yyyy-MM-dd'T'HH:mm:ss||MMM d, yyyy hh:mm:ss aaa||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
         ],
@@ -39,17 +34,8 @@
                 "strings_as_dates": {
                     "match": "originalstartdate||recurrencestart||recurrenceend",
                     "mapping": {
-                        "type": "date",
-                        "ignore_malformed": true
+                        "type": "date"
                     }
-                }
-            },
-            {
-                "datemapping": {
-                    "mapping": {
-                        "ignore_malformed": true
-                    },
-                    "match_mapping_type": "date"
                 }
             },
             {

@@ -129,7 +129,7 @@ public class WfActionAjax extends WfBaseAction {
 
         try {
 
-            newAction  = this.workflowHelper.save(builder.build(), user);
+            newAction  = this.workflowHelper.saveAction(builder.build(), user);
             response.getWriter().println("SUCCESS:" + newAction.getId());
         } catch (Exception e) {
 

@@ -6,15 +6,13 @@ import com.dotcms.cluster.business.ClusterAPI;
 import com.dotcms.cluster.business.ReplicasMode;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.content.elasticsearch.util.ESClient;
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.cluster.mbeans.Cluster;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
@@ -529,7 +527,9 @@ public class ESIndexAPI {
 
 		final XContentBuilder builder = jsonBuilder().startObject().startObject("index");
 
-		builder.field("number_of_replicas",replicasMode.getNumberOfReplicas());
+		if(replicasMode.getNumberOfReplicas()>-1) {
+			builder.field("number_of_replicas", replicasMode.getNumberOfReplicas());
+		}
 		builder.field("auto_expand_replicas",replicasMode.getAutoExpandReplicas());
 
         client.admin().indices().updateSettings(
@@ -582,7 +582,9 @@ public class ESIndexAPI {
 		map.put("index.mapping.total_fields.limit",
 			Config.getIntProperty("ES_INDEX_MAPPING_TOTAL_FIELD_LIMITS", 5000));
 
-		map.put("number_of_replicas",replicasMode.getNumberOfReplicas());
+		if(replicasMode.getNumberOfReplicas()>-1) {
+			map.put("number_of_replicas", replicasMode.getNumberOfReplicas());
+		}
 		map.put("auto_expand_replicas",replicasMode.getAutoExpandReplicas());
 
 		// create actual index
@@ -868,7 +870,7 @@ public class ESIndexAPI {
 			toFile.mkdirs();
 		}
 		// initial repository under the complete path
-		createRepository(toFile.getAbsolutePath(), repositoryName, true);
+		createRepository(toFile.getPath(), repositoryName, true);
 		// if the snapshot exists on the repository
 		if (isSnapshotExist(repositoryName, snapshotName)) {
 			Logger.warn(this.getClass(), snapshotName + " snapshot already exists");
@@ -920,7 +922,7 @@ public class ESIndexAPI {
 				List<String> indices = snapshot.indices();
 				for(String index: indices){
 					if(!isIndexClosed(index)){
-						throw new ElasticsearchException("Index \"" + index + "\"is not closed and can not be restored");
+						throw new DotStateException("Index \"" + index + "\" is not closed and can not be restored");
 					}
 				}
 			}
@@ -1004,8 +1006,7 @@ public class ESIndexAPI {
 		//File outFile = new File(toDirectory.getParent() + File.separator + snapshotName);
 		FileUtils.copyStreamToFile(outFile, inputFile, null);
 		ZipFile zipIn = new ZipFile(outFile);
-		boolean response = uploadSnapshot(zipIn, toDirectory.getAbsolutePath(), cleanRepository);		
-		return response;		
+		return uploadSnapshot(zipIn, toDirectory.getAbsolutePath(), cleanRepository);
 	}
 
 	/**

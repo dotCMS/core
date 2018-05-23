@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.workflows.business;
 
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.util.ConversionUtils;
@@ -41,8 +42,10 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.poi.ss.formula.functions.T;
 
 
 /**
@@ -171,6 +174,11 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	 * @throws InvocationTargetException
 	 */
 	private Object convertMaptoObject(Map<String, Object> map, Class clazz) throws InstantiationException, IllegalAccessException, InvocationTargetException {
+
+		if(ContentType.class.equals(clazz)){
+			//Content type is an abstract class therefore it can not be instantiated directly
+			return new DbContentTypeTransformer(map).from();
+		}
 
 		final Object obj = clazz.newInstance();
 
@@ -403,17 +411,22 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	@Override
-	public void deleteStep(WorkflowStep step) throws DotDataException, AlreadyExistException {
-		String schemeId = step.getSchemeId();
-		final DotConnect db = new DotConnect();
+	public void deleteStep(final WorkflowStep step,
+						   final Consumer<WorkflowTask> workflowTaskConsumer) throws DotDataException, AlreadyExistException {
+		final String schemeId = step.getSchemeId();
+		final DotConnect db   = new DotConnect();
 
 		// delete tasks referencing it
 		db.setSQL("select id from workflow_task where status=?");
 		db.addParam(step.getId());
-		for(Map<String,Object> res : db.loadObjectResults()) {
-			String taskId=(String)res.get("id");
-			WorkflowTask task=findWorkFlowTaskById(taskId);
+		for(final Map<String,Object> resultMap : db.loadObjectResults()) {
+
+			final String taskId		= (String) resultMap.get("id");
+			final WorkflowTask task = findWorkFlowTaskById(taskId);
 			deleteWorkflowTask(task);
+			if (null != workflowTaskConsumer) {
+				workflowTaskConsumer.accept(task);
+			}
 		}
 
 		db.setSQL(sql.DELETE_STEP);
@@ -593,7 +606,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			actions =  this.convertListToObjects(db.loadObjectResults(), WorkflowAction.class);
 
 			if(actions == null) {
-				actions= new ArrayList<WorkflowAction>();
+				actions = new ArrayList<>();
 			}
 
 			cache.addActions(scheme, actions);
@@ -629,7 +642,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 				scheme = (WorkflowScheme) this.convertListToObjects(db.loadObjectResults(), WorkflowScheme.class).get(0);
 				cache.add(scheme);
 			} catch (final IndexOutOfBoundsException e) {
-				throw new DoesNotExistException(e.getMessage(), e);
+				throw new DoesNotExistException("Workflow-does-not-exists-scheme");
 			} catch (final Exception e) {
 				throw new DotDataException(e.getMessage(), e);
 			}
@@ -687,8 +700,12 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			final DotConnect db = new DotConnect();
 			db.setSQL(sql.SELECT_STEP);
 			db.addParam(id);
-			step = (WorkflowStep) this.convertListToObjects(db.loadObjectResults(), WorkflowStep.class).get(0);
-			cache.add(step);
+			try{
+			  step = (WorkflowStep) this.convertListToObjects(db.loadObjectResults(), WorkflowStep.class).get(0);
+			  cache.add(step);
+			}catch (IndexOutOfBoundsException e){
+				throw new DoesNotExistException("Workflow-does-not-exists-step");
+			}
 		}
 		return step;
 	}
@@ -1293,10 +1310,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 		final DotConnect db = new DotConnect();
 		try {
-			WorkflowScheme schemeWithSameName = findSchemeByName(scheme.getName());
-			if(UtilMethods.isSet(schemeWithSameName) && UtilMethods.isSet(schemeWithSameName.getId()) && !schemeWithSameName.getId().equals(scheme.getId())){
-				throw new AlreadyExistException("Already exist a scheme with the same name ("+schemeWithSameName.getName()+"). Create different schemes with the same name is not allowed. Please change your workflow scheme name.");
-			}
+
 			if (isNew) {
 
 				db.setSQL(sql.INSERT_SCHEME);
@@ -1343,10 +1357,15 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	@Override
-	public void saveSchemeIdsForContentType(String contentTypeInode, List<String> schemesIds) throws DotDataException {
+	public void saveSchemeIdsForContentType(final String contentTypeInode,
+											final List<String> schemesIds,
+											final Consumer<WorkflowTask> workflowTaskConsumer) throws DotDataException {
+
 		if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
+
 			return;
 		}
+
 		try {
 
 			final DotConnect db = new DotConnect();
@@ -1366,7 +1385,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			}
 			// update all tasks for the content type and reset their step to
 			// null
-			this.cleanWorkflowTaskStatus(contentTypeInode,steps.build());
+			this.cleanWorkflowTaskStatus(contentTypeInode, steps.build(), workflowTaskConsumer);
 
 			// we have to clear the saved steps/tasks for all contentlets using
 			// this workflow
@@ -1375,6 +1394,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 			cache.clearStepsCache();
 		} catch (final Exception e) {
+
 			Logger.error(this.getClass(), e.getMessage(), e);
 			throw new DotDataException(e.getMessage(),e);
 		}
@@ -1384,10 +1404,13 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	 * Set workflow tasks with status null, for all the existing workflow task with the specified
 	 * contentTypeInode and not in the list of steps availables fot the content type schemes
 	 *
-	 * @param contentTypeInode Content Type Inode
-	 * @param steps List of valid Steps
+	 * @param contentTypeInode Content Type Inode {@link String}
+	 * @param steps List of valid Steps {@link List}
+	 * @param workflowTaskConsumer {@link Consumer}
 	 */
-	private void cleanWorkflowTaskStatus(final String contentTypeInode, List<WorkflowStep> steps)
+	private void cleanWorkflowTaskStatus(final String contentTypeInode,
+										 final List<WorkflowStep> steps,
+										 final Consumer<WorkflowTask> workflowTaskConsumer)
 			throws DotDataException {
 		try {
 
@@ -1413,7 +1436,14 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 					.convertListToObjects(db.loadObjectResults(), WorkflowTask.class);
 
 			//clean cache
-			tasks.stream().forEach(task -> cache.remove(task));
+			tasks.stream().forEach(task -> {
+
+				cache.remove(task);
+				if (null != workflowTaskConsumer) {
+
+					workflowTaskConsumer.accept(task);
+				}
+			});
 
 			db.setSQL(sql.UPDATE_STEPS_BY_STRUCT + condition);
 			db.addParam((Object) null);
@@ -1432,12 +1462,15 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	@Override
-	public void saveSchemesForStruct(String contentTypeInode, List<WorkflowScheme> schemes) throws DotDataException {
-		List<String> ids = schemes.stream()
+	public void saveSchemesForStruct(final String contentTypeInode,
+									 final List<WorkflowScheme> schemes,
+									 final Consumer<WorkflowTask> workflowTaskConsumer) throws DotDataException {
+
+		final List<String> ids = schemes.stream()
 				.map(scheme -> scheme.getId())
 				.collect(Collectors.toList());
 
-		this.saveSchemeIdsForContentType(contentTypeInode, ids);
+		this.saveSchemeIdsForContentType(contentTypeInode, ids, workflowTaskConsumer);
 	}
 
 	@Override

@@ -1181,6 +1181,10 @@ public interface ContentletAPIPostHook {
 		return true;
 	};
 
+	default boolean isInodeIndexedArchived(String inode, int secondsToWait) {
+		return true;
+	}
+
 	/**
 	 * 
 	 * @param inode
@@ -1459,6 +1463,7 @@ public interface ContentletAPIPostHook {
 	 * @throws DotDataException
 	 */
 	public default void addPermissionsToQuery ( StringBuffer buffy, User user, List<Role> roles, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException{}
+
 
 
 }

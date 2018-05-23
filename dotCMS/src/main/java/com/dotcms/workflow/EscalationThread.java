@@ -59,7 +59,7 @@ public class EscalationThread extends DotStatefulJob {
 
                     //No need to escalate if the contentlet already is in the Action Escalated.
                     if(UtilMethods.isSet(actionId) && !actionId.equals
-                            (contentletByDefaultLanguage.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY))) {
+                            (contentletByDefaultLanguage.getActionId())) {
 
                         final String inode          = contentletByDefaultLanguage.getInode();
                         final Contentlet contentlet = APILocator.getContentletAPI().find

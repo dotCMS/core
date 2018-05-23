@@ -35,9 +35,9 @@ public class ThemeSerializer extends JsonSerializer<Contentlet> {
         this.folderAPI = folderAPI;
 
         try {
-        this.systemUser = userAPI.getSystemUser();
+            this.systemUser = userAPI.getSystemUser();
         } catch (DotDataException e) {
-        throw new DotRuntimeException(e);
+            throw new DotRuntimeException(e);
         }
     }
 

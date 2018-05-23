@@ -710,7 +710,17 @@
 			addNewContentlet(structureInode);
 		}
 
-
+        function dispatchCreateContentletEvent(url) {
+            var customEvent = document.createEvent("CustomEvent");
+            customEvent.initCustomEvent("ng-event", false, false,  {
+                name: "create-contentlet",
+                data: {
+                    url: url
+                }
+            });
+            document.dispatchEvent(customEvent);
+            dijit.byId("selectStructureDiv").hide();
+        }
 
 
         function addNewContentlet(structureInode){
@@ -722,7 +732,6 @@
 				return;
 			}
           else if(structureInode == '<%=calendarEventSt.getInode() %>'){
-
                 var href = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
                 href += "<portlet:param name='struts_action' value='/ext/calendar/edit_event' />";
                 href += "<portlet:param name='cmd' value='new' />";
@@ -731,9 +740,8 @@
                 href += "</portlet:actionURL>";
                 href += "&selectedStructure=" + structureInode ;
                 href += "&lang=" + getSelectedLanguageId();
-                window.location=href;
+                dispatchCreateContentletEvent(href);
           }else{
-
                 var href = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
                 href += "<portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' />";
                 href += "<portlet:param name='cmd' value='new' />";
@@ -742,7 +750,7 @@
                 href += "</portlet:actionURL>";
                 href += "&selectedStructure=" + structureInode ;
                 href += "&lang=" + getSelectedLanguageId();
-                window.location=href;
+                dispatchCreateContentletEvent(href)
           }
         }
 
@@ -1495,6 +1503,21 @@
                         fieldsValues[fieldsValues.length] = "conFolder";
                         fieldsValues[fieldsValues.length] = folderValue;
                 }
+
+                let schemeId = dijit.byId("scheme_id").getValue();
+                if ("catchall"!= schemeId) {
+
+                    fieldsValues[fieldsValues.length] = "wfscheme";
+                    fieldsValues[fieldsValues.length] = schemeId;
+                }
+
+                let stepId = dijit.byId("step_id").getValue();
+                if ("catchall"!= stepId) {
+
+                    fieldsValues[fieldsValues.length] = "wfstep";
+                    fieldsValues[fieldsValues.length] = stepId;
+                }
+
                 var allField = dijit.byId("allFieldTB").getValue();
 
 				if (allField != undefined && allField.length>0 ) {
@@ -2000,6 +2023,10 @@
         }
 
         function clearSearch () {
+
+
+                dijit.byId("structure_inode").set("value",'catchall');
+                dijit.byId("scheme_id").set("value",'catchall');
      			dijit.byId("showingSelect").set("value", "all");
      			dijit.byId("allFieldTB").set("value", "");
 

@@ -44,6 +44,7 @@ public class ESClient {
 	final String syncMe = "esSync";
 	private final ServerAPI serverAPI;
 	static final String ES_TRANSPORT_HOST = "transport.host";
+	static final String ES_ZEN_UNICAST_HOSTS = "discovery.zen.ping.unicast.hosts";
 	private final ClusterAPI clusterAPI;
 
 	public ESClient() {
@@ -96,7 +97,7 @@ public class ESClient {
                                 loadFromStream(yamlPath, getClass().getResourceAsStream(yamlPath), false).
                                 put( "node.name", node_id ).
                                 put("path.home", esPathHome).put(extSettings.build()).
-                                        build()
+                                    build()
                         ).start();
                     } catch (IOException | NodeValidationException e){
                         Logger.error(this, "Error validating ES node at start.", e);
@@ -176,7 +177,9 @@ public class ESClient {
         final XContentBuilder builder = jsonBuilder().startObject()
                 .startObject("index");
 
-        builder.field("number_of_replicas",replicasMode.getNumberOfReplicas());
+        if(replicasMode.getNumberOfReplicas()>-1) {
+            builder.field("number_of_replicas", replicasMode.getNumberOfReplicas());
+        }
         builder.field("auto_expand_replicas",replicasMode.getAutoExpandReplicas()).endObject();
 
         settingsRequest.settings(builder.endObject().string(), XContentType.JSON);
@@ -367,7 +370,7 @@ public class ESClient {
      */
     private void setUnicastHostsToSettings(final Builder externalSettings) throws DotDataException {
 
-        final String bindAddr = externalSettings.get("transport.host");
+        final String bindAddr = externalSettings.get(ES_TRANSPORT_HOST);
         final String transportTCPPort = externalSettings.get(ServerPort.ES_TRANSPORT_TCP_PORT.getPropertyName());
 
         final List<Server> aliveServers = serverAPI.getAliveServers();
@@ -381,8 +384,8 @@ public class ESClient {
         }
 
         if(UtilMethods.isSet(initialHosts)) {
-            externalSettings.put("discovery.zen.ping.unicast.hosts", initialHosts);
-            Logger.info(this, "discovery.zen.ping.unicast.hosts: "+initialHosts);
+            externalSettings.put(ES_ZEN_UNICAST_HOSTS, initialHosts);
+            Logger.info(this, ES_ZEN_UNICAST_HOSTS + ": "+initialHosts);
         }
     }
 

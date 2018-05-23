@@ -38,6 +38,7 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -1034,6 +1035,74 @@ public class ContentletAPITest extends ContentletBaseTest {
         }
     }
 
+    @Test
+    public void testCreateSelfJoinedRelationship_contentletAddedAsChild () throws DotDataException, DotSecurityException {
+
+        Contentlet parent = null;
+        Contentlet child = null;
+        Structure structure = null;
+        Relationship selfRelationship = null;
+
+        try {
+            //Get Default Language
+            Language language = languageAPI.getDefaultLanguage();
+
+            //Create a Structure
+            structure = createStructure(
+                    "JUnit Test Structure_" + String.valueOf(new Date().getTime()),
+                    "junit_test_structure_" + String.valueOf(new Date().getTime()));
+
+            //Create the Contentlets
+            parent = createContentlet(structure, language, false);
+            child = createContentlet(structure, language, false);
+
+            //Create the Self contained relationship
+            selfRelationship = createRelationShip(structure.getInode(),
+                    structure.getInode(), false);
+
+            //Create the contentlet relationships
+            List<Contentlet> contentRelationships = new ArrayList<>();
+            contentRelationships.add(child);
+
+            //Relate the content
+            contentletAPI
+                    .relateContent(parent, selfRelationship, contentRelationships, user, false);
+
+            //Find all the relationships for this contentlet
+            ContentletRelationships contentletRelationships = contentletAPI
+                    .getAllRelationships(parent.getInode(), user, false);
+
+            //Validations
+            assertNotNull(contentletRelationships);
+            assertTrue(contentletRelationships.getRelationshipsRecords() != null
+                    && !contentletRelationships.getRelationshipsRecords().isEmpty());
+            for (ContentletRelationshipRecords record : contentletRelationships
+                    .getRelationshipsRecords()) {
+                if (record.isHasParent()) {
+                    assertNotNull(record.getRecords());
+                }
+            }
+        } finally {
+
+            //Clean up
+            if (parent != null) {
+                contentletAPI.archive(parent, user, false);
+                contentletAPI.delete(parent, user, false);
+            }
+            if (child != null) {
+                contentletAPI.archive(child, user, false);
+                contentletAPI.delete(child, user, false);
+            }
+            if (selfRelationship != null) {
+                relationshipAPI.delete(selfRelationship);
+            }
+            if (structure != null) {
+                APILocator.getStructureAPI().delete(structure, user);
+            }
+        }
+
+    }
+
     /**
      * Testing {@link ContentletAPI#getAllRelationships(com.dotmarketing.portlets.contentlet.model.Contentlet)}
      *
@@ -1684,39 +1753,76 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test
     public void deleteRelatedContent () throws DotSecurityException, DotDataException {
 
-        //First lets create a test structure
-        Structure testStructure = createStructure( "JUnit Test Structure_" + String.valueOf( new Date().getTime() ), "junit_test_structure_" + String.valueOf( new Date().getTime() ) );
+        Structure testStructure = null;
+        Relationship testRelationship = null;
 
-        //Now a new test contentlets
-        Contentlet parentContentlet = createContentlet( testStructure, null, false );
-        Contentlet childContentlet = createContentlet( testStructure, null, false );
+        try {
+            //First lets create a test structure
+            testStructure =
+                createStructure("JUnit Test Structure_" + String.valueOf(new Date().getTime()),
+                    "junit_test_structure_" + String.valueOf(new Date().getTime()));
 
-        //Create the relationship
-        Relationship testRelationship = createRelationShip( testStructure, false );
+            //Now a new test contentlets
+            Contentlet baseContentlet = createContentlet(testStructure, null, false);
+            Contentlet contentToRelateAsChild = createContentlet(testStructure, null, false);
+            Contentlet contentToRelateAsParent = createContentlet(testStructure, null, false);
 
-        //Create the contentlet relationships
-        List<Contentlet> contentRelationships = new ArrayList<>();
-        contentRelationships.add( childContentlet );
-        ContentletRelationships contentletRelationships = createContentletRelationships( testRelationship, parentContentlet, testStructure, contentRelationships );
+            //Create the relationship
+            testRelationship = createRelationShip(testStructure.getInode(), testStructure.getInode(),
+                false, 1);
 
-        //Relate contents to our test contentlet
-        for ( ContentletRelationships.ContentletRelationshipRecords contentletRelationshipRecords : contentletRelationships.getRelationshipsRecords() ) {
-            contentletAPI.relateContent( parentContentlet, contentletRelationshipRecords, user, false );
+            //Relate content as child
+            List<Contentlet> childrenList = new ArrayList<>();
+            childrenList.add(contentToRelateAsChild);
+            ContentletRelationships childrenRelationships = createContentletRelationships(testRelationship,
+                baseContentlet, testStructure, childrenList, true);
+
+            //Relate content as parent
+            List<Contentlet> parentList = new ArrayList<>();
+            parentList.add(contentToRelateAsParent);
+            ContentletRelationships parentRelationshis = createContentletRelationships(testRelationship,
+                baseContentlet, testStructure, parentList, false);
+
+            //Relate contents to our test contentlet
+            for (final ContentletRelationships.ContentletRelationshipRecords contentletRelationshipRecords : childrenRelationships
+                .getRelationshipsRecords()) {
+                contentletAPI.relateContent(baseContentlet, contentletRelationshipRecords, user, false);
+            }
+
+            //Relate contents to our test contentlet
+            for (ContentletRelationships.ContentletRelationshipRecords contentletRelationshipRecords : parentRelationshis
+                .getRelationshipsRecords()) {
+                contentletAPI.relateContent(baseContentlet, contentletRelationshipRecords, user, false);
+            }
+
+            // Let's delete only the children (1 child)
+            contentletAPI.deleteRelatedContent(baseContentlet, testRelationship, true, user, false);
+
+            // we should have only one content (1 parent) since we just deleted the one child
+            List<Contentlet> foundContentlets = relationshipAPI.dbRelatedContent(testRelationship, baseContentlet,
+                false);
+            assertTrue(!foundContentlets.isEmpty() && foundContentlets.size() == 1);
+
+            // Let's now delete the parent
+            contentletAPI.deleteRelatedContent(baseContentlet, testRelationship, false, user, false);
+
+            // we should get no content back for both hasParent `true` and `false` since the one child and one parent were deleted
+            foundContentlets = relationshipAPI.dbRelatedContent(testRelationship, baseContentlet, false);
+            assertTrue(!UtilMethods.isSet(foundContentlets));
+
+            foundContentlets = relationshipAPI.dbRelatedContent(testRelationship, baseContentlet, true);
+            assertTrue(!UtilMethods.isSet(foundContentlets));
+        } finally {
+            if (testRelationship != null) {
+                relationshipAPI.delete(testRelationship);
+            }
+            if(testStructure!=null) {
+                APILocator.getStructureAPI().delete(testStructure, user);
+            }
         }
-
-        //Now test this delete
-        contentletAPI.deleteRelatedContent( parentContentlet, testRelationship, user, false );
-
-        //Try to find the deleted Contentlet
-        List<Contentlet> foundContentlets = contentletAPI.getRelatedContent( parentContentlet, testRelationship, user, false );
-
-        //Validations
-        assertTrue( foundContentlets == null || foundContentlets.isEmpty() );
-        if (testRelationship != null) {
-            relationshipAPI.delete(testRelationship);
-        }
-        APILocator.getStructureAPI().delete(testStructure, user);
     }
+
+
 
     /**
      * Testing {@link ContentletAPI#deleteRelatedContent(com.dotmarketing.portlets.contentlet.model.Contentlet, com.dotmarketing.portlets.structure.model.Relationship, boolean, com.liferay.portal.model.User, boolean)}
@@ -3545,7 +3651,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             blogContent = getBlogContent();
 
-            final ContentletRelationships relationships = getACoupleOfRelationships(blogContent);
+            final ContentletRelationships relationships = getACoupleOfChildRelationships(blogContent);
             final Relationship relationship = relationships.getRelationshipsRecords().get(0).getRelationship();
             relatedContent = relationships.getRelationshipsRecords().get(0).getRecords();
 
@@ -3553,6 +3659,8 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             blogContent = contentletAPI.checkin(blogContent, relationships, categories, null, user,
                 false);
+
+            contentletAPI.isInodeIndexed(blogContent.getInode());
 
             List<Contentlet> relatedContentFromDB = relationshipAPI.dbRelatedContent(relationship, blogContent);
 
@@ -3577,6 +3685,56 @@ public class ContentletAPITest extends ContentletBaseTest {
     }
 
     @Test
+    public void testCheckin1_ExistingContentWithChildAndParentRels_NullRels_ShouldKeepExistingRels()
+        throws DotDataException, DotSecurityException {
+        Contentlet blogContent = null;
+        List<Contentlet> relatedContent = null;
+
+        try {
+
+            blogContent = getBlogContent();
+
+            final ContentletRelationships relationships = getACoupleOfParentAndChildrenSelfJoinRelationships(blogContent);
+            final Relationship relationship = relationships.getRelationshipsRecords().get(0).getRelationship();
+            relatedContent = relationships.getRelationshipsRecords().get(0).getRecords();
+
+            final List<Category> categories = getACoupleOfCategories();
+
+            blogContent = contentletAPI.checkin(blogContent, relationships, categories, null, user,
+                false);
+
+            contentletAPI.isInodeIndexed(blogContent.getInode());
+
+            List<Contentlet> relatedContentFromDB = relationshipAPI.dbRelatedContent(relationship, blogContent);
+
+            assertTrue(relatedContentFromDB.containsAll(relatedContent));
+
+            Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
+
+            Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent, (ContentletRelationships) null,
+                null, null, user, false);
+
+            List<Contentlet> existingRelationships = relationshipAPI.dbRelatedContent(relationship, reCheckedinContent);
+
+            assertTrue(existingRelationships.containsAll(relatedContent));
+        } finally {
+            contentletAPI.archive(blogContent, user, false);
+            contentletAPI.delete(blogContent, user, false);
+
+            if(UtilMethods.isSet(relatedContent)) {
+                relatedContent.forEach(content -> {
+                    try {
+                        contentletAPI.archive(content, user, false);
+                        contentletAPI.delete(content, user, false);
+                    } catch (DotDataException | DotSecurityException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+            }
+        }
+    }
+
+    @Test
     public void testCheckin2_ExistingContentWithRels_NullRels_ShouldKeepExistingRels()
         throws DotDataException, DotSecurityException {
         Contentlet blogContent = null;
@@ -3585,12 +3743,14 @@ public class ContentletAPITest extends ContentletBaseTest {
         try {
             blogContent = getBlogContent();
 
-            final ContentletRelationships relationships = getACoupleOfRelationships(blogContent);
+            final ContentletRelationships relationships = getACoupleOfChildRelationships(blogContent);
 
             final List<Category> categories = getACoupleOfCategories();
 
             blogContent = contentletAPI.checkin(blogContent, relationships,
                 categories, null, user, false, false);
+
+            contentletAPI.isInodeIndexed(blogContent.getInode());;
 
             Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
 
@@ -3626,7 +3786,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         try {
             blogContent = getBlogContent();
 
-            final ContentletRelationships relationships = getACoupleOfRelationships(blogContent);
+            final ContentletRelationships relationships = getACoupleOfChildRelationships(blogContent);
 
             final List<Category> categories = getACoupleOfCategories();
 
@@ -3636,6 +3796,8 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             blogContent = contentletAPI.checkin(blogContent, relationshipsMap, categories,
                 null, user,false);
+
+            contentletAPI.isInodeIndexed(blogContent.getInode());
 
             Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
 
@@ -3671,7 +3833,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         try {
             blogContent = getBlogContent();
 
-            final ContentletRelationships relationships = getACoupleOfRelationships(blogContent);
+            final ContentletRelationships relationships = getACoupleOfChildRelationships(blogContent);
 
             final List<Category> categories = getACoupleOfCategories();
 
@@ -3680,6 +3842,8 @@ public class ContentletAPITest extends ContentletBaseTest {
                 relationships.getRelationshipsRecords().get(0).getRecords());
 
             blogContent = contentletAPI.checkin(blogContent, relationshipsMap, categories, user,false);
+
+            contentletAPI.isInodeIndexed(blogContent.getInode());
 
             Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
 
@@ -3715,7 +3879,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         try {
             blogContent = getBlogContent();
 
-            final ContentletRelationships relationships = getACoupleOfRelationships(blogContent);
+            final ContentletRelationships relationships = getACoupleOfChildRelationships(blogContent);
 
             final List<Category> categories = getACoupleOfCategories();
 
@@ -3724,6 +3888,8 @@ public class ContentletAPITest extends ContentletBaseTest {
                 relationships.getRelationshipsRecords().get(0).getRecords());
 
             blogContent = contentletAPI.checkin(blogContent, relationshipsMap, categories, user,false);
+
+            contentletAPI.isInodeIndexed(blogContent.getInode());
 
             Contentlet reCheckedinContent = contentletAPI.checkinWithoutVersioning(blogContent,
                 null, null, null, user, false);
@@ -3757,7 +3923,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         try {
             blogContent = getBlogContent();
 
-            final ContentletRelationships relationships = getACoupleOfRelationships(blogContent);
+            final ContentletRelationships relationships = getACoupleOfChildRelationships(blogContent);
 
             final List<Category> categories = getACoupleOfCategories();
 
@@ -3772,6 +3938,8 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             blogContent = contentletAPI.checkin(blogContent, relationshipsMap, categories,
                 null, user,false);
+
+            contentletAPI.isInodeIndexed(blogContent.getInode());
 
             Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
 
@@ -3805,7 +3973,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         try {
             blogContent = getBlogContent();
 
-            final ContentletRelationships relationships = getACoupleOfRelationships(blogContent);
+            final ContentletRelationships relationships = getACoupleOfChildRelationships(blogContent);
 
             final List<Category> categories = getACoupleOfCategories();
 
@@ -3814,6 +3982,8 @@ public class ContentletAPITest extends ContentletBaseTest {
                 relationships.getRelationshipsRecords().get(0).getRecords());
 
             blogContent = contentletAPI.checkin(blogContent, relationshipsMap, categories, user,false);
+
+            contentletAPI.isInodeIndexed(blogContent.getInode());
 
             Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
 
@@ -3849,7 +4019,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         try {
             blogContent = getBlogContent();
 
-            final ContentletRelationships relationships = getACoupleOfRelationships(blogContent);
+            final ContentletRelationships relationships = getACoupleOfChildRelationships(blogContent);
 
             final List<Category> categories = getACoupleOfCategories();
 
@@ -3858,6 +4028,8 @@ public class ContentletAPITest extends ContentletBaseTest {
                 relationships.getRelationshipsRecords().get(0).getRecords());
 
             blogContent = contentletAPI.checkin(blogContent, relationshipsMap, categories, user,false);
+
+            contentletAPI.isInodeIndexed(blogContent.getInode());
 
             Contentlet reCheckedinContent = contentletAPI.checkinWithoutVersioning(blogContent,
                 new HashMap<>(), null, null, user, false);
@@ -3901,7 +4073,42 @@ public class ContentletAPITest extends ContentletBaseTest {
         }
     }
 
-    private ContentletRelationships getACoupleOfRelationships(Contentlet contentlet)
+    private ContentletRelationships getACoupleOfParentAndChildrenSelfJoinRelationships(final Contentlet contentlet)
+        throws DotDataException, DotSecurityException {
+
+        final Relationship selfJoinRelationship = new Relationship();
+        selfJoinRelationship.setRelationTypeValue("ParentBlog-ChildBlog");
+        selfJoinRelationship.setParentStructureInode(contentlet.getContentTypeId());
+        selfJoinRelationship.setChildStructureInode(contentlet.getContentTypeId());
+        selfJoinRelationship.setCardinality(1);
+        selfJoinRelationship.setParentRelationName("ParentBlog");
+        selfJoinRelationship.setChildRelationName("ChildBlog");
+        relationshipAPI.save(selfJoinRelationship);
+
+        final ContentletRelationships contentletRelationships = new ContentletRelationships(contentlet);
+
+        final ContentletRelationships.ContentletRelationshipRecords parentRecords =
+            contentletRelationships.new ContentletRelationshipRecords(selfJoinRelationship, false);
+        Contentlet parentBlog1 = getBlogContent();
+        parentBlog1 = contentletAPI.checkin(parentBlog1, new HashMap<>(), getACoupleOfCategories(),  user, false);
+        Contentlet parentBlog2 = getBlogContent();
+        parentBlog2 = contentletAPI.checkin(parentBlog2, new HashMap<>(), getACoupleOfCategories(), user, false);
+        parentRecords.setRecords(Arrays.asList(parentBlog1, parentBlog2));
+
+        final ContentletRelationships.ContentletRelationshipRecords childRecords =
+            contentletRelationships.new ContentletRelationshipRecords(selfJoinRelationship, true);
+        Contentlet childBlog1 = getBlogContent();
+        childBlog1 = contentletAPI.checkin(childBlog1, new HashMap<>(), getACoupleOfCategories(), user, false);
+        Contentlet childBlog2 = getBlogContent();
+        childBlog2 = contentletAPI.checkin(childBlog2, new HashMap<>(), getACoupleOfCategories(), user, false);
+        childRecords.setRecords(Arrays.asList(childBlog1, childBlog2));
+
+        contentletRelationships.setRelationshipsRecords(new ArrayList<>(Arrays.asList(parentRecords, childRecords)));
+
+        return contentletRelationships;
+    }
+
+    private ContentletRelationships getACoupleOfChildRelationships(Contentlet contentlet)
         throws DotDataException, DotSecurityException {
         ContentletRelationships relationships = new ContentletRelationships(contentlet);
         final Relationship blogComments = APILocator.getRelationshipAPI().byInode("631a07ea-c840-402d-a330-37ed2826ba30");
@@ -4040,6 +4247,19 @@ public class ContentletAPITest extends ContentletBaseTest {
                 TemplateDataGen.remove(template);
             }
         }
+    }
+
+    @Test
+    public void testSearchFileAssetByMetadata() throws DotSecurityException, DotDataException {
+
+        final String query = "+contentType:FileAsset +metaData.contentType:*image/jpeg*";
+        List<Contentlet> result = contentletAPI.search(query, 100, 0, null, user, false);
+
+        assertNotNull(result);
+        assertFalse(result.isEmpty());
+        assertFalse(result.stream().anyMatch(
+                e -> !(e.getStringProperty("fileName").toLowerCase().endsWith("jpg") || e
+                        .getStringProperty("fileName").toLowerCase().endsWith("jpeg"))));
     }
 
     private File getBinaryAsset(String inode, String varName, String binaryName) {

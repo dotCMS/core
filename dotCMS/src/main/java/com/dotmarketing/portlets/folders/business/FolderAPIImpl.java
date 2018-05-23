@@ -453,6 +453,19 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 	}
 
+	/**
+	 * Deletes all the contents inside the specified {@link Folder}.
+	 *
+	 * @param folder                     The folder whose contents will be deleted.
+	 * @param user                       The user performing this action.
+	 * @param respectFrontEndPermissions Set to {@code true} if this method requires that front-end roles are take into
+	 *                                   account for this (which means this is being called from the front-end).
+	 *                                   Otherwise, set to {@code false}.
+	 *
+	 * @throws DotDataException     An error occurred when interacting with the data source.
+	 * @throws DotStateException    An error occurred when performing this action
+	 * @throws DotSecurityException The specified user does not have the required permissions to perform this action.
+	 */
 	private void _deleteChildrenAssetsFromFolder(Folder folder, User user, boolean respectFrontEndPermissions) throws DotDataException,
 			DotStateException, DotSecurityException {
 
@@ -488,8 +501,7 @@ public class FolderAPIImpl implements FolderAPI  {
 
 					Identifier identifier = APILocator.getIdentifierAPI().find(link);
 					if (!InodeUtils.isSet(identifier.getInode())) {
-						Logger.warn(FolderFactory.class, "_deleteChildrenAssetsFromFolder: link inode = " + link.getInode()
-								+ " doesn't have a valid identifier associated.");
+						Logger.warn(FolderFactory.class, "Link with Inode [" + link.getInode() + "] doesn't have a valid associated Identifier.");
 						continue;
 					}
 
@@ -512,19 +524,20 @@ public class FolderAPIImpl implements FolderAPI  {
     			    dc.addParam(orphan.getId());
     			    dc.loadResult();
 			    } catch(Exception ex) {
-			        Logger.warn(this, "can't delete the orphan identifier",ex);
-			    }
+					Logger.warn(this, "Can't delete orphan Identifier [" + orphan.getId() + "]: " + ex.getMessage(),
+							ex);
+				}
 			    HibernateUtil.getSession().clear();
 			}
 
 			/************ Structures *****************/
 			
 		} catch (Exception e) {
-			Logger.error(FolderAPI.class, e.getMessage(), e);
+			final String errorMsg = "An error occurred when deleting contents of folder '" + folder.getPath() + "' " +
+					"with Identifier [" + folder.getIdentifier() + "]: " + e.getMessage();
+			Logger.error(FolderAPI.class, errorMsg, e);
 			throw new DotStateException(e.getMessage(),e);
-
 		}
-
 	}
 
 	/**

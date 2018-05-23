@@ -7,23 +7,12 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import org.apache.poi.ss.formula.functions.T;
+
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.RejectedExecutionHandler;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * Factory for concurrent {@link Executor} & {@link DotSubmitter}
@@ -182,6 +171,21 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
     public String getObjectName() {
 
         return MBEAN_OBJECT_NAME;
+    }
+
+    /**
+     * Get the Future return without timeout and throws {@link DotConcurrentException} (which is runtime) on case of error, it helps to be used on lamdbas/
+     * @param future
+     * @param <T>
+     * @return T
+     */
+    public static <T>T get (final Future<T> future) {
+
+        try {
+            return future.get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new DotConcurrentException(e);
+        }
     }
 
     private static class SingletonHolder {

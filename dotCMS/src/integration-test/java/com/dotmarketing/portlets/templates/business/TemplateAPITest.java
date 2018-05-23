@@ -8,7 +8,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.PermissionedWebAssetUtil;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.exception.DotDataException;
@@ -334,8 +333,8 @@ public class TemplateAPITest extends IntegrationTestBase {
             }
 
             //This method should only return Templates, no Layouts
-            templates = PermissionedWebAssetUtil.findTemplatesForLimitedUser(null, null, false, "title",
-                                                        0, 1000, 0, user, false);
+            templates = templateAPI.findTemplatesUserCanUse(user, null, null, false,
+                                                        0, 1000);
 
             assertFalse(templates.isEmpty());
             for (final Template temp : templates) {
@@ -348,6 +347,39 @@ public class TemplateAPITest extends IntegrationTestBase {
             }
             if (layout != null) {
                 templateAPI.delete(layout, user, false);
+            }
+        }
+    }
+
+    @Test
+    public void testFindTemplatesUserCanUse_IncludeUniqueFilter_ShouldListOnlyOneResult() throws Exception {
+        Template template = null;
+        Template anotherTemplate = null;
+        try {
+
+            template = new Template();
+            final String uniqueString = UUIDGenerator.generateUuid();
+            final String uniqueTitle =  uniqueString + " This one will show up";
+            template.setTitle(uniqueTitle);
+            template.setBody("<html><body> Empty Template </body></html>");
+            template = templateAPI.saveTemplate(template, host, user, false);
+
+            anotherTemplate = new Template();
+            anotherTemplate.setTitle("I am not invited");
+            anotherTemplate.setBody("<html><body> Empty Template </body></html>");
+            anotherTemplate = templateAPI.saveTemplate(anotherTemplate, host, user, false);
+
+            final List<Template> filteredTemplates = APILocator.getTemplateAPI().findTemplatesUserCanUse(user, host.getIdentifier(), uniqueString, true,0, 1000);
+
+            assertEquals(1, filteredTemplates.size());
+            assertEquals(uniqueTitle, filteredTemplates.get(0).getTitle());
+
+        } finally {
+            if (template != null) {
+                templateAPI.delete(template, user, false);
+            }
+            if (anotherTemplate != null) {
+                templateAPI.delete(anotherTemplate, user, false);
             }
         }
     }

@@ -20,7 +20,6 @@ public interface DotSubmitter extends Executor, Serializable {
      */
     Future<?> submit(Runnable command);
 
-
     /**
      * Submit a {@link Callable}, returning the {@link Future}
      * @param callable {@link Callable}
@@ -28,7 +27,6 @@ public interface DotSubmitter extends Executor, Serializable {
      * @return Future
      */
     <T> Future<T> submit(Callable<T> callable);
-
 
     /**
      * Return the active count threads
@@ -52,5 +50,6 @@ public interface DotSubmitter extends Executor, Serializable {
      * @return List of Runnables
      */
     public List<Runnable> shutdownNow();
+
 
 } // E:O:F:DotExecutor.

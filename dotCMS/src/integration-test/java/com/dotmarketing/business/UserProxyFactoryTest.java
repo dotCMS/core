@@ -1,17 +1,14 @@
 package com.dotmarketing.business;
 
-import com.dotcms.repackage.org.apache.hadoop.util.hash.Hash;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.exception.DotDataException;
 import com.liferay.portal.model.User;
 
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;

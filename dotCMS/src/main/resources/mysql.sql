@@ -1357,7 +1357,8 @@ create table relationship (
    parent_required tinyint(1),
    child_required tinyint(1),
    fixed tinyint(1),
-   primary key (inode)
+   primary key (inode),
+   unique (relation_type_value)
 );
 create table folder (
    inode varchar(36) not null,
@@ -2019,7 +2020,6 @@ create table workflow_scheme(
     entry_action_id varchar(36),
     mod_date datetime
 );
-alter table workflow_scheme add constraint unique_workflow_scheme_name unique (name);
 
 create table workflow_step(
     id varchar(36) primary key,
@@ -2122,6 +2122,7 @@ create table indicies (
   insert into log_mapper (ENABLED,LOG_NAME,DESCRIPTION) values ('1','dotcms-security.log','Log users login activity into dotCMS.');
   insert into log_mapper (ENABLED,LOG_NAME,DESCRIPTION) values ('1','dotcms-adminaudit.log','Log Admin activity on dotCMS.');
   insert into log_mapper (ENABLED,LOG_NAME,DESCRIPTION) values ('1','dotcms-pushpublish.log','Log Push Publishing activity on dotCMS.');
+  insert into log_mapper (ENABLED,LOG_NAME,DESCRIPTION) values ('1','visitor-v3.log','Log Visitor Filter activity on dotCMS.');
 
 create index idx_identifier_perm on identifier (asset_type,host_inode);
 

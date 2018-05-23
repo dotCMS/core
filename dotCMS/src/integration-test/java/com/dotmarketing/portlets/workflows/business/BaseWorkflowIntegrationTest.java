@@ -1,16 +1,24 @@
 package com.dotmarketing.portlets.workflows.business;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.Logger;
 
+import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -175,7 +183,11 @@ public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
         final List<WorkflowStep> workflowSteps = workflowAPI.findSteps(scheme);
         for (final WorkflowStep step : workflowSteps) {
 
-            workflowAPI.deleteStep(step, APILocator.systemUser());
+            try {
+                workflowAPI.deleteStep(step, APILocator.systemUser()).get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw new DotDataException(e);
+            }
         }
 
         scheme.setArchived(true);
@@ -323,6 +335,40 @@ public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
         public WorkflowActionClass getActionClass() {
             return actionClass;
         }
+    }
+
+    static ContentType insertContentType(final User user, final String contentTypeName,
+            BaseContentType baseType)
+            throws DotDataException, DotSecurityException {
+
+        ContentTypeBuilder builder = ContentTypeBuilder.builder(baseType.immutableClass())
+                .description("description")
+                .expireDateVar(null).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+                .name(contentTypeName).owner("owner")
+                .variable("velocityVarName" + contentTypeName);
+
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+        final ContentType type = builder.build();
+        return contentTypeAPI.save(type);
+    }
+
+
+    public static ContentType createContentTypeAndAssignPermissions(final String contentTypeName,
+            final BaseContentType baseContentType, final int permission, final String roleId)
+            throws DotDataException, DotSecurityException {
+
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+
+        final ContentType contentType = insertContentType(APILocator.systemUser(), contentTypeName, baseContentType);
+
+        Permission p = new Permission(contentType.getPermissionId(), roleId, permission, true);
+        permissionAPI.save(p, contentType, APILocator.systemUser(), true);
+
+        p = new Permission(Contentlet.class.getCanonicalName(), contentType.getPermissionId(),
+                roleId, permission, true);
+        permissionAPI.save(p, contentType, APILocator.systemUser(), true);
+
+        return contentType;
     }
 
 }

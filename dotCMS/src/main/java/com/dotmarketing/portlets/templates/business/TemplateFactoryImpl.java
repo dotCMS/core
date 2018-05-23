@@ -10,7 +10,6 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
-import com.dotmarketing.business.PermissionedWebAssetUtil;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -34,6 +33,7 @@ import com.liferay.portal.model.User;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -99,8 +99,10 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 
 	@SuppressWarnings("unchecked")
-	public List<Template> findTemplatesUserCanUse(User user, String hostName, String query,boolean searchHost ,int offset, int limit) throws DotDataException, DotSecurityException {
-		return PermissionedWebAssetUtil.findTemplatesForLimitedUser(query, hostName, searchHost, "title", offset, limit, PermissionAPI.PERMISSION_READ, user, false);
+	public List<Template> findTemplatesUserCanUse(User user, String hostId, String query,boolean searchHost ,int offset, int limit) throws DotDataException, DotSecurityException {
+		return findTemplates(user, false,
+				UtilMethods.isSet(query) ? Collections.singletonMap("title", query.toLowerCase())
+						: null, hostId, null, null, null, offset, limit, "title");
 	}
 
 	public void delete(Template template) throws DotDataException {

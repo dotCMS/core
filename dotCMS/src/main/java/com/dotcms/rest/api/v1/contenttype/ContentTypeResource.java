@@ -14,8 +14,10 @@ import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.annotation.HeaderFilter;
 import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.annotation.PermissionsUtil;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.PaginationUtil;
@@ -256,9 +258,10 @@ public class ContentTypeResource implements Serializable {
 			final ContentType type = tapi.find(idOrVar);
 			resultMap.putAll(new JsonContentTypeTransformer(type).mapObject());
 			resultMap.put("workflows", 		 this.workflowHelper.findSchemesByContentType(type.id(), initData.getUser()));
-			resultMap.put("editable",        this.permissionAPI.doesUserHavePermission(type, PermissionAPI.PERMISSION_WRITE, initData.getUser()));
 
-			response = Response.ok(new ResponseEntityView(resultMap)).build();
+			response = ("true".equalsIgnoreCase(req.getParameter("include_permissions")))?
+					Response.ok(new ResponseEntityView(resultMap, PermissionsUtil.getInstance().getPermissionsArray(type, initData.getUser()))).build():
+					Response.ok(new ResponseEntityView(resultMap)).build();
 		} catch (DotSecurityException e) {
 			throw new ForbiddenException(e);
 		} catch (NotFoundInDbException nfdb2) {
@@ -280,7 +283,7 @@ public class ContentTypeResource implements Serializable {
 		Response response = null;
 
 		try {
-			List<BaseContentTypesView> types = contentTypeHelper.getTypes(request);
+			final List<BaseContentTypesView> types = contentTypeHelper.getTypes(request);
 			response = Response.ok(new ResponseEntityView(types)).build();
 		} catch (Exception e) { // this is an unknown error, so we report as a 500.
 

@@ -1,32 +1,32 @@
 package com.dotcms.rest.api.v1.workflow;
 
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.CURRENT_STEP;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.actionName;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.addSteps;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.createContentTypeAndAssignPermissions;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.createImportExportObjectForm;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.createScheme;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.createWorkflowActions;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.doCleanUp;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.findSchemes;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.findSteps;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.schemeName;
-import static com.dotcms.rest.api.v1.workflow.WorkflowResourceTestUtil.stepName;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.CURRENT_STEP;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.actionName;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.addSteps;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.createImportExportObjectForm;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.createScheme;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.createWorkflowActions;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.doCleanUp;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.findSchemes;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.findSteps;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.schemeName;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.stepName;
 import static com.dotcms.rest.exception.mapper.ExceptionMapperUtil.ACCESS_CONTROL_HEADER_INVALID_LICENSE;
 import static com.dotcms.rest.exception.mapper.ExceptionMapperUtil.ACCESS_CONTROL_HEADER_PERMISSION_VIOLATION;
 import static com.dotmarketing.business.Role.ADMINISTRATOR;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.mock.response.MockAsyncResponse;
+import com.dotcms.repackage.javax.ws.rs.container.AsyncResponse;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
 import com.dotcms.rest.ContentHelper;
@@ -48,6 +48,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
@@ -155,7 +156,7 @@ public class WorkflowResourceLicenseIntegrationTest {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final WorkflowSchemeForm form = new WorkflowSchemeForm.Builder()
                 .schemeName(randomSchemaName).schemeDescription("").schemeArchived(false).build();
-        final Response saveResponse = nonLicenseWorkflowResource.save(request, form);
+        final Response saveResponse = nonLicenseWorkflowResource.saveScheme(request, form);
         assertEquals(Status.FORBIDDEN.getStatusCode(), saveResponse.getStatus());
         assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE,saveResponse.getHeaderString("access-control"));
     }
@@ -164,9 +165,15 @@ public class WorkflowResourceLicenseIntegrationTest {
     public void Delete_Scheme_Invalid_License(){
         final WorkflowScheme savedScheme = createScheme(licenseWorkflowResource);
         final HttpServletRequest request1 = mock(HttpServletRequest.class);
-        final Response response = nonLicenseWorkflowResource.delete(request1,savedScheme.getId());
-        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
-        assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE,response.getHeaderString("access-control"));
+        final AsyncResponse asyncResponse = mock(AsyncResponse.class);
+        doAnswer(arg2 -> {
+            final Response response =  (Response) arg2;
+            assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
+            assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE,response.getHeaderString("access-control"));
+            return true;
+        }).when(asyncResponse).resume(Object.class);
+        nonLicenseWorkflowResource.deleteScheme(request1, asyncResponse, savedScheme.getId());
+
     }
 
     @Test
@@ -243,10 +250,20 @@ public class WorkflowResourceLicenseIntegrationTest {
         assertFalse(workflowSteps.isEmpty());
         final HttpServletRequest removeStepRequest = mock(HttpServletRequest.class);
 
-        for(final WorkflowStep ws: workflowSteps){
-           final Response deleteStepResponse = nonLicenseWorkflowResource.deleteStep(removeStepRequest, ws.getId());
-           assertEquals(Status.FORBIDDEN.getStatusCode(), deleteStepResponse.getStatus());
-           assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE,deleteStepResponse.getHeaderString("access-control"));
+        for(final WorkflowStep workflowStep: workflowSteps){
+
+            final AsyncResponse asyncResponse = new MockAsyncResponse((arg) -> {
+
+                final Response deleteStepResponse = (Response)arg;
+                assertEquals(Status.FORBIDDEN.getStatusCode(), deleteStepResponse.getStatus());
+                assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE,deleteStepResponse.getHeaderString("access-control"));
+                return true;
+            }, arg -> {
+                fail("Error on deleting step");
+                return true;
+            });
+
+            nonLicenseWorkflowResource.deleteStep(removeStepRequest, asyncResponse, workflowStep.getId());
         }
     }
 
@@ -301,7 +318,7 @@ public class WorkflowResourceLicenseIntegrationTest {
         assertNotNull(savedScheme);
         final HttpServletRequest request = mock(HttpServletRequest.class);
         WorkflowSchemeForm form = new WorkflowSchemeForm.Builder().schemeDescription("lol").schemeArchived(false).schemeName(updatedName).build();
-        final Response updateResponse = nonLicenseWorkflowResource.update(request,savedScheme.getId(), form);
+        final Response updateResponse = nonLicenseWorkflowResource.updateScheme(request,savedScheme.getId(), form);
         assertEquals(Status.FORBIDDEN.getStatusCode(), updateResponse.getStatus());
         assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE, updateResponse.getHeaderString("access-control"));
     }
@@ -377,13 +394,13 @@ public class WorkflowResourceLicenseIntegrationTest {
         final String adminRoleId = adminRole.getId();
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final int numSteps = 2;
-        final WorkflowScheme savedScheme = createScheme(licenseWorkflowResource);
+        final WorkflowScheme savedScheme = LocalTransaction.wrapReturn(() -> createScheme(licenseWorkflowResource));
         assertNotNull(savedScheme);
-        final List<WorkflowStep> workflowSteps = addSteps(licenseWorkflowResource, savedScheme,
-                numSteps);
+        final List<WorkflowStep> workflowSteps =
+                LocalTransaction.wrapReturn(() -> addSteps(licenseWorkflowResource, savedScheme,numSteps));
 
-        final List<WorkflowAction> actions = createWorkflowActions(licenseWorkflowResource,
-                savedScheme, adminRoleId, workflowSteps);
+        final List<WorkflowAction> actions =
+                LocalTransaction.wrapReturn(() -> createWorkflowActions(licenseWorkflowResource, savedScheme, adminRoleId, workflowSteps));
         assertEquals(2, actions.size());
 
         final WorkflowStep firstStep = workflowSteps.get(0);
@@ -428,7 +445,7 @@ public class WorkflowResourceLicenseIntegrationTest {
                         actionCondition("").
                         build();
 
-        final Response findResponse = nonLicenseWorkflowResource.save(request,form);
+        final Response findResponse = nonLicenseWorkflowResource.saveAction(request,form);
         assertEquals(Status.FORBIDDEN.getStatusCode(), findResponse.getStatus());
         assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE, findResponse.getHeaderString("access-control"));
     }
@@ -535,7 +552,7 @@ public class WorkflowResourceLicenseIntegrationTest {
     public void Copy_Invalid_License() throws Exception {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final WorkflowScheme savedScheme = createScheme(licenseWorkflowResource);
-        final Response findResponse = nonLicenseWorkflowResource.copyScheme(request, savedScheme.getId(), savedScheme.getName()  + "_copy");
+        final Response findResponse = nonLicenseWorkflowResource.copyScheme(request, savedScheme.getId(), savedScheme.getName()  + "_copy", null);
         assertEquals(Status.FORBIDDEN.getStatusCode(), findResponse.getStatus());
         assertEquals(ACCESS_CONTROL_HEADER_INVALID_LICENSE, findResponse.getHeaderString("access-control"));
     }

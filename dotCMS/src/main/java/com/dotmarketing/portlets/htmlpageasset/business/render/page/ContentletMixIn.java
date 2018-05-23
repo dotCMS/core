@@ -2,7 +2,7 @@ package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * Restricts the JSON conversion of specific data in the Contentlet object.
@@ -18,5 +18,9 @@ abstract class ContentletMixIn {
 
     @JsonIgnore
     public abstract Structure getStructure();
+
+    @JsonIgnore
+    public abstract Structure getMap();
+
 
 }

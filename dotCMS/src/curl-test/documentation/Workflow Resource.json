@@ -1,0 +1,1986 @@
+{
+	"info": {
+		"_postman_id": "6f8ea334-6e61-4516-8d8c-4a8e7ac5d4d9",
+		"name": "Workflow Resource Documentation",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "findSchemes",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "4c3613d3-6fb2-4c7f-bd56-f964f128e9ca",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/workflow/schemes",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"schemes"
+					]
+				},
+				"description": "Returns all schemes non-archived associated to a content type. 401 if the user does not have permission.\n\n@Path(\"/schemes\")"
+			},
+			"response": []
+		},
+		{
+			"name": "findAllSchemesAndSchemesByContentType",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "77d7aa9b-d45f-4b0c-83dd-90603deb6c78",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"",
+							"",
+							"pm.test(\"Body matches string\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"schemes\");",
+							"});",
+							"",
+							"pm.test(\"Body matches string\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"contentTypeSchemes\");",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/workflow/schemes/schemescontenttypes/2a3e91e4-fbbf-4876-8c5b-2233c1739b05",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"schemes",
+						"schemescontenttypes",
+						"2a3e91e4-fbbf-4876-8c5b-2233c1739b05"
+					]
+				},
+				"description": "Returns all schemes for the content type and include schemes non-archive . 401 if the user does not have permission.\n\n@Path(\"/schemes/schemescontenttypes/{contentTypeId}\")\n"
+			},
+			"response": []
+		},
+		{
+			"name": "findStepsByScheme",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "e4cc8fd5-37bc-4849-88ad-a948988282ec",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/workflow/schemes/d61a59e1-a49c-46f2-a929-db2b4bfa88b2/steps",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"schemes",
+						"d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
+						"steps"
+					]
+				},
+				"description": "Return Steps associated to the scheme, 404 if does not exists. 401 if the user does not have permission\n\n@Path(\"/schemes/{schemeId}/steps\")"
+			},
+			"response": []
+		},
+		{
+			"name": "findAvailableActions",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "67745621-ebda-4d87-a315-e2535e2b1537",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/workflow/contentlet/e79ab40f-0728-4995-ab3f-ee9f87340cad/actions",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"contentlet",
+						"e79ab40f-0728-4995-ab3f-ee9f87340cad",
+						"actions"
+					]
+				},
+				"description": "This method return all the available actions for an inode\n\n@Path(\"/contentlet/{inode}/actions\")"
+			},
+			"response": []
+		},
+		{
+			"name": "findAction",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "f6688a28-1b19-4eff-b51a-005d38de184b",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/workflow/actions/b9d89c80-3d88-4311-8365-187323c96436",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"actions",
+						"b9d89c80-3d88-4311-8365-187323c96436"
+					]
+				},
+				"description": "Returns a single action, 404 if does not exists. 401 if the user does not have permission\n\n@Path(\"/actions/{actionId}\")"
+			},
+			"response": []
+		},
+		{
+			"name": "findActionByStep",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "5874ff7e-18fb-4109-ab96-c7fb4ece3ede",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/workflow/steps/6cb7e3bd-1710-4eed-8838-d3db60f78f19/actions/b9d89c80-3d88-4311-8365-187323c96436",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"steps",
+						"6cb7e3bd-1710-4eed-8838-d3db60f78f19",
+						"actions",
+						"b9d89c80-3d88-4311-8365-187323c96436"
+					]
+				},
+				"description": "Returns a single action associated to the step, 404 if does not exists. 401 if the user does not have permission.\n\n@Path(\"/steps/{stepId}/actions/{actionId}\")"
+			},
+			"response": []
+		},
+		{
+			"name": "findActionsByStep (all the actions)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "09873357-6b9b-4bc5-998d-7cfa01abb186",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/workflow/steps/6cb7e3bd-1710-4eed-8838-d3db60f78f19/actions",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"steps",
+						"6cb7e3bd-1710-4eed-8838-d3db60f78f19",
+						"actions"
+					]
+				},
+				"description": "Returns a collection of actions associated to the step, if step does not have any will returns 200 and an empty list.\n\n@Path(\"/steps/{stepId}/actions\")"
+			},
+			"response": []
+		},
+		{
+			"name": "findActionsByScheme",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "e0a97678-c11b-4a30-8dcc-ab2351299549",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/workflow/schemes/d61a59e1-a49c-46f2-a929-db2b4bfa88b2/actions",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"schemes",
+						"d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
+						"actions"
+					]
+				},
+				"description": "Returns a set of actions associated to the schemeId\n\n@Path(\"/schemes/{schemeId}/actions\")"
+			},
+			"response": []
+		},
+		{
+			"name": "Save action",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "0d05425f-d6e9-4d06-bcab-e1db93951ac3",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n   \"stepId\": \"ee24a4cb-2d15-4c98-b1bd-6327126451f3\",\n      \"actionName\": \"saveContent FROM REST NEW\",\n      \"schemeId\": \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\",\n      \"actionCondition\": \"\",\n      \"actionNextStep\": \"currentstep\",\n      \"actionNextAssign\": \"654b0931-1027-41f7-ad4d-173115ed8ec1\",\n      \"actionRoleHierarchyForAssign\": false,\n      \"actionAssignable\": false,\n      \"actionCommentable\": true,\n      \"whoCanUse\":[],\n      \"showOn\": [\n        \"UNPUBLISHED\",\n        \"NEW\",\n        \"LOCKED\",\n        \"PUBLISHED\"\n      ]\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/workflow/actions",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"actions"
+					]
+				},
+				"description": "Saves an action, by default the action is associated to the schema, however if the stepId is set will be automatically associated to the step too.\n\n@Path(\"/actions\")"
+			},
+			"response": []
+		},
+		{
+			"name": "updateAction",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "780aa125-c758-4373-ab44-27ab55b466be",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n   \"stepId\": \"ee24a4cb-2d15-4c98-b1bd-6327126451f3\",\n      \"actionName\": \"Republish\",\n      \"schemeId\": \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\",\n      \"actionCondition\": \"\",\n      \"actionNextStep\": \"currentstep\",\n      \"actionNextAssign\": \"654b0931-1027-41f7-ad4d-173115ed8ec1\",\n      \"actionRoleHierarchyForAssign\": false,\n      \"actionAssignable\": false,\n      \"actionCommentable\": true,\n      \"whoCanUse\":[],\n      \"showOn\": [\n        \"UNPUBLISHED\",\n        \"NEW\",\n        \"LOCKED\",\n        \"PUBLISHED\"\n      ]\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/workflow/actions/4958588d-9c8e-40e4-bfcb-4ded",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"actions",
+						"4958588d-9c8e-40e4-bfcb-4ded"
+					]
+				},
+				"description": "This resource updates the workflow action \n404 if the id does not exist \n\n@Path(\"/actions/{actionId}\")"
+			},
+			"response": []
+		},
+		{
+			"name": "saveActionToStep",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "f887d4a1-2c51-4558-99ae-49838ffb8c94",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{ \"actionId\": \"777f1c6b-c877-4a37-ba4b-10627316c2cc\" }"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/workflow/steps/dc3c9cd0-8467-404b-bf95-cb7df3fbc293/actions",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"steps",
+						"dc3c9cd0-8467-404b-bf95-cb7df3fbc293",
+						"actions"
+					]
+				},
+				"description": "This method saves the actions and associate to a specific step\n\n@Path(\"/steps/{stepId}/actions\")"
+			},
+			"response": []
+		},
+		{
+			"name": "deleteStep",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "6b3f7ab6-697a-4b91-8b92-0391bd59ea2b",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/workflow/steps/f7dc56cd-aa81-4ca8-8174-1bb30756df82",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"steps",
+						"f7dc56cd-aa81-4ca8-8174-1bb30756df82"
+					]
+				},
+				"description": "This method deletes a step using the ID\n\n@Path(\"/steps/{stepId}\")\n"
+			},
+			"response": []
+		},
+		{
+			"name": "deleteAction (from step)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "d3c4d4d2-dfc6-4bde-8200-fa8746362691",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/workflow/steps/0c5018fc-4773-4524-9ba8-328ca4c3d0b2/actions/658278d3-aa3b-4ce4-a028-c9e1656e4f9e",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"steps",
+						"0c5018fc-4773-4524-9ba8-328ca4c3d0b2",
+						"actions",
+						"658278d3-aa3b-4ce4-a028-c9e1656e4f9e"
+					]
+				},
+				"description": "Deletes an action associated to the step\n\n@Path(\"/steps/{stepId}/actions/{actionId}\")"
+			},
+			"response": []
+		},
+		{
+			"name": "deleteAction (permanently)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "59aaecec-637a-4ade-b6e3-90a2b4239e42",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/workflow/actions/c8a03c24-277a-49a5-b5e0-7f99490a004d",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"actions",
+						"c8a03c24-277a-49a5-b5e0-7f99490a004d"
+					]
+				},
+				"description": "Deletes an action associated to the scheme and all references into steps\n\n@Path(\"/actions/{actionId}\")\n"
+			},
+			"response": []
+		},
+		{
+			"name": "reorderStep",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "30ba50d2-eb76-496d-a481-af6f28e94c40",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/workflow/reorder/step/94178d17-96a0-4e08-b9aa-94214a7fb31e/order/0",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"reorder",
+						"step",
+						"94178d17-96a0-4e08-b9aa-94214a7fb31e",
+						"order",
+						"0"
+					]
+				},
+				"description": "Change the order of the steps in a scheme\n\n@Path(\"/reorder/step/{stepId}/order/{order}\")"
+			},
+			"response": []
+		},
+		{
+			"name": "updateStep",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "06f10f41-5e6b-41da-b7a9-2352a199904a",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": " { \"stepOrder\":5, \"stepName\":\"REST\", \"enableEscalation\":false, \"escalationAction\":\"\", \"escalationTime\":\"0\",\"stepResolved\":false} "
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/workflow/steps/94178d17-96a0-4e08-b9aa-94214a7fb31e",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"steps",
+						"94178d17-96a0-4e08-b9aa-94214a7fb31e"
+					]
+				},
+				"description": "This method update the some step using the id \n\n@Path(\"/steps/{stepId}\")"
+			},
+			"response": []
+		},
+		{
+			"name": "addStep",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "758070ae-bec0-45a3-9dd4-753373cda29f",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": " { \"schemeId\" : \"bf886961-42fe-4e49-b0e9-0347cacc81ba\", \"stepName\":\"REST123\", \"enableEscalation\":false, \"escalationAction\":\"\", \"escalationTime\":\"0\",\"stepResolved\":false} "
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/workflow/steps",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"steps"
+					]
+				},
+				"description": "Add a new workflow step \n\n@Path(\"/steps\")"
+			},
+			"response": []
+		},
+		{
+			"name": "findStepById",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "ffe7f645-bda6-4c83-a1fb-94f96fc7f5ad",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/workflow/steps/94178d17-96a0-4e08-b9aa-94214a7fb31e",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"steps",
+						"94178d17-96a0-4e08-b9aa-94214a7fb31e"
+					]
+				},
+				"description": "Get the step by id \n\n@Path(\"/steps/{stepId}\")"
+			},
+			"response": []
+		},
+		{
+			"name": "Fire action",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "95f737ad-f395-4a50-a502-8d8a41eeb889",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{ \"contentletFormData\" : {\n  \"stInode\" : \"678d00bf-10b0-4080-99b4-9517ab9ea580\",\n  \"languageId\" : 1,\n  \"name\": \"postman1\"\n}\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/workflow/actions/936f14eef2/fire",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"actions",
+						"936f14eef2",
+						"fire"
+					]
+				},
+				"description": "Fire any action uysing the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here. \n\n@Path(\"/actions/{actionId}/fire\")"
+			},
+			"response": []
+		},
+		{
+			"name": "reorderAction",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "07a00a96-740c-4dbe-872f-9f6b4ab7a5d2",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"order\" : 3}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/workflow/reorder/steps/94178d17-96a0-4e08-b9aa-94214a7fb31e/actions/7075981c-eda2-4896-a65c-71749ee2877e",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"reorder",
+						"steps",
+						"94178d17-96a0-4e08-b9aa-94214a7fb31e",
+						"actions",
+						"7075981c-eda2-4896-a65c-71749ee2877e"
+					]
+				},
+				"description": "Change the order of an action associated to the step\n\n@Path(\"/reorder/steps/{stepId}/actions/{actionId}\")"
+			},
+			"response": []
+		},
+		{
+			"name": "ImportScheme ",
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "    {\n        \"workflowImportObject\": {\n            \"schemes\": [\n                {\n                    \n                    \"creationDate\": 1523640559394,\n                    \"name\": \"Test3\",\n                    \"description\": \"\",\n                    \"archived\": false,\n                    \"mandatory\": false,\n                    \"defaultScheme\": false,\n                    \"modDate\": 1523640423771,\n                    \"entryActionId\": null,\n                    \"system\": false\n                }\n            ],\n            \"steps\": [\n                {\n                    \"id\": \"01d5d41a-007e-463d-a5b5-c35ea27b1a30\",\n                    \"creationDate\": 1523643857447,\n                    \"name\": \"Step1\",\n                    \"schemeId\": \"766d9cef-e138-4fe0-9acc-b8e7e40bbed3\",\n                    \"myOrder\": 0,\n                    \"resolved\": false,\n                    \"enableEscalation\": false,\n                    \"escalationAction\": null,\n                    \"escalationTime\": 0\n                },\n                {\n                    \"id\": \"2cbf9872-0ed3-407b-b803-70a9a161a7db\",\n                    \"creationDate\": 1523643857447,\n                    \"name\": \"step2\",\n                    \"schemeId\": \"766d9cef-e138-4fe0-9acc-b8e7e40bbed3\",\n                    \"myOrder\": 1,\n                    \"resolved\": false,\n                    \"enableEscalation\": false,\n                    \"escalationAction\": null,\n                    \"escalationTime\": 0\n                }\n            ],\n            \"actions\": [\n                {\n                    \"id\": \"81522b66-221b-4496-aec6-0e4c484973f7\",\n                    \"name\": \"Save it\",\n                    \"schemeId\": \"766d9cef-e138-4fe0-9acc-b8e7e40bbed3\",\n                    \"condition\": \"\",\n                    \"nextStep\": \"2cbf9872-0ed3-407b-b803-70a9a161a7db\",\n                    \"nextAssign\": \"e7d4e34e-5127-45fc-8123-d48b62d510e3\",\n                    \"icon\": \"workflowIcon\",\n                    \"roleHierarchyForAssign\": false,\n                    \"assignable\": false,\n                    \"commentable\": false,\n                    \"order\": 0,\n                    \"owner\": null,\n                    \"nextStepCurrentStep\": false,\n                    \"showOn\": [\n                        \"LOCKED\",\n                        \"NEW\",\n                        \"UNLOCKED\"\n                    ]\n                },\n                {\n                    \"id\": \"687c0729-95fe-4e1d-b37c-e9f70615df23\",\n                    \"name\": \"TEst\",\n                    \"schemeId\": \"766d9cef-e138-4fe0-9acc-b8e7e40bbed3\",\n                    \"condition\": \"\",\n                    \"nextStep\": \"currentstep\",\n                    \"nextAssign\": \"e7d4e34e-5127-45fc-8123-d48b62d510e3\",\n                    \"icon\": \"workflowIcon\",\n                    \"roleHierarchyForAssign\": false,\n                    \"assignable\": false,\n                    \"commentable\": false,\n                    \"order\": 0,\n                    \"owner\": null,\n                    \"nextStepCurrentStep\": true,\n                    \"showOn\": [\n                        \"LOCKED\",\n                        \"UNLOCKED\"\n                    ]\n                }\n            ],\n            \"actionSteps\": [\n                {\n                    \"stepId\": \"01d5d41a-007e-463d-a5b5-c35ea27b1a30\",\n                    \"actionId\": \"81522b66-221b-4496-aec6-0e4c484973f7\",\n                    \"actionOrder\": \"0\"\n                },\n                {\n                    \"stepId\": \"2cbf9872-0ed3-407b-b803-70a9a161a7db\",\n                    \"actionId\": \"687c0729-95fe-4e1d-b37c-e9f70615df23\",\n                    \"actionOrder\": \"0\"\n                }\n            ],\n            \"actionClasses\": [\n                {\n                    \"id\": \"2298b780-e1d3-4916-b981-e22fd5553086\",\n                    \"actionId\": \"81522b66-221b-4496-aec6-0e4c484973f7\",\n                    \"name\": \"Save content\",\n                    \"order\": 0,\n                    \"clazz\": \"com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet\",\n                    \"actionlet\": {\n                        \"name\": \"Save content\",\n                        \"parameters\": null,\n                        \"nextStep\": null,\n                        \"howTo\": \"This actionlet will checkin the content.\",\n                        \"localizedName\": \"Save content\",\n                        \"localizedHowto\": \"com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet.howTo\"\n                    }\n                }\n            ],\n            \"actionClassParams\": []\n        },\n        \"permissions\": []\n}\n    \n"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/workflow/schemes/import",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"schemes",
+						"import"
+					]
+				},
+				"description": "Do an export of the scheme with all dependencies to rebuild it (such as steps and actions) in addition the permission (who can use) will be also returned.\n\n@Path(\"/schemes/import\")"
+			},
+			"response": []
+		},
+		{
+			"name": "exportScheme",
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/workflow/schemes/766d9cef-e138-4fe0-9acc-b8e7e40bbed3/export",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"schemes",
+						"766d9cef-e138-4fe0-9acc-b8e7e40bbed3",
+						"export"
+					]
+				},
+				"description": "Do an export of the scheme with all dependencies to rebuild it (such as steps and actions) in addition the permission (who can use) will be also returned.\n\n@Path(\"/schemes/{schemeId}/export\")"
+			},
+			"response": []
+		},
+		{
+			"name": "copyScheme",
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/workflow/schemes/d61a59e1a4/copy",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"schemes",
+						"d61a59e1a4",
+						"copy"
+					]
+				},
+				"description": "Do a copy of an existing scheme \n\n@Path(\"/schemes/{schemeId}/copy\")"
+			},
+			"response": []
+		},
+		{
+			"name": "findAvailableDefaultActionsByContentType",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "8f66df74-cb91-4225-bac4-6c1224639727",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/workflow/defaultactions/contenttype/2a3e91e4-fbbf-4876-8c5b-2233c1739b05",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"defaultactions",
+						"contenttype",
+						"2a3e91e4-fbbf-4876-8c5b-2233c1739b05"
+					]
+				},
+				"description": "Returns all the possible default actions associated to the content type workflow schemes.\n401 if the user does not have permission.\n\n@Path(\"/defaultactions/contenttype/{contentTypeId}\")\n"
+			},
+			"response": []
+		},
+		{
+			"name": "findAvailableDefaultActionsBySchemes",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "1e70664a-c44a-4bf3-8a50-9ede1497de70",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/workflow/defaultactions/schemes",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"defaultactions",
+						"schemes"
+					]
+				},
+				"description": "Returns all the possible default actions associated to the workflow schemes.\n401 if the user does not have permission.\n\n@Path(\"/defaultactions/schemes\")"
+			},
+			"response": []
+		},
+		{
+			"name": "findInitialAvailableActionsByContentType",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "8f66df74-cb91-4225-bac4-6c1224639727",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/workflow/initialactions/contenttype/2a3e91e4-fbbf-4876-8c5b-2233c1739b05",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"initialactions",
+						"contenttype",
+						"2a3e91e4-fbbf-4876-8c5b-2233c1739b05"
+					]
+				},
+				"description": "Finds the available actions of the initial/first step(s) of the workflow scheme(s) associated with a content type Id.\n\n@Path(\"/initialactions/contenttype/{contentTypeId}\")"
+			},
+			"response": []
+		},
+		{
+			"name": "saveScheme",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "29ec07b1-4ad2-4aea-b001-29dc0a075184",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"schemeName\": \"REST1\", \"schemeDescription\": \"rest1\", \"schemeArchived\": \"false\"}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/workflow/schemes",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"schemes"
+					]
+				},
+				"description": "Creates a new scheme \n\n@Path(\"/schemes\")"
+			},
+			"response": []
+		},
+		{
+			"name": "updateScheme",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "8fcc8e4c-1d0e-4180-90b9-6af971bffa92",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"schemeName\": \"REST2\", \"schemeDescription\": \"rest1\", \"schemeArchived\": \"false\"}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/workflow/schemes/211040db-5d79-4e3c-807a-1f2dec2ff16b",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"schemes",
+						"211040db-5d79-4e3c-807a-1f2dec2ff16b"
+					]
+				},
+				"description": "Updates an existing scheme\n\n@Path(\"/schemes/{schemeId}\")"
+			},
+			"response": []
+		},
+		{
+			"name": "deleteScheme",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "6b3f7ab6-697a-4b91-8b92-0391bd59ea2b",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/workflow/schemes/85c1515c-c4f3-463c-bac2-860b8fcacc34",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"schemes",
+						"85c1515c-c4f3-463c-bac2-860b8fcacc34"
+					]
+				},
+				"description": "Deletes an existing scheme (the response is async)\n\n@Path(\"/schemes/{schemeId}\")\n"
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "e45174b5-930d-43ed-ac45-f0717afc21ce",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "729767eb-bb1b-4f38-9d6d-376048f5d7c0",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"id": "a5cbff48-850f-4a3b-b649-0498db79a8d7",
+			"key": "localServer",
+			"value": "http://localhost:8080",
+			"type": "string",
+			"description": ""
+		}
+	]
+}

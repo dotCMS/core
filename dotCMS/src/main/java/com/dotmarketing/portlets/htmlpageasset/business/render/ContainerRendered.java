@@ -1,11 +1,13 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render;
 
+import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.portlets.containers.model.Container;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Represents the information of the {@link Container} and its respective
@@ -23,7 +25,7 @@ public class ContainerRendered implements Serializable {
 
     private final Container container;
     private final List<ContainerStructure> containerStructures;
-    private String rendered;
+    private final Map<String, String> rendered;
 
     /**
      * Creates a new instance of the ContainerRendered.
@@ -32,7 +34,8 @@ public class ContainerRendered implements Serializable {
      * @param containerStructures The list of {@link ContainerStructure} relationships.
      *                           the browser.
      */
-    public ContainerRendered(final Container container, final List<ContainerStructure> containerStructures) {
+    public ContainerRendered(final Container container, final List<ContainerStructure> containerStructures,
+                             final Map<String, String> rendered) {
         this.container = container;
 
         if (containerStructures != null) {
@@ -40,6 +43,8 @@ public class ContainerRendered implements Serializable {
         } else {
             this.containerStructures = ImmutableList.of();
         }
+
+        this.rendered = rendered;
     }
 
     /**
@@ -56,7 +61,7 @@ public class ContainerRendered implements Serializable {
      *
      * @return The HTML representation of the container.
      */
-    public String getRendered() {
+    public Map<String, String> getRendered() {
         return rendered;
     }
 
@@ -74,14 +79,5 @@ public class ContainerRendered implements Serializable {
     public String toString() {
         return "ContainerRendered{" + "container=" + container + ", containerStructures=" +
                 containerStructures + ", rendered='" + rendered + '\'' + '}';
-    }
-
-    /**
-     * Set the container and its contents as HTML code, i.e., as seen in
-     *
-     * @param rendered
-     */
-    public void setRendered(final String rendered) {
-        this.rendered = rendered;
     }
 }

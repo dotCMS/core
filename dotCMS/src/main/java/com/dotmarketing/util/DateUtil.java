@@ -604,4 +604,18 @@ public class DateUtil {
 			return ERROR_DATE;
 		}
 	}
+
+	/**
+	 * Basically the Thread.sleep without exception
+	 * @param millis
+	 */
+	public static void sleep (final long millis) {
+
+		try {
+			Thread.sleep(millis);
+		} catch (InterruptedException e) {
+
+			Logger.error(DateUtil.class, e.getMessage(), e);
+		}
+	}
 }

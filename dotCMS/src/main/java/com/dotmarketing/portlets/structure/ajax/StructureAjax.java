@@ -1,11 +1,13 @@
 package com.dotmarketing.portlets.structure.ajax;
 
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isFieldTypeAllowedOnImportExport;
+
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
-import com.dotcms.repackage.org.jboss.util.Strings;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -36,11 +38,13 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
-
+import com.liferay.util.StringPool;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
-import java.util.*;
-
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 
 
 /**
@@ -161,11 +165,7 @@ public class StructureAjax {
 		List<Field> fields = struct.getFields();
 		ArrayList<Map> searchableFields = new ArrayList<Map> ();
 		for (Field field : fields) {
-			if (!field.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString()) &&
-					!field.getFieldType().equals(Field.FieldType.FILE.toString()) &&
-					!field.getFieldType().equals(Field.FieldType.IMAGE.toString())&&
-					!field.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString()) &&
-					!field.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString())) {
+			if (isFieldTypeAllowedOnImportExport(field)) {
 				try {
 					Map fieldMap = field.getMap();
 					searchableFields.add(fieldMap);
@@ -480,7 +480,7 @@ public class StructureAjax {
             Map<String, Object> structureDetails = new HashMap<String, Object>();
             structureDetails.put("inode", Structure.STRUCTURE_TYPE_ALL);
             structureDetails.put("name", LanguageUtil.get(user, "all"));
-            structureDetails.put("velocityVarName", Strings.EMPTY);
+            structureDetails.put("velocityVarName", StringPool.BLANK);
             return structureDetails;
         }
 

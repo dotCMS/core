@@ -21,10 +21,10 @@ import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
-import com.dotmarketing.factories.WebAssetFactory;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
@@ -63,7 +63,6 @@ public class TemplateAjax {
 				filter = filter.replaceAll("\\?", "");
 			}
 
-
 			if(UtilMethods.isSet(query.get("hostId"))) {
 			    int startF=start;
 			    int countF=count;
@@ -77,17 +76,28 @@ public class TemplateAjax {
                     fullListTemplates.add(t);
                     totalTemplates.add(t);
                     countF=count-1;
+
+					if (UtilMethods.isSet(query.get("templateSelected"))) {
+						final Template templateSelected = templateAPI.findWorkingTemplate(query.get("templateSelected"),
+								APILocator.getUserAPI().getSystemUser(), respectFrontendRoles);
+
+						if (templateSelected.isAnonymous()) {
+							fullListTemplates.add(templateSelected);
+							totalTemplates.add(templateSelected);
+						}
+					}
                 }
 			    else {
 			        startF=start-1;
 			    }
-				fullListTemplates.addAll(templateAPI.findTemplatesUserCanUse(user, host.getHostname(), filter, true, startF, countF));
-				totalTemplates.addAll(templateAPI.findTemplatesUserCanUse(user, host.getHostname(), filter, true, 0, 1000));
+
+				fullListTemplates.addAll(templateAPI.findTemplatesUserCanUse(user, host.getIdentifier(), filter, true, startF, countF));
+				totalTemplates.addAll(templateAPI.findTemplatesUserCanUse(user, host.getIdentifier(), filter, true, 0, 1000));
 
 			}
 
 			//doesn't currently respect archived
-			if(fullListTemplates.size() ==0){
+			if(fullListTemplates.size() == 0){
 				fullListTemplates.addAll(templateAPI.findTemplatesUserCanUse(user,"", filter,true, start, start>0?count:count+1));
 				totalTemplates.addAll(templateAPI.findTemplatesUserCanUse(user,"", filter,true, 0, 1000));
 			}
@@ -114,12 +124,6 @@ public class TemplateAjax {
 			}
 		}
 
-//		totalTemplates = templateAPI.findTemplatesAssignedTo(host);
-//		if(start >= list.size()) start =  list.size() - 1;
-//		if(start < 0)  start  = 0;
-//		if(start + count >= list.size()) count = list.size() - start;
-//		List<Map<String, Object>> templates = list.subList(start, start + count);
-
 		results.put("totalResults", totalTemplates.size());
 
 		results.put("list", list);
@@ -143,8 +147,18 @@ public class TemplateAjax {
 				Logger.warn(this, "Could not find host for template = " + template.getIdentifier());
 			}
 		}
-		Map<String, Object> templateMap = template.getMap();
-		if(parentHost != null) {
+		final Map<String, Object> templateMap = template.getMap();
+
+		if (template.isAnonymous()){
+			try {
+				final String customLayoutTemplateLabel = LanguageUtil.get("editpage.properties.template.custom.label");
+				templateMap.put("fullTitle", customLayoutTemplateLabel);
+				templateMap.put("htmlTitle", customLayoutTemplateLabel);
+			} catch (LanguageException e) {
+				Logger.error(this.getClass(),
+						"Exception on buildTemplateMap exception message: " + e.getMessage(), e);
+			}
+		} else if(parentHost != null) {
 			templateMap.put("hostName", parentHost.getHostname());
 			templateMap.put("hostId", parentHost.getIdentifier());
 			templateMap.put("fullTitle",   templateMap.get("title") + " (" + parentHost.getHostname() + ")" );
