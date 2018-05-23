@@ -6,7 +6,16 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.*;
+import com.dotcms.repackage.javax.ws.rs.Consumes;
+import com.dotcms.repackage.javax.ws.rs.DELETE;
+import com.dotcms.repackage.javax.ws.rs.DefaultValue;
+import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.POST;
+import com.dotcms.repackage.javax.ws.rs.PUT;
+import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
+import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.QueryParam;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -14,7 +23,6 @@ import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
-import com.dotcms.rest.annotation.HeaderFilter;
 import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.PermissionsUtil;
@@ -35,13 +43,12 @@ import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
-
-import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
 
 @Path("/v1/contenttype")
 public class ContentTypeResource implements Serializable {
@@ -259,9 +266,15 @@ public class ContentTypeResource implements Serializable {
 			resultMap.putAll(new JsonContentTypeTransformer(type).mapObject());
 			resultMap.put("workflows", 		 this.workflowHelper.findSchemesByContentType(type.id(), initData.getUser()));
 
-			response = ("true".equalsIgnoreCase(req.getParameter("include_permissions")))?
-					Response.ok(new ResponseEntityView(resultMap, PermissionsUtil.getInstance().getPermissionsArray(type, initData.getUser()))).build():
-					Response.ok(new ResponseEntityView(resultMap)).build();
+			final ResponseEntityView.Builder builder = new ResponseEntityView.Builder().entity(resultMap);
+			if("true".equalsIgnoreCase(req.getParameter("include_permissions"))){
+               builder.permissions(
+               		PermissionsUtil.getInstance().getPermissionsArray(type, initData.getUser())
+			   );
+			}
+			final ResponseEntityView entityView = builder.build();
+			response = Response.ok(entityView).build();
+
 		} catch (DotSecurityException e) {
 			throw new ForbiddenException(e);
 		} catch (NotFoundInDbException nfdb2) {

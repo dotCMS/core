@@ -1,15 +1,29 @@
 package com.dotcms.rest.api.v1.notification;
 
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotcms.util.ConversionUtils.toLong;
+
 import com.dotcms.notifications.NotificationConverter;
 import com.dotcms.notifications.bean.Notification;
 import com.dotcms.notifications.bean.UserNotificationPair;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.notifications.view.NotificationView;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.*;
+import com.dotcms.repackage.javax.ws.rs.DELETE;
+import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.HeaderParam;
+import com.dotcms.repackage.javax.ws.rs.PUT;
+import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
+import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.rest.*;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.MessageEntity;
+import com.dotcms.rest.RESTParams;
+import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.ConversionUtils;
@@ -21,14 +35,9 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-
+import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.List;
-
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotcms.util.ConversionUtils.toLong;
 
 
 
@@ -147,6 +156,7 @@ public class NotificationResource {
                     "notifications", notificationsResult, "total", notificationsCount)))
                     .header("Content-Range", "items " + offset + "-" + limit + "/" + totalUnreadNotifications)
                     .build(); // 200
+
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
 
             return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
@@ -226,9 +236,13 @@ public class NotificationResource {
                 this.notificationAPI.markNotificationsAsRead(user.getUserId());
             }
 
-            return Response.ok(new ResponseEntityView(Boolean.TRUE,
-                    list(new MessageEntity(LanguageUtil.get(user.getLocale(), "notification.success.markasread")))))
-                    .build(); // 200
+            final List <MessageEntity> messageEntities = list(
+                    new MessageEntity(LanguageUtil.get(user.getLocale(),
+                            "notification.success.markasread")));
+            final ResponseEntityView entityView = new ResponseEntityView.Builder().
+                    entity(Boolean.TRUE).
+                    messages(messageEntities).build();
+            return Response.ok(entityView).build(); // 200
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
 
             response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
@@ -260,11 +274,13 @@ public class NotificationResource {
 
                 this.notificationAPI.deleteNotification(user.getUserId(), groupId); // todo: include the user id, in order to remove by id.
             }
-
-            return Response.ok(new ResponseEntityView(Boolean.TRUE,
-                    list(new MessageEntity(LanguageUtil.get(user.getLocale(),
-                            "notification.success.delete", groupId)))))
-                    .build(); // 200
+            final List<MessageEntity> messageEntities = list(
+                    new MessageEntity(LanguageUtil.get(user.getLocale(),
+                    "notification.success.delete", groupId)));
+            final ResponseEntityView entityView = new ResponseEntityView.Builder().
+                    entity(Boolean.TRUE).
+                    messages(messageEntities).build();
+            return Response.ok(entityView).build(); // 200
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
 
             response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
@@ -301,10 +317,12 @@ public class NotificationResource {
                 this.notificationAPI.deleteNotifications(user.getUserId(), deleteForm.getItems().toArray(new String[] {}));
             }
 
-            response =  Response.ok(new ResponseEntityView(Boolean.TRUE,
-                    list(new MessageEntity(LanguageUtil.get(user.getLocale(),
-                            "notifications.success.delete", deleteForm.getItems())))))
-                    .build(); // 200
+            final List<MessageEntity> messageEntities = list(new MessageEntity(LanguageUtil.get(user.getLocale(),
+                    "notifications.success.delete", deleteForm.getItems())));
+            final ResponseEntityView entityView = new ResponseEntityView.Builder().
+                    entity(Boolean.TRUE).
+                    messages(messageEntities).build();
+            response = Response.ok(entityView).build(); // 200
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
 
             response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);

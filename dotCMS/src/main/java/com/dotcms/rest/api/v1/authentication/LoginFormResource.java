@@ -87,7 +87,7 @@ public class LoginFormResource implements Serializable {
             final Company defaultCompany =
                     this.companyAPI.getDefaultCompany();
 
-            final LoginFormResultView.Builder builder =
+            final LoginFormResultView.Builder loginFormResultBuilder =
                     new LoginFormResultView.Builder();
 
             final HttpSession session =
@@ -106,7 +106,7 @@ public class LoginFormResource implements Serializable {
             final Locale userLocale = LocaleUtil.getLocale(request,
                     i18nForm.getCountry(), i18nForm.getLanguage());
 
-            builder.serverId(LicenseUtil.getDisplayServerId())
+            loginFormResultBuilder.serverId(LicenseUtil.getDisplayServerId())
                 .levelName(LicenseUtil.getLevelName())
                 .version(ReleaseInfo.getVersion())
                 .buildDateString(ReleaseInfo.getBuildDateString())
@@ -124,7 +124,12 @@ public class LoginFormResource implements Serializable {
                             userLocale.getDisplayName(userLocale)))
                 .companyEmail("@" + defaultCompany.getMx());
 
-            res = Response.ok(new ResponseEntityView(builder.build(), messagesMap)).build(); // 200
+            final ResponseEntityView responseEntityView = new ResponseEntityView.Builder()
+                    .entity(loginFormResultBuilder.build())
+                    .i18nMessagesMap(messagesMap)
+                    .build();
+
+            res = Response.ok(responseEntityView).build(); // 200
 
         } catch (DotSecurityException e) {
             throw new ForbiddenException(e);

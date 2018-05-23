@@ -1,8 +1,15 @@
 package com.dotcms.rest.api.v1.folder;
 
+import static com.dotcms.util.CollectionsUtils.map;
+
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.*;
+import com.dotcms.repackage.javax.ws.rs.Consumes;
+import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.POST;
+import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
+import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -22,16 +29,12 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.util.LocaleUtil;
-
 import java.io.Serializable;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
-
 import javax.servlet.http.HttpServletRequest;
-
-import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * Created by jasontesser on 9/28/16.
@@ -92,12 +95,16 @@ public class FolderResource implements Serializable {
                     .collect(Collectors.toList());
             ;
 
-            response = Response.ok(new ResponseEntityView
-                    (map("result", folderResults),
-                            results.getErrorEntities(), null,
-                            this.i18NUtil.getMessagesMap(locale, "Invalid-option-selected",
-                                    "cancel")
-                    )).build(); // 200
+            final ResponseEntityView entityView = new ResponseEntityView.Builder()
+                    .entity(
+                       map("result", folderResults)
+                    ).errors(
+                       results.getErrorEntities()
+                    ).messages(null).i18nMessagesMap(
+                       this.i18NUtil.getMessagesMap(locale, "Invalid-option-selected", "cancel")
+                    ).build();
+
+            response = Response.ok(entityView).build(); // 200
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
             Logger.error(this, "Error handling Save Folder Post Request", e);
             if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {

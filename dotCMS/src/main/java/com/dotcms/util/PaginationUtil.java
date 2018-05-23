@@ -9,10 +9,10 @@ import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectWriter;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.Pagination;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.Paginator;
 import com.dotmarketing.common.util.SQLUtil;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.StringUtils;
-import org.apache.velocity.runtime.Runtime;
 
 /**
  * Utility class to the pagination elements and filter
@@ -49,6 +48,7 @@ public class PaginationUtil {
 	private static final String PAGINATION_CURRENT_PAGE_HEADER_NAME = "X-Pagination-Current-Page";
 	private static final String PAGINATION_MAX_LINK_PAGES_HEADER_NAME = "X-Pagination-Link-Pages";
 	private static final String PAGINATION_TOTAL_ENTRIES_HEADER_NAME = "X-Pagination-Total-Entries";
+
 	public static final String PAGE_VALUE_TEMPLATE = "pageValue";
 
 	private static final String LINK_TEMPLATE = "<{URL}>;rel=\"{relValue}\"";
@@ -145,14 +145,11 @@ public class PaginationUtil {
 				totalRecords, orderBy, direction, extraParams);
 
 		try {
-			return Response.
-                    ok(objectWriter.writeValueAsString(new ResponseEntityView((Object) items)))
-                    .header(LINK_HEADER_NAME, linkHeaderValue)
-                    .header(PAGINATION_PER_PAGE_HEADER_NAME, perPageValue)
-                    .header(PAGINATION_CURRENT_PAGE_HEADER_NAME, pageValue)
-                    .header(PAGINATION_MAX_LINK_PAGES_HEADER_NAME, nLinks)
-                    .header(PAGINATION_TOTAL_ENTRIES_HEADER_NAME, totalRecords)
-                    .build();
+			final Pagination pagination = new Pagination(linkHeaderValue, perPageValue, pageValue,
+					nLinks, totalRecords);
+			final ResponseEntityView entityView = new ResponseEntityView.Builder()
+					.pagination(pagination).entity(items).build();
+			return Response.ok(objectWriter.writeValueAsString(entityView)).build();
 		} catch (JsonProcessingException e) {
 			throw new JsonProcessingRuntimeException(e);
 		}

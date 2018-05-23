@@ -133,10 +133,15 @@ public class HeaderFilter implements ContainerResponseFilter {
 					if (null != user) {
 
 						final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(entity);
-						responseContext.setEntity(new ResponseEntityView
-								(responseEntityView.getEntity(), responseEntityView.getErrors(),
-										responseEntityView.getMessages(), responseEntityView.getI18nMessagesMap(),
-										Arrays.asList(this.permissionsUtil.getPermissionsArray(Permissionable.class.cast(responseEntityView.getEntity()), user))));
+						final ResponseEntityView entityView = new ResponseEntityView.Builder()
+								.entity(responseEntityView.getEntity())
+								.errors(responseEntityView.getErrors())
+								.i18nMessagesMap(responseEntityView.getI18nMessagesMap())
+								.permissions(
+										Arrays.asList(this.permissionsUtil.getPermissionsArray(Permissionable.class.cast(responseEntityView.getEntity()), user))
+								).build();
+
+						responseContext.setEntity(entityView);
 					}
 				} catch (Exception e) {
 					Logger.debug(this, e.getMessage(), e);
