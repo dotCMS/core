@@ -167,7 +167,7 @@ public class TimeMachineFilter implements Filter {
 		basePath.append(ConfigUtils.getTimeMachinePath()).append(sep).append("tm_").append(selectedDate.getTime())
 				.append(sep);
 		// Site and language path (e.g., "live/demo.dotcms.com/1")
-		basePath.append(PageMode.PREVIEW_MODE.name()).append(sep).append(host.getHostname()).append(sep).append(selectedLangId);
+		basePath.append(PageMode.LIVE.name()).append(sep).append(host.getHostname()).append(sep).append(selectedLangId);
 		// URI (e.g., "/folder/your-page")
 		uri = (java.io.File.separator.equals("\\") ? uri.replaceAll("/", "\\\\") : uri);
 		String completePath = basePath.toString() + uri;
