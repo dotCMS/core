@@ -95,7 +95,7 @@ public class HTMLPageAssetRenderedBuilder {
         final Template template = getTemplate();
 
         final PageMode mode = PageMode.get(request);
-        final TemplateLayout layout = template.isDrawed() && !LicenseManager.getInstance().isCommunity()
+        final TemplateLayout layout = template != null && template.isDrawed() && !LicenseManager.getInstance().isCommunity()
                 ? DotTemplateTool.themeLayout(template.getInode()) : null;
 
         if (!rendered) {

@@ -49,16 +49,19 @@ public class PageContainerForm {
                 throws IOException {
 
             final JsonNode jsonNode = jsonParser.readValueAsTree();
-
-            if (!jsonNode.elements().hasNext()) {
-                throw new BadRequestException("");
-            }
-
             final List<ContainerEntry> entries = new ArrayList<>();
 
             for (final JsonNode jsonElement : jsonNode) {
-                final String containerId = jsonElement.get(CONTAINER_ID_ATTRIBUTE_NAME).asText();
-                final String containerUUID = jsonElement.get(CONTAINER_UUID_ATTRIBUTE_NAME).asText();
+                final JsonNode containerIdNode = jsonElement.get(CONTAINER_ID_ATTRIBUTE_NAME);
+                final JsonNode containerUUIDNode = jsonElement.get(CONTAINER_UUID_ATTRIBUTE_NAME);
+
+                if (containerIdNode == null || containerUUIDNode == null) {
+                    throw new BadRequestException("Container id and uuid are required");
+                }
+
+                final String containerId = containerIdNode.asText();
+                final String containerUUID = containerUUIDNode.asText();
+
                 final ContainerEntry containerEntry = new ContainerEntry(containerId, containerUUID);
 
                 final JsonNode containerNode = jsonElement.get(CONTAINER_CONTENTLETSID_ATTRIBUTE_NAME);

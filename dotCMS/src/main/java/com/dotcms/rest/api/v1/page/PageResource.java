@@ -98,7 +98,9 @@ public class PageResource {
     @Path("/json/{uri: .*}")
     public Response loadJson(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                              @PathParam("uri") final String uri,
-                             @QueryParam("live") @DefaultValue("true")  final boolean live) {
+                             @QueryParam("live") @DefaultValue("true")  final boolean live)
+            throws DotDataException, DotSecurityException {
+
         // Force authentication
         final InitDataObject auth = webResource.init(false, request, true);
         final User user = auth.getUser();
@@ -112,16 +114,13 @@ public class PageResource {
                     "Content-Type, " + "Accept, Authorization");
             res = responseBuilder.build();
         } catch (HTMLPageAssetNotFoundException e) {
-            String messageFormat =
+            final String messageFormat =
                     "HTMLPageAssetNotFoundException on PageResource.loadJson, parameters: request -> %s, uri -> %s live -> %s: ";
             final String errorMsg = String.format(messageFormat, request, uri, live);
             Logger.error(this, errorMsg, e);
             res = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
-        } catch (Exception e) {
-            final String errorMsg = "An internal error occurred (" + e.getMessage() + ")";
-            Logger.error(this, errorMsg, e);
-            res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
+
         return res;
     }
 
@@ -160,7 +159,7 @@ public class PageResource {
                                    @QueryParam(WebKeys.CMS_PERSONA_PARAMETER) final String personaId,
                                    @QueryParam("language_id") final String languageId,
                                    @QueryParam("device_inode") final String deviceInode,
-                                   @QueryParam("live") final Boolean live) {
+                                   @QueryParam("live") final Boolean live) throws DotSecurityException, DotDataException {
 
         Logger.debug(this, String.format(
                 "Rendering page: uri -> %s mode-> %s language -> persona -> %s device_inode -> %s live -> %b",
@@ -196,10 +195,6 @@ public class PageResource {
                     request, uri, modeParam);
             Logger.error(this, errorMsg, e);
             res = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
-        } catch (Exception e) {
-            final String errorMsg = "An internal error occurred (" + e.getMessage() + ")";
-            Logger.error(this, errorMsg, e);
-            res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
         return res;
     }
@@ -344,8 +339,9 @@ public class PageResource {
             throw new BadRequestException("Layout is required");
         }
 
+        final InitDataObject initData = webResource.init(true, req, true);
+
         try {
-            final InitDataObject initData = webResource.init(true, req, true);
             final User user = initData.getUser();
 
             final IHTMLPage page = pageResourceHelper.getPage(user, pageId);

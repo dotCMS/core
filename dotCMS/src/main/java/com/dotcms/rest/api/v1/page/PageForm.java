@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.page;
 import java.io.IOException;
 import java.util.*;
 
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonCreator;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.core.JsonProcessingException;
