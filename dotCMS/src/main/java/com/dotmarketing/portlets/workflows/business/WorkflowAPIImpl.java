@@ -7,6 +7,7 @@ import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.javax.ws.rs.HEAD;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
@@ -145,8 +146,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 				if (null == this.friendClass) {
 					this.friendClass =
-							new FriendClass("com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil",
-									"com.dotcms.content.elasticsearch.business.ESMappingAPIImpl");
+							new FriendClass("com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil");
 				}
 			}
 		}
