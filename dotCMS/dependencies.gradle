@@ -103,7 +103,6 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.mimepull', version:'1.6_2'
     compile group: 'com.dotcms.lib', name: 'dot.msnm', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.myspell', version:'ukv_2'
-    compile group: 'com.dotcms.lib', name: 'dot.nekohtml', version:'1.9.17_2'
     compile group: 'com.dotcms.lib', name: 'dot.odmg', version:'ukv_3'
     compile group: 'com.dotcms.lib', name: 'dot.org.eclipse.mylyn.wikitext.confluence.core', version:'1.8.0.I20120918-1109_2'
     compile group: 'com.dotcms.lib', name: 'dot.org.eclipse.mylyn.wikitext.core', version:'1.8.0.I20120918-1109_2'

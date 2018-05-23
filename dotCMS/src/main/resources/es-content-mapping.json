@@ -34,17 +34,8 @@
                 "strings_as_dates": {
                     "match": "originalstartdate||recurrencestart||recurrenceend",
                     "mapping": {
-                        "type": "date",
-                        "ignore_malformed": true
+                        "type": "date"
                     }
-                }
-            },
-            {
-                "datemapping": {
-                    "mapping": {
-                        "ignore_malformed": true
-                    },
-                    "match_mapping_type": "date"
                 }
             },
             {
