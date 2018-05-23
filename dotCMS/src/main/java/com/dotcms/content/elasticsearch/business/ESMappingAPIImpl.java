@@ -300,11 +300,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			if(task!=null && task.getId()!=null) {
 
 				final String stepId = task.getStatus();
-				contentletMap.put(ESMappingConstants.WORKFLOW_CREATED_BY, task.getCreatedBy());
-				contentletMap.put(ESMappingConstants.WORKFLOW_ASSIGN, task.getAssignedTo());
-				contentletMap.put(ESMappingConstants.WORKFLOW_STEP, task.getStatus());
-				contentletMap.put(ESMappingConstants.WORKFLOW_MOD_DATE, elasticSearchDateTimeFormat.format(task.getModDate()));
-				contentletMap.put(ESMappingConstants.WORKFLOW_MOD_DATE + TEXT, datetimeFormat.format(task.getModDate()));
 
 				if (UtilMethods.isSet(stepId)) {
 
@@ -314,8 +309,15 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 						contentletMap.put(ESMappingConstants.WORKFLOW_SCHEME, step.getSchemeId());
 					}
 				}
+				contentletMap.put(ESMappingConstants.WORKFLOW_CREATED_BY, task.getCreatedBy());
+				contentletMap.put(ESMappingConstants.WORKFLOW_ASSIGN, task.getAssignedTo());
+				contentletMap.put(ESMappingConstants.WORKFLOW_STEP, task.getStatus());
+				contentletMap.put(ESMappingConstants.WORKFLOW_MOD_DATE, elasticSearchDateTimeFormat.format(task.getModDate()));
+				contentletMap.put(ESMappingConstants.WORKFLOW_MOD_DATE + TEXT, datetimeFormat.format(task.getModDate()));
+
+
 			}
-		} catch(DotDataException e){
+		} catch(Exception e){
 			Logger.error(this.getClass(), "unable to add workflow info to index:" + e, e);
 		}
 	}
