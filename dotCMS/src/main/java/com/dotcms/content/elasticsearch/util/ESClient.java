@@ -12,10 +12,12 @@ import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
@@ -29,13 +31,18 @@ import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeValidationException;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static com.dotcms.cluster.bean.ServerPort.ES_TRANSPORT_TCP_PORT;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 public class ESClient {
@@ -43,8 +50,15 @@ public class ESClient {
 	private static Node _nodeInstance;
 	final String syncMe = "esSync";
 	private final ServerAPI serverAPI;
-	static final String ES_TRANSPORT_HOST = "transport.host";
-	static final String ES_ZEN_UNICAST_HOSTS = "discovery.zen.ping.unicast.hosts";
+	@VisibleForTesting static final String ES_TRANSPORT_HOST = "transport.host";
+	@VisibleForTesting static final String ES_NODE_DATA = "node.data";
+	@VisibleForTesting static final String ES_NODE_MASTER = "node.master";
+	@VisibleForTesting static final String ES_ZEN_UNICAST_HOSTS = "discovery.zen.ping.unicast.hosts";
+    private static final String ES_PATH_HOME_DEFAULT_VALUE = "WEB-INF/elasticsearch";
+    private static final String ES_CONFIG_DIR = "config";
+    private static final String ES_YML_FILE = "elasticsearch.yml";
+    private static final String ES_EXT_YML_FILE = "elasticsearch-override.yml";
+    private static final String ES_PATH_HOME = "es.path.home";
 	private final ClusterAPI clusterAPI;
 
 	public ESClient() {
@@ -59,7 +73,7 @@ public class ESClient {
     public Client getClient() {
 
         try{
-            initNode(ESUtils.getExtSettingsBuilder());
+            initNode(null);
         }catch (Exception e) {
             Logger.error(ESClient.class, "Could not initialize ES Node", e);
         }
@@ -85,18 +99,19 @@ public class ESClient {
                     shutDownNode();
 
                     final String node_id = ConfigUtils.getServerId();
-                    String esPathHome = ESUtils.getESPathHome();
+                    String esPathHome = getESPathHome();
 
                     Logger.info(this, "***PATH HOME: " + esPathHome);
 
-                    final String yamlPath = ESUtils.getYamlConfiguration();
+                    final String yamlPath = getDefaultYaml().toString();
 
                     try{
                         _nodeInstance = new Node(
                                 Settings.builder().
                                 loadFromStream(yamlPath, getClass().getResourceAsStream(yamlPath), false).
-                                put( "node.name", node_id ).
-                                put("path.home", esPathHome).put(extSettings.build()).
+                                    put( "node.name", node_id ).
+                                    put("path.home", esPathHome).
+                                    put(extSettings!=null?extSettings.build():getExtSettingsBuilder().build()).
                                     build()
                         ).start();
                     } catch (IOException | NodeValidationException e){
@@ -211,7 +226,7 @@ public class ESClient {
         String serverId;
 
         // Load settings from elasticsearch-override.yml
-        final Builder externalSettings = ESUtils.getExtSettingsBuilder();
+        final Builder externalSettings = getExtSettingsBuilder();
 
         // Get current server
         final ServerAPI serverAPI      = APILocator.getServerAPI();
@@ -439,5 +454,93 @@ public class ESClient {
         }
 
         return freePort;
+    }
+
+    private String getESPathHome() {
+        String esPathHome = Config
+            .getStringProperty(ES_PATH_HOME, ES_PATH_HOME_DEFAULT_VALUE);
+
+        esPathHome =
+            !new File(esPathHome).isAbsolute() ? FileUtil.getRealPath(esPathHome) : esPathHome;
+
+        return esPathHome;
+    }
+
+    @VisibleForTesting
+    Path getDefaultYaml(){
+        final String yamlPath = System.getenv("ES_PATH_CONF");
+        if (UtilMethods.isSet(yamlPath)  && FileUtil.exists(yamlPath)){
+            return Paths.get(yamlPath);
+        }else{
+            return Paths.get(getESPathHome() + File.separator + ES_CONFIG_DIR + File.separator + ES_YML_FILE);
+        }
+    }
+
+    @VisibleForTesting
+    Builder getExtSettingsBuilder() throws IOException {
+        Builder settings = Settings.builder();
+        final Path overrideSettingsPath = getOverrideYamlPath();
+
+        if (Files.exists(overrideSettingsPath)) {
+            settings = Settings.builder().loadFromPath(overrideSettingsPath);
+
+            if(isCommunityOrStandard()) {
+                // Let's try to get Transport TCP Port from elasticsearch-override.yml file
+                String transportTCPPort = settings.get(ES_TRANSPORT_TCP_PORT.getPropertyName());
+
+                if(!UtilMethods.isSet(transportTCPPort)) {
+                    transportTCPPort = getDefaultTransportTCPPort();
+                }
+
+                setCommunityESValues(settings, transportTCPPort);
+            }
+        } else if(isCommunityOrStandard()) {
+            setCommunityESValues(settings, getDefaultTransportTCPPort());
+        }
+
+        return settings;
+    }
+
+    @VisibleForTesting
+    Path getOverrideYamlPath() {
+        String overrideYamlPathStr = System.getenv("ES_PATH_CONF");
+        if (!UtilMethods.isSet(overrideYamlPathStr) || !FileUtil.exists(overrideYamlPathStr)) {
+            //Get elasticsearch-override.yml from default location
+            overrideYamlPathStr = getESPathHome() + File.separator + ES_CONFIG_DIR + File.separator + ES_EXT_YML_FILE;
+        } else {
+            //Otherwise, get parent directory from the ES_PATH_CONF
+            overrideYamlPathStr = new File(overrideYamlPathStr).getParent() + File.separator + ES_EXT_YML_FILE;
+        }
+        return Paths.get(overrideYamlPathStr);
+    }
+
+    private void setCommunityESValues(Builder overrideSettings, String transportTCPPort) {
+        overrideSettings.put(ES_ZEN_UNICAST_HOSTS, "localhost:"+transportTCPPort);
+        overrideSettings.put(ES_TRANSPORT_HOST, "localhost");
+        overrideSettings.put(ES_NODE_DATA, "true");
+        overrideSettings.put(ES_NODE_MASTER, "true");
+    }
+
+    /**
+     * Tries to get the Transport TCP Port from the elasticsearch.yml file.
+     * If not found returns the getDefaultValue() of {@link ServerPort#ES_TRANSPORT_TCP_PORT}
+     */
+    @VisibleForTesting
+    String getDefaultTransportTCPPort() throws IOException {
+        String transportTCPPort = ES_TRANSPORT_TCP_PORT.getDefaultValue();
+        final Path defaultYMLPath = getDefaultYaml();
+
+        if (Files.exists(defaultYMLPath)) {
+            final Builder defaultSettings = Settings.builder().loadFromPath(defaultYMLPath);
+            final String transportTCPPortFromYAML = defaultSettings.get(ES_TRANSPORT_TCP_PORT.getPropertyName());
+            transportTCPPort = UtilMethods.isSet(transportTCPPortFromYAML)?transportTCPPortFromYAML:transportTCPPort;
+        }
+
+        return transportTCPPort;
+    }
+
+    @VisibleForTesting
+    boolean isCommunityOrStandard() {
+        return LicenseUtil.getLevel()<= LicenseLevel.STANDARD.level;
     }
 }
