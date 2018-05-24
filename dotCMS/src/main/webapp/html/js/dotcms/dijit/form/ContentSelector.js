@@ -490,7 +490,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	},
 
 	_hideMatchingResults: function  () {
-		this.matchingResultsDiv.style.display = "none";
+		this.matchingResultsDiv.style.visibility = "hidden";
 	},
 
 	_doRelateContent: function () {
@@ -863,7 +863,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 
 	_showMatchingResults: function (num) {
 		var div = this.matchingResultsDiv;
-		div.style.display = "";
+		div.style.visibility = "visible";
 		div.innerHTML = "<b> " + this.matchResultsTextValue + " (" + num + ")</b>";
 	},
 
