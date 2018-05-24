@@ -10419,6 +10419,12 @@ a.category_higlighted, a.tag_higlighted {
   z-index: 1;
 }
 
+.content-edit__form {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
 .content-edit__sidebar {
   background-color: #FAFAFA;
   border-left: solid 1px #ECEDEE;

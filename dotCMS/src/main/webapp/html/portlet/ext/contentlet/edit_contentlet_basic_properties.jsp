@@ -195,18 +195,7 @@
 				</select>
 			<%} else {%>
 				<h3>
-					<% if(structure.getStructureType() ==1){ %>
-						<span class="structureIcon"></span>
-					<%}else if(structure.getStructureType() ==2){ %>
-						<span class="gearIcon"></span>
-					<%}else if(structure.getStructureType() ==3){ %>
-						<span class="formIcon"></span>
-					<%}else if(structure.getStructureType() ==4){ %>
-						<span class="documentIcon"></span>
-					<%}else if(structure.getStructureType() ==5){ %>
-						<span class="pageIcon"></span>
-					<%} %>
-					<%=CacheLocator.getContentTypeCache().getStructureByInode(structure.getInode() ).getName()%>
+                    <%= LanguageUtil.get(pageContext, "language") %>
 				</h3>
 				<input type="hidden" name="selectedStructure" id="selectedStructure" value="<%= structure.getInode() %>">
 			<%} %>
@@ -300,6 +289,7 @@
 								 searchAttr: "lang",
 								 labelAttr: "label",
 								 labelType: "html",
+                                 style: "width: 100%",
 								 onChange: function() {
 									 var obj=dijit.byId("langcombo");
 									 changeLanguage(obj.item.value);
