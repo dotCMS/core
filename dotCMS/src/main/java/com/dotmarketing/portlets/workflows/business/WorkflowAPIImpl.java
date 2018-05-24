@@ -1541,54 +1541,35 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		this.isUserAllowToModifiedWorkflow(user);
 
 		try {
+
 			List<WorkflowActionClass> actionClasses = null;
 			try {
 				// We don't need to get "complete" base action object from the database 
 				// to retrieve all action classes from him. So, we can create the base action object
 				// with the "action id" contain in actionClass parameter.
-				WorkflowAction baseAction = new WorkflowAction();
+				final WorkflowAction baseAction = new WorkflowAction();
 				baseAction.setId(actionClass.getActionId());
 				
 				actionClasses = findActionClasses(baseAction);
 			} catch (Exception e) {
 				throw new DotDataException(e.getLocalizedMessage());
 			}
-			
-			final int currentOrder = actionClass.getOrder();
-			for(WorkflowActionClass action : actionClasses) {
-				if(currentOrder == action.getOrder()) {
-					// Assign the new order to the action class
-					action.setOrder(order);
-				} else {
-					if(currentOrder > order) {
-						// When we want to move it to a lower level
-						if(action.getOrder() < order) {
-							continue;
-						} else {
-							if(action.getOrder() > currentOrder) {
-								// If current item order is higher than the last order position,
-								// we don't need to fix the order.
-								return;
-							}
-							
-							action.setOrder(action.getOrder() + 1);
-						}
-					} else {
-						// When we want to move it to a higher level
-						if(action.getOrder() < currentOrder) {
-							continue;
-						} else {
-							if(action.getOrder() > order) {
-								// If current item is higher than the new order position,
-								// we don't need to fix the order.
-								return;
-							}
-							
-							action.setOrder(action.getOrder() - 1);
-						}
-					}
+
+			final List<WorkflowActionClass> newActionClasses = new ArrayList<>(actionClasses.size());
+			final int normalizedOrder =
+					(order < 0) ? 0 : (order >= actionClasses.size()) ? actionClasses.size()-1 : order;
+			for(final WorkflowActionClass currentActionClass : actionClasses) {
+
+				if (currentActionClass.equals(actionClass)) {
+					continue;
 				}
-				saveActionClass(action, user);
+				newActionClasses.add(currentActionClass);
+			}
+
+			newActionClasses.add(normalizedOrder, actionClass);
+			for (int i = 0; i < newActionClasses.size(); i++) {
+				newActionClasses.get(i).setOrder(i);
+				saveActionClass(newActionClasses.get(i), user);
 			}
 		} catch (Exception e) {
 			throw new DotWorkflowException(e.getMessage(),e);
