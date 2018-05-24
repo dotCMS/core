@@ -11,12 +11,18 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+@RunWith(DataProviderRunner.class)
 public class ES6UpgradeTest extends IntegrationTestBase {
 
     private final static String RESOURCE_DIR = "com/dotcms/content/elasticsearch/business/json";
@@ -32,38 +38,47 @@ public class ES6UpgradeTest extends IntegrationTestBase {
         systemUser = APILocator.getUserAPI().getSystemUser();
     }
 
-    @Test
-    public void testElasticSearchJson ()
-            throws DotSecurityException, DotDataException, IOException {
-
+    /**
+     * Gets an array of JSon files containing Elastic Search queries to be tested
+     * @return list of Files
+     */
+    @DataProvider
+    public static Object[] getJsonFilesDataProvider() {
         final String resource = ConfigTestHelper.getPathToTestResource(RESOURCE_DIR);
         final File directory = new File(resource);
+        return directory.listFiles();
+    }
 
-        for (final File file : directory.listFiles()) {
+    @Test
+    @UseDataProvider("getJsonFilesDataProvider")
+    public void testElasticSearchJson (final Object objectFile)
+            throws DotSecurityException, DotDataException, IOException {
 
-            Logger.info(this, "Testing File: " + file.getName());
+        final File file = (File) objectFile;
+        Logger.info(this, "Testing File: " + file.getName());
 
-            final String json = FileUtils.readFileToString(file);
-            final ESSearchResults results = APILocator.getContentletAPI()
-                    .esSearch(json, false, systemUser, false);
+        final String json = FileUtils.readFileToString(file);
+        final ESSearchResults results = APILocator.getContentletAPI()
+                .esSearch(json, false, systemUser, false);
 
-            Assert.assertNotNull(results);
-            Assert.assertTrue(results.getTotalResults() > 0);
+        Assert.assertNotNull(results);
 
-            if (json.contains("agg")) {
-                //This is an aggregation
-                Assert.assertFalse(results.getAggregations().asList().isEmpty());
-            } else {
-                //Contentlets
-                Assert.assertFalse(results.isEmpty());
-                for (final Object res : results) {
-                    final Contentlet contentlet = (Contentlet) res;
-                    Assert.assertTrue(APILocator.getPermissionAPI().doesUserHavePermission(contentlet,
-                                        PermissionAPI.PERMISSION_READ, systemUser, false));
-                }
+        Logger.info(this, "Results size: " + results.getTotalResults());
+        Assert.assertTrue(results.getTotalResults() > 0);
+
+        if (json.contains("agg")) {
+            //This is an aggregation
+            Assert.assertFalse(results.getAggregations().asList().isEmpty());
+        } else {
+            //Contentlets
+            Assert.assertFalse(results.isEmpty());
+            for (final Object res : results) {
+                final Contentlet contentlet = (Contentlet) res;
+                Assert.assertTrue(APILocator.getPermissionAPI().doesUserHavePermission(contentlet,
+                                    PermissionAPI.PERMISSION_READ, systemUser, false));
             }
-
-            Logger.info(this, "Success Testing File: " + file.getName());
         }
+
+        Logger.info(this, "Success Testing File: " + file.getName());
     }
 }
