@@ -18,6 +18,7 @@ import { DotContentletEditorService } from '../../services/dot-contentlet-editor
 })
 export class DotAddContentletComponent implements OnInit {
     @Output() load: EventEmitter<any> = new EventEmitter();
+    @Output() close: EventEmitter<any> = new EventEmitter();
     url$: Observable<string>;
     header$: Observable<string>;
 
@@ -35,6 +36,7 @@ export class DotAddContentletComponent implements OnInit {
      */
     onClose(): void {
         this.dotContentletEditorService.clear();
+        this.close.emit();
     }
 
     /**

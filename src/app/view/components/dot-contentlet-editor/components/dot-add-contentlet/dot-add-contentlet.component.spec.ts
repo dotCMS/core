@@ -83,6 +83,7 @@ describe('DotAddContentletComponent', () => {
             spyOn(component, 'onClose').and.callThrough();
             spyOn(component, 'onLoad').and.callThrough();
             spyOn(component, 'onKeyDown').and.callThrough();
+            spyOn(component.close, 'emit');
             fixture.detectChanges();
         });
 
@@ -95,9 +96,10 @@ describe('DotAddContentletComponent', () => {
         });
 
         describe('events', () => {
-            it('should call clear', () => {
+            it('should call clear and emit close', () => {
                 dotIframeDialog.triggerEventHandler('close', {});
                 expect(dotAddContentletService.clear).toHaveBeenCalledTimes(1);
+                expect(component.close.emit).toHaveBeenCalledTimes(1);
             });
 
             it('should call load', () => {

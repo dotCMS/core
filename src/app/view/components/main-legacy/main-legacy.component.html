@@ -1,5 +1,5 @@
 <dot-dialog></dot-dialog>
-<dot-contentlet-editor></dot-contentlet-editor>
+<dot-contentlet-editor (close)="onCloseContentletEditor()"></dot-contentlet-editor>
 
 <div class="layout" [class.collapsed]="isMenuCollapsed">
     <dot-toolbar class="layout__toolbar" [collapsed]="isMenuCollapsed" (mainButtonClick)="toggleSidenav($event)"></dot-toolbar>
