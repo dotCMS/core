@@ -1963,13 +1963,15 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         }
     }
 
-    function editHTMLPageAsset (contInode,structureInode){
-        var loc='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&selectedStructure=' + structureInode + '&inode=' + contInode + '&referer=' + referer;
-        if(inFrame){
-            window.location = loc;
-        }else{
-            top.location = loc;
-        }
+    function editHTMLPageAsset (contInode, structureInode){
+        var customEvent = document.createEvent("CustomEvent");
+        customEvent.initCustomEvent("ng-event", false, false,  {
+            name: "edit-contentlet",
+            data: {
+                inode: contInode
+            }
+        });
+        document.dispatchEvent(customEvent);
     }
     function previewHTMLPageAsset(id,referer) {
 
