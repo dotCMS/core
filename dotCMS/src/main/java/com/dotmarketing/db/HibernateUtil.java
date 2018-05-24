@@ -989,6 +989,11 @@ public class HibernateUtil {
 		}
 	}
 
+	public static void addRollbackListener(final Runnable listener) throws DotHibernateException{
+
+		addRollbackListener(new DotSyncRunnable(listener));
+	}
+
 	public static void addRollbackListener(DotRunnable listener) throws DotHibernateException{
 		if (getTransactionListenersStatus() != TransactionListenerStatus.DISABLED) {
 	        try {

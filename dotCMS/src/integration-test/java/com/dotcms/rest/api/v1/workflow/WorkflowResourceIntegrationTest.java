@@ -35,15 +35,16 @@ import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.*;
 import static com.dotmarketing.business.Role.ADMINISTRATOR;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.Matchers.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class WorkflowResourceIntegrationTest {
 
@@ -317,13 +318,33 @@ public class WorkflowResourceIntegrationTest {
         final List<WorkflowStep> workflowSteps = addSteps(workflowResource, savedScheme, numSteps);
         assertFalse(workflowSteps.isEmpty());
         final HttpServletRequest removeStepRequest = mock(HttpServletRequest.class);
-        int count = 0;
-        for(final WorkflowStep ws: workflowSteps){
-            Response deleteStepResponse = workflowResource.deleteStep(removeStepRequest, ws.getId());
-            assertEquals(Response.Status.OK.getStatusCode(), deleteStepResponse.getStatus());
-            count++;
+
+        final CountDownLatch countDownLatch = new CountDownLatch(workflowSteps.size());
+        final AtomicInteger count = new AtomicInteger(0);
+        for(final WorkflowStep workflowStep: workflowSteps){
+            final AsyncResponse asyncResponse = new MockAsyncResponse((arg) -> {
+
+                countDownLatch.countDown();
+                final Response deleteStepResponse = (Response)arg;
+                assertEquals(Response.Status.OK.getStatusCode(), deleteStepResponse.getStatus());
+                count.addAndGet(1);
+                return true;
+            }, arg -> {
+                countDownLatch.countDown();
+                fail("Error on deleting step");
+                return true;
+            });
+
+            workflowResource.deleteStep(removeStepRequest, asyncResponse, workflowStep.getId());
         }
-        assertEquals(count,numSteps);
+
+        try {
+            countDownLatch.await();
+            assertEquals(count.get(), numSteps);
+        } catch (InterruptedException e) {
+            fail(e.getMessage());
+        }
+
     }
 
     @Test
@@ -576,7 +597,6 @@ public class WorkflowResourceIntegrationTest {
         final AsyncResponse asyncResponse = new MockAsyncResponse(
                 (arg) -> {
             final Response deleteSchemeResponse = (Response)arg;
-
             assertEquals(Status.INTERNAL_SERVER_ERROR.getStatusCode(), deleteSchemeResponse.getStatus());
 
             //test archive scheme

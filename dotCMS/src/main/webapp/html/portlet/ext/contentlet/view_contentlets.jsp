@@ -1,25 +1,13 @@
-<%@page import="com.dotmarketing.util.PortletID"%>
-<%@page import="com.dotcms.repackage.bsh.This"%>
-<%@page import="com.dotmarketing.util.Logger"%>
+<%@page import="com.dotcms.content.elasticsearch.constants.ESMappingConstants"%>
+<%@page import="com.dotmarketing.business.CacheLocator"%>
+<%@page import="com.dotmarketing.cache.FieldsCache"%>
 <%@ include file="/html/portlet/ext/contentlet/init.jsp" %>
 <%@ include file="/html/portlet/ext/remotepublish/init.jsp" %>
 
-<%@ page import="java.util.*" %>
 <%@ page import="com.dotmarketing.portlets.languagesmanager.model.Language" %>
-<%@ page import="com.dotmarketing.portlets.structure.model.Structure" %>
 <%@ page import="com.dotmarketing.portlets.structure.factories.StructureFactory" %>
-<%@ page import="com.liferay.portal.model.User" %>
-<%@ page import="com.dotmarketing.portlets.languagesmanager.business.*" %>
-<%@ page import="com.dotmarketing.business.APILocator" %>
-<%@ page import="com.dotmarketing.util.Config" %>
-<%@ page import="com.dotmarketing.util.UtilMethods" %>
-<%@ page import="com.dotmarketing.util.InodeUtils" %>
-<%@page import="com.dotmarketing.business.CacheLocator"%>
-<%@ page import="com.liferay.portal.language.LanguageUtil"%>
-<%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
-<%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI"%>
-<%@page import="com.dotcms.enterprise.LicenseUtil"%>
-<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
+<%@ page import="com.dotmarketing.portlets.structure.model.Field" %>
+<%@ page import="com.dotmarketing.util.*" %>
 
 <iframe id="AjaxActionJackson" name="AjaxActionJackson" style="border:0; width:0; height:0;"></iframe>
 <%
@@ -57,8 +45,19 @@
     if(UtilMethods.isSet(request.getParameter("structure_id"))){
         structureSelected=request.getParameter("structure_id");
     } else if(UtilMethods.isSet(request.getParameter("baseType"))){
-    	structureSelected = structures.get(0).getInode();
+        structureSelected = structures.get(0).getInode();
     }
+
+    String schemeSelected = "catchall";
+    if(UtilMethods.isSet(session.getAttribute(ESMappingConstants.WORKFLOW_SCHEME))){
+        schemeSelected = (String)session.getAttribute(ESMappingConstants.WORKFLOW_SCHEME);
+    }
+
+    String stepsSelected = "catchall";
+    if(UtilMethods.isSet(session.getAttribute(ESMappingConstants.WORKFLOW_STEP))){
+        stepsSelected = (String)session.getAttribute(ESMappingConstants.WORKFLOW_STEP);
+    }
+
 
     if (lastSearch != null && !UtilMethods.isSet(structureSelected)) {
         String ssstruc = (String)session.getAttribute("selectedStructure");
@@ -186,15 +185,6 @@
 %>
 
 
-<%@page import="com.dotmarketing.business.Role"%>
-<%@page import="com.dotmarketing.business.RoleAPI"%>
-<%@page import="com.dotmarketing.business.RoleAPIImpl"%>
-<%@page import="com.dotmarketing.portlets.folders.model.Folder"%>
-<%@page import="com.dotmarketing.beans.Host"%>
-<%@page import="com.dotmarketing.cache.FieldsCache"%>
-<%@page import="com.dotmarketing.portlets.structure.model.Field"%>
-
-<%@page import="com.dotmarketing.business.PermissionAPI"%>
 <jsp:include page="/html/portlet/ext/folders/context_menus_js.jsp" />
 <script type='text/javascript' src='/html/js/scriptaculous/prototype.js'></script>
 <script type='text/javascript' src='/dwr/interface/StructureAjax.js'></script>
@@ -266,6 +256,112 @@
         data: dataItems
     });
 
+    // Workflow Schemes
+    var dojoSchemeStore = null;
+
+    function reloadSchemeStore (aFilteringSelect, structureInode) {
+
+        var xhrArgs = {
+            url: "/api/v1/workflow/schemes" + ((null != structureInode && structureInode && "catchall"!=structureInode)?"?contentTypeId="+structureInode:""),
+            handleAs: "json",
+            load: function(data) {
+
+                let dataItems = {
+                    identifier: "name",
+                    label: "label",
+                    items: [ { name: "catchall", label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All" )) %>",
+                        textLabel: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All" )) %>" }]
+                };
+
+                for (let i=0; i<data.entity.length;++i) {
+
+                    let schemeEntity = data.entity[i];
+                    dataItems.items[dataItems.items.length] = { name: schemeEntity.id, label: schemeEntity.name, textLabel: schemeEntity.name };
+                }
+
+                dojoSchemeStore = new dojo.data.ItemFileReadStore({
+                    data: dataItems
+                });
+
+                if (null != aFilteringSelect) {
+
+                    aFilteringSelect.set('store', dojoSchemeStore);
+                }
+            }
+        }
+
+        dojo.xhrGet(xhrArgs);
+    }
+
+    function reloadSchemeStoreFromStructureInode (aFilteringSelect) {
+
+        reloadSchemeStore(aFilteringSelect, dijit.byId("structure_inode")?dijit.byId("structure_inode").getValue():null);
+    }
+
+    reloadSchemeStore(null, "<%=structureSelected%>");
+
+    // Workflow Steps
+    var dojoStepsStore = null;
+
+    function reloadStepStore (aFilteringSelect, schemeId) {
+
+        if ("catchall" == schemeId) {
+
+            dojoStepsStore = new dojo.data.ItemFileReadStore({
+                data: {
+                    identifier: "name",
+                    label: "label",
+                    items: [ { name: "catchall", label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All" )) %>",
+                        textLabel: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All" )) %>" }]
+                }
+            });
+
+            if (null != aFilteringSelect) {
+
+                aFilteringSelect.set('store', dojoStepsStore);
+            }
+        } else {
+
+            var xhrArgs = {
+                url: "/api/v1/workflow/schemes/" + schemeId + "/steps",
+                handleAs: "json",
+                load: function(data) {
+
+                    let dataItems = {
+                        identifier: "name",
+                        label: "label",
+                        items: [ { name: "catchall", label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All" )) %>",
+                            textLabel: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All" )) %>" }]
+                    };
+
+                    for (let i=0; i<data.entity.length;++i) {
+
+                        let stepEntity = data.entity[i];
+                        dataItems.items[dataItems.items.length] = { name: stepEntity.id, label: stepEntity.name, textLabel: stepEntity.name };
+                    }
+
+                    dojoStepsStore = new dojo.data.ItemFileReadStore({
+                        data: dataItems
+                    });
+
+                    if (null != aFilteringSelect) {
+
+                        aFilteringSelect.set('store', dojoStepsStore);
+                    }
+                }
+            }
+
+            dojo.xhrGet(xhrArgs);
+        }
+
+    }
+
+    function reloadStepStoreFromSchemeId (aFilteringSelect) {
+
+        reloadStepStore(aFilteringSelect, dijit.byId("scheme_id")?dijit.byId("scheme_id").getValue():null);
+    }
+
+    reloadStepStore(null, "<%=schemeSelected%>");
 
     dojo.addOnLoad(function() {
 
@@ -274,7 +370,7 @@
             return item.textLabel + "";
         }
 
-
+        // content type select box
         var fs = new dijit.form.FilteringSelect({
                 id: "structure_inode",
                 name: "structure_inode_select",
@@ -285,12 +381,54 @@
                 labelType: "html",
 
                 onChange: function(){
+
+                    fsSchemes.set('value', 'catchall');
+                    fsSteps.set('value', 'catchall');
+                    reloadSchemeStoreFromStructureInode(fsSchemes);
                     structureChanged(true);
                     doSearch(null, "<%=orderBy%>");
                 }
             },
             dojo.byId("structSelectBox"));
 
+        // scheme select box
+        var fsSchemes = new dijit.form.FilteringSelect({
+                id: "scheme_id",
+                name: "scheme_id_select",
+                value: "<%=schemeSelected%>",
+                store: dojoSchemeStore,
+                searchAttr: "textLabel",
+                labelAttr: "label",
+                labelType: "html",
+
+                onChange: function(){
+
+                    fsSteps.set('value', 'catchall');
+                    reloadStepStoreFromSchemeId (fsSteps)
+                    structureChanged(true);
+                    doSearch(null, "<%=orderBy%>");
+                }
+            },
+            dojo.byId("schemeSelectBox"));
+
+        // step select box
+        var fsSteps = new dijit.form.FilteringSelect({
+                id: "step_id",
+                name: "step_id_select",
+                value: "<%=stepsSelected%>",
+                store: dojoStepsStore,
+                searchAttr: "textLabel",
+                labelAttr: "label",
+                labelType: "html",
+
+                onChange: function(){
+
+                    // todo: recargar con step_id
+                    structureChanged(true);
+                    doSearch(null, "<%=orderBy%>");
+                }
+            },
+            dojo.byId("stepSelectBox"));
 
 
     })
@@ -396,9 +534,24 @@
 
                         <dt><label><%= LanguageUtil.get(pageContext, "Search") %>:</label></dt>
                         <dd><input type="text" dojoType="dijit.form.TextBox" tabindex="1" onKeyUp='doSearch()' name="allFieldTB" id="allFieldTB" value="<%=_allValue %>"></dd>
+                        <div class="clear"></div>
+
+
                     </dl>
 
                     <div id="advancedSearchOptions" style="height:0px;overflow: hidden">
+
+                        <dl class="vertical">
+                            <dt><label>Scheme:</label></dt>
+                            <dd><span id="schemeSelectBox"></span></dd>
+                            <div class="clear"></div>
+                        </dl>
+
+                        <dl class="vertical">
+                            <dt><label>Step:</label></dt>
+                            <dd><span id="stepSelectBox"></span></dd>
+                            <div class="clear"></div>
+                        </dl>
 
                         <%if (languages.size() > 1) { %>
                         <dl class="vertical">
@@ -515,11 +668,11 @@
                                         <div id="archiveUnlockButton" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: unlockSelectedContentlets">
                                             <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unlock"))%>
                                         </div>
-                                            <% if(canReindexContentlets){ %>
+                                        <% if(canReindexContentlets){ %>
                                         <div id="archiveReindexButton" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: reindexSelectedContentlets">
                                             <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Reindex")) %>
                                         </div>
-                                            <% } %>
+                                        <% } %>
                                     </div>
                                 </div>
                             </div>
@@ -537,25 +690,25 @@
                                             <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Archive"))%>
                                         </div>
                                         <div data-dojo-type="dijit/MenuSeparator"></div>
-                                            <% if ( enterprise ) { %>
-                                            <% if ( sendingEndpoints ) { %>
+                                        <% if ( enterprise ) { %>
+                                        <% if ( sendingEndpoints ) { %>
                                         <div id="pushPublishButton" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: pushPublishSelectedContentlets">
                                             <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>
                                         </div>
-                                            <% } %>
+                                        <% } %>
                                         <div id="addToBundleButton" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: addToBundleSelectedContentlets">
                                             <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>
                                         </div>
                                         <div data-dojo-type="dijit/MenuSeparator"></div>
-                                            <% } %>
+                                        <% } %>
                                         <div id="unlockButton" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: unlockSelectedContentlets">
                                             <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unlock"))%>
                                         </div>
-                                            <% if(canReindexContentlets){ %>
+                                        <% if(canReindexContentlets){ %>
                                         <div id="reindexButton" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: reindexSelectedContentlets">
                                             <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Reindex")) %>
                                         </div>
-                                            <% } %>
+                                        <% } %>
                                     </div>
                                 </div>
                             </div>
@@ -565,9 +718,9 @@
                             <div data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"actionIcon", class:"dijitDropDownActionButton"'>
                                 <span></span>
                                 <script type="text/javascript">
-                                function importContent() {
-                                window.location = '/c/portal/layout?p_l_id=<%= layout.getId() %>&dm_rlout=1&p_p_id=<%=PortletID.CONTENT%>&p_p_action=1&p_p_state=maximized&_<%=PortletID.CONTENT%>_struts_action=/ext/contentlet/import_contentlets&selectedStructure=' + document.getElementById('structureInode').value;
-                                }
+                                    function importContent() {
+                                        window.location = '/c/portal/layout?p_l_id=<%= layout.getId() %>&dm_rlout=1&p_p_id=<%=PortletID.CONTENT%>&p_p_action=1&p_p_state=maximized&_<%=PortletID.CONTENT%>_struts_action=/ext/contentlet/import_contentlets&selectedStructure=' + document.getElementById('structureInode').value;
+                                    }
                                 </script>
                                 <ul data-dojo-type="dijit/Menu" id="actionPrimaryMenu" style="display: none;">
                                     <li data-dojo-type="dijit/MenuItem" data-dojo-props="onClick:function() {addNewContentlet()}"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Content" )) %></li>

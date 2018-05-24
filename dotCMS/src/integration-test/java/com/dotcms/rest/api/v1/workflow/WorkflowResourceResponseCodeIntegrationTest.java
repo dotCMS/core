@@ -6,14 +6,18 @@ import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.addSteps;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.createScheme;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.createWorkflowActions;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.doCleanUp;
+import static com.dotcms.rest.exception.mapper.ExceptionMapperUtil.ACCESS_CONTROL_HEADER_INVALID_LICENSE;
 import static com.dotmarketing.business.Role.ADMINISTRATOR;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.mock.response.MockAsyncResponse;
+import com.dotcms.repackage.javax.ws.rs.container.AsyncResponse;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
 import com.dotcms.rest.ContentHelper;
@@ -373,8 +377,17 @@ public class WorkflowResourceResponseCodeIntegrationTest {
     @Test
     public void Delete_Step_Invalid_Id()  {
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response saveActionToStepResponse = workflowResource.deleteStep(request,"00");
-        assertEquals(Status.NOT_FOUND.getStatusCode(), saveActionToStepResponse.getStatus());
+        final AsyncResponse asyncResponse = new MockAsyncResponse((arg) -> {
+
+            final Response saveActionToStepResponse = (Response)arg;
+            assertEquals(Status.NOT_FOUND.getStatusCode(), saveActionToStepResponse.getStatus());
+            return true;
+        }, arg -> {
+            fail("Error on deleting step");
+            return true;
+        });
+
+        workflowResource.deleteStep(request, asyncResponse,"00");
     }
 
     @Test

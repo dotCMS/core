@@ -1,7 +1,9 @@
 package com.dotmarketing.common.business.journal;
 
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 
 import java.sql.Connection;
@@ -191,5 +193,26 @@ public interface DistributedJournalAPI<T> {
 	 * @throws DotDataException
 	 */
 	public void refreshContentUnderFolderPath ( String hostId, String folderPath ) throws DotDataException;
+
+	/**
+	 * Adds an identifier to be reindexed
+	 * @param id {@link String} identifier
+	 * @throws DotDataException
+	 */
+	void addIdentifierReindex(String id) throws DotDataException;
+
+	/**
+	 * Adds a contentlet to be reindexed
+	 * @param contentlet {@link Contentlet}
+	 * @throws DotDataException
+	 */
+	void addContentletReindex(Contentlet contentlet) throws DotDataException;
+
+	/**
+	 * Adds an {@link Identifier} to be reindex
+	 * @param identifier {@link Identifier}
+	 * @throws DotDataException
+	 */
+	void addIdentifierReindex(Identifier identifier) throws DotDataException;
 	
 }

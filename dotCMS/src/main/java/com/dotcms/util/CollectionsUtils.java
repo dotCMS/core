@@ -754,4 +754,14 @@ public class CollectionsUtils implements Serializable {
         }
     } // ImmutableListCollector.
 
+    public static <T> List<T> asList (final Iterator<T> iterator) {
+	    final List<T> result = new ArrayList<T>();
+
+        while(iterator.hasNext()){
+            final T next = iterator.next();
+            result.add(next);
+        }
+
+        return ImmutableList.copyOf(result);
+    }
 }

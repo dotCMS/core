@@ -5,9 +5,10 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
-import com.dotmarketing.exception.DotDataValidationException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.javax.ws.rs.HEAD;
+import com.dotcms.rest.ErrorEntity;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.FriendClass;
@@ -16,21 +17,11 @@ import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Permissionable;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.*;
+import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.AlreadyExistException;
-import com.dotmarketing.exception.DoesNotExistException;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.exception.InvalidLicenseException;
+import com.dotmarketing.exception.*;
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -38,70 +29,23 @@ import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.MessageActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.CheckURLAccessibilityActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.CheckoutContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.CommentOnWorkflowActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.CopyActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.DeleteContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.EmailActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.FourEyeApproverActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.MultipleApproverActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.NotifyUsersActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.PushNowActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.ResetTaskActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.SetValueActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.TranslationActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
-import com.dotmarketing.portlets.workflows.model.WorkflowComment;
-import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
-import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
-import com.dotmarketing.portlets.workflows.model.WorkflowState;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
-import com.dotmarketing.portlets.workflows.model.WorkflowTask;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.SecurityLogger;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.portlets.workflows.actionlet.*;
+import com.dotmarketing.portlets.workflows.model.*;
+import com.dotmarketing.util.*;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.StringTokenizer;
+import org.apache.commons.lang.time.StopWatch;
+import org.apache.commons.lang3.concurrent.ConcurrentUtils;
+import org.osgi.framework.BundleContext;
+
+import javax.annotation.Nullable;
+import java.util.*;
 import java.util.concurrent.Future;
 import java.util.stream.IntStream;
-import javax.annotation.Nullable;
-import org.apache.commons.lang.time.StopWatch;
-import org.osgi.framework.BundleContext;
+
 
 
 public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
@@ -123,6 +67,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	private final SystemMessageEventUtil systemMessageEventUtil =
 			SystemMessageEventUtil.getInstance();
+
+	private final DistributedJournalAPI<String> distributedJournalAPI =
+			APILocator.getDistributedJournalAPI();
 
 	// not very fancy, but the WorkflowImport is a friend of WorkflowAPI
 	private volatile FriendClass  friendClass = null;
@@ -199,7 +146,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 				if (null == this.friendClass) {
 					this.friendClass =
-							new FriendClass("com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil");
+							new FriendClass("com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil",
+									"com.dotcms.content.elasticsearch.business.ESMappingAPIImpl");
 				}
 			}
 		}
@@ -392,7 +340,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			Logger.debug(this, ()-> "Saving schemes: " + schemes +
 									", to the content type: " + contentType);
 
-			this.workFlowFactory.saveSchemesForStruct(contentType.getInode(), schemes);
+			this.workFlowFactory.saveSchemesForStruct(contentType.getInode(), schemes,
+					this::consumeWorkflowTask);
 		} catch(DotDataException e){
 			throw e;
 		}
@@ -403,14 +352,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public void saveSchemeIdsForContentType(final ContentType contentType,
 											final List<String> schemesIds) throws DotDataException {
 
-
 		try {
 
 			Logger.info(WorkflowAPIImpl.class, String.format("Saving Schemas: %s for Content type %s",
 					String.join(",", schemesIds), contentType.inode()));
 
 			workFlowFactory.saveSchemeIdsForContentType(contentType.inode(),
-					schemesIds.stream().map(this::getLongIdForScheme).collect(CollectionsUtils.toImmutableList()));
+					schemesIds.stream().map(this::getLongIdForScheme).collect(CollectionsUtils.toImmutableList()),
+					this::consumeWorkflowTask);
 		} catch(DotDataException e) {
 
 			Logger.error(WorkflowAPIImpl.class, String.format("Error saving Schemas: %s for Content type %s",
@@ -530,7 +479,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			Logger.warn(this,
 					"Can not delete workflow Id:" + scheme.getId() + ", name:" + scheme.getName());
 			throw new DotWorkflowException(
-					"Can not delete workflow Id:" + scheme.getId() + ", name:" + scheme.getName());
+					"Can not delete workflow Id:" + scheme.getId() + ", name:" + scheme.getName() +
+                            ", it is not archived or it is the system workflow");
 		}
 
 		final DotSubmitter submitter = this.concurrentFactory.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
@@ -545,7 +495,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 */
 	@WrapInTransaction
 	private WorkflowScheme deleteSchemeTask(final WorkflowScheme scheme, final User user) {
+
 		try {
+
 			final StopWatch stopWatch = new StopWatch();
 			stopWatch.start();
 			Logger.info(this, "Begin the Delete Workflow Scheme task. workflow Id:" + scheme.getId()
@@ -592,12 +544,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 * @param user The user
 	 * @throws DotRuntimeException
 	 */
-	@CloseDBIfOpened
+	@WrapInTransaction
 	private void deleteWorkflowStepWrapper(final WorkflowStep step, final User user)
 			throws DotRuntimeException {
 		try {
 			//delete step
-			this.deleteStep(step, user);
+			this.doDeleteStep(step, user, false);
 		} catch (Exception e) {
 			throw new DotRuntimeException(e);
 		}
@@ -699,8 +651,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		workFlowFactory.saveStep(step);
 	}
 
-	@WrapInTransaction
-	public void deleteStep(final WorkflowStep step, final User user) throws DotDataException {
+	@CloseDBIfOpened
+	public  Future<WorkflowStep>  deleteStep(final WorkflowStep step, final User user) throws DotDataException {
+
+		return this.doDeleteStep(step, user, true); // runs async
+	}
+
+	private Future<WorkflowStep> doDeleteStep(final WorkflowStep step, final User user, final boolean async) throws DotDataException {
 
 		this.isUserAllowToModifiedWorkflow(user);
 
@@ -714,7 +671,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				Remember the step can point to itself and that should not be a restriction when deleting.
 				 */
 				if (!otherStep.getId().equals(step.getId())) {
-					for(WorkflowAction action : findActions(otherStep, APILocator.getUserAPI().getSystemUser())){
+					for(final WorkflowAction action : findActions(otherStep, APILocator.getUserAPI().getSystemUser())){
 
 						if (action.getNextStep().equals(step.getId())) {
 							final String validationExceptionMessage = LanguageUtil.format(user.getLocale(),
@@ -726,7 +683,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					}
 				}
 			}
-			
+
 			final int countContentletsReferencingStep = getCountContentletsReferencingStep(step);
 			if(countContentletsReferencingStep > 0){
 
@@ -736,16 +693,86 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				throw new DotDataValidationException(validationExceptionMessage);
 			}
 
-			this.workFlowFactory.deleteActions(step); // workflow_action_step
-			this.workFlowFactory.deleteStep(step);    // workflow_step
-			SecurityLogger.logInfo(this.getClass(),
-					"The Workflow Step with id:" + step.getId() + ", name:" + step.getName()
-							+ " was deleted");
-
+			final DotSubmitter submitter = this.concurrentFactory.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
+			//Delete the Scheme in a separated thread
+			return (async)?
+					submitter.submit(() -> deleteStepTask(step, user, true)):
+					ConcurrentUtils.constantFuture(deleteStepTask(step, user, false));
 		} catch(Exception e){
 
 			throw new DotDataException(e.getMessage(), e);
 		}
+	}
+
+	private void consumeWorkflowTask (final WorkflowTask workflowTask) {
+
+		try {
+			HibernateUtil.addAsyncCommitListener( () -> {
+				try {
+					this.distributedJournalAPI.addIdentifierReindex(workflowTask.getWebasset());
+				} catch (DotDataException e) {
+					Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+				}
+			});
+		} catch (DotHibernateException e) {
+			Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+		}
+	}
+
+	@WrapInTransaction
+	private WorkflowStep deleteStepTask(final WorkflowStep step, final User user, final boolean sendSystemEvent) {
+
+		try {
+
+			final StopWatch stopWatch = new StopWatch();
+			stopWatch.start();
+
+			Logger.info(this, "Begin the Delete Workflow Step task. step Id:" + step.getId()
+					+ ", name:" + step.getName());
+
+			this.workFlowFactory.deleteActions(step); // workflow_action_step
+			this.workFlowFactory.deleteStep(step, this::consumeWorkflowTask); // workflow_step
+			SecurityLogger.logInfo(this.getClass(),
+					"The Workflow Step with id:" + step.getId() + ", name:" + step.getName()
+							+ " was deleted");
+
+			stopWatch.stop();
+			Logger.info(this, "Delete Workflow Step task DONE, duration:" +
+					DateUtil.millisToSeconds(stopWatch.getTime()) + " seconds");
+
+			if (sendSystemEvent) {
+				HibernateUtil.addAsyncCommitListener(() -> {
+					try {
+						this.systemMessageEventUtil.pushSimpleTextEvent
+								(LanguageUtil.get(user.getLocale(), "Workflow-Step-deleted", step.getName()), user.getUserId());
+					} catch (LanguageException e1) {
+						Logger.error(this.getClass(), e1.getMessage(), e1);
+					}
+				});
+			}
+		} catch (Exception e) {
+
+			try {
+				HibernateUtil.addRollbackListener(() -> {
+					try {
+						this.systemMessageEventUtil.pushSimpleErrorEvent(new ErrorEntity("Workflow-delete-step-error",
+								LanguageUtil.get(user.getLocale(), "Workflow-delete-step-error", step.getName())), user.getUserId());
+					} catch (LanguageException e1) {
+						Logger.error(this.getClass(), e1.getMessage(), e1);
+					}
+				});
+			} catch (DotHibernateException e1) {
+				Logger.error(this.getClass(), e1.getMessage(), e1);
+			}
+
+			Logger.error(this.getClass(),
+					"Error deleting the step: " + step.getId() + ", name:" + step.getName() + ". "
+							 + e.getMessage(), e);
+
+			throw new DotRuntimeException(e);
+		}
+
+		return step;
 	}
 
 	@CloseDBIfOpened
@@ -1642,26 +1669,23 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return processor;
 	}
 
+	@WrapInTransaction
 	@Override
 	public void fireWorkflowPostCheckin(final WorkflowProcessor processor) throws DotDataException,DotWorkflowException{
-		boolean local 			= false;
-		boolean isNewConnection = false;
 
 		try{
 			if(!processor.inProcess()){
 				return;
 			}
 
-			isNewConnection    = !DbConnectionFactory.connectionExists();
-			local = HibernateUtil.startLocalTransactionIfNeeded();
+			processor.getContentlet().setActionId(processor.getAction().getId());
 
-			processor.getContentlet().setStringProperty("wfActionId", processor.getAction().getId());
-
-			List<WorkflowActionClass> actionClasses = processor.getActionClasses();
+			final List<WorkflowActionClass> actionClasses = processor.getActionClasses();
 			if(actionClasses != null){
-				for(WorkflowActionClass actionClass : actionClasses){
-					WorkFlowActionlet actionlet= actionClass.getActionlet();
-					Map<String,WorkflowActionClassParameter> params = findParamsForActionClass(actionClass);
+				for(final WorkflowActionClass actionClass : actionClasses){
+
+					final WorkFlowActionlet actionlet = actionClass.getActionlet();
+					final Map<String,WorkflowActionClassParameter> params = findParamsForActionClass(actionClass);
 					actionlet.executeAction(processor, params);
 
 					//if we should stop processing further actionlets
@@ -1676,26 +1700,21 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				this.saveWorkflowTask(processor);
 
 				if (UtilMethods.isSet(processor.getContentlet())) {
-					APILocator.getContentletAPI().refresh(processor.getContentlet());
+				    HibernateUtil.addAsyncCommitListener(() -> {
+                        try {
+                            APILocator.getContentletAPI().refresh(processor.getContentlet());
+                        } catch (DotDataException e) {
+                            Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+                        }
+                    });
 				}
 			}
-
-			if(local){
-				HibernateUtil.commitTransaction();
-			}
 		} catch(Exception e) {
-			if(local){
-				HibernateUtil.rollbackTransaction();
-			}
+
 			/* Show a more descriptive error of what caused an issue here */
 			Logger.error(WorkflowAPIImpl.class, "There was an unexpected error: " + e.getMessage());
 			Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
 			throw new DotWorkflowException(e.getMessage(), e);
-		} finally {
-			if(isNewConnection){
-
-				HibernateUtil.closeSessionSilently();
-			}
 		}
 	}
 
