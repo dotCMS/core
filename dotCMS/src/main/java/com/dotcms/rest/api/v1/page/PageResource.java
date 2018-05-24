@@ -28,6 +28,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -221,12 +222,12 @@ public class PageResource {
         Response res = null;
 
         try {
-            final IHTMLPage page = this.pageResourceHelper.getPage(user, pageId);
-            this.pageResourceHelper.saveTemplate(user, page, form);
 
-            final PageMode pageMode = PageMode.get(request);
+            HTMLPageAsset page = (HTMLPageAsset) this.pageResourceHelper.getPage(user, pageId);
+            page = this.pageResourceHelper.saveTemplate(user, page, form);
+
             final PageView renderedPage = this.htmlPageAssetRenderedAPI.getPageRendered(request, response, user,
-                    (HTMLPageAsset) page, pageMode);
+                    page, PageMode.PREVIEW_MODE);
 
             res = Response.ok(new ResponseEntityView(renderedPage)).build();
 

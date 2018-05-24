@@ -130,24 +130,26 @@ public class PageResourceHelper implements Serializable {
         return PageResourceHelper.SingletonHolder.INSTANCE;
     }
 
-    public Template saveTemplate(final User user, IHTMLPage htmlPageAsset, final PageForm pageForm)
+    public HTMLPageAsset saveTemplate(final User user, HTMLPageAsset htmlPageAsset, final PageForm pageForm)
 
             throws BadRequestException, DotDataException, DotSecurityException {
 
         try {
-            
-            
             Template templateSaved = this.saveTemplate(htmlPageAsset, user, pageForm);
 
             String templateId = htmlPageAsset.getTemplateId();
 
+            Contentlet contentlet = htmlPageAsset;
+
             if (!templateId.equals( templateSaved.getIdentifier() )) {
-                htmlPageAsset.setInode(null);
-                htmlPageAsset.setTemplateId(templateSaved.getIdentifier());
-                this.contentletAPI.checkin((HTMLPageAsset)htmlPageAsset, user, false);
+                contentlet = this.contentletAPI.checkout(htmlPageAsset.getInode(), user, false);
+                contentlet.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, templateSaved.getIdentifier());
+                contentlet = this.contentletAPI.checkin(contentlet, user, false);
             }
 
-            return templateSaved;
+            return contentlet instanceof  HTMLPageAsset ?
+                    (HTMLPageAsset) contentlet :
+                    this.htmlPageAssetAPI.fromContentlet(contentlet);
         } catch (BadRequestException | DotDataException | DotSecurityException e) {
             throw new DotRuntimeException(e);
         }
