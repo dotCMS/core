@@ -654,8 +654,8 @@
 	</portlet>
 	
     <portlet>
-        <portlet-name>ga-dashboard</portlet-name>
-        <display-name>Google Analytics Dashboard</display-name>
+        <portlet-name>embedded-dashboard</portlet-name>
+        <display-name>Embedded Analytics Dashboard</display-name>
         <portlet-class>com.dotcms.rest.JSPPortlet</portlet-class>
     </portlet>
     

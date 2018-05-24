@@ -59,7 +59,7 @@ public class Host extends Contentlet implements Permissionable,Treeable,Parentab
 	
     public static final String HOST_VELOCITY_VAR_NAME = "Host";
     
-    public static final String GA_DASHBOARD = "gaDashboard";
+    public static final String EMBEDDED_DASHBOARD = "embeddedDashboard";
     
 	@Override
 	public String getInode() {
