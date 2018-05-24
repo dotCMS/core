@@ -28,7 +28,7 @@
 
 <%if(!yesDashBoard){ %>
    <div style="padding:20px; max-width:800px; border:1px solid gray; background: rgba(225,225,225); position: absolute;cursor:pointer;top: 250px;left:50%; margin-left: -400px;" onclick="dojo.destroy(this)">
-      This is demonstration data. Please create/set the field host.embeddedDashboard to the embed url for your Dashboard visualization. It will be parsed as velocity for variable substitution, e.g. $host.identifer.
+      <%=LanguageUtil.get(user, "embedded.dashboard.instructions") %>
   </div>
 <%}%>
 
