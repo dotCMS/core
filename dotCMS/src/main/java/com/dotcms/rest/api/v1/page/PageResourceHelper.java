@@ -130,6 +130,7 @@ public class PageResourceHelper implements Serializable {
         return PageResourceHelper.SingletonHolder.INSTANCE;
     }
 
+    @WrapInTransaction
     public HTMLPageAsset saveTemplate(final User user, HTMLPageAsset htmlPageAsset, final PageForm pageForm)
 
             throws BadRequestException, DotDataException, DotSecurityException {
