@@ -10,24 +10,32 @@
 	String hostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
 	Host host = (null==hostId) ?  WebAPILocator.getHostWebAPI().getHost(request) :  APILocator.getHostAPI().find(hostId, user, false);
 	String embeddedDashboard = host.getStringProperty(Host.EMBEDDED_DASHBOARD);
+	boolean yesDashBoard=false;
 	if(null!=embeddedDashboard){
 		Context ctx = VelocityUtil.getWebContext(request, response);
 		ctx.put("host", host);
 		embeddedDashboard=VelocityUtil.eval(embeddedDashboard, ctx);
+		yesDashBoard=true;
+	}else{
+	    embeddedDashboard="https://datastudio.google.com/embed/reporting/1_wMHSB93Lb4jhKwLItn7Ctnv4F9cXfw3/page/sBV";
+	    
+	    
 	}
 	
 	
 
 %>
 
-<div style="width: 100%; background: #f1f1f1;">
-  <div style="max-width: 1200px; margin: auto;">
-    <%if(!UtilMethods.isSet(embeddedDashboard)){ %>
-        <div style="padding:30px;max-width:800px;margin: auto;"">
-	       Please create/set the field host.embeddedDashboard to the embed url for your Dashboard visualization. It will be parsed as velocity for variable substitution, e.g. $host.identifer.
-	   </div>
-	<%}else{ %>
-        <iframe width="100%" height="2585" src="<%=embeddedDashboard %>" frameborder="0" style="border:0" allowfullscreen></iframe>
-     <%} %>
+<%if(!yesDashBoard){ %>
+   <div style="padding:20px; max-width:800px; border:1px solid gray; background: rgba(225,225,225); position: absolute;cursor:pointer;top: 250px;left:50%; margin-left: -400px;" onclick="dojo.destroy(this)">
+      This is demonstration data. Please create/set the field host.embeddedDashboard to the embed url for your Dashboard visualization. It will be parsed as velocity for variable substitution, e.g. $host.identifer.
   </div>
+<%}%>
+
+
+
+<div style="width: 100%; background: #f1f1f1;">
+   <div style="max-width: 1200px; margin: auto;">
+       <iframe width="100%" height="2585" src="<%=embeddedDashboard %>" frameborder="0" style="border:0" allowfullscreen></iframe>
+   </div>
 </div>
