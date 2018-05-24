@@ -14,12 +14,12 @@
         },
         {
           "term": {
-            "news.tags": "gas"
+            "tags": "gas"
           }
         },
         {
           "term": {
-            "news.byline": "jean"
+            "byline": "jean"
           }
         }
       ]
