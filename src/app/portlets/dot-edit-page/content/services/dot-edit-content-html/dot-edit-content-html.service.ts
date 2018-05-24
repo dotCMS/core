@@ -200,7 +200,6 @@ export class DotEditContentHtmlService {
     }
 
     private handleIframeClicks(target: HTMLElement) {
-        console.log('click iframe', target);
         if (target.dataset.dotObject === 'edit-content') {
             this.editInnerContentlet(target);
         }
