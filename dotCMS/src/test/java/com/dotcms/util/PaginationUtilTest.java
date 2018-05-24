@@ -9,6 +9,7 @@ import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonNode;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.util.pagination.OrderDirection;
+import com.dotcms.util.pagination.PaginationException;
 import com.dotcms.util.pagination.Paginator;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
@@ -16,22 +17,13 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
-import org.junit.Before;
 import org.junit.Test;
 
 public class PaginationUtilTest {
 
-    private PaginationUtil paginationUtil;
-    private Paginator paginator;
-
-    @Before
-    public void init(){
-        paginator = mock( Paginator.class );
-        paginationUtil = new PaginationUtil( paginator );
-    }
-
     @Test
     public void testPage() throws IOException {
+
         final HttpServletRequest req = mock( HttpServletRequest.class );
         final User user = new User();
         final String filter = "filter";
@@ -39,7 +31,6 @@ public class PaginationUtilTest {
         final int perPage = 5;
         final String orderBy = "name";
         final OrderDirection direction = OrderDirection.ASC;
-        final int offset = (page - 1) * perPage;
         final long totalRecords = 10;
         final StringBuffer baseURL = new StringBuffer("/baseURL");
 
@@ -51,13 +42,15 @@ public class PaginationUtilTest {
 
         when( req.getRequestURL() ).thenReturn( baseURL );
 
-        final Map<String, Object> params = map(
-                Paginator.DEFAULT_FILTER_PARAM_NAME, filter,
-                Paginator.ORDER_BY_PARAM_NAME, orderBy,
-                Paginator.ORDER_DIRECTION_PARAM_NAME, direction
-        );
+        final Paginator paginator = new Paginator() {
+            @Override
+            public PaginatedArrayList getItems(User user, int limit, int offset, Map params)
+                    throws PaginationException {
+                return items;
+            }
+        };
 
-        when( paginator.getItems( user, perPage, offset, params ) ).thenReturn( items );
+        final PaginationUtil paginationUtil = new PaginationUtil( paginator );
 
         final Response response = paginationUtil.getPage(req, user, filter, page, perPage, orderBy, direction, map());
 

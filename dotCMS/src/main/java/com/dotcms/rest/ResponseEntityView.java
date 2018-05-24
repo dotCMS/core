@@ -1,5 +1,6 @@
 package com.dotcms.rest;
 
+import com.dotcms.util.pagination.Pagination;
 import com.liferay.util.StringPool;
 import java.io.Serializable;
 import java.util.Arrays;

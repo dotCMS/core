@@ -9,13 +9,16 @@ import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectWriter;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
-import com.dotcms.rest.Pagination;
+import com.dotcms.util.pagination.Pagination;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.Paginator;
 import com.dotmarketing.common.util.SQLUtil;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringUtil;
 import java.io.UnsupportedEncodingException;
@@ -43,13 +46,7 @@ public class PaginationUtil {
 	public static final String ORDER_BY = "orderby";
 	public static final String DIRECTION = "direction";
 
-	private static final String LINK_HEADER_NAME = "Link";
-	private static final String PAGINATION_PER_PAGE_HEADER_NAME = "X-Pagination-Per-Page";
-	private static final String PAGINATION_CURRENT_PAGE_HEADER_NAME = "X-Pagination-Current-Page";
-	private static final String PAGINATION_MAX_LINK_PAGES_HEADER_NAME = "X-Pagination-Link-Pages";
-	private static final String PAGINATION_TOTAL_ENTRIES_HEADER_NAME = "X-Pagination-Total-Entries";
-
-	public static final String PAGE_VALUE_TEMPLATE = "pageValue";
+	private static final String PAGE_VALUE_TEMPLATE = "pageValue";
 
 	private static final String LINK_TEMPLATE = "<{URL}>;rel=\"{relValue}\"";
 
@@ -132,26 +129,38 @@ public class PaginationUtil {
 		final int perPageValue = perPage == 0 ? perPageDefault : perPage;
 		final int minIndex = getMinIndex(pageValue, perPageValue);
 
-		final String sanitizefilter = filter != null ? SQLUtil.sanitizeParameter(filter) : null;
+		final String sanitizeFilter = filter != null ? SQLUtil.sanitizeParameter(filter) : null;
 
-		final Map<String, Object> params = getParameters(sanitizefilter, orderBy, direction, extraParams);
+		final Map<String, Object> params = getParameters(sanitizeFilter, orderBy, direction, extraParams);
 
 		PaginatedArrayList items = paginator.getItems(user, perPageValue, minIndex, params);
 
 		items =  !UtilMethods.isSet(items) ? new PaginatedArrayList() : items;
 		final long totalRecords = items.getTotalResults();
 
-		final String linkHeaderValue = getHeaderValue(req.getRequestURL().toString(), sanitizefilter, pageValue, perPageValue,
+		final String linkHeaderValue = getHeaderValue(req.getRequestURL().toString(), sanitizeFilter, pageValue, perPageValue,
 				totalRecords, orderBy, direction, extraParams);
 
 		try {
-			final Pagination pagination = new Pagination(linkHeaderValue, perPageValue, pageValue,
-					nLinks, totalRecords);
+			final ImmutableMap.Builder<String,Object> mapBuilder = ImmutableMap.builder();
+			if(extraParams != null){
+				mapBuilder.putAll(extraParams);
+			}
+			final Map <String, Object> paginationValuesMap = mapBuilder
+					.put(Pagination.LINK, linkHeaderValue)
+					.put(Pagination.LINK_PAGES, nLinks)
+					.put(Pagination.CURRENT_PAGE, pageValue)
+					.put(Pagination.PER_PAGE, perPageValue)
+					.put(Pagination.TOTAL_RECORDS, totalRecords).build();
+
+			final Pagination pagination = paginator.createPagination(user, paginationValuesMap);
 			final ResponseEntityView entityView = new ResponseEntityView.Builder()
-					.pagination(pagination).entity(items).build();
+					.entity(items).pagination(pagination).build();
 			return Response.ok(objectWriter.writeValueAsString(entityView)).build();
 		} catch (JsonProcessingException e) {
 			throw new JsonProcessingRuntimeException(e);
+		} catch (DotDataException e){
+			throw new DotRuntimeException(e);
 		}
 	}
 

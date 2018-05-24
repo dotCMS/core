@@ -1,14 +1,10 @@
 package com.dotcms.rest.api.v1.notification;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotcms.util.ConversionUtils.toLong;
+import static com.dotcms.util.ConversionUtils.toInt;
 
 import com.dotcms.notifications.NotificationConverter;
-import com.dotcms.notifications.bean.Notification;
-import com.dotcms.notifications.bean.UserNotificationPair;
 import com.dotcms.notifications.business.NotificationAPI;
-import com.dotcms.notifications.view.NotificationView;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.DELETE;
 import com.dotcms.repackage.javax.ws.rs.GET;
@@ -27,15 +23,19 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.ConversionUtils;
+import com.dotcms.util.PaginationUtil;
+import com.dotcms.util.pagination.NotificationsPaginator;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import java.util.List;
+import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -56,7 +56,7 @@ public class NotificationResource {
     private final NotificationAPI notificationAPI;
     private final ConversionUtils conversionUtils;
     private final NotificationConverter notificationConverter;
-
+    private final PaginationUtil paginationUtil;
 
     public NotificationResource() {
         this(APILocator.getNotificationAPI(), new WebResource());
@@ -70,6 +70,7 @@ public class NotificationResource {
         this.webResource            = webResource;
         this.conversionUtils        = ConversionUtils.INSTANCE;
         this.notificationConverter  = new NotificationConverter();
+        this.paginationUtil = new PaginationUtil(new NotificationsPaginator());
     }
 
     /**
@@ -113,49 +114,28 @@ public class NotificationResource {
 
             /* Limit and Offset Parameters Handling, if not passed, using default */
 
-            long limit  = toLong(limitStr, -1L);
-            long offset = toLong(offsetStr, -1L);
+            int limit  = toInt(limitStr, -1);
+            int offset = toInt(offsetStr, -1);
 
             offset = UtilMethods.isSet(range) ?
-                    Long.parseLong(range.split("=")[1].split("-")[0]) : offset;
+                    Integer.parseInt(range.split("=")[1].split("-")[0]) : offset;
             limit  = UtilMethods.isSet(range) ?
-                    Long.parseLong(range.split("=")[1].split("-")[1]) : limit;
+                    Integer.parseInt(range.split("=")[1].split("-")[1]) : limit;
             limit  += 1;
 
             // Let's mark the new notifications as read: todo: should it work in that way?
             //notificationAPI.markNotificationsAsRead(user.getUserId());
 
-            // Let's get the total count
-            Long notificationsCount = allUsers ?
-                    this.notificationAPI.getNotificationsCount() :
-                    this.notificationAPI.getNotificationsCount(user.getUserId());
 
-            final Long totalUnreadNotifications = allUsers ?
-                    this.notificationAPI.getNotificationsCount() :
-                    this.notificationAPI.getNewNotificationsCount(user.getUserId());
+           final Map<String,Object> extraParams = ImmutableMap.of(ALLUSERS, allUsers);
+           return paginationUtil.getPage(request, user,null, offset, limit, extraParams);
 
-            final List<Notification> notifications = allUsers ?
-                    this.notificationAPI.getNotifications(offset, limit) :
-                    this.notificationAPI.getNotifications(user.getUserId(), offset, limit);
-
-            final List<NotificationView> notificationsResult = list();
-
-            // copy and doing some treatment.
-            if (null != notifications) {
-
-                notifications.forEach(notification -> {
-
-                    final NotificationView notificationResult = this.conversionUtils.convert(
-                            new UserNotificationPair(user, notification), this.notificationConverter);
-
-                    notificationsResult.add(notificationResult);
-                });
-            }
-
+           /*
             return Response.ok(new ResponseEntityView(map("totalUnreadNotifications", totalUnreadNotifications,
                     "notifications", notificationsResult, "total", notificationsCount)))
                     .header("Content-Range", "items " + offset + "-" + limit + "/" + totalUnreadNotifications)
                     .build(); // 200
+                    */
 
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
 
