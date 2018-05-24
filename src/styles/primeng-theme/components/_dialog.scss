@@ -22,11 +22,11 @@
                 .ui-button-text {
                     color: $gray;
                 }
-        
+
                 &:hover,
                 &:focus {
                     background-color: rgba($gray, 0.1);
-        
+
                     .ui-button-text {
                         color: $gray-darker;
                     }
@@ -79,6 +79,7 @@
     .ui-dialog-titlebar-minimize,
     .ui-dialog-titlebar-maximize {
         color: $dialog-close-button-normal-color;
+        font-size: $font-size-x-large;
         margin-top: 0;
         padding: 0;
 

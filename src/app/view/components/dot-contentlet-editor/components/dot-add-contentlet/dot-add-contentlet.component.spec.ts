@@ -69,6 +69,7 @@ describe('DotAddContentletComponent', () => {
     describe('with data', () => {
         beforeEach(() => {
             dotAddContentletService.add({
+                header: 'Add dome content',
                 data: {
                     container: '123',
                     baseTypes: 'content,form'
@@ -87,6 +88,10 @@ describe('DotAddContentletComponent', () => {
 
         it('should have dot-iframe-dialog url set', () => {
             expect(dotIframeDialogComponent.url).toEqual('/html/ng-contentlet-selector.jsp?ng=true&container_id=123&add=content,form');
+        });
+
+        it('should have dot-iframe-dialog header set', () => {
+            expect(dotIframeDialogComponent.header).toEqual('Add dome content');
         });
 
         describe('events', () => {

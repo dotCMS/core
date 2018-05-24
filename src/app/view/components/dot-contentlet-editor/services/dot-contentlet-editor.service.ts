@@ -11,6 +11,7 @@ interface DotAddEditEvents {
 }
 
 export interface DotEditorAction {
+    header?: string;
     data: {
         [key: string]: string;
     };
@@ -26,6 +27,7 @@ export interface DotEditorAction {
 @Injectable()
 export class DotContentletEditorService {
     private data: Subject<DotEditorAction> = new Subject();
+    private _header: Subject<string> = new Subject();
     private _load: ($event: any) => void;
     private _keyDown: ($event: KeyboardEvent) => void;
 
@@ -50,6 +52,10 @@ export class DotContentletEditorService {
             filter((action: DotEditorAction) => this.isCreateUrl(action)),
             map((action: DotEditorAction) => this.getCreateUrl(action))
         );
+    }
+
+    get header$(): Observable<string> {
+        return this._header;
     }
 
     get loadHandler(): ($event: any) => void {
@@ -178,6 +184,10 @@ export class DotContentletEditorService {
     private setData(action: DotEditorAction): void {
         if (action.events) {
             this.bindEvents(action.events);
+        }
+
+        if (action.header) {
+            this._header.next(action.header);
         }
 
         this.data.next({

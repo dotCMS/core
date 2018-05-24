@@ -1,4 +1,5 @@
 import { Component, Input, SimpleChanges, OnChanges, EventEmitter, Output } from '@angular/core';
+import { Observable } from 'rxjs/Observable';
 
 @Component({
     selector: 'dot-iframe-dialog',
@@ -7,6 +8,7 @@ import { Component, Input, SimpleChanges, OnChanges, EventEmitter, Output } from
 })
 export class DotIframeDialogComponent implements OnChanges {
     @Input() url: string;
+    @Input() header = '';
     @Output() close: EventEmitter<any> = new EventEmitter();
     @Output() load: EventEmitter<any> = new EventEmitter();
     @Output() keydown: EventEmitter<KeyboardEvent> = new EventEmitter();
@@ -18,6 +20,10 @@ export class DotIframeDialogComponent implements OnChanges {
 
     ngOnChanges(changes: SimpleChanges) {
         this.show = !!changes.url.currentValue;
+
+        if (changes.header) {
+            this.header = changes.header.currentValue;
+        }
     }
 
     /**
@@ -38,6 +44,9 @@ export class DotIframeDialogComponent implements OnChanges {
      * @memberof DotIframeDialogComponent
      */
     onCustomEvents($event: CustomEvent): void {
+        if ($event.detail.name === 'edit-contentlet-loaded') {
+            this.header = $event.detail.data.contentType;
+        }
         this.custom.emit($event);
     }
 

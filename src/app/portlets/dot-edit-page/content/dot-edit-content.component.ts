@@ -78,6 +78,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         this.subscribeIframeCustomEvents();
         this.subscribeIframeActions();
         this.subscribePageModelChange();
+
     }
 
     ngOnDestroy(): void {
@@ -169,6 +170,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         this.dotEditContentHtmlService.setContainterToAppendContentlet(container);
 
         this.dotContentletEditorService.add({
+            header: this.dotMessageService.get('dot.common.content.search'),
             data: {
                 container: $event.dataset.dotIdentifier,
                 baseTypes: $event.dataset.dotAdd
@@ -219,6 +221,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                 'editpage.content.contentlet.remove.confirmation_message.header',
                 'dot.common.message.saving',
                 'dot.common.message.saved',
+                'dot.common.content.search',
                 'editpage.content.save.changes.confirmation.header',
                 'editpage.content.save.changes.confirmation.message'
             ])

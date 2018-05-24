@@ -14,10 +14,11 @@ import { IframeComponent } from '../_common/iframe/iframe-component';
 
 @Component({
     selector: 'dot-test-host-component',
-    template: '<dot-iframe-dialog [url]="url"></dot-iframe-dialog>'
+    template: '<dot-iframe-dialog [url]="url" [header]="header"></dot-iframe-dialog>'
 })
 class TestHostComponent {
     url: string;
+    header: string;
 }
 
 describe('DotIframeDialogComponent', () => {
@@ -88,6 +89,7 @@ describe('DotIframeDialogComponent', () => {
 
         beforeEach(() => {
             hostComponent.url = 'hello/world';
+            hostComponent.header = 'This is a header';
             hostFixture.detectChanges();
             dialog = de.query(By.css('p-dialog'));
             dialogComponent = dialog.componentInstance;
@@ -120,8 +122,16 @@ describe('DotIframeDialogComponent', () => {
             it('should emit custom', () => {
                 spyOn(component.custom, 'emit');
 
-                dotIframe.triggerEventHandler('custom', { hello: 'world' });
-                expect(component.custom.emit).toHaveBeenCalledWith({ hello: 'world' });
+                dotIframe.triggerEventHandler('custom', {
+                    detail: {
+                        name: 'Hello World'
+                    }
+                });
+                expect(component.custom.emit).toHaveBeenCalledWith({
+                    detail: {
+                        name: 'Hello World'
+                    }
+                });
             });
         });
 
@@ -135,6 +145,7 @@ describe('DotIframeDialogComponent', () => {
                 expect(dialogComponent.draggable).toEqual(false, 'draggable');
                 expect(dialogComponent.dismissableMask).toEqual(true, 'dismissableMask');
                 expect(dialogComponent.modal).toEqual(true, 'modal');
+                expect(dialogComponent.header).toBe('This is a header');
             });
 
             it('should focus in the iframe window', () => {

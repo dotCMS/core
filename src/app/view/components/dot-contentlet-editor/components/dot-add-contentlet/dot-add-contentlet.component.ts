@@ -18,12 +18,14 @@ import { DotContentletEditorService } from '../../services/dot-contentlet-editor
 })
 export class DotAddContentletComponent implements OnInit {
     @Output() load: EventEmitter<any> = new EventEmitter();
-    url: Observable<string>;
+    url$: Observable<string>;
+    header$: Observable<string>;
 
     constructor(private dotContentletEditorService: DotContentletEditorService) {}
 
     ngOnInit() {
-        this.url = this.dotContentletEditorService.addUrl$;
+        this.url$ = this.dotContentletEditorService.addUrl$;
+        this.header$ = this.dotContentletEditorService.header$;
     }
 
     /**

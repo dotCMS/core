@@ -1,7 +1,6 @@
 import {
     Component,
     ElementRef,
-    ViewEncapsulation,
     OnInit,
     Input,
     ViewChild,
@@ -16,7 +15,6 @@ import { IframeOverlayService } from '../service/iframe-overlay.service';
 import { DotIframeService } from '../service/dot-iframe/dot-iframe.service';
 
 @Component({
-    encapsulation: ViewEncapsulation.Emulated,
     selector: 'dot-iframe',
     styleUrls: ['./iframe.component.scss'],
     templateUrl: 'iframe.component.html'
@@ -43,19 +41,12 @@ export class IframeComponent implements OnInit {
 
     ngOnInit(): void {
         this.iframeOverlayService.overlay.subscribe((val) => (this.showOverlay = val));
-        this.element.nativeElement.style.height = this.getIframeHeight(window.innerHeight);
 
         this.dotIframeService.reloaded().subscribe(() => {
             if (this.getIframeWindow()) {
                 this.getIframeLocation().reload();
             }
         });
-
-        Observable.fromEvent(window, 'resize')
-            .debounceTime(250)
-            .subscribe(($event: any) => {
-                this.element.nativeElement.style.height = this.getIframeHeight($event.target.innerHeight);
-            });
     }
 
     /**
@@ -112,11 +103,6 @@ export class IframeComponent implements OnInit {
 
     private getIframeLocation(): any {
         return this.iframeElement.nativeElement.contentWindow.location;
-    }
-
-    private getIframeHeight(height: number): string {
-        // TODO there is a weird 4px bug here that make unnecessary scroll, need to look into it.
-        return height - 64 + 'px';
     }
 
     private isIframeHaveContent(): boolean {

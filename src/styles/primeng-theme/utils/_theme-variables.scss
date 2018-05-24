@@ -199,10 +199,10 @@ $menu-link-color: $black;
 // DIALOG
 $dialog-padding: $basic-padding * 3;
 $dialog-padding-footer: $basic-padding $basic-padding * 2;
-$dialog-title-font-size: $font-size-large;
+$dialog-title-font-size: $font-size-x-large;
 $dialog-message-line-height: 18px;
 $dialog-message-warning-color: $red;
-$dialog-close-button-normal-color: $gray-light;
+$dialog-close-button-normal-color: rgba($black, 0.7);
 $dialog-close-button-hover-color: $black;
 
 // INPUTSWITCH

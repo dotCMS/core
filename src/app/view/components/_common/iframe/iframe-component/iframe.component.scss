@@ -1,6 +1,8 @@
 :host {
     display: block;
+    height: 100%;
     position: relative;
+    overflow: hidden;
 
     iframe {
         border: none;

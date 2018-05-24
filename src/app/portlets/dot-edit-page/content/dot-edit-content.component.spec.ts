@@ -92,7 +92,8 @@ describe('DotEditContentComponent', () => {
             'editpage.content.steal.lock.confirmation_message.reject': 'Lock',
             'editpage.content.steal.lock.confirmation_message.accept': 'Cancel',
             'editpage.content.save.changes.confirmation.header': 'Save header',
-            'editpage.content.save.changes.confirmation.message': 'Save message'
+            'editpage.content.save.changes.confirmation.message': 'Save message',
+            'dot.common.content.search': 'Content Search'
         });
 
         DOTTestBed.configureTestingModule({
@@ -576,6 +577,7 @@ describe('DotEditContentComponent', () => {
 
             it('should call add service', () => {
                 expect(dotContentletEditorService.add).toHaveBeenCalledWith({
+                    header: 'Content Search',
                     data: {
                         container: '123',
                         baseTypes: 'content,widget'
