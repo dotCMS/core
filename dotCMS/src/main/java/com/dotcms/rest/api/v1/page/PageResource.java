@@ -394,7 +394,7 @@ public class PageResource {
                     "Content-Type, " + "Accept, Authorization");
             res = responseBuilder.build();
         } catch (HTMLPageAssetNotFoundException e) {
-            String messageFormat =
+            final String messageFormat =
                     "HTMLPageAssetNotFoundException on PageResource.renderHTMLOnly, parameters: request -> %s, uri -> %s mode -> %s: ";
             final String errorMsg = String.format(messageFormat, request, uri, mode);
             Logger.error(this, errorMsg, e);
