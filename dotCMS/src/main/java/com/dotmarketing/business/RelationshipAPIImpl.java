@@ -12,6 +12,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Relationship;
 
 import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
 import java.util.List;
 
 // THIS IS A FAKE API SO PEOPLE CAN FIND AND USE THE RELATIONSHIPFACTORY
@@ -112,13 +113,41 @@ public class RelationshipAPIImpl implements RelationshipAPI {
     @WrapInTransaction
     @Override
     public void save(Relationship relationship) throws DotDataException {
+        checkReadOnlyFields(relationship, relationship.getInode());
         this.relationshipFactory.save(relationship);
     }
 
     @WrapInTransaction
     @Override
     public void save(Relationship relationship, String inode) throws DotDataException {
+        checkReadOnlyFields(relationship, inode);
         this.relationshipFactory.save(relationship, inode);
+    }
+
+    private void checkReadOnlyFields(final Relationship relationship, final String inode) {
+        if (UtilMethods.isSet(inode) && UtilMethods.isSet(relationship)) {
+
+            //Check if the relationship already exists
+            Relationship currentRelationship = this.relationshipFactory.byInode(inode);
+            if (UtilMethods.isSet(currentRelationship) && UtilMethods.isSet(currentRelationship.getInode())) {
+
+                //Check the parent has not been changed
+                if (!relationship.getParentStructureInode().equals(currentRelationship.getParentStructureInode())) {
+                    throw new DotValidationException("error.relationship.parent.structure.cannot.be.changed");
+                }
+
+                //Check the child has not been changed
+                if (!relationship.getChildStructureInode().equals(currentRelationship.getChildStructureInode())) {
+                    throw new DotValidationException("error.relationship.child.structure.cannot.be.changed");
+                }
+
+                //Check the typeValue has not been changed
+                if (!relationship.getRelationTypeValue().equals(currentRelationship.getRelationTypeValue())) {
+                    throw new DotValidationException("error.relationship.type.value.cannot.be.changed");
+                }
+
+            }
+        }
     }
 
     @WrapInTransaction

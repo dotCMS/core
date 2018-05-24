@@ -18,6 +18,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.liferay.portal.model.User;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * This class provides access to all the information related to Workflows in dotCMS. Workflows
@@ -100,7 +101,16 @@ public interface WorkFlowFactory {
 
 	public void deleteSchemeForStruct(String struc) throws DotDataException;
 
-	public void saveSchemesForStruct(String contentTypeInode, List<WorkflowScheme> schemes) throws DotDataException;
+	/**
+	 * Link the workflows with the {@link com.dotcms.contenttype.model.type.ContentType}, before remove all the
+	 * 	workflow linked previously with this {@link com.dotcms.contenttype.model.type.ContentType}
+	 * @param contentTypeInode
+	 * @param schemes
+	 * @param workflowTaskConsumer
+	 * @throws DotDataException
+	 */
+	public void saveSchemesForStruct(String contentTypeInode, List<WorkflowScheme> schemes,
+									 Consumer<WorkflowTask> workflowTaskConsumer) throws DotDataException;
 
 	/**
 	 * Link the workflows with the {@link com.dotcms.contenttype.model.type.ContentType}, before remove all the
@@ -108,9 +118,10 @@ public interface WorkFlowFactory {
 	 *
 	 * @param contentTypeInode
 	 * @param schemesIds
+	 * @param workflowTaskConsumer {@link Consumer} in case you want to do something which the Workflow task, send a Consumer.
 	 * @throws DotDataException
 	 */
-	public void saveSchemeIdsForContentType(String contentTypeInode, List<String> schemesIds) throws DotDataException;
+	public void saveSchemeIdsForContentType(String contentTypeInode, List<String> schemesIds, Consumer<WorkflowTask> workflowTaskConsumer) throws DotDataException;
 
 	public void saveScheme(WorkflowScheme scheme) throws DotDataException, AlreadyExistException;
 
@@ -193,7 +204,14 @@ public interface WorkFlowFactory {
 	 */
 	void deleteActions(WorkflowStep step) throws DotDataException, AlreadyExistException;
 
-	public void deleteStep(WorkflowStep step) throws DotDataException, AlreadyExistException;
+	/**
+	 * Deletes the step and the workflow tasks associated to the step. In case you need to consume (do something) with the {@link WorkflowTask} deleted,
+	 * pass a {@link Consumer}
+	 * @param step {@link WorkflowStep}
+	 * @throws DotDataException
+	 * @throws AlreadyExistException
+	 */
+	public void deleteStep(WorkflowStep step, Consumer<WorkflowTask> workflowTaskConsumer) throws DotDataException, AlreadyExistException;
 	
 	public int getCountContentletsReferencingStep(WorkflowStep step) throws DotDataException;
 

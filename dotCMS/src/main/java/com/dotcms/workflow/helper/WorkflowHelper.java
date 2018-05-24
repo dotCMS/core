@@ -1,8 +1,5 @@
 package com.dotcms.workflow.helper;
 
-import static com.dotcms.rest.api.v1.authentication.ResponseUtil.getFormattedMessage;
-import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -10,23 +7,13 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.v1.workflow.WorkflowDefaultActionView;
-import com.dotcms.workflow.form.IWorkflowStepForm;
-import com.dotcms.workflow.form.WorkflowActionForm;
-import com.dotcms.workflow.form.WorkflowActionStepBean;
-import com.dotcms.workflow.form.WorkflowReorderBean;
-import com.dotcms.workflow.form.WorkflowSchemeForm;
-import com.dotcms.workflow.form.WorkflowStepAddForm;
-import com.dotcms.workflow.form.WorkflowStepUpdateForm;
+import com.dotcms.workflow.form.*;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.exception.AlreadyExistException;
-import com.dotmarketing.exception.DoesNotExistException;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.exception.InvalidLicenseException;
+import com.dotmarketing.exception.*;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet;
@@ -46,20 +33,15 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.Future;
-
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang.time.StopWatch;
 
-//import static com.dotcms.rest.api.v1.authentication.ResponseUtil.*;
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.Future;
+
+import static com.dotcms.rest.api.v1.authentication.ResponseUtil.getFormattedMessage;
+import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
 
 
 /**
@@ -590,7 +572,7 @@ public class WorkflowHelper {
      * @param stepId String
      */
     @WrapInTransaction
-    public void deleteStep(final String stepId, final User user) throws DotDataException {
+    public Future<WorkflowStep> deleteStep(final String stepId, final User user) throws DotSecurityException, DotDataException {
 
         if (!UtilMethods.isSet(stepId)) {
             throw new IllegalArgumentException("Missing required parameter stepId.");
@@ -606,7 +588,7 @@ public class WorkflowHelper {
         if (null != workflowStep) {
             try {
                 Logger.debug(this, "deleting step: " + stepId);
-                this.workflowAPI.deleteStep(workflowStep, user);
+                return this.workflowAPI.deleteStep(workflowStep, user);
             } catch (DotDataException e) {
                 Logger.error(this, e.getMessage());
                 Logger.debug(this, e.getMessage(), e);

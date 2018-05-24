@@ -377,10 +377,8 @@ function renderSearchField (field) {
 				}else {
 					fieldsValues[fieldsValues.length] = structureVelVar+"."+field["fieldVelocityVarName"];
 					fieldsValues[fieldsValues.length] = formField.value;
-					
 				}
 			}
-			
 		}
 
 		if (hasHostFolderField) {
@@ -455,7 +453,7 @@ function renderSearchField (field) {
 				sortBy = sortBy + " desc";
 			currentSortBy = sortBy;
 		}
-		ContentletAjax.searchContentlets (structureInode, fieldsValues, categoriesValues, false, false, currentPage, currentSortBy, null, null, fillResults)
+		ContentletAjax.searchContentlets (structureInode, fieldsValues, categoriesValues, false, false, currentPage, currentSortBy, null, null, fillResults);
 	}
 	
 	function nextPage () {

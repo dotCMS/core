@@ -4,18 +4,21 @@
 <%@ page import="com.dotmarketing.util.UtilMethods" %>
 <%@ page import="com.dotmarketing.portlets.structure.model.Relationship" %>
 <%@ page import="com.dotmarketing.portlets.structure.struts.RelationshipForm" %>
-<%@ page import="com.dotcms.contenttype.business.RelationshipFactory " %>
-<%@ page import="com.dotmarketing.business.FactoryLocator" %>
+<%@ page import="com.dotmarketing.business.APILocator" %>
 <%@ include file="/html/portlet/ext/structure/init.jsp" %>
 <%
 	String referer = request.getParameter("referer");
 
 	String currentContentTypeId = request.getParameter("structure_id") != null ? request.getParameter("structure_id") : "all";
 	RelationshipForm relationshipForm = (RelationshipForm) request.getAttribute("RelationshipForm");
-	Relationship relationship = FactoryLocator.getRelationshipFactory().byInode(relationshipForm.getInode());
+	Relationship relationship = APILocator.getRelationshipAPI().byInode(relationshipForm.getInode());
 	boolean disabled = false;
 	if(relationship.isFixed()){
 		disabled = true;
+	}
+	boolean isUpdate = false;
+	if (UtilMethods.isSet(relationship.getInode())) {
+	    isUpdate = true;
 	}
 
 	List<Structure> structures = (List<Structure>) request.getAttribute(com.dotmarketing.util.WebKeys.Relationship.STRUCTURES_LIST);
@@ -176,7 +179,7 @@
 						<span class="required"></span><%= LanguageUtil.get(pageContext, "Parent-Structure") %>:
 					</dt>
 					<dd>
-						<select dojoType="dijit.form.FilteringSelect" name="parentStructureInode" id="parentStructureInode" onchange="relationNameChanged(); structuresChanged(); "  disabled="<%=disabled%>" value="<%= UtilMethods.isSet(relationshipForm.getParentStructureInode()) ? relationshipForm.getParentStructureInode() : currentContentTypeId %>">
+						<select dojoType="dijit.form.FilteringSelect" name="parentStructureInode" id="parentStructureInode" onchange="relationNameChanged(); structuresChanged(); "  disabled="<%=disabled%>" readonly="<%=isUpdate%>" value="<%= UtilMethods.isSet(relationshipForm.getParentStructureInode()) ? relationshipForm.getParentStructureInode() : currentContentTypeId %>">
 							<% for (Structure structure: structures) { %>
 							<option value="<%= structure.getInode() %>"><%= structure.getName() %></option>
 							<% } %>
@@ -185,7 +188,7 @@
 				</dl>
 				<dl>
 					<dt><span class="required"></span> <%= LanguageUtil.get(pageContext, "Parent-Relation-Name") %>:</dt>
-					<dd><input type="text" dojoType="dijit.form.TextBox" name="parentRelationName" id="parentRelationName" onkeyup="relationNameChanged()" readonly="<%=disabled%>" value="<%= UtilMethods.isSet(relationshipForm.getParentRelationName()) ? relationshipForm.getParentRelationName() : "" %>" /></dd>
+					<dd><input type="text" dojoType="dijit.form.TextBox" name="parentRelationName" id="parentRelationName" onkeyup="relationNameChanged()" readonly="<%=(disabled || isUpdate)%>" value="<%= UtilMethods.isSet(relationshipForm.getParentRelationName()) ? relationshipForm.getParentRelationName() : "" %>" /></dd>
 				</dl>
 				<dl>
 					<dt id="parentRequiredLabel"><%= LanguageUtil.get(pageContext, "Is-a-Parent-Required") %>:</dt>
@@ -194,7 +197,7 @@
 				<dl>
 					<dt><%= LanguageUtil.get(pageContext, "Child-Structure") %>:</dt>
 					<dd>
-						<select dojoType="dijit.form.FilteringSelect" name="childStructureInode" id="childStructureInode" onchange="relationNameChanged(); structuresChanged();" disabled="<%=disabled%>" value="<%= UtilMethods.isSet(relationshipForm.getChildStructureInode()) ? relationshipForm.getChildStructureInode() : "" %>">
+						<select dojoType="dijit.form.FilteringSelect" name="childStructureInode" id="childStructureInode" onchange="relationNameChanged(); structuresChanged();" disabled="<%=disabled%>" readonly="<%=isUpdate%>" value="<%= UtilMethods.isSet(relationshipForm.getChildStructureInode()) ? relationshipForm.getChildStructureInode() : "" %>">
 							<% for (Structure structure: structures) { %>
 							<option value="<%= structure.getInode() %>"><%= structure.getName() %></option>
 							<% } %>
@@ -203,7 +206,7 @@
 				</dl>
 				<dl>
 					<dt><span class="required"></span> <%= LanguageUtil.get(pageContext, "Child-Relation-Name") %>:</dt>
-					<dd><input type="text" dojoType="dijit.form.TextBox" name="childRelationName" id="childRelationName" onkeyup="relationNameChanged()" styleClass="form-text" readonly="<%=disabled%>" value="<%= UtilMethods.isSet(relationshipForm.getChildRelationName()) ? relationshipForm.getChildRelationName() : "" %>" /></dd>
+					<dd><input type="text" dojoType="dijit.form.TextBox" name="childRelationName" id="childRelationName" onkeyup="relationNameChanged()" styleClass="form-text" readonly="<%=(disabled || isUpdate)%>" value="<%= UtilMethods.isSet(relationshipForm.getChildRelationName()) ? relationshipForm.getChildRelationName() : "" %>" /></dd>
 				</dl>
 				<dl>
 					<dt id="childRequiredRow"><%= LanguageUtil.get(pageContext, "Is-a-Child-Required") %>:</dt>
@@ -244,16 +247,18 @@
     dojo.addOnLoad(relationNameChanged);
     dojo.addOnLoad (function(){//DOTCMS-5407
         if(dojo.isIE){
-            enableDisable(<%=disabled%>);
+            enableDisable(<%=disabled%>, <%=isUpdate%>);
         }
     });
-    function enableDisable(isDisabled){
-        dijit.byId("parentStructureInode").attr('disabled',isDisabled);
+    function enableDisable(isDisabled, isUpdate){
+        dijit.byId("parentStructureInode").attr('disabled', isDisabled);
+        dijit.byId("parentStructureInode").attr('readOnly', isUpdate);
         dijit.byId("childStructureInode").attr('disabled',isDisabled);
+        dijit.byId("childStructureInode").attr('readOnly',isUpdate);
         dijit.byId("parentRequired").attr('disabled',isDisabled);
         dijit.byId("childRequired").attr('disabled',isDisabled);
         dijit.byId("cardinality").attr('disabled',isDisabled);
-        dijit.byId("parentRelationName").attr('readOnly',isDisabled);
-        dijit.byId("childRelationName").attr('readOnly',isDisabled);
+        dijit.byId("parentRelationName").attr('readOnly',(isDisabled || isUpdate));
+        dijit.byId("childRelationName").attr('readOnly',(isDisabled || isUpdate));
     }
 </script>
