@@ -6,7 +6,9 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
+import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.api.v1.workflow.WorkflowDefaultActionView;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.workflow.form.*;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -19,10 +21,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject;
 import com.dotmarketing.util.DateUtil;
@@ -34,6 +33,7 @@ import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.time.StopWatch;
 
 import java.io.IOException;
@@ -55,6 +55,7 @@ public class WorkflowHelper {
     private final ContentletAPI contentletAPI;
     private final PermissionAPI permissionAPI;
     private final WorkflowImportExportUtil workflowImportExportUtil;
+
 
     private static class SingletonHolder {
         private static final WorkflowHelper INSTANCE = new WorkflowHelper();
@@ -183,6 +184,12 @@ public class WorkflowHelper {
             }
         }
     }
+
+    public CommonAvailableWorkflowActions findCommonAvailableActions(final User user, final String... contentletIds) throws DotDataException {
+
+        return this.workflowAPI.findCommonAvailableActions(user, Arrays.asList(contentletIds));
+    } // findCommonAvailableActions.
+
 
     private Set<String> checkActions(final Set<String> schemeIds, final List<WorkflowAction> actions, final User user) throws AlreadyExistException {
 

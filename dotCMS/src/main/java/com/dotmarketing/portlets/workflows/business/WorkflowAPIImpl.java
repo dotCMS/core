@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.workflows.business;
 
 import com.dotcms.api.system.event.SystemMessageEventUtil;
+import com.dotcms.business.CloseDB;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
@@ -8,11 +9,9 @@ import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.HEAD;
+import com.dotcms.repackage.org.nfunk.jep.function.Dot;
 import com.dotcms.rest.ErrorEntity;
-import com.dotcms.util.CollectionsUtils;
-import com.dotcms.util.DotPreconditions;
-import com.dotcms.util.FriendClass;
-import com.dotcms.util.LicenseValiditySupplier;
+import com.dotcms.util.*;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Host;
@@ -23,6 +22,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.*;
 import com.dotmarketing.osgi.HostActivator;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
@@ -43,8 +43,12 @@ import org.osgi.framework.BundleContext;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.stream.IntStream;
+
+import static com.dotcms.util.CollectionsUtils.*;
+
 
 
 
@@ -82,6 +86,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	private static final boolean RESPECT_FRONTEND_ROLES = WorkflowActionUtils.RESPECT_FRONTEND_ROLES;
 
 	private final WorkflowActionUtils workflowActionUtils;
+
+	private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public WorkflowAPIImpl() {
@@ -146,8 +152,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 				if (null == this.friendClass) {
 					this.friendClass =
-							new FriendClass("com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil",
-									"com.dotcms.content.elasticsearch.business.ESMappingAPIImpl");
+							new FriendClass("com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil");
 				}
 			}
 		}
@@ -2324,5 +2329,62 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		scheme.setArchived(Boolean.TRUE);
 		saveScheme(scheme, user);
 	}
+
+	@Override
+	public CommonAvailableWorkflowActions findCommonAvailableActions(final User user, final List<String> contentletIds) throws DotDataException {
+
+		final CounterSet<WorkflowAction> counterSet =
+				new CounterSet<>(contentletIds.size());
+
+		final String       threadPoolName =
+				Config.getStringProperty("workflow.threadpool.name", DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
+		final DotSubmitter dotSubmitter   = this.concurrentFactory.getSubmitter(threadPoolName);
+
+		final List<Future<Map<String, Collection<WorkflowAction>>>> futures =
+				new ArrayList<>();
+		final Map<String, Collection<WorkflowAction>> workflowActionByContentletIdMap =
+				new HashMap<>();
+
+		Logger.debug(this, ()-> "Getting the common available actions for the contentlets: " + contentletIds);
+
+		for (final String inode : contentletIds) {
+
+			futures.add(dotSubmitter.submit(()->
+					getCommonAvailableActions(user, counterSet,
+							this.contentletAPI.find(inode, user, true))));
+		}
+
+		for (final Future<Map<String, Collection<WorkflowAction>>> future : futures) {
+
+			try {
+				workflowActionByContentletIdMap.putAll(future.get());
+			} catch (InterruptedException | ExecutionException e) {
+				Logger.error(this, e.getMessage(), e);
+				throw new DotDataException(e);
+			}
+		}
+
+		return new CommonAvailableWorkflowActions(counterSet.getCommonItems(), workflowActionByContentletIdMap);
+	} // findCommonAvailableActions.
+
+	@CloseDBIfOpened
+	private Map<String, Collection<WorkflowAction>> getCommonAvailableActions(final User user,
+																			  final CounterSet<WorkflowAction> counterSet,
+																			  final Contentlet contentlet) {
+		List<WorkflowAction> actions = Collections.emptyList();
+		try {
+
+			actions =
+					this.findAvailableActions(contentlet, user);
+
+			if (null != actions) {
+				actions.stream().forEach(action -> counterSet.add(action));
+			}
+		} catch (DotDataException | DotSecurityException e) {
+			Logger.error(this, e.getMessage(), e);
+		}
+
+		return  map(contentlet.getInode(), actions);
+	} // getCommonAvailableActions.
 
 }

@@ -41,6 +41,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
@@ -221,11 +222,42 @@ public class WorkflowResource {
             return Response.ok(new ResponseEntityView(actions)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
-                    "Exception on findStepsByScheme, contentlet inode: " + inode +
+                    "Exception on findAvailableActions, contentlet inode: " + inode +
                             ", exception message: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
         }
     } // findAvailableActions.
+
+    /**
+     * Finds the common available actions for an set of inodes
+     * @param request HttpServletRequest
+     * @param inodes String
+     * @return Response
+     */
+    @GET
+    @Path("/contentlet/common/actions")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response findCommonAvailableActions(@Context final HttpServletRequest request,
+                                               @QueryParam("inodes") final String inodes) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, true, request, true, null);
+        try {
+
+            Logger.debug(this, "Getting the common available actions for the contentlets inodes: " + inodes);
+            DotPreconditions.notNull(inodes,"Expected query string 'inodes' was empty.");
+            return Response.ok(new ResponseEntityView
+                    (this.workflowHelper.findCommonAvailableActions(initDataObject.getUser(), inodes.split(StringPool.COMMA))))
+                    .build(); // 200
+        } catch (Exception e) {
+            Logger.error(this.getClass(),
+                    "Exception on findCommonAvailableActions, contentlet inodes: " + inodes +
+                            ", exception message: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    } // findCommonAvailableActions.
 
     /**
      * Returns a single action, 404 if does not exists. 401 if the user does not have permission.
