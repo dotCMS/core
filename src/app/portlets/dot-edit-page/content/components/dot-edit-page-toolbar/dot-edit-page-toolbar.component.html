@@ -1,27 +1,6 @@
 <p-toolbar>
     <div class="ui-toolbar-group-left">
-        <div class="edit-page-toolbar__header">
-            <div class="edit-page-toolbar__page-url-wrapper">
-                <h2 class="edit-page-toolbar__page-url">{{ pageState.page.pageURI }}</h2>
-                <button pButton icon="fa-clone" class="edit-page-toolbar__copy-url" (click)="copyUrlToClipboard($event)"></button>
-            </div>
-            <h3 class="edit-page-toolbar__page-title">
-                {{pageState.page.title}}
-                <ng-template [ngIf]="pageState.state.lockedByAnotherUser && pageState.page.canEdit">
-                    <span class="edit-page-toolbar__message-separator">•</span>
-                    <span #lockedPageMessage class="edit-page-toolbar__locked-by-message">
-                        {{ dotMessageService.get('editpage.toolbar.page.locked.by.user', pageState.page.lockedByName) }}
-                    </span>
-                </ng-template>
-
-                <ng-template [ngIf]="!pageState.page.canEdit">
-                    <span class="edit-page-toolbar__message-separator">•</span>
-                    <span class="edit-page-toolbar__cant-edit-message">
-                        {{ dotMessageService.get('editpage.toolbar.page.cant.edit') }}                            
-                    </span>
-                </ng-template>
-            </h3>
-        </div>
+        <dot-edit-page-info #pageInfo [pageState]="pageState"></dot-edit-page-info>
     </div>
 
     <div class="ui-toolbar-group-center">
@@ -30,7 +9,7 @@
     </div>
 
     <div class="ui-toolbar-group-right">
-        <!-- Only show the button in edit mode -->
+        <button pButton flat type="button" class="edit-page-toolbar__cancel" [label]="dotMessageService.get('dot.common.cancel')" (click)="cancel.emit()"></button>
         <dot-edit-page-workflows-actions [page]="pageState.page" [label]="dotMessageService.get('editpage.toolbar.primary.workflow.actions')" (fired)="handleActionFired()"></dot-edit-page-workflows-actions>
     </div>
 </p-toolbar>

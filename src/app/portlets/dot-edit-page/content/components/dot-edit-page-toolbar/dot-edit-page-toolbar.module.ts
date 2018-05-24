@@ -4,16 +4,18 @@ import { DotEditPageToolbarComponent } from './dot-edit-page-toolbar.component';
 import { DotEditPageWorkflowsActionsModule } from '../dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
 import { ToolbarModule, SelectButtonModule, InputSwitchModule, ButtonModule } from 'primeng/primeng';
 import { FormsModule } from '@angular/forms';
+import { DotEditPageInfoModule } from '../../../components/dot-edit-page-info/dot-edit-page-info.module';
 
 @NgModule({
     imports: [
-        CommonModule,
-        ToolbarModule,
-        SelectButtonModule,
-        InputSwitchModule,
-        FormsModule,
         ButtonModule,
-        DotEditPageWorkflowsActionsModule
+        CommonModule,
+        DotEditPageInfoModule,
+        DotEditPageWorkflowsActionsModule,
+        FormsModule,
+        InputSwitchModule,
+        SelectButtonModule,
+        ToolbarModule
     ],
     exports: [DotEditPageToolbarComponent],
     declarations: [DotEditPageToolbarComponent]

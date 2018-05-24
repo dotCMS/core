@@ -86,7 +86,7 @@ export class DotEditPageResolver implements Resolve<DotRenderedPageState> {
                 tap((res: DotHttpErrorHandled) => {
 
                 if (!res.redirected) {
-                    this.dotRouterService.gotoPortlet('/c/site-browser');
+                    this.dotRouterService.goToSiteBrowser();
                 }
             }
         ));

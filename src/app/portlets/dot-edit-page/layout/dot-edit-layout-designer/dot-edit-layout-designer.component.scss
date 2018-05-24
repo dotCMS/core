@@ -21,14 +21,6 @@ dot-layout-designer {
     flex-grow: 1;
 }
 
-.dot-edit-layout__page-title {
-    align-self: center;
-    color: $body-font-color;
-    margin: 0;
-    font-size: $font-size-x-large;
-    font-weight: 500;
-}
-
 .dot-edit-layout__toolbar,
 .dot-edit-layout__toolbar-actions {
     display: flex;
@@ -36,8 +28,12 @@ dot-layout-designer {
 
 .dot-edit-layout__toolbar {
     align-items: center;
+    background-color: $white;
+    box-shadow: $md-shadow-1;
+    margin-bottom: $basic-padding;
+    height: 48px;
     justify-content: space-between;
-    margin: $basic-padding * 2 $basic-padding * 2 $basic-padding;
+    padding: 0 $basic-padding * 2;
 }
 
 .dot-edit-layout__toolbar-actions {

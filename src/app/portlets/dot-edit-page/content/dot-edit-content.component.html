@@ -2,6 +2,7 @@
 <dot-edit-page-toolbar
     (changeState)="statePageHandler($event)"
     (actionFired)="reload()"
+    (cancel)="onCancelToolbar()"
     [pageState]="pageState"
     class="dot-edit__toolbar">
 </dot-edit-page-toolbar>

@@ -46,6 +46,7 @@ describe('DotEditPageToolbarComponent', () => {
     let dotGlobalMessageService: DotGlobalMessageService;
     let dotDialogService: DotDialogService;
     let actions: DebugElement;
+    let cancel: DebugElement;
 
     const states = {
         edit: 0,
@@ -65,13 +66,10 @@ describe('DotEditPageToolbarComponent', () => {
     }
 
     const messageServiceMock = new MockDotMessageService({
+        'dot.common.cancel': 'Cancel',
         'editpage.toolbar.edit.page': 'Edit',
         'editpage.toolbar.preview.page': 'Preview',
         'editpage.toolbar.live.page': 'Live',
-        'editpage.toolbar.primary.workflow.actions': 'Acciones',
-        'dot.common.message.pageurl.copied.clipboard': 'Copied to clipboard',
-        'editpage.toolbar.page.locked.by.user': 'Page is locked',
-        'editpage.toolbar.page.cant.edit': 'You dont have permissions'
     });
 
     let testbed;
@@ -138,26 +136,11 @@ describe('DotEditPageToolbarComponent', () => {
         dotGlobalMessageService = de.injector.get(DotGlobalMessageService);
         dotDialogService = de.injector.get(DotDialogService);
         actions = de.query(By.css('dot-edit-page-workflows-actions'));
+        cancel = de.query(By.css('.edit-page-toolbar__cancel'));
     });
 
     it('should have a toolbar element', () => {
         expect(de.query(By.css('p-toolbar'))).toBeTruthy();
-    });
-
-    it('should set page title', () => {
-        fixture.componentInstance.pageState.page.title = 'Hello World';
-        const pageTitleEl: HTMLElement = de.query(By.css('.edit-page-toolbar__page-title')).nativeElement;
-        fixture.detectChanges();
-
-        expect(pageTitleEl.textContent).toContain('Hello World');
-    });
-
-    it('should set page url', () => {
-        fixture.componentInstance.pageState.page.pageURI = '/test/test';
-        const pageUrlEl: HTMLElement = de.query(By.css('.edit-page-toolbar__page-url')).nativeElement;
-        fixture.detectChanges();
-
-        expect(pageUrlEl.textContent).toEqual('/test/test');
     });
 
     it('should have lockerModel in true when the page state is LIVE and the page is locked', () => {
@@ -218,45 +201,41 @@ describe('DotEditPageToolbarComponent', () => {
         expect(lockSwitch.componentInstance.disabled).toBe(true);
     });
 
-    it('should have page is locked by another user message and disabled edit button', () => {
+    it('should have disabled edit button (page is locked by another user)', () => {
         fixture.componentInstance.pageState.state.lockedByAnotherUser = true;
         fixture.componentInstance.pageState.page.canLock = false;
         fixture.detectChanges();
-
-        const lockedMessage: DebugElement = de.query(By.css('.edit-page-toolbar__locked-by-message'));
-        expect(lockedMessage.nativeElement.textContent).toContain('Page is locked');
 
         const editStateModel = component.states.find((state) => state.label === 'Edit');
         expect(editStateModel.styleClass).toEqual('edit-page-toolbar__state-selector-item--disabled');
         expect(component.lockerModel).toBeFalsy();
     });
 
-    it('should have page can\'t edit message and disabled edit button', () => {
+    it('should have disabled edit button (user can\'t edit)', () => {
         fixture.componentInstance.pageState.page.canEdit = false;
         fixture.detectChanges();
 
-        const lockedMessage: DebugElement = de.query(By.css('.edit-page-toolbar__cant-edit-message'));
-        expect(lockedMessage.nativeElement.textContent).toContain('You dont have permissions');
         const editStateModel = component.states.find((state) => state.label === 'Edit');
         expect(editStateModel.styleClass).toEqual('edit-page-toolbar__state-selector-item--disabled');
     });
 
-    it('should not have have any locked messages', () => {
-        fixture.detectChanges();
-        const cantEditMessage: DebugElement = de.query(By.css('.edit-page-toolbar__cant-edit-message'));
-        const lockedMessage: DebugElement = de.query(By.css('.edit-page-toolbar__locked-by-message'));
-        expect(cantEditMessage === null).toBe(true);
-        expect(lockedMessage === null).toBe(true);
-    });
-
     it('should blink page is locked message', () => {
-        spyOn(component, 'onLockerClick');
+        spyOn(component.pageInfo, 'blinkLockMessage');
         fixture.componentInstance.pageState.page.canLock = false;
         fixture.detectChanges();
 
         const lockSwitch: DebugElement = de.query(By.css('.edit-page-toolbar__locker'));
         lockSwitch.nativeElement.click();
-        expect(component.onLockerClick).toHaveBeenCalledTimes(1);
+        expect(component.pageInfo.blinkLockMessage).toHaveBeenCalledTimes(1);
+    });
+
+    it('should have cancel button and emit event', () => {
+        spyOn(component.cancel, 'emit');
+        expect(cancel === null).toBe(false);
+
+        cancel.triggerEventHandler('click', {});
+
+        expect(component.cancel.emit).toHaveBeenCalledTimes(1);
     });
 
     it('should have an action split button', () => {
@@ -329,26 +308,6 @@ describe('DotEditPageToolbarComponent', () => {
 
         clickLocker();
         expect(component.lockerModel).toBe(true, 'locked page');
-    });
-
-    it('should copy to clipboard url', () => {
-        spyOn(dotGlobalMessageService, 'display');
-        spyOn(component, 'copyUrlToClipboard').and.callThrough();
-        spyOn(document, 'execCommand');
-        fixture.detectChanges();
-
-        const copyUrlButton: DebugElement = de.query(By.css('.edit-page-toolbar__copy-url'));
-
-        copyUrlButton.nativeElement.click();
-
-        expect(component.copyUrlToClipboard).toHaveBeenCalledTimes(1);
-        expect(document.execCommand).toHaveBeenCalledWith('copy');
-
-        /*
-            I want to test the global message being called but for some reason in the context of the test, the
-            document.execCommand('copy') returns undefined.
-        */
-        // expect(dotGlobalMessageService.display).toHaveBeenCalledWith('Copied to clipboard');
     });
 
     describe('fired action', () => {
@@ -588,15 +547,12 @@ describe('DotEditPageToolbarComponent', () => {
 
             fixture.detectChanges();
 
-            const lockedMessage: DebugElement = de.query(By.css('.edit-page-toolbar__locked-by-message'));
-            expect(lockedMessage.nativeElement.textContent).toContain('Page is locked');
-
             const editStateModel = component.states.find((state) => state.label === 'Edit');
             expect(editStateModel.styleClass).toEqual('');
             expect(component.lockerModel).toBeFalsy();
         });
 
-        it('should have not show any meesage and not disabled edit button neither when page is locked by current user', () => {
+        it('should have not disabled edit button neither when page is locked by current user', () => {
             fixture.componentInstance.pageState.state.lockedByAnotherUser = false;
             fixture.componentInstance.pageState.page.canLock = true;
             fixture.componentInstance.pageState.state.locked = true;
@@ -604,8 +560,6 @@ describe('DotEditPageToolbarComponent', () => {
 
             fixture.detectChanges();
 
-            const lockedMessage: DebugElement = de.query(By.css('.edit-page-toolbar__locked-by-message'));
-            expect(lockedMessage).toBeNull();
             expect(component.lockerModel).toBeTruthy();
         });
 

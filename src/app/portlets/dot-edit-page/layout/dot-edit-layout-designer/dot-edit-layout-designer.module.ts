@@ -16,6 +16,7 @@ import { TemplateContainersCacheService } from '../../template-containers-cache.
 import { PageViewService } from '../../../../api/services/page-view/page-view.service';
 import { DotLayoutDesignerComponent } from './components/dot-layout-designer/dot-layout-designer.component';
 import { DotContainerSelectorModule } from '../../../../view/components/dot-container-selector/dot-container-selector.module';
+import { DotEditPageInfoModule } from '../../components/dot-edit-page-info/dot-edit-page-info.module';
 
 @NgModule({
     declarations: [DotEditLayoutDesignerComponent, DotLayoutDesignerComponent],
@@ -33,7 +34,8 @@ import { DotContainerSelectorModule } from '../../../../view/components/dot-cont
         DotLayoutPropertiesModule,
         DialogModule,
         DotSidebarPropertiesModule,
-        DotContainerSelectorModule
+        DotContainerSelectorModule,
+        DotEditPageInfoModule
     ],
     exports: [DotEditLayoutDesignerComponent],
     providers: [DotEditLayoutService, DotEditLayoutService, PageViewService, TemplateContainersCacheService]

@@ -117,10 +117,10 @@ describe('DotEditPageResolver', () => {
             }));
             spyOn(dotPageStateService, 'get').and.returnValue(Observable.throw(fake403Response));
 
-            spyOn(dotRouterService, 'gotoPortlet');
+            spyOn(dotRouterService, 'goToSiteBrowser');
 
             resolver.resolve(route).subscribe();
-            expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/c/site-browser');
+            expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -163,10 +163,10 @@ describe('DotEditPageResolver', () => {
                 redirected: false
             }));
 
-            spyOn(dotRouterService, 'gotoPortlet');
+            spyOn(dotRouterService, 'goToSiteBrowser');
 
             resolver.resolve(route).subscribe();
-            expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/c/site-browser');
+            expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);
 
         });
 
@@ -184,10 +184,10 @@ describe('DotEditPageResolver', () => {
                 redirected: false
             }));
 
-            spyOn(dotRouterService, 'gotoPortlet');
+            spyOn(dotRouterService, 'goToSiteBrowser');
 
             resolver.resolve(route).subscribe();
-            expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/c/site-browser');
+            expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);
 
         });
     });

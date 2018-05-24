@@ -193,6 +193,13 @@ describe('DotEditContentComponent', () => {
         expect(toolbarComponent.pageState.state).toEqual(mockDotPageState);
     });
 
+    it('should redirect to site browser on toolbar cancel', () => {
+        spyOn(dotRouterService, 'goToSiteBrowser');
+        toolbarElement.triggerEventHandler('cancel', {});
+
+        expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);
+    });
+
     it('should have loading indicator', () => {
         const loadingIndicator: DebugElement = de.query(By.css('dot-loading-indicator'));
         expect(loadingIndicator).not.toBeNull();
@@ -271,12 +278,12 @@ describe('DotEditContentComponent', () => {
             const fake500Response = mockResponseView(500);
             spyOn(dotPageStateService, 'get').and.returnValue(Observable.throw(fake500Response));
             spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
-            spyOn(dotRouterService, 'gotoPortlet');
+            spyOn(dotRouterService, 'goToSiteBrowser');
 
             component.reload();
 
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(fake500Response);
-            expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/c/site-browser');
+            expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);
         });
     });
 

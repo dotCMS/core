@@ -1,0 +1,21 @@
+<div class="page-info__url-wrapper">
+    <h2 class="page-info__url">{{ pageState.page.pageURI }}</h2>
+    <button pButton icon="fa-clone" class="page-info__copy-url" (click)="copyUrlToClipboard($event)"></button>
+</div>
+<h3 class="page-info__title">
+    {{pageState.page.title}}
+
+    <ng-template [ngIf]="pageState.state.lockedByAnotherUser && pageState.page.canEdit">
+        <span class="page-info__message-separator">•</span>
+        <span #lockedPageMessage class="page-info__locked-by-message">
+            {{ dotMessageService.get('editpage.toolbar.page.locked.by.user', pageState.page.lockedByName) }}
+        </span>
+    </ng-template>
+
+    <ng-template [ngIf]="!pageState.page.canEdit">
+        <span class="page-info__message-separator">•</span>
+        <span #lockedPageMessage class="page-info__cant-edit-message">
+            {{ dotMessageService.get('editpage.toolbar.page.cant.edit') }}
+        </span>
+    </ng-template>
+</h3>
