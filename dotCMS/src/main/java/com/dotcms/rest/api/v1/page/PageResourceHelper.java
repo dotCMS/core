@@ -17,9 +17,11 @@ import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
+import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
@@ -158,14 +160,18 @@ public class PageResourceHelper implements Serializable {
 
     @NotNull
     public IHTMLPage getPage(User user, String pageId) throws DotDataException, DotSecurityException {
-        final Contentlet page = this.contentletAPI.findContentletByIdentifier(pageId, false,
-                langAPI.getDefaultLanguage().getId(), user, false);
+        try {
+            final Contentlet page = this.contentletAPI.findContentletByIdentifier(pageId, false,
+                    langAPI.getDefaultLanguage().getId(), user, false);
 
-        if (page == null) {
-            throw new NotFoundException("An error occurred when proccessing the JSON request");
+            if (page == null) {
+                throw new HTMLPageAssetNotFoundException(pageId);
+            }
+
+            return this.htmlPageAssetAPI.fromContentlet(page);
+        }catch (DotContentletStateException e) {
+            throw new HTMLPageAssetNotFoundException(pageId, e);
         }
-
-        return this.htmlPageAssetAPI.fromContentlet(page);
 
     }
 

@@ -9,7 +9,7 @@
         },
         {
           "term": {
-            "news.tags": "home prices"
+            "tags": "home prices"
           }
         }
       ]

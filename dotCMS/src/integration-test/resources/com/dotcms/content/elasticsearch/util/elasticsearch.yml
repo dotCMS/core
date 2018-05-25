@@ -1,0 +1,10 @@
+
+cluster.name: dotCMSContentIndex_3x
+path.data: dotsecure/esdata
+path.repo: dotsecure/essnapshot/snapshots
+path.logs: tomcat8/logs
+http.port: 9200
+http.host: localhost
+http.enabled: true
+http.cors.enabled: false
+transport.tcp.port: 9400
