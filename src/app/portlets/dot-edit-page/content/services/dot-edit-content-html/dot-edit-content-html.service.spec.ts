@@ -13,6 +13,7 @@ import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { DotDialogService } from '../../../../../api/services/dot-dialog/dot-dialog.service';
 import { DotPageContent } from '../../../../dot-edit-page/shared/models/dot-page-content.model';
 import { Observable } from 'rxjs/Observable';
+import { mockDotLayout } from '../../../../../test/dot-rendered-page.mock';
 
 describe('DotEditContentHtmlService', () => {
     const fakeHTML = `
@@ -28,6 +29,8 @@ describe('DotEditContentHtmlService', () => {
             <div data-dot-object="container" data-dot-identifier="123" data-dot-uuid="456" data-dot-can-add="CONTENT">
                 <div data-dot-object="contentlet" data-dot-identifier="456" data-dot-inode="456">
                     <div class="large-column">
+                        <h3>This is a title</h3>
+                        <p>this is a paragraph</p>
                         <div data-dot-object="edit-content"></div>
                     </div>
                 </div>
@@ -35,7 +38,12 @@ describe('DotEditContentHtmlService', () => {
 
             <div data-dot-object="container" data-dot-identifier="321" data-dot-uuid="654" data-dot-can-add="CONTENT">
                 <div data-dot-object="contentlet" data-dot-identifier="456" data-dot-inode="456">
-                    <div class="large-column"></div>
+                    <div class="large-column">
+                        <h3>This is a title</h3>
+                        <p>this is a paragraph</p>
+                        <p>this is other paragraph</p>
+                        <p>this is another paragraph</p>
+                    </div>
                 </div>
             </div>
         </body>
@@ -93,6 +101,51 @@ describe('DotEditContentHtmlService', () => {
 
             tick();
             expect(this.dotEditContentHtmlService.bindContainersEvents).toHaveBeenCalledTimes(1);
+        })
+    );
+
+    it(
+        'should set same height to containers',
+        fakeAsync((): void => {
+            const mockLayout = mockDotLayout;
+            mockLayout.body.rows = [
+                {
+                    columns: [
+                        {
+                            containers: [
+                                {
+                                    identifier: '123',
+                                    uuid: '456'
+                                }
+                            ],
+                            leftOffset: 1,
+                            width: 8
+                        },
+                        {
+                            containers: [
+                                {
+                                    identifier: '321',
+                                    uuid: '654'
+                                }
+                            ],
+                            leftOffset: 1,
+                            width: 8
+                        }
+                    ]
+                }
+            ];
+
+            const querySelector1 = [`div[data-dot-object="container"]`, `[data-dot-identifier="123"]`, `[data-dot-uuid="456"]`].join('');
+
+            const querySelector2 = [`div[data-dot-object="container"]`, `[data-dot-identifier="321"]`, `[data-dot-uuid="654"]`].join('');
+
+            this.dotEditContentHtmlService.setContaintersSameHeight(mockDotLayout);
+            tick();
+
+            const firstContainer = this.dotEditContentHtmlService.getEditPageDocument().querySelector(querySelector1);
+            const secondContainer = this.dotEditContentHtmlService.getEditPageDocument().querySelector(querySelector2);
+
+            expect(firstContainer.height).toEqual(secondContainer.height);
         })
     );
 

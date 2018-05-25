@@ -1,3 +1,4 @@
+import * as _ from 'lodash';
 import { LoggerService } from 'dotcms-js/dotcms-js';
 import { Injectable, ElementRef } from '@angular/core';
 import { EDIT_PAGE_CSS } from '../../shared/iframe-edit-mode.css';
@@ -12,6 +13,9 @@ import { DotPageContainer } from '../../../shared/models/dot-page-container.mode
 import { DotPageContent } from '../../../shared/models/dot-page-content.model';
 import { DotDialogService } from '../../../../../api/services/dot-dialog/dot-dialog.service';
 import { DotMessageService } from '../../../../../api/services/dot-messages-service';
+import { DotLayout } from '../../../shared/models/dot-layout.model';
+import { DotLayoutColumn } from '../../../shared/models/dot-layout-column.model';
+import { DotLayoutRow } from '../../../shared/models/dot-layout-row.model';
 import { take } from 'rxjs/operators/take';
 
 export enum DotContentletAction {
@@ -29,6 +33,7 @@ export class DotEditContentHtmlService {
     pageModel$: Subject<DotPageContainer[]> = new Subject();
 
     private currentAction: DotContentletAction;
+    private rowsMaxHeight: number[] = [];
 
     constructor(
         private dotContainerContentletService: DotContainerContentletService,
@@ -97,7 +102,7 @@ export class DotEditContentHtmlService {
         const doc = this.getEditPageDocument();
         const selector = [
             `div[data-dot-object="container"][data-dot-identifier="${container.identifier}"][data-dot-uuid="${container.uuid}"] `,
-            `div[data-dot-object="contentlet"][data-dot-inode="${content.inode}"]`,
+            `div[data-dot-object="contentlet"][data-dot-inode="${content.inode}"]`
         ].join('');
         const contenletEl = doc.querySelector(selector);
         contenletEl.remove();
@@ -190,6 +195,42 @@ export class DotEditContentHtmlService {
     }
 
     /**
+     * Set listener for Iframe body changes to change container's height
+     *
+     * @param {DotLayout} pageLayout
+     * @memberof DotEditContentHtmlService
+     */
+    setContaintersChangeHeightListener(pageLayout: DotLayout): void {
+        const doc = this.getEditPageDocument();
+        const target = doc.querySelector('body');
+        const config = { attributes: true, childList: true, characterData: true };
+        const debounceContainersHeightChange = _.debounce((layout: DotLayout) => this.setContaintersSameHeight(layout), 500, {
+            leading: true
+        });
+        const observer = new MutationObserver((mutations) => {
+            debounceContainersHeightChange(pageLayout);
+        });
+        observer.observe(target, config);
+    }
+
+    /**
+     * Set the same height to containers in the same row
+     *
+     * @param {DotLayout} pageLayout
+     * @memberof DotEditContentHtmlService
+     */
+    setContaintersSameHeight(pageLayout: DotLayout): void {
+        const containersLayoutIds = this.getContainersLayoutIds(pageLayout);
+        const containerDomElements = this.getContainerDomElements(containersLayoutIds);
+
+        containerDomElements.forEach((containerRow: Array<HTMLElement>, index: number) => {
+            containerRow.forEach((container: HTMLElement) => {
+                container.style.height = `${this.rowsMaxHeight[index]}px`;
+            });
+        });
+    }
+
+    /**
      * Return the page model
      *
      * @returns {*}
@@ -197,6 +238,37 @@ export class DotEditContentHtmlService {
      */
     getContentModel(): DotPageContainer[] {
         return this.getEditPageIframe().contentWindow.getDotNgModel();
+    }
+
+    private getContainersLayoutIds(pageLayout: DotLayout): Array<Array<DotPageContainer>> {
+        return pageLayout.body.rows.map((row: DotLayoutRow) => {
+            return row.columns.map((column: DotLayoutColumn) => {
+                return {
+                    identifier: column.containers[0].identifier,
+                    uuid: column.containers[0].uuid
+                };
+            });
+        });
+    }
+
+    private getContainerDomElements(containersLayoutIds: Array<Array<DotPageContainer>>): Array<Array<HTMLElement>> {
+        const doc = this.getEditPageDocument();
+
+        return containersLayoutIds.map((containerRow: Array<DotPageContainer>, index: number) => {
+            this.rowsMaxHeight[index] = 0;
+            return containerRow.map((container: DotPageContainer) => {
+                const querySelector = [
+                    `div[data-dot-object="container"]`,
+                    `[data-dot-identifier="${container.identifier}"]`,
+                    `[data-dot-uuid="${container.uuid}"]`
+                ].join('');
+                const containerElement = doc.querySelector(querySelector);
+                containerElement.style.height = 'auto';
+                this.rowsMaxHeight[index] =
+                    containerElement.offsetHeight > this.rowsMaxHeight[index] ? containerElement.offsetHeight : this.rowsMaxHeight[index];
+                return containerElement;
+            });
+        });
     }
 
     private handleIframeClicks(target: HTMLElement) {
