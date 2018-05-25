@@ -197,24 +197,6 @@
 <!-- global included dependencies -->
 
 
-<script language='javascript' type='text/javascript'>
-var editButtonRow="editContentletButtonRow";
-
-
-
-dojo.addOnLoad(function () { 
-
-	dojo.query(".ui-dialog-title", window.parent.document).forEach(function(node, index, arr){
-	      node.innerHTML = "<%=UtilMethods.javaScriptify(contentlet.getTitle())%>";
-	  });
-
-});
-
-
-
-</script>
-
-
 <%@ include file="/html/portlet/ext/contentlet/field/edit_field_js.jsp" %>
 
 
@@ -555,17 +537,28 @@ dojo.addOnLoad(function () {
 <script type="text/javascript">
 	dojo.addOnLoad(function () {
 		dojo.style(dijit.byId('savingContentDialog').closeButtonNode, 'visibility', 'hidden');
+		
+        var tab = dijit.byId("mainTabContainer");
+ 		dojo.connect(tab, 'selectChild', function (evt) {
+            selectedTab = tab.selectedChildWidget;
 
-		var tab = dijit.byId("mainTabContainer");
- 		dojo.connect(tab, 'selectChild',
- 				function (evt) {
- 				 	selectedTab = tab.selectedChildWidget;
+            var isCustomTab = false;
+            if (selectedTab.class != undefined && selectedTab.class == "custom-tab") {
+                isCustomTab = true;
+            }
+        });
 
-					var isCustomTab = false;
-					if (selectedTab.class != undefined && selectedTab.class == "custom-tab") {
-						isCustomTab = true;
-					}
- 				});
+        var customEvent = document.createEvent("CustomEvent");
+        customEvent.initCustomEvent("ng-event", false, false,  {
+            name: "edit-contentlet-loaded",
+            data: {
+                contentType: '<%=CacheLocator.getContentTypeCache().getStructureByInode(structure.getInode() ).getName()%>'
+            }
+        });
+        setTimeout(function() {
+            document.dispatchEvent(customEvent);
+        }, 500)
+        
 	});
 
 	var onBeforeUnloadHandle = dojo.connect(dijit.byId('mainTabContainer'), "onkeypress", activateOnBeforeUnload);

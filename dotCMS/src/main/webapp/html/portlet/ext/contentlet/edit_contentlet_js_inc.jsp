@@ -64,43 +64,6 @@
     var inode = '<%=contentlet.getInode()%>';
     var referer = '<%=java.net.URLEncoder.encode(referer,"UTF-8")%>';
 
-    function cancelEdit() {
-
-        window.onbeforeunload=true;
-
-        doesUserCancelledEdit = true;
-
-        if(isContentAutoSaving){ //To avoid storage of contentlet while user cancels.
-            setTimeout("cancelEdit()",300);
-        }
-
-        var ref = $('<portlet:namespace />referer').value;
-        var langId = $('languageId').value;
-
-        ContentletAjax.cancelContentEdit(workingContentletInode,currentContentletInode,ref,langId,cancelEditCallback);
-    }
-
-    function cancelEditCallback(callbackData){
-        if (ngEditContentletEvents && workingContentletInode === '') {
-            window.history.back();
-        } else {
-            var customEvent = document.createEvent("CustomEvent");
-            customEvent.initCustomEvent("ng-event", false, false,  {
-                name: "close"
-            });
-            document.dispatchEvent(customEvent);
-
-            if (callbackData.indexOf("referer") != -1) {
-                var sourceReferer = callbackData.substring(callbackData.indexOf("referer"));
-                sourceReferer = sourceReferer.split("referer").slice(1).join("referer").slice(1);
-                callbackData = callbackData.substring(0,callbackData.indexOf("referer"));
-                self.location = callbackData+"&referer="+escape(sourceReferer);
-            } else {
-                self.location = callbackData;
-            }
-        }
-    }
-
 
     //Full delete contentlet action
     function submitfmDelete()
@@ -512,8 +475,8 @@
     dojo.ready(
         function(){
             createLockedWarningDiv();
-            resetHasChanged();   
-            scrollToTop();
+            resetHasChanged();
+            scrollToTop()
         }
     );
 
@@ -535,7 +498,7 @@
         }
         
     }
-
+    
     function resetHasChanged(){
         _hasUserChanged  = false;
         _bodyKeyDown = dojo.connect(dojo.body(), "onkeydown", null,markHasChanged);

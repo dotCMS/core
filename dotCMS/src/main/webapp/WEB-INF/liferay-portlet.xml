@@ -50,5 +50,5 @@
 	<portlet id="link-checker" struts-path="ext/brokenlinks" narrow="true" />
     <portlet id="time-machine" />
     <portlet id="es-search" />
-
+    <portlet id="embedded-dashboard" />
 </portlets>

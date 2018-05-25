@@ -3,27 +3,6 @@
 <portlet-app>
 
 
-
-	<portlet>
-		<portlet-name>files-legacy</portlet-name>
-		<display-name>File Manager</display-name>
-		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
-		<init-param>
-			<name>view-action</name>
-			<value>/ext/files/view_files</value>
-		</init-param>
-		<expiration-cache>0</expiration-cache>
-		<supports>
-			<mime-type>text/html</mime-type>
-		</supports>
-		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-		<security-role-ref>
-			<role-name>CMS Administrator</role-name>
-		</security-role-ref>
-		<security-role-ref>
-			<role-name>CMS User</role-name>
-		</security-role-ref>
-	</portlet>
 	
 	<portlet>
 		<portlet-name>categories</portlet-name>
@@ -412,61 +391,7 @@
 		</security-role-ref>
 	</portlet>
 
-	<portlet>
-		<portlet-name>web-forms</portlet-name>
-		<display-name>Web Forms</display-name>
-		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
-		<!--init-param>
-			<name>view-action</name>
-			<value>/ext/webforms/view_webforms</value>
-		</init-param-->
-		<expiration-cache>0</expiration-cache>
-		<supports>
-			<mime-type>text/html</mime-type>
-		</supports>
-		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-		<security-role-ref>
-			<role-name>CMS Administrator</role-name>
-		</security-role-ref>
-	</portlet>
 
-	<portlet>
-		<portlet-name>events-approval</portlet-name>
-		<display-name>Events Approval</display-name>
-		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
-		<init-param>
-			<name>view-action</name>
-			<value>/ext/eventsapproval/view_events</value>
-		</init-param>
-		<expiration-cache>0</expiration-cache>
-		<supports>
-			<mime-type>text/html</mime-type>
-		</supports>
-		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-		<security-role-ref>
-			<role-name>Events Administrator</role-name>
-		</security-role-ref>
-	</portlet>
-
-	<!--
-	<portlet>
-		<portlet-name>EXT_USER</portlet-name>
-		<display-name>User Manager</display-name>
-		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
-		<init-param>
-			<name>view-action</name>
-			<value>/ext/user/saveUserCategories</value>
-		</init-param>
-		<expiration-cache>0</expiration-cache>
-		<supports>
-			<mime-type>text/html</mime-type>
-		</supports>
-		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-		<security-role-ref>
-			<role-name>Administrator</role-name>
-		</security-role-ref>
-	</portlet>
-	-->
 
 	<portlet>
 		<portlet-name>maintenance</portlet-name>
@@ -486,23 +411,6 @@
 		</security-role-ref>
 	</portlet>
 	
-	<portlet>
-		<portlet-name>web-event-registrations</portlet-name>
-		<display-name>Web Event Registrations</display-name>
-		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
-		<init-param>
-			<name>view-action</name>
-			<value>/ext/event_registration/view_registrations</value>
-		</init-param>
-		<expiration-cache>0</expiration-cache>
-		<supports>
-			<mime-type>text/html</mime-type>
-		</supports>
-		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-		<security-role-ref>
-			<role-name>CMS Administrator</role-name>
-		</security-role-ref>
-	</portlet>
 
 	<portlet>
 		<portlet-name>jobs</portlet-name>
@@ -738,12 +646,19 @@
 		<display-name>dotCMS Site Browser</display-name>
 		<portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
 	</portlet>
+	
 	<portlet>
 		<portlet-name>content-types-angular</portlet-name>
 		<display-name>Content Types Angular</display-name>
 		<portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
 	</portlet>
-
+	
+    <portlet>
+        <portlet-name>embedded-dashboard</portlet-name>
+        <display-name>Embedded Analytics Dashboard</display-name>
+        <portlet-class>com.dotcms.rest.JSPPortlet</portlet-class>
+    </portlet>
+    
 	<custom-window-state>
 		<window-state>exclusive</window-state>
 	</custom-window-state>

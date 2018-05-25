@@ -157,16 +157,9 @@ public class ContainerResource implements Serializable {
         PageMode mode = PageMode.get(req);
         Language landId = WebAPILocator.getLanguageWebAPI()
             .getLanguage(req);
-
-
-        
         
         PageMode.setPageMode(req, PageMode.EDIT_MODE);
-        
-        
-        
-        
-        
+
         ShortyId contentShorty = APILocator.getShortyAPI()
             .getShorty(contentletId)
             .orElseGet(() -> {
@@ -203,6 +196,7 @@ public class ContainerResource implements Serializable {
             context.put(ContainerLoader.SHOW_PRE_POST_LOOP, false);
             context.put("contentletList" + container.getIdentifier() + uuid,
                     Lists.newArrayList(contentlet.getIdentifier()));
+            context.put(mode.name(), Boolean.TRUE);
             StringWriter out = new StringWriter();
 
             VelocityUtil.getEngine()
