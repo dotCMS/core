@@ -219,7 +219,7 @@ public interface WorkflowAPI {
 	 * @throws DotDataException
 	 * @throws AlreadyExistException
 	 */
-	public void saveScheme(WorkflowScheme scheme, User user) throws DotDataException, AlreadyExistException;
+	public void saveScheme(WorkflowScheme scheme, User user) throws DotDataException, DotSecurityException ,AlreadyExistException;
 
 	/**
 	 * Delete the workflow scheme with all the steps, action, actionlets and
@@ -670,5 +670,5 @@ public interface WorkflowAPI {
 	 * @param scheme Workflow scheme to archive
 	 */
 	public void archive(WorkflowScheme scheme, User user)
-			throws DotDataException, AlreadyExistException;
+			throws DotDataException, DotSecurityException, AlreadyExistException;
 }
