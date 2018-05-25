@@ -2094,29 +2094,6 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         }
     }
 
-    //Container actions
-    function addContainer(referer) {
-
-        var loc = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/containers/edit_container" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>'+ '&referer=' + referer;
-        if(inFrame){
-            window.location = loc;
-        }else{
-            top.location = loc;
-        }
-    }
-
-
-    //Template actions
-    function addTemplate(referer) {
-
-        var loc = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/templates/edit_template" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>'+ '&referer=' + referer;
-        if(inFrame){
-            window.location = loc;
-        }else{
-            top.location = loc;
-        }
-    }
-
     //### DELETE METHODS ###
     //File
     function deleteFile(objId, referer) {
