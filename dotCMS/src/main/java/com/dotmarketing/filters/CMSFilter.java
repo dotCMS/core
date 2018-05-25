@@ -171,18 +171,13 @@ public class CMSFilter implements Filter {
         }
 
         if (iAm == IAm.PAGE) {
-
-            // Serving a page through the velocity servlet
-            StringWriter forward = new StringWriter().append("/servlets/VelocityServlet");
-
-            if (UtilMethods.isSet(queryString)) {
-                if (!queryString.contains(WebKeys.HTMLPAGE_LANGUAGE)) {
-                    queryString = queryString + "&" + WebKeys.HTMLPAGE_LANGUAGE + "=" + languageId;
-                }
-                forward.append('?');
-                forward.append(queryString);
+            if (APILocator.getLoginServiceAPI().isLoggedIn(request)){
+                goToPage(request, response, queryString, languageId);
+            } else {
+                goToEditPage(request, response);
             }
-            request.getRequestDispatcher(forward.toString()).forward(request, response);
+            // Serving a page through the velocity servlet
+
             return;
         }
 
@@ -201,6 +196,23 @@ public class CMSFilter implements Filter {
 
     }
 
+    private void goToEditPage(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String url = String.format("/dotAdmin/#/edit-page/content?url=%s", request.getRequestURI());
+        request.getRequestDispatcher(url).forward(request, response);
+    }
+
+    private void goToPage(HttpServletRequest request, HttpServletResponse response, String queryString, long languageId) throws ServletException, IOException {
+        StringWriter forward = new StringWriter().append("/servlets/VelocityServlet");
+
+        if (UtilMethods.isSet(queryString)) {
+            if (!queryString.contains(WebKeys.HTMLPAGE_LANGUAGE)) {
+                queryString = queryString + "&" + WebKeys.HTMLPAGE_LANGUAGE + "=" + languageId;
+            }
+            forward.append('?');
+            forward.append(queryString);
+        }
+        request.getRequestDispatcher(forward.toString()).forward(request, response);
+    }
 
 
     @Override

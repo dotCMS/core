@@ -46,7 +46,6 @@ public class HTMLPageAssetRenderedBuilder {
 
     private final PermissionAPI permissionAPI;
     private final UserAPI userAPI;
-    private final TemplateAPI templateAPI;
     private final ContentletAPI contentletAPI;
     private final LayoutAPI layoutAPI;
     private final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
@@ -56,7 +55,6 @@ public class HTMLPageAssetRenderedBuilder {
     public HTMLPageAssetRenderedBuilder() {
         permissionAPI = APILocator.getPermissionAPI();
         userAPI = APILocator.getUserAPI();
-        templateAPI = APILocator.getTemplateAPI();
         contentletAPI = APILocator.getContentletAPI();
         layoutAPI = APILocator.getLayoutAPI();
         containerRenderedBuilder = new ContainerRenderedBuilder();
