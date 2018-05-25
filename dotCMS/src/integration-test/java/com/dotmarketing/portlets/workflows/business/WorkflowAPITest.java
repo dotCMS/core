@@ -573,32 +573,34 @@ public class WorkflowAPITest extends IntegrationTestBase {
         workflowScheme3 = workflowAPI.findSchemeByName(workflowSchemeName3);
         assertTrue(null != workflowScheme3 && UtilMethods.isSet(workflowScheme3.getId()));
 
-        worflowSchemes.add(workflowScheme3);
-
         /* Associate the schemas to the content type */
         workflowAPI.saveSchemesForStruct(contentTypeStructure, worflowSchemes);
 
         List<WorkflowScheme> contentTypeSchemes = workflowAPI
                 .findSchemesForStruct(contentTypeStructure);
-        assertTrue(contentTypeSchemes != null && contentTypeSchemes.size() == 3);
-
-        /* Validate that the default scheme is not associated to the content tyepe*/
-        WorkflowScheme defaultScheme = workflowAPI.findSchemeByName("Default Scheme");
-        assertFalse(containsScheme(defaultScheme, contentTypeSchemes));
+        assertTrue(contentTypeSchemes != null && contentTypeSchemes.size() == 2);
         assertTrue(containsScheme(workflowScheme1, contentTypeSchemes));
         assertTrue(containsScheme(workflowScheme2, contentTypeSchemes));
-        assertTrue(containsScheme(workflowScheme3, contentTypeSchemes));
 
-        /* Associate the default schema to the content type */
-        worflowSchemes.add(defaultScheme);
+        //Associate another Workflow Scheme
+        worflowSchemes.add(workflowScheme3);
         workflowAPI.saveSchemesForStruct(contentTypeStructure, worflowSchemes);
 
         /* validate that the schemes area associated */
         contentTypeSchemes = workflowAPI.findSchemesForStruct(contentTypeStructure);
-        assertTrue(contentTypeSchemes != null && contentTypeSchemes.size() == 4);
-        assertTrue(containsScheme(defaultScheme, contentTypeSchemes));
+        assertTrue(contentTypeSchemes != null && contentTypeSchemes.size() == 3);
         assertTrue(containsScheme(workflowScheme1, contentTypeSchemes));
         assertTrue(containsScheme(workflowScheme2, contentTypeSchemes));
+        assertTrue(containsScheme(workflowScheme3, contentTypeSchemes));
+
+        //Remove one associated Workflow Scheme
+        worflowSchemes.remove(1);
+        workflowAPI.saveSchemesForStruct(contentTypeStructure, worflowSchemes);
+
+        /* validate that the schemes area associated */
+        contentTypeSchemes = workflowAPI.findSchemesForStruct(contentTypeStructure);
+        assertTrue(contentTypeSchemes != null && contentTypeSchemes.size() == 2);
+        assertTrue(containsScheme(workflowScheme1, contentTypeSchemes));
         assertTrue(containsScheme(workflowScheme3, contentTypeSchemes));
     }
 

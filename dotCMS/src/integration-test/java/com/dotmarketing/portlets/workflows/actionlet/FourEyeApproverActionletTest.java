@@ -181,6 +181,7 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
         final Contentlet contentlet3 = contentletAPI
                 .findContentletByIdentifier(contentlet2.getIdentifier(),
                         false, languageId, systemUser, false);
+        contentletAPI.isInodeIndexed(contentlet3.getInode(), true);
         Assert.assertTrue("The contentlet MUST be live, it has all the approvers.",
                 contentlet3.isLive());
 
@@ -282,11 +283,11 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
     @AfterClass
     public static void cleanup()
             throws DotDataException, DotSecurityException, AlreadyExistException {
-        if (null != schemeStepActionResult) {
-            cleanScheme(schemeStepActionResult.getScheme());
-        }
         if (null != type) {
             contentTypeAPI.delete(type);
+        }
+        if (null != schemeStepActionResult) {
+            cleanScheme(schemeStepActionResult.getScheme());
         }
     }
 
