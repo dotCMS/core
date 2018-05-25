@@ -107,7 +107,7 @@ describe('DotEditContentHtmlService', () => {
     it(
         'should set same height to containers',
         fakeAsync((): void => {
-            const mockLayout = mockDotLayout;
+            const mockLayout = JSON.parse(JSON.stringify(mockDotLayout));
             mockLayout.body.rows = [
                 {
                     columns: [
@@ -139,7 +139,7 @@ describe('DotEditContentHtmlService', () => {
 
             const querySelector2 = [`div[data-dot-object="container"]`, `[data-dot-identifier="321"]`, `[data-dot-uuid="654"]`].join('');
 
-            this.dotEditContentHtmlService.setContaintersSameHeight(mockDotLayout);
+            this.dotEditContentHtmlService.setContaintersSameHeight(mockLayout);
             tick();
 
             const firstContainer = this.dotEditContentHtmlService.getEditPageDocument().querySelector(querySelector1);
