@@ -105,6 +105,10 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
      * @memberof DotEditContentComponent
      */
     statePageHandler(newState: DotPageState): void {
+        if (this.shouldHideWhatsChanged(newState.mode)) {
+            this.showWhatsChanged = false;
+        }
+
         this.dotPageStateService
             .set(this.pageState.page, newState)
             .takeUntil(this.destroy$)
@@ -165,6 +169,10 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
 
     private shouldSetContainersHeight() {
         return this.pageState && this.pageState.layout &&  this.pageState.state.mode === PageMode.EDIT;
+    }
+
+    private shouldHideWhatsChanged(mode: PageMode): boolean {
+        return this.showWhatsChanged && mode === PageMode.EDIT || mode === PageMode.LIVE;
     }
 
     private saveContent(model: DotPageContainer[]): void {

@@ -241,18 +241,36 @@ describe('DotEditContentComponent', () => {
 
         beforeEach(() => {
             viewAsToolbar = fixture.debugElement.query(By.css('dot-edit-content-view-as-toolbar'));
+            component.pageState = new DotRenderedPageState(mockUser, mockDotRenderedPage, null);
         });
 
         it('should not show by default', () => {
             fixture.detectChanges();
             expect(de.query(By.css('dot-whats-changed'))).toBe(null);
+            expect(component.showWhatsChanged).toBe(false);
         });
 
-        it('should not show by default', () => {
-            fixture.detectChanges();
-            viewAsToolbar.triggerEventHandler('whatschange', true);
-            fixture.detectChanges();
-            expect(de.query(By.css('dot-whats-changed'))).toBeTruthy();
+        describe('show', () => {
+            beforeEach(() => {
+                fixture.detectChanges();
+                viewAsToolbar.triggerEventHandler('whatschange', true);
+                fixture.detectChanges();
+            });
+
+            it('should show', () => {
+                expect(de.query(By.css('dot-whats-changed'))).toBeTruthy();
+                expect(component.showWhatsChanged).toBe(true);
+            });
+
+            it('should hide edit iframe', () => {
+                const editIframe: DebugElement = de.query(By.css('.dot-edit__iframe'));
+                expect(editIframe.styles).toEqual({
+                    width: '',
+                    height: '',
+                    visibility: 'hidden',
+                    position: 'absolute'
+                });
+            });
         });
     });
 
@@ -318,7 +336,12 @@ describe('DotEditContentComponent', () => {
             const editIframe: DebugElement = de.query(By.css('.dot-edit__iframe'));
             component.pageState.viewAs.device = mockDotDevice;
             fixture.detectChanges();
-            expect(editIframe.styles).toEqual({ width: mockDotDevice.cssWidth + 'px', height: mockDotDevice.cssHeight + 'px' });
+            expect(editIframe.styles).toEqual({
+                width: mockDotDevice.cssWidth + 'px',
+                height: mockDotDevice.cssHeight + 'px',
+                visibility: '',
+                position: ''
+            });
             expect(pageWrapper.nativeElement.classList.contains('dot-edit__page-wrapper--deviced')).toBe(true);
         });
 
