@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.workflow;
 
+import com.dotcms.repackage.com.google.common.annotations.Beta;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.repackage.javax.ws.rs.*;
@@ -230,10 +231,12 @@ public class WorkflowResource {
 
     /**
      * Finds the common available actions for an set of inodes
+     * Beta: this is not ready for production yet.
      * @param request HttpServletRequest
      * @param inodes String
      * @return Response
      */
+    @Beta
     @GET
     @Path("/contentlet/common/actions")
     @JSONP
@@ -258,6 +261,61 @@ public class WorkflowResource {
             return ResponseUtil.mapExceptionResponse(e);
         }
     } // findCommonAvailableActions.
+
+    /**
+     * Get the bulk actions based on the {@link BulkActionForm}
+     * @param request HttpServletRequest
+     * @param bulkActionForm String
+     * @return Response
+     */
+    @POST
+    @Path("/contentlet/bulk/actions")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response getBulkActions(@Context final HttpServletRequest request,
+                                         final BulkActionForm bulkActionForm) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, true, request, true, null);
+        try {
+
+            DotPreconditions.notNull(bulkActionForm,"Expected Request body was empty.");
+            Logger.debug(this, ()-> "Getting the bulk actions for the contentlets inodes: " + bulkActionForm);
+            return Response.ok(new ResponseEntityView
+                    (this.workflowHelper.findBulkActions(initDataObject.getUser(), bulkActionForm, PageMode.get(request))))
+                    .build(); // 200
+        } catch (Exception e) {
+            Logger.error(this.getClass(),
+                    "Exception on getBulkActions, bulkActionForm: " + bulkActionForm +
+                            ", exception message: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    } // getBulkActions.
+
+    @PUT
+    @Path("/actions/bulk/fire")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final void fireBulkActions(@Context final HttpServletRequest request,
+                                          @Suspended final AsyncResponse asyncResponse,
+                                          final FireActionForm fireActionForm) { // actionid and list of inodes.
+
+        final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
+        Logger.debug(this, ()-> "Fire bulk actions: " + fireActionForm);
+        try {
+            // check the form
+            final List<String> inodes   = null; // get from the fireBulkActionsForm
+            final String       actionId = null;
+            ResponseUtil.handleAsyncResponse(
+                    this.workflowHelper.fireBulkActions(actionId, inodes, initDataObject.getUser()), asyncResponse);
+        } catch (Exception e) {
+            Logger.error(this.getClass(), "Exception attempting to delete schema identified by : " +schemeId + ", exception message: " + e.getMessage(), e);
+            asyncResponse.resume(ResponseUtil.mapExceptionResponse(e));
+        }
+    }
+
 
     /**
      * Returns a single action, 404 if does not exists. 401 if the user does not have permission.
@@ -985,7 +1043,7 @@ public class WorkflowResource {
                 (null, true, request, true, null);
         try {
             Logger.debug(this,
-                    "Getting the available workflow schemes default action for the ContentType: "
+                    () -> "Getting the available workflow schemes default action for the ContentType: "
                             + contentTypeId );
             final List<WorkflowDefaultActionView> actions = this.workflowHelper.findAvailableDefaultActionsByContentType(contentTypeId, initDataObject.getUser());
             return Response.ok(new ResponseEntityView(actions)).build(); // 200
@@ -1135,7 +1193,7 @@ public class WorkflowResource {
                                        @PathParam("schemeId") final String schemeId) {
 
         final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
-        Logger.debug(this, "Deleting scheme with id: " + schemeId);
+        Logger.debug(this, ()-> "Deleting scheme with id: " + schemeId);
         try {
 
             ResponseUtil.handleAsyncResponse(
