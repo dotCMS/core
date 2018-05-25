@@ -103,12 +103,12 @@ public class ESClientTest {
 
     @Test
     @UseDataProvider("testCases")
-    public void testGetExtSettingsBuilder(ESClientTestCase testCase) throws IOException {
+    public void testGetExtSettingsBuilder(final ESClientTestCase testCase) throws IOException {
         final ESClient esClient = Mockito.spy(new ESClient());
         Mockito.doReturn(testCase.getOverrideFilePath()).when(esClient).getOverrideYamlPath();
         Mockito.doReturn(testCase.getDefaultFilePath()).when(esClient).getDefaultYaml();
         Mockito.doReturn(testCase.isCommunity()).when(esClient).isCommunityOrStandard();
-        Settings.Builder builder = esClient.getExtSettingsBuilder();
+        final Settings.Builder builder = esClient.getExtSettingsBuilder();
         assertEquals(testCase.getExpectedTransportHost(), builder.get(ES_TRANSPORT_HOST));
         assertEquals(testCase.getExpectedZenUniCastHosts(), builder.get(ES_ZEN_UNICAST_HOSTS));
         assertEquals(testCase.getExpectedESNodeData(), builder.get(ES_NODE_DATA));

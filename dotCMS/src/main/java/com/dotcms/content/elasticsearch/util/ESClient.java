@@ -99,7 +99,7 @@ public class ESClient {
                     shutDownNode();
 
                     final String node_id = ConfigUtils.getServerId();
-                    String esPathHome = getESPathHome();
+                    final String esPathHome = getESPathHome();
 
                     Logger.info(this, "***PATH HOME: " + esPathHome);
 
@@ -514,7 +514,7 @@ public class ESClient {
         return Paths.get(overrideYamlPathStr);
     }
 
-    private void setCommunityESValues(Builder overrideSettings, String transportTCPPort) {
+    private void setCommunityESValues(final Builder overrideSettings, final String transportTCPPort) {
         overrideSettings.put(ES_ZEN_UNICAST_HOSTS, "localhost:"+transportTCPPort);
         overrideSettings.put(ES_TRANSPORT_HOST, "localhost");
         overrideSettings.put(ES_NODE_DATA, "true");
