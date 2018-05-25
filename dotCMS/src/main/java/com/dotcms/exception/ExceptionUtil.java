@@ -48,8 +48,8 @@ import java.util.Set;
 public class ExceptionUtil {
 
     public static final Set<Class<? extends Throwable>> SECURITY_EXCEPTIONS = ImmutableSet
-            .of(SecurityException.class, DotSecurityException.class,
-                InvalidLicenseException.class,WorkflowPortletAccessException.class);
+            .of(DotSecurityException.class,
+                InvalidLicenseException.class, WorkflowPortletAccessException.class);
 
     public static final Set<Class<? extends Throwable>> NOT_FOUND_EXCEPTIONS = ImmutableSet
             .of(NotFoundInDbException.class, DoesNotExistException.class);
