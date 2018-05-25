@@ -54,7 +54,7 @@ public class ContainerRenderedBuilder {
 
             throws DotSecurityException, DotDataException {
 
-        if (!template.isDrawed()) {
+        if (template != null && !template.isDrawed()) {
             return Collections.EMPTY_LIST;
         }
 
