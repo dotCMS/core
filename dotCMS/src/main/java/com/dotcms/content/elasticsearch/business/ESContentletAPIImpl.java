@@ -5462,7 +5462,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         // Create new asset name
         final String contentletIdAssetName = contentletId.getAssetName();
-        final String fileExtension = contentlet.hasAssetNameExtension() ? "." + UtilMethods.getFileExtension(contentletIdAssetName).trim() : StringPool.BLANK;
+        String fileExtension = StringPool.BLANK;
+        if(contentlet.hasAssetNameExtension()){
+           final String ext = UtilMethods.getFileExtension(contentletIdAssetName);
+           if(UtilMethods.isSet(ext)){
+              fileExtension = '.' + ext;
+           }
+        }
         final String futureAssetNameWithSuffix = UtilMethods.getFileName(contentletIdAssetName) + assetNameSuffix + fileExtension;
 
         // Check if page url already exist
