@@ -8,6 +8,7 @@ import org.apache.logging.log4j.core.Layout;
 import org.apache.logging.log4j.core.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.appender.ConsoleAppender;
+import org.apache.logging.log4j.core.async.AsyncLoggerContextSelector;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.config.LoggerConfig;
@@ -21,6 +22,13 @@ import java.util.Map;
  *         Date: 8/5/15
  */
 public class Log4jUtil {
+
+    /**
+     * Configure default system properties
+     */
+    public static void configureDefaultSystemProperties () {
+        System.setProperty("Log4jContextSelector", "org.apache.logging.log4j.core.async.AsyncLoggerContextSelector");
+    }
 
     /**
      * Creates a ConsoleAppender in order to add it to the root logger
@@ -125,6 +133,7 @@ public class Log4jUtil {
 
             try {
 
+                configureDefaultSystemProperties();
                 LoggerContext loggerContext = (LoggerContext) LogManager.getContext(false);
 
                 if ( !loggerContext.isInitialized() || loggerContext.isStopped() ) {
@@ -136,7 +145,7 @@ public class Log4jUtil {
             } catch ( Exception e ) {
                 LogManager.getLogger().error("Error initializing log for " + log4jConfigFilePath + " configuration file.", e);
             }
-
+            LogManager.getLogger().info("Async Logger enabled: "+ AsyncLoggerContextSelector.isSelected());
         }
     }
 
