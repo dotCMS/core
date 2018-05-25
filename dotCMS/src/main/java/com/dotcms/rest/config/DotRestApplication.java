@@ -25,7 +25,6 @@ import com.dotcms.rest.api.v1.event.EventsResource;
 import com.dotcms.rest.api.v1.folder.FolderResource;
 import com.dotcms.rest.api.v1.languages.LanguagesResource;
 import com.dotcms.rest.api.v1.menu.MenuResource;
-import com.dotcms.rest.api.v1.page.NavResource;
 import com.dotcms.rest.api.v1.page.PageResource;
 import com.dotcms.rest.api.v1.personas.PersonaResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.RuleResource;
@@ -126,16 +125,15 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 
 					REST_CLASSES.add(BrowserTreeResource.class);
 					REST_CLASSES.add(ContentTypeResource.class);
+
 					REST_CLASSES.add(CategoriesResource.class);
 					REST_CLASSES.add(PageResource.class);
 					REST_CLASSES.add(ContentRelationshipsResource.class);
+
 					REST_CLASSES.add(com.dotcms.rest.api.v1.workflow.WorkflowResource.class);
 					REST_CLASSES.add(ContainerResource.class);
 
-					REST_CLASSES.add(NavResource.class);
 					REST_CLASSES.add(ThemeResource.class);
-
-
 				}
 			}
 		}
