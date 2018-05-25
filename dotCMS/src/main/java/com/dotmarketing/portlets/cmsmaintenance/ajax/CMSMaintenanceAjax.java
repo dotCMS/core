@@ -80,6 +80,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.zip.ZipOutputStream;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -172,7 +173,13 @@ public class CMSMaintenanceAjax {
         List<String> indices=api.listDotCMSIndices();
         api.optimize(indices);
     }
-
+    
+    public Map<String, Integer>  flushIndiciesCache() throws InterruptedException, ExecutionException {
+      validateUser();
+      ContentletIndexAPI api=APILocator.getContentletIndexAPI();
+      List<String> indices=api.listDotCMSIndices();
+      return APILocator.getESIndexAPI().flushCaches(indices);
+  }
     /**
 	 * The path where tmp files are stored. This gets wiped alot
 	 */
