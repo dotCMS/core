@@ -131,14 +131,14 @@ public class PageResourceHelper implements Serializable {
     }
 
     @WrapInTransaction
-    public HTMLPageAsset saveTemplate(final User user, HTMLPageAsset htmlPageAsset, final PageForm pageForm)
+    public HTMLPageAsset saveTemplate(final User user, final HTMLPageAsset htmlPageAsset, final PageForm pageForm)
 
             throws BadRequestException, DotDataException, DotSecurityException {
 
         try {
-            Template templateSaved = this.saveTemplate(htmlPageAsset, user, pageForm);
+            final Template templateSaved = this.saveTemplate(htmlPageAsset, user, pageForm);
 
-            String templateId = htmlPageAsset.getTemplateId();
+            final String templateId = htmlPageAsset.getTemplateId();
 
             Contentlet contentlet = htmlPageAsset;
 
