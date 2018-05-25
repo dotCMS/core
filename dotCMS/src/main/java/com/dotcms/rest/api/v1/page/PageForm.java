@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.page;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Stream;
 
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonCreator;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
@@ -141,6 +142,7 @@ class PageForm {
         private void setContainersUUID() {
             final List<ContainerUUIDChanged> changes = new ArrayList<>();
             final Map<String, Long> maxUUIDByContainer = new HashMap<>();
+
             final Map<String, Object> body = (Map<String, Object>) layout.get("body");
 
             if (body == null) {
@@ -153,37 +155,53 @@ class PageForm {
                 throw new BadRequestException("body has to have at least one row");
             }
 
-            rows.stream()
+            getAllContainers().forEach(container -> {
+                try {
+                    final String containerId = container.get("identifier");
+                    final long currentUUID = maxUUIDByContainer.get(containerId) != null ?
+                            maxUUIDByContainer.get(containerId) : 0;
+                    final long nextUUID = currentUUID + 1;
+
+                    if (container.get("uuid") != null) {
+                        final ContainerUUID oldContainerUUID = MAPPER.readValue(MAPPER.writeValueAsString(container),
+                                ContainerUUID.class);
+                        container.put("uuid", String.valueOf(nextUUID));
+                        final ContainerUUID newContainerUUID = MAPPER.readValue(MAPPER.writeValueAsString(container),
+                                ContainerUUID.class);
+
+                        changes.add(new ContainerUUIDChanged(oldContainerUUID, newContainerUUID));
+                    } else {
+                        container.put("uuid", String.valueOf(nextUUID));
+                    }
+
+                    maxUUIDByContainer.put(containerId, nextUUID);
+
+                } catch (IOException e) {
+                    Logger.error(this.getClass(),"Exception on setContainersUUID exception message: " + e.getMessage(), e);
+                }
+            });
+
+            this.changes = changes;
+        }
+
+        private Stream<Map<String, String>> getAllContainers() {
+            final Stream<Map<String, String>> bodyContainers =
+                    ((List<Map<String, Map>>) ((Map<String, Object>) layout.get("body")).get("rows"))
+                    .stream()
                     .map(row -> (List<Map<String, Map>>) row.get("columns"))
                     .flatMap(columns -> columns.stream())
                     .map(column -> (List<Map<String, String>>) column.get("containers"))
-                    .flatMap(containers -> containers.stream())
-                    .forEach(container -> {
-                        try {
-                            final String containerId = container.get("identifier");
-                            final long currentUUID = maxUUIDByContainer.get(containerId) != null ?
-                                    maxUUIDByContainer.get(containerId) : 0;
-                            final long nextUUID = currentUUID + 1;
+                    .flatMap(containers -> containers.stream());
 
-                            if (container.get("uuid") != null) {
-                                final ContainerUUID oldContainerUUID = MAPPER.readValue(MAPPER.writeValueAsString(container),
-                                        ContainerUUID.class);
-                                container.put("uuid", String.valueOf(nextUUID));
-                                final ContainerUUID newContainerUUID = MAPPER.readValue(MAPPER.writeValueAsString(container),
-                                        ContainerUUID.class);
-                                changes.add(new ContainerUUIDChanged(oldContainerUUID, newContainerUUID));
-                            } else {
-                                container.put("uuid", String.valueOf(nextUUID));
-                            }
+            if (layout.get("sidebar") != null){
+                final Stream<Map<String, String>> sidebarContainers =
+                        ((List<Map<String, String>>) ((Map<String, Object>) layout.get("sidebar")).get("containers"))
+                                .stream();
 
-                            maxUUIDByContainer.put(containerId, nextUUID);
-
-                        } catch (IOException e) {
-                            Logger.error(this.getClass(),"Exception on setContainersUUID exception message: " + e.getMessage(), e);
-                        }
-                    });
-
-            this.changes = changes;
+                return Stream.concat(sidebarContainers, bodyContainers);
+            } else {
+                return bodyContainers;
+            }
         }
 
         public PageForm build(){
