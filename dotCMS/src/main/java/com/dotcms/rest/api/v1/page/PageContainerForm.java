@@ -6,6 +6,7 @@ import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonDeserializer;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonNode;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.repackage.jersey.repackaged.com.google.common.collect.ImmutableList;
+import com.dotcms.rest.exception.BadRequestException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -51,8 +52,16 @@ public class PageContainerForm {
             final List<ContainerEntry> entries = new ArrayList<>();
 
             for (final JsonNode jsonElement : jsonNode) {
-                final String containerId = jsonElement.get(CONTAINER_ID_ATTRIBUTE_NAME).asText();
-                final String containerUUID = jsonElement.get(CONTAINER_UUID_ATTRIBUTE_NAME).asText();
+                final JsonNode containerIdNode = jsonElement.get(CONTAINER_ID_ATTRIBUTE_NAME);
+                final JsonNode containerUUIDNode = jsonElement.get(CONTAINER_UUID_ATTRIBUTE_NAME);
+
+                if (containerIdNode == null || containerUUIDNode == null) {
+                    throw new BadRequestException("Container id and uuid are required");
+                }
+
+                final String containerId = containerIdNode.asText();
+                final String containerUUID = containerUUIDNode.asText();
+
                 final ContainerEntry containerEntry = new ContainerEntry(containerId, containerUUID);
 
                 final JsonNode containerNode = jsonElement.get(CONTAINER_CONTENTLETSID_ATTRIBUTE_NAME);

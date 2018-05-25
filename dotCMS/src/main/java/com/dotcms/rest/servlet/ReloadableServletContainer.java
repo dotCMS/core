@@ -176,7 +176,9 @@ public class ReloadableServletContainer extends HttpServlet implements Filter {
                 .register(JsonParseExceptionMapper.class)
                 .register(JsonMappingExceptionMapper.class)
                 .register(UnrecognizedPropertyExceptionMapper.class)
-                .register(InvalidLicenseExceptionMapper.class);
+                .register(InvalidLicenseExceptionMapper.class)
+                .register(DotSecurityExceptionMapper.class)
+                .register(DotDataExceptionMapper.class);
                 //.register(ExceptionMapper.class); // temporaly unregister since some services are expecting just a plain message as an error instead of a json, so to keep the compatibility we won't apply this change yet.
     }
 }

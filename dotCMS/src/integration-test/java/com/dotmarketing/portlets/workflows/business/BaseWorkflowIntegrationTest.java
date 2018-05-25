@@ -50,7 +50,7 @@ public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
             final String schemeName,
             final String stepName,
             final String actionName,
-            final Class actionClass) throws AlreadyExistException, DotDataException {
+            final Class actionClass) throws AlreadyExistException, DotDataException, DotSecurityException {
         final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
         final WorkflowScheme scheme = new WorkflowScheme();
         scheme.setName(schemeName);

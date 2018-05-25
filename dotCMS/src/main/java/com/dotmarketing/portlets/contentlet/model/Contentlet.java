@@ -265,11 +265,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      */
     public boolean hasAssetNameExtension() {
         boolean hasExtension = false;
-        if (getStructure() != null
-                && getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) {
-            hasExtension = true;
-        }
-
+        if(null != getContentType()){
+           hasExtension = (getContentType().baseType() == BaseContentType.HTMLPAGE || getContentType().baseType() == BaseContentType.FILEASSET );
+		}
         return hasExtension;
     }
 

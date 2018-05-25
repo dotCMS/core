@@ -4,11 +4,13 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Stream;
 
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonCreator;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.core.JsonProcessingException;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
+import com.dotcms.rest.api.Validated;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
@@ -85,18 +87,15 @@ class PageForm {
         private static final ObjectMapper MAPPER = new ObjectMapper();
 
         @JsonProperty
-        @NotNull
         private String themeId;
 
         @JsonProperty
         private String title;
 
         @JsonProperty
-        @NotNull
         private String hostId;
 
-        @JsonProperty
-        @NotNull
+        @JsonProperty(required = true)
         private Map<String, Object> layout;
 
         @JsonIgnore
@@ -127,6 +126,10 @@ class PageForm {
 
         private TemplateLayout getTemplateLayout() throws BadRequestException {
 
+            if (layout == null) {
+                throw new BadRequestException("layout is required");
+            }
+
             try {
                 this.setContainersUUID();
                 final String layoutString = MAPPER.writeValueAsString(layout);
@@ -139,6 +142,18 @@ class PageForm {
         private void setContainersUUID() {
             final List<ContainerUUIDChanged> changes = new ArrayList<>();
             final Map<String, Long> maxUUIDByContainer = new HashMap<>();
+
+            final Map<String, Object> body = (Map<String, Object>) layout.get("body");
+
+            if (body == null) {
+                throw new BadRequestException("body attribute is required");
+            }
+
+            final List<Map<String, Map>> rows = (List<Map<String, Map>>) body.get("rows");
+
+            if (rows == null) {
+                throw new BadRequestException("body has to have at least one row");
+            }
 
             getAllContainers().forEach(container -> {
                 try {
@@ -190,6 +205,7 @@ class PageForm {
         }
 
         public PageForm build(){
+
             return new PageForm(themeId, title, hostId, getTemplateLayout(), changes);
         }
     }
