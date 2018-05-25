@@ -170,7 +170,7 @@ class PageForm {
         }
 
         private Stream<Map<String, String>> getAllContainers() {
-            Stream<Map<String, String>> bodyContainers =
+            final Stream<Map<String, String>> bodyContainers =
                     ((List<Map<String, Map>>) ((Map<String, Object>) layout.get("body")).get("rows"))
                     .stream()
                     .map(row -> (List<Map<String, Map>>) row.get("columns"))
@@ -179,7 +179,7 @@ class PageForm {
                     .flatMap(containers -> containers.stream());
 
             if (layout.get("sidebar") != null){
-                Stream<Map<String, String>> sidebarContainers =
+                final Stream<Map<String, String>> sidebarContainers =
                         ((List<Map<String, String>>) ((Map<String, Object>) layout.get("sidebar")).get("containers"))
                                 .stream();
 
