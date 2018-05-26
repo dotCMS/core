@@ -7,10 +7,7 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
-import com.dotcms.rest.api.v1.workflow.BulkActionView;
-import com.dotcms.rest.api.v1.workflow.CountWorkflowAction;
-import com.dotcms.rest.api.v1.workflow.CountWorkflowStep;
-import com.dotcms.rest.api.v1.workflow.WorkflowDefaultActionView;
+import com.dotcms.rest.api.v1.workflow.*;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.workflow.form.*;
 import com.dotmarketing.beans.Permission;
@@ -128,7 +125,7 @@ public class WorkflowHelper {
                                                        final PageMode mode) throws DotSecurityException, DotDataException {
 
         final StringBuilder luceneQuery = new StringBuilder();
-        luceneQuery.append("+identifier:(");
+        luceneQuery.append("+identifier:("); // todo: check if it is inodes or identifiers? ask to Will
         for (final String contentletid : contentletIds) {
             luceneQuery.append(contentletid).append(" ");
         }
@@ -205,8 +202,19 @@ public class WorkflowHelper {
             bulkActions.put(scheme, schemeActionsMap);
         }
 
-
         return new BulkActionView(bulkActions);
+    }
+
+    public Future<BulkActionsResultView> fireBulkActions(final String workflowActionId,
+                                                         final List<String> contentletIds,
+                                                         final User user) throws DotSecurityException, DotDataException {
+
+        final WorkflowAction action = this.workflowAPI.findAction(workflowActionId, user);
+        if(null != action) {
+            return this.workflowAPI.fireBulkActions(action, user, contentletIds);
+        } else {
+            throw new DoesNotExistException("Workflow-does-not-exists-action");
+        }
     }
 
 

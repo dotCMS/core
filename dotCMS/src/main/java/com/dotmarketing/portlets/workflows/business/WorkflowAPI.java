@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.workflows.business;
 
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.rest.api.v1.workflow.BulkActionsResultView;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Permissionable;
@@ -669,4 +670,14 @@ public interface WorkflowAPI {
 	 * @return CommonAvailableWorkflowActions
 	 */
 	CommonAvailableWorkflowActions findCommonAvailableActions(User user, final List<String> contentletIds) throws DotDataException;
+
+	/**
+	 * Fires a list of contentlets by using an action.
+	 * It returns a list of a success, failed and skipped contentlets
+	 * @param action {@link WorkflowAction}
+	 * @param user   {@link User}
+	 * @param contentletIds {@link List}
+	 * @return Future BulkActionsResultView
+	 */
+	Future<BulkActionsResultView> fireBulkActions(WorkflowAction action, User user, List<String> contentletIds);
 }

@@ -11,6 +11,7 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.HEAD;
 import com.dotcms.repackage.org.nfunk.jep.function.Dot;
 import com.dotcms.rest.ErrorEntity;
+import com.dotcms.rest.api.v1.workflow.BulkActionsResultView;
 import com.dotcms.util.*;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
@@ -43,8 +44,10 @@ import org.osgi.framework.BundleContext;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
 import static com.dotcms.util.CollectionsUtils.*;
@@ -1799,6 +1802,102 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			saveComment(comment);
 		}
 
+	}
+
+	public Future<BulkActionsResultView> fireBulkActions(final WorkflowAction action, final User user, final List<String> contentletIds) {
+
+		// this.isUserAllowToModifiedWorkflow(user); // todo: check only if the user does not have license
+
+		if (null == action){
+			Logger.warn(this, "Does not exists the action");
+			throw new DoesNotExistException("Workflow-does-not-exists-action");
+		}
+
+		final DotSubmitter submitter = this.concurrentFactory.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
+		return submitter.submit(() -> fireBulkActionsTask(action, user, contentletIds));
+	}
+
+	private BulkActionsResultView fireBulkActionsTask(final WorkflowAction action, final User user, final List<String> contentletIds) {
+
+		final List<Future> futures = new ArrayList<>();
+		final CopyOnWriteArrayList<String> successContentlet = new CopyOnWriteArrayList<>();
+		final CopyOnWriteArrayList<String> failContentlet    = new CopyOnWriteArrayList<>();
+		final CopyOnWriteArrayList<String> skipContentlet    = new CopyOnWriteArrayList<>();
+
+		final DotSubmitter submitter = this.concurrentFactory.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
+
+		for (final String contentletId : contentletIds) {
+			futures.add(submitter.submit(() -> fireBulkActionTask(action, user, contentletId,
+												inode -> successContentlet.add(inode),
+												inode -> failContentlet.add(inode),
+												inode -> skipContentlet.add(inode))));
+		}
+
+		for (Future future : futures) {
+
+			try {
+				future.get();
+			} catch (InterruptedException | ExecutionException e) {
+				Logger.error(this, e.getMessage(), e);
+			}
+		}
+
+		return new BulkActionsResultView(ImmutableList.copyOf(successContentlet),
+				ImmutableList.copyOf(skipContentlet), ImmutableList.copyOf(failContentlet));
+	}
+
+	@WrapInTransaction
+	private void fireBulkActionTask(final WorkflowAction action,
+									final User user,
+									final String inode,
+									final Consumer<String> successConsumer,
+									final Consumer<String> failConsumer,
+									final Consumer<String> skipConsumer) {
+
+		final Contentlet   contentlet;
+		final WorkflowTask workflowTask;
+		final WorkflowStep workflowStep;
+		final String       successInode;
+		try {
+
+			Logger.debug(this, ()-> "Firing the action: " + action + " to the inode: " + inode);
+			contentlet = this.contentletAPI.find(inode, user, false);
+
+			if (null != contentlet) {
+
+				workflowTask = this.findTaskByContentlet(contentlet);
+				workflowStep = this.findStep(workflowTask.getStatus());
+
+				if (action.getSchemeId().equals(workflowStep.getSchemeId())) {
+
+					successInode = this.fireContentWorkflow(contentlet,
+							new ContentletDependencies.Builder()
+									.respectAnonymousPermissions(false)
+									.generateSystemEvent(false)
+									.modUser(user).workflowActionId(action.getId()).build())
+							.getInode();
+
+					Logger.debug(this, ()-> "Successfully fired the contentlet: " + inode +
+												", success inode: " + successInode);
+					successConsumer.accept(successInode);
+				} else {
+
+					Logger.debug(this, ()-> "Skipped the contentlet: " + inode +
+							", b/c schemes are diff. The action scheme is: " + action.getSchemeId() +
+							" and the contentlet current task, the scheme is: " + workflowStep.getSchemeId());
+					skipConsumer.accept(inode);
+				}
+			} else {
+
+				Logger.error(this, "fireBulkActionTask, The contentlet does not exists: " + inode);
+			}
+		} catch (Exception e) {
+
+			Logger.error(this, e.getMessage(), e);
+			failConsumer.accept(inode);
+			// throw new RollbackException (e); // todo: we need to stop the transaction but we do not want to stop the whole process needs to continue with the next contentlet
+			// one idea could be check this on the LocalTransaction but not throw it, keep quiet.
+		}
 	}
 
 	@WrapInTransaction

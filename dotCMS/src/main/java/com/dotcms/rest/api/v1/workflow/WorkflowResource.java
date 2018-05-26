@@ -300,18 +300,18 @@ public class WorkflowResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final void fireBulkActions(@Context final HttpServletRequest request,
                                           @Suspended final AsyncResponse asyncResponse,
-                                          final FireActionForm fireActionForm) { // actionid and list of inodes.
+                                          final FireBulkActionsForm fireBulkActionsForm) {
 
         final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
-        Logger.debug(this, ()-> "Fire bulk actions: " + fireActionForm);
+        Logger.debug(this, ()-> "Fire bulk actions: " + fireBulkActionsForm);
         try {
             // check the form
-            final List<String> inodes   = null; // get from the fireBulkActionsForm
-            final String       actionId = null;
+            DotPreconditions.notNull(fireBulkActionsForm,"Expected Request body was empty.");
             ResponseUtil.handleAsyncResponse(
-                    this.workflowHelper.fireBulkActions(actionId, inodes, initDataObject.getUser()), asyncResponse);
+                    this.workflowHelper.fireBulkActions(fireBulkActionsForm.getWorkflowActionId(),
+                            fireBulkActionsForm.getContentletIds(), initDataObject.getUser()), asyncResponse);
         } catch (Exception e) {
-            Logger.error(this.getClass(), "Exception attempting to delete schema identified by : " +schemeId + ", exception message: " + e.getMessage(), e);
+            Logger.error(this.getClass(), "Exception attempting to fire bulk actions by : " +fireBulkActionsForm + ", exception message: " + e.getMessage(), e);
             asyncResponse.resume(ResponseUtil.mapExceptionResponse(e));
         }
     }
