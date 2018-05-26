@@ -50,9 +50,9 @@ public class ContextLifecycleListener implements ServletContextListener {
 
 	}
 
-	public void contextInitialized(ServletContextEvent arg0) {
+	public void contextInitialized(ServletContextEvent contextEvent) {
 
-		Config.setMyApp(arg0.getServletContext());
+		Config.setMyApp(contextEvent.getServletContext());
         if(Config.getStringProperty("DOTCMS_LOGGING_HOME") != null && !Config.getStringProperty("DOTCMS_LOGGING_HOME").trim().equals("")) {
             System.setProperty("DOTCMS_LOGGING_HOME", Config.getStringProperty("DOTCMS_LOGGING_HOME"));
         } else {
