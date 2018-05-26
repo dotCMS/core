@@ -100,8 +100,6 @@
 
 
 			if (addChildren) {
-				var containerperm=<%= APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("containers", user)%>;
-				var templateperm=<%= APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("templates", user)%>;
 
 				var isAdminUser = <%= APILocator.getUserAPI().isCMSAdmin(user)%>;
 
@@ -111,20 +109,6 @@
 		    			strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Folder")) %>';
 					strHTML += '</a>';
 				}
-
-				if(containerperm && (isAdminUser || userRoles.containerModifiable)){
-					strHTML += '<a class="context-menu__item" href="javascript: addContainer(\''+referer+'\')">';
-				    	//strHTML += '<span class="container"></span>';
-		    			strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Container")) %>';
-					strHTML += '</a>';
-				}
-				if(templateperm && (isAdminUser || userRoles.templateModifiable)){
-					strHTML += '<a class="context-menu__item" href="javascript: addTemplate(\''+referer+'\')">';
-			    		//strHTML += '<span class="templateIcon"></span>';
-	    				strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Template")) %>';
-					strHTML += '</a>'
-				}
-				
 
 				
 				if(isAdminUser || userRoles.fileModifiable) {
@@ -894,8 +878,6 @@
 			if (addChildren) {
 				var objId = host.identifier;
 				var referer = unescape(encodeURIComponent(origReferer));
-				var containerperm = <%= APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("containers", user)%>;
-				var templateperm = <%= APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("templates", user)%>;
 			    var isAdminUser = <%= APILocator.getUserAPI().isCMSAdmin(user)%>;
                 
                 if (isAdminUser || userRoles.folderModifiable) {
@@ -907,18 +889,6 @@
 					menuOptions += '<div data-dojo-type="dijit/MenuItem" onclick="addHTMLPage(\'' + objId + '\',\'' + referer + '\')">';
 					menuOptions += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "HTML-Page")) %>';
 					menuOptions += '</div>';
-
-				if(containerperm){
-					menuOptions += '<div data-dojo-type="dijit/MenuItem" onclick="addContainer(\'' + referer + '\')">';
-					menuOptions += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Container")) %>';
-					menuOptions += '</div>';
-				}
-
-				if(templateperm){
-					menuOptions += '<div data-dojo-type="dijit/MenuItem" onclick="addTemplate(\'' + referer + '\')">';
-					menuOptions += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Template")) %>';
-					menuOptions += '</div>';
-				}
 
 				menuOptions += '<div data-dojo-type="dijit/MenuItem" onclick="addFile(\'' + objId + '\',\'' + referer + '\',false);hidePopUp(\'context_menu_popup_'+objId+'\');hidePopUp(\'context_child_menu_popup_'+objId+'\');">';
 				menuOptions += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Image-or-File")) %>';
