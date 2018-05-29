@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.workflow;
 
+import com.dotcms.repackage.com.google.common.annotations.Beta;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.repackage.javax.ws.rs.*;
@@ -41,6 +42,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
@@ -221,11 +223,99 @@ public class WorkflowResource {
             return Response.ok(new ResponseEntityView(actions)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
-                    "Exception on findStepsByScheme, contentlet inode: " + inode +
+                    "Exception on findAvailableActions, contentlet inode: " + inode +
                             ", exception message: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
         }
     } // findAvailableActions.
+
+    /**
+     * Finds the common available actions for an set of inodes
+     * Beta: this is not ready for production yet.
+     * @param request HttpServletRequest
+     * @param inodes String
+     * @return Response
+     */
+    @Beta
+    @GET
+    @Path("/contentlet/common/actions")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response findCommonAvailableActions(@Context final HttpServletRequest request,
+                                               @QueryParam("inodes") final String inodes) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, true, request, true, null);
+        try {
+
+            Logger.debug(this, "Getting the common available actions for the contentlets inodes: " + inodes);
+            DotPreconditions.notNull(inodes,"Expected query string 'inodes' was empty.");
+            return Response.ok(new ResponseEntityView
+                    (this.workflowHelper.findCommonAvailableActions(initDataObject.getUser(), inodes.split(StringPool.COMMA))))
+                    .build(); // 200
+        } catch (Exception e) {
+            Logger.error(this.getClass(),
+                    "Exception on findCommonAvailableActions, contentlet inodes: " + inodes +
+                            ", exception message: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    } // findCommonAvailableActions.
+
+    /**
+     * Get the bulk actions based on the {@link BulkActionForm}
+     * @param request HttpServletRequest
+     * @param bulkActionForm String
+     * @return Response
+     */
+    @POST
+    @Path("/contentlet/bulk/actions")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response getBulkActions(@Context final HttpServletRequest request,
+                                         final BulkActionForm bulkActionForm) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, true, request, true, null);
+        try {
+
+            DotPreconditions.notNull(bulkActionForm,"Expected Request body was empty.");
+            Logger.debug(this, ()-> "Getting the bulk actions for the contentlets inodes: " + bulkActionForm);
+            return Response.ok(new ResponseEntityView
+                    (this.workflowHelper.findBulkActions(initDataObject.getUser(), bulkActionForm, PageMode.get(request))))
+                    .build(); // 200
+        } catch (Exception e) {
+            Logger.error(this.getClass(),
+                    "Exception on getBulkActions, bulkActionForm: " + bulkActionForm +
+                            ", exception message: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    } // getBulkActions.
+
+    @PUT
+    @Path("/actions/bulk/fire")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final void fireBulkActions(@Context final HttpServletRequest request,
+                                          @Suspended final AsyncResponse asyncResponse,
+                                          final FireBulkActionsForm fireBulkActionsForm) {
+
+        final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
+        Logger.debug(this, ()-> "Fire bulk actions: " + fireBulkActionsForm);
+        try {
+            // check the form
+            DotPreconditions.notNull(fireBulkActionsForm,"Expected Request body was empty.");
+            ResponseUtil.handleAsyncResponse(
+                    this.workflowHelper.fireBulkActions(fireBulkActionsForm.getWorkflowActionId(),
+                            fireBulkActionsForm.getContentletIds(), initDataObject.getUser()), asyncResponse);
+        } catch (Exception e) {
+            Logger.error(this.getClass(), "Exception attempting to fire bulk actions by : " +fireBulkActionsForm + ", exception message: " + e.getMessage(), e);
+            asyncResponse.resume(ResponseUtil.mapExceptionResponse(e));
+        }
+    }
+
 
     /**
      * Returns a single action, 404 if does not exists. 401 if the user does not have permission.
@@ -953,7 +1043,7 @@ public class WorkflowResource {
                 (null, true, request, true, null);
         try {
             Logger.debug(this,
-                    "Getting the available workflow schemes default action for the ContentType: "
+                    () -> "Getting the available workflow schemes default action for the ContentType: "
                             + contentTypeId );
             final List<WorkflowDefaultActionView> actions = this.workflowHelper.findAvailableDefaultActionsByContentType(contentTypeId, initDataObject.getUser());
             return Response.ok(new ResponseEntityView(actions)).build(); // 200
@@ -1103,7 +1193,7 @@ public class WorkflowResource {
                                        @PathParam("schemeId") final String schemeId) {
 
         final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
-        Logger.debug(this, "Deleting scheme with id: " + schemeId);
+        Logger.debug(this, ()-> "Deleting scheme with id: " + schemeId);
         try {
 
             ResponseUtil.handleAsyncResponse(

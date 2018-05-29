@@ -144,6 +144,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	private final WorkflowActionUtils workflowActionUtils;
 
+	private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public WorkflowAPIImpl() {
 
@@ -1844,6 +1846,102 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	}
 
+	public Future<BulkActionsResultView> fireBulkActions(final WorkflowAction action, final User user, final List<String> contentletIds) {
+
+		// this.isUserAllowToModifiedWorkflow(user); // todo: check only if the user does not have license
+
+		if (null == action){
+			Logger.warn(this, "Does not exists the action");
+			throw new DoesNotExistException("Workflow-does-not-exists-action");
+		}
+
+		final DotSubmitter submitter = this.concurrentFactory.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
+		return submitter.submit(() -> fireBulkActionsTask(action, user, contentletIds));
+	}
+
+	private BulkActionsResultView fireBulkActionsTask(final WorkflowAction action, final User user, final List<String> contentletIds) {
+
+		final List<Future> futures = new ArrayList<>();
+		final CopyOnWriteArrayList<String> successContentlet = new CopyOnWriteArrayList<>();
+		final CopyOnWriteArrayList<String> failContentlet    = new CopyOnWriteArrayList<>();
+		final CopyOnWriteArrayList<String> skipContentlet    = new CopyOnWriteArrayList<>();
+
+		final DotSubmitter submitter = this.concurrentFactory.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
+
+		for (final String contentletId : contentletIds) {
+			futures.add(submitter.submit(() -> fireBulkActionTask(action, user, contentletId,
+												inode -> successContentlet.add(inode),
+												inode -> failContentlet.add(inode),
+												inode -> skipContentlet.add(inode))));
+		}
+
+		for (Future future : futures) {
+
+			try {
+				future.get();
+			} catch (InterruptedException | ExecutionException e) {
+				Logger.error(this, e.getMessage(), e);
+			}
+		}
+
+		return new BulkActionsResultView(ImmutableList.copyOf(successContentlet),
+				ImmutableList.copyOf(skipContentlet), ImmutableList.copyOf(failContentlet));
+	}
+
+	@WrapInTransaction
+	private void fireBulkActionTask(final WorkflowAction action,
+									final User user,
+									final String inode,
+									final Consumer<String> successConsumer,
+									final Consumer<String> failConsumer,
+									final Consumer<String> skipConsumer) {
+
+		final Contentlet   contentlet;
+		final WorkflowTask workflowTask;
+		final WorkflowStep workflowStep;
+		final String       successInode;
+		try {
+
+			Logger.debug(this, ()-> "Firing the action: " + action + " to the inode: " + inode);
+			contentlet = this.contentletAPI.find(inode, user, false);
+
+			if (null != contentlet) {
+
+				workflowTask = this.findTaskByContentlet(contentlet);
+				workflowStep = this.findStep(workflowTask.getStatus());
+
+				if (action.getSchemeId().equals(workflowStep.getSchemeId())) {
+
+					successInode = this.fireContentWorkflow(contentlet,
+							new ContentletDependencies.Builder()
+									.respectAnonymousPermissions(false)
+									.generateSystemEvent(false)
+									.modUser(user).workflowActionId(action.getId()).build())
+							.getInode();
+
+					Logger.debug(this, ()-> "Successfully fired the contentlet: " + inode +
+												", success inode: " + successInode);
+					successConsumer.accept(successInode);
+				} else {
+
+					Logger.debug(this, ()-> "Skipped the contentlet: " + inode +
+							", b/c schemes are diff. The action scheme is: " + action.getSchemeId() +
+							" and the contentlet current task, the scheme is: " + workflowStep.getSchemeId());
+					skipConsumer.accept(inode);
+				}
+			} else {
+
+				Logger.error(this, "fireBulkActionTask, The contentlet does not exists: " + inode);
+			}
+		} catch (Exception e) {
+
+			Logger.error(this, e.getMessage(), e);
+			failConsumer.accept(inode);
+			// throw new RollbackException (e); // todo: we need to stop the transaction but we do not want to stop the whole process needs to continue with the next contentlet
+			// one idea could be check this on the LocalTransaction but not throw it, keep quiet.
+		}
+	}
+
 	@WrapInTransaction
 	@Override
 	public Contentlet fireContentWorkflow(final Contentlet contentlet, final ContentletDependencies dependencies) throws DotDataException {
@@ -2372,5 +2470,62 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		scheme.setArchived(Boolean.TRUE);
 		saveScheme(scheme, user);
 	}
+
+	@Override
+	public CommonAvailableWorkflowActions findCommonAvailableActions(final User user, final List<String> contentletIds) throws DotDataException {
+
+		final CounterSet<WorkflowAction> counterSet =
+				new CounterSet<>(contentletIds.size());
+
+		final String       threadPoolName =
+				Config.getStringProperty("workflow.threadpool.name", DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
+		final DotSubmitter dotSubmitter   = this.concurrentFactory.getSubmitter(threadPoolName);
+
+		final List<Future<Map<String, Collection<WorkflowAction>>>> futures =
+				new ArrayList<>();
+		final Map<String, Collection<WorkflowAction>> workflowActionByContentletIdMap =
+				new HashMap<>();
+
+		Logger.debug(this, ()-> "Getting the common available actions for the contentlets: " + contentletIds);
+
+		for (final String inode : contentletIds) {
+
+			futures.add(dotSubmitter.submit(()->
+					getCommonAvailableActions(user, counterSet,
+							this.contentletAPI.find(inode, user, true))));
+		}
+
+		for (final Future<Map<String, Collection<WorkflowAction>>> future : futures) {
+
+			try {
+				workflowActionByContentletIdMap.putAll(future.get());
+			} catch (InterruptedException | ExecutionException e) {
+				Logger.error(this, e.getMessage(), e);
+				throw new DotDataException(e);
+			}
+		}
+
+		return new CommonAvailableWorkflowActions(counterSet.getCommonItems(), workflowActionByContentletIdMap);
+	} // findCommonAvailableActions.
+
+	@CloseDBIfOpened
+	private Map<String, Collection<WorkflowAction>> getCommonAvailableActions(final User user,
+																			  final CounterSet<WorkflowAction> counterSet,
+																			  final Contentlet contentlet) {
+		List<WorkflowAction> actions = Collections.emptyList();
+		try {
+
+			actions =
+					this.findAvailableActions(contentlet, user);
+
+			if (null != actions) {
+				actions.stream().forEach(action -> counterSet.add(action));
+			}
+		} catch (DotDataException | DotSecurityException e) {
+			Logger.error(this, e.getMessage(), e);
+		}
+
+		return  map(contentlet.getInode(), actions);
+	} // getCommonAvailableActions.
 
 }

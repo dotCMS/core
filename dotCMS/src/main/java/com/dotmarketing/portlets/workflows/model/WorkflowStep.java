@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.workflows.model;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.Objects;
 
 
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
@@ -93,8 +94,11 @@ public class WorkflowStep implements Serializable {
 	public String toString() {
 		return "WorkflowStep [id=" + id + ", name=" + name + ", schemeId=" + schemeId + "]";
 	}
-	
-	
-	
-	
+
+
+	@Override
+	public int hashCode() {
+
+		return Objects.hash(id);
+	}
 }
