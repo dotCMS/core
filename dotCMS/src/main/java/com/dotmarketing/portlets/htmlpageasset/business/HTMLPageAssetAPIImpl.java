@@ -29,6 +29,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.filters.CMSUrlUtil;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -40,13 +41,7 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.CookieUtil;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.RegEX;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -60,6 +55,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.liferay.util.StringUtil;
 import org.apache.velocity.exception.ResourceNotFoundException;
 
 import com.liferay.portal.model.User;
@@ -67,7 +63,7 @@ import com.liferay.portal.model.User;
 
 
 public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
-
+    public static final String CMS_INDEX_PAGE = Config.getStringProperty("CMS_INDEX_PAGE", "index");
     public static final String DEFAULT_HTML_PAGE_ASSET_STRUCTURE_HOST_FIELD = "defaultHTMLPageAssetStructure";
 
     private final PermissionAPI permissionAPI;
@@ -236,14 +232,21 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         if(!UtilMethods.isSet(uri)){
             return null;
         }
-        try {
-            id = identifierAPI.find(host, uri);
-        } catch (Exception e) {
-            Logger.error(this.getClass(), "Unable to find" + uri);
+
+        if (CMSUrlUtil.getInstance().isFolder(uri, host)) {
+            id = this.getIndexPageIdentifier(uri, host);
+        } else {
+            try {
+                id = identifierAPI.find(host, uri);
+            } catch (Exception e) {
+                Logger.error(this.getClass(), "Unable to find" + uri);
+                return null;
+            }
+        }
+
+        if (id == null || id.getId() == null) {
             return null;
         }
-        if (id == null || id.getId() == null)
-            return null;
 
         if ("contentlet".equals(id.getAssetType())) {
             try {
@@ -266,6 +269,17 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
             }
         }
         return null;
+    }
+
+    private Identifier getIndexPageIdentifier(final String folderURI, final Host host) {
+        String indexPageUri = folderURI.endsWith("/") ? folderURI + CMS_INDEX_PAGE : folderURI + "/" + CMS_INDEX_PAGE;
+
+        try {
+            return identifierAPI.find(host, indexPageUri);
+        } catch (Exception e) {
+            Logger.error(this.getClass(), "Unable to find" + folderURI);
+            return null;
+        }
     }
 
     @Override

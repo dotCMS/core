@@ -23,6 +23,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;
@@ -53,23 +54,32 @@ public class VelocityServlet extends HttpServlet {
             return;
         }
 
-        request.setRequestUri(uri);
-        PageMode mode = PageMode.getWithNavigateMode(request);
+        boolean comeFromAdmin = req.getAttribute(WebKeys.COME_FROM_ADMIN) != null ?
+                (boolean) req.getAttribute(WebKeys.COME_FROM_ADMIN) : false;
 
-        try {
-            VelocityModeHandler.modeHandler(mode, request, response).serve();
-        } catch (ResourceNotFoundException rnfe) {
-            Logger.error(this, "ResourceNotFoundException" + rnfe.toString(), rnfe);
-            response.sendError(HttpServletResponse.SC_NOT_FOUND);
-        } catch (ParseErrorException pee) {
-            Logger.error(this, "Template Parse Exception : " + pee.toString(), pee);
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Template Parse Exception");
-        } catch (MethodInvocationException mie) {
-            Logger.error(this, "MethodInvocationException" + mie.toString(), mie);
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "MethodInvocationException Error on template");
-        } catch (Exception e) {
-            Logger.error(this, "Exception" + e.toString(), e);
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Exception Error on template");
+        response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+
+        if (APILocator.getLoginServiceAPI().isLoggedIn(request) && !comeFromAdmin){
+            goToEditPage(uri, response);
+        } else {
+            request.setRequestUri(uri);
+            PageMode mode = PageMode.getWithNavigateMode(request);
+
+            try {
+                VelocityModeHandler.modeHandler(mode, request, response).serve();
+            } catch (ResourceNotFoundException rnfe) {
+                Logger.error(this, "ResourceNotFoundException" + rnfe.toString(), rnfe);
+                response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            } catch (ParseErrorException pee) {
+                Logger.error(this, "Template Parse Exception : " + pee.toString(), pee);
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Template Parse Exception");
+            } catch (MethodInvocationException mie) {
+                Logger.error(this, "MethodInvocationException" + mie.toString(), mie);
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "MethodInvocationException Error on template");
+            } catch (Exception e) {
+                Logger.error(this, "Exception" + e.toString(), e);
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Exception Error on template");
+            }
         }
     }
 
@@ -80,6 +90,9 @@ public class VelocityServlet extends HttpServlet {
 
     }
 
-
+    private void goToEditPage(String requestURI, HttpServletResponse response) throws ServletException, IOException {
+        String url = String.format("/dotAdmin/#/edit-page/content?url=%s", requestURI);
+        response.sendRedirect(url);
+    }
 
 }
