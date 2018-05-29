@@ -1,7 +1,7 @@
 import { DotClipboardUtil } from './ClipboardUtil';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 
-describe('DotContentletEditorService', () => {
+describe('DotClipboardUtil', () => {
     const load = () => {};
     const keyDown = () => {};
     let service: DotClipboardUtil;
