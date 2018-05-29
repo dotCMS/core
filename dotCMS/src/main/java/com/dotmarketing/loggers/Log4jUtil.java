@@ -1,5 +1,7 @@
 package com.dotmarketing.loggers;
 
+import com.dotmarketing.util.UtilMethods;
+
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 
@@ -23,11 +25,15 @@ import java.util.Map;
  */
 public class Log4jUtil {
 
+    private final static String LOG4J_CONTEXT_SELECTOR = "Log4jContextSelector";
+
     /**
      * Configure default system properties
      */
     public static void configureDefaultSystemProperties () {
-        System.setProperty("Log4jContextSelector", "org.apache.logging.log4j.core.async.AsyncLoggerContextSelector");
+        if(!UtilMethods.isSet(System.getProperty(LOG4J_CONTEXT_SELECTOR))) {
+            System.setProperty(LOG4J_CONTEXT_SELECTOR, "org.apache.logging.log4j.core.async.AsyncLoggerContextSelector");
+        }
     }
 
     /**
