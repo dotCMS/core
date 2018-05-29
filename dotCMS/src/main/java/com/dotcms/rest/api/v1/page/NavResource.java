@@ -93,21 +93,21 @@ public class NavResource {
 
         Response res = null;
         try {
-            Host h =WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+            final Host h =WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
             APILocator.getPermissionAPI().checkPermission(h, PermissionLevel.READ, user);
 
-            ViewContext ctx = new ChainedContext(VelocityUtil.getBasicContext(), request, response, Config.CONTEXT);
+            final ViewContext ctx = new ChainedContext(VelocityUtil.getBasicContext(), request, response, Config.CONTEXT);
 
             final String path = (!uri.startsWith("/")) ? "/" + uri : uri;
 
-            NavTool tool = new NavTool();
+            final NavTool tool = new NavTool();
             tool.init(ctx);
-            NavResult nav = tool.getNav(path);
+            final NavResult nav = tool.getNav(path);
 
-            Map<String, Object> navMap = (nav!=null) ? navToMap(nav, depth, 1) : new HashMap<>();
+            final Map<String, Object> navMap = (nav!=null) ? navToMap(nav, depth, 1) : new HashMap<>();
 
-            ObjectMapper mapper = new ObjectMapper();
-            String json = mapper.writeValueAsString(navMap);
+            final ObjectMapper mapper = new ObjectMapper();
+            final String json = mapper.writeValueAsString(navMap);
 
             final Response.ResponseBuilder responseBuilder = Response.ok(json);
 
@@ -140,7 +140,7 @@ public class NavResource {
 
     private Map<String, Object> navToMap(final NavResult nav, final int maxDepth, final int currentDepth) throws Exception {
 
-        Map<String, Object> navMap = new HashMap<String, Object>();
+        final Map<String, Object> navMap = new HashMap<String, Object>();
         navMap.put("title", nav.getTitle());
         navMap.put("target", nav.getTarget());
         navMap.put("code", nav.getCodeLink());
@@ -153,8 +153,8 @@ public class NavResource {
         navMap.put("hash", nav.hashCode());
 
         if (currentDepth < maxDepth) {
-            List<Map<String, Object>> childs = new ArrayList<>();
-            for (NavResult child : nav.getChildren()) {
+            final List<Map<String, Object>> childs = new ArrayList<>();
+            for (final NavResult child : nav.getChildren()) {
                 int startDepth=currentDepth;
                 childs.add(navToMap(child, maxDepth, ++startDepth));
             }
