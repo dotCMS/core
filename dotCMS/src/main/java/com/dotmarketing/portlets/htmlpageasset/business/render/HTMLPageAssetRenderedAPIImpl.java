@@ -58,7 +58,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                                      final User user, final String uri, final PageMode mode)
             throws DotSecurityException, DotDataException {
 
-        final Host host = resolveSite(request, user);
+        final Host host = resolveSite(request, user, mode);
         final HTMLPageAsset page = getHtmlPageAsset(user, uri, mode, host);
 
         return new HTMLPageAssetRenderedBuilder()
@@ -67,7 +67,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .setRequest(request)
                 .setResponse(response)
                 .setSite(host)
-                .build(false);
+                .build(false, mode);
     }
 
     @Override
@@ -75,7 +75,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                                     final User user, final String pageUri, final PageMode pageMode)
             throws DotDataException, DotSecurityException {
 
-        final Host host = resolveSite(request, user);
+        final Host host = resolveSite(request, user, pageMode);
         final HTMLPageAsset page = getHtmlPageAsset(user, pageUri, pageMode, host);
 
         return new HTMLPageAssetRenderedBuilder()
@@ -84,7 +84,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .setRequest(request)
                 .setResponse(response)
                 .setSite(host)
-                .build(true);
+                .build(true, pageMode);
     }
 
     @Override
@@ -92,7 +92,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                                     final User user, final HTMLPageAsset page, PageMode pageMode)
             throws DotDataException, DotSecurityException {
 
-        final Host host = resolveSite(request, user);
+        final Host host = resolveSite(request, user, pageMode);
 
         return new HTMLPageAssetRenderedBuilder()
                 .setHtmlPageAsset(page)
@@ -100,12 +100,12 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .setRequest(request)
                 .setResponse(response)
                 .setSite(host)
-                .build(true);
+                .build(true, pageMode);
     }
 
     public String getPageHtml(final HttpServletRequest request, final HttpServletResponse response, final User user,
                               final String uri, final PageMode mode) throws DotSecurityException, DotDataException {
-        final Host host = resolveSite(request, user);
+        final Host host = resolveSite(request, user, mode);
         final HTMLPageAsset page = getHtmlPageAsset(user, uri, mode, host);
 
         return new HTMLPageAssetRenderedBuilder()
@@ -142,8 +142,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         return htmlPageAsset;
     }
 
-    private Host resolveSite(final HttpServletRequest request, final User user) throws DotDataException, DotSecurityException {
-        final PageMode mode = PageMode.get(request);
+    private Host resolveSite(final HttpServletRequest request, final User user, final PageMode mode) throws DotDataException, DotSecurityException {
         final String siteName = null == request.getParameter(Host.HOST_VELOCITY_VAR_NAME) ?
                 request.getServerName() : request.getParameter(Host.HOST_VELOCITY_VAR_NAME);
         Host site = this.hostWebAPI.resolveHostName(siteName, user, mode.respectAnonPerms);
