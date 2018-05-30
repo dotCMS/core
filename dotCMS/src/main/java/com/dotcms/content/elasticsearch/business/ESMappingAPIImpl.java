@@ -440,7 +440,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					valueObj = "";
 				}
 
-				if(!UtilMethods.isSet(valueObj)) {
+				if (!UtilMethods.isSet(valueObj) && !f.getFieldType()
+						.equals(Field.FieldType.TAG.toString())) {
 					m.put(keyName, null);
 				}
 				else if(f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_TIME)) {
