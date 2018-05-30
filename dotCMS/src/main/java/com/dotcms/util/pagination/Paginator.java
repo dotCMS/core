@@ -1,11 +1,9 @@
 package com.dotcms.util.pagination;
 
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
-
-import java.io.Serializable;
 import java.util.Map;
-import static com.dotcms.util.CollectionsUtils.map;
 
 
 /**
@@ -29,4 +27,20 @@ public interface Paginator<T> {
      */
     public abstract PaginatedArrayList<T> getItems(User user, int limit, int offset, Map<String, Object> params)
             throws PaginationException;
+
+    /**
+     * default Pagination instantiator.
+     * Allows the possibility to instantiate different constructs in the the descendants
+     * @return
+     */
+    default Pagination createPagination(final User user, final Map<String,Object> paginationValuesMap) throws DotDataException {
+
+        final String link = (String)paginationValuesMap.get(Pagination.LINK);
+        final Number perPage = (Number)paginationValuesMap.get(Pagination.PER_PAGE);
+        final Number currentPage = (Number)paginationValuesMap.get(Pagination.CURRENT_PAGE);
+        final Number linkPages = (Number) paginationValuesMap.get(Pagination.LINK_PAGES);
+        final Number totalRecords = (Number) paginationValuesMap.get(Pagination.TOTAL_RECORDS);
+
+        return new Pagination(link, perPage, currentPage, linkPages, totalRecords);
+    }
 }

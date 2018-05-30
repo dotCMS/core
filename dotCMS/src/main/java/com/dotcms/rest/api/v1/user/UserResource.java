@@ -4,21 +4,23 @@ import static com.dotcms.util.CollectionsUtils.getMapValue;
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 
-import java.io.Serializable;
-import java.util.Collections;
-import java.util.Locale;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.*;
+import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.POST;
+import com.dotcms.repackage.javax.ws.rs.PUT;
+import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
+import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.QueryParam;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
-import com.dotcms.rest.*;
+import com.dotcms.rest.ErrorEntity;
+import com.dotcms.rest.ErrorResponseHelper;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.IncorrectPasswordException;
 import com.dotcms.rest.exception.BadRequestException;
@@ -42,6 +44,13 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.LocaleUtil;
+import java.io.Serializable;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 /**
  * This end-point provides access to information associated to dotCMS users.
@@ -321,10 +330,12 @@ public class UserResource implements Serializable {
 					"An attempt to login as a different user was made by user ID ("
 							+ currentUser.getUserId() + "). Remote IP: " + request.getRemoteAddr());
 			if (UtilMethods.isSet(e.getMessageKey())) {
-				User user = initData.getUser();
-				response = Response.ok(new ResponseEntityView(
-						list(new ErrorEntity(e.getMessageKey(), LanguageUtil.get(user.getLocale(), e.getMessageKey()))),
-						map("loginAs", false))).build();
+				final User user = initData.getUser();
+				final List<ErrorEntity> errors = list(new ErrorEntity(e.getMessageKey(),
+						LanguageUtil.get(user.getLocale(), e.getMessageKey())));
+				final ResponseEntityView entityView = new ResponseEntityView.Builder()
+						.errors(errors).entity(map("loginAs", false)).build();
+				response = Response.ok(entityView).build();
 			} else {
 				return ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
 			}

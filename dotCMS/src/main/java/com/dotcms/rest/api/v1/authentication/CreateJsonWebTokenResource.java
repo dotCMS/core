@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.authentication;
 
+import static com.dotcms.util.CollectionsUtils.map;
+
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -22,7 +24,13 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
-import com.liferay.portal.*;
+import com.liferay.portal.NoSuchUserException;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.RequiredLayoutException;
+import com.liferay.portal.SystemException;
+import com.liferay.portal.UserActiveException;
+import com.liferay.portal.UserEmailAddressException;
+import com.liferay.portal.UserPasswordException;
 import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.ejb.UserLocalManager;
 import com.liferay.portal.ejb.UserLocalManagerFactory;
@@ -32,16 +40,12 @@ import com.liferay.portal.language.LanguageWrapper;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.LocaleUtil;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Locale;
-
-import static com.dotcms.util.CollectionsUtils.map;
-import static java.util.Collections.EMPTY_MAP;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 /**
  * Create a new Json Web Token
@@ -118,8 +122,12 @@ public class CreateJsonWebTokenResource implements Serializable {
                 this.securityLoggerServiceAPI.logInfo(this.getClass(),
                         "A Json Web Token " + userId.toLowerCase() + " has been created from IP: " +
                                 HttpRequestDataUtil.getRemoteAddress(request));
-                res = Response.ok(new ResponseEntityView(map("token",
-                        createJsonWebToken(user, jwtMaxAge)), EMPTY_MAP)).build(); // 200
+
+                final ResponseEntityView entityView = new ResponseEntityView.Builder().
+                        entity(
+                           map("token",createJsonWebToken(user, jwtMaxAge))
+                        ).build();
+                res = Response.ok(entityView).build(); // 200
             } else {
 
                 res = this.responseUtil.getErrorResponse(request, Response.Status.UNAUTHORIZED,
