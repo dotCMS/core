@@ -57,8 +57,6 @@ public class VelocityServlet extends HttpServlet {
         final boolean comeFromAdmin = req.getAttribute(WebKeys.COME_FROM_ADMIN) != null ?
                 (boolean) req.getAttribute(WebKeys.COME_FROM_ADMIN) : false;
 
-        response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-
         if (APILocator.getLoginServiceAPI().isLoggedIn(request) && !comeFromAdmin){
             goToEditPage(uri, response);
         } else {
@@ -92,7 +90,7 @@ public class VelocityServlet extends HttpServlet {
 
     private void goToEditPage(final String requestURI, final HttpServletResponse response)
             throws ServletException, IOException {
-
+        response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
         final String url = String.format("/dotAdmin/#/edit-page/content?url=%s", requestURI);
         response.sendRedirect(url);
     }
