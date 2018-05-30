@@ -44,23 +44,6 @@ public interface Encryptor extends Serializable {
         return com.liferay.util.Encryptor.generateKey(algorithm);
     }
 
-	/**
-	 * Returns the provider used to generate encryption keys.
-	 * 
-	 * @return The provider.
-	 * @throws ClassNotFoundException
-	 *             - The provider can't be found.
-	 * @throws IllegalAccessException
-	 *             - The provider can't be instantiated.
-	 * @throws InstantiationException
-	 *             - The provider can't be instantiated.
-	 */
-    default Provider getProvider()
-            throws ClassNotFoundException, IllegalAccessException,
-            InstantiationException {
-
-        return com.liferay.util.Encryptor.getProvider();
-    }
 
 	/**
 	 * Decrypts an encrypted String using the specified key.
