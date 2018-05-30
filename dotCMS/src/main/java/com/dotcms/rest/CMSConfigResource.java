@@ -68,14 +68,15 @@ public class CMSConfigResource {
     @Produces (MediaType.APPLICATION_JSON)
     @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
     public Response saveCompanyBasicInfo ( @Context HttpServletRequest request,
-                                           @FormParam ("user") String user, @FormParam ("password") String password,
-                                           @FormParam ("portalURL") String portalURL,
-                                           @FormParam ("mx") String mx,
-                                           @FormParam ("emailAddress") String emailAddress,
-                                           @FormParam ("size") String size,
-                                           @FormParam("type") String type,
-                                           @FormParam("street") String street,
-                                           @FormParam ("homeURL") String homeURL ) throws IOException, JSONException {
+                                           @FormParam ("user") final String user,
+                                           @FormParam ("password") final String password,
+                                           @FormParam ("portalURL") final String portalURL,
+                                           @FormParam ("mx") final String mx,
+                                           @FormParam ("emailAddress") final String emailAddress,
+                                           @FormParam ("size") final String size,
+                                           @FormParam("type") final String type,
+                                           @FormParam("street") final String street,
+                                           @FormParam ("homeURL") final String homeURL ) throws IOException, JSONException {
 
         InitDataObject initData = webResource.init( "user/" + user + "/password/" + password, true, request, true, PortletID.CONFIGURATION.toString() );
 
@@ -100,7 +101,7 @@ public class CMSConfigResource {
             PrincipalThreadLocal.setName( initData.getUser().getUserId() );
 
             //Getting the current company
-            Company currentCompany = APILocator.getCompanyAPI().getDefaultCompany();
+            final Company currentCompany = APILocator.getCompanyAPI().getDefaultCompany();
 
             //Set the values
             currentCompany.setPortalURL( portalURL );
