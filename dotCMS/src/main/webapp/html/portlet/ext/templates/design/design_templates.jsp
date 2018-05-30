@@ -108,6 +108,7 @@
 		host = APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(), false);
 	}
 %>
+<%=template.getDrawedBody()%>
 <script type='text/javascript' src='/dwr/interface/TemplateAjax.js'></script>
 <script language="JavaScript" src="/html/js/template/dwr/interface/ContainerAjaxDrawedTemplate.js"></script>
 <script language="Javascript">
