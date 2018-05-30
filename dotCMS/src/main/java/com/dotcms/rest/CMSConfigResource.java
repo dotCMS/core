@@ -55,7 +55,9 @@ public class CMSConfigResource {
      * @param portalURL
      * @param mx
      * @param emailAddress
-     * @param size
+     * @param size this one is the Background Color
+     * @param type this one is the Primary Color
+     * @param street this one is the Secondary Color
      * @param homeURL
      * @return
      * @throws IOException
@@ -71,6 +73,8 @@ public class CMSConfigResource {
                                            @FormParam ("mx") String mx,
                                            @FormParam ("emailAddress") String emailAddress,
                                            @FormParam ("size") String size,
+                                           @FormParam("type") String type,
+                                           @FormParam("street") String street,
                                            @FormParam ("homeURL") String homeURL ) throws IOException, JSONException {
 
         InitDataObject initData = webResource.init( "user/" + user + "/password/" + password, true, request, true, PortletID.CONFIGURATION.toString() );
@@ -80,13 +84,15 @@ public class CMSConfigResource {
         paramsMap.put( "mx", mx );
         paramsMap.put( "emailAddress", emailAddress );
         paramsMap.put( "size", size );
+        paramsMap.put("type", type);
+        paramsMap.put("street", street);
         paramsMap.put( "homeURL", homeURL );
 
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
         StringBuilder responseMessage = new StringBuilder();
 
         //Validate the parameters
-        if ( !responseResource.validate( responseMessage, "portalURL", "mx", "emailAddress", "size" ) ) {
+        if ( !responseResource.validate( responseMessage, "portalURL", "mx", "emailAddress", "size","type","street" ) ) {
             return responseResource.responseError( responseMessage.toString(), HttpStatus.SC_BAD_REQUEST );
         }
 
@@ -94,13 +100,15 @@ public class CMSConfigResource {
             PrincipalThreadLocal.setName( initData.getUser().getUserId() );
 
             //Getting the current company
-            Company currentCompany = PublicCompanyFactory.getDefaultCompany();
+            Company currentCompany = APILocator.getCompanyAPI().getDefaultCompany();
 
             //Set the values
             currentCompany.setPortalURL( portalURL );
             currentCompany.setMx( mx );
             currentCompany.setEmailAddress( emailAddress );
             currentCompany.setSize( size );
+            currentCompany.setType(type);
+            currentCompany.setStreet(street);
             currentCompany.setHomeURL( homeURL );
 
             //Update the company
