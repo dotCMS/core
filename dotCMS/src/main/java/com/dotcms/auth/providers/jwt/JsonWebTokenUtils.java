@@ -5,6 +5,7 @@ import com.dotcms.auth.providers.jwt.beans.JWTBean;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
 import com.dotcms.business.LazyUserAPIWrapper;
+import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.marshal.MarshalFactory;
 import com.dotcms.util.marshal.MarshalUtils;
@@ -91,7 +92,7 @@ public class JsonWebTokenUtils {
      */
     public DotCMSSubjectBean getSubject(final String jwtAccessToken) {
 
-        JWTBean jwtBean = null;
+        JWTBean jwtBean;
         DotCMSSubjectBean subject = null;
 
         try {
@@ -121,8 +122,8 @@ public class JsonWebTokenUtils {
     public User getUser(final String jwtAccessToken) {
 
         User userToReturn = null;
-        String userId = null;
-        IsValidResult isValidResult = null;
+        String userId;
+        IsValidResult isValidResult;
 
         try {
 
@@ -250,13 +251,15 @@ public class JsonWebTokenUtils {
         final String encryptUserId
                 = UserManagerUtil.encryptUserId(user.getUserId());
 
+        final String clusterId = ClusterFactory.getClusterId();
+
         return  this.jsonWebTokenService.generateToken(
                         new JWTBean(encryptUserId,
                                 this.marshalUtils.marshal(
                                         new DotCMSSubjectBean(user.getModificationDate(),
                                                 encryptUserId,
                                                 user.getCompanyId())),
-                                encryptUserId,
+                                clusterId,
                                 (jwtMaxAge > 0)?
                                         DateUtil.daysToMillis(jwtMaxAge):
                                         jwtMaxAge

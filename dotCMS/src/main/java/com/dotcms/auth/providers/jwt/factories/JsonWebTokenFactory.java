@@ -1,5 +1,6 @@
 package com.dotcms.auth.providers.jwt.factories;
 
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import io.jsonwebtoken.*;
 
 import java.io.Serializable;
@@ -38,7 +39,7 @@ public class JsonWebTokenFactory implements Serializable {
      * The default Signing Key class
      */
     public static final String DEFAULT_JSON_WEB_TOKEN_SIGNING_KEY_FACTORY_CLASS =
-            "com.dotcms.auth.providers.jwt.factories.impl.HashSigningKeyFactoryImpl";
+            "com.dotcms.auth.providers.jwt.factories.impl.SecretKeySpecFactoryImpl";
 
     private JsonWebTokenFactory () {
         // singleton
@@ -56,6 +57,9 @@ public class JsonWebTokenFactory implements Serializable {
         return JsonWebTokenFactory.SingletonHolder.INSTANCE;
     } // getInstance.
 
+    @VisibleForTesting
+    public JsonWebTokenFactory(String param) {}
+
     /**
      * Creates the Json Web Token Service based on the configuration on dotmarketing-config.properties
      * @return JsonWebTokenService
@@ -63,8 +67,8 @@ public class JsonWebTokenFactory implements Serializable {
     public JsonWebTokenService getJsonWebTokenService () {
 
         Key key = null;
-        SigningKeyFactory signingKeyFactory = null;
-        String signingKeyFactoryClass = null;
+        SigningKeyFactory signingKeyFactory;
+        String signingKeyFactoryClass;
 
         if (null == this.jsonWebTokenService) {
 

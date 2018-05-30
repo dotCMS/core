@@ -4,6 +4,7 @@ import com.dotcms.UnitTestBase;
 import com.dotcms.auth.providers.jwt.beans.DotCMSSubjectBean;
 import com.dotcms.auth.providers.jwt.beans.JWTBean;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
+import com.dotcms.auth.providers.jwt.factories.KeyFactoryUtils;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.util.marshal.MarshalFactory;
@@ -12,6 +13,7 @@ import com.dotcms.util.security.Encryptor;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
@@ -22,6 +24,7 @@ import com.liferay.portal.util.CookieKeys;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.EncryptorException;
 
+import javax.servlet.ServletContext;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -187,11 +190,17 @@ public class JsonWebTokenInterceptorTest extends UnitTestBase {
     @Test
     public void interceptWithAccessTokenNonValidTest() throws IOException, ParseException {
 
-        final HttpServletRequest   request  = mock(HttpServletRequest.class);
-        final HttpServletResponse  response = mock(HttpServletResponse.class);
-        final HttpSession          session  = mock(HttpSession.class);
-        final MarshalUtils         marshalUtils =
-                                              mock(MarshalUtils.class);
+        //Mocking data
+        final HttpServletRequest   request          = mock(HttpServletRequest.class);
+        final HttpServletResponse  response         = mock(HttpServletResponse.class);
+        final HttpSession          session          = mock(HttpSession.class);
+        final MarshalUtils         marshalUtils     = mock(MarshalUtils.class);
+        final FileAssetAPI         fileAssetAPI     = mock(FileAssetAPI.class);
+        Config.CONTEXT = mock(ServletContext.class);
+        Config.CONTEXT_PATH = "/tmp";
+        KeyFactoryUtils.getInstance(fileAssetAPI);
+        when(fileAssetAPI.getRealAssetsRootPath()).thenReturn("/tmp/assets");
+
         final JsonWebTokenService jsonWebTokenService =
                 JsonWebTokenFactory.getInstance().getJsonWebTokenService();
         final LoginServiceAPI loginService  = mock(LoginServiceAPI.class);
@@ -205,6 +214,7 @@ public class JsonWebTokenInterceptorTest extends UnitTestBase {
 
         final String jwtId  = "jwt1";
         final String userId = "jsanca";
+        final String clusterId = "CLUSTER-123";
         final SimpleDateFormat dateFormat =
                 new SimpleDateFormat("dd/MM/yyyy");
         dateFormat.setTimeZone(TimeZone.getTimeZone("GMT-8:00"));
@@ -218,7 +228,7 @@ public class JsonWebTokenInterceptorTest extends UnitTestBase {
 
         System.out.println("jsonWebTokenSubject:" + jsonWebTokenSubject);
         final String jsonWebToken = jsonWebTokenService.generateToken(new JWTBean(jwtId,
-                jsonWebTokenSubject, userId, date.getTime() - System.currentTimeMillis()
+                jsonWebTokenSubject, clusterId, date.getTime() - System.currentTimeMillis()
         ));
 
         when(request.getSession(false)).thenReturn(session);
@@ -262,9 +272,16 @@ public class JsonWebTokenInterceptorTest extends UnitTestBase {
     @Test
     public void interceptWithAccessTokenUserModifiedTest() throws IOException, ParseException, SystemException, PortalException, EncryptorException, DotSecurityException, DotDataException {
 
-        final HttpServletRequest   request  = mock(HttpServletRequest.class);
-        final HttpServletResponse  response = mock(HttpServletResponse.class);
-        final HttpSession          session  = mock(HttpSession.class);
+        //Mocking data
+        final HttpServletRequest   request          = mock(HttpServletRequest.class);
+        final HttpServletResponse  response         = mock(HttpServletResponse.class);
+        final HttpSession          session          = mock(HttpSession.class);
+        final FileAssetAPI         fileAssetAPI     = mock(FileAssetAPI.class);
+        Config.CONTEXT = mock(ServletContext.class);
+        Config.CONTEXT_PATH = "/tmp";
+        KeyFactoryUtils.getInstance(fileAssetAPI);
+        when(fileAssetAPI.getRealAssetsRootPath()).thenReturn("/tmp/assets");
+
         final JsonWebTokenService jsonWebTokenService =
                 JsonWebTokenFactory.getInstance().getJsonWebTokenService();
         final CompanyLocalManager companyLocalManager =
@@ -277,9 +294,9 @@ public class JsonWebTokenInterceptorTest extends UnitTestBase {
 
         when(loginService.isLoggedIn(request)).thenReturn(false);
 
-
         final String jwtId  = "jwt1";
         final String userId = "jsanca";
+        final String clusterId = "CLUSTER-123";
         final SimpleDateFormat dateFormat =
                 new SimpleDateFormat("dd/MM/yyyy");
         dateFormat.setTimeZone(TimeZone.getTimeZone("GMT-8:00"));
@@ -293,7 +310,7 @@ public class JsonWebTokenInterceptorTest extends UnitTestBase {
 
         System.out.println("jsonWebTokenSubject:" + jsonWebTokenSubject);
         final String jsonWebToken = jsonWebTokenService.generateToken(new JWTBean(jwtId,
-                jsonWebTokenSubject, userId, date.getTime()
+                jsonWebTokenSubject, clusterId, date.getTime()
         ));
 
         when(request.getSession(false)).thenReturn(session);
@@ -375,9 +392,16 @@ public class JsonWebTokenInterceptorTest extends UnitTestBase {
     @Test
     public void interceptWithAccessTokenTest() throws IOException, ParseException, SystemException, PortalException, EncryptorException, DotSecurityException, DotDataException {
 
-        final HttpServletRequest   request  = mock(HttpServletRequest.class);
-        final HttpServletResponse  response = mock(HttpServletResponse.class);
-        final HttpSession          session  = mock(HttpSession.class);
+        //Mocking data
+        final HttpServletRequest   request          = mock(HttpServletRequest.class);
+        final HttpServletResponse  response         = mock(HttpServletResponse.class);
+        final HttpSession          session          = mock(HttpSession.class);
+        final FileAssetAPI         fileAssetAPI     = mock(FileAssetAPI.class);
+        Config.CONTEXT = mock(ServletContext.class);
+        Config.CONTEXT_PATH = "/tmp";
+        KeyFactoryUtils.getInstance(fileAssetAPI);
+        when(fileAssetAPI.getRealAssetsRootPath()).thenReturn("/tmp/assets");
+
         final JsonWebTokenService jsonWebTokenService =
                 JsonWebTokenFactory.getInstance().getJsonWebTokenService();
         final CompanyLocalManager companyLocalManager =
@@ -394,6 +418,7 @@ public class JsonWebTokenInterceptorTest extends UnitTestBase {
 
         final String jwtId  = "jwt1";
         final String userId = "jsanca";
+        final String clusterId = "CLUSTER-123";
         final SimpleDateFormat dateFormat =
                 new SimpleDateFormat("dd/MM/yyyy");
         dateFormat.setTimeZone(TimeZone.getTimeZone("GMT-8:00"));
@@ -407,7 +432,7 @@ public class JsonWebTokenInterceptorTest extends UnitTestBase {
 
         System.out.println("jsonWebTokenSubject:" + jsonWebTokenSubject);
         final String jsonWebToken = jsonWebTokenService.generateToken(new JWTBean(jwtId,
-                jsonWebTokenSubject, userId, date.getTime()
+                jsonWebTokenSubject, clusterId, date.getTime()
         ));
 
         when(request.getSession(false)).thenReturn(session);

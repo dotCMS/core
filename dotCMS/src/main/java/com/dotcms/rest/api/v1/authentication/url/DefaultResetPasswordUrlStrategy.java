@@ -4,6 +4,7 @@ package com.dotcms.rest.api.v1.authentication.url;
 import com.dotcms.auth.providers.jwt.beans.JWTBean;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
+import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
@@ -39,11 +40,12 @@ public class DefaultResetPasswordUrlStrategy implements UrlStrategy {
     @Override
     public String getURL(final Map<String, Object> params) {
 
-        final User user       = (User)    params.get(USER);
-        final String token    = (String)  params.get(TOKEN);
-        final Locale locale   = (Locale)  params.get(LOCALE);
-        final String jwt      = this.jsonWebTokenService.generateToken(
-                new JWTBean(user.getUserId(), token, user.getUserId(), this.jwtMillis
+        final User user         = (User)    params.get(USER);
+        final String clusterId  = ClusterFactory.getClusterId();
+        final String token      = (String)  params.get(TOKEN);
+        final Locale locale     = (Locale)  params.get(LOCALE);
+        final String jwt        = this.jsonWebTokenService.generateToken(
+                new JWTBean(user.getUserId(), token, clusterId, this.jwtMillis
 
         ));
 

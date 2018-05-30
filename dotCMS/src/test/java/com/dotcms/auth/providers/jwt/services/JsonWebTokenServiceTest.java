@@ -3,22 +3,26 @@ package com.dotcms.auth.providers.jwt.services;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.TimeZone;
-
-import org.junit.Test;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.dotcms.UnitTestBase;
 import com.dotcms.auth.providers.jwt.beans.DotCMSSubjectBean;
 import com.dotcms.auth.providers.jwt.beans.JWTBean;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
+import com.dotcms.auth.providers.jwt.factories.KeyFactoryUtils;
 import com.dotcms.util.marshal.MarshalFactory;
 import com.dotcms.util.marshal.MarshalUtils;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
+import javax.servlet.ServletContext;
+import org.junit.Test;
 
 /**
  * JsonWebTokenService
@@ -28,8 +32,6 @@ import com.dotmarketing.util.json.JSONObject;
 
 public class JsonWebTokenServiceTest extends UnitTestBase {
 
-
-
     /**
      * Testing the generateToken JsonWebTokenServiceTest
      */
@@ -38,10 +40,18 @@ public class JsonWebTokenServiceTest extends UnitTestBase {
 
         final String jwtId  = "jwt1";
         final String userId = "jsanca";
+        final String clusterId = "CLUSTER-123";
         final SimpleDateFormat dateFormat =
                 new SimpleDateFormat("dd/MM/yyyy");
         dateFormat.setTimeZone(TimeZone.getTimeZone("GMT-8:00"));
         dateFormat.setLenient(true);
+
+        //Mocking data
+        Config.CONTEXT = mock(ServletContext.class);
+        Config.CONTEXT_PATH = "/tmp";
+        final FileAssetAPI fileAssetAPI = mock(FileAssetAPI.class);
+        KeyFactoryUtils.getInstance(fileAssetAPI);
+        when(fileAssetAPI.getRealAssetsRootPath()).thenReturn("/tmp/assets");
 
         final JsonWebTokenService jsonWebTokenService =
                 JsonWebTokenFactory.getInstance().getJsonWebTokenService();
@@ -73,7 +83,7 @@ public class JsonWebTokenServiceTest extends UnitTestBase {
         );
 
         String jsonWebToken = jsonWebTokenService.generateToken(new JWTBean(jwtId,
-                jsonWebTokenSubject, userId, date.getTime()
+                jsonWebTokenSubject, clusterId, date.getTime()
                 ));
 
         System.out.println(jsonWebToken);
@@ -85,7 +95,7 @@ public class JsonWebTokenServiceTest extends UnitTestBase {
 
         assertNotNull(jwtBean);
         assertEquals(jwtBean.getId(), jwtId);
-        assertEquals(jwtBean.getIssuer(), userId);
+        assertEquals(jwtBean.getIssuer(), clusterId);
 
         final String subject = jwtBean.getSubject();
 
