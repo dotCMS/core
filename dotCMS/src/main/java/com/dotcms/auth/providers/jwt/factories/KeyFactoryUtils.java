@@ -19,7 +19,11 @@ public class KeyFactoryUtils {
 
     public static KeyFactoryUtils getInstance() {
         if (instance == null) {
-            instance = new KeyFactoryUtils();
+            synchronized (KeyFactoryUtils.class) {
+                if (instance == null) {
+                    instance = new KeyFactoryUtils();
+                }
+            }
         }
         return instance;
     }
@@ -27,7 +31,11 @@ public class KeyFactoryUtils {
     @VisibleForTesting
     public static KeyFactoryUtils getInstance(final FileAssetAPI fileAssetAPI) {
         if (instance == null) {
-            instance = new KeyFactoryUtils(fileAssetAPI);
+            synchronized (KeyFactoryUtils.class) {
+                if (instance == null) {
+                    instance = new KeyFactoryUtils(fileAssetAPI);
+                }
+            }
         }
         return instance;
     }
