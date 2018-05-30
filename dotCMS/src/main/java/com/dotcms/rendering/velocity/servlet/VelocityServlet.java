@@ -54,7 +54,7 @@ public class VelocityServlet extends HttpServlet {
             return;
         }
 
-        boolean comeFromAdmin = req.getAttribute(WebKeys.COME_FROM_ADMIN) != null ?
+        final boolean comeFromAdmin = req.getAttribute(WebKeys.COME_FROM_ADMIN) != null ?
                 (boolean) req.getAttribute(WebKeys.COME_FROM_ADMIN) : false;
 
         response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
@@ -84,14 +84,16 @@ public class VelocityServlet extends HttpServlet {
     }
 
     @Override
-    public void init(ServletConfig config) throws ServletException {
+    public void init(final ServletConfig config) throws ServletException {
         Logger.info(this.getClass(), "Initing VelocityServlet");
 
 
     }
 
-    private void goToEditPage(String requestURI, HttpServletResponse response) throws ServletException, IOException {
-        String url = String.format("/dotAdmin/#/edit-page/content?url=%s", requestURI);
+    private void goToEditPage(final String requestURI, final HttpServletResponse response)
+            throws ServletException, IOException {
+
+        final String url = String.format("/dotAdmin/#/edit-page/content?url=%s", requestURI);
         response.sendRedirect(url);
     }
 

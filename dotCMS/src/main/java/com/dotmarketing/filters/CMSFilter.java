@@ -171,11 +171,11 @@ public class CMSFilter implements Filter {
         }
 
         if (iAm == IAm.PAGE) {
-            String refererHeader = request.getHeader("referer");
-            boolean comeFromAdmin = refererHeader != null ? refererHeader.contains("dotAdmin") : false;
+            final String refererHeader = request.getHeader("referer");
+            final boolean comeFromAdmin = refererHeader != null ? refererHeader.contains("dotAdmin") : false;
             request.setAttribute(WebKeys.COME_FROM_ADMIN, comeFromAdmin);
 
-            StringWriter forward = new StringWriter().append("/servlets/VelocityServlet");
+            final StringWriter forward = new StringWriter().append("/servlets/VelocityServlet");
 
             if (UtilMethods.isSet(queryString)) {
                 if (!queryString.contains(WebKeys.HTMLPAGE_LANGUAGE)) {

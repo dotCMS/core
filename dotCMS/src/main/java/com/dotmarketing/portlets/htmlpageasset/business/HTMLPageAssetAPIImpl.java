@@ -272,7 +272,8 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     }
 
     private Identifier getIndexPageIdentifier(final String folderURI, final Host host) {
-        String indexPageUri = folderURI.endsWith("/") ? folderURI + CMS_INDEX_PAGE : folderURI + "/" + CMS_INDEX_PAGE;
+        final String indexPageUri = folderURI.endsWith("/") ?
+                folderURI + CMS_INDEX_PAGE : folderURI + "/" + CMS_INDEX_PAGE;
 
         try {
             return identifierAPI.find(host, indexPageUri);
