@@ -9,7 +9,8 @@ import java.security.Key;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.UUID;
+import java.util.Locale;
+import java.util.Random;
 import javax.crypto.spec.SecretKeySpec;
 import javax.xml.bind.DatatypeConverter;
 
@@ -88,7 +89,8 @@ public class SecretKeySpecFactoryImpl implements SigningKeyFactory {
     private String generateSecret() {
 
         try {
-            return getSHA512(UUID.randomUUID().toString(), getSalt());
+            String randomString = new RandomString().nextString();
+            return getSHA512(randomString, getSalt());
         } catch (NoSuchAlgorithmException e) {
             Logger.error(this.getClass(),
                     String.format("Unable to generate JWT secret [%s]", e.getMessage()), e);
@@ -122,6 +124,50 @@ public class SecretKeySpecFactoryImpl implements SigningKeyFactory {
         byte[] salt = new byte[16];
         sr.nextBytes(salt);
         return salt;
+    }
+
+    class RandomString {
+
+        final static String upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        final static String digits = "0123456789";
+
+        final Random random;
+        final char[] symbols;
+        final char[] buf;
+
+        /**
+         * Creates an alphanumeric strings from a secure generator
+         */
+        RandomString(int length) {
+
+            if (length < 1) {
+                throw new IllegalArgumentException();
+            }
+
+            String symbolsToUse = upper + upper.toLowerCase(Locale.ROOT) + digits;
+
+            this.random = new SecureRandom();
+            this.symbols = symbolsToUse.toCharArray();
+            this.buf = new char[length];
+        }
+
+        /**
+         * Creates an alphanumeric strings from a secure generator of default length 100
+         */
+        RandomString() {
+            this(100);
+        }
+
+        /**
+         * Returns a random string.
+         */
+        String nextString() {
+            for (int idx = 0; idx < buf.length; ++idx) {
+                buf[idx] = symbols[random.nextInt(symbols.length)];
+            }
+            return new String(buf);
+        }
+
     }
 
 }
