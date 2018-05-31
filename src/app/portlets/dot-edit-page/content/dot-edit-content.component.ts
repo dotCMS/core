@@ -168,7 +168,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     }
 
     private shouldSetContainersHeight() {
-        return this.pageState && this.pageState.layout &&  this.pageState.state.mode === PageMode.EDIT;
+        return this.pageState && this.pageState.layout && this.pageState.state.mode === PageMode.EDIT;
     }
 
     private shouldHideWhatsChanged(mode: PageMode): boolean {
@@ -365,7 +365,9 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
             .subscribe((model: DotPageContainer[]) => {
                 this.ngZone.run(() => {
                     this.saveContent(model);
-                    this.dotEditContentHtmlService.setContaintersSameHeight(this.pageState.layout);
+                    if (this.shouldSetContainersHeight()) {
+                        this.dotEditContentHtmlService.setContaintersSameHeight(this.pageState.layout);
+                    }
                 });
             });
     }
