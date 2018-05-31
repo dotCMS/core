@@ -20,12 +20,12 @@ import static org.mockito.Mockito.when;
 import static com.dotcms.util.CollectionsUtils.map;
 
 /**
- * Test of {@linkn ThemeAPIImpl}
+ * Test of {@link ThemePaginator}
  */
 public class ThemePaginatorTest {
 
     /**
-     * Test of {@link ThemeAPIImpl#findAll(User, String)}
+     * Test of {@link ThemePaginator#getItems(User, int, int, Map)}
      *
      * Given: a hostId
      * Should: return all the themes
@@ -36,8 +36,8 @@ public class ThemePaginatorTest {
         final ContentletAPI contentletAPI = mock(ContentletAPI.class);
         final User user = mock(User.class);
         final PaginatedArrayList<ContentletSearch> contentletSearchList = new PaginatedArrayList<>();
-        contentletSearchList.addAll(list(createContentSerachMock("1"), createContentSerachMock("2"),
-                createContentSerachMock("3")));
+        contentletSearchList.addAll(list(createContentSearchMock("1"), createContentSearchMock("2"),
+                createContentSearchMock("3")));
         final List<Contentlet> contentlets = list(mock(Contentlet.class), mock(Contentlet.class),
                 mock(Contentlet.class));
 
@@ -57,7 +57,7 @@ public class ThemePaginatorTest {
     }
 
     /**
-     * Test of {@link ThemeAPIImpl#findAll(User, String)}
+     * Test of {@link ThemePaginator#getItems(User, int, int, Map)}
      *
      * Given: a hostId null
      * Should: return all the themes
@@ -68,8 +68,8 @@ public class ThemePaginatorTest {
         final ContentletAPI contentletAPI = mock(ContentletAPI.class);
         final User user = mock(User.class);
         final PaginatedArrayList<ContentletSearch> contentletSearchList = new PaginatedArrayList<>();
-        contentletSearchList.addAll(list(createContentSerachMock("1"), createContentSerachMock("2"),
-                createContentSerachMock("3")));
+        contentletSearchList.addAll(list(createContentSearchMock("1"), createContentSearchMock("2"),
+                createContentSearchMock("3")));
         final List<Contentlet> contentlets = list(mock(Contentlet.class), mock(Contentlet.class),
                 mock(Contentlet.class));
 
@@ -88,7 +88,7 @@ public class ThemePaginatorTest {
     }
 
     /**
-     * Test of {@link ThemeAPIImpl#findAll(User, String)}
+     * Test of {@link ThemePaginator#getItems(User, int, int, Map)}
      *
      * Given: throw a DotSecurityException
      * Should: throw a DotSecurityException
@@ -115,7 +115,7 @@ public class ThemePaginatorTest {
     }
 
     /**
-     * Test of {@link ThemeAPIImpl#findAll(User, String)}
+     * Test of {@link ThemePaginator#getItems(User, int, int, Map)}
      *
      * Given: throw a DotDataException
      * Should: throw a DotDataException
@@ -142,7 +142,7 @@ public class ThemePaginatorTest {
     }
 
     /**
-     * Test of {@link ThemeAPIImpl#find(User, String, int, int, OrderDirection)}
+     * Test of {@link ThemePaginator#getItems(User, int, int, Map)}
      *
      * Given: OrderDirection.DESC
      * Should: parentPath desc sortby
@@ -153,8 +153,8 @@ public class ThemePaginatorTest {
         final ContentletAPI contentletAPI = mock(ContentletAPI.class);
         final User user = mock(User.class);
         final PaginatedArrayList<ContentletSearch> contentletSearchList = new PaginatedArrayList<>();
-        contentletSearchList.addAll(list(createContentSerachMock("1"), createContentSerachMock("2"),
-                createContentSerachMock("3")));
+        contentletSearchList.addAll(list(createContentSearchMock("1"), createContentSearchMock("2"),
+                createContentSearchMock("3")));
         final List<Contentlet> contentlets = list(mock(Contentlet.class), mock(Contentlet.class),
                 mock(Contentlet.class));
 
@@ -177,7 +177,7 @@ public class ThemePaginatorTest {
     }
 
     /**
-     * Test of {@link ThemeAPIImpl#find(User, String, int, int, OrderDirection)}
+     * Test of {@link ThemePaginator#getItems(User, int, int, Map)}
      *
      * Given: hostId null and OrderDirection DESC
      * Should: return list of contents
@@ -188,8 +188,8 @@ public class ThemePaginatorTest {
         final ContentletAPI contentletAPI = mock(ContentletAPI.class);
         final User user = mock(User.class);
         final PaginatedArrayList<ContentletSearch> contentletSearchList = new PaginatedArrayList<>();
-        contentletSearchList.addAll(list(createContentSerachMock("1"), createContentSerachMock("2"),
-                createContentSerachMock("3")));
+        contentletSearchList.addAll(list(createContentSearchMock("1"), createContentSearchMock("2"),
+                createContentSearchMock("3")));
         final List<Contentlet> contentlets = list(mock(Contentlet.class), mock(Contentlet.class),
                 mock(Contentlet.class));
 
@@ -212,7 +212,7 @@ public class ThemePaginatorTest {
         assertEquals(contentlets.get(2), themes.get(2));
     }
 
-    private ContentletSearch createContentSerachMock(final String contentInode) {
+    private ContentletSearch createContentSearchMock(final String contentInode) {
         final ContentletSearch mockContentletSearch = mock(ContentletSearch.class);
 
         when(mockContentletSearch.getInode()).thenReturn(contentInode);
