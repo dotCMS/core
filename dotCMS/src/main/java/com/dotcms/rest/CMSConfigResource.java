@@ -55,9 +55,9 @@ public class CMSConfigResource {
      * @param portalURL
      * @param mx
      * @param emailAddress
-     * @param size this one is the Background Color
-     * @param type this one is the Primary Color
-     * @param street this one is the Secondary Color
+     * @param backgroundColor this one is the Background Color
+     * @param primaryColor this one is the Primary Color
+     * @param secondaryColor this one is the Secondary Color
      * @param homeURL
      * @return
      * @throws IOException
@@ -73,9 +73,9 @@ public class CMSConfigResource {
                                            @FormParam ("portalURL") final String portalURL,
                                            @FormParam ("mx") final String mx,
                                            @FormParam ("emailAddress") final String emailAddress,
-                                           @FormParam ("size") final String size,
-                                           @FormParam("type") final String type,
-                                           @FormParam("street") final String street,
+                                           @FormParam ("size") final String backgroundColor,
+                                           @FormParam("type") final String primaryColor,
+                                           @FormParam("street") final String secondaryColor,
                                            @FormParam ("homeURL") final String homeURL ) throws IOException, JSONException {
 
         InitDataObject initData = webResource.init( "user/" + user + "/password/" + password, true, request, true, PortletID.CONFIGURATION.toString() );
@@ -84,12 +84,12 @@ public class CMSConfigResource {
         paramsMap.put( "portalURL", portalURL );
         paramsMap.put( "mx", mx );
         paramsMap.put( "emailAddress", emailAddress );
-        paramsMap.put( "size", size );
-        paramsMap.put("type", type);
-        paramsMap.put("street", street);
+        paramsMap.put( "size", backgroundColor );
+        paramsMap.put("type", primaryColor);
+        paramsMap.put("street", secondaryColor);
         paramsMap.put( "homeURL", homeURL );
 
-        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
+        ResourceResponse responseResource = new ResourceResponse( paramsMap );
         StringBuilder responseMessage = new StringBuilder();
 
         //Validate the parameters
@@ -107,9 +107,9 @@ public class CMSConfigResource {
             currentCompany.setPortalURL( portalURL );
             currentCompany.setMx( mx );
             currentCompany.setEmailAddress( emailAddress );
-            currentCompany.setSize( size );
-            currentCompany.setType(type);
-            currentCompany.setStreet(street);
+            currentCompany.setSize( backgroundColor );
+            currentCompany.setType(primaryColor);
+            currentCompany.setStreet(secondaryColor);
             currentCompany.setHomeURL( homeURL );
 
             //Update the company
