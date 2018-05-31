@@ -526,7 +526,7 @@
             currentContentletInode = data["contentletInode"];
         }
         dijit.byId('savingContentDialog').hide();
-
+        resetHasChanged();
 
         // Show DotContentletValidationExceptions.
         if(data["saveContentErrors"] && data["saveContentErrors"][0] != null ){
@@ -562,9 +562,13 @@
                     type: null
                 }
             });
+            
+            
+            
             return;
         }
-
+        
+        refreshActionPanel(data["contentletInode"]);
         // if we have a referer and the contentlet comes back checked in
         if((data["referer"] != null && data["referer"] != '' && !data["contentletLocked"]) || data["htmlPageReferer"] != null ) {
             if(data["isHtmlPage"]){
@@ -578,8 +582,7 @@
             }
             return;
         }
-        resetHasChanged();
-        refreshActionPanel(data["contentletInode"]);
+
 
     }
 
@@ -633,6 +636,32 @@
     }
 
 
+    function refreshPermissionsTab(){
+
+        var y =Math.floor(Math.random()*1123213213);
+
+        var myCp = dijit.byId("permissionsTab");
+
+        if (!myCp) {
+            return;
+        }
+        var myDiv = dijit.byId("contentletRulezDiv");
+
+        if (myDiv) {
+            dojo.empty(myDiv);
+        }
+        var hideRulePushOptions = false
+        <%if(contentlet.getStructure().isHTMLPageAsset()){%>
+        hideRulePushOptions=true;
+        <%}%>
+        myCp = new dojox.layout.ContentPane({
+            id : "contentletRulezDivCp",
+            style: "height:100%",
+            href:  "/api/portlet/rules/include?id=" +contentAdmin.contentletIdentifier + "&r=" + y+"&hideRulePushOptions="+hideRulePushOptions
+        }).placeAt("contentletRulezDiv");
+
+
+    }
 
 
 
@@ -906,6 +935,7 @@
     function stealLock(contentletInode){
         ContentletAjax.unlockContent(contentletInode, stealLockContentCallback);
     }
+    
     function stealLockContentCallback(data){
 
         if(data["Error"]){
@@ -944,11 +974,11 @@
             return;
         }
 
-        window.location="<%=referer%>";
+        refreshActionPanel(data["lockedIdent"]);
 
 
     }
-
+    
 
 
     function refreshActionPanel(inode){

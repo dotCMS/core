@@ -1,3 +1,5 @@
+<%@page import="java.util.Map"%>
+<%@page import="java.util.HashMap"%>
 <%@page import="java.util.stream.Collectors"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet"%>
@@ -36,22 +38,51 @@ catch(Exception e){
 	wfActions = new ArrayList<>();
 }
 
-boolean showScheme = false;
-String changeMe=null;
+
+Map<String, String> schemesAvailable=new HashMap<>();
 for(WorkflowAction action : wfActions){
-    if(changeMe!=null && !changeMe.equals(action.getSchemeId())){
-        showScheme=true;
-        break;
-    }
-    changeMe=action.getSchemeId();
+  schemesAvailable.put(action.getSchemeId() , APILocator.getWorkflowAPI().findScheme(action.getSchemeId()).getName());
 }
 %>
+<script>
+function setMyWorkflowScheme(){
+	var schemeId=dijit.byId("select-workflow-scheme-dropdown").getValue();
+   document.querySelectorAll('.content-edit-actions .schemeActionsDiv').forEach(function(ele) {
+        ele.style.display='none';
+    });
+	
+    if(!schemeId || schemeId.length<1){
+    	return;
+    }
+
+	
+	document.querySelectorAll('.content-edit-actions .schemeId' + schemeId).forEach(function(ele) {
+	    ele.style.display='block';
+	});
+}
+
+</script>
+
+
+<%if(schemesAvailable.size()>1){%>
+<div style="margin-bottom:10px;">
+	<select id="select-workflow-scheme-dropdown" dojoType="dijit.form.FilteringSelect" onchange="setMyWorkflowScheme()" style="width:100%">
+	
+	   <option value=""><%=LanguageUtil.get(pageContext, "dot.common.select.workflow")%></option>
+		<%for(String key :schemesAvailable.keySet()) {%>
+		  
+		  <option value="<%=key%>"><%=schemesAvailable.get(key) %></option>
+		
+		<%} %>
+	</select>
+</div>
+<%} %>
 
 <%--check permissions to display the save and publish button or not--%> 
 <%boolean canUserWriteToContentlet = conPerAPI.doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_WRITE,user);%> 
 
 <div class="content-edit-actions">
-	<div style="margin-bottom:-1px">
+
 		<%if(isContLocked && (contentEditable || isUserCMSAdmin)) {%>
 			<%if(contentEditable){ %>
 			    <a onClick="unlockContent('<%=contentlet.getInode() %>');" id="unlockContentButton">
@@ -85,13 +116,13 @@ for(WorkflowAction action : wfActions){
 				</a>
 			<%} %>
 		<%}%>
-	</div>
+
 
 
 	<%final boolean canPublish = (InodeUtils.isSet(contentlet.getInode())?canUserPublishContentlet && isContLocked && contentEditable && !contentlet.isArchived():canUserPublishContentlet);%>
 	<%if (canPublish && isHost) {%>
 		<% final String savePublishButtonTitle = UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save-Activate"));%>
-		<div style="margin-top:-1px">
+	
 			<a onClick="saveContent(false);">
 				<span class="saveIcon"></span>
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save")) %>
@@ -101,33 +132,30 @@ for(WorkflowAction action : wfActions){
 				<span class="publishIcon"></span>
 				<%= savePublishButtonTitle %>
 			</a>
-		</div>
+
 	<% } %>
-		
+
 	<%--Start workflow tasks --%>
 	<%if(wfActions.size()>0) {%>
-		<%String wfSchemeIdStr=null; %>
-		<div style="margin-top:-1px">
-			<%for(WorkflowAction action : wfActions){ %>
-				<% List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(action); %>
-				<% boolean hasPushPublishActionlet = false; %>
-				<% for(WorkflowActionClass actionlet : actionlets){ %>
-					<% if(actionlet.getActionlet() != null && actionlet.getActionlet().getClass().getCanonicalName().equals(PushPublishActionlet.class.getCanonicalName())){ %>
-						<% hasPushPublishActionlet = true; %>
-					<% } %>
+
+		<%for(WorkflowAction action : wfActions){ %>
+			<% List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(action); %>
+			<% boolean hasPushPublishActionlet = false; %>
+			<% for(WorkflowActionClass actionlet : actionlets){ %>
+				<% if(actionlet.getActionlet() != null && actionlet.getActionlet().getClass().getCanonicalName().equals(PushPublishActionlet.class.getCanonicalName())){ %>
+					<% hasPushPublishActionlet = true; %>
 				<% } %>
-				<% if(wfSchemeIdStr!=null && !wfSchemeIdStr.equals(action.getSchemeId())){%>
-					</div><div style="margin-top:-1px">
-				<%} %>
-				<% wfSchemeIdStr=action.getSchemeId();%>
-				<a onclick="contentAdmin.executeWfAction('<%=action.getId()%>', <%= hasPushPublishActionlet || action.isAssignable() || action.isCommentable() || UtilMethods.isSet(action.getCondition()) %>)">
-					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, action.getName())) %>
-					<%if(showScheme){ %>
-						<div style="padding-left:8px;font-size:x-small"><%=APILocator.getWorkflowAPI().findScheme(action.getSchemeId()).getName() %></div>
-					<%} %>
-				</a>
-			<%} %>
-		</div>
+			<% } %>
+
+			
+			<a 
+			style="<%if(schemesAvailable.size()>1){%>display:none;<%} %>" class="schemeId<%=action.getSchemeId()%> schemeActionsDiv"
+			onclick="contentAdmin.executeWfAction('<%=action.getId()%>', <%= hasPushPublishActionlet || action.isAssignable() || action.isCommentable() || UtilMethods.isSet(action.getCondition()) %>)">
+				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, action.getName())) %>
+
+			</a>
+		<%} %>
+
 	<%} %>
 
 </div>
