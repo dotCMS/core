@@ -53,3 +53,4 @@ newman run ($postmanCollectionJSONPath)
 ## Documentation: 
 * Workflow Resource: https://goo.gl/JKrWr4
 * Pages Resource: https://goo.gl/ExjFGM
+* Nav Resource: https://goo.gl/xfSfRA
