@@ -5,8 +5,10 @@ import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.PaginationException;
 import com.dotcms.util.pagination.ThemePaginator;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.htmlpages.theme.business.ThemeSerializer;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
@@ -41,6 +43,7 @@ public class ThemeResource {
     private final PaginationUtil paginationUtil;
     private final WebResource webResource;
     private final HostAPI hostAPI;
+    private final FileAssetAPI fileAssetAPI;
     private final FolderAPI folderAPI;
     private final UserAPI userAPI;
 
@@ -50,17 +53,19 @@ public class ThemeResource {
             APILocator.getHostAPI(),
             APILocator.getFolderAPI(),
             APILocator.getUserAPI(),
+            APILocator.getFileAssetAPI(),
             new WebResource()
         );
     }
 
     @VisibleForTesting
     ThemeResource(final ThemePaginator themePaginator, final HostAPI hostAPI, final FolderAPI folderAPI,
-                         final UserAPI userAPI, final WebResource webResource ) {
-        this.webResource = webResource;
-        this.hostAPI = hostAPI;
-        this.folderAPI = folderAPI;
-        this.userAPI = userAPI;
+                         final UserAPI userAPI, final FileAssetAPI fileAssetAPI, final WebResource webResource ) {
+        this.webResource  = webResource;
+        this.hostAPI      = hostAPI;
+        this.fileAssetAPI = fileAssetAPI;
+        this.folderAPI    = folderAPI;
+        this.userAPI      = userAPI;
         this.paginationUtil = new PaginationUtil(themePaginator, this.getMapper());
     }
 
@@ -77,7 +82,8 @@ public class ThemeResource {
                                      @QueryParam("hostId") final String hostId,
                                      @QueryParam(PaginationUtil.PAGE) final int page,
                                      @QueryParam(PaginationUtil.PER_PAGE) @DefaultValue("-1") final int perPage,
-                                     @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction)
+                                     @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction,
+                                     @QueryParam("searchParam") final String searchParam)
             throws Throwable {
 
         Logger.debug(this,
@@ -95,6 +101,10 @@ public class ThemeResource {
                 ThemePaginator.HOST_ID_PARAMETER_NAME, hostIdToSearch
             );
 
+            if (UtilMethods.isSet(searchParam)){
+                params.put(ThemePaginator.SEARCH_PARAMETER, searchParam);
+            }
+
             return this.paginationUtil.getPage(request, user, null, page, perPage, null,
                     OrderDirection.valueOf(direction), params);
         } catch (PaginationException e) {
@@ -110,7 +120,7 @@ public class ThemeResource {
     private ObjectMapper getMapper() {
         final  ObjectMapper mapper = new ObjectMapper();
         final  SimpleModule module = new SimpleModule();
-        module.addSerializer(Contentlet.class, new ThemeSerializer(hostAPI, folderAPI, userAPI));
+        module.addSerializer(Contentlet.class, new ThemeSerializer(hostAPI, folderAPI, userAPI, fileAssetAPI));
         mapper.registerModule(module);
 
         return mapper;
