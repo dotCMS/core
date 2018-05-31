@@ -11,6 +11,6 @@ public class HTMLPageAssetNotFoundException extends RuntimeException {
     }
 
     public HTMLPageAssetNotFoundException(final String pageUri, final Exception cause) {
-        super(String.format("Page '%s' is not found", pageUri), cause);
+        super(String.format("Page '%s' not found", pageUri), cause);
     }
 }
