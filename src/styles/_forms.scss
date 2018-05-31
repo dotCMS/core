@@ -57,6 +57,13 @@
     font-size: $label-font-size;
 }
 
+.form__field-variable {
+    font-size: $label-font-size;
+    color: $label-color;
+    float: right;
+    margin-top: $basic-padding;
+}
+
 .form__hint-icon {
     border-radius: 50%;
     border: solid 1px;
