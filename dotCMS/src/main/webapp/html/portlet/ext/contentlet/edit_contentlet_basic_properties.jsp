@@ -305,37 +305,7 @@
 			<!-- END LANGUAGE -->
 
 
-		<!--  Content reviewing fields -->
-		
-		<%if (UtilMethods.isSet(structure.getReviewerRole()) && structure.getStructureType() ==1){ %>
-			<div style="border: 1px solid #ddd;padding:5px;background:#fff;">
-				<div style="margin:0 0 0 5px;">
-					<input type="checkbox" name="reviewContent" id="reviewContent" checked='<%=contentletForm.isReviewContent()%>' onclick="reviewChange()" value="true" dojoType="dijit.form.CheckBox" />
-					<label for="reviewContent" style="padding-top:2px;padding-left:2px;"><%= LanguageUtil.get(pageContext, "Review-Every") %></label>
-				</div>
- 			
-				<div id="reviewContentDate" <%if(!contentletForm.isReviewContent()){ %> style="display: none;" <%} %>>
-					<div style="margin:8px 0 0 3px;">
-						<select dojoType="dijit.form.FilteringSelect" name="reviewIntervalNum"
-							id="reviewIntervalNumId" style="width: 65px" value="<%= UtilMethods.isSet(contentletForm.getReviewIntervalNum()) ? contentletForm.getReviewIntervalNum() : "" %>" >
-							<%	for (int i = 1; i <= 31; i++) {%>
-								<option value='<%= "" + i %>'><%= "" + i %></option>
-							<%}%>						
-						</select> 
-						<select dojoType="dijit.form.FilteringSelect" name="reviewIntervalSelect"
-							id="reviewIntervalSelectId"  style="width: 110px" value="<%= UtilMethods.isSet(contentletForm.getReviewIntervalSelect()) ? contentletForm.getReviewIntervalSelect() : "" %>" >
-							<option value="d"><%= LanguageUtil.get(pageContext, "Day(s)") %></option>
-							<option value="m"><%= LanguageUtil.get(pageContext, "Month(s)") %></option>
-							<option value="y"><%= LanguageUtil.get(pageContext, "Year(s)") %></option>
-						</select>
-					</div>
-				</div>
-			</div>
-		<% } else { %>
-			<html:hidden value="false" property="reviewContent" />
-			<html:hidden value="0" property="reviewIntervalNum" />
-		<% }%>
-		<!--  End reviewing fields -->
+
 	</div>
 
 
