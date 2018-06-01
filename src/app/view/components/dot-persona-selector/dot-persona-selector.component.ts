@@ -1,9 +1,11 @@
+import * as _ from 'lodash';
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { DotPersonasService } from '../../../api/services/dot-personas/dot-personas.service';
 import { DotPersona } from '../../../shared/models/dot-persona/dot-persona.model';
 import { Observable } from 'rxjs/Observable';
 import { DotMessageService } from '../../../api/services/dot-messages-service';
-import { mergeMap, map } from 'rxjs/operators';
+import { map, tap, take } from 'rxjs/operators';
+import { StringPixels } from '../../../api/util/string-pixels-util';
 
 @Component({
     selector: 'dot-persona-selector',
@@ -14,24 +16,28 @@ export class DotPersonaSelectorComponent implements OnInit {
     @Input() value: DotPersona;
     @Output() selected = new EventEmitter<DotPersona>();
 
-    options: Observable<DotPersona[]>;
+    options: DotPersona[];
+    dropdownWidth: string;
 
     constructor(private dotPersonasService: DotPersonasService, private dotMessageService: DotMessageService) {}
 
     ngOnInit() {
-        this.options = this.dotMessageService
+        this.dotMessageService
             .getMessages(['modes.persona.no.persona'])
-            .pipe(
-                mergeMap((messages: string[]) =>
-                    this.dotPersonasService
-                        .get()
-                        .pipe(
-                            map((personas: DotPersona[]) =>
-                                this.setOptions(this.dotMessageService.get('modes.persona.no.persona'), personas)
-                            )
-                        )
-                )
-            );
+            .pipe(take(1))
+            .subscribe(() => {
+                this.dotPersonasService
+                    .get()
+                    .pipe(
+                        tap((personas: DotPersona[]) => {
+                            this.dropdownWidth = StringPixels.getDropdownWidth(personas.map((persona: DotPersona) => persona.name));
+                        }),
+                        map((personas: DotPersona[]) => this.setOptions(this.dotMessageService.get('modes.persona.no.persona'), personas))
+                    )
+                    .subscribe((personas: DotPersona[]) => {
+                        this.options = personas;
+                    });
+            });
     }
 
     /**

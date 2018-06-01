@@ -11,6 +11,7 @@ import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { By } from '@angular/platform-browser';
 import { mockDotDevice } from '../../../test/dot-device.mock';
 import { DotDevice } from '../../../shared/models/dot-device/dot-device.model';
+import { StringPixels } from '../../../api/util/string-pixels-util';
 
 describe('DotDeviceSelectorComponent', () => {
     let component: DotDeviceSelectorComponent;
@@ -62,8 +63,13 @@ describe('DotDeviceSelectorComponent', () => {
 
     it('should add Default Device as first position', () => {
         fixture.detectChanges();
-        component.options.subscribe((devices: DotDevice[]) => {
-            expect(devices[0]).toEqual(defaultDevice);
-        });
+        expect(component.options[0]).toEqual(defaultDevice);
+    });
+
+    it('should set max text width to dropdpown', () => {
+        fixture.detectChanges();
+        const optionValues = ['iphone'];
+        const textSize = StringPixels.getDropdownWidth(optionValues);
+        expect(component.dropdownWidth).toEqual(textSize);
     });
 });

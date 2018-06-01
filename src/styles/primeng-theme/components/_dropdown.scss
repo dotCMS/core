@@ -65,6 +65,7 @@
         border: 0;
         line-height: $dropdown-height;
         padding-right: $dropdown-height + $basic-padding;
+        text-overflow: ellipsis;
     }
 }
 

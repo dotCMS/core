@@ -2,6 +2,8 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { DotLanguagesService } from '../../../api/services/dot-languages/dot-languages.service';
 import { DotLanguage } from '../../../shared/models/dot-language/dot-language.model';
 import { Observable } from 'rxjs/Observable';
+import { StringPixels } from '../../../api/util/string-pixels-util';
+import { tap, take } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-language-selector',
@@ -12,19 +14,28 @@ export class DotLanguageSelectorComponent implements OnInit {
     @Input() value: DotLanguage;
     @Output() selected = new EventEmitter<DotLanguage>();
 
-    languagesOptions: Observable<DotLanguage[]>;
+    languagesOptions: DotLanguage[];
+    dropdownWidth: string;
 
     constructor(private dotLanguagesService: DotLanguagesService) {}
 
     ngOnInit() {
-        this.languagesOptions = this.dotLanguagesService.get();
+        this.dotLanguagesService
+            .get()
+            .pipe(take(1))
+            .subscribe((languages: DotLanguage[]) => {
+                this.languagesOptions = languages;
+                this.dropdownWidth = StringPixels.getDropdownWidth(
+                    this.languagesOptions.map((languageOption: DotLanguage) => languageOption.language)
+                );
+            });
     }
 
     /**
      * Track changes in the dropdown
      * @param {DotLanguage} language
      */
-    change(language: DotLanguage) {
+    change(language: DotLanguage): void {
         this.selected.emit(language);
     }
 }

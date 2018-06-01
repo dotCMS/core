@@ -4,6 +4,8 @@ import { DotDevice } from '../../../shared/models/dot-device/dot-device.model';
 import { Observable } from 'rxjs/Observable';
 import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { map } from 'rxjs/operators/map';
+import { StringPixels } from '../../../api/util/string-pixels-util';
+import { tap, take } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-device-selector',
@@ -14,22 +16,31 @@ export class DotDeviceSelectorComponent implements OnInit {
     @Input() value: DotDevice;
     @Output() selected = new EventEmitter<DotDevice>();
 
-    options: Observable<DotDevice[]>;
+    options: DotDevice[];
+    dropdownWidth: string;
 
     constructor(private dotDevicesService: DotDevicesService, private dotMessageService: DotMessageService) {}
 
     ngOnInit() {
-        this.options = this.dotMessageService
+        this.dotMessageService
             .getMessages(['editpage.viewas.default.device'])
-            .mergeMap(() =>
+            .pipe(take(1))
+            .subscribe(() => {
                 this.dotDevicesService
                     .get()
                     .pipe(
+                        take(1),
+                        tap((devices: DotDevice[]) => {
+                            this.dropdownWidth = StringPixels.getDropdownWidth(devices.map((deviceOption: DotDevice) => deviceOption.name));
+                        }),
                         map((devices: DotDevice[]) =>
                             this.setOptions(this.dotMessageService.get('editpage.viewas.default.device'), devices)
                         )
                     )
-            );
+                    .subscribe((devices: DotDevice[]) => {
+                        this.options = devices;
+                    });
+            });
     }
 
     /**

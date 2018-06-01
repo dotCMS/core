@@ -23,6 +23,7 @@ import { PaginatorService } from './api/services/paginator';
 import { PublicAuthGuardService } from './api/services/guards/public-auth-guard.service';
 import { DotLicenseService } from './api/services/dot-license/dot-license.service';
 import { StringFormat } from './api/util/stringFormat';
+import { StringPixels } from './api/util/string-pixels-util';
 import { DotSaveOnDeactivateService } from './shared/dot-save-on-deactivate-service/dot-save-on-deactivate.service';
 
 const PROVIDERS: any[] = [
@@ -51,7 +52,8 @@ const PROVIDERS: any[] = [
     PaginatorService,
     PublicAuthGuardService,
     DotLicenseService,
-    StringFormat
+    StringFormat,
+    StringPixels
 ];
 
 export const ENV_PROVIDERS = [...PROVIDERS];

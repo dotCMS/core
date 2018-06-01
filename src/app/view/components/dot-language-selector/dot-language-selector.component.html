@@ -1,6 +1,6 @@
-<p-dropdown class="tiny invert" [options]="languagesOptions | async"
+<p-dropdown class="tiny invert" [options]="languagesOptions"
             optionLabel="language"
             [(ngModel)]="value"
-            [style]="{'width':'auto'}"
+            [style]="{'width': dropdownWidth}"
             (onChange)="change($event.value)">
 </p-dropdown>
