@@ -19,7 +19,7 @@ public class Task04375UpdateColorsTest extends BaseWorkflowIntegrationTest {
     }
 
     @Test
-    public void testExecuteUpgrade_newColors_Success(){
+    public void testExecuteUpgrade_newColors_Success() throws DotDataException {
         try {
             Task04375UpdateColors updateColors = new Task04375UpdateColors();
             updateColors.executeUpgrade();
@@ -27,7 +27,7 @@ public class Task04375UpdateColorsTest extends BaseWorkflowIntegrationTest {
             Assert.assertEquals(updateColors.PRIMARY_COLOR,company.getType());
             Assert.assertEquals(updateColors.SECONDARY_COLOR,company.getStreet());
         } catch (DotDataException e) {
-            e.printStackTrace();
+            throw new DotDataException(e.getMessage(), e);
         }
     }
 
