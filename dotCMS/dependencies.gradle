@@ -392,5 +392,7 @@ dependencies {
 
     compile group: 'org.aspectj', name: 'aspectjrt', version:'1.8.10'
     compile group: 'io.bit3', name: 'jsass', version: '5.7.1'
-
+    compile (group: 'com.zaxxer', name: 'HikariCP', version: '3.1.0'){
+        transitive = false
+    }
 }

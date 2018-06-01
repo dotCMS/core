@@ -31,19 +31,19 @@ public class ContextLifecycleListener implements ServletContextListener {
 		try {
 			QuartzUtils.stopSchedulers();
 		} catch (Exception e) {
-			Logger.error(this, "A error ocurred trying to shutdown the Schedulers.");
+			Logger.warn(this, "A error ocurred trying to shutdown the Schedulers.");
 		}
         try {
         	ReindexThread.shutdownThread();
 
         } catch (Exception e) {
-            Logger.error(this, "A error ocurred trying to shutdown the ReindexThread.");
+            Logger.warn(this, "A error ocurred trying to shutdown the ReindexThread.");
         }
 
         try {
         	CacheLocator.getCacheAdministrator().shutdown();
         } catch (Exception e) {
-            Logger.error(this, "A error ocurred trying to shutdown the Cache subsystem.");
+            Logger.warn(this, "A error ocurred trying to shutdown the Cache subsystem.");
         }
 
 		Logger.info(this, "Finished shuting down.");
@@ -53,28 +53,14 @@ public class ContextLifecycleListener implements ServletContextListener {
 	public void contextInitialized(ServletContextEvent contextEvent) {
 
 		Config.setMyApp(contextEvent.getServletContext());
-        if(Config.getStringProperty("DOTCMS_LOGGING_HOME") != null && !Config.getStringProperty("DOTCMS_LOGGING_HOME").trim().equals("")) {
-            System.setProperty("DOTCMS_LOGGING_HOME", Config.getStringProperty("DOTCMS_LOGGING_HOME"));
-        } else {
-    	    System.setProperty("DOTCMS_LOGGING_HOME", ConfigUtils.getDynamicContentPath() + File.separator + "logs");
-        }	    
 
-        String path = null;
-		try {
+    	System.setProperty("DOTCMS_LOGGING_HOME", Config.getStringProperty("DOTCMS_LOGGING_HOME",ConfigUtils.getDynamicContentPath() + File.separator + "logs"));
 
-            String contextPath = Config.CONTEXT_PATH;
-            if ( !contextPath.endsWith( File.separator ) ) {
-                contextPath += File.separator;
-            }
-			File file = new File(contextPath + "WEB-INF" + File.separator + "log4j" + File.separator + "log4j2.xml");
-			path = file.toURI().toString();
+		File file = new File(Config.CONTEXT.getRealPath("/WEB-INF/log4j/log4j2.xml"));
 
-        } catch (Exception e) {
-			Logger.error(this,e.getMessage(),e);
-		}
 
 		//Initialises/reconfigures log4j based on a given log4j configuration file
-		Log4jUtil.initializeFromPath(path);
+		Log4jUtil.initializeFromPath(file.getAbsolutePath());
 
     	Logger.clearLoggers();
     	AsciiArt.doArt();
