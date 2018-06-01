@@ -117,6 +117,44 @@ public class ThemeResource {
         }
     }
 
+    /**
+     * Returns a theme given its ID
+     * @param request  HttpServletRequest
+     * @return Response
+     */
+    @GET
+    @Path("/id/{id}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response findThemeById(@Context final HttpServletRequest request,
+            @PathParam("id") final String id)
+            throws Throwable {
+
+        Logger.debug(this,
+                "Getting the theme by identifier: " + id);
+
+        final InitDataObject initData = this.webResource.init(null, true, request, true, null);
+        final User user = initData.getUser();
+
+
+        try {
+            final Map<String, Object> params = map(
+                    ThemePaginator.IDENTIFIER_PARAMETER, id
+            );
+
+            return this.paginationUtil.getPage(request, user, null, 0, -1, null,
+                    OrderDirection.ASC, params);
+        } catch (PaginationException e) {
+            throw e.getCause();
+        } catch (JsonProcessingRuntimeException e) {
+            final String errorMsg = "An error occurred when accessing the page information (" + e
+                    .getMessage() + ")";
+            Logger.error(this, e.getMessage(), e);
+            return ExceptionMapperUtil.createResponse(null, errorMsg);
+        }
+    }
+
     private ObjectMapper getMapper() {
         final  ObjectMapper mapper = new ObjectMapper();
         final  SimpleModule module = new SimpleModule();

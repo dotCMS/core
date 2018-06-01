@@ -13,6 +13,7 @@ import com.liferay.portal.model.User;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
+import com.liferay.util.StringPool;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
  */
 public class ThemePaginator implements Paginator<Contentlet> {
 
+    public final static String IDENTIFIER_PARAMETER = "identifier";
     public final static String HOST_ID_PARAMETER_NAME = "host-id";
     public final static String SEARCH_PARAMETER = "search-parameter";
 
@@ -49,13 +51,21 @@ public class ThemePaginator implements Paginator<Contentlet> {
 
         final String hostId       = params != null ? (String) params.get(HOST_ID_PARAMETER_NAME) : null;
         final String searchParams = params != null ? (String) params.get(SEARCH_PARAMETER) : null;
+        final String searchById   = params != null ? (String) params.get(IDENTIFIER_PARAMETER) : null;
         StringBuilder query       = new StringBuilder(String.format(hostId == null ? LUCENE_QUERY_WITHOUT_HOST : LUCENE_QUERY_WITH_HOST, hostId));
 
 
         if (UtilMethods.isSet(searchParams)){
-            query.append("+catchall:");
+            query.append(" +catchall:");
             query.append(searchParams);
             query.append("*");
+        }
+
+        if (UtilMethods.isSet(searchById)){
+            query.append(" +");
+            query.append(IDENTIFIER_PARAMETER);
+            query.append(StringPool.COLON);
+            query.append(searchById);
         }
 
         final String sortBy = String.format("parentPath %s", direction.toString().toLowerCase());
