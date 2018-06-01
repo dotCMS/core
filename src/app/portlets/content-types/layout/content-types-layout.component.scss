@@ -1,14 +1,13 @@
-@import 'mixins';
-@import 'variables';
-@import 'primeng-theme/utils/theme-variables';
+@import "mixins";
+@import "variables";
+@import "primeng-theme/utils/theme-variables";
 
-.content-type {
-    .ui-tabview-nav {
-        box-shadow: 0 2px 2px $gray-light;
-    }
+$top-height: ($toolbar-height + $tabview-nav-height);
 
-    & > p-tabview {
+:host {
+    ::ng-deep {
         .ui-tabview-nav {
+            box-shadow: 0 2px 2px $gray-light;
             position: relative;
             z-index: 1;
         }
@@ -16,49 +15,47 @@
 
     dot-iframe {
         padding: $basic-padding * 2 0;
+        height: calc(100vh - #{$top-height});
     }
-}
 
-$top-height: ($toolbar-height + $tabview-nav-height);
+    .content-type__fields-layout {
+        display: flex;
+        overflow: hidden;
+    }
 
-.content-type__fields-layout {
-    height: calc(100vh - #{$top-height});
-    display: flex;
-    overflow: hidden;
-}
-
-.content-type__fields-main {
-    background-color: $gray-lightest;
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
-    overflow: auto;
-}
-
-.content-type__fields-sidebar {
-    border-left: solid 1px $gray-lighter;
-    width: 200px;
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
-
-    dot-content-types-fields-list {
+    .content-type__fields-main {
+        background-color: $gray-lightest;
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
         overflow: auto;
     }
 
-    dot-content-type-fields-row-list {
-        height: 200px;
+    .content-type__fields-sidebar {
+        border-left: solid 1px $gray-lighter;
+        width: 200px;
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+
+        dot-content-types-fields-list {
+            overflow: auto;
+        }
+
+        dot-content-type-fields-row-list {
+            height: 200px;
+        }
     }
-}
 
-.content-type__fields-sidebar-title {
-    background-color: $gray-lighter;
-    font-size: $font-size-medium;
-    font-weight: normal;
-    margin: 0;
-    padding: $basic-padding $basic-padding * 2;
-}
+    .content-type__fields-sidebar-title {
+        background-color: $gray-lighter;
+        font-size: $font-size-medium;
+        font-weight: normal;
+        margin: 0;
+        padding: $basic-padding $basic-padding * 2;
+    }
 
-.content-type-fields-row {
-    background-color: $white;
+    .content-type-fields-row {
+        background-color: $white;
+    }
 }

@@ -1,32 +1,30 @@
-<div class="content-type" id="content-type">
-    <p-tabView>
-        <p-tabPanel class="content-type__properties" header="{{ i18nMessages['contenttypes.tab.fields.header'] }}">
-            <div class="content-type__fields-layout" id="content-type-form-layout">
-                <div class="content-type__fields-main" id="content-type-form-main">
-                    <ng-content></ng-content>
-                </div>
-                <div class="content-type__fields-sidebar">
-                    <h4 class="content-type__fields-sidebar-title">{{ i18nMessages['contenttypes.sidebar.components.title'] }}</h4>
-                    <dot-content-types-fields-list></dot-content-types-fields-list>
-                    <h4 class="content-type__fields-sidebar-title">{{ i18nMessages['contenttypes.sidebar.layouts.title'] }}</h4>
-                    <dot-content-type-fields-row-list></dot-content-type-fields-row-list>
-                </div>
+<p-tabView>
+    <p-tabPanel class="content-type__properties" header="{{ i18nMessages['contenttypes.tab.fields.header'] }}">
+        <div class="content-type__fields-layout" id="content-type-form-layout">
+            <div class="content-type__fields-main" id="content-type-form-main">
+                <ng-content></ng-content>
             </div>
-        </p-tabPanel>
-        <p-tabPanel class="content-type__relationships" header="{{ i18nMessages['contenttypes.tab.relationship.header'] }}" *ngIf="contentTypeId" [cache]="false">
-            <ng-template pTemplate="content">
-                <dot-iframe [src]="relationshipURL"></dot-iframe>
-            </ng-template>
-        </p-tabPanel>
-        <p-tabPanel class="content-type__permissions" header="{{ i18nMessages['contenttypes.tab.permissions.header'] }}" *ngIf="contentTypeId" [cache]="false">
-            <ng-template pTemplate="content">
-                <dot-iframe [src]="permissionURL"></dot-iframe>
-            </ng-template>
-        </p-tabPanel>
-        <p-tabPanel class="content-type__push_history" header="{{ i18nMessages['contenttypes.tab.publisher.push.history.header'] }}" *ngIf="contentTypeId" [cache]="false">
-            <ng-template pTemplate="content">
-                <dot-iframe [src]="pushHistoryURL"></dot-iframe>
-            </ng-template>
-        </p-tabPanel>
-    </p-tabView>
-</div>
+            <div class="content-type__fields-sidebar">
+                <h4 class="content-type__fields-sidebar-title">{{ i18nMessages['contenttypes.sidebar.components.title'] }}</h4>
+                <dot-content-types-fields-list></dot-content-types-fields-list>
+                <h4 class="content-type__fields-sidebar-title">{{ i18nMessages['contenttypes.sidebar.layouts.title'] }}</h4>
+                <dot-content-type-fields-row-list></dot-content-type-fields-row-list>
+            </div>
+        </div>
+    </p-tabPanel>
+    <p-tabPanel class="content-type__relationships" header="{{ i18nMessages['contenttypes.tab.relationship.header'] }}" *ngIf="contentTypeId" [cache]="false">
+        <ng-template pTemplate="content">
+            <dot-iframe [src]="relationshipURL"></dot-iframe>
+        </ng-template>
+    </p-tabPanel>
+    <p-tabPanel class="content-type__permissions" header="{{ i18nMessages['contenttypes.tab.permissions.header'] }}" *ngIf="contentTypeId" [cache]="false">
+        <ng-template pTemplate="content">
+            <dot-iframe [src]="permissionURL"></dot-iframe>
+        </ng-template>
+    </p-tabPanel>
+    <p-tabPanel class="content-type__push_history" header="{{ i18nMessages['contenttypes.tab.publisher.push.history.header'] }}" *ngIf="contentTypeId" [cache]="false">
+        <ng-template pTemplate="content">
+            <dot-iframe [src]="pushHistoryURL"></dot-iframe>
+        </ng-template>
+    </p-tabPanel>
+</p-tabView>
