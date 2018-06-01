@@ -38,11 +38,13 @@ catch(Exception e){
 	wfActions = new ArrayList<>();
 }
 
-
-Map<String, String> schemesAvailable=new HashMap<>();
-for(WorkflowAction action : wfActions){
-  schemesAvailable.put(action.getSchemeId() , APILocator.getWorkflowAPI().findScheme(action.getSchemeId()).getName());
-}
+	Map<String, String> schemesAvailable = new HashMap<>();
+	for (WorkflowAction action : wfActions) {
+		if (!schemesAvailable.containsKey(action.getSchemeId())) {
+			schemesAvailable.put(action.getSchemeId(),
+					APILocator.getWorkflowAPI().findScheme(action.getSchemeId()).getName());
+		}
+	}
 %>
 <script>
 function setMyWorkflowScheme(){
