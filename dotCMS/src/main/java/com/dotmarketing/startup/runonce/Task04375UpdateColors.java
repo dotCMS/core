@@ -15,8 +15,8 @@ public class Task04375UpdateColors implements StartupTask {
 
     private final String UPDATE_PRIMARY_COLOR_QUERY = "update company set type_ = ?";
     private final String UPDATE_SECONDARY_COLOR_QUERY = "update company set street = ?";
-    private final String PRIMARY_COLOR = "#C336E5";
-    private final String SECONDARY_COLOR = "#54428E";
+    protected final String PRIMARY_COLOR = "#C336E5";
+    protected final String SECONDARY_COLOR = "#54428E";
 
     public boolean forceRun() {
         return true;
