@@ -30,7 +30,7 @@ public class SecretKeySpecFactoryTest extends UnitTestBase {
         final FileAssetAPI fileAssetAPI = mock(FileAssetAPI.class);
         when(fileAssetAPI.getRealAssetsRootPath()).thenReturn("/tmp/assets");
 
-        KeyFactoryUtils keyFactoryUtils = KeyFactoryUtils.getInstance(fileAssetAPI);
+        final KeyFactoryUtils keyFactoryUtils = KeyFactoryUtils.getInstance(fileAssetAPI);
 
         //First make sure to delete any existing secret file
         cleanUp(keyFactoryUtils);
@@ -41,7 +41,7 @@ public class SecretKeySpecFactoryTest extends UnitTestBase {
         //Creating a new instance of the JWT service
         new JsonWebTokenFactory("").getJsonWebTokenService();
         Assert.assertTrue(keyFactoryUtils.existSecretFile());
-        String secret1 = keyFactoryUtils.readSecretFromDisk();
+        final String secret1 = keyFactoryUtils.readSecretFromDisk();
         Assert.assertNotNull(secret1);
         System.out.println(secret1);
         //Clean up
@@ -50,13 +50,13 @@ public class SecretKeySpecFactoryTest extends UnitTestBase {
         //----------------------------------
         // 2) Setting a json.web.token.hash.signing.key property
         Assert.assertFalse(keyFactoryUtils.existSecretFile());
-        String mySecretKey2 = "MySecretKey2";
+        final String mySecretKey2 = "MySecretKey2";
         Config.setProperty("json.web.token.hash.signing.key", mySecretKey2);
         //Creating a new instance of the JWT service
         new JsonWebTokenFactory("").getJsonWebTokenService();
         Assert.assertTrue(keyFactoryUtils.existSecretFile());
         //Make sure we wrote properly the secret
-        String secret2 = keyFactoryUtils.readSecretFromDisk();
+        final String secret2 = keyFactoryUtils.readSecretFromDisk();
         Assert.assertNotNull(secret2);
         System.out.println(secret2);
         Assert.assertEquals(secret2, mySecretKey2);
@@ -66,13 +66,13 @@ public class SecretKeySpecFactoryTest extends UnitTestBase {
         Assert.assertTrue(keyFactoryUtils.existSecretFile());
         String oldSecret = keyFactoryUtils.readSecretFromDisk();
         Assert.assertEquals(mySecretKey2, oldSecret);
-        String mySecretKey3 = "MySecretKey3";
+        final String mySecretKey3 = "MySecretKey3";
         Config.setProperty("json.web.token.hash.signing.key", mySecretKey3);
         //Creating a new instance of the JWT service
         new JsonWebTokenFactory("").getJsonWebTokenService();
         Assert.assertTrue(keyFactoryUtils.existSecretFile());
         //Make sure we wrote properly the secret
-        String secret3 = keyFactoryUtils.readSecretFromDisk();
+        final String secret3 = keyFactoryUtils.readSecretFromDisk();
         Assert.assertNotNull(secret3);
         System.out.println(secret3);
         Assert.assertEquals(secret3, mySecretKey3);
@@ -86,7 +86,7 @@ public class SecretKeySpecFactoryTest extends UnitTestBase {
         new JsonWebTokenFactory("").getJsonWebTokenService();
         Assert.assertTrue(keyFactoryUtils.existSecretFile());
         //Make sure we wrote properly the secret
-        String secret4 = keyFactoryUtils.readSecretFromDisk();
+        final String secret4 = keyFactoryUtils.readSecretFromDisk();
         Assert.assertNotNull(secret4);
         System.out.println(secret4);
         Assert.assertEquals(secret4, mySecretKey3);
@@ -99,7 +99,7 @@ public class SecretKeySpecFactoryTest extends UnitTestBase {
         //Creating a new instance of the JWT service
         new JsonWebTokenFactory("").getJsonWebTokenService();
         Assert.assertTrue(keyFactoryUtils.existSecretFile());
-        String secret5 = keyFactoryUtils.readSecretFromDisk();
+        final String secret5 = keyFactoryUtils.readSecretFromDisk();
         Assert.assertNotNull(secret5);
         System.out.println(secret5);
         Assert.assertNotEquals(secret5, mySecretKey3);
@@ -109,13 +109,13 @@ public class SecretKeySpecFactoryTest extends UnitTestBase {
         //----------------------------------
         // 6) Setting the default value to the json.web.token.hash.signing.key property and NO file
         Assert.assertFalse(keyFactoryUtils.existSecretFile());
-        String mySecretKey6 = SecretKeySpecFactoryImpl.DEFAULT_SECRET;
+        final String mySecretKey6 = SecretKeySpecFactoryImpl.DEFAULT_SECRET;
         Config.setProperty("json.web.token.hash.signing.key", mySecretKey6);
         //Creating a new instance of the JWT service
         new JsonWebTokenFactory("").getJsonWebTokenService();
         Assert.assertTrue(keyFactoryUtils.existSecretFile());
         //Make sure we wrote properly the secret
-        String secret6 = keyFactoryUtils.readSecretFromDisk();
+        final String secret6 = keyFactoryUtils.readSecretFromDisk();
         Assert.assertNotNull(secret6);
         System.out.println(secret6);
         Assert.assertNotEquals(secret6, mySecretKey6);
@@ -125,13 +125,13 @@ public class SecretKeySpecFactoryTest extends UnitTestBase {
         //----------------------------------
         // 7) Setting the default value to the file
         Assert.assertFalse(keyFactoryUtils.existSecretFile());
-        String mySecretKey7 = SecretKeySpecFactoryImpl.DEFAULT_SECRET;
+        final String mySecretKey7 = SecretKeySpecFactoryImpl.DEFAULT_SECRET;
         keyFactoryUtils.writeSecretToDisk(mySecretKey7);
         //Creating a new instance of the JWT service
         new JsonWebTokenFactory("").getJsonWebTokenService();
         Assert.assertTrue(keyFactoryUtils.existSecretFile());
         //Make sure we wrote properly the secret
-        String secret7 = keyFactoryUtils.readSecretFromDisk();
+        final String secret7 = keyFactoryUtils.readSecretFromDisk();
         Assert.assertNotNull(secret7);
         System.out.println(secret7);
         Assert.assertNotEquals(secret7, mySecretKey7);

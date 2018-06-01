@@ -51,9 +51,9 @@ public class KeyFactoryUtils {
     /**
      * Writes a given secret string to a secret file inside the assets folder
      */
-    public void writeSecretToDisk(String secret) {
+    public void writeSecretToDisk(final String secret) {
 
-        File secretFile = getSecretFile();
+        final File secretFile = getSecretFile();
 
         if (secretFile.exists()) {
             try {
@@ -67,7 +67,7 @@ public class KeyFactoryUtils {
         }
 
         //Verify the folder where the file lives exist
-        File serverDir = getSecretFolder();
+        final File serverDir = getSecretFolder();
         if (!serverDir.exists()) {
             serverDir.mkdirs();
         }

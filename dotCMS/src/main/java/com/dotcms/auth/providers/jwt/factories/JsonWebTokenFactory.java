@@ -58,7 +58,7 @@ public class JsonWebTokenFactory implements Serializable {
     } // getInstance.
 
     @VisibleForTesting
-    public JsonWebTokenFactory(String param) {}
+    public JsonWebTokenFactory(final String param) {}
 
     /**
      * Creates the Json Web Token Service based on the configuration on dotmarketing-config.properties

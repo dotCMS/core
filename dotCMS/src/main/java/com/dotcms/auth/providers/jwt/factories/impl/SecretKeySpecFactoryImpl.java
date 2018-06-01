@@ -44,7 +44,7 @@ public class SecretKeySpecFactoryImpl implements SigningKeyFactory {
      */
     private String getAndProcessSecret() {
 
-        KeyFactoryUtils factoryUtils = KeyFactoryUtils.getInstance();
+        final KeyFactoryUtils factoryUtils = KeyFactoryUtils.getInstance();
 
         //Read the secret hash
         String secret = Config
@@ -59,7 +59,7 @@ public class SecretKeySpecFactoryImpl implements SigningKeyFactory {
             if (factoryUtils.existSecretFile()) {
 
                 //Read the secret file from the assets folder
-                String secretInSharedStorage = factoryUtils.readSecretFromDisk();
+                final String secretInSharedStorage = factoryUtils.readSecretFromDisk();
                 //And verify is not our default secret
                 if (DEFAULT_SECRET.equals(secretInSharedStorage)) {
                     //Generate a new secret
@@ -89,7 +89,7 @@ public class SecretKeySpecFactoryImpl implements SigningKeyFactory {
     private String generateSecret() {
 
         try {
-            String randomString = new RandomString().nextString();
+            final String randomString = new RandomString().nextString();
             return getSHA512(randomString, getSalt());
         } catch (NoSuchAlgorithmException e) {
             Logger.error(this.getClass(),
@@ -138,7 +138,7 @@ public class SecretKeySpecFactoryImpl implements SigningKeyFactory {
         /**
          * Creates an alphanumeric strings from a secure generator
          */
-        RandomString(int length) {
+        RandomString(final int length) {
 
             if (length < 1) {
                 throw new IllegalArgumentException();
