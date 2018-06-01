@@ -22,7 +22,7 @@ import static org.junit.Assert.assertEquals;
 public class JSONToolFTest {
 
     @Test
-    public void testJSONFetch()
+    public void testJSONFetch_GivenUnicodeTextInContent_ShouldReturnProperlyEncoded()
         throws DotDataException, DotSecurityException, JSONException {
         Contentlet contentWithUnicode = null;
         try {
