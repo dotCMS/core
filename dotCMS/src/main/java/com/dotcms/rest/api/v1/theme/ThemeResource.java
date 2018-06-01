@@ -5,7 +5,7 @@ import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.PaginationException;
 import com.dotcms.util.pagination.ThemePaginator;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.theme.business.ThemeSerializer;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotmarketing.util.UtilMethods;
@@ -22,8 +22,6 @@ import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.util.Logger;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.module.SimpleModule;
 import com.liferay.portal.model.User;
@@ -43,28 +41,22 @@ public class ThemeResource {
     private final PaginationUtil paginationUtil;
     private final WebResource webResource;
     private final HostAPI hostAPI;
-    private final FileAssetAPI fileAssetAPI;
-    private final FolderAPI folderAPI;
     private final UserAPI userAPI;
 
     public ThemeResource() {
-        this(
+         this(
             new ThemePaginator(),
             APILocator.getHostAPI(),
-            APILocator.getFolderAPI(),
             APILocator.getUserAPI(),
-            APILocator.getFileAssetAPI(),
             new WebResource()
         );
     }
 
     @VisibleForTesting
-    ThemeResource(final ThemePaginator themePaginator, final HostAPI hostAPI, final FolderAPI folderAPI,
-                         final UserAPI userAPI, final FileAssetAPI fileAssetAPI, final WebResource webResource ) {
+    ThemeResource(final ThemePaginator themePaginator, final HostAPI hostAPI,
+                         final UserAPI userAPI, final WebResource webResource ) {
         this.webResource  = webResource;
         this.hostAPI      = hostAPI;
-        this.fileAssetAPI = fileAssetAPI;
-        this.folderAPI    = folderAPI;
         this.userAPI      = userAPI;
         this.paginationUtil = new PaginationUtil(themePaginator, this.getMapper());
     }
@@ -158,7 +150,7 @@ public class ThemeResource {
     private ObjectMapper getMapper() {
         final  ObjectMapper mapper = new ObjectMapper();
         final  SimpleModule module = new SimpleModule();
-        module.addSerializer(Contentlet.class, new ThemeSerializer(hostAPI, folderAPI, userAPI, fileAssetAPI));
+        module.addSerializer(Folder.class, new ThemeSerializer(hostAPI, userAPI));
         mapper.registerModule(module);
 
         return mapper;
