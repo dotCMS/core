@@ -20,9 +20,9 @@ public class Task04375UpdateColorsTest extends BaseWorkflowIntegrationTest {
 
     @Test
     public void testExecuteUpgrade_newColors_Success() throws DotDataException {
-            Task04375UpdateColors updateColors = new Task04375UpdateColors();
+            final Task04375UpdateColors updateColors = new Task04375UpdateColors();
             updateColors.executeUpgrade();
-            Company company = APILocator.getCompanyAPI().getDefaultCompany();
+            final Company company = APILocator.getCompanyAPI().getDefaultCompany();
             Assert.assertEquals(updateColors.PRIMARY_COLOR,company.getType());
             Assert.assertEquals(updateColors.SECONDARY_COLOR,company.getStreet());
     }
