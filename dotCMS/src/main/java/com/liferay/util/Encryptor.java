@@ -36,6 +36,7 @@ import javax.crypto.KeyGenerator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 
 /**
@@ -49,72 +50,40 @@ public class Encryptor {
 
 	public static final String ENCODING = "UTF8";
 
-	public static final String DIGEST_ALGORITHM = "SHA";
+	public static final String DIGEST_ALGORITHM = Config.getStringProperty("ENCRYPTION_DIGEST_ALGORITHM","SHA256");
 
-	public static final String KEY_ALGORITHM = "DES";
-
-	public static final String SUN_PROVIDER_CLASS =
-		"com.sun.crypto.provider.SunJCE";
-
-	public static final String IBM_PROVIDER_CLASS =
-		"com.ibm.crypto.provider.IBMJCE";
-
-	public static final String PROVIDER_CLASS = GetterUtil.get(
-		SystemProperties.get(Encryptor.class.getName() + ".provider.class"),
-		SUN_PROVIDER_CLASS);
-
+	public static final String KEY_ALGORITHM = Config.getStringProperty("ENCRYPTION_KEY_ALGORITHM","AES");
+    public static final int KEY_LENGTH = Config.getIntProperty("ENCRYPTION_KEY_LENGTH",256);;
+	
 	public static Key generateKey() throws EncryptorException {
 		return generateKey(KEY_ALGORITHM);
 	}
 
-	public static Key generateKey(String algorithm) throws EncryptorException {
-		try {
-			Security.addProvider(getProvider());
+	public static Key generateKey(final String algorithm) throws EncryptorException {
+      final KeyGenerator kgen;
+      try {
+          kgen = KeyGenerator.getInstance(algorithm);
+      } catch (final NoSuchAlgorithmException e) {
+          throw new RuntimeException(algorithm + " key generator should always be available in a Java runtime", e);
+      }
+      final SecureRandom rng;
+      try {
+          rng = SecureRandom.getInstanceStrong();
+      } catch (final NoSuchAlgorithmException e) {
+          throw new RuntimeException("No strong secure random available to generate strong key", e);
+      }
+      // already throws IllegalParameterException for wrong key sizes
+      kgen.init(KEY_LENGTH, rng);
 
-			KeyGenerator generator = KeyGenerator.getInstance(algorithm);
-			generator.init(56, new SecureRandom());
-
-			Key key = generator.generateKey();
-
-			return key;
-		}
-		catch (Exception e) {
-			throw new EncryptorException(e);
-		}
+      return kgen.generateKey();
 	}
 
-	public static Provider getProvider()
-		throws ClassNotFoundException, IllegalAccessException,
-			   InstantiationException {
-
-		Class providerClass = null;
-
-		try {
-			providerClass = Class.forName(PROVIDER_CLASS);
-		}
-		catch (ClassNotFoundException cnfe) {
-			if ((ServerDetector.isWebSphere()) &&
-				(PROVIDER_CLASS.equals(SUN_PROVIDER_CLASS))) {
-
-				_log.warn(
-					"WebSphere does not have " + SUN_PROVIDER_CLASS +
-						", using " + IBM_PROVIDER_CLASS + " instead");
-
-				providerClass = Class.forName(IBM_PROVIDER_CLASS);
-			}
-			else {
-				throw cnfe;
-			}
-		}
-
-		return (Provider)providerClass.newInstance();
-	}
+	
 
 	public static String decrypt(Key key, String encryptedString)
 		throws EncryptorException {
 
 		try {
-			Security.addProvider(getProvider());
 
 			Cipher cipher = Cipher.getInstance(key.getAlgorithm());
 			cipher.init(Cipher.DECRYPT_MODE, key);
@@ -160,7 +129,7 @@ public class Encryptor {
 		throws EncryptorException {
 
 		try {
-			Security.addProvider(getProvider());
+
 
 			Cipher cipher = Cipher.getInstance(key.getAlgorithm());
 			cipher.init(Cipher.ENCRYPT_MODE, key);

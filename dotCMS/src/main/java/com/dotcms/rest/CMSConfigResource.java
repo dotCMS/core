@@ -55,7 +55,9 @@ public class CMSConfigResource {
      * @param portalURL
      * @param mx
      * @param emailAddress
-     * @param size
+     * @param backgroundColor this one is the Background Color
+     * @param primaryColor this one is the Primary Color
+     * @param secondaryColor this one is the Secondary Color
      * @param homeURL
      * @return
      * @throws IOException
@@ -66,12 +68,15 @@ public class CMSConfigResource {
     @Produces (MediaType.APPLICATION_JSON)
     @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
     public Response saveCompanyBasicInfo ( @Context HttpServletRequest request,
-                                           @FormParam ("user") String user, @FormParam ("password") String password,
-                                           @FormParam ("portalURL") String portalURL,
-                                           @FormParam ("mx") String mx,
-                                           @FormParam ("emailAddress") String emailAddress,
-                                           @FormParam ("size") String size,
-                                           @FormParam ("homeURL") String homeURL ) throws IOException, JSONException {
+                                           @FormParam ("user") final String user,
+                                           @FormParam ("password") final String password,
+                                           @FormParam ("portalURL") final String portalURL,
+                                           @FormParam ("mx") final String mx,
+                                           @FormParam ("emailAddress") final String emailAddress,
+                                           @FormParam ("size") final String backgroundColor,
+                                           @FormParam("type") final String primaryColor,
+                                           @FormParam("street") final String secondaryColor,
+                                           @FormParam ("homeURL") final String homeURL ) throws IOException, JSONException {
 
         InitDataObject initData = webResource.init( "user/" + user + "/password/" + password, true, request, true, PortletID.CONFIGURATION.toString() );
 
@@ -79,14 +84,16 @@ public class CMSConfigResource {
         paramsMap.put( "portalURL", portalURL );
         paramsMap.put( "mx", mx );
         paramsMap.put( "emailAddress", emailAddress );
-        paramsMap.put( "size", size );
+        paramsMap.put( "size", backgroundColor );
+        paramsMap.put("type", primaryColor);
+        paramsMap.put("street", secondaryColor);
         paramsMap.put( "homeURL", homeURL );
 
-        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
+        ResourceResponse responseResource = new ResourceResponse( paramsMap );
         StringBuilder responseMessage = new StringBuilder();
 
         //Validate the parameters
-        if ( !responseResource.validate( responseMessage, "portalURL", "mx", "emailAddress", "size" ) ) {
+        if ( !responseResource.validate( responseMessage, "portalURL", "mx", "emailAddress", "size","type","street" ) ) {
             return responseResource.responseError( responseMessage.toString(), HttpStatus.SC_BAD_REQUEST );
         }
 
@@ -94,13 +101,15 @@ public class CMSConfigResource {
             PrincipalThreadLocal.setName( initData.getUser().getUserId() );
 
             //Getting the current company
-            Company currentCompany = PublicCompanyFactory.getDefaultCompany();
+            final Company currentCompany = APILocator.getCompanyAPI().getDefaultCompany();
 
             //Set the values
             currentCompany.setPortalURL( portalURL );
             currentCompany.setMx( mx );
             currentCompany.setEmailAddress( emailAddress );
-            currentCompany.setSize( size );
+            currentCompany.setSize( backgroundColor );
+            currentCompany.setType(primaryColor);
+            currentCompany.setStreet(secondaryColor);
             currentCompany.setHomeURL( homeURL );
 
             //Update the company

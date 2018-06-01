@@ -366,6 +366,7 @@ public final class WebKeys {
     public static final String ADMIN_CONTROL_TOP = "com.dotmarketing.admin.control.top";
     public static final String ADMIN_CONTROL_LEFT = "com.dotmarketing.admin.control.left";
     public static final String ADMIN_CONTROL_CLOSED = "com.dotmarketing.admin.control.closed";
+    public static final String COME_FROM_ADMIN = "admin.request.from";
 
 	//TASK CONTROL
     public static final String TASK_CONTROL_TOP = "com.dotmarketing.task.control.top";
