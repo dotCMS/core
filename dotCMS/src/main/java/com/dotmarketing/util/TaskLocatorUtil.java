@@ -230,6 +230,7 @@ public class TaskLocatorUtil {
 		ret.add(Task04360WorkflowSchemeDropUniqueNameConstraint.class);
 		ret.add(Task04365RelationshipUniqueConstraint.class);
 		ret.add(Task04370AddVisitorLogger.class);
+		ret.add(Task04375UpdateColors.class);
 		return ret;
 	}
 
