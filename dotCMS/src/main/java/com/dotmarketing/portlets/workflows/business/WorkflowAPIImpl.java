@@ -8,6 +8,7 @@ import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ErrorEntity;
+import com.dotcms.rest.api.v1.workflow.BulkActionsResultView;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.FriendClass;
@@ -35,6 +36,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.osgi.HostActivator;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
@@ -82,6 +84,7 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -100,7 +103,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.annotation.Nullable;
 import org.apache.commons.lang.time.StopWatch;
@@ -1846,9 +1853,24 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	}
 
+	public Future<BulkActionsResultView> fireBulkActions(final WorkflowAction action, final User user, final String luceneQuery){
+		try {
+			List<Contentlet> contentletList = APILocator.getContentletAPI()
+					.search(luceneQuery, 1000, 0, null, user, false);
+
+			 final List<String> inodes = contentletList.stream().map(Contentlet::getInode).collect(Collectors.toList());
+			 return fireBulkActions(action, user, inodes);
+
+		}catch (DotDataException | DotSecurityException e){
+           throw new DotRuntimeException(e);
+		}
+	}
+
 	public Future<BulkActionsResultView> fireBulkActions(final WorkflowAction action, final User user, final List<String> contentletIds) {
 
-		// this.isUserAllowToModifiedWorkflow(user); // todo: check only if the user does not have license
+		if (!hasValidLicense()) {
+			throw new InvalidLicenseException("Workflow-Schemes-License-required");
+		}
 
 		if (null == action){
 			Logger.warn(this, "Does not exists the action");
@@ -1862,9 +1884,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	private BulkActionsResultView fireBulkActionsTask(final WorkflowAction action, final User user, final List<String> contentletIds) {
 
 		final List<Future> futures = new ArrayList<>();
-		final CopyOnWriteArrayList<String> successContentlet = new CopyOnWriteArrayList<>();
-		final CopyOnWriteArrayList<String> failContentlet    = new CopyOnWriteArrayList<>();
-		final CopyOnWriteArrayList<String> skipContentlet    = new CopyOnWriteArrayList<>();
+		final List<String> successContentlet = new CopyOnWriteArrayList<>();
+		final List<String> failContentlet    = new CopyOnWriteArrayList<>();
+		final List<String> skipContentlet    = new CopyOnWriteArrayList<>();
+
+		final List<List<String>> lists = Lists.partition(contentletIds,200);
 
 		final DotSubmitter submitter = this.concurrentFactory.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
 
@@ -2470,62 +2494,5 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		scheme.setArchived(Boolean.TRUE);
 		saveScheme(scheme, user);
 	}
-
-	@Override
-	public CommonAvailableWorkflowActions findCommonAvailableActions(final User user, final List<String> contentletIds) throws DotDataException {
-
-		final CounterSet<WorkflowAction> counterSet =
-				new CounterSet<>(contentletIds.size());
-
-		final String       threadPoolName =
-				Config.getStringProperty("workflow.threadpool.name", DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
-		final DotSubmitter dotSubmitter   = this.concurrentFactory.getSubmitter(threadPoolName);
-
-		final List<Future<Map<String, Collection<WorkflowAction>>>> futures =
-				new ArrayList<>();
-		final Map<String, Collection<WorkflowAction>> workflowActionByContentletIdMap =
-				new HashMap<>();
-
-		Logger.debug(this, ()-> "Getting the common available actions for the contentlets: " + contentletIds);
-
-		for (final String inode : contentletIds) {
-
-			futures.add(dotSubmitter.submit(()->
-					getCommonAvailableActions(user, counterSet,
-							this.contentletAPI.find(inode, user, true))));
-		}
-
-		for (final Future<Map<String, Collection<WorkflowAction>>> future : futures) {
-
-			try {
-				workflowActionByContentletIdMap.putAll(future.get());
-			} catch (InterruptedException | ExecutionException e) {
-				Logger.error(this, e.getMessage(), e);
-				throw new DotDataException(e);
-			}
-		}
-
-		return new CommonAvailableWorkflowActions(counterSet.getCommonItems(), workflowActionByContentletIdMap);
-	} // findCommonAvailableActions.
-
-	@CloseDBIfOpened
-	private Map<String, Collection<WorkflowAction>> getCommonAvailableActions(final User user,
-																			  final CounterSet<WorkflowAction> counterSet,
-																			  final Contentlet contentlet) {
-		List<WorkflowAction> actions = Collections.emptyList();
-		try {
-
-			actions =
-					this.findAvailableActions(contentlet, user);
-
-			if (null != actions) {
-				actions.stream().forEach(action -> counterSet.add(action));
-			}
-		} catch (DotDataException | DotSecurityException e) {
-			Logger.error(this, e.getMessage(), e);
-		}
-
-		return  map(contentlet.getInode(), actions);
-	} // getCommonAvailableActions.
 
 }

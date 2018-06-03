@@ -718,11 +718,10 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
-
+                        </div>&nbsp;&nbsp;
                         <div class="portlet-toolbar__actions-secondary">
-                            <button dojoType="dijit.form.Button" onClick="doShowAvailableActions();" iconClass="actionIcon" >
-                                <%= LanguageUtil.get(pageContext, "available-actions")%>
+                            <button id="bulkAvailableActions" dojoType="dijit.form.Button" onClick="doShowAvailableActions();" iconClass="actionIcon" >
+                                <%= LanguageUtil.get(pageContext, "Available-actions")%>
                             </button>
                         </div>
 

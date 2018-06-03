@@ -288,6 +288,14 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 
 		var xhrArgs = {
 			url: "/api/v1/workflow/schemes/" + schemeId + "/copy?name=" + optionalName,
+
+			postData: '',
+			handleAs: 'json',
+			headers : {
+			'Accept' : 'application/json',
+			'Content-Type' : 'application/json;charset=utf-8'
+            },
+
 			timeout : 30000,
 			handle : function(dataOrError, ioArgs) {
 						if (ioArgs.xhr.status != 200) {

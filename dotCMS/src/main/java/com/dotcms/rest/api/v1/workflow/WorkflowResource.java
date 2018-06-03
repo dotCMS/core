@@ -1,9 +1,18 @@
 package com.dotcms.rest.api.v1.workflow;
 
-import com.dotcms.repackage.com.google.common.annotations.Beta;
+import static com.dotcms.rest.ResponseEntityView.OK;
+import static com.dotcms.util.CollectionsUtils.map;
+
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
-import com.dotcms.repackage.javax.ws.rs.*;
+import com.dotcms.repackage.javax.ws.rs.DELETE;
+import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.POST;
+import com.dotcms.repackage.javax.ws.rs.PUT;
+import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
+import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.QueryParam;
 import com.dotcms.repackage.javax.ws.rs.container.AsyncResponse;
 import com.dotcms.repackage.javax.ws.rs.container.Suspended;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
@@ -19,7 +28,19 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.util.DotPreconditions;
-import com.dotcms.workflow.form.*;
+import com.dotcms.workflow.form.BulkActionForm;
+import com.dotcms.workflow.form.FireActionForm;
+import com.dotcms.workflow.form.FireBulkActionsForm;
+import com.dotcms.workflow.form.WorkflowActionForm;
+import com.dotcms.workflow.form.WorkflowActionStepBean;
+import com.dotcms.workflow.form.WorkflowActionStepForm;
+import com.dotcms.workflow.form.WorkflowCopyForm;
+import com.dotcms.workflow.form.WorkflowReorderBean;
+import com.dotcms.workflow.form.WorkflowReorderWorkflowActionStepForm;
+import com.dotcms.workflow.form.WorkflowSchemeForm;
+import com.dotcms.workflow.form.WorkflowSchemeImportObjectForm;
+import com.dotcms.workflow.form.WorkflowStepAddForm;
+import com.dotcms.workflow.form.WorkflowStepUpdateForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -42,16 +63,11 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
-
-import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
-
-import static com.dotcms.rest.ResponseEntityView.OK;
-import static com.dotcms.util.CollectionsUtils.map;
+import javax.servlet.http.HttpServletRequest;
 
 @SuppressWarnings("serial")
 @Path("/v1/workflow")
@@ -230,46 +246,13 @@ public class WorkflowResource {
     } // findAvailableActions.
 
     /**
-     * Finds the common available actions for an set of inodes
-     * Beta: this is not ready for production yet.
-     * @param request HttpServletRequest
-     * @param inodes String
-     * @return Response
-     */
-    @Beta
-    @GET
-    @Path("/contentlet/common/actions")
-    @JSONP
-    @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response findCommonAvailableActions(@Context final HttpServletRequest request,
-                                               @QueryParam("inodes") final String inodes) {
-
-        final InitDataObject initDataObject = this.webResource.init
-                (null, true, request, true, null);
-        try {
-
-            Logger.debug(this, "Getting the common available actions for the contentlets inodes: " + inodes);
-            DotPreconditions.notNull(inodes,"Expected query string 'inodes' was empty.");
-            return Response.ok(new ResponseEntityView
-                    (this.workflowHelper.findCommonAvailableActions(initDataObject.getUser(), inodes.split(StringPool.COMMA))))
-                    .build(); // 200
-        } catch (Exception e) {
-            Logger.error(this.getClass(),
-                    "Exception on findCommonAvailableActions, contentlet inodes: " + inodes +
-                            ", exception message: " + e.getMessage(), e);
-            return ResponseUtil.mapExceptionResponse(e);
-        }
-    } // findCommonAvailableActions.
-
-    /**
      * Get the bulk actions based on the {@link BulkActionForm}
      * @param request HttpServletRequest
      * @param bulkActionForm String
      * @return Response
      */
     @POST
-    @Path("/contentlet/bulk/actions")
+    @Path("/contentlet/actions/bulk")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -283,7 +266,7 @@ public class WorkflowResource {
             DotPreconditions.notNull(bulkActionForm,"Expected Request body was empty.");
             Logger.debug(this, ()-> "Getting the bulk actions for the contentlets inodes: " + bulkActionForm);
             return Response.ok(new ResponseEntityView
-                    (this.workflowHelper.findBulkActions(initDataObject.getUser(), bulkActionForm, PageMode.get(request))))
+                    (this.workflowHelper.findBulkActions(initDataObject.getUser(), bulkActionForm)))
                     .build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
@@ -294,7 +277,7 @@ public class WorkflowResource {
     } // getBulkActions.
 
     @PUT
-    @Path("/actions/bulk/fire")
+    @Path("/contentlet/actions/bulk/fire")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -308,8 +291,11 @@ public class WorkflowResource {
             // check the form
             DotPreconditions.notNull(fireBulkActionsForm,"Expected Request body was empty.");
             ResponseUtil.handleAsyncResponse(
-                    this.workflowHelper.fireBulkActions(fireBulkActionsForm.getWorkflowActionId(),
-                            fireBulkActionsForm.getContentletIds(), initDataObject.getUser()), asyncResponse);
+                    this.workflowHelper.fireBulkActions(
+                            fireBulkActionsForm,
+                            initDataObject.getUser()
+                    ), asyncResponse
+            );
         } catch (Exception e) {
             Logger.error(this.getClass(), "Exception attempting to fire bulk actions by : " +fireBulkActionsForm + ", exception message: " + e.getMessage(), e);
             asyncResponse.resume(ResponseUtil.mapExceptionResponse(e));

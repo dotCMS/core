@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.workflows.business;
 
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.rest.api.v1.workflow.BulkActionsResultView;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Permissionable;
@@ -219,7 +220,7 @@ public interface WorkflowAPI {
 	 * @throws DotDataException
 	 * @throws AlreadyExistException
 	 */
-	public void saveScheme(WorkflowScheme scheme, User user) throws DotDataException, AlreadyExistException;
+	public void saveScheme(WorkflowScheme scheme, User user) throws DotDataException, DotSecurityException ,AlreadyExistException;
 
 	/**
 	 * Delete the workflow scheme with all the steps, action, actionlets and
@@ -671,15 +672,15 @@ public interface WorkflowAPI {
 	 */
 	public void archive(WorkflowScheme scheme, User user)
 			throws DotDataException, DotSecurityException, AlreadyExistException;
-			throws DotDataException, AlreadyExistException;
 
-	/***
-	 * Returns the common available actions for the contentlet ids, plus the available for each one.
-	 * @param user {@link User}
-	 * @param contentletIds List of {@link String}
-	 * @return CommonAvailableWorkflowActions
-	 */
-	CommonAvailableWorkflowActions findCommonAvailableActions(User user, final List<String> contentletIds) throws DotDataException;
+    /**
+     * Fires a list of contentlets returned by the luceneQuery and using an action.
+     * @param action {@link WorkflowAction}
+     * @param user  {@link User}
+     * @param luceneQuery luceneQuery
+     * @return
+     */
+    public Future<BulkActionsResultView> fireBulkActions(WorkflowAction action, User user, String luceneQuery);
 
 	/**
 	 * Fires a list of contentlets by using an action.

@@ -13,31 +13,18 @@ import java.util.List;
 public class BulkActionForm extends Validated {
 
     private final List<String> contentletIds;
-    private final String       workflowSchemeId;
-    private final String       workflowStepId;
     private final String       query;
+
     @JsonCreator
     public BulkActionForm(@JsonProperty("contentletIds") final List<String> contentletIds,
-                          @JsonProperty("workflowSchemeId") final String workflowSchemeId,
-                          @JsonProperty("workflowStepId") final String workflowStepId,
                           @JsonProperty("query") final String query) {
 
         this.contentletIds      = contentletIds;
-        this.workflowSchemeId   = workflowSchemeId;
-        this.workflowStepId     = workflowStepId;
         this.query              = query;
     }
 
     public List<String> getContentletIds() {
         return contentletIds;
-    }
-
-    public String getWorkflowSchemeId() {
-        return workflowSchemeId;
-    }
-
-    public String getWorkflowStepId() {
-        return workflowStepId;
     }
 
     public String getQuery() {
@@ -48,8 +35,6 @@ public class BulkActionForm extends Validated {
     public String toString() {
         return "BulkActionForm{" +
                 "contentletIds=" + contentletIds +
-                ", workflowSchemeId='" + workflowSchemeId + '\'' +
-                ", workflowStepId='" + workflowStepId + '\'' +
                 ", query='" + query + '\'' +
                 '}';
     }
