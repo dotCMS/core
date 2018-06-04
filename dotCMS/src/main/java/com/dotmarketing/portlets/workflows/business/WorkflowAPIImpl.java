@@ -84,7 +84,6 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -1843,7 +1842,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			task.setTitle(processor.getContentlet().getTitle());
 		}
 
-
 		if(processor.getWorkflowMessage() != null){
 			WorkflowComment comment = new WorkflowComment();
 			comment.setComment(processor.getWorkflowMessage());
@@ -1856,7 +1854,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public Future<BulkActionsResultView> fireBulkActions(final WorkflowAction action, final User user, final String luceneQuery){
 		try {
 			List<Contentlet> contentletList = APILocator.getContentletAPI()
-					.search(luceneQuery, 1000, 0, null, user, false);
+					.search(luceneQuery, -1, 0, null, user, false);
 
 			 final List<String> inodes = contentletList.stream().map(Contentlet::getInode).collect(Collectors.toList());
 			 return fireBulkActions(action, user, inodes);
@@ -1881,82 +1879,96 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return submitter.submit(() -> fireBulkActionsTask(action, user, contentletIds));
 	}
 
-	private BulkActionsResultView fireBulkActionsTask(final WorkflowAction action, final User user, final List<String> contentletIds) {
+	private BulkActionsResultView fireBulkActionsTask(final WorkflowAction action, final User user,
+			final List<String> contentletIds) throws DotDataException {
 
-		final List<Future> futures = new ArrayList<>();
-		final List<String> successContentlet = new CopyOnWriteArrayList<>();
-		final List<String> failContentlet    = new CopyOnWriteArrayList<>();
-		final List<String> skipContentlet    = new CopyOnWriteArrayList<>();
+		try {
+			final List<String> successContentlet = new CopyOnWriteArrayList<>();
+			final List<String> failContentlet = new CopyOnWriteArrayList<>();
+			final List<String> skipContentlet = new ArrayList<>();
 
-		final List<List<String>> lists = Lists.partition(contentletIds,200);
+			final List<Future> futures = new ArrayList<>();
 
-		final DotSubmitter submitter = this.concurrentFactory.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
+            final Set<String> workflowAssociatedStepsIds =
+					workFlowFactory.findProxiesSteps(action).stream().map(WorkflowStep::getId).collect(Collectors.toSet());
 
-		for (final String contentletId : contentletIds) {
-			futures.add(submitter.submit(() -> fireBulkActionTask(action, user, contentletId,
-												inode -> successContentlet.add(inode),
-												inode -> failContentlet.add(inode),
-												inode -> skipContentlet.add(inode))));
-		}
+			final Set<String> inodes = workFlowFactory.findInodesBySteps(workflowAssociatedStepsIds);
 
-		for (Future future : futures) {
+			final DotSubmitter submitter = this.concurrentFactory
+					.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
 
-			try {
-				future.get();
-			} catch (InterruptedException | ExecutionException e) {
-				Logger.error(this, e.getMessage(), e);
+			for (final String contentletId : contentletIds) {
+				if ( inodes.contains(contentletId)) {
+
+					futures.add(
+							submitter
+									.submit(() -> fireBulkActionTask(action, user, contentletId,
+											successContentlet::add,
+											failContentlet::add
+											)
+									)
+					);
+				} else {
+					Logger.debug(this, () -> "Skipped the contentlet: " + contentletId +
+							", b/c schemes are diff. The action scheme is: " + action
+							.getSchemeId()
+							);
+					skipContentlet.add(contentletId);
+				}
 			}
+
+			for (Future future : futures) {
+				try {
+					future.get();
+				} catch (InterruptedException | ExecutionException e) {
+					Logger.error(this, e.getMessage(), e);
+				}
+			}
+
+			return new BulkActionsResultView(
+					ImmutableList.copyOf(successContentlet),
+					ImmutableList.copyOf(skipContentlet),
+					ImmutableList.copyOf(failContentlet)
+			);
+		} catch (Exception e) {
+			Logger.error(getClass(), "Error firing action bulk.", e);
+			throw new DotDataException(e);
 		}
 
-		return new BulkActionsResultView(ImmutableList.copyOf(successContentlet),
-				ImmutableList.copyOf(skipContentlet), ImmutableList.copyOf(failContentlet));
 	}
 
 	@WrapInTransaction
 	private void fireBulkActionTask(final WorkflowAction action,
-									final User user,
-									final String inode,
-									final Consumer<String> successConsumer,
-									final Consumer<String> failConsumer,
-									final Consumer<String> skipConsumer) {
-
-		final Contentlet   contentlet;
-		final WorkflowTask workflowTask;
-		final WorkflowStep workflowStep;
-		final String       successInode;
+			final User user,
+			final String inode,
+			final Consumer<String> successConsumer,
+			final Consumer<String> failConsumer) {
 		try {
 
-			Logger.debug(this, ()-> "Firing the action: " + action + " to the inode: " + inode);
-			contentlet = this.contentletAPI.find(inode, user, false);
 
-			if (null != contentlet) {
+				Logger.debug(this,
+						() -> "Firing the action: " + action + " to the inode: " + inode);
+				final Contentlet contentlet = this.contentletAPI.find(inode, user, false);
+				if (null != contentlet) {
 
-				workflowTask = this.findTaskByContentlet(contentlet);
-				workflowStep = this.findStep(workflowTask.getStatus());
+						final String successInode = this.fireContentWorkflow(contentlet,
+								new ContentletDependencies.Builder()
+										.respectAnonymousPermissions(false)
+										.generateSystemEvent(false)
+										.modUser(user)
+										.workflowActionId(action.getId()).build()
+						).getInode();
 
-				if (action.getSchemeId().equals(workflowStep.getSchemeId())) {
+						Logger.debug(this, () -> "Successfully fired the contentlet: " + inode +
+								", success inode: " + successInode);
+						successConsumer.accept(successInode);
 
-					successInode = this.fireContentWorkflow(contentlet,
-							new ContentletDependencies.Builder()
-									.respectAnonymousPermissions(false)
-									.generateSystemEvent(false)
-									.modUser(user).workflowActionId(action.getId()).build())
-							.getInode();
-
-					Logger.debug(this, ()-> "Successfully fired the contentlet: " + inode +
-												", success inode: " + successInode);
-					successConsumer.accept(successInode);
 				} else {
 
-					Logger.debug(this, ()-> "Skipped the contentlet: " + inode +
-							", b/c schemes are diff. The action scheme is: " + action.getSchemeId() +
-							" and the contentlet current task, the scheme is: " + workflowStep.getSchemeId());
-					skipConsumer.accept(inode);
+					Logger.error(this,
+							"fireBulkActionTask, The contentlet does not exists: " + inode);
 				}
-			} else {
 
-				Logger.error(this, "fireBulkActionTask, The contentlet does not exists: " + inode);
-			}
 		} catch (Exception e) {
 
 			Logger.error(this, e.getMessage(), e);
