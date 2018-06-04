@@ -130,6 +130,7 @@ describe('DotEditContentViewAsToolbarComponent', () => {
             expect(de.query(By.css('dot-language-selector'))).not.toBeNull();
             expect(de.query(By.css('dot-device-selector'))).toBeFalsy();
             expect(de.query(By.css('dot-persona-selector'))).toBeFalsy();
+            expect(de.query(By.css('p-checkbox'))).toBeFalsy();
         });
     });
 
@@ -198,6 +199,11 @@ describe('DotEditContentViewAsToolbarComponent', () => {
             expect(component.changeViewAs.emit).toHaveBeenCalledWith({ language: testlanguage });
         });
 
+        it('should have What is Changed selector', () => {
+            const whatsChangedElem = de.query(By.css('p-checkbox'));
+            expect(whatsChangedElem).toBeTruthy();
+        });
+
         it('should propagate the values to the selector components on init', () => {
             componentHost.pageState = new DotRenderedPageState(mockUser, {
                 ...mockDotRenderedPage,
@@ -214,19 +220,6 @@ describe('DotEditContentViewAsToolbarComponent', () => {
     describe('what\'s change event', () => {
         let whatsChanged: DebugElement;
 
-        it('should not have what\'s change checkbox', () => {
-            componentHost.pageState = new DotRenderedPageState(mockUser, {
-                ...mockDotRenderedPage,
-                page: {
-                    ...mockDotRenderedPage.page,
-                    lockedBy: '123'
-                }
-            });
-            fixtureHost.detectChanges();
-            whatsChanged = de.query(By.css('p-checkbox'));
-            expect(whatsChanged).toBe(null);
-        });
-
         describe('events', () => {
             beforeEach(() => {
                 spyOn(component.whatschange, 'emit');
@@ -235,13 +228,10 @@ describe('DotEditContentViewAsToolbarComponent', () => {
                     JSON.parse(JSON.stringify(mockDotRenderedPage)),
                     PageMode.PREVIEW
                 );
+                spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
                 fixtureHost.detectChanges();
 
                 whatsChanged = de.query(By.css('p-checkbox'));
-            });
-
-            it('should have what\'s change checkbox', () => {
-                expect(whatsChanged).toBeTruthy();
             });
 
             it('should emit what\'s change in true', () => {

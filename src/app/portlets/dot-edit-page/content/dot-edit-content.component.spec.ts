@@ -790,6 +790,20 @@ describe('DotEditContentComponent', () => {
 
     describe('Auto save', () => {
         it('should call the save endpoint after a model change happens', () => {
+            route.parent.parent.data = Observable.of({
+                content: {
+                    ...mockDotRenderedPage,
+                    page: {
+                        ...mockDotRenderedPage.page,
+                        canLock: true
+                    },
+                    state: {
+                        locked: true,
+                        mode: PageMode.EDIT
+                    }
+                }
+            });
+
             const model: DotPageContainer[] = [
                 {
                     identifier: '1',
@@ -814,13 +828,42 @@ describe('DotEditContentComponent', () => {
             spyOn(dotEditContentHtmlService, 'setContaintersSameHeight');
 
             fixture.detectChanges();
-
             dotEditContentHtmlService.pageModel$.next(model);
-            fixture.detectChanges();
-
             dotEditContentHtmlService.pageModel$.next(newModel);
             expect(dotEditPageService.save).toHaveBeenCalledTimes(2);
-            expect(dotEditContentHtmlService.setContaintersSameHeight).toHaveBeenCalled();
+            expect(dotEditContentHtmlService.setContaintersSameHeight).toHaveBeenCalledTimes(2);
+        });
+
+        it('should not execute setContaintersSameHeight() when layout is null', () => {
+
+            route.parent.parent.data = Observable.of({
+                content: {
+                    ...mockDotRenderedPage,
+                    layout: null,
+                    page: {
+                        ...mockDotRenderedPage.page,
+                        canLock: true
+                    },
+                    state: {
+                        locked: true,
+                        mode: PageMode.EDIT
+                    }
+                }
+            });
+
+            const model: DotPageContainer[] = [
+                {
+                    identifier: '1',
+                    uuid: '2',
+                    contentletsId: ['3', '4']
+                }
+            ];
+
+            spyOn(dotEditContentHtmlService, 'setContaintersSameHeight');
+
+            fixture.detectChanges();
+            dotEditContentHtmlService.pageModel$.next(model);
+            expect(dotEditContentHtmlService.setContaintersSameHeight).not.toHaveBeenCalled();
         });
     });
 
