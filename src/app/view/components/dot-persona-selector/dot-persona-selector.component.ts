@@ -1,8 +1,6 @@
-import * as _ from 'lodash';
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { DotPersonasService } from '../../../api/services/dot-personas/dot-personas.service';
 import { DotPersona } from '../../../shared/models/dot-persona/dot-persona.model';
-import { Observable } from 'rxjs/Observable';
 import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { map, tap, take } from 'rxjs/operators';
 import { StringPixels } from '../../../api/util/string-pixels-util';

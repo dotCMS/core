@@ -7,7 +7,6 @@ import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { mockDotLanguage } from '../../../test/dot-language.mock';
-import { Observable } from 'rxjs/Observable';
 import { StringPixels } from '../../../api/util/string-pixels-util';
 import { DotLanguage } from '../../../shared/models/dot-language/dot-language.model';
 

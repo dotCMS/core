@@ -3,8 +3,6 @@ import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DebugElement, Component, EventEmitter, Output, Input } from '@angular/core';
 import { MainComponentLegacyComponent } from './main-legacy.component';
 import { RouterTestingModule } from '@angular/router/testing';
-import { DotEventsService } from '../../../api/services/dot-events/dot-events.service';
-import { DotDialogService } from '../../../api/services/dot-dialog';
 import { LoginService } from 'dotcms-js/dotcms-js';
 import { LoginServiceMock } from '../../../test/login-service.mock';
 import { By } from '@angular/platform-browser';

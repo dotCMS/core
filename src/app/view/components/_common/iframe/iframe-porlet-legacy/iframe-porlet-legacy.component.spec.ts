@@ -1,6 +1,6 @@
 import { ActivatedRoute } from '@angular/router';
 import { By } from '@angular/platform-browser';
-import { ComponentFixture, async, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, async } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { DebugElement } from '@angular/core';
 import { DotContentletService } from '../../../../../api/services/dot-contentlet.service';
@@ -10,7 +10,6 @@ import { IframePortletLegacyComponent } from './iframe-porlet-legacy.component';
 import { Observable } from 'rxjs/Observable';
 import { RouterTestingModule } from '@angular/router/testing';
 import { SocketFactory, SiteService, LoginService } from 'dotcms-js/dotcms-js';
-import { IframeComponent } from '../iframe-component';
 import { DotLoadingIndicatorService } from '../dot-loading-indicator/dot-loading-indicator.service';
 import { DotRouterService } from '../../../../../api/services/dot-router/dot-router.service';
 import { DotIframeEventsHandler } from './services/iframe-events-handler.service';

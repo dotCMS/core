@@ -9,7 +9,6 @@ import {
     NgZone
 } from '@angular/core';
 import { LoginService, LoggerService } from 'dotcms-js/dotcms-js';
-import { Observable } from 'rxjs/Observable';
 import { DotLoadingIndicatorService } from '../dot-loading-indicator/dot-loading-indicator.service';
 import { IframeOverlayService } from '../service/iframe-overlay.service';
 import { DotIframeService } from '../service/dot-iframe/dot-iframe.service';
@@ -31,7 +30,6 @@ export class IframeComponent implements OnInit {
 
     constructor(
         private dotIframeService: DotIframeService,
-        private element: ElementRef,
         private loggerService: LoggerService,
         private loginService: LoginService,
         private ngZone: NgZone,

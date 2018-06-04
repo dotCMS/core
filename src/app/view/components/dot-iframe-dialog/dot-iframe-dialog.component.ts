@@ -1,5 +1,4 @@
 import { Component, Input, SimpleChanges, OnChanges, EventEmitter, Output } from '@angular/core';
-import { Observable } from 'rxjs/Observable';
 
 @Component({
     selector: 'dot-iframe-dialog',

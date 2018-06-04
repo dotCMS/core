@@ -104,7 +104,7 @@ describe('DotEditPageInfoComponent', () => {
         it('should habdle error of copy to clipboard', fakeAsync(() => {
             spyOn(dotGlobalMessageService, 'error');
             spyOn(dotClipboardUtil, 'copy').and.callFake(() => {
-                return new Promise((resolve, reject) => {
+                return new Promise((_resolve, reject) => {
                     reject(true);
                 });
             });

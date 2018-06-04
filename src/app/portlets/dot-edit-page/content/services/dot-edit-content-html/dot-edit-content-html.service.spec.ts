@@ -1,4 +1,4 @@
-import { fakeAsync, tick } from '@angular/core/testing';
+import { async } from '@angular/core/testing';
 import { DotEditContentHtmlService, DotContentletAction } from './dot-edit-content-html.service';
 import { DotEditContentToolbarHtmlService } from '../html/dot-edit-content-toolbar-html.service';
 import { DotContainerContentletService } from '../dot-container-contentlet.service';
@@ -16,6 +16,8 @@ import { Observable } from 'rxjs/Observable';
 import { mockDotLayout } from '../../../../../test/dot-rendered-page.mock';
 
 describe('DotEditContentHtmlService', () => {
+    let fakeDocument: Document;
+
     const fakeHTML = `
         <html>
         <head>
@@ -27,8 +29,20 @@ describe('DotEditContentHtmlService', () => {
         </head>
         <body>
             <div data-dot-object="container" data-dot-identifier="123" data-dot-uuid="456" data-dot-can-add="CONTENT">
-                <div data-dot-object="contentlet" data-dot-identifier="456" data-dot-inode="456">
+                <div
+                    data-dot-object="contentlet"
+                    data-dot-identifier="456"
+                    data-dot-inode="456"
+                    data-dot-type="NewsWidgets"
+                    data-dot-basetype="CONTENT">
                     <div class="large-column">
+                        <div
+                            data-dot-object="vtl-file"
+                            data-dot-inode="345274e0-3bbb-41f1-912c-b398d5745b9a"
+                            data-dot-url="/application/vtl/widgets/news/personalized-news-listing.vtl"
+                            data-dot-can-read="true"
+                            data-dot-can-edit="true">
+                        </div>
                         <h3>This is a title</h3>
                         <p>this is a paragraph</p>
                         <div data-dot-object="edit-content"></div>
@@ -37,7 +51,12 @@ describe('DotEditContentHtmlService', () => {
             </div>
 
             <div data-dot-object="container" data-dot-identifier="321" data-dot-uuid="654" data-dot-can-add="CONTENT">
-                <div data-dot-object="contentlet" data-dot-identifier="456" data-dot-inode="456">
+                <div
+                    data-dot-object="contentlet"
+                    data-dot-identifier="456"
+                    data-dot-inode="456"
+                    data-dot-type="NewsWidgets"
+                    data-dot-basetype="CONTENT">
                     <div class="large-column">
                         <h3>This is a title</h3>
                         <p>this is a paragraph</p>
@@ -61,7 +80,7 @@ describe('DotEditContentHtmlService', () => {
         'editpage.content.container.menu.form': 'Form'
     });
 
-    beforeEach(() => {
+    beforeEach(async(() => {
         this.injector = DOTTestBed.resolveAndCreate([
             DotEditContentHtmlService,
             DotContainerContentletService,
@@ -88,80 +107,110 @@ describe('DotEditContentHtmlService', () => {
             is not a good architecture.
         */
         this.dotEditContentHtmlService.initEditMode(fakeHTML, { nativeElement: fakeIframeEl });
+
+        fakeDocument = fakeIframeEl.contentWindow.document;
+    }));
+
+    describe('document click', () => {
+        it('should open sub menu', () => {
+            const button: HTMLButtonElement = <HTMLButtonElement>fakeDocument.querySelector('[data-dot-object="popup-button"]');
+            button.click();
+            expect(button.nextElementSibling.classList.contains('active')).toBe(true);
+        });
+
+        it('should emit iframe action to add content', () => {
+            this.dotEditContentHtmlService.iframeActions$.subscribe((res) => {
+                expect(res).toEqual({
+                    name: 'add',
+                    container: null,
+                    dataset: button.dataset
+                });
+            });
+            const button: HTMLButtonElement = <HTMLButtonElement>fakeDocument.querySelector('[data-dot-object="popup-menu-item"]');
+            button.click();
+        });
+
+        it('should emit iframe action to edit content', () => {
+            this.dotEditContentHtmlService.iframeActions$.subscribe((res) => {
+                expect(res).toEqual({
+                    name: 'edit',
+                    container: container.dataset,
+                    dataset: button.dataset
+                });
+            });
+            const button: HTMLButtonElement = <HTMLButtonElement>fakeDocument.querySelector('.dotedit-contentlet__edit');
+            const container = <HTMLElement>button.closest('div[data-dot-object="container"]');
+            button.click();
+        });
+
+        it('should emit iframe action to remove content', () => {
+            this.dotEditContentHtmlService.iframeActions$.subscribe((res) => {
+                expect(res).toEqual({
+                    name: 'remove',
+                    container: container.dataset,
+                    dataset: button.dataset
+                });
+            });
+            const button: HTMLButtonElement = <HTMLButtonElement>fakeDocument.querySelector('.dotedit-contentlet__remove');
+            const container = <HTMLElement>button.closest('div[data-dot-object="container"]');
+            button.click();
+        });
+
+        it('should emit iframe action to edit vtl', () => {
+            this.dotEditContentHtmlService.iframeActions$.subscribe((res) => {
+                expect(res).toEqual({
+                    name: 'code',
+                    container: container.dataset,
+                    dataset: button.dataset
+                });
+            });
+            const button: HTMLButtonElement = <HTMLButtonElement>fakeDocument.querySelector(
+                '.dotedit-contentlet__toolbar [data-dot-object="popup-menu-item"]'
+            );
+            const container = <HTMLElement>button.closest('div[data-dot-object="container"]');
+            button.click();
+        });
     });
 
-    it(
-        'should bind containers events when the html is done',
-        fakeAsync((): void => {
-            spyOn(this.dotEditContentHtmlService, 'bindContainersEvents');
+    it('should set same height to containers', () => {
+        const mockLayout = JSON.parse(JSON.stringify(mockDotLayout));
+        mockLayout.body.rows = [
+            {
+                columns: [
+                    {
+                        containers: [
+                            {
+                                identifier: '123',
+                                uuid: '456'
+                            }
+                        ],
+                        leftOffset: 1,
+                        width: 8
+                    },
+                    {
+                        containers: [
+                            {
+                                identifier: '321',
+                                uuid: '654'
+                            }
+                        ],
+                        leftOffset: 1,
+                        width: 8
+                    }
+                ]
+            }
+        ];
 
-            this.dotEditContentToolbarHtmlService.addContainerToolbar(fakeIframeEl.contentDocument).then(() => {
-                this.dotEditContentHtmlService.bindContainersEvents();
-            });
+        const querySelector1 = [`div[data-dot-object="container"]`, `[data-dot-identifier="123"]`, `[data-dot-uuid="456"]`].join('');
+        const querySelector2 = [`div[data-dot-object="container"]`, `[data-dot-identifier="321"]`, `[data-dot-uuid="654"]`].join('');
 
-            tick();
-            expect(this.dotEditContentHtmlService.bindContainersEvents).toHaveBeenCalledTimes(1);
-        })
-    );
+        this.dotEditContentHtmlService.setContaintersSameHeight(mockLayout);
 
-    it(
-        'should set same height to containers',
-        fakeAsync((): void => {
-            const mockLayout = JSON.parse(JSON.stringify(mockDotLayout));
-            mockLayout.body.rows = [
-                {
-                    columns: [
-                        {
-                            containers: [
-                                {
-                                    identifier: '123',
-                                    uuid: '456'
-                                }
-                            ],
-                            leftOffset: 1,
-                            width: 8
-                        },
-                        {
-                            containers: [
-                                {
-                                    identifier: '321',
-                                    uuid: '654'
-                                }
-                            ],
-                            leftOffset: 1,
-                            width: 8
-                        }
-                    ]
-                }
-            ];
+        const firstContainer = this.dotEditContentHtmlService.getEditPageDocument().querySelector(querySelector1);
+        const secondContainer = this.dotEditContentHtmlService.getEditPageDocument().querySelector(querySelector2);
 
-            const querySelector1 = [`div[data-dot-object="container"]`, `[data-dot-identifier="123"]`, `[data-dot-uuid="456"]`].join('');
-
-            const querySelector2 = [`div[data-dot-object="container"]`, `[data-dot-identifier="321"]`, `[data-dot-uuid="654"]`].join('');
-
-            this.dotEditContentHtmlService.setContaintersSameHeight(mockLayout);
-            tick();
-
-            const firstContainer = this.dotEditContentHtmlService.getEditPageDocument().querySelector(querySelector1);
-            const secondContainer = this.dotEditContentHtmlService.getEditPageDocument().querySelector(querySelector2);
-
-            expect(firstContainer.height).toEqual(secondContainer.height);
-        })
-    );
-
-    it(
-        'should bind contentlets events when the html is done',
-        fakeAsync((): void => {
-            spyOn(this.dotEditContentHtmlService, 'bindContenletsEvents');
-
-            this.dotEditContentToolbarHtmlService.addContainerToolbar(fakeIframeEl.contentDocument).then(() => {
-                this.dotEditContentHtmlService.bindContenletsEvents();
-            });
-
-            tick();
-            expect(this.dotEditContentHtmlService.bindContenletsEvents).toHaveBeenCalledTimes(1);
-        })
-    );
+        expect(firstContainer.height).toEqual(secondContainer.height);
+    });
 
     it('should add contentlet', () => {
         spyOn(this.dotEditContentHtmlService, 'renderAddedContentlet');
@@ -226,12 +275,13 @@ describe('DotEditContentHtmlService', () => {
     it('should handle edit-content from iframe click', () => {
         const editEl = fakeIframeEl.contentWindow.document.querySelector('[data-dot-object="edit-content"]');
 
-
-        this.dotEditContentHtmlService.iframeActions$.subscribe(res => {
+        this.dotEditContentHtmlService.iframeActions$.subscribe((res) => {
             expect(JSON.parse(JSON.stringify(res))).toEqual({
                 name: 'edit',
                 dataset: {
-                    dotObject: 'edit-content'
+                    dotObject: 'edit-content',
+                    dotIdentifier: '456',
+                    dotInode: '456'
                 },
                 container: {
                     dotCanAdd: 'CONTENT',
@@ -246,7 +296,9 @@ describe('DotEditContentHtmlService', () => {
 
         expect(this.dotEditContentHtmlService.currentContentlet).toEqual({
             identifier: '456',
-            inode: '456'
+            inode: '456',
+            type: 'NewsWidgets',
+            baseType: 'CONTENT'
         });
     });
 

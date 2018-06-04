@@ -1,10 +1,9 @@
 import { DotDialogService } from '../../../../../api/services/dot-dialog/dot-dialog.service';
-import { Component, OnInit, Input, EventEmitter, Output, ViewChild, ElementRef, SimpleChanges, OnChanges } from '@angular/core';
+import { Component, OnInit, Input, EventEmitter, Output, ViewChild, SimpleChanges, OnChanges } from '@angular/core';
 import { SelectItem, InputSwitch } from 'primeng/primeng';
 import * as _ from 'lodash';
 import { DotEditPageState } from '../../../../../shared/models/dot-edit-page-state/dot-edit-page-state.model';
 import { DotMessageService } from '../../../../../api/services/dot-messages-service';
-import { DotGlobalMessageService } from '../../../../../view/components/_common/dot-global-message/dot-global-message.service';
 import { DotRenderedPageState } from '../../../shared/models/dot-rendered-page-state.model';
 import { PageMode } from '../../../shared/models/page-mode.enum';
 import { DotEditPageInfoComponent } from '../../../components/dot-edit-page-info/dot-edit-page-info.component';
@@ -30,11 +29,7 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
 
     private debounceStateSelector = _.debounce((pageState: PageMode) => this.setSelectorState(pageState), 500, { leading: true });
 
-    constructor(
-        public dotMessageService: DotMessageService,
-        private dotGlobalMessageService: DotGlobalMessageService,
-        private dotDialogService: DotDialogService
-    ) {}
+    constructor(public dotMessageService: DotMessageService, private dotDialogService: DotDialogService) {}
 
     ngOnInit() {
         this.dotMessageService
@@ -121,9 +116,9 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
 
     private getModeOption(mode: string, pageState: DotRenderedPageState): SelectItem {
         const modeMap = {
-            'edit': this.getEditOption.bind(this),
-            'preview': this.getPreviewOption.bind(this),
-            'live': this.getLiveOption.bind(this)
+            edit: this.getEditOption.bind(this),
+            preview: this.getPreviewOption.bind(this),
+            live: this.getLiveOption.bind(this)
         };
 
         return modeMap[mode](pageState);

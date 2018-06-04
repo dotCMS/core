@@ -2,7 +2,6 @@ import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DotWorkflowService } from './dot-workflow.service';
 import { MockBackend } from '@angular/http/testing';
 import { ConnectionBackend, ResponseOptions, Response } from '@angular/http';
-import { Observable } from 'rxjs/Observable';
 import { mockWorkflows } from '../../../test/dot-workflow-service.mock';
 
 describe('DotWorkflowService', () => {

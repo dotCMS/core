@@ -91,8 +91,7 @@ describe('ContentTypesLayoutComponent', () => {
     });
 
     it('should have a tab-view', () => {
-        const contentType = fixture.debugElement.query(By.css('.content-type'));
-        const pTabView = contentType.query(By.css('p-tabView'));
+        const pTabView = de.query(By.css('p-tabView'));
 
         expect(pTabView).not.toBeNull();
     });

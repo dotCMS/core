@@ -1,7 +1,6 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { DotDevicesService } from '../../../api/services/dot-devices/dot-devices.service';
 import { DotDevice } from '../../../shared/models/dot-device/dot-device.model';
-import { Observable } from 'rxjs/Observable';
 import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { map } from 'rxjs/operators/map';
 import { StringPixels } from '../../../api/util/string-pixels-util';

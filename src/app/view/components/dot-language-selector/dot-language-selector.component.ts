@@ -1,9 +1,8 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { DotLanguagesService } from '../../../api/services/dot-languages/dot-languages.service';
 import { DotLanguage } from '../../../shared/models/dot-language/dot-language.model';
-import { Observable } from 'rxjs/Observable';
 import { StringPixels } from '../../../api/util/string-pixels-util';
-import { tap, take } from 'rxjs/operators';
+import { take } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-language-selector',

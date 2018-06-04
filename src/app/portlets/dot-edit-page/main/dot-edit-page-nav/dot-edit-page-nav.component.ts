@@ -97,10 +97,6 @@ export class DotEditPageNavComponent implements OnChanges {
         };
     }
 
-    private getTemplateItemIcon(template: DotTemplate): string {
-        return !template ? 'fa fa-th-large' : template.drawed ? 'fa fa-th-large' : 'fa fa-code';
-    }
-
     private getTemplateItemLabel(template: DotTemplate): string {
         return this.dotMessageService.get(!template ? 'editpage.toolbar.nav.layout' : 'editpage.toolbar.nav.layout');
     }

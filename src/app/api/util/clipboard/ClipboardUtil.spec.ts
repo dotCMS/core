@@ -2,8 +2,6 @@ import { DotClipboardUtil } from './ClipboardUtil';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 
 describe('DotClipboardUtil', () => {
-    const load = () => {};
-    const keyDown = () => {};
     let service: DotClipboardUtil;
     let injector;
 
@@ -29,7 +27,7 @@ describe('DotClipboardUtil', () => {
 
         service
             .copy('hello-world')
-            .then((res: boolean) => {})
+            .then(() => {})
             .catch((res) => {
                 expect(res).toBe(undefined);
             });

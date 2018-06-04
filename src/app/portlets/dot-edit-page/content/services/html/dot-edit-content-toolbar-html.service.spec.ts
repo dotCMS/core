@@ -200,7 +200,7 @@ describe('DotEditContentToolbarHtmlService', () => {
                 it('should have submenu link', () => {
                     const links = testDoc.querySelectorAll('.dotedit-menu__item a');
                     expect(links.length).toEqual(1);
-                    expect(links[0].textContent).toEqual('personalized-news-listing.vtl');
+                    expect(links[0].textContent.trim()).toEqual('personalized-news-listing.vtl');
                 });
             });
 

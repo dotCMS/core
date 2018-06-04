@@ -7,7 +7,7 @@ import { DotRenderedPageState } from '../../shared/models/dot-rendered-page-stat
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { TooltipModule } from 'primeng/primeng';
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { async, ComponentFixture } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { mockDotRenderedPage } from './../../../../test/dot-rendered-page.mock';
 import { mockUser } from './../../../../test/login-service.mock';
@@ -160,8 +160,6 @@ describe('DotEditPageNavComponent', () => {
 
             const menuListItems = fixture.debugElement.queryAll(By.css('.edit-page-nav__item'));
             expect(menuListItems[1].nativeElement.classList).toContain('edit-page-nav__item--disabled');
-
-            const layoutTooltipHTML = menuListItems[1].nativeElement.outerHTML;
             expect(menuListItems[1].nativeElement.getAttribute('ng-reflect-text')).toBe('Can’t edit advanced template');
         });
 
@@ -176,7 +174,6 @@ describe('DotEditPageNavComponent', () => {
             const menuListItems = fixture.debugElement.queryAll(By.css('.edit-page-nav__item'));
             expect(menuListItems[1].nativeElement.classList).toContain('edit-page-nav__item--disabled');
 
-            const layoutTooltipHTML = menuListItems[1].nativeElement.outerHTML;
             expect(menuListItems[1].nativeElement.getAttribute('ng-reflect-text')).toBe('Enterprise only');
         });
 
