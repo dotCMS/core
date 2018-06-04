@@ -1954,16 +1954,19 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         }
     }
 
-    function editFileAsset (contInode,structureInode){
-        var loc='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&selectedStructure=' + structureInode + '&inode=' + contInode + '&referer=' + referer;
-        if(inFrame){
-            window.location = loc;
-        }else{
-            top.location = loc;
-        }
+    function editFileAsset (contInode, structureInode){
+        editContentletEvent(contInode);
     }
 
-    function editHTMLPageAsset (contInode, structureInode){
+    function editHTMLPageAsset (contInode, structureInode) {
+        editContentletEvent(contInode);
+    }
+
+    function previewHTMLPageAsset(id,referer) {
+
+    }
+
+    function editContentletEvent(contInode) {
         var customEvent = document.createEvent("CustomEvent");
         customEvent.initCustomEvent("ng-event", false, false,  {
             name: "edit-contentlet",
@@ -1972,9 +1975,6 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
             }
         });
         document.dispatchEvent(customEvent);
-    }
-    function previewHTMLPageAsset(id,referer) {
-
     }
 
     function publishFile (objId, referer) {
