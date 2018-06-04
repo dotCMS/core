@@ -3,7 +3,7 @@ import { DotDevicesService } from '../../../api/services/dot-devices/dot-devices
 import { DotDevice } from '../../../shared/models/dot-device/dot-device.model';
 import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { StringPixels } from '../../../api/util/string-pixels-util';
-import { map, mergeMap, filter, flatMap, toArray } from 'rxjs/operators';
+import { map, take, tap } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-device-selector',
