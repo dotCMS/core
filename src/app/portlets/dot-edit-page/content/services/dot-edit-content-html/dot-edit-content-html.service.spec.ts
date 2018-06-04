@@ -169,6 +169,13 @@ describe('DotEditContentHtmlService', () => {
             );
             const container = <HTMLElement>button.closest('div[data-dot-object="container"]');
             button.click();
+
+            expect(this.dotEditContentHtmlService.currentContentlet).toEqual({
+                identifier: '456',
+                inode: '456',
+                type: 'NewsWidgets',
+                baseType: 'CONTENT'
+            });
         });
     });
 
