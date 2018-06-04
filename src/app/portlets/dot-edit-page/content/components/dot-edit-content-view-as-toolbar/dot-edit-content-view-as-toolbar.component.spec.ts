@@ -11,7 +11,7 @@ import { DotDevicesServiceMock } from '../../../../../test/dot-device-service.mo
 import { DotLanguagesServiceMock } from '../../../../../test/dot-languages-service.mock';
 import { DotPersonasServiceMock } from '../../../../../test/dot-personas-service.mock';
 import { mockDotLanguage } from '../../../../../test/dot-language.mock';
-import { mockDotDevice } from '../../../../../test/dot-device.mock';
+import { mockDotDevices } from '../../../../../test/dot-device.mock';
 import { DotPersona } from '../../../../../shared/models/dot-persona/dot-persona.model';
 import { DotDevice } from '../../../../../shared/models/dot-device/dot-device.model';
 import { DotLanguage } from '../../../../../shared/models/dot-language/dot-language.model';
@@ -171,12 +171,12 @@ describe('DotEditContentViewAsToolbarComponent', () => {
 
         it('should emit changes in Device', () => {
             fixtureHost.detectChanges();
-            deviceSelector.selected.emit(mockDotDevice);
+            deviceSelector.selected.emit(mockDotDevices[0]);
 
-            expect(component.changeDeviceHandler).toHaveBeenCalledWith(mockDotDevice);
+            expect(component.changeDeviceHandler).toHaveBeenCalledWith(mockDotDevices[0]);
             expect(component.changeViewAs.emit).toHaveBeenCalledWith({
                 language: mockDotLanguage,
-                device: mockDotDevice
+                device: mockDotDevices[0]
             });
         });
 

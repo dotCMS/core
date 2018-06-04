@@ -3,7 +3,7 @@ import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DotDevice } from '../../../shared/models/dot-device/dot-device.model';
 import { ConnectionBackend, ResponseOptions } from '@angular/http';
 import { MockBackend } from '@angular/http/testing';
-import { mockDotDevice } from '../../../test/dot-device.mock';
+import { mockDotDevices } from '../../../test/dot-device.mock';
 
 describe('DotDevicesService', () => {
     beforeEach(() => {
@@ -24,14 +24,14 @@ describe('DotDevicesService', () => {
             new Response(
                 new ResponseOptions({
                     body: {
-                        contentlets: [mockDotDevice]
+                        contentlets: mockDotDevices
                     }
                 })
             )
         );
 
         this.dotDevicesService.get().subscribe((devices: DotDevice[]) => {
-            expect(devices).toEqual([mockDotDevice]);
+            expect(devices).toEqual(mockDotDevices);
         });
     });
 });

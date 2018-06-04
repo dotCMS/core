@@ -33,7 +33,7 @@ import { DotWorkflowService } from '../../../api/services/dot-workflow/dot-workf
 import { DotWorkflowServiceMock } from '../../../test/dot-workflow-service.mock';
 import { mockDotRenderedPage, mockDotPage } from '../../../test/dot-rendered-page.mock';
 import { DotEditPageViewAs } from '../../../shared/models/dot-edit-page-view-as/dot-edit-page-view-as.model';
-import { mockDotDevice } from '../../../test/dot-device.mock';
+import { mockDotDevices } from '../../../test/dot-device.mock';
 import { mockDotEditPageViewAs } from '../../../test/dot-edit-page-view-as.mock';
 import { mockResponseView } from '../../../test/response-view.mock';
 import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
@@ -324,7 +324,7 @@ describe('DotEditContentComponent', () => {
         });
 
         it('should set configuration skin for the content', () => {
-            component.pageState.viewAs.device = mockDotDevice;
+            component.pageState.viewAs.device = mockDotDevices[0];
             fixture.detectChanges();
             const pageWrapper: DebugElement = de.query(By.css('.dot-edit__page-wrapper'));
 
@@ -334,11 +334,11 @@ describe('DotEditContentComponent', () => {
         it('should set the page wrapper dimensions based on device', () => {
             const pageWrapper: DebugElement = de.query(By.css('.dot-edit__page-wrapper'));
             const editIframe: DebugElement = de.query(By.css('.dot-edit__iframe'));
-            component.pageState.viewAs.device = mockDotDevice;
+            component.pageState.viewAs.device = mockDotDevices[0];
             fixture.detectChanges();
             expect(editIframe.styles).toEqual({
-                width: mockDotDevice.cssWidth + 'px',
-                height: mockDotDevice.cssHeight + 'px',
+                width: mockDotDevices[0].cssWidth + 'px',
+                height: mockDotDevices[0].cssHeight + 'px',
                 visibility: '',
                 position: ''
             });

@@ -9,7 +9,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { By } from '@angular/platform-browser';
-import { mockDotDevice } from '../../../test/dot-device.mock';
+import { mockDotDevices } from '../../../test/dot-device.mock';
 import { DotDevice } from '../../../shared/models/dot-device/dot-device.model';
 import { StringPixels } from '../../../api/util/string-pixels-util';
 
@@ -55,10 +55,10 @@ describe('DotDeviceSelectorComponent', () => {
         spyOn(component.selected, 'emit');
         spyOn(component, 'change').and.callThrough();
 
-        pDropDown.triggerEventHandler('onChange', { value: mockDotDevice });
+        pDropDown.triggerEventHandler('onChange', { value: mockDotDevices });
 
-        expect(component.change).toHaveBeenCalledWith(mockDotDevice);
-        expect(component.selected.emit).toHaveBeenCalledWith(mockDotDevice);
+        expect(component.change).toHaveBeenCalledWith(mockDotDevices);
+        expect(component.selected.emit).toHaveBeenCalledWith(mockDotDevices);
     });
 
     it('should add Default Device as first position', () => {
@@ -71,5 +71,13 @@ describe('DotDeviceSelectorComponent', () => {
         const optionValues = ['iphone'];
         const textSize = StringPixels.getDropdownWidth(optionValues);
         expect(component.dropdownWidth).toEqual(textSize);
+    });
+
+    it('should set devices that have Width & Height bigger than 0', () => {
+        fixture.detectChanges();
+        const devicesMock = mockDotDevices.filter((device: DotDevice) => +device.cssHeight > 0 && +device.cssWidth > 0);
+        component.options.subscribe((devices: DotDevice[]) => {
+            expect(devices.length).toEqual(devicesMock.length + 1);
+        });
     });
 });
