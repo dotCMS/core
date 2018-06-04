@@ -68,7 +68,7 @@ describe('DotDeviceSelectorComponent', () => {
 
     it('should set max text width to dropdpown', () => {
         fixture.detectChanges();
-        const optionValues = ['iphone'];
+        const optionValues = [mockDotDevices[1].name];
         const textSize = StringPixels.getDropdownWidth(optionValues);
         expect(component.dropdownWidth).toEqual(textSize);
     });
@@ -76,8 +76,6 @@ describe('DotDeviceSelectorComponent', () => {
     it('should set devices that have Width & Height bigger than 0', () => {
         fixture.detectChanges();
         const devicesMock = mockDotDevices.filter((device: DotDevice) => +device.cssHeight > 0 && +device.cssWidth > 0);
-        component.options.subscribe((devices: DotDevice[]) => {
-            expect(devices.length).toEqual(devicesMock.length + 1);
-        });
+        expect(component.options.length).toEqual(devicesMock.length + 1);
     });
 });
