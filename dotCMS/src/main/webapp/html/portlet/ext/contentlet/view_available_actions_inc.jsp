@@ -112,9 +112,9 @@
      */
     function actionsExecutionSummarytMarkup(entity){
 
-        var failures = entity.failContentletidList.length;
-        var skips = entity.skipContentletidList.length;
-        var success = entity.successContentletidList.length;
+        var failures = entity.failsCount;
+        var skips = entity.skippedCount;
+        var success = entity.successCount;
 
         var resultsLabel = '<%=LanguageUtil.get(pageContext, "Results")%>';
         var sucessLabel = '<%=LanguageUtil.get(pageContext, "Successul")%>';
@@ -186,7 +186,7 @@
                 }
             },
             error: function(error){
-                showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Available-actions-error")%>", true);
+                dojo.byId('bulkActionsContainer').innerHTML = '<%=LanguageUtil.get(pageContext, "Available-actions-error")%>';
             }
         }
 

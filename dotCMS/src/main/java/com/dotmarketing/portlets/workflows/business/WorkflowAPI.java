@@ -680,7 +680,7 @@ public interface WorkflowAPI {
      * @param luceneQuery luceneQuery
      * @return
      */
-    public Future<BulkActionsResultView> fireBulkActions(WorkflowAction action, User user, String luceneQuery);
+    Future<BulkActionsResultView> fireBulkActions(WorkflowAction action, User user, String luceneQuery) throws DotDataException;
 
 	/**
 	 * Fires a list of contentlets by using an action.
@@ -690,5 +690,5 @@ public interface WorkflowAPI {
 	 * @param contentletIds {@link List}
 	 * @return Future BulkActionsResultView
 	 */
-	Future<BulkActionsResultView> fireBulkActions(WorkflowAction action, User user, List<String> contentletIds);
+	Future<BulkActionsResultView> fireBulkActions(WorkflowAction action, User user, List<String> contentletIds) throws DotDataException;
 }
