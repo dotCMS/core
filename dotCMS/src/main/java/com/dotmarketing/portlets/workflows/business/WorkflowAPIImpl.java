@@ -84,6 +84,7 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -102,9 +103,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -151,6 +152,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	private final WorkflowActionUtils workflowActionUtils;
 
 	private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+
+	private static final int MAX_THREADS_ALLOWED_TO_HANDLE_BULK_ACTIONS = 25;
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public WorkflowAPIImpl() {
@@ -1848,133 +1851,255 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			comment.setWorkflowtaskId(task.getId());
 			saveComment(comment);
 		}
-
 	}
 
-	public Future<BulkActionsResultView> fireBulkActions(final WorkflowAction action, final User user, final String luceneQuery){
+	/**
+	 * Entry point that fires up the actions associated with the contentles. Expects a lucene query
+	 * that holds the logic to retrive a large selection of items performed on the UI.
+	 *
+	 * @param action {@link WorkflowAction}
+	 * @param user {@link User}
+	 * @param luceneQuery luceneQuery
+	 */
+	public Future<BulkActionsResultView> fireBulkActions(final WorkflowAction action,
+			final User user, final String luceneQuery) throws DotDataException {
+
+		final Set<String> workflowAssociatedStepsIds = workFlowFactory.findProxiesSteps(action)
+				.stream().map(WorkflowStep::getId).collect(Collectors.toSet());
+		final DotSubmitter submitter = this.concurrentFactory
+				.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
+		return submitter.submit(() -> fireBulkActionsTaskForQuery(action, user, luceneQuery,
+				workflowAssociatedStepsIds));
+	}
+
+	/**
+	 * Entry point that fires up the actions associated with the contentles. Expects a list of ids
+	 * selected on the UI.
+	 *
+	 * @param action {@link WorkflowAction}
+	 * @param user {@link User}
+	 * @param contentletIds {@link List}
+	 */
+	public Future<BulkActionsResultView> fireBulkActions(final WorkflowAction action,
+			final User user, final List<String> contentletIds) throws DotDataException {
+
+		final Set<String> workflowAssociatedStepsIds = workFlowFactory.findProxiesSteps(action)
+				.stream().map(WorkflowStep::getId).collect(Collectors.toSet());
+		final DotSubmitter submitter = this.concurrentFactory
+				.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
+		return submitter
+				.submit(() -> fireBulkActionsTaskForSelectedInodes(action, user, contentletIds,
+						workflowAssociatedStepsIds));
+	}
+
+	/**
+	 * This version of the method expects to wotk with a small set of contentlets
+	 */
+	private List<Contentlet> findContentletsToProcess(final Iterable<String> inodes,
+			final Iterable<String> workflowAssociatedStepIds, User user)
+			throws DotSecurityException, DotDataException {
+
+		final String luceneQuery = String
+				.format("+inode:( %s ) +wfstep:( %s )", String.join(StringPool.SPACE, inodes),
+						String.join(StringPool.SPACE, workflowAssociatedStepIds));
+
+		return ImmutableList.<Contentlet>builder().addAll(
+				APILocator.getContentletAPI()
+						.search(luceneQuery, -1, 0, null, user, RESPECT_FRONTEND_ROLES)
+		).build();
+	}
+
+	/**
+	 * This version of the method expects to work with a larg set of contentlets, But instead of
+	 * having all the ids set a lucene query is used.
+	 */
+	private List<Contentlet> findContentletsToProcess(final String luceneQuery,
+			final Iterable<String> workflowAssociatedStepIds, User user)
+			throws DotSecurityException, DotDataException {
+
+		final String luceneQueryWithSteps = String.format(" %s +wfstep:( %s ) ", luceneQuery,
+				String.join(StringPool.SPACE, workflowAssociatedStepIds));
+		return ImmutableList.<Contentlet>builder().addAll(
+				APILocator.getContentletAPI()
+						.search(luceneQueryWithSteps, -1, 0, null, user, RESPECT_FRONTEND_ROLES)
+		).build();
+	}
+
+	/**
+	 * Out of a given query computes the number of contentlets that will get skipped.
+	 * @param luceneQuery
+	 * @param workflowAssociatedStepsIds
+	 * @param user
+	 * @return
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	private long computeSkippedContentletsCount(final String luceneQuery,
+			final Iterable<String> workflowAssociatedStepsIds, User user)
+			throws DotSecurityException, DotDataException {
+
+		final String contentletsWithinStepsQuery = String
+				.format("%s  +wfstep:( %s ) ", String.join(StringPool.SPACE, luceneQuery),
+						String.join(StringPool.SPACE, workflowAssociatedStepsIds));
+		long withinStepsCount = APILocator.getContentletAPI()
+				.indexCount(contentletsWithinStepsQuery, user, RESPECT_FRONTEND_ROLES);
+
+		final String contentletsWithoutStepsQuery = String
+				.format("%s  -wfstep:( %s ) ", String.join(StringPool.SPACE, luceneQuery),
+						String.join(StringPool.SPACE, workflowAssociatedStepsIds));
+		long withoutStepsCount = APILocator.getContentletAPI()
+				.indexCount(contentletsWithoutStepsQuery, user, RESPECT_FRONTEND_ROLES);
+
+
+		return Math.abs(withinStepsCount - withoutStepsCount);
+	}
+
+	/**
+	 * This version of the method deals with inodes selected directly on the UI
+	 */
+	private BulkActionsResultView fireBulkActionsTaskForSelectedInodes(final WorkflowAction action,
+			final User user,
+			final List<String> inodes, final Set<String> workflowAssociatedStepIds)
+			throws DotDataException {
+
 		try {
-			List<Contentlet> contentletList = APILocator.getContentletAPI()
-					.search(luceneQuery, -1, 0, null, user, false);
-
-			 final List<String> inodes = contentletList.stream().map(Contentlet::getInode).collect(Collectors.toList());
-			 return fireBulkActions(action, user, inodes);
-
-		}catch (DotDataException | DotSecurityException e){
-           throw new DotRuntimeException(e);
-		}
-	}
-
-	public Future<BulkActionsResultView> fireBulkActions(final WorkflowAction action, final User user, final List<String> contentletIds) {
-
-		if (!hasValidLicense()) {
-			throw new InvalidLicenseException("Workflow-Schemes-License-required");
-		}
-
-		if (null == action){
-			Logger.warn(this, "Does not exists the action");
-			throw new DoesNotExistException("Workflow-does-not-exists-action");
-		}
-
-		final DotSubmitter submitter = this.concurrentFactory.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
-		return submitter.submit(() -> fireBulkActionsTask(action, user, contentletIds));
-	}
-
-	private BulkActionsResultView fireBulkActionsTask(final WorkflowAction action, final User user,
-			final List<String> contentletIds) throws DotDataException {
-
-		try {
-			final List<String> successContentlet = new CopyOnWriteArrayList<>();
-			final List<String> failContentlet = new CopyOnWriteArrayList<>();
-			final List<String> skipContentlet = new ArrayList<>();
-
-			final List<Future> futures = new ArrayList<>();
-
-            final Set<String> workflowAssociatedStepsIds =
-					workFlowFactory.findProxiesSteps(action).stream().map(WorkflowStep::getId).collect(Collectors.toSet());
-
-			final Set<String> inodes = workFlowFactory.findInodesBySteps(workflowAssociatedStepsIds);
-
-			final DotSubmitter submitter = this.concurrentFactory
-					.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
-
-			for (final String contentletId : contentletIds) {
-				if ( inodes.contains(contentletId)) {
-
-					futures.add(
-							submitter
-									.submit(() -> fireBulkActionTask(action, user, contentletId,
-											successContentlet::add,
-											failContentlet::add
-											)
-									)
-					);
-				} else {
-					Logger.debug(this, () -> "Skipped the contentlet: " + contentletId +
-							", b/c schemes are diff. The action scheme is: " + action
-							.getSchemeId()
-							);
-					skipContentlet.add(contentletId);
-				}
-			}
-
-			for (Future future : futures) {
-				try {
-					future.get();
-				} catch (InterruptedException | ExecutionException e) {
-					Logger.error(this, e.getMessage(), e);
-				}
-			}
-
-			return new BulkActionsResultView(
-					ImmutableList.copyOf(successContentlet),
-					ImmutableList.copyOf(skipContentlet),
-					ImmutableList.copyOf(failContentlet)
-			);
+			final List<Contentlet> contentlets = findContentletsToProcess(inodes,
+					workflowAssociatedStepIds, user);
+			long skipsCount = (inodes.size() - contentlets.size());
+			return distributeWorkAndProcess(action, user, contentlets, skipsCount);
 		} catch (Exception e) {
-			Logger.error(getClass(), "Error firing action bulk.", e);
+			Logger.error(getClass(), "Error firing actions in bulk.", e);
 			throw new DotDataException(e);
 		}
 
 	}
 
+	/**
+	 * This version of the method deals with a large selection of items which gets translated into a
+	 * lucene query
+	 */
+	private BulkActionsResultView fireBulkActionsTaskForQuery(final WorkflowAction action,
+			final User user,
+			final String luceneQuery, final Set<String> workflowAssociatedStepsIds)
+			throws DotDataException {
+
+		try {
+			final List<Contentlet> contentlets = findContentletsToProcess(luceneQuery,
+					workflowAssociatedStepsIds, user);
+			Long skipsCount = computeSkippedContentletsCount(luceneQuery, workflowAssociatedStepsIds,
+					user);
+			return distributeWorkAndProcess(action, user, contentlets, skipsCount);
+		} catch (Exception e) {
+			Logger.error(getClass(), "Error firing actions in bulk.", e);
+			throw new DotDataException(e);
+		}
+
+	}
+
+	/**
+	 * This method takes the contentlets that are the result of a selection made on the UI or the
+	 * product of a luceneQuery The list then gets partitioned and distributed between the list of
+	 * available workers (threads).
+	 * @param action
+	 * @param user
+	 * @param contentlets
+	 * @param skipsCount
+	 * @return
+	 */
+	private BulkActionsResultView distributeWorkAndProcess(final WorkflowAction action,
+			final User user, final List<Contentlet> contentlets, final Long skipsCount) {
+		final DotSubmitter submitter = this.concurrentFactory
+				.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
+
+		final AtomicLong successCount = new AtomicLong();
+		final AtomicLong failsCount = new AtomicLong();
+
+		final List<Future> futures = new ArrayList<>();
+
+		final List<List<Contentlet>> partitions = partitionContentletInput(contentlets);
+
+		for (final List<Contentlet> partition : partitions) {
+			futures.add(
+					submitter.submit(() -> fireBulkActionTasks(action, user, partition,
+							successCount::addAndGet, failsCount::addAndGet))
+			);
+		}
+
+		for (final Future future : futures) {
+			try {
+				future.get();
+			} catch (InterruptedException | ExecutionException e) {
+				Logger.error(this, e.getMessage(), e);
+			}
+		}
+
+		return new BulkActionsResultView(
+				successCount.get(),
+				skipsCount,
+				failsCount.get()
+		);
+	}
+
+
+	/**
+	 * Takes a input list of contentlets and creates sub groups to distribute the workload
+	 */
+	private List<List<Contentlet>> partitionContentletInput(final List<Contentlet> contentlets) {
+		int partitionSize = Math
+				.max((contentlets.size() / MAX_THREADS_ALLOWED_TO_HANDLE_BULK_ACTIONS), 10);
+
+		Logger.info(getClass(),
+				String.format(
+						"Number of threads is limited to %d. Number of Contentlets to process is %d. Load will be distributed in bunches of %d ",
+						MAX_THREADS_ALLOWED_TO_HANDLE_BULK_ACTIONS, contentlets.size(),
+						partitionSize)
+		);
+		return Lists.partition(contentlets, partitionSize);
+
+	}
+
+	private void fireBulkActionTasks(final WorkflowAction action,
+			final User user,
+			final List<Contentlet> contentlets,
+			final Consumer<Long> successConsumer,
+			final Consumer<Long> failConsumer) {
+
+		for (final Contentlet contentlet : contentlets) {
+			try {
+				fireBulkActionTask(action, user, contentlet, successConsumer, failConsumer);
+			} catch (Exception e) {
+				Logger.error(getClass(), "", e);
+			}
+		}
+	}
+
 	@WrapInTransaction
 	private void fireBulkActionTask(final WorkflowAction action,
 			final User user,
-			final String inode,
-			final Consumer<String> successConsumer,
-			final Consumer<String> failConsumer) {
+			final Contentlet contentlet,
+			final Consumer<Long> successConsumer,
+			final Consumer<Long> failConsumer) {
 		try {
 
+			Logger.debug(this,
+					() -> "Firing the action: " + action + " to the inode: " + contentlet
+							.getInode());
 
-				Logger.debug(this,
-						() -> "Firing the action: " + action + " to the inode: " + inode);
-				final Contentlet contentlet = this.contentletAPI.find(inode, user, false);
-				if (null != contentlet) {
+			final String successInode = this.fireContentWorkflow(contentlet,
+					new ContentletDependencies.Builder()
+							.respectAnonymousPermissions(false)
+							.generateSystemEvent(false)
+							.modUser(user)
+							.workflowActionId(action.getId()).build()
+			).getInode();
 
-						final String successInode = this.fireContentWorkflow(contentlet,
-								new ContentletDependencies.Builder()
-										.respectAnonymousPermissions(false)
-										.generateSystemEvent(false)
-										.modUser(user)
-										.workflowActionId(action.getId()).build()
-						).getInode();
-
-						Logger.debug(this, () -> "Successfully fired the contentlet: " + inode +
-								", success inode: " + successInode);
-						successConsumer.accept(successInode);
-
-				} else {
-
-					Logger.error(this,
-							"fireBulkActionTask, The contentlet does not exists: " + inode);
-				}
+			Logger.debug(this, () -> "Successfully fired the contentlet: " + contentlet.getInode() +
+					", success inode: " + successInode);
+			successConsumer.accept(1L);
 
 		} catch (Exception e) {
-
 			Logger.error(this, e.getMessage(), e);
-			failConsumer.accept(inode);
-			// throw new RollbackException (e); // todo: we need to stop the transaction but we do not want to stop the whole process needs to continue with the next contentlet
-			// one idea could be check this on the LocalTransaction but not throw it, keep quiet.
+			failConsumer.accept(1L);
 		}
 	}
 

@@ -718,12 +718,15 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>&nbsp;&nbsp;
+                        </div>
+                        <% if ( enterprise ) { %>
+                        &nbsp;&nbsp;
                         <div class="portlet-toolbar__actions-secondary">
                             <button id="bulkAvailableActions" dojoType="dijit.form.Button" onClick="doShowAvailableActions();" iconClass="actionIcon" >
                                 <%= LanguageUtil.get(pageContext, "Available-actions")%>
                             </button>
                         </div>
+                        <% } %>
 
                         <div id="matchingResultsDiv" style="display: none" class="portlet-toolbar__info"></div>
                         <div class="portlet-toolbar__actions-primary">

@@ -98,7 +98,7 @@ public class WorkflowHelper {
                     // 1) case with contentlet ids
                     this.findBulkActionByContentlets(bulkActionForm.getContentletIds(), user):
                     // 2) case when the user checks all (using a query)
-                    this.findBulkActionByQuery      (bulkActionForm.getQuery(), user);
+                    this.findBulkActionByQuery(bulkActionForm.getQuery(), user);
     }
 
     private BulkActionView findBulkActionByQuery(final String luceneQuery,
@@ -160,9 +160,10 @@ public class WorkflowHelper {
             stepActionsMap.put(step, this.workflowAPI.findActions(step.getWorkflowStep(), user));
         }
 
-        return (stepCounts.size() > 0)?
-            this.buildBulkActionView(stepActionsMap):
-            new BulkActionView(Collections.emptyMap());
+        return (stepCounts.size() > 0 ?
+            this.buildBulkActionView(stepActionsMap) :
+            new BulkActionView(Collections.emptyMap())
+        );
     }
 
     private BulkActionView buildBulkActionView (final Map<CountWorkflowStep, List<WorkflowAction>> stepActionsMap) throws DotSecurityException, DotDataException {
@@ -182,7 +183,7 @@ public class WorkflowHelper {
             for (final WorkflowAction action : entry.getValue()) {
 
                 actionCountMap.put(action.getId(),
-                        actionCountMap.getOrDefault(action.getId(), 0l) + stepCount);
+                        actionCountMap.getOrDefault(action.getId(), 0L) + stepCount);
             }
         }
 
@@ -207,6 +208,10 @@ public class WorkflowHelper {
 
     public Future<BulkActionsResultView> fireBulkActions(final FireBulkActionsForm form,
                                                          final User user) throws DotSecurityException, DotDataException {
+
+        if (!workflowAPI.hasValidLicense()) {
+            throw new InvalidLicenseException("Workflow-Schemes-License-required");
+        }
 
         final WorkflowAction action = this.workflowAPI.findAction(form.getWorkflowActionId(), user);
         if(null != action) {
