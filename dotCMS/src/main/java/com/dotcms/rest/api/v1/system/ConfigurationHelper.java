@@ -56,7 +56,10 @@ public class ConfigurationHelper implements Serializable {
 	public static final String VERSION = "version";
 	public static final String BUILD_DATE = "buildDate";
 	public static final String EMAIL_REGEX = "emailRegex";
-	public static final String PRIMARY_COLOR = "primaryColor";
+	public static final String BACKGROUND_COLOR = "background";
+	public static final String PRIMARY_COLOR = "primary";
+	public static final String SECONDARY_COLOR = "secondary";
+	public static final String COLORS = "colors";
 	public static ConfigurationHelper INSTANCE = new ConfigurationHelper();
 
 	/**
@@ -79,14 +82,18 @@ public class ConfigurationHelper implements Serializable {
 	 */
 	public Map<String, Object> getConfigProperties(final HttpServletRequest request, final Locale locale) throws LanguageException {
 
-	    String primaryColor = "#0e80cb";
-	    
+	    String backgroundColor = "NA";
+		String primaryColor = "NA";
+		String secondaryColor = "NA";
 
-        try {
-            primaryColor= APILocator.getCompanyAPI().getCompany().getSize();
-        } catch (SystemException | PortalException e) {
-            Logger.warn(this.getClass(), "unable to get color:" +e.getMessage());
-        }
+
+	    try {
+			backgroundColor = APILocator.getCompanyAPI().getDefaultCompany().getSize();
+			primaryColor = APILocator.getCompanyAPI().getDefaultCompany().getType();
+			secondaryColor = APILocator.getCompanyAPI().getDefaultCompany().getStreet();
+		}catch(Exception e){
+			Logger.warn(this.getClass(), "unable to get color:" +e.getMessage());
+		}
 
 		return map(
 				DOTCMS_WEBSOCKET_PROTOCOL,
@@ -123,7 +130,12 @@ public class ConfigurationHelper implements Serializable {
 						BUILD_DATE,        ReleaseInfo.getBuildDateString()
 				),
 				EMAIL_REGEX, Constants.REG_EX_EMAIL,
-				PRIMARY_COLOR,primaryColor
+				COLORS,
+				map(
+					BACKGROUND_COLOR, backgroundColor,
+					PRIMARY_COLOR, primaryColor,
+					SECONDARY_COLOR, secondaryColor
+				)
 		);
 	}
 

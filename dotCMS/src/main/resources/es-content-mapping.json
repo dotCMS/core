@@ -66,6 +66,15 @@
                 }
             },
             {
+                "wfstep" : {
+                    "match": "wfstep",
+                    "mapping": {
+                        "type": "keyword",
+                        "doc_values": true
+                    }
+                }
+            },
+            {
                 "textmapping": {
                     "match_mapping_type": "string",
                     "mapping": {

@@ -115,7 +115,7 @@ public class WorkflowHelper {
                 + "    \"aggs\" : {\n"
                 + "        \"tag\" : {\n"
                 + "            \"terms\" : {\n"
-                + "                \"field\" : \"wfstep_dotraw\",\n"
+                + "                \"field\" : \"wfstep\",\n"
                 + "                \"size\" : 1000  \n"
                 + "            }\n"
                 + "        }\n"

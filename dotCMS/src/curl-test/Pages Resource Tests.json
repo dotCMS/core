@@ -326,7 +326,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "22f6bdce-233a-4c44-9c0b-104ce314362e",
+								"id": "fea8cb7e-1c13-432c-9acf-3f5ab66caccb",
 								"type": "text/javascript",
 								"exec": [
 									"",
@@ -341,7 +341,7 @@
 									"});",
 									"",
 									"pm.test(\"Response body contains\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"uuid-1\");",
+									"    pm.expect(pm.response.text()).to.include(\"uuid\");",
 									"});",
 									""
 								]
@@ -393,7 +393,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "60393960-cf50-449a-8261-2651eee839f7",
+								"id": "8baa5207-fc13-4a97-b86d-170b5b2b2074",
 								"type": "text/javascript",
 								"exec": [
 									"",
@@ -403,7 +403,7 @@
 									"",
 									"",
 									"pm.test(\"Response body contains\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"Page not found\");",
+									"    pm.expect(pm.response.text()).to.include(\"is not found\");",
 									"});",
 									"",
 									""
@@ -721,7 +721,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "7e327087-1d86-41b1-ac03-1cf5dde67185",
+								"id": "74b443a9-5159-4eb6-8882-103877ef54fa",
 								"type": "text/javascript",
 								"exec": [
 									"",
@@ -732,7 +732,7 @@
 									"",
 									"",
 									"pm.test(\"Response body contains\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"Page not found\");",
+									"    pm.expect(pm.response.text()).to.include(\"not found\");",
 									"});",
 									"",
 									""
@@ -790,18 +790,18 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "34349459-947f-419d-ac11-7c637db54639",
+								"id": "6caa4cb3-f829-47da-8a44-c8d6572ddcc6",
 								"type": "text/javascript",
 								"exec": [
 									"",
-									"pm.test(\"Status code is 404\", function () {",
-									"    pm.response.to.have.status(404);",
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
 									"});",
 									"",
 									"",
 									"",
 									"pm.test(\"Response body contains\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"Invalid Body\");",
+									"    pm.expect(pm.response.text()).to.include(\"required\");",
 									"});",
 									"",
 									""
@@ -1127,17 +1127,17 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "005421ca-d134-473c-93d8-623f3f15d33e",
+								"id": "7c13bece-d440-4275-9dc1-4f818253e075",
 								"type": "text/javascript",
 								"exec": [
-									"pm.test(\"Status code is 403\", function () {",
-									"    pm.response.to.have.status(403);",
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
 									"});",
 									"",
 									"",
 									"",
 									"pm.test(\"Response body contains\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"User:dotcms.org.2806 does not have permissions\");",
+									"    pm.expect(pm.response.text()).to.include(\"not found\");",
 									"});",
 									"",
 									"",
@@ -1196,18 +1196,18 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "58feef4c-6e95-44a5-b74f-c639130e5544",
+								"id": "7ac328db-c8d9-41c1-9ff2-620969e3d431",
 								"type": "text/javascript",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 404\", function () {",
-									"    pm.response.to.have.status(404);",
+									"    pm.response.to.have.status(400);",
 									"});",
 									"",
 									"",
 									"",
 									"pm.test(\"Response body contains\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"Body\");",
+									"    pm.expect(pm.response.text()).to.include(\"required\");",
 									"});",
 									"",
 									""
@@ -1260,12 +1260,12 @@
 					"response": []
 				},
 				{
-					"name": "RequestWihoutParameters Copy",
+					"name": "BadRequest",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "58feef4c-6e95-44a5-b74f-c639130e5544",
+								"id": "0203c365-047e-4081-88d6-3bf273277574",
 								"type": "text/javascript",
 								"exec": [
 									"",
@@ -1276,7 +1276,7 @@
 									"",
 									"",
 									"pm.test(\"Response body contains\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"Body\");",
+									"    pm.expect(pm.response.text()).to.include(\"not found\");",
 									"});",
 									"",
 									""
@@ -1309,7 +1309,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "[{\"id2\":\"56bd55ea-b04b-480d-9e37-5d6f9217dcc3\",\"uuid\":\"1\",\"contentlets\":[\"767509b1-2392-4661-a16b-e0e31ce27719\",\"3c30df49-ea78-417a-93ce-631cd25bc66c\"]},{\"id\":\"5363c6c6-5ba0-4946-b7af-cf875188ac2e\",\"uuid\":\"1\",\"contentlets\":[\"2efc77b4-a54f-479b-8a81-a133b9e6da04\",\"5aef0c62-b7d6-4805-9e7c-77a67f4822f3\",\"66d47ebf-7b11-4076-85b0-b6c8c373d000\"]}]"
+							"raw": "[{\"id\":\"56bd55ea-b04b-480d-9e37-5d6f9217dcc3\",\"uuid\":\"1\",\"contentlets\":[\"767509b1-2392-4661-a16b-e0e31ce27719\",\"3c30df49-ea78-417a-93ce-631cd25bc66c\"]},{\"id\":\"5363c6c6-5ba0-4946-b7af-cf875188ac2e\",\"uuid\":\"1\",\"contentlets\":[\"2efc77b4-a54f-479b-8a81-a133b9e6da04\",\"5aef0c62-b7d6-4805-9e7c-77a67f4822f3\",\"66d47ebf-7b11-4076-85b0-b6c8c373d000\"]}]"
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/page/2c12fe7e6-d338-49d5-973b-2d974d57015b/content",
@@ -1390,7 +1390,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "5e4435c4-6647-4389-8671-eafb5c1e5df3",
+								"id": "609e169d-e92d-4f55-a1b9-7193064e035e",
 								"type": "text/javascript",
 								"exec": [
 									"",
@@ -1402,11 +1402,7 @@
 									"",
 									"",
 									"pm.test(\"Include template\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"template\");",
-									"});",
-									"",
-									"pm.test(\"Inlude layout\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"layout\");",
+									"    pm.expect(pm.response.text()).to.include(\"body\");",
 									"});",
 									"",
 									"",
@@ -1531,12 +1527,12 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "5be69de6-228b-4178-a4f9-95b630d594dc",
+								"id": "c409fc37-784f-47c3-a84c-d6b7a35b30c2",
 								"type": "text/javascript",
 								"exec": [
 									"",
-									"pm.test(\"Status code is 401\", function () {",
-									"    pm.response.to.have.status(401);",
+									"pm.test(\"Status code is 403\", function () {",
+									"    pm.response.to.have.status(403);",
 									"});",
 									"",
 									"",
@@ -1621,7 +1617,7 @@
 	],
 	"variable": [
 		{
-			"id": "7b421751-8968-428d-ab62-7b89cb371b5f",
+			"id": "518c9428-019a-4f13-80f5-ab48226df65b",
 			"key": "serverURL",
 			"value": "http://localhost:8080",
 			"type": "string",

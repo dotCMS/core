@@ -5,6 +5,7 @@
  */
 package com.dotmarketing.util;
 
+import com.dotmarketing.loggers.Log4jUtil;
 import org.apache.logging.log4j.LogManager;
 
 import java.io.File;
@@ -19,6 +20,9 @@ import org.apache.velocity.tools.view.tools.ViewTool;
  */
 public class Logger{
 
+	static {
+		Log4jUtil.configureDefaultSystemProperties();
+	}
 	private static WeakHashMap<Class, org.apache.logging.log4j.Logger> map = new WeakHashMap<>();
 
 	public static void clearLoggers(){
