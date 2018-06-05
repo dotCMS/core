@@ -1,3 +1,4 @@
+<%@page import="com.dotcms.contenttype.model.type.ContentType"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotmarketing.beans.Host"%>
 <%@page import="com.dotcms.listeners.SessionMonitor"%>
@@ -37,7 +38,7 @@ String referer = java.net.URLEncoder.encode(com.dotmarketing.util.PortletURLUtil
 CmsMaintenanceForm CMF = (com.dotmarketing.portlets.cmsmaintenance.struts.CmsMaintenanceForm) request.getAttribute("CmsMaintenanceForm");
 
 ContentletIndexAPI idxApi = APILocator.getContentletIndexAPI();
-List<Structure> structs = StructureFactory.getStructures();
+List<ContentType> structs = APILocator.getContentTypeAPI(APILocator.systemUser()).findAll("name");
 %>
 <script type="text/javascript" src="/dwr/engine.js"></script>
 <script type="text/javascript" src="/dwr/util.js"></script>
@@ -1395,8 +1396,8 @@ dd.leftdl {
                                     <option><%= LanguageUtil.get(pageContext,"Rebuild-Whole-Index") %></option>
                                     <%
 
-                                        for(Structure structure : structs){%>
-                                        <option><%=structure.getVelocityVarName()%></option>
+                                        for(ContentType type : structs){%>
+                                        <option><%=type.name()%></option>
                                     <%}%>
                                 </select>
 
