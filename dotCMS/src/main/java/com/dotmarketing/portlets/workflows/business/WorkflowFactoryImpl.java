@@ -33,19 +33,22 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.poi.ss.formula.functions.T;
+import org.apache.commons.lang3.ClassUtils;
 
 
 /**
@@ -88,6 +91,16 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	private Object convert(Object obj, Map<String, Object> map) throws IllegalAccessException, InvocationTargetException {
 		BeanUtils.copyProperties(obj, map);
 		return obj;
+	}
+
+	/**
+	 * Simply extracts a value from the query
+	 * Which is obviously a primitive
+	 * @param map
+	 * @return
+	 */
+	private Object convertPrimitive(Map<String, Object> map) {
+		return map.get("value");
 	}
 
 	/**
@@ -178,6 +191,10 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		if(ContentType.class.equals(clazz)){
 			//Content type is an abstract class therefore it can not be instantiated directly
 			return new DbContentTypeTransformer(map).from();
+		}
+
+		if( String.class.equals(clazz) || ClassUtils.isPrimitiveOrWrapper(clazz)){
+			return this.convertPrimitive(map);
 		}
 
 		final Object obj = clazz.newInstance();
@@ -1189,7 +1206,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	 * @return
 	 * @throws DotDataException
 	 */
-	private List<WorkflowStep> findProxiesSteps(final WorkflowAction action) throws DotDataException {
+	public List<WorkflowStep> findProxiesSteps(final WorkflowAction action) throws DotDataException {
 
 		final ImmutableList.Builder<WorkflowStep> stepsBuilder =
 				new ImmutableList.Builder<>();
@@ -1882,6 +1899,36 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			throw new DotDataException(e.getMessage(), e);
 		}
 		return tasks;
+	}
+
+	@Override
+	public Set<String> findInodesBySteps(final Iterable<String> stepIds) throws DotDataException {
+		List<String> tasks;
+		final DotConnect dc = new DotConnect();
+		try {
+			String preparedSql = sql.SELECT_INODES_BY_STEP;
+
+			final StringBuilder stringBuilder = new StringBuilder();
+			final Iterator iterator = stepIds.iterator();
+			while (iterator.hasNext()){
+				iterator.next();
+				stringBuilder.append("?");
+				if(iterator.hasNext()){
+					stringBuilder.append(",");
+				}
+			}
+
+			preparedSql = preparedSql.replace("?",stringBuilder.toString());
+			dc.setSQL(preparedSql);
+			for(String stepId:stepIds) {
+				dc.addParam(stepId);
+			}
+			tasks = this.convertListToObjects(dc.loadObjectResults(), String.class);
+		} catch (DotDataException e) {
+			Logger.error(WorkFlowFactory.class,e.getMessage(),e);
+			throw new DotDataException(e.getMessage(), e);
+		}
+		return ImmutableSet.<String>builder().addAll(tasks).build();
 	}
 
 	@Override

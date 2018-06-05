@@ -1,19 +1,40 @@
 package com.dotcms.workflow.helper;
 
+import static com.dotcms.rest.api.v1.authentication.ResponseUtil.getFormattedMessage;
+import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
+import com.dotcms.rest.api.v1.workflow.BulkActionView;
+import com.dotcms.rest.api.v1.workflow.BulkActionsResultView;
+import com.dotcms.rest.api.v1.workflow.CountWorkflowAction;
+import com.dotcms.rest.api.v1.workflow.CountWorkflowStep;
 import com.dotcms.rest.api.v1.workflow.WorkflowDefaultActionView;
-import com.dotcms.workflow.form.*;
+import com.dotcms.util.CollectionsUtils;
+import com.dotcms.workflow.form.BulkActionForm;
+import com.dotcms.workflow.form.FireBulkActionsForm;
+import com.dotcms.workflow.form.IWorkflowStepForm;
+import com.dotcms.workflow.form.WorkflowActionForm;
+import com.dotcms.workflow.form.WorkflowActionStepBean;
+import com.dotcms.workflow.form.WorkflowReorderBean;
+import com.dotcms.workflow.form.WorkflowSchemeForm;
+import com.dotcms.workflow.form.WorkflowStepAddForm;
+import com.dotcms.workflow.form.WorkflowStepUpdateForm;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.exception.*;
+import com.dotmarketing.exception.AlreadyExistException;
+import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet;
@@ -33,15 +54,21 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.Future;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang.time.StopWatch;
-
-import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.Future;
-
-import static com.dotcms.rest.api.v1.authentication.ResponseUtil.getFormattedMessage;
-import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
+import org.elasticsearch.search.aggregations.Aggregation;
+import org.elasticsearch.search.aggregations.Aggregations;
+import org.elasticsearch.search.aggregations.bucket.terms.StringTerms;
 
 
 /**
@@ -55,6 +82,143 @@ public class WorkflowHelper {
     private final ContentletAPI contentletAPI;
     private final PermissionAPI permissionAPI;
     private final WorkflowImportExportUtil workflowImportExportUtil;
+
+    /**
+     * Finds the bulk actions based on the {@link BulkActionForm}
+     * @param user {@link User}
+     * @param bulkActionForm {@link BulkActionForm}
+     * @return BulkActionView
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    public BulkActionView findBulkActions(final User user,
+                                          final BulkActionForm bulkActionForm) throws DotSecurityException, DotDataException {
+
+        return (UtilMethods.isSet(bulkActionForm.getContentletIds()))?
+                    // 1) case with contentlet ids
+                    this.findBulkActionByContentlets(bulkActionForm.getContentletIds(), user):
+                    // 2) case when the user checks all (using a query)
+                    this.findBulkActionByQuery      (bulkActionForm.getQuery(), user);
+    }
+
+    private BulkActionView findBulkActionByQuery(final String luceneQuery,
+                                                 final User user) throws DotDataException, DotSecurityException {
+
+        //We should only be considering Working content.
+        final String query = "{\n"
+                + "    \"query\" : { \n"
+                + "        \"query_string\" : {\n"
+                + "            \"query\" : \"" + luceneQuery + "\"\n"
+                + "        } \n"
+                + "\n"
+                + "    },\n"
+                + "    \"aggs\" : {\n"
+                + "        \"tag\" : {\n"
+                + "            \"terms\" : {\n"
+                + "                \"field\" : \"wfstep_dotraw\",\n"
+                + "                \"size\" : 1000  \n"
+                + "            }\n"
+                + "        }\n"
+                + "    },\n"
+                + "\t\"size\":0   \n"
+                + "}";
+        final ESSearchResults results = this.contentletAPI.esSearch(query, false, user, false);
+
+        return this.buildBulkActionView(results, user);
+    }
+
+    private BulkActionView findBulkActionByContentlets(final List<String> contentletIds,
+                                                       final User     user) throws DotSecurityException, DotDataException {
+
+        final String luceneQuery = "+inode:(" + String.join(" ", contentletIds) + ")";
+        return this.findBulkActionByQuery(luceneQuery, user);
+    }
+
+    private BulkActionView buildBulkActionView (final ESSearchResults results,
+                                                final User user) throws DotDataException, DotSecurityException {
+
+        final Aggregations aggregations     = results.getAggregations();
+        final Map<String, Long> stepCounts  = new HashMap<>();
+
+        for (final Aggregation aggregation : aggregations.asList()) {
+
+            if (aggregation instanceof StringTerms) {
+                StringTerms.class.cast(aggregation)
+                        .getBuckets().forEach
+                            (bucket -> stepCounts.put(bucket.getKeyAsString(), bucket.getDocCount()));
+            }
+        }
+
+        final Map<CountWorkflowStep, List<WorkflowAction>> stepActionsMap = new HashMap<>();
+
+        for (final Map.Entry<String, Long> stepCount : stepCounts.entrySet()) {
+
+            final CountWorkflowStep step =
+                    new CountWorkflowStep(stepCount.getValue(),
+                            this.workflowAPI.findStep(stepCount.getKey()));
+
+            stepActionsMap.put(step, this.workflowAPI.findActions(step.getWorkflowStep(), user));
+        }
+
+        return (stepCounts.size() > 0)?
+            this.buildBulkActionView(stepActionsMap):
+            new BulkActionView(Collections.emptyMap());
+    }
+
+    private BulkActionView buildBulkActionView (final Map<CountWorkflowStep, List<WorkflowAction>> stepActionsMap) throws DotSecurityException, DotDataException {
+
+        final Map<String, WorkflowScheme> schemeByIdMap  = new HashMap<>();
+        final Map<String, Long>           actionCountMap = new HashMap<>();
+        final Map<WorkflowScheme, Map<CountWorkflowStep, List<CountWorkflowAction>>> bulkActions = new HashMap<>();
+
+        for (final Map.Entry<CountWorkflowStep, List<WorkflowAction>> entry : stepActionsMap.entrySet()) {
+
+            if (!schemeByIdMap.containsKey(entry.getKey().getWorkflowStep().getSchemeId())) {
+                schemeByIdMap.put(entry.getKey().getWorkflowStep().getSchemeId(),
+                        this.workflowAPI.findScheme(entry.getKey().getWorkflowStep().getSchemeId()));
+            }
+
+            final Long stepCount = entry.getKey().getCount();
+            for (final WorkflowAction action : entry.getValue()) {
+
+                actionCountMap.put(action.getId(),
+                        actionCountMap.getOrDefault(action.getId(), 0l) + stepCount);
+            }
+        }
+
+        for (final Map.Entry<CountWorkflowStep, List<WorkflowAction>> entry : stepActionsMap.entrySet()) {
+
+            final CountWorkflowStep step = entry.getKey();
+            final WorkflowScheme scheme  = schemeByIdMap.get(step.getWorkflowStep().getSchemeId());
+            final List<CountWorkflowAction> actions = entry.getValue().stream()
+                    .map(action -> new CountWorkflowAction(actionCountMap.get(action.getId()), action))
+                    .collect(CollectionsUtils.toImmutableList());
+
+            final Map<CountWorkflowStep, List<CountWorkflowAction>> schemeActionsMap =
+                        (bulkActions.containsKey(scheme))? bulkActions.get(scheme):new HashMap<>();
+
+            schemeActionsMap.put(step, actions);
+
+            bulkActions.put(scheme, schemeActionsMap);
+        }
+
+        return new BulkActionView(bulkActions);
+    }
+
+    public Future<BulkActionsResultView> fireBulkActions(final FireBulkActionsForm form,
+                                                         final User user) throws DotSecurityException, DotDataException {
+
+        final WorkflowAction action = this.workflowAPI.findAction(form.getWorkflowActionId(), user);
+        if(null != action) {
+            if(UtilMethods.isSet(form.getQuery())){
+                return this.workflowAPI.fireBulkActions(action, user, form.getQuery());
+            }
+            return this.workflowAPI.fireBulkActions(action, user, form.getContentletIds());
+        } else {
+            throw new DoesNotExistException("Workflow-does-not-exists-action");
+        }
+    }
+
 
     private static class SingletonHolder {
         private static final WorkflowHelper INSTANCE = new WorkflowHelper();

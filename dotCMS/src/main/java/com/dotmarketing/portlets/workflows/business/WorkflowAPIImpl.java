@@ -8,6 +8,7 @@ import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ErrorEntity;
+import com.dotcms.rest.api.v1.workflow.BulkActionsResultView;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.FriendClass;
@@ -35,6 +36,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.osgi.HostActivator;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
@@ -100,7 +102,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.annotation.Nullable;
 import org.apache.commons.lang.time.StopWatch;
@@ -143,6 +149,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	private static final boolean RESPECT_FRONTEND_ROLES = WorkflowActionUtils.RESPECT_FRONTEND_ROLES;
 
 	private final WorkflowActionUtils workflowActionUtils;
+
+	private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public WorkflowAPIImpl() {
@@ -1834,7 +1842,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			task.setTitle(processor.getContentlet().getTitle());
 		}
 
-
 		if(processor.getWorkflowMessage() != null){
 			WorkflowComment comment = new WorkflowComment();
 			comment.setComment(processor.getWorkflowMessage());
@@ -1842,6 +1849,133 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			saveComment(comment);
 		}
 
+	}
+
+	public Future<BulkActionsResultView> fireBulkActions(final WorkflowAction action, final User user, final String luceneQuery){
+		try {
+			List<Contentlet> contentletList = APILocator.getContentletAPI()
+					.search(luceneQuery, -1, 0, null, user, false);
+
+			 final List<String> inodes = contentletList.stream().map(Contentlet::getInode).collect(Collectors.toList());
+			 return fireBulkActions(action, user, inodes);
+
+		}catch (DotDataException | DotSecurityException e){
+           throw new DotRuntimeException(e);
+		}
+	}
+
+	public Future<BulkActionsResultView> fireBulkActions(final WorkflowAction action, final User user, final List<String> contentletIds) {
+
+		if (!hasValidLicense()) {
+			throw new InvalidLicenseException("Workflow-Schemes-License-required");
+		}
+
+		if (null == action){
+			Logger.warn(this, "Does not exists the action");
+			throw new DoesNotExistException("Workflow-does-not-exists-action");
+		}
+
+		final DotSubmitter submitter = this.concurrentFactory.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
+		return submitter.submit(() -> fireBulkActionsTask(action, user, contentletIds));
+	}
+
+	private BulkActionsResultView fireBulkActionsTask(final WorkflowAction action, final User user,
+			final List<String> contentletIds) throws DotDataException {
+
+		try {
+			final List<String> successContentlet = new CopyOnWriteArrayList<>();
+			final List<String> failContentlet = new CopyOnWriteArrayList<>();
+			final List<String> skipContentlet = new ArrayList<>();
+
+			final List<Future> futures = new ArrayList<>();
+
+            final Set<String> workflowAssociatedStepsIds =
+					workFlowFactory.findProxiesSteps(action).stream().map(WorkflowStep::getId).collect(Collectors.toSet());
+
+			final Set<String> inodes = workFlowFactory.findInodesBySteps(workflowAssociatedStepsIds);
+
+			final DotSubmitter submitter = this.concurrentFactory
+					.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
+
+			for (final String contentletId : contentletIds) {
+				if ( inodes.contains(contentletId)) {
+
+					futures.add(
+							submitter
+									.submit(() -> fireBulkActionTask(action, user, contentletId,
+											successContentlet::add,
+											failContentlet::add
+											)
+									)
+					);
+				} else {
+					Logger.debug(this, () -> "Skipped the contentlet: " + contentletId +
+							", b/c schemes are diff. The action scheme is: " + action
+							.getSchemeId()
+							);
+					skipContentlet.add(contentletId);
+				}
+			}
+
+			for (Future future : futures) {
+				try {
+					future.get();
+				} catch (InterruptedException | ExecutionException e) {
+					Logger.error(this, e.getMessage(), e);
+				}
+			}
+
+			return new BulkActionsResultView(
+					ImmutableList.copyOf(successContentlet),
+					ImmutableList.copyOf(skipContentlet),
+					ImmutableList.copyOf(failContentlet)
+			);
+		} catch (Exception e) {
+			Logger.error(getClass(), "Error firing action bulk.", e);
+			throw new DotDataException(e);
+		}
+
+	}
+
+	@WrapInTransaction
+	private void fireBulkActionTask(final WorkflowAction action,
+			final User user,
+			final String inode,
+			final Consumer<String> successConsumer,
+			final Consumer<String> failConsumer) {
+		try {
+
+
+				Logger.debug(this,
+						() -> "Firing the action: " + action + " to the inode: " + inode);
+				final Contentlet contentlet = this.contentletAPI.find(inode, user, false);
+				if (null != contentlet) {
+
+						final String successInode = this.fireContentWorkflow(contentlet,
+								new ContentletDependencies.Builder()
+										.respectAnonymousPermissions(false)
+										.generateSystemEvent(false)
+										.modUser(user)
+										.workflowActionId(action.getId()).build()
+						).getInode();
+
+						Logger.debug(this, () -> "Successfully fired the contentlet: " + inode +
+								", success inode: " + successInode);
+						successConsumer.accept(successInode);
+
+				} else {
+
+					Logger.error(this,
+							"fireBulkActionTask, The contentlet does not exists: " + inode);
+				}
+
+		} catch (Exception e) {
+
+			Logger.error(this, e.getMessage(), e);
+			failConsumer.accept(inode);
+			// throw new RollbackException (e); // todo: we need to stop the transaction but we do not want to stop the whole process needs to continue with the next contentlet
+			// one idea could be check this on the LocalTransaction but not throw it, keep quiet.
+		}
 	}
 
 	@WrapInTransaction

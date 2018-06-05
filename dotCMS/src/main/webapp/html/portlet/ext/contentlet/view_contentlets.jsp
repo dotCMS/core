@@ -488,6 +488,11 @@
 
     });
 </script>
+
+
+<%@ include file="/html/portlet/ext/contentlet/view_available_actions_inc.jsp" %>
+
+
 <form method="Post" action="" id="search_form" onsubmit="doSearch();return false;">
 
     <input type="hidden" name="fullCommand" id="fullCommand" value="">
@@ -542,13 +547,13 @@
                     <div id="advancedSearchOptions" style="height:0px;overflow: hidden">
 
                         <dl class="vertical">
-                            <dt><label>Scheme:</label></dt>
+                            <dt><label><%= LanguageUtil.get(pageContext, "Workflow-Schemes") %>:</label></dt>
                             <dd><span id="schemeSelectBox"></span></dd>
                             <div class="clear"></div>
                         </dl>
 
                         <dl class="vertical">
-                            <dt><label>Step:</label></dt>
+                            <dt><label><%= LanguageUtil.get(pageContext, "Step") %>:</label></dt>
                             <dd><span id="stepSelectBox"></span></dd>
                             <div class="clear"></div>
                         </dl>
@@ -653,6 +658,7 @@
                     <!-- START Listing Results -->
                     <input type="hidden" name="referer" value="<%=referer%>">
                     <input type="hidden" name="cmd" value="prepublish">
+
                     <div class="portlet-toolbar">
                         <div class="portlet-toolbar__actions-secondary" id="portletActions">
                             <div id="archiveButtonDiv" style="display:none">
@@ -712,7 +718,13 @@
                                     </div>
                                 </div>
                             </div>
+                        </div>&nbsp;&nbsp;
+                        <div class="portlet-toolbar__actions-secondary">
+                            <button id="bulkAvailableActions" dojoType="dijit.form.Button" onClick="doShowAvailableActions();" iconClass="actionIcon" >
+                                <%= LanguageUtil.get(pageContext, "Available-actions")%>
+                            </button>
                         </div>
+
                         <div id="matchingResultsDiv" style="display: none" class="portlet-toolbar__info"></div>
                         <div class="portlet-toolbar__actions-primary">
                             <div data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"actionIcon", class:"dijitDropDownActionButton"'>

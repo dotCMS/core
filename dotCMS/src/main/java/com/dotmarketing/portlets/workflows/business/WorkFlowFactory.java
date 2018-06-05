@@ -18,6 +18,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.liferay.portal.model.User;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 
 /**
@@ -221,6 +222,8 @@ public interface WorkFlowFactory {
 
 	public void deleteActionClass(WorkflowActionClass actionClass) throws DotDataException, AlreadyExistException;
 
+	public List<WorkflowStep> findProxiesSteps(final WorkflowAction action) throws DotDataException;
+
 	public void saveActionClass(WorkflowActionClass actionClass) throws DotDataException, AlreadyExistException;
 
 	public Map<String, WorkflowActionClassParameter> findParamsForActionClass(WorkflowActionClass actionClass) throws DotDataException;
@@ -284,6 +287,14 @@ public interface WorkFlowFactory {
 	 * @throws DotSecurityException
 	 */
 	public List<WorkflowTask> findTasksByStep(String stepId) throws DotDataException, DotSecurityException;
+
+	/**
+	 *
+	 * @param stepIds
+	 * @return
+	 * @throws DotDataException
+	 */
+	public Set<String> findInodesBySteps(final Iterable<String> stepIds) throws DotDataException;
 
 	/**
 	 * Return the list of content types that uses the specified workflow scheme
