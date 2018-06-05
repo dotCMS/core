@@ -9,6 +9,7 @@ import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.PortletURLUtil;
 import com.liferay.portal.model.User;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * This {@link UrlStrategy} is for a Angular Reset Password.
@@ -40,7 +41,8 @@ public class AngularResetPasswordUrlStrategy implements UrlStrategy {
         final String token = (String) params.get(TOKEN);
 
         final String jwt = this.jsonWebTokenService.generateToken(
-                new JWTBean(user.getUserId(), token, user.getModificationDate(), this.jwtMillis
+                new JWTBean(UUID.randomUUID().toString(), token, user.getModificationDate(),
+                        this.jwtMillis
                 ));
 
         return java.text.MessageFormat.format(HTML_NG_RESET_PASSWORD_TRUE_USER_ID_0_TOKEN_1, jwt);

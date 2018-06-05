@@ -9,6 +9,7 @@ import com.dotmarketing.util.DateUtil;
 import com.liferay.portal.model.User;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * This {@link UrlStrategy} is the default one for the web site legacy site.
@@ -42,7 +43,8 @@ public class DefaultResetPasswordUrlStrategy implements UrlStrategy {
         final Locale locale = (Locale) params.get(LOCALE);
 
         final String jwt = this.jsonWebTokenService.generateToken(
-                new JWTBean(user.getUserId(), token, user.getModificationDate(), this.jwtMillis
+                new JWTBean(UUID.randomUUID().toString(), token, user.getModificationDate(),
+                        this.jwtMillis
                 ));
 
         return new StringBuilder(C_PORTAL_PUBLIC_LOGIN_MY_ACCOUNT_CMD_ERESET_MY_USER_ID)

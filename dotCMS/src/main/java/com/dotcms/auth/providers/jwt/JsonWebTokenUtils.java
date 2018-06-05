@@ -10,11 +10,9 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
-import com.liferay.portal.ejb.UserManagerUtil;
 import com.liferay.portal.model.User;
 import java.util.Date;
+import java.util.UUID;
 
 /**
  * Helper to get things in more simple way.
@@ -169,24 +167,22 @@ public class JsonWebTokenUtils {
 
     /**
      * Creates the Json Web Token based on the user
+     *
      * @param user User
      * @param jwtMaxAge int how much days to keep the token valid
      * @return String Json Web Token
      */
-    public String createToken(final User user, int jwtMaxAge) throws SystemException, PortalException {
+    public String createToken(final User user, int jwtMaxAge) {
 
-        final String encryptUserId
-                = UserManagerUtil.encryptUserId(user.getUserId());
-
-        return  this.jsonWebTokenService.generateToken(
-                        new JWTBean(encryptUserId,
-                                encryptUserId,
-                                user.getModificationDate(),
-                                (jwtMaxAge > 0)?
-                                        DateUtil.daysToMillis(jwtMaxAge):
-                                        jwtMaxAge
-                        )
-                );
+        return this.jsonWebTokenService.generateToken(
+                new JWTBean(UUID.randomUUID().toString(),
+                        user.getUserId(),
+                        user.getModificationDate(),
+                        (jwtMaxAge > 0) ?
+                                DateUtil.daysToMillis(jwtMaxAge) :
+                                jwtMaxAge
+                )
+        );
 
     } // getUserIdFromJsonWebToken
 
