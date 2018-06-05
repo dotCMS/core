@@ -5,16 +5,27 @@ import static org.mockito.Mockito.when;
 
 import com.dotcms.UnitTestBase;
 import com.dotcms.auth.providers.jwt.factories.impl.SecretKeySpecFactoryImpl;
+import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
 import javax.servlet.ServletContext;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
  * @author Jonathan Gamba 5/30/18
  */
+@PowerMockIgnore("javax.management.*")
+@PrepareForTest({ClusterFactory.class})
+@RunWith(PowerMockRunner.class)
 public class SecretKeySpecFactoryTest extends UnitTestBase {
+
+    final String clusterId = "CLUSTER-123";
 
     /**
      * Verifies the behaviour generating or using the secret inside the
@@ -25,6 +36,8 @@ public class SecretKeySpecFactoryTest extends UnitTestBase {
     public void readAndPrepareSecret() {
 
         //Mocking data
+        PowerMockito.mockStatic(ClusterFactory.class);
+        PowerMockito.when(ClusterFactory.getClusterId()).thenReturn(clusterId);
         Config.CONTEXT = mock(ServletContext.class);
         Config.CONTEXT_PATH = "/tmp";
         final FileAssetAPI fileAssetAPI = mock(FileAssetAPI.class);

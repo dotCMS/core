@@ -6,6 +6,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.Date;
 import java.util.Locale;
 
 import javax.servlet.http.HttpServletRequest;
@@ -68,7 +69,7 @@ public class ResetPasswordResourceTest extends UnitTestBase {
         final ResponseUtil mResponseUtil = mock(ResponseUtil.class);
         final JWTBean jwtBean = new JWTBean("dotcms.org.1",
                 "token",
-                "dotcms.org.1", 100000);
+                new Date(), 100000);
         final Locale locale = LocaleUtil.getLocale(request);
         when(jsonWebTokenService.parseToken(eq("token"))).thenReturn(jwtBean);
         when(mResponseUtil.getFormattedMessage(null,"reset-password-invalid-password")).thenReturn("");
@@ -87,7 +88,7 @@ public class ResetPasswordResourceTest extends UnitTestBase {
         ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
         final JWTBean jwtBean = new JWTBean("dotcms.org.1",
                 "eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiJkb3RjbXMub3JnLjEiLCJpYXQiOjE0NzM3MTE1OTIsInN1YiI6IlhJazdsUENYUkxWQmlQWWNJOTJpY01MbXVET1ZLeTE0NzM3MTE1OTI5MTIiLCJpc3MiOiJkb3RjbXMub3JnLjEiLCJleHAiOjE0NzM3MTI3OTJ9.65fqPIKHUdfk35uVPy4x9mzhvh2A1EW_UOF2oEc9DUM",
-                "dotcms.org.1", 100000);
+                new Date(), 100000);
         when(jsonWebTokenService.parseToken(eq("token"))).thenReturn(jwtBean);
         Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
         RestUtilTest.verifySuccessResponse(response);
