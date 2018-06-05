@@ -4,56 +4,65 @@ import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
+import com.dotcms.util.security.Encryptor;
+import com.dotcms.util.security.EncryptorFactory;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.cms.login.factories.LoginFactory;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.model.User;
 import com.liferay.portal.util.CookieKeys;
 import com.liferay.util.CookieUtil;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.io.IOException;
 
 /**
  * Default Auto Login implementation
+ *
  * @author jsanca
  */
 public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
 
     private final JsonWebTokenUtils jsonWebTokenUtils;
     private final LoginServiceAPI loginServiceAPI;
+    private Encryptor encryptor;
 
     public DefaultAutoLoginWebInterceptor() {
-        this(JsonWebTokenUtils.getInstance(), APILocator.getLoginServiceAPI());
+        this(JsonWebTokenUtils.getInstance(), APILocator.getLoginServiceAPI(),
+                EncryptorFactory.getInstance().getEncryptor());
     }
 
     public DefaultAutoLoginWebInterceptor(final JsonWebTokenUtils jsonWebTokenUtils,
-                                          final LoginServiceAPI loginServiceAPI) {
+            final LoginServiceAPI loginServiceAPI,
+            final Encryptor encryptor) {
 
         this.jsonWebTokenUtils = jsonWebTokenUtils;
         this.loginServiceAPI = loginServiceAPI;
+        this.encryptor = encryptor;
     }
 
     @Override
     public Result intercept(final HttpServletRequest request,
-                            final HttpServletResponse response) throws IOException {
+            final HttpServletResponse response) {
 
-        final HttpSession session  = request.getSession(false);
-        final String jwtCookieValue = CookieUtil.get
-                (request.getCookies(), CookieKeys.JWT_ACCESS_TOKEN);
-        final String encryptedId = this.jsonWebTokenUtils.getEncryptedUserId(jwtCookieValue);
+        final HttpSession session = request.getSession(false);
         Result result = Result.NEXT;
 
-        if (((session != null && session.getAttribute(WebKeys.CMS_USER) == null) || session == null) &&
-                UtilMethods.isSet(encryptedId)) {
+        if ((null != session && session.getAttribute(WebKeys.CMS_USER) == null)
+                || session == null) {
 
-            Logger.debug(DefaultAutoLoginWebInterceptor.class, "Doing AutoLogin for " + encryptedId);
-            if (this.loginServiceAPI.doCookieLogin(encryptedId, request, response)) {
+            final String jwtCookieValue = CookieUtil.get
+                    (request.getCookies(), CookieKeys.JWT_ACCESS_TOKEN);
 
-                result = Result.SKIP;
+            final User user = this.jsonWebTokenUtils.getUser(jwtCookieValue);
+            if (null != user) {
+
+                if (this.loginServiceAPI.
+                        doCookieLogin(this.encryptor.encryptString(user.getUserId()), request,
+                                response)) {
+
+                    // if this login was successfully, do not need to do any other.
+                    result = Result.SKIP;
+                }
             }
         }
 

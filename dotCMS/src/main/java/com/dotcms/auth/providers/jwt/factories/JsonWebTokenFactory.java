@@ -1,5 +1,8 @@
 package com.dotcms.auth.providers.jwt.factories;
 
+import static com.dotcms.auth.providers.jwt.JsonWebTokenUtils.CLAIM_UPDATED_AT;
+
+import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import io.jsonwebtoken.*;
 
@@ -98,8 +101,9 @@ public class JsonWebTokenFactory implements Serializable {
                             }
                         }
 
+                        final String clusterId = ClusterFactory.getClusterId();
                         this.jsonWebTokenService =
-                                new JsonWebTokenServiceImpl(key);
+                                new JsonWebTokenServiceImpl(key, clusterId);
                     }
                 } catch (Exception e) {
 
@@ -127,6 +131,7 @@ public class JsonWebTokenFactory implements Serializable {
     private class JsonWebTokenServiceImpl implements JsonWebTokenService {
 
         private final Key signingKey;
+        private final String issuerId;
 
 		/**
 		 * Instantiates the JWT Service using a valid signing key.
@@ -136,11 +141,15 @@ public class JsonWebTokenFactory implements Serializable {
 		 * @throws IllegalArgumentException
 		 *             The provided key is null.
 		 */
-        JsonWebTokenServiceImpl(final Key signingKey) {
-        	if (null == signingKey) {
-        		throw new IllegalArgumentException("Signing key cannot be null");
-        	}
+        JsonWebTokenServiceImpl(final Key signingKey, final String issuerId) {
+            if (null == signingKey) {
+                throw new IllegalArgumentException("Signing key cannot be null");
+            }
+            if (null == issuerId) {
+                throw new IllegalArgumentException("Issuer id cannot be null");
+            }
             this.signingKey = signingKey;
+            this.issuerId = issuerId;
         }
 
         @Override
@@ -157,8 +166,9 @@ public class JsonWebTokenFactory implements Serializable {
             final JwtBuilder builder = Jwts.builder()
                     .setId(jwtBean.getId())
                     .setIssuedAt(now)
+                    .claim(CLAIM_UPDATED_AT, jwtBean.getModificationDate())
                     .setSubject(jwtBean.getSubject())
-                    .setIssuer(jwtBean.getIssuer())
+                    .setIssuer(this.issuerId)
                     .signWith(signatureAlgorithm, this.signingKey);
 
             //if it has been specified, let's add the expiration
@@ -194,10 +204,21 @@ public class JsonWebTokenFactory implements Serializable {
                     final Claims body = jws.getBody();
                     if (null != body) {
 
+                        // Validate the issuer is correct, meaning the same cluster id
+                        if (!this.issuerId.equals(body.getIssuer())) {
+                            IncorrectClaimException claimException = new IncorrectClaimException(
+                                    jws.getHeader(), jws.getBody(), "Invalid issuer");
+                            claimException.setClaimName(Claims.ISSUER);
+                            claimException.setClaimValue(body.getIssuer());
+
+                            throw claimException;
+                        }
+
                         jwtBean =
                                 new JWTBean(body.getId(),
                                         body.getSubject(),
                                         body.getIssuer(),
+                                        body.get(CLAIM_UPDATED_AT, Date.class),
                                         (null != body.getExpiration()) ?
                                                 body.getExpiration().getTime() :
                                                 0);

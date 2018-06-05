@@ -1,16 +1,10 @@
 package com.dotcms.auth.providers.jwt;
 
-import com.dotcms.auth.providers.jwt.beans.DotCMSSubjectBean;
 import com.dotcms.auth.providers.jwt.beans.JWTBean;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
 import com.dotcms.business.LazyUserAPIWrapper;
-import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.util.marshal.MarshalFactory;
-import com.dotcms.util.marshal.MarshalUtils;
-import com.dotcms.util.security.Encryptor;
-import com.dotcms.util.security.EncryptorFactory;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -18,16 +12,17 @@ import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
-import com.liferay.portal.ejb.CompanyLocalManager;
-import com.liferay.portal.ejb.CompanyLocalManagerFactory;
 import com.liferay.portal.ejb.UserManagerUtil;
 import com.liferay.portal.model.User;
+import java.util.Date;
 
 /**
  * Helper to get things in more simple way.
  * @author jsanca
  */
 public class JsonWebTokenUtils {
+
+    public static final String CLAIM_UPDATED_AT = "updated_at";
 
     private static class SingletonHolder {
         private static final JsonWebTokenUtils INSTANCE = new JsonWebTokenUtils();
@@ -44,107 +39,75 @@ public class JsonWebTokenUtils {
     private JsonWebTokenUtils() {
         // singleton
         this(JsonWebTokenFactory.getInstance().getJsonWebTokenService(),
-                MarshalFactory.getInstance().getMarshalUtils(),
-                CompanyLocalManagerFactory.getManager(),
-                EncryptorFactory.getInstance().getEncryptor(),
                 new LazyUserAPIWrapper());
     }
 
     @VisibleForTesting
     protected JsonWebTokenUtils(final  JsonWebTokenService jsonWebTokenService,
-                             final  MarshalUtils marshalUtils,
-                             final  CompanyLocalManager companyLocalManager,
-                             final  Encryptor encryptor,
                              final  UserAPI userAPI) {
 
         this.jsonWebTokenService = jsonWebTokenService;
-        this.marshalUtils        = marshalUtils;
-        this.companyLocalManager = companyLocalManager;
-        this.encryptor           = encryptor;
         this.userAPI             = userAPI;
     }
 
     private final JsonWebTokenService jsonWebTokenService;
-
-    private final  MarshalUtils marshalUtils;
-
-    private final  CompanyLocalManager companyLocalManager;
-
-    private final  Encryptor encryptor;
-
     private final UserAPI userAPI;
-
-
-    /**
-     * Check if the Json Web token is valid.
-     * @param jwtBean {@link JWTBean}
-     * @return boolean true if it is valid
-     */
-    public static boolean isJsonWebTokenValid (final JWTBean jwtBean) {
-
-        return jwtBean.getTtlMillis() - System.currentTimeMillis() > 0;
-    } // isJsonWebTokenValid.
 
     /**
      * Gets from the json web access token, the subject.
+     *
      * @param jwtAccessToken String
-     * @return String returns the User, if the user does not exists or is invalid will return null;
+     * @return String returns the subject, if the subjet does not exists or is a invalid token will
+     * return null
      */
-    public DotCMSSubjectBean getSubject(final String jwtAccessToken) {
+    public String getSubject(final String jwtAccessToken) {
 
         JWTBean jwtBean;
-        DotCMSSubjectBean subject = null;
+        String subject = null;
 
         try {
 
             jwtBean = this.jsonWebTokenService.parseToken(jwtAccessToken);
-
-            if (null != jwtBean && isJsonWebTokenValid(jwtBean)) {
-
-                subject =
-                        this.marshalUtils.unmarshal(jwtBean.getSubject(), DotCMSSubjectBean.class);
-
+            if (null != jwtBean) {
+                subject = jwtBean.getSubject();
             }
         } catch (Exception e) {
-
             Logger.error(JsonWebTokenUtils.class, e.getMessage(), e);
             subject = null;
         }
 
         return subject;
-    } // getUserId
+    }
 
     /**
      * Gets from the json web access token, the user.
+     *
      * @param jwtAccessToken String
      * @return String returns the User, if the user does not exists or is invalid will return null;
      */
     public User getUser(final String jwtAccessToken) {
 
         User userToReturn = null;
-        String userId;
         IsValidResult isValidResult;
 
         try {
 
-            final DotCMSSubjectBean subject =
-                    this.getSubject(jwtAccessToken);
+            //Parse the token
+            JWTBean jwtBean = this.jsonWebTokenService.parseToken(jwtAccessToken);
+            if (null != jwtBean) {
 
-            if (null != subject) {
+                //Read the user id
+                String subject = jwtBean.getSubject();
+                if (null != subject) {
 
-                userId = this.encryptor.decrypt(
-                        this.companyLocalManager.getCompany(subject.getCompanyId()).getKeyObj(),
-                        subject.getUserId());
+                    isValidResult = this.isValidUser(subject, jwtBean.getModificationDate());
 
-                isValidResult = this.isValidUser(userId, subject);
-
-                if (isValidResult.isValid()) {
-
+                    if (isValidResult.isValid()) {
                         userToReturn = isValidResult.getUser();
+                    }
                 }
             }
         } catch (Exception e) {
-
             Logger.error(JsonWebTokenUtils.class, e.getMessage(), e);
             userToReturn = null;
         }
@@ -152,7 +115,8 @@ public class JsonWebTokenUtils {
         return userToReturn;
     } // getUser
 
-    private IsValidResult isValidUser (final String userId, final DotCMSSubjectBean subject) throws DotSecurityException, DotDataException {
+    private IsValidResult isValidUser(final String userId, final Date lastModifiedDate)
+            throws DotSecurityException, DotDataException {
 
         boolean isValidUser = false;
         User user = null;
@@ -162,44 +126,16 @@ public class JsonWebTokenUtils {
             user = this.userAPI.loadUserById(userId);
 
             // The user hasn't change since the creation of the JWT
-            isValidUser = ((null != user) &&  (0 == user.getModificationDate().compareTo(subject.getLastModified())));
+            isValidUser = ((null != user) && (0 == user.getModificationDate()
+                    .compareTo(lastModifiedDate)));
         }
 
         return new IsValidResult(isValidUser, user);
     } // isValidUser.
 
     /**
-     * Gets from the json web access token, the user id encrypted.
-     * @param jwtAccessToken String
-     * @return String returns the userId encrypted, null if it is not possible to get it.
-     */
-    public String getEncryptedUserId(final String jwtAccessToken) {
-
-        String encryptedUserId = null;
-
-        try {
-
-            if (null != jwtAccessToken) {
-                final DotCMSSubjectBean subject =
-                        this.getSubject(jwtAccessToken);
-
-                if (null != subject) {
-
-                    encryptedUserId =
-                            subject.getUserId();
-                }
-            }
-        } catch (Exception e) {
-
-            Logger.error(JsonWebTokenUtils.class, e.getMessage(), e);
-            encryptedUserId = null;
-        }
-
-        return encryptedUserId;
-    } // getUserId
-
-    /**
      * Gets from the json web access token, the user id decrypt.
+     *
      * @param jwtAccessToken String
      * @return String returns the userId, null if it is not possible to get it.
      */
@@ -208,18 +144,11 @@ public class JsonWebTokenUtils {
         String userId = null;
 
         try {
-
-            final DotCMSSubjectBean subject =
-                    this.getSubject(jwtAccessToken);
-
+            final String subject = this.getSubject(jwtAccessToken);
             if (null != subject) {
-
-                userId = this.encryptor.decrypt(
-                        this.companyLocalManager.getCompany(subject.getCompanyId()).getKeyObj(),
-                        subject.getUserId());
+                userId = subject;
             }
         } catch (Exception e) {
-
             Logger.error(JsonWebTokenUtils.class, e.getMessage(), e);
             userId = null;
         }
@@ -238,8 +167,6 @@ public class JsonWebTokenUtils {
         return getInstance().getUserId(jwtAccessToken);
     } // getUserIdFromJsonWebToken
 
-
-
     /**
      * Creates the Json Web Token based on the user
      * @param user User
@@ -251,15 +178,10 @@ public class JsonWebTokenUtils {
         final String encryptUserId
                 = UserManagerUtil.encryptUserId(user.getUserId());
 
-        final String clusterId = ClusterFactory.getClusterId();
-
         return  this.jsonWebTokenService.generateToken(
                         new JWTBean(encryptUserId,
-                                this.marshalUtils.marshal(
-                                        new DotCMSSubjectBean(user.getModificationDate(),
-                                                encryptUserId,
-                                                user.getCompanyId())),
-                                clusterId,
+                                encryptUserId,
+                                user.getModificationDate(),
                                 (jwtMaxAge > 0)?
                                         DateUtil.daysToMillis(jwtMaxAge):
                                         jwtMaxAge

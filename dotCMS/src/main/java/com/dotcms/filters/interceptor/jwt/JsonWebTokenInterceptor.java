@@ -1,7 +1,5 @@
 package com.dotcms.filters.interceptor.jwt;
 
-import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
-import com.dotcms.auth.providers.jwt.beans.DotCMSSubjectBean;
 import com.dotcms.auth.providers.jwt.beans.JWTBean;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
@@ -10,8 +8,6 @@ import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.util.marshal.MarshalFactory;
-import com.dotcms.util.marshal.MarshalUtils;
 import com.dotcms.util.security.Encryptor;
 import com.dotcms.util.security.EncryptorFactory;
 import com.dotmarketing.business.APILocator;
@@ -28,12 +24,11 @@ import com.liferay.portal.ejb.CompanyLocalManagerFactory;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.CookieKeys;
-
+import java.io.IOException;
+import java.util.Date;
 import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.Date;
 
 /**
  * This Interceptor is useful to active the remember me using JWT It is going to
@@ -52,21 +47,17 @@ public class JsonWebTokenInterceptor implements WebInterceptor {
 
     private JsonWebTokenService jsonWebTokenService;
 
-    private MarshalUtils marshalUtils;
-
     private CompanyLocalManager companyLocalManager;
 
     private Encryptor encryptor;
 
     private LoginServiceAPI loginService;
 
-
 	private UserAPI userAPI;
 
 	public JsonWebTokenInterceptor() {
 
 		this(JsonWebTokenFactory.getInstance().getJsonWebTokenService(),
-				MarshalFactory.getInstance().getMarshalUtils(),
 				CompanyLocalManagerFactory.getManager(),
 				EncryptorFactory.getInstance().getEncryptor(),
 				APILocator.getLoginServiceAPI(),
@@ -76,14 +67,12 @@ public class JsonWebTokenInterceptor implements WebInterceptor {
 
 	@VisibleForTesting
 	protected JsonWebTokenInterceptor(final JsonWebTokenService jsonWebTokenService,
-								   final MarshalUtils marshalUtils,
 								   final CompanyLocalManager companyLocalManager,
 								   final Encryptor encryptor,
 								   final LoginServiceAPI loginService,
 								   final UserAPI userAPI) {
 
 		this.jsonWebTokenService = jsonWebTokenService;
-		this.marshalUtils = marshalUtils;
 		this.companyLocalManager = companyLocalManager;
 		this.encryptor = encryptor;
 		this.loginService = loginService;
@@ -108,17 +97,6 @@ public class JsonWebTokenInterceptor implements WebInterceptor {
 	 */
     public void setJsonWebTokenService(final JsonWebTokenService jsonWebTokenService) {
         this.jsonWebTokenService = jsonWebTokenService;
-    }
-
-	/**
-	 * Sets a specific {@link MarshalUtils} implementation by dependency
-	 * injection.
-	 * 
-	 * @param marshalUtils
-	 *            - The {@link MarshalUtils} implementation.
-	 */
-    public void setMarshalUtils(final MarshalUtils marshalUtils) {
-        this.marshalUtils = marshalUtils;
     }
 
 	/**
@@ -247,77 +225,58 @@ public class JsonWebTokenInterceptor implements WebInterceptor {
                 this.jsonWebTokenService.parseToken(jwtAccessToken);
 		Result result = Result.NEXT;
 
-        if (null != jwtBean) {
-
-            if (JsonWebTokenUtils.isJsonWebTokenValid (jwtBean)) {
-            	// todo: handle exceptions here
-                result =
-					this.processSubject(jwtBean, response, request);
-            }
-        }
+		if (null != jwtBean) {
+			result = this.processSubject(jwtBean, response, request);
+		}
 
 		return result;
     } // parseJwtToken.
 
 
 	/**
-	 * Takes the subject from the JWT to carry on with the authentication
-	 * process.
-	 * 
-	 * @param jwtBean
-	 *            - The JWT data.
-	 * @param response
-	 *            - The {@link HttpServletResponse} object.
-	 * @param request
-	 *            - The {@link HttpServletRequest} object.
+	 * Takes the subject from the JWT to carry on with the authentication process.
+	 *
+	 * @param jwtBean - The JWT data.
+	 * @param response - The {@link HttpServletResponse} object.
+	 * @param request - The {@link HttpServletRequest} object.
 	 */
-    protected Result processSubject(final JWTBean jwtBean,
-                                  final HttpServletResponse response,
-                                  final HttpServletRequest request) {
+	protected Result processSubject(final JWTBean jwtBean,
+			final HttpServletResponse response,
+			final HttpServletRequest request) {
 
-
-        final DotCMSSubjectBean dotCMSSubjectBean =
-                this.marshalUtils.unmarshal(jwtBean.getSubject(), DotCMSSubjectBean.class);
+		final String userId = jwtBean.getSubject();
 		Result result = Result.NEXT;
 
-        if (null != dotCMSSubjectBean) {
-
-            result =
-				this.performAuthentication (dotCMSSubjectBean, response, request);
-        }
+		if (null != userId) {
+			result =
+					this.performAuthentication(userId, jwtBean.getModificationDate(), response,
+							request);
+		}
 
 		return result;
-    }
+	}
 
 	/**
 	 * Performs the user authentication based on the data from the JWT.
 	 * 
-	 * @param subjectBean
-	 *            - The JWT subject data.
+	 * @param userId
+	 *            - User id found in the token
 	 * @param response
 	 *            - The {@link HttpServletResponse} object.
 	 * @param request
 	 *            - The {@link HttpServletRequest} object.
 	 */
-    protected Result performAuthentication(final DotCMSSubjectBean subjectBean,
+    protected Result performAuthentication(final String userId, final Date lastModifiedDate,
                                          final HttpServletResponse response,
                                          final HttpServletRequest request) {
 
-        final Company company;
-        final String userId;
 		Result result = Result.NEXT;
 
         try {
 
-            company = this.getCompany(subjectBean.getCompanyId());
-
-            userId = this.encryptor.decrypt(company.getKeyObj(),
-                    subjectBean.getUserId()); // encrypt the user id.
-
             // todo: if there is a custom implementation to handle the authentication use it
 			result = this.performDefaultAuthentication
-                    (company, userId, subjectBean.getLastModified(),
-                            response, request);
+					(userId, lastModifiedDate, response, request);
         } catch (Exception e) {
 
             if (Logger.isErrorEnabled(JsonWebTokenInterceptor.class)) {
@@ -350,8 +309,6 @@ public class JsonWebTokenInterceptor implements WebInterceptor {
 	 * Performs the default system authentication based on the information
 	 * retrieved from the JWT.
 	 * 
-	 * @param company
-	 *            - The company that the user belongs to.
 	 * @param userId
 	 *            - The user ID.
 	 * @param lastModified
@@ -365,8 +322,7 @@ public class JsonWebTokenInterceptor implements WebInterceptor {
 	 *             An error occurred when retrieving the user's data.
 	 */
 	@CloseDBIfOpened
-    protected Result performDefaultAuthentication(final Company company,
-                                                final String userId,
+    protected Result performDefaultAuthentication(final String userId,
                                                 final Date lastModified,
                                                 final HttpServletResponse response,
                                                 final HttpServletRequest request) throws DotSecurityException, DotDataException {
