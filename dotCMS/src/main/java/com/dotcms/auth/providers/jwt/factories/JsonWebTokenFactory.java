@@ -64,9 +64,6 @@ public class JsonWebTokenFactory implements Serializable {
         return JsonWebTokenFactory.SingletonHolder.INSTANCE;
     } // getInstance.
 
-    @VisibleForTesting
-    public JsonWebTokenFactory(final String param) {}
-
     /**
      * Creates the Json Web Token Service based on the configuration on dotmarketing-config.properties
      * @return JsonWebTokenService

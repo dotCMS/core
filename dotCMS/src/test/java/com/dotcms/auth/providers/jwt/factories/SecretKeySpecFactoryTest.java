@@ -25,7 +25,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @RunWith(PowerMockRunner.class)
 public class SecretKeySpecFactoryTest extends UnitTestBase {
 
-    final String clusterId = "CLUSTER-123";
+    private final String clusterId = "CLUSTER-123";
 
     /**
      * Verifies the behaviour generating or using the secret inside the
@@ -51,8 +51,8 @@ public class SecretKeySpecFactoryTest extends UnitTestBase {
         //----------------------------------
         // 1) NO setting a json.web.token.hash.signing.key property
         Assert.assertFalse(keyFactoryUtils.existSecretFile());
-        //Creating a new instance of the JWT service
-        new JsonWebTokenFactory("").getJsonWebTokenService();
+        //Creating a new instance of our Key factory
+        new SecretKeySpecFactoryImpl().getKey();
         Assert.assertTrue(keyFactoryUtils.existSecretFile());
         final String secret1 = keyFactoryUtils.readSecretFromDisk();
         Assert.assertNotNull(secret1);
@@ -65,8 +65,8 @@ public class SecretKeySpecFactoryTest extends UnitTestBase {
         Assert.assertFalse(keyFactoryUtils.existSecretFile());
         final String mySecretKey2 = "MySecretKey2";
         Config.setProperty("json.web.token.hash.signing.key", mySecretKey2);
-        //Creating a new instance of the JWT service
-        new JsonWebTokenFactory("").getJsonWebTokenService();
+        //Creating a new instance of our Key factory
+        new SecretKeySpecFactoryImpl().getKey();
         Assert.assertTrue(keyFactoryUtils.existSecretFile());
         //Make sure we wrote properly the secret
         final String secret2 = keyFactoryUtils.readSecretFromDisk();
@@ -81,8 +81,8 @@ public class SecretKeySpecFactoryTest extends UnitTestBase {
         Assert.assertEquals(mySecretKey2, oldSecret);
         final String mySecretKey3 = "MySecretKey3";
         Config.setProperty("json.web.token.hash.signing.key", mySecretKey3);
-        //Creating a new instance of the JWT service
-        new JsonWebTokenFactory("").getJsonWebTokenService();
+        //Creating a new instance of our Key factory
+        new SecretKeySpecFactoryImpl().getKey();
         Assert.assertTrue(keyFactoryUtils.existSecretFile());
         //Make sure we wrote properly the secret
         final String secret3 = keyFactoryUtils.readSecretFromDisk();
@@ -95,8 +95,8 @@ public class SecretKeySpecFactoryTest extends UnitTestBase {
         Assert.assertTrue(keyFactoryUtils.existSecretFile());
         oldSecret = keyFactoryUtils.readSecretFromDisk();
         Assert.assertEquals(mySecretKey3, oldSecret);
-        //Creating a new instance of the JWT service
-        new JsonWebTokenFactory("").getJsonWebTokenService();
+        //Creating a new instance of our Key factory
+        new SecretKeySpecFactoryImpl().getKey();
         Assert.assertTrue(keyFactoryUtils.existSecretFile());
         //Make sure we wrote properly the secret
         final String secret4 = keyFactoryUtils.readSecretFromDisk();
@@ -109,8 +109,8 @@ public class SecretKeySpecFactoryTest extends UnitTestBase {
         //----------------------------------
         // 5) Again, NO property and NO file
         Assert.assertFalse(keyFactoryUtils.existSecretFile());
-        //Creating a new instance of the JWT service
-        new JsonWebTokenFactory("").getJsonWebTokenService();
+        //Creating a new instance of our Key factory
+        new SecretKeySpecFactoryImpl().getKey();
         Assert.assertTrue(keyFactoryUtils.existSecretFile());
         final String secret5 = keyFactoryUtils.readSecretFromDisk();
         Assert.assertNotNull(secret5);
@@ -124,8 +124,8 @@ public class SecretKeySpecFactoryTest extends UnitTestBase {
         Assert.assertFalse(keyFactoryUtils.existSecretFile());
         final String mySecretKey6 = SecretKeySpecFactoryImpl.DEFAULT_SECRET;
         Config.setProperty("json.web.token.hash.signing.key", mySecretKey6);
-        //Creating a new instance of the JWT service
-        new JsonWebTokenFactory("").getJsonWebTokenService();
+        //Creating a new instance of our Key factory
+        new SecretKeySpecFactoryImpl().getKey();
         Assert.assertTrue(keyFactoryUtils.existSecretFile());
         //Make sure we wrote properly the secret
         final String secret6 = keyFactoryUtils.readSecretFromDisk();
@@ -140,8 +140,8 @@ public class SecretKeySpecFactoryTest extends UnitTestBase {
         Assert.assertFalse(keyFactoryUtils.existSecretFile());
         final String mySecretKey7 = SecretKeySpecFactoryImpl.DEFAULT_SECRET;
         keyFactoryUtils.writeSecretToDisk(mySecretKey7);
-        //Creating a new instance of the JWT service
-        new JsonWebTokenFactory("").getJsonWebTokenService();
+        //Creating a new instance of our Key factory
+        new SecretKeySpecFactoryImpl().getKey();
         Assert.assertTrue(keyFactoryUtils.existSecretFile());
         //Make sure we wrote properly the secret
         final String secret7 = keyFactoryUtils.readSecretFromDisk();
