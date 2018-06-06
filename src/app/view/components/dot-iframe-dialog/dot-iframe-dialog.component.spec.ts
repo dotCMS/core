@@ -129,7 +129,7 @@ describe('DotIframeDialogComponent', () => {
                     expect(component.beforeClose.emit).not.toHaveBeenCalled();
                 });
 
-                it('should close ', () => {
+                it('should close on escape key in the dialog', () => {
                     document.dispatchEvent(new KeyboardEvent('keydown', {
                         key: 'Escape'
                     }));
@@ -139,6 +139,19 @@ describe('DotIframeDialogComponent', () => {
                     expect(component.close.emit).toHaveBeenCalledTimes(1);
                     expect(component.beforeClose.emit).not.toHaveBeenCalled();
                 });
+
+                it('should close on click in the dialog mask', (done => {
+                    setTimeout(() => {
+                        component.dialog.mask.click();
+
+                        expect(component.url).toBe(null);
+                        expect(component.show).toBe(false);
+                        expect(component.header).toBe('');
+                        expect(component.close.emit).toHaveBeenCalledTimes(1);
+                        expect(component.beforeClose.emit).not.toHaveBeenCalled();
+                        done();
+                    }, 0);
+                }));
             });
 
             it('should emit keydown', () => {

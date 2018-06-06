@@ -1,4 +1,7 @@
-import { Component, Input, SimpleChanges, OnChanges, EventEmitter, Output, HostListener } from '@angular/core';
+import { Component, Input, SimpleChanges, OnChanges, EventEmitter, Output, HostListener, ViewChild } from '@angular/core';
+import { Dialog } from 'primeng/primeng';
+import { fromEvent } from 'rxjs/observable/fromEvent';
+import { Subscription } from 'rxjs/Subscription';
 
 @Component({
     selector: 'dot-iframe-dialog',
@@ -6,6 +9,8 @@ import { Component, Input, SimpleChanges, OnChanges, EventEmitter, Output, HostL
     styleUrls: ['./dot-iframe-dialog.component.scss']
 })
 export class DotIframeDialogComponent implements OnChanges {
+    @ViewChild('dialog') dialog: Dialog;
+
     @Input() url: string;
     @Input() header = '';
 
@@ -25,6 +30,11 @@ export class DotIframeDialogComponent implements OnChanges {
     ngOnChanges(changes: SimpleChanges) {
         if (changes.url) {
             this.show = !!changes.url.currentValue;
+
+            // Need to wait til' the dialog is rendered
+            setTimeout(() => {
+                this.handleMaskEvents(this.show);
+            }, 0);
         }
 
         if (changes.header) {
@@ -96,5 +106,11 @@ export class DotIframeDialogComponent implements OnChanges {
         this.show = false;
         this.header = '';
         this.close.emit();
+    }
+
+    private handleMaskEvents(show: boolean): void {
+        if (show) {
+            fromEvent(this.dialog.mask, 'click').subscribe(this.onClose.bind(this));
+        }
     }
 }
