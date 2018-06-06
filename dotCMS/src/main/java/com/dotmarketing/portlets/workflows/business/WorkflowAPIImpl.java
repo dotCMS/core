@@ -1904,8 +1904,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			throws DotSecurityException, DotDataException {
 
 		final String luceneQuery = String
-				.format("+inode:( %s ) +wfstep:( %s )", String.join(StringPool.SPACE, inodes),
-						String.join(StringPool.SPACE, workflowAssociatedStepIds));
+				.format("+inode:( %s ) +(wfstep:%s )", String.join(StringPool.SPACE, inodes),
+						String.join(" wfstep:", workflowAssociatedStepIds));
 
 		return ImmutableList.<Contentlet>builder().addAll(
 				APILocator.getContentletAPI()
@@ -1921,8 +1921,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			final Iterable<String> workflowAssociatedStepIds, User user)
 			throws DotSecurityException, DotDataException {
 
-		final String luceneQueryWithSteps = String.format(" %s +wfstep:( %s ) ", luceneQuery,
-				String.join(StringPool.SPACE, workflowAssociatedStepIds));
+		final String luceneQueryWithSteps = String.format(" %s +(wfstep:%s ) ", luceneQuery,
+				String.join(" wfstep:", workflowAssociatedStepIds));
 		return ImmutableList.<Contentlet>builder().addAll(
 				APILocator.getContentletAPI()
 						.search(luceneQueryWithSteps, -1, 0, null, user, RESPECT_FRONTEND_ROLES)
@@ -1943,14 +1943,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			throws DotSecurityException, DotDataException {
 
 		final String contentletsWithinStepsQuery = String
-				.format("%s  +wfstep:( %s ) ", String.join(StringPool.SPACE, luceneQuery),
-						String.join(StringPool.SPACE, workflowAssociatedStepsIds));
+				.format("%s  +(wfstep:%s ) ", String.join(StringPool.SPACE, luceneQuery),
+						String.join(" wfstep:", workflowAssociatedStepsIds));
 		long withinStepsCount = APILocator.getContentletAPI()
 				.indexCount(contentletsWithinStepsQuery, user, RESPECT_FRONTEND_ROLES);
 
 		final String contentletsWithoutStepsQuery = String
-				.format("%s  -wfstep:( %s ) ", String.join(StringPool.SPACE, luceneQuery),
-						String.join(StringPool.SPACE, workflowAssociatedStepsIds));
+				.format("%s  -(wfstep:%s ) ", String.join(StringPool.SPACE, luceneQuery),
+						String.join(" wfstep:", workflowAssociatedStepsIds));
 		long withoutStepsCount = APILocator.getContentletAPI()
 				.indexCount(contentletsWithoutStepsQuery, user, RESPECT_FRONTEND_ROLES);
 
