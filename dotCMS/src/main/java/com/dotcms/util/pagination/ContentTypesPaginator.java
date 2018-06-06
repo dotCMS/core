@@ -132,7 +132,7 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
         if (btype.name().equals(tok)) {
           orClauses.add("structuretype=" + btype.getType());
           break;
-        } else if (btype.name().contains(tok)) {
+        } else if (btype.name().startsWith(tok)) {
           orClauses.add("structuretype=" + btype.getType());
           orClauses.add(String.format("upper(name) like '%%%s%%'", tok));
         } else {
