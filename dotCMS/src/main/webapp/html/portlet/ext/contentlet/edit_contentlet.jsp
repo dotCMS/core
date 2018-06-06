@@ -558,7 +558,7 @@
         });
         setTimeout(function() {
             document.dispatchEvent(customEvent);
-        }, 500)
+        }, 2000)
         
 	});
 

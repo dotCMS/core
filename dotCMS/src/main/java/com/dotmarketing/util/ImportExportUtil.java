@@ -64,6 +64,9 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipFile;
 import org.apache.commons.beanutils.BeanUtils;
 
+import static com.dotcms.enterprise.LicenseUtil.IMPORTED_LICENSE_PACK_PREFIX;
+import static com.dotcms.enterprise.LicenseUtil.LICENSE_NAME;
+
 /**
  * This utility is part of the {@link Task00004LoadStarter} task, which fills
  * the empty dotCMS tables on a fresh install with information regarding the
@@ -1025,7 +1028,8 @@ public class ImportExportUtil {
         assetDirectory.mkdirs();
         final String[] assetsFileList = assetDirectory.list();
         for (String fileName : assetsFileList) {
-            if(fileName.toLowerCase().startsWith("license")) continue;
+            if(fileName.toLowerCase().startsWith(LICENSE_NAME)
+                || fileName.toLowerCase().startsWith(IMPORTED_LICENSE_PACK_PREFIX)) continue;
             File f = new File(assetDirectory.getPath() + File.separator + fileName);
             if(f.isDirectory()) {
                 FileUtil.deltree(f);

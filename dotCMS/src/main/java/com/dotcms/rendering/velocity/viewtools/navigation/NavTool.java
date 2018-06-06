@@ -151,7 +151,7 @@ public class NavTool implements ViewTool {
                             .find(itemPage);
 
                         String redirectUri = itemPage.getRedirect();
-                        NavResult nav =  new NavResult(folder.getInode(), host.getIdentifier(), languageId);
+                        NavResult nav =  new NavResult(folder.getInode(), host.getIdentifier(), itemPage.getLanguageId());
 
                         nav.setTitle(itemPage.getTitle());
                         if (UtilMethods.isSet(redirectUri) && !redirectUri.startsWith("/")) {
@@ -198,7 +198,7 @@ public class NavTool implements ViewTool {
                     if (itemFile.getLanguageId() == languageId || LanguageWebAPI.canDefaultFileToDefaultLanguage()) {
                         ident = APILocator.getIdentifierAPI()
                             .find(itemFile.getPermissionId());
-                        NavResult nav = new NavResult(folder.getInode(), host.getIdentifier(), languageId);
+                        NavResult nav = new NavResult(folder.getInode(), host.getIdentifier(), itemFile.getLanguageId());
 
                         nav.setTitle(itemFile.getFriendlyName());
                         nav.setHref(ident.getURI());
