@@ -2,20 +2,24 @@ package com.dotcms.auth.providers.jwt.factories;
 
 import static com.dotcms.auth.providers.jwt.JsonWebTokenUtils.CLAIM_UPDATED_AT;
 
-import com.dotcms.enterprise.cluster.ClusterFactory;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import io.jsonwebtoken.*;
-
-import java.io.Serializable;
-import java.security.Key;
-import java.util.Date;
-
 import com.dotcms.auth.providers.jwt.beans.JWTBean;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
+import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.IncorrectClaimException;
+import io.jsonwebtoken.Jws;
+import io.jsonwebtoken.JwtBuilder;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import java.io.Serializable;
+import java.security.Key;
+import java.util.Date;
 
 /**
  * This class in is charge of create the Token Factory. It use the
@@ -69,10 +73,6 @@ public class JsonWebTokenFactory implements Serializable {
      */
     public JsonWebTokenService getJsonWebTokenService () {
 
-        Key key = null;
-        SigningKeyFactory signingKeyFactory;
-        String signingKeyFactoryClass;
-
         if (null == this.jsonWebTokenService) {
 
             synchronized (JsonWebTokenFactory.class) {
@@ -80,39 +80,16 @@ public class JsonWebTokenFactory implements Serializable {
                 try {
 
                     if (null == this.jsonWebTokenService) {
-
-						signingKeyFactoryClass = Config.getStringProperty(JSON_WEB_TOKEN_SIGNING_KEY_FACTORY,
-								DEFAULT_JSON_WEB_TOKEN_SIGNING_KEY_FACTORY_CLASS);
-
-                        if (UtilMethods.isSet(signingKeyFactoryClass)) {
-
-                            if (Logger.isDebugEnabled(JsonWebTokenService.class)) {
-
-                                Logger.debug(JsonWebTokenService.class,
-                                        "Using the signing key factory class: " + signingKeyFactoryClass);
-                            }
-
-                            signingKeyFactory =
-                                    (SigningKeyFactory) ReflectionUtils.newInstance(signingKeyFactoryClass);
-
-                            if (null != signingKeyFactory) {
-
-                                key = signingKeyFactory.getKey();
-                            }
-                        }
-
-                        this.jsonWebTokenService =
-                                new JsonWebTokenServiceImpl(key);
+                        this.jsonWebTokenService = new JsonWebTokenServiceImpl();
                     }
+
                 } catch (Exception e) {
 
                     if (Logger.isErrorEnabled(JsonWebTokenService.class)) {
-
                         Logger.error(JsonWebTokenService.class, e.getMessage(), e);
                     }
 
                     if (Logger.isDebugEnabled(JsonWebTokenService.class)) {
-
                         Logger.debug(JsonWebTokenService.class,
                                 "There is an error trying to create the Json Web Token Service, going with the default implementation...");
                     }
@@ -129,22 +106,33 @@ public class JsonWebTokenFactory implements Serializable {
      */
     private class JsonWebTokenServiceImpl implements JsonWebTokenService {
 
-        private final Key signingKey;
+        private Key signingKey;
         private String issuerId;
 
-		/**
-		 * Instantiates the JWT Service using a valid signing key.
-		 * 
-		 * @param signingKey
-		 *            - A secure signing key.
-		 * @throws IllegalArgumentException
-		 *             The provided key is null.
-		 */
-        JsonWebTokenServiceImpl(final Key signingKey) {
+        private Key getSigningKey() {
+
             if (null == signingKey) {
-                throw new IllegalArgumentException("Signing key cannot be null");
+                String signingKeyFactoryClass = Config
+                        .getStringProperty(JSON_WEB_TOKEN_SIGNING_KEY_FACTORY,
+                                DEFAULT_JSON_WEB_TOKEN_SIGNING_KEY_FACTORY_CLASS);
+
+                if (UtilMethods.isSet(signingKeyFactoryClass)) {
+
+                    if (Logger.isDebugEnabled(JsonWebTokenService.class)) {
+                        Logger.debug(JsonWebTokenService.class,
+                                "Using the signing key factory class: " + signingKeyFactoryClass);
+                    }
+
+                    SigningKeyFactory signingKeyFactory =
+                            (SigningKeyFactory) ReflectionUtils.newInstance(signingKeyFactoryClass);
+                    if (null != signingKeyFactory) {
+
+                        signingKey = signingKeyFactory.getKey();
+                    }
+                }
             }
-            this.signingKey = signingKey;
+
+            return signingKey;
         }
 
         private String getIssuer() {
@@ -173,7 +161,7 @@ public class JsonWebTokenFactory implements Serializable {
                     .claim(CLAIM_UPDATED_AT, jwtBean.getModificationDate())
                     .setSubject(jwtBean.getSubject())
                     .setIssuer(this.getIssuer())
-                    .signWith(signatureAlgorithm, this.signingKey);
+                    .signWith(signatureAlgorithm, this.getSigningKey());
 
             //if it has been specified, let's add the expiration
             if ( jwtBean.getTtlMillis() >= 0 ) {
@@ -200,7 +188,7 @@ public class JsonWebTokenFactory implements Serializable {
             try {
                 //This line will throw an exception if it is not a signed JWS (as expected)
                 final Jws<Claims> jws = Jwts.parser()
-                        .setSigningKey(this.signingKey)
+                        .setSigningKey(this.getSigningKey())
                         .parseClaimsJws(jsonWebToken);
 
                 if (null != jws) {

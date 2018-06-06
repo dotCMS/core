@@ -1,8 +1,8 @@
 package com.dotcms.auth.providers.jwt.factories;
 
-import com.dotcms.business.LazyFileAssetAPIWrapper;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Logger;
 import java.io.File;
@@ -41,7 +41,7 @@ public class KeyFactoryUtils {
     }
 
     private KeyFactoryUtils() {
-        this(new LazyFileAssetAPIWrapper());
+        this(APILocator.getFileAssetAPI());
     }
 
     private KeyFactoryUtils(final FileAssetAPI fileAssetAPI) {
