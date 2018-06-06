@@ -1,5 +1,5 @@
-@import 'mixins';
-@import 'variables';
+@import "mixins";
+@import "variables";
 
 .dialog ::ng-deep {
     .ui-dialog {
@@ -7,7 +7,7 @@
         width: 95vw;
 
         .ui-dialog-content {
-            overflow: hidden;
+            overflow: visible;
             height: 80vh !important;
             padding: 0;
         }
@@ -15,6 +15,7 @@
         .ui-dialog-titlebar {
             background-color: $gray-lightest;
             border-bottom: solid 1px $gray-lighter;
+            height: 70px;
         }
     }
 }
@@ -22,4 +23,10 @@
 .dialog__iframe {
     width: 100%;
     height: 80vh;
+}
+
+.dialog__close {
+    position: absolute;
+    right: $basic-padding * 2;
+    top: -44px;
 }

@@ -11,6 +11,9 @@ import { DotCreateContentletComponent } from './components/dot-create-contentlet
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DotIframeDialogModule } from '../dot-iframe-dialog/dot-iframe-dialog.module';
 import { DotMenuService } from '../../../api/services/dot-menu.service';
+import { DotContentletWrapperComponent } from './components/dot-contentlet-wrapper/dot-contentlet-wrapper.component';
+import { LoginService } from 'dotcms-js/dotcms-js';
+import { LoginServiceMock } from '../../../test/login-service.mock';
 
 describe('DotContentletEditorComponent', () => {
     let component: DotContentletEditorComponent;
@@ -23,12 +26,16 @@ describe('DotContentletEditorComponent', () => {
     beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
             imports: [DotIframeDialogModule, BrowserAnimationsModule],
-            providers: [DotMenuService],
+            providers: [DotMenuService, {
+                provide: LoginService,
+                useClass: LoginServiceMock
+            }],
             declarations: [
                 DotContentletEditorComponent,
                 DotAddContentletComponent,
                 DotEditContentletComponent,
-                DotCreateContentletComponent
+                DotCreateContentletComponent,
+                DotContentletWrapperComponent
             ]
         }).compileComponents();
     }));

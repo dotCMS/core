@@ -1,4 +1,4 @@
-import { Component, Input, SimpleChanges, OnChanges, EventEmitter, Output } from '@angular/core';
+import { Component, Input, SimpleChanges, OnChanges, EventEmitter, Output, HostListener } from '@angular/core';
 
 @Component({
     selector: 'dot-iframe-dialog',
@@ -8,17 +8,24 @@ import { Component, Input, SimpleChanges, OnChanges, EventEmitter, Output } from
 export class DotIframeDialogComponent implements OnChanges {
     @Input() url: string;
     @Input() header = '';
+
+    @Output() beforeClose: EventEmitter<{
+        originalEvent: MouseEvent | KeyboardEvent,
+        close: () => void
+    }> = new EventEmitter();
     @Output() close: EventEmitter<any> = new EventEmitter();
+    @Output() custom: EventEmitter<CustomEvent> = new EventEmitter();
     @Output() load: EventEmitter<any> = new EventEmitter();
     @Output() keydown: EventEmitter<KeyboardEvent> = new EventEmitter();
-    @Output() custom: EventEmitter<CustomEvent> = new EventEmitter();
 
     show: boolean;
 
     constructor() {}
 
     ngOnChanges(changes: SimpleChanges) {
-        this.show = !!changes.url.currentValue;
+        if (changes.url) {
+            this.show = !!changes.url.currentValue;
+        }
 
         if (changes.header) {
             this.header = changes.header.currentValue;
@@ -26,14 +33,26 @@ export class DotIframeDialogComponent implements OnChanges {
     }
 
     /**
-     * Callback when dialog hide
+     * Handle attemp to close the dialog
      *
+     * @param {(MouseEvent | KeyboardEvent)} $event
      * @memberof DotIframeDialogComponent
      */
-    closeDialog(): void {
-        this.url = null;
-        this.show = false;
-        this.close.emit();
+    onClose($event: MouseEvent | KeyboardEvent): void {
+        if ($event.preventDefault) {
+            $event.preventDefault();
+        }
+
+        if (this.beforeClose.observers.length) {
+            this.beforeClose.emit({
+                originalEvent: $event,
+                close: () => {
+                    this.closeDialog();
+                }
+            });
+        } else {
+            this.closeDialog();
+        }
     }
 
     /**
@@ -43,9 +62,6 @@ export class DotIframeDialogComponent implements OnChanges {
      * @memberof DotIframeDialogComponent
      */
     onCustomEvents($event: CustomEvent): void {
-        if ($event.detail.name === 'edit-contentlet-loaded') {
-            this.header = $event.detail.data.contentType;
-        }
         this.custom.emit($event);
     }
 
@@ -55,11 +71,12 @@ export class DotIframeDialogComponent implements OnChanges {
      * @param {any} $event
      * @memberof DotIframeDialogComponent
      */
+    @HostListener('document:keydown', ['$event'])
     onKeyDown($event: KeyboardEvent): void {
         this.keydown.emit($event);
 
         if ($event.key === 'Escape') {
-            this.closeDialog();
+            this.onClose($event);
         }
     }
 
@@ -72,5 +89,12 @@ export class DotIframeDialogComponent implements OnChanges {
     onLoad($event: any): void {
         $event.target.contentWindow.focus();
         this.load.emit($event);
+    }
+
+    private closeDialog(): void {
+        this.url = null;
+        this.show = false;
+        this.header = '';
+        this.close.emit();
     }
 }
