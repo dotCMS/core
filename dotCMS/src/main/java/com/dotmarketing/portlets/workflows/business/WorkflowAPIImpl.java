@@ -153,7 +153,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
-	private static final int MAX_THREADS_ALLOWED_TO_HANDLE_BULK_ACTIONS = 25;
+
+	private static final String MAX_THREADS_ALLOWED_TO_HANDLE_BULK_ACTIONS = "workflow.action.bulk.maxthreads";
+
+	private static final int MAX_THREADS_ALLOWED_TO_HANDLE_BULK_ACTIONS_DEFAULT = 5;
+
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public WorkflowAPIImpl() {
@@ -2045,13 +2049,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 * Takes a input list of contentlets and creates sub groups to distribute the workload
 	 */
 	private List<List<Contentlet>> partitionContentletInput(final List<Contentlet> contentlets) {
-		int partitionSize = Math
-				.max((contentlets.size() / MAX_THREADS_ALLOWED_TO_HANDLE_BULK_ACTIONS), 10);
+		final int maxThreads = Config.getIntProperty(MAX_THREADS_ALLOWED_TO_HANDLE_BULK_ACTIONS, MAX_THREADS_ALLOWED_TO_HANDLE_BULK_ACTIONS_DEFAULT);
+		final int partitionSize = Math
+				.max((contentlets.size() / maxThreads), 10);
 
 		Logger.info(getClass(),
 				String.format(
 						"Number of threads is limited to %d. Number of Contentlets to process is %d. Load will be distributed in bunches of %d ",
-						MAX_THREADS_ALLOWED_TO_HANDLE_BULK_ACTIONS, contentlets.size(),
+						maxThreads, contentlets.size(),
 						partitionSize)
 		);
 		return Lists.partition(contentlets, partitionSize);
