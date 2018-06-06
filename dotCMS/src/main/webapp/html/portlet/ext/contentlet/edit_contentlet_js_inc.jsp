@@ -486,6 +486,15 @@
 
     dojo.require('dojox.fx.scroll');
 
+    function emmitUserHasChange(val) {
+        var customEvent = document.createEvent("CustomEvent");
+        customEvent.initCustomEvent("ng-event", false, false,  {
+            name: "edit-contentlet-data-updated",
+            payload: val
+        });
+        document.dispatchEvent(customEvent)
+    }
+
     function scrollToTop() {
         try {
             dojox.fx.smoothScroll({
@@ -500,7 +509,8 @@
     }
     
     function resetHasChanged(){
-        _hasUserChanged  = false;
+        _hasUserChanged = false;
+        emmitUserHasChange(_hasUserChanged);
         _bodyKeyDown = dojo.connect(dojo.body(), "onkeydown", null,markHasChanged);
 
         dojo.query(".wrapperRight").forEach(function(node){
@@ -509,12 +519,13 @@
         })
     }
 
-    function markHasChanged(){
-
-        _hasUserChanged  = true;
-        dojo.disconnect(_bodyKeyDown);
-        dojo.disconnect(_bodyMouseDown);
-
+    function markHasChanged($event){
+        if ($event.key != 'Escape') {
+            _hasUserChanged = true;
+            emmitUserHasChange(_hasUserChanged);
+            dojo.disconnect(_bodyKeyDown);
+            dojo.disconnect(_bodyMouseDown);
+        }
     }
 
 
