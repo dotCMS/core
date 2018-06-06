@@ -4,6 +4,7 @@ import com.dotcms.csspreproc.CSSPreProcessServletTest;
 import com.dotcms.csspreproc.LessCompilerTest;
 import com.dotcms.csspreproc.SassCompilerTest;
 import com.dotcms.publisher.ajax.RemotePublishAjaxActionTest;
+import com.dotcms.rendering.velocity.viewtools.JSONToolFTest;
 import com.dotcms.rest.ContentResourceTest;
 import com.dotcms.rest.RoleResourceTest;
 import com.dotcms.rest.WebResourceTest;
@@ -81,6 +82,7 @@ import org.junit.runners.Suite;
     URLMapTest.class,
     SiteSearchAjaxActionTest.class,
     WebDavTest.class,
-    ImportUtilTest.class
+    ImportUtilTest.class,
+    JSONToolFTest.class
 })
 public class AllTestsSuite {}

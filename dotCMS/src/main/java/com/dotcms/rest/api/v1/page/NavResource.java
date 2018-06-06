@@ -13,8 +13,10 @@ import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 
@@ -22,12 +24,15 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.VelocityUtil;
 
+import com.liferay.util.Validator;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -85,14 +90,15 @@ public class NavResource {
     @GET
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/{uri: .*}")
-    public Response loadJson(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            @PathParam("uri") final String uri, @QueryParam("depth") final int depth) {
+    public final Response loadJson(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+            @PathParam("uri") final String uri, @QueryParam("depth") final String depth) {
 
         final InitDataObject auth = webResource.init(false, request, true);
         final User user = auth.getUser();
 
-        Response res = null;
         try {
+            final int maxDepth = Integer.parseInt(depth);
+
             final Host h =WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
             APILocator.getPermissionAPI().checkPermission(h, PermissionLevel.READ, user);
 
@@ -104,37 +110,21 @@ public class NavResource {
             tool.init(ctx);
             final NavResult nav = tool.getNav(path);
 
-            final Map<String, Object> navMap = (nav!=null) ? navToMap(nav, depth, 1) : new HashMap<>();
+            final Map<String, Object> navMap = (nav!=null) ? navToMap(nav, maxDepth, 1) : new HashMap<>();
+
+            if(navMap.isEmpty()) {
+                throw new DoesNotExistException("The provided URL was not found");
+            }
 
             final ObjectMapper mapper = new ObjectMapper();
             final String json = mapper.writeValueAsString(navMap);
 
-            final Response.ResponseBuilder responseBuilder = Response.ok(json);
+            return Response.ok(new ResponseEntityView(json)).build(); // 200
 
-            responseBuilder.header("Access-Control-Expose-Headers", "Authorization");
-            responseBuilder.header("Access-Control-Allow-Headers",
-                    "Origin, X-Requested-With, " + "Content-Type, " + "Accept, Authorization");
-
-
-            res = responseBuilder.build();
-        } catch (JsonProcessingException e) {
-            final String errorMsg = "An error occurred when generating the JSON response (" + e.getMessage() + ")";
-            Logger.error(this, e.getMessage(), e);
-            res = ExceptionMapperUtil.createResponse(null, errorMsg);
-        } catch (DotSecurityException e) {
-            final String errorMsg = "The user does not have the required permissions (" + e.getMessage() + ")";
-            Logger.error(this, errorMsg, e);
-            throw new ForbiddenException(e);
-        } catch (DotDataException e) {
-            final String errorMsg = "An error occurred when accessing the page information (" + e.getMessage() + ")";
-            Logger.error(this, e.getMessage(), e);
-            res = ExceptionMapperUtil.createResponse(null, errorMsg);
         } catch (Exception e) {
-            final String errorMsg = "An internal error occurred (" + e.getMessage() + ")";
-            Logger.error(this, errorMsg, e);
-            res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+            Logger.error(this.getClass(),"Exception on NavResource exception message: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
-        return res;
     }
 
 

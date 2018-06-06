@@ -16,14 +16,17 @@ import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 
-public class Task00020LoadClusterLicenses implements StartupTask {
+import static com.dotcms.enterprise.LicenseUtil.IMPORTED_LICENSE_PACK_PREFIX;
+import static com.dotcms.enterprise.LicenseUtil.LICENSE_NAME;
+
+public class Task00002LoadClusterLicenses implements StartupTask {
 
     private static final String now= new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date());
     private FileFilter licensePacks = new FileFilter() {
 
         @Override
         public boolean accept(File pathname) {
-            return (pathname.getName().startsWith("license") 
+            return (pathname.getName().startsWith(LICENSE_NAME)
                             && pathname.getName().endsWith(".zip")
                             && pathname.isFile());
         }
@@ -46,7 +49,7 @@ public class Task00020LoadClusterLicenses implements StartupTask {
         
         for(File pack : licensePackFiles()){
             Logger.info(this.getClass(), "found license pack: " + pack);
-            File oldPack = new File(pack.getParent() + File.separator + "imported_" + now  + "_" + pack.getName());
+            File oldPack = new File(pack.getParent() + File.separator + IMPORTED_LICENSE_PACK_PREFIX + now  + "_" + pack.getName());
             try(InputStream in = Files.newInputStream(pack.toPath())){
                 LicenseUtil.uploadLicenseRepoFile(in);
                 if(Config.getBooleanProperty("ARCHIVE_IMPORTED_LICENSE_PACKS", true)){
