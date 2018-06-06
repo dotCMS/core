@@ -1886,13 +1886,14 @@
 
 
                         var cell = row.insertCell (row.cells.length);
-                        cell.style.whiteSpace="nowrap";
 
+                        cell.setAttribute("style","vertical-align:top;white-space:nowrap")
                         cell.innerHTML = statusDataCell(cellData, i);
                         for (var j = 0; j < headers.length; j++) {
                                 var header = headers[j];
                                 var cell = row.insertCell (row.cells.length);
                                 cell.setAttribute("align","left");
+                                cell.setAttribute("style","vertical-align:top;")
                                 if (j == 0 ) {
 
                                 	if(languages.length>1){
@@ -1919,6 +1920,11 @@
                                         cell.setAttribute("align","left");
 									}
                                     var value = titleCell(cellData,cellData[header["fieldVelocityVarName"]], i);
+                                    
+                                    if(cellData.hasImage){
+                             
+                                        value+="<img src='/contentAsset/image/" + cellData.inode + "/" + cellData.imageField + "/filter/Thumbnail/thumbnail_w/100/thumbnail_h/100/thumbnail_bg/255255255' onerror='this.style.display=`none`' >";
+                                    }
                                 }
                                 else{
                                     var value = cellData[header["fieldVelocityVarName"]];
@@ -1928,13 +1934,13 @@
                                 }
                         }
                         var cell = row.insertCell (row.cells.length);
+                        cell.setAttribute("style","vertical-align:top;white-space:nowrap")
                         cell.innerHTML = cellData["modUser"];
-                        cell.style.whiteSpace="nowrap";
+
 
                         var cell = row.insertCell (row.cells.length);
-                        cell.setAttribute("nowrap","true");
-                        cell.style.textAlign="right";
-                        cell.style.whiteSpace="nowrap";
+                        cell.setAttribute("style","vertical-align:top;white-space:nowrap;text-align:right")
+
                         cell.innerHTML = cellData["modDate"];
 
                         var cell = row.insertCell (row.cells.length);

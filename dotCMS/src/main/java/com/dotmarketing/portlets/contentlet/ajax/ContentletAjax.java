@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.contentlet.ajax;
 import com.dotcms.business.CloseDB;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.ESUtils;
+import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.PageContentType;
 import com.dotcms.enterprise.FormAJAXProxy;
@@ -130,23 +131,25 @@ public class ContentletAjax {
 			if(contentlet == null || !UtilMethods.isSet(contentlet.getInode()))
 				return null;
 
-			Structure targetStructure = contentlet.getStructure();
-			List<Field> targetFields = FieldsCache.getFieldsByStructureInode(targetStructure.getInode());
+			ContentType type = contentlet.getContentType();
 
 			String identifier = String.valueOf(contentlet.getIdentifier());
 
 			boolean hasListedFields = false;
+            boolean hasImage = false;
+			for (com.dotcms.contenttype.model.field.Field f : type.fields()) {
 
-			for (Field f : targetFields) {
-
-				if (f.isIndexed() || f.isListed()) {
+				if (f.indexed() || f.listed()) {
 					hasListedFields = true;
-					String fieldName = f.getFieldName();
+					String fieldName = f.name();
 					Object fieldValueObj = "";
 					try{
 						fieldValueObj = conAPI.getFieldValue(contentlet, f);
 					}catch (Exception e) {
 						Logger.error(ContentletAjax.class, "Unable to get value for field", e);
+					}
+					if(f instanceof BinaryField) {
+					  hasImage = UtilMethods.isImage(conAPI.getBinaryFile(contentlet.getInode(), f.variable(), APILocator.systemUser()).getName());
 					}
 					String fieldValue = "";
 					if (fieldValueObj instanceof java.util.Date) {
@@ -163,11 +166,14 @@ public class ContentletAjax {
 					}
 					result.put(fieldName, fieldValue);
 				}
+				if(hasListedFields && hasImage) {
+				  break;
+				}
 			}
 			if( !hasListedFields ) {
 				result.put("identifier", identifier);
 			}
-
+			result.put("hasImage", hasImage);
 			result.put("inode", String.valueOf(contentlet.getInode()));
 			result.put("working", String.valueOf(contentlet.isWorking()));
 			result.put("live", String.valueOf(contentlet.isLive()));
@@ -496,7 +502,7 @@ public class ContentletAjax {
 	 *             A system error has occurred.
 	 */
 	@SuppressWarnings("rawtypes")
-	@LogTime
+
 	public List searchContentletsByUser(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, boolean filterUnpublish, boolean filterLocked, int page, String orderBy,int perPage, final User currentUser, HttpSession sess,String  modDateFrom, String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
 		if(perPage < 1){
 			perPage = Config.getIntProperty("PER_PAGE", 40);
@@ -892,6 +898,34 @@ public class ContentletAjax {
 
 				searchResult = new HashMap<String, String>();
 				ContentType type = con.getContentType();
+				boolean hasImage=false;
+				boolean hasBinary=false;
+				String imageField=null;
+				String binaryType=null;
+                for (com.dotcms.contenttype.model.field.Field f : type.fields()) {
+                  if (f instanceof BinaryField) {
+                    File bin = con.getBinary(f.variable());
+                    if (!bin.exists()) {
+                      continue;
+                    }
+                    hasBinary = true;
+                    if (UtilMethods.isImage(bin.getName())) {
+                      hasImage = true;
+                      imageField = f.variable();
+
+        
+                    }
+                  }
+                  if (hasBinary && hasImage) {
+                    break;
+                  }
+        
+                }
+				
+				searchResult.put("hasBinary", String.valueOf(hasBinary));
+				searchResult.put("hasImage", String.valueOf(hasImage));
+				searchResult.put("imageField", imageField);
+				
 				searchResult.put("typeVariable", type.variable());
 				searchResult.put("baseType",type.baseType().name());
 				for (String fieldContentlet : fieldsMapping.keySet()) {
