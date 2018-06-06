@@ -18,6 +18,7 @@ import java.util.UUID;
  */
 public class AngularResetPasswordUrlStrategy implements UrlStrategy {
 
+    private static final String TOKEN_SEPARATOR = "+++";
     private final JsonWebTokenService jsonWebTokenService;
     private final long jwtMillis =
             Config.getIntProperty("RECOVER_PASSWORD_TOKEN_TTL_MINS", 20) * DateUtil.MINUTE_MILLIS;
@@ -41,11 +42,13 @@ public class AngularResetPasswordUrlStrategy implements UrlStrategy {
         final String token = (String) params.get(TOKEN);
 
         final String jwt = this.jsonWebTokenService.generateToken(
-                new JWTBean(UUID.randomUUID().toString(), token, user.getModificationDate(),
+                new JWTBean(UUID.randomUUID().toString(), user.getUserId(),
+                        user.getModificationDate(),
                         this.jwtMillis
                 ));
 
-        return java.text.MessageFormat.format(HTML_NG_RESET_PASSWORD_TRUE_USER_ID_0_TOKEN_1, jwt);
+        return java.text.MessageFormat.format(HTML_NG_RESET_PASSWORD_TRUE_USER_ID_0_TOKEN_1,
+                (jwt + TOKEN_SEPARATOR + token));
     } // getResetUserPasswordRelativeURL.
 
 } // E:O:F:AngularResetPasswordUrlStrategy.
