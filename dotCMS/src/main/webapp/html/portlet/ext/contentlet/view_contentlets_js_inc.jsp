@@ -22,6 +22,7 @@
 
 <%Structure calendarEventSt = APILocator.getStructureAPI().findByVarName("calendarEvent", APILocator.getUserAPI().getSystemUser());%>
 
+        dojo.require("dojo.NodeList-traverse");
         dojo.require("dojox.dtl.filter.strings");
         dojo.require("dijit.form.FilteringSelect");
         dojo.require("dijit.form.MultiSelect");
@@ -1435,6 +1436,20 @@
             return obj.value;
         }
 
+        function getSelectedWorkflowId(){
+            var obj = dijit.byId("scheme_id");
+            if(!obj)
+               obj = dojo.byId("scheme_id");
+            return obj.value;
+        }
+
+        function getSelectedStepId(){
+           var obj = dijit.byId("step_id");
+           if(!obj)
+              obj = dojo.byId("step_id");
+           return obj.value;
+        }
+
         function doSearch (page, sortBy) {
                 // Wait for the "HostFolderFilteringSelect" widget to end the values updating process before proceeding with the search, if necessary.
                 if (dijit.byId('FolderHostSelector') && dijit.byId('FolderHostSelector').attr('updatingSelectedValue')) {
@@ -2439,12 +2454,17 @@
                     dijit.byId('unlockButton').setAttribute("disabled", false);
                     <%=(canReindex?"dijit.byId('reindexButton').setAttribute(\"disabled\", false);":"") %>
                 }
+
+                dijit.byId('bulkAvailableActions').setAttribute("disabled", false);
                 return;
             }
 
         }
 
         // nothing selected
+
+        dijit.byId('bulkAvailableActions').setAttribute("disabled", true);
+
        	if (showArchive) {
                     dijit.byId("archiveDropDownButton").setAttribute("disabled", true);
                     dijit.byId("unArchiveButton").setAttribute("disabled", true);
@@ -2469,6 +2489,7 @@
                      <%=(canReindex?"dijit.byId('reindexButton').setAttribute(\"disabled\", true);":"") %>
         }
     }
+
     function displayArchiveButton(){
 
         var showArchive =  (dijit.byId("showingSelect").getValue() == "archived");

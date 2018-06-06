@@ -28,6 +28,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.model.*;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.tag.model.Tag;
@@ -300,11 +301,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			if(task!=null && task.getId()!=null) {
 
 				final String stepId = task.getStatus();
-				contentletMap.put(ESMappingConstants.WORKFLOW_CREATED_BY, task.getCreatedBy());
-				contentletMap.put(ESMappingConstants.WORKFLOW_ASSIGN, task.getAssignedTo());
-				contentletMap.put(ESMappingConstants.WORKFLOW_STEP, task.getStatus());
-				contentletMap.put(ESMappingConstants.WORKFLOW_MOD_DATE, elasticSearchDateTimeFormat.format(task.getModDate()));
-				contentletMap.put(ESMappingConstants.WORKFLOW_MOD_DATE + TEXT, datetimeFormat.format(task.getModDate()));
 
 				if (UtilMethods.isSet(stepId)) {
 
@@ -314,8 +310,32 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 						contentletMap.put(ESMappingConstants.WORKFLOW_SCHEME, step.getSchemeId());
 					}
 				}
+				contentletMap.put(ESMappingConstants.WORKFLOW_CREATED_BY, task.getCreatedBy());
+				contentletMap.put(ESMappingConstants.WORKFLOW_ASSIGN, task.getAssignedTo());
+				contentletMap.put(ESMappingConstants.WORKFLOW_STEP, task.getStatus());
+				contentletMap.put(ESMappingConstants.WORKFLOW_MOD_DATE, elasticSearchDateTimeFormat.format(task.getModDate()));
+				contentletMap.put(ESMappingConstants.WORKFLOW_MOD_DATE + TEXT, datetimeFormat.format(task.getModDate()));
+
+
+			}else {
+			   List<String> stepIds= new ArrayList<>();
+			   StringWriter schemeWriter = new StringWriter();
+			   List<WorkflowScheme> schemes= workflowAPI.findSchemesForContentType(contentlet.getContentType());
+			    for(WorkflowScheme scheme : schemes) {
+			        List<WorkflowStep> steps = workflowAPI.findSteps(scheme);
+			        if(steps!=null && !steps.isEmpty()) {
+			            schemeWriter.append(scheme.getId()+ ' ');
+			            stepIds.add(steps.get(0).getId());
+			        }
+			    }
+			       
+			    
+			     contentletMap.put(ESMappingConstants.WORKFLOW_SCHEME, schemeWriter.toString());
+	             contentletMap.put(ESMappingConstants.WORKFLOW_STEP, stepIds);
+			    
+			    
 			}
-		} catch(DotDataException e){
+		} catch(Exception e){
 			Logger.error(this.getClass(), "unable to add workflow info to index:" + e, e);
 		}
 	}
