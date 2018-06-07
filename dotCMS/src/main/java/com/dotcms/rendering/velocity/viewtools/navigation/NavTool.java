@@ -9,6 +9,8 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -114,13 +116,18 @@ public class NavTool implements ViewTool {
             result.setChildrenFolderIds(folderIds);
             result.setShowOnMenu(folder.isShowOnMenu());
 
+            long defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+
             List menuItems;
-            if (path.equals("/"))
+            if (path.equals("/")) {
                 menuItems = APILocator.getFolderAPI()
-                    .findSubFolders(host, true);
-            else
+                        .findSubFolders(host, true);
+            }else {
                 menuItems = APILocator.getFolderAPI()
-                    .findMenuItems(folder, systemUserParam, true);
+                        .findMenuItems(folder, systemUserParam, true);
+            }
+
+
 
             for (Object item : menuItems) {
                 if (item instanceof Folder) {
@@ -142,8 +149,18 @@ public class NavTool implements ViewTool {
                     children.add(nav);
                 } else if (item instanceof IHTMLPage) {
                     IHTMLPage itemPage = (IHTMLPage) item;
+                    Contentlet pageInRequestedLanguage = null;
 
-                    if (itemPage.getLanguageId() == languageId || LanguageWebAPI.canDefaultPageToDefaultLanguage()) {
+                    try {
+                        pageInRequestedLanguage = APILocator.getContentletAPI().
+                                findContentletByIdentifier(itemPage.getIdentifier(), true,
+                                        languageId, systemUser, false);
+                    }catch (DotContentletStateException e){
+                    Logger.debug(this, "Contentlet in the requested language does not exists");
+                }
+
+                    if (itemPage.getLanguageId() == languageId ||
+                            (LanguageWebAPI.canDefaultPageToDefaultLanguage() && itemPage.getLanguageId() == defaultLanguage && pageInRequestedLanguage == null)) {
                         final String httpProtocol = "http://";
                         final String httpsProtocol = "https://";
 
@@ -195,7 +212,18 @@ public class NavTool implements ViewTool {
                 } else if (item instanceof IFileAsset) {
                     IFileAsset itemFile = (IFileAsset) item;
 
-                    if (itemFile.getLanguageId() == languageId || LanguageWebAPI.canDefaultFileToDefaultLanguage()) {
+                    Contentlet fileInRequestedLanguage = null;
+
+                    try {
+                        fileInRequestedLanguage = APILocator.getContentletAPI().
+                                findContentletByIdentifier(itemFile.getPermissionId(), true,
+                                        languageId, systemUser, false);
+                    }catch (DotContentletStateException e){
+                        Logger.debug(this, "Contentlet in the requested language does not exists");
+                    }
+
+                    if (itemFile.getLanguageId() == languageId ||
+                            (LanguageWebAPI.canDefaultFileToDefaultLanguage() && itemFile.getLanguageId() == defaultLanguage && fileInRequestedLanguage == null)) {
                         ident = APILocator.getIdentifierAPI()
                             .find(itemFile.getPermissionId());
                         NavResult nav = new NavResult(folder.getInode(), host.getIdentifier(), itemFile.getLanguageId());
