@@ -5,13 +5,6 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import javax.servlet.http.HttpServletRequest;
-
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.dotcms.auth.providers.jwt.beans.JWTBean;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -24,6 +17,12 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.CompanyPool;
 import com.liferay.portal.ejb.UserManager;
 import com.liferay.portal.model.Company;
+import java.util.Date;
+import javax.servlet.http.HttpServletRequest;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class ResetPasswordResourceIntegrationTest{
 
@@ -52,7 +51,6 @@ public class ResetPasswordResourceIntegrationTest{
         RestUtilTest.initMockContext();
         responseUtil = ResponseUtil.INSTANCE;
         resetPasswordForm = this.getForm();
-
     }
 
     @Test
@@ -61,16 +59,13 @@ public class ResetPasswordResourceIntegrationTest{
         final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
         final JWTBean jwtBean = new JWTBean("dotcms.org.1",
                 "token",
-                "dotcms.org.1", 100000);
+                new Date(), 100000);
 
         when(jsonWebTokenService.parseToken(eq("token"))).thenReturn(jwtBean);
-        
         ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
-
         Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
 
         RestUtilTest.verifyErrorResponse(response,  Response.Status.BAD_REQUEST.getStatusCode(), "please-enter-a-valid-login");
-
     }
 
     @Test
@@ -79,7 +74,7 @@ public class ResetPasswordResourceIntegrationTest{
         final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
         final JWTBean jwtBean = new JWTBean("dotcms.org.1",
                 "token",
-                "dotcms.org.1", 100000);        
+                new Date(), 100000);
         when(jsonWebTokenService.parseToken(eq("token"))).thenReturn(jwtBean);
         
         ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
@@ -93,7 +88,7 @@ public class ResetPasswordResourceIntegrationTest{
         final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
         final JWTBean jwtBean = new JWTBean("dotcms.org.1",
                 "token",
-                "dotcms.org.1", 100000);
+                new Date(), 100000);
 
         when(jsonWebTokenService.parseToken(eq("token"))).thenReturn(jwtBean);
         ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
@@ -124,4 +119,5 @@ public class ResetPasswordResourceIntegrationTest{
     public static void cleanUp(){
     	CompanyPool.remove(RestUtilTest.DEFAULT_COMPANY);
     }
+
 }
