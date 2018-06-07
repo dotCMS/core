@@ -148,7 +148,11 @@ public class NavTool implements ViewTool {
                     children.add(nav);
                 } else if (item instanceof IHTMLPage) {
                     IHTMLPage itemPage = (IHTMLPage) item;
-                    boolean pageExistInRequestedLanguage = findHTMLPageInRequestedLanguage(menuItems,itemPage.getIdentifier(),languageId);
+                    boolean pageExistInRequestedLanguage = true;
+
+                    if(itemPage.getLanguageId() != languageId){
+                        pageExistInRequestedLanguage = findHTMLPageInRequestedLanguage(menuItems,itemPage.getIdentifier(),languageId);
+                    }
 
 
                     if (itemPage.getLanguageId() == languageId ||
@@ -203,7 +207,11 @@ public class NavTool implements ViewTool {
                     children.add(nav);
                 } else if (item instanceof IFileAsset) {
                     IFileAsset itemFile = (IFileAsset) item;
-                    boolean fileExistInRequestedLanguage = findFileAssetInRequestedLanguage(menuItems,itemFile.getPermissionId(),languageId);
+                    boolean fileExistInRequestedLanguage = true;
+
+                    if(itemFile.getLanguageId() != languageId){
+                        fileExistInRequestedLanguage = findFileAssetInRequestedLanguage(menuItems,itemFile.getPermissionId(),languageId);
+                    }
 
 
                     if (itemFile.getLanguageId() == languageId ||
