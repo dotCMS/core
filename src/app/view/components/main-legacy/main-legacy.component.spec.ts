@@ -31,6 +31,14 @@ class MockDotContentletEditorComponent {
 }
 
 @Component({
+    selector: 'dot-workflow-task-detail',
+    template: ''
+})
+class MockDotWorkflowTaskDetailComponent {
+    @Output() close: EventEmitter<any> = new EventEmitter();
+}
+
+@Component({
     selector: 'dot-main-nav',
     template: ''
 })
@@ -54,6 +62,7 @@ describe('MainComponentLegacyComponent', () => {
             declarations: [
                 MainComponentLegacyComponent,
                 MockDotContentletEditorComponent,
+                MockDotWorkflowTaskDetailComponent,
                 MockDotDialogComponent,
                 MockDotMainNavComponent,
                 MockDotToolbarComponent

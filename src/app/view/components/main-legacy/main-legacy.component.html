@@ -1,5 +1,6 @@
 <dot-dialog></dot-dialog>
 <dot-contentlet-editor (close)="onCloseContentletEditor()"></dot-contentlet-editor>
+<dot-workflow-task-detail (close)="onCloseContentletEditor()"></dot-workflow-task-detail>
 
 <div class="layout" [class.collapsed]="isMenuCollapsed">
     <dot-toolbar class="layout__toolbar" [collapsed]="isMenuCollapsed" (mainButtonClick)="toggleSidenav($event)"></dot-toolbar>

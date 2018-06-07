@@ -31,10 +31,12 @@ import {
 import { DotTextareaContentModule } from './view/components/_common/dot-textarea-content/dot-textarea-content.module';
 import { DotGlobalMessageModule } from './view/components/_common/dot-global-message/dot-global-message.module';
 import { DotContentletEditorModule } from './view/components/dot-contentlet-editor/dot-contentlet-editor.module';
+import { DotWorkflowTaskDetailModule } from './view/components/dot-workflow-task-detail/dot-workflow-task-detail.module';
 
 export const CUSTOM_MODULES = [
     DotActionButtonModule,
     DotContentletEditorModule,
+    DotWorkflowTaskDetailModule,
     DotGlobalMessageModule,
     DotTextareaContentModule,
     FieldValidationMessageModule,
