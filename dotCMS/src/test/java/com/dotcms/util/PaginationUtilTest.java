@@ -90,7 +90,7 @@ public class PaginationUtilTest {
      * Should: Should pass a empty String value to the paginator
      */
     @Test
-    public void testPageWHenFIlterISNull() throws IOException {
+    public void testPageWhenFilterIsNull() throws IOException {
         final HttpServletRequest req = mock( HttpServletRequest.class );
         final User user = new User();
         final String filter = null;
