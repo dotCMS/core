@@ -7,13 +7,11 @@ import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonNode;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.repackage.jersey.repackaged.com.google.common.collect.ImmutableList;
 import com.dotcms.rest.exception.BadRequestException;
-import com.dotmarketing.beans.MultiTree;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 
