@@ -55,7 +55,7 @@ public class MultiTreeFactory {
 
     static final String INSERT_SQL =
             "insert into multi_tree (parent1, parent2, child, relation_type, tree_order ) values (?,?,?,?,?)  ";
-
+    static final String SELECT_BY_ONE_PARENT_AND_REALATION = "select * from multi_tree where ( parent1 = ? or parent2 = ?) AND relation_type = ? order by tree_order";
     static final String SELECT_BY_ONE_PARENT = "select * from multi_tree where parent1 = ? or parent2 = ? order by tree_order";
     static final String SELECT_BY_TWO_PARENTS = "select * from multi_tree where parent1 = ? and parent2 = ?  order by tree_order";
     static final String SELECT_ALL = "select * from multi_tree  ";
@@ -84,7 +84,19 @@ public class MultiTreeFactory {
     public static void deleteMultiTreeByParent(String pageOrContainer) throws DotDataException {
         deleteMultiTree(getMultiTrees(pageOrContainer));
     }
+    public static void deleteMultiTreeByParentAndRelationType(String pageOrContainer, final String relationType) throws DotDataException {
+        deleteMultiTree(getMultiTreesByParentAndRelationType(pageOrContainer,relationType));
+    }
     
+    private static List<MultiTree> getMultiTreesByParentAndRelationType(final String pageOrContainer, final String relationType) throws DotDataException {
+        DotConnect db = new DotConnect().setSQL(SELECT_BY_ONE_PARENT_AND_REALATION)
+                .addParam(pageOrContainer)
+                .addParam(pageOrContainer)
+                .addParam(relationType);
+        
+        return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).asList();
+
+    }
     public static void deleteMultiTreeByChild(String contentIdentifier) throws DotDataException {
         deleteMultiTree(getMultiTreesByChild(contentIdentifier));
     }
@@ -303,16 +315,15 @@ public class MultiTreeFactory {
 
         Logger.debug(MultiTreeFactory.class, String.format("Saving page's content: %s", mTrees));
 
-        final DotConnect db = new DotConnect().setSQL(DELETE_ALL_MULTI_TREE_SQL)
-                .addParam(pageId);
-        db.loadResult();
+        final DotConnect db = new DotConnect();
 
-        final List<Params> params = list();
+
+
         for (final MultiTree tree : mTrees) {
-            params.add(new Params(pageId, tree.getContainer(), tree.getContentlet(), tree.getRelationType(), tree.getTreeOrder()));
+            _dbUpsert(tree);
         }
 
-        db.executeBatch(INSERT_SQL, params);
+
 
         final MultiTree mTree = mTrees.get(0);
         updateHTMLPageVersionTS(mTree.getHtmlPage());

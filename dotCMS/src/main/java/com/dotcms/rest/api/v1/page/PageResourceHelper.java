@@ -76,11 +76,14 @@ public class PageResourceHelper implements Serializable {
     @WrapInTransaction
     public void saveContent(final String pageId, final List<PageContainerForm.ContainerEntry> containerEntries) throws DotDataException {
 
-        MultiTreeFactory.deleteMultiTreeByParent(pageId);
+        
 
         final List<MultiTree> multiTrees = new ArrayList<>();
 
         for (final PageContainerForm.ContainerEntry containerEntry : containerEntries) {
+            
+            List<MultiTree> trees = MultiTreeFactory.getMultiTrees(pageId, containerEntry.getContainerId(), containerEntry.getContainerUUID());
+            MultiTreeFactory.deleteMultiTree(trees);
             int i = 0;
             final  List<String> contentIds = containerEntry.getContentIds();
 
