@@ -1,5 +1,7 @@
 package com.dotcms.rendering.velocity.viewtools.navigation;
 
+import static java.util.stream.Collectors.toList;
+
 import com.dotcms.rendering.velocity.viewtools.LanguageWebAPI;
 
 import com.dotmarketing.beans.Host;
@@ -23,6 +25,7 @@ import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UtilMethods;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -116,7 +119,7 @@ public class NavTool implements ViewTool {
             result.setChildrenFolderIds(folderIds);
             result.setShowOnMenu(folder.isShowOnMenu());
 
-            long defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+            final long defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 
             List menuItems;
             if (path.equals("/")) {
@@ -149,18 +152,11 @@ public class NavTool implements ViewTool {
                     children.add(nav);
                 } else if (item instanceof IHTMLPage) {
                     IHTMLPage itemPage = (IHTMLPage) item;
-                    Contentlet pageInRequestedLanguage = null;
+                    boolean pageExistInRequestedLanguage = findHTMLPageInRequestedLanguage(menuItems,itemPage.getIdentifier(),languageId);
 
-                    try {
-                        pageInRequestedLanguage = APILocator.getContentletAPI().
-                                findContentletByIdentifier(itemPage.getIdentifier(), true,
-                                        languageId, systemUser, false);
-                    }catch (DotContentletStateException e){
-                    Logger.debug(this, "Contentlet in the requested language does not exists");
-                }
 
                     if (itemPage.getLanguageId() == languageId ||
-                            (LanguageWebAPI.canDefaultPageToDefaultLanguage() && itemPage.getLanguageId() == defaultLanguage && pageInRequestedLanguage == null)) {
+                            (LanguageWebAPI.canDefaultPageToDefaultLanguage() && itemPage.getLanguageId() == defaultLanguage && !pageExistInRequestedLanguage)) {
                         final String httpProtocol = "http://";
                         final String httpsProtocol = "https://";
 
@@ -211,19 +207,11 @@ public class NavTool implements ViewTool {
                     children.add(nav);
                 } else if (item instanceof IFileAsset) {
                     IFileAsset itemFile = (IFileAsset) item;
+                    boolean fileExistInRequestedLanguage = findFileAssetInRequestedLanguage(menuItems,itemFile.getPermissionId(),languageId);
 
-                    Contentlet fileInRequestedLanguage = null;
-
-                    try {
-                        fileInRequestedLanguage = APILocator.getContentletAPI().
-                                findContentletByIdentifier(itemFile.getPermissionId(), true,
-                                        languageId, systemUser, false);
-                    }catch (DotContentletStateException e){
-                        Logger.debug(this, "Contentlet in the requested language does not exists");
-                    }
 
                     if (itemFile.getLanguageId() == languageId ||
-                            (LanguageWebAPI.canDefaultFileToDefaultLanguage() && itemFile.getLanguageId() == defaultLanguage && fileInRequestedLanguage == null)) {
+                            (LanguageWebAPI.canDefaultFileToDefaultLanguage() && itemFile.getLanguageId() == defaultLanguage && !fileExistInRequestedLanguage)) {
                         ident = APILocator.getIdentifierAPI()
                             .find(itemFile.getPermissionId());
                         NavResult nav = new NavResult(folder.getInode(), host.getIdentifier(), itemFile.getLanguageId());
@@ -322,6 +310,28 @@ public class NavTool implements ViewTool {
         }
 
         return null;
+    }
+
+    private boolean findHTMLPageInRequestedLanguage(List items, String identifier, long language){
+        for(Object item : items){
+            if(item instanceof IHTMLPage){
+                if(((IHTMLPage) item).getIdentifier().equals(identifier) && ((IHTMLPage) item).getLanguageId() == language){
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean findFileAssetInRequestedLanguage(List items, String identifier, long language){
+        for(Object item : items){
+            if(item instanceof IFileAsset){
+                if(((IFileAsset) item).getPermissionId().equals(identifier) && ((IFileAsset) item).getLanguageId() == language){
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
 
