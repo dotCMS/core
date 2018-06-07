@@ -1,25 +1,36 @@
-
+<%@page import="com.liferay.portal.language.LanguageUtil"%>
+<%@page import="com.dotmarketing.util.UtilMethods" %>
+<%@ page import="com.dotcms.util.LicenseValiditySupplier" %>
 <script language="Javascript">
-
 
     /**
      *
      */
     function doShowAvailableActions() {
 
-        var selectedInodes = getSelectedInodes();
-        if(!selectedInodes){
-           return;
-        }
+        dojo.byId('bulkActionsContainer').innerHTML = '';
 
-        var data;
-        if (Array.isArray(selectedInodes) && selectedInodes.length > 0) {
-            data = {"contentletIds": selectedInodes};
-        } else {
-            data = {"query": selectedInodes}; //No. it's not a bug. This variable sometimes holds a query.
-        }
-        getBulkActions(data);
+            <% if(enterprise){ %>
+               // if there are selected items and we're running an enterprise verision the we can bother retriving the available actions
+                var selectedInodes = getSelectedInodes();
+                if (!selectedInodes) {
+                    return;
+                }
 
+                var data;
+                if (Array.isArray(selectedInodes) && selectedInodes.length > 0) {
+                    data = {"contentletIds": selectedInodes};
+                } else {
+                    data = {"query": selectedInodes}; //No. it's not a bug. This variable sometimes holds a query.
+                }
+                getAvailableBulkActions(data);
+               //adjust dialog size to show the actions section
+               dojo.style(dijit.byId('workflowActionsDia').domNode, {height:'575px'});
+        <%}else{%>
+                //adjust dialog size to hide the actions section
+                dojo.style(dijit.byId('workflowActionsDia').domNode, {height:'141px'});
+            <%}%>
+        dijit.byId('workflowActionsDia').show();
     }
 
     /**
@@ -75,18 +86,33 @@
     }
 
     function emptyRecordsMarkup() {
+        var emptyLabel = '<%=LanguageUtil.get(pageContext, "No-Available-Actions")%>';
         var empty
             = '<table class="sTypeTable" style="width:90%; border-collapse: separate; border-spacing: 10px 15px;margin-bottom:10px;">\n'
             + '  <tr>\n'
             + '     <th colspan="2" class="sTypeHeader" ></th>\n'
             + '  </tr>\n'
             + '  <tr>\n'
-            + '     <td> No actions were found. </td>\n'
+            + '     <td> '+emptyLabel+' </td>\n'
             + '  </tr>\n'
             + '</table>';
         return empty;
     }
-    
+
+    function errorMarkup() {
+        var errorMessage= '<%=LanguageUtil.get(pageContext, "Available-actions-error")%>';
+        var empty
+            = '<table class="sTypeTable" style="width:90%; border-collapse: separate; border-spacing: 10px 15px;margin-bottom:10px;">\n'
+            + '  <tr>\n'
+            + '     <th colspan="2" class="sTypeHeader" ></th>\n'
+            + '  </tr>\n'
+            + '  <tr>\n'
+            + '     <td> '+errorMessage+' </td>\n'
+            + '  </tr>\n'
+            + '</table>';
+        return empty;
+    }
+
     /**
      *
      * @param entity
@@ -194,7 +220,7 @@
         return true;
     }
 
-    function getBulkActions(data){
+    function getAvailableBulkActions(data){
 
        var closeHandle = dojo.connect(dijit.byId('workflowActionsDia'), "hide",
             function(){
@@ -219,22 +245,46 @@
                 if(data && data.entity){
                     var markUp = actionsSummaryMarkup(data.entity);
                     dojo.byId('bulkActionsContainer').innerHTML = markUp;
-                    dijit.byId('workflowActionsDia').show();
                     dojo.query(".wfAction").onclick(
                        function(e){
                            fireAction(e);
                        }
                     );
                 } else {
-                    showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Available-actions-error")%>", true);
+                    dojo.byId('bulkActionsContainer').innerHTML = errorMarkup();
+                    console.error('No data was returned.');
                 }
             },
             error: function(error){
-                console.log(error);
-                showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Available-actions-error")%>", true);
+                dojo.byId('bulkActionsContainer').innerHTML = errorMarkup();
+                console.error(error);
             }
         }
         dojo.xhrPost(xhrArgs);
+    }
+
+    function addToBundleSelectedContentletsProxy(){
+        addToBundleSelectedContentlets();
+        dijit.byId('workflowActionsDia').hide();
+        return true;
+    }
+
+    function pushPublishSelectedContentletsProxy(){
+        pushPublishSelectedContentlets();
+        dijit.byId('workflowActionsDia').hide();
+        return true;
+    }
+
+    function unlockSelectedContentletsProxy(){
+        unlockSelectedContentlets();
+        dijit.byId('workflowActionsDia').hide();
+        return true;
+    }
+
+    function reindexSelectedContentletsProxy() {
+        reindexSelectedContentlets();
+        dijit.byId('workflowActionsDia').hide();
+        return true;
     }
 
 </script>
@@ -242,7 +292,7 @@
 <style>
     #workflowActionsDia {
         width: 600px;
-        height: 570px;
+        height: 575px;
     }
 
     #workflowActionsDia .listingTable {
@@ -261,8 +311,43 @@
 </style>
 
 <div dojoType="dijit.Dialog" id="workflowActionsDia"
-     title='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Bulk-Actions" )) %>'>
+     title='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Available-actions" )) %>'>
+    <div>
+        <table class="sTypeTable"
+               style="width:90%; border-collapse: separate; border-spacing: 10px 15px;margin-bottom:10px;">
+
+            <tr class="workflowActionsOption">
+                <%if(enterprise){%>
+                <td style="width:140px;text-align: right">
+                    <button id="addToBundleButton" dojoType="dijit.form.Button" class="dijitButton" data-dojo-props="onClick: addToBundleSelectedContentletsProxy">
+                        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>
+                    </button>
+                </td>
+                <% if ( sendingEndpoints ) { %>
+                <td style="width:140px;text-align: right">
+                  <button id="pushPublishButton"  dojoType="dijit.form.Button" class="dijitButton" data-dojo-props="onClick: pushPublishSelectedContentletsProxy">
+                       <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>
+                  </button>
+                </td>
+                <% } %>
+                <%}%>
+                <td style="width:140px;text-align: right">
+                    <button id="unlockButton" dojoType="dijit.form.Button" class="dijitButton" data-dojo-props="onClick: unlockSelectedContentletsProxy">
+                        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unlock"))%>
+                    </button>
+                </td>
+                <%if(canReindexContentlets){%>
+                <td style="width:140px;text-align: right">
+                    <button id="reindexButton" dojoType="dijit.form.Button" class="dijitButton" data-dojo-props="onClick: reindexSelectedContentletsProxy">
+                        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Reindex")) %>
+                    </button>
+                </td>
+                <%}%>
+            </tr>
+        </table>
+    </div>
     <div id="bulkActionsContainer">
+        <%-- Begin of sample markup --- (This markup is here just for dev purposes.  It really gets generated on the fly with Javascript) --%>
         <table class="sTypeTable"
                style="width:90%; border-collapse: separate; border-spacing: 10px 15px;margin-bottom:10px;">
             <tr>
@@ -325,5 +410,6 @@
             </tr>
         </table>
 
+        <%-- End of sample markup --%>
     </div>
 </div>

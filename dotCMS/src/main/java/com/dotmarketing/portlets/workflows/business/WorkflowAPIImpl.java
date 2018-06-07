@@ -2002,7 +2002,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	/**
 	 * This method takes the contentlets that are the result of a selection made on the UI or the
-	 * product of a luceneQuery The list then gets partitioned and distributed between the list of
+	 * product of a lucene Query The list then gets partitioned and distributed between the list of
 	 * available workers (threads).
 	 * @param action
 	 * @param user
