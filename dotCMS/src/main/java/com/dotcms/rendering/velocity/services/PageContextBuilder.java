@@ -239,8 +239,8 @@ public class PageContextBuilder {
                     ctxMap.put("contentletList" + c.getIdentifier() + uniqueId, contentlist);
 
                     if (ContainerUUID.UUID_LEGACY_VALUE.equals(uniqueId)) {
-                        ctxMap.put("contentletList" + c.getIdentifier() + ContainerUUID.UUID_DEFAULT_VALUE, contentlist);
-                    } else  if (ContainerUUID.UUID_DEFAULT_VALUE.equals(uniqueId)) {
+                        ctxMap.put("contentletList" + c.getIdentifier() + ContainerUUID.UUID_START_VALUE, contentlist);
+                    } else  if (ContainerUUID.UUID_START_VALUE.equals(uniqueId)) {
                         ctxMap.put("contentletList" + c.getIdentifier() + ContainerUUID.UUID_LEGACY_VALUE, contentlist);
                     }
 

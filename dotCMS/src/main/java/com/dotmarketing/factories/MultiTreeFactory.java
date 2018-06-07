@@ -1,6 +1,7 @@
 package com.dotmarketing.factories;
 
 
+import com.dotcms.business.CloseDB;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.rendering.velocity.services.PageLoader;
 
@@ -19,17 +20,16 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.util.Logger;
 
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import com.dotmarketing.util.PageMode;
 import com.google.common.collect.Lists;
 import org.elasticsearch.cluster.routing.allocation.decider.Decision;
+import org.jetbrains.annotations.NotNull;
 
 import static com.dotcms.util.CollectionsUtils.list;
 
@@ -49,7 +49,7 @@ public class MultiTreeFactory {
 
 
     static final String DELETE_SQL = "delete from multi_tree where parent1=? and parent2=? and child=? and  relation_type = ?";
-    static final String DELETE_ALL_MULTI_TREE_SQL = "delete from multi_tree where parent1=?";
+    static final String DELETE_ALL_MULTI_TREE_SQL = "delete from multi_tree where parent1=? AND relation_type != ?";
     static final String SELECT_SQL =
             "select * from multi_tree where parent1 = ? and parent2 = ? and child = ? and  relation_type = ?";
 
@@ -69,6 +69,9 @@ public class MultiTreeFactory {
 
 
     static final String UPDATE_RELATION_TYPE_SQL = "UPDATE multi_tree SET relation_type = ? WHERE parent1 = ? and parent2 = ? and relation_type = ?";
+
+    static final String UPDATE_PAGE_UUID_TO_DEFAULT_SQL = "UPDATE multi_tree SET relation_type = ? WHERE parent1 = ?";
+    static final String UPDATE_PAGE_CONTAINER_UUID_TO_DEFAULT_SQL = "UPDATE multi_tree SET relation_type = ? WHERE parent1 = ? and parent2 = ?";
 
     public static void deleteMultiTree(final MultiTree mTree) throws DotDataException {
         _dbDelete(mTree);
@@ -296,28 +299,46 @@ public class MultiTreeFactory {
      * @throws DotDataException
      */
     @WrapInTransaction
+    @CloseDB
     public static void saveMultiTrees(final String pageId, final List<MultiTree> mTrees) throws DotDataException {
-        if (mTrees == null || mTrees.isEmpty()) {
+        if (mTrees == null) {
             throw new DotDataException("empty list passed in");
         }
 
         Logger.debug(MultiTreeFactory.class, String.format("Saving page's content: %s", mTrees));
 
-        final DotConnect db = new DotConnect().setSQL(DELETE_ALL_MULTI_TREE_SQL)
-                .addParam(pageId);
-        db.loadResult();
+        final DotConnect db = new DotConnect();
 
-        final List<Params> params = list();
-        for (final MultiTree tree : mTrees) {
-            params.add(new Params(pageId, tree.getContainer(), tree.getContentlet(), tree.getRelationType(), tree.getTreeOrder()));
+        db.setSQL(DELETE_ALL_MULTI_TREE_SQL)
+            .addParam(pageId)
+            .addParam(ContainerUUID.UUID_DEFAULT_VALUE)
+            .loadResult();
+
+        if (!mTrees.isEmpty()) {
+            final List<Params> insertParams = list();
+            final Set<String> newContainers = new HashSet<>();
+
+            for (final MultiTree tree : mTrees) {
+                insertParams.add(new Params(pageId, tree.getContainer(), tree.getContentlet(), tree.getRelationType(),
+                        tree.getTreeOrder()));
+                newContainers.add(tree.getContainer());
+            }
+
+            db.executeBatch(INSERT_SQL, insertParams);
+
+            final MultiTree mTree = mTrees.get(0);
+            updateHTMLPageVersionTS(mTree.getHtmlPage());
+            refreshPageInCache(mTree.getHtmlPage());
         }
+    }
 
-        db.executeBatch(INSERT_SQL, params);
 
-        final MultiTree mTree = mTrees.get(0);
-        updateHTMLPageVersionTS(mTree.getHtmlPage());
-        refreshPageInCache(mTree.getHtmlPage());
-
+    protected static List<String> getContainersId(String pageId) throws DotDataException {
+        return MultiTreeFactory.getMultiTrees(pageId).stream()
+                .map(multiTree -> multiTree.getContainer())
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
     }
 
     private static void _dbUpsert(final MultiTree mtree) throws DotDataException {

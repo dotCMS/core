@@ -19,6 +19,9 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+
+import javax.annotation.Nullable;
 
 /**
  * {@link PageResource}'s form
@@ -30,17 +33,20 @@ class PageForm {
     private final String title;
     private final String hostId;
     private final TemplateLayout layout;
-    private final List<ContainerUUIDChanged> changes;
+    private final Map<String, ContainerUUIDChanged> changes;
+    private final Map<String, String> newlyContainersUUID;
 
     public PageForm(final String themeId, final String title, final String hostId, final TemplateLayout layout,
-                    final List<ContainerUUIDChanged> changes) {
+                    final Map<String, ContainerUUIDChanged> changes, Map<String, String> newlyContainersUUID) {
 
         this.themeId = themeId;
         this.title = title;
         this.hostId = hostId;
         this.layout = layout;
-        this.changes = new ImmutableList.Builder<ContainerUUIDChanged>().addAll(changes).build();
+        this.changes = ImmutableMap.<String, ContainerUUIDChanged> builder().putAll(changes).build();
+        this.newlyContainersUUID = ImmutableMap.<String, String> builder().putAll(newlyContainersUUID).build();
     }
+
 
     /**
      *
@@ -78,9 +84,30 @@ class PageForm {
         return layout;
     }
 
-    public List<ContainerUUIDChanged> getChanges () {
-        return changes != null ? changes : Collections.EMPTY_LIST;
+    public ContainerUUIDChanged getChange (String identifier, String uuid) {
+        ContainerUUIDChanged containerUUIDChanged = this.changes.get(getChangeKey(identifier, uuid));
+
+        if (containerUUIDChanged == null) {
+            containerUUIDChanged = ContainerUUID.UUID_LEGACY_VALUE.equals(uuid) ?
+                    this.changes.get(getChangeKey(identifier, ContainerUUID.UUID_START_VALUE)) :
+                    this.changes.get(getChangeKey(identifier, ContainerUUID.UUID_LEGACY_VALUE));
+        }
+
+        return containerUUIDChanged;
     }
+
+    public String getNewlyContainerUUID (String identifier) {
+        return this.newlyContainersUUID.get(identifier);
+    }
+
+    private static String getChangeKey(ContainerUUID containerUUID) {
+        return getChangeKey(containerUUID.getIdentifier(), containerUUID.getUUID());
+    }
+
+    private static String getChangeKey(String identifier, String uuid) {
+        return String.format("%s - %s", identifier, uuid);
+    }
+
 
     public static final class Builder {
 
@@ -99,7 +126,10 @@ class PageForm {
         private Map<String, Object> layout;
 
         @JsonIgnore
-        private List<ContainerUUIDChanged> changes;
+        private Map<String, ContainerUUIDChanged> changes;
+
+        @JsonIgnore
+        private Map<String, String> newlyContainersUUID;
 
         public Builder() {
         }
@@ -140,7 +170,9 @@ class PageForm {
         }
 
         private void setContainersUUID() {
-            final List<ContainerUUIDChanged> changes = new ArrayList<>();
+            changes = new HashMap<>();
+            newlyContainersUUID = new HashMap<>();
+
             final Map<String, Long> maxUUIDByContainer = new HashMap<>();
 
             final Map<String, Object> body = (Map<String, Object>) layout.get("body");
@@ -155,34 +187,37 @@ class PageForm {
                 throw new BadRequestException("body has to have at least one row");
             }
 
-            getAllContainers().forEach(container -> {
-                try {
-                    final String containerId = container.get("identifier");
-                    final long currentUUID = maxUUIDByContainer.get(containerId) != null ?
-                            maxUUIDByContainer.get(containerId) : 0;
-                    final long nextUUID = currentUUID + 1;
-
-                    if (container.get("uuid") != null) {
-                        final ContainerUUID oldContainerUUID = MAPPER.readValue(MAPPER.writeValueAsString(container),
-                                ContainerUUID.class);
-                        container.put("uuid", String.valueOf(nextUUID));
-                        final ContainerUUID newContainerUUID = MAPPER.readValue(MAPPER.writeValueAsString(container),
-                                ContainerUUID.class);
-
-                        changes.add(new ContainerUUIDChanged(oldContainerUUID, newContainerUUID));
-                    } else {
-                        container.put("uuid", String.valueOf(nextUUID));
-                    }
-
-                    maxUUIDByContainer.put(containerId, nextUUID);
-
-                } catch (IOException e) {
-                    Logger.error(this.getClass(),"Exception on setContainersUUID exception message: " + e.getMessage(), e);
-                }
-            });
-
-            this.changes = changes;
+            getAllContainers().forEach(container -> setChange(maxUUIDByContainer, container));
         }
+
+        private void setChange(Map<String, Long> maxUUIDByContainer, Map<String, String> container) {
+            try {
+                final String containerId = container.get("identifier");
+                final long currentUUID = maxUUIDByContainer.get(containerId) != null ?
+                        maxUUIDByContainer.get(containerId) : 0;
+                final long nextUUID = currentUUID + 1;
+
+                if (container.get("uuid") != null) {
+                    final ContainerUUID oldContainerUUID = MAPPER.readValue(MAPPER.writeValueAsString(container),
+                            ContainerUUID.class);
+                    container.put("uuid", String.valueOf(nextUUID));
+                    final ContainerUUID newContainerUUID = MAPPER.readValue(MAPPER.writeValueAsString(container),
+                            ContainerUUID.class);
+
+                    String changeKey = getChangeKey(oldContainerUUID);
+                    changes.put(changeKey, new ContainerUUIDChanged(oldContainerUUID, newContainerUUID));
+                } else {
+                    container.put("uuid", String.valueOf(nextUUID));
+                    newlyContainersUUID.put(containerId, String.valueOf(nextUUID));
+                }
+
+                maxUUIDByContainer.put(containerId, nextUUID);
+
+            } catch (IOException e) {
+                Logger.error(this.getClass(),"Exception on setContainersUUID exception message: " + e.getMessage(), e);
+            }
+        }
+
 
         private Stream<Map<String, String>> getAllContainers() {
             final Stream<Map<String, String>> bodyContainers =
@@ -205,8 +240,7 @@ class PageForm {
         }
 
         public PageForm build(){
-
-            return new PageForm(themeId, title, hostId, getTemplateLayout(), changes);
+            return new PageForm(themeId, title, hostId, getTemplateLayout(), changes, newlyContainersUUID);
         }
     }
 }
