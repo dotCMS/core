@@ -148,6 +148,14 @@ function optimizeCallback() {
 	showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext,"Optimize-Done")%>");
 }
 
+function flushIndiciesCacheCallback(data) {
+	console.log("flushIndiciesCacheCallback",data);
+	var message = "<%=LanguageUtil.get(pageContext,"maintenance.index.cache.flush.message")%>";
+	message=message.replace("{0}", data.successfulShards);
+	message=message.replace("{1}", data.failedShards);
+    showDotCMSSystemMessage(message);
+}
+
 function checkFixAsset()
 {
 	CMSMaintenanceAjax.getFixAssetsProgress(fixAssetsCallback);
@@ -1412,11 +1420,21 @@ dd.leftdl {
                     </tr>
                     <tr>
                         <td>
-                            <%= LanguageUtil.get(pageContext,"Optimize-Index") %> (<%= LanguageUtil.get(pageContext,"Optimize-Index-Info") %> )
+                            <%= LanguageUtil.get(pageContext,"Optimize-Index-Info") %> 
                         </td>
                         <td align="center">
-                            <button dojoType="dijit.form.Button" id="idxShrinkBtn" iconClass="shrinkIcon" onClick="CMSMaintenanceAjax.optimizeIndices(optimizeCallback)">
+                            <button dojoType="dijit.form.Button" id="idxShrinkBtn" onClick="CMSMaintenanceAjax.optimizeIndices(optimizeCallback)">
                                 <%= LanguageUtil.get(pageContext,"Optimize-Index") %>
+                            </button>
+                         </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <%= LanguageUtil.get(pageContext,"maintenance.index.cache.flush.info") %> 
+                        </td>
+                        <td align="center">
+                            <button dojoType="dijit.form.Button"  onClick="CMSMaintenanceAjax.flushIndiciesCache(flushIndiciesCacheCallback)">
+                                <%= LanguageUtil.get(pageContext,"maintenance.index.cache.flush") %>
                             </button>
                          </td>
                     </tr>
