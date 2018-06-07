@@ -35,7 +35,7 @@
         "angular2-logger": "^0.5.1",
         "angular2-tinymce": "^2.1.2",
         "core-js": "^2.5.3",
-        "dotcms-rules-engine": "^0.0.6",
+        "dotcms-rules-engine": "^0.0.7",
         "lodash": "^4.17.4",
         "md5": "^2.2.1",
         "moment": "^2.19.4",
