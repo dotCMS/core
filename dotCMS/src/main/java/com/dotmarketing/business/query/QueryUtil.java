@@ -235,5 +235,19 @@ public class QueryUtil {
 
 		return filteredResults; 
 	}
-	
+
+	/**
+	 *
+	 * @param luceneQuery
+	 * @return
+	 */
+	public static String removeQueryPrefix(final String luceneQuery){
+		final String cleanedUpQuery;
+		if(luceneQuery.startsWith("query_")){
+			cleanedUpQuery = luceneQuery.replace( "query_", "" );
+		} else {
+			cleanedUpQuery = luceneQuery;
+		}
+		return cleanedUpQuery;
+	}
 }

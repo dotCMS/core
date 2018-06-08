@@ -29,6 +29,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -102,8 +103,9 @@ public class WorkflowHelper {
                     this.findBulkActionByQuery(bulkActionForm.getQuery(), user);
     }
 
+
     /**
-     * inds the bulk actions based on the {@link luceneQuery}
+     * inds the bulk actions based on the luceneQuery
      * @param luceneQuery
      * @param user
      * @return
@@ -112,12 +114,12 @@ public class WorkflowHelper {
      */
     private BulkActionView findBulkActionByQuery(final String luceneQuery,
                                                  final User user) throws DotDataException, DotSecurityException {
-
+        final String cleanedUpQuery = QueryUtil.removeQueryPrefix(luceneQuery);
         //We should only be considering Working content.
         final String query = "{\n"
                 + "    \"query\" : { \n"
                 + "        \"query_string\" : {\n"
-                + "            \"query\" : \"" + luceneQuery + "\"\n"
+                + "            \"query\" : \"" + cleanedUpQuery + "\"\n"
                 + "        } \n"
                 + "\n"
                 + "    },\n"
@@ -133,11 +135,13 @@ public class WorkflowHelper {
                 + "}";
         final ESSearchResults results = this.contentletAPI.esSearch(query, false, user, false);
 
+        Logger.debug(getClass(),"luceneQuery: "+ cleanedUpQuery);
+        Logger.debug(getClass(),"esSearch: "+ query);
         return this.buildBulkActionView(results, user);
     }
 
     /**
-     * Finds the bulk actions based on the {@link contentletIds}
+     * Finds the bulk actions based on the contentletIds
      * @param contentletIds
      * @param user
      * @return

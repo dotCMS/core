@@ -24,6 +24,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -1942,20 +1943,16 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			final Iterable<String> workflowAssociatedStepsIds, User user)
 			throws DotSecurityException, DotDataException {
 
+		final long totalCount = APILocator.getContentletAPI()
+				.indexCount(luceneQuery, user, RESPECT_FRONTEND_ROLES);
+
 		final String contentletsWithinStepsQuery = String
 				.format("%s  +(wfstep:%s ) ", String.join(StringPool.SPACE, luceneQuery),
 						String.join(" wfstep:", workflowAssociatedStepsIds));
-		long withinStepsCount = APILocator.getContentletAPI()
+		final long withinStepsCount = APILocator.getContentletAPI()
 				.indexCount(contentletsWithinStepsQuery, user, RESPECT_FRONTEND_ROLES);
-
-		final String contentletsWithoutStepsQuery = String
-				.format("%s  -(wfstep:%s ) ", String.join(StringPool.SPACE, luceneQuery),
-						String.join(" wfstep:", workflowAssociatedStepsIds));
-		long withoutStepsCount = APILocator.getContentletAPI()
-				.indexCount(contentletsWithoutStepsQuery, user, RESPECT_FRONTEND_ROLES);
-
-
-		return Math.abs(withinStepsCount - withoutStepsCount);
+		
+		return (totalCount - withinStepsCount);
 	}
 
 	/**
@@ -1969,7 +1966,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		try {
 			final List<Contentlet> contentlets = findContentletsToProcess(inodes,
 					workflowAssociatedStepIds, user);
-			long skipsCount = (inodes.size() - contentlets.size());
+			final long skipsCount = (inodes.size() - contentlets.size());
 			return distributeWorkAndProcess(action, user, contentlets, skipsCount);
 		} catch (Exception e) {
 			Logger.error(getClass(), "Error firing actions in bulk.", e);
@@ -1977,6 +1974,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 
 	}
+
 
 	/**
 	 * This version of the method deals with a large selection of items which gets translated into a
@@ -1987,10 +1985,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			final String luceneQuery, final Set<String> workflowAssociatedStepsIds)
 			throws DotDataException {
 
+		final String cleanedUpQuery = QueryUtil.removeQueryPrefix(luceneQuery);
+		Logger.debug(getClass(),"luceneQuery: "+ cleanedUpQuery);
+
 		try {
-			final List<Contentlet> contentlets = findContentletsToProcess(luceneQuery,
+			final List<Contentlet> contentlets = findContentletsToProcess(cleanedUpQuery,
 					workflowAssociatedStepsIds, user);
-			Long skipsCount = computeSkippedContentletsCount(luceneQuery, workflowAssociatedStepsIds,
+			final Long skipsCount = computeSkippedContentletsCount(cleanedUpQuery, workflowAssociatedStepsIds,
 					user);
 			return distributeWorkAndProcess(action, user, contentlets, skipsCount);
 		} catch (Exception e) {
