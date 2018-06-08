@@ -80,6 +80,9 @@ public class ThemePaginator implements Paginator<Folder> {
 
         try {
 
+            final List<ContentletSearch> totalResults = (PaginatedArrayList<ContentletSearch>)
+                    contentletAPI.searchIndex(query.toString(), -1, 0, sortBy, user, false);
+
             final List<ContentletSearch> contentletSearches = (PaginatedArrayList<ContentletSearch>)
                     contentletAPI.searchIndex(query.toString(), limit, offset, sortBy, user, false);
 
@@ -103,7 +106,7 @@ public class ThemePaginator implements Paginator<Folder> {
                 }
             }
 
-            result.setTotalResults(result.size());
+            result.setTotalResults(totalResults.size());
             result.setQuery(query.toString());
             return result;
         } catch (DotSecurityException | DotDataException e) {
