@@ -7,6 +7,7 @@ import { LoginService } from 'dotcms-js/dotcms-js';
 import { LoginServiceMock } from '../../../test/login-service.mock';
 import { By } from '@angular/platform-browser';
 import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
+import { DotIframeService } from '../_common/iframe/service/dot-iframe/dot-iframe.service';
 
 @Component({
     selector: 'dot-dialog',
@@ -49,6 +50,7 @@ describe('MainComponentLegacyComponent', () => {
     let fixture: ComponentFixture<MainComponentLegacyComponent>;
     let de: DebugElement;
     let dotRouterService: DotRouterService;
+    let dotIframeService: DotIframeService;
 
     beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
@@ -75,31 +77,32 @@ describe('MainComponentLegacyComponent', () => {
         component = fixture.componentInstance;
         de = fixture.debugElement;
         dotRouterService = de.injector.get(DotRouterService);
+        dotIframeService = de.injector.get(DotIframeService);
+
+        spyOn(dotIframeService, 'run');
         fixture.detectChanges();
     });
 
     describe('Contentlet Editor', () => {
         describe('Events', () => {
             it('should refresh the current portlet on close if portlet is content', () => {
-                spyOn(dotRouterService, 'reloadCurrentPortlet');
                 spyOnProperty(dotRouterService, 'currentPortlet', 'get').and.returnValue({
                     id: 'content'
                 });
                 const contentletEditor: DebugElement = de.query(By.css('dot-contentlet-editor'));
                 contentletEditor.triggerEventHandler('close', {});
 
-                expect(dotRouterService.reloadCurrentPortlet).toHaveBeenCalledTimes(1);
+                expect(dotIframeService.run).toHaveBeenCalledWith('doSearch');
             });
 
             it('should not refresh the current portlet on close', () => {
-                spyOn(dotRouterService, 'reloadCurrentPortlet');
                 spyOnProperty(dotRouterService, 'currentPortlet', 'get').and.returnValue({
                     id: 'what'
                 });
                 const contentletEditor: DebugElement = de.query(By.css('dot-contentlet-editor'));
                 contentletEditor.triggerEventHandler('close', {});
 
-                expect(dotRouterService.reloadCurrentPortlet).not.toHaveBeenCalled();
+                expect(dotIframeService.run).not.toHaveBeenCalled();
             });
         });
     });

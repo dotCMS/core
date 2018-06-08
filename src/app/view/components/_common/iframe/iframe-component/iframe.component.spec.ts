@@ -72,6 +72,23 @@ describe('IframeComponent', () => {
         expect(comp.iframeElement.nativeElement.contentWindow.location.reload).toHaveBeenCalledTimes(1);
     });
 
+    it('should call function in the iframe window', () => {
+        comp.iframeElement.nativeElement = {
+            contentWindow: {
+                fakeFunction: jasmine.createSpy('reload'),
+                document: {
+                    body: {
+                        innerHTML: '<html></html>'
+                    }
+                }
+            }
+        };
+
+        dotIframeService.run('fakeFunction');
+
+        expect(comp.iframeElement.nativeElement.contentWindow.fakeFunction).toHaveBeenCalledTimes(1);
+    });
+
     describe('bind iframe events', () => {
         beforeEach(() => {
             comp.iframeElement.nativeElement = {

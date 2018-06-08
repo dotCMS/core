@@ -15,4 +15,12 @@ describe('DotIframeService', () => {
 
         this.service.reload();
     }));
+
+    it('should trigger ran action', () => {
+        this.service.ran().subscribe(res => {
+            expect(res).toBe('functionName');
+        });
+
+        this.service.run('functionName');
+    });
 });

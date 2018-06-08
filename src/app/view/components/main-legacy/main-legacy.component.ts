@@ -4,6 +4,7 @@ import { DotEventsService } from '../../../api/services/dot-events/dot-events.se
 import { Router, NavigationEnd } from '@angular/router';
 import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
 import { filter } from 'rxjs/operators/filter';
+import { DotIframeService } from '../_common/iframe/service/dot-iframe/dot-iframe.service';
 
 @Component({
     encapsulation: ViewEncapsulation.None,
@@ -20,6 +21,7 @@ export class MainComponentLegacyComponent implements OnInit {
         private dotEventsService: DotEventsService,
         private dotRouterService: DotRouterService,
         private router: Router,
+        private dotIframeService: DotIframeService,
         public dotDialotService: DotDialogService
     ) {}
 
@@ -61,7 +63,7 @@ export class MainComponentLegacyComponent implements OnInit {
      */
     onCloseContentletEditor(): void {
         if (this.dotRouterService.currentPortlet.id === 'content') {
-            this.dotRouterService.reloadCurrentPortlet();
+            this.dotIframeService.run('doSearch');
         }
     }
 

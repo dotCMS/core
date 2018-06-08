@@ -6,19 +6,21 @@ import {
     ViewChild,
     Output,
     EventEmitter,
-    NgZone
+    NgZone,
+    OnDestroy
 } from '@angular/core';
 import { LoginService, LoggerService } from 'dotcms-js/dotcms-js';
 import { DotLoadingIndicatorService } from '../dot-loading-indicator/dot-loading-indicator.service';
 import { IframeOverlayService } from '../service/iframe-overlay.service';
 import { DotIframeService } from '../service/dot-iframe/dot-iframe.service';
+import { Subject } from 'rxjs';
 
 @Component({
     selector: 'dot-iframe',
     styleUrls: ['./iframe.component.scss'],
     templateUrl: 'iframe.component.html'
 })
-export class IframeComponent implements OnInit {
+export class IframeComponent implements OnInit, OnDestroy {
     @ViewChild('iframeElement') iframeElement: ElementRef;
     @Input() src: string;
     @Input() isLoading = false;
@@ -27,6 +29,8 @@ export class IframeComponent implements OnInit {
     @Output() custom: EventEmitter<CustomEvent> = new EventEmitter();
 
     showOverlay = false;
+
+    private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
         private dotIframeService: DotIframeService,
@@ -40,11 +44,22 @@ export class IframeComponent implements OnInit {
     ngOnInit(): void {
         this.iframeOverlayService.overlay.subscribe((val) => (this.showOverlay = val));
 
-        this.dotIframeService.reloaded().subscribe(() => {
+        this.dotIframeService.reloaded().takeUntil(this.destroy$).subscribe(() => {
             if (this.getIframeWindow()) {
                 this.getIframeLocation().reload();
             }
         });
+
+        this.dotIframeService.ran().takeUntil(this.destroy$).subscribe((func: string) => {
+            if (this.getIframeWindow() && typeof this.getIframeWindow()[func] === 'function') {
+                this.getIframeWindow()[func]();
+            }
+        });
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next(true);
+        this.destroy$.complete();
     }
 
     /**

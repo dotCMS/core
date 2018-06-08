@@ -1,7 +1,6 @@
 import { Component, Input, SimpleChanges, OnChanges, EventEmitter, Output, HostListener, ViewChild } from '@angular/core';
 import { Dialog } from 'primeng/primeng';
 import { fromEvent } from 'rxjs/observable/fromEvent';
-import { Subscription } from 'rxjs/Subscription';
 
 @Component({
     selector: 'dot-iframe-dialog',
