@@ -55,7 +55,7 @@ public class Task04380AddSubActionToWorkflowActions implements StartupTask {
             Increment the order of each actionlet of this action id in order to prepare everything
             to insert the new actionlet in the first position.
              */
-            updateActionletsOrderForAction(dotConnect, actionId);
+            incrementActionletsOrderForAction(dotConnect, actionId);
 
             //Insert the Save Content Actionlet to this Workflow Action
             insertActionletToAction(dotConnect, actionId);
@@ -67,7 +67,7 @@ public class Task04380AddSubActionToWorkflowActions implements StartupTask {
      * column (my_order) value in order to allow a new Actionlet to be inserted in the first
      * position (0).
      */
-    private void updateActionletsOrderForAction(DotConnect dc, String actionId) {
+    private void incrementActionletsOrderForAction(DotConnect dc, String actionId) {
 
         dc.setSQL(INCREMENT_ACTION_CLASS_ORDER);
         dc.addParam(actionId);
