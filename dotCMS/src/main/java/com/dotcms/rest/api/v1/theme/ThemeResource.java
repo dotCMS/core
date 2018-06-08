@@ -110,7 +110,7 @@ public class ThemeResource {
     }
 
     /**
-     * Returns a theme given its ID
+     * Returns a theme given its ID (folder theme id)
      * @param request  HttpServletRequest
      * @return Response
      */
@@ -132,7 +132,7 @@ public class ThemeResource {
 
         try {
             final Map<String, Object> params = map(
-                    ThemePaginator.IDENTIFIER_PARAMETER, id
+                    ThemePaginator.ID_PARAMETER, id
             );
 
             return this.paginationUtil.getPage(request, user, null, 0, -1, null,

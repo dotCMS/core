@@ -15,6 +15,7 @@ import com.liferay.portal.model.User;
 
 
 import com.liferay.util.StringPool;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -24,14 +25,12 @@ import java.util.stream.Collectors;
  */
 public class ThemePaginator implements Paginator<Folder> {
 
-    public static final String IDENTIFIER_PARAMETER = "identifier";
-    public static final String HOST_ID_PARAMETER_NAME = "host-id";
+    public static final String ID_PARAMETER = "id";
+    public static final String HOST_ID_PARAMETER_NAME = "host";
     public static final String SEARCH_PARAMETER = "search-parameter";
 
 
-    private static final String BASE_LUCENE_QUERY         = "+parentpath:/application/themes/*";
-    private static final String LUCENE_QUERY_WITH_HOST    = "+parentpath:/application/themes/* +title:template.vtl +conhost:%s";
-    private static final String LUCENE_QUERY_WITHOUT_HOST = "+parentpath:/application/themes/* +title:template.vtl";
+    private static final String BASE_LUCENE_QUERY = "+parentpath:/application/themes/* +title:template.vtl ";
 
     @VisibleForTesting
     static final String THEME_PNG = "theme.png";
@@ -54,30 +53,27 @@ public class ThemePaginator implements Paginator<Folder> {
     public PaginatedArrayList<Folder> getItems(final User user, final int limit, final int offset,
                                                    final Map<String, Object> params) throws PaginationException {
 
+        PaginatedArrayList<Folder> result = new PaginatedArrayList();
+
         final OrderDirection direction =  params != null && params.get(ORDER_DIRECTION_PARAM_NAME) != null ?
                 (OrderDirection) params.get(ORDER_DIRECTION_PARAM_NAME) :
                 OrderDirection.ASC;
 
         final String hostId       = params != null ? (String) params.get(HOST_ID_PARAMETER_NAME) : null;
         final String searchParams = params != null ? (String) params.get(SEARCH_PARAMETER) : null;
-        final String searchById   = params != null ? (String) params.get(IDENTIFIER_PARAMETER) : null;
+        final String searchById   = params != null ? (String) params.get(ID_PARAMETER) : null;
         StringBuilder query       = new StringBuilder();
 
+        query.append(BASE_LUCENE_QUERY);
+
         if (UtilMethods.isSet(searchById)){
-            query.append(BASE_LUCENE_QUERY);
-            query.append(" +");
-            query.append(IDENTIFIER_PARAMETER);
+            query.append("+conFolder");
             query.append(StringPool.COLON);
             query.append(searchById);
-        }else{
-            query.append(String.format(
-                    hostId == null ? LUCENE_QUERY_WITHOUT_HOST : LUCENE_QUERY_WITH_HOST, hostId));
-        }
-
-        if (UtilMethods.isSet(searchParams)){
-            query.append(" +catchall:");
-            query.append(searchParams);
-            query.append("*");
+        }else if(UtilMethods.isSet(hostId)) {
+            query.append("+conhost");
+            query.append(StringPool.COLON);
+            query.append(hostId);
         }
 
         final String sortBy = String.format("parentPath %s", direction.toString().toLowerCase());
@@ -91,12 +87,20 @@ public class ThemePaginator implements Paginator<Folder> {
                     .map(contentletSearch -> contentletSearch.getInode())
                     .collect(Collectors.toList());
 
-            final PaginatedArrayList<Folder> result = new PaginatedArrayList();
-
             for (Contentlet contentlet :contentletAPI.findContentlets(inodes)) {
                 Folder folder = folderAPI.find(contentlet.getFolder(), user, false);
                 folder.setIdentifier(getThemeIdentifier(folder, user));
                 result.add(folder);
+            }
+
+            if(UtilMethods.isSet(searchParams)){
+                Iterator<Folder> folderIterator = result.iterator();
+                while(folderIterator.hasNext()){
+                    Folder folder = folderIterator.next();
+                    if(!folder.getName().contains(searchParams) || !folder.getTitle().contains(searchParams)){
+                        folderIterator.remove();
+                    }
+                }
             }
 
             result.setTotalResults(result.size());
