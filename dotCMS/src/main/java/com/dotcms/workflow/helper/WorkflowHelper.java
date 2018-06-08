@@ -15,7 +15,6 @@ import com.dotcms.rest.api.v1.workflow.BulkActionsResultView;
 import com.dotcms.rest.api.v1.workflow.CountWorkflowAction;
 import com.dotcms.rest.api.v1.workflow.CountWorkflowStep;
 import com.dotcms.rest.api.v1.workflow.WorkflowDefaultActionView;
-import com.dotcms.util.CollectionsUtils;
 import com.dotcms.workflow.form.BulkActionForm;
 import com.dotcms.workflow.form.FireBulkActionsForm;
 import com.dotcms.workflow.form.IWorkflowStepForm;
@@ -59,11 +58,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang.time.StopWatch;
 import org.elasticsearch.search.aggregations.Aggregation;
@@ -101,6 +102,14 @@ public class WorkflowHelper {
                     this.findBulkActionByQuery(bulkActionForm.getQuery(), user);
     }
 
+    /**
+     * inds the bulk actions based on the {@link luceneQuery}
+     * @param luceneQuery
+     * @param user
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     private BulkActionView findBulkActionByQuery(final String luceneQuery,
                                                  final User user) throws DotDataException, DotSecurityException {
 
@@ -127,6 +136,14 @@ public class WorkflowHelper {
         return this.buildBulkActionView(results, user);
     }
 
+    /**
+     * Finds the bulk actions based on the {@link contentletIds}
+     * @param contentletIds
+     * @param user
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
     private BulkActionView findBulkActionByContentlets(final List<String> contentletIds,
                                                        final User     user) throws DotSecurityException, DotDataException {
 
@@ -134,6 +151,14 @@ public class WorkflowHelper {
         return this.findBulkActionByQuery(luceneQuery, user);
     }
 
+    /**
+     * Compuetes a view out of the resulsts returned bylucene
+     * @param results
+     * @param user
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     private BulkActionView buildBulkActionView (final ESSearchResults results,
                                                 final User user) throws DotDataException, DotSecurityException {
 
@@ -166,11 +191,18 @@ public class WorkflowHelper {
         );
     }
 
+    /**
+     * Build a entity view out of the stepsActions map
+     * @param stepActionsMap
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
     private BulkActionView buildBulkActionView (final Map<CountWorkflowStep, List<WorkflowAction>> stepActionsMap) throws DotSecurityException, DotDataException {
 
         final Map<String, WorkflowScheme> schemeByIdMap  = new HashMap<>();
         final Map<String, Long>           actionCountMap = new HashMap<>();
-        final Map<WorkflowScheme, Map<CountWorkflowStep, List<CountWorkflowAction>>> bulkActions = new HashMap<>();
+        Map<WorkflowScheme, Map<CountWorkflowStep, List<CountWorkflowAction>>> bulkActions = new HashMap<>();
 
         for (final Map.Entry<CountWorkflowStep, List<WorkflowAction>> entry : stepActionsMap.entrySet()) {
 
@@ -193,19 +225,61 @@ public class WorkflowHelper {
             final WorkflowScheme scheme  = schemeByIdMap.get(step.getWorkflowStep().getSchemeId());
             final List<CountWorkflowAction> actions = entry.getValue().stream()
                     .map(action -> new CountWorkflowAction(actionCountMap.get(action.getId()), action))
-                    .collect(CollectionsUtils.toImmutableList());
+                    .collect(Collectors.toList());
 
             final Map<CountWorkflowStep, List<CountWorkflowAction>> schemeActionsMap =
                         (bulkActions.containsKey(scheme))? bulkActions.get(scheme):new HashMap<>();
 
-            schemeActionsMap.put(step, actions);
+            schemeActionsMap.put(step, actions); //Need to find other occurrences of the action even if they occur on different steps
 
             bulkActions.put(scheme, schemeActionsMap);
         }
 
+        bulkActions = normalizeBulkActions(bulkActions);
         return new BulkActionView(bulkActions);
     }
 
+
+    /**
+     * The same action might appear on different steps. This will keep the firs appearance and remove the rest of them.
+     * @param bulkActions
+     * @return
+     */
+    private Map<WorkflowScheme, Map<CountWorkflowStep, List<CountWorkflowAction>>> normalizeBulkActions(
+            final Map<WorkflowScheme, Map<CountWorkflowStep, List<CountWorkflowAction>>> bulkActions) {
+        final Set<WorkflowScheme> workflowSchemes = bulkActions.keySet();
+        for (final WorkflowScheme scheme : workflowSchemes) {
+            final Map<CountWorkflowAction, List<CountWorkflowAction>> dupeActionsMap = new HashMap<>();
+            // Actions are only allowed to appear once per workflow. So we need to merge every other instance that might popup.
+            final Map<CountWorkflowStep, List<CountWorkflowAction>> stepsAndActions = bulkActions
+                    .get(scheme);
+
+            final Set<CountWorkflowStep> steps = stepsAndActions.keySet();
+            for (final CountWorkflowStep step : steps) {
+                final List<CountWorkflowAction> countWorkflowActions = stepsAndActions.get(step);
+                final Iterator<CountWorkflowAction> iterator = countWorkflowActions.iterator();
+                while (iterator.hasNext()) {
+                    final CountWorkflowAction action = iterator.next();
+                    if (!dupeActionsMap.containsKey(action)) {
+                        dupeActionsMap.put(action, countWorkflowActions);
+                    } else {
+                        iterator.remove();
+                    }
+                }
+            }
+        }
+
+        return bulkActions;
+    }
+
+    /**
+     *
+     * @param form
+     * @param user
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
     public Future<BulkActionsResultView> fireBulkActions(final FireBulkActionsForm form,
                                                          final User user) throws DotSecurityException, DotDataException {
 

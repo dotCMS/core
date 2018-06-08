@@ -1,6 +1,5 @@
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.util.UtilMethods" %>
-<%@ page import="com.dotcms.util.LicenseValiditySupplier" %>
 <script language="Javascript">
 
     /**
@@ -231,7 +230,7 @@
             }
         );
 
-        dojo.byId('bulkActionsContainer').innerHTML = 'Loading..';
+        dojo.byId('bulkActionsContainer').innerHTML = 'Loading...';
         var dataAsJson = dojo.toJson(data);
         var xhrArgs = {
             url: "/api/v1/workflow/contentlet/actions/bulk",
