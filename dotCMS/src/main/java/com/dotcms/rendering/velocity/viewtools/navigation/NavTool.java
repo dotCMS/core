@@ -38,6 +38,7 @@ public class NavTool implements ViewTool {
     private HttpServletRequest request = null;
     private long currentLanguage = 0;
     private ViewContext context;
+    private long defaultLanguage = 0;
     static {
 
         try {
@@ -58,6 +59,7 @@ public class NavTool implements ViewTool {
             this.currentLanguage = WebAPILocator.getLanguageWebAPI()
                 .getLanguage(this.request)
                 .getId();
+            this.defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage().getId();
         } catch (Exception e) {
             Logger.warn(this, e.getMessage(), e);
         }
@@ -115,8 +117,6 @@ public class NavTool implements ViewTool {
             result.setChildrenFolderIds(folderIds);
             result.setShowOnMenu(folder.isShowOnMenu());
 
-            final long defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-
             List menuItems;
             if (path.equals("/")) {
                 menuItems = APILocator.getFolderAPI()
@@ -151,12 +151,11 @@ public class NavTool implements ViewTool {
                     boolean pageExistInRequestedLanguage = true;
 
                     if(itemPage.getLanguageId() != languageId){
-                        pageExistInRequestedLanguage = findHTMLPageInRequestedLanguage(menuItems,itemPage.getIdentifier(),languageId);
+                        pageExistInRequestedLanguage = doesHTMLPageInRequestedLanguageExists(menuItems,itemPage.getIdentifier(),languageId);
                     }
 
 
-                    if (itemPage.getLanguageId() == languageId ||
-                            (LanguageWebAPI.canDefaultPageToDefaultLanguage() && itemPage.getLanguageId() == defaultLanguage && !pageExistInRequestedLanguage)) {
+                    if (itemPage.getLanguageId() == languageId || shouldAddHTMLPageInAnotherLang(itemPage.getLanguageId(),pageExistInRequestedLanguage)){
                         final String httpProtocol = "http://";
                         final String httpsProtocol = "https://";
 
@@ -210,12 +209,11 @@ public class NavTool implements ViewTool {
                     boolean fileExistInRequestedLanguage = true;
 
                     if(itemFile.getLanguageId() != languageId){
-                        fileExistInRequestedLanguage = findFileAssetInRequestedLanguage(menuItems,itemFile.getPermissionId(),languageId);
+                        fileExistInRequestedLanguage = doesFileAssetInRequestedLanguageExists(menuItems,itemFile.getPermissionId(),languageId);
                     }
 
 
-                    if (itemFile.getLanguageId() == languageId ||
-                            (LanguageWebAPI.canDefaultFileToDefaultLanguage() && itemFile.getLanguageId() == defaultLanguage && !fileExistInRequestedLanguage)) {
+                    if ( itemFile.getLanguageId() == languageId || shouldAddFileInAnotherLang(itemFile.getLanguageId(),fileExistInRequestedLanguage)){
                         ident = APILocator.getIdentifierAPI()
                             .find(itemFile.getPermissionId());
                         NavResult nav = new NavResult(folder.getInode(), host.getIdentifier(), itemFile.getLanguageId());
@@ -237,6 +235,18 @@ public class NavTool implements ViewTool {
 
             return new NavResultHydrated(result, this.context);
         }
+    }
+
+    private boolean shouldAddHTMLPageInAnotherLang(long languageId, boolean pageExistInRequestedLanguage) {
+        return (LanguageWebAPI.canDefaultPageToDefaultLanguage() &&
+                languageId == defaultLanguage &&
+                !pageExistInRequestedLanguage);
+    }
+
+    private boolean shouldAddFileInAnotherLang(long languageId, boolean fileExistInRequestedLanguage) {
+        return (LanguageWebAPI.canDefaultFileToDefaultLanguage() &&
+                languageId == defaultLanguage &&
+                !fileExistInRequestedLanguage);
     }
 
     /**
@@ -316,7 +326,7 @@ public class NavTool implements ViewTool {
         return null;
     }
 
-    private boolean findHTMLPageInRequestedLanguage(List items, String identifier, long language){
+    private boolean doesHTMLPageInRequestedLanguageExists(List items, String identifier, long language){
         for(Object item : items){
             if(item instanceof IHTMLPage){
                 if(((IHTMLPage) item).getIdentifier().equals(identifier) && ((IHTMLPage) item).getLanguageId() == language){
@@ -327,7 +337,7 @@ public class NavTool implements ViewTool {
         return false;
     }
 
-    private boolean findFileAssetInRequestedLanguage(List items, String identifier, long language){
+    private boolean doesFileAssetInRequestedLanguageExists(List items, String identifier, long language){
         for(Object item : items){
             if(item instanceof IFileAsset){
                 if(((IFileAsset) item).getPermissionId().equals(identifier) && ((IFileAsset) item).getLanguageId() == language){
