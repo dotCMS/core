@@ -40,7 +40,7 @@ public class Task04380AddSubActionToWorkflowActions implements StartupTask {
 
         /*
         First get the list of actions to modify:
-        WHERE scheme_id != SYSTEM_WORFLOW AND requires_checkout = TRUE";
+        WHERE scheme_id != SYSTEM_WORFLOW AND requires_checkout = TRUE;
          */
         final List<Map<String, Object>> results =
                 dotConnect.setSQL(SELECT_ACTIONS).addParam(SYSTEM_WORKFLOW_ID)
