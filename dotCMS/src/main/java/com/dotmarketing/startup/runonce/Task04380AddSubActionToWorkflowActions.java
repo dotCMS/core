@@ -1,7 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
@@ -45,7 +44,7 @@ public class Task04380AddSubActionToWorkflowActions implements StartupTask {
          */
         final List<Map<String, Object>> results =
                 dotConnect.setSQL(SELECT_ACTIONS).addParam(SYSTEM_WORKFLOW_ID)
-                        .addParam(DbConnectionFactory.getDBTrue()).loadObjectResults();
+                        .addParam(Boolean.TRUE).loadObjectResults();
 
         results.forEach(row -> {
 
