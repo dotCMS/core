@@ -1866,6 +1866,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 * @param user {@link User}
 	 * @param luceneQuery luceneQuery
 	 */
+	@CloseDBIfOpened
 	public Future<BulkActionsResultView> fireBulkActions(final WorkflowAction action,
 			final User user, final String luceneQuery) throws DotDataException {
 

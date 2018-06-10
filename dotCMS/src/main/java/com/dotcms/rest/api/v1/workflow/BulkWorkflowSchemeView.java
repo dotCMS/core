@@ -9,7 +9,7 @@ public class BulkWorkflowSchemeView {
     private final WorkflowScheme scheme;
     private final List<BulkWorkflowStepView> steps;
 
-    public BulkWorkflowSchemeView(WorkflowScheme scheme, List<BulkWorkflowStepView> steps) {
+    public BulkWorkflowSchemeView(final WorkflowScheme scheme, final List<BulkWorkflowStepView> steps) {
         this.scheme = scheme;
         this.steps = steps;
     }

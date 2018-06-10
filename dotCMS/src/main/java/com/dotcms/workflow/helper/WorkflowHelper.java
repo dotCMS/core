@@ -96,6 +96,10 @@ public class WorkflowHelper {
     public BulkActionView findBulkActions(final User user,
                                           final BulkActionForm bulkActionForm) throws DotSecurityException, DotDataException {
 
+        if (!workflowAPI.hasValidLicense()) {
+            throw new InvalidLicenseException("Workflow-Schemes-License-required");
+        }
+
         return (UtilMethods.isSet(bulkActionForm.getContentletIds()))?
                     // 1) case with contentlet ids
                     this.findBulkActionByContentlets(bulkActionForm.getContentletIds(), user):
@@ -119,7 +123,7 @@ public class WorkflowHelper {
         final String query = "{\n"
                 + "    \"query\" : { \n"
                 + "        \"query_string\" : {\n"
-                + "            \"query\" : \"" + cleanedUpQuery + "\"\n"
+                + "            \"query\" : \"%s\"\n"
                 + "        } \n"
                 + "\n"
                 + "    },\n"
@@ -133,10 +137,11 @@ public class WorkflowHelper {
                 + "    },\n"
                 + "\t\"size\":0   \n"
                 + "}";
-        final ESSearchResults results = this.contentletAPI.esSearch(query, false, user, false);
+        final String preparedQuery = String.format(query,cleanedUpQuery);
+        final ESSearchResults results = this.contentletAPI.esSearch(preparedQuery, false, user, false);
 
-        Logger.debug(getClass(),"luceneQuery: "+ cleanedUpQuery);
-        Logger.debug(getClass(),"esSearch: "+ query);
+        Logger.debug(getClass(),()-> "luceneQuery: "+ cleanedUpQuery);
+        Logger.debug(getClass(),()-> "esSearch: "+ query);
         return this.buildBulkActionView(results, user);
     }
 

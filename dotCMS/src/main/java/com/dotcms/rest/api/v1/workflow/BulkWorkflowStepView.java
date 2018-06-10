@@ -7,7 +7,7 @@ public class BulkWorkflowStepView {
     private final CountWorkflowStep step;
     private final List<CountWorkflowAction> actions;
 
-    public BulkWorkflowStepView(CountWorkflowStep step, List<CountWorkflowAction> actions) {
+    BulkWorkflowStepView(final CountWorkflowStep step, final List<CountWorkflowAction> actions) {
         this.step = step;
         this.actions = actions;
     }

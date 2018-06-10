@@ -6,7 +6,7 @@ import java.util.Objects;
 
 public class CountWorkflowAction {
 
-    private final long            count;
+    private final long count;
     private final WorkflowAction workflowAction;
 
     public CountWorkflowAction(final long count, final WorkflowAction workflowAction) {
@@ -24,9 +24,13 @@ public class CountWorkflowAction {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        CountWorkflowAction that = (CountWorkflowAction) o;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        final CountWorkflowAction that = (CountWorkflowAction) o;
         return Objects.equals(workflowAction, that.workflowAction);
     }
 
