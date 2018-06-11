@@ -76,9 +76,7 @@ describe('DotWorkflowTaskComponent', () => {
             id: '74cabf7a-0e9d-48b6-ab1c-8f76d0ad31e0'
         };
 
-        setTimeout(() => {
-            expect(dotWorkflowTaskDetailService.view).toHaveBeenCalledWith(params);
-        }, 0);
+        expect(dotWorkflowTaskDetailService.view).toHaveBeenCalledWith(params);
     }));
 
     it('should call first portlet when modal closed', () => {
