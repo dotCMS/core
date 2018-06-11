@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.pagination.ThemePaginator.BASE_LUCENE_QUERY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -29,10 +30,8 @@ public class ThemePaginatorTest {
 
     private final ContentletAPI contentletAPI = mock(ContentletAPI.class);
     private final FolderAPI folderAPI         = mock(FolderAPI.class);
-    private final UserAPI userAPI             = mock(UserAPI.class);
 
     private final String queryWithHost = "+parentpath:/application/themes/* +title:template.vtl +conhost:1";
-    private final String queryWithoutHost = "+parentpath:/application/themes/* +title:template.vtl";
 
     private final User user = mock(User.class);
 
@@ -100,7 +99,7 @@ public class ThemePaginatorTest {
 
         final ThemePaginator themePaginator = new ThemePaginator(contentletAPI, folderAPI);
 
-        when(contentletAPI.searchIndex(queryWithoutHost, 0, -1, "parentPath asc", user, false))
+        when(contentletAPI.searchIndex(BASE_LUCENE_QUERY, 0, -1, "parentPath asc", user, false))
                 .thenReturn(contentletSearchList);
 
         when(contentletAPI.findContentlets(elements)).thenReturn(contentlets);
@@ -137,7 +136,7 @@ public class ThemePaginatorTest {
         final DotSecurityException exception = new DotSecurityException("");
 
         try {
-            when(contentletAPI.searchIndex(queryWithoutHost, 0, -1, "parentPath asc", user, false))
+            when(contentletAPI.searchIndex(BASE_LUCENE_QUERY, 0, -1, "parentPath asc", user, false))
                     .thenThrow(exception);
 
             final ThemePaginator themePaginator = new ThemePaginator(contentletAPI, folderAPI);
@@ -161,7 +160,7 @@ public class ThemePaginatorTest {
         final DotDataException exception = new DotDataException("");
 
         try {
-            when(contentletAPI.searchIndex(queryWithoutHost, 0, -1, "parentPath asc", user, false))
+            when(contentletAPI.searchIndex(BASE_LUCENE_QUERY, 0, -1, "parentPath asc", user, false))
                     .thenThrow(exception);
 
             final ThemePaginator themePaginator = new ThemePaginator(contentletAPI, folderAPI);
@@ -240,7 +239,7 @@ public class ThemePaginatorTest {
 
         final ThemePaginator themePaginator = new ThemePaginator(contentletAPI, folderAPI);
 
-        when(contentletAPI.searchIndex(queryWithoutHost, 0, -1, "parentPath desc", user, false))
+        when(contentletAPI.searchIndex(BASE_LUCENE_QUERY, -1, 0, "parentPath desc", user, false))
                 .thenReturn(contentletSearchList);
 
         when(contentletAPI.findContentlets(elements)).thenReturn(contentlets);
@@ -261,7 +260,7 @@ public class ThemePaginatorTest {
                 Paginator.ORDER_DIRECTION_PARAM_NAME, OrderDirection.DESC
         );
 
-        final PaginatedArrayList<Folder> themes = themePaginator.getItems(user, 0, -1, params);
+        final PaginatedArrayList<Folder> themes = themePaginator.getItems(user, -1, 0, params);
 
         assertEquals(contentlets.size(), themes.size());
         assertEquals(contentlets.get(0).getFolder(), themes.get(0).getInode());

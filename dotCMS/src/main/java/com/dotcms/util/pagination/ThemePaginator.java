@@ -28,8 +28,8 @@ public class ThemePaginator implements Paginator<Folder> {
     public static final String HOST_ID_PARAMETER_NAME = "host";
     public static final String SEARCH_PARAMETER = "search-parameter";
 
-
-    private static final String BASE_LUCENE_QUERY = "+parentpath:/application/themes/* +title:template.vtl ";
+    @VisibleForTesting
+    static final String BASE_LUCENE_QUERY = "+parentpath:/application/themes/* +title:template.vtl ";
 
     @VisibleForTesting
     static final String THEME_PNG = "theme.png";
