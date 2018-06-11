@@ -15,7 +15,6 @@ import com.liferay.portal.model.User;
 
 
 import com.liferay.util.StringPool;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -70,21 +69,35 @@ public class ThemePaginator implements Paginator<Folder> {
             query.append("+conFolder");
             query.append(StringPool.COLON);
             query.append(searchById);
-        }else if(UtilMethods.isSet(hostId)) {
+        }
+
+        if(UtilMethods.isSet(hostId)) {
             query.append("+conhost");
             query.append(StringPool.COLON);
             query.append(hostId);
+        }
+
+        if (UtilMethods.isSet(searchParams)){
+            query.append(" +catchall:*");
+            query.append(searchParams);
+            query.append("*");
         }
 
         final String sortBy = String.format("parentPath %s", direction.toString().toLowerCase());
 
         try {
 
-            final List<ContentletSearch> totalResults = (PaginatedArrayList<ContentletSearch>)
+            final List<ContentletSearch> totalResults =
                     contentletAPI.searchIndex(query.toString(), -1, 0, sortBy, user, false);
 
-            final List<ContentletSearch> contentletSearches = (PaginatedArrayList<ContentletSearch>)
-                    contentletAPI.searchIndex(query.toString(), limit, offset, sortBy, user, false);
+            final List<ContentletSearch> contentletSearches;
+
+            if (limit !=-1 || offset!=0){
+                contentletSearches =
+                        contentletAPI.searchIndex(query.toString(), limit, offset, sortBy, user, false);
+            }else{
+                contentletSearches = totalResults;
+            }
 
             final List<String>  inodes = contentletSearches.stream()
                     .map(contentletSearch -> contentletSearch.getInode())
@@ -94,16 +107,6 @@ public class ThemePaginator implements Paginator<Folder> {
                 Folder folder = folderAPI.find(contentlet.getFolder(), user, false);
                 folder.setIdentifier(getThemeIdentifier(folder, user));
                 result.add(folder);
-            }
-
-            if(UtilMethods.isSet(searchParams)){
-                Iterator<Folder> folderIterator = result.iterator();
-                while(folderIterator.hasNext()){
-                    Folder folder = folderIterator.next();
-                    if(!folder.getName().contains(searchParams) || !folder.getTitle().contains(searchParams)){
-                        folderIterator.remove();
-                    }
-                }
             }
 
             result.setTotalResults(totalResults.size());
