@@ -17,7 +17,7 @@ import { DotContentletWrapperComponent } from './components/dot-contentlet-wrapp
         DotCreateContentletComponent,
         DotEditContentletComponent
     ],
-    exports: [DotContentletEditorComponent],
+    exports: [DotContentletEditorComponent, DotEditContentletComponent],
     providers: [DotContentletEditorService]
 })
 export class DotContentletEditorModule {}

@@ -1,4 +1,4 @@
-import { Component, Input, EventEmitter, Output, OnInit } from '@angular/core';
+import { Component, EventEmitter, Output, OnInit } from '@angular/core';
 import { Observable } from 'rxjs/Observable';
 import { DotWorkflowTaskDetailService } from './services/dot-workflow-task-detail.service';
 
@@ -16,11 +16,13 @@ import { DotWorkflowTaskDetailService } from './services/dot-workflow-task-detai
 export class DotWorkflowTaskDetailComponent implements OnInit {
     @Output() close: EventEmitter<any> = new EventEmitter();
     url$: Observable<string>;
+    header$: Observable<string>;
 
     constructor(private dotWorkflowTaskDetailService: DotWorkflowTaskDetailService) {}
 
     ngOnInit() {
         this.url$ = this.dotWorkflowTaskDetailService.viewUrl$;
+        this.header$ = this.dotWorkflowTaskDetailService.header$;
     }
 
     /**

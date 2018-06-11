@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs/Subject';
 import { Observable } from 'rxjs/Observable';
-import { mergeMap, map, filter } from 'rxjs/operators';
+import { mergeMap, map } from 'rxjs/operators';
 import { DotMenuService } from '../../../../api/services/dot-menu.service';
 import { of } from 'rxjs/observable/of';
 
