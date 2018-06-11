@@ -18,6 +18,7 @@ import com.liferay.portal.ejb.CompanyPool;
 import com.liferay.portal.ejb.UserManager;
 import com.liferay.portal.model.Company;
 import java.util.Date;
+import java.util.UUID;
 import javax.servlet.http.HttpServletRequest;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -57,11 +58,11 @@ public class ResetPasswordResourceIntegrationTest{
     public void testNoSuchUserException() throws DotSecurityException, NoSuchUserException, DotInvalidTokenException, SystemException, PortalException {
         UserManager userManager = getUserManagerThrowingException( new NoSuchUserException("") );
         final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
-        final JWTBean jwtBean = new JWTBean("dotcms.org.1",
-                "token",
+        final JWTBean jwtBean = new JWTBean(UUID.randomUUID().toString(),
+                "dotcms.org.1",
                 new Date(), 100000);
 
-        when(jsonWebTokenService.parseToken(eq("token"))).thenReturn(jwtBean);
+        when(jsonWebTokenService.parseToken(eq("token1"))).thenReturn(jwtBean);
         ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
         Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
 
@@ -72,10 +73,10 @@ public class ResetPasswordResourceIntegrationTest{
     public void testTokenInvalidException() throws DotSecurityException, NoSuchUserException, DotInvalidTokenException {
         UserManager userManager = getUserManagerThrowingException( new DotInvalidTokenException("") );
         final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
-        final JWTBean jwtBean = new JWTBean("dotcms.org.1",
-                "token",
+        final JWTBean jwtBean = new JWTBean(UUID.randomUUID().toString(),
+                "dotcms.org.1",
                 new Date(), 100000);
-        when(jsonWebTokenService.parseToken(eq("token"))).thenReturn(jwtBean);
+        when(jsonWebTokenService.parseToken(eq("token1"))).thenReturn(jwtBean);
         
         ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
         Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
@@ -86,11 +87,11 @@ public class ResetPasswordResourceIntegrationTest{
     public void testTokenExpiredException() throws DotSecurityException, NoSuchUserException, DotInvalidTokenException {
         UserManager userManager = getUserManagerThrowingException( new DotInvalidTokenException("", true) );
         final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
-        final JWTBean jwtBean = new JWTBean("dotcms.org.1",
-                "token",
+        final JWTBean jwtBean = new JWTBean(UUID.randomUUID().toString(),
+                "dotcms.org.1",
                 new Date(), 100000);
 
-        when(jsonWebTokenService.parseToken(eq("token"))).thenReturn(jwtBean);
+        when(jsonWebTokenService.parseToken(eq("token1"))).thenReturn(jwtBean);
         ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
         Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
 
@@ -101,13 +102,13 @@ public class ResetPasswordResourceIntegrationTest{
             throws NoSuchUserException, DotSecurityException, DotInvalidTokenException {
         UserManager userManager = mock( UserManager.class );
         doThrow( e ).when( userManager ).resetPassword("dotcms.org.1",
-                resetPasswordForm.getToken(), resetPasswordForm.getPassword());
+                "token2", resetPasswordForm.getPassword());
         return userManager;
     }
 
     private ResetPasswordForm getForm(){
         final String password = "admin";
-        final String token = "token";
+        final String token = "token1+++token2";
 
         return new ResetPasswordForm.Builder()
                 .password(password)
