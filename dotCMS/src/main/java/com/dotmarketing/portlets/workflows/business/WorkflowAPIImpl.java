@@ -1886,6 +1886,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 * @param user {@link User}
 	 * @param contentletIds {@link List}
 	 */
+	@CloseDBIfOpened
 	public Future<BulkActionsResultView> fireBulkActions(final WorkflowAction action,
 			final User user, final List<String> contentletIds) throws DotDataException {
 
@@ -2075,6 +2076,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			try {
 				fireBulkActionTask(action, user, contentlet, successConsumer, failConsumer);
 			} catch (Exception e) {
+				// Additional catch block to handle any exceptions when processing the Transactional Annotation.
 				Logger.error(getClass(), "", e);
 			}
 		}

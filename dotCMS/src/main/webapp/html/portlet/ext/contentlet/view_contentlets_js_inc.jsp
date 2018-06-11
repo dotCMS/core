@@ -7,7 +7,7 @@
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
-<%@ page import="java.util.List"%>
+<%@page import="java.util.List"%>
 
 
 
@@ -989,7 +989,6 @@
         }
 
         function reindexSelectedContentlets(){
-               // disableButtonRow();
                 var form = copySearchForm()
             form.cmd.value = 'full_reindex_list';
                 form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="full_reindex_list" /></portlet:actionURL>';
