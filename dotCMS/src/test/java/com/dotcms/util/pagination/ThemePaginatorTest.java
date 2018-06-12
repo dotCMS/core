@@ -106,7 +106,7 @@ public class ThemePaginatorTest {
         //mocking folders
         elements.forEach(elem -> {
             try {
-                Folder folder = createFolderMock(elem);
+                final Folder folder = createFolderMock(elem);
                 when(folderAPI.find(elem, user, false)).thenReturn(folder);
                 when(contentletAPI.search(getFolderQuery(elem),-1, 0, null, user, false)).thenReturn(null);
             } catch (DotSecurityException | DotDataException e) {
@@ -197,7 +197,7 @@ public class ThemePaginatorTest {
         //mocking folders
         elements.forEach(elem -> {
             try {
-                Folder folder = createFolderMock(elem);
+                final Folder folder = createFolderMock(elem);
                 when(folderAPI.find(elem, user, false)).thenReturn(folder);
                 when(contentletAPI.search(getFolderQuery(elem),-1, 0, null, user, false)).thenReturn(null);
             } catch (DotSecurityException | DotDataException e) {
@@ -244,12 +244,11 @@ public class ThemePaginatorTest {
         //mocking folders
         elements.forEach(elem -> {
             try {
-                Folder folder = createFolderMock(elem);
+                final Folder folder = createFolderMock(elem);
                 when(folderAPI.find(elem, user, false)).thenReturn(folder);
                 when(contentletAPI.search(getFolderQuery(elem),-1, 0, null, user, false)).thenReturn(null);
             } catch (DotSecurityException | DotDataException e) {
-                //TODO: handle exception
-                e.printStackTrace();
+                Logger.error(this, e.getMessage());
             }
         });
 
