@@ -1600,9 +1600,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
             for (MultiTree mt : mts) {
                 Identifier pageIdent = APILocator.getIdentifierAPI().find(mt.getParent1());
                 if (pageIdent != null && UtilMethods.isSet(pageIdent.getInode())) {
+                    try {
                     IHTMLPage page = loadPageByIdentifier(pageIdent.getId(), false, con.getLanguageId(), user, false);
                     if (page != null && UtilMethods.isSet(page.getIdentifier()))
                         new PageLoader().invalidate(page);
+                    }
+                    catch(DotContentletStateException dcse) {
+                        Logger.warn(this.getClass(), "Page with id:" +pageIdent.getId() +" does not exist" );
+                    }
                 }
                 MultiTreeFactory.deleteMultiTree(mt);
             }
