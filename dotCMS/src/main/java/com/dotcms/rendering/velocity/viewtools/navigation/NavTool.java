@@ -236,7 +236,7 @@ public class NavTool implements ViewTool {
     }
 
     @VisibleForTesting
-    boolean shouldAddFileInAnotherLang(List<?> menuItems, IFileAsset itemFile, long languageId) {
+    boolean shouldAddFileInAnotherLang(final List<?> menuItems, final IFileAsset itemFile, final long languageId) {
         return (LanguageWebAPI.canDefaultFileToDefaultLanguage() &&
                 itemFile.getLanguageId() == defaultLanguage &&
                 !doesFileAssetInRequestedLanguageExists(menuItems, itemFile.getPermissionId(), languageId));
@@ -319,12 +319,12 @@ public class NavTool implements ViewTool {
         return null;
     }
 
-    private boolean doesHTMLPageInRequestedLanguageExists(List<?> items, String identifier, long language){
+    private boolean doesHTMLPageInRequestedLanguageExists(final List<?> items, final String identifier, final long language){
         return items.stream().anyMatch((item)->(item instanceof IHTMLPage
             && ((IHTMLPage) item).getIdentifier().equals(identifier) && ((IHTMLPage) item).getLanguageId() == language));
     }
 
-    private boolean doesFileAssetInRequestedLanguageExists(List<?> items, String identifier, long language){
+    private boolean doesFileAssetInRequestedLanguageExists(final List<?> items, final String identifier, final long language){
         return items.stream().anyMatch((item)->(item instanceof IFileAsset
             && ((IFileAsset) item).getPermissionId().equals(identifier) && ((IFileAsset) item).getLanguageId() == language));
     }
