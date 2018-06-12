@@ -30,6 +30,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 
 import com.liferay.util.Validator;
@@ -53,6 +54,7 @@ public class NavResource {
 
 
     private final WebResource webResource;
+    private final int defaultDepth = 1;
 
 
     /**
@@ -74,10 +76,10 @@ public class NavResource {
      *
      * <pre>
      * Format:
-     * http://localhost:8080/api/v1/nav/{start-url}?depth={}
+     * http://localhost:8080/api/v1/nav/{start-url}?depth={}&languageId={}
      * <br/>
-     * Example - will send the navigation under the /about-us folder, 2 levels deep
-     * http://localhost:8080/api/v1/nav/about-us?depth=2
+     * Example - will send the navigation under the /about-us folder, 2 levels deep in english version.
+     * http://localhost:8080/api/v1/nav/about-us?depth=2&languageId=1
      * </pre>
      *
      * @param request The {@link HttpServletRequest} object.
@@ -91,13 +93,17 @@ public class NavResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/{uri: .*}")
     public final Response loadJson(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            @PathParam("uri") final String uri, @QueryParam("depth") final String depth) {
+            @PathParam("uri") final String uri, @QueryParam("depth") final String depth, @QueryParam("languageId") final String languageId) {
 
         final InitDataObject auth = webResource.init(false, request, true);
         final User user = auth.getUser();
 
         try {
-            final int maxDepth = Integer.parseInt(depth);
+            final int maxDepth = (UtilMethods.isSet(depth)) ? Integer.parseInt(depth) :
+                    defaultDepth;
+
+            final long langId = (UtilMethods.isSet(languageId)) ? Long.parseLong(languageId) :
+                    WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
 
             final Host h =WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
             APILocator.getPermissionAPI().checkPermission(h, PermissionLevel.READ, user);
@@ -108,7 +114,7 @@ public class NavResource {
 
             final NavTool tool = new NavTool();
             tool.init(ctx);
-            final NavResult nav = tool.getNav(path);
+            final NavResult nav = tool.getNav(path,langId);
 
             final Map<String, Object> navMap = (nav!=null) ? navToMap(nav, maxDepth, 1) : new HashMap<>();
 
