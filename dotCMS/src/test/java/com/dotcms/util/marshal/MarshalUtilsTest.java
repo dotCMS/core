@@ -4,20 +4,19 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.UnitTestBase;
+import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
 import java.io.ByteArrayInputStream;
+import java.io.Serializable;
 import java.io.StringReader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TimeZone;
-
 import org.junit.Test;
-
-import com.dotcms.UnitTestBase;
-import com.dotcms.auth.providers.jwt.beans.DotCMSSubjectBean;
-import com.dotmarketing.util.json.JSONException;
-import com.dotmarketing.util.json.JSONObject;
 
 /**
  * MarshalUtils
@@ -260,4 +259,63 @@ public class MarshalUtilsTest extends UnitTestBase {
         assertNotNull(dotCMSSubjectBean4);
         assertEquals(subjectBean, dotCMSSubjectBean4);
     }
+
+    class DotCMSSubjectBean implements Serializable {
+
+        private final String userId;
+
+        private final Date lastModified;
+
+        private final String companyId;
+
+        public DotCMSSubjectBean(final Date lastModified, final String userId, final String companyId) {
+            this.lastModified = lastModified;
+            this.userId = userId;
+            this.companyId = companyId;
+        }
+
+        public String getUserId() {
+            return userId;
+        }
+
+        public Date getLastModified() {
+            return lastModified;
+        }
+
+        public String getCompanyId() {
+            return companyId;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            DotCMSSubjectBean that = (DotCMSSubjectBean) o;
+
+            if (userId != null ? !userId.equals(that.userId) : that.userId != null) return false;
+            if (lastModified != null ? lastModified.getTime() != that.lastModified.getTime() : that.lastModified != null) return false;
+            return companyId != null ? companyId.equals(that.companyId) : that.companyId == null;
+
+        }
+
+        @Override
+        public int hashCode() {
+            int result = userId != null ? userId.hashCode() : 0;
+            result = 31 * result + (lastModified != null ? lastModified.hashCode() : 0);
+            result = 31 * result + (companyId != null ? companyId.hashCode() : 0);
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return "DotCMSSubjectBean{" +
+                    "userId='" + userId + '\'' +
+                    ", lastModified=" + lastModified +
+                    ", companyId='" + companyId + '\'' +
+                    '}';
+        }
+
+    }
+
 }

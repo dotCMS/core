@@ -22,6 +22,8 @@
         <Property name="CONSOLE_PATTERN">%-5level %d %c:%M(%L): %m%n</Property>
         <Property name="MESSAGE_PATTERN">[%d{dd/MM/yy HH:mm:ss:SSS z}] %5p %c{2}: %m%n</Property>
         <Property name="MDC_MESSAGE_PATTERN">[%d{dd/MM/yy HH:mm:ss:SSS z}] %5p %m - %X{EndpointName} %X{BundleId} %n</Property>
+        <Property name="VISITOR_LOG_FILE">${sys:catalina.base}/logs/visitors-v3.$${date:yyyy-MM-dd}.log</Property>
+        <Property name="VISITOR_FILENAME_PATTERN">${sys:catalina.base}/logs/archive/visitors-v3-%i.log.gz</Property>
     </Properties>
 
     <Appenders>
@@ -53,6 +55,9 @@
         </Async>
         <Async name="velocity">
             <AppenderRef ref="VELOCITY-FILE"/>
+        </Async>
+        <Async name="visitorlogger">
+            <AppenderRef ref="VISITOR-FILE"/>
         </Async>
 
         <!--  Generic Logging File -->
@@ -125,6 +130,15 @@
                      fileName="${VELOCITY_LOG_FILE}"
                      filePattern="${VELOCITY_FILENAME_PATTERN}">
             <PatternLayout pattern="${MESSAGE_PATTERN}"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="20MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="10"/>
+        </RollingFile>
+        <RollingFile name="VISITOR-FILE"
+            fileName="${VISITOR_LOG_FILE}"
+            filePattern="${VISITOR_FILENAME_PATTERN}">
+            <PatternLayout pattern="%msg%n"/>
             <Policies>
                 <SizeBasedTriggeringPolicy size="20MB"/>
             </Policies>
@@ -203,6 +217,9 @@
         </Logger>
         <Logger name="org.apache.velocity" level="warn" additivity="false">
             <AppenderRef ref="velocity"/>
+        </Logger>
+        <Logger name="com.dotcms.visitor.filter.logger.VisitorLogger" level="info" additivity="false">
+            <AppenderRef ref="visitorlogger"/>
         </Logger>
     </Loggers>
 </Configuration>

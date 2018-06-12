@@ -10,9 +10,19 @@
     dojo.require("dojox.widget.ColorPicker");
     dojo.require("dojo.parser");// scan page for widgets and instantiate them
 
-    function styler (val) {
-        dojo.byId("colorBlock").style.background = val;
+    function bgColorStyler (val) {
+        dojo.byId("bgColorBlock").style.background = val;
         dojo.byId("bgColor").value = val;
+    }
+
+    function PrimaryColorStyler (val) {
+        dojo.byId("pColorBlock").style.background = val;
+        dojo.byId("pColor").value = val;
+    }
+
+    function SecondaryColorStyler (val) {
+        dojo.byId("sColorBlock").style.background = val;
+        dojo.byId("sColor").value = val;
     }
 
     function imgSwap (val) {
@@ -21,7 +31,9 @@
     }
 
     dojo.addOnLoad(function () {
-        styler('<%= company.getSize() %>');
+        bgColorStyler('<%= company.getSize() %>');
+        PrimaryColorStyler('<%= company.getType()%>')
+		SecondaryColorStyler('<%= company.getStreet()%>')
         imgSwap('<%= company.getHomeURL() %>');
     });
 
@@ -51,17 +63,47 @@
 				<dl>
 	                <dt>Background Color</dt>
 	                <dd style="position:relative;">
-	                    <div id="colorBlock" style="position:absolute;left:75px;top: 7px;width:18px;height:18px;"></div>
+	                    <div id="bgColorBlock" style="position:absolute;left:75px;top: 7px;width:18px;height:18px;"></div>
 	                    <div class="inline-form">
 		                    <input id="bgColor" dojoType="dijit.form.TextBox" name="companySize" size="5" type="text" value="<%= company.getSize() %>" style="width: 250px">
-		                    <button id="buttonOne" dojoType="dijit.form.Button" type="button" iconClass="colorIcon">
+		                    <button id="bgButton" dojoType="dijit.form.Button" type="button" iconClass="colorIcon">
 		                        Color Picker
 		                        <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">
-		                            dijit.byId("colorPicker").show();
+		                            dijit.byId("bgColorPicker").show();
 		                        </script>
 		                    </button>
 		                 </div>
 	                </dd>
+				</dl>
+				<dl>
+					<dt>Primary Color</dt>
+					<dd style="position:relative;">
+						<div id="pColorBlock" style="position:absolute;left:75px;top: 7px;width:18px;height:18px;"></div>
+						<div class="inline-form">
+							<input id="pColor" dojoType="dijit.form.TextBox" name="companySize" size="5" type="text" value="<%= company.getType() %>" style="width: 250px">
+							<button id="pButton" dojoType="dijit.form.Button" type="button" iconClass="colorIcon">
+								Color Picker
+								<script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">
+		                            dijit.byId("pColorPicker").show();
+		                        </script>
+							</button>
+						</div>
+					</dd>
+				</dl>
+				<dl>
+					<dt>Secondary Color</dt>
+					<dd style="position:relative;">
+						<div id="sColorBlock" style="position:absolute;left:75px;top: 7px;width:18px;height:18px;"></div>
+						<div class="inline-form">
+							<input id="sColor" dojoType="dijit.form.TextBox" name="companySize" size="5" type="text" value="<%= company.getStreet() %>" style="width: 250px">
+							<button id="sButton" dojoType="dijit.form.Button" type="button" iconClass="colorIcon">
+								Color Picker
+								<script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">
+		                            dijit.byId("sColorPicker").show();
+		                        </script>
+							</button>
+						</div>
+					</dd>
 				</dl>
 				<dl>
 	                <dt>Background Image</dt>
@@ -82,14 +124,32 @@
 	                <dd><div id="imageBlock" style="width:250px; height:170px; border:1px solid #b3b3b3;background-repeat:no-repeat; background-size:100% 100%;"></div></dd>
 	        </dl>
 
-            <div id="colorPicker" data-dojo-type="dijit.Dialog" title="Color Picker">
-                <div id="pickerLive" dojoType="dojox.widget.ColorPicker"
+            <div id="bgColorPicker" data-dojo-type="dijit.Dialog" title="Background Color Picker">
+                <div id="bgPickerLive" dojoType="dojox.widget.ColorPicker"
                      webSafe="false"
                      liveUpdate="true"
                      value="<%= company.getSize() %>"
-                     onChange="styler(arguments[0])">
+                     onChange="bgColorStyler(arguments[0])">
                 </div>
             </div>
+
+				<div id="pColorPicker" data-dojo-type="dijit.Dialog" title="Primary Color Picker">
+					<div id="pPickerLive" dojoType="dojox.widget.ColorPicker"
+						 webSafe="false"
+						 liveUpdate="true"
+						 value="<%= company.getType() %>"
+						 onChange="PrimaryColorStyler(arguments[0])">
+					</div>
+				</div>
+
+				<div id="sColorPicker" data-dojo-type="dijit.Dialog" title="Secondary Color Picker">
+					<div id="sPickerLive" dojoType="dojox.widget.ColorPicker"
+						 webSafe="false"
+						 liveUpdate="true"
+						 value="<%= company.getStreet() %>"
+						 onChange="SecondaryColorStyler(arguments[0])">
+					</div>
+				</div>
 
             <div id="bgPicker" data-dojo-type="dijit.Dialog" title="Backgrounds">
                 <table class="bgThumbnail">

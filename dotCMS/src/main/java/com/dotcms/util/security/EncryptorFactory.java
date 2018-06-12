@@ -122,11 +122,7 @@ public class EncryptorFactory implements Serializable {
             return Encryptor.super.generateKey(algorithm);
         }
 
-        @Override
-        public Provider getProvider() throws ClassNotFoundException, IllegalAccessException, InstantiationException {
 
-            return Encryptor.super.getProvider();
-        }
 
         @Override
         public String decrypt(final Key key, final String encryptedString) throws EncryptorException {

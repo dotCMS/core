@@ -27,6 +27,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.business.WorkflowPortletAccessException;
 import com.dotmarketing.util.Logger;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -48,19 +49,29 @@ import java.util.Set;
 public class ExceptionUtil {
 
     public static final Set<Class<? extends Throwable>> SECURITY_EXCEPTIONS = ImmutableSet
-            .of(DotSecurityException.class,
-                InvalidLicenseException.class, WorkflowPortletAccessException.class);
+            .of(
+                    DotSecurityException.class,
+                    InvalidLicenseException.class,
+                    WorkflowPortletAccessException.class
+            );
 
     public static final Set<Class<? extends Throwable>> NOT_FOUND_EXCEPTIONS = ImmutableSet
-            .of(NotFoundInDbException.class, DoesNotExistException.class);
+            .of(
+                    NotFoundInDbException.class,
+                    DoesNotExistException.class
+            );
 
     public static final Set<Class<? extends Throwable>> BAD_REQUEST_EXCEPTIONS = ImmutableSet
-            .of(AlreadyExistException.class,
-                IllegalArgumentException.class,
-                DotStateException.class,
-                DotDataValidationException.class,
-                ValidationException.class,
-                BadRequestException.class);
+            .of(
+                    AlreadyExistException.class,
+                    IllegalArgumentException.class,
+                    DotStateException.class,
+                    DotDataValidationException.class,
+                    ValidationException.class,
+                    BadRequestException.class,
+                    JsonProcessingException.class,
+                    NumberFormatException.class
+            );
 
 
     private ExceptionUtil () {}

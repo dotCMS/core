@@ -1,6 +1,5 @@
 package com.dotcms.rest.api.v1.authentication.url;
 
-
 import com.dotcms.auth.providers.jwt.beans.JWTBean;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
@@ -9,20 +8,23 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.PortletURLUtil;
 import com.liferay.portal.model.User;
-
 import java.util.Map;
-
+import java.util.UUID;
 
 /**
  * This {@link UrlStrategy} is for a Angular Reset Password.
+ *
  * @author jsanca
  */
 public class AngularResetPasswordUrlStrategy implements UrlStrategy {
 
+    private static final String TOKEN_SEPARATOR = "+++";
     private final JsonWebTokenService jsonWebTokenService;
-    private final long jwtMillis = Config.getIntProperty("RECOVER_PASSWORD_TOKEN_TTL_MINS", 20) * DateUtil.MINUTE_MILLIS;
+    private final long jwtMillis =
+            Config.getIntProperty("RECOVER_PASSWORD_TOKEN_TTL_MINS", 20) * DateUtil.MINUTE_MILLIS;
 
-    private static final String HTML_NG_RESET_PASSWORD_TRUE_USER_ID_0_TOKEN_1 = "/" + PortletURLUtil.URL_ADMIN_PREFIX + "/#/public/resetPassword/{0}";
+    private static final String HTML_NG_RESET_PASSWORD_TRUE_USER_ID_0_TOKEN_1 =
+            "/" + PortletURLUtil.URL_ADMIN_PREFIX + "/#/public/resetPassword/{0}";
 
     public AngularResetPasswordUrlStrategy() {
         this(JsonWebTokenFactory.getInstance().getJsonWebTokenService());
@@ -36,14 +38,17 @@ public class AngularResetPasswordUrlStrategy implements UrlStrategy {
     @Override
     public String getURL(final Map<String, Object> params) {
 
-        final User user       = (User)    params.get(USER);
-        final String token    = (String)  params.get(TOKEN);
-        final String jwt      = this.jsonWebTokenService.generateToken(
-                new JWTBean(user.getUserId(), token, user.getUserId(), this.jwtMillis
+        final User user = (User) params.get(USER);
+        final String token = (String) params.get(TOKEN);
 
-        ));
+        final String jwt = this.jsonWebTokenService.generateToken(
+                new JWTBean(UUID.randomUUID().toString(), user.getUserId(),
+                        user.getModificationDate(),
+                        this.jwtMillis
+                ));
 
-        return java.text.MessageFormat.format(HTML_NG_RESET_PASSWORD_TRUE_USER_ID_0_TOKEN_1, jwt);
+        return java.text.MessageFormat.format(HTML_NG_RESET_PASSWORD_TRUE_USER_ID_0_TOKEN_1,
+                (jwt + TOKEN_SEPARATOR + token));
     } // getResetUserPasswordRelativeURL.
 
 } // E:O:F:AngularResetPasswordUrlStrategy.
