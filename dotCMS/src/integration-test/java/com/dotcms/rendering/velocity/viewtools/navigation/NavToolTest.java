@@ -182,39 +182,39 @@ public class NavToolTest extends IntegrationTestBase{
 
     @DataProvider
     public static Object[] dataProviderShouldAddFileInAnotherLang() {
-        FileAsset fileAssetInSpanish = new FileAsset();
+        final FileAsset fileAssetInSpanish = new FileAsset();
         fileAssetInSpanish.setIdentifier("mutiLangFileAsset");
         fileAssetInSpanish.setLanguageId(2);
 
-        NavToolTestCase case1 = new NavToolTestCase();
+        final NavToolTestCase case1 = new NavToolTestCase();
         case1.menuItems = Collections.singletonList(fileAssetInSpanish);
         case1.itemFile = fileAssetInSpanish;
         case1.selectedLang= 1;
         case1.expectedResult = false;
 
-        NavToolTestCase case2 = new NavToolTestCase();
+        final NavToolTestCase case2 = new NavToolTestCase();
         case2.menuItems = Collections.singletonList(fileAssetInSpanish);
         case2.itemFile = fileAssetInSpanish;
         case2.selectedLang= 2;
         case2.expectedResult = false;
 
-        FileAsset fileAssetInEnglish = new FileAsset();
+        final FileAsset fileAssetInEnglish = new FileAsset();
         fileAssetInEnglish.setIdentifier("mutiLangFileAsset");
         fileAssetInEnglish.setLanguageId(1);
 
-        NavToolTestCase case3 = new NavToolTestCase();
+        final NavToolTestCase case3 = new NavToolTestCase();
         case3.menuItems = Collections.singletonList(fileAssetInEnglish);
         case3.itemFile = fileAssetInSpanish;
         case3.selectedLang= 1;
         case3.expectedResult = false;
 
-        NavToolTestCase case4 = new NavToolTestCase();
+        final NavToolTestCase case4 = new NavToolTestCase();
         case4.menuItems = Collections.singletonList(fileAssetInSpanish);
         case4.itemFile = fileAssetInEnglish;
         case4.selectedLang= 2;
         case4.expectedResult = false;
 
-        NavToolTestCase case5 = new NavToolTestCase();
+        final NavToolTestCase case5 = new NavToolTestCase();
         case5.menuItems = new ArrayList<>();
         case5.itemFile = fileAssetInEnglish;
         case5.selectedLang= 2;
@@ -238,9 +238,9 @@ public class NavToolTest extends IntegrationTestBase{
 
     @Test
     @UseDataProvider("dataProviderShouldAddFileInAnotherLang")
-    public void testShouldAddFileInAnotherLang(NavToolTestCase testCase) {
+    public void testShouldAddFileInAnotherLang(final NavToolTestCase testCase) {
 
-        NavTool navTool = new NavTool();
+        final NavTool navTool = new NavTool();
         navTool.defaultLanguage = LanguageWebAPI.getDefaultLanguage().getId();
         assertEquals(testCase.expectedResult, navTool.shouldAddFileInAnotherLang(testCase.menuItems, testCase.itemFile,
             testCase.selectedLang));
