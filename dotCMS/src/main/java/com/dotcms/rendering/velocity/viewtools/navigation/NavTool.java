@@ -1,6 +1,8 @@
 package com.dotcms.rendering.velocity.viewtools.navigation;
 
 
+import com.google.common.annotations.VisibleForTesting;
+
 import com.dotcms.rendering.velocity.viewtools.LanguageWebAPI;
 
 import com.dotmarketing.beans.Host;
@@ -38,7 +40,8 @@ public class NavTool implements ViewTool {
     private HttpServletRequest request = null;
     private long currentLanguage = 0;
     private ViewContext context;
-    private long defaultLanguage = 0;
+    @VisibleForTesting
+    long defaultLanguage = 0;
     static {
 
         try {
@@ -225,15 +228,17 @@ public class NavTool implements ViewTool {
         }
     }
 
-    private boolean shouldAddHTMLPageInAnotherLang(List<?> menuItems, IHTMLPage itemPage, long languageId) {
+    @VisibleForTesting
+    boolean shouldAddHTMLPageInAnotherLang(List<?> menuItems, IHTMLPage itemPage, long languageId) {
         return (LanguageWebAPI.canDefaultPageToDefaultLanguage() &&
-                languageId == defaultLanguage &&
+            itemPage.getLanguageId()  == defaultLanguage &&
             !doesHTMLPageInRequestedLanguageExists(menuItems,itemPage.getIdentifier(),languageId));
     }
 
-    private boolean shouldAddFileInAnotherLang(List<?> menuItems, IFileAsset itemFile, long languageId) {
+    @VisibleForTesting
+    boolean shouldAddFileInAnotherLang(List<?> menuItems, IFileAsset itemFile, long languageId) {
         return (LanguageWebAPI.canDefaultFileToDefaultLanguage() &&
-                languageId == defaultLanguage &&
+                itemFile.getLanguageId() == defaultLanguage &&
                 !doesFileAssetInRequestedLanguageExists(menuItems, itemFile.getPermissionId(), languageId));
     }
 
