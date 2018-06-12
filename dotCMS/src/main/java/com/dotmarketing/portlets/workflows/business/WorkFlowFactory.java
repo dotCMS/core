@@ -221,6 +221,8 @@ public interface WorkFlowFactory {
 
 	public void deleteActionClass(WorkflowActionClass actionClass) throws DotDataException, AlreadyExistException;
 
+	public List<WorkflowStep> findProxiesSteps(final WorkflowAction action) throws DotDataException;
+
 	public void saveActionClass(WorkflowActionClass actionClass) throws DotDataException, AlreadyExistException;
 
 	public Map<String, WorkflowActionClassParameter> findParamsForActionClass(WorkflowActionClass actionClass) throws DotDataException;
