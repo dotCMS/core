@@ -20,6 +20,7 @@ $top-height: ($toolbar-height + $tabview-nav-height);
 
     .content-type__fields-layout {
         display: flex;
+        height: calc(100vh - #{$top-height});
         overflow: hidden;
     }
 
