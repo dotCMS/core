@@ -208,12 +208,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     }
 
     private editContentlet($event: any): void {
-        const container: DotPageContainer = {
-            identifier: $event.container.dotIdentifier,
-            uuid: $event.container.dotUuid
-        };
-
-        this.dotEditContentHtmlService.setContainterToEditContentlet(container);
         this.dotContentletEditorService.edit({
             data: {
                 inode: $event.dataset.dotInode

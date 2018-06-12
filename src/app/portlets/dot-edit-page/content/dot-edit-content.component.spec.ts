@@ -578,7 +578,6 @@ describe('DotEditContentComponent', () => {
     describe('actions', () => {
         beforeEach(() => {
             spyOn(dotEditContentHtmlService, 'setContainterToAppendContentlet');
-            spyOn(dotEditContentHtmlService, 'setContainterToEditContentlet');
             fixture.detectChanges();
         });
 
@@ -647,13 +646,6 @@ describe('DotEditContentComponent', () => {
                 });
 
                 fixture.detectChanges();
-            });
-
-            it('should set container to edit', () => {
-                expect(dotEditContentHtmlService.setContainterToEditContentlet).toHaveBeenCalledWith({
-                    identifier: '123',
-                    uuid: '456'
-                });
             });
 
             it('should call edit service', () => {
