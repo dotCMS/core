@@ -1,6 +1,5 @@
 package com.dotcms.util.pagination;
 
-import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -8,6 +7,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
 import org.junit.Test;
@@ -31,7 +31,7 @@ public class ThemePaginatorTest {
     private final ContentletAPI contentletAPI = mock(ContentletAPI.class);
     private final FolderAPI folderAPI         = mock(FolderAPI.class);
 
-    private final String queryWithHost = "+parentpath:/application/themes/* +title:template.vtl +conhost:1";
+    private static final String QUERY_WITH_HOST = "+parentpath:/application/themes/* +title:template.vtl +conhost:1";
 
     private final User user = mock(User.class);
 
@@ -54,7 +54,7 @@ public class ThemePaginatorTest {
 
         final ThemePaginator themePaginator = new ThemePaginator(contentletAPI, folderAPI);
 
-        when(contentletAPI.searchIndex(queryWithHost, 0, -1, "parentPath asc", user, false))
+        when(contentletAPI.searchIndex(QUERY_WITH_HOST, 0, -1, "parentPath asc", user, false))
                 .thenReturn(contentletSearchList);
 
         when(contentletAPI.findContentlets(elements)).thenReturn(contentlets);
@@ -62,12 +62,11 @@ public class ThemePaginatorTest {
         //mocking folders
         elements.forEach(elem -> {
             try {
-                Folder folder = createFolderMock(elem);
+                final Folder folder = createFolderMock(elem);
                 when(folderAPI.find(elem, user, false)).thenReturn(folder);
                 when(contentletAPI.search(getFolderQuery(elem),-1, 0, null, user, false)).thenReturn(null);
             } catch (DotSecurityException | DotDataException e) {
-                //TODO: handle exception
-                e.printStackTrace();
+                Logger.error(this, e.getMessage());
             }
         });
 
@@ -111,8 +110,7 @@ public class ThemePaginatorTest {
                 when(folderAPI.find(elem, user, false)).thenReturn(folder);
                 when(contentletAPI.search(getFolderQuery(elem),-1, 0, null, user, false)).thenReturn(null);
             } catch (DotSecurityException | DotDataException e) {
-                //TODO: handle exception
-                e.printStackTrace();
+                Logger.error(this, e.getMessage());
             }
         });
 
@@ -191,7 +189,7 @@ public class ThemePaginatorTest {
 
         final ThemePaginator themePaginator = new ThemePaginator(contentletAPI, folderAPI);
 
-        when(contentletAPI.searchIndex(queryWithHost, 0, -1, "parentPath desc", user, false))
+        when(contentletAPI.searchIndex(QUERY_WITH_HOST, 0, -1, "parentPath desc", user, false))
                 .thenReturn(contentletSearchList);
 
         when(contentletAPI.findContentlets(elements)).thenReturn(contentlets);
@@ -203,8 +201,7 @@ public class ThemePaginatorTest {
                 when(folderAPI.find(elem, user, false)).thenReturn(folder);
                 when(contentletAPI.search(getFolderQuery(elem),-1, 0, null, user, false)).thenReturn(null);
             } catch (DotSecurityException | DotDataException e) {
-                //TODO: handle exception
-                e.printStackTrace();
+                Logger.error(this, e.getMessage());
             }
         });
 
@@ -288,12 +285,9 @@ public class ThemePaginatorTest {
         return folder;
     }
 
-    private String getFolderQuery(String folderInode){
-        StringBuilder query = new StringBuilder();
-        query.append("+conFolder:");
-        query.append(folderInode);
-        query.append(" +title:");
-        query.append(ThemePaginator.THEME_PNG);
+    private String getFolderQuery(final String folderInode){
+        final StringBuilder query = new StringBuilder();
+        query.append("+conFolder:").append(folderInode).append(" +title:").append(ThemePaginator.THEME_PNG);
 
         return query.toString();
     }

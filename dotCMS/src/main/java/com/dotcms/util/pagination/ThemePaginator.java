@@ -43,7 +43,7 @@ public class ThemePaginator implements Paginator<Folder> {
     }
 
     @VisibleForTesting
-    ThemePaginator(final ContentletAPI contentletAPI, FolderAPI folderAPI) {
+    ThemePaginator(final ContentletAPI contentletAPI, final FolderAPI folderAPI) {
         this.contentletAPI = contentletAPI;
         this.folderAPI     = folderAPI;
     }
@@ -52,7 +52,7 @@ public class ThemePaginator implements Paginator<Folder> {
     public PaginatedArrayList<Folder> getItems(final User user, final int limit, final int offset,
                                                    final Map<String, Object> params) throws PaginationException {
 
-        PaginatedArrayList<Folder> result = new PaginatedArrayList();
+        final PaginatedArrayList<Folder> result = new PaginatedArrayList();
 
         final OrderDirection direction =  params != null && params.get(ORDER_DIRECTION_PARAM_NAME) != null ?
                 (OrderDirection) params.get(ORDER_DIRECTION_PARAM_NAME) :
@@ -61,26 +61,20 @@ public class ThemePaginator implements Paginator<Folder> {
         final String hostId       = params != null ? (String) params.get(HOST_ID_PARAMETER_NAME) : null;
         final String searchParams = params != null ? (String) params.get(SEARCH_PARAMETER) : null;
         final String searchById   = params != null ? (String) params.get(ID_PARAMETER) : null;
-        StringBuilder query       = new StringBuilder();
+        final StringBuilder query = new StringBuilder();
 
         query.append(BASE_LUCENE_QUERY);
 
         if (UtilMethods.isSet(searchById)){
-            query.append("+conFolder");
-            query.append(StringPool.COLON);
-            query.append(searchById);
+            query.append("+conFolder").append(StringPool.COLON).append(searchById);
         }
 
         if(UtilMethods.isSet(hostId)) {
-            query.append("+conhost");
-            query.append(StringPool.COLON);
-            query.append(hostId);
+            query.append("+conhost").append(StringPool.COLON).append(hostId);
         }
 
         if (UtilMethods.isSet(searchParams)){
-            query.append(" +catchall:*");
-            query.append(searchParams);
-            query.append("*");
+            query.append(" +catchall:*").append(searchParams).append("*");
         }
 
         final String sortBy = String.format("parentPath %s", direction.toString().toLowerCase());
@@ -103,8 +97,8 @@ public class ThemePaginator implements Paginator<Folder> {
                     .map(contentletSearch -> contentletSearch.getInode())
                     .collect(Collectors.toList());
 
-            for (Contentlet contentlet :contentletAPI.findContentlets(inodes)) {
-                Folder folder = folderAPI.find(contentlet.getFolder(), user, false);
+            for (final Contentlet contentlet :contentletAPI.findContentlets(inodes)) {
+                final Folder folder = folderAPI.find(contentlet.getFolder(), user, false);
                 folder.setIdentifier(getThemeIdentifier(folder, user));
                 result.add(folder);
             }
@@ -118,14 +112,11 @@ public class ThemePaginator implements Paginator<Folder> {
     }
 
     @VisibleForTesting
-    String getThemeIdentifier(Folder folder, User user) throws DotSecurityException, DotDataException {
+    String getThemeIdentifier(final Folder folder, final User user) throws DotSecurityException, DotDataException {
 
-        StringBuilder query = new StringBuilder();
-        query.append("+conFolder:");
-        query.append(folder.getInode());
-        query.append(" +title:");
-        query.append(THEME_PNG);
-        List<Contentlet> results = contentletAPI
+        final StringBuilder query = new StringBuilder();
+        query.append("+conFolder:").append(folder.getInode()).append(" +title:").append(THEME_PNG);
+        final List<Contentlet> results = contentletAPI
                 .search(query.toString(), -1, 0, null, user, false);
 
         return UtilMethods.isSet(results) ? results.get(0).getIdentifier() : null;

@@ -111,7 +111,7 @@ public class ThemeResourceIntegrationTest {
 
     }
 
-    private void validateResponse(Response response, int perPage) throws IOException {
+    private void validateResponse(final Response response, final int perPage) throws IOException {
         assertEquals(200, response.getStatus());
 
         final String totalEntries = response.getHeaderString("X-Pagination-Total-Entries");
@@ -139,7 +139,7 @@ public class ThemeResourceIntegrationTest {
      * BasicAuth
      */
     private HttpServletRequest getHttpRequest() {
-        MockHeaderRequest request = new MockHeaderRequest(
+        final MockHeaderRequest request = new MockHeaderRequest(
                 new MockSessionRequest(
                         new MockAttributeRequest(new MockHttpRequest("localhost", "/").request())
                                 .request())
