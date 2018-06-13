@@ -214,7 +214,7 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 		System.setProperty("java.net.preferIPv4Stack", preferIPv4);
 
 		if (cacheTransport != null &&
-			(cacheTransport.shouldReinit() || (!cacheTransport.shouldReinit() && !cacheTransport.isInitialized())) ) {
+			(cacheTransport.shouldReinit() || !cacheTransport.isInitialized())) {
 			cacheTransport.init(localServer);
 			useTransportChannel = true;
 		} else {
