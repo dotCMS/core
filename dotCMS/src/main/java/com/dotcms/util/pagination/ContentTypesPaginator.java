@@ -59,7 +59,7 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
 
         try {
             List<Structure> structures = this.structureAPI.find(user, false, false, queryCondition,
-                    orderby, limit, offset, direction.toString().toLowerCase());
+                    orderby, limit, offset, UtilMethods.isSet(direction)?direction.toString().toLowerCase(): OrderDirection.ASC.name());
 
             List<ContentType> contentTypes = new StructureTransformer(structures).asList();
             List<Map<String, Object>> contentTypesTransform = transformContentTypesToMap(contentTypes);
