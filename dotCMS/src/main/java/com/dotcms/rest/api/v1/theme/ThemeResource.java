@@ -5,8 +5,10 @@ import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.PaginationException;
 import com.dotcms.util.pagination.ThemePaginator;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.theme.business.ThemeSerializer;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
@@ -20,8 +22,6 @@ import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.util.Logger;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.module.SimpleModule;
 import com.liferay.portal.model.User;
@@ -41,26 +41,23 @@ public class ThemeResource {
     private final PaginationUtil paginationUtil;
     private final WebResource webResource;
     private final HostAPI hostAPI;
-    private final FolderAPI folderAPI;
     private final UserAPI userAPI;
 
     public ThemeResource() {
-        this(
+         this(
             new ThemePaginator(),
             APILocator.getHostAPI(),
-            APILocator.getFolderAPI(),
             APILocator.getUserAPI(),
             new WebResource()
         );
     }
 
     @VisibleForTesting
-    ThemeResource(final ThemePaginator themePaginator, final HostAPI hostAPI, final FolderAPI folderAPI,
+    ThemeResource(final ThemePaginator themePaginator, final HostAPI hostAPI,
                          final UserAPI userAPI, final WebResource webResource ) {
-        this.webResource = webResource;
-        this.hostAPI = hostAPI;
-        this.folderAPI = folderAPI;
-        this.userAPI = userAPI;
+        this.webResource  = webResource;
+        this.hostAPI      = hostAPI;
+        this.userAPI      = userAPI;
         this.paginationUtil = new PaginationUtil(themePaginator, this.getMapper());
     }
 
@@ -77,7 +74,8 @@ public class ThemeResource {
                                      @QueryParam("hostId") final String hostId,
                                      @QueryParam(PaginationUtil.PAGE) final int page,
                                      @QueryParam(PaginationUtil.PER_PAGE) @DefaultValue("-1") final int perPage,
-                                     @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction)
+                                     @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction,
+                                     @QueryParam("searchParam") final String searchParam)
             throws Throwable {
 
         Logger.debug(this,
@@ -95,8 +93,50 @@ public class ThemeResource {
                 ThemePaginator.HOST_ID_PARAMETER_NAME, hostIdToSearch
             );
 
+            if (UtilMethods.isSet(searchParam)){
+                params.put(ThemePaginator.SEARCH_PARAMETER, searchParam);
+            }
+
             return this.paginationUtil.getPage(request, user, null, page, perPage, null,
                     OrderDirection.valueOf(direction), params);
+        } catch (PaginationException e) {
+            throw e.getCause();
+        } catch (JsonProcessingRuntimeException e) {
+            final String errorMsg = "An error occurred when accessing the page information (" + e
+                    .getMessage() + ")";
+            Logger.error(this, e.getMessage(), e);
+            return ExceptionMapperUtil.createResponse(null, errorMsg);
+        }
+    }
+
+    /**
+     * Returns a theme given its ID (folder theme id)
+     * @param request  HttpServletRequest
+     * @return Response
+     */
+    @GET
+    @Path("/id/{id}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response findThemeById(@Context final HttpServletRequest request,
+            @PathParam("id") final String id)
+            throws Throwable {
+
+        Logger.debug(this,
+                "Getting the theme by identifier: " + id);
+
+        final InitDataObject initData = this.webResource.init(null, true, request, true, null);
+        final User user = initData.getUser();
+
+
+        try {
+            final Map<String, Object> params = map(
+                    ThemePaginator.ID_PARAMETER, id
+            );
+
+            return this.paginationUtil.getPage(request, user, null, 0, -1, null,
+                    OrderDirection.ASC, params);
         } catch (PaginationException e) {
             throw e.getCause();
         } catch (JsonProcessingRuntimeException e) {
@@ -110,7 +150,7 @@ public class ThemeResource {
     private ObjectMapper getMapper() {
         final  ObjectMapper mapper = new ObjectMapper();
         final  SimpleModule module = new SimpleModule();
-        module.addSerializer(Contentlet.class, new ThemeSerializer(hostAPI, folderAPI, userAPI));
+        module.addSerializer(Folder.class, new ThemeSerializer(hostAPI, userAPI));
         mapper.registerModule(module);
 
         return mapper;

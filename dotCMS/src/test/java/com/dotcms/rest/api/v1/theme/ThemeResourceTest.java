@@ -4,7 +4,6 @@ import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonNode;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.pagination.OrderDirection;
@@ -13,7 +12,6 @@ import com.dotcms.util.pagination.Paginator;
 import com.dotcms.util.pagination.ThemePaginator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -21,6 +19,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.PaginatedArrayList;
 
+import com.dotmarketing.util.UUIDGenerator;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import org.junit.Before;
@@ -46,6 +45,9 @@ public class ThemeResourceTest {
     private  static final String FOLDER_1 = "folder_1";
     private  static final String FOLDER_2 = "folder_2";
 
+    private static final String FOLDER_INODE_1 = UUIDGenerator.generateUuid();
+    private static final String FOLDER_INODE_2 = UUIDGenerator.generateUuid();
+
     private  static final String HOST_1 = "host_1";
     private  static final String HOST_2 = "host_2";
 
@@ -57,7 +59,6 @@ public class ThemeResourceTest {
     private final UserAPI userAPI = mock(UserAPI.class);
     private final ThemePaginator mockThemePaginator = mock(ThemePaginator.class);
     private final HostAPI hostAPI = mock(HostAPI.class);
-    private final FolderAPI folderAPI = mock(FolderAPI.class);
 
     private final Contentlet content1 = mock(Contentlet.class);
     private final Contentlet content2 = mock(Contentlet.class);
@@ -66,16 +67,16 @@ public class ThemeResourceTest {
     private final Host host_2 = mock(Host.class);
     private final Folder folder_2 = mock(Folder.class);
 
-    private  PaginatedArrayList<Contentlet> contentlets;
+    private  PaginatedArrayList<Folder> folders;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Before
     public void init() throws Throwable{
 
-        contentlets = new PaginatedArrayList<>();
-        contentlets.addAll(list(content1, content2));
-        contentlets.setTotalResults(4);
+        folders = new PaginatedArrayList<>();
+        folders.addAll(list(folder_1, folder_2));
+        folders.setTotalResults(2);
 
         when(content1.getFolder()).thenReturn(FOLDER_1);
         when(content1.getHost()).thenReturn(HOST_1);
@@ -84,6 +85,15 @@ public class ThemeResourceTest {
 
         when(folder_1.getName()).thenReturn(FOLDER_1);
         when(folder_2.getName()).thenReturn(FOLDER_2);
+
+        when(folder_1.getTitle()).thenReturn(FOLDER_1);
+        when(folder_2.getTitle()).thenReturn(FOLDER_2);
+
+        when(folder_1.getInode()).thenReturn(FOLDER_INODE_1);
+        when(folder_2.getInode()).thenReturn(FOLDER_INODE_2);
+
+        when(folder_1.getHostId()).thenReturn(HOST_1);
+        when(folder_2.getHostId()).thenReturn(HOST_2);
 
         when(host_1.getMap()).thenReturn(ImmutableMap.<String, Object> builder()
                 .put("property_1", "value_1")
@@ -102,14 +112,12 @@ public class ThemeResourceTest {
 
 
         when(hostAPI.find(HOST_1, systemUser, false)).thenReturn(host_1);
-        when(folderAPI.find(FOLDER_1, systemUser, false)).thenReturn(folder_1);
         when(hostAPI.find(HOST_2, systemUser, false)).thenReturn(host_2);
-        when(folderAPI.find(FOLDER_2, systemUser, false)).thenReturn(folder_2);
 
         when(request.getRequestURL()).thenReturn(new StringBuffer("themes"));
     }
     /**
-     * Test of {@link ThemeResource#findThemes(HttpServletRequest, String, int, int, String)}
+     * Test of {@link ThemeResource#findThemes(HttpServletRequest, String, int, int, String, String)}
      *
      * Given: A host_id as query parameter
      * Should: Should create the follow lucene query: +parentpath:/application/themes/* +title:template.vtl host:[host_id]
@@ -124,16 +132,16 @@ public class ThemeResourceTest {
                 Paginator.ORDER_BY_PARAM_NAME, null,
                 Paginator.ORDER_DIRECTION_PARAM_NAME, OrderDirection.ASC
         );
-        when(mockThemePaginator.getItems(user, 3, 0, params)).thenReturn(contentlets);
+        when(mockThemePaginator.getItems(user, 3, 0, params)).thenReturn(folders);
 
-        final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI, folderAPI, userAPI, webResource);
-        final Response response = themeResource.findThemes(request, hostId, 1, 3, "ASC");
+        final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI, userAPI, webResource);
+        final Response response = themeResource.findThemes(request, hostId, 1, 3, "ASC", null);
 
         checkSuccessResponse(response);
     }
 
     /**
-     * Test of {@link ThemeResource#findThemes(HttpServletRequest, String, int, int, String)}
+     * Test of {@link ThemeResource#findThemes(HttpServletRequest, String, int, int, String, String)}
      *
      * Given: null host_id query param
      * Should: Should create the follow lucene query: +parentpath:/application/themes/* +title:template.vtl host:[current_host]
@@ -152,16 +160,16 @@ public class ThemeResourceTest {
                 Paginator.ORDER_BY_PARAM_NAME, null,
                 Paginator.ORDER_DIRECTION_PARAM_NAME, OrderDirection.ASC
         );
-        when(mockThemePaginator.getItems(user, 3, 0, params)).thenReturn(contentlets);
+        when(mockThemePaginator.getItems(user, 3, 0, params)).thenReturn(folders);
 
-        final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI, folderAPI, userAPI, webResource);
-        final Response response = themeResource.findThemes(request, null, 1, 3, "ASC");
+        final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI, userAPI, webResource);
+        final Response response = themeResource.findThemes(request, null, 1, 3, "ASC", null);
 
         checkSuccessResponse(response);
     }
 
     /**
-     * Test of {@link ThemeResource#findThemes(HttpServletRequest, String, int, int, String)}
+     * Test of {@link ThemeResource#findThemes(HttpServletRequest, String, int, int, String, String)}
      *
      * Given: a user without permission
      * Should: throw a {@link com.dotcms.rest.exception.ForbiddenException}
@@ -179,10 +187,10 @@ public class ThemeResourceTest {
         );
         when(mockThemePaginator.getItems(user, 3, 0, params)).thenThrow(exception);
 
-        final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI, folderAPI, userAPI, webResource);
+        final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI , userAPI, webResource);
 
         try {
-            themeResource.findThemes(request, hostId, 1, 3, "ASC");
+            themeResource.findThemes(request, hostId, 1, 3, "ASC", null);
             assertTrue(false);
         } catch(DotSecurityException e){
             assertEquals(exception.getCause(), e);
@@ -195,10 +203,14 @@ public class ThemeResourceTest {
 
         final List<JsonNode> responseList = CollectionsUtils.asList(jsonNode.get("entity").elements());
         assertEquals(2, responseList.size());
-        assertEquals("folder_1", responseList.get(0).get("name").asText());
+        assertEquals(FOLDER_1, responseList.get(0).get("name").asText());
+        assertEquals(FOLDER_1, responseList.get(0).get("title").asText());
+        assertEquals(FOLDER_INODE_1, responseList.get(0).get("inode").asText());
         assertEquals("value_1", responseList.get(0).get("host").get("property_1").asText());
         assertEquals("value_2", responseList.get(0).get("host").get("property_2").asText());
-        assertEquals("folder_2", responseList.get(1).get("name").asText());
+        assertEquals(FOLDER_2, responseList.get(1).get("name").asText());
+        assertEquals(FOLDER_2, responseList.get(1).get("title").asText());
+        assertEquals(FOLDER_INODE_2, responseList.get(1).get("inode").asText());
         assertEquals("value_3", responseList.get(1).get("host").get("property_1").asText());
         assertEquals("value_4", responseList.get(1).get("host").get("property_2").asText());
     }
