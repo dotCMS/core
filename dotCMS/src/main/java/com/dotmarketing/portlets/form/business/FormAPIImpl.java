@@ -2,18 +2,21 @@ package com.dotmarketing.portlets.form.business;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.enterprise.FormAJAXProxy;
 import com.dotcms.rendering.velocity.services.ContentTypeLoader;
 
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DataAccessException;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.cache.FieldsCache;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.ajax.ContentletAjax;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
@@ -26,6 +29,7 @@ import com.dotmarketing.util.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 /**
@@ -35,8 +39,20 @@ import com.liferay.portal.model.User;
  */
 public class FormAPIImpl implements FormAPI {
 
-	public PermissionAPI perAPI = APILocator.getPermissionAPI();
-	public ContentletAPI conAPI = APILocator.getContentletAPI();
+	public final PermissionAPI perAPI;
+	public final ContentletAPI conAPI;
+	public final UserAPI userAPI;
+
+	public FormAPIImpl () {
+		this(APILocator.getPermissionAPI(), APILocator.getContentletAPI(), APILocator.getUserAPI());
+	}
+
+	@VisibleForTesting
+	public FormAPIImpl (final PermissionAPI perAPI, final ContentletAPI conAPI, final UserAPI userAPI) {
+		this.perAPI = perAPI;
+		this.conAPI = conAPI;
+		this.userAPI = userAPI;
+	}
 
 	@WrapInTransaction
 	public void createBaseFormFields(Structure structure) throws DotDataException,DotStateException {
@@ -156,6 +172,89 @@ public class FormAPIImpl implements FormAPI {
 		codeField.setDefaultValue("#submitContent(\"${formId}\")");
 		FieldFactory.saveField(codeField);
 		FieldsCache.clearCache();
+
+	}
+
+	@Override
+	public Contentlet getFormContent(final String formId) {
+		try {
+			final User systemUser = userAPI.getSystemUser();
+			final String luceneQuery = "+structureName:" + FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME + " +" +
+					FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME + "." + FormAPI.FORM_WIDGET_FORM_ID_FIELD_VELOCITY_VAR_NAME + ":" + formId;
+
+			final List<Contentlet> listContentlet = conAPI.search(luceneQuery, 1, 0, null,
+					systemUser, false);
+
+			return listContentlet.isEmpty() ? null : listContentlet.get(0);
+		} catch(final DotDataException | DotSecurityException e) {
+			throw new DotRuntimeException(e);
+		}
+	}
+
+	@Override
+	public Contentlet createDefaultFormContent(String formId) throws DotDataException {
+		final User systemUser = userAPI.getSystemUser();
+
+
+		Structure formWidget = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME);
+		if (!UtilMethods.isSet(formWidget.getInode())) {
+			APILocator.getFormAPI().createFormWidgetInstanceStructure();
+			formWidget = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME);
+		}
+
+		try {
+			List<Role> roles = perAPI.getRoles(formId, PermissionAPI.PERMISSION_READ + PermissionAPI.PERMISSION_EDIT + PermissionAPI.PERMISSION_PUBLISH, "", 0, 10, true);
+
+			ContentType formStructure = APILocator.getContentTypeAPI(systemUser).find(formId);
+			String formStructureTitle = formStructure.name();
+			String formTitleFieldValue = APILocator.getContentTypeFieldAPI().byContentTypeAndVar(formStructure, FormAPI.FORM_TITLE_FIELD_VELOCITY_VAR_NAME).values();
+
+			Contentlet formInstance = new Contentlet();
+			formInstance.setStructureInode(formWidget.getInode());
+			formInstance.setProperty(FormAPI.FORM_WIDGET_FORM_ID_FIELD_VELOCITY_VAR_NAME, formId);
+			Field codeField = formWidget.getFieldVar(FormAPI.FORM_WIDGET_CODE_VELOCITY_VAR_NAME);
+			formInstance.setProperty(FormAPI.FORM_WIDGET_CODE_VELOCITY_VAR_NAME, codeField.getDefaultValue());
+			formInstance.setStringProperty(FormAPI.FORM_WIDGET_TITLE_VELOCITY_VAR_NAME, (UtilMethods.isSet(formTitleFieldValue)) ? formTitleFieldValue : formStructureTitle);
+
+			formInstance.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+			formInstance.setOwner(systemUser.getUserId());
+			formInstance.setModUser(systemUser.getUserId());
+			formInstance.setModDate(new java.util.Date());
+
+			HibernateUtil.startTransaction();
+			formInstance = conAPI.checkin(formInstance, systemUser, true);
+				/*Permission for cmsanonymous*/
+			Permission p = new Permission(formInstance.getPermissionId(), APILocator.getRoleAPI().loadCMSAnonymousRole().getId(), PermissionAPI.PERMISSION_READ + PermissionAPI.PERMISSION_EDIT + PermissionAPI.PERMISSION_PUBLISH, true);
+			HibernateUtil.commitTransaction();
+			try {
+				perAPI.save(p, formInstance, APILocator.getUserAPI().getSystemUser(), false);
+			} catch (Exception e) {
+				Logger.error(ContentletAjax.class, "Permission with Inode" + p + " cannot be saved over this asset: " + formInstance);
+			}
+
+			if (roles.size() > 0) {
+				for (Role role : roles) {
+					String id = role.getId();
+					Permission per = new Permission(formInstance.getPermissionId(), id, PermissionAPI.PERMISSION_READ + PermissionAPI.PERMISSION_EDIT + PermissionAPI.PERMISSION_PUBLISH, true);
+					try {
+						perAPI.save(per, formInstance, APILocator.getUserAPI().getSystemUser(), false);
+					} catch (Exception e) {
+						Logger.error(ContentletAjax.class, "Permission with Inode" + per + " cannot be saved over this asset: " + formInstance);
+					}
+				}
+			}
+
+
+			APILocator.getVersionableAPI().setLive(formInstance);
+			APILocator.getVersionableAPI().setWorking(formInstance);
+			if(!conAPI.isInodeIndexed(formInstance.getInode())){
+				Logger.error(FormAJAXProxy.class, "Timed out waiting for index to return");
+			}
+
+			return formInstance;
+		} catch (DotSecurityException e) {
+			throw new DotRuntimeException(e);
+		}
 
 	}
 

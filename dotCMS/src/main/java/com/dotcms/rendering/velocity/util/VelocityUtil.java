@@ -57,7 +57,15 @@ public class VelocityUtil {
 	private static VelocityEngine ve = null;
 	private static boolean DEFAULT_PAGE_TO_DEFAULT_LANGUAGE = LanguageWebAPI.canDefaultPageToDefaultLanguage();
 
+	private static class Holder {
+		private static final VelocityUtil INSTANCE = new VelocityUtil();
+	}
 
+	protected VelocityUtil(){}
+
+	public static VelocityUtil getInstance() {
+		return Holder.INSTANCE;
+	}
 
 	private synchronized static void init(){
 		if(ve != null)
@@ -231,7 +239,7 @@ public class VelocityUtil {
 
 	}
 
-	public static String mergeTemplate(String templatePath, Context ctx) throws ResourceNotFoundException, ParseErrorException, Exception{
+	public String mergeTemplate(String templatePath, Context ctx) throws ResourceNotFoundException, ParseErrorException, Exception{
 		VelocityEngine ve = VelocityUtil.getEngine();
 		Template template = null;
 		StringWriter sw = new StringWriter();

@@ -1,6 +1,7 @@
 package com.dotcms.util.pagination;
 
 
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
@@ -22,7 +23,9 @@ import org.apache.commons.lang.StringUtils;
  * Handle {@link ContentType} pagination
  */
 public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Object>>{
+
     private static final String N_ENTRIES_FIELD_NAME = "nEntries";
+    public static final String TYPE_PARAMETER_NAME = "type";
 
     private final StructureAPI structureAPI;
 
@@ -48,7 +51,9 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
     public PaginatedArrayList<Map<String, Object>> getItems(User user, String filter, int limit, int offset, String orderby,
                                                             OrderDirection direction, Map<String, Object> extraParams) {
 
-        String queryCondition = this.getQueryCondition(filter);
+        List<BaseContentType> type = extraParams.get(TYPE_PARAMETER_NAME) != null ?
+                (List<BaseContentType>) extraParams.get(TYPE_PARAMETER_NAME) : null;
+        String queryCondition = this.getQueryCondition(filter, type);
 
         try {
             List<Structure> structures = this.structureAPI.find(user, false, false, queryCondition,
@@ -106,7 +111,23 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
                         .collect(Collectors.toList());
     }
 
-    private String getQueryCondition(String filter){
-        return UtilMethods.isSet(filter) ? String.format("(upper(name) like '%%%s%%')", filter.toUpperCase()) : StringUtils.EMPTY;
+    private String getQueryCondition(String filter, List<BaseContentType> types){
+        String queryFilter =
+                filter != null ? String.format("(upper(name) like '%%%s%%')", filter.toUpperCase())
+                        : "(upper(name) like '%%')";
+
+        StringBuffer queryType = new StringBuffer();
+
+        if (types != null) {
+            for (BaseContentType baseContentType : types) {
+                if (queryType.length() != 0) {
+                    queryType.append(" AND ");
+                }
+
+                queryType.append(String.format("structureType=%s", baseContentType.getType()));
+            }
+        }
+
+        return queryType.length() == 0 ? queryFilter : String.format("(%s) AND (%s)", queryFilter, queryType.toString());
     }
 }
