@@ -44,7 +44,7 @@ class PageForm {
         this.hostId = hostId;
         this.layout = layout;
         this.changes = ImmutableMap.<String, ContainerUUIDChanged> builder().putAll(changes).build();
-        this.newlyContainersUUID = ImmutableMap.<String, String> builder().putAll(newlyContainersUUID).build();
+        this.newlyContainersUUID = ImmutableMap.copyOf(newlyContainersUUID);
     }
 
 

@@ -2,6 +2,7 @@ package com.dotmarketing.factories;
 
 
 import com.dotcms.business.CloseDB;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.rendering.velocity.services.PageLoader;
 
@@ -299,7 +300,6 @@ public class MultiTreeFactory {
      * @throws DotDataException
      */
     @WrapInTransaction
-    @CloseDB
     public static void saveMultiTrees(final String pageId, final List<MultiTree> mTrees) throws DotDataException {
         if (mTrees == null) {
             throw new DotDataException("empty list passed in");
@@ -332,7 +332,7 @@ public class MultiTreeFactory {
         }
     }
 
-
+    @CloseDBIfOpened
     protected static List<String> getContainersId(String pageId) throws DotDataException {
         return MultiTreeFactory.getMultiTrees(pageId).stream()
                 .map(multiTree -> multiTree.getContainer())
