@@ -88,6 +88,15 @@ public abstract class AbstractHazelcastCacheTransport implements CacheTransport 
         isInitialized.set(true);
     }
 
+    @Override
+    public boolean isInitialized() {
+        return isInitialized.get();
+    }
+
+    @Override
+    public boolean shouldReinit() {
+        return true;
+    }
     public void receive(String msg){
 
     	receivedMessages.addAndGet(1);

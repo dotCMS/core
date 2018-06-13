@@ -8,4 +8,9 @@ public class HazelcastCacheTransportClient extends AbstractHazelcastCacheTranspo
     protected HazelcastInstanceType getHazelcastInstanceType() {
 		return HazelcastInstanceType.CLIENT;
     }
+
+    @Override
+    public boolean shouldReinit() {
+	    return false;
+    }
 }
