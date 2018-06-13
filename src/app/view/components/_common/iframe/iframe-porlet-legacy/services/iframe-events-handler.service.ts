@@ -51,8 +51,6 @@ export class DotIframeEventsHandler {
     }
 
     private editContentlet($event: CustomEvent): void {
-        this.dotContentletEditorService.edit({
-            data: $event.detail.data
-        });
+        this.dotRouterService.goToEditContentlet($event.detail.data.inode);
     }
 }

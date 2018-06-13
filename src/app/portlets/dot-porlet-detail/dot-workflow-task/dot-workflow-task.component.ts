@@ -1,9 +1,9 @@
 import { Component, AfterViewInit } from '@angular/core';
-import { DotWorkflowTaskDetailService } from '../../view/components/dot-workflow-task-detail/services/dot-workflow-task-detail.service';
-import { DotNavigationService } from '../../view/components/dot-navigation/dot-navigation.service';
+import { DotWorkflowTaskDetailService } from '../../../view/components/dot-workflow-task-detail/services/dot-workflow-task-detail.service';
 import { ActivatedRoute } from '@angular/router';
-import { DotMessageService } from '../../api/services/dot-messages-service';
+import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { take } from 'rxjs/operators';
+import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
 
 @Component({
     providers: [],
@@ -14,7 +14,7 @@ export class DotWorkflowTaskComponent implements AfterViewInit {
     constructor(
         private dotWorkflowTaskDetailService: DotWorkflowTaskDetailService,
         private dotMessageService: DotMessageService,
-        private dotNavigationService: DotNavigationService,
+        private dotRouterService: DotRouterService,
         private route: ActivatedRoute
     ) {}
 
@@ -25,7 +25,7 @@ export class DotWorkflowTaskComponent implements AfterViewInit {
             .subscribe(() => {
                 this.dotWorkflowTaskDetailService.view({
                     header: this.dotMessageService.get('workflow.task.dialog.header'),
-                    id: this.route.snapshot.params.id
+                    id: this.route.snapshot.params.asset
                 });
             });
     }
@@ -36,6 +36,6 @@ export class DotWorkflowTaskComponent implements AfterViewInit {
      * @memberof DotWorkflowTaskComponent
      */
     onCloseWorkflowTaskEditor(): void {
-        this.dotNavigationService.goToFirstPortlet();
+        this.dotRouterService.gotoPortlet('/c/workflow');
     }
 }

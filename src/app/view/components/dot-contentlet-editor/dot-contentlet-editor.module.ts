@@ -5,19 +5,17 @@ import { DotCreateContentletComponent } from './components/dot-create-contentlet
 import { DotEditContentletComponent } from './components/dot-edit-contentlet/dot-edit-contentlet.component';
 import { DotIframeDialogModule } from '../dot-iframe-dialog/dot-iframe-dialog.module';
 import { DotContentletEditorService } from './services/dot-contentlet-editor.service';
-import { DotContentletEditorComponent } from './dot-contentlet-editor.component';
 import { DotContentletWrapperComponent } from './components/dot-contentlet-wrapper/dot-contentlet-wrapper.component';
 
 @NgModule({
     imports: [CommonModule, DotIframeDialogModule],
     declarations: [
         DotAddContentletComponent,
-        DotContentletEditorComponent,
         DotContentletWrapperComponent,
         DotCreateContentletComponent,
         DotEditContentletComponent
     ],
-    exports: [DotContentletEditorComponent, DotEditContentletComponent],
+    exports: [DotEditContentletComponent, DotAddContentletComponent, DotCreateContentletComponent],
     providers: [DotContentletEditorService]
 })
 export class DotContentletEditorModule {}

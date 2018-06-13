@@ -1,20 +1,16 @@
-import { DOTTestBed } from '../../test/dot-test-bed';
+import { DOTTestBed } from '../../../test/dot-test-bed';
 import { Injectable, DebugElement } from '@angular/core';
-import { DotNavigationService } from '../../view/components/dot-navigation/dot-navigation.service';
 import { ActivatedRoute } from '@angular/router';
 import { DotWorkflowTaskComponent } from './dot-workflow-task.component';
-import { DotWorkflowTaskDetailService } from '../../view/components/dot-workflow-task-detail/services/dot-workflow-task-detail.service';
-import { DotWorkflowTaskDetailModule } from '../../view/components/dot-workflow-task-detail/dot-workflow-task-detail.module';
+import { DotWorkflowTaskDetailService } from '../../../view/components/dot-workflow-task-detail/services/dot-workflow-task-detail.service';
 import { ComponentFixture, async } from '@angular/core/testing';
+import { DotWorkflowTaskDetailModule } from '../../../view/components/dot-workflow-task-detail/dot-workflow-task-detail.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
-import { DotMessageService } from '../../api/services/dot-messages-service';
-import { MockDotMessageService } from '../../test/dot-message-service.mock';
-
-@Injectable()
-class MockDotNavigationService {
-    goToFirstPortlet = jasmine.createSpy('goToFirstPortlet');
-}
+import { DotMessageService } from '../../../api/services/dot-messages-service';
+import { MockDotMessageService } from '../../../test/dot-message-service.mock';
+import { RouterTestingModule } from '@angular/router/testing';
+import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
 
 @Injectable()
 class MockDotWorkflowTaskDetailService {
@@ -28,14 +24,13 @@ const messageServiceMock = new MockDotMessageService({
 describe('DotWorkflowTaskComponent', () => {
     let fixture: ComponentFixture<DotWorkflowTaskComponent>;
     let de: DebugElement;
-
-    let dotNavigationService: DotNavigationService;
+    let dotRouterService: DotRouterService;
     let dotWorkflowTaskDetailService: DotWorkflowTaskDetailService;
 
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
             declarations: [DotWorkflowTaskComponent],
-            imports: [DotWorkflowTaskDetailModule, BrowserAnimationsModule],
+            imports: [DotWorkflowTaskDetailModule, BrowserAnimationsModule, RouterTestingModule],
             providers: [
                 DotWorkflowTaskDetailService,
                 {
@@ -43,7 +38,7 @@ describe('DotWorkflowTaskComponent', () => {
                     useValue: {
                         snapshot: {
                             params: {
-                                id: '74cabf7a-0e9d-48b6-ab1c-8f76d0ad31e0'
+                                asset: '74cabf7a-0e9d-48b6-ab1c-8f76d0ad31e0'
                             }
                         }
                     }
@@ -51,10 +46,6 @@ describe('DotWorkflowTaskComponent', () => {
                 {
                     provide: DotWorkflowTaskDetailService,
                     useClass: MockDotWorkflowTaskDetailService
-                },
-                {
-                    provide: DotNavigationService,
-                    useClass: MockDotNavigationService
                 },
                 {
                     provide: DotMessageService,
@@ -65,8 +56,9 @@ describe('DotWorkflowTaskComponent', () => {
 
         fixture = DOTTestBed.createComponent(DotWorkflowTaskComponent);
         de = fixture.debugElement;
-        dotNavigationService = de.injector.get(DotNavigationService);
         dotWorkflowTaskDetailService = de.injector.get(DotWorkflowTaskDetailService);
+        dotRouterService = de.injector.get(DotRouterService);
+        spyOn(dotRouterService, 'gotoPortlet');
         fixture.detectChanges();
     });
 
@@ -82,6 +74,6 @@ describe('DotWorkflowTaskComponent', () => {
     it('should call first portlet when modal closed', () => {
         const edit = de.query(By.css('dot-workflow-task-detail'));
         edit.triggerEventHandler('close', {});
-        expect(dotNavigationService.goToFirstPortlet).toHaveBeenCalled();
+        expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/c/workflow');
     });
 });

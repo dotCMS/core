@@ -2,8 +2,8 @@ import { DotDialogService } from '../../../api/services/dot-dialog/dot-dialog.se
 import { Component, OnInit, ViewEncapsulation, HostListener } from '@angular/core';
 import { DotEventsService } from '../../../api/services/dot-events/dot-events.service';
 import { Router, NavigationEnd } from '@angular/router';
-import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
 import { filter } from 'rxjs/operators/filter';
+import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
 import { DotIframeService } from '../_common/iframe/service/dot-iframe/dot-iframe.service';
 
 @Component({
@@ -19,8 +19,8 @@ export class MainComponentLegacyComponent implements OnInit {
 
     constructor(
         private dotEventsService: DotEventsService,
-        private dotRouterService: DotRouterService,
         private router: Router,
+        private dotRouterService: DotRouterService,
         private dotIframeService: DotIframeService,
         public dotDialotService: DotDialogService
     ) {}

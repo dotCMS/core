@@ -42,6 +42,7 @@ import { DotEditPageToolbarComponent } from './components/dot-edit-page-toolbar/
 import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotPageContainer } from '../shared/models/dot-page-container.model';
 import { DotEditContentComponent } from './dot-edit-content.component';
+import { DotContentletEditorModule } from '../../../view/components/dot-contentlet-editor/dot-contentlet-editor.module';
 
 export const mockDotPageState: DotPageState = {
     mode: PageMode.PREVIEW,
@@ -74,7 +75,6 @@ describe('DotEditContentComponent', () => {
     let dotEditPageDataService: DotEditPageDataService;
     let dotGlobalMessageService: DotGlobalMessageService;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
-    let dotMenuService: DotMenuService;
     let dotPageStateService: DotPageStateService;
     let dotRouterService: DotRouterService;
     let fixture: ComponentFixture<DotEditContentComponent>;
@@ -99,8 +99,9 @@ describe('DotEditContentComponent', () => {
         DOTTestBed.configureTestingModule({
             declarations: [DotEditContentComponent, MockDotEditContentViewAsToolbarComponent, MockDotWhatsChangedComponent],
             imports: [
-                DialogModule,
                 BrowserAnimationsModule,
+                DialogModule,
+                DotContentletEditorModule,
                 DotEditPageToolbarModule,
                 DotLoadingIndicatorModule,
                 RouterTestingModule.withRoutes([
@@ -111,7 +112,6 @@ describe('DotEditContentComponent', () => {
                 ])
             ],
             providers: [
-                DotContentletEditorService,
                 DotContainerContentletService,
                 DotContentletLockerService,
                 DotDOMHtmlUtilService,
@@ -175,7 +175,6 @@ describe('DotEditContentComponent', () => {
         dotEditPageDataService = de.injector.get(DotEditPageDataService);
         dotGlobalMessageService = de.injector.get(DotGlobalMessageService);
         dotHttpErrorManagerService = de.injector.get(DotHttpErrorManagerService);
-        dotMenuService = de.injector.get(DotMenuService);
         dotPageStateService = de.injector.get(DotPageStateService);
         dotRouterService = de.injector.get(DotRouterService);
         toolbarElement = de.query(By.css('dot-edit-page-toolbar'));
@@ -597,6 +596,10 @@ describe('DotEditContentComponent', () => {
                 fixture.detectChanges();
             });
 
+            it('should have dot-add-contentlet', () => {
+                expect(de.query(By.css('dot-add-contentlet')) !== null).toBe(true);
+            });
+
             it('should set container to add', () => {
                 expect(dotEditContentHtmlService.setContainterToAppendContentlet).toHaveBeenCalledWith({
                     identifier: '123',
@@ -646,6 +649,10 @@ describe('DotEditContentComponent', () => {
                 });
 
                 fixture.detectChanges();
+            });
+
+            it('should have dot-edit-contentlet', () => {
+                expect(de.query(By.css('dot-edit-contentlet')) !== null).toBe(true);
             });
 
             it('should call edit service', () => {

@@ -33,6 +33,17 @@ export class DotRouterService {
     }
 
     /**
+     * Go to edit contentlet
+     *
+     * @param {string} inode
+     * @returns {Promise<boolean>}
+     * @memberof DotRouterService
+     */
+    goToEditContentlet(inode: string): Promise<boolean> {
+        return this.router.navigate([`${this.currentPortlet.url}/${inode}`]);
+    }
+
+    /**
      * Go to first porlet unless userEditPageRedirect is passed or previousSavedURL is set
      *
      * @param {string} [userEditPageRedirect]
