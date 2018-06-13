@@ -1417,13 +1417,8 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
     //Asset Actions
     var inFrame=<%=(UtilMethods.isSet(request.getSession().getAttribute(WebKeys.IN_FRAME)) && (Boolean)request.getSession().getAttribute(WebKeys.IN_FRAME))?true:false%>;
     //Host Actions
-    function editHost(id, referer) {
-        var loc ='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=' + id + '&referer=' + escape(referer);
-        if(inFrame){
-            window.location = loc;
-        }else{
-            top.location = loc;
-        }
+    function editHost(inode, referer) {
+        editContentletEvent(inode);
     }
 
     function setAsDefaultHost(objId,referer) {
@@ -1877,6 +1872,22 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
             "</div>";
     }
 
+    function createContentlet(url) {
+        var customEvent = document.createEvent("CustomEvent");
+        customEvent.initCustomEvent("ng-event", false, false,  {
+            name: "create-contentlet",
+            data: {
+                url: url
+            }
+        });
+        document.dispatchEvent(customEvent);
+        var dialog = dijit.byId("addPageAssetDialog") || dijit.byId("addFileAssetDialog");
+
+        if (dialog) {
+            dialog.hide();
+        }
+    }
+
     function getSelectedpageAsset(folderInode) {
         var selected = dijit.byId('defaultPageType');
         if(!selected){
@@ -1884,15 +1895,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         }
 
         var loc='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="new" /></portlet:actionURL>&selectedStructure=' + selected +'&folder='+folderInode+'&referer=' + escape(refererVar);
-        
-        var customEvent = document.createEvent("CustomEvent");
-        customEvent.initCustomEvent("ng-event", false, false,  {
-            name: "create-contentlet",
-            data: {
-                url: loc
-            }
-        });
-        document.dispatchEvent(customEvent);
+        createContentlet(loc);
     }
 
 
@@ -1900,18 +1903,14 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         var selected = dijit.byId('defaultFileType');
 
         if(!selected || (selected + '').trim().length == 0){
-
             showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Please-select-a-valid-file-asset-type")) %>');
             return;
         }
 
         if(!isMultiple){
             var loc='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="new" /></portlet:actionURL>&selectedStructure=' + selected +'&folder='+folderInode+'&referer=' + escape(refererVar);
-            if(inFrame){
-                window.location = loc;
-            }else{
-                top.location = loc;
-            }
+            
+            createContentlet(loc);
         } else {
             addMultipleFile(folderInode, selected, escape(refererVar));
         }
