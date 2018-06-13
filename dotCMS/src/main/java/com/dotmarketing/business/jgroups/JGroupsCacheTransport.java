@@ -164,13 +164,13 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
                     channel.disconnect();
                     channel.close();
                     channel = null;
-
-                    if (isInitialized.get()) {
-                        isInitialized.set(false);
-                    }
                 }
             } catch ( Exception e ) {
                 throw new CacheTransportException(e);
+            }
+
+            if (isInitialized.get()) {
+                isInitialized.set(false);
             }
         }
     }
