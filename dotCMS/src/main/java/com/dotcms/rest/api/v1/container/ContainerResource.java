@@ -177,13 +177,13 @@ public class ContainerResource implements Serializable {
 
         final InitDataObject initData = webResource.init(true, req, true);
         final User user = initData.getUser();
-        PageMode mode = PageMode.get(req);
-        Language landId = WebAPILocator.getLanguageWebAPI()
+        PageMode mode = PageMode.EDIT_MODE;
+        final Language landId = WebAPILocator.getLanguageWebAPI()
             .getLanguage(req);
         
         PageMode.setPageMode(req, PageMode.EDIT_MODE);
 
-        ShortyId contentShorty = APILocator.getShortyAPI()
+        final ShortyId contentShorty = APILocator.getShortyAPI()
             .getShorty(contentletId)
             .orElseGet(() -> {
                 throw new ResourceNotFoundException("Can't find contentlet:" + contentletId);
@@ -199,10 +199,9 @@ public class ContainerResource implements Serializable {
                             : APILocator.getContentletAPI()
                                     .find(contentShorty.longId, user, mode.respectAnonPerms);
 
-            String html = getHTML(req, res, containerId, user, mode, contentlet);
+            final String html = getHTML(req, res, containerId, user, contentlet);
 
-            Map<String, String> response = new HashMap<>();
-            response.put("render", html);
+            final Map<String, String> response = ImmutableMap.<String, String> builder().put("render", html).build();
 
             return Response.ok(new ResponseEntityView(response))
                     .build();
@@ -245,9 +244,9 @@ public class ContainerResource implements Serializable {
             formContent = formAPI.createDefaultFormContent(formId);
         }
 
-        String html = getHTML(req, res, containerId, user, PageMode.EDIT_MODE, formContent);
+        final String html = getHTML(req, res, containerId, user, formContent);
 
-        Map<String, Object> response = ImmutableMap.<String, Object> builder()
+        final Map<String, Object> response = ImmutableMap.<String, Object> builder()
             .put("render", html)
             .put("content", formContent.getMap())
             .build();
@@ -259,19 +258,13 @@ public class ContainerResource implements Serializable {
 
 
     private String getHTML(final HttpServletRequest req, final HttpServletResponse res,
-                             final String containerId, final User user, final PageMode mode,
+                             final String containerId, final User user,
                              final Contentlet contentlet) throws DotDataException, DotSecurityException {
-        ShortyId containerShorty = this.shortyAPI.getShorty(containerId)
-                .orElseGet(() -> {
-                    throw new ResourceNotFoundException("Can't find Container:" + containerId);
-                });
 
-        Container container = (containerShorty.type != ShortType.IDENTIFIER)
-                ? this.containerAPI.find(containerId, user, mode.showLive)
-                : (mode.showLive) ? (Container) versionableAPI.findLiveVersion(containerShorty.longId, user, mode.respectAnonPerms)
-                        : (Container) versionableAPI.findWorkingVersion(containerShorty.longId, user, mode.respectAnonPerms);
+        PageMode mode = PageMode.EDIT_MODE;
+        final Container container = getContainer(containerId, user);
 
-        org.apache.velocity.context.Context context = VelocityUtil.getWebContext(req, res);
+        final org.apache.velocity.context.Context context = velocityUtil.getContext(req, res);
 
         context.put(ContainerLoader.SHOW_PRE_POST_LOOP, false);
         context.put("contentletList" + container.getIdentifier() + Container.LEGACY_RELATION_TYPE,
@@ -280,12 +273,20 @@ public class ContainerResource implements Serializable {
 
         final VelocityResourceKey key = new VelocityResourceKey(container, Container.LEGACY_RELATION_TYPE, mode);
 
-        try {
-            return this.velocityUtil.mergeTemplate(key.path, context);
-        } catch (Exception e) {
-            Logger.error(ContainerResource.class, e.getMessage());
-            throw new DotRuntimeException(e);
-        }
+        return velocityUtil.merge(key.path, context);
+    }
+
+    private Container getContainer(String containerId, User user) throws DotDataException, DotSecurityException {
+        final PageMode mode = PageMode.EDIT_MODE;
+        final ShortyId containerShorty = this.shortyAPI.getShorty(containerId)
+                .orElseGet(() -> {
+                    throw new ResourceNotFoundException("Can't find Container:" + containerId);
+                });
+
+        return (containerShorty.type != ShortType.IDENTIFIER)
+                    ? this.containerAPI.find(containerId, user, mode.showLive)
+                    : (mode.showLive) ? (Container) versionableAPI.findLiveVersion(containerShorty.longId, user, mode.respectAnonPerms)
+                            : (Container) versionableAPI.findWorkingVersion(containerShorty.longId, user, mode.respectAnonPerms);
     }
 
     @DELETE
