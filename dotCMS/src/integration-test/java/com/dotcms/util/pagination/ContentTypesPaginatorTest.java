@@ -33,16 +33,17 @@ public class ContentTypesPaginatorTest {
 
     @Test
     public void test_getItems_WhenNoFilter_ReturnsAllContentTypes() {
-        ContentTypesPaginator paginator = new ContentTypesPaginator();
-        PaginatedArrayList<Map<String, Object>> result = paginator.getItems(user, null, -1, 0);
+        final ContentTypesPaginator paginator = new ContentTypesPaginator();
+        final PaginatedArrayList<Map<String, Object>> result = paginator
+                .getItems(user, null, -1, 0);
 
         assertTrue(UtilMethods.isSet(result));
     }
 
     @Test
     public void test_getItems_WhenFilterEqualsToBaseType_ReturnsAllChildrenContentTypes() {
-        ContentTypesPaginator paginator = new ContentTypesPaginator();
-        PaginatedArrayList<Map<String, Object>> result = paginator
+        final ContentTypesPaginator paginator = new ContentTypesPaginator();
+        final PaginatedArrayList<Map<String, Object>> result = paginator
                 .getItems(user, BaseContentType.FILEASSET.name(), -1, 0);
 
         assertTrue(UtilMethods.isSet(result));
@@ -53,8 +54,8 @@ public class ContentTypesPaginatorTest {
 
     @Test
     public void test_getItems_WhenFilterEqualsToBaseType_ReturnsAllRelatedContentTypes() {
-        ContentTypesPaginator paginator = new ContentTypesPaginator();
-        PaginatedArrayList<Map<String, Object>> result = paginator
+        final ContentTypesPaginator paginator = new ContentTypesPaginator();
+        final PaginatedArrayList<Map<String, Object>> result = paginator
                 .getItems(user, BaseContentType.PERSONA.name(), -1, 0);
 
         assertTrue(UtilMethods.isSet(result));
@@ -67,8 +68,8 @@ public class ContentTypesPaginatorTest {
 
     @Test
     public void test_getItems_WhenFilterStartsWithBaseType_ReturnsAllChildrenContentTypes() {
-        ContentTypesPaginator paginator = new ContentTypesPaginator();
-        PaginatedArrayList<Map<String, Object>> result = paginator
+        final ContentTypesPaginator paginator = new ContentTypesPaginator();
+        final PaginatedArrayList<Map<String, Object>> result = paginator
                 .getItems(user, "File", -1, 0);
 
         assertTrue(UtilMethods.isSet(result));
@@ -81,10 +82,11 @@ public class ContentTypesPaginatorTest {
     public void test_getItems_WhenFilterContainsContentTypeName_ReturnsTheContentTypeThatMatches()
             throws DotSecurityException, DotDataException {
 
-        ContentTypeAPI contentTypeApi = APILocator.getContentTypeAPI(user);
+        final ContentTypeAPI contentTypeApi   = APILocator.getContentTypeAPI(user);
+        final ContentTypesPaginator paginator = new ContentTypesPaginator();
 
-        long i = System.currentTimeMillis();
-        String contentTypeName = BaseContentType.FORM.name() + "Testing" + i;
+        final long i = System.currentTimeMillis();
+        final String contentTypeName = BaseContentType.FORM.name() + "Testing" + i;
 
         //Create a new content type
         ContentTypeBuilder builder = ContentTypeBuilder.builder(BaseContentType.FORM.immutableClass())
@@ -96,8 +98,8 @@ public class ContentTypesPaginatorTest {
         ContentType type = builder.build();
         try {
             type = contentTypeApi.save(type);
-            ContentTypesPaginator paginator = new ContentTypesPaginator();
-            PaginatedArrayList<Map<String, Object>> result = paginator
+
+            final PaginatedArrayList<Map<String, Object>> result = paginator
                     .getItems(user, contentTypeName, -1, 0);
 
             assertTrue(UtilMethods.isSet(result));
