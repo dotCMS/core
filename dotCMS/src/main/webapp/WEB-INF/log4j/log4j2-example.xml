@@ -167,6 +167,21 @@
         <Logger name="com.dotcms.repackage.org.directwebremoting.impl.DefaultConverterManager" level="fatal" additivity="false">
             <AppenderRef ref="generic"/>
         </Logger>
+        <Logger name="com.dotcms.filters.interceptor.dotcms.DefaultAutoLoginWebInterceptor" level="info" additivity="false">
+            <AppenderRef ref="security"/>
+        </Logger>
+        <Logger name="com.dotcms.auth.providers.jwt.JsonWebTokenUtils" level="info" additivity="false">
+            <AppenderRef ref="security"/>
+        </Logger>
+        <Logger name="com.liferay.util.LocaleUtil" level="info" additivity="false">
+            <AppenderRef ref="security"/>
+        </Logger>
+        <Logger name="com.dotcms.filters.interceptor.jwt.JsonWebTokenInterceptor" level="info" additivity="false">
+            <AppenderRef ref="security"/>
+        </Logger>
+        <Logger name="com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl" level="info" additivity="false">
+            <AppenderRef ref="security"/>
+        </Logger>
         <Logger name="com.liferay.portal.action.LoginAction" level="info" additivity="false">
             <AppenderRef ref="security"/>
         </Logger>

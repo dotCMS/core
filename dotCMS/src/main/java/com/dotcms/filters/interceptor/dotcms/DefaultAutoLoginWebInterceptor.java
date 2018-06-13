@@ -54,16 +54,23 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
                     (request.getCookies(), CookieKeys.JWT_ACCESS_TOKEN);
             if (null != jwtCookieValue) {
 
-                final User user = this.jsonWebTokenUtils.getUser(jwtCookieValue);
-                if (null != user) {
+                try {
+                    final User user = this.jsonWebTokenUtils.getUser(jwtCookieValue);
+                    if (null != user) {
 
-                    if (this.loginServiceAPI.
-                            doCookieLogin(this.encryptor.encryptString(user.getUserId()), request,
-                                    response)) {
+                        if (this.loginServiceAPI.
+                                doCookieLogin(this.encryptor.encryptString(user.getUserId()),
+                                        request,
+                                        response)) {
 
-                        // if this login was successfully, do not need to do any other.
-                        result = Result.SKIP;
+                            // if this login was successfully, do not need to do any other.
+                            result = Result.SKIP;
+                        }
                     }
+                } catch (Exception e) {
+                    //Handling this invalid token exception
+                    JsonWebTokenUtils.getInstance()
+                            .handleInvalidTokenExceptions(this.getClass(), e, request, response);
                 }
             }
         }
