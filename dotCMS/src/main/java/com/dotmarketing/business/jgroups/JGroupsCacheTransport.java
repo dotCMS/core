@@ -16,6 +16,7 @@ import com.liferay.portal.struts.MultiMessageResources;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.collections.map.LRUMap;
 import org.apache.struts.Globals;
 import org.jgroups.Address;
@@ -31,6 +32,8 @@ import org.jgroups.View;
  *         Date: 8/14/15
  */
 public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTransport {
+
+    private final AtomicBoolean isInitialized = new AtomicBoolean(false);
 
     private Map<String, Map<String, Boolean>> cacheStatus;
     private JChannel channel;
@@ -78,10 +81,22 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
             Logger.info(this, "***\t " + channel.toString(true));
             Logger.info(this, "***\t Ending JGroups Cluster Setup");
 
+            isInitialized.set(true);
+
         } catch ( Exception e ) {
             Logger.error(JGroupsCacheTransport.class, "Error initializing jgroups channel: " + e.getMessage(), e);
             throw new CacheTransportException("Error initializing jgroups channel", e);
         }
+    }
+
+    @Override
+    public boolean isInitialized() {
+        return isInitialized.get();
+    }
+
+    @Override
+    public boolean shouldReinit() {
+        return true;
     }
 
     private void setProperties(){
@@ -149,6 +164,10 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
                     channel.disconnect();
                     channel.close();
                     channel = null;
+
+                    if (isInitialized.get()) {
+                        isInitialized.set(false);
+                    }
                 }
             } catch ( Exception e ) {
                 throw new CacheTransportException(e);
