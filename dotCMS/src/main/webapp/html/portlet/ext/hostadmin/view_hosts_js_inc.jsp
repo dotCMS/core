@@ -76,6 +76,27 @@
         document.dispatchEvent(customEvent);
     }
 
+    function createContentlet(url) {
+        var customEvent = document.createEvent("CustomEvent");
+        customEvent.initCustomEvent("ng-event", false, false,  {
+            name: "create-contentlet",
+            data: {
+                url: url
+            }
+        });
+        document.dispatchEvent(customEvent);
+
+        var dialog = dijit.byId("addHostDialog");
+
+        if (dialog) {
+            dialog.hide();
+        }
+    }
+
+    function refreshHostTable() {
+        hostAdmin.refreshHostTable();
+    }
+
 
     //Object responsible of the interactions with the listing page -->
     dojo.declare("HostAdmin", null, {
@@ -291,7 +312,7 @@
 
 			if(dijit.byId('startBlankHostRadio').attr('value')) {
 				url += "&referer=" + escape(this.viewHostsReferer);
-				window.location = url;
+				createContentlet(url);
 			} else {
 
 				var copyHostOptions = escape(dojo.replace(this.copyHostOptions,
@@ -307,7 +328,7 @@
 						copyTagStorage: document.getElementById('copyTagStorage').value
 					}));				
 				url += "&_copyOptions=" + copyHostOptions + "&referer=" + escape(this.viewHostsReferer);
-				window.location = url;
+				createContentlet(url);
 			}
         },
         hostChanged: function(){

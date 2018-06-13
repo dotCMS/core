@@ -835,6 +835,17 @@
 		refreshCalendarView();
 	}
 
+    function createContentlet(url) {
+        var customEvent = document.createEvent("CustomEvent");
+        customEvent.initCustomEvent("ng-event", false, false,  {
+            name: "create-contentlet",
+            data: {
+                url: url
+            }
+        });
+        document.dispatchEvent(customEvent);
+    }
+
 	function addEvent() {
 		var startDate = selectedDate.getFullYear() + '-' + (selectedDate.getMonth() + 1) + '-' + selectedDate.getDate() + " 00:00";
 		var endDate = selectedDate.getFullYear() + '-' + (selectedDate.getMonth() + 1) + '-' + selectedDate.getDate() + " 00:00";
@@ -845,7 +856,7 @@
 					<portlet:param name="referer" value="<%= referer %>" />
 					<portlet:param name="inode" value="" />
 				</portlet:actionURL>&date1=' + startDate + '&date2=' + endDate;
-		window.location = addURL;
+		createContentlet(addURL);
 	}
 
 	function transformTimeZone(date,offset)
