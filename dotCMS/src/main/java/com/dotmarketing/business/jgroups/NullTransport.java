@@ -26,7 +26,7 @@ public class NullTransport implements CacheTransport {
 
   @Override
   public boolean shouldReinit() {
-    return false;
+    return true;
   }
 
   @Override
