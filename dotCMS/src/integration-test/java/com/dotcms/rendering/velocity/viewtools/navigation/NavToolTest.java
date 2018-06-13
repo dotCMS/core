@@ -241,7 +241,6 @@ public class NavToolTest extends IntegrationTestBase{
     public void testShouldAddFileInAnotherLang(final NavToolTestCase testCase) {
 
         final NavTool navTool = new NavTool();
-        navTool.defaultLanguage = LanguageWebAPI.getDefaultLanguage().getId();
         assertEquals(testCase.expectedResult, navTool.shouldAddFileInAnotherLang(testCase.menuItems, testCase.itemFile,
             testCase.selectedLang));
 

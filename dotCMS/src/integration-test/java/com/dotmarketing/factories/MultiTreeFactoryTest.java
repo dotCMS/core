@@ -7,6 +7,7 @@ import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.startup.runonce.Task04315UpdateMultiTreePK;
 
 import java.util.List;
@@ -15,7 +16,9 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public class MultiTreeFactoryTest extends IntegrationTestBase {
     
@@ -220,5 +223,112 @@ public class MultiTreeFactoryTest extends IntegrationTestBase {
         for (MultiTree multiTree : multiTreesNewRelationType) {
             assertEquals(NEW_RELATION_TYPE, multiTree.getRelationType());
         }
+    }
+
+
+    @Test
+    public void testMultiTreesSave() throws Exception {
+
+
+        long time = System.currentTimeMillis();
+
+        final String parent1 = PAGE + time;
+
+        MultiTree multiTree1 = new MultiTree();
+        multiTree1.setParent1( parent1 );
+        multiTree1.setParent2( CONTAINER +time);
+        multiTree1.setChild( CONTENTLET +time);
+        multiTree1.setRelationType("1");
+        multiTree1.setTreeOrder( 1 );
+
+        long time2 = time + 1;
+
+        MultiTree multiTree2 = new MultiTree();
+        multiTree2.setParent1( parent1 );
+        multiTree2.setParent2( CONTAINER + time2);
+        multiTree2.setChild( CONTENTLET + time2);
+        multiTree2.setRelationType("1");
+        multiTree2.setTreeOrder( 2 );
+
+        MultiTreeFactory.saveMultiTrees( parent1, list(multiTree1, multiTree2) );
+
+        List<MultiTree> multiTrees = MultiTreeFactory.getMultiTrees(parent1);
+
+        assertEquals(2, multiTrees.size());
+
+        MultiTree mtFromDB1 = MultiTreeFactory.getMultiTree(parent1, multiTree1.getContainer(),
+                multiTree1.getContentlet(), multiTree1.getRelationType());
+        MultiTree mtFromDB2 = MultiTreeFactory.getMultiTree(parent1, multiTree2.getContainer(),
+                multiTree2.getContentlet(), multiTree2.getRelationType());
+
+
+        assertEquals(multiTree1, mtFromDB1);
+        assertEquals(multiTree2, mtFromDB2);
+    }
+
+    @Test
+    public void testMultiTreesSaveWithEmpty() throws Exception {
+
+
+        long time = System.currentTimeMillis();
+
+        final String parent1 = PAGE + time;
+
+        MultiTree multiTree1 = new MultiTree();
+        multiTree1.setHtmlPage( parent1 );
+        multiTree1.setContainer( CONTAINER +time);
+        multiTree1.setContentlet( CONTENTLET +time);
+        multiTree1.setRelationType("1");
+        multiTree1.setTreeOrder( 1 );
+
+        MultiTreeFactory.saveMultiTrees( parent1, list(multiTree1) );
+        MultiTreeFactory.saveMultiTrees( parent1, list() );
+
+        List<MultiTree> multiTrees = MultiTreeFactory.getMultiTrees(parent1);
+
+        assertEquals(0, multiTrees.size());
+    }
+
+    @Test
+    public void testMultiTreesSaveDeleting() throws Exception {
+
+
+        long time = System.currentTimeMillis();
+
+        final String parent1 = PAGE + time;
+
+        MultiTree multiTree1 = new MultiTree();
+        multiTree1.setHtmlPage( parent1 );
+        multiTree1.setContainer( CONTAINER +time);
+        multiTree1.setContentlet( CONTENTLET +time);
+        multiTree1.setRelationType("1");
+        multiTree1.setTreeOrder( 1 );
+
+        long time2 = time + 1;
+
+        MultiTree multiTree2 = new MultiTree();
+        multiTree2.setParent1( parent1 );
+        multiTree2.setParent2( CONTAINER + time2);
+        multiTree2.setChild( CONTENTLET + time2);
+        multiTree2.setRelationType("1");
+        multiTree2.setTreeOrder( 2 );
+
+        long time3 = time + 2;
+
+        MultiTree multiTree3 = new MultiTree();
+        multiTree3.setParent1( parent1 );
+        multiTree3.setParent2( CONTAINER + time3);
+        multiTree3.setChild( CONTENTLET + time3);
+        multiTree3.setRelationType("-1");
+        multiTree3.setTreeOrder( 3 );
+
+        MultiTreeFactory.saveMultiTrees( parent1, list(multiTree1, multiTree2, multiTree3) );
+        MultiTreeFactory.saveMultiTrees( parent1, list(multiTree1) );
+
+        List<MultiTree> multiTrees = MultiTreeFactory.getMultiTrees(parent1);
+
+        assertEquals(2, multiTrees.size());
+        assertTrue(multiTrees.contains(multiTree1));
+        assertTrue(multiTrees.contains(multiTree3));
     }
 }
