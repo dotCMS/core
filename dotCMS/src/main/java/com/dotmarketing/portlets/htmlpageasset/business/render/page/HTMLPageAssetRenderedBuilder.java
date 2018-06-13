@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
 import com.dotcms.business.CloseDB;
-
+import com.dotcms.rendering.velocity.directive.RenderParams;
 import com.dotcms.rendering.velocity.services.PageContextBuilder;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
@@ -19,6 +19,7 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRendered;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRenderedBuilder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.IPersona;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
@@ -91,10 +92,15 @@ public class HTMLPageAssetRenderedBuilder {
 
         final HTMLPageAssetInfo htmlPageAssetInfo = getHTMLPageAssetInfo(info);
         final Template template = getTemplate(mode);
-
+        final Language language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
         final TemplateLayout layout = template != null && template.isDrawed() && !LicenseManager.getInstance().isCommunity()
                 ? DotTemplateTool.themeLayout(template.getInode()) : null;
 
+        // this forces all velocity dotParses to use the site for the given page 
+        // (unless host is specified in the dotParse) github 14624
+        final RenderParams params=new RenderParams(user,language, site, mode);
+        request.setAttribute(RenderParams.RENDER_PARAMS_ATTRIBUTE, params);
+        
         if (!rendered) {
             final Collection<ContainerRendered> containers = this.containerRenderedBuilder.getContainers(template, mode);
             return new PageView(site, template, containers, htmlPageAssetInfo, layout);
