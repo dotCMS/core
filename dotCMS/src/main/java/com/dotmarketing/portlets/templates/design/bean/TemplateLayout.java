@@ -17,6 +17,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -165,8 +166,6 @@ public class TemplateLayout implements Serializable{
         this.sidebar.setPreview( isPreview );
 
     }
-
-
 
     @Override
     public String toString() {
