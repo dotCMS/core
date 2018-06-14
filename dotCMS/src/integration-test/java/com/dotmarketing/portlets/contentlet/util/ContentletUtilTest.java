@@ -288,7 +288,7 @@ public class ContentletUtilTest extends IntegrationTestBase {
     public void test_getContentPrintableMap_WhenContentTypeIsNeitherFileAssetNorPage_PathIsNotAddedToTheMap()
             throws DotSecurityException, DotDataException, IOException {
 
-        ContentType contentType = createContentType(BaseContentType.CONTENT);
+        final ContentType contentType = createContentType(BaseContentType.CONTENT);
         Contentlet contentlet = null;
 
         try {
@@ -357,10 +357,10 @@ public class ContentletUtilTest extends IntegrationTestBase {
         try {
 
             folder = new FolderDataGen().nextPersisted();
-            File file = File.createTempFile("texto", ".txt");
+            final File file = File.createTempFile("texto", ".txt");
             FileUtil.write(file, "helloworld");
 
-            FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(folder, file);
+            final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(folder, file);
 
             contentlet = fileAssetDataGen.nextPersisted();
 
@@ -380,12 +380,12 @@ public class ContentletUtilTest extends IntegrationTestBase {
         }
     }
 
-    private ContentType createContentType(BaseContentType baseContentType)
+    private ContentType createContentType(final BaseContentType baseContentType)
             throws DotSecurityException, DotDataException {
 
         final long i = System.currentTimeMillis();
         //Create Content Type.
-        ContentType contentType = ContentTypeBuilder.builder(baseContentType.immutableClass())
+        final ContentType contentType = ContentTypeBuilder.builder(baseContentType.immutableClass())
                 .description("Test ContentType" + i)
                 .host(defaultHost.getIdentifier())
                 .name("Test ContentType" + i)
