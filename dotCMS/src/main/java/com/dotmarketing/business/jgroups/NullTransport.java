@@ -1,10 +1,10 @@
 package com.dotmarketing.business.jgroups;
 
-import java.util.Map;
-
 import com.dotcms.cluster.bean.Server;
 import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.business.cache.transport.CacheTransportException;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author Jonathan Gamba
@@ -12,10 +12,21 @@ import com.dotmarketing.business.cache.transport.CacheTransportException;
  */
 public class NullTransport implements CacheTransport {
 
+  private final AtomicBoolean isInitialized = new AtomicBoolean(false);
+
   @Override
   public void init(Server localServer) throws CacheTransportException {
-    // TODO Auto-generated method stub
-    
+    isInitialized.set(true);
+  }
+
+  @Override
+  public boolean isInitialized() {
+    return isInitialized.get();
+  }
+
+  @Override
+  public boolean shouldReinit() {
+    return true;
   }
 
   @Override
@@ -39,8 +50,9 @@ public class NullTransport implements CacheTransport {
 
   @Override
   public void shutdown() throws CacheTransportException {
-    // TODO Auto-generated method stub
-    
+    if (isInitialized.get()) {
+      isInitialized.set(false);
+    }
   }
 
   @Override

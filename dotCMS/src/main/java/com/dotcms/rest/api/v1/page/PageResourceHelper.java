@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.page;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.business.CloseDB;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.NotFoundException;
@@ -32,6 +33,7 @@ import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.collect.Table;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
@@ -76,8 +78,6 @@ public class PageResourceHelper implements Serializable {
     @WrapInTransaction
     public void saveContent(final String pageId, final List<PageContainerForm.ContainerEntry> containerEntries) throws DotDataException {
 
-        MultiTreeFactory.deleteMultiTreeByParent(pageId);
-
         final List<MultiTree> multiTrees = new ArrayList<>();
 
         for (final PageContainerForm.ContainerEntry containerEntry : containerEntries) {
@@ -95,9 +95,7 @@ public class PageResourceHelper implements Serializable {
             }
         }
 
-        if (!multiTrees.isEmpty()) {
-            multiTreeAPI.saveMultiTrees(pageId, multiTrees);
-        }
+        multiTreeAPI.saveMultiTrees(pageId, multiTrees);
     }
 
     public void saveMultiTree(final String containerId,
@@ -194,20 +192,44 @@ public class PageResourceHelper implements Serializable {
 
             template.setDrawed(true);
 
-            pageForm.getChanges().forEach(containerUUIDChanged -> {
-                final ContainerUUID old = containerUUIDChanged.getOld();
-                final ContainerUUID aNew = containerUUIDChanged.getNew();
-
-                try {
-                    multiTreeAPI.updateMultiTree(page.getIdentifier(), old.getIdentifier(), old.getUUID(), aNew.getUUID());
-                } catch (DotDataException e) {
-                    Logger.error(this.getClass(),"Exception on saveTemplate exception message: " + e.getMessage(), e);
-                }
-            });
+            updateMultiTrees(page, pageForm);
 
             return this.templateAPI.saveTemplate(template, host, user, false);
         } catch (BadRequestException | DotDataException | DotSecurityException e) {
             throw new DotRuntimeException(e);
+        }
+    }
+
+    protected void updateMultiTrees(IHTMLPage page, PageForm pageForm) throws DotDataException, DotSecurityException {
+        final Table<String, String, Set<String>> pageContents = multiTreeAPI.getPageMultiTrees(page, false);
+
+        for (final String containerId : pageContents.rowKeySet()) {
+            for (final String uniqueId : pageContents.row(containerId).keySet()) {
+                final Map<String, Set<String>> row = pageContents.row(containerId);
+                final Set<String> contents = row.get(uniqueId);
+
+                if (!contents.isEmpty()) {
+                    final String newUUID = getNewUUID(pageForm, containerId, uniqueId);
+
+                    try {
+                        if (newUUID != null && !newUUID.equals(uniqueId)) {
+                            multiTreeAPI.updateMultiTree(page.getIdentifier(), containerId, uniqueId, newUUID);
+                        }
+                    } catch (DotDataException e) {
+                        Logger.error(this.getClass(), "Exception on saveTemplate exception message: " +
+                                e.getMessage(), e);
+                    }
+                }
+            }
+        }
+    }
+
+    private String getNewUUID(final PageForm pageForm, final String containerId, final String uniqueId) {
+        if (ContainerUUID.UUID_DEFAULT_VALUE.equals(uniqueId)) {
+            return pageForm.getNewlyContainerUUID(containerId);
+        } else {
+            ContainerUUIDChanged change = pageForm.getChange(containerId, uniqueId);
+            return change != null ? change.getNew().getUUID() : ContainerUUID.UUID_DEFAULT_VALUE;
         }
     }
 
