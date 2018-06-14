@@ -219,7 +219,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			// makes shorties searchable regardless of length
 			contentletMap.put(ESMappingConstants.SHORT_ID, ident.getId().replace("-", ""));
 			contentletMap.put(ESMappingConstants.SHORT_INODE, contentlet.getInode().replace("-", ""));
-			this.addWorkflowTaskDataToContentlet(contentlet, contentletMap);
+			
+			//add workflow to map
+			contentletMap.putAll(getWorkflowInfoForContentlet(contentlet));
 
 			if(UtilMethods.isSet(ident.getSysPublishDate())) {
 				contentletMap.put(ESMappingConstants.PUBLISH_DATE, elasticSearchDateTimeFormat.format(ident.getSysPublishDate()));
@@ -305,56 +307,56 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		}
 	}
 
-	/**
-	 * Adds the current workflow task to the contentlet in order to be reindexed.
-	 * @param contentlet {@link Contentlet}
-	 * @param contentletMap {@link Map}
-	 */
-	protected void addWorkflowTaskDataToContentlet(final Contentlet contentlet,
-												 final Map<String, Object> contentletMap) {
-		try {
+    /**
+     * Adds the current workflow task to the contentlet in order to be reindexed.
+     * 
+     * @param contentlet {@link Contentlet}
+     * @param contentletMap {@link Map}
+     */
+    protected Map<String, Object> getWorkflowInfoForContentlet(final Contentlet contentlet) {
+        
+        final Map<String, Object> wfMap = new HashMap<>();
+        final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+        try {
+            final WorkflowTask task = workflowAPI.findTaskByContentlet(contentlet);
 
-			final WorkflowAPI  workflowAPI = APILocator.getWorkflowAPI();
-			final WorkflowTask task 	   = workflowAPI.findTaskByContentlet(contentlet);
-			if(task!=null && task.getId()!=null) {
+            if(task!=null && task.getId()!=null && null != task.getStatus()) {
+                final WorkflowStep step = workflowAPI.findStep(task.getStatus());
+                wfMap.put(ESMappingConstants.WORKFLOW_SCHEME, step.getSchemeId());
+                wfMap.put(ESMappingConstants.WORKFLOW_STEP, task.getStatus());
+                wfMap.put(ESMappingConstants.WORKFLOW_CREATED_BY, task.getCreatedBy());
+                wfMap.put(ESMappingConstants.WORKFLOW_ASSIGN, task.getAssignedTo());
+                wfMap.put(ESMappingConstants.WORKFLOW_MOD_DATE, elasticSearchDateTimeFormat.format(task.getModDate()));
+                wfMap.put(ESMappingConstants.WORKFLOW_MOD_DATE + TEXT, datetimeFormat.format(task.getModDate()));
+            }
+                
+        } catch (Exception e) {
+            Logger.debug(this.getClass(), "No workflow info for contentlet " +  contentlet.getIdentifier());
+        }
+        if(wfMap.isEmpty()) {
+            try {
+                final List<String> stepIds = new ArrayList<>();
+                final Set<String> schemeWriter = new HashSet<>();
+                final List<WorkflowScheme> schemes = workflowAPI.findSchemesForContentType(contentlet.getContentType());
+                for (final WorkflowScheme scheme : schemes) {
+                    final List<WorkflowStep> steps = workflowAPI.findSteps(scheme);
+                    if (steps != null && !steps.isEmpty()) {
+                        schemeWriter.add(scheme.getId());
+                        stepIds.add(steps.get(0).getId());
+                    }
+                }
+    
+                wfMap.put(ESMappingConstants.WORKFLOW_SCHEME, String.join(" ", schemeWriter));
+                wfMap.put(ESMappingConstants.WORKFLOW_STEP, stepIds);
+        
+             
+            } catch (Exception e) {
+                Logger.error(this.getClass(), "unable to add workflow info to index:" + e, e);
+            }
+        }
+        return wfMap;
 
-				final String stepId = task.getStatus();
-
-				if (UtilMethods.isSet(stepId)) {
-
-					final WorkflowStep step = workflowAPI.findStep(stepId);
-					if(step != null && step.getId() != null) {
-
-						contentletMap.put(ESMappingConstants.WORKFLOW_SCHEME, step.getSchemeId());
-					}
-				}
-				contentletMap.put(ESMappingConstants.WORKFLOW_CREATED_BY, task.getCreatedBy());
-				contentletMap.put(ESMappingConstants.WORKFLOW_ASSIGN, task.getAssignedTo());
-				contentletMap.put(ESMappingConstants.WORKFLOW_STEP, task.getStatus());
-				contentletMap.put(ESMappingConstants.WORKFLOW_MOD_DATE, elasticSearchDateTimeFormat.format(task.getModDate()));
-				contentletMap.put(ESMappingConstants.WORKFLOW_MOD_DATE + TEXT, datetimeFormat.format(task.getModDate()));
-
-
-			}else {
-			   final List<String> stepIds= new ArrayList<>();
-			   final StringWriter schemeWriter = new StringWriter();
-			   final List<WorkflowScheme> schemes= workflowAPI.findSchemesForContentType(contentlet.getContentType());
-			    for(final WorkflowScheme scheme : schemes) {
-			    final List<WorkflowStep> steps = workflowAPI.findSteps(scheme);
-			        if(steps!=null && !steps.isEmpty()) {
-			            schemeWriter.append(scheme.getId()+ ' ');
-			            stepIds.add(steps.get(0).getId());
-			        }
-			    }
-
-			    contentletMap.put(ESMappingConstants.WORKFLOW_SCHEME, schemeWriter.toString());
-	            contentletMap.put(ESMappingConstants.WORKFLOW_STEP, stepIds);
-			    
-			}
-		} catch(Exception e){
-			Logger.error(this.getClass(), "unable to add workflow info to index:" + e, e);
-		}
-	}
+    }
 
 	public Object toMappedObj(Contentlet con) throws DotMappingException {
 		return toJson(con);
