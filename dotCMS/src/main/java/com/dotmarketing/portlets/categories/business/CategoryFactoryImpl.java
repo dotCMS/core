@@ -141,7 +141,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	}
 
 	@Override
-	protected void save(Category object) throws DotDataException {
+	public void save(Category object) throws DotDataException {
 		String id = object.getInode();
 		if(InodeUtils.isSet(id)) {
 			try
