@@ -1088,6 +1088,41 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 
+    /**
+     * This method will return the list of workflows actions available to a user on any give
+     * piece of content, based on how and who has the content locked and what workflow step the content
+     * is in
+     */
+    @Override
+    @CloseDBIfOpened
+    public List<WorkflowAction> findAvailableActionsEditing(final Contentlet contentlet, final User user)
+            throws DotDataException, DotSecurityException {
+
+        List<WorkflowAction> actions = new ArrayList<>( findAvailableActions(contentlet, user));
+        actions.removeIf(action -> !action.shouldShowOnEdit() );
+        
+        
+        return actions;
+    
+    }
+	
+	 /**
+     * This method will return the list of workflows actions available to a user on any give
+     * piece of content, based on how and who has the content locked and what workflow step the content
+     * is in
+     */
+    @Override
+    @CloseDBIfOpened
+    public List<WorkflowAction> findAvailableActionsListing(final Contentlet contentlet, final User user)
+            throws DotDataException, DotSecurityException {
+
+	
+        List<WorkflowAction> actions = new ArrayList<>( findAvailableActions(contentlet, user));
+        actions.removeIf(action -> !action.shouldShowOnListing() );
+        return actions;
+	
+    }
+	
 	/**
 	 * This method will return the list of workflows actions available to a user on any give
 	 * piece of content, based on how and who has the content locked and what workflow step the content

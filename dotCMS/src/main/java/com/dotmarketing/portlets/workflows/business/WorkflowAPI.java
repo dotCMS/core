@@ -691,4 +691,24 @@ public interface WorkflowAPI {
 	 * @return Future BulkActionsResultView
 	 */
 	Future<BulkActionsResultView> fireBulkActions(WorkflowAction action, User user, List<String> contentletIds) throws DotDataException;
+	/**
+	 * Returns a list of actions available on the listing screen
+	 * @param contentlet
+	 * @param user
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+    List<WorkflowAction> findAvailableActionsListing(Contentlet contentlet, User user)
+            throws DotDataException, DotSecurityException;
+    /**
+     * Returns a list of actions available on the editing screen
+     * @param contentlet
+     * @param user
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    List<WorkflowAction> findAvailableActionsEditing(Contentlet contentlet, User user)
+            throws DotDataException, DotSecurityException;
 }

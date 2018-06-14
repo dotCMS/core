@@ -3,11 +3,17 @@ package com.dotmarketing.portlets.workflows.model;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonSetter;
+
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionSummary;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
 import com.dotmarketing.util.UtilMethods;
 
 import java.io.Serializable;
@@ -23,7 +29,6 @@ import java.util.*;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class WorkflowAction implements Permissionable, Serializable{
-
 
 	private static final long serialVersionUID = 1L;
 	/**
@@ -85,7 +90,22 @@ public class WorkflowAction implements Permissionable, Serializable{
 		return this.showOn.contains(WorkflowState.UNPUBLISHED);
 	}
 
-
+    /**
+     * True if the action should be show on unpublish status.
+     * @return boolean
+     */
+    public boolean shouldShowOnListing () {
+        return this.showOn.contains(WorkflowState.LISTING);
+    }
+    
+    /**
+     * True if the action should be show on unpublish status.
+     * @return boolean
+     */
+    public boolean shouldShowOnEdit () {
+        return this.showOn.contains(WorkflowState.EDITING);
+    }
+    
 	/**
 	 * True if the action should be show on locked status.
 	 * @return boolean
@@ -159,6 +179,35 @@ public class WorkflowAction implements Permissionable, Serializable{
 		return accepted;
 	}
 
+	
+    @JsonIgnore
+    private List<WorkflowActionClass> loadedActions = null;
+
+    @JsonIgnore
+    private List<WorkflowActionClass> loadActions() {
+        if (this.loadedActions == null) {
+            try {
+                this.loadedActions = APILocator.getWorkflowAPI().findActionClasses(this);
+            } catch (DotDataException e) {
+                throw new DotStateException("Unable to load actionlets for action:" + this.getId() + " " + e.getMessage());
+            }
+        }
+        return this.loadedActions;
+
+    }
+
+    @JsonIgnore
+    public boolean doesSave() {
+        return loadActions().stream().anyMatch(wca -> (SaveContentActionlet.class.equals(wca.getActionlet().getClass())
+                || SaveContentAsDraftActionlet.class.equals(wca.getActionlet().getClass())));
+
+    }
+
+    @JsonIgnore
+    public boolean doesPushPublish() {
+        return loadActions().stream().anyMatch(wca -> (PushPublishActionlet.class.equals(wca.getActionlet().getClass())));
+    }
+	
 	@JsonIgnore
 	public List<RelatedPermissionableGroup> permissionDependencies(int requiredPermission) {
 		return null;

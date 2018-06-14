@@ -15,7 +15,7 @@ import java.util.stream.Stream;
  */
 public enum WorkflowState {
 
-    NEW, LOCKED, UNLOCKED, PUBLISHED, UNPUBLISHED, ARCHIVED;
+    NEW, LOCKED, UNLOCKED, PUBLISHED, UNPUBLISHED, ARCHIVED, LISTING, EDITING;
 
     private static final String DELIMITER = ",";
 
