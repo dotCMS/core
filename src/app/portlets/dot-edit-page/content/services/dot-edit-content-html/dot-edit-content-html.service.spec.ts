@@ -28,44 +28,63 @@ describe('DotEditContentHtmlService', () => {
             </script>
         </head>
         <body>
-            <div data-dot-object="container" data-dot-identifier="123" data-dot-uuid="456" data-dot-can-add="CONTENT">
-                <div
-                    data-dot-object="contentlet"
-                    data-dot-identifier="456"
-                    data-dot-inode="456"
-                    data-dot-type="NewsWidgets"
-                    data-dot-basetype="CONTENT">
-                    <div class="large-column">
-                        <div
-                            data-dot-object="vtl-file"
-                            data-dot-inode="345274e0-3bbb-41f1-912c-b398d5745b9a"
-                            data-dot-url="/application/vtl/widgets/news/personalized-news-listing.vtl"
-                            data-dot-can-read="true"
-                            data-dot-can-edit="true">
+            <div class="row-1">
+                <div data-dot-object="container" data-dot-identifier="123" data-dot-uuid="456" data-dot-can-add="CONTENT">
+                    <div
+                        data-dot-object="contentlet"
+                        data-dot-identifier="456"
+                        data-dot-inode="456"
+                        data-dot-type="NewsWidgets"
+                        data-dot-basetype="CONTENT">
+                        <div class="large-column">
+                            <div
+                                data-dot-object="vtl-file"
+                                data-dot-inode="345274e0-3bbb-41f1-912c-b398d5745b9a"
+                                data-dot-url="/application/vtl/widgets/news/personalized-news-listing.vtl"
+                                data-dot-can-read="true"
+                                data-dot-can-edit="true">
+                            </div>
+                            <h3>This is a title</h3>
+                            <p>this is a paragraph</p>
+                            <div
+                                data-dot-object="edit-content"
+                                data-dot-inode="bdf24784-fbea-478d-ad04-71159052037b"
+                                data-dot-can-edit="true">
+                            </div>
                         </div>
-                        <h3>This is a title</h3>
-                        <p>this is a paragraph</p>
-                        <div
-                            data-dot-object="edit-content"
-                            data-dot-inode="bdf24784-fbea-478d-ad04-71159052037b"
-                            data-dot-can-edit="true">
+                    </div>
+                </div>
+
+                <div data-dot-object="container" data-dot-identifier="321" data-dot-uuid="654" data-dot-can-add="CONTENT">
+                    <div
+                        data-dot-object="contentlet"
+                        data-dot-identifier="456"
+                        data-dot-inode="456"
+                        data-dot-type="NewsWidgets"
+                        data-dot-basetype="CONTENT">
+                        <div class="large-column">
+                            <h3>This is a title</h3>
+                            <p>this is a paragraph</p>
+                            <p>this is other paragraph</p>
+                            <p>this is another paragraph</p>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <div data-dot-object="container" data-dot-identifier="321" data-dot-uuid="654" data-dot-can-add="CONTENT">
-                <div
-                    data-dot-object="contentlet"
-                    data-dot-identifier="456"
-                    data-dot-inode="456"
-                    data-dot-type="NewsWidgets"
-                    data-dot-basetype="CONTENT">
-                    <div class="large-column">
-                        <h3>This is a title</h3>
-                        <p>this is a paragraph</p>
-                        <p>this is other paragraph</p>
-                        <p>this is another paragraph</p>
+            <div class="row-2">
+                <div data-dot-object="container" data-dot-identifier="976" data-dot-uuid="156" data-dot-can-add="CONTENT">
+                    <div
+                        data-dot-object="contentlet"
+                        data-dot-identifier="367"
+                        data-dot-inode="908"
+                        data-dot-type="NewsWidgets"
+                        data-dot-basetype="CONTENT">
+                        <div class="large-column">
+                            <h3>This is a title</h3>
+                            <p>this is a paragraph</p>
+                            <p>this is other paragraph</p>
+                            <p>this is another paragraph</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -115,44 +134,71 @@ describe('DotEditContentHtmlService', () => {
         fakeDocument = fakeIframeEl.contentWindow.document;
     }));
 
-    it('should set same height to containers', () => {
-        const mockLayout = JSON.parse(JSON.stringify(mockDotLayout));
-        mockLayout.body.rows = [
-            {
-                columns: [
-                    {
-                        containers: [
-                            {
-                                identifier: '123',
-                                uuid: '456'
-                            }
-                        ],
-                        leftOffset: 1,
-                        width: 8
-                    },
-                    {
-                        containers: [
-                            {
-                                identifier: '321',
-                                uuid: '654'
-                            }
-                        ],
-                        leftOffset: 1,
-                        width: 8
-                    }
-                ]
-            }
-        ];
+    describe('same height containers', () => {
+        let mockLayout;
 
-        const querySelector1 = [`div[data-dot-object="container"]`, `[data-dot-identifier="123"]`, `[data-dot-uuid="456"]`].join('');
-        const querySelector2 = [`div[data-dot-object="container"]`, `[data-dot-identifier="321"]`, `[data-dot-uuid="654"]`].join('');
+        beforeEach(() => {
+            mockLayout = JSON.parse(JSON.stringify(mockDotLayout));
+            mockLayout.body.rows = [
+                {
+                    columns: [
+                        {
+                            containers: [
+                                {
+                                    identifier: '123',
+                                    uuid: '456'
+                                }
+                            ],
+                            leftOffset: 1,
+                            width: 8
+                        },
+                        {
+                            containers: [
+                                {
+                                    identifier: '321',
+                                    uuid: '654'
+                                }
+                            ],
+                            leftOffset: 1,
+                            width: 8
+                        }
+                    ]
+                },
+                {
+                    columns: [
+                        {
+                            containers: [
+                                {
+                                    identifier: '976',
+                                    uuid: '156'
+                                }
+                            ],
+                            leftOffset: 1,
+                            width: 8
+                        }
+                    ]
+                }
+            ];
+        });
 
-        this.dotEditContentHtmlService.setContaintersSameHeight(mockLayout);
+        it('should set same height to containers when more than one per row', () => {
+            const querySelector1 = [`div[data-dot-object="container"]`, `[data-dot-identifier="123"]`, `[data-dot-uuid="456"]`].join('');
+            const querySelector2 = [`div[data-dot-object="container"]`, `[data-dot-identifier="321"]`, `[data-dot-uuid="654"]`].join('');
+            const querySelector3 = [`div[data-dot-object="container"]`, `[data-dot-identifier="976"]`, `[data-dot-uuid="156"]`].join('');
 
-        const firstContainer = this.dotEditContentHtmlService.getEditPageDocument().querySelector(querySelector1);
-        const secondContainer = this.dotEditContentHtmlService.getEditPageDocument().querySelector(querySelector2);
+            this.dotEditContentHtmlService.setContaintersSameHeight(mockLayout);
 
-        expect(firstContainer.offsetHeight).toEqual(secondContainer.offsetHeight);
+            const firstContainer = this.dotEditContentHtmlService.getEditPageDocument().querySelector(querySelector1);
+            const secondContainer = this.dotEditContentHtmlService.getEditPageDocument().querySelector(querySelector2);
+            const thirdContainer = this.dotEditContentHtmlService.getEditPageDocument().querySelector(querySelector3);
+
+            expect(firstContainer.offsetHeight).toEqual(secondContainer.offsetHeight);
+            expect(thirdContainer.style.height).toEqual('auto');
+        });
+
+        xit('should redraw the body', () => {
+            // TODO need to test the change of the body.style.style but right now not sure how.
+        });
     });
 
     it('should add contentlet', () => {

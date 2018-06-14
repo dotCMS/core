@@ -223,10 +223,16 @@ export class DotEditContentHtmlService {
         const containerDomElements = this.getContainerDomElements(containersLayoutIds);
 
         containerDomElements.forEach((containerRow: Array<HTMLElement>, index: number) => {
-            containerRow.forEach((container: HTMLElement) => {
-                container.style.height = `${this.rowsMaxHeight[index]}px`;
-            });
+            if (containerRow.length > 1) {
+                containerRow.forEach((container: HTMLElement) => {
+                    container.style.height = `${this.rowsMaxHeight[index]}px`;
+                });
+            }
         });
+
+        const body = this.getEditPageDocument().querySelector('body');
+        body.style.display = 'none';
+        body.style.display = '';
     }
 
     /**
