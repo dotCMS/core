@@ -420,7 +420,7 @@
 
 	<!-- Permissions -->
 	
-		<div id="permissionsTab" disabled="true" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Permissions") %>" onShow="refreshPermissionsTab()">
+		<div id="permissionsTab" disabled="<%=!UtilMethods.isSet(contentlet.getInode()) %>" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Permissions") %>" onShow="refreshPermissionsTab()">
 			<div id="permissionsTabDiv">
                 <%-- This loads the edit_permission_tab_inc_wrapper.jsp passing in the contentletId as a request parameter --%>
 			</div>
