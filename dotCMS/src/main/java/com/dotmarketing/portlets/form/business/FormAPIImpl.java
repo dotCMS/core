@@ -192,6 +192,7 @@ public class FormAPIImpl implements FormAPI {
 	}
 
 	@Override
+	@WrapInTransaction
 	public Contentlet createDefaultFormContent(String formId) throws DotDataException {
 		final User systemUser = userAPI.getSystemUser();
 
