@@ -420,32 +420,14 @@
 
 	<!-- Permissions -->
 	
-		<div id="permissionsTab" disabled="<%=!UtilMethods.isSet(contentlet.getInode()) %>" dojoType="dojox.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Permissions") %>" onShow="refreshPermissionsTab">
-			<%--
-				IHTMLPage permParent = null;
-				final boolean isNewConnection = !DbConnectionFactory.connectionExists();
-
-				try {
-
-					permParent = (IHTMLPage) InodeFactory.getInode(request.getParameter("htmlpage_inode"), IHTMLPage.class);
-				} finally {
-
-					if (isNewConnection) {
-
-						DbConnectionFactory.closeSilently();
-					}
-				}
-				request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, contentlet);
-				if(permParent != null)
-					request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT_BASE, permParent);
-				else
-					request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT_BASE, structure);
-			--%>
-			<%@ include file="/html/portlet/ext/common/edit_permissions_tab_inc.jsp" %>
+		<div id="permissionsTab" disabled="<%=!UtilMethods.isSet(contentlet.getInode()) %>" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Permissions") %>" onShow="refreshPermissionsTab()">
+			<div id="permissionsTabDiv">
+                <%-- This loads the edit_permission_tab_inc_wrapper.jsp passing in the contentletId as a request parameter --%>
+			</div>
 		</div>
 
 
-    <%if(InodeUtils.isSet(contentlet.getInode())){ %>
+
 		<!-- Versions Tab -->
 		<%---if(contentlet != null && InodeUtils.isSet(contentlet.getInode())){
 				com.dotmarketing.portlets.contentlet.business.Contentlet fatty = new com.dotmarketing.portlets.contentlet.business.Contentlet();
@@ -453,7 +435,7 @@
 		 		request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, fatty);
 		}--%>
 
-		<div id="versions" disabled="<%=!UtilMethods.isSet(contentlet.getInode()) %>" class="history" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "History") %>" onShow="refreshVersionCp();">
+		<div id="versionsTab" disabled="<%=!UtilMethods.isSet(contentlet.getInode()) %>" class="history" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "History") %>" onShow="refreshVersionCp();">
 			<div id="contentletVersionsDiv" style="height:100%;" class="content-edit__history-version">
 			</div>
 			<hr class="history__divider">
@@ -468,7 +450,7 @@
 				<jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_references.jsp" />
 			</div>
 		<%}%>
-	<%}%>
+
 	</div>
 
 		<!-- START CONTENT ACTIONS -->

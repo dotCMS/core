@@ -1,6 +1,5 @@
 package com.dotcms.util.pagination;
 
-
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
@@ -14,8 +13,6 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -113,36 +110,37 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
                         .collect(Collectors.toList());
     }
 
-  private String getQueryCondition(final String filter) {
+    private String getQueryCondition(final String filter) {
 
-    if (!UtilMethods.isSet(filter)) {
-      return StringUtils.EMPTY;
-    }
-    final String filterUpper = filter.toUpperCase();
-
-
-    final List<String> andClauses = new ArrayList<>();
-
-
-    final StringTokenizer st = new StringTokenizer(filterUpper, " :,-");
-    while (st.hasMoreTokens()) {
-      final String tok = st.nextToken();
-      final Set<String> orClauses = new HashSet<>();
-      for (final BaseContentType btype : BaseContentType.values()) {
-        if (btype.name().equals(tok)) {
-          orClauses.add("structuretype=" + btype.getType());
-          break;
-        } else if (btype.name().startsWith(tok)) {
-          orClauses.add("structuretype=" + btype.getType());
-          orClauses.add(String.format("upper(name) like '%%%s%%'", tok));
-        } else {
-          orClauses.add(String.format("upper(name) like '%%%s%%'", tok));
+        if (!UtilMethods.isSet(filter)) {
+            return StringUtils.EMPTY;
         }
-      }
-      andClauses.add('(' + String.join(" or ", orClauses) +')');
-    }
-    
-    return '(' + String.join(" and ", andClauses) + ')';
+        final String filterUpper = filter.toUpperCase();
 
-  }
+        final List<String> andClauses = new ArrayList<>();
+
+        final StringTokenizer st = new StringTokenizer(filterUpper, " :,-");
+        while (st.hasMoreTokens()) {
+
+            final String tok = st.nextToken();
+            final Set<String> orClauses = new HashSet<>();
+            for (final BaseContentType btype : BaseContentType.values()) {
+
+                if (btype.name().equals(tok)) {
+                    orClauses.add("structuretype=" + btype.getType());
+                    break;
+                } else if (btype.name().startsWith(tok)) {
+                    orClauses.add("structuretype=" + btype.getType());
+                    orClauses.add(String.format("upper(name) like '%%%s%%'", tok));
+                } else {
+                    orClauses.add(String.format("upper(name) like '%%%s%%'", tok));
+                }
+            }
+
+            andClauses.add('(' + String.join(" or ", orClauses) + ')');
+        }
+
+        return '(' + String.join(" and ", andClauses) + ')';
+    }
+
 }

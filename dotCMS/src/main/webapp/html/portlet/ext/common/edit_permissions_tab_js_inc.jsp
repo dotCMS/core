@@ -111,18 +111,30 @@
 
 	var dijits = [];
 
-
+    function preloadingPermissions(){
+        try {
+            //dwr.util.useLoadingMessage();
+            dojo.style(dijit.byId('savingPermissionsDialog').closeButtonNode, 'visibility', 'hidden');
+            loadPermissions();
+      }
+      catch(err){
+          //console.log("error",err)
+      }
+    }
+    setTimeout(loadPermissions, 0);
+    setTimeout(loadPermissions, 500);
+    setTimeout(loadPermissions, 1000);
+    var permissionsLoaded = false;
 	//Initialization
-	dojo.addOnLoad(function () {
+	dojo.addOnLoad(preloadingPermissions);
 
-		//dwr.util.useLoadingMessage();
-		dojo.style(dijit.byId('savingPermissionsDialog').closeButtonNode, 'visibility', 'hidden');
-		loadPermissions();
-
-	});
-
+    
+    
+    
+    
 	function loadPermissions () {
-
+	    if(permissionsLoaded)return;
+		permissionsLoaded=true;
 		if(isNewAsset) {
 			dojo.style('loadingPermissionsAccordion', { display: 'none' });
 			dojo.style('assetPermissionsWrapper', { display: 'none' });
