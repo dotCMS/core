@@ -66,4 +66,9 @@ describe('DotRouterService', () => {
         service.goToEditContentlet('123');
         expect(router.navigate).toHaveBeenCalledWith(['/c/hello-world/123']);
     });
+
+    it('should go to edit workflow task', () => {
+        service.goToEditTask('123');
+        expect(router.navigate).toHaveBeenCalledWith(['/c/workflow/123']);
+    });
 });

@@ -79,4 +79,20 @@ describe('DotIframeEventsHandler', () => {
         );
         expect(dotRouterService.goToEditContentlet).toHaveBeenCalledWith('123');
     });
+
+    it('should edit a a workflow task', () => {
+        spyOn(dotRouterService, 'goToEditTask');
+
+        service.handle(
+            new CustomEvent('ng-event', {
+                detail: {
+                    name: 'edit-task',
+                    data: {
+                        inode: '123'
+                    }
+                }
+            })
+        );
+        expect(dotRouterService.goToEditTask).toHaveBeenCalledWith('123');
+    });
 });

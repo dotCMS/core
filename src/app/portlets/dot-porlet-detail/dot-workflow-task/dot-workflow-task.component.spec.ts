@@ -11,6 +11,7 @@ import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
+import { DotIframeService } from '../../../view/components/_common/iframe/service/dot-iframe/dot-iframe.service';
 
 @Injectable()
 class MockDotWorkflowTaskDetailService {
@@ -24,8 +25,11 @@ const messageServiceMock = new MockDotMessageService({
 describe('DotWorkflowTaskComponent', () => {
     let fixture: ComponentFixture<DotWorkflowTaskComponent>;
     let de: DebugElement;
+    let component: DotWorkflowTaskComponent;
     let dotRouterService: DotRouterService;
+    let dotIframeService: DotIframeService;
     let dotWorkflowTaskDetailService: DotWorkflowTaskDetailService;
+    let taskDetail: DebugElement;
 
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
@@ -56,10 +60,14 @@ describe('DotWorkflowTaskComponent', () => {
 
         fixture = DOTTestBed.createComponent(DotWorkflowTaskComponent);
         de = fixture.debugElement;
+        component = de.componentInstance;
         dotWorkflowTaskDetailService = de.injector.get(DotWorkflowTaskDetailService);
         dotRouterService = de.injector.get(DotRouterService);
+        dotIframeService = de.injector.get(DotIframeService);
         spyOn(dotRouterService, 'gotoPortlet');
+        spyOn(dotIframeService, 'reloadData');
         fixture.detectChanges();
+        taskDetail = de.query(By.css('dot-workflow-task-detail'));
     });
 
     it('should call workflow task modal', async(() => {
@@ -71,9 +79,19 @@ describe('DotWorkflowTaskComponent', () => {
         expect(dotWorkflowTaskDetailService.view).toHaveBeenCalledWith(params);
     }));
 
-    it('should call first portlet when modal closed', () => {
-        const edit = de.query(By.css('dot-workflow-task-detail'));
-        edit.triggerEventHandler('close', {});
+    it('should redirect to /workflow and refresh data when modal closed', () => {
+        taskDetail.triggerEventHandler('close', {});
         expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/c/workflow');
+        expect(dotIframeService.reloadData).toHaveBeenCalledWith('workflow');
+    });
+
+    it('should redirect to /workflow when edit-task-executed-workflow event is triggered', () => {
+        spyOn(component, 'onCloseWorkflowTaskEditor');
+        taskDetail.triggerEventHandler('custom', {
+            detail: {
+                name: 'edit-task-executed-workflow'
+            }
+        });
+        expect(component.onCloseWorkflowTaskEditor).toHaveBeenCalledTimes(1);
     });
 });

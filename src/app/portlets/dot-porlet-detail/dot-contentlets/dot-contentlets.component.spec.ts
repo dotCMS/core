@@ -11,6 +11,7 @@ import { LoginServiceMock } from '../../../test/login-service.mock';
 import { By } from '@angular/platform-browser';
 import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
 import { RouterTestingModule } from '@angular/router/testing';
+import { DotIframeService } from '../../../view/components/_common/iframe/service/dot-iframe/dot-iframe.service';
 
 @Injectable()
 class MockDotNavigationService {
@@ -27,6 +28,7 @@ describe('DotContentletsComponent', () => {
     let de: DebugElement;
 
     let dotRouterService: DotRouterService;
+    let dotIframeService: DotIframeService;
     let dotContentletEditorService: DotContentletEditorService;
 
     beforeEach(() => {
@@ -35,6 +37,7 @@ describe('DotContentletsComponent', () => {
             imports: [DotContentletEditorModule, RouterTestingModule],
             providers: [
                 DotContentletEditorService,
+                DotIframeService,
                 {
                     provide: ActivatedRoute,
                     useValue: {
@@ -60,11 +63,15 @@ describe('DotContentletsComponent', () => {
         fixture = DOTTestBed.createComponent(DotContentletsComponent);
         de = fixture.debugElement;
         dotRouterService = de.injector.get(DotRouterService);
+        dotIframeService = de.injector.get(DotIframeService);
+        dotContentletEditorService = de.injector.get(DotContentletEditorService);
+
         spyOn(dotRouterService, 'gotoPortlet');
         spyOnProperty(dotRouterService, 'currentPortlet', 'get').and.returnValue({
             id: 'current-portlet'
         });
-        dotContentletEditorService = de.injector.get(DotContentletEditorService);
+
+        spyOn(dotIframeService, 'reloadData');
         fixture.detectChanges();
     });
 
@@ -79,9 +86,10 @@ describe('DotContentletsComponent', () => {
         }, 0);
     }));
 
-    it('should current portlet when modal closed', () => {
+    it('should go current portlet and reload data when modal closed', () => {
         const edit = de.query(By.css('dot-edit-contentlet'));
         edit.triggerEventHandler('close', {});
         expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/c/current-portlet');
+        expect(dotIframeService.reloadData).toHaveBeenCalledWith('current-portlet');
     });
 });

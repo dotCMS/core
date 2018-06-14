@@ -44,6 +44,17 @@ export class DotRouterService {
     }
 
     /**
+     * Go to edit workflow task
+     *
+     * @param {string} inode
+     * @returns {Promise<boolean>}
+     * @memberof DotRouterService
+     */
+    goToEditTask(inode: string): Promise<boolean> {
+        return this.router.navigate([`/c/workflow/${inode}`]);
+    }
+
+    /**
      * Go to first porlet unless userEditPageRedirect is passed or previousSavedURL is set
      *
      * @param {string} [userEditPageRedirect]

@@ -63,7 +63,7 @@ describe('MainComponentLegacyComponent', () => {
         de = fixture.debugElement;
         dotRouterService = de.injector.get(DotRouterService);
         dotIframeService = de.injector.get(DotIframeService);
-        spyOn(dotIframeService, 'run');
+        spyOn(dotIframeService, 'reloadData');
         fixture.detectChanges();
     });
 
@@ -75,24 +75,14 @@ describe('MainComponentLegacyComponent', () => {
     });
 
     describe('Create Contentlet', () => {
-        it('should refresh the current portlet on close if portlet is content', () => {
+        it('should refresh the current portlet data', () => {
             spyOnProperty(dotRouterService, 'currentPortlet', 'get').and.returnValue({
-                id: 'content'
+                id: 'site-browser'
             });
             const createContentlet: DebugElement = de.query(By.css('dot-create-contentlet'));
             createContentlet.triggerEventHandler('close', {});
 
-            expect(dotIframeService.run).toHaveBeenCalledWith('doSearch');
-        });
-
-        it('should not refresh the current portlet on close', () => {
-            spyOnProperty(dotRouterService, 'currentPortlet', 'get').and.returnValue({
-                id: 'what'
-            });
-            const createContentlet: DebugElement = de.query(By.css('dot-create-contentlet'));
-            createContentlet.triggerEventHandler('close', {});
-
-            expect(dotIframeService.run).not.toHaveBeenCalled();
+            expect(dotIframeService.reloadData).toHaveBeenCalledWith('site-browser');
         });
     });
 });

@@ -52,4 +52,31 @@ export class DotIframeService {
             run: name
         });
     }
+
+    /**
+     * Run a function to reload the data in the portlet
+     *
+     * @param {string} portlet
+     * @memberof DotIframeService
+     */
+    reloadData(portlet: string): void {
+        const functionToRun = this.getFunctionToRefreshIframe(portlet);
+
+        if (functionToRun) {
+            this.run(functionToRun);
+        }
+    }
+
+    private getFunctionToRefreshIframe(portlet: string): string {
+        const mapOfFunctions = {
+            'content': 'doSearch',
+            'site-browser': 'reloadContent',
+            'vanity-urls': 'doSearch',
+            'sites': 'refreshHostTable',
+            'calendar': 'initializeCalendar',
+            'workflow': 'doFilter'
+        };
+
+        return mapOfFunctions[portlet];
+    }
 }
