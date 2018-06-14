@@ -1697,11 +1697,7 @@ public class ContentletAjax {
 			}
 		}
 		callbackData.put("referer", referer);
-		try {
-            DbConnectionFactory.closeAndCommit();
-        } catch (DotDataException e) {
-            Logger.warn(this.getClass(), "failed closing db after content save:" +  e.getMessage());
-        }
+
 		return callbackData;
 	}
 
