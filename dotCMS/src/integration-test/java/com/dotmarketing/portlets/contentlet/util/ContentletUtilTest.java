@@ -10,16 +10,29 @@ import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
+import java.io.File;
+import java.io.IOException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -34,19 +47,31 @@ import static org.junit.Assert.*;
  */
 public class ContentletUtilTest extends IntegrationTestBase {
 
-    final User user = APILocator.systemUser();
-    final Language language = APILocator.getLanguageAPI().getDefaultLanguage();
+    private static User user;
+    private static Language language;
 
-    final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
-    final ContentletAPI contentletAPI = APILocator.getContentletAPI();
-    final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI( user, false );
-    final FieldAPI fieldAPI = APILocator.getContentTypeFieldAPI();
+    private static CategoryAPI categoryAPI;
+    private static ContentletAPI contentletAPI;
+    private static ContentTypeAPI contentTypeAPI;
+    private static FieldAPI fieldAPI;
+
+    private static Host defaultHost;
 
     @BeforeClass
     public static void prepare () throws Exception {
 
         //Setting web app environment.
         IntegrationTestInitService.getInstance().init();
+
+        user = APILocator.getUserAPI().getSystemUser();
+        language = APILocator.getLanguageAPI().getDefaultLanguage();
+
+        categoryAPI = APILocator.getCategoryAPI();
+        contentletAPI = APILocator.getContentletAPI();
+        contentTypeAPI = APILocator.getContentTypeAPI( user, false );
+        fieldAPI = APILocator.getContentTypeFieldAPI();
+
+        defaultHost = APILocator.getHostAPI().findDefaultHost( user, false );
     }
 
 
@@ -68,8 +93,6 @@ public class ContentletUtilTest extends IntegrationTestBase {
         Category homeCategory = null;
 
         try {
-
-            final Host defaultHost = APILocator.getHostAPI().findDefaultHost( user, false );
 
             //Creating Categories.
             //Create Parent Content Category.
@@ -260,6 +283,119 @@ public class ContentletUtilTest extends IntegrationTestBase {
         }
 
     }
+
+    @Test
+    public void test_getContentPrintableMap_WhenContentTypeIsNeitherFileAssetNorPage_PathIsNotAddedToTheMap()
+            throws DotSecurityException, DotDataException, IOException {
+
+        ContentType contentType = createContentType(BaseContentType.CONTENT);
+        Contentlet contentlet = null;
+
+        try {
+            contentlet = new ContentletDataGen(contentType.id()).nextPersisted();
+
+            final Map<String, Object> contentPrintableMap = ContentletUtil
+                    .getContentPrintableMap(user, contentlet);
+
+            assertFalse(contentPrintableMap.containsKey("path"));
+        } finally {
+            if (UtilMethods.isSet(contentlet.getInode())) {
+                contentletAPI.archive(contentlet, user, false);
+                contentletAPI.delete(contentlet, user, false);
+            }
+
+            contentTypeAPI.delete(contentType);
+        }
+
+    }
+
+    @Test
+    public void test_getContentPrintableMap_WhenContentTypeIsHTMLPage_PathIsAddedToTheMap()
+            throws DotSecurityException, DotDataException, IOException {
+
+        Folder folder = null;
+        HTMLPageAsset page = null;
+        Template template = null;
+
+        try {
+
+            template = new TemplateDataGen().nextPersisted();
+
+            folder = new FolderDataGen().nextPersisted();
+
+            page = new HTMLPageDataGen(folder, template).nextPersisted();
+
+            final Map<String, Object> contentPrintableMap = ContentletUtil
+                    .getContentPrintableMap(user, page);
+
+            assertTrue(contentPrintableMap.containsKey("path"));
+            assertTrue(UtilMethods.isSet(contentPrintableMap.get("path")));
+        } finally {
+
+            if (UtilMethods.isSet(page) && UtilMethods.isSet(page.getInode())) {
+                HTMLPageDataGen.remove(page);
+            }
+
+            if (UtilMethods.isSet(folder) && UtilMethods.isSet(folder.getInode())) {
+                FolderDataGen.remove(folder);
+            }
+
+            if (UtilMethods.isSet(template) && UtilMethods.isSet(template.getInode())) {
+                TemplateDataGen.remove(template);
+            }
+        }
+
+    }
+
+    @Test
+    public void test_getContentPrintableMap_WhenContentTypeIsFileAsset_PathIsAddedToTheMap()
+            throws DotSecurityException, DotDataException, IOException {
+
+        Folder folder = null;
+        Contentlet contentlet = null;
+
+        try {
+
+            folder = new FolderDataGen().nextPersisted();
+            File file = File.createTempFile("texto", ".txt");
+            FileUtil.write(file, "helloworld");
+
+            FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(folder, file);
+
+            contentlet = fileAssetDataGen.nextPersisted();
+
+            final Map<String, Object> contentPrintableMap = ContentletUtil
+                    .getContentPrintableMap(user, contentlet);
+
+            assertTrue(contentPrintableMap.containsKey("path"));
+            assertTrue(UtilMethods.isSet(contentPrintableMap.get("path")));
+        } finally {
+            if (UtilMethods.isSet(contentlet) && UtilMethods.isSet(contentlet.getInode())) {
+                FileAssetDataGen.remove(contentlet);
+            }
+            if (UtilMethods.isSet(folder) && UtilMethods.isSet(folder.getInode())) {
+                FolderDataGen.remove(folder);
+            }
+
+        }
+    }
+
+    private ContentType createContentType(BaseContentType baseContentType)
+            throws DotSecurityException, DotDataException {
+
+        final long i = System.currentTimeMillis();
+        //Create Content Type.
+        ContentType contentType = ContentTypeBuilder.builder(baseContentType.immutableClass())
+                .description("Test ContentType" + i)
+                .host(defaultHost.getIdentifier())
+                .name("Test ContentType" + i)
+                .owner("owner")
+                .variable("testVelocityVarName")
+                .build();
+
+        return contentTypeAPI.save(contentType);
+    }
+
 
     /**
      * Util method to check if NotFoundInDbException is returned when trying to find a Field or ContentType.
