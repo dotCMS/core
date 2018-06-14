@@ -6,12 +6,14 @@ import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.ADMIN_NAME;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.CURRENT_STEP;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.actionName;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.addSteps;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.collectSampleContent;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.createScheme;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.createWorkflowActions;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.doCleanUp;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.findSchemes;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.findSteps;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.schemeName;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.getWorkflowActions;
 import static com.dotmarketing.business.Role.ADMINISTRATOR;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -24,6 +26,7 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.mock.response.MockAsyncResponse;
 import com.dotcms.repackage.javax.ws.rs.container.AsyncResponse;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -34,6 +37,8 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.workflow.form.BulkActionForm;
+import com.dotcms.workflow.form.FireBulkActionsForm;
 import com.dotcms.workflow.form.WorkflowActionForm;
 import com.dotcms.workflow.form.WorkflowActionStepForm;
 import com.dotcms.workflow.form.WorkflowSchemeForm;
@@ -45,17 +50,21 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -64,6 +73,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -79,19 +89,23 @@ public class WorkflowResourceIntegrationTest {
 
     private static WorkflowAPI workflowAPI;
     private static RoleAPI roleAPI;
+    private static UserAPI userAPI;
     private static WorkflowResource workflowResource;
+    private static ContentletAPI contentletAPI;
+
 
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
-        workflowAPI =  APILocator.getWorkflowAPI();
-        ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        workflowAPI = APILocator.getWorkflowAPI();
+        contentletAPI = APILocator.getContentletAPI();
         roleAPI = APILocator.getRoleAPI();
         ContentHelper contentHelper = ContentHelper.getInstance();
         PermissionAPI permissionAPI = APILocator.getPermissionAPI();
         WorkflowImportExportUtil workflowImportExportUtil = WorkflowImportExportUtil.getInstance();
-        WorkflowHelper workflowHelper = new WorkflowHelper(workflowAPI, roleAPI, contentletAPI, permissionAPI,
+        WorkflowHelper workflowHelper = new WorkflowHelper(workflowAPI, roleAPI, contentletAPI,
+                permissionAPI,
                 workflowImportExportUtil);
         ResponseUtil responseUtil = ResponseUtil.INSTANCE;
 
@@ -109,6 +123,7 @@ public class WorkflowResourceIntegrationTest {
 
         workflowResource = new WorkflowResource(workflowHelper, contentHelper, workflowAPI,
                 contentletAPI, responseUtil, permissionAPI, workflowImportExportUtil, webResource);
+
     }
 
     @AfterClass
@@ -122,12 +137,12 @@ public class WorkflowResourceIntegrationTest {
     public void testImportScheme() throws DotDataException {
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final List<Permission> permissions                              = new ArrayList<>();
-        final List<WorkflowScheme> schemes                              = new ArrayList<>();
-        final WorkflowScheme       scheme                               = new WorkflowScheme();
-        final List<WorkflowStep>   steps                                = new ArrayList<>();
-        final List<WorkflowAction> actions                              = new ArrayList<>();
-        final List<Map<String, String>> actionSteps                     = new ArrayList<>();
+        final List<Permission> permissions = new ArrayList<>();
+        final List<WorkflowScheme> schemes = new ArrayList<>();
+        final WorkflowScheme scheme = new WorkflowScheme();
+        final List<WorkflowStep> steps = new ArrayList<>();
+        final List<WorkflowAction> actions = new ArrayList<>();
+        final List<Map<String, String>> actionSteps = new ArrayList<>();
 
         try {
 
@@ -160,7 +175,8 @@ public class WorkflowResourceIntegrationTest {
             final WorkflowAction workflowAction1 = new WorkflowAction();
 
             workflowAction1.setId(UUIDGenerator.generateUuid());
-            workflowAction1.setShowOn(WorkflowState.LOCKED, WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED);
+            workflowAction1.setShowOn(WorkflowState.LOCKED, WorkflowState.PUBLISHED,
+                    WorkflowState.UNPUBLISHED);
             workflowAction1.setNextStep(workflowStep2.getId());
             workflowAction1.setNextAssign(roleAPI.loadRoleByKey(ADMINISTRATOR).getId());
             workflowAction1.setSchemeId(scheme.getId());
@@ -172,7 +188,8 @@ public class WorkflowResourceIntegrationTest {
             final WorkflowAction workflowAction2 = new WorkflowAction();
 
             workflowAction2.setId(UUIDGenerator.generateUuid());
-            workflowAction2.setShowOn(WorkflowState.LOCKED, WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED);
+            workflowAction2.setShowOn(WorkflowState.LOCKED, WorkflowState.PUBLISHED,
+                    WorkflowState.UNPUBLISHED);
             workflowAction2.setNextStep(workflowStep2.getId());
             workflowAction2.setNextAssign(roleAPI.loadRoleByKey(ADMINISTRATOR).getId());
             workflowAction2.setSchemeId(scheme.getId());
@@ -226,23 +243,28 @@ public class WorkflowResourceIntegrationTest {
             permission2.setPermission(1);
             permissions.add(permission2);
 
-
             final WorkflowSchemeImportObjectForm exportObjectForm =
                     new WorkflowSchemeImportObjectForm(
-                            new WorkflowSchemeImportExportObjectView(WorkflowResource.VERSION,schemes,steps,actions,actionSteps,Collections.emptyList(),Collections.emptyList()),
+                            new WorkflowSchemeImportExportObjectView(WorkflowResource.VERSION,
+                                    schemes, steps, actions, actionSteps, Collections.emptyList(),
+                                    Collections.emptyList()),
                             permissions);
 
-            final Response importResponse = workflowResource.importScheme(request, exportObjectForm);
+            final Response importResponse = workflowResource
+                    .importScheme(request, exportObjectForm);
             assertEquals(Response.Status.OK.getStatusCode(), importResponse.getStatus());
 
             final Response exportResponse = workflowResource.exportScheme(request, scheme.getId());
             assertEquals(Response.Status.OK.getStatusCode(), importResponse.getStatus());
-            final ResponseEntityView exportEntityView = ResponseEntityView.class.cast(exportResponse.getEntity());
+            final ResponseEntityView exportEntityView = ResponseEntityView.class
+                    .cast(exportResponse.getEntity());
             final Map importSchemeMap = Map.class.cast(exportEntityView.getEntity());
             assertNotNull(importSchemeMap);
 
-            final WorkflowSchemeImportExportObjectView exportObject = (WorkflowSchemeImportExportObjectView) importSchemeMap.get("workflowObject");
-            final List<Permission> permissionsExported = (List<Permission>) importSchemeMap.get("permissions");
+            final WorkflowSchemeImportExportObjectView exportObject = (WorkflowSchemeImportExportObjectView) importSchemeMap
+                    .get("workflowObject");
+            final List<Permission> permissionsExported = (List<Permission>) importSchemeMap
+                    .get("permissions");
 
             assertNotNull(exportObject);
             assertNotNull(permissionsExported);
@@ -258,7 +280,8 @@ public class WorkflowResourceIntegrationTest {
 
             assertNotNull(exportObject.getActions());
             assertEquals(3, exportObject.getActions().size());
-            final Set<String> actionIdSet = exportObject.getActions().stream().map(WorkflowAction::getId).collect(Collectors.toSet());
+            final Set<String> actionIdSet = exportObject.getActions().stream()
+                    .map(WorkflowAction::getId).collect(Collectors.toSet());
             assertTrue(actionIdSet.contains(workflowAction1.getId()));
             assertTrue(actionIdSet.contains(workflowAction2.getId()));
             assertTrue(actionIdSet.contains(workflowAction3.getId()));
@@ -286,55 +309,62 @@ public class WorkflowResourceIntegrationTest {
     }
 
     @Test
-    public void testAddSchemaThenFindIt(){
+    public void testAddSchemaThenFindIt() {
         final WorkflowScheme savedScheme = createScheme(workflowResource);
         assertNotNull(savedScheme);
         final List<WorkflowScheme> schemaList = findSchemes(workflowResource);
         boolean found = false;
-        for(WorkflowScheme scheme:schemaList){
+        for (WorkflowScheme scheme : schemaList) {
             found = savedScheme.getId().equals(scheme.getId());
-            if(found){
-               break;
+            if (found) {
+                break;
             }
         }
         assertTrue(found);
     }
 
     @Test
-    public void testUpdateSchema(){
+    public void testUpdateSchema() {
         final String updatedName = schemeName();
         final WorkflowScheme savedScheme = createScheme(workflowResource);
         assertNotNull(savedScheme);
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        WorkflowSchemeForm form = new WorkflowSchemeForm.Builder().schemeDescription("lol").schemeArchived(false).schemeName(updatedName).build();
-        final Response updateResponse = workflowResource.updateScheme(request,savedScheme.getId(), form);
+        WorkflowSchemeForm form = new WorkflowSchemeForm.Builder().schemeDescription("lol")
+                .schemeArchived(false).schemeName(updatedName).build();
+        final Response updateResponse = workflowResource
+                .updateScheme(request, savedScheme.getId(), form);
         assertEquals(Response.Status.OK.getStatusCode(), updateResponse.getStatus());
-        final ResponseEntityView updateSchemeEntityView = ResponseEntityView.class.cast(updateResponse.getEntity());
-        final WorkflowScheme updatedScheme = WorkflowScheme.class.cast(updateSchemeEntityView.getEntity());
+        final ResponseEntityView updateSchemeEntityView = ResponseEntityView.class
+                .cast(updateResponse.getEntity());
+        final WorkflowScheme updatedScheme = WorkflowScheme.class
+                .cast(updateSchemeEntityView.getEntity());
         assertNotNull(updatedScheme);
     }
 
     @Test
-    public void testUpdateSchemaUsingDupeName(){
+    public void testUpdateSchemaUsingDupeName() {
         final WorkflowScheme savedScheme1 = createScheme(workflowResource);
         final WorkflowScheme savedScheme2 = createScheme(workflowResource);
         assertNotNull(savedScheme1);
         final String updatedName = savedScheme2.getName();
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        WorkflowSchemeForm form = new WorkflowSchemeForm.Builder().schemeDescription("lol").schemeArchived(false).schemeName(updatedName).build();
-        final Response updateResponse = workflowResource.updateScheme(request,savedScheme1.getId(), form);
+        WorkflowSchemeForm form = new WorkflowSchemeForm.Builder().schemeDescription("lol")
+                .schemeArchived(false).schemeName(updatedName).build();
+        final Response updateResponse = workflowResource
+                .updateScheme(request, savedScheme1.getId(), form);
         assertEquals(Status.OK.getStatusCode(), updateResponse.getStatus());
     }
 
     @Test
-    public void testCreateSchemeThenAddStepsThenAddActions() throws Exception{
+    public void testCreateSchemeThenAddStepsThenAddActions() throws Exception {
         final Role adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
         final String adminRoleId = adminRole.getId();
         final WorkflowScheme savedScheme = createScheme(workflowResource);
         assertNotNull(savedScheme);
-        final List<WorkflowStep> workflowSteps = addSteps(workflowResource, savedScheme,3);
+        final List<WorkflowStep> workflowSteps = addSteps(workflowResource, savedScheme, 3);
         assertFalse(workflowSteps.isEmpty());
-        final List<WorkflowAction> actions = createWorkflowActions(workflowResource, savedScheme, adminRoleId, workflowSteps);
+        final List<WorkflowAction> actions = createWorkflowActions(workflowResource, savedScheme,
+                adminRoleId, workflowSteps);
         assertFalse(actions.isEmpty());
     }
 
@@ -349,11 +379,11 @@ public class WorkflowResourceIntegrationTest {
 
         final CountDownLatch countDownLatch = new CountDownLatch(workflowSteps.size());
         final AtomicInteger count = new AtomicInteger(0);
-        for(final WorkflowStep workflowStep: workflowSteps){
+        for (final WorkflowStep workflowStep : workflowSteps) {
             final AsyncResponse asyncResponse = new MockAsyncResponse((arg) -> {
 
                 countDownLatch.countDown();
-                final Response deleteStepResponse = (Response)arg;
+                final Response deleteStepResponse = (Response) arg;
                 assertEquals(Response.Status.OK.getStatusCode(), deleteStepResponse.getStatus());
                 count.addAndGet(1);
                 return true;
@@ -382,7 +412,7 @@ public class WorkflowResourceIntegrationTest {
         final List<WorkflowStep> steps = findSteps(workflowResource, savedScheme);
         validateOrderedSteps(steps);
         assertTrue(steps.isEmpty());
-        addSteps(workflowResource, savedScheme,numSteps);
+        addSteps(workflowResource, savedScheme, numSteps);
         final List<WorkflowStep> afterAddingSteps = findSteps(workflowResource, savedScheme);
         assertEquals(numSteps, afterAddingSteps.size());
         validateOrderedSteps(afterAddingSteps);
@@ -396,16 +426,17 @@ public class WorkflowResourceIntegrationTest {
         final WorkflowScheme savedScheme = createScheme(workflowResource);
         final List<WorkflowStep> steps = findSteps(workflowResource, savedScheme);
         assertTrue(steps.isEmpty());
-        final List<WorkflowStep> workflowStepsOriginalSetUp = addSteps(workflowResource, savedScheme, numSteps);
+        final List<WorkflowStep> workflowStepsOriginalSetUp = addSteps(workflowResource,
+                savedScheme, numSteps);
         final WorkflowStep firstWorkflowStep = workflowStepsOriginalSetUp.get(0);
-        reorderSteps(firstWorkflowStep.getId(),randomEntry);
+        reorderSteps(firstWorkflowStep.getId(), randomEntry);
 
         final List<WorkflowStep> afterReorderingSteps = findSteps(workflowResource, savedScheme);
         assertEquals(numSteps, afterReorderingSteps.size());
         final WorkflowStep rearrangedPosition = afterReorderingSteps.get(randomEntry);
 
-        assertEquals(rearrangedPosition.getMyOrder(),randomEntry);
-        assertEquals(rearrangedPosition.getId(),firstWorkflowStep.getId());
+        assertEquals(rearrangedPosition.getMyOrder(), randomEntry);
+        assertEquals(rearrangedPosition.getId(), firstWorkflowStep.getId());
         validateOrderedSteps(afterReorderingSteps);
     }
 
@@ -432,36 +463,43 @@ public class WorkflowResourceIntegrationTest {
     }
 
     @Test
-    public void testUpdateStep(){
+    public void testUpdateStep() {
         final int numSteps = 3;
         final String updatedName = "LOL!";
-        final int newOrder = numSteps + 10; //We're sending an index outside the boundaries. See if we can break it.
+        final int newOrder = numSteps
+                + 10; //We're sending an index outside the boundaries. See if we can break it.
         final WorkflowScheme savedScheme = createScheme(workflowResource);
         assertNotNull(savedScheme);
         final List<WorkflowStep> workflowSteps = addSteps(workflowResource, savedScheme, numSteps);
         assertFalse(workflowSteps.isEmpty());
         final WorkflowStep workflowStep = workflowSteps.get(0);
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final WorkflowStepUpdateForm updatedValuesForm = new WorkflowStepUpdateForm.Builder().enableEscalation(false).escalationAction("").escalationTime("0").enableEscalation(false).stepName(updatedName).stepOrder(newOrder).build();
-        final Response updateStepResponse = workflowResource.updateStep(request, workflowStep.getId(), updatedValuesForm);
+        final WorkflowStepUpdateForm updatedValuesForm = new WorkflowStepUpdateForm.Builder()
+                .enableEscalation(false).escalationAction("").escalationTime("0")
+                .enableEscalation(false).stepName(updatedName).stepOrder(newOrder).build();
+        final Response updateStepResponse = workflowResource
+                .updateStep(request, workflowStep.getId(), updatedValuesForm);
         assertEquals(Response.Status.OK.getStatusCode(), updateStepResponse.getStatus());
-        final ResponseEntityView updateResponseEv = ResponseEntityView.class.cast(updateStepResponse.getEntity());
-        final WorkflowStep updatedWorkflowStep = WorkflowStep.class.cast(updateResponseEv.getEntity());
+        final ResponseEntityView updateResponseEv = ResponseEntityView.class
+                .cast(updateStepResponse.getEntity());
+        final WorkflowStep updatedWorkflowStep = WorkflowStep.class
+                .cast(updateResponseEv.getEntity());
         assertEquals(updatedName, updatedWorkflowStep.getName());
-        assertEquals(numSteps -1 ,updatedWorkflowStep.getMyOrder());
+        assertEquals(numSteps - 1, updatedWorkflowStep.getMyOrder());
     }
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testSaveActionToStepThenFindActionsBySchemeThenFindByStep() throws Exception{
+    public void testSaveActionToStepThenFindActionsBySchemeThenFindByStep() throws Exception {
         final Role adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
         final String adminRoleId = adminRole.getId();
         final WorkflowScheme savedScheme = createScheme(workflowResource);
         assertNotNull(savedScheme);
-        final List<WorkflowStep> workflowSteps = addSteps(workflowResource, savedScheme,2);
+        final List<WorkflowStep> workflowSteps = addSteps(workflowResource, savedScheme, 2);
         assertFalse(workflowSteps.isEmpty());
         assertEquals(2, workflowSteps.size());
-        final List<WorkflowAction> actions = createWorkflowActions(workflowResource, savedScheme, adminRoleId, workflowSteps);
+        final List<WorkflowAction> actions = createWorkflowActions(workflowResource, savedScheme,
+                adminRoleId, workflowSteps);
         assertEquals(2, actions.size());
 
         final WorkflowStep secondStep = workflowSteps.get(1);
@@ -473,125 +511,151 @@ public class WorkflowResourceIntegrationTest {
                 request1, secondStep.getId(),
                 new WorkflowActionStepForm.Builder().actionId(firstAction.getId()).build()
         );
-        final ResponseEntityView updateResponseEv = ResponseEntityView.class.cast(saveActionToStepResponse.getEntity());
-        assertEquals(ResponseEntityView.OK,updateResponseEv.getEntity());
+        final ResponseEntityView updateResponseEv = ResponseEntityView.class
+                .cast(saveActionToStepResponse.getEntity());
+        assertEquals(ResponseEntityView.OK, updateResponseEv.getEntity());
 
         final HttpServletRequest request2 = mock(HttpServletRequest.class);
-        final Response actionsBySchemeResponse = workflowResource.findActionsByScheme(request2, savedScheme.getId());
-        final ResponseEntityView findActionsResponseEv = ResponseEntityView.class.cast(actionsBySchemeResponse.getEntity());
-        final List<WorkflowAction> actionsByScheme = List.class.cast(findActionsResponseEv.getEntity());
+        final Response actionsBySchemeResponse = workflowResource
+                .findActionsByScheme(request2, savedScheme.getId());
+        final ResponseEntityView findActionsResponseEv = ResponseEntityView.class
+                .cast(actionsBySchemeResponse.getEntity());
+        final List<WorkflowAction> actionsByScheme = List.class
+                .cast(findActionsResponseEv.getEntity());
         assertEquals(2, actionsByScheme.size());
 
         final HttpServletRequest request3 = mock(HttpServletRequest.class);
         //This returns 1 single action
-        final Response actionsByStepResponse = workflowResource.findActionByStep(request3, secondStep.getId(), firstAction.getId());
-        final ResponseEntityView findActionsByStepResponseEv = ResponseEntityView.class.cast(actionsByStepResponse.getEntity());
-        final WorkflowAction actionByStep = WorkflowAction.class.cast(findActionsByStepResponseEv.getEntity());
+        final Response actionsByStepResponse = workflowResource
+                .findActionByStep(request3, secondStep.getId(), firstAction.getId());
+        final ResponseEntityView findActionsByStepResponseEv = ResponseEntityView.class
+                .cast(actionsByStepResponse.getEntity());
+        final WorkflowAction actionByStep = WorkflowAction.class
+                .cast(findActionsByStepResponseEv.getEntity());
         assertNotNull(actionByStep);
-        assertEquals(firstAction.getId(),actionByStep.getId());
+        assertEquals(firstAction.getId(), actionByStep.getId());
     }
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testFindActionsByStepThenDeleteThem() throws Exception{
+    public void testFindActionsByStepThenDeleteThem() throws Exception {
         final Role adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
         final String adminRoleId = adminRole.getId();
         final WorkflowScheme savedScheme = createScheme(workflowResource);
         assertNotNull(savedScheme);
-        final List<WorkflowStep> workflowSteps = addSteps(workflowResource, savedScheme,2);
+        final List<WorkflowStep> workflowSteps = addSteps(workflowResource, savedScheme, 2);
         assertFalse(workflowSteps.isEmpty());
         assertEquals(2, workflowSteps.size());
-        final List<WorkflowAction> actions = createWorkflowActions(workflowResource, savedScheme, adminRoleId, workflowSteps);
+        final List<WorkflowAction> actions = createWorkflowActions(workflowResource, savedScheme,
+                adminRoleId, workflowSteps);
         assertEquals(2, actions.size());
 
         final HttpServletRequest request1 = mock(HttpServletRequest.class);
-        final Response actionsByStepResponse1 = workflowResource.findActionsByStep(request1,workflowSteps.get(0).getId());
-        final ResponseEntityView findActionsByStepResponseEv1 = ResponseEntityView.class.cast(actionsByStepResponse1.getEntity());
-        final List<WorkflowAction> actionsByStep1 = List.class.cast(findActionsByStepResponseEv1.getEntity());
+        final Response actionsByStepResponse1 = workflowResource
+                .findActionsByStep(request1, workflowSteps.get(0).getId());
+        final ResponseEntityView findActionsByStepResponseEv1 = ResponseEntityView.class
+                .cast(actionsByStepResponse1.getEntity());
+        final List<WorkflowAction> actionsByStep1 = List.class
+                .cast(findActionsByStepResponseEv1.getEntity());
         assertEquals(1, actionsByStep1.size());
 
         final HttpServletRequest request2 = mock(HttpServletRequest.class);
         //This returns a list actions
-        final Response actionsByStepResponse2 = workflowResource.findActionsByStep(request2,workflowSteps.get(1).getId());
-        final ResponseEntityView findActionsByStepResponseEv2 = ResponseEntityView.class.cast(actionsByStepResponse2.getEntity());
-        final List<WorkflowAction> actionsByStep2 = List.class.cast(findActionsByStepResponseEv2.getEntity());
+        final Response actionsByStepResponse2 = workflowResource
+                .findActionsByStep(request2, workflowSteps.get(1).getId());
+        final ResponseEntityView findActionsByStepResponseEv2 = ResponseEntityView.class
+                .cast(actionsByStepResponse2.getEntity());
+        final List<WorkflowAction> actionsByStep2 = List.class
+                .cast(findActionsByStepResponseEv2.getEntity());
         assertEquals(1, actionsByStep2.size());
 
         final HttpServletRequest request3 = mock(HttpServletRequest.class);
-        final Response deleteActionResponse1 = workflowResource.deleteAction(request3,actionsByStep1.get(0).getId());
-        final ResponseEntityView deleteActionByResponseEv1 = ResponseEntityView.class.cast(deleteActionResponse1.getEntity());
-        final Response deleteActionResponse2 = workflowResource.deleteAction(request3,actionsByStep2.get(0).getId());
-        final ResponseEntityView deleteActionByResponseEv2 = ResponseEntityView.class.cast(deleteActionResponse2.getEntity());
+        final Response deleteActionResponse1 = workflowResource
+                .deleteAction(request3, actionsByStep1.get(0).getId());
+        final ResponseEntityView deleteActionByResponseEv1 = ResponseEntityView.class
+                .cast(deleteActionResponse1.getEntity());
+        final Response deleteActionResponse2 = workflowResource
+                .deleteAction(request3, actionsByStep2.get(0).getId());
+        final ResponseEntityView deleteActionByResponseEv2 = ResponseEntityView.class
+                .cast(deleteActionResponse2.getEntity());
         final String ok1 = String.class.cast(deleteActionByResponseEv1.getEntity());
-        assertEquals(ResponseEntityView.OK,ok1);
+        assertEquals(ResponseEntityView.OK, ok1);
         final String ok2 = String.class.cast(deleteActionByResponseEv2.getEntity());
-        assertEquals(ResponseEntityView.OK,ok2);
+        assertEquals(ResponseEntityView.OK, ok2);
 
         final HttpServletRequest request4 = mock(HttpServletRequest.class);
-        final Response actionsBySchemeResponse = workflowResource.findActionsByScheme(request4, savedScheme.getId());
-        final ResponseEntityView findActionsResponseEv = ResponseEntityView.class.cast(actionsBySchemeResponse.getEntity());
-        final List<WorkflowAction> actionsByScheme = List.class.cast(findActionsResponseEv.getEntity());
+        final Response actionsBySchemeResponse = workflowResource
+                .findActionsByScheme(request4, savedScheme.getId());
+        final ResponseEntityView findActionsResponseEv = ResponseEntityView.class
+                .cast(actionsBySchemeResponse.getEntity());
+        final List<WorkflowAction> actionsByScheme = List.class
+                .cast(findActionsResponseEv.getEntity());
         assertEquals(0, actionsByScheme.size());
 
     }
 
     @Test
-    public void testUpdateAction() throws Exception{
+    public void testUpdateAction() throws Exception {
         final Role adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
         final String adminRoleId = adminRole.getId();
         final WorkflowScheme savedScheme = createScheme(workflowResource);
         assertNotNull(savedScheme);
-        final List<WorkflowStep> workflowSteps = addSteps(workflowResource, savedScheme,1);
+        final List<WorkflowStep> workflowSteps = addSteps(workflowResource, savedScheme, 1);
         assertFalse(workflowSteps.isEmpty());
         assertEquals(1, workflowSteps.size());
-        final List<WorkflowAction> actions = createWorkflowActions(workflowResource, savedScheme, adminRoleId, workflowSteps);
+        final List<WorkflowAction> actions = createWorkflowActions(workflowResource, savedScheme,
+                adminRoleId, workflowSteps);
         assertEquals(1, actions.size());
         final HttpServletRequest request = mock(HttpServletRequest.class);
 
         final Set<WorkflowState> states = WorkflowState.toSet(WorkflowState.values());
         final String actionNewName = actionName();
 
-        final WorkflowActionForm form = new WorkflowActionForm.Builder().schemeId(savedScheme.getId()).
-                stepId(workflowSteps.get(0).getId()).
-                actionName(actionNewName).
-                showOn(states).
-                actionNextStep(CURRENT_STEP).
-                actionAssignable(false).
-                actionCommentable(false).
-                requiresCheckout(false).
-                actionNextAssign(adminRoleId).
-                whoCanUse(Arrays.asList("")).
-                actionCondition("").
-                build();
+        final WorkflowActionForm form = new WorkflowActionForm.Builder()
+                .schemeId(savedScheme.getId()).
+                        stepId(workflowSteps.get(0).getId()).
+                        actionName(actionNewName).
+                        showOn(states).
+                        actionNextStep(CURRENT_STEP).
+                        actionAssignable(false).
+                        actionCommentable(false).
+                        requiresCheckout(false).
+                        actionNextAssign(adminRoleId).
+                        whoCanUse(Arrays.asList("")).
+                        actionCondition("").
+                        build();
 
         final String actionId = actions.get(0).getId();
         final Response updateResponse = workflowResource.updateAction(request, actionId, form);
-        final ResponseEntityView updateResponseEv = ResponseEntityView.class.cast(updateResponse.getEntity());
-        final WorkflowAction workflowAction = WorkflowAction.class.cast(updateResponseEv.getEntity());
-        assertEquals(actionNewName,workflowAction.getName());
+        final ResponseEntityView updateResponseEv = ResponseEntityView.class
+                .cast(updateResponse.getEntity());
+        final WorkflowAction workflowAction = WorkflowAction.class
+                .cast(updateResponseEv.getEntity());
+        assertEquals(actionNewName, workflowAction.getName());
         final HttpServletRequest request2 = mock(HttpServletRequest.class);
         final Response findActionResponse = workflowResource.findAction(request2, actionId);
-        final ResponseEntityView findActionResponseEv = ResponseEntityView.class.cast(findActionResponse.getEntity());
+        final ResponseEntityView findActionResponseEv = ResponseEntityView.class
+                .cast(findActionResponse.getEntity());
         final WorkflowAction wa = WorkflowAction.class.cast(findActionResponseEv.getEntity());
         assertNotNull(wa);
-        assertEquals(actionNewName,wa.getName());
+        assertEquals(actionNewName, wa.getName());
     }
 
     /**
      * Test the delete scheme resource
-     * @throws Exception
      */
     @SuppressWarnings("unchecked")
     @Test
-    public void testDeleteScheme() throws Exception{
+    public void testDeleteScheme() throws Exception {
         final Role adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
         final String adminRoleId = adminRole.getId();
         final WorkflowScheme savedScheme = createScheme(workflowResource);
         assertNotNull(savedScheme);
-        final List<WorkflowStep> workflowSteps = addSteps(workflowResource, savedScheme,2);
+        final List<WorkflowStep> workflowSteps = addSteps(workflowResource, savedScheme, 2);
         assertFalse(workflowSteps.isEmpty());
         assertEquals(2, workflowSteps.size());
-        final List<WorkflowAction> actions = createWorkflowActions(workflowResource, savedScheme, adminRoleId, workflowSteps);
+        final List<WorkflowAction> actions = createWorkflowActions(workflowResource, savedScheme,
+                adminRoleId, workflowSteps);
         assertEquals(2, actions.size());
 
         final WorkflowStep secondStep = workflowSteps.get(1);
@@ -604,52 +668,221 @@ public class WorkflowResourceIntegrationTest {
                 request1, secondStep.getId(),
                 new WorkflowActionStepForm.Builder().actionId(firstAction.getId()).build()
         );
-        final ResponseEntityView updateResponseEv = ResponseEntityView.class.cast(saveActionToStepResponse.getEntity());
-        assertEquals(ResponseEntityView.OK,updateResponseEv.getEntity());
+        final ResponseEntityView updateResponseEv = ResponseEntityView.class
+                .cast(saveActionToStepResponse.getEntity());
+        assertEquals(ResponseEntityView.OK, updateResponseEv.getEntity());
 
         final HttpServletRequest request2 = mock(HttpServletRequest.class);
-        final Response actionsBySchemeResponse = workflowResource.findActionsByScheme(request2, savedScheme.getId());
-        final ResponseEntityView findActionsResponseEv = ResponseEntityView.class.cast(actionsBySchemeResponse.getEntity());
-        final List<WorkflowAction> actionsByScheme = List.class.cast(findActionsResponseEv.getEntity());
+        final Response actionsBySchemeResponse = workflowResource
+                .findActionsByScheme(request2, savedScheme.getId());
+        final ResponseEntityView findActionsResponseEv = ResponseEntityView.class
+                .cast(actionsBySchemeResponse.getEntity());
+        final List<WorkflowAction> actionsByScheme = List.class
+                .cast(findActionsResponseEv.getEntity());
         assertEquals(2, actionsByScheme.size());
 
         final HttpServletRequest request3 = mock(HttpServletRequest.class);
         //This returns 1 single action
-        final Response actionsByStepResponse = workflowResource.findActionByStep(request3, secondStep.getId(), firstAction.getId());
-        final ResponseEntityView findActionsByStepResponseEv = ResponseEntityView.class.cast(actionsByStepResponse.getEntity());
-        final WorkflowAction actionByStep = WorkflowAction.class.cast(findActionsByStepResponseEv.getEntity());
+        final Response actionsByStepResponse = workflowResource
+                .findActionByStep(request3, secondStep.getId(), firstAction.getId());
+        final ResponseEntityView findActionsByStepResponseEv = ResponseEntityView.class
+                .cast(actionsByStepResponse.getEntity());
+        final WorkflowAction actionByStep = WorkflowAction.class
+                .cast(findActionsByStepResponseEv.getEntity());
         assertNotNull(actionByStep);
-        assertEquals(firstAction.getId(),actionByStep.getId());
+        assertEquals(firstAction.getId(), actionByStep.getId());
 
         //test delete without archive
         final AsyncResponse asyncResponse = new MockAsyncResponse(
                 (arg) -> {
-            final Response deleteSchemeResponse = (Response)arg;
-            assertEquals(Status.FORBIDDEN.getStatusCode(), deleteSchemeResponse.getStatus());
+                    final Response deleteSchemeResponse = (Response) arg;
+                    assertEquals(Status.FORBIDDEN.getStatusCode(),
+                            deleteSchemeResponse.getStatus());
 
-            //test archive scheme
-            WorkflowSchemeForm form = new WorkflowSchemeForm.Builder().schemeDescription("Delete scheme").schemeArchived(true).schemeName(savedScheme.getName()).build();
-            final HttpServletRequest request5 = mock(HttpServletRequest.class);
-            final Response updateResponse = workflowResource.updateScheme(request5,savedScheme.getId(), form);
-            assertEquals(Response.Status.OK.getStatusCode(), updateResponse.getStatus());
+                    //test archive scheme
+                    WorkflowSchemeForm form = new WorkflowSchemeForm.Builder()
+                            .schemeDescription("Delete scheme").schemeArchived(true)
+                            .schemeName(savedScheme.getName()).build();
+                    final HttpServletRequest request5 = mock(HttpServletRequest.class);
+                    final Response updateResponse = workflowResource
+                            .updateScheme(request5, savedScheme.getId(), form);
+                    assertEquals(Response.Status.OK.getStatusCode(), updateResponse.getStatus());
 
-            //test delete scheme
-            final AsyncResponse asyncResponse2 = new MockAsyncResponse(
-                    arg2 -> {
-                        final Response deleteSchemeResponse2 =(Response) arg2;
-                        assertEquals(Status.OK.getStatusCode(), deleteSchemeResponse2.getStatus());
-                        return true;
-                    },
-                    (arg2) -> true
-            );
-            final HttpServletRequest request6 = mock(HttpServletRequest.class);
-            workflowResource.deleteScheme(request6, asyncResponse2, savedScheme.getId());
+                    //test delete scheme
+                    final AsyncResponse asyncResponse2 = new MockAsyncResponse(
+                            arg2 -> {
+                                final Response deleteSchemeResponse2 = (Response) arg2;
+                                assertEquals(Status.OK.getStatusCode(),
+                                        deleteSchemeResponse2.getStatus());
+                                return true;
+                            },
+                            (arg2) -> true
+                    );
+                    final HttpServletRequest request6 = mock(HttpServletRequest.class);
+                    workflowResource.deleteScheme(request6, asyncResponse2, savedScheme.getId());
 
-            return true;
-        }, (arg) -> true);
+                    return true;
+                }, (arg) -> true);
 
         final HttpServletRequest request4 = mock(HttpServletRequest.class);
         workflowResource.deleteScheme(request4, asyncResponse, savedScheme.getId());
+    }
+
+    @Test
+    public void Test_Get_Bulk_Actions_For_Query() {
+        final String luceneQuery = "-contentType:Host -baseType:3 +(conhost:48190c8c-42c4-46af-8d1a-0cd5db894797 conhost:SYSTEM_HOST) +languageId:1 +deleted:false +working:true";
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final BulkActionForm form = new BulkActionForm(null, luceneQuery);
+        final Response response = workflowResource.getBulkActions(request, form);
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        final ResponseEntityView entityView = ResponseEntityView.class.cast(response.getEntity());
+        final BulkActionView wa = BulkActionView.class.cast(entityView.getEntity());
+        assertNotNull(wa);
+        final List<BulkWorkflowSchemeView> schemes = wa.getSchemes();
+        assertNotNull(schemes);
+
+        final Optional<BulkWorkflowSchemeView> documentManagementOptional = schemes.stream()
+                .filter(bulkWorkflowSchemeView -> "Document Management"
+                        .equals(bulkWorkflowSchemeView.getScheme().getName())).findFirst();
+        final Optional<BulkWorkflowSchemeView> systemWorkflowOptional = schemes.stream()
+                .filter(bulkWorkflowSchemeView -> "System Workflow"
+                        .equals(bulkWorkflowSchemeView.getScheme().getName())).findFirst();
+
+        assertTrue(documentManagementOptional.isPresent());
+        assertTrue(systemWorkflowOptional.isPresent());
+
+        final BulkWorkflowSchemeView documentManagementScheme = documentManagementOptional.get();
+        final List<WorkflowAction> documentActions = getWorkflowActions(documentManagementScheme);
+
+        assertTrue(documentActions.stream()
+                .anyMatch(action -> "Save as Draft".equals(action.getName())));
+        assertTrue(documentActions.stream()
+                .anyMatch(action -> "Send for Review".equals(action.getName())));
+        assertTrue(documentActions.stream()
+                .anyMatch(action -> "Send to Legal".equals(action.getName())));
+        assertTrue(documentActions.stream().anyMatch(action -> "Publish".equals(action.getName())));
+        assertTrue(
+                documentActions.stream().anyMatch(action -> "Republish".equals(action.getName())));
+        assertTrue(
+                documentActions.stream().anyMatch(action -> "Unpublish".equals(action.getName())));
+        assertTrue(documentActions.stream().anyMatch(action -> "Archive".equals(action.getName())));
+        assertTrue(documentActions.stream()
+                .anyMatch(action -> "Tweet This!".equals(action.getName())));
+
+        final BulkWorkflowSchemeView systemWorkflowScheme = systemWorkflowOptional.get();
+        final List<WorkflowAction> systemActions = getWorkflowActions(systemWorkflowScheme);
+
+        assertTrue(systemActions.stream().anyMatch(action -> "Republish".equals(action.getName())));
+        assertTrue(systemActions.stream().anyMatch(action -> "Unpublish".equals(action.getName())));
+        assertTrue(systemActions.stream().anyMatch(action -> "Copy".equals(action.getName())));
+        assertTrue(systemActions.stream().anyMatch(action -> "Save".equals(action.getName())));
+        assertTrue(systemActions.stream()
+                .anyMatch(action -> "Save / Publish".equals(action.getName())));
+
+    }
+
+
+    @Test
+    public void Test_Get_Bulk_Actions_For_Contentlet_Ids() throws Exception {
+        final Map<WorkflowScheme, Map<ContentType, List<Contentlet>>> sampleContent = collectSampleContent(100);
+        final Set<WorkflowScheme> workflowSchemes = sampleContent.keySet();
+        for (final WorkflowScheme scheme : workflowSchemes) {
+
+            final List<WorkflowStep> steps = workflowAPI.findSteps(scheme);
+
+            final Set<String> availableActions =
+                    workflowAPI.findActions(steps, APILocator.systemUser()).stream().map(WorkflowAction::getId).collect(Collectors.toSet());
+
+            final Map<ContentType, List<Contentlet>> contentsByType = sampleContent.get(scheme);
+            final Set<ContentType> types = contentsByType.keySet();
+            for (final ContentType ct : types) {
+                final List<Contentlet> contentlets = contentsByType.get(ct);
+                final List<String> contentletIds = contentlets.stream().map(Contentlet::getInode)
+                        .collect(Collectors.toList());
+
+                if(!UtilMethods.isSet(contentletIds)){
+                    // for some reason no contetlets of the current type were found.
+                   continue;
+                }
+
+                final HttpServletRequest request = mock(HttpServletRequest.class);
+                final BulkActionForm form = new BulkActionForm(contentletIds, null);
+                final Response response = workflowResource.getBulkActions(request, form);
+                assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+                final ResponseEntityView entityView = ResponseEntityView.class
+                        .cast(response.getEntity());
+                final BulkActionView wa = BulkActionView.class.cast(entityView.getEntity());
+                assertNotNull(wa);
+                final List<BulkWorkflowSchemeView> schemes = wa.getSchemes();
+                assertNotNull(schemes);
+
+                for (final BulkWorkflowSchemeView view : schemes) {
+                    assertEquals("Schema id does not match", scheme.getId(), view.getScheme().getId());
+                    assertEquals("Schema name does not match", scheme.getName(), view.getScheme().getName());
+
+                    for (final BulkWorkflowStepView stepView : view.getSteps()) {
+                        assertTrue("Expected step " + stepView.getStep().getWorkflowStep().getName()  + " Not found."  ,
+                                steps.contains(stepView.getStep().getWorkflowStep())
+                        );
+                        final List<CountWorkflowAction> workflowActions = stepView.getActions();
+                        for (final CountWorkflowAction workflowAction : workflowActions) {
+                            assertTrue("Expected action " + workflowAction.getWorkflowAction().getName() + " Not found." ,
+                                    availableActions.contains(workflowAction.getWorkflowAction().getId())
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+    @Test
+    public void Test_Fire_Bulk_Actions_For_Contentlet_Id() throws Exception {
+
+        final Map<WorkflowScheme, Map<ContentType, List<Contentlet>>> sampleContent = collectSampleContent(10);
+        final Set<WorkflowScheme> workflowSchemes = sampleContent.keySet();
+        for (final WorkflowScheme scheme : workflowSchemes) {
+            final Map<ContentType,List<Contentlet>> samples = sampleContent.get(scheme);
+            for(final ContentType ct: samples.keySet()){
+               final List<Contentlet> contentlets = samples.get(ct);
+               for (final Contentlet contentlet:contentlets){
+                   final List<WorkflowStep> steps = workflowAPI.findStepsByContentlet(contentlet);
+                   final List<WorkflowAction> actions = workflowAPI.findActions(steps, APILocator.systemUser());
+
+                   final WorkflowAction action = actions.stream().findAny().get();
+                   final HttpServletRequest request = mock(HttpServletRequest.class);
+                   final FireBulkActionsForm form = new FireBulkActionsForm(null,
+                           Collections.singletonList(contentlet.getInode()), action.getId()
+                   );
+
+                   final AsyncResponse asyncResponse = new MockAsyncResponse((arg) -> {
+                       final Response response = (Response) arg;
+                       final int code = response.getStatus();
+                       if(code == Status.INTERNAL_SERVER_ERROR.getStatusCode()){
+                           final Map map = Map.class.cast(response.getEntity());
+                           final Object o = map.get("message");
+                           final String message = o.toString();
+                           //Just ignore this error for now
+                               if(!message.contains("rejected from java.util.concurrent.ThreadPoolExecutor")){
+                                   fail(message);
+                               }
+                       } else {
+                           assertEquals(Status.OK.getStatusCode(), code);
+                           final ResponseEntityView entityView = ResponseEntityView.class.cast(response.getEntity());
+                           final BulkActionsResultView wa = BulkActionsResultView.class.cast(entityView.getEntity());
+                           assertNotNull(wa);
+                       }
+
+
+                       return true;
+                   }, o -> true);
+
+                   Logger.info(getClass(), "Executing Action: '"+action.getName() + "' on contentlet: '" + contentlet.getName() + "'");
+                   workflowResource.fireBulkActions(request, asyncResponse ,form);
+               }
+            }
+        }
     }
 
 }

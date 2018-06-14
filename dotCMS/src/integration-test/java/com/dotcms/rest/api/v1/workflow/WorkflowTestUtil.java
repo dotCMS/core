@@ -3,8 +3,9 @@ package com.dotcms.rest.api.v1.workflow;
 import static com.dotmarketing.business.Role.ADMINISTRATOR;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
-
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.workflow.form.WorkflowActionForm;
@@ -14,6 +15,7 @@ import com.dotcms.workflow.form.WorkflowStepAddForm;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
@@ -31,6 +33,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.RandomStringUtils;
 
@@ -46,6 +49,8 @@ public abstract class WorkflowTestUtil {
     static final String ACTION_NAME_PREFIX = "action::";
     static final String CURRENT_STEP = "currentstep";
 
+    public static final String SYSTEM_WORKFLOW = "System Workflow";
+    public static final String DM_WORKFLOW = "Document Management";
 
     static void doCleanUp(final WorkflowResource workflowResource, final WorkflowAPI workflowAPI)
             throws Exception {
@@ -59,11 +64,11 @@ public abstract class WorkflowTestUtil {
         }
     }
 
-    static String stepName() {
+    public static String stepName() {
         return STEP_NAME_PREFIX + RandomStringUtils.random(20, true, true);
     }
 
-    static String schemeName() {
+    public static String schemeName() {
         return SCHEME_NAME_PREFIX + RandomStringUtils.random(20, true, true);
     }
 
@@ -312,4 +317,51 @@ public abstract class WorkflowTestUtil {
 
         return exportObjectForm;
     }
+
+    static  Map<ContentType, List<Contentlet>> findContentSamplesByType(
+            final List<ContentType> contentTypes, final int limit) throws Exception {
+        final Map<ContentType, List<Contentlet>> contentTypeSamplesMap = new HashMap<>();
+
+        for (final ContentType contentType : contentTypes) {
+
+            final List<Contentlet> contentlets = APILocator.getContentletAPI()
+                    .search("+contentType:" + contentType.variable() +
+                                    " +languageId:1 +deleted:false ", limit, 0,
+                            "modDate desc",
+                            APILocator.systemUser(), false);
+
+            contentTypeSamplesMap.computeIfAbsent(contentType, ct -> new ArrayList<>(limit))
+                    .addAll(contentlets);
+
+        }
+        return contentTypeSamplesMap;
+    }
+
+    static Map<WorkflowScheme,Map<ContentType, List<Contentlet>>> collectSampleContent(final int limit) throws Exception{
+        final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+        final Map<WorkflowScheme,Map<ContentType, List<Contentlet>>> contentByWorkflowAndType = new HashMap<>();
+        final List<WorkflowScheme> workflowSchemes = workflowAPI.findSchemes(false);
+        for(final WorkflowScheme scheme:workflowSchemes){
+            final List<ContentType> contentTypes = workflowAPI.findContentTypesForScheme(scheme);
+            contentByWorkflowAndType.put(scheme, findContentSamplesByType(contentTypes, limit));
+        }
+        return contentByWorkflowAndType;
+    }
+
+    public static List<WorkflowAction> getWorkflowActions(final BulkWorkflowSchemeView workflowScheme) {
+        final List<WorkflowAction> workflowActions = new ArrayList<>();
+        final List<BulkWorkflowStepView> systemWorkflowSteps = workflowScheme.getSteps();
+        for (final BulkWorkflowStepView stepView : systemWorkflowSteps) {
+            final CountWorkflowStep countWorkflowStep = stepView.getStep();
+            assertTrue(countWorkflowStep.getCount() > 0);
+            final List<CountWorkflowAction> actions = stepView.getActions();
+            workflowActions.addAll(
+                    actions.stream().map(CountWorkflowAction::getWorkflowAction)
+                            .collect(Collectors.toList())
+            );
+        }
+        return workflowActions;
+    }
+
+
 }
