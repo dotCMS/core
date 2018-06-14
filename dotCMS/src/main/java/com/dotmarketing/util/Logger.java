@@ -6,12 +6,10 @@
 package com.dotmarketing.util;
 
 import com.dotmarketing.loggers.Log4jUtil;
-import org.apache.logging.log4j.LogManager;
-
 import java.io.File;
 import java.util.WeakHashMap;
 import java.util.function.Supplier;
-
+import org.apache.logging.log4j.LogManager;
 import org.apache.velocity.servlet.VelocityServlet;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
@@ -45,6 +43,18 @@ public class Logger{
 			map.put(cl, logger);
 		}
 		return map.get(cl);
+	}
+
+	public static void info(Class clazz, final Supplier<String> message) {
+		if (isInfoEnabled(clazz)) {
+			info(clazz, message.get());
+		}
+	}
+
+	public static void info(final Object ob, final Supplier<String> message) {
+		if (isInfoEnabled(ob.getClass())) {
+			info(ob.getClass(), message.get());
+		}
 	}
 
     public static void info(Object ob, String message) {
@@ -170,6 +180,18 @@ public class Logger{
     	}
         logger.fatal(message, ex);
     }
+
+	public static void warn(final Object ob, final Supplier<String> message) {
+		if (isWarnEnabled(ob.getClass())) {
+			warn(ob.getClass(), message.get());
+		}
+	}
+
+	public static void warn(Class clazz, final Supplier<String> message) {
+		if (isWarnEnabled(clazz)) {
+			warn(clazz, message.get());
+		}
+	}
 
     public static void warn(Object ob, String message) {
     	warn(ob.getClass(), message);

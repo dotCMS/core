@@ -41,7 +41,7 @@ public class NavTool implements ViewTool {
     private long currentLanguage = 0;
     private ViewContext context;
     @VisibleForTesting
-    long defaultLanguage = 0;
+    final long defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage().getId();
     static {
 
         try {
@@ -62,7 +62,6 @@ public class NavTool implements ViewTool {
             this.currentLanguage = WebAPILocator.getLanguageWebAPI()
                 .getLanguage(this.request)
                 .getId();
-            this.defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage().getId();
         } catch (Exception e) {
             Logger.warn(this, e.getMessage(), e);
         }

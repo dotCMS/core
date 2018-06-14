@@ -59,7 +59,7 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
 
         try {
             List<Structure> structures = this.structureAPI.find(user, false, false, queryCondition,
-                    orderby, limit, offset, direction.toString().toLowerCase());
+                    orderby, limit, offset, UtilMethods.isSet(direction)?direction.toString().toLowerCase(): OrderDirection.ASC.name());
 
             List<ContentType> contentTypes = new StructureTransformer(structures).asList();
             List<Map<String, Object>> contentTypesTransform = transformContentTypesToMap(contentTypes);
@@ -124,11 +124,11 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
     final List<String> andClauses = new ArrayList<>();
 
 
-    StringTokenizer st = new StringTokenizer(filterUpper, " :,-");
+    final StringTokenizer st = new StringTokenizer(filterUpper, " :,-");
     while (st.hasMoreTokens()) {
       final String tok = st.nextToken();
       final Set<String> orClauses = new HashSet<>();
-      for (BaseContentType btype : BaseContentType.values()) {
+      for (final BaseContentType btype : BaseContentType.values()) {
         if (btype.name().equals(tok)) {
           orClauses.add("structuretype=" + btype.getType());
           break;
@@ -141,10 +141,8 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
       }
       andClauses.add('(' + String.join(" or ", orClauses) +')');
     }
-    
-    String ret = '(' + String.join(" and ", andClauses) + ')';
 
-    return ret ;
+    return '(' + String.join(" and ", andClauses) + ')';
 
   }
 }
