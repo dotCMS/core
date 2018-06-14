@@ -1955,10 +1955,13 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
 
     function editFileAsset (contInode, structureInode){
         editContentletEvent(contInode);
+        hidePopUp('context_menu_popup_'+contInode);
+
     }
 
     function editHTMLPageAsset (contInode, structureInode) {
         editContentletEvent(contInode);
+        hidePopUp('context_menu_popup_'+contInode);
     }
 
     function previewHTMLPageAsset(id,referer) {
