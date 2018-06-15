@@ -671,9 +671,15 @@
 
 	//Event actions functions
 	function editEvent(inode, referer) {
-			var loc = '';
-			loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/calendar/edit_event" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=' + inode + '&referer=' + escape(referer);
-			window.location = loc;
+        var customEvent = document.createEvent("CustomEvent");
+        customEvent.initCustomEvent("ng-event", false, false,  {
+            name: "edit-contentlet",
+            data: {
+                inode: inode
+            }
+        });
+        document.dispatchEvent(customEvent);
+        hideEventDetail();
 	}
 
 	function editRecurrentEvent(inode, startDate, endDate, referer) {
@@ -829,6 +835,17 @@
 		refreshCalendarView();
 	}
 
+    function createContentlet(url) {
+        var customEvent = document.createEvent("CustomEvent");
+        customEvent.initCustomEvent("ng-event", false, false,  {
+            name: "create-contentlet",
+            data: {
+                url: url
+            }
+        });
+        document.dispatchEvent(customEvent);
+    }
+
 	function addEvent() {
 		var startDate = selectedDate.getFullYear() + '-' + (selectedDate.getMonth() + 1) + '-' + selectedDate.getDate() + " 00:00";
 		var endDate = selectedDate.getFullYear() + '-' + (selectedDate.getMonth() + 1) + '-' + selectedDate.getDate() + " 00:00";
@@ -839,7 +856,7 @@
 					<portlet:param name="referer" value="<%= referer %>" />
 					<portlet:param name="inode" value="" />
 				</portlet:actionURL>&date1=' + startDate + '&date2=' + endDate;
-		window.location = addURL;
+		createContentlet(addURL);
 	}
 
 	function transformTimeZone(date,offset)

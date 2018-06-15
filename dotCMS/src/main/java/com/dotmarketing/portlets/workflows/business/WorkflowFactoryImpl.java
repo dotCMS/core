@@ -1189,7 +1189,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	 * @return
 	 * @throws DotDataException
 	 */
-	private List<WorkflowStep> findProxiesSteps(final WorkflowAction action) throws DotDataException {
+	public List<WorkflowStep> findProxiesSteps(final WorkflowAction action) throws DotDataException {
 
 		final ImmutableList.Builder<WorkflowStep> stepsBuilder =
 				new ImmutableList.Builder<>();

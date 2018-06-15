@@ -320,6 +320,10 @@ public class LocaleUtil {
      */
     public static Locale processCustomLocale(HttpServletRequest request, HttpSession session) throws SystemException, PortalException, DotDataException, DotSecurityException {
 
+        if (null != session && null != session.getAttribute(Globals.LOCALE_KEY)) {
+            return (Locale) session.getAttribute(Globals.LOCALE_KEY);
+        }
+
         //Set the locale based on the Cookies under the key CookieKeys.ID to the session, if it is a valid session.
         Locale locale = processLocaleUserCookie(request, session);
         if ( null == locale ) {
@@ -332,8 +336,10 @@ public class LocaleUtil {
             locale = request.getLocale();
         }
 
-        if ( null == locale ) {
-            session.setAttribute(Globals.LOCALE_KEY, locale);
+        if (null != locale) {
+            if (null != session) {
+                session.setAttribute(Globals.LOCALE_KEY, locale);
+            }
         }
 
         return locale;
@@ -383,7 +389,6 @@ public class LocaleUtil {
 
         Locale locale = null;
         String uId = null;
-        String cookieValue;
 
         if (null != session) {
 
@@ -392,19 +397,20 @@ public class LocaleUtil {
 
             if (cookies != null) {
 
-                cookieValue = CookieUtil.get
-                    (request.getCookies(), CookieKeys.JWT_ACCESS_TOKEN);
-
-                if (UtilMethods.isSet(cookieValue)) {
+                final String jwtAccessToken =
+                        UtilMethods.getCookieValue(
+                                HttpServletRequest.class.cast(request).getCookies(),
+                                CookieKeys.JWT_ACCESS_TOKEN);
+                if (UtilMethods.isSet(jwtAccessToken)) {
 
                     try {
 
-                        uId = getJsonWebTokenUtils().getUserIdFromJsonWebToken(cookieValue);
-                    } catch (Exception e) {
+                        uId = getJsonWebTokenUtils().getUserIdFromJsonWebToken(jwtAccessToken);
 
-                        _log.info("An invalid attempt to login as " + uId + " has been made from IP: "
-                            + request.getRemoteAddr());
-                        uId = null;
+                    } catch (Exception e) {
+                        //Handling this invalid token exception
+                        JsonWebTokenUtils.getInstance()
+                                .handleInvalidTokenExceptions(LocaleUtil.class, e, request, null);
                     }
                 }
             }

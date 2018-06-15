@@ -64,6 +64,7 @@ public class VisitorLoggerTest {
 
             mockObjects(mockRequest);
             VisitorLogger.log(mockRequest, mockResponse);
+            Thread.sleep(3000);
             Assert.assertTrue(UtilMethods.isSet(mockedAppender.message));
         } finally{
             if (logger !=null && mockedAppender!=null){
@@ -80,8 +81,8 @@ public class VisitorLoggerTest {
 
         Assert.assertTrue(UtilMethods.isSet(result));
         Assert.assertTrue(result.stream()
-                .filter(constructor -> constructor.getDeclaringClass().getName()
-                        .equals(CustomCharacterTest.class.getName())).findAny().isPresent());
+                .anyMatch(constructor -> constructor.getDeclaringClass().getName()
+                        .equals(CustomCharacterTest.class.getName())));
         VisitorLogger.removeConstructor(CustomCharacterTest.class);
     }
 

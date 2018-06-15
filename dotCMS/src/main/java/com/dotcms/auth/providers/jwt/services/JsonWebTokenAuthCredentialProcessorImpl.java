@@ -62,7 +62,11 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
                 throw new SecurityException("Invalid Json Web Token", Response.Status.BAD_REQUEST);
             }
 
-            user = jsonWebTokenUtils.getUser(jsonWebToken.trim());
+            try {
+                user = jsonWebTokenUtils.getUser(jsonWebToken.trim());
+            } catch (Exception e) {
+                this.jsonWebTokenUtils.handleInvalidTokenExceptions(this.getClass(), e, null, null);
+            }
 
             if(!UtilMethods.isSet(user)) {
                 // "Invalid syntax for username and password"

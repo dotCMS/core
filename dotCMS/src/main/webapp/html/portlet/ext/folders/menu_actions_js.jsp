@@ -707,15 +707,7 @@
 	//Events
 
 	function editEvent (objId, userId, referer, live, working, write) {
-		//if (write=="1") {
-			var loc = '';
-			loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/calendar/edit_event" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=' + objId + '&referer=' + referer;
-			if(inFrame){
-				window.location = loc;
-			}else{
-				top.location = loc;
-			}
-		//}
+        editContentlet(objId);
 	}
 
 	function publishEvent (objId, userId, referer, live, working, write) {

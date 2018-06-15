@@ -311,6 +311,15 @@ var cmsfile=null;
 		}
 	}
 
+    function emmitFieldDataChange(val) {
+        var customEvent = document.createEvent("CustomEvent");
+        customEvent.initCustomEvent("ng-event", false, false,  {
+            name: "edit-contentlet-data-updated",
+            payload: val
+        });
+        document.dispatchEvent(customEvent)
+    }
+
 	function enableWYSIWYG(textAreaId, confirmChange) {
 		if (!isWYSIWYGEnabled(textAreaId)) {
 			//Confirming the change
@@ -321,7 +330,9 @@ var cmsfile=null;
 
 			//Enabling the wysiwyg
 			try {
-				(new tinymce.Editor(textAreaId, tinyMCEProps, tinymce.EditorManager)).render();
+                var wellTinyMCE = new tinymce.Editor(textAreaId, tinyMCEProps, tinymce.EditorManager);
+				wellTinyMCE.render();
+                wellTinyMCE.on('change', emmitFieldDataChange);
 			}
 			catch(e) {
 				showDotCMSErrorMessage("Enable to initialize WYSIWYG " + e.message);

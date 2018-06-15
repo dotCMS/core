@@ -535,7 +535,16 @@
         if(data["contentletInode"] != null && isInodeSet(data["contentletInode"])){
             $('contentletInode').value = data["contentletInode"];
             currentContentletInode = data["contentletInode"];
+            contentAdmin.contentletInode=data["contentletInode"];
+            contentAdmin.contentletIdentifier=data["contentletIdentifier"];
         }
+        
+        
+
+        
+        
+        
+        
         dijit.byId('savingContentDialog').hide();
         resetHasChanged();
 
@@ -579,6 +588,11 @@
             return;
         }
         
+        
+        dijit.byId("versionsTab").attr("disabled", false);
+        dijit.byId("permissionsTab").attr("disabled", false);
+        
+        
         refreshActionPanel(data["contentletInode"]);
         // if we have a referer and the contentlet comes back checked in
         if((data["referer"] != null && data["referer"] != '' && !data["contentletLocked"]) || data["htmlPageReferer"] != null ) {
@@ -597,6 +611,33 @@
 
     }
 
+    function refreshPermissionsTab(){
+
+        var y = Math.floor(Math.random()*1123213213);
+
+        var dojoDigit=dijit.byId("permissionsRoleSelector-rolesTree")
+        if (dojoDigit) {
+        	dojoDigit.destroyRecursive(false);
+        }
+        
+        var myCp = dijit.byId("contentletPermissionCp");
+        if (myCp) {
+        	console.log("myCp", myCp);
+        	myCp.destroyRecursive(false);
+        }
+        var myDiv = dojo.byId("permissionsTabDiv");
+        if(myDiv){
+            dojo.empty(myDiv);
+        }
+        myCp = new dojox.layout.ContentPane({
+            id : "contentletPermissionCp",
+            style: "height:100%",
+            href: "/html/portlet/ext/contentlet/edit_permissions_tab_inc_wrapper.jsp?contentletId=" +contentAdmin.contentletIdentifier + "&r=" + y
+        }).placeAt(myDiv);
+    }
+
+    
+    
     function refreshVersionCp(){
         var x = dijit.byId("versions");
         var y =Math.floor(Math.random()*1123213213);
@@ -616,7 +657,8 @@
             href: "/html/portlet/ext/contentlet/contentlet_versions_inc.jsp?contentletId=" +contentAdmin.contentletIdentifier + "&r=" + y
         }).placeAt("contentletVersionsDiv");
     }
-
+    
+    
 
     function refreshRulesCp(){
 
@@ -647,32 +689,6 @@
     }
 
 
-    function refreshPermissionsTab(){
-
-        var y =Math.floor(Math.random()*1123213213);
-
-        var myCp = dijit.byId("permissionsTab");
-
-        if (!myCp) {
-            return;
-        }
-        var myDiv = dijit.byId("contentletRulezDiv");
-
-        if (myDiv) {
-            dojo.empty(myDiv);
-        }
-        var hideRulePushOptions = false
-        <%if(contentlet.getStructure().isHTMLPageAsset()){%>
-        hideRulePushOptions=true;
-        <%}%>
-        myCp = new dojox.layout.ContentPane({
-            id : "contentletRulezDivCp",
-            style: "height:100%",
-            href:  "/api/portlet/rules/include?id=" +contentAdmin.contentletIdentifier + "&r=" + y+"&hideRulePushOptions="+hideRulePushOptions
-        }).placeAt("contentletRulezDiv");
-
-
-    }
 
 
 

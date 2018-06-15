@@ -32,6 +32,8 @@ public class WorkflowAction implements Permissionable, Serializable{
 	public  static final String CURRENT_STEP = "currentstep";
 
 	private String id;
+
+
 	private String name;
 
 	@Deprecated
@@ -337,10 +339,18 @@ public class WorkflowAction implements Permissionable, Serializable{
 		return !UtilMethods.isSet(id);
 		
 	}
+
 	@Override
 	public boolean equals(Object obj) {
 		if(obj ==null || ! (obj instanceof WorkflowAction)) return false;
 		return ((WorkflowAction)obj).getId().equals(this.getId());
 	}
+
+	@Override
+	public int hashCode() {
+
+		return Objects.hash(id);
+	}
+
 
 }

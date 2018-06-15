@@ -12,7 +12,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class ContainerUUID implements Serializable{
 
     public static final String UUID_LEGACY_VALUE = "LEGACY_RELATION_TYPE";
-    public static final String UUID_DEFAULT_VALUE = "1";
+    public static final String UUID_START_VALUE = "1";
+    public static final String UUID_DEFAULT_VALUE = "-1";
 
     private final String identifier;
     private final String uuid;
@@ -22,7 +23,7 @@ public class ContainerUUID implements Serializable{
                          final @JsonProperty("uuid") String containerUUID) {
 
         this.identifier = containerIdentifier;
-        this.uuid = containerUUID;
+        this.uuid = containerUUID == null ? UUID_DEFAULT_VALUE : containerUUID;
     }
 
     public String getIdentifier() {

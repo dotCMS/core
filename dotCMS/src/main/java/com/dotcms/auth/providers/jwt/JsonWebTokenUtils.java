@@ -1,18 +1,26 @@
 package com.dotcms.auth.providers.jwt;
 
+import static com.dotcms.exception.ExceptionUtil.causedBy;
+
 import com.dotcms.auth.providers.jwt.beans.JWTBean;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
 import com.dotcms.business.LazyUserAPIWrapper;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.model.User;
+import io.jsonwebtoken.IncorrectClaimException;
+import io.jsonwebtoken.SignatureException;
 import java.util.Date;
 import java.util.UUID;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * Helper to get things in more simple way.
@@ -63,15 +71,9 @@ public class JsonWebTokenUtils {
         JWTBean jwtBean;
         String subject = null;
 
-        try {
-
-            jwtBean = this.jsonWebTokenService.parseToken(jwtAccessToken);
-            if (null != jwtBean) {
-                subject = jwtBean.getSubject();
-            }
-        } catch (Exception e) {
-            Logger.error(JsonWebTokenUtils.class, e.getMessage(), e);
-            subject = null;
+        jwtBean = this.jsonWebTokenService.parseToken(jwtAccessToken);
+        if (null != jwtBean) {
+            subject = jwtBean.getSubject();
         }
 
         return subject;
@@ -105,9 +107,8 @@ public class JsonWebTokenUtils {
                     }
                 }
             }
-        } catch (Exception e) {
+        } catch (DotDataException | DotSecurityException e) {
             Logger.error(JsonWebTokenUtils.class, e.getMessage(), e);
-            userToReturn = null;
         }
 
         return userToReturn;
@@ -133,36 +134,13 @@ public class JsonWebTokenUtils {
 
     /**
      * Gets from the json web access token, the user id decrypt.
-     *
-     * @param jwtAccessToken String
-     * @return String returns the userId, null if it is not possible to get it.
-     */
-    public String getUserId(final String jwtAccessToken) {
-
-        String userId = null;
-
-        try {
-            final String subject = this.getSubject(jwtAccessToken);
-            if (null != subject) {
-                userId = subject;
-            }
-        } catch (Exception e) {
-            Logger.error(JsonWebTokenUtils.class, e.getMessage(), e);
-            userId = null;
-        }
-
-        return userId;
-    } // getUserId
-
-    /**
-     * Gets from the json web access token, the user id decrypt.
      * This method is static just to keep an easier way to be access on a jsp.
      * @param jwtAccessToken String
      * @return String returns the userId, null if it is not possible to get it.
      */
     public static String getUserIdFromJsonWebToken(final String jwtAccessToken) {
 
-        return getInstance().getUserId(jwtAccessToken);
+        return getInstance().getSubject(jwtAccessToken);
     } // getUserIdFromJsonWebToken
 
     /**
@@ -186,6 +164,51 @@ public class JsonWebTokenUtils {
 
     } // getUserIdFromJsonWebToken
 
+    /**
+     * When a Invalid JSON Web Token is found this method handles the error
+     */
+    public void handleInvalidTokenExceptions(Class from, final Throwable e,
+            HttpServletRequest request,
+            HttpServletResponse response) {
+
+        if (Logger.isDebugEnabled(from)) {
+            Logger.debug(from, e.getMessage(), e);
+        }
+
+        if (causedBy(e, SignatureException.class, IncorrectClaimException.class)) {
+            Logger.warn(from,
+                    () -> String.format("An invalid attempt to use a JWT [%s]", e.getMessage()));
+        } else {
+            //For another type of errors lets show it in the logs as an error
+            if (Logger.isErrorEnabled(from)) {
+                Logger.error(from, "An invalid attempt to use a JWT", e);
+            }
+        }
+
+        String securityLoggerMessage;
+        if (null != request) {
+            securityLoggerMessage = String.format("An invalid attempt to use an invalid "
+                            + "JWT has been made from IP [%s] [%s]", request.getRemoteAddr(),
+                    e.getMessage());
+        } else {
+            securityLoggerMessage = String
+                    .format("An invalid attempt to use a JWT [%s]", e.getMessage());
+        }
+        SecurityLogger.logInfo(from, () -> securityLoggerMessage);
+
+        if (null != request && null != response) {
+            try {
+                //Force a clean up of the invalid token cookie
+                APILocator.getLoginServiceAPI().doActionLogout(request, response);
+            } catch (Exception internalException) {
+                if (Logger.isDebugEnabled(from)) {
+                    Logger.debug(from,
+                            "Unable to apply a logout action when invalid JWT was found.",
+                            internalException);
+                }
+            }
+        }
+    }
 
     private class IsValidResult {
 
