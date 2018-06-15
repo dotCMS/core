@@ -104,9 +104,9 @@ public class ContentletLoader implements DotLoader {
 
         sb.append("#set($CONTENT_TYPE='").append(content.getContentType().variable()).append("' )");
 
-        BaseContentType baseType = content.get("formId") == null ? content.getContentType().baseType() : BaseContentType.FORM;
+        final BaseContentType baseType = content.get("formId") == null ? content.getContentType().baseType() : BaseContentType.FORM;
         sb.append("#set($CONTENT_BASE_TYPE='").append(baseType).append("' )");
-        String contentTypeId = content.get("formId") == null ? content.getContentType().id() : content.get("formId").toString();
+        final String contentTypeId = content.get("formId") == null ? content.getContentType().id() : content.get("formId").toString();
         sb.append("#set($CONTENT_TYPE_ID='").append(contentTypeId).append("' )");
         sb.append("#set($CONTENT_LANGUAGE='").append(content.getLanguageId()).append("' )");
 

@@ -193,7 +193,7 @@ public class FormAPIImpl implements FormAPI {
 
 	@Override
 	@WrapInTransaction
-	public Contentlet createDefaultFormContent(String formId) throws DotDataException {
+	public Contentlet createDefaultFormContent(final String formId) throws DotDataException {
 		final User systemUser = userAPI.getSystemUser();
 
 
@@ -204,16 +204,16 @@ public class FormAPIImpl implements FormAPI {
 		}
 
 		try {
-			List<Role> roles = perAPI.getRoles(formId, PermissionAPI.PERMISSION_READ + PermissionAPI.PERMISSION_EDIT + PermissionAPI.PERMISSION_PUBLISH, "", 0, 10, true);
+			final List<Role> roles = perAPI.getRoles(formId, PermissionAPI.PERMISSION_READ + PermissionAPI.PERMISSION_EDIT + PermissionAPI.PERMISSION_PUBLISH, "", 0, 10, true);
 
-			ContentType formStructure = APILocator.getContentTypeAPI(systemUser).find(formId);
-			String formStructureTitle = formStructure.name();
-			String formTitleFieldValue = APILocator.getContentTypeFieldAPI().byContentTypeAndVar(formStructure, FormAPI.FORM_TITLE_FIELD_VELOCITY_VAR_NAME).values();
+			final ContentType formStructure = APILocator.getContentTypeAPI(systemUser).find(formId);
+			final String formStructureTitle = formStructure.name();
+			final String formTitleFieldValue = APILocator.getContentTypeFieldAPI().byContentTypeAndVar(formStructure, FormAPI.FORM_TITLE_FIELD_VELOCITY_VAR_NAME).values();
 
 			Contentlet formInstance = new Contentlet();
 			formInstance.setStructureInode(formWidget.getInode());
 			formInstance.setProperty(FormAPI.FORM_WIDGET_FORM_ID_FIELD_VELOCITY_VAR_NAME, formId);
-			Field codeField = formWidget.getFieldVar(FormAPI.FORM_WIDGET_CODE_VELOCITY_VAR_NAME);
+			final Field codeField = formWidget.getFieldVar(FormAPI.FORM_WIDGET_CODE_VELOCITY_VAR_NAME);
 			formInstance.setProperty(FormAPI.FORM_WIDGET_CODE_VELOCITY_VAR_NAME, codeField.getDefaultValue());
 			formInstance.setStringProperty(FormAPI.FORM_WIDGET_TITLE_VELOCITY_VAR_NAME, (UtilMethods.isSet(formTitleFieldValue)) ? formTitleFieldValue : formStructureTitle);
 
@@ -225,7 +225,7 @@ public class FormAPIImpl implements FormAPI {
 			HibernateUtil.startTransaction();
 			formInstance = conAPI.checkin(formInstance, systemUser, true);
 				/*Permission for cmsanonymous*/
-			Permission p = new Permission(formInstance.getPermissionId(), APILocator.getRoleAPI().loadCMSAnonymousRole().getId(), PermissionAPI.PERMISSION_READ + PermissionAPI.PERMISSION_EDIT + PermissionAPI.PERMISSION_PUBLISH, true);
+			final Permission p = new Permission(formInstance.getPermissionId(), APILocator.getRoleAPI().loadCMSAnonymousRole().getId(), PermissionAPI.PERMISSION_READ + PermissionAPI.PERMISSION_EDIT + PermissionAPI.PERMISSION_PUBLISH, true);
 			HibernateUtil.commitTransaction();
 			try {
 				perAPI.save(p, formInstance, APILocator.getUserAPI().getSystemUser(), false);
@@ -234,9 +234,9 @@ public class FormAPIImpl implements FormAPI {
 			}
 
 			if (roles.size() > 0) {
-				for (Role role : roles) {
-					String id = role.getId();
-					Permission per = new Permission(formInstance.getPermissionId(), id, PermissionAPI.PERMISSION_READ + PermissionAPI.PERMISSION_EDIT + PermissionAPI.PERMISSION_PUBLISH, true);
+				for (final Role role : roles) {
+					final String id = role.getId();
+					final Permission per = new Permission(formInstance.getPermissionId(), id, PermissionAPI.PERMISSION_READ + PermissionAPI.PERMISSION_EDIT + PermissionAPI.PERMISSION_PUBLISH, true);
 					try {
 						perAPI.save(per, formInstance, APILocator.getUserAPI().getSystemUser(), false);
 					} catch (Exception e) {

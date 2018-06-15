@@ -177,7 +177,7 @@ public class ContainerResource implements Serializable {
 
         final InitDataObject initData = webResource.init(true, req, true);
         final User user = initData.getUser();
-        PageMode mode = PageMode.EDIT_MODE;
+        final PageMode mode = PageMode.EDIT_MODE;
         final Language landId = WebAPILocator.getLanguageWebAPI()
             .getLanguage(req);
         
@@ -276,7 +276,7 @@ public class ContainerResource implements Serializable {
         return velocityUtil.merge(key.path, context);
     }
 
-    private Container getContainer(String containerId, User user) throws DotDataException, DotSecurityException {
+    private Container getContainer(final String containerId, final User user) throws DotDataException, DotSecurityException {
         final PageMode mode = PageMode.EDIT_MODE;
         final ShortyId containerShorty = this.shortyAPI.getShorty(containerId)
                 .orElseGet(() -> {

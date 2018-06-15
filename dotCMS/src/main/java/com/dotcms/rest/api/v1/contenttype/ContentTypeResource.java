@@ -343,7 +343,7 @@ public class ContentTypeResource implements Serializable {
 
 		try {
 
-			Map<String, Object> extraParams = types == null ? Collections.EMPTY_MAP :
+			final Map<String, Object> extraParams = types == null ? Collections.EMPTY_MAP :
 					ImmutableMap.<String, Object>builder()
 							.put(ContentTypesPaginator.TYPE_PARAMETER_NAME,
 									Arrays.stream(types.split(","))

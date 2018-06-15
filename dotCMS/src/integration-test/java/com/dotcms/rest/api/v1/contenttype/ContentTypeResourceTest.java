@@ -176,7 +176,7 @@ public class ContentTypeResourceTest {
 		Response responseExpected = Response.ok(new ResponseEntityView(contentTypes)).build();
 
 		final PaginationUtil paginationUtil = mock(PaginationUtil.class);
-		Map<String, Object> extraParams = new TestHashMap<>();
+		final Map<String, Object> extraParams = new TestHashMap<>();
 
 		extraParams.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, list(BaseContentType.valueOf("FORM")));
 
@@ -186,7 +186,7 @@ public class ContentTypeResourceTest {
 
 		final ContentTypeResource resource = new ContentTypeResource
 				(new ContentTypeHelper(), webResource, paginationUtil, WorkflowHelper.getInstance(), permissionAPI);
-		Response response = resource.getContentTypes(request, filter, page, perPage, orderBy, direction.toString(), "FORM");
+		final Response response = resource.getContentTypes(request, filter, page, perPage, orderBy, direction.toString(), "FORM");
 		RestUtilTest.verifySuccessResponse(response);
 
 		assertEquals(responseExpected.getEntity(), response.getEntity());
@@ -529,9 +529,9 @@ public class ContentTypeResourceTest {
 				return false;
 			}
 
-			for (Object key : other.keySet()) {
-				Object otherValue = other.get(key);
-				Object value = this.get(key);
+			for (final Object key : other.keySet()) {
+				final Object otherValue = other.get(key);
+				final Object value = this.get(key);
 
 				if (otherValue.getClass().isArray() && value.getClass().isArray()) {
 					if (!Arrays.deepEquals((Object[]) otherValue, (Object[]) value)) {

@@ -180,7 +180,7 @@ public class VelocityUtil {
 		return getWebContext(getBasicContext(), request, response);
 	}
 
-	public ChainedContext getContext(HttpServletRequest request, HttpServletResponse response) {
+	public ChainedContext getContext(final HttpServletRequest request, final HttpServletResponse response) {
 		return getWebContext(getBasicContext(), request, response);
 	}
 	
@@ -246,7 +246,7 @@ public class VelocityUtil {
 
 	}
 
-	public String  merge(String templatePath, Context ctx) {
+	public String  merge(final String templatePath, final Context ctx) {
 		try {
 			return mergeTemplate(templatePath, ctx);
 		} catch (ResourceNotFoundException | ParseErrorException e) {
