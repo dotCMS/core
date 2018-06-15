@@ -98,22 +98,10 @@ public class ESClient {
 
                     shutDownNode();
 
-                    final String node_id = ConfigUtils.getServerId();
-                    final String esPathHome = getESPathHome();
 
-                    Logger.info(this, "***PATH HOME: " + esPathHome);
-
-                    final String yamlPath = getDefaultYaml().toString();
 
                     try{
-                        _nodeInstance = new Node(
-                                Settings.builder().
-                                loadFromStream(yamlPath, getClass().getResourceAsStream(yamlPath), false).
-                                    put( "node.name", node_id ).
-                                    put("path.home", esPathHome).
-                                    put(extSettings!=null?extSettings.build():getExtSettingsBuilder().build()).
-                                    build()
-                        ).start();
+                        _nodeInstance = new Node(loadNodeSettings(extSettings).build()).start();
                     } catch (IOException | NodeValidationException e){
                         Logger.error(this, "Error validating ES node at start.", e);
                     }
@@ -131,6 +119,32 @@ public class ESClient {
             System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_ES, String.valueOf(System.currentTimeMillis() - start));
         }
         
+    }
+
+    @VisibleForTesting
+    Builder loadNodeSettings(Builder extSettings) throws IOException {
+
+        final String node_id = ConfigUtils.getServerId();
+        final String esPathHome = getESPathHome();
+
+        Logger.info(this, "***PATH HOME: " + esPathHome);
+
+        final String yamlPath = getDefaultYaml().toString();
+
+        final Builder builder = Settings.builder().
+                loadFromStream(yamlPath, getClass().getResourceAsStream(yamlPath), false).
+                put( "node.name", node_id ).
+                put("path.home", esPathHome).
+                put(extSettings!=null?extSettings.build():getExtSettingsBuilder().build());
+
+        //Remove any discovery property when using community license
+        if (isCommunityOrStandard()){
+            List<String> keysToRemove = builder.keys().stream()
+                    .filter(key -> key.startsWith("discovery.") && !key
+                            .equals(ES_ZEN_UNICAST_HOSTS)).collect(Collectors.toList());
+            keysToRemove.forEach(elem -> builder.remove(elem));
+        }
+        return builder;
     }
 
     public void shutDownNode () {
