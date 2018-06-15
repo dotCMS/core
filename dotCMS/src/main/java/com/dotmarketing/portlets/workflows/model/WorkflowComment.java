@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.workflows.model;
 
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.UtilMethods;
 import java.io.Serializable;
 import java.util.Date;
@@ -8,10 +9,34 @@ import java.util.Map;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
 
-public class WorkflowComment  implements Serializable
+public class WorkflowComment  implements Serializable, WorkflowTimelineItem
 {
 	
-	private static final long serialVersionUID = 1L;
+	@Override
+    public Date createdDate() {
+	    return this.getCreationDate();
+    }
+
+    @Override
+    public String roleId() {
+        return this.getPostedBy();
+    }
+
+    @Override
+    public String actionId() {
+        throw new DotStateException("Not Implemented");
+    }
+
+    @Override
+    public String stepId() {
+        throw new DotStateException("Not Implemented");
+    }
+
+    @Override
+    public String commentDescription() {
+        return this.getComment();
+    }
+    private static final long serialVersionUID = 1L;
 	
 	String id;
     Date creationDate;
@@ -97,4 +122,14 @@ public class WorkflowComment  implements Serializable
 		return UtilMethods.isSet(id);
 		
 	}
+	
+    @Override
+    public String taskId() {
+        return this.getWorkflowtaskId();
+    }
+    @Override
+    public String type() {
+        // TODO Auto-generated method stub
+        return this.getClass().getSimpleName();
+    }
 }

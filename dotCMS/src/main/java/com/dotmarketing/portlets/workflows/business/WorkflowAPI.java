@@ -26,6 +26,8 @@ import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
 import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.workflows.model.WorkflowTimelineItem;
+
 import com.liferay.portal.model.User;
 import java.util.Collection;
 import java.util.EnumSet;
@@ -691,4 +693,12 @@ public interface WorkflowAPI {
 	 * @return Future BulkActionsResultView
 	 */
 	Future<BulkActionsResultView> fireBulkActions(WorkflowAction action, User user, List<String> contentletIds) throws DotDataException;
+
+	/**
+	 * Returns date ordered list that is made up of workflow history items and workflow comment items
+	 * @param task
+	 * @return
+	 * @throws DotDataException
+	 */
+    List<WorkflowTimelineItem> getCommentsAndChangeHistory(WorkflowTask task) throws DotDataException;
 }
