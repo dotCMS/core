@@ -50,7 +50,7 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
     public PaginatedArrayList<Map<String, Object>> getItems(User user, String filter, int limit, int offset, String orderby,
                                                             OrderDirection direction, Map<String, Object> extraParams) {
 
-        List<BaseContentType> type = extraParams.get(TYPE_PARAMETER_NAME) != null ?
+        List<BaseContentType> type = extraParams != null && extraParams.get(TYPE_PARAMETER_NAME) != null ?
                 (List<BaseContentType>) extraParams.get(TYPE_PARAMETER_NAME) : null;
         String queryCondition = this.getQueryCondition(filter, type);
 
