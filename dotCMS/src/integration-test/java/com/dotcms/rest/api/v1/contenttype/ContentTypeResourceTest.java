@@ -178,7 +178,7 @@ public class ContentTypeResourceTest {
 		final PaginationUtil paginationUtil = mock(PaginationUtil.class);
 		final Map<String, Object> extraParams = new TestHashMap<>();
 
-		extraParams.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, list(BaseContentType.valueOf("FORM")));
+		extraParams.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, list("FORM"));
 
 		when(paginationUtil.getPage(request, user, filter, page, perPage, orderBy, direction, extraParams)).thenReturn(responseExpected);
 

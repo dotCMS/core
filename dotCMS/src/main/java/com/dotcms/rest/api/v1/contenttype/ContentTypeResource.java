@@ -345,10 +345,7 @@ public class ContentTypeResource implements Serializable {
 
 			final Map<String, Object> extraParams = types == null ? Collections.EMPTY_MAP :
 					ImmutableMap.<String, Object>builder()
-							.put(ContentTypesPaginator.TYPE_PARAMETER_NAME,
-									Arrays.stream(types.split(","))
-											.map(type -> BaseContentType.valueOf(type))
-											.collect(Collectors.toList()))
+							.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, Arrays.asList(types.split(",")))
 							.build();
 
 			response = this.paginationUtil.getPage(request, user, filter, page, perPage, orderBy,
