@@ -1,5 +1,6 @@
 package com.dotcms.filters.interceptor.jwt;
 
+import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
 import com.dotcms.auth.providers.jwt.beans.JWTBean;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
@@ -147,17 +148,14 @@ public class JsonWebTokenInterceptor implements WebInterceptor {
 
             if (Config.getBooleanProperty(JSON_WEB_TOKEN_ALLOW_HTTP, false) || this.isHttpSecure(req)) {
 
-                try {
+				try {
 
 					result = this.processJwtCookie(res, req);
-                } catch (Exception e) {
-
-                    if (Logger.isErrorEnabled(JsonWebTokenInterceptor.class)) {
-
-                        Logger.error(JsonWebTokenInterceptor.class,
-                                e.getMessage(), e);
-                    }
-                }
+				} catch (Exception e) {
+					//Handling this invalid token exception
+					JsonWebTokenUtils.getInstance()
+							.handleInvalidTokenExceptions(this.getClass(), e, req, res);
+				}
             }
         }
 

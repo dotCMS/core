@@ -18,6 +18,8 @@ public interface MultiTreeAPI {
 
     void saveMultiTree(MultiTree multiTree) throws DotDataException;
 
+    void deleteMultiTree(MultiTree multiTree) throws DotDataException;
+
     Table<String, String, Set<String>> getPageMultiTrees(final IHTMLPage page, final boolean liveMode)
             throws DotDataException, DotSecurityException;
 

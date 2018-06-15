@@ -231,6 +231,8 @@ public class TaskLocatorUtil {
 		ret.add(Task04365RelationshipUniqueConstraint.class);
 		ret.add(Task04370AddVisitorLogger.class);
 		ret.add(Task04375UpdateColors.class);
+		ret.add(Task04380AddSubActionToWorkflowActions.class);
+		ret.add(Task04385UpdateCategoryKey.class);
 		return ret;
 	}
 

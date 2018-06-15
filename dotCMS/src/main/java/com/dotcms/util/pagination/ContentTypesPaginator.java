@@ -1,6 +1,5 @@
 package com.dotcms.util.pagination;
 
-
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
@@ -17,7 +16,7 @@ import com.liferay.portal.model.User;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.apache.commons.lang.StringUtils;
+
 
 /**
  * Handle {@link ContentType} pagination
@@ -57,7 +56,7 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
 
         try {
             List<Structure> structures = this.structureAPI.find(user, false, false, queryCondition,
-                    orderby, limit, offset, direction.toString().toLowerCase());
+                    orderby, limit, offset, UtilMethods.isSet(direction)?direction.toString().toLowerCase(): OrderDirection.ASC.name());
 
             List<ContentType> contentTypes = new StructureTransformer(structures).asList();
             List<Map<String, Object>> contentTypesTransform = transformContentTypesToMap(contentTypes);
@@ -111,7 +110,7 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
                         .collect(Collectors.toList());
     }
 
-    private String getQueryCondition(String filter, List<BaseContentType> types){
+    private String getQueryCondition(String filter, List<BaseContentType> types) {
         String queryFilter =
                 filter != null ? String.format("(upper(name) like '%%%s%%')", filter.toUpperCase())
                         : "(upper(name) like '%%')";

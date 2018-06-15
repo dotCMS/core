@@ -174,31 +174,27 @@ public class LoginServiceAPIFactory implements Serializable {
 
         @Override
         public void doActionLogout(final HttpServletRequest req,
-                                      final HttpServletResponse res) throws Exception {
+                final HttpServletResponse res) throws Exception {
 
             final HttpSession session = req.getSession(false);
+            if (null != session) {
+                log.debug("Logout - Events Processor Pre Logout events.");
+                EventsProcessor.process(PropsUtil.getArray(PropsUtil.LOGOUT_EVENTS_PRE), req, res);
+            }
+
+            log.debug("Logout - Set expire cookies");
+            com.dotmarketing.util.CookieUtil.setExpireCookies(req, res);
 
             if (null != session) {
-
-                log.debug("Logout - Events Processor Pre Logout events.");
-
-                EventsProcessor.process(PropsUtil.getArray(PropsUtil.LOGOUT_EVENTS_PRE), req, res);
-
-                log.debug("Logout - Set expire cookies");
-                com.dotmarketing.util.CookieUtil.setExpireCookies(req, res);
-
                 final Map sessions = PortletSessionPool.remove(session.getId());
-
                 if (null != sessions) {
 
                     log.debug("Logout - Invalidating portlet sessions...");
 
                     final Iterator itr = sessions.values().iterator();
-
                     while (itr.hasNext()) {
 
                         final HttpSession portletSession = (HttpSession) itr.next();
-
                         if (null != portletSession) {
 
                             portletSession.invalidate();
@@ -207,16 +203,12 @@ public class LoginServiceAPIFactory implements Serializable {
                 }
 
                 log.debug("Logout - Invalidating http session...");
-
                 session.invalidate();
 
                 log.debug("Logout - Events Processor Post Logout events.");
-
                 EventsProcessor.process(PropsUtil.getArray(PropsUtil.LOGOUT_EVENTS_POST), req, res);
-            } else {
-
-                log.debug("Not action needed, since the session is already ended.");
             }
+
         } // doActionLogout.
 
         @Override

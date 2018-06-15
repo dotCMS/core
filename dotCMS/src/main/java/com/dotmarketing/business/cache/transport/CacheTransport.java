@@ -3,6 +3,7 @@ package com.dotmarketing.business.cache.transport;
 import com.dotcms.cluster.bean.Server;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author Jonathan Gamba
@@ -44,6 +45,10 @@ public interface CacheTransport {
      * @throws CacheTransportException
      */
     void shutdown () throws CacheTransportException;
+
+    boolean isInitialized();
+
+    boolean shouldReinit();
 
     /**
      * Returns stats about the cache transport

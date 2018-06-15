@@ -38,7 +38,14 @@ public class RenderParams {
     }
     
   }
+  public RenderParams(final User user, final Language language, final Host currentHost, final PageMode mode) {
 
+    this.user = user;
+    this.language = language;
+    this.currentHost = currentHost;
+    this.mode = mode;
+
+  }
 
 
 }

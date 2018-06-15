@@ -250,10 +250,12 @@
 					handleAs: "text",
 					load: function(data) {
 						showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Workflow-executed")%>");
-						window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
-						<portlet:param name="struts_action" value="/ext/workflows/view_workflow_tasks" />
-						<portlet:param name="referer" value="<%= referer %>" />
-						</portlet:actionURL>';
+
+                        var customEvent = document.createEvent("CustomEvent");
+                        customEvent.initCustomEvent("ng-event", false, false,  {
+                            name: "edit-task-executed-workflow"
+                        });
+                        document.dispatchEvent(customEvent);
 					
 					},
 					error: function(error) {

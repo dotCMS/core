@@ -1,13 +1,18 @@
 <%@page import="com.dotcms.content.elasticsearch.constants.ESMappingConstants"%>
-<%@page import="com.dotmarketing.business.CacheLocator"%>
-<%@page import="com.dotmarketing.cache.FieldsCache"%>
+<%@page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
+<%@page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI"%>
 <%@ include file="/html/portlet/ext/contentlet/init.jsp" %>
 <%@ include file="/html/portlet/ext/remotepublish/init.jsp" %>
 
+<%@ page import="com.dotmarketing.business.CacheLocator" %>
+<%@ page import="com.dotmarketing.cache.FieldsCache" %>
 <%@ page import="com.dotmarketing.portlets.languagesmanager.model.Language" %>
 <%@ page import="com.dotmarketing.portlets.structure.factories.StructureFactory" %>
 <%@ page import="com.dotmarketing.portlets.structure.model.Field" %>
-<%@ page import="com.dotmarketing.util.*" %>
+<%@ page import="com.dotmarketing.util.Config" %>
+<%@ page import="com.dotmarketing.util.InodeUtils" %>
+<%@ page import="com.dotmarketing.util.Logger" %>
+<%@ page import="com.dotmarketing.util.PortletID" %>
 
 <iframe id="AjaxActionJackson" name="AjaxActionJackson" style="border:0; width:0; height:0;"></iframe>
 <%
@@ -176,12 +181,11 @@
             ,
     };
 
-    boolean enterprise = LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level;
-
-    PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
-    List<PublishingEndPoint> sendingEndpointsList = pepAPI.getReceivingEndPoints();
-    boolean sendingEndpoints = UtilMethods.isSet(sendingEndpointsList) && !sendingEndpointsList.isEmpty();
-
+    final boolean enterprise = (LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level);
+    final PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
+    final List<PublishingEndPoint> sendingEndpointsList = pepAPI.getReceivingEndPoints();
+    final boolean sendingEndpoints = UtilMethods.isSet(sendingEndpointsList) && !sendingEndpointsList.isEmpty();
+    final boolean canReindexContentlets = APILocator.getRoleAPI().doesUserHaveRole(user,APILocator.getRoleAPI().loadRoleByKey(Role.CMS_POWER_USER))|| com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole());
 %>
 
 
@@ -438,7 +442,7 @@
         dijit.byId("searchButton").attr("disabled", false);
         dijit.byId("clearButton").setAttribute("disabled", false);
 
-        displayArchiveButton();
+        togglePublish();
     }
 
 </script>
@@ -488,6 +492,11 @@
 
     });
 </script>
+
+
+<%@ include file="/html/portlet/ext/contentlet/view_available_actions_inc.jsp" %>
+
+
 <form method="Post" action="" id="search_form" onsubmit="doSearch();return false;">
 
     <input type="hidden" name="fullCommand" id="fullCommand" value="">
@@ -542,13 +551,13 @@
                     <div id="advancedSearchOptions" style="height:0px;overflow: hidden">
 
                         <dl class="vertical">
-                            <dt><label>Scheme:</label></dt>
+                            <dt><label><%= LanguageUtil.get(pageContext, "Workflow-Schemes") %>:</label></dt>
                             <dd><span id="schemeSelectBox"></span></dd>
                             <div class="clear"></div>
                         </dl>
 
                         <dl class="vertical">
-                            <dt><label>Step:</label></dt>
+                            <dt><label><%= LanguageUtil.get(pageContext, "Step") %>:</label></dt>
                             <dd><span id="stepSelectBox"></span></dd>
                             <div class="clear"></div>
                         </dl>
@@ -584,7 +593,7 @@
                         <dl class="vertical">
                             <dt><label><%= LanguageUtil.get(pageContext, "Show") %>:</label></dt>
                             <dd>
-                                <select name="showingSelect" onchange='doSearch(1);displayArchiveButton()'  id="showingSelect" dojoType="dijit.form.FilteringSelect">
+                                <select name="showingSelect" onchange='doSearch(1);togglePublish()'  id="showingSelect" dojoType="dijit.form.FilteringSelect">
                                     <option value="all" <% if (!showDeleted && !filterLocked && !filterUnpublish) { %> selected <% } %>><%= LanguageUtil.get(pageContext, "All") %></option>
                                     <option value="locked" <% if (filterLocked) { %> selected <% } %>><%= LanguageUtil.get(pageContext, "Locked") %></option>
                                     <option value="unpublished" <% if (filterUnpublish) { %> selected <% } %>><%= LanguageUtil.get(pageContext, "Unpublished") %></option>
@@ -645,7 +654,6 @@
         <!-- END Left Column -->
 
         <!-- START Right Column -->
-        <%boolean canReindexContentlets = APILocator.getRoleAPI().doesUserHaveRole(user,APILocator.getRoleAPI().loadRoleByKey(Role.CMS_POWER_USER))|| com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole());%>
 
         <div dojoType="dijit.layout.ContentPane" splitter="true" region="center" class="portlet-content-search" id="contentWrapper" style="overflow-y:auto; overflow-x:auto;">
             <div class="portlet-main">
@@ -654,64 +662,10 @@
                     <input type="hidden" name="referer" value="<%=referer%>">
                     <input type="hidden" name="cmd" value="prepublish">
                     <div class="portlet-toolbar">
-                        <div class="portlet-toolbar__actions-secondary" id="portletActions">
-                            <div id="archiveButtonDiv" style="display:none">
-                                <div id="archiveDropDownButton" data-dojo-type="dijit/form/DropDownButton">
-                                    <span><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Actions" )) %></span>
-                                    <div data-dojo-type="dijit/Menu" class="contentlet-menu-actions">
-                                        <div id="unArchiveButton" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: unArchiveSelectedContentlets">
-                                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Un-Archive")) %>
-                                        </div>
-                                        <div id="deleteButton" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: deleteSelectedContentlets">
-                                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete"))%>
-                                        </div>
-                                        <div id="archiveUnlockButton" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: unlockSelectedContentlets">
-                                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unlock"))%>
-                                        </div>
-                                        <% if(canReindexContentlets){ %>
-                                        <div id="archiveReindexButton" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: reindexSelectedContentlets">
-                                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Reindex")) %>
-                                        </div>
-                                        <% } %>
-                                    </div>
-                                </div>
-                            </div>
-                            <div id="unArchiveButtonDiv">
-                                <div id="unArchiveDropDownButton" data-dojo-type="dijit/form/DropDownButton">
-                                    <span><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Actions" )) %></span>
-                                    <div data-dojo-type="dijit/Menu" class="contentlet-menu-actions">
-                                        <div id="publishButton" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: publishSelectedContentlets">
-                                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Publish")) %>
-                                        </div>
-                                        <div id="unPublishButton" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: unPublishSelectedContentlets">
-                                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unpublish")) %>
-                                        </div>
-                                        <div id="archiveButton" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: archiveSelectedContentlets">
-                                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Archive"))%>
-                                        </div>
-                                        <div data-dojo-type="dijit/MenuSeparator"></div>
-                                        <% if ( enterprise ) { %>
-                                        <% if ( sendingEndpoints ) { %>
-                                        <div id="pushPublishButton" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: pushPublishSelectedContentlets">
-                                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>
-                                        </div>
-                                        <% } %>
-                                        <div id="addToBundleButton" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: addToBundleSelectedContentlets">
-                                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>
-                                        </div>
-                                        <div data-dojo-type="dijit/MenuSeparator"></div>
-                                        <% } %>
-                                        <div id="unlockButton" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: unlockSelectedContentlets">
-                                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unlock"))%>
-                                        </div>
-                                        <% if(canReindexContentlets){ %>
-                                        <div id="reindexButton" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: reindexSelectedContentlets">
-                                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Reindex")) %>
-                                        </div>
-                                        <% } %>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="portlet-toolbar__actions-secondary">
+                            <button id="bulkAvailableActions" dojoType="dijit.form.Button" data-dojo-props="onClick: doShowAvailableActions" iconClass="actionIcon" >
+                                <%= LanguageUtil.get(pageContext, "Available-actions")%>
+                            </button>
                         </div>
                         <div id="matchingResultsDiv" style="display: none" class="portlet-toolbar__info"></div>
                         <div class="portlet-toolbar__actions-primary">

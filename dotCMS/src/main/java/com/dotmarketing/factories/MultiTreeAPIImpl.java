@@ -41,6 +41,12 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         MultiTreeFactory.saveMultiTree(multiTree);
     }
 
+    public void deleteMultiTree(MultiTree multiTree) throws DotDataException {
+        Logger.info(this, String.format("Deleting MutiTree: %s", multiTree));
+        MultiTreeFactory.deleteMultiTree(multiTree);
+
+    }
+
     public Table<String, String, Set<String>>  getPageMultiTrees(final IHTMLPage page, final boolean liveMode)
             throws DotDataException, DotSecurityException {
         
@@ -99,7 +105,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                 if (!pageContents.contains(containerUUID.getIdentifier(), containerUUID.getUUID())) {
                     final boolean isLegacyValue = ContainerUUID.UUID_LEGACY_VALUE.equals(containerUUID.getUUID());
 
-                    if (!isLegacyValue || !pageContents.contains(containerUUID.getIdentifier(), ContainerUUID.UUID_DEFAULT_VALUE)) {
+                    if (!isLegacyValue || !pageContents.contains(containerUUID.getIdentifier(), ContainerUUID.UUID_START_VALUE)) {
                         pageContents.put(containerUUID.getIdentifier(), containerUUID.getUUID(), new LinkedHashSet<>());
                     }
                 }

@@ -49,10 +49,10 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
     private static final String MYSQL_CREATE_INTERMEDIATE_TABLE_PK = "ALTER TABLE workflow_action_step ADD CONSTRAINT pk_workflow_action_step PRIMARY KEY (action_id, step_id)";
     private static final String POSTGRES_CREATE_INTERMEDIATE_TABLE_PK = MYSQL_CREATE_INTERMEDIATE_TABLE_PK;
 
-    private static final String MYSQL_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN     = "SELECT show_on FROM workflow_action";
-    private static final String POSTGRES_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN  = "SELECT show_on FROM workflow_action";
-    private static final String MSSQL_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN     = "SELECT show_on FROM workflow_action";
-    private static final String ORACLE_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN    = "SELECT show_on FROM workflow_action";
+    private static final String MYSQL_FIND_SHOW_ON_OPTION_COLUMN     = "SELECT show_on FROM workflow_action";
+    private static final String POSTGRES_FIND_SHOW_ON_OPTION_COLUMN  = "SELECT show_on FROM workflow_action";
+    private static final String MSSQL_FIND_SHOW_ON_OPTION_COLUMN     = "SELECT show_on FROM workflow_action";
+    private static final String ORACLE_FIND_SHOW_ON_OPTION_COLUMN    = "SELECT show_on FROM workflow_action";
 
     private static final String MYSQL_FIND_SCHEME_ID_COLUMN    = "SELECT scheme_id FROM workflow_action";
     private static final String POSTGRES_FIND_SCHEME_ID_COLUMN = "SELECT scheme_id FROM workflow_action";
@@ -69,10 +69,10 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
     private static final String MSSQL_NOT_NULL_CONSTRAINT_SHOW_ON_COLUMN     = "ALTER TABLE workflow_action ALTER COLUMN scheme_id NVARCHAR(36) NOT NULL";
     private static final String ORACLE_NOT_NULL_CONSTRAINT_SHOW_ON_COLUMN    = "ALTER TABLE workflow_action MODIFY       scheme_id varchar2(36) NOT NULL";
 
-    private static final String MYSQL_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN    = "ALTER TABLE workflow_action ADD show_on varchar(255)  default 'LOCKED,UNLOCKED'";
-    private static final String POSTGRES_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN = "ALTER TABLE workflow_action ADD show_on varchar(255)  default 'LOCKED,UNLOCKED'";
-    private static final String MSSQL_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN    = "ALTER TABLE workflow_action ADD show_on NVARCHAR(255) default 'LOCKED,UNLOCKED'";
-    private static final String ORACLE_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN   = "ALTER TABLE workflow_action ADD show_on varchar2(255) default 'LOCKED,UNLOCKED'";
+    private static final String MYSQL_ADD_SHOW_ON_OPTION_COLUMN    = "ALTER TABLE workflow_action ADD show_on varchar(255)  default 'LOCKED,UNLOCKED'";
+    private static final String POSTGRES_ADD_SHOW_ON_OPTION_COLUMN = "ALTER TABLE workflow_action ADD show_on varchar(255)  default 'LOCKED,UNLOCKED'";
+    private static final String MSSQL_ADD_SHOW_ON_OPTION_COLUMN    = "ALTER TABLE workflow_action ADD show_on NVARCHAR(255) default 'LOCKED,UNLOCKED'";
+    private static final String ORACLE_ADD_SHOW_ON_OPTION_COLUMN   = "ALTER TABLE workflow_action ADD show_on varchar2(255) default 'LOCKED,UNLOCKED'";
 
 
     private static final String MYSQL_SELECT_ACTIONS_AND_STEPS = "SELECT wa.id action_id, ws.id step_id, wa.my_order FROM workflow_step ws INNER JOIN workflow_action wa ON ws.id = wa.step_id";
@@ -624,13 +624,13 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
         String sql = null;
 
         if (DbConnectionFactory.isMySql()) {
-            sql =  MYSQL_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN;
+            sql =  MYSQL_FIND_SHOW_ON_OPTION_COLUMN;
         } else if (DbConnectionFactory.isPostgres()) {
-            sql =  POSTGRES_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN;
+            sql =  POSTGRES_FIND_SHOW_ON_OPTION_COLUMN;
         } else if (DbConnectionFactory.isMsSql()) {
-            sql =  MSSQL_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN;
+            sql =  MSSQL_FIND_SHOW_ON_OPTION_COLUMN;
         } else if (DbConnectionFactory.isOracle()) {
-            sql =  ORACLE_FIND_REQUIRES_CHECKOUT_OPTION_COLUMN;
+            sql =  ORACLE_FIND_SHOW_ON_OPTION_COLUMN;
         }
 
         return sql;
@@ -780,7 +780,7 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
     }
 
     /**
-     * Adds the new {@code requires_checkout_option} column to the {@code workflow_action} table so that it is now
+     * Adds the new {@code show_on} column to the {@code workflow_action} table so that it is now
      * multivalue instead of boolean.
      * @return
      */
@@ -789,13 +789,13 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
         String sql = null;
 
         if (DbConnectionFactory.isMySql()) {
-            sql =  MYSQL_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN;
+            sql =  MYSQL_ADD_SHOW_ON_OPTION_COLUMN;
         } else if (DbConnectionFactory.isPostgres()) {
-            sql =  POSTGRES_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN;
+            sql =  POSTGRES_ADD_SHOW_ON_OPTION_COLUMN;
         } else if (DbConnectionFactory.isMsSql()) {
-            sql =  MSSQL_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN;
+            sql =  MSSQL_ADD_SHOW_ON_OPTION_COLUMN;
         } else if (DbConnectionFactory.isOracle()) {
-            sql =  ORACLE_ADD_REQUIRES_CHECKOUT_OPTION_COLUMN;
+            sql =  ORACLE_ADD_SHOW_ON_OPTION_COLUMN;
         }
 
         return sql;
