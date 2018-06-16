@@ -64,6 +64,7 @@ import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SetValueActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.TranslationActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.TwitterActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
@@ -180,6 +181,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				ResetTaskActionlet.class,
 				MultipleApproverActionlet.class,
 				FourEyeApproverActionlet.class,
+				TwitterActionlet.class,
 				PushPublishActionlet.class,
 				CheckURLAccessibilityActionlet.class,
                 EmailActionlet.class,
