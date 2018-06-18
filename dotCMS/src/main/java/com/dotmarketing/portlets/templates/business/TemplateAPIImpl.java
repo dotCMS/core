@@ -276,7 +276,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
             throws DotDataException, DotSecurityException {
 
 
-        final Set<Container> containers = new HashSet<>();
+        final List<Container> containers = new ArrayList<>();
         if(template.isDrawed()) {
             final TemplateLayout layout = DotTemplateTool.themeLayout(template.getInode());
             if (layout != null) {
