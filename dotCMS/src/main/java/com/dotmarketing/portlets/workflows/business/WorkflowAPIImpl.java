@@ -1867,15 +1867,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 * @param luceneQuery luceneQuery
 	 */
 	@CloseDBIfOpened
-	public Future<BulkActionsResultView> fireBulkActions(final WorkflowAction action,
+	public BulkActionsResultView fireBulkActions(final WorkflowAction action,
 			final User user, final String luceneQuery) throws DotDataException {
 
 		final Set<String> workflowAssociatedStepsIds = workFlowFactory.findProxiesSteps(action)
 				.stream().map(WorkflowStep::getId).collect(Collectors.toSet());
-		final DotSubmitter submitter = this.concurrentFactory
-				.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
-		return submitter.submit(() -> fireBulkActionsTaskForQuery(action, user, luceneQuery,
-				workflowAssociatedStepsIds));
+
+		return fireBulkActionsTaskForQuery(action, user, luceneQuery, workflowAssociatedStepsIds);
 	}
 
 	/**
@@ -1887,17 +1885,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 * @param contentletIds {@link List}
 	 */
 	@CloseDBIfOpened
-	public Future<BulkActionsResultView> fireBulkActions(final WorkflowAction action,
+	public BulkActionsResultView fireBulkActions(final WorkflowAction action,
 			final User user, final List<String> contentletIds) throws DotDataException {
 
 		final Set<String> workflowAssociatedStepsIds = workFlowFactory.findProxiesSteps(action)
 				.stream().map(WorkflowStep::getId).collect(Collectors.toSet());
-		final DotSubmitter submitter = this.concurrentFactory
-				.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
-		return submitter
-				.submit(() -> fireBulkActionsTaskForSelectedInodes(action, user, contentletIds,
-						workflowAssociatedStepsIds));
+		return fireBulkActionsTaskForSelectedInodes(action, user, contentletIds, workflowAssociatedStepsIds);
 	}
+
 
 	/**
 	 * This version of the method expects to wotk with a small set of contentlets
@@ -1974,7 +1969,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			Logger.error(getClass(), "Error firing actions in bulk.", e);
 			throw new DotDataException(e);
 		}
-
 	}
 
 
@@ -2082,7 +2076,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 	}
 
-	@WrapInTransaction
 	private void fireBulkActionTask(final WorkflowAction action,
 			final User user,
 			final Contentlet contentlet,
@@ -2090,17 +2083,24 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			final Consumer<Long> failConsumer) {
 		try {
 
+			final String successInode;
 			Logger.debug(this,
 					() -> "Firing the action: " + action + " to the inode: " + contentlet
 							.getInode());
 
-			final String successInode = this.fireContentWorkflow(contentlet,
-					new ContentletDependencies.Builder()
-							.respectAnonymousPermissions(false)
-							.generateSystemEvent(false)
-							.modUser(user)
-							.workflowActionId(action.getId()).build()
-			).getInode();
+			final Contentlet afterFireContentlet =
+					fireContentWorkflow(contentlet,
+							new ContentletDependencies.Builder()
+									.respectAnonymousPermissions(false)
+									.generateSystemEvent(false)
+									.modUser(user)
+									.workflowActionId(action.getId()).build()
+					);
+			if(afterFireContentlet != null){
+				successInode = afterFireContentlet.getInode();
+			} else {
+				successInode = "Unavailable";
+			}
 
 			Logger.debug(this, () -> "Successfully fired the contentlet: " + contentlet.getInode() +
 					", success inode: " + successInode);

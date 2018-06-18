@@ -49,8 +49,20 @@ public abstract class WorkflowTestUtil {
     static final String ACTION_NAME_PREFIX = "action::";
     static final String CURRENT_STEP = "currentstep";
 
-    public static final String SYSTEM_WORKFLOW = "System Workflow";
-    public static final String DM_WORKFLOW = "Document Management";
+    static final String SYSTEM_WORKFLOW = "System Workflow";
+    static final String DM_WORKFLOW = "Document Management";
+
+    static final String SAVE_AS_DRAFT = "Save as Draft";
+    static final String SEND_FOR_REVIEW = "Send for Review";
+    static final String SEND_TO_LEGAL = "Send to Legal";
+    static final String COPY = "Copy";
+    static final String SAVE = "Save";
+    static final String PUBLISH = "Publish";
+    static final String REPUBLISH = "Republish";
+    static final String UNPUBLISH = "Unpublish";
+    static final String ARCHIVE = "Archive";
+    static final String SAVE_PUBLISH = "Save / Publish";
+    static final String TWEET_THIS = "Tweet This!";
 
     static void doCleanUp(final WorkflowResource workflowResource, final WorkflowAPI workflowAPI)
             throws Exception {
@@ -348,7 +360,7 @@ public abstract class WorkflowTestUtil {
         return contentByWorkflowAndType;
     }
 
-    public static List<WorkflowAction> getWorkflowActions(final BulkWorkflowSchemeView workflowScheme) {
+    static List<WorkflowAction> getAllWorkflowActions(final BulkWorkflowSchemeView workflowScheme) {
         final List<WorkflowAction> workflowActions = new ArrayList<>();
         final List<BulkWorkflowStepView> systemWorkflowSteps = workflowScheme.getSteps();
         for (final BulkWorkflowStepView stepView : systemWorkflowSteps) {

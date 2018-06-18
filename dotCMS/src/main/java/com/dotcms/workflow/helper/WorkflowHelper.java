@@ -289,8 +289,8 @@ public class WorkflowHelper {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    public Future<BulkActionsResultView> fireBulkActions(final FireBulkActionsForm form,
-                                                         final User user) throws DotSecurityException, DotDataException {
+    public BulkActionsResultView fireBulkActions(final FireBulkActionsForm form,
+            final User user) throws DotSecurityException, DotDataException {
 
         if (!workflowAPI.hasValidLicense()) {
             throw new InvalidLicenseException("Workflow-Schemes-License-required");
@@ -306,7 +306,6 @@ public class WorkflowHelper {
             throw new DoesNotExistException("Workflow-does-not-exists-action");
         }
     }
-
 
     private static class SingletonHolder {
         private static final WorkflowHelper INSTANCE = new WorkflowHelper();

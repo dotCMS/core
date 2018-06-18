@@ -203,8 +203,9 @@
                 'Content-Type' : 'application/json;charset=utf-8',
             },
             load: function(data) {
-                if(data && data.entity){
-                    var summary = actionsExecutionSummarytMarkup(data.entity);
+                if(data){
+                    var entity = (data.entity ? data.entity : data);
+                    var summary = actionsExecutionSummarytMarkup(entity);
                     dojo.byId('bulkActionsContainer').innerHTML = summary;
                 } else {
                     showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Available-actions-error")%>", true);
