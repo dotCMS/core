@@ -240,6 +240,8 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
                     .append("\"$UtilMethods.javaScriptify($ContentletTitle)\"")
                     .append(" data-dot-can-edit=")
                     .append("\"$contents.doesUserHasPermission($CONTENT_INODE, 2, true)\"")
+                    .append(" data-dot-content-type-id=")
+                    .append("\"$CONTENT_TYPE_ID\"")
                     .append(">");
 
 
