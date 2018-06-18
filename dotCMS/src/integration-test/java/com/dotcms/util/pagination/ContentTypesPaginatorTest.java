@@ -21,6 +21,8 @@ import java.util.Map;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import java.util.Map;
+import java.util.stream.Collectors;
+
 import static com.dotcms.util.CollectionsUtils.map;
 
 public class ContentTypesPaginatorTest {
@@ -66,7 +68,7 @@ public class ContentTypesPaginatorTest {
 
         assertTrue(UtilMethods.isSet(result));
 
-        assertTrue(result.stream().anyMatch(contentType ->
+        assertTrue(result.stream().allMatch(contentType ->
                 contentType.get("baseType").toString().equals(BaseContentType.PERSONA.name())
                         || contentType.get("name").toString().toLowerCase()
                         .contains(BaseContentType.PERSONA.name().toLowerCase())));
@@ -81,7 +83,7 @@ public class ContentTypesPaginatorTest {
 
         assertTrue(UtilMethods.isSet(result));
 
-        assertTrue(result.stream().anyMatch(contentType -> contentType.get("baseType").toString()
+        assertTrue(result.stream().allMatch(contentType -> contentType.get("baseType").toString()
                 .equals(BaseContentType.FILEASSET.name())));
     }
 
@@ -95,11 +97,11 @@ public class ContentTypesPaginatorTest {
 
         assertTrue(UtilMethods.isSet(result));
 
-        assertTrue(result.stream().anyMatch(contentType -> contentType.get("baseType").toString()
-                .equals(BaseContentType.FILEASSET.name())));
+        //assertEquals("", result.stream().map(contentType -> contentType.get("baseType")).collect(Collectors.toList()));
 
-        assertTrue(result.stream().anyMatch(contentType -> contentType.get("baseType").toString()
-                .equals(BaseContentType.PERSONA.name())));
+        assertTrue(result.stream().allMatch(contentType ->
+                contentType.get("baseType").toString().equals(BaseContentType.FILEASSET.name()) ||
+                        contentType.get("baseType").toString().equals(BaseContentType.PERSONA.name())));
     }
 
     @Test
