@@ -519,6 +519,11 @@ var cmsfile=null;
 	    aceEditors[textarea].getSession().setMode("ace/mode/velocity");
 	    aceEditors[textarea].getSession().setUseWrapMode(true);
 	    aceEditors[textarea].setValue(id);
+	    aceEditors[textarea].setOptions({
+		    minLines: 25,
+		    maxLines:40
+	    });
+	    
     	aceEditors[textarea].clearSelection();
 		enabledCodeAreas[textarea]=true;
 		aceEditors[textarea].on("change", function(){
@@ -766,9 +771,15 @@ var cmsfile=null;
 		if(document.getElementById('aceTextArea_'+textarea).style.position != 'relative'){
 			document.getElementById('aceTextArea_'+textarea).style.position='relative';
 			textEditor[textarea] = ace.edit('aceTextArea_'+textarea);
-			textEditor[textarea].setTheme("ace/theme/textmate");
+			//textEditor[textarea].setTheme("ace/theme/textmate");
 			textEditor[textarea].getSession().setMode("ace/mode/"+keyValue);
 			textEditor[textarea].getSession().setUseWrapMode(true);
+			
+			textEditor[textarea].setOptions({
+		            minLines: 15,
+		            maxLines:35
+		        });
+			
 			 aceTextId[textarea] = textarea;
 		}
     	dijit.byId("toggleEditor_"+textarea).disabled=true;

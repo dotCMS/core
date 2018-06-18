@@ -154,7 +154,7 @@ public class EditWorkflowTaskAction extends DotPortletAction {
 		wfAPI.saveComment(taskComment);
 
 		String changeDesc = LanguageUtil.get(user, "edit_worflow.history.comment.added") + comment;
-		_logWorkflowTaskHistory(task, user, changeDesc);
+
 
 
 	}
