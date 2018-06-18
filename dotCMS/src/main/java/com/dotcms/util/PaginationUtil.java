@@ -132,7 +132,7 @@ public class PaginationUtil {
 		final int perPageValue = perPage == 0 ? perPageDefault : perPage;
 		final int minIndex = getMinIndex(pageValue, perPageValue);
 
-		final String sanitizefilter = filter != null ? SQLUtil.sanitizeParameter(filter) : null;
+		final String sanitizefilter = filter != null ? SQLUtil.sanitizeParameter(filter) : "";
 
 		final Map<String, Object> params = getParameters(sanitizefilter, orderBy, direction, extraParams);
 

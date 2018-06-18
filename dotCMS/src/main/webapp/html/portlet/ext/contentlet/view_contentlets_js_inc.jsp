@@ -1,20 +1,13 @@
-<%@page import="java.text.SimpleDateFormat"%>
-<%@ page import="com.dotmarketing.util.UtilMethods" %>
-<%@ page import="com.liferay.portal.language.LanguageUtil"%>
-<%@page import="com.dotmarketing.business.APILocator"%>
-<%@page import="com.dotmarketing.business.RoleAPI"%>
-<%@page import="com.liferay.portal.util.PortalUtil"%>
-<%@page import="com.liferay.portal.model.User"%>
-<%@page import="com.dotcms.repackage.javax.portlet.WindowState"%>
-<%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
-<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
-<%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
-<%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI"%>
-<%@page import="java.util.List"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel" %>
+<%@page import="com.dotcms.repackage.javax.portlet.WindowState"%>
+<%@page import="com.dotmarketing.business.APILocator"%>
+<%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotmarketing.business.Role"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
-<%@page import="com.dotmarketing.portlets.workflows.model.*"%>
+<%@page import="com.dotmarketing.util.UtilMethods"%>
+<%@page import="com.liferay.portal.language.LanguageUtil"%>
+<%@page import="java.util.List"%>
 
 
 
@@ -964,77 +957,7 @@
 
         }
 
-        var dialog;
-        function closeDialog() {
-            dialog.hide();
-        }
-        function publishReset() {
-            var rdate=dijit.byId('resetDate').get('value');
-            var rtime=dijit.byId('resetTime').get('value');
-            dojo.byId('expireDateReset').value=dijit.byId('resetDate')+dijit.byId('resetTime');
-            closeDialog();
-            publishSelectedContentlets();
-        }
 
-        function publishSelectedContentlets(){
-
-            if(dojo.byId('expireDateReset').value=='') {
-                var expiredInodes=dojo.byId("expiredInodes").value.split(",");
-                var selectedInodes=dojo.query("input[name='publishInode']")
-                                       .filter(function(x){return x.checked;})
-                                       .map(function(x){return x.value;})
-                                       .filter(function(x){return expiredInodes.indexOf(x)!=-1;});
-
-                if(selectedInodes.length>0) {
-                    dialog=new dijit.Dialog({
-                        title: "dotCMS",
-                        content: "<p><%=LanguageUtil.get(pageContext, "message.contentlet.resetexpire") %></p>"+
-                                 "<p>"+
-                                 "<input type='text' dojoType='dijit.form.DateTextBox' id='resetDate' constraints= '{min:<%=new SimpleDateFormat("yyyy-MM-dd").format(new Date())%>}'/>"+
-                                 "<input type='text' dojoType='dijit.form.TimeTextBox' id='resetTime'/>"+
-                                 "</p>"+
-                                 "<button dojoType='dijit.form.Button' onClick='publishReset()'><%=LanguageUtil.get(pageContext, "Publish") %></button>"+
-                                 "<button dojoType='dijit.form.Button' onClick='closeDialog()'><%=LanguageUtil.get(pageContext, "Cancel") %></button>",
-                        style: "width:400px",
-                        onHide: function() { this.destroyRecursive(); }
-                    });
-                    dialog.show();
-                    return;
-                }
-            }
-
-            disableButtonRow();
-            var form = copySearchForm()
-			form.cmd.value="full_publish_list";
-               
-            form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="full_publish_list" /></portlet:actionURL>';
-             /*if we have a date*/
-	             var dateFrom= null;
-	             var dateTo= null;
-	             if((document.getElementById("lastModDateFrom").value!="")){
-	                 dateFrom = document.getElementById("lastModDateFrom").value;
-	                 var dateFromsplit = dateFrom.split("/");
-	                 if(dateFromsplit[0]< 10) dateFromsplit[0]= "0"+dateFromsplit[0]; if(dateFromsplit[1]< 10) dateFromsplit[1]= "0"+dateFromsplit[1];
-	                 dateFrom= dateFromsplit[2]+dateFromsplit[0]+dateFromsplit[1]+"000000";
-	                 form.action+= "&modDateFrom="+dateFrom;
-	             }
-	
-	             if((document.getElementById("lastModDateTo").value!="")){
-	                 dateTo = document.getElementById("lastModDateTo").value;
-	                 var dateTosplit = dateTo.split("/");
-	                 if(dateTosplit[0]< 10) dateTosplit[0]= "0"+dateTosplit[0]; if(dateTosplit[1]< 10) dateTosplit[1]= "0"+dateTosplit[1];
-	                 dateTo= dateTosplit[2]+dateTosplit[0]+dateTosplit[1]+"235959";
-	                 form.action+= "&modDateTo="+dateTo;
-	             }
-             form.action+= "&structure_id=<%=structure.getInode()%>";
-             form.action += "&selected_lang=" + getSelectedLanguageId();
-             
-             form.submit();
-             form.parentNode.removeChild(form);
-        }
-        
-
-        
         function copySearchForm(){
         	var newForm = document.createElement("form");
             newForm.style = "display: none";
@@ -1052,8 +975,6 @@
 
 		  	return newForm;
         }
-        
-        
 
         function pushPublishSelectedContentlets() {
 
@@ -1061,77 +982,13 @@
 			pushHandler.showDialog(selectedInodes);
         }
 
-
-
-
         function addToBundleSelectedContentlets() {
 
             var selectedInodes = getSelectedInodes ();
 			pushHandler.showAddToBundleDialog(selectedInodes, '<%=LanguageUtil.get(pageContext, "Add-To-Bundle")%>');
         }
 
-
-        function unPublishSelectedContentlets(){
-            disableButtonRow();
-            var form = copySearchForm()
-            form.cmd.value = 'full_unpublish_list';
-                form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="full_unpublish_list" /></portlet:actionURL>';
-                /*if we have a date*/
-                        var dateFrom= null;
-                        var dateTo= null;
-                        if((document.getElementById("lastModDateFrom").value!="")){
-                                dateFrom = document.getElementById("lastModDateFrom").value;
-                                var dateFromsplit = dateFrom.split("/");
-                                if(dateFromsplit[0]< 10) dateFromsplit[0]= "0"+dateFromsplit[0]; if(dateFromsplit[1]< 10) dateFromsplit[1]= "0"+dateFromsplit[1];
-                                dateFrom= dateFromsplit[2]+dateFromsplit[0]+dateFromsplit[1]+"000000";
-                                form.action+= "&modDateFrom="+dateFrom;
-                        }
-
-                        if((document.getElementById("lastModDateTo").value!="")){
-                                dateTo = document.getElementById("lastModDateTo").value;
-                                var dateTosplit = dateTo.split("/");
-                                if(dateTosplit[0]< 10) dateTosplit[0]= "0"+dateTosplit[0]; if(dateTosplit[1]< 10) dateTosplit[1]= "0"+dateTosplit[1];
-                                dateTo= dateTosplit[2]+dateTosplit[0]+dateTosplit[1]+"235959";
-                                form.action+= "&modDateTo="+dateTo;
-                        }
-                form.action+= "&structure_id=<%=structure.getInode()%>";
-                form.action += "&selected_lang=" + getSelectedLanguageId();
-                form.submit();
-                form.parentNode.removeChild(form);
-        }
-
-        function archiveSelectedContentlets(){
-            disableButtonRow();
-            var form = copySearchForm()
-            form.cmd.value = 'full_archive_list';
-            form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="full_archive_list" /></portlet:actionURL>';
-
-
-          /*if we have a date*/
-                        var dateFrom= null;
-                        var dateTo= null;
-                        if((document.getElementById("lastModDateFrom").value!="")){
-                                dateFrom = document.getElementById("lastModDateFrom").value;
-                                var dateFromsplit = dateFrom.split("/");
-                                if(dateFromsplit[0]< 10) dateFromsplit[0]= "0"+dateFromsplit[0]; if(dateFromsplit[1]< 10) dateFromsplit[1]= "0"+dateFromsplit[1];
-                                dateFrom= dateFromsplit[2]+dateFromsplit[0]+dateFromsplit[1]+"000000";
-                                form.action+= "&modDateFrom="+dateFrom;
-                        }
-
-                        if((document.getElementById("lastModDateTo").value!="")){
-                                dateTo = document.getElementById("lastModDateTo").value;
-                                var dateTosplit = dateTo.split("/");
-                                if(dateTosplit[0]< 10) dateTosplit[0]= "0"+dateTosplit[0]; if(dateTosplit[1]< 10) dateTosplit[1]= "0"+dateTosplit[1];
-                                dateTo= dateTosplit[2]+dateTosplit[0]+dateTosplit[1]+"235959";
-                                form.action+= "&modDateTo="+dateTo;
-                        }
-            form.action+= "&structure_id=<%=structure.getInode()%>";
-            form.submit();
-            form.parentNode.removeChild(form);
-        }
-
         function reindexSelectedContentlets(){
-                disableButtonRow();
                 var form = copySearchForm()
             form.cmd.value = 'full_reindex_list';
                 form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="full_reindex_list" /></portlet:actionURL>';
@@ -1160,76 +1017,11 @@
             form.parentNode.removeChild(form);
         }
 
-        function unArchiveSelectedContentlets(){
-                disableButtonRow();
-            var form = copySearchForm();
-            form.cmd.value = 'full_unarchive_list';
-                form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="full_unarchive_list" /></portlet:actionURL>';
-
-                /*if we have a date*/
-                        var dateFrom= null;
-                        var dateTo= null;
-                        if((document.getElementById("lastModDateFrom").value!="")){
-                                dateFrom = document.getElementById("lastModDateFrom").value;
-                                var dateFromsplit = dateFrom.split("/");
-                                if(dateFromsplit[0]< 10) dateFromsplit[0]= "0"+dateFromsplit[0]; if(dateFromsplit[1]< 10) dateFromsplit[1]= "0"+dateFromsplit[1];
-                                dateFrom= dateFromsplit[2]+dateFromsplit[0]+dateFromsplit[1]+"000000";
-                                form.action+= "&modDateFrom="+dateFrom;
-                        }
-
-                        if((document.getElementById("lastModDateTo").value!="")){
-                                dateTo = document.getElementById("lastModDateTo").value;
-                                var dateTosplit = dateTo.split("/");
-                                if(dateTosplit[0]< 10) dateTosplit[0]= "0"+dateTosplit[0]; if(dateTosplit[1]< 10) dateTosplit[1]= "0"+dateTosplit[1];
-                                dateTo= dateTosplit[2]+dateTosplit[0]+dateTosplit[1]+"235959";
-                                form.action+= "&modDateTo="+dateTo;
-                        }
-                form.action+= "&structure_id=<%=structure.getInode()%>";
-            form.submit();
-            form.parentNode.removeChild(form);
-        }
-
-        function deleteSelectedContentlets(){
-                disableButtonRow();
-                if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.confirm.delete")) %>')){
-                var form = copySearchForm();
-                form.cmd.value = 'full_delete_list';
-                        form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="full_delete_list" /></portlet:actionURL>';
-
-                        /*if we have a date*/
-                        var dateFrom= null;
-                        var dateTo= null;
-                        if((document.getElementById("lastModDateFrom").value!="")){
-                                dateFrom = document.getElementById("lastModDateFrom").value;
-                                var dateFromsplit = dateFrom.split("/");
-                                if(dateFromsplit[0]< 10) dateFromsplit[0]= "0"+dateFromsplit[0]; if(dateFromsplit[1]< 10) dateFromsplit[1]= "0"+dateFromsplit[1];
-                                dateFrom= dateFromsplit[2]+dateFromsplit[0]+dateFromsplit[1]+"000000";
-                                form.action+= "&modDateFrom="+dateFrom;
-                        }
-
-                        if((document.getElementById("lastModDateTo").value!="")){
-                                dateTo = document.getElementById("lastModDateTo").value;
-                                var dateTosplit = dateTo.split("/");
-                                if(dateTosplit[0]< 10) dateTosplit[0]= "0"+dateTosplit[0]; if(dateTosplit[1]< 10) dateTosplit[1]= "0"+dateTosplit[1];
-                                dateTo= dateTosplit[2]+dateTosplit[0]+dateTosplit[1]+"235959";
-                                form.action+= "&modDateTo="+dateTo;
-                        }
-                        form.action+= "&structure_id=<%=structure.getInode()%>";
-		            form.submit();
-                    form.parentNode.removeChild(form);
-                }
-        }
-
 
 		function fakeAjaxCallback(){
 			clearAllContentsSelection();
 			refreshFakeJax();
 		}
-
-
-
-
-
 
         function structureChanged (sync) {
 		    if(sync != true)
@@ -1433,6 +1225,20 @@
             if(!obj)
                 obj=dojo.byId('language_id');
             return obj.value;
+        }
+
+        function getSelectedWorkflowId(){
+            var obj = dijit.byId("scheme_id");
+            if(!obj)
+               obj = dojo.byId("scheme_id");
+            return obj.value;
+        }
+
+        function getSelectedStepId(){
+           var obj = dijit.byId("step_id");
+           if(!obj)
+              obj = dojo.byId("step_id");
+           return obj.value;
         }
 
         function doSearch (page, sortBy) {
@@ -2409,82 +2215,62 @@
         togglePublish();
     }
 
-    function togglePublish() {
+    function togglePublish(){
         var cbArray = document.getElementsByName("publishInode");
         var showArchive =  (dijit.byId("showingSelect").getValue() == "archived");
 
         var cbCount = cbArray.length;
         for(i = 0;i< cbCount ;i++){
             if (cbArray[i].checked) {
-                if (showArchive) {
-                    dijit.byId('archiveDropDownButton').setAttribute("disabled", false);
-                    dijit.byId('unArchiveButton').setAttribute("disabled", false);
-                    dijit.byId('deleteButton').setAttribute("disabled", false);
-                    dijit.byId('archiveUnlockButton').setAttribute("disabled", false);
-                    <%=(canReindex?"dijit.byId('archiveReindexButton').setAttribute(\"disabled\", false);":"") %>
-                } else {
-                    dijit.byId('unArchiveDropDownButton').setAttribute("disabled", false);
-                    dijit.byId('archiveButton').setAttribute("disabled", false);
-                    dijit.byId('publishButton').setAttribute("disabled", false);
-                    <% if ( enterprise ) { %>
-                        if(typeof dijit.byId('addToBundleButton') !== "undefined") {
-                        <%   if ( sendingEndpoints ) { %>
-                            dijit.byId('pushPublishButton').setAttribute("disabled", false);
-                         <% } %>
-              			}
-                        dijit.byId('addToBundleButton').setAttribute("disabled", false);
 
-                    <% } %>
-                    dijit.byId('unPublishButton').setAttribute("disabled", false);
-                    dijit.byId('unlockButton').setAttribute("disabled", false);
-                    <%=(canReindex?"dijit.byId('reindexButton').setAttribute(\"disabled\", false);":"") %>
+                if (showArchive) {
+                  <%=(canReindex?"dijit.byId('reindexButton').setAttribute(\"disabled\", false);":"") %>
+                } else {
+                   <% if ( enterprise ) { %>
+                    if(typeof dijit.byId('addToBundleButton') !== "undefined") {
+                       <% if ( sendingEndpoints ) { %>
+                             dijit.byId('pushPublishButton').setAttribute("disabled", false);
+                       <% } %>
+                    }
+                    dijit.byId('addToBundleButton').setAttribute("disabled", false);
+
+                  <% } %>
+                      dijit.byId('unlockButton').setAttribute("disabled", false);
+                  <%=(canReindex?"dijit.byId('reindexButton').setAttribute(\"disabled\", false);":"") %>
                 }
+
+
+                dijit.byId('bulkAvailableActions').setAttribute("disabled", false);
                 return;
             }
 
         }
 
         // nothing selected
-       	if (showArchive) {
-                    dijit.byId("archiveDropDownButton").setAttribute("disabled", true);
-                    dijit.byId("unArchiveButton").setAttribute("disabled", true);
-                    dijit.byId("deleteButton").setAttribute("disabled", true);
-                    dijit.byId("archiveUnlockButton").setAttribute("disabled", true);
-                    <%=(canReindex?"dijit.byId('archiveReindexButton').setAttribute(\"disabled\", true);":"") %>
-        } else {
-                    dijit.byId('unArchiveDropDownButton').setAttribute("disabled", true);
-                    dijit.byId('archiveButton').setAttribute("disabled", true);
-                    dijit.byId('publishButton').setAttribute("disabled", true);
-                    <% if ( enterprise ) { %>
-                        if(typeof dijit.byId('addToBundleButton') !== "undefined") {
-                        <%   if ( sendingEndpoints ) { %>
-                            dijit.byId('pushPublishButton').setAttribute("disabled", true);
-                         <% } %>
-              			}
-                        dijit.byId('addToBundleButton').setAttribute("disabled", true);
 
-                    <% } %>
-                    dijit.byId('unPublishButton').setAttribute("disabled", true);
-                    dijit.byId("unlockButton").setAttribute("disabled", true);
-                     <%=(canReindex?"dijit.byId('reindexButton').setAttribute(\"disabled\", true);":"") %>
-        }
-    }
-    function displayArchiveButton(){
+        dijit.byId('bulkAvailableActions').setAttribute("disabled", true);
 
-        var showArchive =  (dijit.byId("showingSelect").getValue() == "archived");
-        if (showArchive) {
-            document.getElementById("archiveButtonDiv").style.display="";
-            document.getElementById("unArchiveButtonDiv").style.display="none";
-        } else {
-            document.getElementById("archiveButtonDiv").style.display="none";
-            document.getElementById("unArchiveButtonDiv").style.display="";
-        }
-        togglePublish();
+
+            if(showArchive){
+                <%=(canReindex?"dijit.byId('reindexButton').setAttribute(\"disabled\", true);":"") %>
+            } else {
+                <% if ( enterprise ) { %>
+                if(typeof dijit.byId('addToBundleButton') !== "undefined") {
+                <%   if ( sendingEndpoints ) { %>
+                dijit.byId('pushPublishButton').setAttribute("disabled", true);
+                <% } %>
+                }
+                dijit.byId('addToBundleButton').setAttribute("disabled", true);
+                <% } %>
+                dijit.byId("unlockButton").setAttribute("disabled", true);
+                <%=(canReindex?"dijit.byId('reindexButton').setAttribute(\"disabled\", true);":"") %>
+            }
+
+
     }
 
 
-
-        dojo.addOnLoad(function () {
+    dojo.addOnLoad(function () {
         structureChanged(true);
         //useLoadingMessage("<i class='loadingIcon'></i> Loading");
 
@@ -2496,15 +2282,15 @@
         }
     });
 
-        function checkSearchFieldLoaded() {
-                if (!loadingSearchFields) {
-                        initialLoad();
-                } else {
-                        setTimeout("checkSearchFieldLoaded()", 50);
-                }
-        }
+    function checkSearchFieldLoaded() {
+            if (!loadingSearchFields) {
+                    initialLoad();
+            } else {
+                    setTimeout("checkSearchFieldLoaded()", 50);
+            }
+    }
 
-     function resetHostValue() {
+    function resetHostValue() {
         if(document.getElementById('FolderHostSelector-hostFolderSelect')){
           if(document.getElementById('FolderHostSelector-hostFolderSelect').value == ""){
               dojo.byId("hostField").value = "";
@@ -2514,51 +2300,10 @@
         }
     }
 
-        function disableButtonRow() {
-                if(dijit.byId("archiveDropDownButton"))
-                        dijit.byId("archiveDropDownButton").setAttribute("disabled", true);
 
-                if(dijit.byId("unArchiveButton"))
-                        dijit.byId("unArchiveButton").attr("disabled", true);
-
-                if(dijit.byId("deleteButton"))
-                        dijit.byId("deleteButton").attr("disabled", true);
-
-                if(dijit.byId("archiveReindexButton"))
-                        dijit.byId("archiveReindexButton").attr("disabled", true);
-
-                if(dijit.byId("archiveUnlockButton"))
-                        dijit.byId("archiveUnlockButton").attr("disabled", true);
-
-                if(dijit.byId("unArchiveDropDownButton"))
-                        dijit.byId("unArchiveDropDownButton").attr("disabled", true);
-
-                if(dijit.byId("publishButton"))
-                        dijit.byId("publishButton").attr("disabled", true);
-
-                if(dijit.byId("pushPublishButton"))
-                        dijit.byId("pushPublishButton").attr("disabled", true);
-
-                if(dijit.byId("addToBundleButton"))
-                        dijit.byId("addToBundleButton").attr("disabled", true);
-
-                if(dijit.byId("unPublishButton"))
-                        dijit.byId("unPublishButton").attr("disabled", true);
-
-                if(dijit.byId("archiveButton"))
-                        dijit.byId("archiveButton").attr("disabled", true);
-
-                if(dijit.byId("reindexButton"))
-                        dijit.byId("reindexButton").attr("disabled", true);
-
-                if(dijit.byId("unlockButton"))
-                        dijit.byId("unlockButton").attr("disabled", true);
-
-
-        }
 
          function unlockSelectedContentlets(){
-            disableButtonRow();
+            //disableButtonRow();
             var form = copySearchForm()
             form.cmd.value = 'full_unlock_list';
             form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="full_unlock_list" /></portlet:actionURL>';
@@ -2585,9 +2330,9 @@
             form.action+= "&structure_id=<%=structure.getInode()%>";
             form.submit();
             form.parentNode.removeChild(form);
-        }
+         }
 
-        //*************************************
+    //*************************************
     //
     //
     //  ContentAdmin Obj

@@ -318,11 +318,17 @@
 		doFilter();
 	}
 
-	function editTask(id,langId){
-		var url = "<portlet:actionURL windowState="maximized"><portlet:param name="struts_action" value="/ext/workflows/edit_workflow_task" /><portlet:param name="cmd" value="view" /><portlet:param name="taskId" value="REPLACEME" /><portlet:param name="language" value="LANGUAGE" /></portlet:actionURL>";
-		url = url.replace("REPLACEME", id);
-		url = url.replace("LANGUAGE", langId);
-		window.location=url;
+	function editTask(event, inode, langId){
+        event.preventDefault();
+        var customEvent = document.createEvent("CustomEvent");
+        customEvent.initCustomEvent("ng-event", false, false,  {
+            name: "edit-task",
+            data: {
+                inode: inode,
+                lang: langId
+            }
+        });
+        document.dispatchEvent(customEvent);
 	}
 
 /*	dojo.ready(function(){

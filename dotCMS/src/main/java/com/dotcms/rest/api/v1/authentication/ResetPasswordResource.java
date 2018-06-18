@@ -23,9 +23,8 @@ import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.ejb.UserManager;
 import com.liferay.portal.ejb.UserManagerFactory;
 import com.liferay.util.LocaleUtil;
-
-import javax.servlet.http.HttpServletRequest;
 import java.util.Locale;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * This resource change the user password.
@@ -34,6 +33,8 @@ import java.util.Locale;
  */
 @Path("/v1/changePassword")
 public class ResetPasswordResource {
+
+    private static final String TOKEN_SEPARATOR_REGEX = "\\+{3}";
 
     private final UserManager userManager;
     private final ResponseUtil responseUtil;
@@ -63,15 +64,23 @@ public class ResetPasswordResource {
     public final Response resetPassword(@Context final HttpServletRequest request,
                                         final ResetPasswordForm resetPasswordForm) {
 
-        Response res = null;
+        Response res;
         final String password = resetPasswordForm.getPassword();
-        final String jwtToken = resetPasswordForm.getToken();
+        final String tokens = resetPasswordForm.getToken();
         final Locale locale   = LocaleUtil.getLocale(request);
-        final String token;
+        final String changePasswordToken;
         final String userId;
         final JWTBean jwtBean;
 
         try {
+
+            /*
+            Parsing the token sent in the URL, we have two tokens here, the JWT and the
+            change password security token.
+             */
+            String[] tokensArray = tokens.split(TOKEN_SEPARATOR_REGEX);
+            final String jwtToken = tokensArray[0];
+            changePasswordToken = tokensArray[1];
 
             jwtBean = this.jsonWebTokenService.parseToken(jwtToken);
             if (null == jwtBean) {
@@ -81,10 +90,9 @@ public class ResetPasswordResource {
                 res = this.responseUtil.getErrorResponse(request, Response.Status.UNAUTHORIZED, locale, null,
                         "reset-password-token-expired");
             } else {
-                userId = jwtBean.getId();
-                token = jwtBean.getSubject();
+                userId = jwtBean.getSubject();
 
-                this.userManager.resetPassword(userId, token, password);
+                this.userManager.resetPassword(userId, changePasswordToken, password);
 
                 SecurityLogger.logInfo(ResetPasswordResource.class,
                 		String.format("User %s successful changed his password from IP: %s", userId, request.getRemoteAddr()));
@@ -126,4 +134,5 @@ public class ResetPasswordResource {
 
         return res;
     }
+
 }

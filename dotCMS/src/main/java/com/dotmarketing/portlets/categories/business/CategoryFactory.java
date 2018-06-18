@@ -62,7 +62,7 @@ public abstract class CategoryFactory {
 	 * @param object
 	 * @throws DotDataException
 	 */
-	protected abstract void save(Category object) throws DotDataException;
+	public abstract void save(Category object) throws DotDataException;
 	
 	/**
 	 * This method saves a category in the system coming by a Remote publishing.

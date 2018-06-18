@@ -5,6 +5,7 @@ import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.javax.ws.rs.core.MultivaluedMap;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.api.v1.theme.ThemeResource;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.Paginator;
 import com.dotmarketing.common.util.SQLUtil;
@@ -79,6 +80,45 @@ public class PaginationUtilTest {
         assertEquals( response.getHeaderString("X-Pagination-Link-Pages"), "5" );
         assertEquals( response.getHeaderString("X-Pagination-Total-Entries"), String.valueOf( totalRecords ) );
         assertEquals( response.getHeaderString("Link"), headerLink );
+    }
+
+
+    /**
+     * Test of {@link ThemeResource#findThemes(HttpServletRequest, String, int, int, String)}
+     *
+     * Given: A null filter parameter
+     * Should: Should pass a empty String value to the paginator
+     */
+    @Test
+    public void testPageWhenFilterIsNull() throws IOException {
+        final HttpServletRequest req = mock( HttpServletRequest.class );
+        final User user = new User();
+        final String filter = null;
+        final int page = 2;
+        final int perPage = 5;
+        final String orderBy = "name";
+        final OrderDirection direction = OrderDirection.ASC;
+        final int offset = (page - 1) * perPage;
+        final long totalRecords = 10;
+        final StringBuffer baseURL = new StringBuffer("/baseURL");
+
+        final PaginatedArrayList items = new PaginatedArrayList<>();
+        items.add(new PaginationUtilModeTest("testing"));
+        items.setTotalResults(totalRecords);
+
+        when( req.getRequestURL() ).thenReturn( baseURL );
+
+        final Map<String, Object> params = map(
+                Paginator.DEFAULT_FILTER_PARAM_NAME, "",
+                Paginator.ORDER_BY_PARAM_NAME, orderBy,
+                Paginator.ORDER_DIRECTION_PARAM_NAME, direction
+        );
+
+        when( paginator.getItems( user, perPage, offset, params ) ).thenReturn( items );
+
+        paginationUtil.getPage(req, user, filter, page, perPage, orderBy, direction, map());
+
+        verify(paginator).getItems(user, perPage, offset, params);
     }
 }
 

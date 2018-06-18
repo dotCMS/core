@@ -41,6 +41,7 @@ import com.dotcms.rest.api.v1.system.ruleengine.actionlets.ActionletsResource;
 import com.dotcms.rest.api.v1.system.ruleengine.conditionlets.ConditionletsResource;
 import com.dotcms.rest.api.v1.user.UserResource;
 import com.dotcms.rest.personas.PersonasResourcePortlet;
+import com.dotcms.rest.api.v1.page.NavResource;
 
 /**
  * This class provides the list of all the REST end-points in dotCMS. Every new
@@ -134,6 +135,7 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 					REST_CLASSES.add(ContainerResource.class);
 
 					REST_CLASSES.add(ThemeResource.class);
+					REST_CLASSES.add(NavResource.class);
 				}
 			}
 		}

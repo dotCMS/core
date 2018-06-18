@@ -98,22 +98,10 @@ public class ESClient {
 
                     shutDownNode();
 
-                    final String node_id = ConfigUtils.getServerId();
-                    final String esPathHome = getESPathHome();
 
-                    Logger.info(this, "***PATH HOME: " + esPathHome);
-
-                    final String yamlPath = getDefaultYaml().toString();
 
                     try{
-                        _nodeInstance = new Node(
-                                Settings.builder().
-                                loadFromStream(yamlPath, getClass().getResourceAsStream(yamlPath), false).
-                                    put( "node.name", node_id ).
-                                    put("path.home", esPathHome).
-                                    put(extSettings!=null?extSettings.build():getExtSettingsBuilder().build()).
-                                    build()
-                        ).start();
+                        _nodeInstance = new Node(loadNodeSettings(extSettings).build()).start();
                     } catch (IOException | NodeValidationException e){
                         Logger.error(this, "Error validating ES node at start.", e);
                     }
@@ -131,6 +119,32 @@ public class ESClient {
             System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_ES, String.valueOf(System.currentTimeMillis() - start));
         }
         
+    }
+
+    @VisibleForTesting
+    Builder loadNodeSettings(Builder extSettings) throws IOException {
+
+        final String node_id = ConfigUtils.getServerId();
+        final String esPathHome = getESPathHome();
+
+        Logger.info(this, "***PATH HOME: " + esPathHome);
+
+        final String yamlPath = getDefaultYaml().toString();
+
+        final Builder builder = Settings.builder().
+                loadFromStream(yamlPath, getClass().getResourceAsStream(yamlPath), false).
+                put( "node.name", node_id ).
+                put("path.home", esPathHome).
+                put(extSettings!=null?extSettings.build():getExtSettingsBuilder().build());
+
+        //Remove any discovery property when using community license
+        if (isCommunityOrStandard()){
+            List<String> keysToRemove = builder.keys().stream()
+                    .filter(key -> key.startsWith("discovery.") && !key
+                            .equals(ES_ZEN_UNICAST_HOSTS)).collect(Collectors.toList());
+            keysToRemove.forEach(elem -> builder.remove(elem));
+        }
+        return builder;
     }
 
     public void shutDownNode () {
@@ -293,22 +307,24 @@ public class ESClient {
      * @return
      */
     private void setHttpConfToSettings(final Server currentServer, final Builder externalSettings) {
-        String httpPort;
+        if(clusterAPI.isESAutoWire()) {
+            String httpPort;
 
-        final String bindAddr = externalSettings.get("transport.host");
-        if (UtilMethods.isSet(externalSettings.get("http.enabled")) && (Boolean
+            final String bindAddr = externalSettings.get("transport.host");
+            if (UtilMethods.isSet(externalSettings.get("http.enabled")) && (Boolean
                 .parseBoolean(externalSettings.get("http.enabled")))) {
-            httpPort =
+                httpPort =
                     UtilMethods.isSet(currentServer.getEsHttpPort()) ? currentServer.getEsHttpPort()
-                            .toString()
-                            : ClusterFactory.getNextAvailablePort(currentServer.getServerId(), ServerPort.ES_HTTP_PORT,
-                                    externalSettings);
+                        .toString()
+                        : ClusterFactory.getNextAvailablePort(currentServer.getServerId(), ServerPort.ES_HTTP_PORT,
+                            externalSettings);
 
-            if (!UtilMethods.isSet(externalSettings.get("http.host"))) {
-                externalSettings.put("http.host", bindAddr);
+                if (!UtilMethods.isSet(externalSettings.get("http.host"))) {
+                    externalSettings.put("http.host", bindAddr);
+                }
+
+                externalSettings.put(ServerPort.ES_HTTP_PORT.getPropertyName(), httpPort);
             }
-
-            externalSettings.put(ServerPort.ES_HTTP_PORT.getPropertyName(), httpPort);
         }
     }
 
@@ -319,24 +335,26 @@ public class ESClient {
      */
     @VisibleForTesting
     protected void setTransportConfToSettings(final Server currentServer, final Builder externalSettings) {
-        String bindAddressFromProperty;
-        String bindAddr;
-        String transportTCPPort;
-        bindAddressFromProperty = externalSettings.get(ES_TRANSPORT_HOST);
+        if(clusterAPI.isESAutoWire()) {
+            String bindAddressFromProperty;
+            String bindAddr;
+            String transportTCPPort;
+            bindAddressFromProperty = externalSettings.get(ES_TRANSPORT_HOST);
 
-        if (UtilMethods.isSet(bindAddressFromProperty)) {
-            bindAddressFromProperty = validateAddress(bindAddressFromProperty);
+            if (UtilMethods.isSet(bindAddressFromProperty)) {
+                bindAddressFromProperty = validateAddress(bindAddressFromProperty);
+            }
+
+            bindAddr = bindAddressFromProperty != null ? bindAddressFromProperty : currentServer.getIpAddress();
+
+            externalSettings.put(ES_TRANSPORT_HOST, bindAddr);
+
+            transportTCPPort = UtilMethods.isSet(currentServer.getEsTransportTcpPort())
+                ? Integer.toString(currentServer.getEsTransportTcpPort())
+                : getNextAvailableESPort(currentServer.getServerId(), bindAddr, externalSettings);
+
+            externalSettings.put(ServerPort.ES_TRANSPORT_TCP_PORT.getPropertyName(), transportTCPPort);
         }
-
-        bindAddr = bindAddressFromProperty != null ? bindAddressFromProperty : currentServer.getIpAddress();
-
-        externalSettings.put(ES_TRANSPORT_HOST, bindAddr);
-
-        transportTCPPort = UtilMethods.isSet(currentServer.getEsTransportTcpPort())
-            ? Integer.toString(currentServer.getEsTransportTcpPort())
-            : getNextAvailableESPort(currentServer.getServerId(), bindAddr, externalSettings);
-
-        externalSettings.put(ServerPort.ES_TRANSPORT_TCP_PORT.getPropertyName(), transportTCPPort);
     }
 
     @Nullable
@@ -384,23 +402,24 @@ public class ESClient {
      * @throws DotDataException
      */
     private void setUnicastHostsToSettings(final Builder externalSettings) throws DotDataException {
+        if(clusterAPI.isESAutoWire()) {
+            final String bindAddr = externalSettings.get(ES_TRANSPORT_HOST);
+            final String transportTCPPort = externalSettings.get(ServerPort.ES_TRANSPORT_TCP_PORT.getPropertyName());
 
-        final String bindAddr = externalSettings.get(ES_TRANSPORT_HOST);
-        final String transportTCPPort = externalSettings.get(ServerPort.ES_TRANSPORT_TCP_PORT.getPropertyName());
+            final List<Server> aliveServers = serverAPI.getAliveServers();
 
-        final List<Server> aliveServers = serverAPI.getAliveServers();
+            String initialHosts = aliveServers.stream().map(this::getServerAddress).collect(Collectors.joining(","));
 
-        String initialHosts = aliveServers.stream().map(this::getServerAddress).collect(Collectors.joining(","));
+            if (initialHosts.isEmpty()) {
+                initialHosts = bindAddr.equals("localhost")
+                    ? serverAPI.getCurrentServer().getIpAddress() + ":" + transportTCPPort
+                    : bindAddr + ":" + transportTCPPort;
+            }
 
-        if(initialHosts.isEmpty()) {
-            initialHosts = bindAddr.equals("localhost")
-                ? serverAPI.getCurrentServer().getIpAddress() + ":" + transportTCPPort
-                : bindAddr + ":" + transportTCPPort;
-        }
-
-        if(UtilMethods.isSet(initialHosts)) {
-            externalSettings.put(ES_ZEN_UNICAST_HOSTS, initialHosts);
-            Logger.info(this, ES_ZEN_UNICAST_HOSTS + ": "+initialHosts);
+            if (UtilMethods.isSet(initialHosts)) {
+                externalSettings.put(ES_ZEN_UNICAST_HOSTS, initialHosts);
+                Logger.info(this, ES_ZEN_UNICAST_HOSTS + ": " + initialHosts);
+            }
         }
     }
 

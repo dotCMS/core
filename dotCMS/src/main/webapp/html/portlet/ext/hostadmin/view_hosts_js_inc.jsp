@@ -65,6 +65,38 @@
 
 	var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
 
+    function editContentletEvent(contInode) {
+        var customEvent = document.createEvent("CustomEvent");
+        customEvent.initCustomEvent("ng-event", false, false,  {
+            name: "edit-contentlet",
+            data: {
+                inode: contInode
+            }
+        });
+        document.dispatchEvent(customEvent);
+    }
+
+    function createContentlet(url) {
+        var customEvent = document.createEvent("CustomEvent");
+        customEvent.initCustomEvent("ng-event", false, false,  {
+            name: "create-contentlet",
+            data: {
+                url: url
+            }
+        });
+        document.dispatchEvent(customEvent);
+
+        var dialog = dijit.byId("addHostDialog");
+
+        if (dialog) {
+            dialog.hide();
+        }
+    }
+
+    function refreshHostTable() {
+        hostAdmin.refreshHostTable();
+    }
+
 
     //Object responsible of the interactions with the listing page -->
     dojo.declare("HostAdmin", null, {
@@ -98,7 +130,7 @@
             		<td width="25%">\
             			<div class="host-list__item" id="hostName{identifier}">\
             				<span class="{imgSrc}"></span>\
-            				<a href="javascript: hostAdmin.editHost(\'{identifier}\', \'{inode}\')">{hostName}</a>\
+            				<a href="javascript: editContentletEvent(\'{inode}\')">{hostName}</a>\
                             <div class="host-list__item-loader">\
                                 <div dojoType="dijit.ProgressBar" style="width:100px; display:none;" jsId="{identifier}SetupProgress" id="{identifier}SetupProgress">\
                                 </div>\
@@ -115,7 +147,7 @@
                 </div>',
 
 		tableEditRowMenuTemplate:
-					'<div dojoType="dijit.MenuItem" iconClass="editIcon" onClick="hostAdmin.editHost(\'{identifier}\', \'{inode}\')">\
+					'<div dojoType="dijit.MenuItem" iconClass="editIcon" onClick="editContentletEvent(\'{inode}\')">\
                         <%= LanguageUtil.get(pageContext, "Edit") %>\
                      </div>\
                      <div dojoType="dijit.MenuItem" iconClass="editScriptIcon" onClick="hostAdmin.editHostVariables(\'{identifier}\', \'{inode}\')">\
@@ -280,7 +312,7 @@
 
 			if(dijit.byId('startBlankHostRadio').attr('value')) {
 				url += "&referer=" + escape(this.viewHostsReferer);
-				window.location = url;
+				createContentlet(url);
 			} else {
 
 				var copyHostOptions = escape(dojo.replace(this.copyHostOptions,
@@ -296,7 +328,7 @@
 						copyTagStorage: document.getElementById('copyTagStorage').value
 					}));				
 				url += "&_copyOptions=" + copyHostOptions + "&referer=" + escape(this.viewHostsReferer);
-				window.location = url;
+				createContentlet(url);
 			}
         },
         hostChanged: function(){

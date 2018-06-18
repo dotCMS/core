@@ -76,18 +76,14 @@ public class WorkflowEmailUtil {
             }
             String link = Config.getStringProperty("WORKFLOW_OVERRIDE_LINK_URL");
             if (!UtilMethods.isSet(link)) {
-                String serverPort = Config.getStringProperty("WEB_SERVER_HTTP_PORT", "80");
-                String serverScheme = Config.getStringProperty("WEB_SERVER_SCHEME", "http");
-                link += serverScheme + "://" + host.getHostname() + ":" + serverPort;
-
+                String serverScheme = Config.getStringProperty("WEB_SERVER_SCHEME", "https");
+                link += serverScheme + "://" + host.getHostname() ;
             }
-            link += "/c/portal/layout?p_l_id=" + layout.getId()
-                    + "&p_p_id=" + PortletID.WORKFLOW
-                    + "&p_p_action=1&p_p_state=maximized&p_p_mode=view&_" + PortletID.WORKFLOW
-                    + "_struts_action=/ext/workflows/edit_workflow_task&_workflow_cmd=view" + (
-                    null != processor.getTask() ? "&_"
-                            + PortletID.WORKFLOW + "_taskId="
-                            + processor.getTask().getId() : "");
+            if (null != processor.getTask()) {
+                link += "/dotAdmin/#/c/workflow/" + processor.getTask().getId();
+            } else {
+                link += "/dotAdmin/#/c/workflow";
+            }
 
             HttpServletRequest requestProxy = new MockHttpRequest(host.getHostname(), null).request();
             HttpServletResponse responseProxy = new BaseResponse().response();

@@ -22,6 +22,7 @@ import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.ZipUtil;
+import com.google.common.collect.ImmutableMap;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.tools.zip.ZipEntry;
@@ -38,6 +39,8 @@ import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotR
 import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotResponse;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
+import org.elasticsearch.action.admin.indices.cache.clear.ClearIndicesCacheRequestBuilder;
+import org.elasticsearch.action.admin.indices.cache.clear.ClearIndicesCacheResponse;
 import org.elasticsearch.action.admin.indices.close.CloseIndexRequest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
@@ -161,6 +164,36 @@ public class ESIndexAPI {
         return indicesStatsResponse.getIndices();
     }
 
+    
+    
+    /**
+     * This method will flush ElasticSearches field and filter 
+     * caches.  The operation can take up to a minute to complete
+     * 
+     * @param indexNames
+     * @return
+     * @throws InterruptedException
+     * @throws ExecutionException
+     */
+    public Map<String, Integer> flushCaches(final List<String> indexNames) throws InterruptedException, ExecutionException {
+      Logger.warn(this.getClass(), "Flushing Elasticsearch index caches:" + indexNames);
+      if(indexNames==null || indexNames.isEmpty()) {
+        return ImmutableMap.of("failedShards",0, "successfulShards", 0);
+      }
+      final Client client = esclient.getClient();
+      final ClearIndicesCacheRequestBuilder requestBuilder =
+          client.admin().indices().prepareClearCache(indexNames.toArray(new String[indexNames.size()]));
+
+      final ClearIndicesCacheResponse res = esclient.getClient().admin().indices().clearCache(requestBuilder.request()).get();
+      Map<String, Integer> map= ImmutableMap.of("failedShards",res.getFailedShards(), "successfulShards", res.getSuccessfulShards());
+ 
+      Logger.warn(this.getClass(), "Flushed Elasticsearch index caches:" + map);
+      return map;
+    }
+    
+    
+    
+    
 	/**
 	 * Writes an index to a backup file
 	 * @param index

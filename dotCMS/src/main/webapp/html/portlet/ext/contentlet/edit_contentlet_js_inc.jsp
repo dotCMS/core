@@ -486,6 +486,15 @@
 
     dojo.require('dojox.fx.scroll');
 
+    function emmitUserHasChange(val) {
+        var customEvent = document.createEvent("CustomEvent");
+        customEvent.initCustomEvent("ng-event", false, false,  {
+            name: "edit-contentlet-data-updated",
+            payload: val
+        });
+        document.dispatchEvent(customEvent)
+    }
+
     function scrollToTop() {
         try {
             dojox.fx.smoothScroll({
@@ -500,7 +509,8 @@
     }
     
     function resetHasChanged(){
-        _hasUserChanged  = false;
+        _hasUserChanged = false;
+        emmitUserHasChange(_hasUserChanged);
         _bodyKeyDown = dojo.connect(dojo.body(), "onkeydown", null,markHasChanged);
 
         dojo.query(".wrapperRight").forEach(function(node){
@@ -509,12 +519,13 @@
         })
     }
 
-    function markHasChanged(){
-
-        _hasUserChanged  = true;
-        dojo.disconnect(_bodyKeyDown);
-        dojo.disconnect(_bodyMouseDown);
-
+    function markHasChanged($event){
+        if ($event.key != 'Escape') {
+            _hasUserChanged = true;
+            emmitUserHasChange(_hasUserChanged);
+            dojo.disconnect(_bodyKeyDown);
+            dojo.disconnect(_bodyMouseDown);
+        }
     }
 
 
@@ -524,9 +535,18 @@
         if(data["contentletInode"] != null && isInodeSet(data["contentletInode"])){
             $('contentletInode').value = data["contentletInode"];
             currentContentletInode = data["contentletInode"];
+            contentAdmin.contentletInode=data["contentletInode"];
+            contentAdmin.contentletIdentifier=data["contentletIdentifier"];
         }
-        dijit.byId('savingContentDialog').hide();
+        
+        
 
+        
+        
+        
+        
+        dijit.byId('savingContentDialog').hide();
+        resetHasChanged();
 
         // Show DotContentletValidationExceptions.
         if(data["saveContentErrors"] && data["saveContentErrors"][0] != null ){
@@ -562,9 +582,18 @@
                     type: null
                 }
             });
+            
+            
+            
             return;
         }
-
+        
+        
+        dijit.byId("versionsTab").attr("disabled", false);
+        dijit.byId("permissionsTab").attr("disabled", false);
+        
+        
+        refreshActionPanel(data["contentletInode"]);
         // if we have a referer and the contentlet comes back checked in
         if((data["referer"] != null && data["referer"] != '' && !data["contentletLocked"]) || data["htmlPageReferer"] != null ) {
             if(data["isHtmlPage"]){
@@ -578,11 +607,37 @@
             }
             return;
         }
-        resetHasChanged();
-        refreshActionPanel(data["contentletInode"]);
+
 
     }
 
+    function refreshPermissionsTab(){
+
+        var y = Math.floor(Math.random()*1123213213);
+
+        var dojoDigit=dijit.byId("permissionsRoleSelector-rolesTree")
+        if (dojoDigit) {
+        	dojoDigit.destroyRecursive(false);
+        }
+        
+        var myCp = dijit.byId("contentletPermissionCp");
+        if (myCp) {
+        	console.log("myCp", myCp);
+        	myCp.destroyRecursive(false);
+        }
+        var myDiv = dojo.byId("permissionsTabDiv");
+        if(myDiv){
+            dojo.empty(myDiv);
+        }
+        myCp = new dojox.layout.ContentPane({
+            id : "contentletPermissionCp",
+            style: "height:100%",
+            href: "/html/portlet/ext/contentlet/edit_permissions_tab_inc_wrapper.jsp?contentletId=" +contentAdmin.contentletIdentifier + "&r=" + y
+        }).placeAt(myDiv);
+    }
+
+    
+    
     function refreshVersionCp(){
         var x = dijit.byId("versions");
         var y =Math.floor(Math.random()*1123213213);
@@ -602,7 +657,8 @@
             href: "/html/portlet/ext/contentlet/contentlet_versions_inc.jsp?contentletId=" +contentAdmin.contentletIdentifier + "&r=" + y
         }).placeAt("contentletVersionsDiv");
     }
-
+    
+    
 
     function refreshRulesCp(){
 
@@ -906,6 +962,7 @@
     function stealLock(contentletInode){
         ContentletAjax.unlockContent(contentletInode, stealLockContentCallback);
     }
+    
     function stealLockContentCallback(data){
 
         if(data["Error"]){
@@ -944,11 +1001,11 @@
             return;
         }
 
-        window.location="<%=referer%>";
+        refreshActionPanel(data["lockedIdent"]);
 
 
     }
-
+    
 
 
     function refreshActionPanel(inode){

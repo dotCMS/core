@@ -116,7 +116,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
             contentlet.setProperty(element.getKey(), element.getValue());
         }
 
-        contentlet.setStructureInode(structureId);
+        contentlet.setContentTypeId(structureId);
 
         return contentlet;
     }

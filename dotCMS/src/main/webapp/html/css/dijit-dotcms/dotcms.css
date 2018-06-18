@@ -10447,18 +10447,22 @@ a.category_higlighted, a.tag_higlighted {
   margin-bottom: 8px;
 }
 
-.content-edit-actions > div {
-  background-color: #fff;
-  border-radius: 2px;
-  border: solid 1px #C5C5C5;
-}
+
 .content-edit-actions a {
+  background:#fff;
   display: block;
   padding: 8px;
-  border-bottom: solid 1px #C5C5C5;
+  border: solid 1px #C5C5C5;
   cursor: pointer;
+  border-collapse:collapse;
+  text-decoration:none;
   transition: background-color 0.1s;
+  margin-bottom:-1px;
 }
+.content-edit-actions a:last-of-type {
+  margin-bottom:0px;
+}
+
 .content-edit-actions a [class$="Icon"],
 .content-edit-actions a [class*="Icon"] {
   display: none;
@@ -10467,9 +10471,7 @@ a.category_higlighted, a.tag_higlighted {
   background-color: #ECEDEE;
   color: #161616;
 }
-.content-edit-actions a:last-of-type {
-  border-bottom: none;
-}
+
 
 .content-edit-workflow table {
   width: 100%;

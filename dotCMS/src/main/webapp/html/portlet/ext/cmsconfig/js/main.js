@@ -30,6 +30,8 @@ var saveCompanyBasicInfo = function () {
     var companyMX = dijit.byId("companyMX").get("value");
     var companyEmailAddress = dijit.byId("companyEmailAddress").get("value");
     var bgColor = dijit.byId("bgColor").get("value");
+    var primaryColor = dijit.byId("pColor").get("value");
+    var secondaryColor = dijit.byId("sColor").get("value");
     var bgURL = dijit.byId("bgURL").get("value");
 
     var xhrArgs = {
@@ -39,6 +41,8 @@ var saveCompanyBasicInfo = function () {
             'mx': companyMX,
             'emailAddress': companyEmailAddress,
             'size': bgColor,
+            'type': primaryColor,
+            'street': secondaryColor,
             'homeURL': bgURL
         },
         handleAs: "json",

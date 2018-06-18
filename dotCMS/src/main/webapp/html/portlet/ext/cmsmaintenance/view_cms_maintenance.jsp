@@ -1,3 +1,4 @@
+<%@page import="com.dotcms.contenttype.model.type.ContentType"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotmarketing.beans.Host"%>
 <%@page import="com.dotcms.listeners.SessionMonitor"%>
@@ -37,7 +38,7 @@ String referer = java.net.URLEncoder.encode(com.dotmarketing.util.PortletURLUtil
 CmsMaintenanceForm CMF = (com.dotmarketing.portlets.cmsmaintenance.struts.CmsMaintenanceForm) request.getAttribute("CmsMaintenanceForm");
 
 ContentletIndexAPI idxApi = APILocator.getContentletIndexAPI();
-List<Structure> structs = StructureFactory.getStructures();
+List<ContentType> structs = APILocator.getContentTypeAPI(APILocator.systemUser()).findAll("name");
 %>
 <script type="text/javascript" src="/dwr/engine.js"></script>
 <script type="text/javascript" src="/dwr/util.js"></script>
@@ -146,6 +147,14 @@ function downloadFailedAsCsv() {
 
 function optimizeCallback() {
 	showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext,"Optimize-Done")%>");
+}
+
+function flushIndiciesCacheCallback(data) {
+	console.log("flushIndiciesCacheCallback",data);
+	var message = "<%=LanguageUtil.get(pageContext,"maintenance.index.cache.flush.message")%>";
+	message=message.replace("{0}", data.successfulShards);
+	message=message.replace("{1}", data.failedShards);
+    showDotCMSSystemMessage(message);
 }
 
 function checkFixAsset()
@@ -1395,8 +1404,8 @@ dd.leftdl {
                                     <option><%= LanguageUtil.get(pageContext,"Rebuild-Whole-Index") %></option>
                                     <%
 
-                                        for(Structure structure : structs){%>
-                                        <option><%=structure.getVelocityVarName()%></option>
+                                        for(ContentType type : structs){%>
+                                        <option><%=type.name()%></option>
                                     <%}%>
                                 </select>
 
@@ -1412,11 +1421,21 @@ dd.leftdl {
                     </tr>
                     <tr>
                         <td>
-                            <%= LanguageUtil.get(pageContext,"Optimize-Index") %> (<%= LanguageUtil.get(pageContext,"Optimize-Index-Info") %> )
+                            <%= LanguageUtil.get(pageContext,"Optimize-Index-Info") %> 
                         </td>
                         <td align="center">
-                            <button dojoType="dijit.form.Button" id="idxShrinkBtn" iconClass="shrinkIcon" onClick="CMSMaintenanceAjax.optimizeIndices(optimizeCallback)">
+                            <button dojoType="dijit.form.Button" id="idxShrinkBtn" onClick="CMSMaintenanceAjax.optimizeIndices(optimizeCallback)">
                                 <%= LanguageUtil.get(pageContext,"Optimize-Index") %>
+                            </button>
+                         </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <%= LanguageUtil.get(pageContext,"maintenance.index.cache.flush.info") %> 
+                        </td>
+                        <td align="center">
+                            <button dojoType="dijit.form.Button"  onClick="CMSMaintenanceAjax.flushIndiciesCache(flushIndiciesCacheCallback)">
+                                <%= LanguageUtil.get(pageContext,"maintenance.index.cache.flush") %>
                             </button>
                          </td>
                     </tr>

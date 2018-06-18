@@ -160,6 +160,10 @@ public class ContentletUtil {
 			}
 		}
 
+		if (s.isFileAsset() || s.isHTMLPageAsset()){
+			m.put("path", APILocator.getIdentifierAPI().find(c.getIdentifier()).getPath());
+		}
+
 		return m;
 	}
 	
