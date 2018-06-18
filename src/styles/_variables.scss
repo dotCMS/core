@@ -1,8 +1,14 @@
+:root {
+    --color-background: #3A3847;
+    --color-main: #C336E5;
+    --color-main_mod: #D369EC;
+    --color-main_rgb: 195, 54, 229;
+    --color-sec: #54428E;
+    --color-sec_rgb: 84, 66, 142;
+}
+
 // COLORS
-$black: #161616;
-$blue-ligth: #77cee6;
-$blue-lighter: #DAECF6;
-$blue: #0e80cb;
+$black: #0A0725;
 $gray-dark: #5b5b5b;
 $gray-darker: #444444;
 $gray: #8a8a8a;
@@ -17,22 +23,26 @@ $white: #fff;
 $error: #d0021b;
 $red: #cb3927;
 
-$brand-primary: $blue;
-$brand-secondary: $red;
+$brand-primary: var(--color-main);
+$brand-primary_mod: var(--color-main_mod);
+$brand-primary_rgb: var(--color-main_rgb);
+$brand-secondary: var(--color-sec);
+$brand-secondary_rgb: var(--color-sec_rgb);
+$brand-background: var(--color-background);
 
 // Basic stuffs
 $border-radius: 2px;
 $icon-size: 16px;
 $basic-padding: 8px;
-$field-height: 32px;
-$field-tiny-height: 20px;
+$field-height: 36px;
+$field-tiny-height: 28px;
 $field-disabled-opacity: 0.7;
 
 // TYPOGRAPHY
 $font-size-xx-large: 24px;
 $font-size-x-large: 18px;
 $font-size-large: 16px;
-$font-size-medium: 13px;
+$font-size-medium: 14px;
 $font-size-small: 12px;
 
 $body-text: Roboto, 'Helvetica Neue', Helvetica, Arial, 'Lucida Grande', sans-serif;
@@ -45,8 +55,8 @@ $basic-speed: 100ms;
 // LAYOUT
 $basic-padding: 8px;
 $toolbar-height: 60px;
-$toolbar-background: $brand-primary;
-$toolbar-color: $white;
+$toolbar-background: $white;
+$toolbar-color: $black;
 
 // GRIDS
 $gutter-width: $basic-padding * 4;

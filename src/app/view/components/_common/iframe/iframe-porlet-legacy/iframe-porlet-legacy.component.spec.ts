@@ -10,9 +10,8 @@ import { IframePortletLegacyComponent } from './iframe-porlet-legacy.component';
 import { Observable } from 'rxjs/Observable';
 import { RouterTestingModule } from '@angular/router/testing';
 import { SocketFactory, SiteService, LoginService } from 'dotcms-js/dotcms-js';
-import { DotLoadingIndicatorService } from '../dot-loading-indicator/dot-loading-indicator.service';
-import { DotRouterService } from '../../../../../api/services/dot-router/dot-router.service';
 import { DotIframeEventsHandler } from './services/iframe-events-handler.service';
+import { DotUiColorsService } from '../../../../../api/services/dot-ui-colors/dot-ui-colors.service';
 
 describe('IframePortletLegacyComponent', () => {
     let comp: IframePortletLegacyComponent;
@@ -20,9 +19,7 @@ describe('IframePortletLegacyComponent', () => {
     let de: DebugElement;
     let el: HTMLElement;
     let dotIframe: DebugElement;
-    let dotLoadingIndicatorService: DotLoadingIndicatorService;
     let dotMenuService: DotMenuService;
-    let dotRouterService: DotRouterService;
     let dotIframeEventsHandler: DotIframeEventsHandler;
     let route: ActivatedRoute;
 
@@ -34,6 +31,7 @@ describe('IframePortletLegacyComponent', () => {
                 DotContentletService,
                 DotIframeEventsHandler,
                 DotMenuService,
+                DotUiColorsService,
                 LoginService,
                 SiteService,
                 SocketFactory,
@@ -57,9 +55,7 @@ describe('IframePortletLegacyComponent', () => {
         de = fixture.debugElement;
         el = de.nativeElement;
         dotIframe = de.query(By.css('dot-iframe'));
-        dotLoadingIndicatorService = de.injector.get(DotLoadingIndicatorService);
         dotMenuService = de.injector.get(DotMenuService);
-        dotRouterService = de.injector.get(DotRouterService);
         dotIframeEventsHandler = de.injector.get(DotIframeEventsHandler);
         route = de.injector.get(ActivatedRoute);
     }));

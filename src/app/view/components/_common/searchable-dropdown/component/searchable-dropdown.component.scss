@@ -15,12 +15,23 @@ dot-searchable-dropdown {
         &:focus {
             @extend #field-hover-state;
             @extend #inputtext-normal-border;
+
+            .ui-button-text,
+            [class^="ui-button-icon"] {
+                color: $body-font-color;
+            }
+        }
+
+        .ui-button-text,
+        [class^="ui-button-icon"] {
+            color: $body-font-color;
         }
 
         .ui-button-text {
+            font-size: $font-size-large;
+            font-weight: normal;
             padding: 0;
             text-transform: none;
-            font-weight: normal;
         }
     }
 }

@@ -2,8 +2,7 @@
 @import 'mixins';
 
 .site-selector__title {
-    margin: 0 0 0 $basic-padding;
-    align-self: center;
+    font-size: $font-size-large;
 }
 
 .site-selector__modal {

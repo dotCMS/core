@@ -1,7 +1,7 @@
 @import 'mixins';
 @import '../../../../styles/primeng-theme/utils/_mixins.scss';
 @import 'variables';
-$sidebar-width: 190px;
+$sidebar-width: 200px;
 
 .layout {
     display: flex;
@@ -10,8 +10,8 @@ $sidebar-width: 190px;
     width: 100vw;
 }
 
-.layout__toolbar {
-    box-shadow: $md-shadow-1;
+.layout__header {
+    flex-shrink: 0;
     z-index: 11;
 }
 
@@ -55,8 +55,7 @@ $sidebar-width: 190px;
 }
 
 .layout__sidebar {
-    background-color: $white;
-    border-right: solid 1px $gray-lighter;
+    background-color: $brand-background;
     flex-shrink: 0;
     transition: width $basic-speed * 2 cubic-bezier(0.25, 0.8, 0.25, 1);
     width: $sidebar-width;
@@ -75,8 +74,4 @@ $sidebar-width: 190px;
         overflow: hidden;
         width: 0;
     }
-}
-
-.layout__toolbar {
-    flex-shrink: 0;
 }

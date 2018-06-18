@@ -5,11 +5,11 @@
 
     <div class="ui-toolbar-group-center">
         <p-inputSwitch #locker class="edit-page-toolbar__locker" [class.warn]="pageState.page.canLock && pageState.state.lockedByAnotherUser" [disabled]="!pageState.page.canLock" [(ngModel)]="lockerModel" (onChange)="lockPageHandler($event)" (click)="onLockerClick($event)"></p-inputSwitch>
-        <p-selectButton flat class="edit-page-toolbar__state-selector" [(ngModel)]="mode" (onChange)="stateSelectorHandler($event.value)" [options]="states"></p-selectButton>
+        <p-selectButton secondary class="edit-page-toolbar__state-selector" [(ngModel)]="mode" (onChange)="stateSelectorHandler($event.value)" [options]="states"></p-selectButton>
     </div>
 
     <div class="ui-toolbar-group-right">
-        <button pButton flat type="button" class="edit-page-toolbar__cancel" [label]="dotMessageService.get('dot.common.cancel')" (click)="cancel.emit()"></button>
+        <button pButton secondary type="button" class="edit-page-toolbar__cancel" [label]="dotMessageService.get('dot.common.cancel')" (click)="cancel.emit()"></button>
         <dot-edit-page-workflows-actions [page]="pageState.page" [label]="dotMessageService.get('editpage.toolbar.primary.workflow.actions')" (fired)="handleActionFired()"></dot-edit-page-workflows-actions>
     </div>
 </p-toolbar>

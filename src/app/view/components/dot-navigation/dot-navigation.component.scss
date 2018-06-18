@@ -1,56 +1,54 @@
 @import 'variables';
 
-dot-accordion {
-    a {
-        display: block;
-        padding: 5px 30px 5px 47px;
-        color: $body-font-color;
-        text-decoration: none;
-    }
+:host {
+    ::ng-deep {
+        dot-accordion {
+            a {
+                display: block;
+                color: $white;
+                padding-left: $basic-padding * 3;
+                height: 48px;
+                display: flex;
+                align-items: center;
+                text-decoration: none;
+                outline: 0;
+            }
 
-    .accordion-group__content {
-        background-color: $gray-lightest;
-        border-left: solid 3px $brand-primary;
-    }
+            .accordion-group__title {
+                display: flex;
+                transition: background-color 0.15s ease-in;
 
-    .accordion-group__title {
-        border-left: solid 3px transparent;
-        padding: ($basic-padding * 2) 10px ($basic-padding * 2) 20px;
-        transition: background-color 0.15s ease-in;
+                &.is-active {
+                    background-color: rgba($white, 0.1);
+                }
 
-        &:hover {
-            background-color: $gray-lightest;
-        }
+                .fa {
+                    font-size: $font-size-large;
+                }
+            }
 
-        &.is-active {
-            background-color: $gray-lightest;
-            border-left: solid 3px $brand-primary;
-            font-weight: bold;
-        }
+            .accordion-group__title-text {
+                margin-left: $basic-padding;
+                flex-grow: 1;
+            }
 
-        .fa {
-            font-size: $font-size-large;
-        }
-    }
+            .accordion-group__title-arrow {
+                opacity: 0.5;
+                margin-right: $basic-padding * 2;
+            }
 
-    .accordion-group__title-text {
-        margin-left: 6px; // with the space it's 10px
-    }
+            .main-nav__submenu {
+                background-color: rgba($white, 0.1);
+                padding: 0 0 10px 0;
 
-    .main-nav__submenu {
-        padding: 0 0 10px 0;
+                a {
+                    padding-left: 47px;
+                }
+            }
 
-        a {
-            color: $gray-dark;
-            outline: 0;
-
-            &:hover {
-                color: $body-font-color;
+            .main-nav__submenu--active {
+                background-color: $brand-primary;
             }
         }
-    }
-
-    .main-nav__submenu--active {
-        font-weight: bold;
     }
 }

@@ -1,4 +1,4 @@
-<p-overlayPanel 
+<p-overlayPanel
     #searchPanel
     appendTo="body"
     (onAfterShow)="show.emit()"
@@ -6,13 +6,13 @@
     <header class="searchable-dropdown__search">
         <i class="fa fa-search searchable-dropdown__search-icon"></i>
         <input #searchInput pInputText placeholder="{{ i18nMessages['search'] }}" type="text" class="searchable-dropdown__search-field"/>
-        
+
     </header>
     <p-dataList
         (onLazyLoad)="paginate($event)"
         [lazy]="true"
         [pageLinks]="pageLinkSize"
-        [paginator]="totalRecords > rows" 
+        [paginator]="totalRecords > rows"
         [rows]="rows"
         [totalRecords]="totalRecords"
         [value]="data"
@@ -26,8 +26,8 @@
 <button dotMdRipple pButton
     (click)="searchPanel.toggle($event)"
     [label]="persistentPlaceholder ? placeholder : valueString"
-    icon="fa-caret-down" 
-    iconPos="right" 
-    type="button" 
+    icon="fa-caret-down"
+    iconPos="right"
+    type="button"
     [ngStyle]="{ 'width': width }">
 </button>

@@ -5,23 +5,26 @@ import { DotRouterService } from '../../../../../../api/services/dot-router/dot-
 import { RouterTestingModule } from '@angular/router/testing';
 import { DotMenuService } from '../../../../../../api/services/dot-menu.service';
 import { DotContentletEditorService } from '../../../../dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotUiColorsService } from '../../../../../../api/services/dot-ui-colors/dot-ui-colors.service';
 
 describe('DotIframeEventsHandler', () => {
     let service: DotIframeEventsHandler;
     let dotLoadingIndicatorService: DotLoadingIndicatorService;
     let dotRouterService: DotRouterService;
+    let dotUiColorsService: DotUiColorsService;
     let dotContentletEditorService: DotContentletEditorService;
     let injector;
 
     beforeEach(() => {
         injector = DOTTestBed.configureTestingModule({
-            providers: [DotIframeEventsHandler, DotLoadingIndicatorService, DotMenuService],
+            providers: [DotIframeEventsHandler, DotLoadingIndicatorService, DotMenuService, DotUiColorsService],
             imports: [RouterTestingModule]
         });
 
         service = injector.get(DotIframeEventsHandler);
         dotLoadingIndicatorService = injector.get(DotLoadingIndicatorService);
         dotRouterService = injector.get(DotRouterService);
+        dotUiColorsService = injector.get(DotUiColorsService);
         dotContentletEditorService = injector.get(DotContentletEditorService);
     });
 
@@ -94,5 +97,29 @@ describe('DotIframeEventsHandler', () => {
             })
         );
         expect(dotRouterService.goToEditTask).toHaveBeenCalledWith('123');
+    });
+
+    it('should set colors in the ui', () => {
+        spyOn(dotUiColorsService, 'setColors');
+
+        service.handle(
+            new CustomEvent('ng-event', {
+                detail: {
+                    name: 'company-info-updated',
+                    payload: {
+                        colors: {
+                            primary: '#fff',
+                            secondary: '#000',
+                            background: '#ccc',
+                        }
+                    }
+                }
+            })
+        );
+        expect(dotUiColorsService.setColors).toHaveBeenCalledWith({
+            primary: '#fff',
+            secondary: '#000',
+            background: '#ccc',
+        });
     });
 });

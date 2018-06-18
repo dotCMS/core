@@ -2,7 +2,12 @@
 @import 'variables';
 
 :host {
+    display: block;
     position: relative;
+
+    dot-gravatar {
+        display: block;
+    }
 
     .dropdown-content {
         @include box_shadow(2);

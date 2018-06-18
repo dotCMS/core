@@ -13,25 +13,11 @@
     .ui-dialog-footer {
         margin: 0;
         padding: 0;
-        text-align: right;
+        display: flex;
+        justify-content: flex-end;
 
-        .ui-button {
-            @extend #button-flat;
-
-            &.cancel {
-                .ui-button-text {
-                    color: $gray;
-                }
-
-                &:hover,
-                &:focus {
-                    background-color: rgba($gray, 0.1);
-
-                    .ui-button-text {
-                        color: $gray-darker;
-                    }
-                }
-            }
+        .ui-button:last-child {
+            margin-left: $basic-padding;
         }
     }
 

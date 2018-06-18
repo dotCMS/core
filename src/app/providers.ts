@@ -25,23 +25,28 @@ import { DotLicenseService } from './api/services/dot-license/dot-license.servic
 import { StringFormat } from './api/util/stringFormat';
 import { StringPixels } from './api/util/string-pixels-util';
 import { DotSaveOnDeactivateService } from './shared/dot-save-on-deactivate-service/dot-save-on-deactivate.service';
+import { DotContentletService } from './api/services/dot-contentlet.service';
+import { DotUiColorsService } from './api/services/dot-ui-colors/dot-ui-colors.service';
 
 const PROVIDERS: any[] = [
     AccountService,
     AuthGuardService,
-    DotSaveOnDeactivateService,
     ColorUtil,
     ConfirmationService,
     ContentTypesInfoService,
     ContentletGuardService,
     CrudService,
     DefaultGuardService,
+    DotContentletService,
     DotDialogService,
     DotHttpErrorManagerService,
     DotIframeService,
+    DotLicenseService,
     DotMenuService,
     DotMessageService,
     DotRouterService,
+    DotSaveOnDeactivateService,
+    DotUiColorsService,
     FormatDateService,
     GravatarService,
     IframeOverlayService,

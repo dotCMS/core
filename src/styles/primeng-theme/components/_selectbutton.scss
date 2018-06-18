@@ -4,15 +4,15 @@
 
 .ui-selectbutton {
     @extend #button-basic;
-    @extend #button-raised;
+    @extend #button-main;
     @include button-base($selectbutton-normal-bgcolor, $selectbutton-normal-border, $selectbutton-normal-shadow);
 
-    [flat] & {
+    [secondary] & {
         box-shadow: none;
-        background-color: rgba($brand-primary, 0.1);
+        background-color: rgba($brand-primary_rgb, 0.1);
 
         .ui-button {
-            @extend #button-flat;
+            @extend #button-sec;
             background-color: transparent;
         }
     }
@@ -20,7 +20,7 @@
     .ui-button {
         box-shadow: none;
         line-height: $button-height;
-        transition: background-color $field-animation-speed ease-in; 
+        transition: background-color $field-animation-speed ease-in;
 
         &:hover {
             background-color: $selectbutton-button-hover-bgcolor;

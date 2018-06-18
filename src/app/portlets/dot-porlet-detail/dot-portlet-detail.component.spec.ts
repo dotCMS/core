@@ -13,7 +13,6 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotContentletsModule } from './dot-contentlets/dot-contentlets.module';
 import { ActivatedRoute } from '@angular/router';
-import { NonNullAssert } from '@angular/compiler';
 
 describe('DotPortletDetailComponent', () => {
     let component: DotPortletDetailComponent;

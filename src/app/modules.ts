@@ -5,7 +5,6 @@ import { ListingDataTableModule } from './view/components/listing-data-table/lis
 import { SiteSelectorModule } from './view/components/_common/site-selector/site-selector.module';
 import { SearchableDropDownModule } from './view/components/_common/searchable-dropdown';
 import { IFrameModule } from './view/components/_common/iframe';
-import { ToolbarAddContenletModule } from './view/components/toolbar-add-contentlet';
 
 import {
     AutoCompleteModule,
@@ -43,8 +42,7 @@ export const CUSTOM_MODULES = [
     IFrameModule,
     ListingDataTableModule,
     SearchableDropDownModule,
-    SiteSelectorModule,
-    ToolbarAddContenletModule
+    SiteSelectorModule
 ];
 
 export const NGFACES_MODULES = [

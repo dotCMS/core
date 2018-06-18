@@ -1,10 +1,9 @@
-import { Component, ViewEncapsulation, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Observable } from 'rxjs/Observable';
 import { DotMenu } from '../../../shared/models/navigation';
 import { DotNavigationService } from './dot-navigation.service';
 
 @Component({
-    encapsulation: ViewEncapsulation.None,
     providers: [],
     selector: 'dot-main-nav',
     styleUrls: ['./dot-navigation.component.scss'],

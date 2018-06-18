@@ -9,7 +9,7 @@
         <div class="action-header__group-actions">
             <span class="action-header__selected-items-counter">{{ selectedItems.length }} {{ i18nMessages['selected'] }}</span>
             <ng-container *ngIf="options && options.secondary">
-                <p-splitButton class="action-header__secondary-button" *ngFor="let action of options.secondary" flat label="{{ action.label }}" class="inverted" [model]="action.model"></p-splitButton>
+                <p-splitButton class="action-header__secondary-button" *ngFor="let action of options.secondary" secondary label="{{ action.label }}" class="inverted" [model]="action.model"></p-splitButton>
             </ng-container>
         </div>
     </div>

@@ -2,12 +2,12 @@ p-splitbutton {
 
     .ui-splitbutton {
         @extend #button-basic;
-        @extend #button-raised;
+        @extend #button-main;
         display: inline-block;
         border-radius: $button-radius;
 
         &.ui-state-disabled {
-            @extend #button-raised-disabled;
+            @extend #button-main-disabled;
         }
 
         // SplitButton component have 2 regular buttons inside, we don't want to style those.
@@ -17,7 +17,7 @@ p-splitbutton {
                 background-color: transparent;
 
                 .ui-button-text {
-                    color: map-get(map-get($button-flat, disabled), color);
+                    color: map-get(map-get($button-sec, disabled), color);
                 }
             }
 
@@ -48,11 +48,11 @@ p-splitbutton {
         }
     }
 
-    &[flat] .ui-splitbutton {
-        @extend #button-flat;
+    &[secondary] .ui-splitbutton {
+        @extend #button-sec;
 
         &.ui-state-disabled {
-            @extend #button-flat-disabled;
+            @extend #button-sec-disabled;
         }
     }
 }

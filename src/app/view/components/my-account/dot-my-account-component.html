@@ -86,7 +86,7 @@
     <footer>
         <div class="ui-dialog-buttonpane ui-widget-content ui-helper-clearfix">
             <button pButton id="dot-my-account-ok-button" (click)="save()" [disabled]="(changePasswordOption && !passwordMatch) || !myAccountForm.form.valid" label="{{ i18nMessages['save'] }}"></button>
-            <button pButton flat id="dot-my-account-close-button" (click)="close.emit()" type="button" label="{{ i18nMessages['modes.Close'] }}"></button>
+            <button pButton secondary id="dot-my-account-close-button" (click)="close.emit()" type="button" label="{{ i18nMessages['modes.Close'] }}"></button>
         </div>
     </footer>
 </p-dialog>

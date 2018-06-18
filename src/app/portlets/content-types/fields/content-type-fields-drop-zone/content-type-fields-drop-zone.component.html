@@ -41,7 +41,7 @@
     </dot-content-type-fields-properties-form>
 
     <p-footer>
-        <button type="button" flat pButton (click)="toggleDialog()" [label]="i18nMessages['contenttypes.dropzone.action.cancel']"></button>
+        <button type="button" secondary pButton (click)="toggleDialog()" [label]="i18nMessages['contenttypes.dropzone.action.cancel']"></button>
         <button type="button" pButton (click)="fieldPropertiesForm.saveFieldProperties(fieldPropertiesForm.form.value, fieldPropertiesForm.form.valid)" [label]="i18nMessages['contenttypes.dropzone.action.save']"></button>
     </p-footer>
 </p-dialog>

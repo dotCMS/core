@@ -17,8 +17,7 @@ export class AccordionComponent {
     closeOthers(openGroup: AccordionGroupComponent): void {
         this.groups.forEach((group: AccordionGroupComponent) => {
             if (group !== openGroup) {
-                // TODO: why is this code commented?
-                // group.isOpen = false;
+                group.isOpen = false;
             }
         });
     }
@@ -59,7 +58,11 @@ export class AccordionComponent {
             <span class="accordion-group__title-text">
                 {{ heading }}
             </span>
-
+            <i
+                class="fa accordion-group__title-arrow"
+                [ngClass]="{'fa-caret-down': !isOpen, 'fa-caret-up': isOpen}"
+                aria-hidden="true">
+            </i>
         </a>
         <div class="accordion-group__content" [@expandAnimation]="isOpen ? 'expanded' : 'collapsed'">
             <div class="accordion-group__content-inner" #accordionGroupContentInner>

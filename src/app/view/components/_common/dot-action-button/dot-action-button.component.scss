@@ -12,21 +12,17 @@ $action-button-height: 56px;
         width: $action-button-height;
 
         &:not([disabled]) {
-            background-color: $blue;
+            background-color: $brand-primary;
             box-shadow: $md-shadow-1;
             opacity: 1;
 
             &:hover {
-                background: darken($brand-primary, 10%);
+                background: $brand-primary_mod;
                 box-shadow: $md-shadow-3;
             }
 
-            &:active {
-                background: darken($brand-primary, 20%);
-            }
-
-            &:focus {
-                background: darken($brand-primary, 10%);
+            &:active, &:focus {
+                background: $brand-primary_mod;
             }
 
             [class^='ui-button-icon'],

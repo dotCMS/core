@@ -1,7 +1,7 @@
 <div class="dot-add-rows__container">
     <div class="dot-add-rows-button__container" 
         [ngClass]="{'dot-add-rows__add': rowState === 'add'}">    
-        <button type="button" pButton flat 
+        <button type="button" pButton secondary 
             label="{{ i18nMessages['contenttypes.dropzone.rows.add'] }}" (click)="setColumnSelect()" 
             icon="fa-plus"
             [disabled]="disabled">

@@ -1,6 +1,5 @@
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { Injectable, DebugElement } from '@angular/core';
-import { DotNavigationService } from '../../../view/components/dot-navigation/dot-navigation.service';
 import { ActivatedRoute } from '@angular/router';
 import { DotContentletsComponent } from './dot-contentlets.component';
 import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
@@ -12,11 +11,6 @@ import { By } from '@angular/platform-browser';
 import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
 import { RouterTestingModule } from '@angular/router/testing';
 import { DotIframeService } from '../../../view/components/_common/iframe/service/dot-iframe/dot-iframe.service';
-
-@Injectable()
-class MockDotNavigationService {
-    goToFirstPortlet = jasmine.createSpy('goToFirstPortlet');
-}
 
 @Injectable()
 class MockDotContentletEditorService {

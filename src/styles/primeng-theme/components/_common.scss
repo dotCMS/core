@@ -1,7 +1,11 @@
-input, select, textarea, button {
+input, textarea, button {
     font-family: $body-text;
-    font-size: $body-font-size-base;
 }
+
+input, textarea, .ui-inputtext {
+    font-size: $font-size-large;
+}
+
 
 /* Component containers
 ----------------------------------*/

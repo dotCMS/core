@@ -1,10 +1,9 @@
-import { Component, ViewEncapsulation, Output, EventEmitter, Input, OnInit } from '@angular/core';
+import { Component, Output, EventEmitter, Input, OnInit } from '@angular/core';
 import { SiteService, Site, DotcmsEventsService } from 'dotcms-js/dotcms-js';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
 
 @Component({
-    encapsulation: ViewEncapsulation.None,
     selector: 'dot-toolbar',
     styleUrls: ['./dot-toolbar.component.scss'],
     templateUrl: './dot-toolbar.component.html'

@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { DotLoadingIndicatorService } from '../../dot-loading-indicator/dot-loading-indicator.service';
 import { DotRouterService } from '../../../../../../api/services/dot-router/dot-router.service';
 import { DotContentletEditorService } from '../../../../dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotUiColors, DotUiColorsService } from '../../../../../../api/services/dot-ui-colors/dot-ui-colors.service';
 
 /**
  * Handle events triggered by the iframe in the IframePortletLegacyComponent
@@ -16,14 +17,16 @@ export class DotIframeEventsHandler {
     constructor(
         private dotLoadingIndicatorService: DotLoadingIndicatorService,
         private dotRouterService: DotRouterService,
-        private dotContentletEditorService: DotContentletEditorService
+        private dotContentletEditorService: DotContentletEditorService,
+        private dotUiColorsService: DotUiColorsService
     ) {
         if (!this.handlers) {
             this.handlers = {
                 'edit-page': this.goToEditPage.bind(this),
                 'edit-contentlet': this.editContentlet.bind(this),
                 'edit-task': this.editTask.bind(this),
-                'create-contentlet': this.createContentlet.bind(this)
+                'create-contentlet': this.createContentlet.bind(this),
+                'company-info-updated': this.setDotcmsUiColors.bind(this)
             };
         }
     }
@@ -57,5 +60,9 @@ export class DotIframeEventsHandler {
 
     private editTask($event: CustomEvent): void {
         this.dotRouterService.goToEditTask($event.detail.data.inode);
+    }
+
+    private setDotcmsUiColors($event: CustomEvent): void {
+        this.dotUiColorsService.setColors(<DotUiColors>$event.detail.payload.colors);
     }
 }
