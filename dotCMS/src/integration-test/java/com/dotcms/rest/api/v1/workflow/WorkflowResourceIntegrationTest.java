@@ -769,6 +769,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
     @Test
     public void Test_Get_Bulk_Actions_For_Contentlet_Ids() throws Exception {
+        //This collects contents associated with a workflow.
         final Map<WorkflowScheme, Map<ContentType, List<Contentlet>>> sampleContent = collectSampleContent(10);
         final Set<WorkflowScheme> workflowSchemes = sampleContent.keySet();
         for (final WorkflowScheme scheme : workflowSchemes) {
@@ -801,22 +802,34 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 final List<BulkWorkflowSchemeView> schemes = bulkActionView.getSchemes();
                 assertNotNull(schemes);
                 assertFalse(schemes.isEmpty());
+                // if the piece of content is associated with multiple WorkFlows we need to verify the response matches the one we're currently on.
+                boolean schemeMatches = false;
                 for (final BulkWorkflowSchemeView view : schemes) {
-                    assertFalse("Scheme is expected to have steps",view.getSteps().isEmpty());
-                    assertEquals("Schema id does not match", scheme.getId(), view.getScheme().getId());
-                    assertEquals("Schema name does not match", scheme.getName(), view.getScheme().getName());
-                    for (final BulkWorkflowStepView stepView : view.getSteps()) {
-                        assertTrue("Expected step " + stepView.getStep().getWorkflowStep().getName()  + " Not found."  ,
-                                steps.contains(stepView.getStep().getWorkflowStep())
-                        );
-                        final List<CountWorkflowAction> workflowActions = stepView.getActions();
-                        for (final CountWorkflowAction workflowAction : workflowActions) {
-                            assertTrue("Expected action " + workflowAction.getWorkflowAction().getName() + " Not found." ,
-                                    availableActions.contains(workflowAction.getWorkflowAction().getId())
+                    schemeMatches = (scheme.getId().equals(view.getScheme().getId()));
+                    if (schemeMatches) {
+                        assertFalse("Scheme is expected to have steps", view.getSteps().isEmpty());
+                        assertEquals("Schema name does not match", scheme.getName(),
+                                view.getScheme().getName());
+                        for (final BulkWorkflowStepView stepView : view.getSteps()) {
+                            assertTrue("Expected step " + stepView.getStep().getWorkflowStep()
+                                            .getName() + " Not found.",
+                                    steps.contains(stepView.getStep().getWorkflowStep())
                             );
+                            final List<CountWorkflowAction> workflowActions = stepView.getActions();
+                            for (final CountWorkflowAction workflowAction : workflowActions) {
+                                assertTrue("Expected action " + workflowAction.getWorkflowAction()
+                                                .getName() + " Not found.",
+                                        availableActions.contains(
+                                                workflowAction.getWorkflowAction().getId())
+                                );
+                            }
                         }
+                        break;
                     }
                 }
+
+                //At least one scheme was matched
+                assertTrue("no scheme was matched. ",schemeMatches);
             }
         }
     }
@@ -1128,10 +1141,10 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
     }
 
     @Test
-    public void Test_Find_Bulk_Actions_Then_Fire_Bulk_Actions_On_Custom_Content_Type_with_Errors_Then_Verify_Workflow_Changed()
+    public void Test_Find_Bulk_Actions_Then_Fire_Bulk_Actions_On_Custom_Content_Type_with_Errors_Then_Verify_Workflow_Did_Not_Changed()
             throws Exception {
 
-        //Hand picked Form-like Widgets with a mandatory title.
+        //Hand picked Form-like Widgets with a mandatory title field
         final Contentlet candidate1 = contentletAPI.findContentletByIdentifier(
                 "b4ae5fd4-c4c7-4590-8299-00569a9f13be", false, 1, systemUser, false
         );
