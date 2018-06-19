@@ -14,11 +14,16 @@ import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
+import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.*;
 
 import java.util.Map;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import static com.dotcms.util.CollectionsUtils.map;
 
 public class ContentTypesPaginatorTest {
 
@@ -42,9 +47,11 @@ public class ContentTypesPaginatorTest {
 
     @Test
     public void test_getItems_WhenFilterEqualsToBaseType_ReturnsAllChildrenContentTypes() {
+        final Map<String, Object> extraParams = map(ContentTypesPaginator.TYPE_PARAMETER_NAME,
+                list(BaseContentType.FILEASSET.toString()));
         final ContentTypesPaginator paginator = new ContentTypesPaginator();
         final PaginatedArrayList<Map<String, Object>> result = paginator
-                .getItems(user, BaseContentType.FILEASSET.name(), -1, 0);
+                .getItems(user, null, -1, 0, "name", OrderDirection.ASC, extraParams);
 
         assertTrue(UtilMethods.isSet(result));
 
@@ -54,13 +61,14 @@ public class ContentTypesPaginatorTest {
 
     @Test
     public void test_getItems_WhenFilterEqualsToBaseType_ReturnsAllRelatedContentTypes() {
+        final Map<String, Object> extraParams = map(ContentTypesPaginator.TYPE_PARAMETER_NAME, list(BaseContentType.PERSONA.toString()));
         final ContentTypesPaginator paginator = new ContentTypesPaginator();
         final PaginatedArrayList<Map<String, Object>> result = paginator
-                .getItems(user, BaseContentType.PERSONA.name(), -1, 0);
+                .getItems(user, null, -1, 0, "name", OrderDirection.ASC, extraParams);
 
         assertTrue(UtilMethods.isSet(result));
 
-        assertTrue(result.stream().anyMatch(contentType ->
+        assertTrue(result.stream().allMatch(contentType ->
                 contentType.get("baseType").toString().equals(BaseContentType.PERSONA.name())
                         || contentType.get("name").toString().toLowerCase()
                         .contains(BaseContentType.PERSONA.name().toLowerCase())));
@@ -68,14 +76,32 @@ public class ContentTypesPaginatorTest {
 
     @Test
     public void test_getItems_WhenFilterStartsWithBaseType_ReturnsAllChildrenContentTypes() {
+        final Map<String, Object> extraParams = map(ContentTypesPaginator.TYPE_PARAMETER_NAME, list("File"));
         final ContentTypesPaginator paginator = new ContentTypesPaginator();
         final PaginatedArrayList<Map<String, Object>> result = paginator
-                .getItems(user, "File", -1, 0);
+                .getItems(user, null, -1, 0, "name", OrderDirection.ASC, extraParams);
 
         assertTrue(UtilMethods.isSet(result));
 
-        assertTrue(result.stream().anyMatch(contentType -> contentType.get("baseType").toString()
+        assertTrue(result.stream().allMatch(contentType -> contentType.get("baseType").toString()
                 .equals(BaseContentType.FILEASSET.name())));
+    }
+
+    @Test
+    public void test_getItems_WhenMultiBaseTypeFilter_ReturnsAllChildrenContentTypes() {
+        final Map<String, Object> extraParams = map(ContentTypesPaginator.TYPE_PARAMETER_NAME, list(BaseContentType.FILEASSET.toString(),
+                BaseContentType.PERSONA.toString()));
+        final ContentTypesPaginator paginator = new ContentTypesPaginator();
+        final PaginatedArrayList<Map<String, Object>> result = paginator
+                .getItems(user, null, -1, 0, "name", OrderDirection.ASC, extraParams);
+
+        assertTrue(UtilMethods.isSet(result));
+
+        //assertEquals("", result.stream().map(contentType -> contentType.get("baseType")).collect(Collectors.toList()));
+
+        assertTrue(result.stream().allMatch(contentType ->
+                contentType.get("baseType").toString().equals(BaseContentType.FILEASSET.name()) ||
+                        contentType.get("baseType").toString().equals(BaseContentType.PERSONA.name())));
     }
 
     @Test
