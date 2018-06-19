@@ -62,7 +62,6 @@ public abstract class WorkflowTestUtil {
     static final String UNPUBLISH = "Unpublish";
     static final String ARCHIVE = "Archive";
     static final String SAVE_PUBLISH = "Save / Publish";
-    static final String TWEET_THIS = "Tweet This!";
 
     static void doCleanUp(final WorkflowResource workflowResource, final WorkflowAPI workflowAPI)
             throws Exception {

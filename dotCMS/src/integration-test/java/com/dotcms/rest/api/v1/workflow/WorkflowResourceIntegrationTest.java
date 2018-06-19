@@ -15,7 +15,6 @@ import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SAVE_PUBLISH;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SEND_FOR_REVIEW;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SEND_TO_LEGAL;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SYSTEM_WORKFLOW;
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.TWEET_THIS;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.UNPUBLISH;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.actionName;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.addSteps;
@@ -750,8 +749,6 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         assertTrue(
                 documentActions.stream().anyMatch(action -> UNPUBLISH.equals(action.getName())));
         assertTrue(documentActions.stream().anyMatch(action -> ARCHIVE.equals(action.getName())));
-        assertTrue(documentActions.stream()
-                .anyMatch(action -> TWEET_THIS.equals(action.getName())));
 
         final BulkWorkflowSchemeView systemWorkflowScheme = systemWorkflowOptional.get();
         final List<WorkflowAction> systemActions = getAllWorkflowActions(systemWorkflowScheme);
