@@ -601,6 +601,7 @@
 
                 var customEvent = document.createEvent("CustomEvent");
                 customEvent.initCustomEvent("ng-event", false, false,  {
+                    htmlUrl: data["htmlPageReferer"],
                     name: "close"
                 });
                 document.dispatchEvent(customEvent)
