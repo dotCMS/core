@@ -682,7 +682,7 @@ public interface WorkflowAPI {
      * @param luceneQuery luceneQuery
      * @return
      */
-    Future<BulkActionsResultView> fireBulkActions(WorkflowAction action, User user, String luceneQuery) throws DotDataException;
+	BulkActionsResultView fireBulkActions(WorkflowAction action, User user,  String luceneQuery) throws DotDataException;
 
 	/**
 	 * Fires a list of contentlets by using an action.
@@ -692,7 +692,8 @@ public interface WorkflowAPI {
 	 * @param contentletIds {@link List}
 	 * @return Future BulkActionsResultView
 	 */
-	Future<BulkActionsResultView> fireBulkActions(WorkflowAction action, User user, List<String> contentletIds) throws DotDataException;
+
+	BulkActionsResultView fireBulkActions(WorkflowAction action, User user, List<String> contentletIds) throws DotDataException ;
 
 	/**
 	 * Returns date ordered list that is made up of workflow history items and workflow comment items
@@ -701,4 +702,5 @@ public interface WorkflowAPI {
 	 * @throws DotDataException
 	 */
     List<WorkflowTimelineItem> getCommentsAndChangeHistory(WorkflowTask task) throws DotDataException;
+
 }

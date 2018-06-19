@@ -3,16 +3,34 @@ package com.dotcms.rest.api.v1.workflow;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.ADMIN_DEFAULT_ID;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.ADMIN_DEFAULT_MAIL;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.ADMIN_NAME;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.ARCHIVE;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.COPY;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.CURRENT_STEP;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.DM_WORKFLOW;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.PUBLISH;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.REPUBLISH;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SAVE;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SAVE_AS_DRAFT;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SAVE_PUBLISH;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SEND_FOR_REVIEW;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SEND_TO_LEGAL;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SYSTEM_WORKFLOW;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.UNPUBLISH;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.actionName;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.addSteps;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.collectSampleContent;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.createScheme;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.createWorkflowActions;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.doCleanUp;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.findSchemes;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.findSteps;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.getAllWorkflowActions;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.schemeName;
 import static com.dotmarketing.business.Role.ADMINISTRATOR;
+import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.ACTION_ID;
+import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.ACTION_ORDER;
+import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.STEP_ID;
+import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.getInstance;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -24,6 +42,13 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.mock.response.MockAsyncResponse;
 import com.dotcms.repackage.javax.ws.rs.container.AsyncResponse;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -34,12 +59,15 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.workflow.form.BulkActionForm;
+import com.dotcms.workflow.form.FireBulkActionsForm;
 import com.dotcms.workflow.form.WorkflowActionForm;
 import com.dotcms.workflow.form.WorkflowActionStepForm;
 import com.dotcms.workflow.form.WorkflowSchemeForm;
 import com.dotcms.workflow.form.WorkflowSchemeImportObjectForm;
 import com.dotcms.workflow.form.WorkflowStepUpdateForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -49,13 +77,19 @@ import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -63,10 +97,13 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
@@ -74,23 +111,32 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class WorkflowResourceIntegrationTest {
-
+public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest {
 
     private static WorkflowAPI workflowAPI;
     private static RoleAPI roleAPI;
     private static WorkflowResource workflowResource;
+
+    private static ContentletAPI contentletAPI;
+    private static ContentTypeAPI contentTypeAPI;
+    private static WorkflowHelper workflowHelper;
+    private static User systemUser;
+    private static User adminUser;
+    private static LanguageAPI languageAPI;
+    private static HostAPI hostAPI;
+    private static Host host;
+    private static Role adminRole;
 
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
         workflowAPI =  APILocator.getWorkflowAPI();
-        ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        contentletAPI = APILocator.getContentletAPI();
         roleAPI = APILocator.getRoleAPI();
         ContentHelper contentHelper = ContentHelper.getInstance();
         PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-        WorkflowImportExportUtil workflowImportExportUtil = WorkflowImportExportUtil.getInstance();
+        WorkflowImportExportUtil workflowImportExportUtil = getInstance();
         WorkflowHelper workflowHelper = new WorkflowHelper(workflowAPI, roleAPI, contentletAPI, permissionAPI,
                 workflowImportExportUtil);
         ResponseUtil responseUtil = ResponseUtil.INSTANCE;
@@ -99,6 +145,7 @@ public class WorkflowResourceIntegrationTest {
         when(user.getUserId()).thenReturn(ADMIN_DEFAULT_ID);
         when(user.getEmailAddress()).thenReturn(ADMIN_DEFAULT_MAIL);
         when(user.getFullName()).thenReturn(ADMIN_NAME);
+        when(user.getLocale()).thenReturn(Locale.getDefault());
 
         final WebResource webResource = mock(WebResource.class);
         final InitDataObject dataObject = mock(InitDataObject.class);
@@ -109,6 +156,18 @@ public class WorkflowResourceIntegrationTest {
 
         workflowResource = new WorkflowResource(workflowHelper, contentHelper, workflowAPI,
                 contentletAPI, responseUtil, permissionAPI, workflowImportExportUtil, webResource);
+
+        contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+        systemUser = APILocator.systemUser();
+
+        adminUser = APILocator.getUserAPI()
+                .loadByUserByEmail("admin@dotcms.com", systemUser, false);
+
+        languageAPI = APILocator.getLanguageAPI();
+        hostAPI = APILocator.getHostAPI();
+
+        host = hostAPI.findDefaultHost(systemUser, false);
+        adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
     }
 
     @AfterClass
@@ -194,21 +253,21 @@ public class WorkflowResourceIntegrationTest {
             actions.add(workflowAction3);
 
             final Map<String, String> actionStep1 = new HashMap<>();
-            actionStep1.put(WorkflowImportExportUtil.ACTION_ID, workflowAction1.getId());
-            actionStep1.put(WorkflowImportExportUtil.STEP_ID, workflowStep1.getId());
-            actionStep1.put(WorkflowImportExportUtil.ACTION_ORDER, "0");
+            actionStep1.put(ACTION_ID, workflowAction1.getId());
+            actionStep1.put(STEP_ID, workflowStep1.getId());
+            actionStep1.put(ACTION_ORDER, "0");
             actionSteps.add(actionStep1);
 
             final Map<String, String> actionStep2 = new HashMap<>();
-            actionStep2.put(WorkflowImportExportUtil.ACTION_ID, workflowAction2.getId());
-            actionStep2.put(WorkflowImportExportUtil.STEP_ID, workflowStep1.getId());
-            actionStep2.put(WorkflowImportExportUtil.ACTION_ORDER, "1");
+            actionStep2.put(ACTION_ID, workflowAction2.getId());
+            actionStep2.put(STEP_ID, workflowStep1.getId());
+            actionStep2.put(ACTION_ORDER, "1");
             actionSteps.add(actionStep2);
 
             final Map<String, String> actionStep3 = new HashMap<>();
-            actionStep3.put(WorkflowImportExportUtil.ACTION_ID, workflowAction3.getId());
-            actionStep3.put(WorkflowImportExportUtil.STEP_ID, workflowStep2.getId());
-            actionStep3.put(WorkflowImportExportUtil.ACTION_ORDER, "2");
+            actionStep3.put(ACTION_ID, workflowAction3.getId());
+            actionStep3.put(STEP_ID, workflowStep2.getId());
+            actionStep3.put(ACTION_ORDER, "2");
             actionSteps.add(actionStep3);
 
             final Permission permission1 = new Permission();
@@ -651,5 +710,558 @@ public class WorkflowResourceIntegrationTest {
         final HttpServletRequest request4 = mock(HttpServletRequest.class);
         workflowResource.deleteScheme(request4, asyncResponse, savedScheme.getId());
     }
+
+    @Test
+    public void Test_Get_Bulk_Actions_For_Query() {
+        final String luceneQuery = "-contentType:Host -baseType:3 +(conhost:48190c8c-42c4-46af-8d1a-0cd5db894797 conhost:SYSTEM_HOST) +languageId:1 +deleted:false +working:true";
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final BulkActionForm form = new BulkActionForm(null, luceneQuery);
+        final Response response = workflowResource.getBulkActions(request, form);
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        final ResponseEntityView entityView = ResponseEntityView.class.cast(response.getEntity());
+        final BulkActionView wa = BulkActionView.class.cast(entityView.getEntity());
+        assertNotNull(wa);
+        final List<BulkWorkflowSchemeView> schemes = wa.getSchemes();
+        assertNotNull(schemes);
+
+        final Optional<BulkWorkflowSchemeView> documentManagementOptional = schemes.stream()
+                .filter(bulkWorkflowSchemeView -> DM_WORKFLOW
+                        .equals(bulkWorkflowSchemeView.getScheme().getName())).findFirst();
+        final Optional<BulkWorkflowSchemeView> systemWorkflowOptional = schemes.stream()
+                .filter(bulkWorkflowSchemeView -> SYSTEM_WORKFLOW
+                        .equals(bulkWorkflowSchemeView.getScheme().getName())).findFirst();
+
+        assertTrue(documentManagementOptional.isPresent());
+        assertTrue(systemWorkflowOptional.isPresent());
+
+        final BulkWorkflowSchemeView documentManagementScheme = documentManagementOptional.get();
+        final List<WorkflowAction> documentActions = getAllWorkflowActions(documentManagementScheme);
+
+        assertTrue(documentActions.stream()
+                .anyMatch(action -> SAVE_AS_DRAFT.equals(action.getName())));
+        assertTrue(documentActions.stream()
+                .anyMatch(action -> SEND_FOR_REVIEW.equals(action.getName())));
+        assertTrue(documentActions.stream()
+                .anyMatch(action -> SEND_TO_LEGAL.equals(action.getName())));
+        assertTrue(documentActions.stream().anyMatch(action -> PUBLISH.equals(action.getName())));
+        assertTrue(
+                documentActions.stream().anyMatch(action -> REPUBLISH.equals(action.getName())));
+        assertTrue(
+                documentActions.stream().anyMatch(action -> UNPUBLISH.equals(action.getName())));
+        assertTrue(documentActions.stream().anyMatch(action -> ARCHIVE.equals(action.getName())));
+
+        final BulkWorkflowSchemeView systemWorkflowScheme = systemWorkflowOptional.get();
+        final List<WorkflowAction> systemActions = getAllWorkflowActions(systemWorkflowScheme);
+
+        assertTrue(systemActions.stream().anyMatch(action -> ARCHIVE.equals(action.getName())));
+        assertTrue(systemActions.stream().anyMatch(action -> UNPUBLISH.equals(action.getName())));
+        assertTrue(systemActions.stream().anyMatch(action -> COPY.equals(action.getName())));
+        assertTrue(systemActions.stream().anyMatch(action -> SAVE.equals(action.getName())));
+        assertTrue(systemActions.stream()
+                .anyMatch(action -> SAVE_PUBLISH.equals(action.getName()))
+        );
+
+    }
+
+
+    @Test
+    public void Test_Get_Bulk_Actions_For_Contentlet_Ids() throws Exception {
+        //This collects contents associated with a workflow.
+        final Map<WorkflowScheme, Map<ContentType, List<Contentlet>>> sampleContent = collectSampleContent(10);
+        final Set<WorkflowScheme> workflowSchemes = sampleContent.keySet();
+        for (final WorkflowScheme scheme : workflowSchemes) {
+
+            final List<WorkflowStep> steps = workflowAPI.findSteps(scheme);
+
+            final Set<String> availableActions =
+                    workflowAPI.findActions(steps, APILocator.systemUser()).stream().map(WorkflowAction::getId).collect(Collectors.toSet());
+
+            final Map<ContentType, List<Contentlet>> contentsByType = sampleContent.get(scheme);
+            final Set<ContentType> types = contentsByType.keySet();
+            for (final ContentType ct : types) {
+                final List<Contentlet> contentlets = contentsByType.get(ct);
+                final List<String> contentletIds = contentlets.stream().map(Contentlet::getInode)
+                        .collect(Collectors.toList());
+
+                if(!UtilMethods.isSet(contentletIds)){
+                    // for some reason no contetlets of the current type were found.
+                   continue;
+                }
+
+                final HttpServletRequest request = mock(HttpServletRequest.class);
+                final BulkActionForm form = new BulkActionForm(contentletIds, null);
+                final Response response = workflowResource.getBulkActions(request, form);
+                assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+                final ResponseEntityView entityView = ResponseEntityView.class
+                        .cast(response.getEntity());
+                final BulkActionView bulkActionView = BulkActionView.class.cast(entityView.getEntity());
+                assertNotNull(bulkActionView);
+                final List<BulkWorkflowSchemeView> schemes = bulkActionView.getSchemes();
+                assertNotNull(schemes);
+                assertFalse(schemes.isEmpty());
+                // if the piece of content is associated with multiple WorkFlows we need to verify the response matches the one we're currently on.
+                boolean schemeMatches = false;
+                for (final BulkWorkflowSchemeView view : schemes) {
+                    schemeMatches = (scheme.getId().equals(view.getScheme().getId()));
+                    if (schemeMatches) {
+                        assertFalse("Scheme is expected to have steps", view.getSteps().isEmpty());
+                        assertEquals("Schema name does not match", scheme.getName(),
+                                view.getScheme().getName());
+                        for (final BulkWorkflowStepView stepView : view.getSteps()) {
+                            assertTrue("Expected step " + stepView.getStep().getWorkflowStep()
+                                            .getName() + " Not found.",
+                                    steps.contains(stepView.getStep().getWorkflowStep())
+                            );
+                            final List<CountWorkflowAction> workflowActions = stepView.getActions();
+                            for (final CountWorkflowAction workflowAction : workflowActions) {
+                                assertTrue("Expected action " + workflowAction.getWorkflowAction()
+                                                .getName() + " Not found.",
+                                        availableActions.contains(
+                                                workflowAction.getWorkflowAction().getId())
+                                );
+                            }
+                        }
+                        break;
+                    }
+                }
+
+                //At least one scheme was matched
+                assertTrue("no scheme was matched. ",schemeMatches);
+            }
+        }
+    }
+
+
+    @Test
+    public void Test_Fire_Bulk_Actions_For_Contentlet_Id() throws Exception {
+
+        final Map<WorkflowScheme, Map<ContentType, List<Contentlet>>> sampleContent = collectSampleContent(3);
+        final Set<WorkflowScheme> workflowSchemes = sampleContent.keySet();
+        for (final WorkflowScheme scheme : workflowSchemes) {
+            final Map<ContentType,List<Contentlet>> samples = sampleContent.get(scheme);
+            for(final ContentType ct: samples.keySet()){
+               final List<Contentlet> contentlets = samples.get(ct);
+               if(UtilMethods.isSet(contentlets)){
+                   final Contentlet contentlet = contentlets.get(0);
+                   final List<WorkflowStep> steps = workflowAPI.findStepsByContentlet(contentlet);
+                   final List<WorkflowAction> actions = workflowAPI.findActions(steps, APILocator.systemUser());
+
+                   final WorkflowAction action = actions.stream().findAny().get();
+                   final HttpServletRequest request = mock(HttpServletRequest.class);
+                   final FireBulkActionsForm form = new FireBulkActionsForm(null,
+                           Collections.singletonList(contentlet.getInode()), action.getId()
+                   );
+
+                   final AsyncResponse asyncResponse = new MockAsyncResponse((arg) -> {
+                       final Response response = (Response) arg;
+                       final int code = response.getStatus();
+                       assertEquals(Status.OK.getStatusCode(), code);
+                       final ResponseEntityView entityView = ResponseEntityView.class.cast(response.getEntity());
+                       final BulkActionsResultView wa = BulkActionsResultView.class.cast(entityView.getEntity());
+                       assertNotNull(wa);
+                       return true;
+                   }, o -> true);
+
+                   Logger.info(getClass(), "Executing Action: '"+action.getName() + "' on contentlet: '" + contentlet.getName() + "'");
+                   workflowResource.fireBulkActions(request, asyncResponse, form);
+               }
+            }
+        }
+    }
+
+    private List<WorkflowAction> validateDocumentManagement(final BulkWorkflowSchemeView documentManagementScheme){
+
+        final List<WorkflowAction> documentActions = getAllWorkflowActions(documentManagementScheme);
+
+        //step 1 Document Management Actions.
+        assertTrue(documentActions.stream()
+                .anyMatch(action -> SAVE_AS_DRAFT.equals(action.getName())));
+        assertTrue(documentActions.stream()
+                .anyMatch(action -> SEND_FOR_REVIEW.equals(action.getName())));
+        assertTrue(documentActions.stream()
+                .anyMatch(action -> SEND_TO_LEGAL.equals(action.getName())));
+        assertTrue(documentActions.stream().anyMatch(action -> PUBLISH.equals(action.getName())));
+
+        return documentActions;
+    }
+
+    private List<WorkflowAction> validateSystemWorkflow(final BulkWorkflowSchemeView systemWorkflowScheme){
+
+        final List<WorkflowAction> systemActions = getAllWorkflowActions(systemWorkflowScheme);
+
+        //step 1 System Workflow Actions.
+        assertTrue(systemActions.stream().anyMatch(action -> SAVE.equals(action.getName())));
+        assertTrue(systemActions.stream()
+               .anyMatch(action -> SAVE_PUBLISH.equals(action.getName())));
+        return systemActions;
+    }
+
+
+    /**
+     * Thread sleep that allows a few seconds for the index to finish indexing.
+     * @throws Exception
+     */
+    private void indexNeedsToCatchup() {
+        try {
+            TimeUnit.SECONDS.sleep(8); // Wait for the new content to be indexed.
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     *
+     * @param contentlet
+     * @return
+     * @throws Exception
+     */
+    private Contentlet findLatestWorkingContentlet(final Contentlet contentlet) {
+
+        try {
+            return contentletAPI.findContentletByIdentifier(
+                    contentlet.getIdentifier(),false, contentlet.getLanguageId(), systemUser, false
+            );
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Creates a custom contentType with a required field
+     * @return
+     * @throws Exception
+     */
+    private ContentType createSampleContentType() throws Exception{
+        ContentType contentType;
+        final String ctPrefix = "TestContentType";
+        final String newContentTypeName = ctPrefix + System.currentTimeMillis();
+
+        // Create ContentType
+        contentType = createContentTypeAndAssignPermissions(newContentTypeName,
+                BaseContentType.CONTENT, PermissionAPI.PERMISSION_READ, adminRole.getId());
+        final WorkflowScheme systemWorkflow = workflowAPI.findSystemWorkflowScheme();
+        final WorkflowScheme documentWorkflow = workflowAPI
+                .findSchemeByName(DM_WORKFLOW);
+
+        // Add fields to the contentType
+        final Field field =
+                FieldBuilder.builder(TextField.class).name("requiredField").variable("requiredField")
+                        .required(true)
+                        .contentTypeId(contentType.id()).dataType(DataTypes.TEXT).build();
+        contentType = contentTypeAPI.save(contentType, Collections.singletonList(field));
+
+        // Assign contentType to Workflows
+        workflowAPI.saveSchemeIdsForContentType(contentType,
+                Arrays.asList(
+                        systemWorkflow.getId(), documentWorkflow.getId()
+                )
+        );
+
+        return contentType;
+    }
+
+    /**
+     * Creates a contentlet based on the content type passed
+     * @param contentType
+     * @return
+     * @throws Exception
+     */
+    private Contentlet createSampleContent(final ContentType contentType) throws Exception{
+        Contentlet contentlet = null;
+        // Create a content sample
+        contentlet = new Contentlet();
+        // instruct the content with its own type
+        contentlet.setStructureInode(contentType.inode());
+        contentlet.setHost(host.getIdentifier());
+        contentlet.setLanguageId(languageAPI.getDefaultLanguage().getId());
+        contentlet.setStringProperty("requiredField","anyValue");
+
+        // Save the content
+        contentlet = contentletAPI.checkin(contentlet, systemUser, false);
+        assertNotNull(contentlet.getInode());
+
+        indexNeedsToCatchup();
+
+        assertTrue(contentletAPI.isInodeIndexed(contentlet.getInode()));
+        return contentlet;
+    }
+
+    @Test
+    public void Test_Find_Bulk_Actions_Then_Fire_Bulk_Actions_On_Custom_Content_Type_Then_Verify_Workflow_Changed()
+            throws Exception {
+
+        // We create a contentType that is associated with the two workflows that come out of the box.
+        final ContentType contentType = createSampleContentType();
+        //Then we create an instance
+        final Contentlet contentlet = createSampleContent(contentType);
+        final String inode = contentlet.getInode();
+
+        try {
+            //  Now Test BulkActions
+            final BulkActionForm form1 = new BulkActionForm(
+                    Collections.singletonList(inode), null
+            );
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            final Response bulkActionsResponse = workflowResource.getBulkActions(request, form1);
+            assertEquals(Response.Status.OK.getStatusCode(), bulkActionsResponse.getStatus());
+
+            final ResponseEntityView beforeFireEntityView = ResponseEntityView.class
+                    .cast(bulkActionsResponse.getEntity());
+            final BulkActionView bulkActionView = BulkActionView.class
+                    .cast(beforeFireEntityView.getEntity());
+            assertNotNull(bulkActionView);
+            final List<BulkWorkflowSchemeView> schemes1 = bulkActionView.getSchemes();
+
+            final Optional<BulkWorkflowSchemeView> documentManagementOptional1 = schemes1.stream()
+                    .filter(bulkWorkflowSchemeView -> DM_WORKFLOW
+                            .equals(bulkWorkflowSchemeView.getScheme().getName())).findFirst();
+
+            final Optional<BulkWorkflowSchemeView> systemWorkflowOptional1 = schemes1.stream()
+                    .filter(bulkWorkflowSchemeView -> SYSTEM_WORKFLOW
+                            .equals(bulkWorkflowSchemeView.getScheme().getName())).findFirst();
+
+            assertTrue(documentManagementOptional1.isPresent());
+            assertTrue(systemWorkflowOptional1.isPresent());
+
+            //Validate we have every possible action within the workflows.
+            final BulkWorkflowSchemeView documentManagementScheme = documentManagementOptional1
+                    .get();
+            // Workflow has to have All available first steps for the current assigned WF.
+            final List<WorkflowAction> documentManagementAction = validateDocumentManagement(
+                    documentManagementScheme);
+
+            // System Actions
+            final BulkWorkflowSchemeView systemWorkflowScheme = systemWorkflowOptional1.get();
+            final List<WorkflowAction> systemWorkflowActions = validateSystemWorkflow(
+                    systemWorkflowScheme);
+
+            //Now I should be able to choose from the two set of actions and start an execution path.
+
+            final WorkflowAction saveAction = systemWorkflowActions.stream()
+                    .filter(action -> SAVE.equals(action.getName())).findFirst().get();
+
+            final HttpServletRequest request1 = mock(HttpServletRequest.class);
+            final FireBulkActionsForm actionsForm1 = new FireBulkActionsForm(null,
+                    Collections.singletonList(inode), saveAction.getId());
+
+            //This CountDownLatch prevents the finally block from getting reached until after the thread completes
+            final CountDownLatch countDownLatch = new CountDownLatch(1);
+
+            final AsyncResponse asyncResponse = new MockAsyncResponse((arg) -> {
+                try {
+                    final Response response = (Response) arg;
+                    final int code = response.getStatus();
+                    assertEquals(Status.OK.getStatusCode(), code);
+                    final ResponseEntityView fireEntityView = ResponseEntityView.class
+                            .cast(response.getEntity());
+
+                    final BulkActionsResultView bulkActionsResultView = BulkActionsResultView.class
+                            .cast(fireEntityView.getEntity());
+                    assertNotNull(bulkActionsResultView);
+
+                    assertEquals(1, bulkActionsResultView.getSuccessCount().intValue());
+                    assertEquals(0, bulkActionsResultView.getFailsCount().intValue());
+                    assertEquals(0, bulkActionsResultView.getSkippedCount().intValue());
+
+                    indexNeedsToCatchup();
+
+                    // If we try to find available actions for a  contentlet on which we have fired an action successfully we shouldn't get anything.
+                    final HttpServletRequest request2 = mock(HttpServletRequest.class);
+                    final BulkActionForm form2 = new BulkActionForm(
+                            Collections.singletonList(inode), null
+                    );
+
+                    final Response response2 = workflowResource.getBulkActions(request2, form2);
+                    assertEquals(Response.Status.OK.getStatusCode(), response2.getStatus());
+                    final ResponseEntityView afterFireEntityView = ResponseEntityView.class
+                            .cast(response2.getEntity());
+                    final BulkActionView bulkActionView2 = BulkActionView.class
+                            .cast(afterFireEntityView.getEntity());
+                    assertNotNull(bulkActionView2);
+                    final List<BulkWorkflowSchemeView> schemes2 = bulkActionView2.getSchemes();
+                    assertTrue(schemes2.isEmpty());
+
+                    //We need to get the latest working inode. Since it has changed after we fired an action successfully.
+                    final Contentlet contentletAfterActionApplied = findLatestWorkingContentlet(
+                            contentlet);
+
+                    final HttpServletRequest request3 = mock(HttpServletRequest.class);
+                    // If we try to find available actions for the latest inode then we should still see the workflow that owns the action we fired on this contentlet. But not the other ones.
+                    final BulkActionForm bulkActionFormAfterSave = new BulkActionForm(
+                            Collections.singletonList(contentletAfterActionApplied.getInode()), null
+                    );
+
+                    final Response response3 = workflowResource
+                            .getBulkActions(request3, bulkActionFormAfterSave);
+                    assertEquals(Response.Status.OK.getStatusCode(), response3.getStatus());
+                    final ResponseEntityView afterFireEntityViewNewInode = ResponseEntityView.class
+                            .cast(response3.getEntity());
+                    final BulkActionView bulkActionView3 = BulkActionView.class
+                            .cast(afterFireEntityViewNewInode.getEntity());
+                    assertNotNull(bulkActionView3);
+                    final List<BulkWorkflowSchemeView> schemes3 = bulkActionView3.getSchemes();
+                    assertFalse(schemes3.isEmpty());
+
+                    final Optional<BulkWorkflowSchemeView> documentManagementOptional2 = schemes3
+                            .stream()
+                            .filter(bulkWorkflowSchemeView -> DM_WORKFLOW
+                                    .equals(bulkWorkflowSchemeView.getScheme().getName()))
+                            .findFirst();
+
+                    final Optional<BulkWorkflowSchemeView> systemWorkflowOptional2 = schemes3
+                            .stream()
+                            .filter(bulkWorkflowSchemeView -> SYSTEM_WORKFLOW
+                                    .equals(bulkWorkflowSchemeView.getScheme().getName()))
+                            .findFirst();
+
+                    assertTrue(systemWorkflowOptional2.isPresent());
+                    assertFalse(documentManagementOptional2.isPresent());
+                }finally {
+                    countDownLatch.countDown();
+                }
+                return true;
+            }, o -> true);
+
+            workflowResource.fireBulkActions(request1, asyncResponse, actionsForm1);
+            countDownLatch.await(60, TimeUnit.SECONDS);
+
+        } finally {
+
+            if (contentlet != null) {
+                contentletAPI.archive(contentlet, systemUser, false);
+                contentletAPI.delete(contentlet, systemUser, false);
+            }
+            if (contentType != null) {
+                contentTypeAPI.delete(contentType);
+            }
+        }
+    }
+
+    @Test
+    public void Test_Find_Bulk_Actions_Then_Fire_Bulk_Actions_On_Custom_Content_Type_with_Errors_Then_Verify_Workflow_Did_Not_Changed()
+            throws Exception {
+
+        //Hand picked Form-like Widgets with a mandatory title field
+        final Contentlet candidate1 = contentletAPI.findContentletByIdentifier(
+                "b4ae5fd4-c4c7-4590-8299-00569a9f13be", false, 1, systemUser, false
+        );
+
+        final Contentlet candidate2 = contentletAPI.findContentletByIdentifier(
+                "2f180f39-59c3-4225-9cca-5daf778f3f3e", false, 1, systemUser, false
+        );
+
+        final List<Contentlet> contentlets = Arrays.asList(candidate1, candidate2);
+
+        final CountDownLatch countDownLatch =  new CountDownLatch(contentlets.size());
+
+        for (final Contentlet contentlet : contentlets) {
+
+            final String inode = contentlet.getInode();
+
+            //  Now Test BulkActions
+            final BulkActionForm form1 = new BulkActionForm(
+                    Collections.singletonList(inode), null
+            );
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            final Response findActionsResponse = workflowResource.getBulkActions(request, form1);
+            assertEquals(Response.Status.OK.getStatusCode(), findActionsResponse.getStatus());
+
+            final ResponseEntityView beforeFireEntityView = ResponseEntityView.class
+                    .cast(findActionsResponse.getEntity());
+            final BulkActionView bulkActionView = BulkActionView.class
+                    .cast(beforeFireEntityView.getEntity());
+            assertNotNull(bulkActionView);
+            final List<BulkWorkflowSchemeView> schemes1 = bulkActionView.getSchemes();
+
+            final Optional<BulkWorkflowSchemeView> documentManagementOptional1 = schemes1
+                    .stream()
+                    .filter(bulkWorkflowSchemeView -> DM_WORKFLOW
+                            .equals(bulkWorkflowSchemeView.getScheme().getName())).findFirst();
+
+            final Optional<BulkWorkflowSchemeView> systemWorkflowOptional1 = schemes1.stream()
+                    .filter(bulkWorkflowSchemeView -> SYSTEM_WORKFLOW
+                            .equals(bulkWorkflowSchemeView.getScheme().getName())).findFirst();
+
+            assertFalse(documentManagementOptional1.isPresent());
+            assertTrue(systemWorkflowOptional1.isPresent());
+
+            //Validate and get System WF Actions.
+            final BulkWorkflowSchemeView systemWorkflowScheme = systemWorkflowOptional1.get();
+            final List<WorkflowAction> systemWorkflowActions = validateSystemWorkflow(
+                    systemWorkflowScheme
+            );
+
+            //Now I should be able to fire Save.
+
+            final WorkflowAction saveAction = systemWorkflowActions.stream()
+                    .filter(action -> SAVE.equals(action.getName())).findFirst().get();
+
+            final HttpServletRequest request1 = mock(HttpServletRequest.class);
+            final FireBulkActionsForm actionsForm1 = new FireBulkActionsForm(null,
+                    Collections.singletonList(inode), saveAction.getId());
+
+            final AsyncResponse asyncResponse = new MockAsyncResponse((arg) -> {
+                try {
+                    final Response response = (Response) arg;
+                    final int code = response.getStatus();
+                    assertEquals(Status.OK.getStatusCode(), code);
+                    final ResponseEntityView fireEntityView = ResponseEntityView.class
+                            .cast(response.getEntity());
+
+                    final BulkActionsResultView bulkActionsResultView = BulkActionsResultView.class
+                            .cast(fireEntityView.getEntity());
+                    assertNotNull(bulkActionsResultView);
+
+                    //This CTs We chose should  have a required field. And a failure is expected.
+
+                    assertEquals(0, bulkActionsResultView.getSuccessCount().intValue());
+                    assertEquals(1, bulkActionsResultView.getFailsCount().intValue());
+                    assertEquals(0, bulkActionsResultView.getSkippedCount().intValue());
+
+                    //  Now Test BulkActions
+                    final BulkActionForm form2 = new BulkActionForm(
+                            Collections.singletonList(inode), null
+                    );
+                    final HttpServletRequest request2 = mock(HttpServletRequest.class);
+                    final Response response2 = workflowResource.getBulkActions(request2, form2);
+                    assertEquals(Response.Status.OK.getStatusCode(), response2.getStatus());
+
+                    final ResponseEntityView afterFireEntityView = ResponseEntityView.class
+                            .cast(response2.getEntity());
+                    final BulkActionView bulkActionView2 = BulkActionView.class
+                            .cast(afterFireEntityView.getEntity());
+                    assertNotNull(bulkActionView2);
+                    final List<BulkWorkflowSchemeView> schemes2 = bulkActionView2.getSchemes();
+
+                    final Optional<BulkWorkflowSchemeView> documentManagementOptional2 = schemes2
+                            .stream()
+                            .filter(bulkWorkflowSchemeView -> DM_WORKFLOW
+                                    .equals(bulkWorkflowSchemeView.getScheme().getName()))
+                            .findFirst();
+
+                    final Optional<BulkWorkflowSchemeView> systemWorkflowOptional2 = schemes2
+                            .stream()
+                            .filter(bulkWorkflowSchemeView -> SYSTEM_WORKFLOW
+                                    .equals(bulkWorkflowSchemeView.getScheme().getName()))
+                            .findFirst();
+
+                    assertFalse(documentManagementOptional2.isPresent());
+                    assertTrue(systemWorkflowOptional2.isPresent());
+                }finally {
+                    countDownLatch.countDown();
+                }
+                return true;
+            }, o -> true);
+
+            workflowResource.fireBulkActions(request1, asyncResponse, actionsForm1);
+
+        }
+
+        countDownLatch.await(60, TimeUnit.SECONDS);
+
+    }
+
+
+
 
 }
