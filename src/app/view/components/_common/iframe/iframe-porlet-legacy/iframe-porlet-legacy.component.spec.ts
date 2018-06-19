@@ -11,7 +11,6 @@ import { Observable } from 'rxjs/Observable';
 import { RouterTestingModule } from '@angular/router/testing';
 import { SocketFactory, SiteService, LoginService } from 'dotcms-js/dotcms-js';
 import { DotIframeEventsHandler } from './services/iframe-events-handler.service';
-import { DotUiColorsService } from '../../../../../api/services/dot-ui-colors/dot-ui-colors.service';
 
 describe('IframePortletLegacyComponent', () => {
     let comp: IframePortletLegacyComponent;
@@ -21,7 +20,6 @@ describe('IframePortletLegacyComponent', () => {
     let dotIframe: DebugElement;
     let dotMenuService: DotMenuService;
     let dotIframeEventsHandler: DotIframeEventsHandler;
-    let dotUiColorsService: DotUiColorsService;
     let route: ActivatedRoute;
 
     beforeEach(async(() => {
@@ -57,7 +55,6 @@ describe('IframePortletLegacyComponent', () => {
         dotIframe = de.query(By.css('dot-iframe'));
         dotMenuService = de.injector.get(DotMenuService);
         dotIframeEventsHandler = de.injector.get(DotIframeEventsHandler);
-        dotUiColorsService = de.injector.get(DotUiColorsService);
         route = de.injector.get(ActivatedRoute);
     }));
 
@@ -111,25 +108,5 @@ describe('IframePortletLegacyComponent', () => {
                 is: 'a custom event'
             }
         });
-    });
-
-    it('should set colors in the jsp on load', () => {
-        spyOn(dotUiColorsService, 'setColors');
-
-        const fakeHTMLElement = {
-            fake: 'HTML'
-        };
-
-        dotIframe.triggerEventHandler('load', {
-            target: {
-                contentDocument: {
-                    querySelector: () => {
-                        return fakeHTMLElement;
-                    }
-                }
-            }
-        });
-
-        expect(dotUiColorsService.setColors).toHaveBeenCalledWith(fakeHTMLElement);
     });
 });

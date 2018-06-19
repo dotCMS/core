@@ -10,7 +10,6 @@ import { DotLoadingIndicatorService } from '../dot-loading-indicator/dot-loading
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { DotRouterService } from '../../../../../api/services/dot-router/dot-router.service';
 import { DotIframeEventsHandler } from './services/iframe-events-handler.service';
-import { DotUiColorsService } from '../../../../../api/services/dot-ui-colors/dot-ui-colors.service';
 
 @Component({
     selector: 'dot-iframe-porlet',
@@ -29,7 +28,6 @@ export class IframePortletLegacyComponent implements OnInit {
         private dotcmsEventsService: DotcmsEventsService,
         private route: ActivatedRoute,
         private dotIframeEventsHandler: DotIframeEventsHandler,
-        private dotUiColorsService: DotUiColorsService,
         public loggerService: LoggerService,
         public siteService: SiteService
     ) {
@@ -57,18 +55,6 @@ export class IframePortletLegacyComponent implements OnInit {
      */
     onCustomEvent($event: CustomEvent): void {
         this.dotIframeEventsHandler.handle($event);
-    }
-
-    /**
-     * Handle dot-iframe load
-     *
-     * @param {Event} $event
-     * @memberof IframePortletLegacyComponent
-     */
-    onLoad($event: Event) {
-        const target: HTMLIFrameElement = <HTMLIFrameElement>$event.target;
-        const doc: Document = target.contentDocument;
-        this.dotUiColorsService.setColors(doc.querySelector('html'));
     }
 
     /**

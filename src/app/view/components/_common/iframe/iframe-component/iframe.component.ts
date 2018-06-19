@@ -13,7 +13,7 @@ import { LoginService, LoggerService } from 'dotcms-js/dotcms-js';
 import { DotLoadingIndicatorService } from '../dot-loading-indicator/dot-loading-indicator.service';
 import { IframeOverlayService } from '../service/iframe-overlay.service';
 import { DotIframeService } from '../service/dot-iframe/dot-iframe.service';
-import { Subject } from 'rxjs';
+import { Subject } from 'rxjs/Subject';
 import { DotUiColorsService } from '../../../../../api/services/dot-ui-colors/dot-ui-colors.service';
 
 @Component({
@@ -105,6 +105,12 @@ export class IframeComponent implements OnInit, OnDestroy {
             this.getIframeWindow().addEventListener('keydown', this.emitKeyDown.bind(this));
             this.getIframeWindow().document.addEventListener('ng-event', this.emitCustonEvent.bind(this));
             this.load.emit($event);
+
+            const doc = this.getIframeDocument();
+
+            if (doc) {
+                this.dotUiColorsService.setColors(doc.querySelector('html'));
+            }
         }
     }
 

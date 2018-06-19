@@ -35,7 +35,9 @@ describe('IframeComponent', () => {
                 }
             ]
         });
+    }));
 
+    beforeEach(() => {
         fixture = DOTTestBed.createComponent(IframeComponent);
         comp = fixture.componentInstance;
         de = fixture.debugElement;
@@ -43,11 +45,13 @@ describe('IframeComponent', () => {
         dotIframeService = de.injector.get(DotIframeService);
         dotUiColorsService = de.injector.get(DotUiColorsService);
 
+        spyOn(dotUiColorsService, 'setColors');
+
         comp.isLoading = false;
         comp.src = 'etc/etc?hello=world';
         fixture.detectChanges();
         iframeEl = de.query(By.css('iframe'));
-    }));
+    });
 
     it('should have iframe element', () => {
         expect(iframeEl).toBeTruthy();
@@ -107,21 +111,26 @@ describe('IframeComponent', () => {
             }
         };
 
-        spyOn(dotUiColorsService, 'setColors');
-
         dotIframeService.reloadColors();
 
         expect(dotUiColorsService.setColors).toHaveBeenCalledWith(fakeHtmlEl);
     });
 
     describe('bind iframe events', () => {
+        let fakeHtmlEl;
+
         beforeEach(() => {
+            fakeHtmlEl = {
+                hello: 'html'
+            };
+
             comp.iframeElement.nativeElement = {
                 contentWindow: {
                     document: {
                         body: {
                             innerHTML: '<html></html>'
                         },
+                        querySelector: () => fakeHtmlEl,
                         addEventListener: jasmine.createSpy('docAddEventListener'),
                         removeEventListener: jasmine.createSpy('docRemoveEventListener')
                     },
@@ -151,6 +160,13 @@ describe('IframeComponent', () => {
                 'ng-event',
                 jasmine.any(Function)
             );
+        });
+
+        it('should set the colors to the jsp on load', () => {
+
+            iframeEl.triggerEventHandler('load', {});
+
+            expect(dotUiColorsService.setColors).toHaveBeenCalledWith(fakeHtmlEl);
         });
     });
 
