@@ -92,10 +92,8 @@ public class VisitorLoggerTest {
         VisitorLogger.addConstructor(CustomCharacterTest.class);
         List<Constructor<AbstractCharacter>> result = VisitorLogger.removeConstructor(CustomCharacterTest.class);
 
-        Assert.assertTrue(UtilMethods.isSet(result));
-        Assert.assertFalse(result.stream()
-                .filter(constructor -> constructor.getDeclaringClass().getName()
-                        .equals(CustomCharacterTest.class.getName())).findAny().isPresent());
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.isEmpty());
     }
 
     private void mockObjects(HttpServletRequest mockRequest) throws UnknownHostException {
