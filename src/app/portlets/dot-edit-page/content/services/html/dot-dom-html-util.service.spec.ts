@@ -69,7 +69,5 @@ describe('DotDOMHtmlUtilService', () => {
         expect(button.getAttribute('aria-label')).toEqual('ButtonLabel', 'button aria-label is wrong');
         expect(button.dataset['a']).toEqual('a value', 'button datset[a] is wrong');
         expect(button.dataset['b']).toEqual('b value', 'button datset[a] is wrong');
-
-        expect(button.disabled).toBeFalsy();
     });
 });

@@ -8,7 +8,7 @@ import { Subject } from 'rxjs/Subject';
 
 import { SiteService, ResponseView } from 'dotcms-js/dotcms-js';
 
-import { DotAlertConfirmService } from '../../../api/services/dot-alert-confirm';
+import { DotDialogService } from '../../../api/services/dot-dialog';
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
 import { DotEditPageService } from '../../../api/services/dot-edit-page/dot-edit-page.service';
 import { DotEditPageViewAs } from '../../../shared/models/dot-edit-page-view-as/dot-edit-page-view-as.model';
@@ -28,7 +28,6 @@ import { PageMode } from '../shared/models/page-mode.enum';
 import { DotRenderedPage } from '../shared/models/dot-rendered-page.model';
 import { DotEditPageDataService } from '../shared/services/dot-edit-page-resolver/dot-edit-page-data.service';
 import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { ContentType } from '../../content-types/shared/content-type.model';
 
 /**
  * Edit content page component, render the html of a page and bind all events to make it ediable.
@@ -49,13 +48,12 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     contentletActionsUrl: SafeResourceUrl;
     pageState: DotRenderedPageState;
     showWhatsChanged = false;
-    editForm = false;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
         private dotContentletEditorService: DotContentletEditorService,
-        private dotDialogService: DotAlertConfirmService,
+        private dotDialogService: DotDialogService,
         private dotEditPageDataService: DotEditPageDataService,
         private dotEditPageService: DotEditPageService,
         private dotGlobalMessageService: DotGlobalMessageService,
@@ -161,17 +159,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Handle form selected
-     *
-     * @param {ContentType} item
-     * @memberof DotEditContentComponent
-     */
-    onFormSelected(item: ContentType): void {
-        this.dotEditContentHtmlService.renderAddedForm(item);
-        this.editForm = false;
-    }
-
-    /**
      * Handle cancel button click in the toolbar
      *
      * @memberof DotEditContentComponent
@@ -206,22 +193,18 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         };
         this.dotEditContentHtmlService.setContainterToAppendContentlet(container);
 
-        if ($event.dataset.dotAdd === 'form') {
-            this.editForm = true;
-        } else {
-            this.dotContentletEditorService.add({
-                header: this.dotMessageService.get('dot.common.content.search'),
-                data: {
-                    container: $event.dataset.dotIdentifier,
-                    baseTypes: $event.dataset.dotAdd
-                },
-                events: {
-                    load: (event) => {
-                        event.target.contentWindow.ngEditContentletEvents = this.dotEditContentHtmlService.contentletEvents$;
-                    }
+        this.dotContentletEditorService.add({
+            header: this.dotMessageService.get('dot.common.content.search'),
+            data: {
+                container: $event.dataset.dotIdentifier,
+                baseTypes: $event.dataset.dotAdd
+            },
+            events: {
+                load: (event) => {
+                    event.target.contentWindow.ngEditContentletEvents = this.dotEditContentHtmlService.contentletEvents$;
                 }
-            });
-        }
+            }
+        });
     }
 
     private editContentlet($event: any): void {

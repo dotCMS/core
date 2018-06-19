@@ -1,4 +1,4 @@
-import { DotAlertConfirmService } from '../../../api/services/dot-alert-confirm/dot-alert-confirm.service';
+import { DotDialogService } from '../../../api/services/dot-dialog/dot-dialog.service';
 import { Component, OnInit, ViewEncapsulation, HostListener } from '@angular/core';
 import { DotEventsService } from '../../../api/services/dot-events/dot-events.service';
 import { Router, NavigationEnd } from '@angular/router';
@@ -22,6 +22,7 @@ export class MainComponentLegacyComponent implements OnInit {
         private router: Router,
         private dotRouterService: DotRouterService,
         private dotIframeService: DotIframeService,
+        public dotDialotService: DotDialogService
     ) {}
 
     /**

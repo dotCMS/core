@@ -1,6 +1,6 @@
 import { LoginServiceMock } from './../../../../../test/login-service.mock';
 import { LoginService } from 'dotcms-js/core/login.service';
-import { DotAlertConfirmService } from '../../../../../api/services/dot-alert-confirm/dot-alert-confirm.service';
+import { DotDialogService } from '../../../../../api/services/dot-dialog/dot-dialog.service';
 import { async, ComponentFixture } from '@angular/core/testing';
 import { DotEditPageToolbarComponent } from './dot-edit-page-toolbar.component';
 import { DotEditPageToolbarModule } from './dot-edit-page-toolbar.module';
@@ -44,7 +44,7 @@ describe('DotEditPageToolbarComponent', () => {
     let fixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
     let dotGlobalMessageService: DotGlobalMessageService;
-    let dotDialogService: DotAlertConfirmService;
+    let dotDialogService: DotDialogService;
     let actions: DebugElement;
     let cancel: DebugElement;
 
@@ -134,7 +134,7 @@ describe('DotEditPageToolbarComponent', () => {
         );
 
         dotGlobalMessageService = de.injector.get(DotGlobalMessageService);
-        dotDialogService = de.injector.get(DotAlertConfirmService);
+        dotDialogService = de.injector.get(DotDialogService);
         actions = de.query(By.css('dot-edit-page-workflows-actions'));
         cancel = de.query(By.css('.edit-page-toolbar__cancel'));
     });

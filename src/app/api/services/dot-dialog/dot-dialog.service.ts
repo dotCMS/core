@@ -1,18 +1,18 @@
 import { DotMessageService } from '../dot-messages-service';
 import { Injectable } from '@angular/core';
-import { DotAlertConfirm } from '../../../shared/models/dot-alert-confirm/dot-alert-confirm.model';
+import { DotDialog } from '../../../shared/models/dot-confirmation/dot-confirmation.model';
 import { ConfirmationService } from 'primeng/primeng';
 
 /**
  * Handle global confirmation and alert dialog component
  * @export
- * @class DotAlertConfirmService
+ * @class DotDialogService
  */
 
 @Injectable()
-export class DotAlertConfirmService {
-    alertModel: DotAlertConfirm = null;
-    confirmModel: DotAlertConfirm = null;
+export class DotDialogService {
+    alertModel: DotDialog = null;
+    confirmModel: DotDialog = null;
 
     constructor(public confirmationService: ConfirmationService, private dotMessageService: DotMessageService) {
         this.dotMessageService.getMessages(['dot.common.dialog.accept', 'dot.common.dialog.reject']).subscribe();
@@ -21,11 +21,10 @@ export class DotAlertConfirmService {
     /**
      * Confirm wrapper method of ConfirmService
      * Add both accept and reject labels into confirmation object
-     *
-     * @param {DotAlertConfirm} dialogModel
-     * @memberof DotAlertConfirmService
+     * @param {DotDialog} dialogModel
+     * @memberof DotDialogService
      */
-    confirm(dialogModel: DotAlertConfirm): void {
+    confirm(dialogModel: DotDialog): void {
         dialogModel.footerLabel = {
             accept: this.dotMessageService.get('dot.common.dialog.accept'),
             reject: this.dotMessageService.get('dot.common.dialog.reject'),
@@ -41,11 +40,10 @@ export class DotAlertConfirmService {
     /**
      * Confirm wrapper method of ConfirmService
      * Add both accept and reject labels into confirmation object
-     *
-     * @param {DotAlertConfirm} confirmation
-     * @memberof DotAlertConfirmService
+     * @param {DotDialog} confirmation
+     * @memberof DotDialogService
      */
-    alert(dialogModel: DotAlertConfirm): void {
+    alert(dialogModel: DotDialog): void {
         dialogModel.footerLabel = {
             accept: this.dotMessageService.get('dot.common.dialog.accept'),
             ...dialogModel.footerLabel
@@ -57,7 +55,7 @@ export class DotAlertConfirmService {
     /**
      * Call the alert accept action and clear the model
      *
-     * @memberof DotAlertConfirmService
+     * @memberof DotDialogService
      */
     alertAccept($event): void {
         if (this.alertModel.accept) {
@@ -69,7 +67,7 @@ export class DotAlertConfirmService {
     /**
      * Call the alert reject action and clear the model
      *
-     * @memberof DotAlertConfirmService
+     * @memberof DotDialogService
      */
     alertReject($event): void {
         if (this.alertModel.reject) {
@@ -81,7 +79,7 @@ export class DotAlertConfirmService {
     /**
      * clear confirm dialog object
      *
-     * @memberof DotAlertConfirmService
+     * @memberof DotDialogService
      */
     clearConfirm(): void {
         this.confirmModel = null;

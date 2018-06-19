@@ -1,4 +1,4 @@
-import { DotAlertConfirmService } from '../../../../api/services/dot-alert-confirm/dot-alert-confirm.service';
+import { DotDialogService } from '../../../../api/services/dot-dialog/dot-dialog.service';
 import { Component, Input, SimpleChanges, ViewEncapsulation, OnChanges } from '@angular/core';
 
 import { BaseComponent } from '../../_common/_base/base-component';
@@ -16,7 +16,7 @@ export class ActionHeaderComponent extends BaseComponent implements OnChanges {
     @Input() options: ActionHeaderOptions;
     public dynamicOverflow = 'visible';
 
-    constructor(dotMessageService: DotMessageService, private dotDialogService: DotAlertConfirmService) {
+    constructor(dotMessageService: DotMessageService, private dotDialogService: DotDialogService) {
         super(['selected', 'contenttypes.action.delete', 'contenttypes.action.cancel'], dotMessageService);
     }
 

@@ -1,22 +1,22 @@
-import { DotAlertConfirmService } from '../../../../api/services/dot-alert-confirm/dot-alert-confirm.service';
+import { DotDialogService } from '../../../../api/services/dot-dialog/dot-dialog.service';
 import { Component, ViewChild } from '@angular/core';
 import { ConfirmDialog } from 'primeng/primeng';
 
 @Component({
-    selector: 'dot-alert-confirm',
-    templateUrl: './dot-alert-confirm.html',
-    styleUrls: ['./dot-alert-confirm.scss']
+    selector: 'dot-dialog',
+    templateUrl: './dot-dialog.component.html',
+    styleUrls: ['./dot-dialog.component.scss']
 })
-export class DotAlertConfirmComponent {
+export class DotDialogComponent {
     @ViewChild('cd') cd: ConfirmDialog;
 
-    constructor(public dotDialogService: DotAlertConfirmService) {}
+    constructor(public dotDialogService: DotDialogService) {}
 
     /**
      * Handle confirmation dialog action button click
      *
      * @param {string} action
-     * @memberof DotAlertConfirmComponent
+     * @memberof DotDialogComponent
      */
     onClickConfirm(action: string): void {
         action === 'accept' ? this.cd.accept() : this.cd.reject();

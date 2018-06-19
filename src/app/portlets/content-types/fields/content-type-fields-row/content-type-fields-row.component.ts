@@ -3,7 +3,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { ContentTypeField, FieldRow } from '../shared';
 import { BaseComponent } from '../../../../view/components/_common/_base/base-component';
 import { DotMessageService } from '../../../../api/services/dot-messages-service';
-import { DotAlertConfirmService } from '../../../../api/services/dot-alert-confirm';
+import { DotDialogService } from '../../../../api/services/dot-dialog';
 import { FieldColumn } from '..';
 
 /**
@@ -24,7 +24,7 @@ export class ContentTypeFieldsRowComponent extends BaseComponent {
     @Output() removeField: EventEmitter<ContentTypeField> = new EventEmitter();
     @Output() removeRow: EventEmitter<FieldRow> = new EventEmitter();
 
-    constructor(dotMessageService: DotMessageService, private dotDialogService: DotAlertConfirmService) {
+    constructor(dotMessageService: DotMessageService, private dotDialogService: DotDialogService) {
         super(
             [
                 'contenttypes.dropzone.rows.empty.message',

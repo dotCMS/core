@@ -1,7 +1,7 @@
 import { Component, OnInit, Input, EventEmitter, Output } from '@angular/core';
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
+import { DotDialogService } from '../../../../../api/services/dot-dialog';
 import { DotMessageService } from '../../../../../api/services/dot-messages-service';
-import { DotAlertConfirmService } from '../../../../../api/services/dot-alert-confirm';
 
 @Component({
     selector: 'dot-contentlet-wrapper',
@@ -18,7 +18,7 @@ export class DotContentletWrapperComponent implements OnInit {
 
     constructor(
         private dotContentletEditorService: DotContentletEditorService,
-        private dotAlertConfirmService: DotAlertConfirmService,
+        private dotDialogService: DotDialogService,
         private dotMessageService: DotMessageService
     ) {
         if (!this.customEventsHandler) {
@@ -52,7 +52,7 @@ export class DotContentletWrapperComponent implements OnInit {
      */
     onBeforeClose($event?: { originalEvent: MouseEvent | KeyboardEvent; close: () => void }): void {
         if (this.isContentletModified) {
-            this.dotAlertConfirmService.confirm({
+            this.dotDialogService.confirm({
                 accept: () => {
                     $event.close();
                 },

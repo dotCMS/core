@@ -1,38 +1,38 @@
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotAlertConfirmService } from '../../../../api/services/dot-alert-confirm/dot-alert-confirm.service';
+import { DotDialogService } from '../../../../api/services/dot-dialog/dot-dialog.service';
 import { DebugElement } from '@angular/core/src/debug/debug_node';
 import { LoginServiceMock } from '../../../../test/login-service.mock';
 import { LoginService } from 'dotcms-js/dotcms-js';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
-import { DotAlertConfirmComponent } from './dot-alert-confirm';
+import { DotDialogComponent } from './dot-dialog.component';
 import { async, ComponentFixture, fakeAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { tick } from '@angular/core/testing';
 
-describe('DotAlertConfirmComponent', () => {
-    let component: DotAlertConfirmComponent;
-    let dialogService: DotAlertConfirmService;
-    let fixture: ComponentFixture<DotAlertConfirmComponent>;
+describe('DotDialogComponent', () => {
+    let component: DotDialogComponent;
+    let dialogService: DotDialogService;
+    let fixture: ComponentFixture<DotDialogComponent>;
     let de: DebugElement;
 
     beforeEach(
         async(() => {
             DOTTestBed.configureTestingModule({
-                declarations: [DotAlertConfirmComponent],
+                declarations: [DotDialogComponent],
                 providers: [
                     {
                         provide: LoginService,
                         useClass: LoginServiceMock
                     },
-                    DotAlertConfirmService
+                    DotDialogService
                 ],
                 imports: [BrowserAnimationsModule]
             });
 
-            fixture = DOTTestBed.createComponent(DotAlertConfirmComponent);
+            fixture = DOTTestBed.createComponent(DotDialogComponent);
             component = fixture.componentInstance;
             de = fixture.debugElement;
-            dialogService = de.injector.get(DotAlertConfirmService);
+            dialogService = de.injector.get(DotDialogService);
             fixture.detectChanges();
         })
     );

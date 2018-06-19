@@ -12,7 +12,7 @@ import { DotContentletEditorModule } from '../dot-contentlet-editor/dot-contentl
 import { DotMenuService } from '../../../api/services/dot-menu.service';
 
 @Component({
-    selector: 'dot-alert-confirm',
+    selector: 'dot-dialog',
     template: ''
 })
 class MockDotDialogComponent {}

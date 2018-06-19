@@ -4,8 +4,6 @@ import { CoreWebService } from 'dotcms-js/core/core-web.service';
 import { RequestMethod } from '@angular/http';
 import { DotPageContainer } from '../../shared/models/dot-page-container.model';
 import { DotPageContent } from '../../shared/models/dot-page-content.model';
-import { ContentType } from '../../../content-types/shared/content-type.model';
-
 
 @Injectable()
 export class DotContainerContentletService {
@@ -23,25 +21,8 @@ export class DotContainerContentletService {
         return this.coreWebService
             .requestView({
                 method: RequestMethod.Get,
-                url: `v1/containers/${container.identifier}/content/${content.identifier}`
+                url: `v1/containers/${container.identifier}/uuid/${container.uuid}/content/${content.identifier}`
             })
-            .pluck('entity', 'render');
-    }
-
-    /**
-     * Get the HTML of a form inside a container
-     *
-     * @param {DotPageContainer} container
-     * @param {ContentType} form
-     * @returns {Observable<string>}
-     * @memberof DotContainerContentletService
-     */
-    getFormToContainer(container: DotPageContainer, form: ContentType): Observable<string>  {
-        return this.coreWebService
-            .requestView({
-                method: RequestMethod.Get,
-                url: `v1/containers/${container.identifier}/form/${form.id}`
-            })
-            .pluck('entity', 'render');
+            .pluck('bodyJsonObject', 'render');
     }
 }

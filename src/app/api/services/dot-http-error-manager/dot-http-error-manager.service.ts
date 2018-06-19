@@ -6,7 +6,7 @@ import { Observable } from 'rxjs/Observable';
 
 import { ResponseView, LoginService, HttpCode } from 'dotcms-js/dotcms-js';
 
-import { DotAlertConfirmService } from '../dot-alert-confirm';
+import { DotDialogService } from '../dot-dialog';
 import { Response } from '@angular/http';
 import { take, switchMap } from 'rxjs/operators';
 
@@ -27,7 +27,7 @@ export class DotHttpErrorManagerService {
     private readonly errorHandlers;
 
     constructor(
-        private dotDialogService: DotAlertConfirmService,
+        private dotDialogService: DotDialogService,
         private dotMessageService: DotMessageService,
         private loginService: LoginService,
         private dotRouterService: DotRouterService

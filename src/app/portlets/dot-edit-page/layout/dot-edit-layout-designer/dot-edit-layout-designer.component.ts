@@ -1,5 +1,5 @@
 import { DotRenderedPageState } from './../../shared/models/dot-rendered-page-state.model';
-import { DotAlertConfirmService } from './../../../../api/services/dot-alert-confirm/dot-alert-confirm.service';
+import { DotDialogService } from './../../../../api/services/dot-dialog/dot-dialog.service';
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { Component, OnInit, ViewChild, ElementRef, Input } from '@angular/core';
 import { PageViewService } from '../../../../api/services/page-view/page-view.service';
@@ -37,7 +37,7 @@ export class DotEditLayoutDesignerComponent implements OnInit {
         private dotEditLayoutService: DotEditLayoutService,
         private dotEventsService: DotEventsService,
         private dotGlobalMessageService: DotGlobalMessageService,
-        private dotDialogService: DotAlertConfirmService,
+        private dotDialogService: DotDialogService,
         private fb: FormBuilder,
         private pageViewService: PageViewService,
         private templateContainersCacheService: TemplateContainersCacheService,
