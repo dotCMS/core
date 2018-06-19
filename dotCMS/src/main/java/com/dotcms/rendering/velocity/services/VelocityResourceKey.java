@@ -44,6 +44,8 @@ public class VelocityResourceKey implements Serializable {
     public VelocityResourceKey(final Container asset, final String uuid, final PageMode mode) {
         this("/" + mode.name() + "/" + asset.getIdentifier() + "/" + uuid +  "." + VelocityType.CONTAINER.fileExtension);
     }
+
+
     public VelocityResourceKey(final HTMLPageAsset asset, final PageMode mode, final long language) {
         this("/" + mode.name() + "/" + asset.getIdentifier() + "_" + language + "." + VelocityType.HTMLPAGE.fileExtension);
     }

@@ -22,10 +22,11 @@
 <style type="text/css">
 	#aceEditor, #preLoopAceEditor, #postLoopAceEditor {
 		position: relative;
+		width: 900px;
+		border:1px solid silver;
 	}
 	.show{
-		width: 800px;
-		height: 400px;
+
 		border:1px solid #C0C0C0;
 	}
 	.pShow{
@@ -38,6 +39,22 @@
 	.ace_scrollbar {
 		overflow: auto;
 	}
+
+	.defaultTextArea{
+        min-height:400px;
+        width:900px;
+        border:1px solid silver;
+        font-family: monospace;
+        white-space: nowrap;
+        overflow: auto;
+        font-size: 1.1em;
+    }
+	.toggleOpts {
+        width:900px;
+        text-align: right;
+    }
+	
+
 </style>
 <%
 
@@ -201,25 +218,33 @@
 						</div>
 						<div id="preLoopDiv">
 							<div class="fieldWrapper">
-								<div class="fieldName"><%= LanguageUtil.get(pageContext, "Pre-Loop") %>:</div>
+								<div class="fieldName"><%= LanguageUtil.get(pageContext, "Pre-Loop") %>:
+								</div>
 								<div class="fieldValue">
-									<div id="preLoopEditorArea" style="border: 0px;">
+									<div id="preLoopEditorArea" style="border: 0px;max-width:900px">
 										<div id="preLoopAceEditor" class="pShow"></div>
-										<textarea onkeydown="return catchTab(this,event)" style="display: none;" name="preLoopMask" id="preLoopMask"><%=UtilMethods.isSet(form.getPreLoop())?UtilMethods.escapeHTMLSpecialChars(form.getPreLoop()):"" %></textarea>
+										<textarea onkeydown="return catchTab(this,event)" style="display: none;" class="defaultTextArea" name="preLoopMask" id="preLoopMask"><%=UtilMethods.isSet(form.getPreLoop())?UtilMethods.escapeHTMLSpecialChars(form.getPreLoop()):"" %></textarea>
 										<input type="hidden" id="preLoop" name="preLoop" value=""/>
 									</div>
-									<div class="checkbox">
-										<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditorPreLoop" id="toggleEditorPreLoop"  onClick="aceToggler('preLoopAceEditor', 'preLoopMask');" checked="checked"  />
-										<label for="toggleEditorPreLoop" style="margin-right: 10px;"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
-									</div>
-
-									<div id="toggleWrapEditor" class="checkbox">
-										<input id="preloopWrapEditor" name="preloopWrapEditor" data-dojo-type="dijit/form/CheckBox" value="true" onClick="aceWrapToggler(event);" />
-										<label for="wrapEditor"><%= LanguageUtil.get(pageContext, "Wrap-Code") %></label>
-									</div>
 								</div>
+								<div class="toggleOpts">
+		                            <div style="display: inline-block;">
+		                                <input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditorPreLoop" id="toggleEditorPreLoop"  onClick="aceToggler('preLoopAceEditor', 'preLoopMask');" checked="checked"  />
+		                                <label for="toggleEditorPreLoop" style="margin-right: 10px;"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
+		                            </div>
+		                            <div style="display: inline-block;">
+		                                <input id="preloopWrapEditor" name="preloopWrapEditor" data-dojo-type="dijit/form/CheckBox" value="true" onClick="aceWrapToggler(event);" />
+		                                <label for="preloopWrapEditor"><%= LanguageUtil.get(pageContext, "Wrap-Code") %></label>
+		                            </div>
+		                        </div>
+								
 							</div>
 						</div>
+
+						
+						
+						
+						
 						<div id="codeDiv">
 
 						</div>
@@ -270,8 +295,8 @@
 													String code = UtilMethods.escapeHTMLSpecialChars(cs.getCode());
 											%>
 											<div dojoType="dijit.layout.ContentPane" title="<%=st.getName()%>" selected="true" style="padding:0" id="tab_<%=st.getInode()%>" data-dojo-props="closable:true">
-												<div id="aceMaskMulti<%=st.getInode()%>" style="position: relative;" class="show"></div>
-												<textarea style="width:99%; height:300px; display: none;" onkeydown="return catchTab(this,event)" name="codeMaskMulti<%=st.getInode()%>" id="codeMaskMulti<%=st.getInode()%>"><%=UtilMethods.isSet(cs.getCode())?UtilMethods.escapeHTMLSpecialChars(cs.getCode()):"" %></textarea>
+												<div id="aceMaskMulti<%=st.getInode()%>" style="position: relative;min-height:400px;" class="show"></div>
+												<textarea style="display: none;" class="defaultTextArea" onkeydown="return catchTab(this,event)" name="codeMaskMulti<%=st.getInode()%>" id="codeMaskMulti<%=st.getInode()%>"><%=UtilMethods.isSet(cs.getCode())?UtilMethods.escapeHTMLSpecialChars(cs.getCode()):"" %></textarea>
 											</div>
 											<script>
                                                 addStructureToList('<%=st.getInode()%>');
@@ -288,15 +313,16 @@
 											%>
 										</div>
 
-										<div class="checkbox">
-											<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditorCodeMultiple" id="toggleEditorCodeMultiple"  onClick="aceToggler('aceMaskMulti', 'codeMaskMulti');"  checked="checked"  />
-											<label for="toggleEditorCodeMultiple"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
-										</div>
-										<div id="toggleWrapEditor" class="checkbox">
-											<input id="multiWrapEditor" name="multiWrapEditor" data-dojo-type="dijit/form/CheckBox" value="true" onClick="aceWrapToggler(event);" />
-											<label for="wrapEditor"><%= LanguageUtil.get(pageContext, "Wrap-Code") %></label>
-										</div>
-
+	                                    <div class="toggleOpts">
+	                                        <div style="display: inline-block;">
+												<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditorCodeMultiple" id="toggleEditorCodeMultiple"  onClick="aceToggler('aceMaskMulti', 'codeMaskMulti');"  checked="checked"  />
+												<label for="toggleEditorCodeMultiple"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
+											</div>
+											<div style="display: inline-block;">
+												<input id="multiWrapEditor" name="multiWrapEditor" data-dojo-type="dijit/form/CheckBox" value="true" onClick="aceWrapToggler(event);" />
+												<label for="multiWrapEditor"><%= LanguageUtil.get(pageContext, "Wrap-Code") %></label>
+											</div>
+                                        </div>
 									</div>
 								</div>
 								<div class="fieldWrapper">
@@ -337,16 +363,18 @@
 									<br/>
 									<div id="postLoopEditorArea" style="border: 0px;">
 										<div id="postLoopAceEditor" class="pShow"></div>
-										<textarea onkeydown="return catchTab(this,event)" style="display: none;" name="postLoopMask" id="postLoopMask"><%=UtilMethods.isSet(form.getPostLoop())?UtilMethods.escapeHTMLSpecialChars(form.getPostLoop()):"" %></textarea>
+										<textarea onkeydown="return catchTab(this,event)" class="defaultTextArea"  style="display: none;" name="postLoopMask" id="postLoopMask"><%=UtilMethods.isSet(form.getPostLoop())?UtilMethods.escapeHTMLSpecialChars(form.getPostLoop()):"" %></textarea>
 										<input type="hidden" name="postLoop" id="postLoop" value="" />
 									</div>
-									<div class="checkbox">
-										<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditorPostLoop" id="toggleEditorPostLoop"  onClick="aceToggler('postLoopAceEditor', 'postLoopMask');"  checked="checked"  />
+                                      <div class="toggleOpts">
+                                          <div style="display: inline-block;">
+								      <input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditorPostLoop" id="toggleEditorPostLoop"  onClick="aceToggler('postLoopAceEditor', 'postLoopMask');"  checked="checked"  />
 										<label for="toggleEditorPostLoop" style="margin-right: 10px;"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
 									</div>
-									<div id="toggleWrapEditor" class="checkbox">
+							       <div style="display: inline-block;">
 										<input id="postloopWrapEditor" name="postloopWrapEditor" data-dojo-type="dijit/form/CheckBox" value="true" onClick="aceWrapToggler(event);" />
-										<label for="wrapEditor"><%= LanguageUtil.get(pageContext, "Wrap-Code") %></label>
+										<label for="postloopWrapEditor"><%= LanguageUtil.get(pageContext, "Wrap-Code") %></label>
+									</div>
 									</div>
 								</div>
 							</div>

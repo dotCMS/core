@@ -136,7 +136,7 @@
             if(structureType == 2){
                 isWidget = true;
             }
-            boolean toggleOn = false;
+            boolean toggleOn = isWidget;
             String[] wysiwygsDisabled = new String[0];
             if(contentletForm != null && UtilMethods.isSet(contentletForm.getDisabledWysiwyg())){
                 wysiwygsDisabled = contentletForm.getDisabledWysiwyg().split(",");

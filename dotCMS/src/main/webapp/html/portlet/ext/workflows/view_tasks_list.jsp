@@ -176,7 +176,7 @@
 
 
 			</td>
-			<td onClick="editTask('<%=task.getId()%>', '<%=contentlet.getLanguageId()%>')">
+			<td onClick="editTask(event, '<%=task.getId()%>', '<%=contentlet.getLanguageId()%>')">
 				<%=contentlet.getTitle() %>
 			</td>
 			<td nowrap="true" align="center" width="1%" onClick="editTask('<%=task.getId()%>', '<%=contentlet.getLanguageId()%>')">

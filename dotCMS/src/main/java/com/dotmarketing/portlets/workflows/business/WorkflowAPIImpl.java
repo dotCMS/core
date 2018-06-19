@@ -64,6 +64,7 @@ import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SetValueActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.TranslationActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.TwitterActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
@@ -78,6 +79,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
 import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.workflows.model.WorkflowTimelineItem;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
@@ -180,6 +182,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				ResetTaskActionlet.class,
 				MultipleApproverActionlet.class,
 				FourEyeApproverActionlet.class,
+				TwitterActionlet.class,
 				PushPublishActionlet.class,
 				CheckURLAccessibilityActionlet.class,
                 EmailActionlet.class,
@@ -2640,5 +2643,32 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		scheme.setArchived(Boolean.TRUE);
 		saveScheme(scheme, user);
 	}
+	
+	@Override
+	@CloseDBIfOpened
+	public List<WorkflowTimelineItem> getCommentsAndChangeHistory(WorkflowTask task) throws DotDataException{
+	    List<WorkflowComment> comments = this.findWorkFlowComments(task);
+	    List<WorkflowHistory> history = this.findWorkflowHistory(task);
+	    
+	    
+	    List<WorkflowTimelineItem> items = new ArrayList<>();
+	    
+	    items.addAll(comments);
+	    items.addAll(history);
+	    
+	    return items.stream()
+                .sorted((o1,o2) -> o1.createdDate().compareTo(o2.createdDate()))
+                .collect(Collectors.toList());
+	    
+	    
+	    
+	}
+	
+	
+	
+	
+	
+	
+	
 
 }

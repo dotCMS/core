@@ -171,42 +171,41 @@ public class JsonWebTokenUtils {
             HttpServletRequest request,
             HttpServletResponse response) {
 
+        if (Logger.isDebugEnabled(from)) {
+            Logger.debug(from, e.getMessage(), e);
+        }
+
         if (causedBy(e, SignatureException.class, IncorrectClaimException.class)) {
-
-            if (Logger.isDebugEnabled(from)) {
-                Logger.debug(from, e.getMessage(), e);
-            }
-
             Logger.warn(from,
                     () -> String.format("An invalid attempt to use a JWT [%s]", e.getMessage()));
-
-            String securityLoggerMessage;
-            if (null != request) {
-                securityLoggerMessage = String.format("An invalid attempt to use an invalid "
-                                + "JWT has been made from IP [%s] [%s]", request.getRemoteAddr(),
-                        e.getMessage());
-            } else {
-                securityLoggerMessage = String
-                        .format("An invalid attempt to use a JWT [%s]", e.getMessage());
-            }
-            SecurityLogger.logInfo(from, () -> securityLoggerMessage);
-
-            if (null != request && null != response) {
-                try {
-                    //Force a clean up of the invalid token cookie
-                    APILocator.getLoginServiceAPI().doActionLogout(request, response);
-                } catch (Exception internalException) {
-                    if (Logger.isDebugEnabled(from)) {
-                        Logger.debug(from,
-                                "Unable to apply a logout action when invalid JWT was found.",
-                                internalException);
-                    }
-                }
-            }
-
         } else {
+            //For another type of errors lets show it in the logs as an error
             if (Logger.isErrorEnabled(from)) {
                 Logger.error(from, "An invalid attempt to use a JWT", e);
+            }
+        }
+
+        String securityLoggerMessage;
+        if (null != request) {
+            securityLoggerMessage = String.format("An invalid attempt to use an invalid "
+                            + "JWT has been made from IP [%s] [%s]", request.getRemoteAddr(),
+                    e.getMessage());
+        } else {
+            securityLoggerMessage = String
+                    .format("An invalid attempt to use a JWT [%s]", e.getMessage());
+        }
+        SecurityLogger.logInfo(from, () -> securityLoggerMessage);
+
+        if (null != request && null != response) {
+            try {
+                //Force a clean up of the invalid token cookie
+                APILocator.getLoginServiceAPI().doActionLogout(request, response);
+            } catch (Exception internalException) {
+                if (Logger.isDebugEnabled(from)) {
+                    Logger.debug(from,
+                            "Unable to apply a logout action when invalid JWT was found.",
+                            internalException);
+                }
             }
         }
     }
