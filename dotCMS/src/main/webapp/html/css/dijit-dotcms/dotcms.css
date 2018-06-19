@@ -3042,7 +3042,7 @@ html, body {
 
 .dijitTextBoxHover {
   background-color: #fff;
-  border: solid 1px var(--color-main);
+  border: solid 1px var(--color-sec);
 }
 
 .dijitTextBoxHover .dijitInputInner {
@@ -3051,24 +3051,24 @@ html, body {
 
 .dijitTextBoxHover .dijitArrowButton {
   background-color: #fff;
-  border-left: solid 1px var(--color-main);
+  border-left: solid 1px var(--color-sec);
 }
 
 .dijitTextBoxHover .dijitArrowButton:before {
-  border-top-color: var(--color-main);
+  border-top-color: var(--color-sec);
 }
 
 .dijitTextBoxHover .dijitDownArrowButtonHover {
-  background-color: rgba(var(--color-main_rgb), 0.2);
+  background-color: rgba(var(--color-sec_rgb), 0.2);
   border-left: solid 1px #5B5B5B;
 }
 
 .dijitTextBoxHover .dijitDownArrowButtonHover:before {
-  border-top-color: var(--color-main);
+  border-top-color: var(--color-sec);
 }
 
 .dijitTextBoxFocused {
-  border: solid 1px var(--color-main);
+  border: solid 1px var(--color-sec);
   background-color: #fff;
 }
 
@@ -3078,7 +3078,7 @@ html, body {
 
 .dijitTextBoxFocused .dijitArrowButton {
   background-color: #fff;
-  border-left: solid 1px var(--color-main);
+  border-left: solid 1px var(--color-sec);
 }
 
 .dijitTextBoxFocused .dijitArrowButton:before {
@@ -3089,7 +3089,7 @@ html, body {
   top: 50%;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 5px solid var(--color-main);
+  border-top: 5px solid var(--color-sec);
   content: "";
   height: 0;
   width: 0;
@@ -3181,12 +3181,12 @@ html, body {
 
 .dijitTextAreaHover {
   background-color: #fff;
-  border: solid 1px var(--color-main);
+  border: solid 1px var(--color-sec);
   color: #161616;
 }
 
 .dijitTextAreaFocused {
-  border: solid 1px var(--color-main);
+  border: solid 1px var(--color-sec);
   background-color: #fff;
   color: #161616;
 }
@@ -3238,19 +3238,19 @@ html, body {
 
 .dijitSpinnerHover {
   background-color: #fff;
-  border: solid 1px var(--color-main);
+  border: solid 1px var(--color-sec);
 }
 
 .dijitSpinnerHover .dijitSpinnerButtonContainer {
-  border-left: solid 1px var(--color-main);
+  border-left: solid 1px var(--color-sec);
 }
 
 .dijitSpinnerHover .dijitSpinnerButtonContainer .dijitDownArrowButton {
-  border-top: solid 1px var(--color-main) !important;
+  border-top: solid 1px var(--color-sec) !important;
 }
 
 .dijitSpinnerHover .dijitArrowButton {
-  border-left: solid 1px var(--color-main);
+  border-left: solid 1px var(--color-sec);
 }
 
 .dijitSpinnerHover .dijitArrowButton:before {
@@ -3259,30 +3259,30 @@ html, body {
 
 .dijitSpinnerHover .dijitDownArrowButtonHover,
 .dijitSpinnerHover .dijitUpArrowButtonHover {
-  background-color: rgba(var(--color-main_rgb), 0.2);
+  background-color: rgba(var(--color-sec_rgb), 0.2);
   border-left: solid 1px #5B5B5B;
 }
 
 .dijitSpinnerHover .dijitDownArrowButtonHover:before,
 .dijitSpinnerHover .dijitUpArrowButtonHover:before {
-  border-top-color: var(--color-main);
+  border-top-color: var(--color-sec);
 }
 
 .dijitSpinnerFocused {
   background-color: #fff;
-  border: solid 1px var(--color-main);
+  border: solid 1px var(--color-sec);
 }
 
 .dijitSpinnerFocused .dijitSpinnerButtonContainer {
-  border-left: solid 1px var(--color-main);
+  border-left: solid 1px var(--color-sec);
 }
 
 .dijitSpinnerFocused .dijitSpinnerButtonContainer .dijitDownArrowButton {
-  border-top: solid 1px var(--color-main) !important;
+  border-top: solid 1px var(--color-sec) !important;
 }
 
 .dijitSpinnerFocused .dijitArrowButton {
-  border-left: solid 1px var(--color-main);
+  border-left: solid 1px var(--color-sec);
 }
 
 .dijitSpinnerFocused .dijitArrowButton:before {
@@ -3291,7 +3291,7 @@ html, body {
 
 .dijitSpinnerFocused .dijitDownArrowButtonHover,
 .dijitSpinnerFocused .dijitUpArrowButtonHover {
-  background-color: rgba(var(--color-main_rgb), 0.2);
+  background-color: rgba(var(--color-sec_rgb), 0.2);
   border-left: solid 1px var(--color-main);
 }
 
@@ -3377,9 +3377,9 @@ html, body {
 }
 
 .dijitButton {
-  background-color: var(--color-main);
-  border: solid 1px transparent;
-  color: #fff;
+  background-color: #fff;
+  border: solid 1px var(--color-sec);
+  color: var(--color-sec);
   box-shadow: 0;
 }
 
@@ -3392,30 +3392,30 @@ html, body {
 }
 
 .dijitButtonHover {
-  background-color: var(--color-main_mod);
-  border: solid 1px transparent;
-  color: #fff;
+  background-color: #fff;
+  border: solid 1px var(--color-main);
+  color: var(--color-main);
   box-shadow: 0;
 }
 
 .dijitButtonFocused {
-  background-color: var(--color-main_mod);
-  border: solid 1px transparent;
-  color: #fff;
+  background-color: #fff;
+  border: solid 1px var(--color-main);
+  color: var(--color-main);
   box-shadow: 0;
 }
 
 .dijitButtonDisabled {
   background-color: #ECEDEE;
-  border: solid 1px transparent;
+  border: solid 1px #ECEDEE;
   color: #C5C5C5;
   box-shadow: 0;
 }
 
 .dijitDropDownButton {
-  background-color: var(--color-main);
-  border: solid 1px transparent;
-  color: #fff;
+  background-color: #fff;
+  border: solid 1px var(--color-sec);
+  color: var(--color-sec);
   box-shadow: 0;
 }
 
@@ -3436,16 +3436,16 @@ html, body {
   top: 50%;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 5px solid #fff;
+  border-top: 5px solid var(--color-sec);
   content: "";
   height: 0;
   width: 0;
 }
 
 .dijitDropDownButtonHover {
-  background-color: var(--color-main_mod);
-  border: solid 1px transparent;
-  color: #fff;
+  background-color: #fff;
+  border: solid 1px var(--color-main);
+  color: var(--color-main);
   box-shadow: 0;
 }
 
@@ -3461,16 +3461,16 @@ html, body {
   top: 50%;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 5px solid #fff;
+  border-top: 5px solid var(--color-main);
   content: "";
   height: 0;
   width: 0;
 }
 
 .dijitDropDownButtonActive {
-  background-color: var(--color-main_mod);
-  border: solid 1px transparent;
-  color: #fff;
+  background-color: #fff;
+  border: solid 1px var(--color-main);
+  color: var(--color-main);
   box-shadow: 0;
 }
 
@@ -3493,15 +3493,15 @@ html, body {
 }
 
 .dijitDropDownButtonFocused {
-  background-color: var(--color-main_mod);
-  border: solid 1px transparent;
-  color: #fff;
+  background-color: #fff;
+  border: solid 1px var(--color-main);
+  color: var(--color-main);
   box-shadow: 0;
 }
 
 .dijitDropDownButtonDisabled {
   background-color: #ECEDEE;
-  border: solid 1px transparent;
+  border: solid 1px #ECEDEE;
   color: #C5C5C5;
   box-shadow: 0;
 }
@@ -3525,14 +3525,13 @@ html, body {
 }
 
 .dijitComboButton {
-  background-color: var(--color-main);
-  border: solid 1px transparent;
-  color: #fff;
+  background-color: #fff;
+  border: solid 1px var(--color-sec);
+  color: var(--color-sec);
   box-shadow: 0;
 }
 
 .dijitComboButton .dijitArrowButtonInner {
-  border-left: solid 1px transparent;
   width: 36px;
   background-color: transparent;
 }
@@ -3545,7 +3544,7 @@ html, body {
   top: 50%;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 5px solid #fff;
+  border-top: 5px solid var(--color-sec);
   content: "";
   height: 0;
   width: 0;
@@ -3560,14 +3559,13 @@ html, body {
 }
 
 .dijitComboButtonHover {
-  background-color: var(--color-main_mod);
-  border: solid 1px transparent;
-  color: #fff;
+  background-color: #fff;
+  border: solid 1px var(--color-main);
+  color: var(--color-main);
   box-shadow: 0;
 }
 
 .dijitComboButtonHover .dijitArrowButtonInner {
-  border-left: solid 1px transparent;
   background-color: transparent;
 }
 
@@ -3579,21 +3577,20 @@ html, body {
   top: 50%;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 5px solid #fff;
+  border-top: 5px solid var(--color-main);
   content: "";
   height: 0;
   width: 0;
 }
 
 .dijitComboButtonActive {
-  background-color: var(--color-main_mod);
-  border: solid 1px transparent;
-  color: #fff;
+  background-color: #fff;
+  border: solid 1px var(--color-main);
+  color: var(--color-main);
   box-shadow: 0;
 }
 
 .dijitComboButtonActive .dijitArrowButtonInner {
-  border-left: solid 1px transparent;
   background-color: transparent;
 }
 
@@ -3605,21 +3602,20 @@ html, body {
   top: 50%;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 5px solid #fff;
+  border-top: 5px solid var(--color-main);
   content: "";
   height: 0;
   width: 0;
 }
 
 .dijitComboButtonFocused, .dijitComboButtonHoverFocused {
-  background-color: var(--color-main_mod);
-  border: solid 1px transparent;
-  color: #fff;
+  background-color: #fff;
+  border: solid 1px var(--color-main);
+  color: var(--color-main);
   box-shadow: 0;
 }
 
 .dijitComboButtonFocused .dijitArrowButtonInner, .dijitComboButtonHoverFocused .dijitArrowButtonInner {
-  border-left: solid 1px transparent;
   background-color: transparent;
 }
 
@@ -3631,7 +3627,7 @@ html, body {
   top: 50%;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 5px solid #fff;
+  border-top: 5px solid var(--color-main);
   content: "";
   height: 0;
   width: 0;
@@ -3639,13 +3635,13 @@ html, body {
 
 .dijitComboButtonDisabled {
   background-color: #ECEDEE;
-  border: solid 1px transparent;
+  border: solid 1px #ECEDEE;
   color: #C5C5C5;
   box-shadow: 0;
 }
 
 .dijitComboButtonDisabled .dijitArrowButtonInner {
-  border-left: solid 1px transparent;
+  border-left: solid 1px #ECEDEE;
   background-color: transparent;
 }
 
@@ -3664,9 +3660,9 @@ html, body {
 }
 
 .dijitToggleButton {
-  background-color: var(--color-main);
-  border: solid 1px transparent;
-  color: #fff;
+  background-color: #fff;
+  border: solid 1px var(--color-sec);
+  color: var(--color-sec);
   box-shadow: 0;
 }
 
@@ -3679,22 +3675,22 @@ html, body {
 }
 
 .dijitToggleButtonFocused, .dijitToggleButtonChecked {
-  background-color: var(--color-main_mod);
-  border: solid 1px transparent;
-  color: #fff;
+  background-color: #fff;
+  border: solid 1px var(--color-main);
+  color: var(--color-main);
   box-shadow: 0;
 }
 
 .dijitToggleButtonHover, .dijitToggleButtonHoverFocused, .dijitToggleButtonCheckedHover {
-  background-color: var(--color-main_mod);
-  border: solid 1px transparent;
-  color: #fff;
+  background-color: #fff;
+  border: solid 1px var(--color-main);
+  color: var(--color-main);
   box-shadow: 0;
 }
 
 .dijitToggleButtonDisabled {
   background-color: #ECEDEE;
-  border: solid 1px transparent;
+  border: solid 1px #ECEDEE;
   color: #C5C5C5;
   box-shadow: 0;
 }
@@ -3708,7 +3704,7 @@ html, body {
 }
 
 .dijitCheckBoxChecked {
-  border: solid 1px #161616;
+  border: solid 1px var(--color-main);
   background: var(--color-main) url("data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIHdpZHRoPSIxMHB4IiBoZWlnaHQ9IjhweCIgdmlld0JveD0iMCAwIDEwIDgiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+ICAgICAgICA8dGl0bGU+U2hhcGU8L3RpdGxlPiAgICA8ZGVzYz5DcmVhdGVkIHdpdGggU2tldGNoLjwvZGVzYz4gICAgPGRlZnM+PC9kZWZzPiAgICA8ZyBpZD0iU3ltYm9scyIgc3Ryb2tlPSJub25lIiBzdHJva2Utd2lkdGg9IjEiIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCI+ICAgICAgICA8ZyBpZD0iY2hlY2tib3gtYWN0aXZlIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNC4wMDAwMDAsIC01LjAwMDAwMCkiIGZpbGw9IiNGRkZGRkYiPiAgICAgICAgICAgIDxwb2x5Z29uIGlkPSJTaGFwZSIgcG9pbnRzPSI3LjMxMDcyMDMyIDExLjQyMjQ0NDkgNC45ODYxOTU2MyA5LjA5NzkyMDE5IDQuMTk0NjMwODcgOS44ODM5MTA1NSA3LjMxMDcyMDMyIDEzIDE0IDYuMzEwNzIwMzIgMTMuMjE0MDA5NiA1LjUyNDcyOTk2Ij48L3BvbHlnb24+ICAgICAgICA8L2c+ICAgIDwvZz48L3N2Zz4=") center center no-repeat;
 }
 
@@ -3801,12 +3797,12 @@ html, body {
 
 .dijitSelectHover {
   background-color: #fff;
-  border: solid 1px var(--color-main);
+  border: solid 1px var(--color-sec);
   color: #161616;
 }
 
 .dijitSelectHover .dijitArrowButton {
-  border-left: solid 1px var(--color-main);
+  border-left: solid 1px var(--color-sec);
   background-color: transparent;
 }
 
@@ -3826,12 +3822,12 @@ html, body {
 
 .dijitSelectActive, .dijitSelectOpened {
   background-color: #fff;
-  border: solid 1px var(--color-main);
+  border: solid 1px var(--color-sec);
   color: #161616;
 }
 
 .dijitSelectActive .dijitArrowButton, .dijitSelectOpened .dijitArrowButton {
-  border-left: solid 1px var(--color-main);
+  border-left: solid 1px var(--color-sec);
   background-color: transparent;
 }
 
@@ -3893,39 +3889,39 @@ html, body {
 
 .dijitComboBoxHover {
   background-color: #fff;
-  border: solid 1px var(--color-main);
+  border: solid 1px var(--color-sec);
 }
 
 .dijitComboBoxHover .dijitArrowButton {
   background-color: #fff;
-  border-left: solid 1px var(--color-main);
+  border-left: solid 1px var(--color-sec);
 }
 
 .dijitComboBoxHover .dijitArrowButton:before {
-  border-top-color: var(--color-main);
+  border-top-color: var(--color-sec);
 }
 
 .dijitComboBoxHover .dijitDownArrowButtonHover {
-  background-color: rgba(var(--color-main_rgb), 0.2);
+  background-color: rgba(var(--color-sec_rgb), 0.2);
   border-left: solid 1px #5B5B5B;
 }
 
 .dijitComboBoxHover .dijitDownArrowButtonHover:before {
-  border-top-color: var(--color-main);
+  border-top-color: var(--color-sec);
 }
 
 .dijitComboBoxFocused {
-  border: solid 1px var(--color-main);
+  border: solid 1px var(--color-sec);
   background-color: #fff;
 }
 
 .dijitComboBoxFocused .dijitArrowButton {
   background-color: #fff;
-  border-left: solid 1px var(--color-main);
+  border-left: solid 1px var(--color-sec);
 }
 
 .dijitComboBoxFocused .dijitDownArrowButtonHover {
-  background-color: rgba(var(--color-main_rgb), 0.2);
+  background-color: rgba(var(--color-sec_rgb), 0.2);
   border-left: solid 1px var(--color-main);
 }
 
@@ -4034,8 +4030,8 @@ html, body {
   border-radius: 2px;
   width: 20px;
   height: 16px;
-  border: solid 1px transparent;
-  background-color: var(--color-main);
+  border: solid 1px var(--color-sec);
+  background-color: #fff;
   position: relative;
 }
 
@@ -4044,7 +4040,7 @@ html, body {
 }
 
 .dijitSliderDecrementButtonHover, .dijitSliderIncrementButtonHover {
-  border: solid 1px transparent;
+  border: solid 1px var(--color-main);
 }
 
 .dijitSliderIncrementIconV {
@@ -4084,8 +4080,8 @@ html, body {
 }
 
 .dijitSliderDecrementButtonActive, .dijitSliderIncrementButtonActive {
-  background-color: var(--color-main_mod);
-  border: solid 1px transparent;
+  background-color: #fff;
+  border: solid 1px var(--color-main);
 }
 
 .dijitSliderIncrementButtonActive:before {
@@ -4169,7 +4165,7 @@ html, body {
 .dijitSliderDisabled .dijitSliderIncrementIconH,
 .dijitSliderDisabled .dijitSliderDecrementIconV,
 .dijitSliderDisabled .dijitSliderIncrementIconV {
-  border: solid 1px transparent;
+  border: solid 1px #ECEDEE;
 }
 
 .dijitSliderDisabled .dijitSliderDecrementIconV:before {
@@ -4552,7 +4548,7 @@ html, body {
 }
 
 .dijitTab.tabStripButtonActive {
-  background-color: rgba(var(--color-main_rgb), 0.2);
+  background-color: rgba(var(--color-sec_rgb), 0.2);
 }
 
 .dijitTab.tabStripButtonActive .dijitTabStripSlideLeftIcon:before {
@@ -5126,7 +5122,7 @@ html, body {
 
 .dijitInlineEditBoxDisplayModeHover {
   border-radius: 2px;
-  border: solid 1px solid 1px var(--color-main);
+  border: solid 1px solid 1px var(--color-sec);
   background: #fff;
 }
 
@@ -6571,7 +6567,7 @@ fieldset {
 }
 
 a {
-  color: var(--color-main);
+  color: var(--color-sec);
 }
 
 a:hover {
@@ -6579,7 +6575,7 @@ a:hover {
 }
 
 .link {
-  color: var(--color-main) !important;
+  color: var(--color-sec) !important;
   text-decoration: underline !important;
 }
 
@@ -6740,13 +6736,13 @@ select[multiple] {
 }
 
 select[multiple]:hover {
-  border: solid 1px var(--color-main);
+  border: solid 1px var(--color-sec);
 }
 
 .fakeDojoButton {
-  background-color: var(--color-main);
-  border: solid 1px transparent;
-  color: #fff;
+  background-color: #fff;
+  border: solid 1px var(--color-sec);
+  color: var(--color-sec);
   box-shadow: 0;
   transition: all 0.1s;
   border-radius: 2px;
@@ -6759,9 +6755,9 @@ select[multiple]:hover {
 }
 
 .fakeDojoButton:hover {
-  background-color: var(--color-main_mod);
-  border: solid 1px transparent;
-  color: #fff;
+  background-color: #fff;
+  border: solid 1px var(--color-main);
+  color: var(--color-main);
   box-shadow: 0;
 }
 
@@ -6821,6 +6817,7 @@ select[multiple]:hover {
 }
 
 .dijitButtonFlat {
+  border: 0;
   background-color: transparent;
   box-shadow: none;
   color: var(--color-main);
@@ -6840,6 +6837,7 @@ select[multiple]:hover {
 }
 
 .dijitButtonAction {
+  border: solid 1px transparent;
   background-color: var(--color-main);
   color: #fff;
 }
@@ -10884,7 +10882,7 @@ a.category_higlighted, a.tag_higlighted {
 
 .import-preview {
   margin: 50px auto;
-  border: solid 1px transparent;
+  border: solid 1px var(--color-sec);
   border-color: #ECEDEE;
   border-radius: 4px;
 }
