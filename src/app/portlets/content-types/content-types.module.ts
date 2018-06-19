@@ -60,6 +60,7 @@ import { PushPublishContentTypesDialogModule } from '../../view/components/_comm
 import { DotAddToBundleModule } from '../../view/components/_common/dot-add-to-bundle/dot-add-to-bundle.module';
 import { DotDirectivesModule } from '../../shared/dot-directives.module';
 import { DotWorkflowsSelectorFieldModule } from '../../view/components/_common/dot-workflows-selector-field/dot-workflows-selector-field.module';
+import { DotPageSelectorModule } from '../../view/components/_common/dot-page-selector/dot-page-selector.module';
 
 @NgModule({
     declarations: [
@@ -122,7 +123,8 @@ import { DotWorkflowsSelectorFieldModule } from '../../view/components/_common/d
         MultiSelectModule,
         DotAddToBundleModule,
         DotDirectivesModule,
-        DotWorkflowsSelectorFieldModule
+        DotWorkflowsSelectorFieldModule,
+        DotPageSelectorModule
     ],
     providers: [
         ContentTypesInfoService,

@@ -1,0 +1,28 @@
+<span dotMdInputtext [label]="label" *ngIf="floatingLabel; else placeholded">
+    <p-autoComplete
+        (completeMethod)="search($event.query)"
+        (onClear)="onClear($event)"
+        (onSelect)="onSelect($event)"
+        [inputStyle]="{'width': '100%', 'padding': '0'}"
+        [minLength]="3"
+        [ngModel]="val"
+        [style]="style"
+        [suggestions]="results"
+        field="path">
+    </p-autoComplete>
+</span>
+
+<ng-template #placeholded>
+    <p-autoComplete
+        (completeMethod)="search($event.query)"
+        (onClear)="onClear($event)"
+        (onSelect)="onSelect($event)"
+        [inputStyle]="{'width': '100%', 'padding': '0'}"
+        [minLength]="3"
+        [ngModel]="val"
+        [placeholder]="label"
+        [style]="style"
+        [suggestions]="results"
+        field="path">
+    </p-autoComplete>
+</ng-template>

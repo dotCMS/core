@@ -27,6 +27,8 @@ import { MdInputTextModule } from '../../../view/directives/md-inputtext/md-inpu
 import { DotWorkflowsSelectorFieldModule } from '../../../view/components/_common/dot-workflows-selector-field/dot-workflows-selector-field.module';
 import { DotWorkflowServiceMock } from '../../../test/dot-workflow-service.mock';
 import { DotLicenseService } from '../../../api/services/dot-license/dot-license.service';
+import { DotPageSelectorModule } from '../../../view/components/_common/dot-page-selector/dot-page-selector.module';
+import { DotDirectivesModule } from '../../../shared/dot-directives.module';
 
 @Injectable()
 class MockDotLicenseService {
@@ -93,7 +95,8 @@ describe('ContentTypesFormComponent', () => {
                     TabViewModule,
                     SiteSelectorFieldModule,
                     RouterTestingModule,
-                    MdInputTextModule,
+                    DotDirectivesModule,
+                    DotPageSelectorModule,
                     DotWorkflowsSelectorFieldModule
                 ],
                 providers: [
@@ -511,7 +514,7 @@ describe('ContentTypesFormComponent', () => {
                 clazz: 'com.dotcms.contenttype.model.field.ImmutableDateTimeField',
                 id: '123',
                 indexed: true,
-                name: 'publishDateVar'
+                name: 'publishDateVar',
             }
         ];
         fixture.detectChanges();
@@ -522,6 +525,19 @@ describe('ContentTypesFormComponent', () => {
 
         expect(comp.submitForm).toHaveBeenCalled();
         expect(comp.submit.emit).not.toHaveBeenCalled();
+    });
+
+    it('should have dot-page-selector component and right attrs', () => {
+        comp.data = {
+            baseType: 'CONTENT'
+        };
+        fixture.detectChanges();
+
+        const pageSelector: DebugElement = de.query(By.css('dot-page-selector'));
+        expect(pageSelector !== null).toBe(true);
+        expect(pageSelector.componentInstance.label).toEqual('Detail Page');
+        expect(pageSelector.componentInstance.floatingLabel).toBe(true);
+        expect(pageSelector.componentInstance.style).toEqual({width: '100%'});
     });
 
     describe('send data with valid form', () => {

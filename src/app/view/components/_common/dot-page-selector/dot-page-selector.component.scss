@@ -1,0 +1,11 @@
+:host {
+    ::ng-deep {
+        .ui-autocomplete-panel {
+            width: auto !important;
+        }
+
+        .ui-autocomplete-list-item {
+            white-space: nowrap;
+        }
+    }
+}

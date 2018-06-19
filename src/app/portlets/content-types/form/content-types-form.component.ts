@@ -31,6 +31,7 @@ export class ContentTypesFormComponent implements OnInit {
 
     @Input() data: any;
     @Input() fields: ContentTypeField[];
+
     @Output() submit: EventEmitter<any> = new EventEmitter();
 
     canSave = false;

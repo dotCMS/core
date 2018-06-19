@@ -12,6 +12,9 @@ import { ToolbarComponent } from './view/components/dot-toolbar/dot-toolbar.comp
 import { ToolbarNotificationsComponent } from './view/components/toolbar-notifications/toolbar-notifications';
 import { ToolbarUserComponent } from './view/components/toolbar-user/toolbar-user';
 
+// CUSTOM PIPES
+import { CapitalizePipe, SafePipe } from './view/pipes/index';
+
 export const COMPONENTS = [
     CustomTimeComponent,
     DotDialogComponent,
@@ -28,8 +31,5 @@ export const COMPONENTS = [
     ToolbarNotificationsComponent,
     ToolbarUserComponent
 ];
-
-// CUSTOM PIPES
-import { CapitalizePipe, SafePipe } from './view/pipes/index';
 
 export const PIPES = [CapitalizePipe, SafePipe];
