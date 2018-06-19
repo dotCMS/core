@@ -5,6 +5,7 @@ import { DotLayoutPropertiesItemModule } from './dot-layout-properties-item/dot-
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { DotLayoutPropertiesComponent } from './dot-layout-properties.component';
+import { DotThemeSelectorModule } from '../dot-theme-selector/dot-theme-selector.module';
 
 @NgModule({
     declarations: [DotLayoutPropertiesComponent],
@@ -14,7 +15,8 @@ import { DotLayoutPropertiesComponent } from './dot-layout-properties.component'
         DotLayoutSidebarModule,
         OverlayPanelModule,
         ButtonModule,
-        ReactiveFormsModule
+        ReactiveFormsModule,
+        DotThemeSelectorModule
     ],
     exports: [DotLayoutPropertiesComponent],
     providers: []

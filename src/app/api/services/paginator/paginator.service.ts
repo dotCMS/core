@@ -58,9 +58,16 @@ export class PaginatorService {
         }
     }
 
-    addExtraParams(name: string, value: any): void {
+    /**
+     * Set value of extra parameters of the eventual request.
+     * @param {string} name
+     * @param value
+     *
+     * @memberof DotThemeSelectorComponent
+     */
+    setExtraParams(name: string, value?: any): void {
         if (value !== null && value !== undefined) {
-            this.extraParams.append(name, value.toString());
+            this.extraParams.set(name, value.toString());
         }
     }
 
@@ -100,7 +107,6 @@ export class PaginatorService {
      */
     public get(url?: string): Observable<any[]> {
         const params: URLSearchParams = new URLSearchParams();
-
         if (this.filter) {
             params.set('filter', `${this.filter}`);
         }

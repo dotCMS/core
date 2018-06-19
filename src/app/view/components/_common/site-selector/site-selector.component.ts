@@ -60,9 +60,9 @@ export class SiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
     ngOnInit(): void {
         this.paginationService.url = 'v1/site';
 
-        this.paginationService.addExtraParams('archive', this.archive);
-        this.paginationService.addExtraParams('live', this.live);
-        this.paginationService.addExtraParams('system', this.system);
+        this.paginationService.setExtraParams('archive', this.archive);
+        this.paginationService.setExtraParams('live', this.live);
+        this.paginationService.setExtraParams('system', this.system);
 
         this.refreshSitesSub = this.siteService.refreshSites$.subscribe((_site: Site) => this.handleSitesRefresh());
 

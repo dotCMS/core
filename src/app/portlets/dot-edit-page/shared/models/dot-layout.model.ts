@@ -7,4 +7,5 @@ export interface DotLayout {
     header: boolean;
     sidebar: DotLayoutSideBar;
     title: string;
+    themeId?: string;
 }

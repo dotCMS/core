@@ -15,6 +15,8 @@ import { DotRenderedPage } from '../../shared/models/dot-rendered-page.model';
 import { LoginService } from 'dotcms-js/core/login.service';
 import { DotLayoutSideBar } from '../../shared/models/dot-layout-sidebar.model';
 import { DotRouterService } from '../../../../api/services/dot-router/dot-router.service';
+import { DotTheme } from '../../shared/models/dot-theme.model';
+import { DotThemesService } from '../../../../api/services/dot-themes/dot-themes.service';
 
 @Component({
     selector: 'dot-edit-layout-designer',
@@ -29,6 +31,8 @@ export class DotEditLayoutDesignerComponent implements OnInit {
     form: FormGroup;
     initialFormValue: any;
     isModelUpdated = false;
+    themeDialogVisibility = false;
+    currentTheme: DotTheme;
 
     saveAsTemplate: boolean;
     showTemplateLayoutSelectionDialog = false;
@@ -44,6 +48,7 @@ export class DotEditLayoutDesignerComponent implements OnInit {
         private loginService: LoginService,
         private dotRouterService: DotRouterService,
         public dotMessageService: DotMessageService,
+        private dotThemesService: DotThemesService
     ) {}
 
     ngOnInit(): void {
@@ -154,6 +159,27 @@ export class DotEditLayoutDesignerComponent implements OnInit {
         }
     }
 
+    /**
+     * Handle the changes in the Theme Selector component.
+     * @param {DotTheme} theme
+     *
+     * @memberof DotEditLayoutDesignerComponent
+     */
+    changeThemeHandler(theme: DotTheme): void {
+        this.currentTheme = theme;
+        this.form.get('themeId').setValue(theme.inode);
+        this.themeDialogVisibility = false;
+    }
+
+    /**
+     * Close the Theme Dialog.
+     *
+     *  @memberof DotEditLayoutDesignerComponent
+     */
+    closeThemeDialog(): void {
+        this.themeDialogVisibility = false;
+    }
+
     private setupLayout(pageState?: DotRenderedPageState): void {
         if (pageState) {
             this.pageState.dotRenderedPageState = pageState;
@@ -161,7 +187,9 @@ export class DotEditLayoutDesignerComponent implements OnInit {
         this.templateContainersCacheService.set(this.pageState.containers);
         this.initForm();
         this.saveAsTemplateHandleChange(false);
-
+        this.dotThemesService.get(this.form.get('themeId').value).subscribe((theme: DotTheme) => {
+            this.currentTheme = theme;
+        });
         // Emit event to redraw the grid when the sidebar change
         this.form.get('layout.sidebar').valueChanges.subscribe(() => {
             this.dotEventsService.notify('layout-sidebar-change');
@@ -171,6 +199,7 @@ export class DotEditLayoutDesignerComponent implements OnInit {
     private initForm(): void {
         this.form = this.fb.group({
             title: this.isLayout() ? null : this.pageState.template.title,
+            themeId: this.pageState.template.theme,
             layout: this.fb.group({
                 body: this.dotEditLayoutService.cleanupDotLayoutBody(this.pageState.layout.body) || {},
                 header: this.pageState.layout.header,

@@ -27,9 +27,9 @@ describe('PaginatorService setting', () => {
     });
 
     it('should do a request with extra params', () => {
-        this.paginatorService.addExtraParams('archive', 'false');
-        this.paginatorService.addExtraParams('system', 'true');
-        this.paginatorService.addExtraParams('live', null);
+        this.paginatorService.setExtraParams('archive', 'false');
+        this.paginatorService.setExtraParams('system', 'true');
+        this.paginatorService.setExtraParams('live', null);
         this.paginatorService.get().subscribe((items) => (this.result = items));
         expect(this.lastConnection.request.url).toContain('v1/urldemo?archive=false&system=true');
     });

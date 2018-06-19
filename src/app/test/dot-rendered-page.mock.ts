@@ -89,7 +89,8 @@ export const mockDotTemplate: DotTemplate = {
     type: '',
     versionType: '',
     drawed: true,
-    canEdit: true
+    canEdit: true,
+    theme: ''
 };
 
 export const mockDotTemplateLayout: DotTemplate = {

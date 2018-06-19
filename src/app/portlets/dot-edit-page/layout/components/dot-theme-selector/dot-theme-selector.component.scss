@@ -1,0 +1,76 @@
+@import 'variables';
+
+$theme-item-dimension: 240px;
+
+::ng-deep {
+    dot-site-selector {
+        dot-searchable-dropdown .ui-button,
+        .site-selector__title {
+            font-size: $font-size-large;
+            min-width: 180px;
+        }
+    }
+
+    .ui-datagrid-content {
+        width: $theme-item-dimension * 4 + $basic-padding * 6;
+        height: $theme-item-dimension * 2 + $basic-padding * 4;
+        margin: 0 $basic-padding * 2;
+
+        .ui-g {
+            margin: 0;
+        }
+    }
+
+    .ui-datagrid-content .ui-widget-content.ui-g-12 {
+        text-align: center;
+        font-size: $font-size-large;
+        margin-top: $basic-padding * 5;
+    }
+}
+
+.dot-theme-search-box {
+    display: inline-block;
+    width: 200px;
+    margin-left: $basic-padding * 3;
+    position: relative;
+
+    input {
+        font-size: $font-size-large;
+    }
+}
+
+.dot-theme-item {
+    margin: $basic-padding * 2 $basic-padding * 2 0 0;
+    width: $theme-item-dimension;
+    height: $theme-item-dimension;
+    background: $gray-lighter;
+    align-items: center;
+    padding: $basic-padding * 3 $basic-padding * 2;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+
+    svg {
+        fill: $gray;
+    }
+
+    &:hover,
+    &.active {
+        box-shadow: $md-shadow-3;
+        background: $white;
+    }
+}
+
+.dot-theme-item:nth-child(4n) {
+    margin-right: 0;
+}
+
+.dot-theme-item__name {
+    padding-top: $basic-padding * 3;
+    font-size: $font-size-large;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+    width: 100%;
+}
