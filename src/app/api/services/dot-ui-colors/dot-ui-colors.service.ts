@@ -44,30 +44,33 @@ export class DotUiColorsService {
     }
 
     private setColorBackground(el: HTMLElement, color: string): void {
-        if (this.getDefaultsColors(el).background !== color) {
-            el.style.setProperty('--color-background', color);
+        const colorBackground: TinyColor = new TinyColor(color);
+
+        if (colorBackground.isValid && this.getDefaultsColors(el).background !== color) {
+            el.style.setProperty('--color-background', colorBackground.toHexString().toUpperCase());
         }
     }
 
     private setColorMain(el: HTMLElement, color: string): void {
-        if (this.getDefaultsColors(el).primary !== color) {
-            const colorMain = new TinyColor(color);
+        const colorMain = new TinyColor(color);
+
+        if (colorMain.isValid && this.getDefaultsColors(el).primary !== color) {
             const colorMainMod = `#${colorMain
                 .lighten(this.COL_MAIN_LIGHTEN_VAL)
                 .toHex()
                 .toUpperCase()}`;
 
-            el.style.setProperty('--color-main', color);
+            el.style.setProperty('--color-main', colorMain.toHexString().toUpperCase());
             el.style.setProperty('--color-main_mod', colorMainMod);
             el.style.setProperty('--color-main_rgb', this.getRgbString(colorMain));
         }
     }
 
     private setColorSec(el: HTMLElement, color: string): void {
-        if (this.getDefaultsColors(el).secondary !== color) {
-            const colorSec = new TinyColor(color);
+        const colorSec = new TinyColor(color);
 
-            el.style.setProperty('--color-sec', color);
+        if (colorSec.isValid && this.getDefaultsColors(el).secondary !== color) {
+            el.style.setProperty('--color-sec', colorSec.toHexString().toUpperCase());
             el.style.setProperty('--color-sec_rgb', this.getRgbString(colorSec));
         }
     }

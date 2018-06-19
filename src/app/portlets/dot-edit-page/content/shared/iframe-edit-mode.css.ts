@@ -58,7 +58,12 @@ export const EDIT_PAGE_CSS = `
     .dotedit-contentlet__content {
         min-height: 100px;
         position: relative;
-        display: inline-block;
+    }
+
+    .dotedit-contentlet__content:after {
+        content: "";
+        display: table;
+        clear: both;
     }
 
     .loader,

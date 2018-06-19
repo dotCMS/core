@@ -50,6 +50,18 @@ describe('DotUiColorsService', () => {
         expect(html.style.setProperty).toHaveBeenCalledTimes(6);
     });
 
+    it('should not set invalid colors', () => {
+        service.setColors(document.querySelector('html'), {
+            primary: 'sdfadfg',
+            secondary: 'dfgsdfg',
+            background: 'dsfgsdfg'
+        });
+
+        const html = <HTMLElement>document.querySelector('');
+
+        expect(html.style.setProperty).not.toHaveBeenCalled();
+    });
+
     it('should only primary colors', () => {
         service.setColors(document.querySelector('html'), {
             primary: '#78E4FF',
