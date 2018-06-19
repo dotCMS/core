@@ -290,18 +290,17 @@ public class WorkflowResource {
         try {
             // check the form
             DotPreconditions.notNull(fireBulkActionsForm,"Expected Request body was empty.");
-
             ResponseUtil.handleAsyncResponse(() -> {
-                        try {
-                            return workflowHelper
-                                    .fireBulkActions(fireBulkActionsForm, initDataObject.getUser());
-                        } catch (Exception e) {
-                            asyncResponse.resume(ResponseUtil.mapExceptionResponse(e));
-                        }
-                        return null;
-                    }
-                    , asyncResponse
-            );
+                try {
+                    final BulkActionsResultView view = workflowHelper
+                            .fireBulkActions(fireBulkActionsForm, initDataObject.getUser());
+                    return Response.ok( new ResponseEntityView(view)).build();
+                } catch (Exception e) {
+                    asyncResponse.resume(ResponseUtil.mapExceptionResponse(e));
+                }
+                return null;
+            }, asyncResponse);
+
         } catch (Exception e) {
             Logger.error(this.getClass(), "Exception attempting to fire bulk actions by : " +fireBulkActionsForm + ", exception message: " + e.getMessage(), e);
             asyncResponse.resume(ResponseUtil.mapExceptionResponse(e));
