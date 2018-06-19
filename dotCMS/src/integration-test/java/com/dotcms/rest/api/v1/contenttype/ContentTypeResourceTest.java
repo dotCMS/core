@@ -1,8 +1,6 @@
 package com.dotcms.rest.api.v1.contenttype;
 
-import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
-import static org.jruby.runtime.Helpers.map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -11,7 +9,6 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.contenttype.business.ContentTypeFactory;
@@ -33,20 +30,21 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.util.ContentTypeUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.PaginationUtil;
-import com.dotcms.util.pagination.ContentTypesPaginator;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
-import com.dotmarketing.exception.DotDataException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -157,7 +155,7 @@ public class ContentTypeResourceTest {
 	}
 
 	@Test
-	public void getContentTypes() throws DotDataException {
+	public void getContentTypes(){
 		final HttpServletRequest request  = mock(HttpServletRequest.class);
 		final WebResource webResource = mock(WebResource.class);
 		final InitDataObject initDataObject = mock(InitDataObject.class);
@@ -176,92 +174,19 @@ public class ContentTypeResourceTest {
 		Response responseExpected = Response.ok(new ResponseEntityView(contentTypes)).build();
 
 		final PaginationUtil paginationUtil = mock(PaginationUtil.class);
-		final Map<String, Object> extraParams = new TestHashMap<>();
-
-		extraParams.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, list("FORM"));
-
-		when(paginationUtil.getPage(request, user, filter, page, perPage, orderBy, direction, extraParams)).thenReturn(responseExpected);
+		when(paginationUtil.getPage(request, user, filter, page, perPage, orderBy, direction.toString())).thenReturn(responseExpected);
 
 		final PermissionAPI permissionAPI = mock(PermissionAPI.class);
 
 		final ContentTypeResource resource = new ContentTypeResource
 				(new ContentTypeHelper(), webResource, paginationUtil, WorkflowHelper.getInstance(), permissionAPI);
-		final Response response = resource.getContentTypes(request, filter, page, perPage, orderBy, direction.toString(), "FORM");
-		RestUtilTest.verifySuccessResponse(response);
+		Response response = null;
+
+		RestUtilTest.verifySuccessResponse(
+				response = resource.getContentTypes(request, filter, page, perPage, orderBy, direction.toString())
+		);
 
 		assertEquals(responseExpected.getEntity(), response.getEntity());
-		verify(paginationUtil).getPage(request, user, filter, page, perPage, orderBy, direction, extraParams);
-	}
-
-	@Test
-	public void getContentTypesUnValidType() throws DotDataException {
-		final HttpServletRequest request  = mock(HttpServletRequest.class);
-		final WebResource webResource = mock(WebResource.class);
-		final InitDataObject initDataObject = mock(InitDataObject.class);
-		final User user = new User();
-		when(initDataObject.getUser()).thenReturn(user);
-		when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
-
-		String filter = "filter";
-		int page = 3;
-		int perPage = 4;
-		String orderBy = "name";
-		OrderDirection direction = OrderDirection.ASC;
-
-		final PaginationUtil paginationUtil = mock(PaginationUtil.class);
-		final PermissionAPI permissionAPI = mock(PermissionAPI.class);
-
-		final ContentTypeResource resource = new ContentTypeResource
-				(new ContentTypeHelper(), webResource, paginationUtil, WorkflowHelper.getInstance(), permissionAPI);
-
-		try {
-			resource.getContentTypes(request, filter, page, perPage, orderBy, direction.toString(), "FORM2");
-			assertTrue(false);
-		} catch (DotDataException e) {
-			assertTrue(true);
-		}
-	}
-
-	@Test
-	public void getContentTypesWithoutType() throws DotDataException {
-		final HttpServletRequest request  = mock(HttpServletRequest.class);
-		final WebResource webResource = mock(WebResource.class);
-		final InitDataObject initDataObject = mock(InitDataObject.class);
-		final User user = new User();
-		when(initDataObject.getUser()).thenReturn(user);
-		when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
-
-		String filter = "filter";
-		int page = 3;
-		int perPage = 4;
-		String orderBy = "name";
-		OrderDirection direction = OrderDirection.ASC;
-
-		List<ContentType> contentTypes = new ArrayList<>();
-		Response responseExpected = Response.ok(new ResponseEntityView(contentTypes)).build();
-
-		final PaginationUtil paginationUtil = mock(PaginationUtil.class);
-		Map<String, Object> extraParams = new HashMap<String, Object>() {
-			@Override
-			public boolean equals(Object o) {
-				Map other = (Map) o;
-
-				return other.size() == 0;
-			}
-		};
-
-
-		when(paginationUtil.getPage(request, user, filter, page, perPage, orderBy, direction, extraParams)).thenReturn(responseExpected);
-
-		final PermissionAPI permissionAPI = mock(PermissionAPI.class);
-
-		final ContentTypeResource resource = new ContentTypeResource
-				(new ContentTypeHelper(), webResource, paginationUtil, WorkflowHelper.getInstance(), permissionAPI);
-		Response response = resource.getContentTypes(request, filter, page, perPage, orderBy, direction.toString(), null);
-		RestUtilTest.verifySuccessResponse(response);
-
-		assertEquals(responseExpected.getEntity(), response.getEntity());
-		verify(paginationUtil).getPage(request, user, filter, page, perPage, orderBy, direction, extraParams);
 	}
 
 	private static String JSON_CONTENT_TYPE_CREATE =
@@ -518,32 +443,6 @@ public class ContentTypeResourceTest {
 				APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentTypeVisibleByDefault);
 			}
 		}
-	}
 
-	private static class TestHashMap<K, V> extends HashMap<K, V> {
-		@Override
-		public boolean equals(Object o) {
-			Map other = (Map) o;
-
-			if (this.size() != ((Map) o).size()) {
-				return false;
-			}
-
-			for (final Object key : other.keySet()) {
-				final Object otherValue = other.get(key);
-				final Object value = this.get(key);
-
-				if (otherValue.getClass().isArray() && value.getClass().isArray()) {
-					if (!Arrays.deepEquals((Object[]) otherValue, (Object[]) value)) {
-						return false;
-					}
-
-				} else if (!otherValue.equals(value)) {
-					return false;
-				}
-			}
-
-			return true;
-		}
 	}
 }
