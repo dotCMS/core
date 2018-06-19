@@ -20,7 +20,7 @@ describe('AppComponent', () => {
         DOTTestBed.configureTestingModule({
             declarations: [AppComponent],
             imports: [RouterTestingModule],
-            providers: [DotUiColorsService, NotLicensedService]
+            providers: [NotLicensedService]
         });
 
         fixture = DOTTestBed.createComponent(AppComponent);
@@ -48,7 +48,7 @@ describe('AppComponent', () => {
     });
 
     it('should set ui colors', () => {
-        expect(dotUiColorsService.setColors).toHaveBeenCalledWith({
+        expect(dotUiColorsService.setColors).toHaveBeenCalledWith(jasmine.any(HTMLElement), {
             primary: '#123',
             secondary: '#456',
             background: '#789'

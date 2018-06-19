@@ -17,7 +17,7 @@ describe('DotIframeEventsHandler', () => {
 
     beforeEach(() => {
         injector = DOTTestBed.configureTestingModule({
-            providers: [DotIframeEventsHandler, DotLoadingIndicatorService, DotMenuService, DotUiColorsService],
+            providers: [DotIframeEventsHandler, DotLoadingIndicatorService, DotMenuService],
             imports: [RouterTestingModule]
         });
 
@@ -101,6 +101,8 @@ describe('DotIframeEventsHandler', () => {
 
     it('should set colors in the ui', () => {
         spyOn(dotUiColorsService, 'setColors');
+        const fakeHtmlEl = {hello: 'html'};
+        spyOn(document, 'querySelector').and.returnValue(fakeHtmlEl);
 
         service.handle(
             new CustomEvent('ng-event', {
@@ -116,7 +118,7 @@ describe('DotIframeEventsHandler', () => {
                 }
             })
         );
-        expect(dotUiColorsService.setColors).toHaveBeenCalledWith({
+        expect(dotUiColorsService.setColors).toHaveBeenCalledWith(fakeHtmlEl, {
             primary: '#fff',
             secondary: '#000',
             background: '#ccc',

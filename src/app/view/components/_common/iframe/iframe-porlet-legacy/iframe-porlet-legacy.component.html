@@ -1,2 +1,8 @@
-<dot-iframe #iframe [src]="url | async" [isLoading]="isLoading" (custom)="onCustomEvent($event)"></dot-iframe>
+<dot-iframe
+    #iframe
+    (custom)="onCustomEvent($event)"
+    (load)="onLoad($event)"
+    [isLoading]="isLoading"
+    [src]="url | async">
+</dot-iframe>
 <router-outlet></router-outlet>

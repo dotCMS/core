@@ -33,7 +33,7 @@ describe('DotUiColorsService', () => {
     });
 
     it('should set all colors', () => {
-        service.setColors({
+        service.setColors(document.querySelector('html'), {
             primary: '#78E4FF',
             secondary: '#98FF78',
             background: '#CB8978'
@@ -51,7 +51,7 @@ describe('DotUiColorsService', () => {
     });
 
     it('should only primary colors', () => {
-        service.setColors({
+        service.setColors(document.querySelector('html'), {
             primary: '#78E4FF',
             secondary: '#54428E',
             background: '#3A3847'
@@ -65,7 +65,7 @@ describe('DotUiColorsService', () => {
     });
 
     it('should only secondary colors', () => {
-        service.setColors({
+        service.setColors(document.querySelector('html'), {
             primary: '#C336E5',
             secondary: '#98FF78',
             background: '#3A3847'
@@ -78,7 +78,7 @@ describe('DotUiColorsService', () => {
     });
 
     it('should only background colors', () => {
-        service.setColors({
+        service.setColors(document.querySelector('html'), {
             primary: '#C336E5',
             secondary: '#54428E',
             background: '#CB8978'

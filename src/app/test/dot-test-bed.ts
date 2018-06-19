@@ -29,6 +29,7 @@ import { DotDialogService } from '../api/services/dot-dialog';
 import { DotRouterService } from '../api/services/dot-router/dot-router.service';
 import { DotLicenseService } from '../api/services/dot-license/dot-license.service';
 import { DotContentletEditorService } from '../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotUiColorsService } from '../api/services/dot-ui-colors/dot-ui-colors.service';
 
 export class DOTTestBed {
     private static DEFAULT_CONFIG = {
@@ -50,6 +51,7 @@ export class DOTTestBed {
             DotIframeService,
             DotMessageService,
             DotRouterService,
+            DotUiColorsService,
             DotcmsConfig,
             DotcmsEventsService,
             FormatDateService,

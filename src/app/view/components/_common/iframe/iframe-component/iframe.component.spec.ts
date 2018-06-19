@@ -12,6 +12,7 @@ import { IframeComponent } from './iframe.component';
 import { LoginService } from 'dotcms-js/core/login.service';
 import { LoginServiceMock } from '../../../../../test/login-service.mock';
 import { DotIframeService } from '../service/dot-iframe/dot-iframe.service';
+import { DotUiColorsService } from '../../../../../api/services/dot-ui-colors/dot-ui-colors.service';
 
 describe('IframeComponent', () => {
     let comp: IframeComponent;
@@ -19,6 +20,7 @@ describe('IframeComponent', () => {
     let de: DebugElement;
     let iframeEl: DebugElement;
     let dotIframeService: DotIframeService;
+    let dotUiColorsService: DotUiColorsService;
 
     beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
@@ -39,6 +41,7 @@ describe('IframeComponent', () => {
         de = fixture.debugElement;
 
         dotIframeService = de.injector.get(DotIframeService);
+        dotUiColorsService = de.injector.get(DotUiColorsService);
 
         comp.isLoading = false;
         comp.src = 'etc/etc?hello=world';
@@ -87,6 +90,28 @@ describe('IframeComponent', () => {
         dotIframeService.run('fakeFunction');
 
         expect(comp.iframeElement.nativeElement.contentWindow.fakeFunction).toHaveBeenCalledTimes(1);
+    });
+
+    it('should reload colors', () => {
+        const fakeHtmlEl = {
+            hello: 'html'
+        };
+
+        comp.iframeElement = {
+            nativeElement: {
+                contentWindow: {
+                    document: {
+                        querySelector: () => fakeHtmlEl
+                    }
+                }
+            }
+        };
+
+        spyOn(dotUiColorsService, 'setColors');
+
+        dotIframeService.reloadColors();
+
+        expect(dotUiColorsService.setColors).toHaveBeenCalledWith(fakeHtmlEl);
     });
 
     describe('bind iframe events', () => {

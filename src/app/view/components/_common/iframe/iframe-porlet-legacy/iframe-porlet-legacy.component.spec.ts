@@ -21,6 +21,7 @@ describe('IframePortletLegacyComponent', () => {
     let dotIframe: DebugElement;
     let dotMenuService: DotMenuService;
     let dotIframeEventsHandler: DotIframeEventsHandler;
+    let dotUiColorsService: DotUiColorsService;
     let route: ActivatedRoute;
 
     beforeEach(async(() => {
@@ -31,7 +32,6 @@ describe('IframePortletLegacyComponent', () => {
                 DotContentletService,
                 DotIframeEventsHandler,
                 DotMenuService,
-                DotUiColorsService,
                 LoginService,
                 SiteService,
                 SocketFactory,
@@ -57,11 +57,12 @@ describe('IframePortletLegacyComponent', () => {
         dotIframe = de.query(By.css('dot-iframe'));
         dotMenuService = de.injector.get(DotMenuService);
         dotIframeEventsHandler = de.injector.get(DotIframeEventsHandler);
+        dotUiColorsService = de.injector.get(DotUiColorsService);
         route = de.injector.get(ActivatedRoute);
     }));
 
     it('should have dot-iframe component', () => {
-        expect(fixture.debugElement.query(By.css('dot-iframe'))).toBeDefined();
+        expect(dotIframe).toBeDefined();
     });
 
     it('should set query param url to the dot-iframe src', () => {
@@ -110,5 +111,25 @@ describe('IframePortletLegacyComponent', () => {
                 is: 'a custom event'
             }
         });
+    });
+
+    it('should set colors in the jsp on load', () => {
+        spyOn(dotUiColorsService, 'setColors');
+
+        const fakeHTMLElement = {
+            fake: 'HTML'
+        };
+
+        dotIframe.triggerEventHandler('load', {
+            target: {
+                contentDocument: {
+                    querySelector: () => {
+                        return fakeHTMLElement;
+                    }
+                }
+            }
+        });
+
+        expect(dotUiColorsService.setColors).toHaveBeenCalledWith(fakeHTMLElement);
     });
 });

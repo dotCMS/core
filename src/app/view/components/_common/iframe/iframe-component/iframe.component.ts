@@ -14,6 +14,7 @@ import { DotLoadingIndicatorService } from '../dot-loading-indicator/dot-loading
 import { IframeOverlayService } from '../service/iframe-overlay.service';
 import { DotIframeService } from '../service/dot-iframe/dot-iframe.service';
 import { Subject } from 'rxjs';
+import { DotUiColorsService } from '../../../../../api/services/dot-ui-colors/dot-ui-colors.service';
 
 @Component({
     selector: 'dot-iframe',
@@ -37,6 +38,7 @@ export class IframeComponent implements OnInit, OnDestroy {
         private loggerService: LoggerService,
         private loginService: LoginService,
         private ngZone: NgZone,
+        private dotUiColorsService: DotUiColorsService,
         public dotLoadingIndicatorService: DotLoadingIndicatorService,
         public iframeOverlayService: IframeOverlayService,
     ) {}
@@ -53,6 +55,14 @@ export class IframeComponent implements OnInit, OnDestroy {
         this.dotIframeService.ran().takeUntil(this.destroy$).subscribe((func: string) => {
             if (this.getIframeWindow() && typeof this.getIframeWindow()[func] === 'function') {
                 this.getIframeWindow()[func]();
+            }
+        });
+
+        this.dotIframeService.reloadedColors().takeUntil(this.destroy$).subscribe(() => {
+            const doc = this.getIframeDocument();
+
+            if (doc) {
+                this.dotUiColorsService.setColors(doc.querySelector('html'));
             }
         });
     }
@@ -112,6 +122,10 @@ export class IframeComponent implements OnInit, OnDestroy {
 
     private getIframeWindow(): Window {
         return this.iframeElement && this.iframeElement.nativeElement.contentWindow;
+    }
+
+    private getIframeDocument(): Document {
+        return this.getIframeWindow().document;
     }
 
     private getIframeLocation(): any {

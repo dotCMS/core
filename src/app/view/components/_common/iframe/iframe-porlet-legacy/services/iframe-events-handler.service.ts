@@ -3,6 +3,7 @@ import { DotLoadingIndicatorService } from '../../dot-loading-indicator/dot-load
 import { DotRouterService } from '../../../../../../api/services/dot-router/dot-router.service';
 import { DotContentletEditorService } from '../../../../dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotUiColors, DotUiColorsService } from '../../../../../../api/services/dot-ui-colors/dot-ui-colors.service';
+import { DotIframeService } from '../../service/dot-iframe/dot-iframe.service';
 
 /**
  * Handle events triggered by the iframe in the IframePortletLegacyComponent
@@ -18,7 +19,8 @@ export class DotIframeEventsHandler {
         private dotLoadingIndicatorService: DotLoadingIndicatorService,
         private dotRouterService: DotRouterService,
         private dotContentletEditorService: DotContentletEditorService,
-        private dotUiColorsService: DotUiColorsService
+        private dotUiColorsService: DotUiColorsService,
+        private dotIframeService: DotIframeService
     ) {
         if (!this.handlers) {
             this.handlers = {
@@ -63,6 +65,7 @@ export class DotIframeEventsHandler {
     }
 
     private setDotcmsUiColors($event: CustomEvent): void {
-        this.dotUiColorsService.setColors(<DotUiColors>$event.detail.payload.colors);
+        this.dotUiColorsService.setColors(document.querySelector('html'), <DotUiColors>$event.detail.payload.colors);
+        this.dotIframeService.reloadColors();
     }
 }

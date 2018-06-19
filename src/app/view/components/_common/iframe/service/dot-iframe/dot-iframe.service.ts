@@ -29,6 +29,17 @@ export class DotIframeService {
     }
 
     /**
+     * Get reload colors action
+     *
+     * @returns {Observable<any>}
+     * @memberof DotIframeService
+     */
+    reloadedColors(): Observable<any> {
+        return this._actions.asObservable().pipe(filter((action: string) => action === 'colors'));
+    }
+
+
+    /**
      * Get functions to run in the iframe window
      *
      * @returns {Observable<string>}
@@ -65,6 +76,15 @@ export class DotIframeService {
         if (functionToRun) {
             this.run(functionToRun);
         }
+    }
+
+    /**
+     * Reload the colors in the jsp
+     *
+     * @memberof DotIframeService
+     */
+    reloadColors(): void {
+        this._actions.next('colors');
     }
 
     private getFunctionToRefreshIframe(portlet: string): string {

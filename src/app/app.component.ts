@@ -25,7 +25,7 @@ export class AppComponent implements OnInit {
                 pluck('colors')
             )
             .subscribe((colors: DotUiColors) => {
-                this.dotUiColors.setColors(colors);
+                this.dotUiColors.setColors(document.querySelector('html'), colors);
             });
     }
 }
