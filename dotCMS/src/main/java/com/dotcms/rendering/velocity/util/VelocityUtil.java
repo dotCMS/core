@@ -4,6 +4,7 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.rendering.velocity.viewtools.LanguageWebAPI;
 import com.dotcms.rendering.velocity.viewtools.RequestWrapper;
+import com.dotcms.rest.api.v1.container.ContainerResource;
 import com.dotcms.visitor.domain.Visitor;
 
 import com.dotmarketing.beans.Host;
@@ -57,7 +58,15 @@ public class VelocityUtil {
 	private static VelocityEngine ve = null;
 	private static boolean DEFAULT_PAGE_TO_DEFAULT_LANGUAGE = LanguageWebAPI.canDefaultPageToDefaultLanguage();
 
+	private static class Holder {
+		private static final VelocityUtil INSTANCE = new VelocityUtil();
+	}
 
+	protected VelocityUtil(){}
+
+	public static VelocityUtil getInstance() {
+		return Holder.INSTANCE;
+	}
 
 	private synchronized static void init(){
 		if(ve != null)
@@ -163,11 +172,17 @@ public class VelocityUtil {
 	 * @param request
 	 * @param response
 	 * @return
+	 *
+	 * @deprecated Use the mockable version instead {@link VelocityUtil#getContext(HttpServletRequest, HttpServletResponse)}
 	 */
+	@Deprecated()
 	public static ChainedContext getWebContext(HttpServletRequest request, HttpServletResponse response) {
 		return getWebContext(getBasicContext(), request, response);
 	}
-	
+
+	public ChainedContext getContext(final HttpServletRequest request, final HttpServletResponse response) {
+		return getWebContext(getBasicContext(), request, response);
+	}
 	
 	public static ChainedContext getWebContext(Context ctx, HttpServletRequest request, HttpServletResponse response) {
 
@@ -231,6 +246,30 @@ public class VelocityUtil {
 
 	}
 
+	public String  merge(final String templatePath, final Context ctx) {
+		try {
+			return mergeTemplate(templatePath, ctx);
+		} catch (ResourceNotFoundException | ParseErrorException e) {
+			Logger.error(ContainerResource.class, e.getMessage());
+			throw e;
+		} catch (Exception e) {
+			Logger.error(ContainerResource.class, e.getMessage());
+			throw new DotRuntimeException(e);
+		}
+	}
+
+	/**
+	 * Merge a velocity resource
+	 *
+	 * @param templatePath
+	 * @param ctx
+	 * @return
+	 * @throws ResourceNotFoundException
+	 * @throws ParseErrorException
+	 * @throws Exception
+	 *
+	 * @deprecated Use the mockable version instead {@link VelocityUtil#merge(String, Context)}
+	 */
 	public static String mergeTemplate(String templatePath, Context ctx) throws ResourceNotFoundException, ParseErrorException, Exception{
 		VelocityEngine ve = VelocityUtil.getEngine();
 		Template template = null;
