@@ -3,7 +3,7 @@ import { CrudService } from '../../../api/services/crud/crud.service';
 import { ContentType } from '../shared/content-type.model';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ListingDataTableModule } from '../../../view/components/listing-data-table/listing-data-table.module';
-import { DotDialogService } from '../../../api/services/dot-dialog/dot-dialog.service';
+import { DotAlertConfirmService } from '../../../api/services/dot-alert-confirm/dot-alert-confirm.service';
 import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture } from '@angular/core/testing';
@@ -83,7 +83,7 @@ describe('ContentTypesPortletComponent', () => {
             providers: [
                 ContentTypesInfoService,
                 CrudService,
-                DotDialogService,
+                DotAlertConfirmService,
                 FormatDateService,
                 { provide: DotContentletService, useClass: MockDotContentletService },
                 { provide: DotMessageService, useValue: messageServiceMock },
@@ -156,7 +156,7 @@ describe('ContentTypesPortletComponent', () => {
             system: false
         };
 
-        const dotDialogService = fixture.debugElement.injector.get(DotDialogService);
+        const dotDialogService = fixture.debugElement.injector.get(DotAlertConfirmService);
         spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
             conf.accept();
         });

@@ -7,7 +7,7 @@ import { ContentTypesInfoService } from './api/services/content-types-info';
 import { ContentletGuardService } from './api/services/guards/contentlet-guard.service';
 import { CrudService } from './api/services/crud/crud.service';
 import { DefaultGuardService } from './api/services/guards/default-guard.service';
-import { DotDialogService } from './api/services/dot-dialog';
+import { DotAlertConfirmService } from './api/services/dot-alert-confirm';
 import { DotHttpErrorManagerService } from './api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotMenuService } from './api/services/dot-menu.service';
 import { DotMessageService } from './api/services/dot-messages-service';
@@ -37,8 +37,8 @@ const PROVIDERS: any[] = [
     ContentletGuardService,
     CrudService,
     DefaultGuardService,
+    DotAlertConfirmService,
     DotContentletService,
-    DotDialogService,
     DotHttpErrorManagerService,
     DotIframeService,
     DotLicenseService,

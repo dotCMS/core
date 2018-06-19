@@ -1,7 +1,7 @@
 import { Component, OnInit, forwardRef, ViewChild } from '@angular/core';
 import { NgGrid, NgGridConfig, NgGridItemConfig } from 'angular2-grid';
 import * as _ from 'lodash';
-import { DotDialogService } from '../../../../../api/services/dot-dialog/dot-dialog.service';
+import { DotAlertConfirmService } from '../../../../../api/services/dot-alert-confirm/dot-alert-confirm.service';
 import { DotMessageService } from '../../../../../api/services/dot-messages-service';
 import { DotLayoutGridBox } from '../../../shared/models/dot-layout-grid-box.model';
 import {
@@ -61,7 +61,7 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
     };
 
     constructor(
-        private dotDialogService: DotDialogService,
+        private dotDialogService: DotAlertConfirmService,
         private dotEditLayoutService: DotEditLayoutService,
         public dotMessageService: DotMessageService,
         private dotEventsService: DotEventsService

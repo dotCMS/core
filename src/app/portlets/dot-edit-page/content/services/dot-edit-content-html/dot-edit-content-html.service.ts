@@ -9,7 +9,7 @@ import * as _ from 'lodash';
 
 import { DotContainerContentletService } from '../dot-container-contentlet.service';
 import { DotDOMHtmlUtilService } from '../html/dot-dom-html-util.service';
-import { DotDialogService } from '../../../../../api/services/dot-dialog/dot-dialog.service';
+import { DotAlertConfirmService } from '../../../../../api/services/dot-alert-confirm/dot-alert-confirm.service';
 import { DotDragDropAPIHtmlService } from '../html/dot-drag-drop-api-html.service';
 import { DotEditContentToolbarHtmlService } from '../html/dot-edit-content-toolbar-html.service';
 import { DotLayout } from '../../../shared/models/dot-layout.model';
@@ -21,10 +21,17 @@ import { DotPageContent } from '../../../shared/models/dot-page-content.model';
 import { EDIT_PAGE_CSS } from '../../shared/iframe-edit-mode.css';
 import { GOOGLE_FONTS } from '../html/iframe-edit-mode.js';
 import { MODEL_VAR_NAME } from '../html/iframe-edit-mode.js';
+import { ContentType } from '../../../../content-types/shared/content-type.model';
 
 export enum DotContentletAction {
     EDIT,
     ADD
+}
+
+interface RenderAddedItemParams {
+    item: DotPageContent | ContentType;
+    checkExistFunc: (item: DotPageContent | ContentType, containerEL: HTMLElement) => boolean;
+    getContent: (container: DotPageContainer, form: DotPageContent |  ContentType) => Observable<string>;
 }
 
 @Injectable()
@@ -48,7 +55,7 @@ export class DotEditContentHtmlService {
         private dotDragDropAPIHtmlService: DotDragDropAPIHtmlService,
         private dotEditContentToolbarHtmlService: DotEditContentToolbarHtmlService,
         private dotDOMHtmlUtilService: DotDOMHtmlUtilService,
-        private dotDialogService: DotDialogService,
+        private dotDialogService: DotAlertConfirmService,
         private dotMessageService: DotMessageService
     ) {
         this.contentletEvents$.subscribe((contentletEvent: any) => {
@@ -135,7 +142,7 @@ export class DotEditContentHtmlService {
             contentlet.type = currentContentlet.dataset.dotType;
 
             const containerEl = currentContentlet.parentNode;
-            const contentletEl: HTMLElement = this.createNewContentlet(contentlet);
+            const contentletEl: HTMLElement = this.createNewContentlet(currentContentlet);
 
             containerEl.replaceChild(contentletEl, currentContentlet);
 
@@ -160,26 +167,25 @@ export class DotEditContentHtmlService {
      * @memberof DotEditContentHtmlService
      */
     renderAddedContentlet(contentlet: DotPageContent): void {
-        const doc = this.getEditPageDocument();
-        const containerEl = doc.querySelector(
-            // tslint:disable-next-line:max-line-length
-            `div[data-dot-object="container"][data-dot-identifier="${this.currentContainer.identifier}"][data-dot-uuid="${
-                this.currentContainer.uuid
-            }"]`
-        );
+        this.renderAddedItem({
+            item: contentlet,
+            checkExistFunc: this.isContentExistInContainer.bind(this),
+            getContent: this.dotContainerContentletService.getContentletToContainer.bind(this.dotContainerContentletService)
+        });
+    }
 
-        if (this.isContentExistInContainer(contentlet, containerEl)) {
-            this.showContentAlreadyAddedError();
-        } else {
-            const contentletEl: HTMLElement = this.createNewContentlet(contentlet);
-            containerEl.insertAdjacentElement('beforeend', contentletEl);
-            this.dotContainerContentletService
-                .getContentletToContainer(this.currentContainer, contentlet)
-                .subscribe((contentletHtml: string) => {
-                    this.renderHTMLToContentlet(contentletEl, contentletHtml);
-                    this.currentAction = DotContentletAction.EDIT;
-                });
-        }
+    /**
+     * Render a form in the DOM after add it
+     *
+     * @param {ContentType} form
+     * @memberof DotEditContentHtmlService
+     */
+    renderAddedForm(form: ContentType): void  {
+        this.renderAddedItem({
+            item: form,
+            checkExistFunc: this.isFormExistInContainer.bind(this),
+            getContent: this.dotContainerContentletService.getFormToContainer.bind(this.dotContainerContentletService)
+        });
     }
 
     /**
@@ -243,6 +249,28 @@ export class DotEditContentHtmlService {
      */
     getContentModel(): DotPageContainer[] {
         return this.getEditPageIframe().contentWindow.getDotNgModel();
+    }
+
+    private renderAddedItem(params: RenderAddedItemParams): void {
+        const doc = this.getEditPageDocument();
+        const containerEl = doc.querySelector(
+            // tslint:disable-next-line:max-line-length
+            `div[data-dot-object="container"][data-dot-identifier="${this.currentContainer.identifier}"][data-dot-uuid="${
+                this.currentContainer.uuid
+            }"]`
+        );
+
+        if (params.checkExistFunc(params.item, containerEl)) {
+            this.showContentAlreadyAddedError();
+        } else {
+            params.getContent(this.currentContainer, params.item).subscribe((contentletHtml: string) => {
+                    const contentletEl: HTMLElement = this.createNewContentletFromString(contentletHtml);
+                    containerEl.insertAdjacentElement('beforeend', contentletEl);
+
+                    this.renderHTMLToContentlet(contentletEl, contentletHtml);
+                    this.currentAction = DotContentletAction.EDIT;
+                });
+        }
     }
 
     private bindGlobalEvents(): void {
@@ -346,6 +374,12 @@ export class DotEditContentHtmlService {
         return currentContentlets.some((contentElement) => contentElement.dataset.dotIdentifier === contentlet.identifier);
     }
 
+    private isFormExistInContainer(form: ContentType, containerEL: HTMLElement): boolean {
+        const contentsSelector = `div[data-dot-object="contentlet"]`;
+        const currentContentlets: HTMLElement[] = <HTMLElement[]>Array.from(containerEL.querySelectorAll(contentsSelector).values());
+        return currentContentlets.some((contentElement) => contentElement.dataset.dotContentTypeId === form.id);
+    }
+
     private addContentToolBars(): void {
         const doc = this.getEditPageDocument();
         this.dotEditContentToolbarHtmlService.addContainerToolbar(doc);
@@ -359,8 +393,10 @@ export class DotEditContentHtmlService {
         const div = doc.createElement('div');
         div.innerHTML = html;
 
+        const contentDivWrapper = div.children[0];
+
         // TODO: need to come up with a more efficient way to do this
-        Array.from(div.children).forEach((node: any) => {
+        Array.from(contentDivWrapper.children).forEach((node: any) => {
             if (node.tagName === 'SCRIPT') {
                 const script = doc.createElement('script');
                 script.type = 'text/javascript';
@@ -373,7 +409,6 @@ export class DotEditContentHtmlService {
 
                 contentletContentEl.appendChild(script);
             } else {
-                node.removeAttribute('data-dot-object');
                 contentletContentEl.appendChild(node);
             }
         });
@@ -401,25 +436,26 @@ export class DotEditContentHtmlService {
         });
     }
 
-    private createNewContentlet(contentlet: DotPageContent): HTMLElement {
+    private createNewContentletFromString(contentletHTML: string): HTMLElement {
         const doc = this.getEditPageDocument();
+
+        const div = doc.createElement('div');
+        div.innerHTML = contentletHTML;
+
+        return this.createNewContentlet(div.children[0]);
+    }
+
+    private createNewContentlet(contentletElement: HTMLElement): HTMLElement {
+        const doc = this.getEditPageDocument();
+
         const dotEditContentletEl: HTMLElement = doc.createElement('div');
-        dotEditContentletEl.dataset.dotObject = 'contentlet';
-        dotEditContentletEl.dataset.dotIdentifier = contentlet.identifier;
-        dotEditContentletEl.dataset.dotInode = contentlet.inode;
-        dotEditContentletEl.dataset.dotType = contentlet.type;
-        dotEditContentletEl.dataset.dotBasetype = contentlet.baseType;
-        dotEditContentletEl.dataset.dotCanEdit = 'true';
+        Object.assign(dotEditContentletEl.dataset, contentletElement.dataset);
 
         /*
             TODO: we have the method: DotEditContentToolbarHtmlService.addContentletMarkup that does this, we need
             to consolidate this.
         */
-        const contenToolbarButtons = this.dotEditContentToolbarHtmlService.getContentButton(
-            contentlet.identifier,
-            contentlet.inode,
-            dotEditContentletEl.dataset.dotCanEdit === 'true'
-        );
+        const contenToolbarButtons = this.dotEditContentToolbarHtmlService.getContentButton(contentletElement.dataset);
 
         dotEditContentletEl.innerHTML = `
             <div class="dotedit-contentlet__toolbar">
@@ -516,7 +552,8 @@ export class DotEditContentHtmlService {
     private renderHTMLToContentlet(contentletEl: HTMLElement, contentletHtml: string): void {
         const contentletContentEl = contentletEl.querySelector('.dotedit-contentlet__content');
         contentletContentEl.innerHTML = ''; // Removing the loading indicator
-        this.appendNewContentlets(contentletContentEl, contentletHtml);
+
+        this.appendNewContentlets(contentletEl, contentletHtml);
 
         this.addVtlEditMenu(contentletEl);
 
@@ -534,9 +571,7 @@ export class DotEditContentHtmlService {
         this.dotContainerContentletService
             .getContentletToContainer(relocateInfo.container, relocateInfo.contentlet)
             .subscribe((contentletHtml: string) => {
-                // Removing the loading indicator
-                contentletContentEl.innerHTML = '';
-                this.appendNewContentlets(contentletContentEl, contentletHtml);
+                this.appendNewContentlets(contenletEl, contentletHtml);
             });
     }
 }

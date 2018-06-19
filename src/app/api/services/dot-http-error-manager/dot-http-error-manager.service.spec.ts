@@ -1,4 +1,4 @@
-import { DotDialogService } from '../dot-dialog/dot-dialog.service';
+import { DotAlertConfirmService } from '../dot-alert-confirm/dot-alert-confirm.service';
 import { LoginService, ResponseView } from 'dotcms-js/dotcms-js';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DotRouterService } from '../dot-router/dot-router.service';
@@ -12,7 +12,7 @@ import { Headers } from '@angular/http';
 describe('DotHttpErrorManagerService', () => {
     let service: DotHttpErrorManagerService;
     let dotRouterService: DotRouterService;
-    let dotDialogService: DotDialogService;
+    let dotDialogService: DotAlertConfirmService;
     let loginService: LoginService;
     let result: any;
 
@@ -52,7 +52,7 @@ describe('DotHttpErrorManagerService', () => {
         });
         service = testbed.get(DotHttpErrorManagerService);
         dotRouterService = testbed.get(DotRouterService);
-        dotDialogService = testbed.get(DotDialogService);
+        dotDialogService = testbed.get(DotAlertConfirmService);
         loginService = testbed.get(LoginService);
     });
 

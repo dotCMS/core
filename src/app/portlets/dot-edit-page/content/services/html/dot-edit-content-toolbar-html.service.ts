@@ -1,10 +1,13 @@
 import { Injectable } from '@angular/core';
 import { DotMessageService } from '../../../../../api/services/dot-messages-service';
 import { DotDOMHtmlUtilService } from './dot-dom-html-util.service';
+import { DotLicenseService } from '../../../../../api/services/dot-license/dot-license.service';
+import { take, switchMap } from 'rxjs/operators';
 
 interface DotEditPopupMenuItem {
     label: string;
     disabled?: boolean;
+    tooltip?: string;
     dataset: {
         [propName: string]: string;
     };
@@ -25,7 +28,8 @@ interface DotEditPopupMenu {
  */
 @Injectable()
 export class DotEditContentToolbarHtmlService {
-    constructor(private dotMessageService: DotMessageService, private dotDOMHtmlUtilService: DotDOMHtmlUtilService) {}
+    constructor(private dotMessageService: DotMessageService, private dotDOMHtmlUtilService: DotDOMHtmlUtilService,
+        private dotLicenseService: DotLicenseService) {}
 
     /**
      * Add custom HTML buttons to the containers div
@@ -39,9 +43,14 @@ export class DotEditContentToolbarHtmlService {
                 'editpage.content.container.action.add',
                 'editpage.content.container.menu.content',
                 'editpage.content.container.menu.widget',
-                'editpage.content.container.menu.form'
+                'editpage.content.container.menu.form',
+                'dot.common.license.enterprise.only.error'
             ])
-            .subscribe(() => {
+           .pipe(
+                switchMap(this.dotLicenseService.isEnterprise.bind(this.dotLicenseService)),
+                take(1)
+            )
+            .subscribe((isEnterpriseLicense: boolean) => {
                 const containers = Array.from(doc.querySelectorAll('div[data-dot-object="container"]'));
                 containers.forEach((container: HTMLElement) => {
                     const containerToolbar = document.createElement('div');
@@ -51,7 +60,7 @@ export class DotEditContentToolbarHtmlService {
                         container.classList.add('disabled');
                     }
 
-                    containerToolbar.innerHTML = this.getContainerToolbarHtml(container);
+                    containerToolbar.innerHTML = this.getContainerToolbarHtml(container, isEnterpriseLicense);
                     container.parentNode.insertBefore(containerToolbar, container);
                 });
             });
@@ -84,11 +93,7 @@ export class DotEditContentToolbarHtmlService {
                         contentletToolbar.innerHTML += this.getEditVtlButtons(vtls);
                     }
 
-                    contentletToolbar.innerHTML += this.getContentButton(
-                        contentlet.dataset.dotIdentifier,
-                        contentlet.dataset.dotInode,
-                        contentlet.dataset.dotCanEdit === 'true'
-                    );
+                    contentletToolbar.innerHTML += this.getContentButton(contentlet.dataset);
 
                     const contentletContent = document.createElement('div');
                     contentletContent.classList.add('dotedit-contentlet__content');
@@ -101,14 +106,20 @@ export class DotEditContentToolbarHtmlService {
             });
     }
 
-    getContentButton(identifier: string, inode: string, canEdit?: boolean): string {
+    getContentButton(contentletDataset: {[key: string]: any}): string {
+
+        const identifier: string = contentletDataset.dotIdentifier;
+        const inode: string = contentletDataset.dotIdentifier;
+        const canEdit: boolean = contentletDataset.dotCanEdit === 'true';
+        const isForm: boolean = contentletDataset.dotBasetype === 'FORM';
+
         const dataset = {
             'dot-identifier': identifier,
             'dot-inode': inode
         };
 
         let editButtonClass = 'dotedit-contentlet__edit';
-        editButtonClass += !canEdit ? ' dotedit-contentlet__disabled' : '';
+        editButtonClass += !canEdit  || isForm ? ' dotedit-contentlet__disabled' : '';
 
         return `
             ${this.dotDOMHtmlUtilService.getButtomHTML(
@@ -157,7 +168,7 @@ export class DotEditContentToolbarHtmlService {
         });
     }
 
-    private getContainerToolbarHtml(container: HTMLElement): string {
+    private getContainerToolbarHtml(container: HTMLElement, isEnterpriseLicense: boolean): string {
         return this.getDotEditPopupMenuHtml({
             button: {
                 label: `${this.dotMessageService.get('editpage.content.container.action.add')}`,
@@ -168,6 +179,7 @@ export class DotEditContentToolbarHtmlService {
                 .filter((item: string) => item.length)
                 .map((item: string) => {
                     item = item.toLowerCase();
+                    const isDisabledFormAdd = item === 'form' && !isEnterpriseLicense;
 
                     return {
                         label: this.dotMessageService.get(`editpage.content.container.menu.${item}`),
@@ -176,7 +188,9 @@ export class DotEditContentToolbarHtmlService {
                             add: item,
                             identifier: container.dataset.dotIdentifier,
                             uuid: container.dataset.dotUuid
-                        }
+                        },
+                        disabled: isDisabledFormAdd,
+                        tooltip: this.dotMessageService.get('dot.common.license.enterprise.only.error')
                     };
                 })
         });
@@ -216,13 +230,14 @@ export class DotEditContentToolbarHtmlService {
                 ${items
                     .map((item: DotEditPopupMenuItem) => {
                         return `
-                            <li class="dotedit-menu__item ${item.disabled ? 'dotedit-menu__item--disabled' : ''}">
-                                <a
-                                    href="#"
-                                    data-dot-object="popup-menu-item"
-                                    ${this.getDotEditPopupMenuItemDataSet(item.dataset)} role="button">
-                                    ${item.label}
-                                </a>
+                            <li class="dotedit-menu__item ${item.disabled ? 'dotedit-menu__item--disabled' : ''}"
+                                ${item.tooltip ? 'title=' + item.tooltip : ''}">
+                                    <a
+                                        href="#"
+                                        data-dot-object="popup-menu-item"
+                                        ${this.getDotEditPopupMenuItemDataSet(item.dataset)} role="button">
+                                        ${item.label}
+                                    </a>
                             </li>
                         `;
                     })

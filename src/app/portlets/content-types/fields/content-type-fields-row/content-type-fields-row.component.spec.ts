@@ -9,7 +9,7 @@ import { DragulaModule } from 'ng2-dragula';
 import { IconButtonTooltipModule } from '../../../../view/components/_common/icon-button-tooltip/icon-button-tooltip.module';
 import { DotMessageService } from '../../../../api/services/dot-messages-service';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
-import { DotDialogService } from '../../../../api/services/dot-dialog';
+import { DotAlertConfirmService } from '../../../../api/services/dot-alert-confirm';
 
 const mockFieldRow = new FieldRow();
 mockFieldRow.columns = [
@@ -48,7 +48,7 @@ describe('ContentTypeFieldsRowComponent', () => {
     let comp: ContentTypeFieldsRowComponent;
     let fixture: ComponentFixture<ContentTypeFieldsRowComponent>;
     let de: DebugElement;
-    let dotDialogService: DotDialogService;
+    let dotDialogService: DotAlertConfirmService;
 
     const messageServiceMock = new MockDotMessageService({
         'contenttypes.dropzone.rows.empty.message': 'Add fields here',
@@ -65,13 +65,13 @@ describe('ContentTypeFieldsRowComponent', () => {
             DOTTestBed.configureTestingModule({
                 declarations: [ContentTypeFieldsRowComponent, TestContentTypeFieldDraggableItemComponent],
                 imports: [DragulaModule, IconButtonTooltipModule],
-                providers: [FieldDragDropService, DotDialogService, { provide: DotMessageService, useValue: messageServiceMock }]
+                providers: [FieldDragDropService, DotAlertConfirmService, { provide: DotMessageService, useValue: messageServiceMock }]
             });
 
             fixture = DOTTestBed.createComponent(ContentTypeFieldsRowComponent);
             comp = fixture.componentInstance;
             de = fixture.debugElement;
-            dotDialogService = fixture.debugElement.injector.get(DotDialogService);
+            dotDialogService = fixture.debugElement.injector.get(DotAlertConfirmService);
         })
     );
 

@@ -25,7 +25,7 @@ import { DotEventsService } from '../api/services/dot-events/dot-events.service'
 import { DotGlobalMessageService } from '../view/components/_common/dot-global-message/dot-global-message.service';
 import { DotMessageService } from '../api/services/dot-messages-service';
 import { FormatDateService } from '../api/services/format-date-service';
-import { DotDialogService } from '../api/services/dot-dialog';
+import { DotAlertConfirmService } from '../api/services/dot-alert-confirm';
 import { DotRouterService } from '../api/services/dot-router/dot-router.service';
 import { DotLicenseService } from '../api/services/dot-license/dot-license.service';
 import { DotContentletEditorService } from '../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
@@ -43,7 +43,7 @@ export class DOTTestBed {
             ConfirmationService,
             CoreWebService,
             DotContentletEditorService,
-            DotDialogService,
+            DotAlertConfirmService,
             DotEventsService,
             DotGlobalMessageService,
             DotHttpErrorManagerService,

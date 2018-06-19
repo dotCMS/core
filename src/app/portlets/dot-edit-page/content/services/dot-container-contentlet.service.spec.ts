@@ -8,6 +8,7 @@ import { tick } from '@angular/core/testing';
 import { fakeAsync } from '@angular/core/testing';
 import { DotPageContainer } from '../../../dot-edit-page/shared/models/dot-page-container.model';
 import { DotPageContent } from '../../../dot-edit-page/shared/models/dot-page-content.model';
+import { ContentType } from '../../../content-types/shared/content-type.model';
 
 describe('DotContainerContentletService', () => {
     let dotContainerContentletService: DotContainerContentletService;
@@ -45,7 +46,41 @@ describe('DotContainerContentletService', () => {
 
             tick();
             expect(lastConnection.request.url).toContain(
-                `v1/containers/${pageContainer.identifier}/uuid/${pageContainer.uuid}/content/${contentletId}`
+                `v1/containers/${pageContainer.identifier}/content/${contentletId}`
+            );
+        })
+    );
+
+    it('should do a request for get the form html code',
+        fakeAsync(() => {
+            const formId = '2';
+            const pageContainer: DotPageContainer = {
+                identifier: '1',
+                uuid: '3'
+            };
+
+            const form: ContentType = {
+                clazz: 'clazz',
+                defaultType: true,
+                fixed: true,
+                folder: 'folder',
+                host: 'host',
+                name: 'name',
+                owner: 'owner',
+                system: false,
+                baseType: 'form',
+                id: formId
+            };
+
+            let response;
+
+            dotContainerContentletService
+                .getFormToContainer(pageContainer, form)
+                .subscribe((resp) => (response = resp));
+
+            tick();
+            expect(lastConnection.request.url).toContain(
+                `v1/containers/${pageContainer.identifier}/form/${formId}`
             );
         })
     );

@@ -1,0 +1,18 @@
+@import "mixins";
+@import "variables";
+
+:host {
+    dot-dialog ::ng-deep {
+        th {
+            text-align: left;
+        }
+
+        .dialog .ui-dialog {
+            width: 800px;
+
+            .ui-dialog-content {
+                height: 625px !important;
+            }
+        }
+    }
+}

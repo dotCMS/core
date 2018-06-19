@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
 
-import { DialogModule } from 'primeng/primeng';
+import { DialogModule, TooltipModule } from 'primeng/primeng';
 
 import { DotContainerContentletService } from './services/dot-container-contentlet.service';
 import { DotDOMHtmlUtilService } from './services/html/dot-dom-html-util.service';
@@ -18,6 +18,8 @@ import { DotWorkflowService } from '../../../api/services/dot-workflow/dot-workf
 import { DotEditPageService } from '../../../api/services/dot-edit-page/dot-edit-page.service';
 import { DotEditContentViewAsToolbarModule } from './components/dot-edit-content-view-as-toolbar/dot-edit-content-view-as-toolbar.module';
 import { DotWhatsChangedModule } from './components/dot-whats-changed/dot-whats-changed.module';
+
+import { DotFormSelectorModule } from './components/dot-form-selector/dot-form-selector.module';
 import { DotContentletEditorModule } from '../../../view/components/dot-contentlet-editor/dot-contentlet-editor.module';
 
 const routes: Routes = [
@@ -38,6 +40,8 @@ const routes: Routes = [
         DotDirectivesModule,
         DotEditContentViewAsToolbarModule,
         DotWhatsChangedModule,
+        DotFormSelectorModule,
+        TooltipModule,
         DotContentletEditorModule
     ],
     exports: [DotEditContentComponent],
