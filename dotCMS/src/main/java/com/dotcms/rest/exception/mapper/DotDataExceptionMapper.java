@@ -14,7 +14,9 @@ public class DotDataExceptionMapper implements com.dotcms.repackage.javax.ws.rs.
 
     @Override
     public Response toResponse(final DotDataException exception) {
+        final String errorMsg = "An error occurred when accessing the page information (" + exception
+                .getMessage() + ")";
         Logger.error(this, exception.getMessage(), exception);
-        return ExceptionMapperUtil.createResponse(null, exception.getMessage());
+        return ExceptionMapperUtil.createResponse(null, errorMsg);
     }
 }

@@ -13,21 +13,20 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import org.jetbrains.annotations.NotNull;
-
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.stream.Collectors;
-
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Handle {@link ContentType} pagination
  */
 public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Object>>{
-
     private static final String N_ENTRIES_FIELD_NAME = "nEntries";
-    public static final String TYPE_PARAMETER_NAME = "type";
 
     private final StructureAPI structureAPI;
 
@@ -53,16 +52,14 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
     public PaginatedArrayList<Map<String, Object>> getItems(User user, String filter, int limit, int offset, String orderby,
                                                             OrderDirection direction, Map<String, Object> extraParams) {
 
-        final List<String> type = extraParams != null && extraParams.get(TYPE_PARAMETER_NAME) != null ?
-                (List<String>) extraParams.get(TYPE_PARAMETER_NAME) : null;
-        final String queryCondition = this.getQueryCondition(filter, type);
+        String queryCondition = this.getQueryCondition(filter);
 
         try {
-            final List<Structure> structures = this.structureAPI.find(user, false, false, queryCondition,
+            List<Structure> structures = this.structureAPI.find(user, false, false, queryCondition,
                     orderby, limit, offset, UtilMethods.isSet(direction)?direction.toString().toLowerCase(): OrderDirection.ASC.name());
 
-            final List<ContentType> contentTypes = new StructureTransformer(structures).asList();
-            final List<Map<String, Object>> contentTypesTransform = transformContentTypesToMap(contentTypes);
+            List<ContentType> contentTypes = new StructureTransformer(structures).asList();
+            List<Map<String, Object>> contentTypesTransform = transformContentTypesToMap(contentTypes);
 
             setEntriesAttribute(user, contentTypesTransform);
 
@@ -71,7 +68,7 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
                 orderByEntries(direction, contentTypesTransform);
             }
 
-            final PaginatedArrayList<Map<String, Object>> result = new PaginatedArrayList<>();
+            final PaginatedArrayList<Map<String, Object>> result = new PaginatedArrayList();
             result.addAll(contentTypesTransform);
             result.setTotalResults(this.getTotalRecords(queryCondition));
 
@@ -113,48 +110,37 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
                         .collect(Collectors.toList());
     }
 
-    private String getQueryCondition(String filter, List<String> filterTypes) {
-        String queryFilter =
-                filter != null ? String.format("(upper(name) like '%%%s%%')", filter.toUpperCase())
-                        : "(upper(name) like '%%')";
+    private String getQueryCondition(final String filter) {
 
-        final StringBuilder queryType = new StringBuilder();
-
-        if (filterTypes != null) {
-
-            final List<BaseContentType> baseTypes = filterTypes.stream()
-                    .map(filterType -> getBaseContentType(filterType))
-                    .filter(baseContentType -> baseContentType != null)
-                    .collect(Collectors.toList());
-
-            for (final BaseContentType baseType : baseTypes) {
-                if (queryType.length() != 0) {
-                    queryType.append(" OR ");
-                }
-
-                queryType.append(String.format("structureType=%s", baseType.getType()));
-
-            }
+        if (!UtilMethods.isSet(filter)) {
+            return StringUtils.EMPTY;
         }
+        final String filterUpper = filter.toUpperCase();
 
-        return queryType.length() == 0 ? queryFilter : String.format("(%s) AND (%s)", queryFilter, queryType.toString());
-    }
+        final List<String> andClauses = new ArrayList<>();
 
-    @NotNull
-    private BaseContentType getBaseContentType(String filter) {
-        try {
-            return BaseContentType.valueOf(filter);
-        } catch (IllegalArgumentException e) {
-            BaseContentType result = null;
+        final StringTokenizer st = new StringTokenizer(filterUpper, " :,-");
+        while (st.hasMoreTokens()) {
 
-            for (BaseContentType baseContentType : BaseContentType.values()) {
-                if (baseContentType.name().startsWith(filter.toUpperCase())) {
-                    result = baseContentType;
+            final String tok = st.nextToken();
+            final Set<String> orClauses = new HashSet<>();
+            for (final BaseContentType btype : BaseContentType.values()) {
+
+                if (btype.name().equals(tok)) {
+                    orClauses.add("structuretype=" + btype.getType());
                     break;
+                } else if (btype.name().startsWith(tok)) {
+                    orClauses.add("structuretype=" + btype.getType());
+                    orClauses.add(String.format("upper(name) like '%%%s%%'", tok));
+                } else {
+                    orClauses.add(String.format("upper(name) like '%%%s%%'", tok));
                 }
             }
 
-            return result;
+            andClauses.add('(' + String.join(" or ", orClauses) + ')');
         }
+
+        return '(' + String.join(" and ", andClauses) + ')';
     }
+
 }

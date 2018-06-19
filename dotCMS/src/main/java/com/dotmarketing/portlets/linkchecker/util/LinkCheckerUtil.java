@@ -98,7 +98,7 @@ public class LinkCheckerUtil {
             
 
             if (!UtilMethods.isSet(emailText)) {
-                emailText = VelocityUtil.getInstance().mergeTemplate("static/workflow/workflow_email_template.html", ctx);
+                emailText = VelocityUtil.mergeTemplate("static/workflow/workflow_email_template.html", ctx);
                 isHTML = true;
             } else {
                 emailText = VelocityUtil.eval(emailText, ctx);

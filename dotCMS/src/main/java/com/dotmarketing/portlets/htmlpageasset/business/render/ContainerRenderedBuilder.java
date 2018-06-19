@@ -98,7 +98,7 @@ public class ContainerRenderedBuilder {
                     final VelocityResourceKey key = new VelocityResourceKey(container, uuid, mode);
 
                     try {
-                        return VelocityUtil.getInstance().mergeTemplate(key.path, velocityContext);
+                        return VelocityUtil.mergeTemplate(key.path, velocityContext);
                     } catch (Exception e) {
                         throw new DotRuntimeException(String.format("Container '%s' could not be " +
                                 "rendered via " + "Velocity.", container.getIdentifier()), e);
