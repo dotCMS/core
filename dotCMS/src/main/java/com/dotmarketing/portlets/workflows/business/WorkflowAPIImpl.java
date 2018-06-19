@@ -2013,7 +2013,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	private BulkActionsResultView distributeWorkAndProcess(final WorkflowAction action,
 			final User user, final List<Contentlet> contentlets, final Long skipsCount) {
 		final DotSubmitter submitter = this.concurrentFactory
-				.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
+				.getSubmitter(DotConcurrentFactory.BULK_ACTIONS_THREAD_POOL);
 
 		final AtomicLong successCount = new AtomicLong();
 		final AtomicLong failsCount = new AtomicLong();
