@@ -14,6 +14,6 @@ public class VelocityFieldFormRenderer implements FieldFormRenderer{
 	}
 	@Override
 	public String render(){
-		return VelocityUtil.getInstance().parseVelocity(storedValue, context);
+		return new VelocityUtil().parseVelocity(storedValue, context);
 	}
 }
