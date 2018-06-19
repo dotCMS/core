@@ -2079,6 +2079,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 	}
 
+	@WrapInTransaction
 	private void fireBulkActionTask(final WorkflowAction action,
 			final User user,
 			final Contentlet contentlet,
