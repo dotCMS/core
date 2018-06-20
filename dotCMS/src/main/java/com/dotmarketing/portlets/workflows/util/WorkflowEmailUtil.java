@@ -79,7 +79,11 @@ public class WorkflowEmailUtil {
                 String serverScheme = Config.getStringProperty("WEB_SERVER_SCHEME", "https");
                 link += serverScheme + "://" + host.getHostname() ;
             }
-            link += "/dotAdmin/#/workflow/" +  processor.getTask().getId();
+            if (null != processor.getTask()) {
+                link += "/dotAdmin/#/c/workflow/" + processor.getTask().getId();
+            } else {
+                link += "/dotAdmin/#/c/workflow";
+            }
 
             HttpServletRequest requestProxy = new MockHttpRequest(host.getHostname(), null).request();
             HttpServletResponse responseProxy = new BaseResponse().response();

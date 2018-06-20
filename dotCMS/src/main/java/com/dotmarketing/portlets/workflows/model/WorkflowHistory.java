@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
-public class WorkflowHistory  implements Serializable
+public class WorkflowHistory  implements Serializable, WorkflowTimelineItem
 {
 	
 	private static final long serialVersionUID = 1L;
@@ -105,4 +105,45 @@ public class WorkflowHistory  implements Serializable
 		return UtilMethods.isSet(id);
 		
 	}
+
+    @Override
+    public Date createdDate() {
+      
+        return this.getCreationDate();
+    }
+
+    @Override
+    public String roleId() {
+       
+        return this.getMadeBy();
+    }
+
+    @Override
+    public String actionId() {
+      
+        return this.getActionId();
+    }
+
+    @Override
+    public String stepId() {
+        
+        return this.getStepId();
+    }
+
+    @Override
+    public String commentDescription() {
+     
+        return this.getChangeDescription();
+    }
+
+    @Override
+    public String taskId() {
+        return this.getWorkflowtaskId();
+    }
+
+    @Override
+    public String type() {
+        // TODO Auto-generated method stub
+        return this.getClass().getSimpleName();
+    }
 }

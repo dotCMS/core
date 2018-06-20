@@ -3,6 +3,7 @@ package com.dotcms.content.elasticsearch.util;
 import com.dotcms.cluster.bean.ServerPort;
 import com.dotcms.util.ConfigTestHelper;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.util.UtilMethods;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -23,9 +24,10 @@ import static com.dotcms.content.elasticsearch.util.ESClient.ES_ZEN_UNICAST_HOST
 import static org.junit.Assert.assertEquals;
 
 import static com.dotcms.content.elasticsearch.util.ESClient.ES_TRANSPORT_HOST;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(DataProviderRunner.class)
-public class ESClientTest {
+public class ESClientIntegrationTest {
 
     private static final String OVERRIDE_YML_EXTERNAL_ES_PATH =
         "com/dotcms/content/elasticsearch/util/elasticsearch-override_external-es.yml";
@@ -113,6 +115,28 @@ public class ESClientTest {
         assertEquals(testCase.getExpectedZenUniCastHosts(), builder.get(ES_ZEN_UNICAST_HOSTS));
         assertEquals(testCase.getExpectedESNodeData(), builder.get(ES_NODE_DATA));
         assertEquals(testCase.getExpectedESNodeMaster(), builder.get(ES_NODE_MASTER));
+    }
+
+    @Test
+    @UseDataProvider("testCases")
+    public void testLoadNodeSettings(final ESClientTestCase testCase) throws IOException {
+        final ESClient esClient = Mockito.spy(new ESClient());
+        Mockito.doReturn(testCase.getOverrideFilePath()).when(esClient).getOverrideYamlPath();
+        if (UtilMethods.isSet(testCase.getDefaultFilePath()) && !testCase.getDefaultFilePath()
+                .equals(Paths.get(NON_EXISTING_PATH))) {
+            Mockito.doReturn(testCase.getDefaultFilePath()).when(esClient).getDefaultYaml();
+        }
+        Mockito.doReturn(testCase.isCommunity()).when(esClient).isCommunityOrStandard();
+        final Settings.Builder builder = esClient
+                .loadNodeSettings(esClient.getExtSettingsBuilder());
+
+        if (testCase.isCommunity()) {
+            assertTrue(builder.keys().stream().filter(key -> key.startsWith("discovery.") && !key
+                    .equals(ES_ZEN_UNICAST_HOSTS)).count() == 0);
+        } else {
+            assertTrue(builder.keys().stream().filter(key -> key.startsWith("discovery.") && !key
+                    .equals(ES_ZEN_UNICAST_HOSTS)).count() > 0);
+        }
     }
 
 }

@@ -75,7 +75,6 @@ public class PageResourceHelper implements Serializable {
 
     }
 
-    @WrapInTransaction
     public void saveContent(final String pageId, final List<PageContainerForm.ContainerEntry> containerEntries) throws DotDataException {
 
         final List<MultiTree> multiTrees = new ArrayList<>();
@@ -200,10 +199,18 @@ public class PageResourceHelper implements Serializable {
         }
     }
 
+    @WrapInTransaction
     protected void updateMultiTrees(IHTMLPage page, PageForm pageForm) throws DotDataException, DotSecurityException {
+
         final Table<String, String, Set<String>> pageContents = multiTreeAPI.getPageMultiTrees(page, false);
 
+        String pageIdentifier = page.getIdentifier();
+        MultiTreeFactory.deleteMultiTreeByParent(pageIdentifier);
+        List<MultiTree> multiTrees = new ArrayList<>();
+
         for (final String containerId : pageContents.rowKeySet()) {
+            int treeOrder = 0;
+
             for (final String uniqueId : pageContents.row(containerId).keySet()) {
                 final Map<String, Set<String>> row = pageContents.row(containerId);
                 final Set<String> contents = row.get(uniqueId);
@@ -211,22 +218,26 @@ public class PageResourceHelper implements Serializable {
                 if (!contents.isEmpty()) {
                     final String newUUID = getNewUUID(pageForm, containerId, uniqueId);
 
-                    try {
-                        if (newUUID != null && !newUUID.equals(uniqueId)) {
-                            multiTreeAPI.updateMultiTree(page.getIdentifier(), containerId, uniqueId, newUUID);
-                        }
-                    } catch (DotDataException e) {
-                        Logger.error(this.getClass(), "Exception on saveTemplate exception message: " +
-                                e.getMessage(), e);
+                    for (String contentId : contents) {
+                        final MultiTree multiTree = new MultiTree().setContainer(containerId)
+                                .setContentlet(contentId)
+                                .setRelationType(newUUID)
+                                .setTreeOrder(treeOrder++)
+                                .setHtmlPage(pageIdentifier);
+
+                        multiTrees.add(multiTree);
                     }
                 }
             }
         }
+
+        multiTreeAPI.saveMultiTrees(pageIdentifier, multiTrees);
     }
 
     private String getNewUUID(final PageForm pageForm, final String containerId, final String uniqueId) {
         if (ContainerUUID.UUID_DEFAULT_VALUE.equals(uniqueId)) {
-            return pageForm.getNewlyContainerUUID(containerId);
+            String newlyContainerUUID = pageForm.getNewlyContainerUUID(containerId);
+            return newlyContainerUUID != null ? newlyContainerUUID : ContainerUUID.UUID_DEFAULT_VALUE;
         } else {
             ContainerUUIDChanged change = pageForm.getChange(containerId, uniqueId);
             return change != null ? change.getNew().getUUID() : ContainerUUID.UUID_DEFAULT_VALUE;

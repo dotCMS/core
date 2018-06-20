@@ -119,10 +119,7 @@ function setMyWorkflowScheme(){
 			<%} %>
 		<%}%>
 
-    <div style="height:50px;">
-    
-    
-    </div>
+
 
 	<%final boolean canPublish = (InodeUtils.isSet(contentlet.getInode())?canUserPublishContentlet && isContLocked && contentEditable && !contentlet.isArchived():canUserPublishContentlet);%>
 	<%if (canPublish && isHost) {%>

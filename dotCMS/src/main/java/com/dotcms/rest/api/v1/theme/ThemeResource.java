@@ -1,10 +1,12 @@
 package com.dotcms.rest.api.v1.theme;
 
+import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
 import com.dotcms.util.JsonProcessingRuntimeException;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.PaginationException;
 import com.dotcms.util.pagination.ThemePaginator;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.theme.business.ThemeSerializer;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
@@ -87,6 +89,13 @@ public class ThemeResource {
         final String hostIdToSearch = hostId != null ?
                 hostId :
                 (String) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+
+        //Validate hostId is valid
+        Host host = hostAPI.find(hostIdToSearch, user, false);
+
+        if (!UtilMethods.isSet(host)){
+            return ExceptionMapperUtil.createResponse(null, "Invalid Host ID");
+        }
 
         try {
             final Map<String, Object> params = map(

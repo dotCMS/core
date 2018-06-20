@@ -7,12 +7,24 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import org.apache.poi.ss.formula.functions.T;
-
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Factory for concurrent {@link Executor} & {@link DotSubmitter}
@@ -58,6 +70,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
 
     public static final String DOT_SYSTEM_THREAD_POOL = "dotSystemPool";
 
+    public static final String BULK_ACTIONS_THREAD_POOL = "bulkActionsPool";
 
     /**
      * Used to keep the instance of the JWT Service.

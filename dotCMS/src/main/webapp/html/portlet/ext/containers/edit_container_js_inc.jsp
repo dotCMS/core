@@ -459,16 +459,12 @@
 	}
 
 	function setWidths(w) {
-		setWidth('preLoopMask','<%=preLoopWidth%>');
-		setWidth('codeMask','<%=codeWidth%>');
-		setWidth('postLoopMask','<%=postLoopWidth%>');
+
 
 	}
 
 	function setHeights(h) {
-		setHeight('preLoopMask','<%=preLoopHeight%>');
-		setHeight('codeMask','<%=codeHeight%>');
-		setHeight('postLoopMask','<%=postLoopHeight%>');
+
 
 	}
 
@@ -510,6 +506,10 @@
 		editor = ace.edit(editorId);
 		editor.setTheme("ace/theme/textmate");
 		editor.getSession().setMode("ace/mode/velocity");
+		editor.setOptions({
+		    minLines: 15,
+		    maxLines:35
+		});
 		var id = document.getElementById(textarea);
 		if(id == undefined){
 			editor.setValue("");

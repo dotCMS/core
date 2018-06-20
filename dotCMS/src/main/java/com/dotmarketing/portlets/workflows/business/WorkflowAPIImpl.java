@@ -64,6 +64,7 @@ import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SetValueActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.TranslationActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.TwitterActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
@@ -78,6 +79,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
 import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.workflows.model.WorkflowTimelineItem;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
@@ -180,6 +182,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				ResetTaskActionlet.class,
 				MultipleApproverActionlet.class,
 				FourEyeApproverActionlet.class,
+				TwitterActionlet.class,
 				PushPublishActionlet.class,
 				CheckURLAccessibilityActionlet.class,
                 EmailActionlet.class,
@@ -1902,15 +1905,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 * @param luceneQuery luceneQuery
 	 */
 	@CloseDBIfOpened
-	public Future<BulkActionsResultView> fireBulkActions(final WorkflowAction action,
+	public BulkActionsResultView fireBulkActions(final WorkflowAction action,
 			final User user, final String luceneQuery) throws DotDataException {
 
 		final Set<String> workflowAssociatedStepsIds = workFlowFactory.findProxiesSteps(action)
 				.stream().map(WorkflowStep::getId).collect(Collectors.toSet());
-		final DotSubmitter submitter = this.concurrentFactory
-				.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
-		return submitter.submit(() -> fireBulkActionsTaskForQuery(action, user, luceneQuery,
-				workflowAssociatedStepsIds));
+
+		return fireBulkActionsTaskForQuery(action, user, luceneQuery, workflowAssociatedStepsIds);
 	}
 
 	/**
@@ -1922,17 +1923,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 * @param contentletIds {@link List}
 	 */
 	@CloseDBIfOpened
-	public Future<BulkActionsResultView> fireBulkActions(final WorkflowAction action,
+	public BulkActionsResultView fireBulkActions(final WorkflowAction action,
 			final User user, final List<String> contentletIds) throws DotDataException {
 
 		final Set<String> workflowAssociatedStepsIds = workFlowFactory.findProxiesSteps(action)
 				.stream().map(WorkflowStep::getId).collect(Collectors.toSet());
-		final DotSubmitter submitter = this.concurrentFactory
-				.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
-		return submitter
-				.submit(() -> fireBulkActionsTaskForSelectedInodes(action, user, contentletIds,
-						workflowAssociatedStepsIds));
+		return fireBulkActionsTaskForSelectedInodes(action, user, contentletIds, workflowAssociatedStepsIds);
 	}
+
 
 	/**
 	 * This version of the method expects to wotk with a small set of contentlets
@@ -2009,7 +2007,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			Logger.error(getClass(), "Error firing actions in bulk.", e);
 			throw new DotDataException(e);
 		}
-
 	}
 
 
@@ -2051,7 +2048,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	private BulkActionsResultView distributeWorkAndProcess(final WorkflowAction action,
 			final User user, final List<Contentlet> contentlets, final Long skipsCount) {
 		final DotSubmitter submitter = this.concurrentFactory
-				.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
+				.getSubmitter(DotConcurrentFactory.BULK_ACTIONS_THREAD_POOL);
 
 		final AtomicLong successCount = new AtomicLong();
 		final AtomicLong failsCount = new AtomicLong();
@@ -2125,17 +2122,24 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			final Consumer<Long> failConsumer) {
 		try {
 
+			final String successInode;
 			Logger.debug(this,
 					() -> "Firing the action: " + action + " to the inode: " + contentlet
 							.getInode());
 
-			final String successInode = this.fireContentWorkflow(contentlet,
-					new ContentletDependencies.Builder()
-							.respectAnonymousPermissions(false)
-							.generateSystemEvent(false)
-							.modUser(user)
-							.workflowActionId(action.getId()).build()
-			).getInode();
+			final Contentlet afterFireContentlet =
+					fireContentWorkflow(contentlet,
+							new ContentletDependencies.Builder()
+									.respectAnonymousPermissions(false)
+									.generateSystemEvent(false)
+									.modUser(user)
+									.workflowActionId(action.getId()).build()
+					);
+			if(afterFireContentlet != null){
+				successInode = afterFireContentlet.getInode();
+			} else {
+				successInode = "Unavailable";
+			}
 
 			Logger.debug(this, () -> "Successfully fired the contentlet: " + contentlet.getInode() +
 					", success inode: " + successInode);
@@ -2675,5 +2679,32 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		scheme.setArchived(Boolean.TRUE);
 		saveScheme(scheme, user);
 	}
+	
+	@Override
+	@CloseDBIfOpened
+	public List<WorkflowTimelineItem> getCommentsAndChangeHistory(WorkflowTask task) throws DotDataException{
+	    List<WorkflowComment> comments = this.findWorkFlowComments(task);
+	    List<WorkflowHistory> history = this.findWorkflowHistory(task);
+	    
+	    
+	    List<WorkflowTimelineItem> items = new ArrayList<>();
+	    
+	    items.addAll(comments);
+	    items.addAll(history);
+	    
+	    return items.stream()
+                .sorted((o1,o2) -> o1.createdDate().compareTo(o2.createdDate()))
+                .collect(Collectors.toList());
+	    
+	    
+	    
+	}
+	
+	
+	
+	
+	
+	
+	
 
 }

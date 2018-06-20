@@ -1,5 +1,24 @@
 dojo.require("dojo.io.iframe");
 
+function emmitCompanyInfoUpdated(content) {
+    var customEvent = document.createEvent("CustomEvent");
+    customEvent.initCustomEvent("ng-event", false, false,  {
+        name: "company-info-updated",
+        payload: {
+            portalURL: content.portalURL,
+            mx: content.mx,
+            emailAddress: content.emailAddress,
+            homeURL: content.homeURL,
+            colors: {
+                primary: content.type,
+                secondary: content.street,
+                background: content.size,
+            }
+        }
+    });
+    document.dispatchEvent(customEvent)
+}
+
 /**
  * Loads the CMS Company Config tab
  */
@@ -34,26 +53,29 @@ var saveCompanyBasicInfo = function () {
     var secondaryColor = dijit.byId("sColor").get("value");
     var bgURL = dijit.byId("bgURL").get("value");
 
+    var content = {
+        'portalURL': companyPortalUrl,
+        'mx': companyMX,
+        'emailAddress': companyEmailAddress,
+        'size': bgColor,
+        'type': primaryColor,
+        'street': secondaryColor,
+        'homeURL': bgURL
+    };
+
     var xhrArgs = {
         url: "/api/config/saveCompanyBasicInfo",
-        content: {
-            'portalURL': companyPortalUrl,
-            'mx': companyMX,
-            'emailAddress': companyEmailAddress,
-            'size': bgColor,
-            'type': primaryColor,
-            'street': secondaryColor,
-            'homeURL': bgURL
-        },
+        content: content,
         handleAs: "json",
         load: function (data) {
-
             var isError = false;
+
             if (data.success == false || data.success == "false") {
                 isError = true;
             }
 
             showDotCMSSystemMessage(data.message, isError);
+            emmitCompanyInfoUpdated(content);
         },
         error: function (error) {
             showDotCMSSystemMessage(error.responseText, true);

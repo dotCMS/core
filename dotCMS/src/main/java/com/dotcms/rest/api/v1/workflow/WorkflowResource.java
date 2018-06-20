@@ -282,20 +282,25 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final void fireBulkActions(@Context final HttpServletRequest request,
-                                          @Suspended final AsyncResponse asyncResponse,
-                                          final FireBulkActionsForm fireBulkActionsForm) {
+            @Suspended final AsyncResponse asyncResponse,
+            final FireBulkActionsForm fireBulkActionsForm) {
 
         final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
         Logger.debug(this, ()-> "Fire bulk actions: " + fireBulkActionsForm);
         try {
             // check the form
             DotPreconditions.notNull(fireBulkActionsForm,"Expected Request body was empty.");
-            ResponseUtil.handleAsyncResponse(
-                    this.workflowHelper.fireBulkActions(
-                            fireBulkActionsForm,
-                            initDataObject.getUser()
-                    ), asyncResponse
-            );
+            ResponseUtil.handleAsyncResponse(() -> {
+                try {
+                    final BulkActionsResultView view = workflowHelper
+                            .fireBulkActions(fireBulkActionsForm, initDataObject.getUser());
+                    return Response.ok( new ResponseEntityView(view)).build();
+                } catch (Exception e) {
+                    asyncResponse.resume(ResponseUtil.mapExceptionResponse(e));
+                }
+                return null;
+            }, asyncResponse);
+
         } catch (Exception e) {
             Logger.error(this.getClass(), "Exception attempting to fire bulk actions by : " +fireBulkActionsForm + ", exception message: " + e.getMessage(), e);
             asyncResponse.resume(ResponseUtil.mapExceptionResponse(e));
