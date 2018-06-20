@@ -27,7 +27,7 @@ import static com.dotcms.content.elasticsearch.util.ESClient.ES_TRANSPORT_HOST;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(DataProviderRunner.class)
-public class ESClientTest {
+public class ESClientIntegrationTest {
 
     private static final String OVERRIDE_YML_EXTERNAL_ES_PATH =
         "com/dotcms/content/elasticsearch/util/elasticsearch-override_external-es.yml";
