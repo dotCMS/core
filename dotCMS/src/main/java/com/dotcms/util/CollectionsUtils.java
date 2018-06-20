@@ -808,4 +808,18 @@ public class CollectionsUtils implements Serializable {
 
         return ImmutableList.copyOf(result);
     }
+
+    public static List join (final List ...lists) {
+
+	    final List joinList = new ArrayList();
+
+	    for (final Collection<?> list : lists) {
+
+	        if (null != list) {
+                joinList.addAll(list);
+            }
+        }
+
+	    return joinList;
+    }
 }
