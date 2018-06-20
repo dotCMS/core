@@ -12,6 +12,7 @@ export class DotContentletWrapperComponent implements OnInit {
     @Input() header = '';
     @Input() url: string;
     @Output() close: EventEmitter<any> = new EventEmitter();
+    @Output() custom: EventEmitter<any> = new EventEmitter();
 
     private isContentletModified = false;
     private readonly customEventsHandler;
@@ -28,6 +29,9 @@ export class DotContentletWrapperComponent implements OnInit {
                 },
                 'edit-contentlet-data-updated': (e: CustomEvent) => {
                     this.isContentletModified = e.detail.payload;
+                },
+                'save-page': () => {
+                    this.isContentletModified = false;
                 },
                 'edit-contentlet-loaded': (e: CustomEvent) => {
                     this.header = e.detail.data.contentType;
@@ -88,6 +92,7 @@ export class DotContentletWrapperComponent implements OnInit {
      */
     onCustomEvent($event) {
         this.customEventsHandler[$event.detail.name]($event);
+        this.custom.emit($event);
     }
 
     /**

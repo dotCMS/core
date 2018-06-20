@@ -1,2 +1,3 @@
 <router-outlet></router-outlet>
 <dot-edit-page-nav [pageState]="pageState | async"></dot-edit-page-nav>
+<dot-edit-contentlet (custom)="onCustomEvent($event)"></dot-edit-contentlet>

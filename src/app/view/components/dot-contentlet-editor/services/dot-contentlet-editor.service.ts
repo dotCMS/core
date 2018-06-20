@@ -26,6 +26,8 @@ export interface DotEditorAction {
  */
 @Injectable()
 export class DotContentletEditorService {
+    close$: Subject<boolean> = new Subject<boolean>();
+
     private data: Subject<DotEditorAction> = new Subject();
     private _header: Subject<string> = new Subject();
     private _load: ($event: any) => void;
@@ -105,6 +107,7 @@ export class DotContentletEditorService {
         this.data.next(null);
         this._load = null;
         this._keyDown = null;
+        this.close$.next(true);
     }
 
     /**

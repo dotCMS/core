@@ -107,6 +107,10 @@ describe('DotContentletEditorService', () => {
             expect(url).toEqual('');
         });
 
+        service.close$.subscribe((message) => {
+            expect(message).toBe(true);
+        });
+
         service.clear();
 
         expect(service.loadHandler).toEqual(null);

@@ -342,6 +342,12 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         this.route.parent.parent.data.pipe(pluck('content'), takeUntil(this.destroy$)).subscribe((pageState: DotRenderedPageState) => {
             this.setPageState(pageState);
         });
+
+        this.dotPageStateService.reload$.pipe(takeUntil(this.destroy$)).subscribe((pageState: DotRenderedPageState) => {
+            if (this.pageState.page.inode !== pageState.page.inode) {
+                this.setPageState(pageState);
+            }
+        });
     }
 
     private setPageState(pageState: DotRenderedPageState): void {

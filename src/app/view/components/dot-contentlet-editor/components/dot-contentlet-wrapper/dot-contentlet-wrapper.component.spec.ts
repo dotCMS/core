@@ -69,6 +69,7 @@ describe('DotContentletWrapperComponent', () => {
         spyOn(dotAddContentletService, 'load');
         spyOn(dotAddContentletService, 'keyDown');
         spyOn(component.close, 'emit');
+        spyOn(component.custom, 'emit');
     });
 
     it('should hide dot-iframe-dialog', () => {
@@ -108,6 +109,7 @@ describe('DotContentletWrapperComponent', () => {
                 });
                 expect(dotAddContentletService.clear).toHaveBeenCalledTimes(1);
                 expect(component.header).toBe(null);
+                expect(component.custom.emit).toHaveBeenCalledTimes(1);
                 expect(component.close.emit).toHaveBeenCalledTimes(1);
             });
 
@@ -150,6 +152,7 @@ describe('DotContentletWrapperComponent', () => {
                         }
                     });
                     expect(component.close.emit).toHaveBeenCalledTimes(1);
+                    expect(component.custom.emit).toHaveBeenCalledTimes(1);
                     expect(dotAddContentletService.clear).toHaveBeenCalledTimes(1);
                 });
 
@@ -180,6 +183,19 @@ describe('DotContentletWrapperComponent', () => {
                     });
                     expect(component.close.emit).not.toHaveBeenCalled();
                     expect(dotAddContentletService.clear).not.toHaveBeenCalled();
+                });
+
+                it('should emit custom evt with params', () => {
+                    const params = {
+                        detail: {
+                            name: 'save-page',
+                            payload: {
+                                hello: 'world'
+                            }
+                        }
+                    };
+                    dotIframeDialog.triggerEventHandler('custom', params);
+                    expect(component.custom.emit).toHaveBeenCalledWith(params);
                 });
             });
         });

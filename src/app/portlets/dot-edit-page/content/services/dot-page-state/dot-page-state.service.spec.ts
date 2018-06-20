@@ -11,7 +11,9 @@ import { DotRenderedPageState } from '../../../shared/models/dot-rendered-page-s
 import { LoginServiceMock } from '../../../../../test/login-service.mock';
 import { PageMode } from '../../../shared/models/page-mode.enum';
 import { mockDotRenderedPage, mockDotPage } from '../../../../../test/dot-rendered-page.mock';
+import { mockUser } from '../../../../../test/login-service.mock';
 import * as _ from 'lodash';
+import { Observable } from 'rxjs/Observable';
 
 describe('DotPageStateService', () => {
     let service: DotPageStateService;
@@ -151,6 +153,21 @@ describe('DotPageStateService', () => {
 
             expect(lastConnection[0].request.url).toContain('/api/v1/page/render/an/url/test?mode=PREVIEW');
             expect(lastConnection[1]).toBeUndefined();
+        });
+    });
+
+    describe('reload page state', () => {
+        it('should emit reload evt with DotRenderedPageState', () => {
+            const renderedPage = new DotRenderedPageState(mockUser, {
+                ...mockDotRenderedPage
+            });
+            spyOn(service, 'get').and.returnValue(
+                Observable.of(renderedPage)
+            );
+            service.reload$.subscribe((page: DotRenderedPageState) => {
+                expect(page).toBe(renderedPage);
+            });
+            service.reload('/hello/world');
         });
     });
 

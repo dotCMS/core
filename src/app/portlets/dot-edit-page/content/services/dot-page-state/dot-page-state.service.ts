@@ -7,9 +7,13 @@ import { Observable } from 'rxjs/Observable';
 import { Injectable } from '@angular/core';
 import { DotContentletLockerService } from '../../../../../api/services/dot-contentlet-locker/dot-contentlet-locker.service';
 import { DotEditPageViewAs } from '../../../../../shared/models/dot-edit-page-view-as/dot-edit-page-view-as.model';
+import { Subject } from 'rxjs/Subject';
+import { take } from 'rxjs/operators';
 
 @Injectable()
 export class DotPageStateService {
+    reload$: Subject<DotRenderedPage> = new Subject<DotRenderedPage>();
+
     constructor(
         private dotRenderHTMLService: DotRenderHTMLService,
         private dotContentletLockerService: DotContentletLockerService,
@@ -37,13 +41,23 @@ export class DotPageStateService {
         return lockUnlock$.mergeMap(() =>
             pageMode$.map(
                 (updatedPage: DotRenderedPage) =>
-                    new DotRenderedPageState(
-                        this.loginService.auth.loginAsUser || this.loginService.auth.user,
-                        updatedPage,
-                        state.mode
-                    )
+                    new DotRenderedPageState(this.loginService.auth.loginAsUser || this.loginService.auth.user, updatedPage, state.mode)
             )
         );
+    }
+
+    /**
+     * Get page state
+     *
+     * @param {string} url
+     * @memberof DotPageStateService
+     */
+    reload(url: string): void {
+        this.get(url)
+            .pipe(take(1))
+            .subscribe((page: DotRenderedPageState) => {
+                this.reload$.next(page);
+            });
     }
 
     /**
@@ -57,8 +71,7 @@ export class DotPageStateService {
         return this.dotRenderHTMLService
             .getEdit(url)
             .map(
-                (page: DotRenderedPage) =>
-                    new DotRenderedPageState(this.loginService.auth.loginAsUser || this.loginService.auth.user, page)
+                (page: DotRenderedPage) => new DotRenderedPageState(this.loginService.auth.loginAsUser || this.loginService.auth.user, page)
             );
     }
 

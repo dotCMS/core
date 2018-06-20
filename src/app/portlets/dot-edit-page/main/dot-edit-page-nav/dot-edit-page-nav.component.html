@@ -5,14 +5,15 @@
             <a class="edit-page-nav__item"
                 pTooltip="{{ item.tooltip }}"
                 [ngClass]="{'edit-page-nav__item--disabled': item.disabled, 'edit-page-nav__item--active': item.link === this.route.snapshot.firstChild.url[0].path}"
-                [routerLink]="!item.disabled ? ['./' + item.link] : null" [queryParams]="route.queryParams | async">
+                [routerLink]="!item.disabled && item.link ? ['./' + item.link] : null"
+                (click)="item.action ? item.action(pageState.page.inode) : ''"
+                [queryParams]="route.queryParams | async">
                 <i class="{{ item.icon }}"></i>
                 <span class="edit-page-nav__item-text">{{ item.label }}</span>
             </a>
         </ng-template>
         <ng-template #enterprise>
-            <span pTooltip="{{ dotMessageService.get('editpage.toolbar.nav.license.enterprise.only') }}" tooltipPosition="left"
-                class="edit-page-nav__item edit-page-nav__item--disabled">
+            <span pTooltip="{{ dotMessageService.get('editpage.toolbar.nav.license.enterprise.only') }}" tooltipPosition="left" class="edit-page-nav__item edit-page-nav__item--disabled">
                 <i class="{{ item.icon }}"></i>
                 <span class="edit-page-nav__item-text">{{ item.label }}</span>
             </span>

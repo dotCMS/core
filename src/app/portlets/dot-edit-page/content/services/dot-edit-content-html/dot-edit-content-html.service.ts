@@ -35,6 +35,7 @@ export class DotEditContentHtmlService {
     iframe: ElementRef;
     iframeActions$: Subject<any> = new Subject();
     pageModel$: Subject<DotPageContainer[]> = new Subject();
+    mutationConfig = { attributes: false, childList: true, characterData: false };
 
     private currentAction: DotContentletAction;
     private rowsMaxHeight: number[] = [];
@@ -202,14 +203,13 @@ export class DotEditContentHtmlService {
     setContaintersChangeHeightListener(pageLayout: DotLayout): void {
         const doc = this.getEditPageDocument();
         const target = doc.querySelector('body');
-        const config = { attributes: true, childList: true, characterData: true };
         const debounceContainersHeightChange = _.debounce((layout: DotLayout) => this.setContaintersSameHeight(layout), 500, {
             leading: true
         });
         const observer = new MutationObserver(() => {
             debounceContainersHeightChange(pageLayout);
         });
-        observer.observe(target, config);
+        observer.observe(target, this.mutationConfig);
     }
 
     /**

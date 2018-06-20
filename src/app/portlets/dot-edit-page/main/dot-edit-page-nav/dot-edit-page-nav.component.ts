@@ -1,11 +1,12 @@
 import { DotTemplate } from './../../shared/models/dot-template.model';
 import { DotRenderedPageState } from './../../shared/models/dot-rendered-page-state.model';
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges} from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { DotMessageService } from '../../../../api/services/dot-messages-service';
 import { Observable } from 'rxjs/Observable';
 import { DotRenderedPage } from '../../shared/models/dot-rendered-page.model';
 import { DotLicenseService } from '../../../../api/services/dot-license/dot-license.service';
+import { DotContentletEditorService } from '../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { map } from 'rxjs/operators/map';
 import { mergeMap } from 'rxjs/operators/mergeMap';
 import * as _ from 'lodash';
@@ -15,7 +16,8 @@ interface DotEditPageNavItem {
     disabled: boolean;
     icon: string;
     label: string;
-    link: string;
+    link?: string;
+    action?: object;
     tooltip?: string;
 }
 
@@ -29,7 +31,12 @@ export class DotEditPageNavComponent implements OnChanges {
     model: Observable<DotEditPageNavItem[]>;
     isEnterpriseLicense: boolean;
 
-    constructor(private dotLicenseService: DotLicenseService, public dotMessageService: DotMessageService, public route: ActivatedRoute) {}
+    constructor(
+        private dotLicenseService: DotLicenseService,
+        private dotContentletEditorService: DotContentletEditorService,
+        public dotMessageService: DotMessageService,
+        public route: ActivatedRoute
+    ) {}
 
     ngOnChanges(changes: SimpleChanges): void {
         if (this.layoutChanged(changes)) {
@@ -47,6 +54,7 @@ export class DotEditPageNavComponent implements OnChanges {
         return this.dotMessageService
             .getMessages([
                 'editpage.toolbar.nav.content',
+                'editpage.toolbar.nav.properties',
                 'editpage.toolbar.nav.layout',
                 'editpage.toolbar.nav.code',
                 'editpage.toolbar.nav.license.enterprise.only',
@@ -78,7 +86,20 @@ export class DotEditPageNavComponent implements OnChanges {
                 label: this.dotMessageService.get('editpage.toolbar.nav.content'),
                 link: 'content'
             },
-            this.getTemplateNavItem(dotRenderedPage, enterpriselicense)
+            this.getTemplateNavItem(dotRenderedPage, enterpriselicense),
+            {
+                needsEntepriseLicense: false,
+                disabled: false,
+                icon: 'fa fa-plus',
+                label: this.dotMessageService.get('editpage.toolbar.nav.properties'),
+                action: (inode) => {
+                    this.dotContentletEditorService.edit({
+                        data: {
+                            inode: inode
+                        }
+                    });
+                }
+            }
         ];
 
         return result;
