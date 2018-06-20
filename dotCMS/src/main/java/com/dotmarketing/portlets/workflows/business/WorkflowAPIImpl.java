@@ -6,6 +6,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.api.v1.workflow.BulkActionsResultView;
@@ -24,7 +25,6 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -41,6 +41,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
+import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.MessageActionlet;
@@ -83,6 +84,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowTimelineItem;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.LuceneQueryUtils;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -1984,13 +1986,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			final String luceneQuery, final Set<String> workflowAssociatedStepsIds)
 			throws DotDataException {
 
-		final String cleanedUpQuery = QueryUtil.removeQueryPrefix(luceneQuery);
-		Logger.debug(getClass(),"luceneQuery: "+ cleanedUpQuery);
-
 		try {
-			final List<Contentlet> contentlets = findContentletsToProcess(cleanedUpQuery,
+			final String prepareBulkActionsQuery = LuceneQueryUtils.prepareBulkActionsQuery(luceneQuery);
+			Logger.debug(getClass(),"luceneQuery: "+ prepareBulkActionsQuery);
+			final List<Contentlet> contentlets = findContentletsToProcess(prepareBulkActionsQuery,
 					workflowAssociatedStepsIds, user);
-			final Long skipsCount = computeSkippedContentletsCount(cleanedUpQuery, workflowAssociatedStepsIds,
+			final Long skipsCount = computeSkippedContentletsCount(prepareBulkActionsQuery, workflowAssociatedStepsIds,
 					user);
 			return distributeWorkAndProcess(action, user, contentlets, skipsCount);
 		} catch (Exception e) {
@@ -2118,7 +2119,19 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@WrapInTransaction
 	@Override
-	public Contentlet fireContentWorkflow(final Contentlet contentlet, final ContentletDependencies dependencies) throws DotDataException {
+	public Contentlet fireContentWorkflow(final Contentlet contentlet, final ContentletDependencies dependencies) throws DotDataException, DotSecurityException {
+
+		if (ContentletUtil.isHost(contentlet)) {
+			final User user = dependencies.getModUser();
+			throw new DotSecurityException(
+					ExceptionUtil
+							.getLocalizedMessageOrDefault(user, "Workflow-restricted-content-type",
+									"Invalid attempt to execute a workflow on a restricted Content type",
+									getClass()
+							)
+			);
+		}
+
 
 		if(UtilMethods.isSet(dependencies.getWorkflowActionId())){
 			contentlet.setActionId(dependencies.getWorkflowActionId());

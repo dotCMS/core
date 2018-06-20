@@ -29,7 +29,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -48,6 +47,7 @@ import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.LuceneQueryUtils;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
@@ -117,35 +117,46 @@ public class WorkflowHelper {
      * @throws DotSecurityException
      */
     private BulkActionView findBulkActionByQuery(final String luceneQuery,
-                                                 final User user) throws DotDataException, DotSecurityException {
-        final String cleanedUpQuery = QueryUtil.removeQueryPrefix(luceneQuery);
+            final User user) throws DotDataException {
 
-        // Modify Query here
+        try {
+            final String prepareBulkActionsQuery = LuceneQueryUtils
+                    .prepareBulkActionsQuery(luceneQuery);
 
-        //We should only be considering Working content.
-        final String query = "{\n"
-                + "    \"query\" : { \n"
-                + "        \"query_string\" : {\n"
-                + "            \"query\" : \"%s\"\n"
-                + "        } \n"
-                + "\n"
-                + "    },\n"
-                + "    \"aggs\" : {\n"
-                + "        \"tag\" : {\n"
-                + "            \"terms\" : {\n"
-                + "                \"field\" : \"wfstep\",\n"
-                + "                \"size\" : 1000  \n"
-                + "            }\n"
-                + "        }\n"
-                + "    },\n"
-                + "\t\"size\":0   \n"
-                + "}";
-        final String preparedQuery = String.format(query,cleanedUpQuery);
-        final ESSearchResults results = this.contentletAPI.esSearch(preparedQuery, false, user, false);
+            // Modify Query here
 
-        Logger.debug(getClass(),()-> "luceneQuery: "+ cleanedUpQuery);
-        Logger.debug(getClass(),()-> "esSearch: "+ query);
-        return this.buildBulkActionView(results, user);
+            //We should only be considering Working content.
+            final String query = "{\n"
+                    + "    \"query\" : { \n"
+                    + "        \"query_string\" : {\n"
+                    + "            \"query\" : \"%s\"\n"
+                    + "        } \n"
+                    + "\n"
+                    + "    },\n"
+                    + "    \"aggs\" : {\n"
+                    + "        \"tag\" : {\n"
+                    + "            \"terms\" : {\n"
+                    + "                \"field\" : \"wfstep\",\n"
+                    + "                \"size\" : 1000  \n"
+                    + "            }\n"
+                    + "        }\n"
+                    + "    },\n"
+                    + "\t\"size\":0   \n"
+                    + "}";
+            final String preparedQuery = String.format(query, prepareBulkActionsQuery);
+            final ESSearchResults results = this.contentletAPI
+                    .esSearch(preparedQuery, false, user, false);
+            /*
+            SearchResponse sr =this.contentletAPI
+                    .esSearchRaw(preparedQuery, false, user, false);
+                    */
+
+            Logger.debug(getClass(), () -> "luceneQuery: " + prepareBulkActionsQuery);
+            Logger.debug(getClass(), () -> "esSearch: " + query);
+            return this.buildBulkActionView(results, user);
+        } catch (Exception e) {
+            throw new DotDataException(e);
+        }
     }
 
     /**
@@ -157,7 +168,7 @@ public class WorkflowHelper {
      * @throws DotDataException
      */
     private BulkActionView findBulkActionByContentlets(final List<String> contentletIds,
-                                                       final User     user) throws DotSecurityException, DotDataException {
+                                                       final User     user) throws DotDataException {
 
         final String luceneQuery =  String.format("+inode:( %s ) ", String.join(StringPool.SPACE, contentletIds));
         return this.findBulkActionByQuery(luceneQuery, user);

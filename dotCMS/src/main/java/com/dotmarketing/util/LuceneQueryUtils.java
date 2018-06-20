@@ -21,7 +21,7 @@ public class LuceneQueryUtils {
      * @param luceneQuery
      * @return
      */
-    public static String removeQueryPrefix(final String luceneQuery){
+    private static String removeQueryPrefix(final String luceneQuery){
         final String cleanedUpQuery;
         if(luceneQuery.startsWith("query_")){
             cleanedUpQuery = luceneQuery.replace( "query_", StringPool.BLANK);
@@ -35,10 +35,16 @@ public class LuceneQueryUtils {
             new BooleanClause(new TermQuery(new Term("contentType","Host")),Occur.MUST_NOT)
     );
 
+    /**
+     * This method basically does two things. Gets rid of the 'query_' prefix and also adds an additional condition to ensure we exclude all content of type host
+     * Since acces to ContentType Host is limited.
+     * @param luceneQuery
+     * @return
+     * @throws ParseException
+     */
     public static String prepareBulkActionsQuery(final String luceneQuery) throws ParseException {
 
         final String cleanedUpQuery = removeQueryPrefix(luceneQuery);
-
         final QueryParser parser = new QueryParser(null, new WhitespaceAnalyzer());
         final BooleanQuery query = (BooleanQuery) parser.parse(cleanedUpQuery);
         final List<BooleanClause> clauses = query.clauses();

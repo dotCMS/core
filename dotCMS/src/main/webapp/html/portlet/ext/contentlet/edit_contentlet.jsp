@@ -470,7 +470,7 @@
 
 
 			<div class="content-edit-workflow">
-				<% if(null != wfSteps && wfSteps.size() ==1){
+				<% if ((!isHost) && (null != wfSteps && wfSteps.size() ==1)){
 					WorkflowStep step = wfSteps.get(0);
 				%>
 				<h3><%= LanguageUtil.get(pageContext, "Workflow") %></h3>
