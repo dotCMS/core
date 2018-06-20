@@ -9,10 +9,10 @@ import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectWriter;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.Paginator;
 import com.dotmarketing.common.util.SQLUtil;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.StringUtils;
-import org.apache.velocity.runtime.Runtime;
 
 /**
  * Utility class to the pagination elements and filter
@@ -138,7 +137,10 @@ public class PaginationUtil {
 
 		PaginatedArrayList items = paginator.getItems(user, perPageValue, minIndex, params);
 
-		items =  !UtilMethods.isSet(items) ? new PaginatedArrayList() : items;
+		if (!UtilMethods.isSet(items)){
+			return ExceptionMapperUtil.createResponse(Response.Status.NOT_FOUND);
+		}
+
 		final long totalRecords = items.getTotalResults();
 
 		final String linkHeaderValue = getHeaderValue(req.getRequestURL().toString(), sanitizefilter, pageValue, perPageValue,
