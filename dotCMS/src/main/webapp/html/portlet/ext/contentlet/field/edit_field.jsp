@@ -158,7 +158,7 @@
         <div id="aceTextArea_<%=field.getVelocityVarName()%>" class="classAce"></div>
         <textarea <%= isReadOnly?"readonly=\"readonly\" style=\"background-color:#eeeeee;\"":"" %> dojoType="dijit.form.SimpleTextarea"  <%=isWidget?"style=\"overflow:auto;min-height:362px;max-height: 400px\"":"style=\"overflow:auto;min-height:100px;max-height: 600px\""%>
                                                                                                    name="<%=field.getFieldContentlet()%>"
-                                                                                                   id="<%=field.getVelocityVarName()%>" class="editTextAreaField"><%= UtilMethods.htmlifyString(textValue) %></textarea>
+                                                                                                   id="<%=field.getVelocityVarName()%>" class="editTextAreaField" onchange="emmitFieldDataChange(true)"><%= UtilMethods.htmlifyString(textValue) %></textarea>
         <%
             if (!isReadOnly) {
         %>
@@ -202,7 +202,7 @@
         %>
 
 
-        <div id="HostSelector" dojoType="dotcms.dijit.form.HostFolderFilteringSelect" onChange="updateHostFolderValues('<%=field.getVelocityVarName()%>');"
+        <div id="HostSelector" dojoType="dotcms.dijit.form.HostFolderFilteringSelect" onChange="updateHostFolderValues('<%=field.getVelocityVarName()%>');emmitFieldDataChange(true)"
              value="<%= selectorValue %>"></div>
         <input type="hidden" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>"
                value="<%= selectorValue %>"/>
@@ -244,7 +244,7 @@
                     id="<%=field.getVelocityVarName()%>"><%=UtilMethods.htmlifyString(textValue)%></textarea>
 
             <div class="wysiwyg-tools">
-                <select  autocomplete="false" dojoType="dijit.form.Select" id="<%=field.getVelocityVarName()%>_toggler" onChange="enableDisableWysiwygCodeOrPlain('<%=field.getVelocityVarName()%>')">
+                <select  autocomplete="false" dojoType="dijit.form.Select" id="<%=field.getVelocityVarName()%>_toggler" onChange="enableDisableWysiwygCodeOrPlain('<%=field.getVelocityVarName()%>');emmitFieldDataChange(true)">
                     <option value="WYSIWYG">WYSIWYG</option>
                     <option value="CODE" <%= !wysiwygPlain&&wysiwygDisabled?"selected='true'":"" %>>CODE</option>
                     <option value="PLAIN" <%= wysiwygPlain?"selected='true'":"" %>>PLAIN</option>
@@ -330,7 +330,7 @@
 
             <input type="text"
                    value="<%= dateValue!=null ? df2.format(dateValue) : "" %>"
-                   onChange="updateDate('<%=field.getVelocityVarName()%>');"
+                   onChange="updateDate('<%=field.getVelocityVarName()%>');emmitFieldDataChange(true)"
                    dojoType="dijit.form.DateTextBox"
                    name="<%=field.getFieldContentlet()%>Date"
                    id="<%=field.getVelocityVarName()%>Date">
@@ -350,7 +350,7 @@
             <input type="text" id="<%=field.getVelocityVarName()%>Time"
                    name="<%=field.getFieldContentlet()%>Time"
                    value='<%=cal!=null ? "T"+hour+":"+min+":00" : ""%>'
-                   onChange="updateDate('<%=field.getVelocityVarName()%>');"
+                   onChange="updateDate('<%=field.getVelocityVarName()%>');emmitFieldDataChange(true)"
                    dojoType="dijit.form.TimeTextBox"
                     <%=field.isReadOnly()?"disabled=\"disabled\"":""%>/>
 
@@ -371,12 +371,13 @@
         </div>
         <%} else {%>
         <div class="checkbox">
-            <input type="checkbox" onclick="toggleExpire('<%=field.getVelocityVarName()%>')" dojoType="dijit.form.CheckBox"  checked ="true" name="fieldNeverExpire"  id="fieldNeverExpire">
+            <input type="checkbox" onclick="toggleExpire('<%=field.getVelocityVarName()%>')" dojoType="dijit.form.CheckBox"  checked ="true" name="fieldNeverExpire"  id="fieldNeverExpire" >
             <label for="fieldNeverExpire"><%= LanguageUtil.get(pageContext, "never") %></label>
         </div>
         <%}%>
         <script type="text/javascript">
             function toggleExpire(velocityVarName) {
+            	emmitFieldDataChange(true);
                 var never = dijit.byId("fieldNeverExpire").getValue();
                 var dateField = dijit.byId(velocityVarName + "Date");
                 var timeField = dijit.byId(velocityVarName + "Time");
@@ -407,7 +408,7 @@
         else if (field.getFieldType().equals(
                 Field.FieldType.IMAGE.toString())) {%>
         <input type="text" name="<%=field.getFieldContentlet()%>" dojoType="dotcms.dijit.form.FileSelector" fileBrowserView="thumbnails" contentLanguage="<%=contentLanguage%>"
-               value="<%= UtilMethods.isSet(value)?value:"" %>" mimeTypes="image" onlyFiles="true" showThumbnail="true" id="<%=field.getVelocityVarName()%>"/>
+               value="<%= UtilMethods.isSet(value)?value:"" %>" mimeTypes="image" onlyFiles="true" showThumbnail="true" id="<%=field.getVelocityVarName()%>" onChange="emmitFieldDataChange(true)"/>
 
         <%
             //END IMAGE Field
@@ -416,7 +417,7 @@
         } else if (field.getFieldType().equals(Field.FieldType.FILE.toString())) {
         %>
         <input type="text" name="<%=field.getFieldContentlet()%>" dojoType="dotcms.dijit.form.FileSelector" fileBrowserView="details" contentLanguage="<%=contentLanguage%>"
-               value="<%= value %>" onlyFiles="true" showThumbnail="false" id="<%=field.getVelocityVarName()%>"/>
+               value="<%= value %>" onlyFiles="true" showThumbnail="false" id="<%=field.getVelocityVarName()%>"  onChange="emmitFieldDataChange(true)"/>
 
         <%
             //END FILE Field
@@ -468,7 +469,7 @@
                  onclick="dijit.byId('fileDia<%=field.getVelocityVarName()%>').show()">
         </div>
 
-        <div dojoType="dijit.Dialog" id="fileDia<%=field.getVelocityVarName()%>" title="<%=LanguageUtil.get(pageContext,"Image") %>"  style="width:760px;height:500px;display:none;"">
+        <div dojoType="dijit.Dialog" id="fileDia<%=field.getVelocityVarName()%>" title="<%=LanguageUtil.get(pageContext,"Image") %>"  style="width:90%;height:80%;display:none;"">
         <div style="text-align:center;margin:auto;overflow:auto;width:700px;height:400px;">
             <img src="/contentAsset/image/<%=binInode %>/<%=field.getVelocityVarName() %>/?byInode=true" />
         </div>
@@ -628,7 +629,7 @@
     <!-- display -->
     <div class="tagsWrapper" id="<%=field.getVelocityVarName()%>Wrapper">
       <input type="hidden" name="<%=field.getVelocityVarName()%>" id="<%=field.getVelocityVarName()%>Content" value="<%=hiddenTextValue%>" />
-      <input type="text" name="name" value="" dojoType="dijit.form.TextBox" id="<%=field.getVelocityVarName()%>" />
+      <input type="text" name="name" value="" dojoType="dijit.form.TextBox" id="<%=field.getVelocityVarName()%>"   onChange="emmitFieldDataChange(true)" />
       <div class="tagsOptions" id="<%=field.getVelocityVarName()%>SuggestedTagsDiv" style="display:none;"></div>
     </div>
 
@@ -670,7 +671,7 @@
             }
     %>
     <div class="radio">
-        <input type="radio" dojoType="dijit.form.RadioButton" name="<%=radio%>" id="<%=field.getVelocityVarName() + j %>" value="<%=pairValue%>"<%=field.isReadOnly()?" disabled=\"disabled\" ":"" %><%=checked%>>
+        <input type="radio" dojoType="dijit.form.RadioButton"   onChange="emmitFieldDataChange(true)" name="<%=radio%>" id="<%=field.getVelocityVarName() + j %>" value="<%=pairValue%>"<%=field.isReadOnly()?" disabled=\"disabled\" ":"" %><%=checked%>>
         <label for="<%=field.getVelocityVarName() + j %>"><%=name%></label>
     </div>
     <%
@@ -679,7 +680,7 @@
     //SELECT kind of field rendering
 } else if (field.getFieldType().equals(Field.FieldType.SELECT.toString())) {
 %>
-    <select dojoType="dijit.form.FilteringSelect" autocomplete="true" id="<%=field.getVelocityVarName()%>" name="<%=field.getFieldContentlet()%>" <%=field.isReadOnly()?"readonly=\"\"":""%>>
+    <select dojoType="dijit.form.FilteringSelect"   onChange="emmitFieldDataChange(true)" autocomplete="true" id="<%=field.getVelocityVarName()%>" name="<%=field.getFieldContentlet()%>" <%=field.isReadOnly()?"readonly=\"\"":""%>>
         <%
             String[] pairs = fieldValues.contains("\r\n") ? fieldValues.split("\r\n") : fieldValues.split("\n");
             for (int j = 0; j < pairs.length; j++)
@@ -718,7 +719,7 @@
     <select multiple="multiple" size="scrollable"
             name="<%=field.getFieldContentlet()%>MultiSelect"
             id="<%=field.getVelocityVarName()%>MultiSelect"
-            onchange="update<%=field.getVelocityVarName()%>MultiSelect()"
+            onchange="update<%=field.getVelocityVarName()%>MultiSelect();emmitFieldDataChange(true)" 
             style="width: 200px;""<%=field.isReadOnly()?"readonly=\"readonly\"":""%>">
     <%
         String compareValue = (UtilMethods.isSet(value) ? value.toString() : (UtilMethods.isSet(defaultValue) ? defaultValue : ""));
@@ -798,7 +799,7 @@
     <div class="checkbox">
         <input type="checkbox" dojoType="dijit.form.CheckBox" name="<%=fieldName%>Checkbox" id="<%=fieldName + j%>Checkbox"
                value="<%=pairValue%>" <%=checked%> <%=field.isReadOnly()?"disabled":""%>
-               onchange="update<%=field.getVelocityVarName()%>Checkbox()">&nbsp
+               onchange="update<%=field.getVelocityVarName()%>Checkbox();">&nbsp
         <label for="<%=fieldName + j%>Checkbox"><%=name%></label>
     </div>
     <%
@@ -809,6 +810,7 @@
 
     <script type="text/javascript">
         function update<%=field.getVelocityVarName()%>Checkbox() {
+        	emmitFieldDataChange(true);
             var valuesList = [];
             var checkedInputs = dojo.query("input:checkbox[name^='<%=fieldName%>Checkbox']:checked");
             checkedInputs.forEach(function(checkedInput) {
@@ -875,6 +877,7 @@
             dijit.byId('categoriesDialog<%=counter%>').show();
             doSearch<%=counter%>();
             fixAddedGrid<%=counter%>();
+            emmitFieldDataChange(true);
         }
 
         dojo.addOnLoad(function() {
@@ -984,7 +987,7 @@
                 id="<%=field.getVelocityVarName()%>_value"
                 dojoType='dijit.form.TextBox'
                 value="" <%=field.isReadOnly()?"disabled":""%> />
-        <button type="submit" dojoType="dijit.form.Button" id="<%=field.getFieldContentlet()%>_addbutton" onClick="addKVPair('<%=field.getFieldContentlet()%>', '<%=field.getVelocityVarName()%>');" iconClass="plusIcon" <%=field.isReadOnly()?"disabled":""%> type="button"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add")) %></button>
+        <button type="submit" dojoType="dijit.form.Button" id="<%=field.getFieldContentlet()%>_addbutton" onClick="addKVPair('<%=field.getFieldContentlet()%>', '<%=field.getVelocityVarName()%>');emmitFieldDataChange(true);" iconClass="plusIcon" <%=field.isReadOnly()?"disabled":""%> type="button"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add")) %></button>
     </div>
     <div id="mainHolder" class="key-value-items">
 
