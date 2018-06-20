@@ -119,6 +119,9 @@ public class WorkflowHelper {
     private BulkActionView findBulkActionByQuery(final String luceneQuery,
                                                  final User user) throws DotDataException, DotSecurityException {
         final String cleanedUpQuery = QueryUtil.removeQueryPrefix(luceneQuery);
+
+        // Modify Query here
+
         //We should only be considering Working content.
         final String query = "{\n"
                 + "    \"query\" : { \n"
@@ -156,7 +159,7 @@ public class WorkflowHelper {
     private BulkActionView findBulkActionByContentlets(final List<String> contentletIds,
                                                        final User     user) throws DotSecurityException, DotDataException {
 
-        final String luceneQuery = "+inode:(" + String.join(" ", contentletIds) + ")";
+        final String luceneQuery =  String.format("+inode:( %s ) ", String.join(StringPool.SPACE, contentletIds));
         return this.findBulkActionByQuery(luceneQuery, user);
     }
 
