@@ -5,7 +5,6 @@ import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -68,6 +67,7 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang.time.StopWatch;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.bucket.terms.StringTerms;
@@ -123,8 +123,6 @@ public class WorkflowHelper {
             final String prepareBulkActionsQuery = LuceneQueryUtils
                     .prepareBulkActionsQuery(luceneQuery);
 
-            // Modify Query here
-
             //We should only be considering Working content.
             final String query = "{\n"
                     + "    \"query\" : { \n"
@@ -144,16 +142,13 @@ public class WorkflowHelper {
                     + "\t\"size\":0   \n"
                     + "}";
             final String preparedQuery = String.format(query, prepareBulkActionsQuery);
-            final ESSearchResults results = this.contentletAPI
-                    .esSearch(preparedQuery, false, user, false);
-            /*
-            SearchResponse sr =this.contentletAPI
-                    .esSearchRaw(preparedQuery, false, user, false);
-                    */
+
+            final SearchResponse response = this.contentletAPI
+                    .esSearchRaw(preparedQuery.toLowerCase(), false, user, false);
 
             Logger.debug(getClass(), () -> "luceneQuery: " + prepareBulkActionsQuery);
             Logger.debug(getClass(), () -> "esSearch: " + query);
-            return this.buildBulkActionView(results, user);
+            return this.buildBulkActionView(response, user);
         } catch (Exception e) {
             throw new DotDataException(e);
         }
@@ -176,16 +171,16 @@ public class WorkflowHelper {
 
     /**
      * Compuetes a view out of the resulsts returned bylucene
-     * @param results
+     * @param response
      * @param user
      * @return
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    private BulkActionView buildBulkActionView (final ESSearchResults results,
+    private BulkActionView buildBulkActionView (final SearchResponse response,
                                                 final User user) throws DotDataException, DotSecurityException {
 
-        final Aggregations aggregations     = results.getAggregations();
+        final Aggregations aggregations     = response.getAggregations();
         final Map<String, Long> stepCounts  = new HashMap<>();
 
         for (final Aggregation aggregation : aggregations.asList()) {

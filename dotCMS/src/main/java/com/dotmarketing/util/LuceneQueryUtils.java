@@ -1,8 +1,10 @@
 package com.dotmarketing.util;
 
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
@@ -31,7 +33,7 @@ public class LuceneQueryUtils {
         return cleanedUpQuery;
     }
 
-    private static List<BooleanClause> filterQueryTerms = ImmutableList.of(
+    private static Set<BooleanClause> filterQueryTerms = ImmutableSet.of(
             new BooleanClause(new TermQuery(new Term("contentType","Host")),Occur.MUST_NOT)
     );
 
@@ -48,15 +50,18 @@ public class LuceneQueryUtils {
         final QueryParser parser = new QueryParser(null, new WhitespaceAnalyzer());
         final BooleanQuery query = (BooleanQuery) parser.parse(cleanedUpQuery);
         final List<BooleanClause> clauses = query.clauses();
-
+        final Set<BooleanClause> clauseSet = new HashSet<>(clauses);
         final BooleanQuery.Builder builder = new BooleanQuery.Builder();
 
         for(final BooleanClause clause:clauses){
-           builder.add(clause);
+            builder.add(clause);
         }
 
-        for (final BooleanClause clause:filterQueryTerms) {
-            builder.add(clause);
+        //Do not add terms that are already part of the query.
+        for (final BooleanClause clause : filterQueryTerms) {
+              if(!clauseSet.contains(clause)){
+                 builder.add(clause);
+              }
         }
 
         return builder.build().toString();

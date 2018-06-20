@@ -117,6 +117,7 @@ import java.util.stream.IntStream;
 import javax.annotation.Nullable;
 import org.apache.commons.lang.time.StopWatch;
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
+import org.apache.lucene.queryparser.classic.ParseException;
 import org.osgi.framework.BundleContext;
 
 
@@ -1904,15 +1905,17 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 */
 	private List<Contentlet> findContentletsToProcess(final Iterable<String> inodes,
 			final Iterable<String> workflowAssociatedStepIds, User user)
-			throws DotSecurityException, DotDataException {
+			throws DotSecurityException, DotDataException, ParseException {
 
 		final String luceneQuery = String
 				.format("+inode:( %s ) +(wfstep:%s )", String.join(StringPool.SPACE, inodes),
 						String.join(" wfstep:", workflowAssociatedStepIds));
 
+		final String preparedQuery = LuceneQueryUtils.prepareBulkActionsQuery(luceneQuery);
+
 		return ImmutableList.<Contentlet>builder().addAll(
 				APILocator.getContentletAPI()
-						.search(luceneQuery, -1, 0, null, user, RESPECT_FRONTEND_ROLES)
+						.search(preparedQuery, -1, 0, null, user, RESPECT_FRONTEND_ROLES)
 		).build();
 	}
 
@@ -1926,6 +1929,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		final String luceneQueryWithSteps = String.format(" %s +(wfstep:%s ) ", luceneQuery,
 				String.join(" wfstep:", workflowAssociatedStepIds));
+
 		return ImmutableList.<Contentlet>builder().addAll(
 				APILocator.getContentletAPI()
 						.search(luceneQueryWithSteps, -1, 0, null, user, RESPECT_FRONTEND_ROLES)
@@ -1987,11 +1991,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			throws DotDataException {
 
 		try {
-			final String prepareBulkActionsQuery = LuceneQueryUtils.prepareBulkActionsQuery(luceneQuery);
-			Logger.debug(getClass(),"luceneQuery: "+ prepareBulkActionsQuery);
-			final List<Contentlet> contentlets = findContentletsToProcess(prepareBulkActionsQuery,
+			final String preparedBulkActionsQuery = LuceneQueryUtils.prepareBulkActionsQuery(luceneQuery);
+			Logger.debug(getClass(),"luceneQuery: "+ preparedBulkActionsQuery);
+			final List<Contentlet> contentlets = findContentletsToProcess(preparedBulkActionsQuery,
 					workflowAssociatedStepsIds, user);
-			final Long skipsCount = computeSkippedContentletsCount(prepareBulkActionsQuery, workflowAssociatedStepsIds,
+			final Long skipsCount = computeSkippedContentletsCount(preparedBulkActionsQuery, workflowAssociatedStepsIds,
 					user);
 			return distributeWorkAndProcess(action, user, contentlets, skipsCount);
 		} catch (Exception e) {
