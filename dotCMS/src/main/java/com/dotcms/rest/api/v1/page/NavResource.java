@@ -17,6 +17,7 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 
@@ -99,26 +100,43 @@ public class NavResource {
         final User user = auth.getUser();
 
         try {
-            final int maxDepth = (UtilMethods.isSet(depth)) ? Integer.parseInt(depth) :
-                    defaultDepth;
+            int maxDepth;
+            long langId;
+            try {
+                maxDepth = (UtilMethods.isSet(depth)) ? Integer.parseInt(depth) :
+                        defaultDepth;
+            }catch(NumberFormatException nfe){
+                throw new NumberFormatException("The provided depth is not a number");
+            }
 
-            final long langId = (UtilMethods.isSet(languageId)) ? Long.parseLong(languageId) :
-                    WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
+            try {
+                langId = (UtilMethods.isSet(languageId)) ? Long.parseLong(languageId) :
+                        WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
+            }catch (NumberFormatException nfe){
+                throw new NumberFormatException("The provided languageId is not a number");
+            }
 
-            final Host h =WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+            if (!APILocator.getLanguageAPI().getLanguages().stream()
+                    .anyMatch(l -> l.getId() == langId)) {
+                throw new DoesNotExistException("The provided languageId does not exists");
+            }
+
+            final Host h = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
             APILocator.getPermissionAPI().checkPermission(h, PermissionLevel.READ, user);
 
-            final ViewContext ctx = new ChainedContext(VelocityUtil.getBasicContext(), request, response, Config.CONTEXT);
+            final ViewContext ctx = new ChainedContext(VelocityUtil.getBasicContext(), request,
+                    response, Config.CONTEXT);
 
             final String path = (!uri.startsWith("/")) ? "/" + uri : uri;
 
             final NavTool tool = new NavTool();
             tool.init(ctx);
-            final NavResult nav = tool.getNav(path,langId);
+            final NavResult nav = tool.getNav(path, langId);
 
-            final Map<String, Object> navMap = (nav!=null) ? navToMap(nav, maxDepth, 1) : new HashMap<>();
+            final Map<String, Object> navMap =
+                    (nav != null) ? navToMap(nav, maxDepth, 1) : new HashMap<>();
 
-            if(navMap.isEmpty()) {
+            if (navMap.isEmpty()) {
                 throw new DoesNotExistException("The provided URL was not found");
             }
 
@@ -126,9 +144,9 @@ public class NavResource {
             final String json = mapper.writeValueAsString(navMap);
 
             return Response.ok(new ResponseEntityView(json)).build(); // 200
-
         } catch (Exception e) {
-            Logger.error(this.getClass(),"Exception on NavResource exception message: " + e.getMessage(), e);
+            Logger.error(this.getClass(),
+                    "Exception on NavResource exception message: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
         }
     }
