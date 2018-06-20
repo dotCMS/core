@@ -113,8 +113,8 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
                         .collect(Collectors.toList());
     }
 
-    private String getQueryCondition(String filter, List<String> filterTypes) {
-        String queryFilter =
+    private String getQueryCondition(final String filter, final List<String> filterTypes) {
+        final String queryFilter =
                 filter != null ? String.format("(upper(name) like '%%%s%%')", filter.toUpperCase())
                         : "(upper(name) like '%%')";
 
@@ -141,13 +141,13 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
     }
 
     @NotNull
-    private BaseContentType getBaseContentType(String filter) {
+    private BaseContentType getBaseContentType(final String filter) {
         try {
             return BaseContentType.valueOf(filter);
         } catch (IllegalArgumentException e) {
             BaseContentType result = null;
 
-            for (BaseContentType baseContentType : BaseContentType.values()) {
+            for (final BaseContentType baseContentType : BaseContentType.values()) {
                 if (baseContentType.name().startsWith(filter.toUpperCase())) {
                     result = baseContentType;
                     break;

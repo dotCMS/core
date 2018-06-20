@@ -241,10 +241,10 @@ public class ContentTypeResourceTest {
 		Response responseExpected = Response.ok(new ResponseEntityView(contentTypes)).build();
 
 		final PaginationUtil paginationUtil = mock(PaginationUtil.class);
-		Map<String, Object> extraParams = new HashMap<String, Object>() {
+		final Map<String, Object> extraParams = new HashMap<String, Object>() {
 			@Override
-			public boolean equals(Object o) {
-				Map other = (Map) o;
+			public boolean equals(final Object o) {
+				final Map other = (Map) o;
 
 				return other.size() == 0;
 			}
@@ -257,7 +257,7 @@ public class ContentTypeResourceTest {
 
 		final ContentTypeResource resource = new ContentTypeResource
 				(new ContentTypeHelper(), webResource, paginationUtil, WorkflowHelper.getInstance(), permissionAPI);
-		Response response = resource.getContentTypes(request, filter, page, perPage, orderBy, direction.toString(), null);
+		final Response response = resource.getContentTypes(request, filter, page, perPage, orderBy, direction.toString(), null);
 		RestUtilTest.verifySuccessResponse(response);
 
 		assertEquals(responseExpected.getEntity(), response.getEntity());

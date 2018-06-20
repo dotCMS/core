@@ -261,7 +261,7 @@ public class ContainerResource implements Serializable {
                              final String containerId, final User user,
                              final Contentlet contentlet) throws DotDataException, DotSecurityException {
 
-        PageMode mode = PageMode.EDIT_MODE;
+        final PageMode mode = PageMode.EDIT_MODE;
         final Container container = getContainer(containerId, user);
 
         final org.apache.velocity.context.Context context = velocityUtil.getContext(req, res);

@@ -87,16 +87,16 @@ public class ContainerResourceIntegrationTest {
 
     @Test
     public void test_renderFormIntoContainer() throws DotSecurityException, DotDataException {
-        Map contentMap = mock(Map.class);
+        final Map contentMap = mock(Map.class);
 
         when(versionableAPI.findWorkingVersion(shortyId.longId, user, PageMode.EDIT_MODE.respectAnonPerms)).thenReturn(container);
         when(velocityUtil.merge("/EDIT_MODE/1/LEGACY_RELATION_TYPE.container", context)).thenReturn("html");
         when(formContent.getMap()).thenReturn(contentMap);
 
-        Response response = containerResource.containerForm(request, this.response, containerId, formId);
+        final Response response = containerResource.containerForm(request, this.response, containerId, formId);
 
         RestUtilTest.verifySuccessResponse(response);
-        Map<String, Object> map = (Map<String, Object>) ((ResponseEntityView) response.getEntity()).getEntity();
+        final Map<String, Object> map = (Map<String, Object>) ((ResponseEntityView) response.getEntity()).getEntity();
         assertEquals("html" , map.get("render"));
         assertEquals(contentMap , map.get("content"));
 
@@ -107,7 +107,7 @@ public class ContainerResourceIntegrationTest {
 
     @Test
     public void test_renderFormIntoContainer_WhenContainerIDThrowDataSecurityException() throws DotSecurityException, DotDataException {
-        DotSecurityException dotSecurityException = new DotSecurityException("");
+        final DotSecurityException dotSecurityException = new DotSecurityException("");
         when(versionableAPI.findWorkingVersion(shortyId.longId, user, PageMode.EDIT_MODE.respectAnonPerms)).thenThrow(dotSecurityException);
 
         try {
@@ -120,7 +120,7 @@ public class ContainerResourceIntegrationTest {
 
     @Test
     public void test_renderFormIntoContainer_WhenContentMergeThrowDotParserException() throws DotSecurityException, DotDataException {
-        ParseErrorException exception = new ParseErrorException("");
+        final ParseErrorException exception = new ParseErrorException("");
 
         when(versionableAPI.findWorkingVersion(shortyId.longId, user, PageMode.EDIT_MODE.respectAnonPerms)).thenReturn(container);
         when(velocityUtil.merge("/EDIT_MODE/1/LEGACY_RELATION_TYPE.container", context)).thenThrow(exception);
