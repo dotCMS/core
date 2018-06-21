@@ -30,6 +30,8 @@ public class VisitorLogger {
 
     private static List<Constructor<AbstractCharacter>> constructors;
 
+    private static List<Constructor<AbstractCharacter>> customConstructors;
+
     private VisitorLogger() {
 
     }
@@ -37,6 +39,7 @@ public class VisitorLogger {
     static {
         try {
             constructors = getConstructors(charactersToApply);
+            customConstructors = new ArrayList<>();
         } catch (NoSuchMethodException | SecurityException e) {
             throw new DotRuntimeException(e);
         }
@@ -48,7 +51,7 @@ public class VisitorLogger {
         for (Class clazz : applyThese) {
             cons.add(clazz.getConstructor(AbstractCharacter.class));
         }
-        return cons;
+        return ImmutableList.copyOf(cons);
     }
 
 
@@ -95,8 +98,8 @@ public class VisitorLogger {
      */
     public static List<Constructor<AbstractCharacter>> addConstructor(
             Class character) throws NoSuchMethodException {
-        constructors.add(character.getConstructor(AbstractCharacter.class));
-        return ImmutableList.copyOf(constructors);
+        customConstructors.add(character.getConstructor(AbstractCharacter.class));
+        return ImmutableList.copyOf(customConstructors);
     }
 
     /**
@@ -107,8 +110,8 @@ public class VisitorLogger {
      */
     public static List<Constructor<AbstractCharacter>> removeConstructor(
             Class character) throws NoSuchMethodException {
-        constructors.remove(character.getConstructor(AbstractCharacter.class));
-        return ImmutableList.copyOf(constructors);
+        customConstructors.remove(character.getConstructor(AbstractCharacter.class));
+        return ImmutableList.copyOf(customConstructors);
     }
 
     private static void logInternal(final HttpServletRequest request, final HttpServletResponse response)
@@ -118,6 +121,10 @@ public class VisitorLogger {
         AbstractCharacter base = new BaseCharacter(request, response);
         try {
             for (Constructor<AbstractCharacter> con : constructors) {
+                base = con.newInstance(base);
+            }
+
+            for (Constructor<AbstractCharacter> con : customConstructors) {
                 base = con.newInstance(base);
             }
             doLog(mapper().writeValueAsString(base.getMap()));

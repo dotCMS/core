@@ -128,10 +128,12 @@ public class ThemeResourceTest {
 
         final Map<String, Object> params = map(
                 ThemePaginator.HOST_ID_PARAMETER_NAME, hostId,
-                Paginator.DEFAULT_FILTER_PARAM_NAME, null,
+                Paginator.DEFAULT_FILTER_PARAM_NAME, "",
                 Paginator.ORDER_BY_PARAM_NAME, null,
                 Paginator.ORDER_DIRECTION_PARAM_NAME, OrderDirection.ASC
         );
+
+        when(hostAPI.find(hostId, user, false)).thenReturn(host_1);
         when(mockThemePaginator.getItems(user, 3, 0, params)).thenReturn(folders);
 
         final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI, userAPI, webResource);
@@ -154,9 +156,11 @@ public class ThemeResourceTest {
         when(request.getSession()).thenReturn(session);
         when(session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID)).thenReturn(hostId);
 
+        when(hostAPI.find(hostId, user, false)).thenReturn(host_1);
+
         final Map<String, Object> params = map(
                 ThemePaginator.HOST_ID_PARAMETER_NAME, hostId,
-                Paginator.DEFAULT_FILTER_PARAM_NAME, null,
+                Paginator.DEFAULT_FILTER_PARAM_NAME, "",
                 Paginator.ORDER_BY_PARAM_NAME, null,
                 Paginator.ORDER_DIRECTION_PARAM_NAME, OrderDirection.ASC
         );
@@ -175,16 +179,18 @@ public class ThemeResourceTest {
      * Should: throw a {@link com.dotcms.rest.exception.ForbiddenException}
      */
     @Test
-    public void testFindThemesThrowForbidenException() throws Throwable  {
+    public void testFindThemesThrowForbiddenException() throws Throwable  {
         final String hostId = "1";
         final Exception exception = new PaginationException(new DotSecurityException(""));
 
         Map<String, Object> params = map(
                 ThemePaginator.HOST_ID_PARAMETER_NAME, hostId,
-                Paginator.DEFAULT_FILTER_PARAM_NAME, null,
+                Paginator.DEFAULT_FILTER_PARAM_NAME, "",
                 Paginator.ORDER_BY_PARAM_NAME, null,
                 Paginator.ORDER_DIRECTION_PARAM_NAME, OrderDirection.ASC
         );
+
+        when(hostAPI.find(hostId, user, false)).thenReturn(host_1);
         when(mockThemePaginator.getItems(user, 3, 0, params)).thenThrow(exception);
 
         final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI , userAPI, webResource);

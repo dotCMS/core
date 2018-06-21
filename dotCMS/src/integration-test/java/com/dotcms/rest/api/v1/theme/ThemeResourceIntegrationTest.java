@@ -11,6 +11,7 @@ import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonNode;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
 import com.dotcms.repackage.org.glassfish.jersey.internal.util.Base64;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
@@ -60,6 +61,16 @@ public class ThemeResourceIntegrationTest {
     }
 
     @Test
+    public void test_FindThemes_WhenInvalidHostId_Returns400Error()
+            throws Throwable {
+        final ThemeResource resource = new ThemeResource();
+        final Response response = resource.findThemes(getHttpRequest(), "123456", 0, -1,
+                OrderDirection.ASC.name(), null);
+
+        assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+    }
+
+    @Test
     public void test_FindThemes_WhenHostIdIsSentAndPerPageEquals1_Returns1Theme()
             throws Throwable {
         final ThemeResource resource = new ThemeResource();
@@ -96,7 +107,7 @@ public class ThemeResourceIntegrationTest {
                 .findFolderByPath("/application/themes/quest", host, user, false);
         final ThemeResource resource = new ThemeResource();
         final Response response = resource.findThemeById(getHttpRequest(), folder.getInode());
-        assertEquals(200, response.getStatus());
+        assertEquals(Status.OK.getStatusCode(), response.getStatus());
         final String responseString = response.getEntity().toString();
         final JsonNode jsonNode = objectMapper.readTree(responseString);
 
@@ -111,8 +122,15 @@ public class ThemeResourceIntegrationTest {
 
     }
 
+    @Test
+    public void test_FindThemeById_WhenInvalidID_Returns404Error() throws Throwable {
+        final ThemeResource resource = new ThemeResource();
+        final Response response = resource.findThemeById(getHttpRequest(), "123456");
+        assertEquals(Status.NOT_FOUND.getStatusCode(), response.getStatus());
+    }
+
     private void validateResponse(final Response response, final int perPage) throws IOException {
-        assertEquals(200, response.getStatus());
+        assertEquals(Status.OK.getStatusCode(), response.getStatus());
 
         final String totalEntries = response.getHeaderString("X-Pagination-Total-Entries");
         final String responseString = response.getEntity().toString();
