@@ -119,14 +119,7 @@ public class NavTool implements ViewTool {
             result.setChildrenFolderIds(folderIds);
             result.setShowOnMenu(folder.isShowOnMenu());
 
-            List<?> menuItems;
-            if (path.equals("/")) {
-                menuItems = APILocator.getFolderAPI()
-                        .findSubFolders(host, true);
-            }else {
-                menuItems = APILocator.getFolderAPI()
-                        .findMenuItems(folder, systemUserParam, true);
-            }
+            final List<?> menuItems = APILocator.getFolderAPI().findMenuItems(folder, systemUserParam, true);
 
 
 
