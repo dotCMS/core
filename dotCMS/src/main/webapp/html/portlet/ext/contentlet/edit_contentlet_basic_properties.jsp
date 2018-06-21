@@ -194,9 +194,6 @@
 					<%}%>
 				</select>
 			<%} else {%>
-				<h3>
-                    <%= LanguageUtil.get(pageContext, "language") %>
-				</h3>
 				<input type="hidden" name="selectedStructure" id="selectedStructure" value="<%= structure.getInode() %>">
 			<%} %>
 			<!-- END SELECT STRUCTURE -->
@@ -206,6 +203,11 @@
 				&& !structure.getVelocityVarName().equalsIgnoreCase("Host")
 				&& structure.getStructureType() != Structure.STRUCTURE_TYPE_FORM
 				&& structure.getStructureType() != Structure.STRUCTURE_TYPE_PERSONA ) { %>
+
+				<h3>
+					<%= LanguageUtil.get(pageContext, "language") %>
+				</h3>
+			
 				<script>
 					function changeLanguage(url){
 						/*
