@@ -709,6 +709,29 @@ function stripCarriageReturn(s) {
 	return s.replace(/\r|\n|\r\n/g, " ");
 }
 
+/**
+ * Our current version of  commons-beanutils (1.9.3) does not understand array-like property names such as 'uploadedFiles[]'
+ * The Dojo Uploader component automatically transforms the name on the input type='file' and adding the squre brackets and making it plural.
+ * so something like:
+ * <input name="uploadedFile" multiple="true" type="file" id="uploader" dojoType="dojox.form.Uploader" >
+ * Will end-up as a field on the http request named "uploadFiles[]".
+ * Such behavior is docuemnted here:
+ * https://dojotoolkit.org/reference-guide/1.10/dojox/form/Uploader.html
+ *
+ * fields with array-like names such as uploadedFiles[]
+ * might create a conflict with certain versions of commons-beanutils
+ * This function stripp off the square brakets from the input fields of type "file"
+ */
+function preventNameConflictsOnInputTypeFile(form){
+	for (var i = 0; i < form.length; i++){
+		var e = form.elements[i];
+		if ((e.type != null && e.type.toLowerCase() === "file") && (e.name != null && endsWith(e.name,'[]'))) {
+			e.name = e.name.replace(/[\[\]']+/g,'');
+		}
+	}
+	return form;
+}
+
 function submitForm(form, action, singleSubmit, callback) {
 	if (submitFormCount == 0) {
 		if (singleSubmit == null || singleSubmit) {

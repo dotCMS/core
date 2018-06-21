@@ -541,7 +541,7 @@ public interface WorkflowAPI {
 	 * @param dependencies {@link ContentletDependencies}
 	 * @return Contentlet
 	 */
-	Contentlet fireContentWorkflow(Contentlet contentlet, ContentletDependencies dependencies) throws DotDataException;
+	Contentlet fireContentWorkflow(Contentlet contentlet, ContentletDependencies dependencies) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Validates if the Workflow Action the Contentlet is going to execute belongs to the step of the

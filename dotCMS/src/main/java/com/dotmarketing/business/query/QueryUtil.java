@@ -10,7 +10,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
@@ -237,18 +236,4 @@ public class QueryUtil {
 		return filteredResults; 
 	}
 
-	/**
-	 *
-	 * @param luceneQuery
-	 * @return
-	 */
-	public static String removeQueryPrefix(final String luceneQuery){
-		final String cleanedUpQuery;
-		if(luceneQuery.startsWith("query_")){
-			cleanedUpQuery = luceneQuery.replace( "query_", StringPool.BLANK);
-		} else {
-			cleanedUpQuery = luceneQuery;
-		}
-		return cleanedUpQuery;
-	}
 }

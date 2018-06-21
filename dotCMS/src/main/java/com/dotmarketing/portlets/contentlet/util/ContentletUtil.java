@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.contentlet.util;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -42,6 +43,11 @@ public class ContentletUtil {
 
 	public static boolean isFieldTypeAllowedOnImportExport(final Field field){
 		return !fieldTypesToExcludeFromImportExport.contains(field.getFieldType());
+	}
+
+	public static boolean isHost(final Contentlet contentlet){
+		final Structure hostStrucuture = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(Host.HOST_VELOCITY_VAR_NAME);
+		return contentlet.getStructureInode().equals(hostStrucuture.getInode());
 	}
 
 	//http://jira.dotmarketing.net/browse/DOTCMS-3393

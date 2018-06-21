@@ -305,7 +305,7 @@
 
     #bulkActionsContainer {
         overflow:auto;
-        height: 470px;
+        height: 425px;
     }
 </style>
 
