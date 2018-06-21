@@ -1,9 +1,9 @@
-@import 'mixins';
-@import 'variables';
+@import "mixins";
+@import "variables";
 
 :host {
     display: flex;
-    padding-right: $basic-padding * 8;
+    padding-right: 80px;
     min-height: 100%;
 
     & > dot-edit-page-nav {

@@ -9,7 +9,7 @@ import { DotPersonasService } from '../../../api/services/dot-personas/dot-perso
 import { DotPersonasServiceMock } from '../../../test/dot-personas-service.mock';
 import { By } from '@angular/platform-browser';
 import { DotPersona } from '../../../shared/models/dot-persona/dot-persona.model';
-import { StringPixels } from '../../../api/util/string-pixels-util';
+import { Dropdown } from 'primeng/primeng';
 
 describe('DotPersonaSelectorComponent', () => {
     let component: DotPersonaSelectorComponent;
@@ -58,10 +58,9 @@ describe('DotPersonaSelectorComponent', () => {
         expect(component.options[0]).toEqual(defaultPersona);
     });
 
-    it('should set max text width to dropdpown', () => {
+    it('shoudl set fixed width to dropdown', () => {
         fixture.detectChanges();
-        const optionValues = component.options.map((persona: DotPersona) => persona.name);
-        const textSize = StringPixels.getDropdownWidth(optionValues);
-        expect(component.dropdownWidth).toEqual(textSize);
+        const pDropDown: Dropdown = de.query(By.css('p-dropdown')).componentInstance;
+        expect(pDropDown.style).toEqual({width: '100px'});
     });
 });

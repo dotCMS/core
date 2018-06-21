@@ -101,14 +101,14 @@ $button-sec: (
 // SELECT BUTTON
 $selectbutton-normal-bgcolor: $white;
 $selectbutton-normal-border: $button-border;
-$selectbutton-normal-shadow: $md-shadow-1;
+$selectbutton-normal-shadow: 0;
 
 $selectbutton-hover-bgcolor: $white;
 $selectbutton-hover-border: $button-border;
 $selectbutton-hover-shadow: $md-shadow-2;
 
 $selectbutton-button-hover-bgcolor: rgba($brand-primary_rgb, 0.1);
-$selectbutton-button-active-bgcolor: $brand-primary;
+$selectbutton-button-active-bgcolor: $brand-primary_mod;
 $selectbutton-button-active-color: $white;
 
 // DROPDOWN
@@ -199,7 +199,7 @@ $dialog-close-button-normal-color: rgba($black, 0.7);
 $dialog-close-button-hover-color: $black;
 
 // INPUTSWITCH
-$inputswitch-normal-track-color: rgba($black, 0.38);
+$inputswitch-normal-track-color: $gray-lighter;
 $inputswitch-checked-track-color: rgba($brand-primary_rgb, 0.38);
 
 $inputswitch-normal-thumb-color: $white;

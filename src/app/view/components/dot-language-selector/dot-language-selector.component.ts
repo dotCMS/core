@@ -1,7 +1,6 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { DotLanguagesService } from '../../../api/services/dot-languages/dot-languages.service';
 import { DotLanguage } from '../../../shared/models/dot-language/dot-language.model';
-import { StringPixels } from '../../../api/util/string-pixels-util';
 import { take } from 'rxjs/operators';
 
 @Component({
@@ -14,7 +13,6 @@ export class DotLanguageSelectorComponent implements OnInit {
     @Output() selected = new EventEmitter<DotLanguage>();
 
     languagesOptions: DotLanguage[];
-    dropdownWidth: string;
 
     constructor(private dotLanguagesService: DotLanguagesService) {}
 
@@ -24,9 +22,6 @@ export class DotLanguageSelectorComponent implements OnInit {
             .pipe(take(1))
             .subscribe((languages: DotLanguage[]) => {
                 this.languagesOptions = languages;
-                this.dropdownWidth = StringPixels.getDropdownWidth(
-                    this.languagesOptions.map((languageOption: DotLanguage) => languageOption.language)
-                );
             });
     }
 

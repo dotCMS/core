@@ -3,6 +3,7 @@ import { NGFACES_MODULES } from '../../../../modules';
 import { NgModule } from '@angular/core';
 import { PatternLibraryComponent } from './pattern-library.component';
 import { Routes, RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 
 const routes: Routes = [
     {
@@ -14,6 +15,7 @@ const routes: Routes = [
 @NgModule({
     imports: [
         CommonModule,
+        FormsModule,
         ...NGFACES_MODULES,
         RouterModule.forChild(routes)
     ],

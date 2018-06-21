@@ -21,11 +21,10 @@ import { Observable } from 'rxjs/Observable';
 
 @Component({
     selector: 'dot-test-host-component',
-    template: `<dot-edit-page-workflows-actions [page]="page" [label]="label"></dot-edit-page-workflows-actions>`
+    template: `<dot-edit-page-workflows-actions [page]="page"></dot-edit-page-workflows-actions>`
 })
 class TestHostComponent {
     @Input() page: DotPage;
-    @Input() label: string;
 }
 
 describe('DotEditPageWorkflowsActionsComponent', () => {
@@ -33,7 +32,7 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
     let fixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
     let testbed;
-    let actionButton: DebugElement;
+    let button: DebugElement;
     let dotWorkflowService: DotWorkflowService;
     let workflowActionDebugEl: DebugElement;
     let workflowActionComponent: DotEditPageWorkflowsActionsComponent;
@@ -71,13 +70,13 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
         de = fixture.debugElement;
 
         component = fixture.componentInstance;
-        component.label = 'ACTIONS';
         component.page = { ...mockDotPage, ...{ workingInode: 'cc2cdf9c-a20d-4862-9454-2a76c1132123' } };
 
-        actionButton = de.query(By.css('.edit-page-toolbar__actions'));
         workflowActionDebugEl = de.query(By.css('dot-edit-page-workflows-actions'));
         workflowActionComponent = workflowActionDebugEl.componentInstance;
         dotGlobalMessageService = de.injector.get(DotGlobalMessageService);
+
+        button = workflowActionDebugEl.query(By.css('button'));
 
         dotWorkflowService = workflowActionDebugEl.injector.get(DotWorkflowService);
         spyOn(dotWorkflowService, 'fireWorkflowAction').and.callThrough();
@@ -87,18 +86,6 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
         describe('enabled', () => {
             beforeEach(() => {
                 spyOn(dotWorkflowService, 'getContentWorkflowActions').and.callThrough();
-                fixture.detectChanges();
-            });
-
-            it('should have a workflow actions element', () => {
-                expect(actionButton).toBeTruthy();
-            });
-
-            it('should have a workflow actions with label "ACTIONS"', () => {
-                expect(actionButton.nativeElement.textContent).toContain('ACTIONS');
-            });
-
-            it('should get workflow actions when page changes"', () => {
                 component.page = {
                     ...mockDotPage,
                     ...{
@@ -107,8 +94,22 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
                     }
                 };
                 fixture.detectChanges();
+            });
+
+            it('should have button', () => {
+                expect(button).toBeTruthy();
+            });
+
+            it('should have right attr in button', () => {
+                const attr = button.attributes;
+                expect(attr.icon).toEqual('fa-ellipsis-v');
+                expect(attr.pButton).toBeDefined();
+                expect(attr.secondary).toBeDefined();
+            });
+
+            it('should get workflow actions when page changes"', () => {
                 expect(dotWorkflowService.getContentWorkflowActions).toHaveBeenCalledWith('cc2cdf9c-a20d-4862-9454-2a76c1132123');
-                expect(dotWorkflowService.getContentWorkflowActions).toHaveBeenCalledTimes(2);
+                expect(dotWorkflowService.getContentWorkflowActions).toHaveBeenCalledTimes(1);
             });
 
             describe('fire actions', () => {
@@ -174,7 +175,7 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
             });
 
             it('should be disabled', () => {
-                expect(actionButton.nativeElement.disabled).toBe(true);
+                expect(button.nativeElement.disabled).toBe(true);
             });
         });
     });

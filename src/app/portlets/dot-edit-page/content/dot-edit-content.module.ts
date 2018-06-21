@@ -19,6 +19,7 @@ import { DotEditPageService } from '../../../api/services/dot-edit-page/dot-edit
 import { DotEditContentViewAsToolbarModule } from './components/dot-edit-content-view-as-toolbar/dot-edit-content-view-as-toolbar.module';
 import { DotWhatsChangedModule } from './components/dot-whats-changed/dot-whats-changed.module';
 import { DotContentletEditorModule } from '../../../view/components/dot-contentlet-editor/dot-contentlet-editor.module';
+import { DotEditPageInfoModule } from '../components/dot-edit-page-info/dot-edit-page-info.module';
 
 const routes: Routes = [
     {
@@ -33,12 +34,13 @@ const routes: Routes = [
         CommonModule,
         DialogModule,
         RouterModule.forChild(routes),
-        DotEditPageToolbarModule,
-        DotLoadingIndicatorModule,
+        DotContentletEditorModule,
         DotDirectivesModule,
         DotEditContentViewAsToolbarModule,
-        DotWhatsChangedModule,
-        DotContentletEditorModule
+        DotEditPageInfoModule,
+        DotEditPageToolbarModule,
+        DotLoadingIndicatorModule,
+        DotWhatsChangedModule
     ],
     exports: [DotEditContentComponent],
     providers: [

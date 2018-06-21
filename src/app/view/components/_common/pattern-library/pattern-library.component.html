@@ -1,10 +1,10 @@
 
 <div class="pl__forms">
-    <p-dropdown [options]="cities1"></p-dropdown>
+    <p-dropdown [options]="dropdownOptions"></p-dropdown>
+    <p-dropdown tiny [options]="dropdownOptions"></p-dropdown>
     <input type="text" pInputText value="Hello World"/>
     <textarea pInputTextarea>Hello World</textarea>
     <div class="pl__buttons">
-
         <div class="pl__buttons-row">
             <button pButton label="Value"></button>
             <button pButton label="Disabled" disabled="true"></button>
@@ -24,7 +24,18 @@
             <button pButton icon="fa-trash" disabled="true"></button>
             <button pButton icon="fa-heart"></button>
             <button pButton icon="fa-heart" disabled="true"></button>
-        </div>
+            <button pButton tiny icon="fa-heart"></button>
+            <button pButton tiny icon="fa-trash" disabled="true"></button>
 
+            <button pButton secondary icon="fa-trash"></button>
+            <button pButton secondary icon="fa-trash" disabled="true"></button>
+            <button pButton secondary icon="fa-heart"></button>
+            <button pButton secondary icon="fa-heart" disabled="true"></button>
+            <button pButton secondary tiny icon="fa-heart"></button>
+            <button pButton secondary tiny icon="fa-trash" disabled="true"></button>
+        </div>
     </div>
+
+    <p-selectButton [(ngModel)]="selectButtonValue" [options]="selectButtonStates"></p-selectButton>
+    <p-selectButton secondary  [(ngModel)]="selectButtonValue" [options]="selectButtonStates"></p-selectButton>
 </div>

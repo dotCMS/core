@@ -71,6 +71,11 @@
         width: $field-height;
         height: $field-height;
 
+        &[tiny] {
+            width: $button-tiny-height;
+            height: $button-tiny-height;
+        }
+
         &:not([disabled]) {
             background: none;
 
@@ -81,6 +86,15 @@
 
             [class^="ui-button-icon"] {
                 color: map-get(map-get($button-sec, normal), color);
+            }
+
+            &[secondary] {
+                @extend #button-main;
+                box-shadow: $md-shadow-1;
+
+                &:hover {
+                    box-shadow: $md-shadow-2;
+                }
             }
         }
     }
@@ -161,7 +175,14 @@
     }
 }
 
-.ui-button-icon-only .fa {
-    margin-top: -.5em;
-    margin-left: -.65em;
+.ui-button-icon-only {
+    .fa {
+        margin-top: -.5em;
+        margin-left: -.65em;
+    }
+
+    &[tiny] .fa {
+        margin-top: -.4em;
+        margin-left: -.7em;
+    }
 }

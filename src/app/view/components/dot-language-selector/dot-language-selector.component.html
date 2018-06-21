@@ -1,6 +1,8 @@
-<p-dropdown class="tiny invert" [options]="languagesOptions"
-            optionLabel="language"
-            [(ngModel)]="value"
-            [style]="{'width': dropdownWidth}"
-            (onChange)="change($event.value)">
+<p-dropdown
+    tiny
+    [options]="languagesOptions"
+    optionLabel="language"
+    [(ngModel)]="value"
+    [style]="{'width': '100px'}"
+    (onChange)="change($event.value)">
 </p-dropdown>

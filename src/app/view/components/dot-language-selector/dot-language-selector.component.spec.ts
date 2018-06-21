@@ -7,8 +7,7 @@ import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { mockDotLanguage } from '../../../test/dot-language.mock';
-import { StringPixels } from '../../../api/util/string-pixels-util';
-import { DotLanguage } from '../../../shared/models/dot-language/dot-language.model';
+import { Dropdown } from 'primeng/primeng';
 
 describe('DotLanguageSelectorComponent', () => {
     let component: DotLanguageSelectorComponent;
@@ -49,10 +48,9 @@ describe('DotLanguageSelectorComponent', () => {
         expect(component.selected.emit).toHaveBeenCalledWith(mockDotLanguage);
     });
 
-    it('should set max text width to dropdpown', () => {
+    it('shoudl set fixed width to dropdown', () => {
         fixture.detectChanges();
-        const optionValues = component.languagesOptions.map((languageOption: DotLanguage) => languageOption.language);
-        const textSize = StringPixels.getDropdownWidth(optionValues);
-        expect(component.dropdownWidth).toEqual(textSize);
+        const pDropDown: Dropdown = de.query(By.css('p-dropdown')).componentInstance;
+        expect(pDropDown.style).toEqual({width: '100px'});
     });
 });

@@ -5,7 +5,27 @@
     background-color: $gray-lightest-x;
     display: flex;
     flex-direction: column;
+    position: relative;
     width: 100%;
+}
+
+dot-whats-changed,
+.dot-edit__iframe {
+    background: $white;
+    border-radius: $border-radius;
+    box-shadow: $md-shadow-2;
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+.dot-edit__toolbar {
+    flex-shrink: 0;
+}
+
+.dot-edit__page-actions {
+    display: flex;
+    justify-content: space-between;
+    padding: $basic-padding * 2;
 }
 
 .dot-edit__page-wrapper {
@@ -13,31 +33,13 @@
     display: flex;
     flex-direction: column;
     flex-grow: 1;
-    padding: $basic-padding * 2;
+    justify-content: center;
+    padding: 0 $basic-padding * 2 $basic-padding * 2;
     width: 100%;
-
-    &--deviced {
-        padding: $basic-padding * 2 0;
-        justify-content: center;
-    }
 }
 
-dot-whats-changed,
-.dot-edit__iframe {
-    border: solid 1px $gray-lighter;
-    flex-grow: 1;
-}
-
-.dot-edit__toolbar {
-    flex-shrink: 0;
-}
-
-/*
-    When the primeng dialog components resize it adds .ui-unselectable-text to the <body>, we beed to disable
-    pointer events in the iframe during the resize of the dialog otherwise resize breaks.
-*/
-::ng-deep .ui-unselectable-text .dot-edit__contentlet-iframe {
-    pointer-events: none;
+.dot-edit__page-wrapper--deviced {
+    padding: $basic-padding * 3 0;
 }
 
 .dot-edit__device-wrapper {
@@ -83,17 +85,10 @@ dot-whats-changed,
     }
 }
 
-.dot-edit__page-device-info {
-    padding: $basic-padding;
-    text-align: center;
-    border-bottom: 1px solid $gray-light;
-}
-
-.dot-edit__page-device-name {
-    font-weight: bold;
-    margin-right: $basic-padding * 2;
-}
-
-.dot-edit__page-device-dimensions {
-    word-spacing: $basic-padding;
+/*
+    When the primeng dialog components resize it adds .ui-unselectable-text to the <body>, we beed to disable
+    pointer events in the iframe during the resize of the dialog otherwise resize breaks.
+*/
+::ng-deep .ui-unselectable-text .dot-edit__contentlet-iframe {
+    pointer-events: none;
 }

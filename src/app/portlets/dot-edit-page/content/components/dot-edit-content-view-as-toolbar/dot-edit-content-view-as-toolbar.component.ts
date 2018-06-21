@@ -20,7 +20,7 @@ export class DotEditContentViewAsToolbarComponent implements OnInit, OnChanges {
 
     isEnterpriseLicense$: Observable<boolean>;
     isPreview: boolean;
-    whatsChangedMessage$: Observable<string>;
+    messages: {[key: string]: string} = {};
 
     private value: DotEditPageViewAs;
     private _pageState: DotRenderedPageState;
@@ -29,9 +29,11 @@ export class DotEditContentViewAsToolbarComponent implements OnInit, OnChanges {
 
     ngOnInit(): void {
         this.isEnterpriseLicense$ = this.dotLicenseService.isEnterprise();
-        this.whatsChangedMessage$ = this.dotMessageService
-            .getMessages(['dot.common.whats.changed'])
-            .map((messages: string[]) => messages['dot.common.whats.changed']);
+        this.dotMessageService
+            .getMessages(['dot.common.whats.changed', 'editpage.viewas.previewing'])
+            .subscribe((messages: {[key: string]: string}) => {
+                this.messages = messages;
+            });
     }
 
     ngOnChanges(changes: SimpleChanges): void {

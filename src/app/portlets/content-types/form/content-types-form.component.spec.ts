@@ -22,7 +22,6 @@ import { ContentTypesInfoService } from '../../../api/services/content-types-inf
 import { SiteSelectorFieldModule } from '../../../view/components/_common/site-selector-field/site-selector-field.module';
 import { SiteServiceMock } from '../../../test/site-service.mock';
 import { DotWorkflowService } from '../../../api/services/dot-workflow/dot-workflow.service';
-import { MdInputTextModule } from '../../../view/directives/md-inputtext/md-input-text.module';
 // tslint:disable-next-line:max-line-length
 import { DotWorkflowsSelectorFieldModule } from '../../../view/components/_common/dot-workflows-selector-field/dot-workflows-selector-field.module';
 import { DotWorkflowServiceMock } from '../../../test/dot-workflow-service.mock';

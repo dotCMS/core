@@ -17,7 +17,6 @@ import { tap, map, mergeMap, catchError, pluck } from 'rxjs/operators';
 })
 export class DotEditPageWorkflowsActionsComponent implements OnInit, OnChanges {
     @Input() page: DotPage;
-    @Input() label: string;
 
     @Output() fired: EventEmitter<any> = new EventEmitter();
 

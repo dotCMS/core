@@ -166,7 +166,7 @@ describe('DotEditLayoutDesignerComponent', () => {
 
         it('should show save button', () => {
             fixture.detectChanges();
-            const saveButton: DebugElement = fixture.debugElement.query(By.css('.dot-edit-layout__toolbar-action-save'));
+            const saveButton: DebugElement = fixture.debugElement.query(By.css('.dot-edit-layout__toolbar-save'));
 
             expect(saveButton).toBeTruthy();
             expect(saveButton.nativeElement.textContent).toEqual('Save');
@@ -347,7 +347,7 @@ describe('DotEditLayoutDesignerComponent', () => {
         beforeEach(() => {
             component.pageState = new DotRenderedPageState(mockUser, mockDotRenderedPage);
             fixture.detectChanges();
-            saveButton = fixture.debugElement.query(By.css('.dot-edit-layout__toolbar-action-save'));
+            saveButton = fixture.debugElement.query(By.css('.dot-edit-layout__toolbar-save'));
         });
 
         it('should have disabled by default', () => {

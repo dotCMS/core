@@ -2,8 +2,7 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { DotPersonasService } from '../../../api/services/dot-personas/dot-personas.service';
 import { DotPersona } from '../../../shared/models/dot-persona/dot-persona.model';
 import { DotMessageService } from '../../../api/services/dot-messages-service';
-import { map, tap, take } from 'rxjs/operators';
-import { StringPixels } from '../../../api/util/string-pixels-util';
+import { map, take } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-persona-selector',
@@ -15,7 +14,6 @@ export class DotPersonaSelectorComponent implements OnInit {
     @Output() selected = new EventEmitter<DotPersona>();
 
     options: DotPersona[];
-    dropdownWidth: string;
 
     constructor(private dotPersonasService: DotPersonasService, private dotMessageService: DotMessageService) {}
 
@@ -27,9 +25,6 @@ export class DotPersonaSelectorComponent implements OnInit {
                 this.dotPersonasService
                     .get()
                     .pipe(
-                        tap((personas: DotPersona[]) => {
-                            this.dropdownWidth = StringPixels.getDropdownWidth(personas.map((persona: DotPersona) => persona.name));
-                        }),
                         map((personas: DotPersona[]) => this.setOptions(this.dotMessageService.get('modes.persona.no.persona'), personas))
                     )
                     .subscribe((personas: DotPersona[]) => {

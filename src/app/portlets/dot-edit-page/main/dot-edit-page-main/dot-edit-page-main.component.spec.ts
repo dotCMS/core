@@ -19,7 +19,6 @@ import { DotContentletEditorService } from '../../../../view/components/dot-cont
 import { Injectable, Component, Output, EventEmitter } from '@angular/core';
 import { DotPageStateService } from '../../content/services/dot-page-state/dot-page-state.service';
 import { Subject } from 'rxjs/Subject';
-import { DotContentletEditorModule } from '../../../../view/components/dot-contentlet-editor/dot-contentlet-editor.module';
 import { DotRouterService } from '../../../../api/services/dot-router/dot-router.service';
 
 @Injectable()

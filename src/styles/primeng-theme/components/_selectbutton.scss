@@ -9,11 +9,32 @@
 
     [secondary] & {
         box-shadow: none;
-        background-color: rgba($brand-primary_rgb, 0.1);
+
+        &:hover {
+            background: none;
+        }
 
         .ui-button {
-            @extend #button-sec;
+            border: none;
             background-color: transparent;
+            border-bottom: solid 4px transparent;
+
+            &:hover {
+                background-color: rgba($brand-secondary_rgb, 0.1);
+            }
+
+            .ui-button-text {
+                color: $brand-secondary;
+            }
+
+            &.ui-state-active {
+                background: none;
+                border-bottom: solid 4px $brand-secondary;
+
+                .ui-button-text {
+                    color: $brand-secondary;
+                }
+            }
         }
     }
 

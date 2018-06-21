@@ -6,7 +6,7 @@ import { DotEditPageState } from '../../../../../shared/models/dot-edit-page-sta
 import { DotMessageService } from '../../../../../api/services/dot-messages-service';
 import { DotRenderedPageState } from '../../../shared/models/dot-rendered-page-state.model';
 import { PageMode } from '../../../shared/models/page-mode.enum';
-import { DotEditPageInfoComponent } from '../../../components/dot-edit-page-info/dot-edit-page-info.component';
+import { DotEditPageLockInfoComponent } from './components/dot-edit-page-lock-info/dot-edit-page-lock-info.component';
 
 @Component({
     selector: 'dot-edit-page-toolbar',
@@ -15,7 +15,7 @@ import { DotEditPageInfoComponent } from '../../../components/dot-edit-page-info
 })
 export class DotEditPageToolbarComponent implements OnInit, OnChanges {
     @ViewChild('locker') locker: InputSwitch;
-    @ViewChild('pageInfo') pageInfo: DotEditPageInfoComponent;
+    @ViewChild('pageLockInfo') pageLockInfo: DotEditPageLockInfoComponent;
 
     @Input() pageState: DotRenderedPageState;
 
@@ -39,8 +39,7 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
                 'editpage.content.steal.lock.confirmation.message.header',
                 'editpage.toolbar.edit.page',
                 'editpage.toolbar.live.page',
-                'editpage.toolbar.preview.page',
-                'editpage.toolbar.primary.workflow.actions'
+                'editpage.toolbar.preview.page'
             ])
             .subscribe(() => {
                 this.setFieldsModels(this.pageState);
@@ -70,7 +69,7 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
      */
     onLockerClick(_$event): void {
         if (this.locker.disabled) {
-            this.pageInfo.blinkLockMessage();
+            this.pageLockInfo.blinkLockMessage();
         }
     }
 

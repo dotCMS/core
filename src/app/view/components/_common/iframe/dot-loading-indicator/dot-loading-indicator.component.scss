@@ -52,6 +52,7 @@ $border-size: $size / 5;
     right: 0;
     top: 0;
     overflow: hidden;
+    z-index: 1;
 
     .loader {
         position: absolute;

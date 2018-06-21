@@ -66,7 +66,7 @@ class MockDotPageSelectorService {
     getPagesInFolder(_folder: string): Observable<DotPageAsset[]> {
         return Observable.of(mockPageSelector);
     }
-    getPage(idenfier: string): Observable<DotPageAsset> {
+    getPage(_idenfier: string): Observable<DotPageAsset> {
         return Observable.of(mockPageSelector[0]);
     }
 }

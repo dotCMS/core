@@ -97,7 +97,7 @@ describe('DotEditPageNavComponent', () => {
 
         it('should have correct item active', () => {
             const activeItem = fixture.debugElement.query(By.css('.edit-page-nav__item--active'));
-            expect(activeItem.nativeElement.innerText).toContain('Content');
+            expect(activeItem.nativeElement.innerText).toContain('CONTENT');
         });
 
         it('should call the ContentletEditorService Edit when clicked on Properties button', () => {

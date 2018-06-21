@@ -220,13 +220,14 @@ describe('DotEditPageToolbarComponent', () => {
     });
 
     it('should blink page is locked message', () => {
-        spyOn(component.pageInfo, 'blinkLockMessage');
+        spyOn(component.pageLockInfo, 'blinkLockMessage');
+
         fixture.componentInstance.pageState.page.canLock = false;
         fixture.detectChanges();
 
         const lockSwitch: DebugElement = de.query(By.css('.edit-page-toolbar__locker'));
-        lockSwitch.nativeElement.click();
-        expect(component.pageInfo.blinkLockMessage).toHaveBeenCalledTimes(1);
+        lockSwitch.triggerEventHandler('click', {});
+        expect(component.pageLockInfo.blinkLockMessage).toHaveBeenCalledTimes(1);
     });
 
     it('should have cancel button and emit event', () => {
@@ -246,7 +247,6 @@ describe('DotEditPageToolbarComponent', () => {
         fixture.componentInstance.pageState.page.workingInode = 'cc2cdf9c-a20d-4862-9454-2a76c1132123';
         fixture.detectChanges();
 
-        expect(actions.componentInstance.label).toEqual(messageServiceMock.get('editpage.toolbar.primary.workflow.actions'));
         expect(actions.componentInstance.page.workingInode).toEqual(component.pageState.page.workingInode);
     });
 

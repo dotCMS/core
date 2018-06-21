@@ -7,12 +7,14 @@ import { SelectItem } from 'primeng/primeng';
     templateUrl: 'pattern-library.component.html'
 })
 export class PatternLibraryComponent implements OnInit {
-    cities1: SelectItem[];
+    dropdownOptions: SelectItem[];
+    selectButtonStates: SelectItem[] = [];
+    selectButtonValue: string;
 
     constructor() {}
 
     ngOnInit() {
-        this.cities1 = [
+        this.dropdownOptions = [
             { label: 'Select City', value: null },
             { label: 'New York', value: { id: 1, name: 'New York', code: 'NY' } },
             { label: 'Rome', value: { id: 2, name: 'Rome', code: 'RM' } },
@@ -20,5 +22,13 @@ export class PatternLibraryComponent implements OnInit {
             { label: 'Istanbul', value: { id: 4, name: 'Istanbul', code: 'IST' } },
             { label: 'Paris', value: { id: 5, name: 'Paris', code: 'PRS' } }
         ];
+
+        this.selectButtonStates = [
+            { label: 'Value 1', value: 'one' },
+            { label: 'Value 2', value: 'two' },
+            { label: 'Value 3', value: 'three' }
+        ];
+
+        this.selectButtonValue = 'one';
     }
 }

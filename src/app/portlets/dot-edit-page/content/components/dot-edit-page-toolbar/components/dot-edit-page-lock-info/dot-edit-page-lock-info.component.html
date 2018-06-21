@@ -1,0 +1,7 @@
+<span #lockedPageMessage class="page-info__locked-by-message" *ngIf="pageState.state.lockedByAnotherUser && pageState.page.canEdit">
+    {{ dotMessageService.get('editpage.toolbar.page.locked.by.user', pageState.page.lockedByName) }}
+</span>
+
+<span #lockedPageMessage class="page-info__cant-edit-message" *ngIf="!pageState.page.canEdit">
+    {{ dotMessageService.get('editpage.toolbar.page.cant.edit') }}
+</span>

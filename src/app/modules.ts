@@ -25,7 +25,8 @@ import {
     TabViewModule,
     ToolbarModule,
     TreeTableModule,
-    MultiSelectModule
+    MultiSelectModule,
+    SelectButtonModule
 } from 'primeng/primeng';
 import { DotTextareaContentModule } from './view/components/_common/dot-textarea-content/dot-textarea-content.module';
 import { DotGlobalMessageModule } from './view/components/_common/dot-global-message/dot-global-message.module';
@@ -57,12 +58,13 @@ export const NGFACES_MODULES = [
     DropdownModule,
     InputTextModule,
     InputTextareaModule,
+    MultiSelectModule,
     PasswordModule,
     RadioButtonModule,
+    SelectButtonModule,
     SharedModule,
     SplitButtonModule,
     TabViewModule,
     ToolbarModule,
-    TreeTableModule,
-    MultiSelectModule
+    TreeTableModule
 ];

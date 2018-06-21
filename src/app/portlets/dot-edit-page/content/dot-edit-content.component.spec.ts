@@ -43,6 +43,8 @@ import { DotContentletEditorService } from '../../../view/components/dot-content
 import { DotPageContainer } from '../shared/models/dot-page-container.model';
 import { DotEditContentComponent } from './dot-edit-content.component';
 import { DotContentletEditorModule } from '../../../view/components/dot-contentlet-editor/dot-contentlet-editor.module';
+import { DotEditPageInfoModule } from '../components/dot-edit-page-info/dot-edit-page-info.module';
+import { DotEditPageInfoComponent } from '../components/dot-edit-page-info/dot-edit-page-info.component';
 
 export const mockDotPageState: DotPageState = {
     mode: PageMode.PREVIEW,
@@ -103,6 +105,7 @@ describe('DotEditContentComponent', () => {
                 DialogModule,
                 DotContentletEditorModule,
                 DotEditPageToolbarModule,
+                DotEditPageInfoModule,
                 DotLoadingIndicatorModule,
                 RouterTestingModule.withRoutes([
                     {
@@ -190,6 +193,14 @@ describe('DotEditContentComponent', () => {
         fixture.detectChanges();
         expect(toolbarComponent.pageState.page).toEqual(mockDotPage);
         expect(toolbarComponent.pageState.state).toEqual(mockDotPageState);
+    });
+
+    it('should have page information', () => {
+        fixture.detectChanges();
+        const pageInfo: DotEditPageInfoComponent = de.query(By.css('dot-edit-page-info')).componentInstance;
+        expect(pageInfo !== null).toBe(true);
+        expect(pageInfo.pageState.page).toEqual(mockDotPage);
+        expect(pageInfo.pageState.state).toEqual(mockDotPageState);
     });
 
     it('should redirect to site browser on toolbar cancel', () => {

@@ -1,12 +1,15 @@
-@import 'variables';
-@import 'mixins';
+@import "variables";
+@import "mixins";
+
+$nav-size: 80px;
 
 :host {
+    background-color: $white;
+    border-left: solid 1px $gray-lighter;
     display: flex;
-    background-color: $gray-darker;
-    order: 2;
-    width: 64px;
     flex-shrink: 0;
+    order: 2;
+    width: $nav-size;
 }
 
 .edit-page-nav {
@@ -16,17 +19,19 @@
 
 .edit-page-nav__item {
     align-items: center;
-    color: $white;
+    color: $brand-background;
     display: block;
     display: flex;
     flex-direction: column;
-    height: 64px;
+    font-size: 11px;
+    height: $nav-size;
     justify-content: center;
     text-decoration: none;
+    text-transform: uppercase;
     transition: background-color $basic-speed ease-in;
 
     &:hover {
-        background-color: rgba($white, 0.1);
+        background-color: $gray-lighter;
     }
 
     & > .fa {
@@ -37,12 +42,13 @@
     &--disabled,
     &--disabled:hover {
         background-color: transparent;
-        opacity: 0.2;
+        opacity: 0.4;
         cursor: not-allowed;
     }
 }
 
 .edit-page-nav__item--active {
-    background-color: $brand-primary;
+    background-color: $brand-background;
+    color: $white;
     pointer-events: none;
 }

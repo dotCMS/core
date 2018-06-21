@@ -4,6 +4,8 @@
     display: flex;
     opacity: 0;
     transition: $basic-speed * 2;
+    border-right: solid 1px $gray-lighter;
+    padding-right: $basic-padding * 2;
 }
 
 :host(.dot-global-message--visible) {
@@ -18,4 +20,5 @@
 .dot-global-message__text {
     line-height: 19px;
     vertical-align: top;
+    color: $gray-light;
 }

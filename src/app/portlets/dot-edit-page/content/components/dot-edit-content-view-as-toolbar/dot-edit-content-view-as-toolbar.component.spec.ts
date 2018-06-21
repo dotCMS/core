@@ -27,6 +27,8 @@ import { PageMode } from '../../../shared/models/page-mode.enum';
 import { LoginService } from 'dotcms-js/dotcms-js';
 import { DotLicenseService } from '../../../../../api/services/dot-license/dot-license.service';
 import { of } from 'rxjs/observable/of';
+import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
+import { DotMessageService } from '../../../../../api/services/dot-messages-service';
 
 @Component({
     selector: 'dot-test-host',
@@ -65,6 +67,11 @@ class MockDotLanguageSelectorComponent {
     @Output() selected = new EventEmitter<DotLanguage>();
 }
 
+const messageServiceMock = new MockDotMessageService({
+    'dot.common.whats.changed': 'what',
+    'editpage.viewas.previewing': 'Previewing'
+});
+
 describe('DotEditContentViewAsToolbarComponent', () => {
     let componentHost: DotTestHostComponent;
     let fixtureHost: ComponentFixture<DotTestHostComponent>;
@@ -88,6 +95,10 @@ describe('DotEditContentViewAsToolbarComponent', () => {
             imports: [BrowserAnimationsModule],
             providers: [
                 DotLicenseService,
+                {
+                    provide: DotMessageService,
+                    useValue: messageServiceMock
+                },
                 {
                     provide: DotDevicesService,
                     useClass: DotDevicesServiceMock
@@ -202,6 +213,7 @@ describe('DotEditContentViewAsToolbarComponent', () => {
         it('should have What is Changed selector', () => {
             const whatsChangedElem = de.query(By.css('p-checkbox'));
             expect(whatsChangedElem).toBeTruthy();
+            expect(whatsChangedElem.componentInstance.label).toBe('what');
         });
 
         it('should propagate the values to the selector components on init', () => {
@@ -214,6 +226,18 @@ describe('DotEditContentViewAsToolbarComponent', () => {
             expect(languageSelector.value).toEqual(mockDotEditPageViewAs.language);
             expect(deviceSelector.value).toEqual(mockDotEditPageViewAs.device);
             expect(personaSelector.value).toEqual(mockDotEditPageViewAs.persona);
+        });
+
+        it('should show device information', () => {
+            componentHost.pageState = new DotRenderedPageState(mockUser, {
+                ...mockDotRenderedPage,
+                viewAs: mockDotEditPageViewAs
+            });
+            fixtureHost.detectChanges();
+            const label = de.query(By.css('.device-info__label'));
+            const content = de.query(By.css('.device-info__content'));
+            expect(label.nativeElement.textContent.trim()).toEqual('Previewing:');
+            expect(content.nativeElement.textContent.trim()).toEqual('iphone - 200 x 100');
         });
     });
 

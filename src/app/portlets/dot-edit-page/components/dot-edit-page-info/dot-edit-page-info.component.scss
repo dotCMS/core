@@ -1,68 +1,17 @@
-@import 'variables';
-@import 'mixins';
+@import "variables";
+@import "mixins";
 
-.page-info {
-    &__url-wrapper {
-        display: flex;
-    }
-
-    &__url,
-    &__title {
-        margin: 0;
-    }
-
-    &__url {
-        align-self: center;
-        color: $body-font-color;
-        font-size: $font-size-x-large;
-        font-weight: normal;
-        margin-right: $basic-padding / 2;
-    }
-
-    &__title {
-        color: $gray-light;
-        font-size: $font-size-medium;
-        font-weight: normal;
-        margin-top: -3px;
-    }
-
-    &__copy-url {
-        width: 25px;
-        height: 25px;
-    }
-
-    &__message-separator {
-        font-weight: bold;
-        margin: 0 $basic-padding / 4;
-    }
-
-    &__locked-by-message {
-        color: $red;
-    }
-
-    &__locked-by-message--blink {
-        animation: blinker 500ms linear 1;
-    }
+:host {
+    align-items: center;
+    display: flex;
 }
 
-@keyframes blinker {
-    0% {
-        opacity: 0.25;
-    }
-
-    25% {
-        opacity: 0;
-    }
-
-    50% {
-        opacity: 0.5;
-    }
-
-    75% {
-        opacity: 0;
-    }
-
-    100% {
-        opacity: 1;
+.page-info {
+    &__title {
+        margin: 0 $basic-padding / 2 0 0;
+        align-self: center;
+        color: $body-font-color;
+        font-size: $font-size-xx-large;
+        font-weight: normal;
     }
 }

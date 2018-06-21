@@ -1,0 +1,39 @@
+@import "variables";
+@import "mixins";
+
+:host {
+    font-size: $font-size-small;
+    color: $gray-light;
+}
+
+.page-info {
+    &__locked-by-message {
+        color: $red;
+    }
+
+    &__locked-by-message--blink {
+        animation: blinker 500ms linear 1;
+    }
+}
+
+@keyframes blinker {
+    0% {
+        opacity: 0.25;
+    }
+
+    25% {
+        opacity: 0;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+
+    75% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}

@@ -11,7 +11,7 @@ import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { By } from '@angular/platform-browser';
 import { mockDotDevices } from '../../../test/dot-device.mock';
 import { DotDevice } from '../../../shared/models/dot-device/dot-device.model';
-import { StringPixels } from '../../../api/util/string-pixels-util';
+import { Dropdown } from 'primeng/primeng';
 
 describe('DotDeviceSelectorComponent', () => {
     let component: DotDeviceSelectorComponent;
@@ -66,16 +66,15 @@ describe('DotDeviceSelectorComponent', () => {
         expect(component.options[0]).toEqual(defaultDevice);
     });
 
-    it('should set max text width to dropdpown', () => {
-        fixture.detectChanges();
-        const optionValues = [mockDotDevices[1].name];
-        const textSize = StringPixels.getDropdownWidth(optionValues);
-        expect(component.dropdownWidth).toEqual(textSize);
-    });
-
     it('should set devices that have Width & Height bigger than 0', () => {
         fixture.detectChanges();
         const devicesMock = mockDotDevices.filter((device: DotDevice) => +device.cssHeight > 0 && +device.cssWidth > 0);
         expect(component.options.length).toEqual(devicesMock.length + 1);
+    });
+
+    it('shoudl set fixed width to dropdown', () => {
+        fixture.detectChanges();
+        const pDropDown: Dropdown = de.query(By.css('p-dropdown')).componentInstance;
+        expect(pDropDown.style).toEqual({width: '100px'});
     });
 });

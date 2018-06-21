@@ -4,13 +4,12 @@ import { DotEditPageToolbarComponent } from './dot-edit-page-toolbar.component';
 import { DotEditPageWorkflowsActionsModule } from '../dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
 import { ToolbarModule, SelectButtonModule, InputSwitchModule, ButtonModule } from 'primeng/primeng';
 import { FormsModule } from '@angular/forms';
-import { DotEditPageInfoModule } from '../../../components/dot-edit-page-info/dot-edit-page-info.module';
+import { DotEditPageLockInfoComponent } from './components/dot-edit-page-lock-info/dot-edit-page-lock-info.component';
 
 @NgModule({
     imports: [
         ButtonModule,
         CommonModule,
-        DotEditPageInfoModule,
         DotEditPageWorkflowsActionsModule,
         FormsModule,
         InputSwitchModule,
@@ -18,6 +17,6 @@ import { DotEditPageInfoModule } from '../../../components/dot-edit-page-info/do
         ToolbarModule
     ],
     exports: [DotEditPageToolbarComponent],
-    declarations: [DotEditPageToolbarComponent]
+    declarations: [DotEditPageToolbarComponent, DotEditPageLockInfoComponent]
 })
 export class DotEditPageToolbarModule {}

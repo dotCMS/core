@@ -1,20 +1,49 @@
-@import 'variables';
+@import "variables";
 
 :host {
-    background-color: $gray-darker;
-    height: 35px;
-    padding: 0 0 0 $basic-padding * 2;
     display: flex;
     align-items: center;
 
-    ::ng-deep {
-        .ui-dropdown,
-        .ui-dropdown-ui-state-focus {
-            box-shadow: none;
-        }
+    & > * {
+        margin-left: $basic-padding * 2;
 
-        p-dropdown {
-            margin-right: $basic-padding;
+        &:first-child {
+            margin-left: 0;
         }
+    }
+}
+
+::ng-deep {
+    .ui-dropdown {
+        .ui-dropdown-label,
+        .ui-dropdown-trigger {
+            color: $gray;
+        }
+    }
+
+    .ui-chkbox {
+        .ui-chkbox-box.ui-state-default {
+            border-color: $gray;
+        }
+    }
+
+    .ui-chkbox-label {
+        color: $gray;
+    }
+}
+
+.device-info {
+    border-right: solid 1px $gray-light;
+    margin-right: $basic-padding;
+    padding-right: $basic-padding * 2;
+
+    &__label {
+        color: $gray;
+        margin-right: $basic-padding / 4;
+    }
+
+    &__content {
+        font-size: $font-size-small;
+        text-transform: uppercase
     }
 }

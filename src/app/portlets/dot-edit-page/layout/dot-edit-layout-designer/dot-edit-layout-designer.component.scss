@@ -1,5 +1,7 @@
-@import 'mixins';
-@import 'variables';
+@import "mixins";
+@import "variables";
+
+$toolbar-height: 48px;
 
 :host {
     background-color: $gray-lightest;
@@ -15,41 +17,33 @@ dot-layout-designer {
     flex-grow: 1;
 }
 
+.dot-edit-layout__actions {
+    display: flex;
+    justify-content: space-between;
+    padding: $basic-padding * 2;
+}
+
 .dot-edit-layout__form {
     display: flex;
     flex-direction: column;
     flex-grow: 1;
 }
 
-.dot-edit-layout__toolbar,
-.dot-edit-layout__toolbar-actions {
-    display: flex;
-}
-
 .dot-edit-layout__toolbar {
-    align-items: center;
     background-color: $white;
-    box-shadow: $md-shadow-1;
-    margin-bottom: $basic-padding;
-    height: 48px;
-    justify-content: space-between;
-    padding: 0 $basic-padding * 2;
-}
+    display: block;
+    position: relative;
+    z-index: 1;
 
-.dot-edit-layout__toolbar-actions {
-    align-items: center;
-    flex: 1;
-    justify-content: flex-end;
-
-    & > * {
-        margin-left: $basic-padding;
+    ::ng-deep {
+        .ui-toolbar {
+            border-bottom: solid 1px $gray-lighter;
+            height: $toolbar-height;
+            padding-left: 0;
+        }
     }
 }
 
-.dot-edit-layout__toolbar-template-name {
-    width: 280px;
-}
-
-.dot-edit-layout__toolbar-save-template {
-    margin-right: $basic-padding * 3;
+.dot-edit-layout__toolbar-action-cancel {
+    margin-right: $basic-padding;
 }

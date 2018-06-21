@@ -11,12 +11,22 @@
     @extend #inputtext-normal-border;
     border-radius: 0;
 
+    [tiny] & {
+        height: $field-tiny-height;
+
+        .ui-dropdown-label {
+            font-size: $font-size-medium;
+            line-height: $field-tiny-height;
+        }
+    }
+
     &.ui-state-focus {
         @extend #inputtext-active-border;
     }
 
     .ui-inputtext {
         box-shadow: none;
+        height: auto;
     }
 
     &:not(.ui-state-disabled) {
@@ -51,10 +61,10 @@
     }
 
     .ui-dropdown-trigger {
+        padding: 0;
         align-items: center;
         display: flex;
-        justify-content: center;
-        width: $dropdown-height;
+        justify-content: flex-end;
 
         .fa {
             margin: 0;
@@ -64,7 +74,6 @@
     .ui-dropdown-label {
         border: 0;
         line-height: $dropdown-height;
-        padding-right: $dropdown-height + $basic-padding;
         text-overflow: ellipsis;
     }
 }
