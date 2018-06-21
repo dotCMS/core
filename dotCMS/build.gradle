@@ -873,7 +873,7 @@ class DeployWarTomcatTask extends DefaultTask{
             include 'mail.jar'
             include 'sqljdbc42.jar'
             include 'mysql-connector-java-5.1.37-bin.jar'
-            include 'postgresql-9.0-801.jdbc3.jar'
+            include 'postgresql-42.2.2.jar'
             include 'ojdbc5.jar'
             include 'jtds-1.2.2.jar'
         }
