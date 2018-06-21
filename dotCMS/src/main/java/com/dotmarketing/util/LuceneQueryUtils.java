@@ -23,14 +23,11 @@ public class LuceneQueryUtils {
      * @param luceneQuery
      * @return
      */
-    private static String removeQueryPrefix(final String luceneQuery){
-        final String cleanedUpQuery;
-        if(luceneQuery.startsWith("query_")){
-            cleanedUpQuery = luceneQuery.replace( "query_", StringPool.BLANK);
-        } else {
-            cleanedUpQuery = luceneQuery;
-        }
-        return cleanedUpQuery;
+    private static String removeQueryPrefix(final String luceneQuery) {
+
+        return (luceneQuery.startsWith("query_") ? luceneQuery.replace("query_", StringPool.BLANK)
+                : luceneQuery
+        );
     }
 
     private static Set<BooleanClause> filterQueryTerms = ImmutableSet.of(

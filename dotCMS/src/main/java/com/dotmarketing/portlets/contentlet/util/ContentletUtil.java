@@ -46,7 +46,7 @@ public class ContentletUtil {
 	}
 
 	public static boolean isHost(final Contentlet contentlet){
-		final Structure hostStrucuture = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
+		final Structure hostStrucuture = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(Host.HOST_VELOCITY_VAR_NAME);
 		return contentlet.getStructureInode().equals(hostStrucuture.getInode());
 	}
 

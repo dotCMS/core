@@ -85,6 +85,24 @@ public class WorkflowHelper {
     private final PermissionAPI permissionAPI;
     private final WorkflowImportExportUtil workflowImportExportUtil;
 
+    private static final String BULK_ACTIONS_QUERY_WRAPPER = "{\n"
+            + "    \"query\" : { \n"
+            + "        \"query_string\" : {\n"
+            + "            \"query\" : \"%s\"\n"
+            + "        } \n"
+            + "\n"
+            + "    },\n"
+            + "    \"aggs\" : {\n"
+            + "        \"tag\" : {\n"
+            + "            \"terms\" : {\n"
+            + "                \"field\" : \"wfstep\",\n"
+            + "                \"size\" : 1000  \n"
+            + "            }\n"
+            + "        }\n"
+            + "    },\n"
+            + "\t\"size\":0   \n"
+            + "}";
+
     /**
      * Finds the bulk actions based on the {@link BulkActionForm}
      * @param user {@link User}
@@ -123,31 +141,13 @@ public class WorkflowHelper {
             final String prepareBulkActionsQuery = LuceneQueryUtils
                     .prepareBulkActionsQuery(luceneQuery);
 
+            final String query = String.format(BULK_ACTIONS_QUERY_WRAPPER, prepareBulkActionsQuery);
             //We should only be considering Working content.
-            final String query = "{\n"
-                    + "    \"query\" : { \n"
-                    + "        \"query_string\" : {\n"
-                    + "            \"query\" : \"%s\"\n"
-                    + "        } \n"
-                    + "\n"
-                    + "    },\n"
-                    + "    \"aggs\" : {\n"
-                    + "        \"tag\" : {\n"
-                    + "            \"terms\" : {\n"
-                    + "                \"field\" : \"wfstep\",\n"
-                    + "                \"size\" : 1000  \n"
-                    + "            }\n"
-                    + "        }\n"
-                    + "    },\n"
-                    + "\t\"size\":0   \n"
-                    + "}";
-            final String preparedQuery = String.format(query, prepareBulkActionsQuery);
-
             final SearchResponse response = this.contentletAPI
-                    .esSearchRaw(preparedQuery.toLowerCase(), false, user, false);
+                    .esSearchRaw(query.toLowerCase(), false, user, false);
+            //Query must be sent lowercase. It's a must.
 
             Logger.debug(getClass(), () -> "luceneQuery: " + prepareBulkActionsQuery);
-            Logger.debug(getClass(), () -> "esSearch: " + query);
             return this.buildBulkActionView(response, user);
         } catch (Exception e) {
             throw new DotDataException(e);
