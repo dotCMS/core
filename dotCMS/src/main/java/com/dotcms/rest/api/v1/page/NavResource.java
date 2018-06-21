@@ -106,19 +106,19 @@ public class NavResource {
                 maxDepth = (UtilMethods.isSet(depth)) ? Integer.parseInt(depth) :
                         defaultDepth;
             }catch(NumberFormatException nfe){
-                throw new NumberFormatException("The provided depth is not a number");
+                throw new NumberFormatException("depth-not-a-number");
             }
 
             try {
                 langId = (UtilMethods.isSet(languageId)) ? Long.parseLong(languageId) :
                         WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
             }catch (NumberFormatException nfe){
-                throw new NumberFormatException("The provided languageId is not a number");
+                throw new NumberFormatException("languageId-not-a-number");
             }
 
             if (!APILocator.getLanguageAPI().getLanguages().stream()
                     .anyMatch(l -> l.getId() == langId)) {
-                throw new DoesNotExistException("The provided languageId does not exists");
+                throw new DoesNotExistException("languageId-not-exists");
             }
 
             final Host h = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
@@ -137,7 +137,7 @@ public class NavResource {
                     (nav != null) ? navToMap(nav, maxDepth, 1) : new HashMap<>();
 
             if (navMap.isEmpty()) {
-                throw new DoesNotExistException("The provided URL was not found");
+                throw new DoesNotExistException("dot.common.http.error.404.header");
             }
 
             final ObjectMapper mapper = new ObjectMapper();
