@@ -190,44 +190,56 @@ public class NavToolTest extends IntegrationTestBase{
         //Using System User.
         final User user = APILocator.getUserAPI().getSystemUser();
 
-        //Get SystemFolder
-        final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
+        Contentlet fileAssetShown = null;
+        Contentlet fileAssetNotShown = null;
 
-        //Using demo.dotcms.com host.
-        final Host demoHost = APILocator.getHostAPI().findByName("demo.dotcms.com", user, false);
+        try {
 
-        //Create a FileAsset In English With ShowOnMenu = true
-        final File file = File.createTempFile("fileTestEngTrue", ".txt");
-        FileUtil.write(file, "helloworld");
-        final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(systemFolder, file);
-        final Contentlet fileAsset = fileAssetDataGen.nextPersisted();
-        Contentlet fileAssetShown = APILocator.getContentletAPI().find(fileAsset.getInode(),user,false);
-        fileAssetShown.setBoolProperty(FileAssetAPI.SHOW_ON_MENU,true);
-        fileAssetShown.setInode("");
-        fileAssetShown = APILocator.getContentletAPI().checkin(fileAssetShown,user,false);
-        APILocator.getContentletAPI().publish(fileAssetShown,user,false);
-        APILocator.getContentletAPI().isInodeIndexed(fileAssetShown.getInode(),true);
+            //Get SystemFolder
+            final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
 
-        //Create a FileAsset In English With ShowOnMenu = false
-        final File file2 = File.createTempFile("fileTestEngFalse", ".txt");
-        FileUtil.write(file2, "helloworld");
-        final FileAssetDataGen fileAssetDataGen2 = new FileAssetDataGen(systemFolder, file2);
-        final Contentlet fileAssetNotShown = fileAssetDataGen2.nextPersisted();
-        APILocator.getContentletAPI().publish(fileAssetNotShown,user,false);
-        APILocator.getContentletAPI().isInodeIndexed(fileAssetNotShown.getInode(),true);
+            //Using demo.dotcms.com host.
+            final Host demoHost = APILocator.getHostAPI()
+                    .findByName("demo.dotcms.com", user, false);
 
-        //Get the Nav at the Root Level
-        final NavResult navResult = new NavTool().getNav(demoHost,systemFolder.getPath(),1,user);
-        assertNotNull(navResult);
-        assertEquals(1,navResult.getChildren().size());
+            //Create a FileAsset In English With ShowOnMenu = true
+            final File file = File.createTempFile("fileTestEngTrue", ".txt");
+            FileUtil.write(file, "helloworld");
+            final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(systemFolder, file);
+            final Contentlet fileAsset = fileAssetDataGen.nextPersisted();
+            fileAssetShown = APILocator.getContentletAPI().find(fileAsset.getInode(), user, false);
+            fileAssetShown.setBoolProperty(FileAssetAPI.SHOW_ON_MENU, true);
+            fileAssetShown.setInode("");
+            fileAssetShown = APILocator.getContentletAPI().checkin(fileAssetShown, user, false);
+            APILocator.getContentletAPI().publish(fileAssetShown, user, false);
+            APILocator.getContentletAPI().isInodeIndexed(fileAssetShown.getInode(), true);
 
-        //Now remove all the pages that we created for this tests.
-        APILocator.getContentletAPI().unpublish(fileAssetShown, user, false);
-        APILocator.getContentletAPI().archive(fileAssetShown, user, false);
-        APILocator.getContentletAPI().delete(fileAssetShown, user, false);
-        APILocator.getContentletAPI().unpublish(fileAssetNotShown, user, false);
-        APILocator.getContentletAPI().archive(fileAssetNotShown, user, false);
-        APILocator.getContentletAPI().delete(fileAssetNotShown, user, false);
+            //Create a FileAsset In English With ShowOnMenu = false
+            final File file2 = File.createTempFile("fileTestEngFalse", ".txt");
+            FileUtil.write(file2, "helloworld");
+            final FileAssetDataGen fileAssetDataGen2 = new FileAssetDataGen(systemFolder, file2);
+            fileAssetNotShown = fileAssetDataGen2.nextPersisted();
+            APILocator.getContentletAPI().publish(fileAssetNotShown, user, false);
+            APILocator.getContentletAPI().isInodeIndexed(fileAssetNotShown.getInode(), true);
+
+            //Get the Nav at the Root Level
+            final NavResult navResult = new NavTool()
+                    .getNav(demoHost, systemFolder.getPath(), 1, user);
+            assertNotNull(navResult);
+            assertEquals(1, navResult.getChildren().size());
+        }finally {
+            //Now remove all the pages that we created for this tests.
+            if(fileAssetShown!=null) {
+                APILocator.getContentletAPI().unpublish(fileAssetShown, user, false);
+                APILocator.getContentletAPI().archive(fileAssetShown, user, false);
+                APILocator.getContentletAPI().delete(fileAssetShown, user, false);
+            }
+            if(fileAssetNotShown!=null) {
+                APILocator.getContentletAPI().unpublish(fileAssetNotShown, user, false);
+                APILocator.getContentletAPI().archive(fileAssetNotShown, user, false);
+                APILocator.getContentletAPI().delete(fileAssetNotShown, user, false);
+            }
+        }
 
     }
 
