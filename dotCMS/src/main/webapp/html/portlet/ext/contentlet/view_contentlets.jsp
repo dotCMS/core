@@ -217,44 +217,44 @@
 
             <%	boolean started = false;
                 int baseType=0;
-                for(Structure s : structures){
+                for(final Structure contentType : structures){
 
                     //Ignore the Host structure in the content search
-                    if (s.isHost()) {
+                    if (contentType.isHost()) {
                         continue;
                     }
 
-                String labelAndIcon = (s.getStructureType()==1)
-                      ? "<span class='contentIcon'></span>"
-                          : (s.getStructureType()==2)
-                              ? "<span class='gearIcon'></span>"
-                                  : (s.getStructureType()==3)
-                                      ? "<span class='fa-columns'></span>"
-                                          : (s.getStructureType()==4)
-                                          ? "<span class='fileIcon'></span>"
-                                              : (s.getStructureType()==5)
-                                              ? "<span class='pageIcon'></span> "
-                                                  : (s.getStructureType()==6)
-                                                  ? "<span class='personaIcon'></span>"
-                                                    : (s.getStructureType()==7)
-                                                    ? "<span class='vanityIcon'></span>"
-                                                        : (s.getStructureType()==8)
-                                                        ? "<span class='languageVarIcon'></span>"
-                                                            :"<span class='blankIcon'></span>";
+                    String labelAndIcon = (contentType.getStructureType()==1)
+                          ? "<span class='contentIcon'></span>"
+                              : (contentType.getStructureType()==2)
+                                  ? "<span class='gearIcon'></span>"
+                                      : (contentType.getStructureType()==3)
+                                          ? "<span class='fa-columns'></span>"
+                                              : (contentType.getStructureType()==4)
+                                              ? "<span class='fileIcon'></span>"
+                                                  : (contentType.getStructureType()==5)
+                                                  ? "<span class='pageIcon'></span> "
+                                                      : (contentType.getStructureType()==6)
+                                                      ? "<span class='personaIcon'></span>"
+                                                        : (contentType.getStructureType()==7)
+                                                        ? "<span class='vanityIcon'></span>"
+                                                            : (contentType.getStructureType()==8)
+                                                            ? "<span class='languageVarIcon'></span>"
+                                                                :"<span class='blankIcon'></span>";
 
-                String contentTypeName= UtilMethods.javaScriptify(s.getName());
-                labelAndIcon+="&nbsp; &nbsp;" + contentTypeName;
-                if(s.getStructureType() != baseType){
-                  labelAndIcon = "<div style='height:1px;margin:-1px -10px 0px -10px;background:silver;'></div>" + labelAndIcon;
-                  baseType = s.getStructureType();
-                }
+                    String contentTypeName= UtilMethods.javaScriptify(contentType.getName());
+                    labelAndIcon+="&nbsp; &nbsp;" + contentTypeName;
+                    if(contentType.getStructureType() != baseType){
+                      labelAndIcon = "<div style='height:1px;margin:-1px -10px 0px -10px;background:silver;'></div>" + labelAndIcon;
+                      baseType = contentType.getStructureType();
+                    }
             %>
             <%=(started) ? "," :""%>
-            {
-                name: "<%=s.getInode()%>",
-                label: "<%=labelAndIcon %>",
-                textLabel: "<%=contentTypeName %>"
-            }
+                {
+                    name: "<%=contentType.getInode()%>",
+                    label: "<%=labelAndIcon %>",
+                    textLabel: "<%=contentTypeName %>"
+                }
             <%started = true;%>
             <%}%>
 
