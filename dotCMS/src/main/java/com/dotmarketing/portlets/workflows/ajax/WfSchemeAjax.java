@@ -39,9 +39,7 @@ public class WfSchemeAjax extends WfBaseAction {
 
         try {
             final User user = this.userWebAPI.getUser(request);
-            final WorkflowHelper helper = WorkflowHelper.getInstance();
-
-            String responseMessage = saveScheme(schemeId, schemeForm, user);
+            final String responseMessage = saveScheme(schemeId, schemeForm, user);
             response.getWriter().println(responseMessage);
         } catch (Exception e) {
             Logger.error(this.getClass(), e.getMessage(), e);
