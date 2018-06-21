@@ -219,6 +219,11 @@
                 int baseType=0;
                 for(Structure s : structures){
 
+                    //Ignore the Host structure in the content search
+                    if (s.isHost()) {
+                        continue;
+                    }
+
                 String labelAndIcon = (s.getStructureType()==1)
                       ? "<span class='contentIcon'></span>"
                           : (s.getStructureType()==2)
