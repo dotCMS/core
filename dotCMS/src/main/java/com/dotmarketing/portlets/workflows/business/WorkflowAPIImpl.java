@@ -120,8 +120,6 @@ import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.osgi.framework.BundleContext;
 
-
-
 public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	private final List<Class<? extends WorkFlowActionlet>> actionletClasses;
@@ -351,10 +349,32 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@CloseDBIfOpened
 	public List<WorkflowStep> findStepsByContentlet(final Contentlet contentlet) throws DotDataException{
 
+		return this.findStepsByContentlet(contentlet, true);
+	}
+
+	@Override
+	@CloseDBIfOpened
+	public List<WorkflowStep> findStepsByContentlet(final Contentlet contentlet, final boolean showArchive) throws DotDataException{
+
 		final List<WorkflowScheme> schemes = hasValidLicense() ?
 				workFlowFactory.findSchemesForStruct(contentlet.getContentTypeId()) :
 				Arrays.asList(workFlowFactory.findSystemWorkflow()) ;
-		return workFlowFactory.findStepsByContentlet(contentlet, schemes);
+
+		final List<WorkflowStep> steps =
+				this.workFlowFactory.findStepsByContentlet(contentlet, schemes);
+
+		if (!showArchive) {
+
+			final Set<String> nonArchiveSchemeIdSet =
+					schemes.stream().filter(scheme -> !scheme.isArchived())
+						    .map(scheme -> scheme.getId())
+							.collect(Collectors.toSet());
+
+			return steps.stream().filter(step -> nonArchiveSchemeIdSet.contains(step.getSchemeId()))
+					.collect(CollectionsUtils.toImmutableList());
+		}
+
+		return steps;
 	}
 
 	@Override
@@ -547,7 +567,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 
 		workFlowFactory.saveScheme(scheme);
-
 	}
 
 	@Override
@@ -1137,7 +1156,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		}
 
-		final List<WorkflowStep> steps = findStepsByContentlet(contentlet);
+		final List<WorkflowStep> steps = findStepsByContentlet(contentlet, false);
 
 		Logger.debug(this, "#findAvailableActions: for content: "   + contentlet.getIdentifier()
 								+ ", isNew: "    + isNew
@@ -2192,11 +2211,18 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					throw new DoesNotExistException("Workflow-does-not-exists-schemes-by-content-type");
 				}
 
-					if (!schemes.stream().anyMatch(scheme -> scheme.getId().equals(action.getSchemeId()))) {
-						throw new IllegalArgumentException(LanguageUtil
-								.get(user.getLocale(), "Invalid-Action-Scheme-Error", actionId));
-					}
+				if (!schemes.stream().anyMatch(scheme -> scheme.getId().equals(action.getSchemeId()))) {
+					throw new IllegalArgumentException(LanguageUtil
+							.get(user.getLocale(), "Invalid-Action-Scheme-Error", actionId));
+				}
 
+				final WorkflowScheme  scheme = schemes.stream().filter
+						(aScheme -> aScheme.getId().equals(action.getSchemeId())).findFirst().get();
+
+				if (scheme.isArchived()) {
+					throw new IllegalArgumentException(LanguageUtil
+							.get(user.getLocale(), "Invalid-Scheme-Archive-Error", actionId));
+				}
 				// if we are on a step, validates that the action belongs to this step
 				final WorkflowTask   workflowTask   = this.findTaskByContentlet(contentlet);
 
@@ -2210,8 +2236,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				} else {  // if the content is not in any step (may be is new), will check the first step.
 
 					// we are sure in this moment that the scheme id on the action is in the list.
-					final WorkflowScheme  scheme = schemes.stream().filter
-							(aScheme -> aScheme.getId().equals(action.getSchemeId())).findFirst().get();
 
 					final Optional<WorkflowStep> workflowStepOptional = this.findFirstStep(scheme);
 
@@ -2660,33 +2684,21 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			throws DotDataException, DotSecurityException,  AlreadyExistException {
 		scheme.setArchived(Boolean.TRUE);
 		saveScheme(scheme, user);
+
 	}
-	
+
 	@Override
 	@CloseDBIfOpened
-	public List<WorkflowTimelineItem> getCommentsAndChangeHistory(WorkflowTask task) throws DotDataException{
-	    List<WorkflowComment> comments = this.findWorkFlowComments(task);
-	    List<WorkflowHistory> history = this.findWorkflowHistory(task);
-	    
-	    
-	    List<WorkflowTimelineItem> items = new ArrayList<>();
-	    
-	    items.addAll(comments);
-	    items.addAll(history);
-	    
-	    return items.stream()
-                .sorted((o1,o2) -> o1.createdDate().compareTo(o2.createdDate()))
-                .collect(Collectors.toList());
-	    
-	    
-	    
+	public List<WorkflowTimelineItem> getCommentsAndChangeHistory(final WorkflowTask task) throws DotDataException{
+
+	    final List<WorkflowTimelineItem> workflowTimelineItems =
+				CollectionsUtils.join(this.findWorkFlowComments(task),
+						this.findWorkflowHistory (task));
+
+	    return workflowTimelineItems.stream()
+                .sorted(Comparator.comparing(WorkflowTimelineItem::createdDate))
+                .collect(CollectionsUtils.toImmutableList());
 	}
-	
-	
-	
-	
-	
-	
-	
+
 
 }

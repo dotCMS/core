@@ -1,7 +1,5 @@
 package com.dotcms.rest.annotation;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.repackage.javax.annotation.Priority;
 import com.dotcms.repackage.javax.ws.rs.Priorities;
@@ -15,12 +13,17 @@ import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
+import javax.inject.Singleton;
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Proxy;
-import java.util.*;
-import javax.inject.Singleton;
-import javax.servlet.http.HttpServletRequest;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Optional;
+
+import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * This decorator reads the annotations on the resources and includes header based on it based on them.
@@ -68,14 +71,7 @@ public class HeaderFilter implements ContainerResponseFilter {
 						headers.add(CACHE_CONTROL, NO_CACHE_CONTROL); // HTTP 1.1.
 						headers.add(PRAGMA, NO_CACHE); // HTTP 1.0.
 						headers.add(EXPIRES, EXPIRES_DEFAULT_DATE); // Proxies.
-					},
-					Deprecated.class,
-					(final Annotation annotation,final  MultivaluedMap<String, Object> headers, final ContainerRequestContext requestContext,
-					 final ContainerResponseContext responseContext) -> {
-						// "This API is deprecated. Please refer to the following end-point: ..."
-						headers.add("Deprecated API ", "This is an old API, will be not available in the future");
 					}
-
 			);
 
     @Override
