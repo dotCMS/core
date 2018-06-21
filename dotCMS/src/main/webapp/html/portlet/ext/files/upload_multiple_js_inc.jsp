@@ -67,6 +67,7 @@ function uploadFiles(uploader, referer) {
         dijit.byId('savePublishButton').setAttribute('disabled', true);
     }
 
+    form = preventNameConflictsOnInputTypeFile(form);
     submitForm(form);
 
     return true;

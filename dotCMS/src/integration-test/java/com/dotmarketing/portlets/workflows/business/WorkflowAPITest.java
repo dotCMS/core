@@ -3051,7 +3051,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
      */
     public static Contentlet fireWorkflowAction(Contentlet contentlet,
             ContentletRelationships contentletRelationships, WorkflowAction action, String comment,
-            String workflowAssignKey, User user) throws DotDataException {
+            String workflowAssignKey, User user) throws DotDataException, DotSecurityException {
         contentlet = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet,
                 new ContentletDependencies.Builder().respectAnonymousPermissions(Boolean.FALSE)
                         .modUser(user)
