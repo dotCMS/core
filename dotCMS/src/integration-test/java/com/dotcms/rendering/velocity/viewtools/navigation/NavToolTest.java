@@ -1,6 +1,7 @@
 package com.dotcms.rendering.velocity.viewtools.navigation;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.rendering.velocity.viewtools.LanguageWebAPI;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -9,16 +10,19 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.util.Config;
 
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 
+import java.io.File;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -178,6 +182,53 @@ public class NavToolTest extends IntegrationTestBase{
 
         // Flush the cache
         CacheLocator.getNavToolCache().removeNav(demoHost.getIdentifier(), aboutUsFolder.getInode(), 2);
+    }
+
+    @Test
+    public void testRootLevelNavigation_WhenOneFileAssetIsShownOnMenu() throws Exception {
+
+        //Using System User.
+        final User user = APILocator.getUserAPI().getSystemUser();
+
+        //Get SystemFolder
+        final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
+
+        //Using demo.dotcms.com host.
+        final Host demoHost = APILocator.getHostAPI().findByName("demo.dotcms.com", user, false);
+
+        //Create a FileAsset In English With ShowOnMenu = true
+        final File file = File.createTempFile("fileTestEngTrue", ".txt");
+        FileUtil.write(file, "helloworld");
+        final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(systemFolder, file);
+        final Contentlet fileAsset = fileAssetDataGen.nextPersisted();
+        Contentlet fileAssetShown = APILocator.getContentletAPI().find(fileAsset.getInode(),user,false);
+        fileAssetShown.setBoolProperty(FileAssetAPI.SHOW_ON_MENU,true);
+        fileAssetShown.setInode("");
+        fileAssetShown = APILocator.getContentletAPI().checkin(fileAssetShown,user,false);
+        APILocator.getContentletAPI().publish(fileAssetShown,user,false);
+        APILocator.getContentletAPI().isInodeIndexed(fileAssetShown.getInode(),true);
+
+        //Create a FileAsset In English With ShowOnMenu = false
+        final File file2 = File.createTempFile("fileTestEngFalse", ".txt");
+        FileUtil.write(file2, "helloworld");
+        final FileAssetDataGen fileAssetDataGen2 = new FileAssetDataGen(systemFolder, file2);
+        final Contentlet fileAssetNotShown = fileAssetDataGen2.nextPersisted();
+        APILocator.getContentletAPI().publish(fileAssetNotShown,user,false);
+        APILocator.getContentletAPI().isInodeIndexed(fileAssetNotShown.getInode(),true);
+
+        //Get the Nav at the Root Level
+        final NavResult navResult = new NavTool().getNav(demoHost,systemFolder.getPath(),1,user);
+        assertNotNull(navResult);
+        assertEquals(1,navResult.getChildren().size());
+
+        //Now remove all the pages that we created for this tests.
+        APILocator.getContentletAPI().unpublish(fileAssetShown, user, false);
+        APILocator.getContentletAPI().archive(fileAssetShown, user, false);
+        APILocator.getContentletAPI().delete(fileAssetShown, user, false);
+        APILocator.getContentletAPI().unpublish(fileAssetNotShown, user, false);
+        APILocator.getContentletAPI().archive(fileAssetNotShown, user, false);
+        APILocator.getContentletAPI().delete(fileAssetNotShown, user, false);
+
     }
 
     @DataProvider
