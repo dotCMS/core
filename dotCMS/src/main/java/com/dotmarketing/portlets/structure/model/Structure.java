@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.structure.model;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -252,6 +253,11 @@ public class Structure extends Inode implements Permissionable, Treeable,Content
     public boolean isPersona(){
         return structureType==STRUCTURE_TYPE_PERSONA;
     }
+
+    public boolean isHost() {
+        return Host.HOST_VELOCITY_VAR_NAME.equals(getVelocityVarName());
+    }
+
     public boolean isSystem() {
         return system;
     }

@@ -582,9 +582,6 @@
                     type: null
                 }
             });
-            
-            
-            
             return;
         }
         
@@ -594,21 +591,28 @@
         
         
         refreshActionPanel(data["contentletInode"]);
-        // if we have a referer and the contentlet comes back checked in
-        if((data["referer"] != null && data["referer"] != '' && !data["contentletLocked"]) || data["htmlPageReferer"] != null ) {
-            if(data["isHtmlPage"]){
-                window.top.location = '/dotAdmin/#/edit-page/content?url=' + data["htmlPageReferer"];
 
-                var customEvent = document.createEvent("CustomEvent");
-                customEvent.initCustomEvent("ng-event", false, false,  {
-                    name: "close"
-                });
-                document.dispatchEvent(customEvent)
+        // if we have a referer and the contentlet comes back checked in
+        if((data["referer"] != null && data["referer"] != '' && (!data["contentletLocked"]) || data["htmlPageReferer"] != null)) {
+            if (data['isHtmlPage']) {
+                var customEventDetail = {
+                    name: 'save-page',
+                    payload: data
+                }
+
+                if (workingContentletInode.length === 0) {
+                    customEventDetail = {
+                        name: 'close'
+                    }
+                    window.top.location = '/dotAdmin/#/edit-page/content?url=' + data['htmlPageReferer'];
+                }
+
+                var customEvent = document.createEvent('CustomEvent');
+                customEvent.initCustomEvent('ng-event', false, false, customEventDetail);
+                document.dispatchEvent(customEvent);
             }
             return;
         }
-
-
     }
 
     function refreshPermissionsTab(){

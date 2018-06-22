@@ -821,7 +821,6 @@ static def replaceText(filePath, fromString, toString) {
     new File(sourceFile).write(updatedContent, 'UTF-8')
 }
 
-//TODO: now that we have grgit we could use it here instead exec.
 // Clones dotCMS's tomcat repo following tomcatInstall under gradle.properties.
 // If the tomcat folder exists: git pull, if not: git clone.
 class ClonePullTomcatTask extends DefaultTask{
@@ -830,14 +829,19 @@ class ClonePullTomcatTask extends DefaultTask{
 
     @TaskAction
     def pull(){
-        project.exec{
-            def folder = new File( tomcatLocation )
-            if( !folder.exists() ) {
-                commandLine "git", "clone", "-b", project.tomcatInstallBranch, project.tomcatInstallRepo, tomcatLocation
-            } else {
-                workingDir tomcatLocation
-                commandLine "git", "pull"
+        def folder = new File( tomcatLocation )
+        if( !folder.exists() ) {
+
+            try {
+
+                println "Cloning the $project.tomcatInstallRepo, branch $project.tomcatInstallBranch on $tomcatLocation";
+                org.ajoberstar.grgit.Grgit.clone(dir: "$tomcatLocation", uri: "$project.tomcatInstallRepo", refToCheckout: "$project.tomcatInstallBranch")
+            } catch (Exception exception) {
+                //Do nothing, this will fail only if git is not installed on this machine
             }
+        } else {
+            def tomcatGit = org.ajoberstar.grgit.Grgit.open(folder);
+            tomcatGit.pull();
         }
     }
 
@@ -873,7 +877,7 @@ class DeployWarTomcatTask extends DefaultTask{
             include 'mail.jar'
             include 'sqljdbc42.jar'
             include 'mysql-connector-java-5.1.37-bin.jar'
-            include 'postgresql-9.0-801.jdbc3.jar'
+            include 'postgresql-42.2.2.jar'
             include 'ojdbc5.jar'
             include 'jtds-1.2.2.jar'
         }

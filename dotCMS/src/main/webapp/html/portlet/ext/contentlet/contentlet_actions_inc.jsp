@@ -158,3 +158,34 @@ function setMyWorkflowScheme(){
 </div>
 
 
+<div class="content-edit-workflow">
+	<% if ((!isHost) && (null != wfSteps && wfSteps.size() ==1)){
+        WorkflowStep step = wfSteps.get(0);
+    %>
+    <h3><%= LanguageUtil.get(pageContext, "Workflow") %></h3>
+    <table>
+        <tr>
+            <th style="vertical-align: top"><%= LanguageUtil.get(pageContext, "Workflow") %>:</th>
+            <td><%=APILocator.getWorkflowAPI().findScheme(step.getSchemeId()).getName() %></td>
+        </tr>
+        <tr>
+            <th style="vertical-align: top"><%= LanguageUtil.get(pageContext, "Step") %>:</th>
+            <td><%=step.getName() %></td>
+        </tr>
+        <tr>
+            <th style="vertical-align: top"><%= LanguageUtil.get(pageContext, "Assignee") %>:</th>
+            <td><%=(wfTask == null || wfTask.isNew() || !UtilMethods.isSet(wfTask.getAssignedTo()) || APILocator.getRoleAPI().loadRoleById(wfTask.getAssignedTo()) == null) ? LanguageUtil.get(pageContext, "Nobody") : APILocator.getRoleAPI().loadRoleById(wfTask.getAssignedTo()).getName() %></td>
+        </tr>
+
+        <tr id="contentLockedInfo" <%=(!isLocked) ? "style='height:0px;'" : "" %>>
+            <%if(contentlet != null && InodeUtils.isSet(contentlet.getInode()) && isLocked){ %>
+                <th style="vertical-align: top"><%= LanguageUtil.get(pageContext, "Locked") %>:</th>
+                <td id="lockedTextInfoDiv">
+                    <%=APILocator.getUserAPI().loadUserById(APILocator.getVersionableAPI().getLockedBy(contentlet), APILocator.getUserAPI().getSystemUser(), false).getFullName() %>
+                    <span class="lockedAgo">(<%=UtilMethods.capitalize( DateUtil.prettyDateSince(APILocator.getVersionableAPI().getLockedOn(contentlet), user.getLocale())) %>)</span>
+                </td>
+            <%} %>
+        </tr>
+    </table>
+    <% } %>
+</div>

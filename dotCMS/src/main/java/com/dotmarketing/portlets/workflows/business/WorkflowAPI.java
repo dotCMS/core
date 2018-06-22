@@ -64,11 +64,28 @@ public interface WorkflowAPI {
 	 * If the contentlet doesn't have a workflow step associated, then it will
 	 * display all the first workflow steps associated to the contentlet Content Type.
 	 *
+	 * Includes the archives.
+	 *
 	 * @param contentlet The current contentlet
 	 * @return A list of step available for the contentlet
 	 * @throws DotDataException
 	 */
 	public List<WorkflowStep> findStepsByContentlet(Contentlet contentlet) throws DotDataException;
+
+	/**
+	 * This method will get a list with the current contentlet workflow step.
+	 * If the contentlet doesn't have a workflow step associated, then it will
+	 * display all the first workflow steps associated to the contentlet Content Type.
+	 *
+	 * Includes the archives.
+	 *
+	 * @param contentlet The current contentlet
+	 * @param showArchive boolean true if want to find steps from schemes archived
+	 * @return A list of step available for the contentlet
+	 * @throws DotDataException
+	 */
+
+	public List<WorkflowStep> findStepsByContentlet(final Contentlet contentlet, final boolean showArchive) throws DotDataException;
 
 	/**
 	 * Return the contentlet current step if there is one or null
@@ -524,7 +541,7 @@ public interface WorkflowAPI {
 	 * @param dependencies {@link ContentletDependencies}
 	 * @return Contentlet
 	 */
-	Contentlet fireContentWorkflow(Contentlet contentlet, ContentletDependencies dependencies) throws DotDataException;
+	Contentlet fireContentWorkflow(Contentlet contentlet, ContentletDependencies dependencies) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Validates if the Workflow Action the Contentlet is going to execute belongs to the step of the

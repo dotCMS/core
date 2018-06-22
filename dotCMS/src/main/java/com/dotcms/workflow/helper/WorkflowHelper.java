@@ -2,7 +2,6 @@ package com.dotcms.workflow.helper;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -14,7 +13,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.exception.*;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -27,16 +25,14 @@ import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject;
-import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.StringUtils;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang.time.StopWatch;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.bucket.terms.StringTerms;
@@ -61,6 +57,24 @@ public class WorkflowHelper {
     private final ContentletAPI contentletAPI;
     private final PermissionAPI permissionAPI;
     private final WorkflowImportExportUtil workflowImportExportUtil;
+
+    private static final String BULK_ACTIONS_QUERY_WRAPPER = "{\n"
+            + "    \"query\" : { \n"
+            + "        \"query_string\" : {\n"
+            + "            \"query\" : \"%s\"\n"
+            + "        } \n"
+            + "\n"
+            + "    },\n"
+            + "    \"aggs\" : {\n"
+            + "        \"tag\" : {\n"
+            + "            \"terms\" : {\n"
+            + "                \"field\" : \"wfstep\",\n"
+            + "                \"size\" : 1000  \n"
+            + "            }\n"
+            + "        }\n"
+            + "    },\n"
+            + "\t\"size\":0   \n"
+            + "}";
 
     /**
      * Finds the bulk actions based on the {@link BulkActionForm}
@@ -94,32 +108,23 @@ public class WorkflowHelper {
      * @throws DotSecurityException
      */
     private BulkActionView findBulkActionByQuery(final String luceneQuery,
-                                                 final User user) throws DotDataException, DotSecurityException {
-        final String cleanedUpQuery = QueryUtil.removeQueryPrefix(luceneQuery);
-        //We should only be considering Working content.
-        final String query = "{\n"
-                + "    \"query\" : { \n"
-                + "        \"query_string\" : {\n"
-                + "            \"query\" : \"%s\"\n"
-                + "        } \n"
-                + "\n"
-                + "    },\n"
-                + "    \"aggs\" : {\n"
-                + "        \"tag\" : {\n"
-                + "            \"terms\" : {\n"
-                + "                \"field\" : \"wfstep\",\n"
-                + "                \"size\" : 1000  \n"
-                + "            }\n"
-                + "        }\n"
-                + "    },\n"
-                + "\t\"size\":0   \n"
-                + "}";
-        final String preparedQuery = String.format(query,cleanedUpQuery);
-        final ESSearchResults results = this.contentletAPI.esSearch(preparedQuery, false, user, false);
+            final User user) throws DotDataException {
 
-        Logger.debug(getClass(),()-> "luceneQuery: "+ cleanedUpQuery);
-        Logger.debug(getClass(),()-> "esSearch: "+ query);
-        return this.buildBulkActionView(results, user);
+        try {
+            final String prepareBulkActionsQuery = LuceneQueryUtils
+                    .prepareBulkActionsQuery(luceneQuery);
+
+            final String query = String.format(BULK_ACTIONS_QUERY_WRAPPER, prepareBulkActionsQuery);
+            //We should only be considering Working content.
+            final SearchResponse response = this.contentletAPI
+                    .esSearchRaw(query.toLowerCase(), false, user, false);
+            //Query must be sent lowercase. It's a must.
+
+            Logger.debug(getClass(), () -> "luceneQuery: " + prepareBulkActionsQuery);
+            return this.buildBulkActionView(response, user);
+        } catch (Exception e) {
+            throw new DotDataException(e);
+        }
     }
 
     /**
@@ -131,24 +136,24 @@ public class WorkflowHelper {
      * @throws DotDataException
      */
     private BulkActionView findBulkActionByContentlets(final List<String> contentletIds,
-                                                       final User     user) throws DotSecurityException, DotDataException {
+                                                       final User     user) throws DotDataException {
 
-        final String luceneQuery = "+inode:(" + String.join(" ", contentletIds) + ")";
+        final String luceneQuery =  String.format("+inode:( %s ) ", String.join(StringPool.SPACE, contentletIds));
         return this.findBulkActionByQuery(luceneQuery, user);
     }
 
     /**
      * Compuetes a view out of the resulsts returned bylucene
-     * @param results
+     * @param response
      * @param user
      * @return
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    private BulkActionView buildBulkActionView (final ESSearchResults results,
+    private BulkActionView buildBulkActionView (final SearchResponse response,
                                                 final User user) throws DotDataException, DotSecurityException {
 
-        final Aggregations aggregations     = results.getAggregations();
+        final Aggregations aggregations     = response.getAggregations();
         final Map<String, Long> stepCounts  = new HashMap<>();
 
         for (final Aggregation aggregation : aggregations.asList()) {

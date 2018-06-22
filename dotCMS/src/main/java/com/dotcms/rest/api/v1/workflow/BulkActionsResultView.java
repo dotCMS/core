@@ -1,16 +1,18 @@
 package com.dotcms.rest.api.v1.workflow;
 
+import java.util.List;
+
 public class BulkActionsResultView {
 
     private final Long successCount;
     private final Long skippedCount;
-    private final Long failsCount;
+    private final List<ActionFail> fails;
 
 
-    public BulkActionsResultView(final Long successCount, final Long skippedCount, final Long failsCount) {
+    public BulkActionsResultView(final Long successCount, final Long skippedCount, final List<ActionFail> fails) {
         this.successCount = successCount;
         this.skippedCount = skippedCount;
-        this.failsCount = failsCount;
+        this.fails = fails;
     }
 
     public Long getSuccessCount() {
@@ -21,7 +23,7 @@ public class BulkActionsResultView {
         return skippedCount;
     }
 
-    public Long getFailsCount() {
-        return failsCount;
+    public List<ActionFail> getFails() {
+        return fails;
     }
 }

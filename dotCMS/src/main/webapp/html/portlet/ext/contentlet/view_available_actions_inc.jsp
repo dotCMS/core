@@ -2,6 +2,21 @@
 <%@page import="com.dotmarketing.util.UtilMethods" %>
 <script language="Javascript">
 
+
+    /**
+     *
+     *
+     */
+    function toggleFailDetails() {
+        var node = dojo.byId('fail-details');
+        if( node.style.display === "none" ){
+            node.style.display = "block";
+        }else{
+            node.style.display = "none";
+        }
+        return false;
+    }
+    
     /**
      *
      */
@@ -9,7 +24,7 @@
 
         dojo.byId('bulkActionsContainer').innerHTML = '';
 
-            <% if(enterprise){ %>
+        <% if(enterprise){ %>
                // if there are selected items and we're running an enterprise verision the we can bother retriving the available actions
                 var selectedInodes = getSelectedInodes();
                 if (!selectedInodes) {
@@ -38,10 +53,10 @@
     function renderSingleAction(action){
         var actionSingleTemplate
             = '<tr class="workflowActionsOption">\n'
-            + '   <td style="">&nbsp;&nbsp;'+action.workflowAction.name+'</td>\n'
-            + '     <td style="width:140px;text-align: right">\n'
-            + '     <button dojoType="dijit.form.Button" class="dijitButton wfAction" data-acction-id="'+action.workflowAction.id+'" >'+action.count+' content(s)</button>\n'
-            + '   </td>\n'
+            + '   <td style="">&nbsp;&nbsp;'+action.workflowAction.name+'</td>'
+            + '     <td style="width:140px;text-align: right">'
+            + '     <button dojoType="dijit.form.Button" class="dijitButton wfAction" data-acction-id="'+action.workflowAction.id+'" >'+action.count+' content(s)</button>'
+            + '   </td>'
             + '</tr>';
         return actionSingleTemplate;
     }
@@ -75,25 +90,25 @@
         }
 
         var schemeTemplate
-            = '<table class="sTypeTable" style="width:90%; border-collapse: separate; border-spacing: 10px 15px;margin-bottom:10px;">\n'
-            + '  <tr>\n'
-            + '     <th colspan="2" class="sTypeHeader wfScheme" data-scheme-id="'+scheme.id+'" >'+scheme.name+'</th>\n'
-            + '  </tr>\n'
+            = '<table class="sTypeTable" style="width:90%; border-collapse: separate; border-spacing: 10px 15px;margin-bottom:10px;">'
+            + '  <tr>'
+            + '     <th colspan="2" class="sTypeHeader wfScheme" data-scheme-id="'+scheme.id+'" >'+scheme.name+'</th>'
+            + '  </tr>'
             + actionRows
-            + ' </table>';
+            + '</table>';
         return schemeTemplate;
     }
 
-    function emptyRecordsMarkup() {
+    function emptyActionsMarkup() {
         var emptyLabel = '<%=LanguageUtil.get(pageContext, "No-Available-Actions")%>';
         var empty
-            = '<table class="sTypeTable" style="width:90%; border-collapse: separate; border-spacing: 10px 15px;margin-bottom:10px;">\n'
-            + '  <tr>\n'
-            + '     <th colspan="2" class="sTypeHeader" ></th>\n'
-            + '  </tr>\n'
-            + '  <tr>\n'
-            + '     <td> '+emptyLabel+' </td>\n'
-            + '  </tr>\n'
+            = '<table class="sTypeTable" style="width:90%; border-collapse: separate; border-spacing: 10px 15px;margin-bottom:10px;">'
+            + '  <tr>'
+            + '     <th colspan="2" class="sTypeHeader" ></th>'
+            + '  </tr>'
+            + '  <tr>'
+            + '     <td> '+emptyLabel+' </td>'
+            + '  </tr>'
             + '</table>';
         return empty;
     }
@@ -101,13 +116,27 @@
     function errorMarkup() {
         var errorMessage= '<%=LanguageUtil.get(pageContext, "Available-actions-error")%>';
         var empty
-            = '<table class="sTypeTable" style="width:90%; border-collapse: separate; border-spacing: 10px 15px;margin-bottom:10px;">\n'
-            + '  <tr>\n'
-            + '     <th colspan="2" class="sTypeHeader" ></th>\n'
-            + '  </tr>\n'
-            + '  <tr>\n'
-            + '     <td> '+errorMessage+' </td>\n'
-            + '  </tr>\n'
+            = '<table class="sTypeTable" style="width:90%; border-collapse: separate; border-spacing: 10px 15px;margin-bottom:10px;">'
+            + '  <tr>'
+            + '     <th colspan="2" class="sTypeHeader" ></th>'
+            + '  </tr>'
+            + '  <tr>'
+            + '     <td> '+errorMessage+' </td>'
+            + '  </tr>'
+            + '</table>';
+        return empty;
+    }
+
+    function noFailsMarkup() {
+        var emptyLabel = '<%=LanguageUtil.get(pageContext, "No-Failed-Actions")%>';
+        var empty
+            = '<table class="sTypeTable" style="width:90%; border-collapse: separate; border-spacing: 10px 15px;margin-bottom:10px;">'
+            + '  <tr>'
+            + '     <th colspan="2" class="sTypeHeader" ></th>'
+            + '  </tr>'
+            + '  <tr>'
+            + '     <td> '+emptyLabel+' </td>'
+            + '  </tr>'
             + '</table>';
         return empty;
     }
@@ -118,16 +147,16 @@
      * @returns {string}
      */
     function actionsSummaryMarkup(entity){
-        var markUp = '';
+        var markup = '';
         var schemes = entity.schemes;
         if(schemes.length == 0){
-            markUp = emptyRecordsMarkup();
+            markup = emptyActionsMarkup();
         } else {
             for(var i=0; i < schemes.length; i++){
-                markUp += renderSchemeInfo(schemes[i]);
+                markup += renderSchemeInfo(schemes[i]);
             }
         }
-        return markUp;
+        return markup;
     }
 
     /**
@@ -135,39 +164,72 @@
      * @param entity
      * @returns {string}
      */
-    function actionsExecutionSummarytMarkup(entity){
+    function actionsExecutionSummarytMarkup(entity) {
 
-        var failures = entity.failsCount;
-        var skips = entity.skippedCount;
-        var success = entity.successCount;
+        var skipsCount = entity.skippedCount;
+        var successCount = entity.successCount;
+        var failsCount = entity.fails.length;
 
         var resultsLabel = '<%=LanguageUtil.get(pageContext, "Results")%>';
         var sucessLabel = '<%=LanguageUtil.get(pageContext, "Successul")%>';
         var failsLabel = '<%=LanguageUtil.get(pageContext, "Fails")%>';
         var skipsLabel = '<%=LanguageUtil.get(pageContext, "Skips")%>';
 
-        var markUp =
-       '<div>' +
-          '<table class="sTypeTable" style="width:90%; border-collapse: separate; border-spacing: 10px 15px;margin-bottom:10px;">' +
-                '<tr>' +
-                  ' <th colspan="2" class="sTypeHeader" >'+resultsLabel+'</th>' +
-                  ' <th> </th>' +
-                '</tr>' +
+        var exceptionLabel = '<%=LanguageUtil.get(pageContext, "Exception")%>';
+
+        var summaryTableMarkup =
+        '<div>' +
+          '<table class="sTypeTable" style="width:90%; border-collapse: separate; border-spacing: 10px 15px;margin-bottom:10px;">'
+            +
             '<tr>' +
-                '<td> '+sucessLabel+':&nbsp;</td>' +
-                '<td> '+success+' </td>' +
+            ' <th colspan="2" class="sTypeHeader" >' + resultsLabel + '</th>' +
+            ' <th></th>' +
             '</tr>' +
             '<tr>' +
-                '<td> '+failsLabel+':&nbsp;</td>' +
-                '<td> '+failures+' </td>' +
+              '<td> ' + sucessLabel + ':&nbsp;</td>' +
+              '<td> ' + successCount + ' </td>' +
             '</tr>' +
             '<tr>' +
-                '<td> '+skipsLabel+':&nbsp;</td>' +
-                '<td> '+skips+' </td>' +
+              '<td> ' + failsLabel + ':&nbsp;</td>' +
+              '<td><a href="#" onclick="toggleFailDetails();" > ' + failsCount + ' </a></td>' +
+            '</tr>' +
+            '<tr>' +
+              '<td> ' + skipsLabel + ':&nbsp;</td>' +
+              '<td> ' + skipsCount + ' </td>' +
             '</tr>' +
           '</table>' +
-       '</div>';
-       return markUp;
+        '</div>';
+
+        var detailsMarkup = '';
+
+        if (failsCount == 0) {
+            detailsMarkup = '<div id="fail-details" style="display:none;">' +
+                noFailsMarkup() +
+            '</div>';
+        } else {
+
+            var markupDetailEntries = '';
+            for (var i = 0; i < entity.fails.length; i++) {
+                var fail = entity.fails[i];
+                markupDetailEntries +=
+                    '<tr>' +
+                      '<td colspan="2"> ' + fail.inode + '  &nbsp;</td>' +
+                      '<td> ' + fail.errorMessage + ' </td>' +
+                    '</tr>';
+            }
+
+            detailsMarkup =
+            '<div id="fail-details" style="display:none;">' +
+                '<table class="sTypeTable" style="width:90%; border-collapse: separate; border-spacing: 10px 15px;margin-bottom:10px;">'
+                +
+                '<tr>' +
+                ' <th colspan="2" class="sTypeHeader" > iNode </th>' +
+                ' <th class="sTypeHeader" >' + exceptionLabel + '</th>' +
+                '</tr>' +
+                   markupDetailEntries +
+            '</div>';
+        }
+        return summaryTableMarkup + detailsMarkup;
     }
 
     function fireAction(e) {
@@ -230,7 +292,7 @@
             }
         );
 
-        dojo.byId('bulkActionsContainer').innerHTML = 'Loading...';
+        dojo.byId('bulkActionsContainer').innerHTML = '<%=LanguageUtil.get(pageContext, "dot.common.message.loading")%>';
         var dataAsJson = dojo.toJson(data);
         var xhrArgs = {
             url: "/api/v1/workflow/contentlet/actions/bulk",
@@ -305,7 +367,7 @@
 
     #bulkActionsContainer {
         overflow:auto;
-        height: 470px;
+        height: 425px;
     }
 </style>
 

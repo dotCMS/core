@@ -663,7 +663,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
     }
 
     @Test
-    public void Test_Get_Bulk_Actions_For_Query() {
+    public void Test_Get_Bulk_Actions_For_Query() throws Exception{
         final String luceneQuery = "-contentType:Host -baseType:3 +(conhost:48190c8c-42c4-46af-8d1a-0cd5db894797 conhost:SYSTEM_HOST) +languageId:1 +deleted:false +working:true";
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final BulkActionForm form = new BulkActionForm(null, luceneQuery);
@@ -688,30 +688,22 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         final BulkWorkflowSchemeView documentManagementScheme = documentManagementOptional.get();
         final List<WorkflowAction> documentActions = getAllWorkflowActions(documentManagementScheme);
 
-        assertTrue(documentActions.stream()
-                .anyMatch(action -> SAVE_AS_DRAFT.equals(action.getName())));
-        assertTrue(documentActions.stream()
-                .anyMatch(action -> SEND_FOR_REVIEW.equals(action.getName())));
-        assertTrue(documentActions.stream()
-                .anyMatch(action -> SEND_TO_LEGAL.equals(action.getName())));
-        assertTrue(documentActions.stream().anyMatch(action -> PUBLISH.equals(action.getName())));
-        assertTrue(
-                documentActions.stream().anyMatch(action -> REPUBLISH.equals(action.getName())));
-        assertTrue(
-                documentActions.stream().anyMatch(action -> UNPUBLISH.equals(action.getName())));
-        assertTrue(documentActions.stream().anyMatch(action -> ARCHIVE.equals(action.getName())));
+        final Set<String> documentActionNames =
+                workflowAPI.findActions(workflowAPI.findSchemeByName(DM_WORKFLOW), systemUser).stream().map(WorkflowAction::getName).collect(Collectors.toSet());
+
+        documentActions.forEach(action -> {
+            assertTrue(documentActionNames.contains(action.getName()));
+        });
 
         final BulkWorkflowSchemeView systemWorkflowScheme = systemWorkflowOptional.get();
         final List<WorkflowAction> systemActions = getAllWorkflowActions(systemWorkflowScheme);
 
-        assertTrue(systemActions.stream().anyMatch(action -> ARCHIVE.equals(action.getName())));
-        assertTrue(systemActions.stream().anyMatch(action -> UNPUBLISH.equals(action.getName())));
-        assertTrue(systemActions.stream().anyMatch(action -> COPY.equals(action.getName())));
-        assertTrue(systemActions.stream().anyMatch(action -> SAVE.equals(action.getName())));
-        assertTrue(systemActions.stream()
-                .anyMatch(action -> SAVE_PUBLISH.equals(action.getName()))
-        );
+        final Set<String> systemActionNames =
+                workflowAPI.findActions(workflowAPI.findSystemWorkflowScheme(), systemUser).stream().map(WorkflowAction::getName).collect(Collectors.toSet());
 
+        systemActions.forEach(action -> {
+            assertTrue(systemActionNames.contains(action.getName()));
+        });
     }
 
 
@@ -1011,7 +1003,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                     assertNotNull(bulkActionsResultView);
 
                     assertEquals(1, bulkActionsResultView.getSuccessCount().intValue());
-                    assertEquals(0, bulkActionsResultView.getFailsCount().intValue());
+                    assertEquals(0, bulkActionsResultView.getFails().size());
                     assertEquals(0, bulkActionsResultView.getSkippedCount().intValue());
 
                     indexNeedsToCatchup();
@@ -1166,7 +1158,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                     //This CTs We chose should  have a required field. And a failure is expected.
 
                     assertEquals(0, bulkActionsResultView.getSuccessCount().intValue());
-                    assertEquals(1, bulkActionsResultView.getFailsCount().intValue());
+                    assertEquals(1, bulkActionsResultView.getFails().size());
                     assertEquals(0, bulkActionsResultView.getSkippedCount().intValue());
 
                     //  Now Test BulkActions
