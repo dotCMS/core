@@ -9,6 +9,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ErrorEntity;
+import com.dotcms.rest.api.v1.workflow.ActionFail;
 import com.dotcms.rest.api.v1.workflow.BulkActionsResultView;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
@@ -110,7 +111,10 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -162,6 +166,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	private static final int MAX_THREADS_ALLOWED_TO_HANDLE_BULK_ACTIONS_DEFAULT = 5;
 
+	private static final String MAX_EXCEPTIONS_REPORTED_ON_BULK_ACTIONS = "workflow.action.bulk.maxexceptions";
+
+	private static final int MAX_EXCEPTIONS_REPORTED_ON_BULK_ACTIONS_DEFAULT = 1000;
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public WorkflowAPIImpl() {
@@ -2036,11 +2043,19 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 */
 	private BulkActionsResultView distributeWorkAndProcess(final WorkflowAction action,
 			final User user, final List<Contentlet> contentlets, final Long skipsCount) {
+		// We use a dedicated pool for bulk actions processing.
 		final DotSubmitter submitter = this.concurrentFactory
 				.getSubmitter(DotConcurrentFactory.BULK_ACTIONS_THREAD_POOL);
 
+		final int maxExceptions = Config.getIntProperty(MAX_EXCEPTIONS_REPORTED_ON_BULK_ACTIONS, MAX_EXCEPTIONS_REPORTED_ON_BULK_ACTIONS_DEFAULT);
+
 		final AtomicLong successCount = new AtomicLong();
-		final AtomicLong failsCount = new AtomicLong();
+
+		final List<ActionFail> fails = new ArrayList<>();
+
+		final ReentrantLock lock =  new ReentrantLock();
+
+		final AtomicBoolean accepting = new AtomicBoolean(true);
 
 		final List<Future> futures = new ArrayList<>();
 
@@ -2048,8 +2063,20 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		for (final List<Contentlet> partition : partitions) {
 			futures.add(
-					submitter.submit(() -> fireBulkActionTasks(action, user, partition,
-							successCount::addAndGet, failsCount::addAndGet))
+				submitter.submit(() -> fireBulkActionTasks(action, user, partition,
+					successCount::addAndGet, (inode, e) -> {
+						if (accepting.get()) { //if not accepting exceptions no need to lock and process. We're simply not accepting more.
+							lock.lock();
+							try {
+								fails.add(ActionFail.newInstance(user, inode, e));
+								accepting.set(fails.size() <= maxExceptions);
+							} finally {
+								lock.unlock();
+							}
+						}
+					}
+					)
+				)
 			);
 		}
 
@@ -2064,7 +2091,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return new BulkActionsResultView(
 				successCount.get(),
 				skipsCount,
-				failsCount.get()
+				ImmutableList.copyOf(fails)
 		);
 	}
 
@@ -2091,7 +2118,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			final User user,
 			final List<Contentlet> contentlets,
 			final Consumer<Long> successConsumer,
-			final Consumer<Long> failConsumer) {
+			final BiConsumer<String,Exception> failConsumer) {
 
 		for (final Contentlet contentlet : contentlets) {
 			try {
@@ -2107,7 +2134,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			final User user,
 			final Contentlet contentlet,
 			final Consumer<Long> successConsumer,
-			final Consumer<Long> failConsumer) {
+			final BiConsumer<String,Exception> failConsumer) {
 		try {
 
 			final String successInode;
@@ -2134,8 +2161,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			successConsumer.accept(1L);
 
 		} catch (Exception e) {
+			failConsumer.accept(contentlet.getInode(), e);
 			Logger.error(this, e.getMessage(), e);
-			failConsumer.accept(1L);
 		}
 	}
 
