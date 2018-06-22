@@ -73,7 +73,7 @@ public class NavResourceTest{
         final NavResource resource = new NavResource();
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
         final Response response = resource.loadJson(getHttpRequest(),mockResponse,"/about-us","2","99");
-        Assert.assertEquals(Status.NOT_FOUND.getStatusCode(),response.getStatus());
+        Assert.assertEquals(Status.BAD_REQUEST.getStatusCode(),response.getStatus());
     }
 
     @Test
