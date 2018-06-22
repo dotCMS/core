@@ -6,8 +6,11 @@
 
 <%
 	try { //maintenance
-		String requiredPortletAccess = (String) request.getAttribute("requiredPortletAccess");
-		requiredPortletAccess = UtilMethods.isSet(requiredPortletAccess)?requiredPortletAccess:"maintenance";
+		final String requiredPortletAccess = UtilMethods.isSet(request.getAttribute("requiredPortletAccess"))
+		        ? (String) request.getAttribute("requiredPortletAccess")
+		                : (UtilMethods.isSet(request.getAttribute("PORTLET_ID")))
+		                ? (String) request.getAttribute("PORTLET_ID") 
+		                        : "maintenance";
 
 		User userToCheck = com.liferay.portal.util.PortalUtil.getUser(request);
 		if(userToCheck == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(requiredPortletAccess, userToCheck)){
