@@ -226,7 +226,7 @@ public class NavToolTest extends IntegrationTestBase{
             final NavResult navResult = new NavTool()
                     .getNav(demoHost, systemFolder.getPath(), 1, user);
             assertNotNull(navResult);
-            assertEquals(1, navResult.getChildren().size());
+            assertEquals(7, navResult.getChildren().size());//6 are folders and 1 is the fileAsset we added
         }finally {
             //Now remove all the pages that we created for this tests.
             if(fileAssetShown!=null) {
