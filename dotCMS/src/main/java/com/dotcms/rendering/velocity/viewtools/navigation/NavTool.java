@@ -1,6 +1,7 @@
 package com.dotcms.rendering.velocity.viewtools.navigation;
 
 
+import com.dotmarketing.beans.Inode;
 import com.google.common.annotations.VisibleForTesting;
 
 import com.dotcms.rendering.velocity.viewtools.LanguageWebAPI;
@@ -119,28 +120,25 @@ public class NavTool implements ViewTool {
             result.setChildrenFolderIds(folderIds);
             result.setShowOnMenu(folder.isShowOnMenu());
 
-            final List<?> menuItems = APILocator.getFolderAPI().findMenuItems(folder, systemUserParam, true);
+            List<?> menuItems = APILocator.getFolderAPI()
+                    .findMenuItems(folder, systemUserParam, true);
+            List<Folder> folders = new ArrayList<>();
+            if (path.equals("/")) {
+                folders.addAll(APILocator.getFolderAPI()
+                        .findSubFolders(host, true));
+            }
 
+            for (Folder itemFolder : folders) {
+                addFolderToNav(host, languageId, folder, children, folderIds, itemFolder);
+            }
 
 
             for (Object item : menuItems) {
                 if (item instanceof Folder) {
                     Folder itemFolder = (Folder) item;
-                    ident = APILocator.getIdentifierAPI()
-                        .find(itemFolder);
-                    NavResult nav = new NavResult(folder.getInode(), host.getIdentifier(), itemFolder.getInode(), languageId);
-
-                    nav.setTitle(itemFolder.getTitle());
-                    nav.setHref(ident.getURI());
-                    nav.setOrder(itemFolder.getSortOrder());
-                    nav.setType("folder");
-                    nav.setPermissionId(itemFolder.getPermissionId());
-                    nav.setShowOnMenu(itemFolder.isShowOnMenu());
-
-                    // it will load lazily its children
-                    folderIds.add(itemFolder.getInode());
-                    nav = new NavResultHydrated(nav, this.context);
-                    children.add(nav);
+                    if(!folders.contains(itemFolder)) {
+                        addFolderToNav(host, languageId, folder, children, folderIds, itemFolder);
+                    }
                 } else if (item instanceof IHTMLPage) {
                     IHTMLPage itemPage = (IHTMLPage) item;
 
@@ -218,6 +216,27 @@ public class NavTool implements ViewTool {
 
             return new NavResultHydrated(result, this.context);
         }
+    }
+
+    private void addFolderToNav(Host host, long languageId, Folder folder, List<NavResult> children,
+            List<String> folderIds, Folder itemFolder) throws DotDataException {
+        Identifier ident;
+        ident = APILocator.getIdentifierAPI()
+                .find(itemFolder);
+        NavResult nav = new NavResult(folder.getInode(), host.getIdentifier(),
+                itemFolder.getInode(), languageId);
+
+        nav.setTitle(itemFolder.getTitle());
+        nav.setHref(ident.getURI());
+        nav.setOrder(itemFolder.getSortOrder());
+        nav.setType("folder");
+        nav.setPermissionId(itemFolder.getPermissionId());
+        nav.setShowOnMenu(itemFolder.isShowOnMenu());
+
+        // it will load lazily its children
+        folderIds.add(itemFolder.getInode());
+        nav = new NavResultHydrated(nav, this.context);
+        children.add(nav);
     }
 
     @VisibleForTesting
