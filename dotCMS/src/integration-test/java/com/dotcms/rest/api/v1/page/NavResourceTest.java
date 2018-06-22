@@ -72,7 +72,7 @@ public class NavResourceTest{
     public void getAboutUsNav_WhenLanguageDoesNotExists_NotFound() throws IOException {
         final NavResource resource = new NavResource();
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
-        final Response response = resource.loadJson(getHttpRequest(),mockResponse,"/about-us","2","5");
+        final Response response = resource.loadJson(getHttpRequest(),mockResponse,"/about-us","2","99");
         Assert.assertEquals(Status.NOT_FOUND.getStatusCode(),response.getStatus());
     }
 
