@@ -63,58 +63,37 @@ public class ThemeResourceTest {
     private final Contentlet content1 = mock(Contentlet.class);
     private final Contentlet content2 = mock(Contentlet.class);
     private final Host host_1 = mock(Host.class);
-    private final Folder folder_1 = mock(Folder.class);
     private final Host host_2 = mock(Host.class);
-    private final Folder folder_2 = mock(Folder.class);
 
-    private  PaginatedArrayList<Folder> folders;
+    private  PaginatedArrayList<Map<String, Object>> folders;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Before
     public void init() throws Throwable{
 
-        folders = new PaginatedArrayList<>();
-        folders.addAll(list(folder_1, folder_2));
-        folders.setTotalResults(2);
-
         when(content1.getFolder()).thenReturn(FOLDER_1);
         when(content1.getHost()).thenReturn(HOST_1);
         when(content2.getFolder()).thenReturn(FOLDER_2);
         when(content2.getHost()).thenReturn(HOST_2);
 
-        when(folder_1.getName()).thenReturn(FOLDER_1);
-        when(folder_2.getName()).thenReturn(FOLDER_2);
-
-        when(folder_1.getTitle()).thenReturn(FOLDER_1);
-        when(folder_2.getTitle()).thenReturn(FOLDER_2);
-
-        when(folder_1.getInode()).thenReturn(FOLDER_INODE_1);
-        when(folder_2.getInode()).thenReturn(FOLDER_INODE_2);
-
-        when(folder_1.getHostId()).thenReturn(HOST_1);
-        when(folder_2.getHostId()).thenReturn(HOST_2);
-
-        when(host_1.getMap()).thenReturn(ImmutableMap.<String, Object> builder()
-                .put("property_1", "value_1")
-                .put("property_2", "value_2")
-                .build()
-        );
-        when(host_2.getMap()).thenReturn(ImmutableMap.<String, Object> builder()
-                .put("property_1", "value_3")
-                .put("property_2", "value_4")
-                .build()
-        );
-
         when(initDataObject.getUser()).thenReturn(user);
         when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
         when(userAPI.getSystemUser()).thenReturn(systemUser);
 
-
-        when(hostAPI.find(HOST_1, systemUser, false)).thenReturn(host_1);
-        when(hostAPI.find(HOST_2, systemUser, false)).thenReturn(host_2);
-
         when(request.getRequestURL()).thenReturn(new StringBuffer("themes"));
+
+        folders = new PaginatedArrayList<>();
+        folders.addAll(list(ImmutableMap.<String, Object> builder()
+                .put("name", FOLDER_1)
+                .put("title", FOLDER_1)
+                .put("inode", FOLDER_INODE_1)
+                .build(),ImmutableMap.<String, Object> builder()
+                .put("name", FOLDER_2)
+                .put("title", FOLDER_2)
+                .put("inode", FOLDER_INODE_2)
+                .build()));
+        folders.setTotalResults(2);
     }
     /**
      * Test of {@link ThemeResource#findThemes(HttpServletRequest, String, int, int, String, String)}
@@ -212,12 +191,9 @@ public class ThemeResourceTest {
         assertEquals(FOLDER_1, responseList.get(0).get("name").asText());
         assertEquals(FOLDER_1, responseList.get(0).get("title").asText());
         assertEquals(FOLDER_INODE_1, responseList.get(0).get("inode").asText());
-        assertEquals("value_1", responseList.get(0).get("host").get("property_1").asText());
-        assertEquals("value_2", responseList.get(0).get("host").get("property_2").asText());
+
         assertEquals(FOLDER_2, responseList.get(1).get("name").asText());
         assertEquals(FOLDER_2, responseList.get(1).get("title").asText());
         assertEquals(FOLDER_INODE_2, responseList.get(1).get("inode").asText());
-        assertEquals("value_3", responseList.get(1).get("host").get("property_1").asText());
-        assertEquals("value_4", responseList.get(1).get("host").get("property_2").asText());
     }
 }

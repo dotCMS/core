@@ -64,6 +64,7 @@ public class ThemePaginatorTest {
             try {
                 final Folder folder = createFolderMock(elem);
                 when(folderAPI.find(elem, user, false)).thenReturn(folder);
+                when(folder.getMap()).thenReturn(map("inode", elem));
                 when(contentletAPI.search(getFolderQuery(elem),-1, 0, null, user, false)).thenReturn(null);
             } catch (DotSecurityException | DotDataException e) {
                 Logger.error(this, e.getMessage());
@@ -71,12 +72,9 @@ public class ThemePaginatorTest {
         });
 
         final Map<String, Object> params = map(ThemePaginator.HOST_ID_PARAMETER_NAME, "1");
-        final PaginatedArrayList<Folder> themes = themePaginator.getItems(user, 0, -1, params);
+        final PaginatedArrayList<Map<String, Object>> themes = themePaginator.getItems(user, 0, -1, params);
 
-        assertEquals(contentlets.size(), themes.size());
-        assertEquals(contentlets.get(0).getFolder(), themes.get(0).getInode());
-        assertEquals(contentlets.get(1).getFolder(), themes.get(1).getInode());
-        assertEquals(contentlets.get(2).getFolder(), themes.get(2).getInode());
+        checkAssertions(contentlets, themes);
     }
 
     /**
@@ -108,18 +106,16 @@ public class ThemePaginatorTest {
             try {
                 final Folder folder = createFolderMock(elem);
                 when(folderAPI.find(elem, user, false)).thenReturn(folder);
+                when(folder.getMap()).thenReturn(map("inode", elem));
                 when(contentletAPI.search(getFolderQuery(elem),-1, 0, null, user, false)).thenReturn(null);
             } catch (DotSecurityException | DotDataException e) {
                 Logger.error(this, e.getMessage());
             }
         });
 
-        final PaginatedArrayList<Folder> themes = themePaginator.getItems(user, 0, -1, null);
+        final PaginatedArrayList<Map<String, Object>> themes = themePaginator.getItems(user, 0, -1, null);
 
-        assertEquals(contentlets.size(), themes.size());
-        assertEquals(contentlets.get(0).getFolder(), themes.get(0).getInode());
-        assertEquals(contentlets.get(1).getFolder(), themes.get(1).getInode());
-        assertEquals(contentlets.get(2).getFolder(), themes.get(2).getInode());
+        checkAssertions(contentlets, themes);
     }
 
     /**
@@ -199,6 +195,7 @@ public class ThemePaginatorTest {
             try {
                 final Folder folder = createFolderMock(elem);
                 when(folderAPI.find(elem, user, false)).thenReturn(folder);
+                when(folder.getMap()).thenReturn(map("inode", elem));
                 when(contentletAPI.search(getFolderQuery(elem),-1, 0, null, user, false)).thenReturn(null);
             } catch (DotSecurityException | DotDataException e) {
                 Logger.error(this, e.getMessage());
@@ -209,12 +206,9 @@ public class ThemePaginatorTest {
                 ThemePaginator.HOST_ID_PARAMETER_NAME, "1",
                 Paginator.ORDER_DIRECTION_PARAM_NAME, OrderDirection.DESC
         );
-        final PaginatedArrayList<Folder> themes = themePaginator.getItems(user, 0, -1, params);
+        final PaginatedArrayList<Map<String, Object>> themes = themePaginator.getItems(user, 0, -1, params);
 
-        assertEquals(contentlets.size(), themes.size());
-        assertEquals(contentlets.get(0).getFolder(), themes.get(0).getInode());
-        assertEquals(contentlets.get(1).getFolder(), themes.get(1).getInode());
-        assertEquals(contentlets.get(2).getFolder(), themes.get(2).getInode());
+        checkAssertions(contentlets, themes);
     }
 
     /**
@@ -246,6 +240,7 @@ public class ThemePaginatorTest {
             try {
                 final Folder folder = createFolderMock(elem);
                 when(folderAPI.find(elem, user, false)).thenReturn(folder);
+                when(folder.getMap()).thenReturn(map("inode", elem));
                 when(contentletAPI.search(getFolderQuery(elem),-1, 0, null, user, false)).thenReturn(null);
             } catch (DotSecurityException | DotDataException e) {
                 Logger.error(this, e.getMessage());
@@ -256,12 +251,9 @@ public class ThemePaginatorTest {
                 Paginator.ORDER_DIRECTION_PARAM_NAME, OrderDirection.DESC
         );
 
-        final PaginatedArrayList<Folder> themes = themePaginator.getItems(user, -1, 0, params);
+        final PaginatedArrayList<Map<String, Object>> themes = themePaginator.getItems(user, -1, 0, params);
 
-        assertEquals(contentlets.size(), themes.size());
-        assertEquals(contentlets.get(0).getFolder(), themes.get(0).getInode());
-        assertEquals(contentlets.get(1).getFolder(), themes.get(1).getInode());
-        assertEquals(contentlets.get(2).getFolder(), themes.get(2).getInode());
+        checkAssertions(contentlets, themes);
     }
 
     private ContentletSearch createContentSearchMock(final String contentInode) {
@@ -289,5 +281,16 @@ public class ThemePaginatorTest {
         query.append("+conFolder:").append(folderInode).append(" +title:").append(ThemePaginator.THEME_PNG);
 
         return query.toString();
+    }
+
+    private void checkAssertions(List<Contentlet> contentlets,
+            PaginatedArrayList<Map<String, Object>> themes) {
+        assertEquals(contentlets.size(), themes.size());
+        assertEquals(contentlets.get(0).getFolder(), themes.get(0).get("inode"));
+        assertTrue(themes.get(0).containsKey("themeThumbnail"));
+        assertEquals(contentlets.get(1).getFolder(), themes.get(1).get("inode"));
+        assertTrue(themes.get(1).containsKey("themeThumbnail"));
+        assertEquals(contentlets.get(2).getFolder(), themes.get(2).get("inode"));
+        assertTrue(themes.get(2).containsKey("themeThumbnail"));
     }
 }
