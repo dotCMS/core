@@ -1048,7 +1048,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                     assertNotNull(bulkActionsResultView);
 
                     assertEquals(1, bulkActionsResultView.getSuccessCount().intValue());
-                    assertEquals(0, bulkActionsResultView.getFailsCount().intValue());
+                    assertEquals(0, bulkActionsResultView.getFails().size());
                     assertEquals(0, bulkActionsResultView.getSkippedCount().intValue());
 
                     indexNeedsToCatchup();
@@ -1203,7 +1203,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                     //This CTs We chose should  have a required field. And a failure is expected.
 
                     assertEquals(0, bulkActionsResultView.getSuccessCount().intValue());
-                    assertEquals(1, bulkActionsResultView.getFailsCount().intValue());
+                    assertEquals(1, bulkActionsResultView.getFails().size());
                     assertEquals(0, bulkActionsResultView.getSkippedCount().intValue());
 
                     //  Now Test BulkActions
