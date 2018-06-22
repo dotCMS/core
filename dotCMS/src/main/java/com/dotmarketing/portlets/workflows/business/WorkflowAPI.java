@@ -675,6 +675,7 @@ public interface WorkflowAPI {
 	public void archive(WorkflowScheme scheme, User user)
 			throws DotDataException, DotSecurityException, AlreadyExistException;
 
+
     /**
      * Fires a list of contentlets returned by the luceneQuery and using an action.
      * @param action {@link WorkflowAction}
@@ -693,9 +694,23 @@ public interface WorkflowAPI {
 	 * @return Future BulkActionsResultView
 	 */
 
+	/**
+	 * Finds the available {@link WorkflowAction} for the contentlet to a user on any give
+	 * piece of content, based on how and who has the content locked and what workflow step the content
+	 * is in, the {@link RenderMode} is the EDITING by default
+	 *
+	 * @param contentlet {@link Contentlet}
+	 * @param user       {@link User}
+	 * @param renderMode {@link RenderMode}
+	 * @return List of   WorkflowAction
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public List<WorkflowAction> findAvailableActions(Contentlet contentlet, User user, RenderMode renderMode) throws DotDataException,
+			DotSecurityException ;
 
 	/**
-	 * Returns a list of actions available on the listing screen
+	 * Returns a list of actions available on the listing render mode
 	 * @param contentlet
 	 * @param user
 	 * @return
@@ -705,7 +720,7 @@ public interface WorkflowAPI {
     List<WorkflowAction> findAvailableActionsListing(Contentlet contentlet, User user)
             throws DotDataException, DotSecurityException;
     /**
-     * Returns a list of actions available on the editing screen
+     * Returns a list of actions available on the editing render mode
      * @param contentlet
      * @param user
      * @return
@@ -726,5 +741,21 @@ public interface WorkflowAPI {
 	 */
     List<WorkflowTimelineItem> getCommentsAndChangeHistory(WorkflowTask task) throws DotDataException;
 
+	/**
+	 * Render mode for the available actions
+	 */
+    enum RenderMode {
+
+    	EDITING(WorkflowState.EDITING), LISTING(WorkflowState.LISTING);
+    	private final WorkflowState state;
+
+		RenderMode(final WorkflowState state) {
+			this.state = state;
+		}
+
+		public WorkflowState getState() {
+			return state;
+		}
+	}
 
 }

@@ -1,14 +1,5 @@
 package com.dotmarketing.portlets.workflows.business;
 
-import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
@@ -21,11 +12,7 @@ import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -37,38 +24,22 @@ import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.DeleteContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.ResetTaskActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
-import com.dotmarketing.portlets.workflows.model.WorkflowComment;
-import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowState;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
-import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.workflows.actionlet.*;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+
+import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
+import static org.junit.Assert.*;
 
 /**
  * Test the workflowAPI
@@ -2552,7 +2523,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             action.setCommentable(true);
             action.setAssignable(false);
             action.setShowOn(WorkflowState.LOCKED, WorkflowState.UNLOCKED, WorkflowState.NEW,
-                    WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED, WorkflowState.ARCHIVED);
+                    WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED, WorkflowState.ARCHIVED, WorkflowState.EDITING);
 
             workflowAPI.saveAction(action,
                     Arrays.asList(new Permission[]{
@@ -2676,7 +2647,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             saveAsDraftAction.setCommentable(true);
             saveAsDraftAction.setAssignable(false);
             saveAsDraftAction.setShowOn(WorkflowState.LOCKED, WorkflowState.NEW,
-                    WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED);
+                    WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED, WorkflowState.EDITING);
 
             workflowAPI.saveAction(saveAsDraftAction,
                     Arrays.asList(new Permission[]{
@@ -2708,7 +2679,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             sendForReviewAction.setCommentable(true);
             sendForReviewAction.setAssignable(false);
             sendForReviewAction.setShowOn(WorkflowState.LOCKED, WorkflowState.UNLOCKED,
-                    WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED);
+                    WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED, WorkflowState.EDITING);
 
             workflowAPI.saveAction(sendForReviewAction,
                     Arrays.asList(new Permission[]{
@@ -2739,7 +2710,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             sendToLegalAction.setCommentable(true);
             sendToLegalAction.setAssignable(false);
             sendToLegalAction.setShowOn(WorkflowState.LOCKED, WorkflowState.UNLOCKED,
-                    WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED);
+                    WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED, WorkflowState.EDITING);
 
             workflowAPI.saveAction(sendToLegalAction,
                     Arrays.asList(new Permission[]{
@@ -2769,7 +2740,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             publishAction.setCommentable(false);
             publishAction.setAssignable(false);
             publishAction.setShowOn(WorkflowState.LOCKED, WorkflowState.UNLOCKED,
-                    WorkflowState.UNPUBLISHED);
+                    WorkflowState.UNPUBLISHED, WorkflowState.EDITING);
 
             workflowAPI.saveAction(publishAction,
                     Arrays.asList(new Permission[]{
@@ -2803,7 +2774,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             returnForEditAction.setCommentable(true);
             returnForEditAction.setAssignable(true);
             returnForEditAction.setShowOn(WorkflowState.LOCKED, WorkflowState.UNLOCKED,
-                    WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED);
+                    WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED, WorkflowState.EDITING);
 
             workflowAPI.saveAction(returnForEditAction,
                     Arrays.asList(new Permission[]{
@@ -2833,7 +2804,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             republishAction.setCommentable(false);
             republishAction.setAssignable(false);
             republishAction.setShowOn(WorkflowState.LOCKED, WorkflowState.UNLOCKED,
-                    WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED);
+                    WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED, WorkflowState.EDITING);
 
             workflowAPI.saveAction(republishAction,
                     Arrays.asList(new Permission[]{
@@ -2863,7 +2834,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             unpublishAction.setCommentable(false);
             unpublishAction.setAssignable(false);
             unpublishAction.setShowOn(WorkflowState.LOCKED, WorkflowState.UNLOCKED,
-                    WorkflowState.PUBLISHED);
+                    WorkflowState.PUBLISHED, WorkflowState.EDITING);
 
             workflowAPI.saveAction(unpublishAction,
                     Arrays.asList(new Permission[]{
@@ -2890,7 +2861,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             archiveAction.setNextAssign(anonymus.getId());
             archiveAction.setCommentable(false);
             archiveAction.setAssignable(false);
-            archiveAction.setShowOn(WorkflowState.UNLOCKED, WorkflowState.UNPUBLISHED);
+            archiveAction.setShowOn(WorkflowState.UNLOCKED, WorkflowState.UNPUBLISHED, WorkflowState.EDITING);
 
             workflowAPI.saveAction(archiveAction,
                     Arrays.asList(new Permission[]{
@@ -2917,7 +2888,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             deleteAction.setNextAssign(anonymus.getId());
             deleteAction.setCommentable(false);
             deleteAction.setAssignable(false);
-            deleteAction.setShowOn(WorkflowState.UNLOCKED, WorkflowState.ARCHIVED);
+            deleteAction.setShowOn(WorkflowState.UNLOCKED, WorkflowState.ARCHIVED, WorkflowState.EDITING);
 
             workflowAPI.saveAction(deleteAction,
                     Arrays.asList(new Permission[]{
@@ -2946,7 +2917,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             resetWorkflowAction.setCommentable(false);
             resetWorkflowAction.setAssignable(false);
             resetWorkflowAction.setShowOn(WorkflowState.LOCKED, WorkflowState.UNLOCKED,
-                    WorkflowState.ARCHIVED);
+                    WorkflowState.ARCHIVED, WorkflowState.EDITING);
 
             workflowAPI.saveAction(resetWorkflowAction,
                     Arrays.asList(new Permission[]{

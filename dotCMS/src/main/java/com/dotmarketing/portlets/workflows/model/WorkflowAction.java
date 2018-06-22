@@ -3,17 +3,11 @@ package com.dotmarketing.portlets.workflows.model;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonSetter;
-
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionSummary;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
 import com.dotmarketing.util.UtilMethods;
 
 import java.io.Serializable;
@@ -53,6 +47,9 @@ public class WorkflowAction implements Permissionable, Serializable{
 	private boolean assignable;
 	private boolean commentable;
 	private int order;
+	private boolean saveActionlet;
+	private boolean publishActionlet;
+	private boolean pushPublishActionlet;
 	private Set<WorkflowState> showOn = Collections.emptySet();
 
 	public WorkflowAction() {
@@ -75,7 +72,7 @@ public class WorkflowAction implements Permissionable, Serializable{
 	}
 
 	/**
-	 * True if the action should be show on publish status.
+	 * True if the action should be show on publishActionlet status.
 	 * @return boolean
 	 */
 	public boolean shouldShowOnPublished () {
@@ -179,35 +176,30 @@ public class WorkflowAction implements Permissionable, Serializable{
 		return accepted;
 	}
 
-	
-    @JsonIgnore
-    private List<WorkflowActionClass> loadedActions = null;
-
-    @JsonIgnore
-    private List<WorkflowActionClass> loadActions() {
-        if (this.loadedActions == null) {
-            try {
-                this.loadedActions = APILocator.getWorkflowAPI().findActionClasses(this);
-            } catch (DotDataException e) {
-                throw new DotStateException("Unable to load actionlets for action:" + this.getId() + " " + e.getMessage());
-            }
-        }
-        return this.loadedActions;
-
+    public boolean hasSaveActionlet() {
+    	return this.saveActionlet;
     }
 
-    @JsonIgnore
-    public boolean doesSave() {
-        return loadActions().stream().anyMatch(wca -> (SaveContentActionlet.class.equals(wca.getActionlet().getClass())
-                || SaveContentAsDraftActionlet.class.equals(wca.getActionlet().getClass())));
-
+    public boolean hasPublishActionlet() {
+    	return this.publishActionlet;
     }
 
-    @JsonIgnore
-    public boolean doesPushPublish() {
-        return loadActions().stream().anyMatch(wca -> (PushPublishActionlet.class.equals(wca.getActionlet().getClass())));
-    }
-	
+	public boolean hasPushPublishActionlet() {
+		return this.pushPublishActionlet;
+	}
+
+	public void setSaveActionlet(boolean saveActionlet) {
+		this.saveActionlet = saveActionlet;
+	}
+
+	public void setPublishActionlet(boolean publishActionlet) {
+		this.publishActionlet = publishActionlet;
+	}
+
+	public void setPushPublishActionlet(boolean pushPublishActionlet) {
+		this.pushPublishActionlet = pushPublishActionlet;
+	}
+
 	@JsonIgnore
 	public List<RelatedPermissionableGroup> permissionDependencies(int requiredPermission) {
 		return null;

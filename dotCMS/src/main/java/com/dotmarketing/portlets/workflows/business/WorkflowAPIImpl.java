@@ -9,33 +9,17 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.api.v1.workflow.BulkActionsResultView;
-import com.dotcms.util.CollectionsUtils;
-import com.dotcms.util.DotPreconditions;
-import com.dotcms.util.FriendClass;
-import com.dotcms.util.LicenseValiditySupplier;
+import com.dotcms.util.*;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Permissionable;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.AlreadyExistException;
-import com.dotmarketing.exception.DoesNotExistException;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotDataValidationException;
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.exception.InvalidLicenseException;
+import com.dotmarketing.exception.*;
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
@@ -44,78 +28,27 @@ import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.MessageActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.CheckURLAccessibilityActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.CheckoutContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.CommentOnWorkflowActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.CopyActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.DeleteContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.EmailActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.FourEyeApproverActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.MultipleApproverActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.NotifyUsersActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.PushNowActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.ResetTaskActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.SetValueActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.TranslationActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.TwitterActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
-import com.dotmarketing.portlets.workflows.model.WorkflowComment;
-import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
-import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
-import com.dotmarketing.portlets.workflows.model.WorkflowState;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
-import com.dotmarketing.portlets.workflows.model.WorkflowTask;
-import com.dotmarketing.portlets.workflows.model.WorkflowTimelineItem;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.SecurityLogger;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.portlets.workflows.actionlet.*;
+import com.dotmarketing.portlets.workflows.model.*;
+import com.dotmarketing.util.*;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.StringTokenizer;
+import org.apache.commons.lang.time.StopWatch;
+import org.apache.commons.lang3.concurrent.ConcurrentUtils;
+import org.osgi.framework.BundleContext;
+
+import javax.annotation.Nullable;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import javax.annotation.Nullable;
-import org.apache.commons.lang.time.StopWatch;
-import org.apache.commons.lang3.concurrent.ConcurrentUtils;
-import org.osgi.framework.BundleContext;
 
 
 
@@ -1081,14 +1014,47 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@CloseDBIfOpened
 	public List<WorkflowAction> findActions(final List<WorkflowStep> steps, final User user, final Permissionable permissionable) throws DotDataException,
 			DotSecurityException {
+
 		final ImmutableList.Builder<WorkflowAction> actions = new ImmutableList.Builder<>();
-		for(WorkflowStep step : steps) {
+		for(final WorkflowStep step : steps) {
 			actions.addAll(workFlowFactory.findActions(step));
 		}
 
-		return workflowActionUtils
-				.filterActions(actions.build(), user, RESPECT_FRONTEND_ROLES, permissionable);
+		return this.fillActionsInfo(this.workflowActionUtils
+                .filterActions(actions.build(), user, RESPECT_FRONTEND_ROLES, permissionable)) ;
 	}
+
+    private List<WorkflowAction> fillActionsInfo(final List<WorkflowAction> workflowActions) throws DotDataException {
+
+	    for (final WorkflowAction action : workflowActions) {
+
+	        this.fillActionInfo(action, this.workFlowFactory.findActionClasses(action));
+        }
+
+        return workflowActions;
+    }
+
+    private void fillActionInfo(final WorkflowAction action,
+                                final List<WorkflowActionClass> actionClasses) {
+
+	    boolean isSave        = false;
+	    boolean isPublish     = false;
+        boolean isPushPublish = false;
+
+        for (final WorkflowActionClass actionClass : actionClasses) {
+
+            final Actionlet actionlet = AnnotationUtils.
+                    getBeanAnnotation(ReflectionUtils.getClassFor(actionClass.getClazz()), Actionlet.class);
+
+                isSave        |= (null != actionlet)?actionlet.save()       :false;
+                isPublish     |= (null != actionlet)?actionlet.publish()    :false;
+                isPushPublish |= (null != actionlet)?actionlet.pushPublish():false;
+        }
+
+	    action.setSaveActionlet(isSave);
+        action.setPublishActionlet(isPublish);
+        action.setPushPublishActionlet(isPushPublish);
+    }
 
 
     /**
@@ -1101,12 +1067,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
     public List<WorkflowAction> findAvailableActionsEditing(final Contentlet contentlet, final User user)
             throws DotDataException, DotSecurityException {
 
-        List<WorkflowAction> actions = new ArrayList<>( findAvailableActions(contentlet, user));
-        actions.removeIf(action -> !action.shouldShowOnEdit() );
-        
-        
-        return actions;
-    
+        return this.findAvailableActions(contentlet, user, RenderMode.EDITING);
     }
 	
 	 /**
@@ -1119,11 +1080,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
     public List<WorkflowAction> findAvailableActionsListing(final Contentlet contentlet, final User user)
             throws DotDataException, DotSecurityException {
 
-	
-        List<WorkflowAction> actions = new ArrayList<>( findAvailableActions(contentlet, user));
-        actions.removeIf(action -> !action.shouldShowOnListing() );
-        return actions;
-	
+		return this.findAvailableActions(contentlet, user, RenderMode.LISTING);
     }
 	
 	/**
@@ -1136,48 +1093,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public List<WorkflowAction> findAvailableActions(final Contentlet contentlet, final User user)
 			throws DotDataException, DotSecurityException {
 
-		if(contentlet == null || contentlet.getStructure() ==null) {
-
-			Logger.debug(this, () -> "the Contentlet: " + contentlet + " or their structure could be null");
-			throw new DotStateException("content is null");
-		}
-
-		final ImmutableList.Builder<WorkflowAction> actions =
-				new ImmutableList.Builder<>();
-
-		if(Host.HOST_VELOCITY_VAR_NAME.equals(contentlet.getStructure().getVelocityVarName())) {
-
-			Logger.debug(this, () -> "The contentlet: " +
-					contentlet.getIdentifier() + ", is a host. Returning zero available actions");
-
-			return Collections.emptyList();
-		}
-
-		final boolean isNew  = !UtilMethods.isSet(contentlet.getInode());
-		boolean canLock      = false;
-		boolean isLocked     = false;
-		boolean isPublish    = false;
-		boolean isArchived   = false;
-
-		try {
-
-			canLock      = APILocator.getContentletAPI().canLock(contentlet, user);
-			isLocked     = isNew? true :  APILocator.getVersionableAPI().isLocked(contentlet);
-			isPublish    = isNew? false:  APILocator.getVersionableAPI().hasLiveVersion(contentlet);
-			isArchived   = isNew? false:  APILocator.getVersionableAPI().isDeleted(contentlet);
-		} catch(Exception e) {
-
-		}
-
-		final List<WorkflowStep> steps = findStepsByContentlet(contentlet);
-
-		Logger.debug(this, "#findAvailableActions: for content: "   + contentlet.getIdentifier()
-								+ ", isNew: "    + isNew
-								+ ", canLock: "        + canLock + ", isLocked: " + isLocked);
-
-
-		return isNew? this.doFilterActions(actions, true, false, false, canLock, isLocked, findActions(steps, user, contentlet.getContentType())):
-				this.doFilterActions(actions, false, isPublish, isArchived, canLock, isLocked, findActions(steps, user, contentlet));
+		return this.findAvailableActions(contentlet, user, RenderMode.EDITING);
 	}
 
 
@@ -1187,12 +1103,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 								 final boolean isArchived,
 								 final boolean canLock,
 								 final boolean isLocked,
+								 final RenderMode renderMode,
 								 final List<WorkflowAction> unfilteredActions) {
 
 		for (final WorkflowAction workflowAction : unfilteredActions) {
 
 			if (this.workflowStatusFilter.filter(workflowAction,
-					new ContentletStateOptions(isNew, isPublished, isArchived, canLock, isLocked))) {
+					new ContentletStateOptions(isNew, isPublished, isArchived, canLock, isLocked, renderMode))) {
 
             	actions.add(workflowAction);
             }
@@ -1912,6 +1829,55 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				.stream().map(WorkflowStep::getId).collect(Collectors.toSet());
 
 		return fireBulkActionsTaskForQuery(action, user, luceneQuery, workflowAssociatedStepsIds);
+	}
+
+	@Override
+	@CloseDBIfOpened
+	public List<WorkflowAction> findAvailableActions(final Contentlet contentlet, final User user,
+													 final RenderMode renderMode) throws DotDataException, DotSecurityException {
+
+		if(contentlet == null || contentlet.getStructure() ==null) {
+
+			Logger.debug(this, () -> "the Contentlet: " + contentlet + " or their structure could be null");
+			throw new DotStateException("content is null");
+		}
+
+		final ImmutableList.Builder<WorkflowAction> actions =
+				new ImmutableList.Builder<>();
+
+		if(Host.HOST_VELOCITY_VAR_NAME.equals(contentlet.getStructure().getVelocityVarName())) {
+
+			Logger.debug(this, () -> "The contentlet: " +
+					contentlet.getIdentifier() + ", is a host. Returning zero available actions");
+
+			return Collections.emptyList();
+		}
+
+		final boolean isNew  = !UtilMethods.isSet(contentlet.getInode());
+		boolean canLock      = false;
+		boolean isLocked     = false;
+		boolean isPublish    = false;
+		boolean isArchived   = false;
+
+		try {
+
+			canLock      = APILocator.getContentletAPI().canLock(contentlet, user);
+			isLocked     = isNew? true :  APILocator.getVersionableAPI().isLocked(contentlet);
+			isPublish    = isNew? false:  APILocator.getVersionableAPI().hasLiveVersion(contentlet);
+			isArchived   = isNew? false:  APILocator.getVersionableAPI().isDeleted(contentlet);
+		} catch(Exception e) {
+
+		}
+
+		final List<WorkflowStep> steps = findStepsByContentlet(contentlet);
+
+		Logger.debug(this, "#findAvailableActions: for content: "   + contentlet.getIdentifier()
+				+ ", isNew: "    + isNew
+				+ ", canLock: "        + canLock + ", isLocked: " + isLocked);
+
+
+		return isNew? this.doFilterActions(actions, true, false, false, canLock, isLocked, renderMode, findActions(steps, user, contentlet.getContentType())):
+				this.doFilterActions(actions, false, isPublish, isArchived, canLock, isLocked, renderMode, findActions(steps, user, contentlet));
 	}
 
 	/**

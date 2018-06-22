@@ -147,8 +147,8 @@ function setMyWorkflowScheme(){
 			
 			<a 
 			style="<%if(schemesAvailable.size()>1){%>display:none;<%} %>" class="schemeId<%=action.getSchemeId()%> schemeActionsDiv"
-			onclick="contentAdmin.executeWfAction('<%=action.getId()%>', <%= action.doesPushPublish() || action.isAssignable() || action.isCommentable() || UtilMethods.isSet(action.getCondition()) %>)">
-				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, action.getName())) %>   <div style="float:right"><%if(action.doesSave()){ %>(saves)<%} %></div>
+			onclick="contentAdmin.executeWfAction('<%=action.getId()%>', <%= action.hasPushPublishActionlet() || action.isAssignable() || action.isCommentable() || UtilMethods.isSet(action.getCondition()) %>)">
+				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, action.getName())) %>   <div style="float:right"><%if(action.hasSaveActionlet()){ %>(LanguageUtil.get(pageContext, "saves"))<%} %></div>
 
 			</a>
 		<%} %>

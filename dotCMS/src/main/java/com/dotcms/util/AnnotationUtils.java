@@ -2,16 +2,13 @@ package com.dotcms.util;
 
 
 import com.google.common.collect.ImmutableSet;
+import org.apache.commons.collections.keyvalue.MultiKey;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.commons.collections.keyvalue.MultiKey;
 
 
 /**
@@ -19,6 +16,11 @@ import org.apache.commons.collections.keyvalue.MultiKey;
  * @author jsanca
  */
 public class AnnotationUtils {
+
+    private static final String NULL = "NULL";
+
+    private static final Map<MultiKey, Object> beansAnnotatedByCacheMap =
+            new ConcurrentHashMap<>(256);
 
     private static final Map<MultiKey, String []> attributesAnnotatedByCacheMap =
             new ConcurrentHashMap<>(256);
@@ -63,12 +65,33 @@ public class AnnotationUtils {
      */
     public static <T extends Annotation> T getBeanAnnotation (final Class beanClass, final Class<T> annotationType) {
 
-        for (Annotation annotation : Arrays.asList(beanClass.getDeclaredAnnotations())) {
-            if (annotation.annotationType().equals(annotationType)) {
-                return (T)annotation;
+        T annotationFound   = null;
+
+        if (null != beanClass) {
+
+            final MultiKey multiKey =
+                    new MultiKey(beanClass, annotationType);
+
+            if (beansAnnotatedByCacheMap.containsKey(multiKey)) {
+
+                if (!NULL.equals(beansAnnotatedByCacheMap.get(multiKey))) {
+                    annotationFound =
+                            (T) beansAnnotatedByCacheMap.get(multiKey);
+                }
+            } else {
+
+                for (final Annotation annotation : Arrays.asList(beanClass.getDeclaredAnnotations())) {
+                    if (annotation.annotationType().equals(annotationType)) {
+                        annotationFound = (T) annotation;
+                    }
+                }
+
+                beansAnnotatedByCacheMap.put(multiKey,
+                        (null != annotationFound) ? annotationFound : NULL);
             }
         }
-        return null;
+
+        return annotationFound;
     } // isBeanAnnotatedBy.
 
 

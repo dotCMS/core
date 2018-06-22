@@ -36,12 +36,7 @@ import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.apache.commons.beanutils.BeanUtils;
@@ -564,11 +559,21 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	@Override
-	public List<WorkflowActionClass> findActionClasses(WorkflowAction action) throws DotDataException {
-		final DotConnect db = new DotConnect();
-		db.setSQL(sql.SELECT_ACTION_CLASSES_BY_ACTION);
-		db.addParam(action.getId());
-		return this.convertListToObjects(db.loadObjectResults(), WorkflowActionClass.class);
+	public List<WorkflowActionClass> findActionClasses(final WorkflowAction action) throws DotDataException {
+
+		List<WorkflowActionClass> classes = cache.getActionClasses(action);
+
+		if (null == classes) {
+
+			classes = this.convertListToObjects(new DotConnect().setSQL(sql.SELECT_ACTION_CLASSES_BY_ACTION)
+					.addParam(action.getId()).loadObjectResults(), WorkflowActionClass.class);
+
+			classes = (classes == null)?Collections.emptyList():classes;
+
+			cache.addActionClasses(action, classes);
+		}
+
+		return classes;
 	}
 
 	public WorkflowActionClassParameter findActionClassParameter(String id) throws DotDataException {
@@ -582,16 +587,25 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	public List<WorkflowAction> findActions(final WorkflowStep step) throws DotDataException {
 
 		List<WorkflowAction> actions = cache.getActions(step);
-		if(actions ==null){
-			final DotConnect db = new DotConnect();
-			db.setSQL(sql.SELECT_ACTIONS_BY_STEP);
-			db.addParam(step.getId());
-			actions =  this.convertListToObjects(db.loadObjectResults(), WorkflowAction.class);
-			if(actions == null) actions= new ArrayList<WorkflowAction>();
+
+		if(null == actions) {
+
+			actions = this.convertListToObjects(
+					new DotConnect().setSQL(sql.SELECT_ACTIONS_BY_STEP)
+							.addParam(step.getId()).loadObjectResults(), WorkflowAction.class);
+
+			if (null == actions) {
+
+				actions = Collections.emptyList();
+				cache.addActions(step, actions);
+				return actions;
+			}
 
 			cache.addActions(step, actions);
 		}
-		return actions;
+
+		// we need always a copy to avoid futher modification to the WorkflowAction since they are not immutable.
+		return ImmutableList.copyOf(actions);
 	}
 
 	@Override
@@ -1223,7 +1237,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	@Override
-	public void saveActionClass(WorkflowActionClass actionClass) throws DotDataException,AlreadyExistException {
+	public void saveActionClass(final WorkflowActionClass actionClass) throws DotDataException,AlreadyExistException {
 
 		boolean isNew = true;
 		if (UtilMethods.isSet(actionClass.getId())) {
@@ -1261,9 +1275,11 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		// cache.remove(step);
 
 		// update workflowScheme mod date
-		WorkflowAction action = findAction(actionClass.getActionId());
-		WorkflowScheme scheme = findScheme(action.getSchemeId());
+		final WorkflowAction action = findAction(actionClass.getActionId());
+		final WorkflowScheme scheme = findScheme(action.getSchemeId());
+
 		saveScheme(scheme);
+		cache.remove(action);
 	}
 
 	@Override

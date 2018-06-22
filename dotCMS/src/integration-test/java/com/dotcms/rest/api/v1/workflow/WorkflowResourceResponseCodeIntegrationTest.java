@@ -1,21 +1,5 @@
 package com.dotcms.rest.api.v1.workflow;
 
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.CURRENT_STEP;
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.actionName;
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.addSteps;
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.createScheme;
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.createWorkflowActions;
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.doCleanUp;
-import static com.dotcms.rest.exception.mapper.ExceptionMapperUtil.ACCESS_CONTROL_HEADER_INVALID_LICENSE;
-import static com.dotmarketing.business.Role.ADMINISTRATOR;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.dotcms.mock.response.MockAsyncResponse;
 import com.dotcms.repackage.javax.ws.rs.container.AsyncResponse;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -25,11 +9,7 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotcms.workflow.form.WorkflowActionForm;
-import com.dotcms.workflow.form.WorkflowActionStepForm;
-import com.dotcms.workflow.form.WorkflowReorderWorkflowActionStepForm;
-import com.dotcms.workflow.form.WorkflowStepAddForm;
-import com.dotcms.workflow.form.WorkflowStepUpdateForm;
+import com.dotcms.workflow.form.*;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -43,13 +23,22 @@ import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.liferay.portal.model.User;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-import javax.servlet.http.HttpServletRequest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.*;
+import static com.dotmarketing.business.Role.ADMINISTRATOR;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+import static org.mockito.Matchers.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class WorkflowResourceResponseCodeIntegrationTest {
 
@@ -292,14 +281,14 @@ public class WorkflowResourceResponseCodeIntegrationTest {
     @Test
     public void Find_Available_Actions(){
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response findResponse = workflowResource.findAvailableActions(request,"LOL");
+        final Response findResponse = workflowResource.findAvailableActions(request,"LOL", null);
         assertEquals(Status.NOT_FOUND.getStatusCode(), findResponse.getStatus());
     }
 
     @Test
     public void Find_Available_Actions_Invalid_Input(){
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response findResponse = workflowResource.findAvailableActions(request,null);
+        final Response findResponse = workflowResource.findAvailableActions(request,null, null);
         assertEquals(Status.BAD_REQUEST.getStatusCode(), findResponse.getStatus());
     }
 
