@@ -327,7 +327,6 @@ public class VersionableFactoryImpl extends VersionableFactory {
         else {
             HibernateUtil.saveOrUpdate(vi);
         }
-    	HibernateUtil.saveOrUpdate(vi);
     	this.icache.removeContentletVersionInfoToCache(cvInfo.getIdentifier(),cvInfo.getLang());
     }
 
