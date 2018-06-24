@@ -105,7 +105,7 @@ pagePath=<%=pagePath%>
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
 	<liferay:param name="box_title" value="Order Menu Items" />
 
-	<form id="fm" method="post" target="_parent">
+	<form id="fm" method="post">
 		<input type="hidden" name="referer" value="<%=referer%>">
 		<input type="hidden" name="cmd" value="reorder">
 		<input type="hidden" name="item" id="item" value="">
