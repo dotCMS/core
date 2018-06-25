@@ -1,14 +1,5 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublisherAPI;
@@ -23,6 +14,11 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.util.Logger;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+
+@Actionlet(pushPublish = true)
 public class PushPublishActionlet extends WorkFlowActionlet {
 
 	private PublisherAPI publisherAPI = PublisherAPI.getInstance();

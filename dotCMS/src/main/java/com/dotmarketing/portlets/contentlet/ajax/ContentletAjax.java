@@ -16,6 +16,7 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.*;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.*;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
@@ -1031,7 +1032,9 @@ public class ContentletAjax {
 				searchResult.put("contentStructureType", "" + con.getStructure().getStructureType());
 
 				// Workflow Actions
-				final JSONArray wfActionMapList = this.getAvailableWorkflowActionsJson(currentUser, con);
+				final JSONArray wfActionMapList = this.getAvailableWorkflowActionsListingJson(currentUser, con);
+				
+				
 				searchResult.put("wfActionMapList", wfActionMapList.toString());
 				// End Workflow Actions
 
@@ -1111,14 +1114,14 @@ public class ContentletAjax {
 
 	@CloseDB
 	@NotNull
-	private JSONArray getAvailableWorkflowActionsJson(final User currentUser,
+	private JSONArray getAvailableWorkflowActionsListingJson(final User currentUser,
 													  final Contentlet contentlet) throws DotDataException, DotSecurityException {
 
 		final List<WorkflowAction> workflowActions = new ArrayList<>();
 
 		try {
             workflowActions.addAll(APILocator.getWorkflowAPI()
-					.findAvailableActions(contentlet, currentUser)) ;
+					.findAvailableActionsListing(contentlet, currentUser)) ;
         } catch (Exception e) {
             Logger.error(this, "Could not load workflow actions : ", e);
         }

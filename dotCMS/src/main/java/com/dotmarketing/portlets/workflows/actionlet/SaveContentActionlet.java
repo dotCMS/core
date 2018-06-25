@@ -16,6 +16,7 @@ import java.util.Map;
  * Do the save for a content (checkin)
  * @author jsanca
  */
+@Actionlet(save = true)
 public class SaveContentActionlet extends WorkFlowActionlet {
 
 	private final ContentletAPI contentletAPI;

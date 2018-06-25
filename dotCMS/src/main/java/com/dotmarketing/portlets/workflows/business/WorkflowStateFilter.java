@@ -19,15 +19,21 @@ public class WorkflowStateFilter {
     public boolean filter (final WorkflowAction workflowAction,
                            final ContentletStateOptions contentletStatusOptions) {
 
-        if (!contentletStatusOptions.isLocked() && workflowAction.shouldShowOnUnlock()) { // unlocked
+        final WorkflowAPI.RenderMode renderMode = contentletStatusOptions.getRenderMode();
 
-            return this.filterAction(workflowAction, contentletStatusOptions);
-        } else {
+        if ((renderMode == WorkflowAPI.RenderMode.EDITING && workflowAction.shouldShowOnEdit()) ||
+                (renderMode == WorkflowAPI.RenderMode.LISTING && workflowAction.shouldShowOnListing())) {
 
-            if (contentletStatusOptions.isCanLock() && contentletStatusOptions.isLocked()
-                    && workflowAction.shouldShowOnLock()) {
+            if (!contentletStatusOptions.isLocked() && workflowAction.shouldShowOnUnlock()) { // unlocked
 
                 return this.filterAction(workflowAction, contentletStatusOptions);
+            } else {
+
+                if (contentletStatusOptions.isCanLock() && contentletStatusOptions.isLocked()
+                        && workflowAction.shouldShowOnLock()) {
+
+                    return this.filterAction(workflowAction, contentletStatusOptions);
+                }
             }
         }
 

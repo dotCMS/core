@@ -174,16 +174,7 @@
 
 
         function fillResults(data) {
-        	if(amISearching <0){
-        		amISearching=0;
-        	}
-        	else if(amISearching>0){
-        		amISearching--;
-        	}
 
-        	if(amISearching>0){
-        		return;
-        	}
 
             var counters = data[0];
             var hasNext = counters["hasNext"];
@@ -260,7 +251,7 @@
                     dijit.byId('checkAll').attr('checked',true);
                     selectAllContents();
             }
-            amISearching--;
+
 
         }
 
@@ -1240,20 +1231,31 @@
               obj = dojo.byId("step_id");
            return obj.value;
         }
-
+        
+        
+        const debounce = (callback, time = 250, interval) => 
+        (...args) => {
+          clearTimeout(interval, interval = setTimeout(() => callback(...args), time));
+         
+        }
+        const debouncedSearch = debounce(doSearch1, 250);
+        
         function doSearch (page, sortBy) {
-                // Wait for the "HostFolderFilteringSelect" widget to end the values updating process before proceeding with the search, if necessary.
-                if (dijit.byId('FolderHostSelector') && dijit.byId('FolderHostSelector').attr('updatingSelectedValue')) {
-                        setTimeout("doSearch (" + page + ", '" + sortBy + "');", 250);
-                } else {
-                		if(dijit.byId('structure_inode'))
-                        	doSearch1 (page, sortBy);
-                        else
-                        	setTimeout("doSearch (" + page + ", '" + sortBy + "');", 250);
-                }
+			// Wait for the "HostFolderFilteringSelect" widget to end the values updating process before proceeding with the search, if necessary.
+			if (dijit.byId('FolderHostSelector') && dijit.byId('FolderHostSelector').attr('updatingSelectedValue')) {
+			        setTimeout("doSearch (" + page + ", '" + sortBy + "');", 250);
+			} else {
+				if(dijit.byId('structure_inode')){
+				    debouncedSearch(page, sortBy);
+				}
+				else{
+				    setTimeout("doSearch (" + page + ", '" + sortBy + "');", 250);
+				}
+			}
         }
 
-		var amISearching = 0;
+
+
 
 
         function doSearch1 (page, sortBy) {
@@ -1494,7 +1496,7 @@
                                 if(dateTosplit[0]< 10) dateTosplit[0]= "0"+dateTosplit[0]; if(dateTosplit[1]< 10) dateTosplit[1]= "0"+dateTosplit[1];
                                 dateTo= dateTosplit[2]+dateTosplit[0]+dateTosplit[1]+"235959";
                         }
-                        amISearching++;
+
                         ContentletAjax.searchContentlets (structureInode, fieldsValues, categoriesValues, showDeleted, filterSystemHost, filterUnpublish, filterLocked, currentPage, currentSortBy, dateFrom, dateTo, fillResults);
 
                 }
@@ -1968,7 +1970,6 @@
 
 	        hideMatchingResults ();
 
-	        amISearching =0;
 
         }
 
@@ -2218,53 +2219,33 @@
     function togglePublish(){
         var cbArray = document.getElementsByName("publishInode");
         var showArchive =  (dijit.byId("showingSelect").getValue() == "archived");
-
-        var cbCount = cbArray.length;
-        for(i = 0;i< cbCount ;i++){
-            if (cbArray[i].checked) {
-
-                if (showArchive) {
-                  <%=(canReindex?"dijit.byId('reindexButton').setAttribute(\"disabled\", false);":"") %>
-                } else {
-                   <% if ( enterprise ) { %>
-                    if(typeof dijit.byId('addToBundleButton') !== "undefined") {
-                       <% if ( sendingEndpoints ) { %>
-                             dijit.byId('pushPublishButton').setAttribute("disabled", false);
-                       <% } %>
-                    }
-                    dijit.byId('addToBundleButton').setAttribute("disabled", false);
-
-                  <% } %>
-                      dijit.byId('unlockButton').setAttribute("disabled", false);
-                  <%=(canReindex?"dijit.byId('reindexButton').setAttribute(\"disabled\", false);":"") %>
+        if(event && event.shiftKey && event.target.checked){
+        
+            var hasChecked=false;
+            for(i = 0;i< cbArray.length ;i++){
+                if (cbArray[i].checked) {
+                    hasChecked=true;
                 }
+                dijit.byId(cbArray[i].id).setChecked(hasChecked);
+                cbArray[i].checked=true;
+                if(cbArray[i].id==event.target.id){
+                    break;
+                }
+                
+            }
+        }
+        
 
-
+        for(i = 0;i< cbArray.length ;i++){
+            if (cbArray[i].checked) {
                 dijit.byId('bulkAvailableActions').setAttribute("disabled", false);
                 return;
             }
-
         }
 
         // nothing selected
-
         dijit.byId('bulkAvailableActions').setAttribute("disabled", true);
 
-
-            if(showArchive){
-                <%=(canReindex?"dijit.byId('reindexButton').setAttribute(\"disabled\", true);":"") %>
-            } else {
-                <% if ( enterprise ) { %>
-                if(typeof dijit.byId('addToBundleButton') !== "undefined") {
-                <%   if ( sendingEndpoints ) { %>
-                dijit.byId('pushPublishButton').setAttribute("disabled", true);
-                <% } %>
-                }
-                dijit.byId('addToBundleButton').setAttribute("disabled", true);
-                <% } %>
-                dijit.byId("unlockButton").setAttribute("disabled", true);
-                <%=(canReindex?"dijit.byId('reindexButton').setAttribute(\"disabled\", true);":"") %>
-            }
 
 
     }

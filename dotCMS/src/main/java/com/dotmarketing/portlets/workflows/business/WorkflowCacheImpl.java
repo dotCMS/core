@@ -1,17 +1,14 @@
 package com.dotmarketing.portlets.workflows.business;
 
-import java.util.List;
-
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
-import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+
+import java.util.List;
 
 //This interface should have default package access
 public class WorkflowCacheImpl extends WorkflowCache {
@@ -288,6 +285,37 @@ public class WorkflowCacheImpl extends WorkflowCache {
 			Logger.debug(WorkflowCacheImpl.class,e.getMessage(),e);
 		}
 		return null;
+	}
+
+	@Override
+	protected List<WorkflowActionClass> getActionClasses(final WorkflowAction action) {
+
+		if(action != null ) {
+			try {
+				return (List<WorkflowActionClass>) cache.get(action.getId(), ACTION_CLASS_GROUP);
+			} catch (DotCacheException e) {
+				Logger.debug(WorkflowCacheImpl.class, e.getMessage(), e);
+			}
+		}
+		return null;
+	}
+
+	@Override
+	protected List<WorkflowActionClass> addActionClasses(final WorkflowAction action,
+													final List<WorkflowActionClass> actionClasses) {
+
+		if(action == null || actionClasses==null) {
+			return null;
+		}
+
+		cache.put(action.getId(), actionClasses, ACTION_CLASS_GROUP);
+		return actionClasses;
+	}
+
+	@Override
+	public void remove(final WorkflowAction action) {
+
+		cache.remove(action.getId(), ACTION_CLASS_GROUP);
 	}
 
 	@Override
