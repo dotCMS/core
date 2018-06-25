@@ -17,30 +17,20 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.workflows.model.WorkFlowTaskFiles;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
-import com.dotmarketing.portlets.workflows.model.WorkflowComment;
-import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
-import com.dotmarketing.portlets.workflows.model.WorkflowState;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
-import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
+import org.apache.commons.beanutils.BeanUtils;
+
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import org.apache.commons.beanutils.BeanUtils;
-import org.apache.poi.ss.formula.functions.T;
 
 
 /**
@@ -323,6 +313,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		final WorkflowScheme proxyScheme = new WorkflowScheme();
 		proxyScheme.setId(action.getSchemeId());
 		cache.removeActions(proxyScheme);
+		cache.remove(action);
 
 		// update scheme mod date
 		final WorkflowScheme scheme = findScheme(action.getSchemeId());
@@ -355,7 +346,13 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 				.addParam(step.getId()).loadResult();
 
 		Logger.debug(this, "Removing the actions cache associated to the step: " + step.getId());
+		final List<WorkflowAction> actions =
+				this.cache.getActions(step);
+		if (null != actions) {
+			actions.stream().forEach(action -> this.cache.remove(action));
+		}
 		cache.removeActions(step);
+
 
 		Logger.debug(this, "Updating schema associated to the step: " + step.getId());
 		// update scheme mod date
@@ -379,6 +376,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		final WorkflowAction action = findAction(actionId);
 		final WorkflowScheme scheme = findScheme(action.getSchemeId());
 		saveScheme(scheme);
+		this.cache.remove(action);
 	}
 
 	/**
@@ -395,6 +393,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		// update scheme mod date
 		final WorkflowScheme scheme = findScheme(action.getSchemeId());
 		saveScheme(scheme);
+		this.cache.remove(action);
 	}
 
 	@Override
@@ -1930,6 +1929,12 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			dc.addParam(scheme.getId());
 			dc.loadResult();
 
+			final List<WorkflowAction> actions =
+					this.cache.getActions(scheme);
+			if (null != actions) {
+				actions.stream().forEach(action -> this.cache.remove(action));
+			}
+			this.cache.remove(scheme);
 		} catch (DotDataException e) {
 			Logger.error(WorkFlowFactory.class,e.getMessage(),e);
 			throw new DotDataException(e.getMessage(), e);
