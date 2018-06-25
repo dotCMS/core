@@ -163,11 +163,11 @@ td li li{
 			   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save-changes")) %>
 	                    </button>       
 		<%} %>
-		<% if (referer!=null && referer.length()>0) { %>
-	                    <button dojoType="dijit.form.Button" onClick="window.location.href='<%=referer%>'" iconClass="cancelIcon">
-	                      <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
-	                    </button>
-		<% } %>
+        <button dojoType="dijit.form.Button" onClick="parent.window.location.href='/html/portlet/ext/folders/redirect_after_order.jsp'" iconClass="cancelIcon">
+
+         <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
+       </button>
+
 	</div>
 	</form>
 </liferay:box>
