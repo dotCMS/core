@@ -7,6 +7,15 @@ const white = '#fff';
 const grayLight = '#c5c5c5';
 
 export const EDIT_PAGE_CSS = `
+    :root {
+        --color-background: #3A3847;
+        --color-main: #C336E5;
+        --color-main_mod: #D369EC;
+        --color-main_rgb: 195, 54, 229;
+        --color-sec: #54428E;
+        --color-sec_rgb: 84, 66, 142;
+    }
+
     [data-dot-object="container"] {
         border: solid 1px #53c2f9;
         min-height: 120px;
@@ -211,19 +220,19 @@ export const EDIT_PAGE_CSS = `
 
     .dotedit-container__add {
         background-image: url(data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjRkZGRkZGIiBoZWlnaHQ9IjI0IiB2aWV3Qm94PSIwIDAgMjQgMjQiIHdpZHRoPSIyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4gICAgPHBhdGggZD0iTTE5IDEzaC02djZoLTJ2LTZINXYtMmg2VjVoMnY2aDZ2MnoiLz4gICAgPHBhdGggZD0iTTAgMGgyNHYyNEgweiIgZmlsbD0ibm9uZSIvPjwvc3ZnPg==);
-        background-color: #0E80CB;
+        background-color: var(--color-main);
     }
 
     .dotedit-container__add:hover {
-        background-color: #0b629b;
+        background-color: var(--color-main_mod);
     }
 
     .dotedit-container__add:focus {
-        background-color: #0b629b
+        background-color: var(--color-main_mod);
     }
 
     .dotedit-container__add:active {
-        background-color: #07446c;
+        background-color: var(--color-main_mod);
     }
 
     .dotedit-contentlet__drag {

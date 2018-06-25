@@ -46,6 +46,7 @@ import { ContentType } from '../../content-types/shared/content-type.model';
 import { DotContentletEditorModule } from '../../../view/components/dot-contentlet-editor/dot-contentlet-editor.module';
 import { DotEditPageInfoModule } from '../components/dot-edit-page-info/dot-edit-page-info.module';
 import { DotEditPageInfoComponent } from '../components/dot-edit-page-info/dot-edit-page-info.component';
+import { DotUiColorsService } from '../../../api/services/dot-ui-colors/dot-ui-colors.service';
 
 export const mockDotPageState: DotPageState = {
     mode: PageMode.PREVIEW,
@@ -95,6 +96,7 @@ describe('DotEditContentComponent', () => {
     let toolbarComponent: DotEditPageToolbarComponent;
     let toolbarElement: DebugElement;
     let dotContentletEditorService: DotContentletEditorService;
+    let dotUiColorsService: DotUiColorsService;
 
     beforeEach(() => {
         const messageServiceMock = new MockDotMessageService({
@@ -194,6 +196,7 @@ describe('DotEditContentComponent', () => {
         dotEditPageDataService = de.injector.get(DotEditPageDataService);
         dotGlobalMessageService = de.injector.get(DotGlobalMessageService);
         dotHttpErrorManagerService = de.injector.get(DotHttpErrorManagerService);
+        dotUiColorsService = de.injector.get(DotUiColorsService);
         dotPageStateService = de.injector.get(DotPageStateService);
         dotRouterService = de.injector.get(DotRouterService);
         toolbarElement = de.query(By.css('dot-edit-page-toolbar'));
@@ -250,7 +253,16 @@ describe('DotEditContentComponent', () => {
         const spyLoadingIndicator = spyOn(component.dotLoadingIndicatorService, 'hide');
         const loadingIndicatorElem: DebugElement = de.query(By.css('dot-loading-indicator'));
 
-        component.onLoad(Event);
+        const iframe: DebugElement = de.query(By.css('.dot-edit__iframe'));
+        iframe.triggerEventHandler('load', {
+            target: {
+                contentWindow: {
+                    document: {
+                        querySelector: () => {}
+                    }
+                }
+            }
+        });
 
         expect(loadingIndicatorElem).not.toBeNull();
         expect(spyLoadingIndicator).toHaveBeenCalled();
@@ -959,11 +971,44 @@ describe('DotEditContentComponent', () => {
 
     it('should set listener to change containers height', () => {
         spyOn(dotEditContentHtmlService, 'setContaintersChangeHeightListener');
-        fixture.detectChanges();
         expect(dotEditContentHtmlService.setContaintersChangeHeightListener).not.toHaveBeenCalled();
+        fixture.detectChanges();
         component.pageState.state.mode = PageMode.EDIT;
-        component.onLoad(Event);
+
+
+        const iframe: DebugElement = de.query(By.css('.dot-edit__iframe'));
+        iframe.triggerEventHandler('load', {
+            target: {
+                contentWindow: {
+                    document: {
+                        querySelector: () => {}
+                    }
+                }
+            }
+        });
+
         expect(dotEditContentHtmlService.setContaintersChangeHeightListener).toHaveBeenCalledWith(component.pageState.layout);
+    });
+
+    it('should set colors on load', () => {
+        const fakeHtmlEl = {
+            hello: 'world'
+        };
+
+        spyOn(dotUiColorsService, 'setColors');
+
+        const iframe: DebugElement = de.query(By.css('.dot-edit__iframe'));
+        iframe.triggerEventHandler('load', {
+            target: {
+                contentWindow: {
+                    document: {
+                        querySelector: () => fakeHtmlEl
+                    }
+                }
+            }
+        });
+
+        expect(dotUiColorsService.setColors).toHaveBeenCalledWith(fakeHtmlEl);
     });
 
 });

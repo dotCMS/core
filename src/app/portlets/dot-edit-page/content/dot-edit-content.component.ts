@@ -28,6 +28,7 @@ import { PageMode } from '../shared/models/page-mode.enum';
 import { DotRenderedPage } from '../shared/models/dot-rendered-page.model';
 import { DotEditPageDataService } from '../shared/services/dot-edit-page-resolver/dot-edit-page-data.service';
 import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotUiColorsService } from '../../../api/services/dot-ui-colors/dot-ui-colors.service';
 import { ContentType } from '../../content-types/shared/content-type.model';
 
 /**
@@ -63,6 +64,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         private dotMessageService: DotMessageService,
         private dotPageStateService: DotPageStateService,
         private dotRouterService: DotRouterService,
+        private dotUiColorsService: DotUiColorsService,
         private ngZone: NgZone,
         private route: ActivatedRoute,
         private siteService: SiteService,
@@ -93,11 +95,15 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
      * @param {any} $event
      * @memberof DotEditContentComponent
      */
-    onLoad(_event): void {
+    onLoad($event): void {
         this.dotLoadingIndicatorService.hide();
+
         if (this.shouldSetContainersHeight()) {
             this.dotEditContentHtmlService.setContaintersChangeHeightListener(this.pageState.layout);
         }
+
+        const doc = $event.target.contentWindow.document;
+        this.dotUiColorsService.setColors(doc.querySelector('html'));
     }
 
     /**

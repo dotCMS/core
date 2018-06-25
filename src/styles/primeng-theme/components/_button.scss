@@ -65,6 +65,21 @@
         }
     }
 
+    &[link] {
+        background: none;
+
+        &:not([disabled]) {
+            .ui-button-text,
+            [class^="ui-button-icon"] {
+                color: $brand-secondary;
+            }
+
+            &:hover {
+                background: rgba($brand-secondary_rgb, 0.1);
+            }
+        }
+    }
+
     &.ui-button-icon-only {
         box-shadow: none;
         border-radius: 50%;
