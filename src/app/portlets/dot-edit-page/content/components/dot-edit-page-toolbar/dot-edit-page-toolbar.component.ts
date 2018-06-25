@@ -1,4 +1,4 @@
-import { DotDialogService } from '../../../../../api/services/dot-dialog/dot-dialog.service';
+import { DotAlertConfirmService } from '../../../../../api/services/dot-alert-confirm/dot-alert-confirm.service';
 import { Component, OnInit, Input, EventEmitter, Output, ViewChild, SimpleChanges, OnChanges } from '@angular/core';
 import { SelectItem, InputSwitch } from 'primeng/primeng';
 import * as _ from 'lodash';
@@ -29,7 +29,7 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
 
     private debounceStateSelector = _.debounce((pageState: PageMode) => this.setSelectorState(pageState), 500, { leading: true });
 
-    constructor(public dotMessageService: DotMessageService, private dotDialogService: DotDialogService) {}
+    constructor(public dotMessageService: DotMessageService, private dotDialogService: DotAlertConfirmService) {}
 
     ngOnInit() {
         this.dotMessageService

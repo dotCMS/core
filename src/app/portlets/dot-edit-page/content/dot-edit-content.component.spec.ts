@@ -12,7 +12,7 @@ import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DotContainerContentletService } from './services/dot-container-contentlet.service';
 import { DotContentletLockerService } from '../../../api/services/dot-contentlet-locker/dot-contentlet-locker.service';
 import { DotDOMHtmlUtilService } from './services/html/dot-dom-html-util.service';
-import { DotDialogService } from '../../../api/services/dot-dialog/index';
+import { DotAlertConfirmService } from '../../../api/services/dot-alert-confirm/index';
 import { DotDragDropAPIHtmlService } from './services/html/dot-drag-drop-api-html.service';
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
 import { DotEditContentToolbarHtmlService } from './services/html/dot-edit-content-toolbar-html.service';
@@ -42,6 +42,7 @@ import { DotEditPageToolbarComponent } from './components/dot-edit-page-toolbar/
 import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotPageContainer } from '../shared/models/dot-page-container.model';
 import { DotEditContentComponent } from './dot-edit-content.component';
+import { ContentType } from '../../content-types/shared/content-type.model';
 import { DotContentletEditorModule } from '../../../view/components/dot-contentlet-editor/dot-contentlet-editor.module';
 import { DotEditPageInfoModule } from '../components/dot-edit-page-info/dot-edit-page-info.module';
 import { DotEditPageInfoComponent } from '../components/dot-edit-page-info/dot-edit-page-info.component';
@@ -68,11 +69,21 @@ class MockDotWhatsChangedComponent {
     @Input() pageId: string;
 }
 
+@Component({
+    selector: 'dot-form-selector',
+    template: ''
+})
+export class MockDotFormSelectorComponent {
+    @Input() show = false;
+    @Output() select = new EventEmitter<ContentType>();
+    @Output() close = new EventEmitter<any>();
+}
+
 describe('DotEditContentComponent', () => {
     const siteServiceMock = new SiteServiceMock();
     let component: DotEditContentComponent;
     let de: DebugElement;
-    let dotDialogService: DotDialogService;
+    let dotDialogService: DotAlertConfirmService;
     let dotEditContentHtmlService: DotEditContentHtmlService;
     let dotEditPageDataService: DotEditPageDataService;
     let dotGlobalMessageService: DotGlobalMessageService;
@@ -99,7 +110,12 @@ describe('DotEditContentComponent', () => {
         });
 
         DOTTestBed.configureTestingModule({
-            declarations: [DotEditContentComponent, MockDotEditContentViewAsToolbarComponent, MockDotWhatsChangedComponent],
+            declarations: [
+                DotEditContentComponent,
+                MockDotEditContentViewAsToolbarComponent,
+                MockDotWhatsChangedComponent,
+                MockDotFormSelectorComponent
+            ],
             imports: [
                 BrowserAnimationsModule,
                 DialogModule,
@@ -118,7 +134,7 @@ describe('DotEditContentComponent', () => {
                 DotContainerContentletService,
                 DotContentletLockerService,
                 DotDOMHtmlUtilService,
-                DotDialogService,
+                DotAlertConfirmService,
                 DotDragDropAPIHtmlService,
                 DotEditContentHtmlService,
                 DotEditContentToolbarHtmlService,
@@ -173,7 +189,7 @@ describe('DotEditContentComponent', () => {
         component = fixture.componentInstance;
         de = fixture.debugElement;
         dotContentletEditorService = de.injector.get(DotContentletEditorService);
-        dotDialogService = de.injector.get(DotDialogService);
+        dotDialogService = de.injector.get(DotAlertConfirmService);
         dotEditContentHtmlService = de.injector.get(DotEditContentHtmlService);
         dotEditPageDataService = de.injector.get(DotEditPageDataService);
         dotGlobalMessageService = de.injector.get(DotGlobalMessageService);
@@ -598,7 +614,7 @@ describe('DotEditContentComponent', () => {
                 dotEditContentHtmlService.iframeActions$.next({
                     name: 'add',
                     dataset: {
-                        dotAdd: 'content,widget',
+                        dotAdd: 'content',
                         dotIdentifier: '123',
                         dotUuid: '456'
                     }
@@ -607,40 +623,98 @@ describe('DotEditContentComponent', () => {
                 fixture.detectChanges();
             });
 
-            it('should have dot-add-contentlet', () => {
-                expect(de.query(By.css('dot-add-contentlet')) !== null).toBe(true);
-            });
 
-            it('should set container to add', () => {
-                expect(dotEditContentHtmlService.setContainterToAppendContentlet).toHaveBeenCalledWith({
-                    identifier: '123',
-                    uuid: '456'
-                });
-            });
-
-            it('should call add service', () => {
-                expect(dotContentletEditorService.add).toHaveBeenCalledWith({
-                    header: 'Content Search',
-                    data: {
-                        container: '123',
-                        baseTypes: 'content,widget'
-                    },
-                    events: {
-                        load: jasmine.any(Function)
-                    }
-                });
-            });
-
-            it('should bind contentlet events', () => {
-                const fakeEvent = {
-                    target: {
-                        contentWindow: {
-                            ngEditContentletEvents: undefined
+            describe('content or widget', () => {
+                beforeEach(() => {
+                    dotEditContentHtmlService.iframeActions$.next({
+                        name: 'add',
+                        dataset: {
+                            dotAdd: 'content',
+                            dotIdentifier: '123',
+                            dotUuid: '456'
                         }
-                    }
-                };
-                dotContentletEditorService.load(fakeEvent);
-                expect(fakeEvent.target.contentWindow.ngEditContentletEvents).toBeDefined();
+                    });
+
+                    fixture.detectChanges();
+                });
+
+                it('should have dot-add-contentlet', () => {
+                    expect(de.query(By.css('dot-add-contentlet')) !== null).toBe(true);
+                });
+
+                it('should set container to add', () => {
+                    expect(dotEditContentHtmlService.setContainterToAppendContentlet).toHaveBeenCalledWith({
+                        identifier: '123',
+                        uuid: '456'
+                    });
+
+                    expect(dotContentletEditorService.add).toHaveBeenCalledWith({
+                        header: 'Content Search',
+                        data: {
+                            container: '123',
+                            baseTypes: 'content'
+                        },
+                        events: {
+                            load: jasmine.any(Function)
+                        }
+                    });
+                });
+
+                it('should bind contentlet events', () => {
+                    const fakeEvent = {
+                        target: {
+                            contentWindow: {
+                                ngEditContentletEvents: undefined
+                            }
+                        }
+                    };
+                    dotContentletEditorService.load(fakeEvent);
+                    expect(fakeEvent.target.contentWindow.ngEditContentletEvents).toBeDefined();
+                });
+            });
+
+            describe('form', () => {
+                let dotFormSelector;
+
+                beforeEach(() => {
+                    dotEditContentHtmlService.iframeActions$.next({
+                        name: 'add',
+                        dataset: {
+                            dotAdd: 'form',
+                            dotIdentifier: '123',
+                            dotUuid: '456'
+                        }
+                    });
+
+                    fixture.detectChanges();
+
+                    dotFormSelector = de.query(By.css('dot-form-selector'));
+                });
+
+                it('should show form-selector and set container to add', () => {
+                    expect(dotEditContentHtmlService.setContainterToAppendContentlet).toHaveBeenCalledWith({
+                        identifier: '123',
+                        uuid: '456'
+                    });
+
+                    fixture.detectChanges();
+
+                    expect(dotFormSelector.componentInstance.show).toBe(true);
+                });
+
+
+                it('select a form to add into the page', () => {
+                    const mockContentType = {};
+
+                    spyOn(dotEditContentHtmlService, 'renderAddedForm').and.callFake(() => {});
+
+                    dotFormSelector.componentInstance.select.emit(mockContentType);
+
+                    fixture.detectChanges();
+
+                    expect(dotFormSelector.componentInstance.show).toBe(false);
+                    expect(dotEditContentHtmlService.renderAddedForm).toHaveBeenCalledWith(mockContentType);
+                });
             });
         });
 

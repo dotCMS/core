@@ -11,12 +11,12 @@ import { LoginService } from 'dotcms-js/dotcms-js';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 import { DotContentletWrapperComponent } from './dot-contentlet-wrapper.component';
-import { DotDialogService } from '../../../../../api/services/dot-dialog';
 import { DotIframeDialogModule } from '../../../dot-iframe-dialog/dot-iframe-dialog.module';
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { DotMessageService } from '../../../../../api/services/dot-messages-service';
 import { LoginServiceMock } from '../../../../../test/login-service.mock';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
+import { DotAlertConfirmService } from '../../../../../api/services/dot-alert-confirm';
 
 const messageServiceMock = new MockDotMessageService({
     'editcontentlet.lose.dialog.header': 'Header',
@@ -30,7 +30,7 @@ describe('DotContentletWrapperComponent', () => {
     let fixture: ComponentFixture<DotContentletWrapperComponent>;
     let dotIframeDialog: DebugElement;
     let dotAddContentletService: DotContentletEditorService;
-    let dotDialogService: DotDialogService;
+    let dotAlertConfirmService: DotAlertConfirmService;
 
     beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
@@ -63,7 +63,7 @@ describe('DotContentletWrapperComponent', () => {
         de = fixture.debugElement;
         component = de.componentInstance;
         dotAddContentletService = de.injector.get(DotContentletEditorService);
-        dotDialogService = de.injector.get(DotDialogService);
+        dotAlertConfirmService = de.injector.get(DotAlertConfirmService);
 
         spyOn(dotAddContentletService, 'clear');
         spyOn(dotAddContentletService, 'load');
@@ -125,7 +125,7 @@ describe('DotContentletWrapperComponent', () => {
                 });
 
                 it('should show confirmation dialog and handle accept', () => {
-                    spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
+                    spyOn(dotAlertConfirmService, 'confirm').and.callFake((conf) => {
                         conf.accept();
                     });
 
@@ -142,7 +142,7 @@ describe('DotContentletWrapperComponent', () => {
                         }
                     });
 
-                    expect(dotDialogService.confirm).toHaveBeenCalledWith({
+                    expect(dotAlertConfirmService.confirm).toHaveBeenCalledWith({
                         accept: jasmine.any(Function),
                         reject: jasmine.any(Function),
                         header: 'Header',
@@ -157,7 +157,7 @@ describe('DotContentletWrapperComponent', () => {
                 });
 
                 it('should show confirmation dialog and handle reject', () => {
-                    spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
+                    spyOn(dotAlertConfirmService, 'confirm').and.callFake((conf) => {
                         conf.reject();
                     });
 
@@ -172,7 +172,7 @@ describe('DotContentletWrapperComponent', () => {
                         close: () => {}
                     });
 
-                    expect(dotDialogService.confirm).toHaveBeenCalledWith({
+                    expect(dotAlertConfirmService.confirm).toHaveBeenCalledWith({
                         accept: jasmine.any(Function),
                         reject: jasmine.any(Function),
                         header: 'Header',

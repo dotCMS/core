@@ -3,6 +3,16 @@ import { DotEditContentToolbarHtmlService } from './dot-edit-content-toolbar-htm
 import { DotMessageService } from '../../../../../api/services/dot-messages-service';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
 import { DotDOMHtmlUtilService } from './dot-dom-html-util.service';
+import { DotLicenseService } from '../../../../../api/services/dot-license/dot-license.service';
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs/Observable';
+
+@Injectable()
+class DotLicenseServiceMock {
+    isEnterprise(): Observable<boolean> {
+        return Observable.of(true);
+    }
+}
 
 describe('DotEditContentToolbarHtmlService', () => {
     let dotEditContentToolbarHtmlService: DotEditContentToolbarHtmlService;
@@ -16,13 +26,15 @@ describe('DotEditContentToolbarHtmlService', () => {
         'editpage.content.container.action.add': 'Add',
         'editpage.content.container.menu.content': 'Content',
         'editpage.content.container.menu.widget': 'Widget',
-        'editpage.content.container.menu.form': 'Form'
+        'editpage.content.container.menu.form': 'Form',
+        'dot.common.license.enterprise.only.error': 'Enterprise Only'
     });
 
     beforeEach(() => {
         TestBed.configureTestingModule({
             providers: [
                 DotEditContentToolbarHtmlService,
+                { provide: DotLicenseService, useClass: DotLicenseServiceMock },
                 DotDOMHtmlUtilService,
                 { provide: DotMessageService, useValue: messageServiceMock }
             ]
@@ -104,6 +116,26 @@ describe('DotEditContentToolbarHtmlService', () => {
                     expect(menuItemsLabels).toEqual(['Widget']);
                     expect(menuItems.length).toEqual(1);
                 });
+
+                describe('without license', () => {
+                    beforeEach(() => {
+                        const dotLicenseService = TestBed.get(DotLicenseService);
+                        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(Observable.of(false));
+                    });
+
+                    it('should have content, widget and form', () => {
+                        dummyContainer.innerHTML = '<div data-dot-object="container" data-dot-can-add="CONTENT,WIDGET,FORM"></div>';
+                        const htmlElement: HTMLHtmlElement = testDoc.getElementsByTagName('html')[0];
+                        htmlElement.appendChild(dummyContainer);
+                        dotEditContentToolbarHtmlService.addContainerToolbar(testDoc);
+                        menuItems = testDoc.querySelectorAll('.dotedit-menu__item ');
+
+                        expect(menuItems.length).toEqual(3);
+                        expect(menuItems[0].classList.contains('dotedit-menu__item--disabled')).toBeFalsy();
+                        expect(menuItems[1].classList.contains('dotedit-menu__item--disabled')).toBeFalsy();
+                        expect(menuItems[2].classList.contains('dotedit-menu__item--disabled')).toBeTruthy();
+                    });
+                });
             });
         });
 
@@ -175,6 +207,24 @@ describe('DotEditContentToolbarHtmlService', () => {
             });
 
             xit('should bind events');
+        });
+
+        describe('form', () => {
+            beforeEach(() => {
+                dummyContainer.innerHTML = `
+                    <div data-dot-object="container">
+                        <div data-dot-object="contentlet" data-dot-basetype="FORM">
+                            <div class="large-column"></div>
+                        </div>
+                    </div>
+                `;
+                htmlElement.appendChild(dummyContainer);
+                dotEditContentToolbarHtmlService.addContentletMarkup(testDoc);
+            });
+
+            it('should have edit button disabled', () => {
+                expect(testDoc.querySelector('.dotedit-contentlet__edit').classList.contains('dotedit-contentlet__disabled')).toBe(true);
+            });
         });
 
         describe('with vtl files', () => {

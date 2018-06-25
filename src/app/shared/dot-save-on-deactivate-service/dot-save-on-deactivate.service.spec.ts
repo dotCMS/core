@@ -1,10 +1,10 @@
 import { DotSaveOnDeactivateService } from './dot-save-on-deactivate.service';
-import { DotDialogService } from '../../api/services/dot-dialog/dot-dialog.service';
+import { DotAlertConfirmService } from '../../api/services/dot-alert-confirm/dot-alert-confirm.service';
 import { DOTTestBed } from '../../test/dot-test-bed';
 import { LoginService } from 'dotcms-js/dotcms-js';
 import { LoginServiceMock } from '../../test/login-service.mock';
 import { OnSaveDeactivate } from './save-on-deactivate';
-import { DotDialog } from '../models/dot-confirmation/dot-confirmation.model';
+import { DotAlertConfirm } from '../models/dot-alert-confirm/dot-alert-confirm.model';
 import { Component } from '@angular/core';
 import { Observable } from 'rxjs/Observable';
 
@@ -21,7 +21,7 @@ class MockComponent implements OnSaveDeactivate {
         return Observable.of(true);
     }
 
-    getSaveWarningMessages(): DotDialog {
+    getSaveWarningMessages(): DotAlertConfirm {
         return { header: 'Header', message: 'message' };
     }
 }
@@ -29,13 +29,13 @@ class MockComponent implements OnSaveDeactivate {
 describe('DotSaveOnDeactivateService', () => {
     let dotSaveOnDeactivateService: DotSaveOnDeactivateService;
     let mockComponent: MockComponent;
-    let dotDialogService: DotDialogService;
+    let dotDialogService: DotAlertConfirmService;
     beforeEach(() => {
         const testbed = DOTTestBed.configureTestingModule({
             declarations: [MockComponent],
             providers: [
                 DotSaveOnDeactivateService,
-                DotDialogService,
+                DotAlertConfirmService,
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
@@ -44,7 +44,7 @@ describe('DotSaveOnDeactivateService', () => {
             imports: []
         });
         dotSaveOnDeactivateService = testbed.get(DotSaveOnDeactivateService);
-        dotDialogService = testbed.get(DotDialogService);
+        dotDialogService = testbed.get(DotAlertConfirmService);
         mockComponent = new MockComponent();
     });
 

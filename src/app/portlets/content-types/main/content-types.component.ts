@@ -1,5 +1,5 @@
 import { ListingDataTableComponent } from '../../../view/components/listing-data-table/listing-data-table.component';
-import { DotDialogService } from '../../../api/services/dot-dialog/dot-dialog.service';
+import { DotAlertConfirmService } from '../../../api/services/dot-alert-confirm/dot-alert-confirm.service';
 import { CrudService } from '../../../api/services/crud';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Component, OnInit, ViewChild } from '@angular/core';
@@ -64,7 +64,7 @@ export class ContentTypesPortletComponent implements OnInit {
     constructor(
         private contentTypesInfoService: ContentTypesInfoService,
         private crudService: CrudService,
-        private dotDialogService: DotDialogService,
+        private dotDialogService: DotAlertConfirmService,
         private dotContentletService: DotContentletService,
         private route: ActivatedRoute,
         private router: Router,

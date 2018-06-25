@@ -1,5 +1,5 @@
 import { CustomTimeComponent } from './view/components/_common/custom-time/custom-time';
-import { DotDialogComponent } from './view/components/_common/dot-dialog/dot-dialog.component';
+import { DotAlertConfirmComponent } from './view/components/_common/dot-alert-confirm/dot-alert-confirm';
 import { GlobalSearchComponent } from './view/components/global-search/global-search';
 import { LogOutContainerComponent } from './view/components/login/login-component/log-out-container';
 import { LoginAsComponent } from './view/components/login-as/login-as';
@@ -17,7 +17,7 @@ import { CapitalizePipe, SafePipe } from './view/pipes/index';
 
 export const COMPONENTS = [
     CustomTimeComponent,
-    DotDialogComponent,
+    DotAlertConfirmComponent,
     GlobalSearchComponent,
     LogOutContainerComponent,
     LoginAsComponent,

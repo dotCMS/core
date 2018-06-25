@@ -283,6 +283,13 @@ export const EDIT_PAGE_CSS = `
         text-decoration: none;
     }
 
+    .dotedit-menu__item[title]:hover:after {
+        content: attr(title);
+        position: absolute;
+        top: 100%;
+        left: 100%;
+    }
+
     .dotedit-menu__item a,
     .dotedit-menu__item a:visited {
         color: inherit;

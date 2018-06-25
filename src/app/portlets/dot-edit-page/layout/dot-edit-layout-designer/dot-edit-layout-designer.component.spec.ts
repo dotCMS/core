@@ -2,7 +2,7 @@ import { By } from '@angular/platform-browser';
 import { ComponentFixture } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DebugElement } from '@angular/core/src/debug/debug_node';
-import { DotDialogService } from '../../../../api/services/dot-dialog';
+import { DotAlertConfirmService } from '../../../../api/services/dot-alert-confirm';
 import { DotEditLayoutDesignerComponent } from './dot-edit-layout-designer.component';
 import { DotEditLayoutGridModule } from '../components/dot-edit-layout-grid/dot-edit-layout-grid.module';
 import { LoginService, SocketFactory } from 'dotcms-js/dotcms-js';
@@ -94,7 +94,7 @@ const testConfigObject = {
     ],
     providers: [
         DotRouterService,
-        DotDialogService,
+        DotAlertConfirmService,
         LoginService,
         PageViewService,
         PaginatorService,
@@ -380,10 +380,10 @@ describe('DotEditLayoutDesignerComponent', () => {
     });
 
     describe('edit layout/template dialog', () => {
-        let dotDialogService: DotDialogService;
+        let dotDialogService: DotAlertConfirmService;
 
         beforeEach(() => {
-            dotDialogService = fixture.debugElement.injector.get(DotDialogService);
+            dotDialogService = fixture.debugElement.injector.get(DotAlertConfirmService);
             spyOn(dotDialogService, 'alert').and.callThrough();
             spyOn(component, 'setEditLayoutMode');
         });

@@ -1,0 +1,17 @@
+<p-dialog
+    class="dialog"
+    [header]="header"
+    (onHide)="closeDialog($event)"
+    [draggable]="false"
+    [visible]="show"
+    [dismissableMask]="true"
+    [responsive]="true"
+    [modal]="true">
+
+    <ng-content></ng-content>
+
+    <p-footer *ngIf="ok || cancel">
+        <button *ngIf="cancel" pButton class="dot-dialog__cancel" type="button"  [label]="cancel.label" (click)="cancel.action()"></button>
+        <button *ngIf="ok" pButton class="dot-dialog__ok" type="button"  [label]="ok.label" (click)="ok.action()"></button>
+    </p-footer>
+</p-dialog>

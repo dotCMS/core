@@ -1,8 +1,8 @@
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
-import { DotDialog } from '../../../shared/models/dot-confirmation/dot-confirmation.model';
+import { DotAlertConfirm } from '../../../shared/models/dot-alert-confirm/dot-alert-confirm.model';
 import { ConfirmationService } from 'primeng/primeng';
 import { LoginService } from 'dotcms-js/dotcms-js';
-import { DotDialogService } from './dot-dialog.service';
+import { DotAlertConfirmService } from './dot-alert-confirm.service';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { LoginServiceMock } from '../../../test/login-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -15,14 +15,14 @@ const messageServiceMock = new MockDotMessageService({
 });
 
 describe('DotDialogService', () => {
-    let mockData: DotDialog;
-    let service: DotDialogService;
+    let mockData: DotAlertConfirm;
+    let service: DotAlertConfirmService;
     let confirmationService: ConfirmationService;
 
     beforeEach(() => {
         const testbed = DOTTestBed.configureTestingModule({
             providers: [
-                DotDialogService,
+                DotAlertConfirmService,
                 ConfirmationService,
                 {
                     provide: LoginService,
@@ -47,7 +47,7 @@ describe('DotDialogService', () => {
             }
         };
 
-        service = testbed.get(DotDialogService);
+        service = testbed.get(DotAlertConfirmService);
         confirmationService = testbed.get(ConfirmationService);
     });
 

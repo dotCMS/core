@@ -10,12 +10,23 @@ import { LoggerService, StringUtils } from 'dotcms-js/dotcms-js';
 import { Config } from 'dotcms-js/core/config.service';
 import { Logger } from 'angular2-logger/core';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
-import { DotDialogService } from '../../../../../api/services/dot-dialog/dot-dialog.service';
+import { DotAlertConfirmService } from '../../../../../api/services/dot-alert-confirm/dot-alert-confirm.service';
 import { DotPageContent } from '../../../../dot-edit-page/shared/models/dot-page-content.model';
 import { Observable } from 'rxjs/Observable';
 import { mockDotLayout } from '../../../../../test/dot-rendered-page.mock';
+import { ContentType } from '../../../../content-types/shared/content-type.model';
+import { DotLicenseService } from '../../../../../api/services/dot-license/dot-license.service';
+import { Injectable } from '@angular/core';
+
+@Injectable()
+class MockDotLicenseService {
+    isEnterprise(): Observable<boolean> {
+        return Observable.of(false);
+    }
+}
 
 describe('DotEditContentHtmlService', () => {
+    let dotLicenseService: DotLicenseService;
     let fakeDocument: Document;
 
     const fakeHTML = `
@@ -114,8 +125,9 @@ describe('DotEditContentHtmlService', () => {
             Config,
             Logger,
             StringUtils,
-            DotDialogService,
-            { provide: DotMessageService, useValue: messageServiceMock }
+            DotAlertConfirmService,
+            { provide: DotMessageService, useValue: messageServiceMock },
+            { provide: DotLicenseService, useClass: MockDotLicenseService },
         ]);
         this.dotEditContentHtmlService = <DotEditContentHtmlService>this.injector.get(DotEditContentHtmlService);
         this.dotEditContentToolbarHtmlService = this.injector.get(DotEditContentToolbarHtmlService);
@@ -130,7 +142,7 @@ describe('DotEditContentHtmlService', () => {
             is not a good architecture.
         */
         this.dotEditContentHtmlService.initEditMode(fakeHTML, { nativeElement: fakeIframeEl });
-
+        dotLicenseService = this.injector.get(DotLicenseService);
         fakeDocument = fakeIframeEl.contentWindow.document;
     }));
 
@@ -289,7 +301,7 @@ describe('DotEditContentHtmlService', () => {
         const dotEditContentToolbarHtmlService = this.injector.get(DotContainerContentletService);
         spyOn(dotEditContentToolbarHtmlService, 'getContentletToContainer').and.returnValue(Observable.of('<i>testing</i>'));
 
-        const dotDialogService = this.injector.get(DotDialogService);
+        const dotDialogService = this.injector.get(DotAlertConfirmService);
         spyOn(dotDialogService, 'alert');
 
         const contentlet: DotPageContent = {
@@ -338,6 +350,11 @@ describe('DotEditContentHtmlService', () => {
     });
 
     describe('document click', () => {
+
+        beforeEach(() => {
+            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(Observable.of(true));
+        });
+
         it('should open sub menu', () => {
             const button: HTMLButtonElement = <HTMLButtonElement>fakeDocument.querySelector('[data-dot-object="popup-button"]');
             button.click();
@@ -352,7 +369,9 @@ describe('DotEditContentHtmlService', () => {
                     dataset: button.dataset
                 });
             });
-            const button: HTMLButtonElement = <HTMLButtonElement>fakeDocument.querySelector('[data-dot-object="popup-menu-item"]');
+
+            const button: HTMLButtonElement = <HTMLButtonElement>
+                fakeDocument.querySelector('[data-dot-object="popup-menu-item"]');
             button.click();
         });
 
@@ -520,6 +539,56 @@ describe('DotEditContentHtmlService', () => {
                 type: 'NewsWidgets',
                 baseType: 'CONTENT'
             });
+        });
+    });
+
+    describe('render Form', () => {
+        const form: ContentType = {
+            clazz: 'clazz',
+            defaultType: true,
+            fixed: true,
+            folder: 'folder',
+            host: 'host',
+            name: 'name',
+            owner: 'owner',
+            system: false,
+            baseType: 'form',
+            id: '2'
+        };
+
+        const currentContainer = {
+            identifier: '123',
+            uuid: '456'
+        };
+
+        beforeEach(() => {
+            spyOn(this.dotEditContentHtmlService, 'renderEditedContentlet');
+
+            this.dotEditContentHtmlService.currentContainer = currentContainer;
+        });
+
+        it('should render added form', () => {
+            let currentModel;
+
+            const dotEditContentToolbarHtmlService = this.injector.get(DotContainerContentletService);
+
+            spyOn(dotEditContentToolbarHtmlService, 'getFormToContainer').and.returnValue(Observable.of('<i>testing</i>'));
+
+            this.dotEditContentHtmlService.pageModel$.subscribe((model) => (currentModel = model));
+
+            this.dotEditContentHtmlService.renderAddedForm(form);
+
+            expect(dotEditContentToolbarHtmlService.getFormToContainer).toHaveBeenCalledWith(currentContainer, form);
+
+            expect(this.dotEditContentHtmlService.currentContainer).toEqual(
+                {
+                    identifier: '123',
+                    uuid: '456'
+                },
+                'currentContainer must be the same after add form'
+            );
+
+            expect(currentModel).toEqual('testing', 'should tigger model change event');
         });
     });
 });

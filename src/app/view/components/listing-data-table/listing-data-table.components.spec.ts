@@ -1,4 +1,4 @@
-import { DotDialogService } from '../../../api/services/dot-dialog/dot-dialog.service';
+import { DotAlertConfirmService } from '../../../api/services/dot-alert-confirm/dot-alert-confirm.service';
 import { IconButtonTooltipModule } from '../_common/icon-button-tooltip/icon-button-tooltip.module';
 import { ActionMenuButtonComponent } from '../_common/action-menu-button/action-menu-button.component';
 import { DotActionButtonComponent } from '../_common/dot-action-button/dot-action-button.component';
@@ -48,7 +48,7 @@ describe('ListingDataTableComponent', () => {
                 CrudService,
                 FormatDateService,
                 PaginatorService,
-                DotDialogService
+                DotAlertConfirmService
             ]
         });
 

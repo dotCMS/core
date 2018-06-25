@@ -1,7 +1,7 @@
 import { EventEmitter } from '@angular/core';
 import { FooterLabels } from './footer-labels.model';
 
-export interface DotDialog {
+export interface DotAlertConfirm {
     message: string;
     key?: string;
     icon?: string;
