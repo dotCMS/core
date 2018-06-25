@@ -302,527 +302,530 @@ var theme = 'dmundra';
                 	#set($reqFieldMsg = "Required fields are can not be hidden")
                 #end
 
-				#if($field.fieldType == 'tab_divider' && !(($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName)) || $structures.isFieldConstant($field)))
+				#if($field.fieldType != 'column' && $field.fieldType != 'row')
+
+					#if($field.fieldType == 'tab_divider' && !(($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName)) || $structures.isFieldConstant($field)))
 
 
-							</dl>
-						</div>
+								</dl>
+							</div>
 
-				</div>
-				<div id="tabButton$tabCount" class="submitButton" #if($tabCount > 0) style="display:none" #end >
-				   #if($tabCount > 0)
-				    <button dojoType="dijit.form.Button" onclick="showPreviousTab(); return false;" >$text.getFromSessionLanguage('org.dotcms.frontend.content.submission.previous')</button>
-				   #end
-					<button dojoType="dijit.form.Button" onclick="showNextTab(); return false;" >$text.getFromSessionLanguage('org.dotcms.frontend.content.submission.next')</button>
-			    </div>
-			    #set($tabCount = $math.add($tabCount ,1))
-			    #set($submitTabName = "${field.velocityVarName}Tab")
-			    #set($currentTab = "${field.velocityVarName}Tab")
-
-				<div id="${field.velocityVarName}Tab" class="contentTab" style="display:none;">
-	    				<div id="${field.velocityVarName}TabProperties" >
-	    					<dl class="formFieldSet">
-				#elseif($field.fieldType == 'line_divider' && !($showOnlyRequiredFields && !$field.isRequired()) && !(($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName)) || $structures.isFieldConstant($field)))
-					</dl>
-					<dl class="formFieldSet" id="${field.velocityVarName}FieldSet">
-						<div class="group">
-		    				<div class="formDivider">$text.get($field.fieldName)</div>
-	    				</div><!-- end .group -->
-
-				#elseif($field.fieldType == 'categories_tab' && !($showOnlyRequiredFields && !$field.isRequired()) && !(($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName)) || $structures.isFieldConstant($field)))
-						#set($fieldDefaultValue = "")
-						#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
-	            	    	#set($fieldDefaultValue = $!request.getParameterValues("$field.velocityVarName"))
-	            	    #else
-	            	    	#set($fieldDefaultValue = $field.defaultValue.split('\|'))
-	            	    #end
-	            	    #if(! $fieldDefaultValue)
-	            	        #set($fieldDefaultValue = "")
-	            	    #end
-
-	            	    
-						#set($fieldAux = $field)
-						#parse('/static/content/category_tab_field_render.vtl')
-
-				#elseif($field.fieldType == 'permissions_tab' && !($showOnlyRequiredFields && !$field.isRequired()) && !(($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName)) || $structures.isFieldConstant($field)))
-
-
-
-				#elseif($field.fieldType == 'relationships_tab' && !($showOnlyRequiredFields && !$field.isRequired()) && !(($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName)) || $structures.isFieldConstant($field)))
-					<div class="group">
-						<dt id="${field.velocityVarName}FieldLabel" class="formFieldLabel">
-		    				#if(!($showOnlyRequiredFields && !$field.isRequired()) && !(($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName)) || $structures.isFieldConstant($field)))
-		    					<label for="${field.velocityVarName}">#if($field.isRequired())<img src="/html/images/icons/required.gif"/>#end ${field.fieldName}</label>
-		    				#end
-		    			</dt>
-		    			<dd id="${field.velocityVarName}FieldInput" class="formFieldInput">
-		    				#set($fieldAux = $field)
-							#parse('/static/content/relationships_tab_render.vtl')
-							<script language="javascript">
-					       		updateTabCounter("$currentTab");
-					    	</script>
-					    </dd>
 					</div>
-				#elseif((!$structures.isFieldConstant($field) && !$structures.isFieldHidden($field)) && $field.fieldName != 'Form Host')
-					#set($fieldAux = $field)
-				    <div class="group">
-				    <dt id="${field.velocityVarName}FieldLabel" class="formFieldLabel">
-	    			#if(!($showOnlyRequiredFields && !$field.isRequired()) && !(($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired()) || $structures.isFieldConstant($field)))
-	    				<label for="${field.velocityVarName}">
-	    				#if($UtilMethods.isSet($field.hint))
-	    					<a href="#" id="tip-$field.getVelocityVarName()"><span class="hintIcon"></span></a>
-							<span dojoType="dijit.Tooltip" connectId="tip-$field.getVelocityVarName()" position="above" style="width:100px;">
-								<span class="contentHint">$text.get($field.hint)</span>
-							</span>
+					<div id="tabButton$tabCount" class="submitButton" #if($tabCount > 0) style="display:none" #end >
+					   #if($tabCount > 0)
+						<button dojoType="dijit.form.Button" onclick="showPreviousTab(); return false;" >$text.getFromSessionLanguage('org.dotcms.frontend.content.submission.previous')</button>
+					   #end
+						<button dojoType="dijit.form.Button" onclick="showNextTab(); return false;" >$text.getFromSessionLanguage('org.dotcms.frontend.content.submission.next')</button>
+					</div>
+					#set($tabCount = $math.add($tabCount ,1))
+					#set($submitTabName = "${field.velocityVarName}Tab")
+					#set($currentTab = "${field.velocityVarName}Tab")
+
+					<div id="${field.velocityVarName}Tab" class="contentTab" style="display:none;">
+							<div id="${field.velocityVarName}TabProperties" >
+								<dl class="formFieldSet">
+					#elseif($field.fieldType == 'line_divider' && !($showOnlyRequiredFields && !$field.isRequired()) && !(($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName)) || $structures.isFieldConstant($field)))
+						</dl>
+						<dl class="formFieldSet" id="${field.velocityVarName}FieldSet">
+							<div class="group">
+								<div class="formDivider">$text.get($field.fieldName)</div>
+							</div><!-- end .group -->
+
+					#elseif($field.fieldType == 'categories_tab' && !($showOnlyRequiredFields && !$field.isRequired()) && !(($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName)) || $structures.isFieldConstant($field)))
+							#set($fieldDefaultValue = "")
+							#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+								#set($fieldDefaultValue = $!request.getParameterValues("$field.velocityVarName"))
+							#else
+								#set($fieldDefaultValue = $field.defaultValue.split('\|'))
+							#end
+							#if(! $fieldDefaultValue)
+								#set($fieldDefaultValue = "")
+							#end
+
+
+							#set($fieldAux = $field)
+							#parse('/static/content/category_tab_field_render.vtl')
+
+					#elseif($field.fieldType == 'permissions_tab' && !($showOnlyRequiredFields && !$field.isRequired()) && !(($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName)) || $structures.isFieldConstant($field)))
+
+
+
+					#elseif($field.fieldType == 'relationships_tab' && !($showOnlyRequiredFields && !$field.isRequired()) && !(($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName)) || $structures.isFieldConstant($field)))
+						<div class="group">
+							<dt id="${field.velocityVarName}FieldLabel" class="formFieldLabel">
+								#if(!($showOnlyRequiredFields && !$field.isRequired()) && !(($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName)) || $structures.isFieldConstant($field)))
+									<label for="${field.velocityVarName}">#if($field.isRequired())<img src="/html/images/icons/required.gif"/>#end ${field.fieldName}</label>
+								#end
+							</dt>
+							<dd id="${field.velocityVarName}FieldInput" class="formFieldInput">
+								#set($fieldAux = $field)
+								#parse('/static/content/relationships_tab_render.vtl')
+								<script language="javascript">
+									updateTabCounter("$currentTab");
+								</script>
+							</dd>
+						</div>
+					#elseif((!$structures.isFieldConstant($field) && !$structures.isFieldHidden($field)) && $field.fieldName != 'Form Host')
+						#set($fieldAux = $field)
+						<div class="group">
+						<dt id="${field.velocityVarName}FieldLabel" class="formFieldLabel">
+						#if(!($showOnlyRequiredFields && !$field.isRequired()) && !(($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired()) || $structures.isFieldConstant($field)))
+							<label for="${field.velocityVarName}">
+							#if($UtilMethods.isSet($field.hint))
+								<a href="#" id="tip-$field.getVelocityVarName()"><span class="hintIcon"></span></a>
+								<span dojoType="dijit.Tooltip" connectId="tip-$field.getVelocityVarName()" position="above" style="width:100px;">
+									<span class="contentHint">$text.get($field.hint)</span>
+								</span>
+							#end
+							#if($field.isRequired())<img src="/html/images/icons/required.gif"/>#end $text.get($field.fieldName)</label>
 						#end
-	    				#if($field.isRequired())<img src="/html/images/icons/required.gif"/>#end $text.get($field.fieldName)</label>
-	    			#end
-	    			</dt>
-	    			#set($velocityVarName = "default${field.velocityVarName.substring(0,1).toUpperCase()}${field.velocityVarName.substring(1)}")
-	    			#set($tempVelocityVar = $render.eval($render.eval("\\$$velocityVarName")))
+						</dt>
+						#set($velocityVarName = "default${field.velocityVarName.substring(0,1).toUpperCase()}${field.velocityVarName.substring(1)}")
+						#set($tempVelocityVar = $render.eval($render.eval("\\$$velocityVarName")))
 
-					<dd id="${field.velocityVarName}FieldInput" class="formFieldInput">
-	            	#if($field.fieldType == 'text' && !($showOnlyRequiredFields && !$field.isRequired()) )
-	            	    #set($fieldDefaultValue = "")
-	            	    #if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
-	            	    	#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
-	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
-	            	    	#set($fieldDefaultValue = $tempVelocityVar)
-	            	    #else
-	            	    	#set($fieldDefaultValue = $!field.defaultValue)
-	            	    #end
-	            	    #if(! $fieldDefaultValue)
-	            	        #set($fieldDefaultValue = "")
-	            	    #end
-	            	    #if($action == 'editContent')
-	            	    	#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
-	            	    #end	
-	            	    #if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
-	            			#parse('/static/content/hidden_field_render.vtl')
-	            		#else
-	            			#parse('/static/content/text_field_render.vtl')
-	            			<script language="javascript">
-					        	updateTabCounter("$currentTab");
-					        </script>
-	            		#end
+						<dd id="${field.velocityVarName}FieldInput" class="formFieldInput">
+						#if($field.fieldType == 'text' && !($showOnlyRequiredFields && !$field.isRequired()) )
+							#set($fieldDefaultValue = "")
+							#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+								#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
+							#elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+								#set($fieldDefaultValue = $tempVelocityVar)
+							#else
+								#set($fieldDefaultValue = $!field.defaultValue)
+							#end
+							#if(! $fieldDefaultValue)
+								#set($fieldDefaultValue = "")
+							#end
+							#if($action == 'editContent')
+								#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
+							#end
+							#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
+								#parse('/static/content/hidden_field_render.vtl')
+							#else
+								#parse('/static/content/text_field_render.vtl')
+								<script language="javascript">
+									updateTabCounter("$currentTab");
+								</script>
+							#end
 
-	            	#elseif($field.fieldType == 'textarea' && !($showOnlyRequiredFields && !$field.isRequired()) )
-	            	    #set($fieldDefaultValue = "") 
-	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
-	            	    	#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
-	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
-	            	    	#set($fieldDefaultValue = $tempVelocityVar)
-	            	    #else
-	            	    	#set($fieldDefaultValue = $!field.defaultValue)
-	            	    #end
-	            	    #if(! $fieldDefaultValue)
-	            	        #set($fieldDefaultValue = "")
+						#elseif($field.fieldType == 'textarea' && !($showOnlyRequiredFields && !$field.isRequired()) )
+							#set($fieldDefaultValue = "")
+							#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+								#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
+							#elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+								#set($fieldDefaultValue = $tempVelocityVar)
+							#else
+								#set($fieldDefaultValue = $!field.defaultValue)
+							#end
+							#if(! $fieldDefaultValue)
+								#set($fieldDefaultValue = "")
 
-	            	    #end
-	            	    #if($action == 'editContent') 
-	            	    	#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
-	            	    #end	
-	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
-	            			#parse('/static/content/hidden_field_render.vtl')
-	            		#else
-	            			#parse('/static/content/textarea_field_render.vtl')
-	            			<script language="javascript">
-					        	updateTabCounter("$currentTab");
-					        </script>
-	            		#end
-	            		
-	            	#elseif($field.fieldType == 'key_value' && !($showOnlyRequiredFields && !$field.isRequired()) )
-	            	    #set($fieldDefaultValue = "") 
-	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
-	            	    	#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
-	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
-	            	    	#set($fieldDefaultValue = $tempVelocityVar)
-	            	    #else
-	            	    	#set($fieldDefaultValue = $!field.defaultValue)
-	            	    #end
-	            	    #if(! $fieldDefaultValue)
-	            	        #set($fieldDefaultValue = "")
+							#end
+							#if($action == 'editContent')
+								#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
+							#end
+							#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
+								#parse('/static/content/hidden_field_render.vtl')
+							#else
+								#parse('/static/content/textarea_field_render.vtl')
+								<script language="javascript">
+									updateTabCounter("$currentTab");
+								</script>
+							#end
 
-	            	    #end
-	            	    #if($action == 'editContent') 
-	            	    	#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
-	            	    #end	
-	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
-	            			#parse('/static/content/hidden_field_render.vtl')
-	            		#else
-	            			#parse('/static/content/keyvalue_field_render.vtl')
-	            			<script language="javascript">
-					        	updateTabCounter("$currentTab");
-					        </script>
-	            		#end
+						#elseif($field.fieldType == 'key_value' && !($showOnlyRequiredFields && !$field.isRequired()) )
+							#set($fieldDefaultValue = "")
+							#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+								#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
+							#elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+								#set($fieldDefaultValue = $tempVelocityVar)
+							#else
+								#set($fieldDefaultValue = $!field.defaultValue)
+							#end
+							#if(! $fieldDefaultValue)
+								#set($fieldDefaultValue = "")
 
-	            	#elseif($field.fieldType == 'wysiwyg' && !($showOnlyRequiredFields && !$field.isRequired()) )
-	            		#set($fieldDefaultValue = "")
-	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
-	            	    	#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
-	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
-	            	    	#set($fieldDefaultValue = $tempVelocityVar)
-	            	    #else
-	            	    	#set($fieldDefaultValue = $!field.defaultValue )
-	            	    #end
-	            	    #if(! $fieldDefaultValue)
-	            	        #set($fieldDefaultValue = "")
-	            	    #end
-	            	    #if($action == 'editContent')
-							#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
-						#end	
-	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
-	            			#parse('/static/content/hidden_field_render.vtl')
-	            		#else
-	            			#parse('/static/content/wysiwyg_field_render.vtl')
-	            			<script language="javascript">
-					        	updateTabCounter("$currentTab");
-					        </script>
-	            		#end
+							#end
+							#if($action == 'editContent')
+								#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
+							#end
+							#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
+								#parse('/static/content/hidden_field_render.vtl')
+							#else
+								#parse('/static/content/keyvalue_field_render.vtl')
+								<script language="javascript">
+									updateTabCounter("$currentTab");
+								</script>
+							#end
 
-	            	#elseif($field.fieldType == 'tag' && !($showOnlyRequiredFields && !$field.isRequired()) )
-	            	    #set($fieldDefaultValue = "")
-	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
-	            	    	#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
-	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
-	            	    	#set($fieldDefaultValue = $tempVelocityVar)
-	            	    #else
-	            	    	#set($fieldDefaultValue = $!field.defaultValue )
-	            	    #end
-	            	    #if(! $fieldDefaultValue)
-                            #set($fieldDefaultValue = "")
-                        #end
-                        #if($action == 'editContent')
-							#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
-						#end	
-	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
-	            			#parse('/static/content/hidden_field_render.vtl')
-	            		#else
-	            			#parse('/static/content/tag_field_render.vtl')
-	            			<script language="javascript">
-					        	updateTabCounter("$currentTab");
-					        </script>
-	            		#end
+						#elseif($field.fieldType == 'wysiwyg' && !($showOnlyRequiredFields && !$field.isRequired()) )
+							#set($fieldDefaultValue = "")
+							#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+								#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
+							#elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+								#set($fieldDefaultValue = $tempVelocityVar)
+							#else
+								#set($fieldDefaultValue = $!field.defaultValue )
+							#end
+							#if(! $fieldDefaultValue)
+								#set($fieldDefaultValue = "")
+							#end
+							#if($action == 'editContent')
+								#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
+							#end
+							#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
+								#parse('/static/content/hidden_field_render.vtl')
+							#else
+								#parse('/static/content/wysiwyg_field_render.vtl')
+								<script language="javascript">
+									updateTabCounter("$currentTab");
+								</script>
+							#end
 
-	            	#elseif($field.fieldType == 'checkbox' && !($showOnlyRequiredFields && !$field.isRequired()) )
-	            	    #set($fieldDefaultValue = "")
-	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
-	            	    	#set($fieldDefaultValue = $!request.getParameterValues("$field.velocityVarName"))
-	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
-	            	    	#set($fieldDefaultValue = $tempVelocityVar)
-	            	    #else
-	            	    	#set($fieldDefaultValue = $!field.defaultValue.split('\|'))
-	            	    #end
-	            	    #if(! $fieldDefaultValue)
-                            #set($fieldDefaultValue = "")
-                        #end
-                        #if($action == 'editContent')
-							#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName").getSelectedValues())
-						#end							
-						#set($fieldAux = $field)
-	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
-	            			#parse('/static/content/hidden_field_render.vtl')
-	            		#else
-	            			#parse('/static/content/checkbox_field_render.vtl')
-	            			<script language="javascript">
-					        	updateTabCounter("$currentTab");
-					        </script>
-	            		#end
+						#elseif($field.fieldType == 'tag' && !($showOnlyRequiredFields && !$field.isRequired()) )
+							#set($fieldDefaultValue = "")
+							#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+								#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
+							#elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+								#set($fieldDefaultValue = $tempVelocityVar)
+							#else
+								#set($fieldDefaultValue = $!field.defaultValue )
+							#end
+							#if(! $fieldDefaultValue)
+								#set($fieldDefaultValue = "")
+							#end
+							#if($action == 'editContent')
+								#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
+							#end
+							#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
+								#parse('/static/content/hidden_field_render.vtl')
+							#else
+								#parse('/static/content/tag_field_render.vtl')
+								<script language="javascript">
+									updateTabCounter("$currentTab");
+								</script>
+							#end
 
-	            	#elseif($field.fieldType == 'radio' && !($showOnlyRequiredFields && !$field.isRequired()) )
-	            	    #set($fieldDefaultValue = "")
-	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
-	            	    	#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
-	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
-	            	    	#set($fieldDefaultValue = $tempVelocityVar)
-	            	    #else
-	            	    	#set($fieldDefaultValue = $!field.defaultValue )
-	            	    #end
-	            	    #if(! $fieldDefaultValue)
-                            #set($fieldDefaultValue = "")
-                        #end
-                        #if($action == 'editContent')
-							#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName").getSelectValue())
-						#end	
-	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
-	            			#parse('/static/content/hidden_field_render.vtl')
-	            		#else
-	            			#parse('/static/content/radio_field_render.vtl')
-	            			<script language="javascript">
-					        	updateTabCounter("$currentTab");
-					        </script>
-	            		#end
+						#elseif($field.fieldType == 'checkbox' && !($showOnlyRequiredFields && !$field.isRequired()) )
+							#set($fieldDefaultValue = "")
+							#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+								#set($fieldDefaultValue = $!request.getParameterValues("$field.velocityVarName"))
+							#elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+								#set($fieldDefaultValue = $tempVelocityVar)
+							#else
+								#set($fieldDefaultValue = $!field.defaultValue.split('\|'))
+							#end
+							#if(! $fieldDefaultValue)
+								#set($fieldDefaultValue = "")
+							#end
+							#if($action == 'editContent')
+								#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName").getSelectedValues())
+							#end
+							#set($fieldAux = $field)
+							#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
+								#parse('/static/content/hidden_field_render.vtl')
+							#else
+								#parse('/static/content/checkbox_field_render.vtl')
+								<script language="javascript">
+									updateTabCounter("$currentTab");
+								</script>
+							#end
 
-	            	#elseif($field.fieldType == 'select' && !($showOnlyRequiredFields && !$field.isRequired()) )
-	            	    #set($fieldDefaultValue = "")
-	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
-	            	    	#set($fieldDefaultValue=$request.getParameter("$field.velocityVarName"))
-	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
-	            	    	#set($fieldDefaultValue=$tempVelocityVar)
-	            	    #else
-	            	    	#set($fieldDefaultValue=$!field.defaultValue)
-	            	    #end
-	            	    #if(! $fieldDefaultValue)
-                            #set($fieldDefaultValue = "")
-                        #end
-                        #if($action == 'editContent')
-							#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName").getSelectValue())
-						#end	
-	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
-	            			#parse('/static/content/hidden_field_render.vtl')
-	            		#else
-	            			#parse('/static/content/select_field_render.vtl')
-	            			<script language="javascript">
-					        	updateTabCounter("$currentTab");
-					        </script>
-	            		#end
+						#elseif($field.fieldType == 'radio' && !($showOnlyRequiredFields && !$field.isRequired()) )
+							#set($fieldDefaultValue = "")
+							#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+								#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
+							#elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+								#set($fieldDefaultValue = $tempVelocityVar)
+							#else
+								#set($fieldDefaultValue = $!field.defaultValue )
+							#end
+							#if(! $fieldDefaultValue)
+								#set($fieldDefaultValue = "")
+							#end
+							#if($action == 'editContent')
+								#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName").getSelectValue())
+							#end
+							#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
+								#parse('/static/content/hidden_field_render.vtl')
+							#else
+								#parse('/static/content/radio_field_render.vtl')
+								<script language="javascript">
+									updateTabCounter("$currentTab");
+								</script>
+							#end
 
-	            	#elseif($field.fieldType == 'multi_select' && !($showOnlyRequiredFields && !$field.isRequired()) )
-	            	    #set($fieldDefaultValue = "")
-	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
-	            	    	#set($fieldDefaultValue = $request.getParameterValues("$field.velocityVarName"))
-	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
-	            	    	#set($fieldDefaultValue = $tempVelocityVar )
-	            	    #else
-	            	    	#set($fieldDefaultValue = $field.defaultValue.split('\|'))
-	            	    #end
-	            	    #if(! $fieldDefaultValue)
-                            #set($fieldDefaultValue = "")
-                        #end
-                        #if($action == 'editContent')
-                        	#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName").getSelectedValues())
-                        #end	
-	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
-	            			#parse('/static/content/hidden_field_render.vtl')
-	            		#else
-	            			#parse('/static/content/multiselect_field_render.vtl')
-	            			<script language="javascript">
-					        	updateTabCounter("$currentTab");
-					        </script>
-	            		#end
+						#elseif($field.fieldType == 'select' && !($showOnlyRequiredFields && !$field.isRequired()) )
+							#set($fieldDefaultValue = "")
+							#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+								#set($fieldDefaultValue=$request.getParameter("$field.velocityVarName"))
+							#elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+								#set($fieldDefaultValue=$tempVelocityVar)
+							#else
+								#set($fieldDefaultValue=$!field.defaultValue)
+							#end
+							#if(! $fieldDefaultValue)
+								#set($fieldDefaultValue = "")
+							#end
+							#if($action == 'editContent')
+								#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName").getSelectValue())
+							#end
+							#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
+								#parse('/static/content/hidden_field_render.vtl')
+							#else
+								#parse('/static/content/select_field_render.vtl')
+								<script language="javascript">
+									updateTabCounter("$currentTab");
+								</script>
+							#end
 
-	            	#elseif($field.fieldType == 'date' && !($showOnlyRequiredFields && !$field.isRequired()) )
-	            		#set($fieldDefaultValue = "")
-	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
-	            	    	#set($fieldDefaultValue = $date.toDate('yyyy-MM-dd',$request.getParameter("$field.velocityVarName")))
-	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
-	            	    	#set($fieldDefaultValue = $tempVelocityVar)
-	            	    #elseif($UtilMethods.isSet($field.defaultValue))
-	            	    	#set($fieldDefaultValue = $date.toDate('yyyy-MM-dd',$!field.defaultValue))
-	            	    #else
-	            	    	#set($fieldDefaultValue = $UtilMethods.getCurrentDate())
-	            	    #end
-	            	    #if(! $fieldDefaultValue)
-                            #set($fieldDefaultValue = "")
-                        #end
-                        #if($action == 'editContent')
-							#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
-						#end	
-	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
-	            			#parse('/static/content/hidden_field_render.vtl')
-	            		#else
-	            			#parse('/static/content/date_field_render.vtl')
-	            			<script language="javascript">
-					        	updateTabCounter("$currentTab");
-					        </script>
-	            		#end
+						#elseif($field.fieldType == 'multi_select' && !($showOnlyRequiredFields && !$field.isRequired()) )
+							#set($fieldDefaultValue = "")
+							#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+								#set($fieldDefaultValue = $request.getParameterValues("$field.velocityVarName"))
+							#elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+								#set($fieldDefaultValue = $tempVelocityVar )
+							#else
+								#set($fieldDefaultValue = $field.defaultValue.split('\|'))
+							#end
+							#if(! $fieldDefaultValue)
+								#set($fieldDefaultValue = "")
+							#end
+							#if($action == 'editContent')
+								#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName").getSelectedValues())
+							#end
+							#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
+								#parse('/static/content/hidden_field_render.vtl')
+							#else
+								#parse('/static/content/multiselect_field_render.vtl')
+								<script language="javascript">
+									updateTabCounter("$currentTab");
+								</script>
+							#end
 
-	            	#elseif($field.fieldType == 'time' && !($showOnlyRequiredFields && !$field.isRequired()) )
-	            	    #set($fieldDefaultValue = "")
-	            		#if($UtilMethods.isSet($request.getParameter("${field.velocityVarName}")))
-	            		    #set($temp_currentDate = $UtilMethods.dateToHTMLDate($UtilMethods.getCurrentDate(),'M/d/yyyy'))
-	            		    #set($temp_currentDateTime = $request.getParameter("${field.velocityVarName}"))
-	            	    	#set($fieldDefaultValue = $UtilMethods.htmlDateTimeToDate("$temp_currentDate $temp_currentDateTime"))
-	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
-	            	    	#set($fieldDefaultValue = $tempVelocityVar)
-	            	    #elseif($UtilMethods.isSet($field.defaultValue))
-	            	    	#set($fieldDefaultValue = $date.toDate('HH:mm',$!field.defaultValue))
-	            	    #else
-	            	    	#set($fieldDefaultValue = $UtilMethods.getCurrentDate())
-	            	    #end
-	            	    #if(! $fieldDefaultValue)
-                            #set($fieldDefaultValue = "")
-                        #end
-                        #if($action == 'editContent')
-							#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
-						#end	
-	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
-	            			#parse('/static/content/hidden_field_render.vtl')
-	            		#else
-	            			#parse('/static/content/time_field_render.vtl')
-	            			<script language="javascript">
-					        	updateTabCounter("$currentTab");
-					        </script>
-	            		#end
+						#elseif($field.fieldType == 'date' && !($showOnlyRequiredFields && !$field.isRequired()) )
+							#set($fieldDefaultValue = "")
+							#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+								#set($fieldDefaultValue = $date.toDate('yyyy-MM-dd',$request.getParameter("$field.velocityVarName")))
+							#elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+								#set($fieldDefaultValue = $tempVelocityVar)
+							#elseif($UtilMethods.isSet($field.defaultValue))
+								#set($fieldDefaultValue = $date.toDate('yyyy-MM-dd',$!field.defaultValue))
+							#else
+								#set($fieldDefaultValue = $UtilMethods.getCurrentDate())
+							#end
+							#if(! $fieldDefaultValue)
+								#set($fieldDefaultValue = "")
+							#end
+							#if($action == 'editContent')
+								#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
+							#end
+							#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
+								#parse('/static/content/hidden_field_render.vtl')
+							#else
+								#parse('/static/content/date_field_render.vtl')
+								<script language="javascript">
+									updateTabCounter("$currentTab");
+								</script>
+							#end
 
-	            	#elseif($field.fieldType == 'date_time' && !($showOnlyRequiredFields && !$field.isRequired()) )
-	            	    #set($fieldDefaultValue = "")
-	            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
-	            		    #set($temp_currentDate = $date.toDate('yyyy-MM-dd',$request.getParameter("${field.velocityVarName}Date")))
-	            		    #set($temp_currentDate = $UtilMethods.dateToHTMLDate($temp_currentDate,'M/d/yyyy'))
-	            		    #set($temp_currentDateTime = $request.getParameter("${field.velocityVarName}Time"))
-	            	    	#set($fieldDefaultValue = $UtilMethods.htmlDateTimeToDate("$temp_currentDate $temp_currentDateTime"))
-	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
-	            	    	#set($fieldDefaultValue = $tempVelocityVar)
-	            	    #elseif($UtilMethods.isSet($field.defaultValue))
-	            	    	#set($fieldDefaultValue = $date.toDate('yyyy-MM-dd HH:mm',$!field.defaultValue))
-	            	    #else
-	            	    	#set($fieldDefaultValue = $UtilMethods.getCurrentDate())
-	            	    #end
-	            	    #if(! $fieldDefaultValue)
-                            #set($fieldDefaultValue = "")
-                        #end
-                        #if($action == 'editContent')
-							#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
-						#end	
-	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
-	            			#parse('/static/content/hidden_field_render.vtl')
-	            		#else
-	            			#parse('/static/content/datetime_field_render.vtl')
-	            			<script language="javascript">
-					        	updateTabCounter("$currentTab");
-					        </script>
-	            		#end
+						#elseif($field.fieldType == 'time' && !($showOnlyRequiredFields && !$field.isRequired()) )
+							#set($fieldDefaultValue = "")
+							#if($UtilMethods.isSet($request.getParameter("${field.velocityVarName}")))
+								#set($temp_currentDate = $UtilMethods.dateToHTMLDate($UtilMethods.getCurrentDate(),'M/d/yyyy'))
+								#set($temp_currentDateTime = $request.getParameter("${field.velocityVarName}"))
+								#set($fieldDefaultValue = $UtilMethods.htmlDateTimeToDate("$temp_currentDate $temp_currentDateTime"))
+							#elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+								#set($fieldDefaultValue = $tempVelocityVar)
+							#elseif($UtilMethods.isSet($field.defaultValue))
+								#set($fieldDefaultValue = $date.toDate('HH:mm',$!field.defaultValue))
+							#else
+								#set($fieldDefaultValue = $UtilMethods.getCurrentDate())
+							#end
+							#if(! $fieldDefaultValue)
+								#set($fieldDefaultValue = "")
+							#end
+							#if($action == 'editContent')
+								#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
+							#end
+							#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
+								#parse('/static/content/hidden_field_render.vtl')
+							#else
+								#parse('/static/content/time_field_render.vtl')
+								<script language="javascript">
+									updateTabCounter("$currentTab");
+								</script>
+							#end
 
-	            	#elseif($field.fieldType == 'file' && !($showOnlyRequiredFields && !$field.isRequired()) )
-	            	    #set($fieldDefaultValue = "")
-	            	    #if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
-	            	    	#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
-	            		#elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
-	            	    	#set($fieldDefaultValue = $tempVelocityVar)
-	            	    #else
-	            	    	#set($fieldDefaultValue = $!field.defaultValue)
-	            	    #end
-	            	    #if(! $fieldDefaultValue)
-                            #set($fieldDefaultValue = "")
-                        #end
-                        #if($action == 'editContent')
-							#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
-						#end	
-	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
-	            			#parse('/static/content/hidden_field_render.vtl')
-	            		#else
-	            			#parse('/static/content/file_field_render.vtl')
-	            			<script language="javascript">
-					        	updateTabCounter("$currentTab");
-					        </script>
-	            		#end
+						#elseif($field.fieldType == 'date_time' && !($showOnlyRequiredFields && !$field.isRequired()) )
+							#set($fieldDefaultValue = "")
+							#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+								#set($temp_currentDate = $date.toDate('yyyy-MM-dd',$request.getParameter("${field.velocityVarName}Date")))
+								#set($temp_currentDate = $UtilMethods.dateToHTMLDate($temp_currentDate,'M/d/yyyy'))
+								#set($temp_currentDateTime = $request.getParameter("${field.velocityVarName}Time"))
+								#set($fieldDefaultValue = $UtilMethods.htmlDateTimeToDate("$temp_currentDate $temp_currentDateTime"))
+							#elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+								#set($fieldDefaultValue = $tempVelocityVar)
+							#elseif($UtilMethods.isSet($field.defaultValue))
+								#set($fieldDefaultValue = $date.toDate('yyyy-MM-dd HH:mm',$!field.defaultValue))
+							#else
+								#set($fieldDefaultValue = $UtilMethods.getCurrentDate())
+							#end
+							#if(! $fieldDefaultValue)
+								#set($fieldDefaultValue = "")
+							#end
+							#if($action == 'editContent')
+								#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
+							#end
+							#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
+								#parse('/static/content/hidden_field_render.vtl')
+							#else
+								#parse('/static/content/datetime_field_render.vtl')
+								<script language="javascript">
+									updateTabCounter("$currentTab");
+								</script>
+							#end
 
-	            	#elseif($field.fieldType == 'image' && !($showOnlyRequiredFields && !$field.isRequired()) )
-	            	    #set($fieldDefaultValue = "")
-	            	    #if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
-	            	    	#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
-	            		#elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
-	            	    	#set($fieldDefaultValue = $tempVelocityVar)
-	            	    #else
-	            	    	#set($fieldDefaultValue = $!field.defaultValue)
-	            	    #end
-	            	    #if(! $fieldDefaultValue)
-                            #set($fieldDefaultValue = "")
-                        #end
-                        #if($action == 'editContent')
-							#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
-						#end	
-	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
-	            			#parse('/static/content/hidden_field_render.vtl')
-	            		#else
-	            			#parse('/static/content/image_field_render.vtl')
-	            			<script language="javascript">
-					        	updateTabCounter("$currentTab");
-					        </script>
-	            		#end
+						#elseif($field.fieldType == 'file' && !($showOnlyRequiredFields && !$field.isRequired()) )
+							#set($fieldDefaultValue = "")
+							#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+								#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
+							#elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+								#set($fieldDefaultValue = $tempVelocityVar)
+							#else
+								#set($fieldDefaultValue = $!field.defaultValue)
+							#end
+							#if(! $fieldDefaultValue)
+								#set($fieldDefaultValue = "")
+							#end
+							#if($action == 'editContent')
+								#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
+							#end
+							#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
+								#parse('/static/content/hidden_field_render.vtl')
+							#else
+								#parse('/static/content/file_field_render.vtl')
+								<script language="javascript">
+									updateTabCounter("$currentTab");
+								</script>
+							#end
 
-	            	#elseif($field.fieldType == 'binary' && !($showOnlyRequiredFields && !$field.isRequired()) )
-	            	    #set($fieldDefaultValue = "")
-	            	    #if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
-	            	    	#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
-	            		#elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
-	            	    	#set($fieldDefaultValue = $tempVelocityVar)
-	            	    #else
-	            	    	#set($fieldDefaultValue = $!field.defaultValue)
-	            	    #end
-	            	    #if(! $fieldDefaultValue)
-                            #set($fieldDefaultValue = "")
-                        #end
-                        #if($action == 'editContent')
-							#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
-						#end	
-	            		#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
-	            			#parse('/static/content/hidden_field_render.vtl')
-	            		#else
-	            			#parse('/static/content/binary_field_render.vtl')
-	            			<script language="javascript">
-					        	updateTabCounter("$currentTab");
-					        </script>
-	            		#end
+						#elseif($field.fieldType == 'image' && !($showOnlyRequiredFields && !$field.isRequired()) )
+							#set($fieldDefaultValue = "")
+							#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+								#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
+							#elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+								#set($fieldDefaultValue = $tempVelocityVar)
+							#else
+								#set($fieldDefaultValue = $!field.defaultValue)
+							#end
+							#if(! $fieldDefaultValue)
+								#set($fieldDefaultValue = "")
+							#end
+							#if($action == 'editContent')
+								#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
+							#end
+							#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
+								#parse('/static/content/hidden_field_render.vtl')
+							#else
+								#parse('/static/content/image_field_render.vtl')
+								<script language="javascript">
+									updateTabCounter("$currentTab");
+								</script>
+							#end
 
-	            	#elseif($field.fieldType == 'custom_field' && !($showOnlyRequiredFields && !$field.isRequired()) && $_showField)                     
-	            	
-		            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
-		            	    	#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
-		            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
-		            	    	#set($fieldDefaultValue = $tempVelocityVar)
-		            	    #else
-		            	    	#set($fieldDefaultValue = $!field.defaultValue)
-		            	    #end
-		            	    
-							
-		            	    #if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
-	            				#parse('/static/content/hidden_field_render.vtl')
-	            		    #else
-	            				#parse('/static/content/custom_field_render.vtl')
-	            				<script language="javascript">
-					        		updateTabCounter("$currentTab");
-					        	</script>
-	            			#end
-					#elseif($field.fieldType == 'host or folder' && !($showOnlyRequiredFields && !$field.isRequired()))                     
-	            	
-		            		#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
-		            	    	#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
-		            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
-		            	    	#set($fieldDefaultValue = $tempVelocityVar)
-		            	    #else
-		            	    	#set($fieldDefaultValue = "$!host.identifier")
-		            	    #end
-		            	    
-							
-		            	    #if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
-	            				#parse('/static/content/hidden_field_render.vtl') 
-	            		    #else
-		            		    #if(!$UtilMethods.isSet($user))
-		            		    	#parse('/static/content/hidden_field_render.vtl') 
-		            		    #else
-		            				#parse('/static/content/host_folder_field_render.vtl')
-		            				<script language="javascript">
-						        		updateTabCounter("$currentTab");
-						        	</script>
-		            			#end		            				
-	            			#end
-	            	#elseif($field.fieldType == 'category' && !($showOnlyRequiredFields && !$field.isRequired()) )
-	            		#set($fieldDefaultValue = "")
-	            		#if($UtilMethods.isSet($request.getParameter("categoryNames")))
-	            	    	#set($fieldDefaultValue = $request.getParameterValues("categories"))
-	            	    #elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
-	            	    	#set($fieldDefaultValue = $tempVelocityVar)
-	            	    #else
-	            	    	#set($fieldDefaultValue = [])
-	            	    #end
-	            	    #if($action == 'editContent')
-							#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
-						#end	
-						#set($fieldAux = $field)
-	            	    #if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
-	            			#parse('/static/content/hidden_field_render.vtl')
-	            		#else
-	            			#parse('/static/content/category_field_render.vtl')
-	            			<script language="javascript">
-					        	updateTabCounter("$currentTab");
-					        </script>
-	            		#end
+						#elseif($field.fieldType == 'binary' && !($showOnlyRequiredFields && !$field.isRequired()) )
+							#set($fieldDefaultValue = "")
+							#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+								#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
+							#elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+								#set($fieldDefaultValue = $tempVelocityVar)
+							#else
+								#set($fieldDefaultValue = $!field.defaultValue)
+							#end
+							#if(! $fieldDefaultValue)
+								#set($fieldDefaultValue = "")
+							#end
+							#if($action == 'editContent')
+								#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
+							#end
+							#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
+								#parse('/static/content/hidden_field_render.vtl')
+							#else
+								#parse('/static/content/binary_field_render.vtl')
+								<script language="javascript">
+									updateTabCounter("$currentTab");
+								</script>
+							#end
+
+						#elseif($field.fieldType == 'custom_field' && !($showOnlyRequiredFields && !$field.isRequired()) && $_showField)
+
+								#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+									#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
+								#elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+									#set($fieldDefaultValue = $tempVelocityVar)
+								#else
+									#set($fieldDefaultValue = $!field.defaultValue)
+								#end
+
+
+								#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
+									#parse('/static/content/hidden_field_render.vtl')
+								#else
+									#parse('/static/content/custom_field_render.vtl')
+									<script language="javascript">
+										updateTabCounter("$currentTab");
+									</script>
+								#end
+						#elseif($field.fieldType == 'host or folder' && !($showOnlyRequiredFields && !$field.isRequired()))
+
+								#if($UtilMethods.isSet($request.getParameter("$field.velocityVarName")))
+									#set($fieldDefaultValue = $!request.getParameter("$field.velocityVarName"))
+								#elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+									#set($fieldDefaultValue = $tempVelocityVar)
+								#else
+									#set($fieldDefaultValue = "$!host.identifier")
+								#end
+
+
+								#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
+									#parse('/static/content/hidden_field_render.vtl')
+								#else
+									#if(!$UtilMethods.isSet($user))
+										#parse('/static/content/hidden_field_render.vtl')
+									#else
+										#parse('/static/content/host_folder_field_render.vtl')
+										<script language="javascript">
+											updateTabCounter("$currentTab");
+										</script>
+									#end
+								#end
+						#elseif($field.fieldType == 'category' && !($showOnlyRequiredFields && !$field.isRequired()) )
+							#set($fieldDefaultValue = "")
+							#if($UtilMethods.isSet($request.getParameter("categoryNames")))
+								#set($fieldDefaultValue = $request.getParameterValues("categories"))
+							#elseif($UtilMethods.isSet($tempVelocityVar) && $tempVelocityVar.indexOf('\$') == -1)
+								#set($fieldDefaultValue = $tempVelocityVar)
+							#else
+								#set($fieldDefaultValue = [])
+							#end
+							#if($action == 'editContent')
+								#set($fieldDefaultValue = $contentMap.get("$field.velocityVarName"))
+							#end
+							#set($fieldAux = $field)
+							#if($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired())
+								#parse('/static/content/hidden_field_render.vtl')
+							#else
+								#parse('/static/content/category_field_render.vtl')
+								<script language="javascript">
+									updateTabCounter("$currentTab");
+								</script>
+							#end
+						#end
+						</dd>
+						</div><!-- end .group -->
+
 					#end
-	    			</dd>
-	    			</div><!-- end .group -->
-
 				#end
 			#end
 			
