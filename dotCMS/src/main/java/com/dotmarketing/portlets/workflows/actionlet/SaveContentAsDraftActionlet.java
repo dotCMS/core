@@ -24,6 +24,7 @@ import java.util.Map;
  * Do the save as draft for a content (checkin)
  * @author jsanca
  */
+@Actionlet(save = true)
 public class SaveContentAsDraftActionlet extends WorkFlowActionlet {
 
 	private final ContentletAPI   contentletAPI;

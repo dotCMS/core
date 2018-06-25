@@ -1,23 +1,21 @@
 package com.dotmarketing.portlets.workflows.business;
 
-import java.util.List;
-
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
-import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.workflows.model.*;
+
+import java.util.List;
 
 //This interface should have default package access
-public abstract class WorkflowCache implements Cachable{
+public abstract class WorkflowCache implements Cachable {
 
-    public final String defaultKey = "DEFAULT_WORKFLOW_SCHEME";
-	protected static String PRIMARY_GROUP = "WorkflowCache";
-	protected static String TASK_GROUP = "WorkflowTaskCache";
-	protected static String STEP_GROUP = "WorkflowStepCache";
-	protected static String ACTION_GROUP = "WorkflowActionCache";
+    public final String defaultKey 				= "DEFAULT_WORKFLOW_SCHEME";
+	protected static String PRIMARY_GROUP 		= "WorkflowCache";
+	protected static String TASK_GROUP 			= "WorkflowTaskCache";
+	protected static String STEP_GROUP 			= "WorkflowStepCache";
+	protected static String ACTION_GROUP 		= "WorkflowActionCache";
+	protected static String ACTION_CLASS_GROUP 	= "WorkflowActionClassCache";
 	abstract protected WorkflowScheme add(WorkflowScheme scheme);
 
 	public abstract WorkflowScheme getScheme(String key);
@@ -31,13 +29,16 @@ public abstract class WorkflowCache implements Cachable{
 	abstract protected WorkflowStep add(WorkflowStep step);
 	abstract protected List<WorkflowAction> addActions(WorkflowStep step, List<WorkflowAction> actions);
 	abstract protected List<WorkflowAction> addActions(WorkflowScheme scheme, List<WorkflowAction> actions);
+	abstract protected List<WorkflowActionClass> addActionClasses(WorkflowAction action, List<WorkflowActionClass> actionClasses);
 	abstract protected List<WorkflowAction> getActions(WorkflowStep step);
+	abstract protected List<WorkflowActionClass> getActionClasses(final WorkflowAction action);
 	abstract protected List<WorkflowAction> getActions(WorkflowScheme scheme);
 	
 	abstract public void clearCache();
 	abstract protected void remove(Contentlet contentlet);
 	public abstract void remove(WorkflowScheme scheme);
 	abstract public void remove(WorkflowStep step);
+	abstract public void remove(WorkflowAction action);
 	abstract protected void removeActions(WorkflowStep step);
 	abstract protected void removeActions(WorkflowScheme scheme);
 	abstract protected void remove(WorkflowTask task) ;

@@ -1,28 +1,5 @@
 package com.dotcms.rest.api.v1.workflow;
 
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.CURRENT_STEP;
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.actionName;
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.addSteps;
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.createImportExportObjectForm;
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.createScheme;
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.createWorkflowActions;
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.doCleanUp;
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.findSchemes;
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.findSteps;
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.schemeName;
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.stepName;
-import static com.dotcms.rest.exception.mapper.ExceptionMapperUtil.ACCESS_CONTROL_HEADER_INVALID_LICENSE;
-import static com.dotcms.rest.exception.mapper.ExceptionMapperUtil.ACCESS_CONTROL_HEADER_PERMISSION_VIOLATION;
-import static com.dotmarketing.business.Role.ADMINISTRATOR;
-import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.mock.response.MockAsyncResponse;
@@ -36,13 +13,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.LicenseValiditySupplier;
-import com.dotcms.workflow.form.WorkflowActionForm;
-import com.dotcms.workflow.form.WorkflowActionStepForm;
-import com.dotcms.workflow.form.WorkflowReorderWorkflowActionStepForm;
-import com.dotcms.workflow.form.WorkflowSchemeForm;
-import com.dotcms.workflow.form.WorkflowSchemeImportObjectForm;
-import com.dotcms.workflow.form.WorkflowStepAddForm;
-import com.dotcms.workflow.form.WorkflowStepUpdateForm;
+import com.dotcms.workflow.form.*;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -59,14 +30,26 @@ import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.liferay.portal.model.User;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import javax.servlet.http.HttpServletRequest;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import javax.servlet.http.HttpServletRequest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.*;
+import static com.dotcms.rest.exception.mapper.ExceptionMapperUtil.ACCESS_CONTROL_HEADER_INVALID_LICENSE;
+import static com.dotcms.rest.exception.mapper.ExceptionMapperUtil.ACCESS_CONTROL_HEADER_PERMISSION_VIOLATION;
+import static com.dotmarketing.business.Role.ADMINISTRATOR;
+import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
+import static org.junit.Assert.*;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.*;
 
 public class WorkflowResourceLicenseIntegrationTest {
 
@@ -581,7 +564,7 @@ public class WorkflowResourceLicenseIntegrationTest {
     public void Find_Available_Actions_Invalid_License() throws Exception {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         List<Contentlet> contetlets = APILocator.getContentletAPI().findAllContent(0,1);
-        final Response response = nonLicenseWorkflowResource.findAvailableActions(request, contetlets.get(0).getInode());
+        final Response response = nonLicenseWorkflowResource.findAvailableActions(request, contetlets.get(0).getInode(), null);
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
         ResponseEntityView ev = ResponseEntityView.class.cast(response.getEntity());
         List<WorkflowAction> actions = List.class.cast(ev.getEntity());

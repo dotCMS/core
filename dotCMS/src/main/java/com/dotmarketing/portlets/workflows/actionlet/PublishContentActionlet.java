@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+@Actionlet(publish = true)
 public class PublishContentActionlet extends WorkFlowActionlet {
 
     private static final long serialVersionUID = 1L;

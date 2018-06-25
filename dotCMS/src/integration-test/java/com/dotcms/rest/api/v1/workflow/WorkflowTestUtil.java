@@ -1,10 +1,5 @@
 package com.dotcms.rest.api.v1.workflow;
 
-import static com.dotmarketing.business.Role.ADMINISTRATOR;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
@@ -24,18 +19,15 @@ import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject;
 import com.dotmarketing.util.UUIDGenerator;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.RandomStringUtils;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static com.dotmarketing.business.Role.ADMINISTRATOR;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
 
 public abstract class WorkflowTestUtil {
 
@@ -246,7 +238,7 @@ public abstract class WorkflowTestUtil {
 
         workflowAction1.setId(UUIDGenerator.generateUuid());
         workflowAction1.setShowOn(WorkflowState.LOCKED, WorkflowState.PUBLISHED,
-                WorkflowState.UNPUBLISHED);
+                WorkflowState.UNPUBLISHED, WorkflowState.EDITING);
         workflowAction1.setNextStep(workflowStep2.getId());
         workflowAction1.setNextAssign(roleAPI.loadRoleByKey(ADMINISTRATOR).getId());
         workflowAction1.setSchemeId(scheme.getId());
@@ -259,7 +251,7 @@ public abstract class WorkflowTestUtil {
 
         workflowAction2.setId(UUIDGenerator.generateUuid());
         workflowAction2.setShowOn(WorkflowState.LOCKED, WorkflowState.PUBLISHED,
-                WorkflowState.UNPUBLISHED);
+                WorkflowState.UNPUBLISHED, WorkflowState.EDITING);
         workflowAction2.setNextStep(workflowStep2.getId());
         workflowAction2.setNextAssign(roleAPI.loadRoleByKey(ADMINISTRATOR).getId());
         workflowAction2.setSchemeId(scheme.getId());
@@ -271,7 +263,7 @@ public abstract class WorkflowTestUtil {
         final WorkflowAction workflowAction3 = new WorkflowAction();
 
         workflowAction3.setId(UUIDGenerator.generateUuid());
-        workflowAction3.setShowOn(WorkflowState.LOCKED, WorkflowState.PUBLISHED);
+        workflowAction3.setShowOn(WorkflowState.LOCKED, WorkflowState.PUBLISHED, WorkflowState.EDITING);
         workflowAction3.setNextStep(WorkflowAction.CURRENT_STEP);
         workflowAction3.setNextAssign(roleAPI.loadRoleByKey(ADMINISTRATOR).getId());
         workflowAction3.setSchemeId(scheme.getId());
