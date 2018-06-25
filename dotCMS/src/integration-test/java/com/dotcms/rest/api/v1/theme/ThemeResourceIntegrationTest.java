@@ -147,10 +147,6 @@ public class ThemeResourceIntegrationTest {
             assertNotNull(totalEntries);
             assertTrue(Integer.parseInt(totalEntries) > 1);
         }
-
-        assertTrue(responseList.stream()
-                .anyMatch(element -> element.get("host").get("identifier").textValue()
-                        .equals(host.getIdentifier())));
     }
 
     /**

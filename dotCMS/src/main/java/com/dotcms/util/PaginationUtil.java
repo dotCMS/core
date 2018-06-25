@@ -138,7 +138,9 @@ public class PaginationUtil {
 		PaginatedArrayList items = paginator.getItems(user, perPageValue, minIndex, params);
 
 		if (!UtilMethods.isSet(items)){
-			return ExceptionMapperUtil.createResponse(Response.Status.NOT_FOUND);
+			return ExceptionMapperUtil
+					.createResponse(map("message", "No items found"), "No items found",
+							Response.Status.NOT_FOUND);
 		}
 
 		final long totalRecords = items.getTotalResults();
