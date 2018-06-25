@@ -1,8 +1,12 @@
 package com.dotmarketing.portlets.folders.action;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
+import com.dotcms.uuid.shorty.ShortType;
+import com.dotcms.uuid.shorty.ShortyId;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -13,39 +17,37 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.factories.InodeFactory;
-import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portal.struts.DotPortletAction;
-import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-import com.liferay.portal.language.LanguageUtil;
-import com.liferay.portal.model.User;
-import com.liferay.portal.struts.ActionException;
-import com.liferay.portlet.ActionRequestImpl;
-import com.liferay.util.servlet.SessionMessages;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Matcher;
+
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
+
+import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.User;
+import com.liferay.portal.struts.ActionException;
+import com.liferay.portlet.ActionRequestImpl;
+import com.liferay.util.servlet.SessionMessages;
 /**
  * @author Maria
  */
@@ -57,14 +59,18 @@ public class OrderMenuAction extends DotPortletAction {
 	private PermissionAPI perAPI= null;
 	User user = null;
 	FolderAPI fapi = APILocator.getFolderAPI();
-	ActionRequest actionRequest = null;
+	ActionRequestImpl actionRequest = null;
 
+	@WrapInTransaction
 	public void processAction(ActionMapping mapping, ActionForm form, PortletConfig config, ActionRequest req, ActionResponse res) throws Exception {
 
 		perAPI = APILocator.getPermissionAPI();
 		user = _getUser(req);
-		actionRequest = req;
-
+		actionRequest = (ActionRequestImpl) req;
+		final String orderReturnPath = (req.getParameter("pagePath"));
+		if(orderReturnPath!=null) {
+		    actionRequest.getHttpServletRequest().getSession().setAttribute("orderReturnPath", orderReturnPath);
+		}
 		try {
 			String cmd = req.getParameter("cmd");
 
@@ -89,7 +95,7 @@ public class OrderMenuAction extends DotPortletAction {
 			List<Treeable> navs = new ArrayList<Treeable>();
 			//This condition works while saving the reordered menu
 			if (((cmd != null) && cmd.equals("generatemenu"))) {
-				HibernateUtil.startTransaction();
+
 				//regenerates menu files
 				boolean doReorderMenu = false;
 				if(l != null && (List)l.get(0) != null){
@@ -103,23 +109,29 @@ public class OrderMenuAction extends DotPortletAction {
 					_sendToReferral(req,res,req.getParameter("referer"));
 					return;
 				}
-				RefreshMenus.deleteMenus();
+				
+                // we have to clear navs after db commit
+                for(Treeable treeable : navs){
+                    Identifier id = APILocator.getIdentifierAPI().find(treeable.getIdentifier());
+                    if("folder".equals(id.getAssetType())){
+                        CacheLocator.getNavToolCache().removeNavByPath(id.getHostId(), id.getPath());
+                    }
+                    
+                    Folder folder = APILocator.getFolderAPI().findParentFolder(treeable, user, false);
+                    String folderInode = (folder==null) ? FolderAPI.SYSTEM_FOLDER : folder.getInode();
+                    CacheLocator.getNavToolCache().removeNav(id.getHostId(), folderInode);
+                    CacheLocator.getHTMLPageCache().remove(id.getId());
+                    CacheLocator.getNavToolCache().removeNav(id.getHostId(), FolderAPI.SYSTEM_FOLDER);
+                }
 
-				HibernateUtil.closeAndCommitTransaction();
-				_sendToReferral(req,res,req.getParameter("referer"));
+
+                
+                
+                
+				_sendToReferral(req,res,"/html/portlet/ext/folders/redirect_after_order.jsp");
 				
 				
-				// we have to clear navs after db commit
-				for(Treeable treeable : navs){
-					Identifier id = APILocator.getIdentifierAPI().find(treeable.getIdentifier());
-					if("folder".equals(id.getAssetType())){
-						CacheLocator.getNavToolCache().removeNavByPath(id.getHostId(), id.getPath());
-					}
-					Folder folder = APILocator.getFolderAPI().findParentFolder(treeable, user, false);
-					String folderInode = (folder==null) ? FolderAPI.SYSTEM_FOLDER : folder.getInode();
-					CacheLocator.getNavToolCache().removeNav(id.getHostId(), folderInode);
-					CacheLocator.getHTMLPageCache().remove(id.getId());
-				}
+
 				
 				return;
 			}
@@ -272,42 +284,45 @@ public class OrderMenuAction extends DotPortletAction {
 					}
 				}
 			}
-			Set<String> keys = hashMap.keySet();
-			Iterator<String> keysIterator = keys.iterator();
-			while (keysIterator.hasNext()) {
-				String key = keysIterator.next();
+			
+			for(String key:hashMap.keySet()) {
 				HashMap<Integer, String> hashInodes = hashMap.get(key);
 				for (int i = 0; i < hashInodes.size(); i++) {
-					String inode = (String) hashInodes.get(i);
-					Inode asset = (Inode) InodeFactory.getInode(inode,
-							Inode.class);
-					Contentlet c = null;
-					try {
-						c = APILocator.getContentletAPI().find(inode, user,
-								false);
-					} catch (ClassCastException cce) {
-						// Continue
+					final String inode = (String) hashInodes.get(i);
+					ShortyId shorty = APILocator.getShortyAPI().getShorty(inode).orElse(null);
+					if(shorty==null) {
+					    continue;
 					}
-					if (asset instanceof Folder) {
-						((Folder) asset).setSortOrder(i);
-						ret.add(((Folder) asset));
+					else if (ShortType.FOLDER.equals(shorty.subType)) {
+					    Folder f = APILocator.getFolderAPI().find(inode, user, false);
+						f.setSortOrder(i);
+						APILocator.getFolderAPI().save(f, user, false);
+						ret.add(f);
 					}
-					if (asset instanceof WebAsset && !asset.getType().equals("contentlet")) {
-						((WebAsset) asset).setSortOrder(i);
-						ret.add(((WebAsset) asset));
+					else if (ShortType.LINKS.equals(shorty.subType)) {
+						Link l = APILocator.getMenuLinkAPI().find(inode, user, false);
+						l.setSortOrder(i);
+						APILocator.getMenuLinkAPI().save(l, user, false);
+						ret.add(l);
 					}
-					if (APILocator.getFileAssetAPI().isFileAsset(c)) {
-						ret.add(c);
-						c.setSortOrder(i);
-						APILocator.getContentletAPI().refresh(c);
+					else if (ShortType.CONTENTLET.equals(shorty.subType)) {
+					    final Contentlet c = APILocator.getContentletAPI().find(inode, user, false);
+					    final ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(c.getIdentifier(), c.getLanguageId());
+					    final Contentlet out = APILocator.getContentletAPI().checkout(cvi.getWorkingInode(), user,false);
+					    out.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+					    out.setSortOrder(i);
+					    final boolean isLive = out.isLive();
+						final Contentlet in = APILocator.getContentletAPI().checkin(out, user, false);
+						ret.add(in);
+						if(isLive) {
+						    APILocator.getContentletAPI().publish(in, user, false);
+						}
 					}
+				}
+			}
 
-					HibernateUtil.saveOrUpdate(asset);
+/*
 
-					if(asset.getType().equals("contentlet")){
-						ret.add(c);
-
-						String[] listOfJustOne = {asset.getIdentifier()};
 						List<Language> languagesList = APILocator.getLanguageAPI().getLanguages();
 
 						for (Language language : languagesList) {
@@ -331,13 +346,13 @@ public class OrderMenuAction extends DotPortletAction {
 										"No contents with identifier: " + asset.getIdentifier()
 												+ " for language: " + language.getId());
 							}
-						}
-					}
-				}
-			}
+						}*/
+					
+				
+
 		} catch (Exception ex) {
-			Logger.error(this,
-					"_orderMenuItemsDragAndDrop: Exception ocurred.", ex);
+			Logger.warn(this,
+					"MenuItemsDragAndDrop: Exception ocurred." + ex.getMessage());
 			throw ex;
 		}
 		return ret;
@@ -350,7 +365,7 @@ public class OrderMenuAction extends DotPortletAction {
 		String itemInode = req.getParameter("item");
 
 		//gets folder object from folderParent inode
-		Folder folder = (Folder) InodeFactory.getInode(req.getParameter("folderParent"),Folder.class);
+		Folder folder = APILocator.getFolderAPI().find(req.getParameter("folderParent"), _getUser(req),false);
 
 		java.util.List itemsList = new ArrayList();
 
