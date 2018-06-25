@@ -962,6 +962,20 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		this.workFlowFactory.deleteWorkflowTask(task);
 		SecurityLogger.logInfo(this.getClass(),
 				"The Workflow Task with id:" + task.getId() + " was deleted.");
+		try {
+			final Contentlet contentlet = this.contentletAPI.find(task.getWebasset(), user, false);
+			if (UtilMethods.isSet(contentlet)) {
+				HibernateUtil.addAsyncCommitListener(() -> {
+					try {
+						APILocator.getContentletAPI().refresh(contentlet);
+					} catch (DotDataException e) {
+						Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+					}
+				});
+			}
+		} catch (DotSecurityException e) {
+			Logger.error(this, e.getMessage(), e);
+		}
 	}
 
 	@CloseDBIfOpened
