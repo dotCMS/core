@@ -1,6 +1,10 @@
 package com.dotcms.languagevariable.business;
 
+import com.dotcms.keyvalue.model.KeyValue;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
+import java.util.List;
 
 /**
  * Provides access to Language Variable objects in the system, which allow you to associate a key to
@@ -93,5 +97,8 @@ public interface LanguageVariableAPI {
 
         return this.get(key, languageId, user, Boolean.FALSE);
     }
+
+    public List<KeyValue> getAllLanguageVariablesKeyStartsWith(final String key, final long languageId, final User user, final int limit)
+            throws DotDataException, DotSecurityException;
 
 }
