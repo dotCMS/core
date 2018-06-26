@@ -499,7 +499,7 @@
 </script>
 
 
-<%@ include file="/html/portlet/ext/contentlet/view_available_actions_inc.jsp" %>
+<%@ include file="/html/portlet/ext/contentlet/view_bulk_actions_inc.jsp" %>
 
 
 <form method="Post" action="" id="search_form" onsubmit="doSearch();return false;">

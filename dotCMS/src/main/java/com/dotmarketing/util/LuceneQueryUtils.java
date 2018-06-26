@@ -41,7 +41,7 @@ public class LuceneQueryUtils {
      * @return
      * @throws ParseException
      */
-    public static String prepareBulkActionsQuery(final String luceneQuery) throws ParseException {
+    public static String sanitizeBulkActionsQuery(final String luceneQuery) throws ParseException {
 
         final String cleanedUpQuery = removeQueryPrefix(luceneQuery);
         final QueryParser parser = new QueryParser(null, new WhitespaceAnalyzer());

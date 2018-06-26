@@ -138,16 +138,16 @@ public class WorkflowHelper {
             final User user) throws DotDataException {
 
         try {
-            final String prepareBulkActionsQuery = LuceneQueryUtils
-                    .prepareBulkActionsQuery(luceneQuery);
+            final String sanitizedQuery = LuceneQueryUtils
+                    .sanitizeBulkActionsQuery(luceneQuery);
 
-            final String query = String.format(BULK_ACTIONS_QUERY_WRAPPER, prepareBulkActionsQuery);
+            final String query = String.format(BULK_ACTIONS_QUERY_WRAPPER, sanitizedQuery);
             //We should only be considering Working content.
             final SearchResponse response = this.contentletAPI
                     .esSearchRaw(query.toLowerCase(), false, user, false);
             //Query must be sent lowercase. It's a must.
 
-            Logger.debug(getClass(), () -> "luceneQuery: " + prepareBulkActionsQuery);
+            Logger.debug(getClass(), () -> "luceneQuery: " + sanitizedQuery);
             return this.buildBulkActionView(response, user);
         } catch (Exception e) {
             throw new DotDataException(e);
@@ -308,9 +308,9 @@ public class WorkflowHelper {
         final WorkflowAction action = this.workflowAPI.findAction(form.getWorkflowActionId(), user);
         if(null != action) {
             if(UtilMethods.isSet(form.getQuery())){
-                return this.workflowAPI.fireBulkActions(action, user, form.getQuery());
+                return this.workflowAPI.fireBulkActions(action, user, form.getQuery(), form.getPopupParamsBean());
             }
-            return this.workflowAPI.fireBulkActions(action, user, form.getContentletIds());
+            return this.workflowAPI.fireBulkActions(action, user, form.getContentletIds(), form.getPopupParamsBean());
         } else {
             throw new DoesNotExistException("Workflow-does-not-exists-action");
         }

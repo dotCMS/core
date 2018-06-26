@@ -1,35 +1,19 @@
-<%@page import="com.dotmarketing.portlets.structure.factories.StructureFactory"%>
-<%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
-<%@page import="com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet"%>
-<%@page import="com.dotmarketing.portlets.workflows.model.WorkflowActionClass"%>
-<%@ include file="/html/common/init.jsp" %>
 <%@page import="com.dotmarketing.business.APILocator"%>
-<%@page import="com.dotmarketing.portlets.workflows.model.WorkflowAction"%>
-<%@page import="com.liferay.portal.model.User"%>
-<%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.dotmarketing.business.Role"%>
-<%@page import="java.util.Set"%>
-<%@page import="com.dotmarketing.util.Config"%>
-<%@page import="com.liferay.portal.language.LanguageUtil"%>
+<%@page import="com.dotmarketing.portlets.contentlet.util.ActionletUtil"%>
+<%@page import="com.dotmarketing.portlets.structure.factories.StructureFactory"%>
+<%@ include file="/html/common/init.jsp" %>
+<%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
+<%@page import="com.dotmarketing.portlets.workflows.model.WorkflowAction"%>
 <%
-String actionId=request.getParameter("actionId");
-String inode=request.getParameter("inode");// DOTCMS-7085
-WorkflowAction action = APILocator.getWorkflowAPI().findAction(actionId, user);
-Role role = APILocator.getRoleAPI().loadRoleById(action.getNextAssign());
+final String actionId=request.getParameter("actionId");
+final String inode=request.getParameter("inode");// DOTCMS-7085
+final WorkflowAction action = APILocator.getWorkflowAPI().findAction(actionId, user);
+final Role role = APILocator.getRoleAPI().loadRoleById(action.getNextAssign());
 
-List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(action);
-boolean hasPushPublishActionlet = false;
-GregorianCalendar cal = new GregorianCalendar();
-for(WorkflowActionClass actionlet : actionlets){
-	if(actionlet.getActionlet() != null 
-			&& actionlet.getActionlet().getClass().getCanonicalName().equals(PushPublishActionlet.class.getCanonicalName())){
-		hasPushPublishActionlet = true;
-	}
-}
-boolean mustShow = false;
-if(action.isAssignable() || action.isCommentable() || UtilMethods.isSet(action.getCondition()) || hasPushPublishActionlet){
-	mustShow = true;
-}
+final GregorianCalendar cal = new GregorianCalendar();
+final boolean hasPushPublishActionlet = ActionletUtil.hasPushPublishActionlet(action);
+final boolean mustShow = ActionletUtil.requiresPopupAdditionalParams(action);
 
 String conPublishDateVar = request.getParameter("publishDate");
 String conExpireDateVar = request.getParameter("expireDate");
@@ -42,7 +26,7 @@ if(conPublishDateVar ==null && structureInode != null){
 	}
 }
 
-
+final boolean bulkActions = Boolean.parseBoolean(request.getParameter("bulkActions"));
 
 %>
 
@@ -108,8 +92,74 @@ function setDates(){
 
 }
 
-function validate() {
 
+function extractTime(dateValue) {
+   return dateValue == null ? "" : dojo.date.locale.format(dateValue,{timePattern: "H-m", selector: "time"})
+}
+
+function extractDate(dateValue){
+   return dateValue == null ? "" : dojo.date.locale.format(dateValue,{datePattern: "yyyy-MM-dd", selector: "date"});
+}
+
+/**
+ *
+ */
+function handleBulkActionsDialogSelection() {
+
+    if(typeof fireAction  === "function") {
+
+        var actionId = '<%=actionId%>';
+        var comment = (dijit.byId("taskCommentsAux") ? dijit.byId("taskCommentsAux").getValue() : null);
+        var assign = (dijit.byId("taskAssignmentAux") ? dijit.byId("taskAssignmentAux").getValue() : null);
+
+        var assignComment = {
+            comment: comment,
+            assign: assign,
+        }
+
+        var data;
+        <%if(hasPushPublishActionlet){%>
+
+		    //for some reason hidden fields can only be retrieved using dojo and not dijit
+			var whereToSend = (dojo.byId("whereToSend") ? dojo.byId("whereToSend").value : "");
+			var publishDate = (dijit.byId("wfPublishDateAux") ? extractDate(dijit.byId("wfPublishDateAux").getValue()) : "");
+			var publishTime = (dijit.byId("wfPublishTimeAux") ? extractTime(dijit.byId("wfPublishTimeAux").getValue()): "");
+			var expireDate  = (dijit.byId("wfExpireDateAux") ? extractDate(dijit.byId("wfExpireDateAux").getValue()) : "");
+			var expireTime  = (dijit.byId("wfExpireTimeAux") ? extractTime(dijit.byId("wfExpireTimeAux").getValue()) : "");
+			var neverExpire = (dijit.byId("wfNeverExpire") ? dijit.byId("wfNeverExpire").getValue() : "");
+			var forcePush   = (dijit.byId("forcePush") ? dijit.byId("forcePush").getValue(): null);
+
+			var pushPublish = {
+				whereToSend:whereToSend,
+				publishDate:publishDate,
+				publishTime:publishTime,
+                expireDate:expireDate,
+				expireTime:expireTime,
+				neverExpire:neverExpire,
+				forcePush:forcePush
+			}
+
+		    data = {
+				assignComment:assignComment,
+                pushPublish:pushPublish
+			}
+
+        <%} else {%>
+
+			data = {
+				assignComment:assignComment
+			}
+
+        <%}%>
+
+        fireAction(actionId, data);
+        dijit.byId('contentletWfDialog').hide();
+    } else {
+        console.error("Unable to find function `handleBulkActionsDialogSelection`")
+    }
+}
+
+function validate() {
     <%if(hasPushPublishActionlet){%>
         var whereToSend = dojo.byId("whereToSend").value;
         if(whereToSend==null || whereToSend=="") {
@@ -118,7 +168,14 @@ function validate() {
         }
     <%}%>
 
-    contentAdmin.saveAssign();
+    <%if(bulkActions){%>
+
+          // javascript handler to return selection to the bulk actions caller.
+          handleBulkActionsDialogSelection();
+
+    <%}else{%>
+       contentAdmin.saveAssign();
+    <%}%>
 }
 
 </script>

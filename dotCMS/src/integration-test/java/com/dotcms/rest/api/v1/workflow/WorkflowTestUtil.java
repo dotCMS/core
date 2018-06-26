@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
@@ -330,13 +331,14 @@ public abstract class WorkflowTestUtil {
     }
 
     static  Map<ContentType, List<Contentlet>> findContentSamplesByType(
-            final List<ContentType> contentTypes, final int limit) throws Exception {
+            final List<ContentType> contentTypes, final WorkflowScheme scheme, final int limit) throws Exception {
         final Map<ContentType, List<Contentlet>> contentTypeSamplesMap = new HashMap<>();
 
         for (final ContentType contentType : contentTypes) {
 
             final List<Contentlet> contentlets = APILocator.getContentletAPI()
                     .search("+contentType:" + contentType.variable() +
+                                    " +wfscheme:"+ scheme.getId() +
                                     " +languageId:1 +deleted:false ", limit, 0,
                             "modDate desc",
                             APILocator.systemUser(), false);
@@ -354,7 +356,7 @@ public abstract class WorkflowTestUtil {
         final List<WorkflowScheme> workflowSchemes = workflowAPI.findSchemes(false);
         for(final WorkflowScheme scheme:workflowSchemes){
             final List<ContentType> contentTypes = workflowAPI.findContentTypesForScheme(scheme);
-            contentByWorkflowAndType.put(scheme, findContentSamplesByType(contentTypes, limit));
+            contentByWorkflowAndType.put(scheme, findContentSamplesByType(contentTypes, scheme, limit));
         }
         return contentByWorkflowAndType;
     }

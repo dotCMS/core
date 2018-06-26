@@ -766,8 +766,8 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
             final Map<ContentType, List<Contentlet>> contentsByType = sampleContent.get(scheme);
             final Set<ContentType> types = contentsByType.keySet();
-            for (final ContentType ct : types) {
-                final List<Contentlet> contentlets = contentsByType.get(ct);
+            for (final ContentType contentType : types) {
+                final List<Contentlet> contentlets = contentsByType.get(contentType);
                 final List<String> contentletIds = contentlets.stream().map(Contentlet::getInode)
                         .collect(Collectors.toList());
 
@@ -785,36 +785,46 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 final BulkActionView bulkActionView = BulkActionView.class.cast(entityView.getEntity());
                 assertNotNull(bulkActionView);
                 final List<BulkWorkflowSchemeView> schemes = bulkActionView.getSchemes();
-                assertNotNull(schemes);
-                assertFalse(schemes.isEmpty());
-                // if the piece of content is associated with multiple WorkFlows we need to verify the response matches the one we're currently on.
-                boolean schemeMatches = false;
-                for (final BulkWorkflowSchemeView view : schemes) {
-                    schemeMatches = (scheme.getId().equals(view.getScheme().getId()));
-                    if (schemeMatches) {
-                        assertFalse("Scheme is expected to have steps", view.getSteps().isEmpty());
-                        assertEquals("Schema name does not match", scheme.getName(),
-                                view.getScheme().getName());
-                        for (final BulkWorkflowStepView stepView : view.getSteps()) {
-                            assertTrue("Expected step " + stepView.getStep().getWorkflowStep()
-                                            .getName() + " Not found.",
-                                    steps.contains(stepView.getStep().getWorkflowStep())
-                            );
-                            final List<CountWorkflowAction> workflowActions = stepView.getActions();
-                            for (final CountWorkflowAction workflowAction : workflowActions) {
-                                assertTrue("Expected action " + workflowAction.getWorkflowAction()
-                                                .getName() + " Not found.",
-                                        availableActions.contains(
-                                                workflowAction.getWorkflowAction().getId())
-                                );
-                            }
-                        }
-                        break;
-                    }
-                }
 
-                //At least one scheme was matched
-                assertTrue("no scheme was matched. ",schemeMatches);
+                assertNotNull(schemes);
+                if(Host.HOST_VELOCITY_VAR_NAME.equals(contentType.name())){
+
+                    // if we're sending contentlets of type Host then we should get nothing back
+                    assertTrue("Nothing should come back for CT Host ",schemes.isEmpty());
+
+                } else {
+
+                    assertFalse( "Everything else should have a WF. " , schemes.isEmpty());
+                    // if the piece of content is associated with multiple WorkFlows we need to verify the response matches the one we're currently on.
+                    boolean schemeMatches = false;
+                    for (final BulkWorkflowSchemeView view : schemes) {
+                        schemeMatches = (scheme.getId().equals(view.getScheme().getId()));
+                        if (schemeMatches) {
+                            assertFalse("Scheme is expected to have steps", view.getSteps().isEmpty());
+                            assertEquals("Schema name does not match", scheme.getName(),
+                                    view.getScheme().getName());
+                            for (final BulkWorkflowStepView stepView : view.getSteps()) {
+                                assertTrue("Expected step " + stepView.getStep().getWorkflowStep()
+                                                .getName() + " Not found.",
+                                        steps.contains(stepView.getStep().getWorkflowStep())
+                                );
+                                final List<CountWorkflowAction> workflowActions = stepView.getActions();
+                                for (final CountWorkflowAction workflowAction : workflowActions) {
+                                    assertTrue("Expected action " + workflowAction.getWorkflowAction()
+                                                    .getName() + " Not found.",
+                                            availableActions.contains(
+                                                    workflowAction.getWorkflowAction().getId())
+                                    );
+                                }
+                            }
+                            break;
+                        }
+                    }
+
+                    //At least one scheme was matched
+                    assertTrue("no scheme was matched. ",schemeMatches);
+
+                }
             }
         }
     }
@@ -837,7 +847,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                    final WorkflowAction action = actions.stream().findAny().get();
                    final HttpServletRequest request = mock(HttpServletRequest.class);
                    final FireBulkActionsForm form = new FireBulkActionsForm(null,
-                           Collections.singletonList(contentlet.getInode()), action.getId()
+                           Collections.singletonList(contentlet.getInode()), action.getId(), null
                    );
 
                    final AsyncResponse asyncResponse = new MockAsyncResponse((arg) -> {
@@ -1030,7 +1040,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
             final HttpServletRequest request1 = mock(HttpServletRequest.class);
             final FireBulkActionsForm actionsForm1 = new FireBulkActionsForm(null,
-                    Collections.singletonList(inode), saveAction.getId());
+                    Collections.singletonList(inode), saveAction.getId(), null);
 
             //This CountDownLatch prevents the finally block from getting reached until after the thread completes
             final CountDownLatch countDownLatch = new CountDownLatch(1);
@@ -1186,7 +1196,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
             final HttpServletRequest request1 = mock(HttpServletRequest.class);
             final FireBulkActionsForm actionsForm1 = new FireBulkActionsForm(null,
-                    Collections.singletonList(inode), saveAction.getId());
+                    Collections.singletonList(inode), saveAction.getId(), null);
 
             final AsyncResponse asyncResponse = new MockAsyncResponse((arg) -> {
                 try {

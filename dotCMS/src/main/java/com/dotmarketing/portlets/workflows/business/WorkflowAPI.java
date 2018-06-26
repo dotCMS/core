@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.workflows.business;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.api.v1.workflow.BulkActionsResultView;
+import com.dotcms.workflow.form.AdditionalParamsBean;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Permissionable;
@@ -27,7 +28,6 @@ import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.portlets.workflows.model.WorkflowTimelineItem;
-
 import com.liferay.portal.model.User;
 import java.util.Collection;
 import java.util.EnumSet;
@@ -36,7 +36,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Future;
-import java.util.function.Consumer;
 
 public interface WorkflowAPI {
 
@@ -697,9 +696,10 @@ public interface WorkflowAPI {
      * @param action {@link WorkflowAction}
      * @param user  {@link User}
      * @param luceneQuery luceneQuery
-     * @return
+     * @param additionalParamsBean
+	 * @return
      */
-	BulkActionsResultView fireBulkActions(WorkflowAction action, User user,  String luceneQuery) throws DotDataException;
+	BulkActionsResultView fireBulkActions(WorkflowAction action, User user,  String luceneQuery, AdditionalParamsBean additionalParamsBean) throws DotDataException;
 
 	/**
 	 * Fires a list of contentlets by using an action.
@@ -707,10 +707,11 @@ public interface WorkflowAPI {
 	 * @param action {@link WorkflowAction}
 	 * @param user   {@link User}
 	 * @param contentletIds {@link List}
+	 * @param additionalParamsBean
 	 * @return Future BulkActionsResultView
 	 */
 
-	BulkActionsResultView fireBulkActions(WorkflowAction action, User user, List<String> contentletIds) throws DotDataException ;
+	BulkActionsResultView fireBulkActions(WorkflowAction action, User user, List<String> contentletIds, AdditionalParamsBean additionalParamsBean) throws DotDataException ;
 
 	/**
 	 * Returns date ordered list that is made up of workflow history items and workflow comment items
