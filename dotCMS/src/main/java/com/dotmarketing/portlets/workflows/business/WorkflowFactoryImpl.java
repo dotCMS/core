@@ -1388,7 +1388,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.addParam(contentTypeInode);
 			db.loadResult();
 
-			final ImmutableList.Builder<WorkflowStep> steps = new ImmutableList.Builder<>();
+			final ImmutableList.Builder<WorkflowStep> stepBuilder = new ImmutableList.Builder<>();
 			for(String id : schemesIds) {
 				db.setSQL(sql.INSERT_SCHEME_FOR_STRUCT);
 				db.addParam(UUIDGenerator.generateUuid());
@@ -1396,22 +1396,46 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 				db.addParam(contentTypeInode);
 				db.loadResult();
 
-				steps.addAll(this.findSteps(this.findScheme(id)));
+				stepBuilder.addAll(this.findSteps(this.findScheme(id)));
 			}
 			// update all tasks for the content type and reset their step to
 			// null
-			this.cleanWorkflowTaskStatus(contentTypeInode, steps.build(), workflowTaskConsumer);
+			this.cleanWorkflowTaskStatus(contentTypeInode, stepBuilder.build(), workflowTaskConsumer);
+			this.checkContentTypeWorkflowTaskNullStatus(contentTypeInode, workflowTaskConsumer);
 
 			// we have to clear the saved steps/tasks for all contentlets using
 			// this workflow
 
 			cache.removeStructure(contentTypeInode);
-
 			cache.clearStepsCache();
 		} catch (final Exception e) {
 
 			Logger.error(this.getClass(), e.getMessage(), e);
 			throw new DotDataException(e.getMessage(),e);
+		}
+	}
+
+	private void checkContentTypeWorkflowTaskNullStatus(final String contentTypeInode,
+														final Consumer<WorkflowTask> workflowTaskConsumer) throws DotDataException {
+
+		try {
+
+			final List<WorkflowTask> tasks = this
+					.convertListToObjects(new DotConnect()
+							.setSQL(sql.SELECT_TASK_NULL_BY_STRUCT)
+							.addParam(contentTypeInode).loadObjectResults(), WorkflowTask.class);
+
+			//clean cache
+			tasks.stream().forEach(task -> {
+
+				if (null != workflowTaskConsumer) {
+
+					workflowTaskConsumer.accept(task);
+				}
+			});
+		} catch (final Exception e) {
+			Logger.error(this.getClass(), e.getMessage(), e);
+			throw new DotDataException(e.getMessage(), e);
 		}
 	}
 

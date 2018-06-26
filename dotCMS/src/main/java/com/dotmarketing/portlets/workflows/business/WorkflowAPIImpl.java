@@ -962,6 +962,19 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		this.workFlowFactory.deleteWorkflowTask(task);
 		SecurityLogger.logInfo(this.getClass(),
 				"The Workflow Task with id:" + task.getId() + " was deleted.");
+		try {
+			if (UtilMethods.isSet(task.getWebasset())) {
+				HibernateUtil.addAsyncCommitListener(() -> {
+					try {
+						this.distributedJournalAPI.addIdentifierReindex(task.getWebasset());
+					} catch (DotDataException e) {
+						Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+					}
+				});
+			}
+		} catch (Exception e) {
+			Logger.error(this, e.getMessage(), e);
+		}
 	}
 
 	@CloseDBIfOpened
@@ -988,7 +1001,20 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			task.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
 		}
 
-		workFlowFactory.saveWorkflowTask(task);
+		this.workFlowFactory.saveWorkflowTask(task);
+		try {
+			if (UtilMethods.isSet(task.getWebasset())) {
+				HibernateUtil.addAsyncCommitListener(() -> {
+					try {
+						this.distributedJournalAPI.addIdentifierReindex(task.getWebasset());
+					} catch (DotDataException e) {
+						Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+					}
+				});
+			}
+		} catch (Exception e) {
+			Logger.error(this, e.getMessage(), e);
+		}
 	}
 
 	@Override
