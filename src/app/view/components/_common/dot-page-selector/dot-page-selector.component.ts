@@ -26,6 +26,7 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
     @Output() selected = new EventEmitter<DotPageAsset>();
     @Input() style: any;
     @Input() label: string;
+    @Input() hostIdentifier: string;
     @Input() floatingLabel = false;
 
     results: any[];
@@ -59,11 +60,11 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
     /**
      * Get pages results and set it to the autotomplete
      *
-     * @param {string} query
+     * @param {string} param
      * @memberof DotPageSelectorComponent
      */
-    search(query: string): void {
-        this.dotPageSelectorService.getPagesInFolder(query).subscribe((pages: DotPageAsset[]) => {
+    search(param: string): void {
+        this.dotPageSelectorService.getPagesInFolder(param, this.hostIdentifier).subscribe((pages: DotPageAsset[]) => {
             this.results = pages;
         });
     }

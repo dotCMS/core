@@ -148,10 +148,11 @@ describe('ContentTypesEditComponent create mode', () => {
         fixture.detectChanges();
     }));
 
-    it('should has dialog opened by default', () => {
+    it('should has dialog opened by default & has css base-type class', () => {
         const dialog = de.query(By.css('p-dialog'));
         expect(dialog).not.toBeNull();
         expect(dialog.componentInstance.visible).toBeTruthy();
+        expect(dialog.componentInstance.styleClass).toEqual('basetype-content');
     });
 
     it('should have cancel button', () => {

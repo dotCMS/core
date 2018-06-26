@@ -30,6 +30,7 @@
     *ngIf="show"
     modal="modal"
     width="500"
+    styleClass="{{ 'baseType-' + data.baseType | lowercase}}"
     [(visible)]="show"
     [responsive]="true"
     [resizable]="false"

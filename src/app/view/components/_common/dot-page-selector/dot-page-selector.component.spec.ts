@@ -144,11 +144,12 @@ describe('DotPageSelectorComponent', () => {
     });
 
     it('should search for pages', () => {
+        component.hostIdentifier = '123';
         autocomplete.triggerEventHandler('completeMethod', {
             query: 'hello'
         });
 
-        expect(dotPageSelectorService.getPagesInFolder).toHaveBeenCalledWith('hello');
+        expect(dotPageSelectorService.getPagesInFolder).toHaveBeenCalledWith('hello', '123');
     });
 
     it('should pass attrs to autocomplete component', () => {

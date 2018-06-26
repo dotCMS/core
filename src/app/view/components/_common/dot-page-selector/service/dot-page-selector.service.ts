@@ -39,13 +39,17 @@ export class DotPageSelectorService {
      * @returns {Observable<DotPageAsset[]>}
      * @memberof DotPageSelectorService
      */
-    getPagesInFolder(searchParam: string): Observable<DotPageAsset[]> {
+    getPagesInFolder(searchParam: string, hostId?: string): Observable<DotPageAsset[]> {
+        searchParam = searchParam.replace(/\//g, '\\/');
+        let query = `+basetype:5 +parentpath:*${searchParam}*`;
+        query += hostId ? ` +conhost:${hostId}` : '';
+
         return this.coreWebService
             .requestView({
                 body: {
                     query: {
                         query_string: {
-                            query: `+basetype:5 +parentpath:*${searchParam}*`
+                            query: query
                         }
                     }
                 },

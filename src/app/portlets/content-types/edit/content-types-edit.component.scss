@@ -1,6 +1,10 @@
 @import 'mixins';
 @import 'variables';
 
+::ng-deep .basetype-content.ui-dialog .ui-dialog-content {
+    overflow: visible;
+}
+
 .content-type__edit-header {
     margin: $basic-padding * 3 0;
     display: flex;
