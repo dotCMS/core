@@ -1,5 +1,7 @@
 package com.dotcms.keyvalue.business;
 
+import com.dotcms.util.CollectionsUtils;
+import java.util.Collections;
 import java.util.List;
 
 import com.dotcms.cache.KeyValueCache;
@@ -184,17 +186,14 @@ public class KeyValueAPIImpl implements KeyValueAPI {
 
     public List<KeyValue> allKeyValuesKeyStartsWith(final String key, final long languageId, final ContentType contentType, final User user,
             final boolean respectFrontendRoles, final int limit) {
-        final ImmutableList.Builder<KeyValue> results = new Builder<>();
         final StringBuilder query = new StringBuilder();
         try {
 
-            query.append((UtilMethods.isSet(contentType) && UtilMethods.isSet(contentType.variable()))
-                    ? "+contentType:" + contentType.variable() : "+baseType:" + BaseContentType.KEY_VALUE.getType());
-
             if (UtilMethods.isSet(contentType) && UtilMethods.isSet(contentType.variable())) {
-
+                query.append("+contentType:" + contentType.variable());
                 query.append(" +").append(contentType.variable()).append(".key:").append(key).append("*");
             } else {
+                query.append("+baseType:" + BaseContentType.KEY_VALUE.getType());
                 query.append(" +key:").append(key).append("*");
             }
 
@@ -202,15 +201,12 @@ public class KeyValueAPIImpl implements KeyValueAPI {
             query.append(" +live:true +deleted:false");
             List<Contentlet> contentResults =
                     contentletAPI.search(query.toString(), limit, -1, StringPool.BLANK, user, respectFrontendRoles);
-            contentResults.stream().forEach((Contentlet contentlet) -> {
-                KeyValue keyValue = fromContentlet(contentlet);
-                results.add(keyValue);
-            });
+            return contentResults.stream().map(this::fromContentlet).collect(CollectionsUtils.toImmutableList());
         } catch (DotDataException | DotSecurityException e) {
             Logger.error(this, String.format("An error occurred when retrieving a KeyValue object with key '%s': %s", key,
                     e.getMessage()), e);
         }
-        return results.build();
+        return Collections.EMPTY_LIST;
     }
 
 }

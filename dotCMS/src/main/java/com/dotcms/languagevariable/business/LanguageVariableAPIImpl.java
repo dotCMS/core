@@ -83,8 +83,8 @@ public class LanguageVariableAPIImpl implements LanguageVariableAPI {
     }
 
     @Override
-    public List<KeyValue> getAllLanguageVariablesKeyStartsWith(String key,
-            long languageId, User user, int limit) throws DotDataException, DotSecurityException {
+    public List<KeyValue> getAllLanguageVariablesKeyStartsWith(final String key,
+            final long languageId, final User user, final int limit) throws DotDataException, DotSecurityException {
         return this.keyValueAPI.allKeyValuesKeyStartsWith(key,languageId,APILocator.getContentTypeAPI(user).find(LANGUAGEVARIABLE),user,false,limit);
     }
 

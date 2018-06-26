@@ -170,7 +170,7 @@ public class ContentletAjaxTest {
 					"powered.by.IT", "hello world", 1,
 					languageVariableContentType, systemUser);
 
-			ContentletAjax contentletAjax = new ContentletAjax();
+			final ContentletAjax contentletAjax = new ContentletAjax();
 			List<String[]> languageVariablesList = contentletAjax.doSearchGlossaryTerm("test","1");
 			Assert.assertEquals(1,languageVariablesList.size());
 			languageVariablesList = contentletAjax.doSearchGlossaryTerm("powered.by.dot","1");

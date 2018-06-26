@@ -98,6 +98,18 @@ public interface LanguageVariableAPI {
         return this.get(key, languageId, user, Boolean.FALSE);
     }
 
+    /**
+     *
+     * Returns a list of {@link KeyValue} that the key starts with the specified key and languageId.
+     *
+     * @param key - The key to the Language Variable that starts with.
+     * @param languageId - The ID of the language that the variable was created for.
+     * @param user - The user performing this action.
+     * @param limit - Size of the list.
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     public List<KeyValue> getAllLanguageVariablesKeyStartsWith(final String key, final long languageId, final User user, final int limit)
             throws DotDataException, DotSecurityException;
 
