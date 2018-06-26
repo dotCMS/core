@@ -102,8 +102,8 @@ describe('DotThemeSelectorComponent', () => {
         });
 
         it('should set the current theme variable based on the Input value', () => {
-            const value = Object.assign({}, mockDotThemes[0])
-            component.value =  value;
+            const value = Object.assign({}, mockDotThemes[0]);
+            component.value = value;
             fixture.detectChanges();
             expect(component.current).toBe(value);
         });
@@ -117,11 +117,20 @@ describe('DotThemeSelectorComponent', () => {
             expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
         });
 
-        it('should disable the apply butotn', () => {
+        it('should disable the apply button', () => {
             fixture.detectChanges();
             const applyButton: DebugElement = fixture.debugElement.query(By.css('.apply'));
 
             expect(applyButton.nativeElement.disabled).toBe(true);
+        });
+
+        it('should show theme image when available', () => {
+            spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of(mockDotThemes));
+            component.siteChange(mockSites[0]);
+            fixture.detectChanges();
+            const themeImage: DebugElement = fixture.debugElement.query(By.css('.dot-theme-iteme__image'));
+
+            expect(themeImage).not.toBeNull();
         });
     });
 

@@ -14,7 +14,6 @@ $theme-item-dimension: 240px;
     .ui-datagrid-content {
         width: $theme-item-dimension * 4 + $basic-padding * 6;
         height: $theme-item-dimension * 2 + $basic-padding * 4;
-        margin: 0 $basic-padding * 2;
 
         .ui-g {
             margin: 0;
@@ -26,6 +25,10 @@ $theme-item-dimension: 240px;
         font-size: $font-size-large;
         margin-top: $basic-padding * 5;
     }
+}
+
+.dot-themes-container {
+    margin-top: $basic-padding * 2;
 }
 
 .dot-theme-search-box {
@@ -49,9 +52,11 @@ $theme-item-dimension: 240px;
     display: flex;
     flex-direction: column;
     cursor: pointer;
+    border-radius: 4px;
 
     svg {
         fill: $gray;
+        border-radius: 6px;
     }
 
     &:hover,
@@ -67,10 +72,15 @@ $theme-item-dimension: 240px;
 
 .dot-theme-item__name {
     padding-top: $basic-padding * 3;
-    font-size: $font-size-large;
+    font-size: $font-size-x-large;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     text-align: center;
     width: 100%;
+    line-height: 20px;
+}
+
+.dot-theme-iteme__image{
+    border-radius: 6px;
 }
