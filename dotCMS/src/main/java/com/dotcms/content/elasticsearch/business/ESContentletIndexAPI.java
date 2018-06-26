@@ -207,9 +207,6 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
                 newinfo.reindex_live=liveIndex;
                 APILocator.getIndiciesAPI().point(newinfo);
 
-                iapi.moveIndexToLocalNode(workingIndex);
-                iapi.moveIndexToLocalNode(liveIndex);
-
                 return timeStamp;
             } catch (Exception e) {
                 throw new ElasticsearchException(e.getMessage(), e);
