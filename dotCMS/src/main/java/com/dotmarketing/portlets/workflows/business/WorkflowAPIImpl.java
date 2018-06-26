@@ -963,17 +963,16 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		SecurityLogger.logInfo(this.getClass(),
 				"The Workflow Task with id:" + task.getId() + " was deleted.");
 		try {
-			final Contentlet contentlet = this.contentletAPI.find(task.getWebasset(), user, false);
-			if (UtilMethods.isSet(contentlet)) {
+			if (UtilMethods.isSet(task.getWebasset())) {
 				HibernateUtil.addAsyncCommitListener(() -> {
 					try {
-						APILocator.getContentletAPI().refresh(contentlet);
+						this.distributedJournalAPI.addIdentifierReindex(task.getWebasset());
 					} catch (DotDataException e) {
 						Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
 					}
 				});
 			}
-		} catch (DotSecurityException e) {
+		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
 		}
 	}
@@ -1002,7 +1001,20 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			task.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
 		}
 
-		workFlowFactory.saveWorkflowTask(task);
+		this.workFlowFactory.saveWorkflowTask(task);
+		try {
+			if (UtilMethods.isSet(task.getWebasset())) {
+				HibernateUtil.addAsyncCommitListener(() -> {
+					try {
+						this.distributedJournalAPI.addIdentifierReindex(task.getWebasset());
+					} catch (DotDataException e) {
+						Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+					}
+				});
+			}
+		} catch (Exception e) {
+			Logger.error(this, e.getMessage(), e);
+		}
 	}
 
 	@Override

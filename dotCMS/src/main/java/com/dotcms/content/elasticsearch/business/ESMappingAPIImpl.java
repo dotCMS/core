@@ -333,7 +333,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
         } catch (Exception e) {
             Logger.debug(this.getClass(), "No workflow info for contentlet " +  contentlet.getIdentifier());
         }
-        if(wfMap.isEmpty()) {
+	        if(wfMap.isEmpty()) {
             try {
                 final List<String> stepIds = new ArrayList<>();
                 final Set<String> schemeWriter = new HashSet<>();

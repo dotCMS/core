@@ -23,10 +23,11 @@ public class ResetTaskActionlet extends WorkFlowActionlet {
 	public String getName() {
 		return "Reset Workflow";
 	}
+
 	@Override
 	public String getHowTo() {
 
-		return "This actionlet will complety delete all workflow task information, including history for the content item and reset the content items workflow state.  It will also STOP all further subaction processing";
+		return "This actionlet will reset workflow task state, but keeping the comments and history.  It will also STOP all further subaction processing";
 	}
 
 	@Override
@@ -34,10 +35,11 @@ public class ResetTaskActionlet extends WorkFlowActionlet {
 							  final Map<String,WorkflowActionClassParameter>  params) throws WorkflowActionFailureException {
 
 		final WorkflowTask task = processor.getTask();
-		task.setStatus(null);
+		
 		try {
 
-			APILocator.getWorkflowAPI().deleteWorkflowTask(task, APILocator.systemUser());
+			task.setStatus(null);
+			APILocator.getWorkflowAPI().saveWorkflowTask(task);
 
 			processor.setTask(null);
 			processor.setContentlet(null);
