@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.contenttype;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
 import com.dotcms.exception.ExceptionUtil;
@@ -22,6 +23,7 @@ import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.ContentTypesPaginator;
+import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -38,10 +40,9 @@ import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 @Path("/v1/contenttype")
 public class ContentTypeResource implements Serializable {
@@ -308,7 +309,7 @@ public class ContentTypeResource implements Serializable {
 	 * where:
 	 *
 	 * <ul>
-	 *     <li>query-string: just return ContentTypes who content this pattern</li>
+	 *     <li>filter: just return ContentTypes who content this pattern</li>
 	 *     <li>n-limit: limit of items to return</li>
 	 *     <li>n-offset: offset</li>
 	 *     <li>fieldname: field to order by</li>
@@ -330,7 +331,8 @@ public class ContentTypeResource implements Serializable {
 										  @QueryParam(PaginationUtil.PAGE) final int page,
 										  @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
 										  @DefaultValue("upper(name)") @QueryParam(PaginationUtil.ORDER_BY) String orderbyParam,
-										  @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) String direction) {
+										  @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) String direction,
+										  @QueryParam("type") String types) throws DotDataException {
 
 		final InitDataObject initData = webResource.init(null, true, request, true, null);
 
@@ -340,7 +342,16 @@ public class ContentTypeResource implements Serializable {
 		final User user = initData.getUser();
 
 		try {
-			response = this.paginationUtil.getPage(request, user, filter, page, perPage, orderBy, direction);
+
+			final Map<String, Object> extraParams = types == null ? Collections.EMPTY_MAP :
+					ImmutableMap.<String, Object>builder()
+							.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, Arrays.asList(types.split(",")))
+							.build();
+
+			response = this.paginationUtil.getPage(request, user, filter, page, perPage, orderBy,
+					OrderDirection.valueOf(direction), extraParams);
+		} catch (IllegalArgumentException e) {
+			throw new DotDataException(e.getMessage());
 		} catch (Exception e) {
 			if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
 				throw new ForbiddenException(e);

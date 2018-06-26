@@ -5,6 +5,7 @@ import java.util.List;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
 
@@ -55,4 +56,8 @@ public interface FormAPI {
 		 * @throws DotStateException
 		 */
 		public void createFormWidgetInstanceStructure()throws DotDataException, DotStateException;
+
+		public Contentlet getFormContent(String formId);
+
+		public Contentlet createDefaultFormContent(String formId) throws DotDataException, DotSecurityException;
 }

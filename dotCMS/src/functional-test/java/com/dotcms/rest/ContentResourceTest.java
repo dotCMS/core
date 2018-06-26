@@ -3,12 +3,7 @@ package com.dotcms.rest;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
-import com.dotcms.contenttype.model.field.CategoryField;
-import com.dotcms.contenttype.model.field.DataTypes;
-import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.ImmutableBinaryField;
-import com.dotcms.contenttype.model.field.ImmutableTextField;
-import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -31,11 +26,7 @@ import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeatur
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Role;
+import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -52,53 +43,25 @@ import com.dotmarketing.portlets.structure.model.Field.DataType;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
-import com.dotmarketing.portlets.workflows.model.WorkflowState;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
-import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.tag.model.Tag;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-import com.tngtech.java.junit.dataprovider.DataProvider;
-import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import com.dotmarketing.util.Config;
-
-import java.util.ArrayList;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.BufferedWriter;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import javax.servlet.http.HttpServletRequest;
+import java.io.*;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
-import javax.servlet.http.HttpServletRequest;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 public class ContentResourceTest {
     Client client;
@@ -589,7 +552,7 @@ public class ContentResourceTest {
         saveDraft.setStepId(step1.getId());
         saveDraft.setNextAssign(APILocator.getRoleAPI().loadCMSAnonymousRole().getId());
         saveDraft.setShowOn(WorkflowState.LOCKED,WorkflowState.UNLOCKED, WorkflowState.NEW,
-                WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED);
+                WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED, WorkflowState.EDITING);
         APILocator.getWorkflowAPI().saveAction(saveDraft,
                 Arrays.asList(new Permission[] {
                         new Permission(
@@ -613,7 +576,7 @@ public class ContentResourceTest {
         escalate.setCommentable(true);
         escalate.setNextAssign(APILocator.getRoleAPI().loadCMSAnonymousRole().getId());
         escalate.setShowOn(WorkflowState.LOCKED,WorkflowState.UNLOCKED, WorkflowState.NEW,
-                WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED);
+                WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED, WorkflowState.EDITING);
         APILocator.getWorkflowAPI().saveAction(escalate,
                 Arrays.asList(new Permission[] {
                         new Permission(
@@ -636,7 +599,7 @@ public class ContentResourceTest {
         sendReview.setStepId(step1.getId());
         sendReview.setNextAssign(APILocator.getRoleAPI().loadCMSAnonymousRole().getId());
         sendReview.setShowOn(WorkflowState.LOCKED,WorkflowState.UNLOCKED,
-                WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED);
+                WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED, WorkflowState.EDITING);
         APILocator.getWorkflowAPI().saveAction(sendReview,
                 Arrays.asList(new Permission[] {
                         new Permission(
@@ -658,7 +621,7 @@ public class ContentResourceTest {
         reject.setStepId(step2.getId());
         reject.setNextAssign(APILocator.getRoleAPI().loadCMSAnonymousRole().getId());
         reject.setShowOn(WorkflowState.LOCKED,WorkflowState.UNLOCKED,
-                WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED);
+                WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED, WorkflowState.EDITING);
         APILocator.getWorkflowAPI().saveAction(reject,
                 Arrays.asList(new Permission[] {
                         new Permission(
@@ -680,7 +643,7 @@ public class ContentResourceTest {
         publish.setStepId(step2.getId());
         publish.setNextAssign(APILocator.getRoleAPI().loadCMSAnonymousRole().getId());
         publish.setShowOn(WorkflowState.LOCKED,WorkflowState.UNLOCKED,
-                WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED);
+                WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED, WorkflowState.EDITING);
         APILocator.getWorkflowAPI().saveAction(publish,
                 Arrays.asList(new Permission[] {
                         new Permission(

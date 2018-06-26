@@ -118,7 +118,7 @@ public class NavResource {
 
             if (!APILocator.getLanguageAPI().getLanguages().stream()
                     .anyMatch(l -> l.getId() == langId)) {
-                throw new DoesNotExistException("languageId-not-exists");
+                throw new IllegalArgumentException("languageId-not-exists");
             }
 
             final Host h = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);

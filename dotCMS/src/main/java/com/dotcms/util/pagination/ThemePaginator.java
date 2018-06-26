@@ -15,6 +15,7 @@ import com.liferay.portal.model.User;
 
 
 import com.liferay.util.StringPool;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -22,7 +23,7 @@ import java.util.stream.Collectors;
 /**
  * Handle theme pagination
  */
-public class ThemePaginator implements Paginator<Folder> {
+public class ThemePaginator implements Paginator<Map<String, Object>> {
 
     public static final String ID_PARAMETER = "id";
     public static final String HOST_ID_PARAMETER_NAME = "host";
@@ -49,10 +50,10 @@ public class ThemePaginator implements Paginator<Folder> {
     }
 
     @Override
-    public PaginatedArrayList<Folder> getItems(final User user, final int limit, final int offset,
+    public PaginatedArrayList<Map<String, Object>> getItems(final User user, final int limit, final int offset,
                                                    final Map<String, Object> params) throws PaginationException {
 
-        final PaginatedArrayList<Folder> result = new PaginatedArrayList();
+        final PaginatedArrayList<Map<String, Object>> result = new PaginatedArrayList();
 
         final OrderDirection direction =  params != null && params.get(ORDER_DIRECTION_PARAM_NAME) != null ?
                 (OrderDirection) params.get(ORDER_DIRECTION_PARAM_NAME) :
@@ -99,8 +100,10 @@ public class ThemePaginator implements Paginator<Folder> {
 
             for (final Contentlet contentlet :contentletAPI.findContentlets(inodes)) {
                 final Folder folder = folderAPI.find(contentlet.getFolder(), user, false);
-                folder.setIdentifier(getThemeIdentifier(folder, user));
-                result.add(folder);
+
+                Map<String, Object> map = new HashMap<>(folder.getMap());
+                map.put("themeThumbnail", getThemeThumbnail(folder, user));
+                result.add(map);
             }
 
             result.setTotalResults(totalResults.size());
@@ -112,7 +115,7 @@ public class ThemePaginator implements Paginator<Folder> {
     }
 
     @VisibleForTesting
-    String getThemeIdentifier(final Folder folder, final User user) throws DotSecurityException, DotDataException {
+    String getThemeThumbnail(final Folder folder, final User user) throws DotSecurityException, DotDataException {
 
         final StringBuilder query = new StringBuilder();
         query.append("+conFolder:").append(folder.getInode()).append(" +title:").append(THEME_PNG);

@@ -22,13 +22,14 @@
 	List<WorkflowActionClass> subActions = Collections.emptyList();
 	Role nextAssignRole = new Role();
 	boolean hideHierarchayControl = true;
+	final Role cmsAnonRole=APILocator.getRoleAPI().loadCMSAnonymousRole();
 	if(UtilMethods.isSet(actionId) && !NEW_ACTION.equals(actionId)) {
 		try {
 			action = wapi.findAction(actionId, APILocator.getUserAPI().getSystemUser());
 			nextAssignRole = APILocator.getRoleAPI().loadRoleById(action.getNextAssign());
 			if (UtilMethods.isSet(nextAssignRole) && UtilMethods.isSet(nextAssignRole.getId())) {
 				if (!nextAssignRole.isUser() && !nextAssignRole
-						.equals(APILocator.getRoleAPI().loadCMSAnonymousRole())) {
+						.equals(cmsAnonRole)) {
 					if (action.isAssignable()) {
 						hideHierarchayControl = false;
 					}
@@ -43,6 +44,8 @@
 		}
 
 		subActions = wapi.findActionClasses(action);
+	}else{
+	    action.setNextAssign(cmsAnonRole.getId());
 	}
 
 	final WorkflowScheme scheme = wapi.findScheme(schemeId);
@@ -55,7 +58,8 @@
 	boolean showPublished   = false;
 	boolean showUnpublished = false;
 	boolean showArchive		= false;
-
+    boolean showListing     = false;
+    boolean showEditing     = false;
 	if (null != action) {
 
 		showLocked      = action.shouldShowOnLock();
@@ -64,6 +68,8 @@
 		showPublished   = action.shouldShowOnPublished();
 		showUnpublished = action.shouldShowOnUnpublished();
 		showArchive		= action.shouldShowOnArchived();
+		showListing     = action.shouldShowOnListing();
+		showEditing     = action.shouldShowOnEdit();
 	}
 
 	final boolean showAll	= showNew && showPublished && showUnpublished && showArchive;
@@ -267,6 +273,17 @@
 					<dl class="vertical">
 						<fieldset style="width:80%">
 							<legend><%=LanguageUtil.get(pageContext, "show-when")%></legend>
+							<div class="checkbox">
+                                <input type="checkbox" name="showOn" id="showOnEDITING" dojoType="dijit.form.CheckBox"   value="EDITING"        onclick="actionAdmin.doChange()"   <%=(showEditing)?     "checked" : "" %>/>
+                                <label for="showOnEDITING"><%=LanguageUtil.get(pageContext, "Editing") %></label>
+                                &nbsp; &nbsp;
+                                <input type="checkbox" name="showOn" id="showOnLISTING"  dojoType="dijit.form.CheckBox"   value="LISTING"      onclick="actionAdmin.doChange()"   <%=(showListing)?   "checked" : "" %>/>
+                                <label for="showOnLISTING"><%=LanguageUtil.get(pageContext, "Listing") %></label>
+                            </div>
+                                <div style="padding:10px;font-style: italic;">AND</div>
+							
+							
+							
 							<div class="checkbox">
 								<input type="checkbox" name="showOn" id="showOnLOCKED" dojoType="dijit.form.CheckBox"   value="LOCKED"        onclick="actionAdmin.doChange()"   <%=(showLocked)?     "checked" : "" %>/>
 								<label for="showOnLOCKED"><%=LanguageUtil.get(pageContext, "Requires-Checkout-Locked") %></label>

@@ -7,8 +7,6 @@ import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.PaginationException;
 import com.dotcms.util.pagination.ThemePaginator;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpages.theme.business.ThemeSerializer;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
@@ -65,8 +63,14 @@ public class ThemeResource {
 
     /**
      * Returns all themes
-     * @param request  HttpServletRequest
-     * @return Response
+     * @param request
+     * @param hostId Optional param, when it is not specified the default host is used
+     * @param page Page number
+     * @param perPage Items to be returned per page
+     * @param direction Sort order (ASC, DESC)
+     * @param searchParam Lucene criteria used to filter as +catchall:*searchParam*
+     * @return
+     * @throws Throwable
      */
     @GET
     @JSONP
@@ -85,16 +89,26 @@ public class ThemeResource {
 
         final InitDataObject initData = this.webResource.init(null, true, request, true, null);
         final User user = initData.getUser();
+        Host host;
 
-        final String hostIdToSearch = hostId != null ?
+        String hostIdToSearch = hostId != null ?
                 hostId :
                 (String) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
 
-        //Validate hostId is valid
-        Host host = hostAPI.find(hostIdToSearch, user, false);
 
-        if (!UtilMethods.isSet(host)){
-            return ExceptionMapperUtil.createResponse(null, "Invalid Host ID");
+        if (UtilMethods.isSet(hostIdToSearch)){
+            //Validate hostId is valid
+            host = hostAPI.find(hostIdToSearch, user, false);
+
+            if (!UtilMethods.isSet(host)){
+                return ExceptionMapperUtil
+                        .createResponse(map("message", "Invalid Host ID"), "Invalid Host ID",
+                                Status.BAD_REQUEST);
+            }
+        }else{
+            //Validate hostId is valid
+            host = hostAPI.findDefaultHost(user, false);
+            hostIdToSearch = host.getIdentifier();
         }
 
         try {
@@ -111,17 +125,17 @@ public class ThemeResource {
         } catch (PaginationException e) {
             throw e.getCause();
         } catch (JsonProcessingRuntimeException e) {
-            final String errorMsg = "An error occurred when accessing the page information (" + e
-                    .getMessage() + ")";
             Logger.error(this, e.getMessage(), e);
-            return ExceptionMapperUtil.createResponse(null, errorMsg);
+            return ExceptionMapperUtil.createResponse(e, Status.INTERNAL_SERVER_ERROR);
         }
     }
 
     /**
-     * Returns a theme given its ID (folder theme id)
-     * @param request  HttpServletRequest
-     * @return Response
+     * Returns a theme given its ID (folder theme inode)
+     * @param request
+     * @param id folder inode
+     * @return
+     * @throws Throwable
      */
     @GET
     @Path("/id/{id}")
@@ -149,17 +163,15 @@ public class ThemeResource {
         } catch (PaginationException e) {
             throw e.getCause();
         } catch (JsonProcessingRuntimeException e) {
-            final String errorMsg = "An error occurred when accessing the page information (" + e
-                    .getMessage() + ")";
+
             Logger.error(this, e.getMessage(), e);
-            return ExceptionMapperUtil.createResponse(null, errorMsg);
+            return ExceptionMapperUtil.createResponse(e, Status.INTERNAL_SERVER_ERROR);
         }
     }
 
     private ObjectMapper getMapper() {
         final  ObjectMapper mapper = new ObjectMapper();
         final  SimpleModule module = new SimpleModule();
-        module.addSerializer(Folder.class, new ThemeSerializer(hostAPI, userAPI));
         mapper.registerModule(module);
 
         return mapper;

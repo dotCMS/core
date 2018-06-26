@@ -27,7 +27,7 @@ List<WorkflowAction> wfActions = null;
 List<WorkflowAction> wfActionsAll = null;
 try{
 	wfSteps = APILocator.getWorkflowAPI().findStepsByContentlet(contentlet);
-	wfActions = APILocator.getWorkflowAPI().findAvailableActions(contentlet, user);
+	wfActions = APILocator.getWorkflowAPI().findAvailableActionsEditing(contentlet, user);
 	wfActionsAll= APILocator.getWorkflowAPI().findActions(wfSteps, user);
 	if(null != wfSteps && !wfSteps.isEmpty() && wfSteps.size() == 1) {
 		wfStep = wfSteps.get(0);
@@ -142,18 +142,13 @@ function setMyWorkflowScheme(){
 
 		<%for(WorkflowAction action : wfActions){ %>
 			<% List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(action); %>
-			<% boolean hasPushPublishActionlet = false; %>
-			<% for(WorkflowActionClass actionlet : actionlets){ %>
-				<% if(actionlet.getActionlet() != null && actionlet.getActionlet().getClass().getCanonicalName().equals(PushPublishActionlet.class.getCanonicalName())){ %>
-					<% hasPushPublishActionlet = true; %>
-				<% } %>
-			<% } %>
+
 
 			
 			<a 
 			style="<%if(schemesAvailable.size()>1){%>display:none;<%} %>" class="schemeId<%=action.getSchemeId()%> schemeActionsDiv"
-			onclick="contentAdmin.executeWfAction('<%=action.getId()%>', <%= hasPushPublishActionlet || action.isAssignable() || action.isCommentable() || UtilMethods.isSet(action.getCondition()) %>)">
-				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, action.getName())) %>
+			onclick="contentAdmin.executeWfAction('<%=action.getId()%>', <%= action.hasPushPublishActionlet() || action.isAssignable() || action.isCommentable() || UtilMethods.isSet(action.getCondition()) %>)">
+				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, action.getName())) %>   <div style="float:right"><%if(action.hasSaveActionlet()){ %>(<%=LanguageUtil.get(pageContext, "saves")%>)<%} %></div>
 
 			</a>
 		<%} %>

@@ -24,7 +24,6 @@ import java.util.*;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class WorkflowAction implements Permissionable, Serializable{
 
-
 	private static final long serialVersionUID = 1L;
 	/**
 	 * Key to store when the next step is current step.
@@ -48,6 +47,9 @@ public class WorkflowAction implements Permissionable, Serializable{
 	private boolean assignable;
 	private boolean commentable;
 	private int order;
+	private boolean saveActionlet;
+	private boolean publishActionlet;
+	private boolean pushPublishActionlet;
 	private Set<WorkflowState> showOn = Collections.emptySet();
 
 	public WorkflowAction() {
@@ -70,7 +72,7 @@ public class WorkflowAction implements Permissionable, Serializable{
 	}
 
 	/**
-	 * True if the action should be show on publish status.
+	 * True if the action should be show on publishActionlet status.
 	 * @return boolean
 	 */
 	public boolean shouldShowOnPublished () {
@@ -85,7 +87,22 @@ public class WorkflowAction implements Permissionable, Serializable{
 		return this.showOn.contains(WorkflowState.UNPUBLISHED);
 	}
 
-
+    /**
+     * True if the action should be show on unpublish status.
+     * @return boolean
+     */
+    public boolean shouldShowOnListing () {
+        return this.showOn.contains(WorkflowState.LISTING);
+    }
+    
+    /**
+     * True if the action should be show on unpublish status.
+     * @return boolean
+     */
+    public boolean shouldShowOnEdit () {
+        return this.showOn.contains(WorkflowState.EDITING);
+    }
+    
 	/**
 	 * True if the action should be show on locked status.
 	 * @return boolean
@@ -157,6 +174,30 @@ public class WorkflowAction implements Permissionable, Serializable{
 		accepted.add(new PermissionSummary("use",
 				"use-permission-description", PermissionAPI.PERMISSION_USE));
 		return accepted;
+	}
+
+    public boolean hasSaveActionlet() {
+    	return this.saveActionlet;
+    }
+
+    public boolean hasPublishActionlet() {
+    	return this.publishActionlet;
+    }
+
+	public boolean hasPushPublishActionlet() {
+		return this.pushPublishActionlet;
+	}
+
+	public void setSaveActionlet(boolean saveActionlet) {
+		this.saveActionlet = saveActionlet;
+	}
+
+	public void setPublishActionlet(boolean publishActionlet) {
+		this.publishActionlet = publishActionlet;
+	}
+
+	public void setPushPublishActionlet(boolean pushPublishActionlet) {
+		this.pushPublishActionlet = pushPublishActionlet;
 	}
 
 	@JsonIgnore

@@ -1,9 +1,8 @@
 package com.dotcms.rest.api.v1.container;
 
 
-import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
-import com.dotcms.rendering.velocity.services.VelocityType;
+import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.DELETE;
@@ -18,8 +17,8 @@ import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
-import com.dotcms.rest.WidgetResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
@@ -29,22 +28,26 @@ import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
 
+import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionLevel;
+import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
+import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.form.business.FormAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.VelocityUtil;
+import com.dotcms.rendering.velocity.util.VelocityUtil;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringWriter;
@@ -55,6 +58,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.google.common.collect.ImmutableMap;
 import org.apache.commons.io.IOUtils;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ResourceNotFoundException;
@@ -75,17 +79,38 @@ public class ContainerResource implements Serializable {
 
     private final PaginationUtil paginationUtil;
     private final WebResource webResource;
-
-
+    private final FormAPI formAPI;
+    private final ContainerAPI containerAPI;
+    private final VersionableAPI versionableAPI;
+    private final VelocityUtil velocityUtil;
+    private final ShortyIdAPI shortyAPI;
 
     public ContainerResource() {
-        this(new WebResource(), new PaginationUtil(new ContainerPaginator()));
+        this(new WebResource(),
+                new PaginationUtil(new ContainerPaginator()),
+                APILocator.getFormAPI(),
+                APILocator.getContainerAPI(),
+                APILocator.getVersionableAPI(),
+                VelocityUtil.getInstance(),
+                APILocator.getShortyAPI());
     }
 
     @VisibleForTesting
-    public ContainerResource(final WebResource webResource, final PaginationUtil paginationUtil) {
+    public ContainerResource(final WebResource webResource,
+                             final PaginationUtil paginationUtil,
+                             final FormAPI formAPI,
+                             final ContainerAPI containerAPI,
+                             final VersionableAPI versionableAPI,
+                             final VelocityUtil velocityUtil,
+                             final ShortyIdAPI shortyAPI) {
+
         this.webResource = webResource;
         this.paginationUtil = paginationUtil;
+        this.formAPI = formAPI;
+        this.containerAPI = containerAPI;
+        this.versionableAPI = versionableAPI;
+        this.velocityUtil = velocityUtil;
+        this.shortyAPI = shortyAPI;
     }
 
     /**
@@ -145,22 +170,20 @@ public class ContainerResource implements Serializable {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Path("/{containerId}/uuid/{uuid}/content/{contentletId}")
+    @Path("/{containerId}/content/{contentletId}")
     public final Response containerContent(@Context final HttpServletRequest req, @Context final HttpServletResponse res,
-            @PathParam("containerId") final String containerId, @PathParam("contentletId") final String contentletId,
-            @PathParam("uuid") final String uuid) throws DotDataException,
-            MethodInvocationException, ResourceNotFoundException, IOException, IllegalAccessException, InstantiationException,
-            InvocationTargetException, NoSuchMethodException {
+            @PathParam("containerId") final String containerId, @PathParam("contentletId") final String contentletId)
+            throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = webResource.init(true, req, true);
         final User user = initData.getUser();
-        PageMode mode = PageMode.get(req);
-        Language landId = WebAPILocator.getLanguageWebAPI()
+        final PageMode mode = PageMode.EDIT_MODE;
+        final Language landId = WebAPILocator.getLanguageWebAPI()
             .getLanguage(req);
         
         PageMode.setPageMode(req, PageMode.EDIT_MODE);
 
-        ShortyId contentShorty = APILocator.getShortyAPI()
+        final ShortyId contentShorty = APILocator.getShortyAPI()
             .getShorty(contentletId)
             .orElseGet(() -> {
                 throw new ResourceNotFoundException("Can't find contentlet:" + contentletId);
@@ -176,44 +199,94 @@ public class ContainerResource implements Serializable {
                             : APILocator.getContentletAPI()
                                     .find(contentShorty.longId, user, mode.respectAnonPerms);
 
-            ShortyId containerShorty = APILocator.getShortyAPI()
-                    .getShorty(containerId)
-                    .orElseGet(() -> {
-                        throw new ResourceNotFoundException("Can't find Container:" + containerId);
-                    });
+            final String html = getHTML(req, res, containerId, user, contentlet);
 
-            Container container = (containerShorty.type != ShortType.IDENTIFIER)
-                    ? APILocator.getContainerAPI()
-                    .find(containerId, user, mode.showLive)
-                    : (mode.showLive) ? (Container) APILocator.getVersionableAPI()
-                            .findLiveVersion(containerShorty.longId, user, mode.respectAnonPerms)
-                            : (Container) APILocator.getVersionableAPI()
-                                    .findWorkingVersion(containerShorty.longId, user,
-                                            mode.respectAnonPerms);
+            final Map<String, String> response = ImmutableMap.<String, String> builder().put("render", html).build();
 
-            org.apache.velocity.context.Context context = VelocityUtil.getWebContext(req, res);
-
-            context.put(ContainerLoader.SHOW_PRE_POST_LOOP, false);
-            context.put("contentletList" + container.getIdentifier() + uuid,
-                    Lists.newArrayList(contentlet.getIdentifier()));
-            context.put(mode.name(), Boolean.TRUE);
-            StringWriter out = new StringWriter();
-
-            VelocityUtil.getEngine()
-                    .mergeTemplate(
-                            mode.name() + File.separator + container.getIdentifier() + "/" + uuid
-                                    + "."
-                                    + VelocityType.CONTAINER.fileExtension, context, out);
-
-            Map<String, String> response = new HashMap<>();
-            response.put("render", out.toString());
-
-            return Response.ok(response)
+            return Response.ok(new ResponseEntityView(response))
                     .build();
 
         } catch (DotSecurityException e) {
             throw new ForbiddenException(e);
         }
+    }
+
+    /**
+     * Return a form render into a specific container
+     *
+     * @param req
+     * @param res
+     * @param containerId
+     * @param formId
+     * @param uuid
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @GET
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Path("/{containerId}/form/{formId}")
+    public final Response containerForm(@Context final HttpServletRequest req, @Context final HttpServletResponse res,
+                                           @PathParam("containerId") final String containerId,
+                                           @PathParam("formId") final String formId)
+            throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData = webResource.init(true, req, true);
+        final User user = initData.getUser();
+
+        PageMode.setPageMode(req, PageMode.EDIT_MODE);
+        Contentlet formContent = formAPI.getFormContent(formId);
+
+        if (formContent == null) {
+            formContent = formAPI.createDefaultFormContent(formId);
+        }
+
+        final String html = getHTML(req, res, containerId, user, formContent);
+
+        final Map<String, Object> response = ImmutableMap.<String, Object> builder()
+            .put("render", html)
+            .put("content", formContent.getMap())
+            .build();
+
+        return Response.ok(new ResponseEntityView(response))
+                .build();
+
+    }
+
+
+    private String getHTML(final HttpServletRequest req, final HttpServletResponse res,
+                             final String containerId, final User user,
+                             final Contentlet contentlet) throws DotDataException, DotSecurityException {
+
+        final PageMode mode = PageMode.EDIT_MODE;
+        final Container container = getContainer(containerId, user);
+
+        final org.apache.velocity.context.Context context = velocityUtil.getContext(req, res);
+
+        context.put(ContainerLoader.SHOW_PRE_POST_LOOP, false);
+        context.put("contentletList" + container.getIdentifier() + Container.LEGACY_RELATION_TYPE,
+                Lists.newArrayList(contentlet.getIdentifier()));
+        context.put(mode.name(), Boolean.TRUE);
+
+        final VelocityResourceKey key = new VelocityResourceKey(container, Container.LEGACY_RELATION_TYPE, mode);
+
+        return velocityUtil.merge(key.path, context);
+    }
+
+    private Container getContainer(final String containerId, final User user) throws DotDataException, DotSecurityException {
+        final PageMode mode = PageMode.EDIT_MODE;
+        final ShortyId containerShorty = this.shortyAPI.getShorty(containerId)
+                .orElseGet(() -> {
+                    throw new ResourceNotFoundException("Can't find Container:" + containerId);
+                });
+
+        return (containerShorty.type != ShortType.IDENTIFIER)
+                    ? this.containerAPI.find(containerId, user, mode.showLive)
+                    : (mode.showLive) ? (Container) versionableAPI.findLiveVersion(containerShorty.longId, user, mode.respectAnonPerms)
+                            : (Container) versionableAPI.findWorkingVersion(containerShorty.longId, user, mode.respectAnonPerms);
     }
 
     @DELETE

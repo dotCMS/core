@@ -2244,15 +2244,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
             // we prepare the new index and aliases to point both old and new
             indexAPI.setUpFullReindex();
 
-            // wait a bit while ES do its distribution work and new
-            // index/aliases become available
-            if(indexAPI.isInFullReindex()){
-                Thread.sleep(12000L);
-            }else{
-                Thread.sleep(10000L);
-            }
-
-
             // new records to index
             distributedJournalAPI.addBuildNewIndexEntries();
 

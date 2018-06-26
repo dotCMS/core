@@ -17,35 +17,20 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.workflows.model.WorkFlowTaskFiles;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
-import com.dotmarketing.portlets.workflows.model.WorkflowComment;
-import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
-import com.dotmarketing.portlets.workflows.model.WorkflowState;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
-import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
+import org.apache.commons.beanutils.BeanUtils;
+
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import org.apache.commons.beanutils.BeanUtils;
-import org.apache.poi.ss.formula.functions.T;
 
 
 /**
@@ -328,6 +313,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		final WorkflowScheme proxyScheme = new WorkflowScheme();
 		proxyScheme.setId(action.getSchemeId());
 		cache.removeActions(proxyScheme);
+		cache.remove(action);
 
 		// update scheme mod date
 		final WorkflowScheme scheme = findScheme(action.getSchemeId());
@@ -360,7 +346,13 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 				.addParam(step.getId()).loadResult();
 
 		Logger.debug(this, "Removing the actions cache associated to the step: " + step.getId());
+		final List<WorkflowAction> actions =
+				this.cache.getActions(step);
+		if (null != actions) {
+			actions.stream().forEach(action -> this.cache.remove(action));
+		}
 		cache.removeActions(step);
+
 
 		Logger.debug(this, "Updating schema associated to the step: " + step.getId());
 		// update scheme mod date
@@ -384,6 +376,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		final WorkflowAction action = findAction(actionId);
 		final WorkflowScheme scheme = findScheme(action.getSchemeId());
 		saveScheme(scheme);
+		this.cache.remove(action);
 	}
 
 	/**
@@ -400,6 +393,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		// update scheme mod date
 		final WorkflowScheme scheme = findScheme(action.getSchemeId());
 		saveScheme(scheme);
+		this.cache.remove(action);
 	}
 
 	@Override
@@ -564,11 +558,21 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	@Override
-	public List<WorkflowActionClass> findActionClasses(WorkflowAction action) throws DotDataException {
-		final DotConnect db = new DotConnect();
-		db.setSQL(sql.SELECT_ACTION_CLASSES_BY_ACTION);
-		db.addParam(action.getId());
-		return this.convertListToObjects(db.loadObjectResults(), WorkflowActionClass.class);
+	public List<WorkflowActionClass> findActionClasses(final WorkflowAction action) throws DotDataException {
+
+		List<WorkflowActionClass> classes = cache.getActionClasses(action);
+
+		if (null == classes) {
+
+			classes = this.convertListToObjects(new DotConnect().setSQL(sql.SELECT_ACTION_CLASSES_BY_ACTION)
+					.addParam(action.getId()).loadObjectResults(), WorkflowActionClass.class);
+
+			classes = (classes == null)?Collections.emptyList():classes;
+
+			cache.addActionClasses(action, classes);
+		}
+
+		return classes;
 	}
 
 	public WorkflowActionClassParameter findActionClassParameter(String id) throws DotDataException {
@@ -582,16 +586,25 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	public List<WorkflowAction> findActions(final WorkflowStep step) throws DotDataException {
 
 		List<WorkflowAction> actions = cache.getActions(step);
-		if(actions ==null){
-			final DotConnect db = new DotConnect();
-			db.setSQL(sql.SELECT_ACTIONS_BY_STEP);
-			db.addParam(step.getId());
-			actions =  this.convertListToObjects(db.loadObjectResults(), WorkflowAction.class);
-			if(actions == null) actions= new ArrayList<WorkflowAction>();
+
+		if(null == actions) {
+
+			actions = this.convertListToObjects(
+					new DotConnect().setSQL(sql.SELECT_ACTIONS_BY_STEP)
+							.addParam(step.getId()).loadObjectResults(), WorkflowAction.class);
+
+			if (null == actions) {
+
+				actions = Collections.emptyList();
+				cache.addActions(step, actions);
+				return actions;
+			}
 
 			cache.addActions(step, actions);
 		}
-		return actions;
+
+		// we need always a copy to avoid futher modification to the WorkflowAction since they are not immutable.
+		return ImmutableList.copyOf(actions);
 	}
 
 	@Override
@@ -1223,7 +1236,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	@Override
-	public void saveActionClass(WorkflowActionClass actionClass) throws DotDataException,AlreadyExistException {
+	public void saveActionClass(final WorkflowActionClass actionClass) throws DotDataException,AlreadyExistException {
 
 		boolean isNew = true;
 		if (UtilMethods.isSet(actionClass.getId())) {
@@ -1261,9 +1274,11 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		// cache.remove(step);
 
 		// update workflowScheme mod date
-		WorkflowAction action = findAction(actionClass.getActionId());
-		WorkflowScheme scheme = findScheme(action.getSchemeId());
+		final WorkflowAction action = findAction(actionClass.getActionId());
+		final WorkflowScheme scheme = findScheme(action.getSchemeId());
+
 		saveScheme(scheme);
+		cache.remove(action);
 	}
 
 	@Override
@@ -1373,7 +1388,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.addParam(contentTypeInode);
 			db.loadResult();
 
-			final ImmutableList.Builder<WorkflowStep> steps = new ImmutableList.Builder<>();
+			final ImmutableList.Builder<WorkflowStep> stepBuilder = new ImmutableList.Builder<>();
 			for(String id : schemesIds) {
 				db.setSQL(sql.INSERT_SCHEME_FOR_STRUCT);
 				db.addParam(UUIDGenerator.generateUuid());
@@ -1381,22 +1396,46 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 				db.addParam(contentTypeInode);
 				db.loadResult();
 
-				steps.addAll(this.findSteps(this.findScheme(id)));
+				stepBuilder.addAll(this.findSteps(this.findScheme(id)));
 			}
 			// update all tasks for the content type and reset their step to
 			// null
-			this.cleanWorkflowTaskStatus(contentTypeInode, steps.build(), workflowTaskConsumer);
+			this.cleanWorkflowTaskStatus(contentTypeInode, stepBuilder.build(), workflowTaskConsumer);
+			this.checkContentTypeWorkflowTaskNullStatus(contentTypeInode, workflowTaskConsumer);
 
 			// we have to clear the saved steps/tasks for all contentlets using
 			// this workflow
 
 			cache.removeStructure(contentTypeInode);
-
 			cache.clearStepsCache();
 		} catch (final Exception e) {
 
 			Logger.error(this.getClass(), e.getMessage(), e);
 			throw new DotDataException(e.getMessage(),e);
+		}
+	}
+
+	private void checkContentTypeWorkflowTaskNullStatus(final String contentTypeInode,
+														final Consumer<WorkflowTask> workflowTaskConsumer) throws DotDataException {
+
+		try {
+
+			final List<WorkflowTask> tasks = this
+					.convertListToObjects(new DotConnect()
+							.setSQL(sql.SELECT_TASK_NULL_BY_STRUCT)
+							.addParam(contentTypeInode).loadObjectResults(), WorkflowTask.class);
+
+			//clean cache
+			tasks.stream().forEach(task -> {
+
+				if (null != workflowTaskConsumer) {
+
+					workflowTaskConsumer.accept(task);
+				}
+			});
+		} catch (final Exception e) {
+			Logger.error(this.getClass(), e.getMessage(), e);
+			throw new DotDataException(e.getMessage(), e);
 		}
 	}
 
@@ -1914,6 +1953,12 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			dc.addParam(scheme.getId());
 			dc.loadResult();
 
+			final List<WorkflowAction> actions =
+					this.cache.getActions(scheme);
+			if (null != actions) {
+				actions.stream().forEach(action -> this.cache.remove(action));
+			}
+			this.cache.remove(scheme);
 		} catch (DotDataException e) {
 			Logger.error(WorkFlowFactory.class,e.getMessage(),e);
 			throw new DotDataException(e.getMessage(), e);

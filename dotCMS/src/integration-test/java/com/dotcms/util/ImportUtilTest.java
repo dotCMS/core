@@ -1,19 +1,8 @@
 package com.dotcms.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
-import com.dotcms.contenttype.model.field.DataTypes;
-import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.HostFolderField;
-import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
-import com.dotcms.contenttype.model.field.ImmutableTextField;
-import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -45,30 +34,21 @@ import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet
 import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
 import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowState;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
-import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.ImportUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import java.io.*;
+import java.nio.charset.Charset;
+import java.util.*;
+
+import static org.junit.Assert.*;
 
 /**
  * Verifies that the Content Importer/Exporter feature is working as expected.
@@ -179,7 +159,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         rolesIds.add(anyWhoCanEditRole.getId());
         saveAction.setNextStep(step1.getId());
         saveAction.setShowOn(WorkflowState.LOCKED, WorkflowState.UNLOCKED, WorkflowState.NEW,
-                WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED);
+                WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED, WorkflowState.EDITING);
         addWhoCanUseToAction(saveAction, rolesIds);
         rolesIds.remove(anyWhoCanEditRole.getId());
 
@@ -194,7 +174,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         saveAndPublishAction.setNextStep(step2.getId());
         rolesIds.add(anyWhoCanPublishRole.getId());
         saveAndPublishAction.setShowOn(WorkflowState.LOCKED, WorkflowState.UNLOCKED, WorkflowState.NEW,
-                WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED);
+                WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED, WorkflowState.EDITING);
         addWhoCanUseToAction(saveAndPublishAction, rolesIds);
         rolesIds.remove(anyWhoCanPublishRole.getId());
 
@@ -206,7 +186,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         saveAsDraftAction.setNextStep(step3.getId());
         rolesIds.add(reviewerRole.getId());
         saveAsDraftAction.setShowOn(WorkflowState.LOCKED, WorkflowState.UNLOCKED, WorkflowState.NEW,
-                WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED);
+                WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED, WorkflowState.EDITING);
         addWhoCanUseToAction(saveAsDraftAction, rolesIds);
         rolesIds.remove(reviewerRole.getId());
 
@@ -216,7 +196,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         unpublishAction = schemeResultTemp.getAction();
         rolesIds.add(publisherRole.getId());
         unpublishAction
-                .setShowOn(WorkflowState.LOCKED, WorkflowState.UNLOCKED, WorkflowState.PUBLISHED);
+                .setShowOn(WorkflowState.LOCKED, WorkflowState.UNLOCKED, WorkflowState.PUBLISHED, WorkflowState.EDITING);
         addWhoCanUseToAction(unpublishAction, rolesIds);
         rolesIds.remove(publisherRole.getId());
 
@@ -226,7 +206,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         publishAction = schemeResultTemp.getAction();
         rolesIds.add(publisherRole.getId());
         publishAction
-                .setShowOn(WorkflowState.LOCKED, WorkflowState.UNLOCKED, WorkflowState.UNPUBLISHED);
+                .setShowOn(WorkflowState.LOCKED, WorkflowState.UNLOCKED, WorkflowState.UNPUBLISHED, WorkflowState.EDITING);
         addWhoCanUseToAction(publishAction, rolesIds);
         rolesIds.remove(publisherRole.getId());
 
@@ -236,7 +216,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         publish2Action = schemeResultTemp.getAction();
         rolesIds.add(publisherRole.getId());
         publish2Action
-                .setShowOn(WorkflowState.LOCKED, WorkflowState.UNLOCKED, WorkflowState.UNPUBLISHED);
+                .setShowOn(WorkflowState.LOCKED, WorkflowState.UNLOCKED, WorkflowState.UNPUBLISHED, WorkflowState.EDITING);
         addWhoCanUseToAction(publish2Action, rolesIds);
         rolesIds.remove(publisherRole.getId());
 
