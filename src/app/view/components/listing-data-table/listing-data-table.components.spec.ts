@@ -17,6 +17,7 @@ import { Observable } from 'rxjs/Observable';
 import { PaginatorService } from '../../../api/services/paginator';
 import { ActionHeaderComponent } from './action-header/action-header';
 import { DotDataTableAction } from '../../../shared/models/data-table/dot-data-table-action';
+import { DotMenuModule } from '../_common/dot-menu/dot-menu.module';
 
 describe('ListingDataTableComponent', () => {
     let comp: ListingDataTableComponent;
@@ -41,7 +42,8 @@ describe('ListingDataTableComponent', () => {
                 SharedModule,
                 RouterTestingModule.withRoutes([{ path: 'test', component: ListingDataTableComponent }]),
                 IconButtonTooltipModule,
-                MenuModule
+                MenuModule,
+                DotMenuModule
             ],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },

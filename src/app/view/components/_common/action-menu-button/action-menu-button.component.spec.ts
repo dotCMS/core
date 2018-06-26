@@ -4,9 +4,9 @@ import { ActionMenuButtonComponent } from './action-menu-button.component';
 import { ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { DebugElement } from '@angular/core';
-import { MenuModule } from 'primeng/primeng';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DotDataTableAction } from '../../../../shared/models/data-table/dot-data-table-action';
+import { DotMenuModule } from '../dot-menu/dot-menu.module';
 
 describe('ActionMenuButtonComponent', () => {
     let comp: ActionMenuButtonComponent;
@@ -17,7 +17,7 @@ describe('ActionMenuButtonComponent', () => {
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
             declarations: [ActionMenuButtonComponent],
-            imports: [IconButtonTooltipModule, MenuModule]
+            imports: [IconButtonTooltipModule, DotMenuModule]
         });
 
         fixture = DOTTestBed.createComponent(ActionMenuButtonComponent);
@@ -50,7 +50,7 @@ describe('ActionMenuButtonComponent', () => {
 
         const button = de.query(By.css('button'));
         const buttonTooltip = de.query(By.css('dot-icon-button-tooltip'));
-        const menu = de.query(By.css('p-menu'));
+        const menu = de.query(By.css('dot-menu'));
 
         expect(buttonTooltip).toBeNull();
         expect(button).toBeDefined();
@@ -72,7 +72,7 @@ describe('ActionMenuButtonComponent', () => {
         fixture.detectChanges();
 
         const actionButtonTooltip = de.query(By.css('dot-icon-button-tooltip'));
-        const actionButtonMenu = de.query(By.css('p-menu'));
+        const actionButtonMenu = de.query(By.css('dot-menu'));
 
         expect(actionButtonTooltip).not.toBeNull();
         expect(actionButtonMenu).toBeNull();
@@ -183,7 +183,7 @@ describe('ActionMenuButtonComponent', () => {
         fixture.detectChanges();
 
         expect(de.query(By.css('dot-icon-button-tooltip')) === null).toEqual(true, 'tooltip button hide');
-        expect(de.query(By.css('p-menu')) === null).toEqual(false, 'menu options show');
+        expect(de.query(By.css('dot-menu')) === null).toEqual(false, 'menu options show');
         expect(de.query(By.css('button')) === null).toEqual(false, 'button to show/hide menu show');
     });
 
@@ -202,7 +202,7 @@ describe('ActionMenuButtonComponent', () => {
                 menuItem: {
                     icon: 'fa-check',
                     label: 'Test',
-                    command: (item) => {
+                    command: item => {
                         fakeCommand(item);
                     }
                 }
@@ -220,12 +220,14 @@ describe('ActionMenuButtonComponent', () => {
             owner: '123',
             system: false
         };
-
         comp.actions = fakeActions;
         comp.item = mockContentType;
         fixture.detectChanges();
+        const actionButtonMenu = de.query(By.css('.dot-menu__button'));
+        actionButtonMenu.triggerEventHandler('click', {});
+        fixture.detectChanges();
 
-        const menuItemsLink = de.queryAll(By.css('.ui-menu-list a'));
+        const menuItemsLink = de.queryAll(By.css('.dot-menu-item__link'));
         menuItemsLink[1].nativeElement.click();
 
         expect(fakeCommand).toHaveBeenCalledTimes(1);

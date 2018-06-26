@@ -1,8 +1,4 @@
-<span *ngIf="actions.length > 1 && filteredActions.length">
-    <p-menu #menu appendTo="body" popup="popup" [model]="filteredActions"></p-menu>
-    <button type="button" pButton [icon]="icon" (click)="menu.toggle($event)"></button>
-</span>
-
+<dot-menu *ngIf="actions.length > 1 && filteredActions.length" [icon]="icon" [model]="filteredActions"></dot-menu>
 <dot-icon-button-tooltip *ngIf="actions.length === 1 && filteredActions.length === 1"
     [icon]="filteredActions[0].icon"
     [tooltipText]="filteredActions[0].label"

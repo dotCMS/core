@@ -1,0 +1,33 @@
+@import 'variables';
+
+:host {
+    position: relative;
+}
+
+.dot-menu-list {
+    position: absolute;
+    padding: 0;
+    margin: 0;
+    right: 0;
+    top: $basic-padding * 3;
+    box-shadow: $md-shadow-1;
+    background: $white;
+    z-index: 1003;
+    min-width: 160px;
+}
+
+.dot-menu-item {
+    list-style: none;
+
+    .dot-menu-item__link,
+    .dot-menu-item__link:visited {
+        color: $black;
+        display: block;
+        padding: $basic-padding;
+        text-decoration: none;
+    }
+}
+
+.dot-menu-item:hover {
+    background-color: $gray-lighter;
+}
