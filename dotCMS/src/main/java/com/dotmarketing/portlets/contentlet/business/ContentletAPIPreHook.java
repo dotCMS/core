@@ -1414,6 +1414,10 @@ public interface ContentletAPIPreHook {
       return true;
     }
 
+	public default boolean isInodeIndexed(String inode, boolean live, int secondsToWait) {
+		return true;
+	}
+
 	public default boolean isInodeIndexed(String inode, boolean live, boolean working) { return true; }
 
 	/**
