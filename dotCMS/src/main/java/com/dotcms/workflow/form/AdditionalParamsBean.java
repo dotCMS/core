@@ -10,8 +10,8 @@ public class AdditionalParamsBean {
 
     @JsonCreator
     public AdditionalParamsBean(
-            @JsonProperty("pushPublish") PushPublishBean pushPublishBean,
-            @JsonProperty("assignComment") AssignCommentBean assignCommentBean) {
+            @JsonProperty("pushPublish") final PushPublishBean pushPublishBean,
+            @JsonProperty("assignComment") final AssignCommentBean assignCommentBean) {
         this.pushPublishBean = pushPublishBean;
         this.assignCommentBean = assignCommentBean;
     }

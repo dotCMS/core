@@ -1,8 +1,10 @@
 package com.dotmarketing.portlets.contentlet.util;
 
+import com.dotcms.util.AnnotationUtils;
+import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.Actionlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.util.Logger;
@@ -18,17 +20,20 @@ public class ActionletUtil {
      */
     public static boolean hasPushPublishActionlet(final WorkflowAction action) {
         try {
-            final List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI()
-                    .findActionClasses(action);
-            for (WorkflowActionClass actionlet : actionlets) {
-                if (actionlet.getActionlet() != null && actionlet.getActionlet().getClass()
-                        .getCanonicalName().equals(PushPublishActionlet.class.getCanonicalName())) {
+            final List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(action);
+            for (final WorkflowActionClass actionletClass : actionlets) {
+
+                final Actionlet actionlet = AnnotationUtils.
+                        getBeanAnnotation(ReflectionUtils.getClassFor(actionletClass.getClazz()), Actionlet.class);
+
+                if (null != actionlet && actionlet.pushPublish()) {
                     return true;
                 }
+
             }
         } catch (DotDataException e) {
             Logger.error(ActionletUtil.class, String.format(
-                    "Can't determine weather or not action '%s' has PushPublishActionlet.",
+                    "Can't determine if action '%s' has PushPublishActionlet.",
                     action.getName()), e);
         }
         return false;

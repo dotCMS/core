@@ -15,10 +15,13 @@ public class PushPublishBean {
 
     @JsonCreator
     public PushPublishBean(
-            @JsonProperty("whereToSend") String whereToSend,
-            @JsonProperty("publishDate") String publishDate, @JsonProperty("publishTime") String publishTime,
-            @JsonProperty("expireDate") String expireDate,  @JsonProperty("expireTime") String expireTime,
-            @JsonProperty("neverExpire") String neverExpire, @JsonProperty("forcePush") String forcePush) {
+            @JsonProperty("whereToSend") final String whereToSend,
+            @JsonProperty("publishDate") final String publishDate,
+            @JsonProperty("publishTime") final String publishTime,
+            @JsonProperty("expireDate") final String expireDate,
+            @JsonProperty("expireTime") final String expireTime,
+            @JsonProperty("neverExpire") final String neverExpire,
+            @JsonProperty("forcePush") final String forcePush) {
         this.whereToSend = whereToSend;
         this.publishDate = publishDate;
         this.publishTime = publishTime;
