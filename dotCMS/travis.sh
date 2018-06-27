@@ -5,6 +5,7 @@ pwd
 ls -al
 echo "=============================="
 
+rm -rf /home/travis/.gradle/caches/
 cd dotCMS/
 ./gradlew war --stacktrace
 cd ..
