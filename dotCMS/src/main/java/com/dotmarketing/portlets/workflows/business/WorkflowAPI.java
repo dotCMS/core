@@ -195,7 +195,7 @@ public interface WorkflowAPI {
 	public void removeAttachedFile(WorkflowTask task, String fileInode) throws DotDataException;
 
 	/**
-	 *
+	 * Deletes (reset) a workflow task
 	 * @param task
 	 * @param user
 	 * @throws DotDataException
