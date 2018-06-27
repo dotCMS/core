@@ -6,7 +6,7 @@ ls -al
 echo "=============================="
 
 cd dotCMS/
-./gradlew war
+./gradlew war --stacktrace
 cd ..
 
 echo "=============================="
