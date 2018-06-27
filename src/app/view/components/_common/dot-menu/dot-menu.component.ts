@@ -59,5 +59,6 @@ export class DotMenuComponent {
                 item: item
             });
         }
+        this.visible = false;
     }
 }

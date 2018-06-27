@@ -60,7 +60,7 @@ describe('DotMenuComponent', () => {
         expect(component.visible).toBeFalsy();
     });
 
-    it('should execute the command on the selected menu item', () => {
+    it('should execute the command on the selected menu item and hide the menu', () => {
         spyOn(component.model[0], 'command');
         const button: DebugElement = fixture.debugElement.query(By.css('.dot-menu__button'));
         button.triggerEventHandler('click', {});
@@ -69,6 +69,7 @@ describe('DotMenuComponent', () => {
         menuItem.triggerEventHandler('click', {});
 
         expect(component.model[0].command).toHaveBeenCalled();
+        expect(component.visible).toBeFalsy();
     });
 
     it('should NOT exceute the command on the selected menu item if is disabled', () => {
