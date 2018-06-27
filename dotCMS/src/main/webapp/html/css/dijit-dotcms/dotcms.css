@@ -11707,6 +11707,8 @@ a.category_higlighted, a.tag_higlighted {
 
 .related-content-dialog .dijitDialogPaneContent {
   padding: 0;
+  width:100%;
+  overflow-y:scroll;
 }
 
 .related-content-dialog .portlet-sidebar-wrapper {

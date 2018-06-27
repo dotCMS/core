@@ -960,7 +960,17 @@
 
 			</script>
 
-			<div id="<%= relationJsName %>Dialog" dojoType="dotcms.dijit.form.ContentSelector" structureInode="<%= targetStructure.getInode() %>" relationJsName="<%= relationJsName %>" multiple="true" onContentSelected="callback<%= relationJsName %>" title="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %>" counter_radio="<%= counter %>" searchCounter="<%= searchCounter %>" dialogCounter="<%= dialogCounter %>"></div>
+			<div id="<%= relationJsName %>Dialog" dojoType="dotcms.dijit.form.ContentSelector" 
+			     structureInode="<%= targetStructure.getInode() %>" 
+			     relationJsName="<%= relationJsName %>" 
+			     multiple="true" 
+			     onContentSelected="callback<%= relationJsName %>" 
+			     title="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %>" 
+			     counter_radio="<%= counter %>" 
+			     searchCounter="<%= searchCounter %>" 
+			     contentletLanguageId="<%=contentlet.getLanguageId() %>"
+			     dialogCounter="<%= dialogCounter %>">
+			 </div>
 <%
             counter=counter+100;
             searchCounter+=10000;
