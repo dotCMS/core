@@ -37,12 +37,12 @@ if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then
     -Dsonar.github.oauth=$SONAR_GITHUB_TOKEN \
     -Dsonar.github.repository=dotCMS/core \
     -Dsonar.scanner.skip=false \
-    -Dsonar.java.binaries=dotCMS/build/classes/main \
+    -Dsonar.java.binaries=dotCMS/build/classes/java/main \
     -Dsonar.java.libraries=dotCMS/build/pluginsLib/*.jar
 
 else
   sonar-scanner \
     -Dsonar.scanner.skip=false \
-    -Dsonar.java.binaries=dotCMS/build/classes/main \
+    -Dsonar.java.binaries=dotCMS/build/classes/java/main \
     -Dsonar.java.libraries=dotCMS/build/pluginsLib/*.jar
 fi
