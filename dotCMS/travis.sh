@@ -17,8 +17,10 @@ echo "dotCMS/build"
 ls -al dotCMS/build
 echo "dotCMS/build/classes"
 ls -al dotCMS/build/classes
-echo "dotCMS/build/classes/main"
-ls -al dotCMS/build/classes/main
+echo "dotCMS/build/classes/java"
+ls -al dotCMS/build/classes/java
+echo "dotCMS/build/classes/java/main"
+ls -al dotCMS/build/classes/java/main
 echo "=============================="
 
 if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then
