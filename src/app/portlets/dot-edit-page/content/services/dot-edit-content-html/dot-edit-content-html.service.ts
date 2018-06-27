@@ -31,7 +31,7 @@ export enum DotContentletAction {
 interface RenderAddedItemParams {
     item: DotPageContent | ContentType;
     checkExistFunc: (item: DotPageContent | ContentType, containerEL: HTMLElement) => boolean;
-    getContent: (container: DotPageContainer, form: DotPageContent |  ContentType) => Observable<string>;
+    getContent: (container: DotPageContainer, form: DotPageContent | ContentType) => Observable<string>;
 }
 
 @Injectable()
@@ -180,7 +180,7 @@ export class DotEditContentHtmlService {
      * @param {ContentType} form
      * @memberof DotEditContentHtmlService
      */
-    renderAddedForm(form: ContentType): void  {
+    renderAddedForm(form: ContentType): void {
         this.renderAddedItem({
             item: form,
             checkExistFunc: this.isFormExistInContainer.bind(this),
@@ -263,14 +263,14 @@ export class DotEditContentHtmlService {
             this.showContentAlreadyAddedError();
         } else {
             params.getContent(this.currentContainer, params.item).subscribe((contentletHtml: string) => {
-                    const contentletEl: HTMLElement = this.createNewContentletFromString(contentletHtml);
-                    containerEl.insertAdjacentElement('beforeend', contentletEl);
+                const contentletEl: HTMLElement = this.createNewContentletFromString(contentletHtml);
+                containerEl.insertAdjacentElement('beforeend', contentletEl);
 
-                    this.renderHTMLToContentlet(contentletEl, contentletHtml);
-                    // Update the model with the recently added contentlet
-                    this.pageModel$.next(this.getContentModel());
-                    this.currentAction = DotContentletAction.EDIT;
-                });
+                this.renderHTMLToContentlet(contentletEl, contentletHtml);
+                // Update the model with the recently added contentlet
+                this.pageModel$.next(this.getContentModel());
+                this.currentAction = DotContentletAction.EDIT;
+            });
         }
     }
 
@@ -300,7 +300,7 @@ export class DotEditContentHtmlService {
             identifier: contentlet.dataset.dotIdentifier,
             inode: contentlet.dataset.dotInode,
             type: contentlet.dataset.dotType,
-            baseType: contentlet.dataset.dotBasetype,
+            baseType: contentlet.dataset.dotBasetype
         };
     }
 
@@ -387,10 +387,37 @@ export class DotEditContentHtmlService {
         this.dotEditContentToolbarHtmlService.addContentletMarkup(doc);
     }
 
+    private createScriptTag(node: any): HTMLScriptElement {
+        const doc = this.getEditPageDocument();
+        const script = doc.createElement('script');
+        script.type = 'text/javascript';
+
+        if (node.src) {
+            script.src = node.src;
+        } else {
+            script.text = node.textContent;
+        }
+        return script;
+    }
+
+    private getScriptTags(scriptTags, contentDivWrapper: HTMLElement): HTMLScriptElement[] {
+        Array.from(contentDivWrapper.children).forEach((node: any) => {
+            if (node.tagName === 'SCRIPT') {
+                const script = this.createScriptTag(node);
+                scriptTags.push(script);
+            } else if (node.children.length) {
+                this.getScriptTags(scriptTags, node);
+            }
+        });
+
+        return scriptTags;
+    }
+
     private appendNewContentlets(contentletEl: any, html: string): void {
+
         const contentletContentEl = contentletEl.querySelector('.dotedit-contentlet__content');
         contentletContentEl.innerHTML = ''; // Removing the loading indicator
-
+        let scriptTags: HTMLScriptElement[] = [];
         const doc = this.getEditPageDocument();
 
         // Add innerHTML to a plain so we can get the HTML nodes later
@@ -399,20 +426,15 @@ export class DotEditContentHtmlService {
 
         const contentDivWrapper = div.children[0];
 
+        scriptTags = this.getScriptTags(scriptTags, contentDivWrapper);
+
+        scriptTags.forEach((script: HTMLScriptElement) => {
+            contentletContentEl.appendChild(script);
+        });
+
         // TODO: need to come up with a more efficient way to do this
         Array.from(contentDivWrapper.children).forEach((node: any) => {
-            if (node.tagName === 'SCRIPT') {
-                const script = doc.createElement('script');
-                script.type = 'text/javascript';
-
-                if (node.src) {
-                    script.src = node.src;
-                } else {
-                    script.text = node.textContent;
-                }
-
-                contentletContentEl.appendChild(script);
-            } else {
+            if (node.tagName !== 'SCRIPT') {
                 contentletContentEl.appendChild(node);
             }
         });
@@ -554,7 +576,6 @@ export class DotEditContentHtmlService {
     }
 
     private renderHTMLToContentlet(contentletEl: HTMLElement, contentletHtml: string): void {
-
         this.appendNewContentlets(contentletEl, contentletHtml);
 
         this.addVtlEditMenu(contentletEl);
@@ -574,4 +595,3 @@ export class DotEditContentHtmlService {
             });
     }
 }
- 

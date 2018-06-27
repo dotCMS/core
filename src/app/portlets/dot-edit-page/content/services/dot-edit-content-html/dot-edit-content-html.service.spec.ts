@@ -322,6 +322,9 @@ describe('DotEditContentHtmlService', () => {
     });
 
     it('should render edit contentlet', () => {
+
+        window.top['changed'] = false;
+
         const currentContainer = {
             identifier: '123',
             uuid: '456'
@@ -341,12 +344,36 @@ describe('DotEditContentHtmlService', () => {
         };
 
         const dotEditContentToolbarHtmlService = this.injector.get(DotContainerContentletService);
-        spyOn(dotEditContentToolbarHtmlService, 'getContentletToContainer').and.returnValue(Observable.of('<i>testing</i>'));
+        spyOn(dotEditContentToolbarHtmlService, 'getContentletToContainer').and.returnValue(Observable.of(`
+        <div>
+            <script>
+                console.log('First');
+            </script>
+            <div>
+                <div>
+                    <p>
+                        <div>
+                            <ul>
+                                <li>
+                                    <p>
+                                        Text test
+                                        <script>
+                                            window.top['changed'] = true;
+                                        </script>
+                                    </p>
+                                </li>
+                            </ul>
+                        </div>
+                    </p>
+                </div>
+            </div>
+        </div>`));
 
         this.dotEditContentHtmlService.renderEditedContentlet(contentlet);
 
         expect(dotEditContentToolbarHtmlService.getContentletToContainer).toHaveBeenCalledWith(currentContainer, contentlet);
         expect(dotEditContentToolbarHtmlService.getContentletToContainer).toHaveBeenCalledWith(anotherContainer, contentlet);
+        expect(window.top['changed']).toEqual(true);
     });
 
     describe('document click', () => {
