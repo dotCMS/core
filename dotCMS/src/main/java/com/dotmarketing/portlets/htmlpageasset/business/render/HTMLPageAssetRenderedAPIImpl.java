@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotmarketing.beans.ContainerStructure;
@@ -17,7 +18,9 @@ import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAsse
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRenderedBuilder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -124,7 +127,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
         final HTMLPageAsset htmlPageAsset = (UUIDUtil.isUUID(pageUri)) ?
                 (HTMLPageAsset) this.htmlPageAssetAPI.findPage(pageUri, user, mode.respectAnonPerms) :
-                (HTMLPageAsset) this.htmlPageAssetAPI.getPageByPath(pageUri, host, this.languageAPI.getDefaultLanguage().getId(), mode.showLive);
+                (HTMLPageAsset) getPageByUri(mode, host, pageUri);
 
         if (htmlPageAsset == null){
             throw new HTMLPageAssetNotFoundException(pageUri);
@@ -140,6 +143,17 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         }
 
         return htmlPageAsset;
+    }
+
+    private IHTMLPage getPageByUri(PageMode mode, Host host, String pageUri) throws DotDataException, DotSecurityException {
+        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        final Language defaultLanguage = this.languageAPI.getDefaultLanguage();
+        final Language language = request != null ?
+                WebAPILocator.getLanguageWebAPI().getLanguage(request) : defaultLanguage;
+
+        IHTMLPage htmlPage = this.htmlPageAssetAPI.getPageByPath(pageUri, host, language.getId(), mode.showLive);
+
+        return htmlPage != null ? htmlPage : this.htmlPageAssetAPI.getPageByPath(pageUri, host, defaultLanguage.getId(), mode.showLive);
     }
 
     private Host resolveSite(final HttpServletRequest request, final User user, final PageMode mode) throws DotDataException, DotSecurityException {
