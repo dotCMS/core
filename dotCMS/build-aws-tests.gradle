@@ -30,7 +30,7 @@ buildscript {
 	}
 }
 
-fileTree("../libs/buildlibs").include('jtds-*.jar', 'mysql-conn*.jar', 'ojdbc*.jar', 'postgres*.jar', 'sqljdbc*.jar').visit( { element ->
+fileTree("../libs/buildlibs").include('mysql-conn*.jar', 'ojdbc*.jar', 'postgres*.jar', 'sqljdbc*.jar').visit( { element ->
 	GroovyObject.class.classLoader.addURL(element.file.toURI().toURL());
 })
 
@@ -297,7 +297,7 @@ task describeDBInstance {
 				break;
 
 			case "MSSQL":
-				dbInstanceUrl = "jdbc:jtds:sqlserver://${dbInstanceEndpoint}:${dbInstancePort};databaseName=${dbInstanceName}";
+				dbInstanceUrl = "jdbc:sqlserver://${dbInstanceEndpoint}:${dbInstancePort};databaseName=${dbInstanceName}";
 				validationQuery = "SELECT 1"
 				break;
 

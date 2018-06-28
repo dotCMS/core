@@ -996,9 +996,8 @@
                 <include name="mail.jar"/>
                 <include name="sqljdbc42.jar"/>
                 <include name="mysql-connector-java-5.1.37-bin.jar"/>
-                <include name="postgresql-9.0-801.jdbc3.jar"/>
+                <include name="postgresql-42.2.2.jar"/>
                 <include name="ojdbc5.jar"/>
-                <include name="jtds-1.2.2.jar"/>
             </fileset>
         </copy>
 
