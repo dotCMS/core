@@ -181,7 +181,7 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
         final Contentlet contentlet3 = contentletAPI
                 .findContentletByIdentifier(contentlet2.getIdentifier(),
                         false, languageId, systemUser, false);
-        contentletAPI.isInodeIndexed(contentlet3.getInode(), true);
+        contentletAPI.isInodeIndexed(contentlet3.getInode(), true, 6);
         Assert.assertTrue("The contentlet MUST be live, it has all the approvers.",
                 contentlet3.isLive());
 

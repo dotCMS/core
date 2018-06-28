@@ -5526,6 +5526,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @Override
+    public boolean isInodeIndexed(String inode, boolean live, int secondsToWait) {
+        if (!UtilMethods.isSet(inode)) {
+            Logger.warn(this, "Requested Inode is not indexed because Inode is not set");
+        }
+
+        return isInodeIndexedWithQuery("+inode:" + inode + (live ? " +live:true" : ""),
+                secondsToWait);
+    }
+
+    @Override
     public boolean isInodeIndexed(String inode, boolean live, boolean working) {
         if (!UtilMethods.isSet(inode)) {
             Logger.warn(this, "Requested Inode is not indexed because Inode is not set");
