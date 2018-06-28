@@ -108,6 +108,8 @@ public class WorkflowEmailUtil {
                     : processor.getContentlet().getModDate());
             ctx.put("structureName", processor.getContentlet().getStructure().getName());
 
+            ctx.put("contentlet", processor.getContentlet());
+            ctx.put("content", processor.getContentlet());
 
 
             if (!UtilMethods.isSet(emailText)) {
