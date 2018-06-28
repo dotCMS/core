@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.workflow;
 
 import com.dotmarketing.portlets.contentlet.util.ActionletUtil;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.util.UtilMethods;
 import java.util.Objects;
 
 public class CountWorkflowAction {
@@ -9,11 +10,13 @@ public class CountWorkflowAction {
     private final long count;
     private final WorkflowAction workflowAction;
     private final boolean pushPublish;
+    private final boolean conditionPresent;
 
     public CountWorkflowAction(final long count, final WorkflowAction workflowAction) {
         this.count = count;
         this.workflowAction = workflowAction;
         this.pushPublish = ActionletUtil.hasPushPublishActionlet(workflowAction);
+        this.conditionPresent = UtilMethods.isSet(workflowAction.getCondition());
     }
 
     public long getCount() {
@@ -26,6 +29,10 @@ public class CountWorkflowAction {
 
     public boolean isPushPublish() {
         return pushPublish;
+    }
+
+    public boolean isConditionPresent() {
+        return conditionPresent;
     }
 
     @Override
