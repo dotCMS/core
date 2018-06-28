@@ -58,7 +58,8 @@
             + '             data-acction-id="'+action.workflowAction.id+'" '
             + '             data-action-commentable="'+action.workflowAction.commentable+'" '
             + '             data-action-assignable="'+action.workflowAction.assignable+'" '
-            + '             data-action-pushPublish="'+action.pushPublish+'" >'+action.count+' content(s)</button>'
+            + '             data-action-pushPublish="'+action.pushPublish+'"  '
+            + '             data-action-condition="'+action.conditionPresent+'" >'+action.count+' content(s)</button>'
             + '   </td>'
             + '</tr>';
         return actionSingleTemplate;
@@ -240,8 +241,9 @@
         var commentable = dojo.attr(buttonElement, 'data-action-commentable');
         var assignable = dojo.attr(buttonElement, 'data-action-assignable');
         var pushPublish = dojo.attr(buttonElement, 'data-action-pushPublish');
+        var condition = dojo.attr(buttonElement, 'data-action-condition');
 
-        var popupRequired = (commentable == 'true' || assignable == 'true' || pushPublish == 'true');
+        var popupRequired = (commentable == 'true' || assignable == 'true' || pushPublish == 'true' || condition == 'true' );
         if(!popupRequired){
            return false;
         }
@@ -251,13 +253,33 @@
         var dia = dijit.byId("contentletWfDialog");
         if(dia){
             dia.destroyRecursive();
-
         }
         dia = new dijit.Dialog({
             id			:	"contentletWfDialog",
             title		: 	"<%=LanguageUtil.get(pageContext, "Workflow-Actions")%>",
             style		:	"width:520px;height:400px;resize: both;overflow: auto;"
         });
+
+        var closeHandle = dojo.connect(dijit.byId('contentletWfDialog'), "hide",
+            function(){
+
+                var dia = dijit.byId('contentletWfDialog');
+                if(dia){
+                    dia.destroyRecursive();
+                }
+
+                if(closeHandle){
+                    dojo.disconnect(closeHandle);
+                }
+
+            }
+        );
+
+        //There might be an instance of the other dialog hanging somewhere.
+        var remoteDia = dijit.byId("remotePublisherDia");
+        if(remoteDia){
+            remoteDia.destroyRecursive();
+        }
 
         var myCp = dijit.byId("contentletWfCP");
         if(myCp){
@@ -270,7 +292,13 @@
         }).placeAt("contentletWfDialog");
 
         dia.show();
-        myCp.attr("href", "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfTaskAjax?cmd=renderAction&actionId=" + actionId + '&bulkActions=true');
+
+        var selectedInodes = getSelectedInodes();
+        if (Array.isArray(selectedInodes) && selectedInodes.length > 0) {
+            myCp.attr("href", "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfTaskAjax?cmd=renderAction&actionId=" + actionId + '&inode=' +selectedInodes[0]+ '&bulkActions=true');
+        } else {
+            myCp.attr("href", "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfTaskAjax?cmd=renderAction&actionId=" + actionId + '&bulkActions=true');
+        }
         return true;
     }
 
