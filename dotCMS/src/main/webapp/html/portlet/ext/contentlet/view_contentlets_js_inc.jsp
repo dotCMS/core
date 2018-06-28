@@ -2216,7 +2216,7 @@
         togglePublish();
     }
 
-    function toggle`Publish(){
+    function togglePublish(){
         var cbArray = document.getElementsByName("publishInode");
         var showArchive =  (dijit.byId("showingSelect").getValue() == "archived");
         if(typeof event !== 'undefined' && event.shiftKey && event.target.checked){
