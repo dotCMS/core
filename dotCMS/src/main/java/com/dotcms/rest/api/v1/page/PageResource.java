@@ -132,17 +132,7 @@ public class PageResource {
      *
      * <pre>
      * Format:
-     * http://localhost:8080/api/v1/pa
-     *
-     *
-     *
-     *
-     *
-     *
-     *
-     *
-     *
-     * /{page-url}
+     * http://localhost:8080/api/v1/page/render/{page-url}
      * <br/>
      * Example:
      * http://localhost:8080/api/v1/page/render/about-us/locations/index
