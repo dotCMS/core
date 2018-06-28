@@ -16,6 +16,7 @@
 <%@page import="java.util.List"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowTask"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowSearcher"%>
+<%@ page import="java.util.stream.Collectors" %>
 <%request.setAttribute("requiredPortletAccess", "workflow"); %>
 <%@ include file="/html/common/uservalidation.jsp"%>
 <%
@@ -58,12 +59,23 @@
 	List<WorkflowAction> availableActions= new ArrayList();
 	if(currentStep != null){
 
-	    final WorkflowStep step = new WorkflowStep();
+		final WorkflowStep step = new WorkflowStep();
 		step.setId(currentStep);
 
-		availableActions = wapi.findActions(step, user);
-		if(availableActions.size() ==0){
-			singleStep=false;
+		final List<WorkflowAction> actions = wapi.findActions(step, user);
+		if (null != actions) {
+
+			for (final WorkflowAction action : actions) {
+
+				if (action.shouldShowOnListing()) {
+
+					availableActions.add(action);
+				}
+			}
+		}
+
+		if (availableActions.size() == 0) {
+			singleStep = false;
 		}
 	}
 
