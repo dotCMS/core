@@ -2216,10 +2216,10 @@
         togglePublish();
     }
 
-    function togglePublish(){
+    function toggle`Publish(){
         var cbArray = document.getElementsByName("publishInode");
         var showArchive =  (dijit.byId("showingSelect").getValue() == "archived");
-        if(event && event.shiftKey && event.target.checked){
+        if(typeof event !== 'undefined' && event.shiftKey && event.target.checked){
         
             var hasChecked=false;
             for(i = 0;i< cbArray.length ;i++){
