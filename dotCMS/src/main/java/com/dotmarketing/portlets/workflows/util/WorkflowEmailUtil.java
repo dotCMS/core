@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.workflows.util;
 
+import com.dotmarketing.util.Logger;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -132,7 +133,8 @@ public class WorkflowEmailUtil {
                 mail.sendMessage();
             }
         } catch (Exception e) {
-            throw new DotWorkflowException("Exception ocurred trying to deliver emails for workflow " + e.getMessage(), e);
+            Logger.error(WorkflowEmailUtil.class,
+                    "Exception occurred trying to deliver emails for workflow " + e.getMessage(), e);
         }
 
     }
@@ -190,8 +192,8 @@ public class WorkflowEmailUtil {
 
 
 		} catch (Exception e) {
-
-			throw new DotWorkflowException("Exception ocurred trying to deliver emails for workflow " + e.getMessage(), e);
+            Logger.error(WorkflowEmailUtil.class,
+                    "Exception occurred trying to deliver emails for workflow " + e.getMessage(), e);
 		}
 	}
 
