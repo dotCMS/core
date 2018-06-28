@@ -101,7 +101,7 @@ public class WorkflowHelper {
 
 
     /**
-     * inds the bulk actions based on the luceneQuery
+     * Finds the bulk actions based on the luceneQuery
      * @param luceneQuery
      * @param user
      * @return
@@ -144,7 +144,7 @@ public class WorkflowHelper {
     }
 
     /**
-     * Computes a view out of the resulsts returned bylucene
+     * Computes a view out of the results returned bylucene
      * @param response
      * @param user
      * @return
