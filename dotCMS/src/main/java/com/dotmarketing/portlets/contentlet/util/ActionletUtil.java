@@ -14,7 +14,7 @@ import java.util.List;
 public class ActionletUtil {
 
     /**
-     *
+     * This method tells you if an action has been set to have a sub actionlet Push-Publish
      * @param action
      * @return
      */
@@ -40,7 +40,8 @@ public class ActionletUtil {
     }
 
     /**
-     *
+     * Evaluates an action and tells you if it requires the additional info that is collected via a popup dialog.
+     * e.g. Comments, Assign, Push-Publish.
      * @param action
      * @return
      */
