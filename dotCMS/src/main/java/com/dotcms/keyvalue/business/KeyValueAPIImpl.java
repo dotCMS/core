@@ -184,16 +184,16 @@ public class KeyValueAPIImpl implements KeyValueAPI {
         return results.build();
     }
 
-    public List<KeyValue> allKeyValuesKeyStartsWith(final String key, final long languageId, final ContentType contentType, final User user,
+    public List<KeyValue> getKeyValuesByKeyStartingWith(final String key, final long languageId, final ContentType contentType, final User user,
             final boolean respectFrontendRoles, final int limit) {
         final StringBuilder query = new StringBuilder();
         try {
 
             if (UtilMethods.isSet(contentType) && UtilMethods.isSet(contentType.variable())) {
-                query.append("+contentType:" + contentType.variable());
+                query.append("+contentType:").append(contentType.variable());
                 query.append(" +").append(contentType.variable()).append(".key:").append(key).append("*");
             } else {
-                query.append("+baseType:" + BaseContentType.KEY_VALUE.getType());
+                query.append("+baseType:").append(BaseContentType.KEY_VALUE.getType());
                 query.append(" +key:").append(key).append("*");
             }
 

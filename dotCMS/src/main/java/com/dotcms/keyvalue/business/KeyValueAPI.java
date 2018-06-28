@@ -165,7 +165,7 @@ public interface KeyValueAPI {
 
     /**
      *
-     * Returns a list of {@link KeyValue} that the key starts with the specified key, language and content type.
+     * Returns a list of {@link KeyValue} whose keys start with the provided key, language and content type.
      *
      * @param key - The key.
      * @param languageId - The ID of the language that the content was created for.
@@ -176,7 +176,7 @@ public interface KeyValueAPI {
      *        front-end). Otherwise, set to {@code false}.
      * @return a list of Key/Value Objects.
      */
-    public List<KeyValue> allKeyValuesKeyStartsWith(final String key, final long languageId, final ContentType contentType, final User user,
+    public List<KeyValue> getKeyValuesByKeyStartingWith(final String key, final long languageId, final ContentType contentType, final User user,
             final boolean respectFrontendRoles, final int limit);
 
 }

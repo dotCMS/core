@@ -76,7 +76,7 @@ public class LanguageVariableAPIImpl implements LanguageVariableAPI {
             }
         } catch (DotDataException | DotSecurityException e) {
 
-            Logger.debug(this, String.format("Could not retrieve Language Variable '%s': %s", key, e.getMessage()), e);
+            Logger.debug(this, ()-> String.format("Could not retrieve Language Variable '%s': %s", key, e.getMessage(), e));
         }
 
         return (null != languageValue)? languageValue:key;
@@ -85,7 +85,7 @@ public class LanguageVariableAPIImpl implements LanguageVariableAPI {
     @Override
     public List<KeyValue> getAllLanguageVariablesKeyStartsWith(final String key,
             final long languageId, final User user, final int limit) throws DotDataException, DotSecurityException {
-        return this.keyValueAPI.allKeyValuesKeyStartsWith(key,languageId,APILocator.getContentTypeAPI(user).find(LANGUAGEVARIABLE),user,false,limit);
+        return this.keyValueAPI.getKeyValuesByKeyStartingWith(key,languageId,APILocator.getContentTypeAPI(user).find(LANGUAGEVARIABLE),user,false,limit);
     }
 
     private String getValueFromUserLanguage(final String key, long languageId,
