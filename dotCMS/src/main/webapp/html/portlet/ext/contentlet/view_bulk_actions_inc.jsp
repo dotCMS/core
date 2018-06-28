@@ -2,7 +2,6 @@
 <%@page import="com.dotmarketing.util.UtilMethods" %>
 <script language="Javascript">
 
-
     /**
      *
      *
@@ -52,10 +51,15 @@
      */
     function renderSingleAction(action){
         var actionSingleTemplate
-            = '<tr class="workflowActionsOption">\n'
-            + '   <td style="">&nbsp;&nbsp;'+action.workflowAction.name+'</td>'
-            + '     <td style="width:140px;text-align: right">'
-            + '     <button dojoType="dijit.form.Button" class="dijitButton wfAction" data-acction-id="'+action.workflowAction.id+'" >'+action.count+' content(s)</button>'
+            = '<tr class="workflowActionsOption"> '
+            + '   <td style="">&nbsp;&nbsp;'+action.workflowAction.name+'</td> '
+            + '     <td style="width:140px;text-align: right"> '
+            + '     <button dojoType="dijit.form.Button" class="dijitButton wfAction" '
+            + '             data-acction-id="'+action.workflowAction.id+'" '
+            + '             data-action-commentable="'+action.workflowAction.commentable+'" '
+            + '             data-action-assignable="'+action.workflowAction.assignable+'" '
+            + '             data-action-pushPublish="'+action.pushPublish+'"  '
+            + '             data-action-condition="'+action.conditionPresent+'" >'+action.count+' content(s)</button>'
             + '   </td>'
             + '</tr>';
         return actionSingleTemplate;
@@ -232,26 +236,110 @@
         return summaryTableMarkup + detailsMarkup;
     }
 
-    function fireAction(e) {
-        dojo.byId('bulkActionsContainer').innerHTML = '<%=LanguageUtil.get(pageContext, "Applying")%>';
-        var buttonElement = e.toElement;
+    function showPopupIfRequired(buttonElement) {
+
+        var commentable = dojo.attr(buttonElement, 'data-action-commentable');
+        var assignable = dojo.attr(buttonElement, 'data-action-assignable');
+        var pushPublish = dojo.attr(buttonElement, 'data-action-pushPublish');
+        var condition = dojo.attr(buttonElement, 'data-action-condition');
+
+        var popupRequired = (commentable == 'true' || assignable == 'true' || pushPublish == 'true' || condition == 'true' );
+        if(!popupRequired){
+           return false;
+        }
+
         var actionId = dojo.attr(buttonElement, 'data-acction-id');
+
+        var dia = dijit.byId("contentletWfDialog");
+        if(dia){
+            dia.destroyRecursive();
+        }
+        dia = new dijit.Dialog({
+            id			:	"contentletWfDialog",
+            title		: 	"<%=LanguageUtil.get(pageContext, "Workflow-Actions")%>",
+            style		:	"width:520px;height:400px;resize: both;overflow: auto;"
+        });
+
+        var closeHandle = dojo.connect(dijit.byId('contentletWfDialog'), "hide",
+            function(){
+
+                var dia = dijit.byId('contentletWfDialog');
+                if(dia){
+                    dia.destroyRecursive();
+                }
+
+                if(closeHandle){
+                    dojo.disconnect(closeHandle);
+                }
+
+            }
+        );
+
+        //There might be an instance of the other dialog hanging somewhere.
+        var remoteDia = dijit.byId("remotePublisherDia");
+        if(remoteDia){
+            remoteDia.destroyRecursive();
+        }
+
+        var myCp = dijit.byId("contentletWfCP");
+        if(myCp){
+            myCp.destroyRecursive();
+
+        }
+        myCp = new dojox.layout.ContentPane({
+            id 			: "contentletWfCP",
+            style		: "width:500px;height:400px;margin:auto;"
+        }).placeAt("contentletWfDialog");
+
+        dia.show();
+
+        var selectedInodes = getSelectedInodes();
+        if (Array.isArray(selectedInodes) && selectedInodes.length > 0) {
+            myCp.attr("href", "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfTaskAjax?cmd=renderAction&actionId=" + actionId + '&inode=' +selectedInodes[0]+ '&bulkActions=true');
+        } else {
+            myCp.attr("href", "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfTaskAjax?cmd=renderAction&actionId=" + actionId + '&bulkActions=true');
+        }
+        return true;
+    }
+
+
+    function fireAction(actionId, popupData) {
+
+        dojo.byId('bulkActionsContainer').innerHTML = '<%=LanguageUtil.get(pageContext, "Applying")%>';
 
         var selectedInodes = getSelectedInodes();
         if(!selectedInodes){
             return;
         }
 
+        var assignComment = null;
+
+        if((typeof popupData != "undefined") && (typeof popupData.assignComment != "undefined")){
+            assignComment = popupData.assignComment;
+        }
+
+        var pushPublish = null;
+        if((typeof popupData != "undefined") && (typeof popupData.pushPublish != "undefined")){
+            pushPublish = popupData.pushPublish;
+        }
+
+        var additionalParams = {
+            assignComment:assignComment,
+            pushPublish:pushPublish
+        }
+
         var data ;
         if(Array.isArray(selectedInodes)){
             data = {
                 "workflowActionId":actionId,
-                "contentletIds":selectedInodes
+                "contentletIds":selectedInodes,
+                "additionalParams":additionalParams
             };
         } else {
             data = {
                 "workflowActionId":actionId,
-                "query":selectedInodes
+                "query":selectedInodes,
+                "additionalParams":additionalParams
             };
         }
 
@@ -308,7 +396,13 @@
                     dojo.byId('bulkActionsContainer').innerHTML = markUp;
                     dojo.query(".wfAction").onclick(
                        function(e){
-                           fireAction(e);
+                           var buttonElement = e.toElement;
+                           var popupShown = showPopupIfRequired(buttonElement);
+                           if(popupShown){
+                               return;
+                           }
+                           var actionId = dojo.attr(buttonElement, 'data-acction-id');
+                           fireAction(actionId);
                        }
                     );
                 } else {

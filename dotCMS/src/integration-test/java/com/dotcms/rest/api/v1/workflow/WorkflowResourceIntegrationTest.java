@@ -1,5 +1,43 @@
 package com.dotcms.rest.api.v1.workflow;
 
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.ADMIN_DEFAULT_ID;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.ADMIN_DEFAULT_MAIL;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.ADMIN_NAME;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.CURRENT_STEP;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.DM_WORKFLOW;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.PUBLISH;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SAVE;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SAVE_AS_DRAFT;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SAVE_PUBLISH;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SEND_FOR_REVIEW;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SEND_TO_LEGAL;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SYSTEM_WORKFLOW;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.actionName;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.addSteps;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.collectSampleContent;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.createScheme;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.createWorkflowActions;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.doCleanUp;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.findSchemes;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.findSteps;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.getAllWorkflowActions;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.schemeName;
+import static com.dotmarketing.business.Role.ADMINISTRATOR;
+import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.ACTION_ID;
+import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.ACTION_ORDER;
+import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.STEP_ID;
+import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.getInstance;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
@@ -17,7 +55,13 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotcms.workflow.form.*;
+import com.dotcms.workflow.form.BulkActionForm;
+import com.dotcms.workflow.form.FireBulkActionsForm;
+import com.dotcms.workflow.form.WorkflowActionForm;
+import com.dotcms.workflow.form.WorkflowActionStepForm;
+import com.dotcms.workflow.form.WorkflowSchemeForm;
+import com.dotcms.workflow.form.WorkflowSchemeImportObjectForm;
+import com.dotcms.workflow.form.WorkflowStepUpdateForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
@@ -43,24 +87,25 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import javax.servlet.http.HttpServletRequest;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.*;
-import static com.dotmarketing.business.Role.ADMINISTRATOR;
-import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.*;
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import javax.servlet.http.HttpServletRequest;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest {
 
@@ -721,8 +766,8 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
             final Map<ContentType, List<Contentlet>> contentsByType = sampleContent.get(scheme);
             final Set<ContentType> types = contentsByType.keySet();
-            for (final ContentType ct : types) {
-                final List<Contentlet> contentlets = contentsByType.get(ct);
+            for (final ContentType contentType : types) {
+                final List<Contentlet> contentlets = contentsByType.get(contentType);
                 final List<String> contentletIds = contentlets.stream().map(Contentlet::getInode)
                         .collect(Collectors.toList());
 
@@ -740,36 +785,46 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 final BulkActionView bulkActionView = BulkActionView.class.cast(entityView.getEntity());
                 assertNotNull(bulkActionView);
                 final List<BulkWorkflowSchemeView> schemes = bulkActionView.getSchemes();
-                assertNotNull(schemes);
-                assertFalse(schemes.isEmpty());
-                // if the piece of content is associated with multiple WorkFlows we need to verify the response matches the one we're currently on.
-                boolean schemeMatches = false;
-                for (final BulkWorkflowSchemeView view : schemes) {
-                    schemeMatches = (scheme.getId().equals(view.getScheme().getId()));
-                    if (schemeMatches) {
-                        assertFalse("Scheme is expected to have steps", view.getSteps().isEmpty());
-                        assertEquals("Schema name does not match", scheme.getName(),
-                                view.getScheme().getName());
-                        for (final BulkWorkflowStepView stepView : view.getSteps()) {
-                            assertTrue("Expected step " + stepView.getStep().getWorkflowStep()
-                                            .getName() + " Not found.",
-                                    steps.contains(stepView.getStep().getWorkflowStep())
-                            );
-                            final List<CountWorkflowAction> workflowActions = stepView.getActions();
-                            for (final CountWorkflowAction workflowAction : workflowActions) {
-                                assertTrue("Expected action " + workflowAction.getWorkflowAction()
-                                                .getName() + " Not found.",
-                                        availableActions.contains(
-                                                workflowAction.getWorkflowAction().getId())
-                                );
-                            }
-                        }
-                        break;
-                    }
-                }
 
-                //At least one scheme was matched
-                assertTrue("no scheme was matched. ",schemeMatches);
+                assertNotNull(schemes);
+                if(Host.HOST_VELOCITY_VAR_NAME.equals(contentType.name())){
+
+                    // if we're sending contentlets of type Host then we should get nothing back
+                    assertTrue("Nothing should come back for CT Host ",schemes.isEmpty());
+
+                } else {
+
+                    assertFalse( "Everything else should have a WF. " , schemes.isEmpty());
+                    // if the piece of content is associated with multiple WorkFlows we need to verify the response matches the one we're currently on.
+                    boolean schemeMatches = false;
+                    for (final BulkWorkflowSchemeView view : schemes) {
+                        schemeMatches = (scheme.getId().equals(view.getScheme().getId()));
+                        if (schemeMatches) {
+                            assertFalse("Scheme is expected to have steps", view.getSteps().isEmpty());
+                            assertEquals("Schema name does not match", scheme.getName(),
+                                    view.getScheme().getName());
+                            for (final BulkWorkflowStepView stepView : view.getSteps()) {
+                                assertTrue("Expected step " + stepView.getStep().getWorkflowStep()
+                                                .getName() + " Not found.",
+                                        steps.contains(stepView.getStep().getWorkflowStep())
+                                );
+                                final List<CountWorkflowAction> workflowActions = stepView.getActions();
+                                for (final CountWorkflowAction workflowAction : workflowActions) {
+                                    assertTrue("Expected action " + workflowAction.getWorkflowAction()
+                                                    .getName() + " Not found.",
+                                            availableActions.contains(
+                                                    workflowAction.getWorkflowAction().getId())
+                                    );
+                                }
+                            }
+                            break;
+                        }
+                    }
+
+                    //At least one scheme was matched
+                    assertTrue("no scheme was matched. ",schemeMatches);
+
+                }
             }
         }
     }
@@ -792,7 +847,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                    final WorkflowAction action = actions.stream().findAny().get();
                    final HttpServletRequest request = mock(HttpServletRequest.class);
                    final FireBulkActionsForm form = new FireBulkActionsForm(null,
-                           Collections.singletonList(contentlet.getInode()), action.getId()
+                           Collections.singletonList(contentlet.getInode()), action.getId(), null
                    );
 
                    final AsyncResponse asyncResponse = new MockAsyncResponse((arg) -> {
@@ -985,7 +1040,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
             final HttpServletRequest request1 = mock(HttpServletRequest.class);
             final FireBulkActionsForm actionsForm1 = new FireBulkActionsForm(null,
-                    Collections.singletonList(inode), saveAction.getId());
+                    Collections.singletonList(inode), saveAction.getId(), null);
 
             //This CountDownLatch prevents the finally block from getting reached until after the thread completes
             final CountDownLatch countDownLatch = new CountDownLatch(1);
@@ -1141,7 +1196,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
             final HttpServletRequest request1 = mock(HttpServletRequest.class);
             final FireBulkActionsForm actionsForm1 = new FireBulkActionsForm(null,
-                    Collections.singletonList(inode), saveAction.getId());
+                    Collections.singletonList(inode), saveAction.getId(), null);
 
             final AsyncResponse asyncResponse = new MockAsyncResponse((arg) -> {
                 try {

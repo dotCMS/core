@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.workflow;
 
 import com.dotcms.exception.ExceptionUtil;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 public class ActionFail {
@@ -23,13 +24,17 @@ public class ActionFail {
 
     public static ActionFail newInstance(final User user ,final String inode, final Exception e){
 
-        String message = e.getMessage();
-        final String [] tokens = message.split("\\s+");
-        if(tokens.length == 1){
-            //Message is i18ned
-           message = ExceptionUtil.getLocalizedMessageOrDefault(user, message, message,null);
+        final Throwable rootCause = ExceptionUtil.getRootCause(e);
+        String message = rootCause.getMessage();
+        if(UtilMethods.isSet(message)) {
+            final String[] tokens = message.split("\\s+");
+            if (tokens.length == 1) {
+                //Message is i18ned
+                message = ExceptionUtil.getLocalizedMessageOrDefault(user, message, message, null);
+            }
+        } else {
+            message = ExceptionUtil.getLocalizedMessageOrDefault(user, "No-Exception-Info-Available", "Unavailable", null);
         }
-
         return new ActionFail(inode, message);
     }
 
