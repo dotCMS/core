@@ -241,6 +241,15 @@ public interface LanguageAPI {
      */
     public Language getFallbackLanguage(final String languageCode);
 
+	/**
+	 * Return all the languages for a specific contentletInode
+	 *
+	 * @param contentletInode
+	 * @param user
+	 * @return
+	 * @throws DotSecurityException if the user dont have read permission in the contentlet
+	 * @throws DotDataException
+	 */
 	public List<Language> getAvailableContentPageLanguages(final String contentletInode, final User user)
 			throws DotSecurityException, DotDataException;
 
