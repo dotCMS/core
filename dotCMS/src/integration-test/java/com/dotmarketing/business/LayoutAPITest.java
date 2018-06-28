@@ -59,7 +59,7 @@ public class LayoutAPITest extends IntegrationTestBase {
     }
 
     private Layout createNewLayout(final String layoutName, final String layoutDescription, final int order) throws DotDataException {
-        Layout newLayout = new Layout();
+        final Layout newLayout = new Layout();
         newLayout.setName(layoutName);
         newLayout.setDescription(layoutDescription);
         newLayout.setTabOrder(order);
