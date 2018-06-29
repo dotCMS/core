@@ -27,6 +27,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -125,12 +126,7 @@ public class OrderMenuAction extends DotPortletAction {
 					CacheLocator.getNavToolCache().removeNav(id.getHostId(), FolderAPI.SYSTEM_FOLDER);
 				}
 
-				try {
-					Thread.sleep(1500L);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-
+				DateUtil.sleep(1500L);
 
 				return;
 			}
