@@ -5,7 +5,7 @@ import static com.liferay.util.HttpHeaders.EXPIRES;
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.repackage.com.google.common.io.Files;
+
 import com.dotcms.util.DownloadUtil;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
@@ -447,25 +447,27 @@ public class BinaryExporterServlet extends HttpServlet {
 					}
 				}
 			}
-
+			if(resp.getHeader("Accept-Ranges")==null) {
+			  resp.setHeader("Accept-Ranges","bytes");
+			}
 			String rangeHeader = req.getHeader("range");
 			if(UtilMethods.isSet(rangeHeader)){
 
 				try {
 					out = resp.getOutputStream();
+					long fileLen = data.getDataFile().length();
 
-					byte[] dataBytes = Files.toByteArray(data.getDataFile());
 
 					//extract range header
 					 resp.setHeader("Accept-Ranges", "bytes");
 					// Range header should match format "bytes=n-n,n-n,n-n...". If not, then return 416.
 					if (!rangeHeader.matches("^bytes=\\d*-\\d*(,\\d*-\\d*)*$")) {
-						resp.setHeader("Content-Range", "bytes */" + dataBytes.length); // Required in 416.
+						resp.setHeader("Content-Range", "bytes */" + fileLen); // Required in 416.
 						resp.sendError(HttpServletResponse.SC_REQUESTED_RANGE_NOT_SATISFIABLE);
 						return;
 					}
 					//parse multiple range bytes
-					ArrayList<SpeedyAssetServletUtil.ByteRange> ranges = SpeedyAssetServletUtil.parseRange(rangeHeader, dataBytes.length);
+					ArrayList<SpeedyAssetServletUtil.ByteRange> ranges = SpeedyAssetServletUtil.parseRange(rangeHeader, fileLen);
 					if (ranges != null){
 						SpeedyAssetServletUtil.ByteRange full = new SpeedyAssetServletUtil.ByteRange(0, data.getDataFile().length() - 1, data.getDataFile().length());
 						if (ranges.isEmpty() || ranges.get(0).equals(full)) {
@@ -482,7 +484,7 @@ public class BinaryExporterServlet extends HttpServlet {
 							input = new RandomAccessFile(data.getDataFile(), "r");
 							// Check if Range is syntactically valid. If not, then return 416.
 							if (range.start > range.end) {
-								resp.setHeader("Content-Range", "bytes */" + dataBytes.length); // Required in 416.
+								resp.setHeader("Content-Range", "bytes */" + fileLen); // Required in 416.
 								resp.sendError(HttpServletResponse.SC_REQUESTED_RANGE_NOT_SATISFIABLE);
 								return;
 							}
@@ -497,7 +499,7 @@ public class BinaryExporterServlet extends HttpServlet {
 						    input = new RandomAccessFile(data.getDataFile(), "r");
 							for (SpeedyAssetServletUtil.ByteRange r : ranges) {
 								if (r.start > r.end) {
-									resp.setHeader("Content-Range", "bytes */" + dataBytes.length); // Required in 416.
+									resp.setHeader("Content-Range", "bytes */" + fileLen); // Required in 416.
 									resp.sendError(HttpServletResponse.SC_REQUESTED_RANGE_NOT_SATISFIABLE);
 									return;
 								}

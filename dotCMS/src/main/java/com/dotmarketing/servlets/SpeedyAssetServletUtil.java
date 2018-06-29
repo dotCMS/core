@@ -35,7 +35,7 @@ public class SpeedyAssetServletUtil {
 	 * @param dataLen length of the byte range
 	 * @return
 	 */
-	protected static ArrayList<ByteRange> parseRange(String rangeHeader, int length){
+	protected static ArrayList<ByteRange> parseRange(String rangeHeader, long length){
         ArrayList<ByteRange> ranges = null;
         if (rangeHeader != null && rangeHeader.startsWith("bytes")){            
             ranges = new ArrayList<ByteRange>(8);
