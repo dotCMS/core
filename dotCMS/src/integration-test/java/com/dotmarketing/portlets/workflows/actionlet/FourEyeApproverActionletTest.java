@@ -166,22 +166,25 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
         WorkflowProcessor processor =
                 workflowAPI.fireWorkflowPreCheckin(contentlet1, publisher1);
         workflowAPI.fireWorkflowPostCheckin(processor);
+        Contentlet processedContentlet = processor.getContentlet();
 
         // The contentlet MUST NOT be live yet, it needs one more approval
+        contentletAPI.isInodeIndexed(processedContentlet.getInode(), 6);
         final Contentlet contentlet2 = contentletAPI
-                .findContentletByIdentifier(contentlet1.getIdentifier(),
+                .findContentletByIdentifier(processedContentlet.getIdentifier(),
                         false, languageId, systemUser, false);
         Assert.assertFalse("The contentlet cannot be live, it needs 1 more approver.",
                 contentlet2.isLive());
 
         processor = workflowAPI.fireWorkflowPreCheckin(contentlet2, publisher2);
         workflowAPI.fireWorkflowPostCheckin(processor);
+        processedContentlet = processor.getContentlet();
 
         // The contentlet MUST be live now as it has been approved by another user
+        contentletAPI.isInodeIndexed(processedContentlet.getInode(), true, 6);
         final Contentlet contentlet3 = contentletAPI
-                .findContentletByIdentifier(contentlet2.getIdentifier(),
+                .findContentletByIdentifier(processedContentlet.getIdentifier(),
                         false, languageId, systemUser, false);
-        contentletAPI.isInodeIndexed(contentlet3.getInode(), true, 6);
         Assert.assertTrue("The contentlet MUST be live, it has all the approvers.",
                 contentlet3.isLive());
 
