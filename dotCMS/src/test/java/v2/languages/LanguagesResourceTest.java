@@ -99,11 +99,6 @@ public class LanguagesResourceTest {
 
         final LanguagesResource languagesResource = new LanguagesResource(languageAPI, webResource);
 
-        try {
-            languagesResource.list(request, "2");
-            assertTrue(false);
-        } catch(DotSecurityException e) {
-            assertTrue(true);
-        }
+        languagesResource.list(request, "2");
     }
 }
