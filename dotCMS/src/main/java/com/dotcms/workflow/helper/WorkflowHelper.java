@@ -7,6 +7,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.v1.workflow.*;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.workflow.form.*;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -100,7 +101,7 @@ public class WorkflowHelper {
 
 
     /**
-     * inds the bulk actions based on the luceneQuery
+     * Finds the bulk actions based on the luceneQuery
      * @param luceneQuery
      * @param user
      * @return
@@ -111,16 +112,16 @@ public class WorkflowHelper {
             final User user) throws DotDataException {
 
         try {
-            final String prepareBulkActionsQuery = LuceneQueryUtils
-                    .prepareBulkActionsQuery(luceneQuery);
+            final String sanitizedQuery = LuceneQueryUtils
+                    .sanitizeBulkActionsQuery(luceneQuery);
 
-            final String query = String.format(BULK_ACTIONS_QUERY_WRAPPER, prepareBulkActionsQuery);
+            final String query = String.format(BULK_ACTIONS_QUERY_WRAPPER, sanitizedQuery);
             //We should only be considering Working content.
             final SearchResponse response = this.contentletAPI
                     .esSearchRaw(query.toLowerCase(), false, user, false);
             //Query must be sent lowercase. It's a must.
 
-            Logger.debug(getClass(), () -> "luceneQuery: " + prepareBulkActionsQuery);
+            Logger.debug(getClass(), () -> "luceneQuery: " + sanitizedQuery);
             return this.buildBulkActionView(response, user);
         } catch (Exception e) {
             throw new DotDataException(e);
@@ -143,7 +144,7 @@ public class WorkflowHelper {
     }
 
     /**
-     * Compuetes a view out of the resulsts returned bylucene
+     * Computes a view out of the results returned bylucene
      * @param response
      * @param user
      * @return
@@ -173,7 +174,8 @@ public class WorkflowHelper {
                     new CountWorkflowStep(stepCount.getValue(),
                             this.workflowAPI.findStep(stepCount.getKey()));
 
-            stepActionsMap.put(step, this.workflowAPI.findActions(step.getWorkflowStep(), user));
+            stepActionsMap.put(step, this.workflowAPI.findActions(step.getWorkflowStep(), user)
+                    .stream().filter(WorkflowAction::shouldShowOnListing).collect(CollectionsUtils.toImmutableList()));
         }
 
         return (stepCounts.size() > 0 ?
@@ -281,9 +283,9 @@ public class WorkflowHelper {
         final WorkflowAction action = this.workflowAPI.findAction(form.getWorkflowActionId(), user);
         if(null != action) {
             if(UtilMethods.isSet(form.getQuery())){
-                return this.workflowAPI.fireBulkActions(action, user, form.getQuery());
+                return this.workflowAPI.fireBulkActions(action, user, form.getQuery(), form.getPopupParamsBean());
             }
-            return this.workflowAPI.fireBulkActions(action, user, form.getContentletIds());
+            return this.workflowAPI.fireBulkActions(action, user, form.getContentletIds(), form.getPopupParamsBean());
         } else {
             throw new DoesNotExistException("Workflow-does-not-exists-action");
         }
@@ -1439,7 +1441,11 @@ public class WorkflowHelper {
             final List<WorkflowAction> actions = this.workflowAPI
                     .findInitialAvailableActionsByContentType(contentType, user);
 
-            for (final WorkflowAction action : actions) {
+            final List<WorkflowAction> editingActions =
+                    UtilMethods.isSet(actions)?actions.stream().filter(WorkflowAction::shouldShowOnEdit)
+                            .collect(Collectors.toList()) : Collections.emptyList();
+
+            for (final WorkflowAction action : editingActions) {
                 final WorkflowScheme scheme = this.workflowAPI.findScheme(action.getSchemeId());
                 final WorkflowDefaultActionView value = new WorkflowDefaultActionView(scheme, action);
                 results.add(value);

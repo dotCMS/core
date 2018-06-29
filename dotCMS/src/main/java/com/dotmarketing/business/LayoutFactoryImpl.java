@@ -3,6 +3,7 @@
  */
 package com.dotmarketing.business;
 
+import com.dotmarketing.util.UtilMethods;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -11,6 +12,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.InodeUtils;
+import java.util.UUID;
 
 /**
  * @author Jason Tesser
@@ -96,9 +98,25 @@ public class LayoutFactoryImpl extends LayoutFactory {
 	@Override
 	protected void saveLayout(Layout layout) throws DotDataException {
 		lc.remove(layout);
-		HibernateUtil.merge(layout);
+		if(UtilMethods.isSet(layout.getId())){
+			final String UPDATE_LAYOUT_SQL = "UPDATE cms_layout SET layout_name = ?, description = ?, tab_order = ? WHERE id = ?";
+			new DotConnect().setSQL(UPDATE_LAYOUT_SQL)
+					.addParam(layout.getName())
+					.addParam(layout.getDescription())
+					.addParam(layout.getTabOrder())
+					.addParam(layout.getId())
+					.loadResult();
+		}else{
+			final String INSERT_LAYOUT_SQL = "INSERT INTO cms_layout(id,layout_name,description,tab_order) values(?,?,?,?)";
+			layout.setId(UUID.randomUUID().toString());
+			new DotConnect().setSQL(INSERT_LAYOUT_SQL)
+					.addParam(layout.getId())
+					.addParam(layout.getName())
+					.addParam(layout.getDescription())
+					.addParam(layout.getTabOrder())
+					.loadResult();
+		}
 		populatePortlets(layout);
-		lc.add(layout.getId(), layout);
 	}
 
 	@SuppressWarnings("unchecked")

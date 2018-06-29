@@ -588,8 +588,7 @@
         
         dijit.byId("versionsTab").attr("disabled", false);
         dijit.byId("permissionsTab").attr("disabled", false);
-        
-        
+
         refreshActionPanel(data["contentletInode"]);
 
         // if we have a referer and the contentlet comes back checked in
@@ -598,13 +597,20 @@
                 var customEventDetail = {
                     name: 'save-page',
                     payload: data
-                }
+                };
 
                 if (workingContentletInode.length === 0) {
                     customEventDetail = {
                         name: 'close'
-                    }
-                    window.top.location = '/dotAdmin/#/edit-page/content?url=' + data['htmlPageReferer'];
+                    };
+
+                    var params = data['htmlPageReferer'].split('?')[1].split('&');
+                    var languageQueryParam = params.find(function(queryParam) {
+                        return queryParam.startsWith('com.dotmarketing.htmlpage.language');
+                    });
+                    var languageId = languageQueryParam.split('=')[1];
+					
+                    window.top.location = '/dotAdmin/#/edit-page/content?url=' + data['htmlPageReferer'].split('?')[0] + '&language_id=' + languageId;
                 }
 
                 var customEvent = document.createEvent('CustomEvent');

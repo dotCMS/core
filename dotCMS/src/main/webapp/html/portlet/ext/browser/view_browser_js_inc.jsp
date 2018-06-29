@@ -370,7 +370,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         }
         if (inodes[inode].type == 'htmlpage') {
         	
-            previewHTMLPage(e.target.dataset.url || e.target.parentNode.dataset.url);
+            previewHTMLPage(e.target.dataset.url || e.target.parentNode.dataset.url, inodes[inode]);
         }
         return;
     }
@@ -1579,14 +1579,15 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         });
     }
 
-    function previewHTMLPage(url) {
+    function previewHTMLPage(url, content) {
         // We can't new CustomEvent becuase it's not supported by IE11
         var customEvent = document.createEvent("CustomEvent");
         console.log(url);
         customEvent.initCustomEvent("ng-event", false, false,  {
             name: "edit-page",
             data: {
-                url: url
+                url: url,
+                content: content
             }
         });
         document.dispatchEvent(customEvent);

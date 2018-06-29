@@ -37,7 +37,8 @@ abstract class WorkflowSQL {
 	protected static String UPDATE_SCHEME_SET_TO_DEFAULT= "update workflow_scheme set default_scheme = " + DbConnectionFactory.getDBTrue() + " where id = ? ";
 
 
-
+	protected static String SELECT_TASK_NULL_BY_STRUCT= "select task.* FROM workflow_task task INNER JOIN contentlet con ON con.identifier = task.webasset INNER JOIN contentlet_version_info cvi ON cvi.working_inode = con.inode"
+			+ " WHERE task.status is NULL AND con.structure_inode=?";
 
 	protected static String SELECT_TASK_STEPS_TO_CLEAN_BY_STRUCT= "select * from  workflow_task where webasset in (select identifier from contentlet where contentlet.structure_inode = ? group by identifier) ";
 	protected static String UPDATE_STEPS_BY_STRUCT= "update workflow_task set status = ? where webasset in (select identifier from contentlet where contentlet.structure_inode = ? group by identifier) ";

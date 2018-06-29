@@ -6,10 +6,10 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.microsoft.sqlserver.jdbc.ISQLServerConnection;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
-import net.sourceforge.jtds.jdbc.ConnectionJDBC2;
 import org.quartz.JobDetail;
 import org.quartz.JobPersistenceException;
 import org.quartz.ObjectAlreadyExistsException;
@@ -76,8 +76,8 @@ public class DotJobStore extends JobStoreCMT {
 				new ConnectionProvider() {
 					public Connection getConnection() throws SQLException {
 						Connection c = nonTxDataSourceToUse.getConnection();
-						if (ConnectionJDBC2.TRANSACTION_READ_COMMITTED != c.getTransactionIsolation()) {
-							c.setTransactionIsolation(ConnectionJDBC2.TRANSACTION_READ_COMMITTED);
+						if (ISQLServerConnection.TRANSACTION_READ_COMMITTED != c.getTransactionIsolation()) {
+							c.setTransactionIsolation(ISQLServerConnection.TRANSACTION_READ_COMMITTED);
 						}
 						return  c;
 					}

@@ -21,10 +21,10 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageUtil;
@@ -85,7 +85,7 @@ public class BrowserAPI {
             try {
                 if (contentlet != null) {
                 	wfActions = APILocator.getWorkflowAPI()
-								.findAvailableActions(contentlet, user);
+								.findAvailableActions(contentlet, user, WorkflowAPI.RenderMode.LISTING);
                 }
             } catch (Exception e) {
                 Logger.error(this, "Could not load workflow actions : ", e);

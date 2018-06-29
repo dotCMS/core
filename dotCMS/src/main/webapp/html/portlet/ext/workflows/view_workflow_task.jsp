@@ -15,6 +15,7 @@
 <%@page import="com.dotmarketing.portlets.workflows.model.*"%>
 <%@page import="com.dotmarketing.util.DateUtil" %>
 <%@page import="com.dotmarketing.util.Logger" %>
+<%@ page import="com.dotmarketing.portlets.workflows.business.WorkflowAPI" %>
 
 
 <%!
@@ -60,7 +61,7 @@ public String getPostedby(String postedBy){
         scheme = APILocator.getWorkflowAPI().findScheme(step.getSchemeId());
     }
 
-    List<WorkflowAction> actions = APILocator.getWorkflowAPI().findAvailableActions(contentlet, user);
+    List<WorkflowAction> actions = APILocator.getWorkflowAPI().findAvailableActions(contentlet, user, WorkflowAPI.RenderMode.LISTING);
     List<WorkflowAction>  wfActionsAll= APILocator.getWorkflowAPI().findActions(step, user);
 
     boolean canEdit = APILocator.getPermissionAPI().doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user, false);

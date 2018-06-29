@@ -1,0 +1,90 @@
+{
+	"info": {
+		"_postman_id": "9f393da8-6b39-49fe-8093-5b2575793b74",
+		"name": "NavResource Documentation",
+		"description": "\n",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "loadJson",
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/nav/about-us?depth=2&languageId=2",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"nav",
+						"about-us"
+					],
+					"query": [
+						{
+							"key": "depth",
+							"value": "2"
+						},
+						{
+							"key": "languageId",
+							"value": "2"
+						}
+					]
+				},
+				"description": "Returns navigation metadata in JSON format for objects that have been marked show on menu\n\nFormat:\nhttp://localhost:8080/api/v1/nav/{start-url}?depth={}&languageId={}\n\nExample - will send the navigation under the /about-us folder, 2 levels deep\n  http://localhost:8080/api/v1/nav/about-us?depth=2&languageId=1\n  \nThe {languageId} is an optional parameter if you don't send it, takes the default language, also should respect all those properties:\n\n- DEFAULT_FILE_TO_DEFAULT_LANGUAGE\n- DEFAULT_PAGE_TO_DEFAULT_LANGUAGE"
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "4e330a5e-7ad5-4721-a3e3-7ecfb5353a8b",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "3371f499-8ae4-405d-9a23-32b16ee19d0f",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}

@@ -5,7 +5,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.*;
 import com.liferay.util.JNDIUtil;
-import net.sourceforge.jtds.jdbc.ConnectionJDBC2;
+import com.microsoft.sqlserver.jdbc.ISQLServerConnection;
 
 import javax.naming.*;
 import javax.sql.DataSource;
@@ -158,7 +158,7 @@ public class DbConnectionFactory {
 
             // _dbType would only be null until the getDbType was called, then it is static
             if (_dbType != null && MSSQL.equals(getDBType())) {
-                connection.setTransactionIsolation(ConnectionJDBC2.TRANSACTION_SNAPSHOT);
+                connection.setTransactionIsolation(ISQLServerConnection.TRANSACTION_SNAPSHOT);
             }
 
             return connection;
