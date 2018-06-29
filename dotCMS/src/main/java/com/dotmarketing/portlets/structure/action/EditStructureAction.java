@@ -349,7 +349,7 @@ public class EditStructureAction extends DotPortletAction {
 			
 			
 			BeanUtils.copyProperties(structure, structureForm);
-
+			structure.setHost(structureForm.getHost());
 
 			if (newStructure) {
 				String structureVelocityName = VelocityUtil.convertToVelocityVariable(structure.getName(), true);
