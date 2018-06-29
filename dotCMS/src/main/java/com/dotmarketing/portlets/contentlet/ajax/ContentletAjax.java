@@ -16,7 +16,6 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.*;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.*;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
@@ -861,21 +860,34 @@ public class ContentletAjax {
 
 
 		if (headers.size() == 0) {
-			Map<String, String> fieldMap = new HashMap<String, String> ();
+			Map<String, String> fieldMap = new HashMap<> ();
 			fieldMap.put("fieldVelocityVarName", "__title__");
 			fieldMap.put("fieldName", "Title");
 			headers.add(fieldMap);
-			fieldMap = new HashMap<String, String> ();
+
+			fieldMap = new HashMap<> ();
 			fieldMap.put("fieldVelocityVarName", "__type__");
 			fieldMap.put("fieldName", "Type");
 			headers.add(fieldMap);
+
+
 		}
+
+		final Map<String, String> fieldMap = new HashMap<> ();
+		fieldMap.put("fieldVelocityVarName", "__wfstep__");
+		try {
+			fieldMap.put("fieldName", LanguageUtil.get(currentUser, "Step"));
+		} catch (LanguageException e) {
+			fieldMap.put("fieldName", "Step");
+		}
+		headers.add(fieldMap);
+
 		results.add(headers);
 
 		// we add the total hists for the query
 		results.add(totalHits);
 
-		List<String> expiredInodes=new ArrayList<String>();
+		List<String> expiredInodes=new ArrayList<>();
 
 		//Adding the query results
 		Contentlet con;
@@ -1028,7 +1040,12 @@ public class ContentletAjax {
 				Boolean locked = con.isLocked();
 				searchResult.put("locked", locked.toString());
 				searchResult.put("structureInode", con.getStructureInode());
-				WorkflowStep step = APILocator.getWorkflowAPI().findStepByContentlet(contentlet);
+				final WorkflowStep step = APILocator.getWorkflowAPI().findStepByContentlet(contentlet);
+				final String currentStep = (null != step)?
+						step.getName():
+						LanguageUtil.get(currentUser, "workflow.notassigned");
+				searchResult.put("__wfstep__", currentStep);
+
 				searchResult.put("contentStructureType", "" + con.getStructure().getStructureType());
 
 				// Workflow Actions
