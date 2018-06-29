@@ -4,6 +4,8 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
+
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
@@ -356,15 +358,15 @@ public class LanguageAPIImpl implements LanguageAPI {
     }
 
 	@Override
-	public List<Language> getAvailableContentPageLanguages(final String contentletInode, final User user)
+	public List<Language> getAvailableContentLanguages(final String contentletInode, final User user)
 			throws DotSecurityException, DotDataException {
 
 		final Contentlet contentlet = APILocator.getContentletAPI().find(contentletInode, user, false);
-		List<DisplayedLanguage> availableContentPageLanguages = VelocityUtil.getAvailableContentPageLanguages(contentlet);
+		final List<DisplayedLanguage> availableContentPageLanguages = VelocityUtil.getAvailableContentPageLanguages(contentlet);
 
 		return availableContentPageLanguages.stream()
 				.map(displayedLanguage -> displayedLanguage.getLanguage())
-				.collect(Collectors.toList());
+				.collect(CollectionsUtils.toImmutableList());
 	}
 
     /**

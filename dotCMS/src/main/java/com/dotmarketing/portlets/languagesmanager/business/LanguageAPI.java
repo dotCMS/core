@@ -250,7 +250,7 @@ public interface LanguageAPI {
 	 * @throws DotSecurityException if the user dont have read permission in the contentlet
 	 * @throws DotDataException
 	 */
-	public List<Language> getAvailableContentPageLanguages(final String contentletInode, final User user)
+	public List<Language> getAvailableContentLanguages(final String contentletInode, final User user)
 			throws DotSecurityException, DotDataException;
 
 }

@@ -47,7 +47,7 @@ public class LanguagesResourceTest {
     }
 
     @Test
-    public void test_when_contenInodeIsNotNull_should_listLanguageByInode() throws DotSecurityException, DotDataException {
+    public void test_when_contentInodeIsNotNull_should_listLanguageByInode() throws DotSecurityException, DotDataException {
         final HttpServletRequest request  = mock(HttpServletRequest.class);
         final WebResource webResource = mock(WebResource.class);
         final LanguageAPI languageAPI = mock(LanguageAPI.class);
@@ -57,7 +57,7 @@ public class LanguagesResourceTest {
 
         when(initDataObject.getUser()).thenReturn(user);
         when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
-        when(languageAPI.getAvailableContentPageLanguages("2", user)).thenReturn(languages);
+        when(languageAPI.getAvailableContentLanguages("2", user)).thenReturn(languages);
 
         final LanguagesResource languagesResource = new LanguagesResource(languageAPI, webResource);
         final Response response = languagesResource.list(request, "2");
@@ -65,42 +65,37 @@ public class LanguagesResourceTest {
         assertEquals(languages, ((ResponseEntityView) response.getEntity()).getEntity());
     }
 
-    @Test
-    public void test_when_contenInodeIsNotNull_and_throwDotDataException() throws DotSecurityException, DotDataException {
+    @Test(expected = DotDataException.class)
+    public void test_when_contentInodeIsNotNull_and_throwDotDataException() throws DotSecurityException, DotDataException {
         final HttpServletRequest request  = mock(HttpServletRequest.class);
         final WebResource webResource = mock(WebResource.class);
         final LanguageAPI languageAPI = mock(LanguageAPI.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
         final User user = new User();
-        final List<Language> languages = CollectionsUtils.list(mock(Language.class));
         final DotDataException exception = mock(DotDataException.class);
 
         when(initDataObject.getUser()).thenReturn(user);
         when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
-        when(languageAPI.getAvailableContentPageLanguages("2", user)).thenThrow(exception);
+        when(languageAPI.getAvailableContentLanguages("2", user)).thenThrow(exception);
 
         final LanguagesResource languagesResource = new LanguagesResource(languageAPI, webResource);
 
-        try {
-            languagesResource.list(request, "2");
-            assertTrue(false);
-        } catch(DotDataException e) {
-            assertTrue(true);
-        }
+
+        languagesResource.list(request, "2");
     }
 
-    public void test_when_contenInodeIsNotNull_and_throwDotSecurityException() throws DotSecurityException, DotDataException {
+    @Test(expected = DotSecurityException.class)
+    public void test_when_contentInodeIsNotNull_and_throwDotSecurityException() throws DotSecurityException, DotDataException {
         final HttpServletRequest request  = mock(HttpServletRequest.class);
         final WebResource webResource = mock(WebResource.class);
         final LanguageAPI languageAPI = mock(LanguageAPI.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
         final User user = new User();
-        final List<Language> languages = CollectionsUtils.list(mock(Language.class));
         final DotSecurityException exception = mock(DotSecurityException.class);
 
         when(initDataObject.getUser()).thenReturn(user);
         when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
-        when(languageAPI.getAvailableContentPageLanguages("2", user)).thenThrow(exception);
+        when(languageAPI.getAvailableContentLanguages("2", user)).thenThrow(exception);
 
         final LanguagesResource languagesResource = new LanguagesResource(languageAPI, webResource);
 

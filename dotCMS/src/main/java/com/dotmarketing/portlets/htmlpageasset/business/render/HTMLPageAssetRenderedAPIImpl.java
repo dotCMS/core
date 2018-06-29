@@ -145,13 +145,13 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         return htmlPageAsset;
     }
 
-    private IHTMLPage getPageByUri(PageMode mode, Host host, String pageUri) throws DotDataException, DotSecurityException {
+    private IHTMLPage getPageByUri(final PageMode mode, final Host host, final String pageUri) throws DotDataException, DotSecurityException {
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         final Language defaultLanguage = this.languageAPI.getDefaultLanguage();
         final Language language = request != null ?
                 WebAPILocator.getLanguageWebAPI().getLanguage(request) : defaultLanguage;
 
-        IHTMLPage htmlPage = this.htmlPageAssetAPI.getPageByPath(pageUri, host, language.getId(), mode.showLive);
+        final IHTMLPage htmlPage = this.htmlPageAssetAPI.getPageByPath(pageUri, host, language.getId(), mode.showLive);
 
         return htmlPage != null ? htmlPage : this.htmlPageAssetAPI.getPageByPath(pageUri, host, defaultLanguage.getId(), mode.showLive);
     }

@@ -609,8 +609,7 @@
                         return queryParam.startsWith('com.dotmarketing.htmlpage.language');
                     });
                     var languageId = languageQueryParam.split('=')[1];
-
-                    console.log('languageId', languageId);
+					
                     window.top.location = '/dotAdmin/#/edit-page/content?url=' + data['htmlPageReferer'].split('?')[0] + '&language_id=' + languageId;
                 }
 

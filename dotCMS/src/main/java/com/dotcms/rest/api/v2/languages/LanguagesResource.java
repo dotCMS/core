@@ -59,13 +59,13 @@ public class LanguagesResource {
     public Response  list(@Context final HttpServletRequest request, @QueryParam("contentInode") final String contentInode)
             throws DotDataException, DotSecurityException {
 
-        Logger.debug(this, String.format("listing languages %s", request.getRequestURI()));
+        Logger.debug(this, () -> String.format("listing languages %s", request.getRequestURI()));
 
         final InitDataObject init = webResource.init(true, request, true);
         final User user = init.getUser();
 
         final List<Language> languages = contentInode != null ?
-                languageAPI.getAvailableContentPageLanguages(contentInode, user) :
+                languageAPI.getAvailableContentLanguages(contentInode, user) :
                 languageAPI.getLanguages();
 
         return Response.ok(new ResponseEntityView(ImmutableList.copyOf(languages))).build();
