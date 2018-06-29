@@ -87,8 +87,8 @@ public class ThemeResource {
         Logger.debug(this,
                 "Getting the themes for the hostId: " + hostId);
 
-        final InitDataObject initData = this.webResource.init(null, true, request, true, null);
-        final User user = initData.getUser();
+        this.webResource.init(null, true, request, true, null);
+        final User systemUser = userAPI.getSystemUser();
         Host host;
 
         String hostIdToSearch = hostId != null ?
@@ -98,7 +98,7 @@ public class ThemeResource {
 
         if (UtilMethods.isSet(hostIdToSearch)){
             //Validate hostId is valid
-            host = hostAPI.find(hostIdToSearch, user, false);
+            host = hostAPI.find(hostIdToSearch, systemUser, false);
 
             if (!UtilMethods.isSet(host)){
                 return ExceptionMapperUtil
@@ -107,7 +107,7 @@ public class ThemeResource {
             }
         }else{
             //Validate hostId is valid
-            host = hostAPI.findDefaultHost(user, false);
+            host = hostAPI.findDefaultHost(systemUser, false);
             hostIdToSearch = host.getIdentifier();
         }
 
@@ -120,7 +120,7 @@ public class ThemeResource {
                 params.put(ThemePaginator.SEARCH_PARAMETER, searchParam);
             }
 
-            return this.paginationUtil.getPage(request, user, null, page, perPage, null,
+            return this.paginationUtil.getPage(request, systemUser, null, page, perPage, null,
                     OrderDirection.valueOf(direction), params);
         } catch (PaginationException e) {
             throw e.getCause();
@@ -149,8 +149,8 @@ public class ThemeResource {
         Logger.debug(this,
                 "Getting the theme by identifier: " + id);
 
-        final InitDataObject initData = this.webResource.init(null, true, request, true, null);
-        final User user = initData.getUser();
+        this.webResource.init(null, true, request, true, null);
+        final User systemUser = userAPI.getSystemUser();
 
 
         try {
@@ -158,7 +158,7 @@ public class ThemeResource {
                     ThemePaginator.ID_PARAMETER, id
             );
 
-            return this.paginationUtil.getPage(request, user, null, 0, -1, null,
+            return this.paginationUtil.getPage(request, systemUser, null, 0, -1, null,
                     OrderDirection.ASC, params);
         } catch (PaginationException e) {
             throw e.getCause();

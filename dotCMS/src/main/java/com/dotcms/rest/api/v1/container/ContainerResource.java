@@ -33,6 +33,7 @@ import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionLevel;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -84,6 +85,7 @@ public class ContainerResource implements Serializable {
     private final VersionableAPI versionableAPI;
     private final VelocityUtil velocityUtil;
     private final ShortyIdAPI shortyAPI;
+    private final UserAPI userAPI;
 
     public ContainerResource() {
         this(new WebResource(),
@@ -92,7 +94,8 @@ public class ContainerResource implements Serializable {
                 APILocator.getContainerAPI(),
                 APILocator.getVersionableAPI(),
                 VelocityUtil.getInstance(),
-                APILocator.getShortyAPI());
+                APILocator.getShortyAPI(),
+                APILocator.getUserAPI());
     }
 
     @VisibleForTesting
@@ -102,7 +105,8 @@ public class ContainerResource implements Serializable {
                              final ContainerAPI containerAPI,
                              final VersionableAPI versionableAPI,
                              final VelocityUtil velocityUtil,
-                             final ShortyIdAPI shortyAPI) {
+                             final ShortyIdAPI shortyAPI,
+                             final UserAPI userAPI) {
 
         this.webResource = webResource;
         this.paginationUtil = paginationUtil;
@@ -111,6 +115,7 @@ public class ContainerResource implements Serializable {
         this.versionableAPI = versionableAPI;
         this.velocityUtil = velocityUtil;
         this.shortyAPI = shortyAPI;
+        this.userAPI = userAPI;
     }
 
     /**
@@ -151,12 +156,12 @@ public class ContainerResource implements Serializable {
             @QueryParam(ContainerPaginator.HOST_PARAMETER_ID) final String hostId) {
 
         final InitDataObject initData = webResource.init(null, true, request, true, null);
-        final User user = initData.getUser();
 
         try {
+            final User systemUser = this.userAPI.getSystemUser();
             final Map<String, Object> extraParams = Maps.newHashMap();
             extraParams.put(ContainerPaginator.HOST_PARAMETER_ID, (Object) hostId);
-            return this.paginationUtil.getPage(request, user, filter, page, perPage, orderBy, OrderDirection.valueOf(direction),
+            return this.paginationUtil.getPage(request, systemUser, filter, page, perPage, orderBy, OrderDirection.valueOf(direction),
                     extraParams);
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
