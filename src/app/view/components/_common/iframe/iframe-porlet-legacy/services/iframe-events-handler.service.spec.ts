@@ -37,14 +37,17 @@ describe('DotIframeEventsHandler', () => {
                 detail: {
                     name: 'edit-page',
                     data: {
-                        url: 'some/url'
+                        url: 'some/url',
+                        content: {
+                            languageId: '2'
+                        }
                     }
                 }
             })
         );
 
         expect(dotLoadingIndicatorService.show).toHaveBeenCalledTimes(1);
-        expect(dotRouterService.goToEditPage).toHaveBeenCalledWith('some/url');
+        expect(dotRouterService.goToEditPage).toHaveBeenCalledWith('some/url', '2');
     });
 
     it('should create a contentlet', () => {

@@ -7,7 +7,7 @@
     </div>
 </ng-template>
 
-<dot-language-selector (selected)="changeLanguageHandler($event)"  [value]="pageState.viewAs.language" ></dot-language-selector>
+<dot-language-selector (selected)="changeLanguageHandler($event)"  [value]="pageState.viewAs.language" [contentInode]="pageState.page.inode"></dot-language-selector>
 
 <ng-template [ngIf]="isEnterpriseLicense$ | async">
     <dot-device-selector (selected)="changeDeviceHandler($event)" [value]="pageState.viewAs.device"></dot-device-selector>

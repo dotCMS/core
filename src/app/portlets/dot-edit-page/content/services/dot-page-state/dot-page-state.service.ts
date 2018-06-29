@@ -9,6 +9,8 @@ import { DotContentletLockerService } from '../../../../../api/services/dot-cont
 import { DotEditPageViewAs } from '../../../../../shared/models/dot-edit-page-view-as/dot-edit-page-view-as.model';
 import { Subject } from 'rxjs/Subject';
 import { take } from 'rxjs/operators';
+import { PageMode } from '../../../shared/models/page-mode.enum';
+import { map } from 'rxjs/operators';
 
 @Injectable()
 export class DotPageStateService {
@@ -67,12 +69,19 @@ export class DotPageStateService {
      * @returns {Observable<DotRenderedPageState>}
      * @memberof DotPageStateService
      */
-    get(url: string): Observable<DotRenderedPageState> {
-        return this.dotRenderHTMLService
-            .getEdit(url)
-            .map(
-                (page: DotRenderedPage) => new DotRenderedPageState(this.loginService.auth.loginAsUser || this.loginService.auth.user, page)
-            );
+    get(url: string, languageId?: string): Observable<DotRenderedPageState> {
+       return this.dotRenderHTMLService.get({
+               url: url,
+               languageId: languageId,
+               mode: PageMode.EDIT
+           })
+           .pipe(
+                map(
+                    (page: DotRenderedPage) =>
+                        new DotRenderedPageState(this.loginService.auth.loginAsUser || this.loginService.auth.user, page)
+                )
+           );
+;
     }
 
     private getLockMode(workingInode: string, lock: boolean): Observable<string> {

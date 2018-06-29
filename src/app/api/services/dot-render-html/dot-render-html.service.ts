@@ -70,13 +70,17 @@ export class DotRenderHTMLService {
     }
 
     public get(options: DotRenderPageOptions): Observable<DotRenderedPage> {
-        let params = { mode: this.getPageModeString(options.mode) };
+        let params: any = { mode: this.getPageModeString(options.mode) };
+
         if (options.viewAs) {
             params = {
                 ...params,
                 ...this.setOptionalViewAsParams(options.viewAs)
             };
+        } else if (options.languageId) {
+            params.language_id = options.languageId;
         }
+
         return this.coreWebService
             .requestView({
                 method: RequestMethod.Get,
@@ -106,6 +110,7 @@ export class DotRenderHTMLService {
 
 export interface DotRenderPageOptions {
     url: string;
-    mode: PageMode;
+    mode?: PageMode;
     viewAs?: DotEditPageViewAs;
+    languageId?: string;
 }

@@ -30,5 +30,27 @@ describe('DotLanguagesService', () => {
         );
 
         expect(result).toEqual([mockDotLanguage]);
+        expect(this.lastConnection.request.url).toContain('v2/languages');
+    });
+
+    it('should get Languages by content indode', () => {
+        let result;
+
+        this.dotLanguagesService.get('2').subscribe(res => {
+            result = res;
+        });
+
+        this.lastConnection.mockRespond(
+            new Response(
+                new ResponseOptions({
+                    body: {
+                        entity: [mockDotLanguage]
+                    }
+                })
+            )
+        );
+
+        expect(result).toEqual([mockDotLanguage]);
+        expect(this.lastConnection.request.url).toContain('v2/languages?contentInode=2');
     });
 });

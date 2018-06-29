@@ -53,7 +53,7 @@ export class DotIframeEventsHandler {
 
     private goToEditPage($event: CustomEvent): void {
         this.dotLoadingIndicatorService.show();
-        this.dotRouterService.goToEditPage($event.detail.data.url);
+        this.dotRouterService.goToEditPage($event.detail.data.url, $event.detail.data.content.languageId);
     }
 
     private editContentlet($event: CustomEvent): void {

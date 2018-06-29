@@ -60,10 +60,12 @@ class MockDotDeviceSelectorComponent {
 
 @Component({
     selector: 'dot-language-selector',
-    template: ''
+    template: '',
 })
 class MockDotLanguageSelectorComponent {
     @Input() value: DotLanguage;
+    @Input() contentInode: string;
+
     @Output() selected = new EventEmitter<DotLanguage>();
 }
 
@@ -193,6 +195,10 @@ describe('DotEditContentViewAsToolbarComponent', () => {
 
         it('should have Language selector', () => {
             expect(languageSelector).not.toBeNull();
+        });
+
+        it('should set contentInode in Language selector', () => {
+            expect(languageSelector.contentInode).toEqual('2');
         });
 
         it('should emit changes in Language', () => {

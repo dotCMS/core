@@ -103,4 +103,26 @@ describe('DotRenderHTMLService', () => {
         expect(lastConnection[0].request.url).toContain('/api/v1/page/render/about-us?mode=EDIT_MODE');
         expect(result).toEqual(mockDotRenderedPage);
     });
+
+    it('should get a rendered page in specific mode and language', () => {
+        let result: DotRenderedPage;
+        const param: DotRenderPageOptions = {
+            url: 'about-us',
+            languageId: '2',
+            mode: PageMode.EDIT
+        };
+        editPageService.get(param).subscribe((renderedPage: DotRenderedPage) => (result = renderedPage));
+
+        lastConnection[0].mockRespond(
+            new Response(
+                new ResponseOptions({
+                    body: {
+                        entity: mockDotRenderedPage
+                    }
+                })
+            )
+        );
+        expect(lastConnection[0].request.url).toContain('/api/v1/page/render/about-us?mode=EDIT_MODE&language_id=2');
+        expect(result).toEqual(mockDotRenderedPage);
+    });
 });

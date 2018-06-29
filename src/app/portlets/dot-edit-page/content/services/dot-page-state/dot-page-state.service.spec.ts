@@ -198,6 +198,32 @@ describe('DotPageStateService', () => {
             expect(lastConnection[0].request.url).toContain('/api/v1/page/render/hello/world?mode=EDIT_MODE');
         });
 
+        it('should get a page in a specific language', () => {
+            const { lockedBy, lockMessage, lockedByName, lockedOn, ...noLockedByPage } = mockDotPage;
+
+            service.get('/hello/world', '2').subscribe((updatedPageState: DotRenderedPageState) => {
+                expect(updatedPageState.page).toEqual(noLockedByPage);
+                expect(updatedPageState.state).toEqual({
+                    locked: false,
+                    mode: PageMode.PREVIEW,
+                    lockedByAnotherUser: false
+                });
+            });
+            lastConnection[0].mockRespond(
+                new Response(
+                    new ResponseOptions({
+                        body: {
+                            entity: {
+                                page: noLockedByPage
+                            }
+                        }
+                    })
+                )
+            );
+
+            expect(lastConnection[0].request.url).toContain('/api/v1/page/render/hello/world?mode=EDIT_MODE');
+        });
+
         describe('locked by another user', () => {
             beforeEach(() => {
                 spyOnProperty(loginService, 'auth', 'get').and.returnValue({

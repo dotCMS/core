@@ -18,11 +18,11 @@ export class DotLanguagesService {
      * @returns {Observable<DotLanguage[]>}
      * @memberof DotLanguagesService
      */
-    get(): Observable<DotLanguage[]> {
+    get(contentInode?: string): Observable<DotLanguage[]> {
         return this.coreWebService
             .requestView({
                 method: RequestMethod.Get,
-                url: 'v2/languages'
+                url: !contentInode ? 'v2/languages' : `v2/languages?contentInode=${contentInode}`
             })
             .pluck('entity');
     }

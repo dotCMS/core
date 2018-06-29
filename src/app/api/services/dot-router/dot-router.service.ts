@@ -28,8 +28,9 @@ export class DotRouterService {
         this.portletReload$.next(id);
     }
 
-    goToEditPage(url: string): Promise<boolean> {
-        return this.router.navigate(['/edit-page/content'], { queryParams: { url: url } });
+    goToEditPage(url: string, languageId?: string): Promise<boolean> {
+        return this.router.navigate(['/edit-page/content'],
+            { queryParams: !!languageId ? { url: url, language_id: languageId} : { url: url } });
     }
 
     /**

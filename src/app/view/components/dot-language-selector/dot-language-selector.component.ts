@@ -10,6 +10,7 @@ import { take } from 'rxjs/operators';
 })
 export class DotLanguageSelectorComponent implements OnInit {
     @Input() value: DotLanguage;
+    @Input() contentInode: string;
     @Output() selected = new EventEmitter<DotLanguage>();
 
     languagesOptions: DotLanguage[];
@@ -18,7 +19,7 @@ export class DotLanguageSelectorComponent implements OnInit {
 
     ngOnInit() {
         this.dotLanguagesService
-            .get()
+            .get(this.contentInode)
             .pipe(take(1))
             .subscribe((languages: DotLanguage[]) => {
                 this.languagesOptions = languages;

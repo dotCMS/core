@@ -32,7 +32,7 @@ export const mockDotPage: DotPage = {
     fileAsset: true,
     friendlyName: '',
     host: '',
-    inode: '',
+    inode: '2',
     name: '',
     systemHost: false,
     type: '',
