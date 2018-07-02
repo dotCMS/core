@@ -8,6 +8,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
@@ -66,7 +67,12 @@ public interface BatchAction <T> {
      * @return
      */
     default List <T> getObjectsForBatch(final ConcurrentMap<String, Object> context, final WorkflowActionClass actionClass){
-        return (List<T>) context.values();
+        final String actionletInstanceId = actionClass.getId();
+        final Object object = context.get(actionletInstanceId);
+        if(null == object) {
+            return Collections.emptyList();
+        }
+        return (List<T>) context.get(actionletInstanceId);
     }
 
 }
