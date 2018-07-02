@@ -1,5 +1,8 @@
 package com.dotmarketing.portlets.workflows.model;
 
+import static com.dotmarketing.business.APILocator.getRoleAPI;
+import static com.dotmarketing.business.APILocator.getWorkflowAPI;
+
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -11,12 +14,9 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-
 import java.util.List;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static com.dotmarketing.business.APILocator.getRoleAPI;
-import static com.dotmarketing.business.APILocator.getWorkflowAPI;
 public class WorkflowProcessor {
 
 	Contentlet contentlet;
@@ -34,6 +34,8 @@ public class WorkflowProcessor {
 	List<WorkflowActionClass> actionClasses;
 	ContentletDependencies    contentletDependencies;
 	private final AtomicBoolean abort  = new AtomicBoolean(false);
+
+	private ConcurrentMap<String,Object> actionsContext;
 
 	/**
 	 * True if the processor was aborted
@@ -75,7 +77,6 @@ public class WorkflowProcessor {
 	}
 
 
-
 	public Role getNextAssign() {
 		return nextAssign;
 	}
@@ -83,7 +84,6 @@ public class WorkflowProcessor {
 	public void setNextAssign(Role nextAssign) {
 		this.nextAssign = nextAssign;
 	}
-
 
 
 	public Role getPreviousAssign() {
@@ -110,9 +110,11 @@ public class WorkflowProcessor {
 		this.history = history;
 	}
 
+	public WorkflowProcessor(final Contentlet contentlet, final User firingUser) {
+       this(contentlet, firingUser, null);
+	}
 
-
-	public WorkflowProcessor(Contentlet contentlet, User firingUser) {
+	public WorkflowProcessor(final Contentlet contentlet, final User firingUser, final ConcurrentMap<String,Object> actionsContext) {
 		this.contentlet = contentlet;
 
 		try {
@@ -172,6 +174,8 @@ public class WorkflowProcessor {
 			if(task != null && UtilMethods.isSet(task.getId())){
 				history = getWorkflowAPI().findWorkflowHistory(task);
 			}
+
+			this.actionsContext = actionsContext;
 
 		} catch (Exception e) {
 			throw new DotWorkflowException(e.getMessage(),e);
@@ -262,5 +266,14 @@ public class WorkflowProcessor {
 
 	public boolean inProcess(){
 		return UtilMethods.isSet(action);
+	}
+
+	public boolean isRunningBulk(){
+		final Boolean runningBulk = Boolean.class.cast(getContentlet().getMap().get(Contentlet.WORKFLOW_BULK_KEY));
+		return runningBulk != null && runningBulk;
+	}
+
+	public ConcurrentMap<String,Object> getActionsContext() {
+		return actionsContext;
 	}
 }
