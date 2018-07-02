@@ -12,8 +12,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
-/***
- *
+/**
+ * This interface establishes the contact between the WorkflowAPI and any WorkFlowActionlet willing to add
+ * a In-Batch type of behavior to its own implementation.
  * @param <T>
  */
 public interface BatchAction <T> {
@@ -59,10 +60,13 @@ public interface BatchAction <T> {
 
     /**
      * This method must instruct the Batch Action how to extract the object out of the shared context.
+     * Again, default implemention that might require adjustments.
      * @param context
      * @param actionClass
      * @return
      */
-    List <T> getObjectsForBatch(final ConcurrentMap<String, Object> context, final WorkflowActionClass actionClass);
+    default List <T> getObjectsForBatch(final ConcurrentMap<String, Object> context, final WorkflowActionClass actionClass){
+        return (List<T>) context.values();
+    }
 
 }

@@ -270,7 +270,7 @@ public class WorkflowProcessor {
 
 	public boolean isRunningBulk(){
 		final Boolean runningBulk = Boolean.class.cast(getContentlet().getMap().get(Contentlet.WORKFLOW_BULK_KEY));
-		return runningBulk == null ? false : runningBulk;
+		return runningBulk != null && runningBulk;
 	}
 
 	public ConcurrentMap<String,Object> getActionsContext() {

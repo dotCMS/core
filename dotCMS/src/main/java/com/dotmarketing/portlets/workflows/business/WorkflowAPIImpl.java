@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.workflows.business;
 
+import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.*;
+
 import com.dotcms.api.system.event.SystemMessageEventUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -1178,9 +1180,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
             final Actionlet actionlet = AnnotationUtils.
                     getBeanAnnotation(ReflectionUtils.getClassFor(actionClass.getClazz()), Actionlet.class);
 
-                isSave        |= (null != actionlet)?actionlet.save()       :false;
-                isPublish     |= (null != actionlet)?actionlet.publish()    :false;
-                isPushPublish |= (null != actionlet)?actionlet.pushPublish():false;
+                isSave        |= (null != actionlet) && actionlet.save();
+                isPublish     |= (null != actionlet) && actionlet.publish();
+                isPushPublish |= (null != actionlet) && actionlet.pushPublish();
         }
 
 	    action.setSaveActionlet(isSave);
@@ -2267,6 +2269,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 									actionClass.getName()
 							), e
 					);
+					// We assume the entire batch is has failed. So break;
+					break;
 				}
 			}
 		}
@@ -2318,13 +2322,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	private Contentlet applyAdditionalParams(final AdditionalParamsBean additionalParamsBean, Contentlet contentlet){
 		if(UtilMethods.isSet(additionalParamsBean) && UtilMethods.isSet(additionalParamsBean.getPushPublishBean()) ){
 			final PushPublishBean pushPublishBean = additionalParamsBean.getPushPublishBean();
-			contentlet.setStringProperty("wfPublishDate", pushPublishBean.getPublishDate());
-			contentlet.setStringProperty("wfPublishTime", pushPublishBean.getPublishTime());
-			contentlet.setStringProperty("wfExpireDate", pushPublishBean.getExpireDate());
-			contentlet.setStringProperty("wfExpireTime", pushPublishBean.getExpireTime());
-			contentlet.setStringProperty("wfNeverExpire", pushPublishBean.getNeverExpire());
-			contentlet.setStringProperty("whereToSend", pushPublishBean.getWhereToSend());
-			contentlet.setStringProperty("forcePush", pushPublishBean.getForcePush());
+			contentlet.setStringProperty(WF_PUBLISH_DATE, pushPublishBean.getPublishDate());
+			contentlet.setStringProperty(WF_PUBLISH_TIME, pushPublishBean.getPublishTime());
+			contentlet.setStringProperty(WF_EXPIRE_DATE, pushPublishBean.getExpireDate());
+			contentlet.setStringProperty(WF_EXPIRE_TIME, pushPublishBean.getExpireTime());
+			contentlet.setStringProperty(WF_NEVER_EXPIRE, pushPublishBean.getNeverExpire());
+			contentlet.setStringProperty(WHERE_TO_SEND, pushPublishBean.getWhereToSend());
+			contentlet.setStringProperty(FORCE_PUSH, pushPublishBean.getForcePush());
 		}
 		return contentlet;
 	}

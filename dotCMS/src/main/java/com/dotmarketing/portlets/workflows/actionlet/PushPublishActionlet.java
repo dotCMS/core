@@ -30,6 +30,13 @@ import java.util.stream.Stream;
 @Actionlet(pushPublish = true)
 public class PushPublishActionlet extends WorkFlowActionlet implements BatchAction <String>  {
 
+	public static final String WF_PUBLISH_DATE = "wfPublishDate";
+	public static final String WF_PUBLISH_TIME = "wfPublishTime";
+	public static final String WF_EXPIRE_DATE = "wfExpireDate";
+	public static final String WF_EXPIRE_TIME = "wfExpireTime";
+	public static final String WF_NEVER_EXPIRE = "wfNeverExpire";
+	public static final String WHERE_TO_SEND = "whereToSend";
+	public static final String FORCE_PUSH = "forcePush";
 	private PublisherAPI publisherAPI = PublisherAPI.getInstance();
 
 	/**
@@ -125,15 +132,16 @@ public class PushPublishActionlet extends WorkFlowActionlet implements BatchActi
 	private void doPushPublish(final Map<String,String> pushPublishData, final List<String> identifiers, final User user)
 			throws DotDataException, ParseException, DotPublisherException {
 
-			final String contentPushPublishDate = pushPublishData.get("wfPublishDate");
-			final String contentPushPublishTime = pushPublishData.get("wfPublishTime");
-			final String contentPushExpireDate = pushPublishData.get("wfExpireDate");
-			final String contentPushExpireTime = pushPublishData.get("wfExpireTime");
-			final boolean contentPushNeverExpire =
-					"on".equals(pushPublishData.get("wfNeverExpire")) || "true"
-							.equals(pushPublishData.get("wfNeverExpire"));
-			final String whoToSendTmp = pushPublishData.get("whereToSend");
-			final String forcePushStr = pushPublishData.get("forcePush");
+			final String contentPushPublishDate = pushPublishData.get(WF_PUBLISH_DATE);
+			final String contentPushPublishTime = pushPublishData.get(WF_PUBLISH_TIME);
+			final String contentPushExpireDate = pushPublishData.get(WF_EXPIRE_DATE);
+			final String contentPushExpireTime = pushPublishData.get(WF_EXPIRE_TIME);
+			final String contentNeverExpire = pushPublishData.get(WF_NEVER_EXPIRE);
+			final boolean contentPushNeverExpire = ("on".equals(contentNeverExpire) ||
+					  "true".equals(contentNeverExpire)
+			);
+			final String whoToSendTmp = pushPublishData.get(WHERE_TO_SEND);
+			final String forcePushStr = pushPublishData.get(FORCE_PUSH);
 			final boolean forcePush = "true".equals(forcePushStr);
 			final String[] whereToSend = whoToSendTmp.split(",");
 			final List<Environment> envsToSendTo = Stream.of(whereToSend).map(id -> {
@@ -164,25 +172,27 @@ public class PushPublishActionlet extends WorkFlowActionlet implements BatchActi
 			}
 	}
 
+
+
 	private Map<String,String> getPushPublishDataAsMap(final Contentlet contentlet){
 		final Map<String,String> map = new HashMap<>();
-        map.put("wfPublishDate",contentlet.getStringProperty("wfPublishDate"));
-		map.put("wfPublishTime",contentlet.getStringProperty("wfPublishTime"));
-		map.put("wfExpireDate",contentlet.getStringProperty("wfExpireDate"));
-		map.put("wfExpireTime",contentlet.getStringProperty("wfExpireTime"));
-		map.put("wfNeverExpire",contentlet.getStringProperty("wfNeverExpire"));
-		map.put("whereToSend",contentlet.getStringProperty("whereToSend"));
-		map.put("forcePush",contentlet.getStringProperty("forcePush"));
+        map.put(WF_PUBLISH_DATE,contentlet.getStringProperty(WF_PUBLISH_DATE));
+		map.put(WF_PUBLISH_TIME,contentlet.getStringProperty(WF_PUBLISH_TIME));
+		map.put(WF_EXPIRE_DATE,contentlet.getStringProperty(WF_EXPIRE_DATE));
+		map.put(WF_EXPIRE_TIME,contentlet.getStringProperty(WF_EXPIRE_TIME));
+		map.put(WF_NEVER_EXPIRE,contentlet.getStringProperty(WF_NEVER_EXPIRE));
+		map.put(WHERE_TO_SEND,contentlet.getStringProperty(WHERE_TO_SEND));
+		map.put(FORCE_PUSH,contentlet.getStringProperty(FORCE_PUSH));
 		return map;
 	}
 
 	static class PushPublishBatchData {
 
-		private List<String> identifiers;
+		private final List<String> identifiers;
 
-		private List<String> inodes;
+		private final List<String> inodes;
 
-        private Map<String,String> data;
+        private final Map<String,String> data;
 
 		PushPublishBatchData( final Map<String,String> data) {
 			this.data = data;
