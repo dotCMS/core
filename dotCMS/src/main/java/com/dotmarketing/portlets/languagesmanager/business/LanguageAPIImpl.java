@@ -3,10 +3,16 @@ package com.dotmarketing.portlets.languagesmanager.business;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
+import com.dotcms.rendering.velocity.util.VelocityUtil;
+
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.languagesmanager.model.DisplayedLanguage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
 import com.dotmarketing.util.Logger;
@@ -21,6 +27,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.velocity.tools.view.context.ViewContext;
@@ -349,6 +356,18 @@ public class LanguageAPIImpl implements LanguageAPI {
     public Language getFallbackLanguage(final String languageCode) {
         return this.factory.getFallbackLanguage(languageCode);
     }
+
+	@Override
+	public List<Language> getAvailableContentLanguages(final String contentletInode, final User user)
+			throws DotSecurityException, DotDataException {
+
+		final Contentlet contentlet = APILocator.getContentletAPI().find(contentletInode, user, false);
+		final List<DisplayedLanguage> availableContentPageLanguages = VelocityUtil.getAvailableContentPageLanguages(contentlet);
+
+		return availableContentPageLanguages.stream()
+				.map(displayedLanguage -> displayedLanguage.getLanguage())
+				.collect(CollectionsUtils.toImmutableList());
+	}
 
     /**
      * Utility method used to get an instance of the {@link LanguageVariableAPI}. This is used to

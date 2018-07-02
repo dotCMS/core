@@ -1429,6 +1429,11 @@ public interface ContentletAPI {
 	public boolean isInodeIndexed(String inode, boolean live);
 
 	/**
+	 * This version optionally adds a +live:true to the search if parameter live is true.
+	 */
+	public boolean isInodeIndexed(String inode, boolean live, int secondsToWait);
+
+	/**
 	 * Waits until the contentlet with the given inode is indexed with the given status conditions.
 	 * <p><strong>Example of the resulting query when using this method:</strong>
 	 * +inode:﻿38a3f133-85e1-4b07-b55e-179f38303b90 +live:false +working:true </p> <p>This method

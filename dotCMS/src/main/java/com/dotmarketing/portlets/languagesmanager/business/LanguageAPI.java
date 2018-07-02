@@ -5,8 +5,12 @@ import java.util.Map;
 import java.util.Set;
 
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.languagesmanager.model.DisplayedLanguage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
+import com.liferay.portal.model.User;
 
 /**
  * Provides access to information related to the different languages that can be added to the
@@ -237,6 +241,16 @@ public interface LanguageAPI {
      */
     public Language getFallbackLanguage(final String languageCode);
 
-
+	/**
+	 * Return all the languages for a specific contentletInode
+	 *
+	 * @param contentletInode
+	 * @param user
+	 * @return
+	 * @throws DotSecurityException if the user dont have read permission in the contentlet
+	 * @throws DotDataException
+	 */
+	public List<Language> getAvailableContentLanguages(final String contentletInode, final User user)
+			throws DotSecurityException, DotDataException;
 
 }

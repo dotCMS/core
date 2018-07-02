@@ -1193,6 +1193,8 @@ public interface ContentletAPIPostHook {
 	 */
 	public default void isInodeIndexed(String inode, boolean live, boolean returnValue){}
 
+	public default void isInodeIndexed(String inode, boolean live, int secondsToWait, boolean returnValue) {}
+
 	public default void isInodeIndexed(String inode, boolean live, boolean working, boolean returnValue) {}
 
 	/**

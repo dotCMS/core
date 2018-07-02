@@ -35,7 +35,7 @@ public final class DotSQLGeneratorTask extends Task {
 			Class.forName("oracle.jdbc.driver.OracleDriver");
 			Class.forName("com.mysql.jdbc.Driver");
 			Class.forName("org.postgresql.Driver");
-			Class.forName("net.sourceforge.jtds.jdbc.Driver");	
+			Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
 			Class.forName("org.h2.Driver");
 		}
 		catch(Exception e){
@@ -52,7 +52,7 @@ public final class DotSQLGeneratorTask extends Task {
 				cfg.addResource("com/dotmarketing/beans/DotCMSId.hbm.xml");
 			}else if (dialect.equals("com.dotcms.repackage.net.sf.hibernate.dialect.SybaseDialect")){
 				cfg.addResource("com/dotmarketing/beans/DotCMSId.hbm.xml");
-                cfg.setProperty("hibernate.connection.driver_class", "net.sourceforge.jtds.jdbc.Driver");
+                cfg.setProperty("hibernate.connection.driver_class", "com.microsoft.sqlserver.jdbc.SQLServerDriver");
 			}else if(dialect.equals("com.dotcms.repackage.net.sf.hibernate.dialect.OracleDialect")){
 				cfg.addResource("com/dotmarketing/beans/DotCMSSeq.hbm.xml");
                 cfg.setProperty("hibernate.connection.driver_class", "oracle.jdbc.driver.OracleDriver");
