@@ -15,7 +15,7 @@ import com.dotmarketing.util.Logger;
 public class ParamExceptionMapper implements ExceptionMapper<ParamException> {
 
     @Override
-    public Response toResponse(ParamException exception)
+    public Response toResponse(final ParamException exception)
     {
         //Log into our logs first.
         Logger.warn(this.getClass(), exception.getMessage(), exception);
