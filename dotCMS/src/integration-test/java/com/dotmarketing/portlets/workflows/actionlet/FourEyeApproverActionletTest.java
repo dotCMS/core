@@ -20,6 +20,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
@@ -64,7 +65,6 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
     private static User systemUser;
     private static CreateSchemeStepActionResult schemeStepActionResult = null;
     private static ContentType type = null;
-    private static Contentlet contentlet = null;
     private static User publisher1;
     private static User publisher2;
 
@@ -141,57 +141,86 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
     @Test
     public void contentApprovalWithTwoApprovers()
             throws DotSecurityException, DotDataException {
-        // Create a contentlet first and save it
-        final long languageId = languageAPI.getDefaultLanguage().getId();
-        final Contentlet cont = new Contentlet();
-        cont.setContentTypeId(type.id());
-        cont.setOwner(APILocator.systemUser().toString());
-        cont.setModDate(new Date());
-        cont.setLanguageId(languageId);
-        cont.setStringProperty("title", "4-Eye Approval Test Title");
-        cont.setStringProperty("txt", "4-Eye Approval Test Text");
-        cont.setHost("48190c8c-42c4-46af-8d1a-0cd5db894797");
-        cont.setFolder("b37bed19-b1fd-497d-be5e-f8cc33c3fb8d");
-        final Contentlet contentlet1 = contentletAPI.checkin(cont, systemUser, false);
-        Assert.assertFalse("The contentlet cannot be live, it has just been created.",
-                contentlet1.isLive());
 
-        // Set the appropriate workflow action to the contentlet
-        contentlet1.setActionId(
-                schemeStepActionResult.getAction().getId());
-        contentlet1.setStringProperty("title", "Test Save");
-        contentlet1.setStringProperty("txt", "Test Save Text");
+        Contentlet contentletToCleanUp = null;
 
-        // Triggering the save content action
-        WorkflowProcessor processor =
-                workflowAPI.fireWorkflowPreCheckin(contentlet1, publisher1);
-        workflowAPI.fireWorkflowPostCheckin(processor);
-        Contentlet processedContentlet = processor.getContentlet();
+        try {
+            // Create a contentlet first and save it
+            final long languageId = languageAPI.getDefaultLanguage().getId();
+            final Contentlet cont = new Contentlet();
+            cont.setContentTypeId(type.id());
+            cont.setOwner(APILocator.systemUser().toString());
+            cont.setModDate(new Date());
+            cont.setLanguageId(languageId);
+            cont.setStringProperty("title", "4-Eye Approval Test Title");
+            cont.setStringProperty("txt", "4-Eye Approval Test Text");
+            cont.setHost("48190c8c-42c4-46af-8d1a-0cd5db894797");
+            cont.setFolder("b37bed19-b1fd-497d-be5e-f8cc33c3fb8d");
+            Contentlet contentlet1 = contentletAPI.checkin(cont, systemUser, false);
+            Assert.assertFalse("The contentlet cannot be live, it has just been created.",
+                    contentlet1.isLive());
 
-        // The contentlet MUST NOT be live yet, it needs one more approval
-        contentletAPI.isInodeIndexed(processedContentlet.getInode(), 6);
-        final Contentlet contentlet2 = contentletAPI
-                .findContentletByIdentifier(processedContentlet.getIdentifier(),
-                        false, languageId, systemUser, false);
-        Assert.assertFalse("The contentlet cannot be live, it needs 1 more approver.",
-                contentlet2.isLive());
+            // Set the appropriate workflow action to the contentlet
+            contentlet1.setActionId(
+                    schemeStepActionResult.getAction().getId());
+            contentlet1.setStringProperty("title", "Test Save");
+            contentlet1.setStringProperty("txt", "Test Save Text");
 
-        processor = workflowAPI.fireWorkflowPreCheckin(contentlet2, publisher2);
-        workflowAPI.fireWorkflowPostCheckin(processor);
-        processedContentlet = processor.getContentlet();
+            // Triggering the four eyes action
+            WorkflowProcessor processor =
+                    workflowAPI.fireWorkflowPreCheckin(contentlet1, publisher1);
+            workflowAPI.fireWorkflowPostCheckin(processor);
+            Contentlet processedContentlet = processor.getContentlet();
 
-        // The contentlet MUST be live now as it has been approved by another user
-        contentletAPI.isInodeIndexed(processedContentlet.getInode(), true, 6);
-        final Contentlet contentlet3 = contentletAPI
-                .findContentletByIdentifier(processedContentlet.getIdentifier(),
-                        false, languageId, systemUser, false);
-        Assert.assertTrue("The contentlet MUST be live, it has all the approvers.",
-                contentlet3.isLive());
+            // The contentlet MUST NOT be live yet, it needs one more approval
+            contentletAPI.isInodeIndexed(processedContentlet.getInode(), 6);
+            ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI()
+                    .getContentletVersionInfo(processedContentlet.getIdentifier(), languageId);
+            Assert.assertNotNull(contentletVersionInfo);
+            Assert.assertNull("The contentlet cannot be live, it needs 1 more approver.",
+                    contentletVersionInfo.getLiveInode());
+            Assert.assertNotNull("The contentlet should be working, it needs 1 more approver.",
+                    contentletVersionInfo.getWorkingInode());
 
-        // Cleanup
-        contentlet = contentlet3;
-        contentletAPI.archive(contentlet3, systemUser, false);
-        contentletAPI.delete(contentlet3, systemUser, false);
+            // Triggering the four eyes action
+            Contentlet contentlet2 = contentletAPI
+                    .find(contentletVersionInfo.getWorkingInode(), systemUser, false);
+            contentlet2.setActionId(
+                    schemeStepActionResult.getAction().getId());
+            processor = workflowAPI.fireWorkflowPreCheckin(contentlet2, publisher2);
+            workflowAPI.fireWorkflowPostCheckin(processor);
+            processedContentlet = processor.getContentlet();
+
+            // The contentlet MUST be live now as it has been approved by another user
+            contentletAPI.isInodeIndexed(processedContentlet.getInode(), true, 6);
+            contentletVersionInfo = APILocator.getVersionableAPI()
+                    .getContentletVersionInfo(processedContentlet.getIdentifier(), languageId);
+            Assert.assertNotNull(contentletVersionInfo);
+            Assert.assertNotNull("The contentlet MUST be live, it has all the approvers",
+                    contentletVersionInfo.getLiveInode());
+            Assert.assertNotNull("The contentlet should be working also.",
+                    contentletVersionInfo.getWorkingInode());
+
+            Contentlet contentlet3 = contentletAPI
+                    .findContentletByIdentifier(processedContentlet.getIdentifier(),
+                            true, languageId, systemUser, false);
+            Assert.assertNotNull(contentlet3);
+            Assert.assertTrue("The contentlet MUST be live, it has all the approvers.",
+                    contentlet3.isLive());
+
+            //For clean up
+            contentletToCleanUp = contentlet3;
+        } finally {
+            // Cleanup
+            if (null != contentletToCleanUp) {
+                if (contentletToCleanUp.isLive()) {
+                    contentletAPI.unpublish(contentletToCleanUp, systemUser, false);
+                }
+                contentletAPI.archive(contentletToCleanUp, systemUser, false);
+                contentletAPI.delete(contentletToCleanUp, systemUser, false);
+            }
+        }
+
     }
 
     @Test
