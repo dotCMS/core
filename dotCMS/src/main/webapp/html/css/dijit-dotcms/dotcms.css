@@ -11705,10 +11705,18 @@ a.category_higlighted, a.tag_higlighted {
   font-weight: bolder;
 }
 
+.related-content-dialog{
+	  background: url('/html/images/backgrounds/relate-content-dia.png') !important;
+	  background-position: left;  
+	  background-repeat:repeat-y;
+	  width:90%;
+	  height:90%;
+	  
+}
 .related-content-dialog .dijitDialogPaneContent {
   padding: 0;
-  width:100%;
-  overflow-y:scroll;
+
+
 }
 
 .related-content-dialog .portlet-sidebar-wrapper {
@@ -11721,8 +11729,8 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .related-content-form {
-  width: 900px;
-  height: 500px;
+  width: 1000px;
+  height: 660px;
 }
 
 .context-menu {
