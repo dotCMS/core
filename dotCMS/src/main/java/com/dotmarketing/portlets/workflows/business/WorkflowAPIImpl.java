@@ -2174,7 +2174,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		final int maxExceptions = Config.getIntProperty(MAX_EXCEPTIONS_REPORTED_ON_BULK_ACTIONS, MAX_EXCEPTIONS_REPORTED_ON_BULK_ACTIONS_DEFAULT);
 
-		final ConcurrentMap<String,Object> bulkActionsContext = new ConcurrentHashMap<>();
+		//Actions Shared context.
+		final ConcurrentMap<String,Object> actionsContext = new ConcurrentHashMap<>();
 
 		final AtomicLong successCount = new AtomicLong();
 
@@ -2201,7 +2202,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 								lock.unlock();
 							}
 						}
-					}, bulkActionsContext)
+					}, actionsContext)
 				)
 			);
 		}
@@ -2214,8 +2215,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			}
 		}
 
-		//Actions which implement the interface BatchAction are executed at the end
-		executeBatchActions(user, action, bulkActionsContext, (list, e) -> {
+		//Actions which implement the interface BatchAction are shared between threads using the actionsContext
+		executeBatchActions(user, action, actionsContext, (list, e) -> {
 
 			list.forEach(o -> {
 						fails.add(ActionFail.newInstance(user, o.toString(), e));
@@ -2240,14 +2241,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 * Also gathers any exception the might result of an internal error while processing the actions getting executed as a single batch.
 	 * @param user
 	 * @param action
-	 * @param batchActionContext
+	 * @param actionsContext
 	 * @param failsConsumer
 	 * @throws DotDataException
 	 */
 	private void executeBatchActions(
 			final User user,
 			final WorkflowAction action,
-			final ConcurrentMap<String, Object> batchActionContext,
+			final ConcurrentMap<String, Object> actionsContext,
 			final BiConsumer<List<?>, Exception> failsConsumer) throws DotDataException {
 
 		final List<WorkflowActionClass> actionClasses = this.findActionClasses(action);
@@ -2256,9 +2257,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			if (actionlet instanceof BatchAction) {
 				final Map<String, WorkflowActionClassParameter> params = findParamsForActionClass(actionClass);
 				final BatchAction batchAction = BatchAction.class.cast(actionlet);
-				final List <?> objects = batchAction.getObjectsForBatch(batchActionContext, actionClass);
+				final List <?> objects = batchAction.getObjectsForBatch(actionsContext, actionClass);
 				try {
-					batchAction.executeBatchAction(user, batchActionContext, actionClass, params);
+					batchAction.executeBatchAction(user, actionsContext, actionClass, params);
 				} catch (Exception e) {
 					failsConsumer.accept(objects, e);
 					Logger.error(getClass(),

@@ -35,7 +35,7 @@ public class WorkflowProcessor {
 	ContentletDependencies    contentletDependencies;
 	private final AtomicBoolean abort  = new AtomicBoolean(false);
 
-	private ConcurrentMap<String,Object> batchActionContext;
+	private ConcurrentMap<String,Object> actionsContext;
 
 	/**
 	 * True if the processor was aborted
@@ -77,7 +77,6 @@ public class WorkflowProcessor {
 	}
 
 
-
 	public Role getNextAssign() {
 		return nextAssign;
 	}
@@ -85,7 +84,6 @@ public class WorkflowProcessor {
 	public void setNextAssign(Role nextAssign) {
 		this.nextAssign = nextAssign;
 	}
-
 
 
 	public Role getPreviousAssign() {
@@ -116,7 +114,7 @@ public class WorkflowProcessor {
        this(contentlet, firingUser, null);
 	}
 
-	public WorkflowProcessor(final Contentlet contentlet, final User firingUser, final ConcurrentMap<String,Object> batchActionletContext) {
+	public WorkflowProcessor(final Contentlet contentlet, final User firingUser, final ConcurrentMap<String,Object> actionsContext) {
 		this.contentlet = contentlet;
 
 		try {
@@ -177,7 +175,7 @@ public class WorkflowProcessor {
 				history = getWorkflowAPI().findWorkflowHistory(task);
 			}
 
-			this.batchActionContext = batchActionletContext;
+			this.actionsContext = actionsContext;
 
 		} catch (Exception e) {
 			throw new DotWorkflowException(e.getMessage(),e);
@@ -275,7 +273,7 @@ public class WorkflowProcessor {
 		return runningBulk == null ? false : runningBulk;
 	}
 
-	public ConcurrentMap<String,Object> getBatchActionContext() {
-		return batchActionContext;
+	public ConcurrentMap<String,Object> getActionsContext() {
+		return actionsContext;
 	}
 }

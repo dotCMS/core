@@ -78,7 +78,7 @@ public class PushPublishActionlet extends WorkFlowActionlet implements BatchActi
 
 		 final String actionletInstanceId = actionClass.getId();
 		 final Contentlet contentlet = processor.getContentlet();
-		 final ConcurrentMap<String,Object> context = processor.getBatchActionContext();
+		 final ConcurrentMap<String,Object> context = processor.getActionsContext();
 		 context.computeIfAbsent(actionletInstanceId, key ->
 		    new PushPublishBatchData(getPushPublishDataAsMap(contentlet))
 		 );
@@ -125,16 +125,16 @@ public class PushPublishActionlet extends WorkFlowActionlet implements BatchActi
 	private void doPushPublish(final Map<String,String> pushPublishData, final List<String> identifiers, final User user)
 			throws DotDataException, ParseException, DotPublisherException {
 
-			final String _contentPushPublishDate = pushPublishData.get("wfPublishDate");
-			final String _contentPushPublishTime = pushPublishData.get("wfPublishTime");
-			final String _contentPushExpireDate = pushPublishData.get("wfExpireDate");
-			final String _contentPushExpireTime = pushPublishData.get("wfExpireTime");
-			final boolean _contentPushNeverExpire =
+			final String contentPushPublishDate = pushPublishData.get("wfPublishDate");
+			final String contentPushPublishTime = pushPublishData.get("wfPublishTime");
+			final String contentPushExpireDate = pushPublishData.get("wfExpireDate");
+			final String contentPushExpireTime = pushPublishData.get("wfExpireTime");
+			final boolean contentPushNeverExpire =
 					"on".equals(pushPublishData.get("wfNeverExpire")) || "true"
 							.equals(pushPublishData.get("wfNeverExpire"));
 			final String whoToSendTmp = pushPublishData.get("whereToSend");
 			final String forcePushStr = pushPublishData.get("forcePush");
-			final boolean forcePush = (forcePushStr != null && forcePushStr.equals("true"));
+			final boolean forcePush = "true".equals(forcePushStr);
 			final String[] whereToSend = whoToSendTmp.split(",");
 			final List<Environment> envsToSendTo = Stream.of(whereToSend).map(id -> {
 				try {
@@ -148,16 +148,16 @@ public class PushPublishActionlet extends WorkFlowActionlet implements BatchActi
 
 			final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-H-m");
 			final Date publishDate = dateFormat
-					.parse(_contentPushPublishDate + "-" + _contentPushPublishTime);
+					.parse(contentPushPublishDate + "-" + contentPushPublishTime);
 
 			Bundle bundle = new Bundle(null, publishDate, null, user.getUserId(), forcePush);
 			APILocator.getBundleAPI().saveBundle(bundle, envsToSendTo);
 
 			publisherAPI.addContentsToPublish(identifiers, bundle.getId(), publishDate, user);
-			if (!_contentPushNeverExpire && (!"".equals(_contentPushExpireDate.trim()) && !""
-					.equals(_contentPushExpireTime.trim()))) {
+			if (!contentPushNeverExpire && (!"".equals(contentPushExpireDate.trim()) && !""
+					.equals(contentPushExpireTime.trim()))) {
 				Date expireDate = dateFormat
-						.parse(_contentPushExpireDate + "-" + _contentPushExpireTime);
+						.parse(contentPushExpireDate + "-" + contentPushExpireTime);
 				bundle = new Bundle(null, publishDate, expireDate, user.getUserId(), forcePush);
 				APILocator.getBundleAPI().saveBundle(bundle, envsToSendTo);
 				publisherAPI.addContentsToUnpublish(identifiers, bundle.getId(), expireDate, user);
