@@ -1788,7 +1788,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@Override
 	public WorkflowProcessor fireWorkflowPreCheckin(final Contentlet contentlet, final User user) throws DotDataException,DotWorkflowException, DotContentletValidationException{
-		return fireWorkflowPreCheckin(contentlet, user);
+		return fireWorkflowPreCheckin(contentlet, user, null);
 	}
 
 
