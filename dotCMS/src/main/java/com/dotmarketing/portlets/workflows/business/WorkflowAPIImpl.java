@@ -2221,7 +2221,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 						fails.add(ActionFail.newInstance(user, o.toString(), e));
 					}
 			);
-
+			//Initially When adding up to the list of batch actions we assume a success.
+			//So we need to Update success count in case something has gone wrong internally.
+			//This assumes that if one single action fails internally the whole batch has failed.
 			successCount.updateAndGet(value -> value - list.size());
 		});
 
@@ -2234,7 +2236,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 
 	/**
-	 *
+	 * This method takes the all the Batch actions saved in the batchActionContext and executes them
+	 * Also gathers any exception the might result of an internal error while processing the actions getting executed as a single batch.
 	 * @param user
 	 * @param action
 	 * @param batchActionContext
@@ -2286,6 +2289,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	}
 
+	/**
+	 * Applies the values captured via pop-up on the UI (If any) And gets them applied to the contentlet through the dependencies builder.
+	 * @param additionalParamsBean
+	 * @param dependenciesBuilder
+	 * @return
+	 */
 	private ContentletDependencies.Builder applyAdditionalParams(final AdditionalParamsBean additionalParamsBean, ContentletDependencies.Builder dependenciesBuilder){
 		if(UtilMethods.isSet(additionalParamsBean) && UtilMethods.isSet(additionalParamsBean.getAssignCommentBean()) ){
 			final AssignCommentBean assignCommentBean = additionalParamsBean.getAssignCommentBean();
@@ -2299,6 +2308,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return dependenciesBuilder;
 	}
 
+	/**
+	 * Applies the values captured via pop-up on the UI (If any) And gets them applied directly to the contentlet.
+	 * @param additionalParamsBean
+	 * @param contentlet
+	 * @return
+	 */
 	private Contentlet applyAdditionalParams(final AdditionalParamsBean additionalParamsBean, Contentlet contentlet){
 		if(UtilMethods.isSet(additionalParamsBean) && UtilMethods.isSet(additionalParamsBean.getPushPublishBean()) ){
 			final PushPublishBean pushPublishBean = additionalParamsBean.getPushPublishBean();
