@@ -156,11 +156,11 @@ public class PageResource {
     public Response render(@Context final HttpServletRequest request,
                                    @Context final HttpServletResponse response,
                                    @PathParam("uri") final String uri,
-                                   @QueryParam("mode") @DefaultValue("LIVE_ADMIN") final String modeParam,
+                                   @QueryParam("mode") final String modeParam,
                                    @QueryParam(WebKeys.CMS_PERSONA_PARAMETER) final String personaId,
                                    @QueryParam("language_id") final String languageId,
                                    @QueryParam("device_inode") final String deviceInode,
-                                   @QueryParam("live") final Boolean live) throws DotSecurityException, DotDataException {
+                                   @QueryParam("live") @DefaultValue("false") final Boolean live) throws DotSecurityException, DotDataException {
 
         Logger.debug(this, String.format(
                 "Rendering page: uri -> %s mode-> %s language -> persona -> %s device_inode -> %s live -> %b",
@@ -171,9 +171,7 @@ public class PageResource {
         final User user = auth.getUser();
         Response res = null;
 
-        final String modeStr = modeParam != null ? modeParam : (live ? PageMode.LIVE : PageMode.PREVIEW_MODE).toString();
-        final PageMode mode = PageMode.get(modeStr);
-        PageMode.setPageMode(request, mode);
+        final PageMode mode = modeParam != null ? PageMode.get(modeParam) : (live ? PageMode.LIVE : null);
 
         try {
 
@@ -186,7 +184,8 @@ public class PageResource {
             responseBuilder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, " +
                     "Content-Type, " + "Accept, Authorization");
 
-            final Host host = APILocator.getHostAPI().find(pageRendered.getPageInfo().getPage().getHost(), user, mode.respectAnonPerms);
+            final Host host = APILocator.getHostAPI().find(pageRendered.getPageInfo().getPage().getHost(), user,
+                    PageMode.get(request.getSession()).respectAnonPerms);
             request.setAttribute(WebKeys.CURRENT_HOST, host);
             request.getSession().setAttribute(WebKeys.CURRENT_HOST, host);
 
