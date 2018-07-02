@@ -162,7 +162,7 @@ dependencies {
 
     providedCompile "javax.servlet:javax.servlet-api:3.1.0"
     providedCompile fileTree("../libs/buildlibs").include('**/*.jar')
-    providedCompile fileTree("../libs/buildlibs").include('mail.jar', 'mysql-conn*.jar', 'ojdbc*.jar', 'postgres*.jar', 'sqljdbc*.jar')
+    providedCompile fileTree("../libs/buildlibs").include('mail.jar', 'mysql-conn*.jar', 'ojdbc*.jar', 'postgres*.jar', 'mssql-jdbc*.jar')
 
     individualTestCompile sourceSets.test.output
     integrationTestCompile sourceSets.test.output
@@ -875,7 +875,7 @@ class DeployWarTomcatTask extends DefaultTask{
             from '../libs/buildlibs'
             into buildLibLocation + '/lib'
             include 'mail.jar'
-            include 'sqljdbc42.jar'
+            include 'mssql-jdbc-6.2.2.jre8.jar'
             include 'mysql-connector-java-5.1.37-bin.jar'
             include 'postgresql-42.2.2.jar'
             include 'ojdbc5.jar'
