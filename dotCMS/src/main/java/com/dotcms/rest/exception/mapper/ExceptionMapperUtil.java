@@ -1,10 +1,5 @@
 package com.dotcms.rest.exception.mapper;
 
-import static com.dotcms.exception.ExceptionUtil.ValidationError;
-import static com.dotcms.exception.ExceptionUtil.getRootCause;
-import static com.dotcms.exception.ExceptionUtil.mapValidationException;
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -21,12 +16,16 @@ import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+
+import javax.servlet.http.HttpServletRequest;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
+
+import static com.dotcms.exception.ExceptionUtil.*;
+import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * Created by Oscar Arrieta on 8/27/15.
@@ -51,6 +50,27 @@ public final class ExceptionMapperUtil {
         String entity;
         try {
             JSONObject json = new JSONObject();
+            json.put("error", message);
+            entity = json.toString();
+        } catch (JSONException e) {
+            entity = "{ \"error\": \"" + message.replace("\"", "\\\"") + "\" }";
+        }
+        return entity;
+    }
+
+    /**
+     * Format the exception message and field as a json response
+     * @param field String field that has the error
+     * @param message String error message to include in the JSON.
+     * @return string with the Json formed in this format: {error:message}.
+     */
+    public static String getJsonErrorAsString(final String field, final String message){
+
+        //Creating the message in JSON format.
+        String entity;
+        try {
+            JSONObject json = new JSONObject();
+            json.put("field", field);
             json.put("error", message);
             entity = json.toString();
         } catch (JSONException e) {
