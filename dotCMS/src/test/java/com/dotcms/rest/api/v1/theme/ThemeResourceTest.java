@@ -35,6 +35,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 import static com.dotcms.util.CollectionsUtils.map;
 
 /**
@@ -95,6 +96,7 @@ public class ThemeResourceTest {
                 .build()));
         folders.setTotalResults(2);
     }
+
     /**
      * Test of {@link ThemeResource#findThemes(HttpServletRequest, String, int, int, String, String)}
      *
@@ -112,8 +114,8 @@ public class ThemeResourceTest {
                 Paginator.ORDER_DIRECTION_PARAM_NAME, OrderDirection.ASC
         );
 
-        when(hostAPI.find(hostId, user, false)).thenReturn(host_1);
-        when(mockThemePaginator.getItems(user, 3, 0, params)).thenReturn(folders);
+        when(hostAPI.find(hostId, systemUser, false)).thenReturn(host_1);
+        when(mockThemePaginator.getItems(systemUser, 3, 0, params)).thenReturn(folders);
 
         final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI, userAPI, webResource);
         final Response response = themeResource.findThemes(request, hostId, 1, 3, "ASC", null);
@@ -135,7 +137,7 @@ public class ThemeResourceTest {
         when(request.getSession()).thenReturn(session);
         when(session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID)).thenReturn(hostId);
 
-        when(hostAPI.find(hostId, user, false)).thenReturn(host_1);
+        when(hostAPI.find(hostId, systemUser, false)).thenReturn(host_1);
 
         final Map<String, Object> params = map(
                 ThemePaginator.HOST_ID_PARAMETER_NAME, hostId,
@@ -143,7 +145,7 @@ public class ThemeResourceTest {
                 Paginator.ORDER_BY_PARAM_NAME, null,
                 Paginator.ORDER_DIRECTION_PARAM_NAME, OrderDirection.ASC
         );
-        when(mockThemePaginator.getItems(user, 3, 0, params)).thenReturn(folders);
+        when(mockThemePaginator.getItems(systemUser, 3, 0, params)).thenReturn(folders);
 
         final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI, userAPI, webResource);
         final Response response = themeResource.findThemes(request, null, 1, 3, "ASC", null);
@@ -169,8 +171,8 @@ public class ThemeResourceTest {
                 Paginator.ORDER_DIRECTION_PARAM_NAME, OrderDirection.ASC
         );
 
-        when(hostAPI.find(hostId, user, false)).thenReturn(host_1);
-        when(mockThemePaginator.getItems(user, 3, 0, params)).thenThrow(exception);
+        when(hostAPI.find(hostId, systemUser, false)).thenReturn(host_1);
+        when(mockThemePaginator.getItems(systemUser, 3, 0, params)).thenThrow(exception);
 
         final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI , userAPI, webResource);
 
@@ -180,6 +182,32 @@ public class ThemeResourceTest {
         } catch(DotSecurityException e){
             assertEquals(exception.getCause(), e);
         }
+    }
+
+    /**
+     * Test of {@link ThemeResource#findThemeById(HttpServletRequest, String)}
+     *
+     * Given: A tehmeId as query parameter
+     * Should: Should
+     */
+    @Test
+    public void testFindThemeBYId() throws Throwable {
+        final String themeId = "1";
+
+        final Map<String, Object> params = map(
+                ThemePaginator.ID_PARAMETER, themeId,
+                Paginator.DEFAULT_FILTER_PARAM_NAME, "",
+                Paginator.ORDER_BY_PARAM_NAME, null,
+                Paginator.ORDER_DIRECTION_PARAM_NAME, OrderDirection.ASC
+        );
+
+        when(mockThemePaginator.getItems(systemUser, -1, 0, params)).thenReturn(folders);
+
+        final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI, userAPI, webResource);
+        final Response response = themeResource.findThemeById(request, themeId);
+
+        verify(mockThemePaginator).getItems(systemUser, -1, 0, params);
+        checkSuccessResponse(response);
     }
 
     protected void checkSuccessResponse(final Response response) throws IOException {

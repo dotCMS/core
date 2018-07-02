@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.container;
 
+import com.beust.jcommander.internal.Maps;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -9,9 +10,12 @@ import com.dotcms.rest.RestUtilTest;
 import com.dotcms.rest.WebResource;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.PaginationUtil;
+import com.dotcms.util.pagination.ContainerPaginator;
+import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -31,9 +35,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Map;
 
+import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -55,7 +61,9 @@ public class ContainerResourceIntegrationTest {
     private final VelocityUtil velocityUtil = mock(VelocityUtil.class);
     private final HttpServletRequest request = mock(HttpServletRequest.class);
     private final ShortyIdAPI shortyAPI = mock(ShortyIdAPI.class);
+    private final UserAPI userAPI = mock(UserAPI.class);
     private final User user = mock(User.class);
+    private final User systemUser = mock(User.class);
     private final HttpServletResponse response = mock(HttpServletResponse.class);
     private final ChainedContext context = mock(ChainedContext.class);
     private final HttpSession session = mock(HttpSession.class);
@@ -78,11 +86,28 @@ public class ContainerResourceIntegrationTest {
         when(shortyAPI.getShorty(containerId)).thenReturn(Optional.of(shortyId));
         when(container.getIdentifier()).thenReturn(containerId);
         when(formContent.getIdentifier()).thenReturn(formId);
+        when(userAPI.getSystemUser()).thenReturn(systemUser);
 
         containerResource = new ContainerResource(webResource, paginationUtil, formAPI, containerAPI, versionableAPI,
-                velocityUtil, shortyAPI);
+                velocityUtil, shortyAPI, userAPI);
 
         IntegrationTestInitService.getInstance().init();
+    }
+
+    @Test
+    public void test_getContainers() throws DotSecurityException, DotDataException {
+        final Response responseMock = mock(Response.class);
+        final String filter = "filter";
+        final String hostId = "2";
+
+        final Map<String, Object> extraParams = Maps.newHashMap();
+        extraParams.put(ContainerPaginator.HOST_PARAMETER_ID, (Object) hostId);
+
+        when(paginationUtil.getPage(request, systemUser, filter, 1, 10, "title", OrderDirection.ASC, extraParams)).thenReturn(responseMock);
+
+        final Response response = containerResource.getContainers(request, filter, 1, 10, "title", "ASC", hostId);
+        verify(paginationUtil).getPage(request, systemUser, filter, 1, 10, "title", OrderDirection.ASC, extraParams);
+        assertEquals(responseMock, response);
     }
 
     @Test
