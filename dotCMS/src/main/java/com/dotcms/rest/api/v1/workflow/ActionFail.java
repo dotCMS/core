@@ -33,7 +33,7 @@ public class ActionFail {
                 message = ExceptionUtil.getLocalizedMessageOrDefault(user, message, message, null);
             }
         } else {
-            message = ExceptionUtil.getLocalizedMessageOrDefault(user, "No-Exception-Info-Available", "Unavailable", null);
+            message = rootCause.toString();
         }
         return new ActionFail(inode, message);
     }

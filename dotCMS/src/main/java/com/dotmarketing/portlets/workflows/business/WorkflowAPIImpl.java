@@ -54,6 +54,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.MessageActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.Actionlet;
 import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.BatchAction;
 import com.dotmarketing.portlets.workflows.actionlet.CheckURLAccessibilityActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.CheckoutContentActionlet;
@@ -116,6 +117,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -1785,18 +1788,23 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@Override
 	public WorkflowProcessor fireWorkflowPreCheckin(final Contentlet contentlet, final User user) throws DotDataException,DotWorkflowException, DotContentletValidationException{
-		WorkflowProcessor processor = new WorkflowProcessor(contentlet, user);
+		return fireWorkflowPreCheckin(contentlet, user);
+	}
+
+
+	private WorkflowProcessor fireWorkflowPreCheckin(final Contentlet contentlet, final User user, final ConcurrentMap<String,Object> context) throws DotDataException,DotWorkflowException, DotContentletValidationException{
+		WorkflowProcessor processor = new WorkflowProcessor(contentlet, user, context);
 		if(!processor.inProcess()){
 			return processor;
 		}
 
-		List<WorkflowActionClass> actionClasses = processor.getActionClasses();
+		final List<WorkflowActionClass> actionClasses = processor.getActionClasses();
 		if(actionClasses != null){
 			for(WorkflowActionClass actionClass : actionClasses){
-				WorkFlowActionlet actionlet= actionClass.getActionlet();
-				//Validate the actionlet exists and the OSGI is installed and running. 
+				final WorkFlowActionlet actionlet = actionClass.getActionlet();
+				//Validate the actionlet exists and the OSGI is installed and running.
 				if(UtilMethods.isSet(actionlet)){
-					Map<String,WorkflowActionClassParameter> params = findParamsForActionClass(actionClass);
+					final Map<String,WorkflowActionClassParameter> params = findParamsForActionClass(actionClass);
 					actionlet.executePreAction(processor, params);
 					//if we should stop processing further actionlets
 					if(actionlet.stopProcessing()){
@@ -1805,7 +1813,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				}else {
 					throw new DotWorkflowException("Actionlet: " + actionClass.getName() + " is null. Check if the Plugin is installed and running.");
 				}
-				
+
 			}
 		}
 
@@ -1829,7 +1837,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 					final WorkFlowActionlet actionlet = actionClass.getActionlet();
 					final Map<String,WorkflowActionClassParameter> params = findParamsForActionClass(actionClass);
-					actionlet.executeAction(processor, params);
+					if (processor.isRunningBulk() && actionlet instanceof BatchAction) {
+						final BatchAction batchable = BatchAction.class.cast(actionlet);
+						batchable.preBatchAction(processor, actionClass, params);
+						//gather data to run in batch later
+					} else {
+						actionlet.executeAction(processor, params);
+					}
 
 					//if we should stop processing further actionlets
 					if(actionlet.stopProcessing()){
@@ -2152,12 +2166,15 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 * @return
 	 */
 	private BulkActionsResultView distributeWorkAndProcess(final WorkflowAction action,
-			final User user, final List<Contentlet> contentlets, final Long skipsCount, final AdditionalParamsBean additionalParamsBean) {
+			final User user, final List<Contentlet> contentlets, final Long skipsCount, final AdditionalParamsBean additionalParamsBean)
+			throws DotDataException {
 		// We use a dedicated pool for bulk actions processing.
 		final DotSubmitter submitter = this.concurrentFactory
 				.getSubmitter(DotConcurrentFactory.BULK_ACTIONS_THREAD_POOL);
 
 		final int maxExceptions = Config.getIntProperty(MAX_EXCEPTIONS_REPORTED_ON_BULK_ACTIONS, MAX_EXCEPTIONS_REPORTED_ON_BULK_ACTIONS_DEFAULT);
+
+		final ConcurrentMap<String,Object> bulkActionsContext = new ConcurrentHashMap<>();
 
 		final AtomicLong successCount = new AtomicLong();
 
@@ -2165,7 +2182,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		final ReentrantLock lock =  new ReentrantLock();
 
-		final AtomicBoolean accepting = new AtomicBoolean(true);
+		final AtomicBoolean acceptingExceptions = new AtomicBoolean(true);
 
 		final List<Future> futures = new ArrayList<>();
 
@@ -2173,20 +2190,18 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		for (final List<Contentlet> partition : partitions) {
 			futures.add(
-				submitter.submit(() -> fireBulkActionTasks(action, user, partition,
-						additionalParamsBean,
+				submitter.submit(() -> fireBulkActionTasks(action, user, partition, additionalParamsBean,
 					successCount::addAndGet, (inode, e) -> {
-						if (accepting.get()) { //if not accepting exceptions no need to lock and process. We're simply not accepting more.
+						if (acceptingExceptions.get()) { //if not accepting exceptions no need to lock and process. We're simply not accepting more.
 							lock.lock();
 							try {
 								fails.add(ActionFail.newInstance(user, inode, e));
-								accepting.set(fails.size() <= maxExceptions);
+								acceptingExceptions.set(fails.size() <= maxExceptions);
 							} finally {
 								lock.unlock();
 							}
 						}
-					}
-					)
+					}, bulkActionsContext)
 				)
 			);
 		}
@@ -2199,6 +2214,17 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			}
 		}
 
+		//Actions which implement the interface BatchAction are executed at the end
+		executeBatchActions(user, action, bulkActionsContext, (list, e) -> {
+
+			list.forEach(o -> {
+						fails.add(ActionFail.newInstance(user, o.toString(), e));
+					}
+			);
+
+			successCount.updateAndGet(value -> value - list.size());
+		});
+
 		return new BulkActionsResultView(
 				successCount.get(),
 				skipsCount,
@@ -2206,6 +2232,41 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		);
 	}
 
+
+	/**
+	 *
+	 * @param user
+	 * @param action
+	 * @param batchActionContext
+	 * @param failsConsumer
+	 * @throws DotDataException
+	 */
+	private void executeBatchActions(
+			final User user,
+			final WorkflowAction action,
+			final ConcurrentMap<String, Object> batchActionContext,
+			final BiConsumer<List<?>, Exception> failsConsumer) throws DotDataException {
+
+		final List<WorkflowActionClass> actionClasses = this.findActionClasses(action);
+		for (final WorkflowActionClass actionClass : actionClasses) {
+			final WorkFlowActionlet actionlet = actionClass.getActionlet();
+			if (actionlet instanceof BatchAction) {
+				final Map<String, WorkflowActionClassParameter> params = findParamsForActionClass(actionClass);
+				final BatchAction batchAction = BatchAction.class.cast(actionlet);
+				final List <?> objects = batchAction.getObjectsForBatch(batchActionContext, actionClass);
+				try {
+					batchAction.executeBatchAction(user, batchActionContext, actionClass, params);
+				} catch (Exception e) {
+					failsConsumer.accept(objects, e);
+					Logger.error(getClass(),
+							String.format("Exception while Trying to execute action %s, in batch",
+									actionClass.getName()
+							), e
+					);
+				}
+			}
+		}
+	}
 
 	/**
 	 * Takes a input list of contentlets and creates sub groups to distribute the workload
@@ -2257,7 +2318,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			final List<Contentlet> contentlets,
 			final AdditionalParamsBean additionalParamsBean,
 			final Consumer<Long> successConsumer,
-			final BiConsumer<String,Exception> failConsumer) {
+			final BiConsumer<String,Exception> failConsumer,
+			final ConcurrentMap<String,Object> context) {
 
 		ContentletDependencies.Builder dependenciesBuilder = new ContentletDependencies.Builder();
 		dependenciesBuilder = dependenciesBuilder
@@ -2266,10 +2328,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				.modUser(user)
 				.workflowActionId(action.getId());
 
+		final boolean requiresAdditionalParams = ActionletUtil.requiresPopupAdditionalParams(action);
 
-		final boolean applyAdditionalParams = ActionletUtil.requiresPopupAdditionalParams(action);
-
-		if(applyAdditionalParams){
+		if(requiresAdditionalParams){
 		// additional params applied through the builder
            dependenciesBuilder = applyAdditionalParams(additionalParamsBean, dependenciesBuilder);
 		}
@@ -2278,14 +2339,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		for (Contentlet contentlet : contentlets) {
 			try {
-                if(applyAdditionalParams){
+                if(requiresAdditionalParams){
 					// additional params applied directly to the contentlet.
                    contentlet = applyAdditionalParams(additionalParamsBean, contentlet);
 				}
-				fireBulkActionTask(action, contentlet, dependencies, successConsumer, failConsumer);
+				fireBulkActionTask(action, contentlet, dependencies, successConsumer, failConsumer, context);
 			} catch (Exception e) {
 				// Additional catch block to handle any exceptions when processing the Transactional Annotation.
-				Logger.error(getClass(), "", e);
+				Logger.error(getClass(), "Error processing fire Action Task", e);
 			}
 		}
 	}
@@ -2295,7 +2356,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			final Contentlet contentlet,
 			final ContentletDependencies dependencies,
 			final Consumer<Long> successConsumer,
-			final BiConsumer<String,Exception> failConsumer) {
+			final BiConsumer<String,Exception> failConsumer,
+			final ConcurrentMap<String,Object> context) {
 		try {
 
 			final String successInode;
@@ -2303,7 +2365,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					() -> "Firing the action: " + action + " to the inode: " + contentlet
 							.getInode());
 
-			final Contentlet afterFireContentlet = fireContentWorkflow(contentlet, dependencies);
+			contentlet.getMap().put(Contentlet.WORKFLOW_BULK_KEY, true);
+
+			final Contentlet afterFireContentlet = fireContentWorkflow(contentlet, dependencies, context);
 			if(afterFireContentlet != null){
 				successInode = afterFireContentlet.getInode();
 			} else {
@@ -2358,6 +2422,46 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		return processor.getContentlet();
 	} // fireContentWorkflow
+
+
+	@WrapInTransaction
+	private Contentlet fireContentWorkflow(final Contentlet contentlet, final ContentletDependencies dependencies, final ConcurrentMap<String,Object> context) throws DotDataException, DotSecurityException {
+
+		if (ContentletUtil.isHost(contentlet)) {
+			final User user = dependencies.getModUser();
+			throw new DotSecurityException(
+					ExceptionUtil
+							.getLocalizedMessageOrDefault(user, "Workflow-restricted-content-type",
+									"Invalid attempt to execute a workflow on a restricted Content type",
+									getClass()
+							)
+			);
+		}
+
+
+		if(UtilMethods.isSet(dependencies.getWorkflowActionId())){
+			contentlet.setActionId(dependencies.getWorkflowActionId());
+		}
+
+		if(UtilMethods.isSet(dependencies.getWorkflowActionComments())){
+			contentlet.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY, dependencies.getWorkflowActionComments());
+		}
+
+		if(UtilMethods.isSet(dependencies.getWorkflowAssignKey())){
+			contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, dependencies.getWorkflowAssignKey());
+		}
+
+		this.validateActionStepAndWorkflow(contentlet, dependencies.getModUser());
+		this.checkShorties (contentlet);
+
+		final WorkflowProcessor processor = this.fireWorkflowPreCheckin(contentlet, dependencies.getModUser(), context);
+
+		processor.setContentletDependencies(dependencies);
+		this.fireWorkflowPostCheckin(processor);
+
+		return processor.getContentlet();
+	} // fireContentWorkflow
+
 
 	private void checkShorties(final Contentlet contentlet) {
 
