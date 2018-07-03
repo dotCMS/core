@@ -30,7 +30,7 @@ buildscript {
 	}
 }
 
-fileTree("../libs/buildlibs").include('mysql-conn*.jar', 'ojdbc*.jar', 'postgres*.jar', 'sqljdbc*.jar').visit( { element ->
+fileTree("../libs/buildlibs").include('mysql-conn*.jar', 'ojdbc*.jar', 'postgres*.jar', 'mssql-jdbc*.jar').visit( { element ->
 	GroovyObject.class.classLoader.addURL(element.file.toURI().toURL());
 })
 
