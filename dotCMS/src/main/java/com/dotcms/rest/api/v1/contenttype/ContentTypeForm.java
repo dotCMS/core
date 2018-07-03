@@ -69,7 +69,9 @@ public class ContentTypeForm  {
             return new ContentTypeForm(entries, json);
         }
 
-        private List<ContentTypeFormEntry> getContentTypeFormEntries(final List<ContentType> typesToSave,
+        private List<ContentTypeFormEntry>
+
+        getContentTypeFormEntries(final List<ContentType> typesToSave,
                                                                      final List<List<String>> workflows) {
 
             final List<ContentTypeFormEntry> entries = new ArrayList<>();
