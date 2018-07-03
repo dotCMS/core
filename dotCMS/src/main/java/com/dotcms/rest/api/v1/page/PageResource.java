@@ -233,7 +233,7 @@ public class PageResource {
         Response res = null;
 
         try {
-            HTMLPageAsset page = (HTMLPageAsset) this.pageResourceHelper.getPage(user, pageId);
+            HTMLPageAsset page = (HTMLPageAsset) this.pageResourceHelper.getPage(user, pageId, request);
             page = this.pageResourceHelper.saveTemplate(user, page, form);
 
             final PageView renderedPage = this.htmlPageAssetRenderedAPI.getPageRendered(request, response, user,
@@ -343,7 +343,7 @@ public class PageResource {
         try {
             final User user = initData.getUser();
 
-            final IHTMLPage page = pageResourceHelper.getPage(user, pageId);
+            final IHTMLPage page = pageResourceHelper.getPage(user, pageId, req);
 
             APILocator.getPermissionAPI().checkPermission(page, PermissionLevel.EDIT, user);
             pageResourceHelper.saveContent(pageId, pageContainerForm.getContainerEntries());

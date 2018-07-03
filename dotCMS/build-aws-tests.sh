@@ -88,6 +88,7 @@ sed -i "s,{url},$DB_URL,g" dotserver/tomcat/webapps/ROOT/META-INF/context.xml
 sed -i "s,{username},$DB_USERNAME,g" dotserver/tomcat/webapps/ROOT/META-INF/context.xml
 sed -i "s,{password},$DB_PASSWORD,g" dotserver/tomcat/webapps/ROOT/META-INF/context.xml
 sed -i "s,{valquery},$DB_VALIDATION_QUERY,g" dotserver/tomcat/webapps/ROOT/META-INF/context.xml
+sed -i 's,{transaction},$DB_TRANSACTION_ISOLATION,g' dotserver/tomcat/webapps/ROOT/META-INF/context.xml
 
 sed -i 's,<!-- TEST FRAMEWORK SERVLETS,<!-- TEST FRAMEWORK SERVLETS -->,g' dotserver/tomcat/webapps/ROOT/WEB-INF/web.xml
 sed -i 's,END OF TEST FRAMEWORK SERVLETS -->,<!-- END OF TEST FRAMEWORK SERVLETS -->,g' dotserver/tomcat/webapps/ROOT/WEB-INF/web.xml
