@@ -137,7 +137,7 @@ class WorkflowActionUtils {
             //if we're performing a filter on a role that is mapped to a user. Lets say Chris Publisher
             //for that reason we have a user, with assigned roles etc..
             Logger.debug(this, () -> " Role :" + role.getName() + " is mapped to a user, filtering based on user permissions." );
-            return filterActions(permissionables, user, RESPECT_FRONTEND_ROLES, permissionable);
+            return filterActions(permissionables, user, !RESPECT_FRONTEND_ROLES, permissionable);
         } catch (Exception nsu) {
             Logger.debug(this, () -> "Unable to determine role belongs to a user.");
         }
@@ -240,7 +240,7 @@ class WorkflowActionUtils {
         //We need to make sure the role is present on the action and on the permissionable.
         for (final Role role : collectedRoles) {
             if ((isRolePresent(workflowAction, role) && isRolePresent(permissionable, role))
-                    || hasSpecialWorkflowPermission(role, RESPECT_FRONTEND_ROLES, permissionable,
+                    || hasSpecialWorkflowPermission(role, !RESPECT_FRONTEND_ROLES, permissionable,
                     workflowAction)) {
                 return true;
             }
