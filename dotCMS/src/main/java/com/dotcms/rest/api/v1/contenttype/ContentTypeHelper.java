@@ -5,6 +5,8 @@ import static com.dotcms.util.CollectionsUtils.list;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
@@ -29,8 +31,6 @@ import javax.servlet.http.HttpServletRequest;
  * @author jsanca
  */
 public class ContentTypeHelper implements Serializable {
-
-    private static final Map<Locale, Map<String, String>> BASE_CONTENT_TYPE_LABELS = new HashMap<>();
 
     private static class SingletonHolder {
         private static final ContentTypeHelper INSTANCE = new ContentTypeHelper();
@@ -125,28 +125,29 @@ public class ContentTypeHelper implements Serializable {
      * @return Map (type Id -> i18n value)
      * @throws LanguageException
      */
-    public synchronized static Map<String, String> getBaseContentTypeNames(final Locale locale) throws LanguageException {
+    public synchronized Map<String, String> getBaseContentTypeNames(final Locale locale) throws LanguageException {
 
-        Map<String, String> map = BASE_CONTENT_TYPE_LABELS.get(locale);
+        Map<String, String> contentTypesLabelsMap = new HashMap<>();
+        contentTypesLabelsMap.put(BaseContentType.CONTENT.name(), LanguageUtil.get(locale, "Content"));
+        contentTypesLabelsMap.put(BaseContentType.WIDGET.name(), LanguageUtil.get(locale, "Widget"));
+        contentTypesLabelsMap.put(BaseContentType.FILEASSET.name(), LanguageUtil.get(locale, "File"));
+        contentTypesLabelsMap.put(BaseContentType.HTMLPAGE.name(), LanguageUtil.get(locale, "HTMLPage"));
+        contentTypesLabelsMap.put(BaseContentType.KEY_VALUE.name(), LanguageUtil.get(locale, "KeyValue"));
+        contentTypesLabelsMap.put(BaseContentType.VANITY_URL.name(), LanguageUtil.get(locale, "VanityURL"));
 
-        if (map == null) {
-            map = imap(
-                    BaseContentType.CONTENT.name(), LanguageUtil.get(locale, "Content"),
-                    BaseContentType.WIDGET.name(), LanguageUtil.get(locale, "Widget"),
-                    BaseContentType.FORM.name(), LanguageUtil.get(locale, "Form"),
-                    BaseContentType.FILEASSET.name(), LanguageUtil.get(locale, "File"),
-                    BaseContentType.HTMLPAGE.name(), LanguageUtil.get(locale, "HTMLPage"),
-                    BaseContentType.PERSONA.name(), LanguageUtil.get(locale, "Persona"),
-                    BaseContentType.KEY_VALUE.name(), LanguageUtil.get(locale, "KeyValue"),
-                    BaseContentType.VANITY_URL.name(), LanguageUtil.get(locale, "VanityURL")
-            );
-
-            BASE_CONTENT_TYPE_LABELS.put(locale, map);
+        if(isStandardOrEnterprise()) {
+            contentTypesLabelsMap.put(BaseContentType.FORM.name(), LanguageUtil.get(locale, "Form"));
+            contentTypesLabelsMap.put(BaseContentType.PERSONA.name(), LanguageUtil.get(locale, "Persona"));
         }
 
-        return map;
+        return contentTypesLabelsMap;
 
     } // getBaseContentTypeNames.
+
+    @VisibleForTesting
+    boolean isStandardOrEnterprise() {
+        return LicenseUtil.getLevel() > LicenseLevel.COMMUNITY.level;
+    }
 
     public long getContentTypesCount(String condition) throws DotDataException {
         return this.structureAPI.countStructures(condition);

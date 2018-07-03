@@ -163,4 +163,20 @@ public interface KeyValueAPI {
     public KeyValue get(final String key, final long languageId, final ContentType contentType, final User user,
                     final boolean respectFrontendRoles);
 
+    /**
+     *
+     * Returns a list of {@link KeyValue} whose keys start with the provided key, language and content type.
+     *
+     * @param key - The key.
+     * @param languageId - The ID of the language that the content was created for.
+     * @param contentType - The {@link ContentType} used to create this content.
+     * @param user - The user performing this action.
+     * @param respectFrontendRoles - Set to {@code true} if this method requires that front-end
+     *        roles are take in count for the search (which means this is being called from the
+     *        front-end). Otherwise, set to {@code false}.
+     * @return a list of Key/Value Objects.
+     */
+    public List<KeyValue> getKeyValuesByKeyStartingWith(final String key, final long languageId, final ContentType contentType, final User user,
+            final boolean respectFrontendRoles, final int limit);
+
 }

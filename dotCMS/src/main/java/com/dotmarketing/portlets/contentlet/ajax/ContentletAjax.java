@@ -8,6 +8,7 @@ import com.dotcms.contenttype.model.type.PageContentType;
 import com.dotcms.enterprise.FormAJAXProxy;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.keyvalue.model.KeyValue;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotcms.util.LogTime;
 import com.dotmarketing.beans.Host;
@@ -1191,21 +1192,39 @@ public class ContentletAjax {
 
 	@CloseDB
 	public ArrayList<String[]> doSearchGlossaryTerm(String valueToComplete, String language) throws Exception {
-		ArrayList<String[]> list = new ArrayList<String[]>(15);
-
-		List<LanguageKey> props = retrieveProperties(Long.parseLong(language));
-
+		final int limit = Config.getIntProperty("glossary.term.max.limit",15);
+		ArrayList<String[]> list = new ArrayList<String[]>(limit);
+		final User systemUser = APILocator.systemUser();
+		final long languageId = Long.parseLong(language);
+		List<String> listAddedKeys = new ArrayList<>();
 		String[] term;
-		valueToComplete = valueToComplete.toLowerCase();
 
+		List<LanguageKey> props = retrieveProperties(languageId);
+		valueToComplete = valueToComplete.toLowerCase();
 		for (LanguageKey prop : props) {
 			if (prop.getKey().toLowerCase().startsWith(valueToComplete)) {
-				term = new String[] { prop.getKey(),
-						(70 < prop.getValue().length() ? prop.getValue().substring(0, 69) : prop.getValue())};
+				term = new String[]{prop.getKey(),
+						(70 < prop.getValue().length() ? prop.getValue().substring(0, 69)
+								: prop.getValue())};
 				list.add(term);
+				listAddedKeys.add(prop.getKey());
+			}
+
+		if(list.size() < limit){
+			List<KeyValue> languageVariables = APILocator.getLanguageVariableAPI().getAllLanguageVariablesKeyStartsWith(valueToComplete,languageId,systemUser,limit);
+			for (KeyValue languageVariable : languageVariables) {
+				if(!listAddedKeys.contains(languageVariable.getKey())) {
+					term = new String[]{languageVariable.getKey(),
+							(70 < languageVariable.getValue().length() ? languageVariable.getValue()
+									.substring(0, 69) : languageVariable.getValue())};
+					list.add(term);
+				}
+				if(list.size() == limit){
+					break;
+				}
+			}
 			}
 		}
-
 		return list;
 	}
 
