@@ -200,7 +200,7 @@ public class ContentTypeResourceTest {
 		verify(paginationUtil).getPage(request, user, filter, page, perPage, orderBy, direction, extraParams);
 	}
 
-	@Test
+	@Test(expected = DotDataException.class)
 	public void getContentTypesUnValidType() throws DotDataException {
 		final HttpServletRequest request  = mock(HttpServletRequest.class);
 		final WebResource webResource = mock(WebResource.class);
@@ -215,18 +215,13 @@ public class ContentTypeResourceTest {
 		String orderBy = "name";
 		OrderDirection direction = OrderDirection.ASC;
 
-		final PaginationUtil paginationUtil = mock(PaginationUtil.class);
 		final PermissionAPI permissionAPI = mock(PermissionAPI.class);
 
 		final ContentTypeResource resource = new ContentTypeResource
-				(new ContentTypeHelper(), webResource, paginationUtil, WorkflowHelper.getInstance(), permissionAPI);
+				(new ContentTypeHelper(), webResource,new PaginationUtil(new ContentTypesPaginator()) , WorkflowHelper.getInstance(), permissionAPI);
 
-		try {
-			resource.getContentTypes(request, filter, page, perPage, orderBy, direction.toString(), "FORM2");
-			assertTrue(false);
-		} catch (DotDataException e) {
-			assertTrue(true);
-		}
+		resource.getContentTypes(request, filter, page, perPage, orderBy, direction.toString(), "FORM2");
+
 	}
 
 	@Test

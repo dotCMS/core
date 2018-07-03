@@ -154,7 +154,7 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
                 }
             }
 
-            return result;
+            throw e;
         }
     }
 }
