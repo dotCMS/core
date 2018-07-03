@@ -284,6 +284,7 @@ task describeDBInstance {
 
 		String dbInstanceUrl = null;
 		String validationQuery = null;
+		String transactionIsolation = ""
 		switch( project.database.toUpperCase() ) {
 
 			case "POSTGRES":
@@ -292,13 +293,14 @@ task describeDBInstance {
 				break;
 
 			case "MYSQL":
-				dbInstanceUrl = "jdbc:mysql://${dbInstanceEndpoint}:${dbInstancePort}/${dbInstanceName}?characterEncoding=UTF-8"
+				dbInstanceUrl = "jdbc:mysql://${dbInstanceEndpoint}:${dbInstancePort}/${dbInstanceName}?characterEncoding=UTF-8&amp;useLegacyDatetimeCode=false&amp;serverTimezone=UTC"
 				validationQuery = "SELECT 1"
 				break;
 
 			case "MSSQL":
 				dbInstanceUrl = "jdbc:sqlserver://${dbInstanceEndpoint}:${dbInstancePort};databaseName=${dbInstanceName}";
 				validationQuery = "SELECT 1"
+				transactionIsolation = "defaultTransactionIsolation=\"READ_COMMITTED\""
 				break;
 
 			case "ORACLE":
@@ -317,6 +319,7 @@ task describeDBInstance {
 		project.dbInstanceSlavePassword = dbInstanceSlavePassword;
 		project.dbInstanceUrl = dbInstanceUrl;
 		project.validationQuery = validationQuery;
+		project.transactionIsolation = transactionIsolation;
 
 		println("Described DB Instance = "+ project.dbInstanceEndpoint )
 	}
@@ -418,7 +421,7 @@ task executeScript(dependsOn: [describeInstance, describeDBInstance]) {
 		String dbInstanceSlavePassword = project.dbInstanceSlavePassword
 		String dbInstanceUrl = project.dbInstanceUrl
 		String validationQuery = project.validationQuery
-
+		String transactionIsolation = project.transactionIsolation
 
 		// Define the variables supported on script
 		def variables = [
@@ -436,6 +439,7 @@ task executeScript(dependsOn: [describeInstance, describeDBInstance]) {
 			"DB_URL": dbInstanceUrl,
 			"DB_USERNAME": dbInstanceSlaveUsername,
 			"DB_PASSWORD": dbInstanceSlavePassword,
+			"DB_TRANSACTION_ISOLATION": transactionIsolation,
 			"DB_VALIDATION_QUERY": validationQuery,
 			"ESCLUSTER": "dotCMS"+ database + cleanBranchName(branch),
 
