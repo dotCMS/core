@@ -84,7 +84,7 @@ public class Task00001LoadSchema implements StartupTask {
 			}
 			final List<String> tokens = SQLUtil.tokenize(schemaString);
 			final DotConnect dc = new DotConnect();
-			final Connection con = DbConnectionFactory.getDataSource().getConnection();
+			final Connection con = DbConnectionFactory.getConnection();
 			if(DbConnectionFactory.isMySql()){
 				dc.executeStatement("SET " + DbConnectionFactory.getMySQLStorageEngine() + "=INNODB", con);
 			}
