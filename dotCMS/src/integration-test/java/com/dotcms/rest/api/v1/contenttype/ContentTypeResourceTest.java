@@ -201,7 +201,7 @@ public class ContentTypeResourceTest {
 	}
 
 	@Test(expected = DotDataException.class)
-	public void getContentTypesUnValidType() throws DotDataException {
+	public void getContentTypes_GivenNotExistingTypeName_ShouldThrowError() throws DotDataException {
 		final HttpServletRequest request  = mock(HttpServletRequest.class);
 		final WebResource webResource = mock(WebResource.class);
 		final InitDataObject initDataObject = mock(InitDataObject.class);

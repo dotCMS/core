@@ -149,8 +149,7 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
 
             for (final BaseContentType baseContentType : BaseContentType.values()) {
                 if (baseContentType.name().startsWith(filter.toUpperCase())) {
-                    result = baseContentType;
-                    break;
+                    return baseContentType;
                 }
             }
 
