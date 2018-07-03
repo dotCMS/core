@@ -125,7 +125,7 @@ public class ContentTypeHelper implements Serializable {
      * @return Map (type Id -> i18n value)
      * @throws LanguageException
      */
-    public synchronized static Map<String, String> getBaseContentTypeNames(final Locale locale) throws LanguageException {
+    public synchronized Map<String, String> getBaseContentTypeNames(final Locale locale) throws LanguageException {
 
         Map<String, String> contentTypesLabelsMap = new HashMap<>();
         contentTypesLabelsMap.put(BaseContentType.CONTENT.name(), LanguageUtil.get(locale, "Content"));
@@ -135,7 +135,7 @@ public class ContentTypeHelper implements Serializable {
         contentTypesLabelsMap.put(BaseContentType.KEY_VALUE.name(), LanguageUtil.get(locale, "KeyValue"));
         contentTypesLabelsMap.put(BaseContentType.VANITY_URL.name(), LanguageUtil.get(locale, "VanityURL"));
 
-        if(LicenseUtil.getLevel() > LicenseLevel.COMMUNITY.level) {
+        if(isStandardOrEnterprise()) {
             contentTypesLabelsMap.put(BaseContentType.FORM.name(), LanguageUtil.get(locale, "Form"));
             contentTypesLabelsMap.put(BaseContentType.PERSONA.name(), LanguageUtil.get(locale, "Persona"));
         }
@@ -143,6 +143,11 @@ public class ContentTypeHelper implements Serializable {
         return contentTypesLabelsMap;
 
     } // getBaseContentTypeNames.
+
+    @VisibleForTesting
+    boolean isStandardOrEnterprise() {
+        return LicenseUtil.getLevel() > LicenseLevel.COMMUNITY.level;
+    }
 
     public long getContentTypesCount(String condition) throws DotDataException {
         return this.structureAPI.countStructures(condition);
