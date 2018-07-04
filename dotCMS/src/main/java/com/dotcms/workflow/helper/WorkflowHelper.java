@@ -7,6 +7,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.v1.workflow.*;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.workflow.form.*;
 import com.dotmarketing.beans.Permission;
@@ -29,6 +30,8 @@ import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject
 import com.dotmarketing.util.*;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import org.apache.commons.beanutils.BeanUtils;
@@ -53,6 +56,7 @@ import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
  */
 public class WorkflowHelper {
 
+    private static final String INVALID_RENDER_MODE = "Invalid Render Mode";
     private final WorkflowAPI   workflowAPI;
     private final RoleAPI       roleAPI;
     private final ContentletAPI contentletAPI;
@@ -288,6 +292,28 @@ public class WorkflowHelper {
             return this.workflowAPI.fireBulkActions(action, user, form.getContentletIds(), form.getPopupParamsBean());
         } else {
             throw new DoesNotExistException("Workflow-does-not-exists-action");
+        }
+    }
+
+    /**
+     * If the render mode is set, it should be a valid one
+     * @param renderMode String renderMode pass by the user
+     * @param user User   the user that makes the request
+     * @param validRenderModeSet Set set of valid values for the render mode
+     */
+    public void checkRenderMode(final String renderMode, final User user, final Set<String> validRenderModeSet) {
+
+        if (UtilMethods.isSet(renderMode) && !validRenderModeSet.contains(renderMode.toLowerCase())) {
+
+            String message = INVALID_RENDER_MODE;
+
+            try {
+                message = LanguageUtil.get(user, "workflow.invalidrendermode");
+            } catch (LanguageException e) {
+                message = INVALID_RENDER_MODE;
+            }
+
+            throw new BadRequestException(message);
         }
     }
 
