@@ -2,13 +2,13 @@
   "schemes": [
     {
       "id": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
-      "creationDate": 1522185744131,
+      "creationDate": 1530721950755,
       "name": "System Workflow",
       "description": "",
       "archived": false,
       "mandatory": false,
       "defaultScheme": false,
-      "modDate": 1522181693944,
+      "modDate": 1530721947676,
       "entryActionId": null,
       "system": true
     }
@@ -16,7 +16,7 @@
   "steps": [
     {
       "id": "6cb7e3bd-1710-4eed-8838-d3db60f78f19",
-      "creationDate": 1522697713567,
+      "creationDate": 1530722059341,
       "name": "New",
       "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
       "myOrder": 0,
@@ -27,7 +27,7 @@
     },
     {
       "id": "ee24a4cb-2d15-4c98-b1bd-6327126451f3",
-      "creationDate": 1522697713568,
+      "creationDate": 1530722059342,
       "name": "Unpublished",
       "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
       "myOrder": 1,
@@ -38,7 +38,7 @@
     },
     {
       "id": "dc3c9cd0-8467-404b-bf95-cb7df3fbc293",
-      "creationDate": 1522697713568,
+      "creationDate": 1530722059343,
       "name": "Published",
       "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
       "myOrder": 2,
@@ -49,7 +49,7 @@
     },
     {
       "id": "d6b095b6-b65f-4bdb-bbfd-701d663dfee2",
-      "creationDate": 1522697713568,
+      "creationDate": 1530722059344,
       "name": "Archived",
       "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
       "myOrder": 3,
@@ -76,7 +76,7 @@
       "nextStepCurrentStep": false,
       "showOn": [
         "UNLOCKED",
-        "LOCKED",
+        "LISTING",
         "UNPUBLISHED"
       ]
     },
@@ -96,9 +96,10 @@
       "nextStepCurrentStep": true,
       "showOn": [
         "UNLOCKED",
-        "PUBLISHED",
         "LOCKED",
-        "UNPUBLISHED"
+        "LISTING",
+        "UNPUBLISHED",
+        "PUBLISHED"
       ]
     },
     {
@@ -116,9 +117,11 @@
       "owner": null,
       "nextStepCurrentStep": false,
       "showOn": [
-        "ARCHIVED",
         "UNLOCKED",
-        "LOCKED"
+        "ARCHIVED",
+        "LOCKED",
+        "LISTING",
+        "EDITING"
       ]
     },
     {
@@ -142,26 +145,6 @@
       ]
     },
     {
-      "id": "4958588d-9c8e-40e4-bfcb-4ded40bd099f",
-      "name": "Republish",
-      "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
-      "condition": "",
-      "nextStep": "dc3c9cd0-8467-404b-bf95-cb7df3fbc293",
-      "nextAssign": "654b0931-1027-41f7-ad4d-173115ed8ec1",
-      "icon": "workflowIcon",
-      "roleHierarchyForAssign": false,
-      "assignable": false,
-      "commentable": false,
-      "order": 0,
-      "owner": null,
-      "nextStepCurrentStep": false,
-      "showOn": [
-        "UNLOCKED",
-        "PUBLISHED",
-        "UNPUBLISHED"
-      ]
-    },
-    {
       "id": "ceca71a0-deee-4999-bd47-b01baa1bcfc8",
       "name": "Save",
       "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
@@ -176,10 +159,11 @@
       "owner": null,
       "nextStepCurrentStep": false,
       "showOn": [
-        "PUBLISHED",
+        "NEW",
         "LOCKED",
         "UNPUBLISHED",
-        "NEW"
+        "PUBLISHED",
+        "EDITING"
       ]
     },
     {
@@ -197,10 +181,11 @@
       "owner": null,
       "nextStepCurrentStep": false,
       "showOn": [
-        "PUBLISHED",
+        "NEW",
         "LOCKED",
         "UNPUBLISHED",
-        "NEW"
+        "PUBLISHED",
+        "EDITING"
       ]
     },
     {
@@ -218,9 +203,10 @@
       "owner": null,
       "nextStepCurrentStep": false,
       "showOn": [
-        "ARCHIVED",
         "UNLOCKED",
-        "LOCKED"
+        "ARCHIVED",
+        "LOCKED",
+        "LISTING"
       ]
     },
     {
@@ -239,8 +225,9 @@
       "nextStepCurrentStep": false,
       "showOn": [
         "UNLOCKED",
-        "PUBLISHED",
-        "LOCKED"
+        "LOCKED",
+        "LISTING",
+        "PUBLISHED"
       ]
     }
   ],
@@ -254,6 +241,11 @@
       "stepId": "6cb7e3bd-1710-4eed-8838-d3db60f78f19",
       "actionId": "b9d89c80-3d88-4311-8365-187323c96436",
       "actionOrder": "1"
+    },
+    {
+      "stepId": "6cb7e3bd-1710-4eed-8838-d3db60f78f19",
+      "actionId": "38efc763-d78f-4e4b-b092-59cd8c579b93",
+      "actionOrder": "2"
     },
     {
       "stepId": "ee24a4cb-2d15-4c98-b1bd-6327126451f3",
@@ -281,8 +273,13 @@
       "actionOrder": "4"
     },
     {
+      "stepId": "ee24a4cb-2d15-4c98-b1bd-6327126451f3",
+      "actionId": "38efc763-d78f-4e4b-b092-59cd8c579b93",
+      "actionOrder": "5"
+    },
+    {
       "stepId": "dc3c9cd0-8467-404b-bf95-cb7df3fbc293",
-      "actionId": "4958588d-9c8e-40e4-bfcb-4ded40bd099f",
+      "actionId": "000ec468-0a63-4283-beb7-fcb36c107b2f",
       "actionOrder": "0"
     },
     {
@@ -324,11 +321,11 @@
       "order": 0,
       "clazz": "com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet",
       "actionlet": {
-        "howTo": "This actionlet will archive the content.",
         "name": "Archive content",
         "parameters": null,
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet.howTo",
-        "localizedName": "Archive Content"
+        "howTo": "This actionlet will archive the content.",
+        "localizedName": "Archive Content",
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet.howTo"
       }
     },
     {
@@ -338,12 +335,12 @@
       "order": 1,
       "clazz": "com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet",
       "actionlet": {
-        "nextStep": null,
-        "howTo": "This actionlet will checkin and unlock the content.",
         "name": "Unlock content",
         "parameters": null,
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet.howTo",
-        "localizedName": "Unlock Content"
+        "nextStep": null,
+        "howTo": "This actionlet will checkin and unlock the content.",
+        "localizedName": "Unlock Content",
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet.howTo"
       }
     },
     {
@@ -353,11 +350,11 @@
       "order": 0,
       "clazz": "com.dotmarketing.portlets.workflows.actionlet.CopyActionlet",
       "actionlet": {
-        "howTo": "This workflow actionlet copies the edited contentlet ",
         "name": "Copy Contentlet",
         "parameters": [],
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.CopyActionlet.howTo",
-        "localizedName": "Copy Contentlet"
+        "howTo": "This workflow actionlet copies the edited contentlet ",
+        "localizedName": "Copy Contentlet",
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.CopyActionlet.howTo"
       }
     },
     {
@@ -367,11 +364,11 @@
       "order": 0,
       "clazz": "com.dotmarketing.portlets.workflows.actionlet.DeleteContentActionlet",
       "actionlet": {
-        "howTo": "This action will delete the content. Warning: this can't be undone!",
         "name": "Delete content",
         "parameters": null,
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.DeleteContentActionlet.howTo",
-        "localizedName": "Delete content"
+        "howTo": "This action will delete the content. Warning: this can't be undone!",
+        "localizedName": "Delete content",
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.DeleteContentActionlet.howTo"
       }
     },
     {
@@ -381,12 +378,12 @@
       "order": 0,
       "clazz": "com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet",
       "actionlet": {
-        "nextStep": null,
-        "howTo": "This actionlet will checkin the content.",
         "name": "Save content",
         "parameters": null,
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet.howTo",
-        "localizedName": "Save content"
+        "nextStep": null,
+        "howTo": "This actionlet will checkin the content.",
+        "localizedName": "Save content",
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet.howTo"
       }
     },
     {
@@ -396,12 +393,12 @@
       "order": 1,
       "clazz": "com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet",
       "actionlet": {
-        "nextStep": null,
-        "howTo": "This actionlet will publish the content.",
         "name": "Publish content",
         "parameters": null,
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet.howTo",
-        "localizedName": "Publish Content"
+        "nextStep": null,
+        "howTo": "This actionlet will publish the content.",
+        "localizedName": "Publish Content",
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet.howTo"
       }
     },
     {
@@ -411,27 +408,12 @@
       "order": 2,
       "clazz": "com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet",
       "actionlet": {
-        "nextStep": null,
-        "howTo": "This actionlet will checkin and unlock the content.",
         "name": "Unlock content",
         "parameters": null,
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet.howTo",
-        "localizedName": "Unlock Content"
-      }
-    },
-    {
-      "id": "ce09710c-aaa6-41fd-89b0-d6367a65f118",
-      "actionId": "4958588d-9c8e-40e4-bfcb-4ded40bd099f",
-      "name": "Publish content",
-      "order": 0,
-      "clazz": "com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet",
-      "actionlet": {
         "nextStep": null,
-        "howTo": "This actionlet will publish the content.",
-        "name": "Publish content",
-        "parameters": null,
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet.howTo",
-        "localizedName": "Publish Content"
+        "howTo": "This actionlet will checkin and unlock the content.",
+        "localizedName": "Unlock Content",
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet.howTo"
       }
     },
     {
@@ -441,12 +423,12 @@
       "order": 0,
       "clazz": "com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet",
       "actionlet": {
-        "nextStep": null,
-        "howTo": "This actionlet will checkin the content.",
         "name": "Save content",
         "parameters": null,
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet.howTo",
-        "localizedName": "Save content"
+        "nextStep": null,
+        "howTo": "This actionlet will checkin the content.",
+        "localizedName": "Save content",
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet.howTo"
       }
     },
     {
@@ -456,12 +438,12 @@
       "order": 0,
       "clazz": "com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet",
       "actionlet": {
-        "nextStep": null,
-        "howTo": "This actionlet will checkin the content.",
         "name": "Save content",
         "parameters": null,
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet.howTo",
-        "localizedName": "Save content"
+        "nextStep": null,
+        "howTo": "This actionlet will checkin the content.",
+        "localizedName": "Save content",
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet.howTo"
       }
     },
     {
@@ -471,12 +453,27 @@
       "order": 1,
       "clazz": "com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet",
       "actionlet": {
-        "nextStep": null,
-        "howTo": "This actionlet will publish the content.",
         "name": "Publish content",
         "parameters": null,
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet.howTo",
-        "localizedName": "Publish Content"
+        "nextStep": null,
+        "howTo": "This actionlet will publish the content.",
+        "localizedName": "Publish Content",
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet.howTo"
+      }
+    },
+    {
+      "id": "50ed0898-b721-4075-800e-ab2d9ea6183b",
+      "actionId": "b9d89c80-3d88-4311-8365-187323c96436",
+      "name": "Unlock content",
+      "order": 2,
+      "clazz": "com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet",
+      "actionlet": {
+        "name": "Unlock content",
+        "parameters": null,
+        "nextStep": null,
+        "howTo": "This actionlet will checkin and unlock the content.",
+        "localizedName": "Unlock Content",
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet.howTo"
       }
     },
     {
@@ -486,12 +483,12 @@
       "order": 0,
       "clazz": "com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet",
       "actionlet": {
-        "nextStep": null,
-        "howTo": "This actionlet will un archive the content and return it to a working state",
         "name": "Unarchive content",
         "parameters": null,
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet.howTo",
-        "localizedName": "Unarchive Content"
+        "nextStep": null,
+        "howTo": "This actionlet will un archive the content and return it to a working state",
+        "localizedName": "Unarchive Content",
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet.howTo"
       }
     },
     {
@@ -501,12 +498,12 @@
       "order": 0,
       "clazz": "com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet",
       "actionlet": {
-        "nextStep": null,
-        "howTo": "This actionlet will unpublish the content.",
         "name": "Unpublish content",
         "parameters": null,
-        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet.howTo",
-        "localizedName": "Unpublish Content"
+        "nextStep": null,
+        "howTo": "This actionlet will unpublish the content.",
+        "localizedName": "Unpublish Content",
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet.howTo"
       }
     }
   ],
@@ -542,15 +539,6 @@
     {
       "id": 0,
       "inode": "000ec468-0a63-4283-beb7-fcb36c107b2f",
-      "permission": 1,
-      "type": "individual",
-      "bitPermission": false,
-      "individualPermission": true,
-      "roleId": "c3eb4526-6d96-48d8-9540-e5fa560cfc0f"
-    },
-    {
-      "id": 0,
-      "inode": "4958588d-9c8e-40e4-bfcb-4ded40bd099f",
       "permission": 1,
       "type": "individual",
       "bitPermission": false,
