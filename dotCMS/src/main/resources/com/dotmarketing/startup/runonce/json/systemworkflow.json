@@ -141,6 +141,7 @@
       "showOn": [
         "UNLOCKED",
         "LOCKED",
+        "LISTING",
         "UNPUBLISHED"
       ]
     },
