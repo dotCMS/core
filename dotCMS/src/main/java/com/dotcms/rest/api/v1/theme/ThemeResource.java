@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.theme;
 
 import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
+import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.util.JsonProcessingRuntimeException;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
@@ -8,6 +9,10 @@ import com.dotcms.util.pagination.PaginationException;
 import com.dotcms.util.pagination.ThemePaginator;
 import com.dotmarketing.beans.Host;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.*;
@@ -27,6 +32,7 @@ import com.dotcms.repackage.com.fasterxml.jackson.databind.module.SimpleModule;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.HashMap;
 import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.map;
@@ -41,24 +47,24 @@ public class ThemeResource {
     private final PaginationUtil paginationUtil;
     private final WebResource webResource;
     private final HostAPI hostAPI;
-    private final UserAPI userAPI;
+    private final FolderAPI folderAPI;
 
     public ThemeResource() {
          this(
             new ThemePaginator(),
             APILocator.getHostAPI(),
-            APILocator.getUserAPI(),
+                 APILocator.getFolderAPI(),
             new WebResource()
         );
     }
 
     @VisibleForTesting
-    ThemeResource(final ThemePaginator themePaginator, final HostAPI hostAPI,
-                         final UserAPI userAPI, final WebResource webResource ) {
+    ThemeResource(final ThemePaginator themePaginator, final HostAPI hostAPI, final FolderAPI folderAPI,
+                         final WebResource webResource ) {
         this.webResource  = webResource;
         this.hostAPI      = hostAPI;
-        this.userAPI      = userAPI;
         this.paginationUtil = new PaginationUtil(themePaginator, this.getMapper());
+        this.folderAPI = folderAPI;
     }
 
     /**
@@ -143,8 +149,7 @@ public class ThemeResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findThemeById(@Context final HttpServletRequest request,
-            @PathParam("id") final String id)
-            throws Throwable {
+            @PathParam("id") final String id) throws DotDataException, DotSecurityException {
 
         Logger.debug(this,
                 "Getting the theme by identifier: " + id);
@@ -152,20 +157,12 @@ public class ThemeResource {
         final InitDataObject initData = this.webResource.init(null, true, request, true, null);
         final User user = initData.getUser();
 
+        final Folder folder = folderAPI.find(id, user, false);
 
-        try {
-            final Map<String, Object> params = map(
-                    ThemePaginator.ID_PARAMETER, id
-            );
-
-            return this.paginationUtil.getPage(request, user, null, 0, -1, null,
-                    OrderDirection.ASC, params);
-        } catch (PaginationException e) {
-            throw e.getCause();
-        } catch (JsonProcessingRuntimeException e) {
-
-            Logger.error(this, e.getMessage(), e);
-            return ExceptionMapperUtil.createResponse(e, Status.INTERNAL_SERVER_ERROR);
+        if (folder == null) {
+            return Response.status(Status.NOT_FOUND).build();
+        } else {
+            return Response.ok(new ResponseEntityView(folder.getMap())).build();
         }
     }
 

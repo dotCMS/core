@@ -54,9 +54,8 @@ public class ThemeResourceTest {
     private final WebResource webResource = mock(WebResource.class);
     private final InitDataObject initDataObject = mock(InitDataObject.class);
     private final User user = mock(User.class);
-    private final User systemUser = mock(User.class);
     private final HttpServletRequest request = mock(HttpServletRequest.class);
-    private final UserAPI userAPI = mock(UserAPI.class);
+    private final FolderAPI folderAPI = mock(FolderAPI.class);
     private final ThemePaginator mockThemePaginator = mock(ThemePaginator.class);
     private final HostAPI hostAPI = mock(HostAPI.class);
 
@@ -79,7 +78,6 @@ public class ThemeResourceTest {
 
         when(initDataObject.getUser()).thenReturn(user);
         when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
-        when(userAPI.getSystemUser()).thenReturn(systemUser);
 
         when(request.getRequestURL()).thenReturn(new StringBuffer("themes"));
 
@@ -115,7 +113,7 @@ public class ThemeResourceTest {
         when(hostAPI.find(hostId, user, false)).thenReturn(host_1);
         when(mockThemePaginator.getItems(user, 3, 0, params)).thenReturn(folders);
 
-        final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI, userAPI, webResource);
+        final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI, folderAPI, webResource);
         final Response response = themeResource.findThemes(request, hostId, 1, 3, "ASC", null);
 
         checkSuccessResponse(response);
@@ -145,7 +143,7 @@ public class ThemeResourceTest {
         );
         when(mockThemePaginator.getItems(user, 3, 0, params)).thenReturn(folders);
 
-        final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI, userAPI, webResource);
+        final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI, folderAPI, webResource);
         final Response response = themeResource.findThemes(request, null, 1, 3, "ASC", null);
 
         checkSuccessResponse(response);
@@ -172,7 +170,7 @@ public class ThemeResourceTest {
         when(hostAPI.find(hostId, user, false)).thenReturn(host_1);
         when(mockThemePaginator.getItems(user, 3, 0, params)).thenThrow(exception);
 
-        final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI , userAPI, webResource);
+        final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI , folderAPI, webResource);
 
         try {
             themeResource.findThemes(request, hostId, 1, 3, "ASC", null);
