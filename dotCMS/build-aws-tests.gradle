@@ -295,7 +295,7 @@ task describeDBInstance {
 				break;
 
 			case "MYSQL":
-				dbInstanceUrl = "jdbc:mysql://${dbInstanceEndpoint}:${dbInstancePort}/${dbInstanceName}?characterEncoding=UTF-8&amp;useLegacyDatetimeCode=false&amp;serverTimezone=UTC"
+				dbInstanceUrl = "jdbc:mysql://${dbInstanceEndpoint}:${dbInstancePort}/${dbInstanceName}?characterEncoding=UTF-8\\\\&amp;useLegacyDatetimeCode=false\\\\&amp;serverTimezone=UTC"
 				validationQuery = "SELECT 1"
 				transactionIsolation = " "
 				break;
@@ -323,7 +323,7 @@ task describeDBInstance {
 		project.dbInstanceSlavePassword = dbInstanceSlavePassword;
 		project.dbInstanceUrl = dbInstanceUrl;
 		project.validationQuery = validationQuery;
-        
+
 		project.transactionIsolation = transactionIsolation;
 
 		println("Described DB Instance = "+ project.dbInstanceEndpoint )
