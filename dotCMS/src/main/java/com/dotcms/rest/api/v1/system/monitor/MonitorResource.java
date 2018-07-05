@@ -3,6 +3,8 @@ package com.dotcms.rest.api.v1.system.monitor;
 import java.io.File;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -13,21 +15,19 @@ import java.util.concurrent.TimeoutException;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.repackage.javax.ws.rs.*;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.util.WebKeys;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.index.query.QueryBuilders;
 
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.ESClient;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.InternalServerErrorException;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.core.Response.ResponseBuilder;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
-import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotmarketing.beans.Host;
@@ -71,24 +71,65 @@ public class MonitorResource {
     @JSONP
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response test() throws Throwable {
+    public Response test(@Context HttpServletRequest request) throws Throwable {
         // force authentication
-        //InitDataObject auth = webResource.init(false, httpRequest, false);
+        //InitDataObject auth = webResource.init(false, httpRequest, false);  cannot require as we cannot assume db or other subsystems are functioning
+        boolean extendedFormat = false;
+        if (request.getQueryString() != null && "extended".equals(request.getQueryString()))
+            extendedFormat = true;
+        System.out.println("********* extendedFormat = |" + extendedFormat + "|");
 
         try{
             IndiciesInfo idxs=APILocator.getIndiciesAPI().loadIndicies();
             
             
-            JSONObject jo = new JSONObject();
-            
-            jo.put("dbSelect", dbCount());
-            jo.put("indexLive", indexCount(idxs.live));
-            jo.put("indexWorking", indexCount(idxs.working));
-            jo.put("cache", cache());
-            jo.put("local_fs_rw", localFiles());
-            jo.put("asset_fs_rw", assetFiles());
-            
-            ResponseBuilder builder = Response.ok(jo.toString(2), MediaType.APPLICATION_JSON);
+            boolean dotCMSHealthy = false;
+            boolean frontendHealthy = false;
+            boolean backendHealthy = false;
+            boolean dbSelectHealthy = dbCount();
+            boolean indexLiveHealthy = indexCount(idxs.live);
+            boolean indexWorkingHealthy = indexCount(idxs.working);
+            boolean cacheHealthy = cache();
+            boolean localFSHealthy = localFiles();
+            boolean assetFSHealthy = assetFiles();
+
+            if(dbSelectHealthy && indexLiveHealthy && indexWorkingHealthy && cacheHealthy && localFSHealthy && assetFSHealthy) {
+                dotCMSHealthy = true;
+                frontendHealthy = true;
+                backendHealthy = true;
+            }
+            else if(!indexWorkingHealthy && dbSelectHealthy && indexLiveHealthy && cacheHealthy && localFSHealthy && assetFSHealthy) {
+                frontendHealthy = true;
+            }
+
+            ResponseBuilder builder = null;
+            if(extendedFormat) {
+                JSONObject jo = new JSONObject();
+                jo.put("dotCMSHealthy", dotCMSHealthy);
+                jo.put("frontendHealthy", frontendHealthy);
+                jo.put("backendHealthy", backendHealthy);
+                jo.put("DOTCMS_STARTUP_TIME", System.getProperty(WebKeys.DOTCMS_STARTUP_TIME));
+
+                JSONObject subsystems = new JSONObject();
+                subsystems.put("dbSelectHealthy", dbSelectHealthy);
+                subsystems.put("indexLiveHealthy", indexLiveHealthy);
+                subsystems.put("indexWorkingHealthy", indexWorkingHealthy);
+                subsystems.put("cacheHealthy", cacheHealthy);
+                subsystems.put("localFSHealthy", localFSHealthy);
+                subsystems.put("assetFSHealthy", assetFSHealthy);
+                jo.put("subsystems", subsystems);
+
+                builder = Response.ok(jo.toString(2), MediaType.APPLICATION_JSON);
+            }
+            else {
+                if (dotCMSHealthy) {
+                    builder = Response.ok("", MediaType.APPLICATION_JSON);
+                } else if (!indexWorkingHealthy && dbSelectHealthy && indexLiveHealthy && cacheHealthy && localFSHealthy && assetFSHealthy) {
+                    builder = Response.status(507).entity("").type(MediaType.APPLICATION_JSON);
+                } else {
+                    builder = Response.status(503).entity("").type(MediaType.APPLICATION_JSON);
+                }
+            }
     
             builder.header("Access-Control-Expose-Headers", "Authorization");
             builder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
@@ -111,7 +152,11 @@ public class MonitorResource {
                 .get(failFastPolicy(DB_TIMEOUT, () -> { 
                     
                     try{
-                        return APILocator.getContentletAPI().contentletCount() > 0;
+                        DotConnect dc = new DotConnect();
+                        dc.setSQL("select count(*) as count from contentlet");
+                        List<Map<String,String>> results = dc.loadResults();
+                        long count = Long.parseLong(results.get(0).get("count"));
+                        return count > 0;
                     }
                     finally{
                         DbConnectionFactory.closeSilently();
@@ -136,7 +181,6 @@ public class MonitorResource {
                         .actionGet()
                         .getHits()
                         .getTotalHits();
-                    System.out.println("totalHits=" + totalHits);
                     return totalHits > 0;
                 }finally{
                     DbConnectionFactory.closeSilently();
