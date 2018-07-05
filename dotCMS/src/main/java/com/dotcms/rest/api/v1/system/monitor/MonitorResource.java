@@ -54,11 +54,11 @@ public class MonitorResource {
     @Context
     private HttpServletRequest httpRequest;
 
-    final static long LOCAL_FS_TIMEOUT=5000;
-    final static long CACHE_TIMEOUT=5000;
-    final static long ASSET_FS_TIMEOUT=5000;
-    final static long INDEX_TIMEOUT=5000;
-    final static long DB_TIMEOUT=5000;
+    static long LOCAL_FS_TIMEOUT=5000;
+    static long CACHE_TIMEOUT=5000;
+    static long ASSET_FS_TIMEOUT=5000;
+    static long INDEX_TIMEOUT=5000;
+    static long DB_TIMEOUT=5000;
     ExecutorService executorService = Executors.newCachedThreadPool();
 
     @NoCache
@@ -69,10 +69,20 @@ public class MonitorResource {
     public Response test(@Context HttpServletRequest request) throws Throwable {
         // force authentication
         //InitDataObject auth = webResource.init(false, httpRequest, false);  cannot require as we cannot assume db or other subsystems are functioning
+
+        String ip_acl = Config.getStringProperty("SYSTEM_STATUS_API_IP_ACL", "127.0.0.1");
+        // TODO validate whether or not IP of client matches ACL
+        System.out.println("ip_acl="+ ip_acl);
+
         boolean extendedFormat = false;
         if (request.getQueryString() != null && "extended".equals(request.getQueryString()))
             extendedFormat = true;
-        System.out.println("********* extendedFormat = |" + extendedFormat + "|");
+
+        LOCAL_FS_TIMEOUT=Config.getLongProperty("SYSTEM_STATUS_API_LOCAL_FS_TIMEOUT", 5000);
+        CACHE_TIMEOUT=Config.getLongProperty("SYSTEM_STATUS_API_CACHE_TIMEOUT", 5000);;
+        ASSET_FS_TIMEOUT=Config.getLongProperty("SYSTEM_STATUS_API_ASSET_FS_TIMEOUT", 5000);;
+        INDEX_TIMEOUT=Config.getLongProperty("SYSTEM_STATUS_API_INDEX_TIMEOUT", 5000);;
+        DB_TIMEOUT=Config.getLongProperty("SYSTEM_STATUS_API_DB_TIMEOUT", 5000);;
 
         try{
             IndiciesInfo idxs=APILocator.getIndiciesAPI().loadIndicies();
