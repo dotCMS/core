@@ -15,6 +15,7 @@ import java.util.concurrent.TimeoutException;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.util.*;
@@ -97,9 +98,11 @@ public class MonitorResource {
 
             ResponseBuilder builder = null;
             if(extendedFormat) {
-                String serverId=getServerID();
+                String serverID=getServerID();
+                String clusterID = getClusterID();
                 JSONObject jo = new JSONObject();
-                jo.put("serverID", serverId);
+                jo.put("serverID", serverID);
+                jo.put("clusterID", clusterID);
                 jo.put("dotCMSHealthy", dotCMSHealthy);
                 jo.put("frontendHealthy", frontendHealthy);
                 jo.put("backendHealthy", backendHealthy);
@@ -299,6 +302,23 @@ public class MonitorResource {
                         Logger.error(this, "Error - unable to get the serverID", t);
                     }
                     return serverID;
+                }));
+
+    }
+
+    private String getClusterID() throws Throwable{
+        return Failsafe
+                .with(breaker())
+                .withFallback("UNKNOWN")
+                .get(failFastStringPolicy(DB_TIMEOUT, () -> {
+                    String clusterID = "UNKNOWN";
+                    try {
+                        clusterID=ClusterFactory.getClusterId();
+                    }
+                    catch (Throwable t) {
+                        Logger.error(this, "Error - unable to get the clusterID", t);
+                    }
+                    return clusterID;
                 }));
 
     }
