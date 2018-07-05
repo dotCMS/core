@@ -1,5 +1,6 @@
 <dot-action-header [options]="actionHeaderOptions">
     <input #gf pInputText type="text" placeholder="{{ i18nMessages['global-search'] }}" [(ngModel)]="filter"/>
+    <ng-content></ng-content>
 </dot-action-header>
 
 <p-dataTable [value]="items"

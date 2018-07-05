@@ -4,7 +4,7 @@ import { ContentType } from '../shared/content-type.model';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ListingDataTableModule } from '../../../view/components/listing-data-table/listing-data-table.module';
 import { DotAlertConfirmService } from '../../../api/services/dot-alert-confirm/dot-alert-confirm.service';
-import { DebugElement } from '@angular/core';
+import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture } from '@angular/core/testing';
 import { ContentTypesInfoService } from '../../../api/services/content-types-info';
@@ -20,10 +20,20 @@ import { PushPublishContentTypesDialogModule } from '../../../view/components/_c
 import { PushPublishService } from '../../../api/services/push-publish/push-publish.service';
 import { DotAddToBundleModule } from '../../../view/components/_common/dot-add-to-bundle/dot-add-to-bundle.module';
 import { DotLicenseService } from '../../../api/services/dot-license/dot-license.service';
+import { SelectItem } from 'primeng/primeng';
 
 @Injectable()
 class MockDotContentletService {
     getAllContentTypes() {}
+}
+
+@Component({
+    selector: 'dot-base-type-selector',
+    template: ''
+})
+class MockDotBaseTypeSelectorComponent {
+    @Input() value: SelectItem;
+    @Output() selected = new EventEmitter<string>();
 }
 
 @Injectable()
@@ -58,6 +68,7 @@ describe('ContentTypesPortletComponent', () => {
     let dotContentletService: DotContentletService;
     let pushPublishService: PushPublishService;
     let dotLicenseService: DotLicenseService;
+    let baseTypesSelector: MockDotBaseTypeSelectorComponent;
 
     beforeEach(() => {
         const messageServiceMock = new MockDotMessageService({
@@ -72,7 +83,7 @@ describe('ContentTypesPortletComponent', () => {
         });
 
         DOTTestBed.configureTestingModule({
-            declarations: [ContentTypesPortletComponent],
+            declarations: [ContentTypesPortletComponent, MockDotBaseTypeSelectorComponent],
             imports: [
                 RouterTestingModule.withRoutes([{ path: 'test', component: ContentTypesPortletComponent }]),
                 BrowserAnimationsModule,
@@ -88,7 +99,7 @@ describe('ContentTypesPortletComponent', () => {
                 { provide: DotContentletService, useClass: MockDotContentletService },
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: PushPublishService, useClass: MockPushPublishService },
-                { provide: DotLicenseService, useClass: MockDotLicenseService },
+                { provide: DotLicenseService, useClass: MockDotLicenseService }
             ]
         });
 
@@ -157,7 +168,7 @@ describe('ContentTypesPortletComponent', () => {
         };
 
         const dotDialogService = fixture.debugElement.injector.get(DotAlertConfirmService);
-        spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
+        spyOn(dotDialogService, 'confirm').and.callFake(conf => {
             conf.accept();
         });
 
@@ -172,7 +183,7 @@ describe('ContentTypesPortletComponent', () => {
 
     it('should have remove, push publish and Add to bundle actions to the list item', () => {
         fixture.detectChanges();
-        expect(comp.rowActions.map((action) => action.menuItem.label)).toEqual(['Delete', 'Push Publish', 'Add to bundle']);
+        expect(comp.rowActions.map(action => action.menuItem.label)).toEqual(['Delete', 'Push Publish', 'Add to bundle']);
     });
 
     it('should have ONLY remove action because is community license', () => {
@@ -180,7 +191,7 @@ describe('ContentTypesPortletComponent', () => {
 
         fixture.detectChanges();
         expect(
-            comp.rowActions.map((action) => {
+            comp.rowActions.map(action => {
                 return {
                     label: action.menuItem.label,
                     icon: action.menuItem.icon
@@ -198,7 +209,7 @@ describe('ContentTypesPortletComponent', () => {
         spyOn(pushPublishService, 'getEnvironments').and.returnValue(Observable.of([]));
         fixture.detectChanges();
 
-        expect(comp.rowActions.map((action) => action.menuItem.label)).toEqual(['Delete', 'Add to bundle']);
+        expect(comp.rowActions.map(action => action.menuItem.label)).toEqual(['Delete', 'Add to bundle']);
     });
 
     it('should open push publish dialog', () => {
@@ -258,5 +269,13 @@ describe('ContentTypesPortletComponent', () => {
     it('should not set primary command in the header options', () => {
         fixture.detectChanges();
         expect(comp.actionHeaderOptions.primary.command).toBe(undefined);
+    });
+
+    it('should emit changes in base types selector', () => {
+        baseTypesSelector = de.query(By.css('dot-base-type-selector')).componentInstance;
+        spyOn(comp, 'changeBaseTypeSelector');
+        baseTypesSelector.selected.emit('test');
+
+        expect(comp.changeBaseTypeSelector).toHaveBeenCalledWith('test');
     });
 });

@@ -61,6 +61,7 @@ import { DotAddToBundleModule } from '../../view/components/_common/dot-add-to-b
 import { DotDirectivesModule } from '../../shared/dot-directives.module';
 import { DotWorkflowsSelectorFieldModule } from '../../view/components/_common/dot-workflows-selector-field/dot-workflows-selector-field.module';
 import { DotPageSelectorModule } from '../../view/components/_common/dot-page-selector/dot-page-selector.module';
+import { DotBaseTypeSelectorModule } from '../../view/components/dot-base-type-selector/dot-base-type-selector.module';
 
 @NgModule({
     declarations: [
@@ -124,7 +125,8 @@ import { DotPageSelectorModule } from '../../view/components/_common/dot-page-se
         DotAddToBundleModule,
         DotDirectivesModule,
         DotWorkflowsSelectorFieldModule,
-        DotPageSelectorModule
+        DotPageSelectorModule,
+        DotBaseTypeSelectorModule
     ],
     providers: [
         ContentTypesInfoService,

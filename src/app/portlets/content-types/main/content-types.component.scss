@@ -1,3 +1,9 @@
+@import 'variables';
+
 :host ::ng-deep listing-data-table tr {
     cursor: pointer;
+}
+
+dot-base-type-selector {
+    margin-left: $basic-padding * 3;
 }

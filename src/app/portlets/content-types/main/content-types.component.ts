@@ -104,6 +104,11 @@ export class ContentTypesPortletComponent implements OnInit {
         });
     }
 
+    public changeBaseTypeSelector(value: string) {
+        this.listing.paginatorService.setExtraParams('type', value);
+        this.listing.loadDataPaginationEvent({first: 0});
+    }
+
     private createRowActions(rowActionsMap: any): DotDataTableAction[] {
         const listingActions: DotDataTableAction[] = [];
 
