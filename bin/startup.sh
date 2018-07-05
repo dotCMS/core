@@ -70,6 +70,9 @@ JAVA_OPTS="$JAVA_OPTS -XX:+UseG1GC"
 # Set agent opts
 JAVA_OPTS="$JAVA_OPTS -javaagent:$DOTCMS_HOME/WEB-INF/lib/byte-buddy-agent-1.6.12.jar"
 
+# Set encoding
+JAVA_OPTS="$JAVA_OPTS -Dsun.jnu.encoding=UTF-8"
+
 if [ "$1" = "debug" ] ; then
 
     DEBUG_PORT="8000"

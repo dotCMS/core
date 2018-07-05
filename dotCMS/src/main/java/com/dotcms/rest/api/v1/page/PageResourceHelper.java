@@ -45,6 +45,8 @@ import java.util.*;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.jetbrains.annotations.NotNull;
 
+import javax.servlet.http.HttpServletRequest;
+
 /**
  * Provides the utility methods that interact with HTML Pages in dotCMS. These methods are used by
  * the Page REST end-point.
@@ -156,10 +158,13 @@ public class PageResourceHelper implements Serializable {
     }
 
     @NotNull
-    public IHTMLPage getPage(User user, String pageId) throws DotDataException, DotSecurityException {
+    public IHTMLPage getPage(final User user, final String pageId, final HttpServletRequest request)
+            throws DotDataException, DotSecurityException {
+
         try {
+            final Language currentLanguage = WebAPILocator.getLanguageWebAPI().getLanguage(request);
             final Contentlet page = this.contentletAPI.findContentletByIdentifier(pageId, false,
-                    langAPI.getDefaultLanguage().getId(), user, false);
+                    currentLanguage.getId(), user, false);
 
             if (page == null) {
                 throw new HTMLPageAssetNotFoundException(pageId);

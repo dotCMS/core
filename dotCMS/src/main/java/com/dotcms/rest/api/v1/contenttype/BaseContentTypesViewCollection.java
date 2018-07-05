@@ -1,6 +1,8 @@
 package com.dotcms.rest.api.v1.contenttype;
 
 
+import com.dotmarketing.util.UtilMethods;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -41,7 +43,10 @@ public class BaseContentTypesViewCollection {
             String name = contentTypeViewsEntry.getKey();
             List<ContentTypeView> types = contentTypeViewsEntry.getValue();
             String label = strTypeNames.get(name);
-            result.add(new BaseContentTypesView(name, label, types));
+
+            if(UtilMethods.isSet(label)) {
+                result.add(new BaseContentTypesView(name, label, types));
+            }
         }
 
         return result;
