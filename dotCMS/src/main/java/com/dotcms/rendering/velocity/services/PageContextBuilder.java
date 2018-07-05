@@ -5,6 +5,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
@@ -17,11 +18,13 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -41,6 +44,8 @@ import org.apache.velocity.context.Context;
 
 import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
+
+import javax.servlet.http.HttpServletRequest;
 
 public class PageContextBuilder {
     private static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
@@ -156,6 +161,10 @@ public class PageContextBuilder {
 
 
         if (!pageContents.isEmpty()) {
+            final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+            final Language language = request == null ? APILocator.getLanguageAPI().getDefaultLanguage() :
+                    WebAPILocator.getLanguageWebAPI().getLanguage(request);
+
             for (final String containerId : pageContents.rowKeySet()) {
                 for (final String uniqueId : pageContents.row(containerId)
                     .keySet()) {
@@ -193,7 +202,7 @@ public class PageContextBuilder {
 
                     List<Contentlet> contentlets = APILocator.getContentletAPI()
                             .findContentletsByIdentifiers(cons.stream()
-                                    .toArray(String[]::new), mode.showLive, -1, systemUser, false);
+                                    .toArray(String[]::new), mode.showLive, language != null ? language.getId() : -1, systemUser, false);
                     // get contentlets only for main frame
 
                     if (contentlets != null) {
