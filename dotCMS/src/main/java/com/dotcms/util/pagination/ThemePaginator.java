@@ -34,6 +34,8 @@ public class ThemePaginator implements Paginator<Map<String, Object>> {
 
     public static final String THEME_PNG = "theme.png";
 
+    public static final String THEME_THUMBNAIL_KEY = "themeThumbnail";
+
     private ContentletAPI contentletAPI;
 
     private FolderAPI folderAPI;
@@ -101,7 +103,7 @@ public class ThemePaginator implements Paginator<Map<String, Object>> {
                 final Folder folder = folderAPI.find(contentlet.getFolder(), user, false);
 
                 Map<String, Object> map = new HashMap<>(folder.getMap());
-                map.put("themeThumbnail", getThemeThumbnail(folder, user));
+                map.put(THEME_THUMBNAIL_KEY, getThemeThumbnail(folder, user));
                 result.add(map);
             }
 

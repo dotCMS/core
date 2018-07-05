@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.theme;
 
 import static com.dotcms.util.pagination.ThemePaginator.THEME_PNG;
+import static com.dotcms.util.pagination.ThemePaginator.THEME_THUMBNAIL_KEY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -138,13 +139,13 @@ public class ThemeResourceIntegrationTest {
         final Folder folder = APILocator.getFolderAPI()
                 .findFolderByPath("/application/themes/quest", host, user, false);
 
-        File file = File.createTempFile(THEME_PNG.split("\\.")[0], ".png");
+        final File file = File.createTempFile(THEME_PNG.split("\\.")[0], ".png");
         FileUtil.write(file, "Theme Thumbnail");
 
         try{
 
             //Creating theme.png
-            FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(folder,file);
+            final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(folder,file);
             fileAssetDataGen.setProperty("title", THEME_PNG);
             fileAssetDataGen.setProperty("fileName", THEME_PNG);
             fileAssetDataGen.setProperty("__DOTNAME__", THEME_PNG);
@@ -164,8 +165,8 @@ public class ThemeResourceIntegrationTest {
             final List<JsonNode> responseList = CollectionsUtils
                     .asList(jsonNode.get("entity").elements());
 
-            assertNotNull(responseList.get(0).get("themeThumbnail"));
-            assertEquals(thumbnail.getIdentifier(), responseList.get(0).get("themeThumbnail").textValue());
+            assertNotNull(responseList.get(0).get(THEME_THUMBNAIL_KEY));
+            assertEquals(thumbnail.getIdentifier(), responseList.get(0).get(THEME_THUMBNAIL_KEY).textValue());
 
         } finally {
 
@@ -184,11 +185,11 @@ public class ThemeResourceIntegrationTest {
         final Folder folder = APILocator.getFolderAPI()
                 .findFolderByPath("/application/themes/quest", host, user, false);
 
-        File file = File.createTempFile(THEME_PNG.split("\\.")[0], ".png");
+        final File file = File.createTempFile(THEME_PNG.split("\\.")[0], ".png");
         FileUtil.write(file, "Theme Thumbnail");
 
         try{
-            FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(folder,file);
+            final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(folder,file);
             fileAssetDataGen.setProperty("title", THEME_PNG);
             fileAssetDataGen.setProperty("fileName", THEME_PNG);
             fileAssetDataGen.setProperty("__DOTNAME__", THEME_PNG);
@@ -204,7 +205,7 @@ public class ThemeResourceIntegrationTest {
 
             final List<JsonNode> responseList = CollectionsUtils
                     .asList(jsonNode.get("entity").elements());
-            assertNull(responseList.get(0).get("themeThumbnail").textValue());
+            assertNull(responseList.get(0).get(THEME_THUMBNAIL_KEY).textValue());
 
         } finally {
 
@@ -225,11 +226,11 @@ public class ThemeResourceIntegrationTest {
         final Folder folder = APILocator.getFolderAPI()
                 .findFolderByPath("/application/themes/quest", host, user, false);
 
-        File file = File.createTempFile(THEME_PNG.split("\\.")[0], ".png");
+        final File file = File.createTempFile(THEME_PNG.split("\\.")[0], ".png");
         FileUtil.write(file, "Theme Thumbnail");
 
         try{
-            FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(folder,file);
+            final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(folder,file);
             fileAssetDataGen.setProperty("title", THEME_PNG);
             fileAssetDataGen.setProperty("fileName", THEME_PNG);
             fileAssetDataGen.setProperty("__DOTNAME__", THEME_PNG);
@@ -244,7 +245,7 @@ public class ThemeResourceIntegrationTest {
 
             final List<JsonNode> responseList = CollectionsUtils
                     .asList(jsonNode.get("entity").elements());
-            assertNull(responseList.get(0).get("themeThumbnail").textValue());
+            assertNull(responseList.get(0).get(THEME_THUMBNAIL_KEY).textValue());
 
         } finally {
 
