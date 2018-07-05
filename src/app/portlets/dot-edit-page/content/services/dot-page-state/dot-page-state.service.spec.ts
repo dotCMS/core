@@ -195,7 +195,7 @@ describe('DotPageStateService', () => {
                 )
             );
 
-            expect(lastConnection[0].request.url).toContain('/api/v1/page/render/hello/world?mode=EDIT_MODE');
+            expect(lastConnection[0].request.url).toContain('/api/v1/page/render/hello/world');
         });
 
         it('should get a page in a specific language', () => {
@@ -221,7 +221,7 @@ describe('DotPageStateService', () => {
                 )
             );
 
-            expect(lastConnection[0].request.url).toContain('/api/v1/page/render/hello/world?mode=EDIT_MODE');
+            expect(lastConnection[0].request.url).toContain('/api/v1/page/render/hello/world?language_id=2');
         });
 
         describe('locked by another user', () => {
@@ -252,7 +252,7 @@ describe('DotPageStateService', () => {
                         })
                     )
                 );
-                expect(lastConnection[0].request.url).toContain('/api/v1/page/render/test/123?mode=EDIT_MODE');
+                expect(lastConnection[0].request.url).toContain('/api/v1/page/render/test/123');
             });
 
             it('should get a locked page and set default state locked by another user', () => {
@@ -274,7 +274,7 @@ describe('DotPageStateService', () => {
                         })
                     )
                 );
-                expect(lastConnection[0].request.url).toContain('/api/v1/page/render/hola/mundo?mode=EDIT_MODE');
+                expect(lastConnection[0].request.url).toContain('/api/v1/page/render/hola/mundo');
             });
         });
     });

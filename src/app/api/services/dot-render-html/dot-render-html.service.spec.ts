@@ -53,6 +53,7 @@ describe('DotRenderHTMLService', () => {
         expect(result).toEqual(mockDotRenderedPage);
     });
 
+
     it('should get a rendered page in preview mode', () => {
         let result: DotRenderedPage;
         editPageService.getPreview('about-us').subscribe((renderedPage: DotRenderedPage) => (result = renderedPage));
@@ -101,6 +102,27 @@ describe('DotRenderHTMLService', () => {
             )
         );
         expect(lastConnection[0].request.url).toContain('/api/v1/page/render/about-us?mode=EDIT_MODE');
+        expect(result).toEqual(mockDotRenderedPage);
+    });
+
+    it('should get a rendered page in default mode', () => {
+        let result: DotRenderedPage;
+        const param: DotRenderPageOptions = {
+            url: 'about-us',
+            languageId: '2'
+        };
+        editPageService.get(param).subscribe((renderedPage: DotRenderedPage) => (result = renderedPage));
+
+        lastConnection[0].mockRespond(
+            new Response(
+                new ResponseOptions({
+                    body: {
+                        entity: mockDotRenderedPage
+                    }
+                })
+            )
+        );
+        expect(lastConnection[0].request.url).toContain('/api/v1/page/render/about-us?language_id=2');
         expect(result).toEqual(mockDotRenderedPage);
     });
 

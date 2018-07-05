@@ -72,8 +72,7 @@ export class DotPageStateService {
     get(url: string, languageId?: string): Observable<DotRenderedPageState> {
        return this.dotRenderHTMLService.get({
                url: url,
-               languageId: languageId,
-               mode: PageMode.EDIT
+               languageId: languageId
            })
            .pipe(
                 map(

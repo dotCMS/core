@@ -196,13 +196,15 @@ describe('DotEditPageResolver', () => {
     });
 
     describe('with dotRenderedPageState', () => {
+        const renderedPageState: DotRenderedPageState = new DotRenderedPageState(mockUser, mockDotRenderedPage, PageMode.EDIT);
+
         beforeEach(() => {
-            dotEditPageDataService.set(new DotRenderedPageState(mockUser, mockDotRenderedPage, PageMode.EDIT));
+            dotEditPageDataService.set(renderedPageState);
         });
 
         it('should return a DotRenderedPageState valid object', () => {
             resolver.resolve(route).subscribe((res) => {
-                expect(res).toEqual(new DotRenderedPageState(mockUser, mockDotRenderedPage));
+                expect(res).toEqual(renderedPageState);
             });
         });
     });

@@ -47,6 +47,8 @@ import { DotContentletEditorModule } from '../../../view/components/dot-contentl
 import { DotEditPageInfoModule } from '../components/dot-edit-page-info/dot-edit-page-info.module';
 import { DotEditPageInfoComponent } from '../components/dot-edit-page-info/dot-edit-page-info.component';
 import { DotUiColorsService } from '../../../api/services/dot-ui-colors/dot-ui-colors.service';
+import * as _ from 'lodash';
+import { DotRenderedPage } from '../shared/models/dot-rendered-page.model';
 
 export const mockDotPageState: DotPageState = {
     mode: PageMode.PREVIEW,
@@ -851,20 +853,23 @@ describe('DotEditContentComponent', () => {
             });
 
             it('should go to edit-page and set data for the resolver', () => {
+                const copyMockDotRenderedPage: DotRenderedPage = _.cloneDeep(mockDotRenderedPage);
+                copyMockDotRenderedPage.page.lockedBy = '123';
+
                 fixture.detectChanges();
 
                 const customEvent = document.createEvent('CustomEvent');
                 customEvent.initCustomEvent('ng-event', false, false, {
                     name: 'load-edit-mode-page',
-                    data: mockDotRenderedPage
+                    data: copyMockDotRenderedPage
                 });
                 document.dispatchEvent(customEvent);
 
                 expect(dotEditPageDataService.set).toHaveBeenCalledWith(
-                    new DotRenderedPageState(mockUser, mockDotRenderedPage, PageMode.EDIT)
+                    new DotRenderedPageState(mockUser, copyMockDotRenderedPage, PageMode.EDIT)
                 );
 
-                expect(dotRouterService.goToEditPage).toHaveBeenCalledWith(mockDotRenderedPage.page.pageURI);
+                expect(dotRouterService.goToEditPage).toHaveBeenCalledWith(copyMockDotRenderedPage.page.pageURI);
             });
 
             it('unsubcribe before destroy', () => {

@@ -1,5 +1,5 @@
 export enum PageMode {
-    EDIT,
-    PREVIEW,
-    LIVE
+    EDIT = 1,
+    PREVIEW = 2,
+    LIVE = 3
 }
