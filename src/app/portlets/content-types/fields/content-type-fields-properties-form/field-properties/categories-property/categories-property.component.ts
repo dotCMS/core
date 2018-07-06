@@ -23,16 +23,17 @@ export class CategoriesPropertyComponent extends BaseComponent implements OnInit
     categoriesCurrentPage: Category[];
     property: FieldProperty;
     group: FormGroup;
+    placeholder: string;
 
     constructor(public dotMessageService: DotMessageService, private paginationService: PaginatorService) {
-        super(
-            ['contenttypes.field.properties.category.label', 'contenttypes.field.properties.category.error.required'],
-            dotMessageService
-        );
+        super(['contenttypes.field.properties.category.label', 'contenttypes.field.properties.category.error.required'], dotMessageService);
     }
 
     ngOnInit(): void {
-        this.paginationService.url = 'v1/categories';
+        this.placeholder = !this.property.value
+            ? this.dotMessageService.get('contenttypes.field.properties.category.label')
+            : this.property.value;
+            this.paginationService.url = 'v1/categories';
     }
 
     /**

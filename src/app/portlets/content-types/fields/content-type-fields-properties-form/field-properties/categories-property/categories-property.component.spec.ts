@@ -45,7 +45,7 @@ describe('CategoriesPropertyComponent', () => {
     let de: DebugElement;
     let el: HTMLElement;
     const messageServiceMock = new MockDotMessageService({
-        'contenttypes.field.properties.categories.label': 'contenttypes.field.properties.categories.label',
+        'contenttypes.field.properties.category.label': 'Select category',
         search: 'search'
     });
 
@@ -80,10 +80,30 @@ describe('CategoriesPropertyComponent', () => {
         expect(group).toEqual(divForm.componentInstance.group);
     });
 
-    it('should set PaginatorService url', () => {
+    it('should set PaginatorService url & placeholder empty label', () => {
+        comp.property = {
+            field: {},
+            name: 'categories',
+            value: ''};
         comp.ngOnInit();
         const mockFieldPaginatorService = fixture.debugElement.injector.get(PaginatorService);
         expect('v1/categories').toBe(mockFieldPaginatorService.url);
+        expect(comp.placeholder).toBe('Select category');
+    });
+
+    it('should set stored value in placeholder label', () => {
+        comp.property = {
+            field: {},
+            name: 'categories',
+            value: {
+                categoryName: 'A-Z Index',
+                description: '',
+                key: 'azindex',
+                sortOrder: 0,
+                inode: '3297fcca-d88a-45a7-aef4-7960bc6964aa'
+            }};
+        comp.ngOnInit();
+        expect(comp.placeholder).toBe(comp.property.value);
     });
 
     describe('Pagination events', () => {

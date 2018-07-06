@@ -1,9 +1,16 @@
 <div [formGroup]="group">
     <label class="form__label">{{ i18nMessages['categories'] }}</label>
-    <dot-searchable-dropdown #searchableDropdown (filterChange)="handleFilterChange($event)" (pageChange)="handlePageChange($event)"
-        [data]="categoriesCurrentPage" [pageLinkSize]="paginationService.maxLinksPage" [rows]="paginationService.paginationPerPage"
-        [totalRecords]="paginationService.totalRecords" placeholder="{{ i18nMessages['contenttypes.field.properties.category.label'] }}" 
-        [formControlName]="property.name" labelPropertyName="categoryName" valuePropertyName="inode">
+    <dot-searchable-dropdown #searchableDropdown 
+        [data]="categoriesCurrentPage"
+        [formControlName]="property.name"
+        [pageLinkSize]="paginationService.maxLinksPage"
+        [rows]="paginationService.paginationPerPage"
+        [totalRecords]="paginationService.totalRecords"
+        (filterChange)="handleFilterChange($event)"
+        (pageChange)="handlePageChange($event)"
+        labelPropertyName="categoryName"
+        placeholder="{{ placeholder }}"
+        valuePropertyName="inode">
     </dot-searchable-dropdown>*
 
     <dot-field-validation-message 
