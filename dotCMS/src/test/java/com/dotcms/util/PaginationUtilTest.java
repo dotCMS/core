@@ -2,13 +2,10 @@ package com.dotcms.util;
 
 import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonNode;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
-import com.dotcms.repackage.javax.ws.rs.core.MultivaluedMap;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.v1.theme.ThemeResource;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.Paginator;
-import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
 import org.junit.Before;
@@ -18,12 +15,11 @@ import javax.servlet.http.HttpServletRequest;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
@@ -119,6 +115,44 @@ public class PaginationUtilTest {
         paginationUtil.getPage(req, user, filter, page, perPage, orderBy, direction, map());
 
         verify(paginator).getItems(user, perPage, offset, params);
+    }
+
+    /**
+     * Test of {@link ThemeResource#findThemes(HttpServletRequest, String, int, int, String)}
+     *
+     * Given: getItems return null
+     * Should: Should return a empty collection
+     */
+    @Test
+    public void testPageWhenFilterIsEmpty() throws IOException {
+        final HttpServletRequest req = mock( HttpServletRequest.class );
+        final User user = new User();
+        final String filter = null;
+        final int page = 2;
+        final int perPage = 5;
+        final String orderBy = "name";
+        final OrderDirection direction = OrderDirection.ASC;
+        final int offset = (page - 1) * perPage;
+        final StringBuffer baseURL = new StringBuffer("/baseURL");
+
+        when( req.getRequestURL() ).thenReturn( baseURL );
+
+        final Map<String, Object> params = map(
+                Paginator.DEFAULT_FILTER_PARAM_NAME, "",
+                Paginator.ORDER_BY_PARAM_NAME, orderBy,
+                Paginator.ORDER_DIRECTION_PARAM_NAME, direction
+        );
+
+        when( paginator.getItems( user, perPage, offset, params ) ).thenReturn( null );
+
+        final Response response = paginationUtil.getPage(req, user, filter, page, perPage, orderBy, direction, map());
+
+        verify(paginator).getItems(user, perPage, offset, params);
+
+        final ObjectMapper objectMapper = new ObjectMapper();
+        final JsonNode jsonNode = objectMapper.readTree(response.getEntity().toString());
+
+        assertFalse(jsonNode.get("entity").elements().hasNext());
     }
 }
 
