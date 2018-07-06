@@ -115,7 +115,6 @@ public class WorkflowEmailUtil {
 
             if (!UtilMethods.isSet(emailText)) {
                 emailText = VelocityUtil.getInstance().mergeTemplate("static/workflow/workflow_email_template.vtl", ctx);
-                isHTML = true;
             } else {
                 emailText = VelocityUtil.eval(emailText, ctx);
             }
