@@ -2,13 +2,10 @@ package com.dotcms.util;
 
 import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonNode;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
-import com.dotcms.repackage.javax.ws.rs.core.MultivaluedMap;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.v1.theme.ThemeResource;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.Paginator;
-import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
 import org.junit.Before;
@@ -18,15 +15,11 @@ import javax.servlet.http.HttpServletRequest;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
@@ -152,7 +145,7 @@ public class PaginationUtilTest {
 
         when( paginator.getItems( user, perPage, offset, params ) ).thenReturn( null );
 
-        Response response = paginationUtil.getPage(req, user, filter, page, perPage, orderBy, direction, map());
+        final Response response = paginationUtil.getPage(req, user, filter, page, perPage, orderBy, direction, map());
 
         verify(paginator).getItems(user, perPage, offset, params);
 
