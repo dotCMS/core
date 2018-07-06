@@ -15,8 +15,6 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.PaginatedArrayList;
 
 import com.dotmarketing.util.UUIDGenerator;
@@ -26,7 +24,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.*;
 
@@ -63,7 +60,6 @@ public class ThemeResourceTest {
     private final Contentlet content1 = mock(Contentlet.class);
     private final Contentlet content2 = mock(Contentlet.class);
     private final Host host_1 = mock(Host.class);
-    private final Host host_2 = mock(Host.class);
 
     private  PaginatedArrayList<Map<String, Object>> folders;
 
@@ -113,40 +109,11 @@ public class ThemeResourceTest {
         );
 
         when(hostAPI.find(hostId, user, false)).thenReturn(host_1);
+        when(host_1.getIdentifier()).thenReturn(hostId);
         when(mockThemePaginator.getItems(user, 3, 0, params)).thenReturn(folders);
 
-        final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI, userAPI, webResource);
+        final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI, webResource);
         final Response response = themeResource.findThemes(request, hostId, 1, 3, "ASC", null);
-
-        checkSuccessResponse(response);
-    }
-
-    /**
-     * Test of {@link ThemeResource#findThemes(HttpServletRequest, String, int, int, String, String)}
-     *
-     * Given: null host_id query param
-     * Should: Should create the follow lucene query: +parentpath:/application/themes/* +title:template.vtl host:[current_host]
-     */
-    @Test
-    public void testFindThemesDefaultHostId() throws Throwable  {
-        final String hostId = "1";
-
-        final HttpSession session = mock(HttpSession.class);
-        when(request.getSession()).thenReturn(session);
-        when(session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID)).thenReturn(hostId);
-
-        when(hostAPI.find(hostId, user, false)).thenReturn(host_1);
-
-        final Map<String, Object> params = map(
-                ThemePaginator.HOST_ID_PARAMETER_NAME, hostId,
-                Paginator.DEFAULT_FILTER_PARAM_NAME, "",
-                Paginator.ORDER_BY_PARAM_NAME, null,
-                Paginator.ORDER_DIRECTION_PARAM_NAME, OrderDirection.ASC
-        );
-        when(mockThemePaginator.getItems(user, 3, 0, params)).thenReturn(folders);
-
-        final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI, userAPI, webResource);
-        final Response response = themeResource.findThemes(request, null, 1, 3, "ASC", null);
 
         checkSuccessResponse(response);
     }
@@ -170,9 +137,10 @@ public class ThemeResourceTest {
         );
 
         when(hostAPI.find(hostId, user, false)).thenReturn(host_1);
+        when(host_1.getIdentifier()).thenReturn(hostId);
         when(mockThemePaginator.getItems(user, 3, 0, params)).thenThrow(exception);
 
-        final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI , userAPI, webResource);
+        final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI, webResource);
 
         try {
             themeResource.findThemes(request, hostId, 1, 3, "ASC", null);

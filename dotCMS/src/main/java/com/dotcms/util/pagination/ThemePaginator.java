@@ -32,8 +32,9 @@ public class ThemePaginator implements Paginator<Map<String, Object>> {
     @VisibleForTesting
     static final String BASE_LUCENE_QUERY = "+parentpath:/application/themes/* +title:template.vtl ";
 
-    @VisibleForTesting
-    static final String THEME_PNG = "theme.png";
+    public static final String THEME_PNG = "theme.png";
+
+    public static final String THEME_THUMBNAIL_KEY = "themeThumbnail";
 
     private ContentletAPI contentletAPI;
 
@@ -102,7 +103,7 @@ public class ThemePaginator implements Paginator<Map<String, Object>> {
                 final Folder folder = folderAPI.find(contentlet.getFolder(), user, false);
 
                 Map<String, Object> map = new HashMap<>(folder.getMap());
-                map.put("themeThumbnail", getThemeThumbnail(folder, user));
+                map.put(THEME_THUMBNAIL_KEY, getThemeThumbnail(folder, user));
                 result.add(map);
             }
 
@@ -118,7 +119,8 @@ public class ThemePaginator implements Paginator<Map<String, Object>> {
     String getThemeThumbnail(final Folder folder, final User user) throws DotSecurityException, DotDataException {
 
         final StringBuilder query = new StringBuilder();
-        query.append("+conFolder:").append(folder.getInode()).append(" +title:").append(THEME_PNG);
+        query.append("+conFolder:").append(folder.getInode()).append(" +title:").append(THEME_PNG)
+                .append(" +live:true +deleted:false");
         final List<Contentlet> results = contentletAPI
                 .search(query.toString(), -1, 0, null, user, false);
 

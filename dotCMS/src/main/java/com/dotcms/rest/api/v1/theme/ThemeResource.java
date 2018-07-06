@@ -20,7 +20,6 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Logger;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.module.SimpleModule;
@@ -41,23 +40,19 @@ public class ThemeResource {
     private final PaginationUtil paginationUtil;
     private final WebResource webResource;
     private final HostAPI hostAPI;
-    private final UserAPI userAPI;
 
     public ThemeResource() {
          this(
             new ThemePaginator(),
             APILocator.getHostAPI(),
-            APILocator.getUserAPI(),
             new WebResource()
         );
     }
 
     @VisibleForTesting
-    ThemeResource(final ThemePaginator themePaginator, final HostAPI hostAPI,
-                         final UserAPI userAPI, final WebResource webResource ) {
+    ThemeResource(final ThemePaginator themePaginator, final HostAPI hostAPI, final WebResource webResource ) {
         this.webResource  = webResource;
         this.hostAPI      = hostAPI;
-        this.userAPI      = userAPI;
         this.paginationUtil = new PaginationUtil(themePaginator, this.getMapper());
     }
 
@@ -89,25 +84,21 @@ public class ThemeResource {
 
         final InitDataObject initData = this.webResource.init(null, true, request, true, null);
         final User user = initData.getUser();
-        Host host;
+        Host host = null;
 
-        String hostIdToSearch = hostId != null ?
-                hostId :
-                (String) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+        String hostIdToSearch;
 
 
-        if (UtilMethods.isSet(hostIdToSearch)){
+        if (UtilMethods.isSet(hostId)){
             //Validate hostId is valid
-            host = hostAPI.find(hostIdToSearch, user, false);
+            host = hostAPI.find(hostId, user, false);
+        }
 
-            if (!UtilMethods.isSet(host)){
-                return ExceptionMapperUtil
-                        .createResponse(map("message", "Invalid Host ID"), "Invalid Host ID",
-                                Status.BAD_REQUEST);
-            }
+        if (!UtilMethods.isSet(host)){
+            return ExceptionMapperUtil
+                    .createResponse(map("message", "Invalid Host ID"), "Invalid Host ID",
+                            Status.NOT_FOUND);
         }else{
-            //Validate hostId is valid
-            host = hostAPI.findDefaultHost(user, false);
             hostIdToSearch = host.getIdentifier();
         }
 
