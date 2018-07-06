@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -82,6 +83,45 @@ public class PaginationUtilTest {
         assertEquals( response.getHeaderString("Link"), headerLink );
     }
 
+    @Test
+    public void when_One_extraParamsIsACollection() throws IOException {
+        final HttpServletRequest req = mock( HttpServletRequest.class );
+        final User user = new User();
+        final String filter = "filter";
+        final int page = 2;
+        final int perPage = 5;
+        final String orderBy = "name";
+        final OrderDirection direction = OrderDirection.ASC;
+        final int offset = (page - 1) * perPage;
+        final long totalRecords = 10;
+        final StringBuffer baseURL = new StringBuffer("/baseURL");
+
+        final String headerLink = "</baseURL?filter=filter&per_page=5&orderby=name&page=1&type=A%2CB&direction=ASC>;rel=\"first\",</baseURL?filter=filter&per_page=5&orderby=name&page=2&type=A%2CB&direction=ASC>;rel=\"last\",</baseURL?filter=filter&per_page=5&orderby=name&page=pageValue&type=A%2CB&direction=ASC>;rel=\"x-page\",</baseURL?filter=filter&per_page=5&orderby=name&page=1&type=A%2CB&direction=ASC>;rel=\"prev\"";
+
+        final PaginatedArrayList items = new PaginatedArrayList<>();
+        items.add(new PaginationUtilModeTest("testing"));
+        items.setTotalResults(totalRecords);
+
+        when( req.getRequestURL() ).thenReturn( baseURL );
+
+        final Map<String, Object> params = map(
+                "type", list("A", "B"),
+                Paginator.DEFAULT_FILTER_PARAM_NAME, filter,
+                Paginator.ORDER_BY_PARAM_NAME, orderBy,
+                Paginator.ORDER_DIRECTION_PARAM_NAME, direction
+        );
+
+        final Map<String, Object> extraParams = map(
+                "type", list("A", "B")
+        );
+
+
+        when( paginator.getItems( user, perPage, offset, params ) ).thenReturn( items );
+
+        final Response response = paginationUtil.getPage(req, user, filter, page, perPage, orderBy, direction, extraParams);
+
+        assertEquals(headerLink, response.getHeaderString("Link"));
+    }
 
     /**
      * Test of {@link ThemeResource#findThemes(HttpServletRequest, String, int, int, String)}
