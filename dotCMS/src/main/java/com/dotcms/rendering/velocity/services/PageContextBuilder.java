@@ -201,7 +201,8 @@ public class PageContextBuilder {
 
                     List<Contentlet> contentlets = APILocator.getContentletAPI()
                             .findContentletsByIdentifiers(cons.stream()
-                                    .toArray(String[]::new), mode.showLive, language != null ? language.getId() : -1, systemUser, false);
+                                    .toArray(String[]::new), mode.showLive,
+                                        language != null ? language.getId() : APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
                     // get contentlets only for main frame
 
                     if (contentlets != null) {

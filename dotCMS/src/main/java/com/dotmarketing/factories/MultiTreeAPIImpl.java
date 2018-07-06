@@ -70,7 +70,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             Contentlet contentlet = null;
             try {
                 contentlet = contentletAPI.findContentletByIdentifier(multiTree.getContentlet(), liveMode,
-                        language != null ? language.getId() : -1, systemUser, false);
+                        language != null ? language.getId() : APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
             }catch(DotDataException | DotSecurityException | DotContentletStateException e){
                 Logger.warn(this.getClass(), "invalid contentlet on multitree:" + multiTree);
             }
