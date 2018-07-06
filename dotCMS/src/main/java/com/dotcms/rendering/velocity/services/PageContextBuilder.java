@@ -160,7 +160,8 @@ public class PageContextBuilder {
         final Language language = request == null ? APILocator.getLanguageAPI().getDefaultLanguage() :
                 WebAPILocator.getLanguageWebAPI().getLanguage(request);
 
-        Table<String, String, Set<String>> pageContents = APILocator.getMultiTreeAPI().getPageMultiTrees(htmlPage, language, mode.showLive);
+        final Table<String, String, Set<String>> pageContents = APILocator.getMultiTreeAPI()
+                .getPageMultiTrees(htmlPage, language, mode.showLive);
 
         if (!pageContents.isEmpty()) {
 
