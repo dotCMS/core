@@ -156,14 +156,13 @@ public class PageContextBuilder {
 
 
     private void populateContainers() throws DotDataException, DotSecurityException {
-        Table<String, String, Set<String>> pageContents = APILocator.getMultiTreeAPI().getPageMultiTrees(htmlPage, mode.showLive);
+        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        final Language language = request == null ? APILocator.getLanguageAPI().getDefaultLanguage() :
+                WebAPILocator.getLanguageWebAPI().getLanguage(request);
 
-
+        Table<String, String, Set<String>> pageContents = APILocator.getMultiTreeAPI().getPageMultiTrees(htmlPage, language, mode.showLive);
 
         if (!pageContents.isEmpty()) {
-            final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-            final Language language = request == null ? APILocator.getLanguageAPI().getDefaultLanguage() :
-                    WebAPILocator.getLanguageWebAPI().getLanguage(request);
 
             for (final String containerId : pageContents.rowKeySet()) {
                 for (final String uniqueId : pageContents.row(containerId)

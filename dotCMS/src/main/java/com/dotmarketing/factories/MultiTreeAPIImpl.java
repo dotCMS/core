@@ -52,11 +52,9 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
     }
 
-    public Table<String, String, Set<String>>  getPageMultiTrees(final IHTMLPage page, final boolean liveMode)
-            throws DotDataException, DotSecurityException {
-        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-        final Language language = request == null ? APILocator.getLanguageAPI().getDefaultLanguage() :
-                WebAPILocator.getLanguageWebAPI().getLanguage(request);
+    @Override
+    public Table<String, String, Set<String>>  getPageMultiTrees(final IHTMLPage page, final Language language,
+                                                                 final boolean liveMode) throws DotDataException, DotSecurityException {
 
         final Table<String, String, Set<String>> pageContents = HashBasedTable.create();
         final List<MultiTree> multiTres = MultiTreeFactory.getMultiTrees(page.getIdentifier());
