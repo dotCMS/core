@@ -205,13 +205,16 @@ public class PageResourceHelper implements Serializable {
     }
 
     @WrapInTransaction
-    protected void updateMultiTrees(IHTMLPage page, PageForm pageForm) throws DotDataException, DotSecurityException {
+    protected void updateMultiTrees(final IHTMLPage page, final PageForm pageForm) throws DotDataException, DotSecurityException {
+        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        final Language language = request == null ? APILocator.getLanguageAPI().getDefaultLanguage() :
+                WebAPILocator.getLanguageWebAPI().getLanguage(request);
 
-        final Table<String, String, Set<String>> pageContents = multiTreeAPI.getPageMultiTrees(page, false);
+        final Table<String, String, Set<String>> pageContents = multiTreeAPI.getPageMultiTrees(page, language, false);
 
-        String pageIdentifier = page.getIdentifier();
+        final String pageIdentifier = page.getIdentifier();
         MultiTreeFactory.deleteMultiTreeByParent(pageIdentifier);
-        List<MultiTree> multiTrees = new ArrayList<>();
+        final List<MultiTree> multiTrees = new ArrayList<>();
 
         for (final String containerId : pageContents.rowKeySet()) {
             int treeOrder = 0;
