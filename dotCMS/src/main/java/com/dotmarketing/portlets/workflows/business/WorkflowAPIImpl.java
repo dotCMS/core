@@ -2264,7 +2264,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				final BatchAction batchAction = BatchAction.class.cast(actionlet);
 				final List <?> objects = batchAction.getObjectsForBatch(actionsContext, actionClass);
 				try {
-					batchAction.executeBatchAction(user, actionsContext, actionClass, params);
+					this.executeBatchAction(user, actionsContext, actionClass, params, batchAction);
 				} catch (Exception e) {
 					failsConsumer.accept(objects, e);
 					Logger.error(getClass(),
@@ -2277,6 +2277,16 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				}
 			}
 		}
+	}
+
+	@WrapInTransaction
+	private void executeBatchAction(final User user,
+									final ConcurrentMap<String, Object> actionsContext,
+									final WorkflowActionClass actionClass,
+									final Map<String, WorkflowActionClassParameter> params,
+									final BatchAction batchAction) {
+
+		batchAction.executeBatchAction(user, actionsContext, actionClass, params);
 	}
 
 	/**
@@ -2520,7 +2530,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 				if (!schemes.stream().anyMatch(scheme -> scheme.getId().equals(action.getSchemeId()))) {
 					throw new IllegalArgumentException(LanguageUtil
-							.get(user.getLocale(), "Invalid-Action-Scheme-Error", actionId));
+							.get(user.getLocale(), "Invalid-Action-Scheme-Error", actionId, contentlet.getContentType().name(), contentlet.getInode()));
 				}
 
 				final WorkflowScheme  scheme = schemes.stream().filter

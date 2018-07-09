@@ -4,6 +4,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.ContentMappingAPI;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
@@ -171,6 +172,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	 *
 	 * Jun 7, 2013 - 3:47:26 PM
 	 */
+	@CloseDBIfOpened
 	public Map<String,Object> toMap(final Contentlet contentlet) throws DotMappingException {
 
 		try {
@@ -612,6 +614,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	public String toJsonString(Map<String, Object> map) throws IOException{
 		return mapper.writeValueAsString(map);
 	}
+
+	@CloseDBIfOpened
 	public List<String> dependenciesLeftToReindex(Contentlet con) throws DotStateException, DotDataException, DotSecurityException {
 		List<String> dependenciesToReindex = new ArrayList<String>();
 
