@@ -7,7 +7,7 @@ import com.dotmarketing.util.Logger;
 import org.apache.velocity.exception.ResourceNotFoundException;
 
 /**
- * Handles a HttpStatusCodeException using the status on the
+ * Handles a ResourceNotFoundException by returning 404
  * @author jsanca
  */
 @Provider
@@ -15,10 +15,9 @@ public class ResourceNotFoundExceptionMapper implements ExceptionMapper<Resource
 
     @Override
     public Response toResponse(final ResourceNotFoundException exception) {
-        //Log into our logs first.
+        
         Logger.warn(this.getClass(), exception.getMessage(), exception);
 
-        //Return 4xx message to the client.
         return
                 ExceptionMapperUtil.createResponse(ExceptionMapperUtil.getJsonErrorAsString(exception.getMessage()), exception.getMessage(), Response.Status.NOT_FOUND);
 
