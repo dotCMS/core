@@ -89,6 +89,19 @@ describe('PaginatorService getting', () => {
         expect(this.result).toEqual(fakeEntity);
     });
 
+    it('links should has the right values', () => {
+        expect(this.paginatorService.links.first).toEqual('/baseURL?filter=filter&page=1');
+        expect(this.paginatorService.links.last).toEqual('</baseURL?filter=filter&page=5');
+        expect(this.paginatorService.links.next).toEqual('</baseURL?filter=filter&page=4');
+        expect(this.paginatorService.links.prev).toEqual('</baseURL?filter=filter&page=2');
+        expect(this.paginatorService.links['x-page']).toEqual('</baseURL?filter=filter&page=pageValue');
+    });
+
+    it('clean links after set any extra params', () => {
+        this.paginatorService.setExtraParams('any_param', 'any_value');
+        expect({}).toEqual(this.paginatorService.links);
+    });
+
     it('should set basic pagination information', () => {
         expect(this.paginatorService.currentPage).toEqual(3);
         expect(this.paginatorService.maxLinksPage).toEqual(5);

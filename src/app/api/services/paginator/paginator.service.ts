@@ -68,6 +68,7 @@ export class PaginatorService {
     setExtraParams(name: string, value?: any): void {
         if (value !== null && value !== undefined) {
             this.extraParams.set(name, value.toString());
+            this.links = {};
         }
     }
 
@@ -231,7 +232,7 @@ export class PaginatorService {
             const url = linkrealSplit[0].substring(1, linkrealSplit[0].length - 1);
             const relSplit = linkrealSplit[1].split('=');
             const rel = relSplit[1].substring(1, relSplit[1].length - 1);
-            this.links[rel] = url;
+            this.links[rel] = url.trim();
         });
     }
 }
