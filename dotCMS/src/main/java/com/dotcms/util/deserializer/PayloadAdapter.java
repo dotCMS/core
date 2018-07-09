@@ -3,20 +3,11 @@ package com.dotcms.util.deserializer;
 
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.Visibility;
-import com.dotcms.repackage.com.fasterxml.jackson.core.JsonParser;
-import com.dotcms.repackage.com.fasterxml.jackson.core.JsonProcessingException;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.DeserializationContext;
 import com.google.gson.*;
-import com.liferay.portal.model.User;
 
-import java.io.IOException;
 import java.lang.reflect.Type;
 
 import static com.dotcms.util.ReflectionUtils.getClassFor;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Json deserializer and serializer for {@link Payload} objects, the format of the json is the follow:<br>
@@ -87,7 +78,7 @@ public class PayloadAdapter implements JsonDeserializer<Payload>,JsonSerializer<
 
     @Override
     public JsonElement serialize(Payload payload, Type type, JsonSerializationContext jsonSerializationContext) {
-        JsonObject jsonElement = new JsonObject();
+        final JsonObject jsonElement = new JsonObject();
         jsonElement.addProperty(TYPE, payload.getRawData().getClass().getName());
         jsonElement.addProperty(VISIBILITY, payload.getVisibility().name());
         Object visibilityValue = payload.getVisibilityValue();
