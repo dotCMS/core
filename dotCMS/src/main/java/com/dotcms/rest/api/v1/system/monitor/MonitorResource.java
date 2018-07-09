@@ -17,6 +17,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.repackage.javax.ws.rs.*;
+import com.dotcms.util.HttpRequestDataUtil;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.util.*;
 import org.elasticsearch.client.Client;
@@ -70,9 +71,25 @@ public class MonitorResource {
         // force authentication
         //InitDataObject auth = webResource.init(false, httpRequest, false);  cannot require as we cannot assume db or other subsystems are functioning
 
-        String ip_acl = Config.getStringProperty("SYSTEM_STATUS_API_IP_ACL", "127.0.0.1");
-        // TODO validate whether or not IP of client matches ACL
-        System.out.println("ip_acl="+ ip_acl);
+        String config_ip_acl = Config.getStringProperty("SYSTEM_STATUS_API_IP_ACL", "127.0.0.1");
+        String[] aclIPs = null;
+        if(config_ip_acl != null)
+            aclIPs = config_ip_acl.split(",");
+        System.out.println("config_ip_acl="+ config_ip_acl);
+        System.out.println("request.getRemoteAddr=" + request.getRemoteAddr());
+        Boolean allowedAccess = false;
+        if(aclIPs == null) {
+            allowedAccess = true;
+        }
+        else {
+            for(String aclIP : aclIPs) {
+                if(HttpRequestDataUtil.isIpMatchingNetmask(request.getRemoteAddr(), aclIP)){
+                    allowedAccess = true;
+                    break;
+                }
+            }
+        }
+        System.out.println("allowedAccess=" + allowedAccess);
 
         boolean extendedFormat = false;
         if (request.getQueryString() != null && "extended".equals(request.getQueryString()))
