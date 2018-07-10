@@ -107,7 +107,7 @@ public class URLMapFilter implements Filter {
         final String mastRegEx   = loadURLMapPatterns();
         final boolean trailSlash = uri.endsWith(StringPool.FORWARD_SLASH);
         final boolean isDotPage  = this.cmsUrlUtil.isPageAsset(uri, host, languageId);
-        final String url         = (!trailSlash && !isDotPage)? uri + StringPool.FORWARD_SLASH : uri;
+        final String url         = !trailSlash && !isDotPage? uri + StringPool.FORWARD_SLASH : uri;
 
         // if not URLMAP Pattern or if it is webdav, continue
         if (!UtilMethods.isSet(mastRegEx) || this.cmsUrlUtil.isVanityUrlFiltered(uri)) {
@@ -173,8 +173,8 @@ public class URLMapFilter implements Filter {
 
                     // Set Host Stuff
                     final Field   hostField       = this.findHostField (fields);
-                    final boolean hasHostField    = (null != hostField);
-                    final boolean hostIsRequired  = (null != hostField)?hostField.isRequired():false;
+                    final boolean hasHostField    = null != hostField;
+                    final boolean hostIsRequired  = null != hostField? hostField.isRequired():false;
 
                     this.setHostQuery(host, query, hasHostField);
                     this.buildFields (query, structure, groups, fieldMatches);
@@ -199,7 +199,7 @@ public class URLMapFilter implements Filter {
                         }
 
                         contentletSearches = this.contentletAPI.searchIndex(query.toString(), 2, 0,
-                                (hostIsRequired ? "conhost, modDate" : "modDate"), this.wuserAPI.getSystemUser(), true);
+                                hostIsRequired? "conhost, modDate" : "modDate", this.wuserAPI.getSystemUser(), true);
 
                         int idx = 0;
                         if (checkIndex && contentletSearches.size() == 2) {
@@ -278,7 +278,7 @@ public class URLMapFilter implements Filter {
                                         .getDetailPage());
                     }
 
-                    if ((contentletSearches != null && contentletSearches.size() > 0) || !urlFallthrough) {
+                    if (UtilMethods.isSet (contentletSearches) || !urlFallthrough) {
 
                         request.setAttribute(Constants.CMS_FILTER_URI_OVERRIDE, identifier.getURI());
                     }
@@ -441,18 +441,23 @@ public class URLMapFilter implements Filter {
             masterRegEx.append(regEx);
             first = false;
         }
+
         Collections.sort(this.patternsCache, new Comparator<URLMapFilter.PatternCache>() {
-            public int compare(URLMapFilter.PatternCache o1, URLMapFilter.PatternCache o2) {
-                String regex1 = o1.getRegEx();
-                String regex2 = o2.getRegEx();
-                if (!regex1.endsWith("/")) {
-                    regex1 += "/";
+            public int compare(URLMapFilter.PatternCache patternCache1, URLMapFilter.PatternCache patternCache2) {
+                String regex1 = patternCache1.getRegEx();
+                String regex2 = patternCache2.getRegEx();
+
+                if (!regex1.endsWith(StringPool.FORWARD_SLASH)) {
+                    regex1 += StringPool.FORWARD_SLASH;
                 }
-                if (!regex2.endsWith("/")) {
-                    regex2 += "/";
+
+                if (!regex2.endsWith(StringPool.FORWARD_SLASH)) {
+                    regex2 += StringPool.FORWARD_SLASH;
                 }
-                int regExLength1 = getSlashCount(regex1);
-                int regExLength2 = getSlashCount(regex2);
+
+                final int regExLength1 = getSlashCount(regex1);
+                final int regExLength2 = getSlashCount(regex2);
+
                 if (regExLength1 < regExLength2) {
                     return 1;
                 } else if (regExLength1 > regExLength2) {
@@ -462,6 +467,7 @@ public class URLMapFilter implements Filter {
                 }
             }
         });
+
         CacheLocator.getContentTypeCache().addURLMasterPattern(masterRegEx.toString());
         return masterRegEx.toString();
     }
