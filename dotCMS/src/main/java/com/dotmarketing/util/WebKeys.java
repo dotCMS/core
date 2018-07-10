@@ -409,6 +409,7 @@ public final class WebKeys {
 
     public static final String CRUMB_TRAIL = "com.dotmarketing.viewtool.crumbtrail";
 	public static final String REDIRECT_AFTER_LOGIN = "REDIRECT_AFTER_LOGIN";
+    public static final String DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE = "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE";
 
 	// CMS USER LOGIN
     public static final String CMS_USER = "cms.user";
