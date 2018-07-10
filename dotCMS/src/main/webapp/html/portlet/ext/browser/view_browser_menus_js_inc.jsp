@@ -640,7 +640,7 @@
 		var hasLiveVersion = page.hasLiveVersion;
 		var strHTML = '';
 		if ((live || working) && read && !archived) {
-			strHTML += '<a href="javascript: previewHTMLPage(\'' + pageURI + '\');" class="context-menu__item">';
+			strHTML += '<a href="javascript: previewHTMLPage(\'' + pageURI + '\', { languageId: ' + page.languageId + '});" class="context-menu__item">';
 		    	//strHTML += '<span class="pageIcon"></span>';
 	    	    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Open-Preview")) %>';
 			strHTML += '</a>';
