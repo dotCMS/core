@@ -271,7 +271,7 @@
     function reloadSchemeStore (aFilteringSelect, structureInode) {
 
         var xhrArgs = {
-            url: "/api/v1/workflow/schemes" + ((null != structureInode && structureInode && "catchall"!=structureInode)?"?contentTypeId="+structureInode:""),
+            url: "/api/v1/workflow/schemes?showArchive=false" + ((null != structureInode && structureInode && "catchall"!=structureInode)?"&contentTypeId="+structureInode:""),
             handleAs: "json",
             load: function(data) {
 
