@@ -9703,13 +9703,9 @@ Styles for commons fields along the backend
   width: 100%;
 }
 
-.langVariablesField {
-  position: relative;
-}
-
 .langVariablesField .glossaryTermPopup {
-  right: 0;
-  top: 36px;
+  right: -8px;
+  bottom: 36px;
 }
 
 .wysiwyg-tools .dijitSelect {
@@ -10700,6 +10696,7 @@ a.category_higlighted, a.tag_higlighted {
   width: 100%;
   max-width: 900px;
   margin: 0 auto;
+  position: relative;
 }
 
 .content-edit__sidebar {
