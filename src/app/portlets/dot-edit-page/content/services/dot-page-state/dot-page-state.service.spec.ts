@@ -172,7 +172,7 @@ describe('DotPageStateService', () => {
     });
 
     describe('get a page state', () => {
-        it('should get a unlocked page and set default state', () => {
+        fit('should get a unlocked page and set default state', () => {
             const { lockedBy, lockMessage, lockedByName, lockedOn, ...noLockedByPage } = mockDotPage;
 
             service.get('/hello/world').subscribe((updatedPageState: DotRenderedPageState) => {
@@ -201,7 +201,7 @@ describe('DotPageStateService', () => {
         it('should get a page in a specific language', () => {
             const { lockedBy, lockMessage, lockedByName, lockedOn, ...noLockedByPage } = mockDotPage;
 
-            service.get('/hello/world', '2').subscribe((updatedPageState: DotRenderedPageState) => {
+            service.get('/hello/world', 2).subscribe((updatedPageState: DotRenderedPageState) => {
                 expect(updatedPageState.page).toEqual(noLockedByPage);
                 expect(updatedPageState.state).toEqual({
                     locked: false,

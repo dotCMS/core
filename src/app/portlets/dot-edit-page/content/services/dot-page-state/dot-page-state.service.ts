@@ -1,7 +1,7 @@
 import { DotPage } from './../../../shared/models/dot-page.model';
 import { LoginService } from 'dotcms-js/dotcms-js';
 import { DotRenderedPageState, DotPageState } from '../../../shared/models/dot-rendered-page-state.model';
-import { DotRenderHTMLService } from '../../../../../api/services/dot-render-html/dot-render-html.service';
+import { DotRenderHTMLService, DotRenderPageOptions } from '../../../../../api/services/dot-render-html/dot-render-html.service';
 import { DotRenderedPage } from '../../../shared/models/dot-rendered-page.model';
 import { Observable } from 'rxjs/Observable';
 import { Injectable } from '@angular/core';
@@ -32,10 +32,10 @@ export class DotPageStateService {
      */
     set(page: DotPage, state: DotPageState, viewAs?: DotEditPageViewAs): Observable<DotRenderedPageState> {
         const lockUnlock$: Observable<string> = this.getLockMode(page.workingInode, state.locked);
-        const pageOpts = {
+        const pageOpts: DotRenderPageOptions = {
             url: page.pageURI,
             mode: state.mode,
-            viewAs: viewAs
+            viewAs: this.dotRenderHTMLService.getDotEditPageViewAsParams(viewAs)
         };
         const pageMode$: Observable<DotRenderedPage> =
             state.mode !== undefined ? this.dotRenderHTMLService.get(pageOpts) : Observable.of(null);
@@ -69,18 +69,24 @@ export class DotPageStateService {
      * @returns {Observable<DotRenderedPageState>}
      * @memberof DotPageStateService
      */
-    get(url: string, languageId?: string): Observable<DotRenderedPageState> {
-       return this.dotRenderHTMLService.get({
-               url: url,
-               languageId: languageId
-           })
+    get(url: string, languageId?: number): Observable<DotRenderedPageState> {
+       const options: DotRenderPageOptions = {
+            url: url
+       };
+
+       if (languageId) {
+            options.viewAs = {
+                language_id: languageId
+            };
+        }
+
+       return this.dotRenderHTMLService.get(options)
            .pipe(
                 map(
                     (page: DotRenderedPage) =>
                         new DotRenderedPageState(this.loginService.auth.loginAsUser || this.loginService.auth.user, page)
                 )
            );
-;
     }
 
     private getLockMode(workingInode: string, lock: boolean): Observable<string> {

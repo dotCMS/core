@@ -229,7 +229,7 @@ describe('DotEditContentViewAsToolbarComponent', () => {
             });
             fixtureHost.detectChanges();
 
-            expect(languageSelector.value).toEqual(mockDotEditPageViewAs.language);
+            expect(languageSelector.value).toEqual(<DotLanguage> mockDotEditPageViewAs.language);
             expect(deviceSelector.value).toEqual(mockDotEditPageViewAs.device);
             expect(personaSelector.value).toEqual(mockDotEditPageViewAs.persona);
         });

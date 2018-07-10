@@ -109,7 +109,9 @@ describe('DotRenderHTMLService', () => {
         let result: DotRenderedPage;
         const param: DotRenderPageOptions = {
             url: 'about-us',
-            languageId: '2'
+            viewAs: {
+                language_id: 2
+            }
         };
         editPageService.get(param).subscribe((renderedPage: DotRenderedPage) => (result = renderedPage));
 
@@ -130,7 +132,9 @@ describe('DotRenderHTMLService', () => {
         let result: DotRenderedPage;
         const param: DotRenderPageOptions = {
             url: 'about-us',
-            languageId: '2',
+            viewAs: {
+                language_id: 2
+            },
             mode: PageMode.EDIT
         };
         editPageService.get(param).subscribe((renderedPage: DotRenderedPage) => (result = renderedPage));
