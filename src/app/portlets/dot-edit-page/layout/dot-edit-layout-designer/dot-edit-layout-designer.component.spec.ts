@@ -18,7 +18,7 @@ import { Component, Input, EventEmitter, Output } from '@angular/core';
 import { TemplateContainersCacheService } from '../../template-containers-cache.service';
 import { FieldValidationMessageModule } from '../../../../view/components/_common/field-validation-message/file-validation-message.module';
 import { DotRenderedPageState } from '../../shared/models/dot-rendered-page-state.model';
-import {mockDotRenderedPage, mockDotTemplate} from '../../../../test/dot-rendered-page.mock';
+import { mockDotRenderedPage, mockDotTemplate } from '../../../../test/dot-rendered-page.mock';
 import { mockUser } from '../../../../test/login-service.mock';
 import { async } from '@angular/core/testing';
 import { DotRouterService } from '../../../../api/services/dot-router/dot-router.service';
@@ -27,6 +27,9 @@ import { DotTheme } from '../../shared/models/dot-theme.model';
 import { mockDotThemes } from '../../../../test/dot-themes.mock';
 import { DotThemesService } from '../../../../api/services/dot-themes/dot-themes.service';
 import { DotThemesServiceMock } from '../../../../test/dot-themes-service.mock';
+import { TooltipModule } from 'primeng/primeng';
+import { Observable } from 'rxjs/Observable';
+import * as _ from 'lodash';
 
 @Component({
     selector: 'dot-template-addtional-actions-menu',
@@ -69,12 +72,14 @@ const messageServiceMock = new MockDotMessageService({
     'editpage.layout.dialog.info': 'This is the message',
     'editpage.layout.toolbar.action.save': 'Save',
     'editpage.layout.toolbar.save.template': 'Save as template',
-    'editpage.layout.toolbar.template.name': 'Name of the template'
+    'editpage.layout.toolbar.template.name': 'Name of the template',
+    'org.dotcms.frontend.content.submission.not.proper.permissions': 'No Read Permission'
 });
 
 let component: DotEditLayoutDesignerComponent;
 let fixture: ComponentFixture<DotEditLayoutDesignerComponent>;
 let dotRouterService: DotRouterService;
+let dotThemesService: DotThemesService;
 
 const testConfigObject = {
     declarations: [
@@ -90,7 +95,8 @@ const testConfigObject = {
         DotEditPageInfoModule,
         FieldValidationMessageModule,
         FormsModule,
-        RouterTestingModule
+        RouterTestingModule,
+        TooltipModule
     ],
     providers: [
         DotRouterService,
@@ -107,18 +113,17 @@ const testConfigObject = {
 };
 
 describe('DotEditLayoutDesignerComponent', () => {
-    beforeEach(
-        async(() => {
-            DOTTestBed.configureTestingModule({
-                ...testConfigObject,
-                providers: [...testConfigObject.providers]
-            });
+    beforeEach(() => {
+        DOTTestBed.configureTestingModule({
+            ...testConfigObject,
+            providers: [...testConfigObject.providers]
+        });
 
-            fixture = DOTTestBed.createComponent(DotEditLayoutDesignerComponent);
-            component = fixture.componentInstance;
-            dotRouterService = fixture.debugElement.injector.get(DotRouterService);
-        })
-    );
+        fixture = DOTTestBed.createComponent(DotEditLayoutDesignerComponent);
+        component = fixture.componentInstance;
+        dotRouterService = fixture.debugElement.injector.get(DotRouterService);
+        dotThemesService = fixture.debugElement.injector.get(DotThemesService);
+    });
 
     describe('edit layout', () => {
         beforeEach(() => {
@@ -126,7 +131,7 @@ describe('DotEditLayoutDesignerComponent', () => {
                 mockUser,
                 {
                     ...mockDotRenderedPage,
-                    template: {...mockDotTemplate, theme: '123'},
+                    template: { ...mockDotTemplate, theme: '123' },
                     canCreateTemplate: false
                 },
                 null
@@ -217,28 +222,6 @@ describe('DotEditLayoutDesignerComponent', () => {
             });
         });
 
-        describe('themes', () => {
-            let themeSelector: MockDotThemeSelectorComponent;
-            let themeButton;
-            beforeEach(() => {
-                themeButton = fixture.debugElement.query(By.css('.dot-edit-layout__toolbar-action-themes')).nativeElement;
-                themeButton.click();
-                fixture.detectChanges();
-                themeSelector = fixture.debugElement.query(By.css('dot-theme-selector')).componentInstance;
-            });
-
-            it('should expose theme selector component', () => {
-                expect(themeSelector).not.toBe(null);
-            });
-
-            it('should get the emitted value from themes and trigger a save', () => {
-                spyOn(component, 'changeThemeHandler').and.callThrough();
-                themeSelector.selected.emit(mockDotThemes[0]);
-
-                expect(component.changeThemeHandler).toHaveBeenCalledWith(mockDotThemes[0]);
-            });
-        });
-
         describe('can save as template', () => {
             beforeEach(() => {
                 component.pageState = new DotRenderedPageState(
@@ -284,6 +267,53 @@ describe('DotEditLayoutDesignerComponent', () => {
                     expect(component.form.get('title').value).toEqual('Hello World');
                 });
             });
+        });
+    });
+
+    describe('themes', () => {
+        let themeSelector: MockDotThemeSelectorComponent;
+        let themeButton;
+        beforeEach(() => {
+            component.pageState = new DotRenderedPageState(
+                mockUser,
+                {
+                    ...mockDotRenderedPage,
+                    template: { ...mockDotTemplate, theme: '123' },
+                    canCreateTemplate: false
+                },
+                null
+            );
+            component.themeDialogVisibility = true;
+        });
+
+        it('should expose theme selector component & Theme button be enabled', () => {
+            fixture.detectChanges();
+            themeButton = fixture.debugElement.query(By.css('.dot-edit-layout__toolbar-action-themes')).nativeElement;
+            themeButton.click();
+            themeSelector = fixture.debugElement.query(By.css('dot-theme-selector')).componentInstance;
+            const themeSelectorBtn = fixture.debugElement.query(By.css('.dot-edit-layout__toolbar-action-themes')).nativeElement;
+            expect(themeSelector).not.toBe(null);
+            expect(themeSelectorBtn.disabled).toBe(false);
+        });
+
+        it('should Theme button be disabled', () => {
+            spyOn(dotThemesService, 'get').and.returnValue(Observable.of(null));
+            fixture.detectChanges();
+            const themeSelectorBtn = fixture.debugElement.query(By.css('.dot-edit-layout__toolbar-action-themes')).nativeElement;
+            const themeSelectorBtnContainer = fixture.debugElement.query(By.css('.dot-edit__layout-actions-themes')).nativeElement;
+            expect(themeSelectorBtn.disabled).toBe(true);
+            expect(themeSelectorBtnContainer.outerHTML).toContain('No Read Permission');
+        });
+
+        it('should get the emitted value from themes and trigger a save', () => {
+            spyOn(component, 'changeThemeHandler').and.callThrough();
+            fixture.detectChanges();
+            themeButton = fixture.debugElement.query(By.css('.dot-edit-layout__toolbar-action-themes')).nativeElement;
+            themeButton.click();
+            themeSelector = fixture.debugElement.query(By.css('dot-theme-selector')).componentInstance;
+            const mockTheme = _.cloneDeep(mockDotThemes[0]);
+            themeSelector.selected.emit(mockTheme);
+            expect(component.changeThemeHandler).toHaveBeenCalledWith(mockTheme);
         });
     });
 
@@ -479,7 +509,7 @@ describe('DotEditLayoutDesignerComponent', () => {
                 mockUser,
                 {
                     ...mockDotRenderedPage,
-                    template: {...mockDotTemplate, theme: '123'},
+                    template: { ...mockDotTemplate, theme: '123' },
                     canCreateTemplate: false
                 },
                 null

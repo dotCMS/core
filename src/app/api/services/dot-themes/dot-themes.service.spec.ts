@@ -22,7 +22,7 @@ describe('DotThemesService', () => {
             new Response(
                 new ResponseOptions({
                     body: {
-                        entity: [mockDotThemes[0]]
+                        entity: mockDotThemes[0]
                     }
                 })
             )

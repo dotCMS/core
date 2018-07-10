@@ -17,6 +17,9 @@ import { DotLayoutSideBar } from '../../shared/models/dot-layout-sidebar.model';
 import { DotRouterService } from '../../../../api/services/dot-router/dot-router.service';
 import { DotTheme } from '../../shared/models/dot-theme.model';
 import { DotThemesService } from '../../../../api/services/dot-themes/dot-themes.service';
+import { Observable } from '../../../../../../node_modules/rxjs/Observable';
+import { DotHttpErrorManagerService, DotHttpErrorHandled } from '../../../../api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { tap } from '../../../../../../node_modules/rxjs/operators/tap';
 
 @Component({
     selector: 'dot-edit-layout-designer',
@@ -48,7 +51,8 @@ export class DotEditLayoutDesignerComponent implements OnInit {
         private loginService: LoginService,
         private dotRouterService: DotRouterService,
         public dotMessageService: DotMessageService,
-        private dotThemesService: DotThemesService
+        private dotThemesService: DotThemesService,
+        private dotHttpErrorManagerService: DotHttpErrorManagerService
     ) {}
 
     ngOnInit(): void {
@@ -64,7 +68,9 @@ export class DotEditLayoutDesignerComponent implements OnInit {
                 'editpage.layout.dialog.info',
                 'editpage.layout.toolbar.action.save',
                 'editpage.layout.toolbar.save.template',
-                'editpage.layout.toolbar.template.name'
+                'editpage.layout.toolbar.template.name',
+                'editpage.layout.theme.button.label',
+                'org.dotcms.frontend.content.submission.not.proper.permissions'
             ])
             .subscribe();
 
@@ -187,9 +193,12 @@ export class DotEditLayoutDesignerComponent implements OnInit {
         this.templateContainersCacheService.set(this.pageState.containers);
         this.initForm();
         this.saveAsTemplateHandleChange(false);
-        this.dotThemesService.get(this.form.get('themeId').value).subscribe((theme: DotTheme) => {
-            this.currentTheme = theme;
-        });
+        this.dotThemesService.get(this.form.get('themeId').value).subscribe(
+            (theme: DotTheme) => {
+                this.currentTheme = theme;
+            },
+            (error: ResponseView) => this.errorHandler(error)
+        );
         // Emit event to redraw the grid when the sidebar change
         this.form.get('layout.sidebar').valueChanges.subscribe(() => {
             this.dotEventsService.notify('layout-sidebar-change');
@@ -250,5 +259,16 @@ export class DotEditLayoutDesignerComponent implements OnInit {
 
     private shouldShowDialog(): boolean {
         return this.editTemplate && !this.isLayout() && this.pageState.template.canEdit;
+    }
+
+    private errorHandler(err: ResponseView): Observable<any> {
+        return this.dotHttpErrorManagerService.handle(err).pipe(
+                tap((res: DotHttpErrorHandled) => {
+                if (!res.redirected) {
+                    this.dotRouterService.goToSiteBrowser();
+                }
+                this.currentTheme = err.response.status === 403 ? null : this.currentTheme;
+            }
+        ));
     }
 }

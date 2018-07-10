@@ -17,7 +17,7 @@ export class DotThemesService {
      * Get Theme information based on the inode.
      *
      * @param {string} inode
-     * @returns {Observable<DotTheme[]>}
+     * @returns {Observable<DotTheme>}
      * @memberof DotThemesService
      */
     get(inode: string): Observable<DotTheme> {
@@ -26,7 +26,6 @@ export class DotThemesService {
                 method: RequestMethod.Get,
                 url: 'v1/themes/id/' + inode
             })
-            .pluck('entity')
-            .map((themes: DotTheme[]) => themes[0]);
+            .pluck('entity');
     }
 }
