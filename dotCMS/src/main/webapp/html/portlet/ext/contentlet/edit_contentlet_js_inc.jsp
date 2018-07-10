@@ -622,8 +622,7 @@
     }
 
     function refreshPermissionsTab(){
-
-        var y = Math.floor(Math.random()*1123213213);
+        var y = Math.floor(Math.random() * 1123213213);
 
         var dojoDigit=dijit.byId("permissionsRoleSelector-rolesTree")
         if (dojoDigit) {
@@ -632,7 +631,6 @@
         
         var myCp = dijit.byId("contentletPermissionCp");
         if (myCp) {
-        	console.log("myCp", myCp);
         	myCp.destroyRecursive(false);
         }
         var myDiv = dojo.byId("permissionsTabDiv");
@@ -642,7 +640,7 @@
         myCp = new dojox.layout.ContentPane({
             id : "contentletPermissionCp",
             style: "height:100%",
-            href: "/html/portlet/ext/contentlet/edit_permissions_tab_inc_wrapper.jsp?contentletId=" +contentAdmin.contentletIdentifier + "&r=" + y
+            href: "/html/portlet/ext/contentlet/edit_permissions_tab_inc_wrapper.jsp?contentletId=" +contentAdmin.contentletIdentifier + "&languageId=<%= contentlet.getLanguageId() %>" + "&r=" + y
         }).placeAt(myDiv);
     }
 

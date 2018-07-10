@@ -20,10 +20,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringUtil;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.StringUtils;
 
@@ -138,9 +135,7 @@ public class PaginationUtil {
 		PaginatedArrayList items = paginator.getItems(user, perPageValue, minIndex, params);
 
 		if (!UtilMethods.isSet(items)){
-			return ExceptionMapperUtil
-					.createResponse(map("message", "No items found"), "No items found",
-							Response.Status.NOT_FOUND);
+			items = new PaginatedArrayList();
 		}
 
 		final long totalRecords = items.getTotalResults();
@@ -288,7 +283,22 @@ public class PaginationUtil {
 				final Object value = extraParamsEntry.getValue();
 
 				if (value != null) {
-					params.put(extraParamsEntry.getKey(), value.toString());
+					if (value instanceof Collection) {
+						final Collection valueCollection = (Collection) value;
+						final StringBuilder buffer = new StringBuilder();
+
+						for (final Object valueItem : valueCollection) {
+							if (buffer.length() != 0) {
+								buffer.append(",");
+							}
+
+							buffer.append(valueItem.toString());
+						}
+
+						params.put(extraParamsEntry.getKey(), buffer.toString());
+					} else {
+						params.put(extraParamsEntry.getKey(), value.toString());
+					}
 				}
 			}
 		}

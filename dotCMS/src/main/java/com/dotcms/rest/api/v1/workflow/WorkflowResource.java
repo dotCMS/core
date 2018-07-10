@@ -17,6 +17,7 @@ import com.dotcms.rest.annotation.IncludePermissions;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.ForbiddenException;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.workflow.form.*;
 import com.dotcms.workflow.helper.WorkflowHelper;
@@ -52,6 +53,7 @@ import java.util.function.Supplier;
 
 import static com.dotcms.rest.ResponseEntityView.OK;
 import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotcms.util.DotLambdas.*;
 
 @SuppressWarnings("serial")
 @Path("/v1/workflow")
@@ -120,7 +122,8 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findSchemes(@Context final HttpServletRequest request,
-                                      @QueryParam("contentTypeId") final String contentTypeId) {
+                                      @QueryParam("contentTypeId") final String  contentTypeId,
+                                      @DefaultValue("true") @QueryParam("showArchive")  final boolean showArchived) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
@@ -128,8 +131,11 @@ public class WorkflowResource {
             Logger.debug(this,
                     "Getting the workflow schemes for the contentTypeId: " + contentTypeId);
             final List<WorkflowScheme> schemes = (null != contentTypeId) ?
-                    this.workflowHelper.findSchemesByContentType(contentTypeId, initDataObject.getUser()):
-                    this.workflowHelper.findSchemes(true);
+                    ((showArchived)?
+                            this.workflowHelper.findSchemesByContentType(contentTypeId, initDataObject.getUser()):
+                            this.workflowHelper.findSchemesByContentType(contentTypeId, initDataObject.getUser())
+                                    .stream().filter(not(WorkflowScheme::isArchived)).collect(CollectionsUtils.toImmutableList())):
+                    this.workflowHelper.findSchemes(showArchived);
 
             return Response.ok(new ResponseEntityView(schemes)).build(); // 200
         } catch (Exception e) {

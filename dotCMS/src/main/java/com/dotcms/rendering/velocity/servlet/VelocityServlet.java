@@ -1,5 +1,7 @@
 package com.dotcms.rendering.velocity.servlet;
 
+import static com.dotmarketing.filters.TimeMachineFilter.TM_DATE_VAR;
+
 import com.dotcms.business.CloseDB;
 import com.dotcms.rendering.velocity.viewtools.RequestWrapper;
 
@@ -57,7 +59,7 @@ public class VelocityServlet extends HttpServlet {
         final boolean comeFromAdmin = req.getAttribute(WebKeys.COME_FROM_ADMIN) != null ?
                 (boolean) req.getAttribute(WebKeys.COME_FROM_ADMIN) : false;
 
-        if (APILocator.getLoginServiceAPI().isLoggedIn(request) && !comeFromAdmin){
+        if (APILocator.getLoginServiceAPI().isLoggedIn(request) && !comeFromAdmin && !this.isTimeMachine(req)){
             goToEditPage(uri, response);
         } else {
             request.setRequestUri(uri);
@@ -79,6 +81,10 @@ public class VelocityServlet extends HttpServlet {
                 response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Exception Error on template");
             }
         }
+    }
+
+    private boolean isTimeMachine(HttpServletRequest req) {
+        return req.getSession(false) != null && req.getSession().getAttribute(TM_DATE_VAR) != null;
     }
 
     @Override
