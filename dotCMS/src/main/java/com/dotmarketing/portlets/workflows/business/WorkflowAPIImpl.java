@@ -287,6 +287,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 
+	@CloseDBIfOpened
     @Override
     public void isUserAllowToModifiedWorkflow(final User user) {
 
@@ -1637,12 +1638,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@Override
 	public List<WorkFlowActionlet> findActionlets() throws DotDataException {
-		List<WorkFlowActionlet> l = new ArrayList<WorkFlowActionlet>();
-		Map<String,WorkFlowActionlet>  m = getActionlets();
-		for (String x : m.keySet()) {
-			l.add(getActionlets().get(x));
+		final List<WorkFlowActionlet> workFlowActionlets = new ArrayList<WorkFlowActionlet>();
+		final Map<String,WorkFlowActionlet>  actionlets  = getActionlets();
+		for (final String actionletName : actionlets.keySet()) {
+			workFlowActionlets.add(getActionlets().get(actionletName));
 		}
-		return l;
+		return workFlowActionlets;
 
 	}
 
@@ -1750,6 +1751,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return workFlowFactory.findParamsForActionClass(actionClass);
 	}
 
+	// note: does not need WrapInTransaction b/c it is already handling their own transaction
 	@Override
 	public void saveWorkflowActionClassParameters(final List<WorkflowActionClassParameter> params,
 												  final User user) throws DotDataException{
@@ -1788,6 +1790,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 	}
 
+	@WrapInTransaction
 	@Override
 	public WorkflowProcessor fireWorkflowPreCheckin(final Contentlet contentlet, final User user) throws DotDataException,DotWorkflowException, DotContentletValidationException{
 		return fireWorkflowPreCheckin(contentlet, user, null);
@@ -2261,7 +2264,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				final BatchAction batchAction = BatchAction.class.cast(actionlet);
 				final List <?> objects = batchAction.getObjectsForBatch(actionsContext, actionClass);
 				try {
-					batchAction.executeBatchAction(user, actionsContext, actionClass, params);
+					this.executeBatchAction(user, actionsContext, actionClass, params, batchAction);
 				} catch (Exception e) {
 					failsConsumer.accept(objects, e);
 					Logger.error(getClass(),
@@ -2274,6 +2277,16 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				}
 			}
 		}
+	}
+
+	@WrapInTransaction
+	private void executeBatchAction(final User user,
+									final ConcurrentMap<String, Object> actionsContext,
+									final WorkflowActionClass actionClass,
+									final Map<String, WorkflowActionClassParameter> params,
+									final BatchAction batchAction) {
+
+		batchAction.executeBatchAction(user, actionsContext, actionClass, params);
 	}
 
 	/**
@@ -2517,7 +2530,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 				if (!schemes.stream().anyMatch(scheme -> scheme.getId().equals(action.getSchemeId()))) {
 					throw new IllegalArgumentException(LanguageUtil
-							.get(user.getLocale(), "Invalid-Action-Scheme-Error", actionId));
+							.get(user.getLocale(), "Invalid-Action-Scheme-Error", actionId, contentlet.getContentType().name(), contentlet.getInode()));
 				}
 
 				final WorkflowScheme  scheme = schemes.stream().filter
@@ -2568,6 +2581,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				.findSteps(scheme).stream().findFirst();
 	}
 
+	@WrapInTransaction
 	@Override
 	public WorkflowProcessor fireWorkflowNoCheckin(final Contentlet contentlet, final User user) throws DotDataException,DotWorkflowException, DotContentletValidationException{
 

@@ -25,7 +25,6 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Logger;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.module.SimpleModule;
@@ -53,7 +52,7 @@ public class ThemeResource {
          this(
             new ThemePaginator(),
             APILocator.getHostAPI(),
-                 APILocator.getFolderAPI(),
+            APILocator.getFolderAPI(),
             new WebResource()
         );
     }
@@ -95,25 +94,21 @@ public class ThemeResource {
 
         final InitDataObject initData = this.webResource.init(null, true, request, true, null);
         final User user = initData.getUser();
-        Host host;
+        Host host = null;
 
-        String hostIdToSearch = hostId != null ?
-                hostId :
-                (String) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+        String hostIdToSearch;
 
 
-        if (UtilMethods.isSet(hostIdToSearch)){
+        if (UtilMethods.isSet(hostId)){
             //Validate hostId is valid
-            host = hostAPI.find(hostIdToSearch, user, false);
+            host = hostAPI.find(hostId, user, false);
+        }
 
-            if (!UtilMethods.isSet(host)){
-                return ExceptionMapperUtil
-                        .createResponse(map("message", "Invalid Host ID"), "Invalid Host ID",
-                                Status.BAD_REQUEST);
-            }
+        if (!UtilMethods.isSet(host)){
+            return ExceptionMapperUtil
+                    .createResponse(map("message", "Invalid Host ID"), "Invalid Host ID",
+                            Status.NOT_FOUND);
         }else{
-            //Validate hostId is valid
-            host = hostAPI.findDefaultHost(user, false);
             hostIdToSearch = host.getIdentifier();
         }
 

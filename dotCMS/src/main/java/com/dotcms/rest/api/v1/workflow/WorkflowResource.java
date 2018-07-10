@@ -17,6 +17,7 @@ import com.dotcms.rest.annotation.IncludePermissions;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.ForbiddenException;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.workflow.form.*;
 import com.dotcms.workflow.helper.WorkflowHelper;
@@ -38,6 +39,7 @@ import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -46,10 +48,12 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import static com.dotcms.rest.ResponseEntityView.OK;
 import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotcms.util.DotLambdas.*;
 
 @SuppressWarnings("serial")
 @Path("/v1/workflow")
@@ -57,6 +61,8 @@ public class WorkflowResource {
 
     public  final static String VERSION = "1.0";
     private static final String LISTING = "listing";
+    private static final String EDITING = "editing";
+
     private final WorkflowHelper   workflowHelper;
     private final ContentHelper    contentHelper;
     private final WebResource      webResource;
@@ -65,7 +71,7 @@ public class WorkflowResource {
     private final ContentletAPI    contentletAPI;
     private final PermissionAPI    permissionAPI;
     private final WorkflowImportExportUtil workflowImportExportUtil;
-
+    private final Set<String> validRenderModeSet = ImmutableSet.of(LISTING, EDITING);
 
 
     /**
@@ -116,7 +122,8 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findSchemes(@Context final HttpServletRequest request,
-                                      @QueryParam("contentTypeId") final String contentTypeId) {
+                                      @QueryParam("contentTypeId") final String  contentTypeId,
+                                      @DefaultValue("true") @QueryParam("showArchive")  final boolean showArchived) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
@@ -124,8 +131,11 @@ public class WorkflowResource {
             Logger.debug(this,
                     "Getting the workflow schemes for the contentTypeId: " + contentTypeId);
             final List<WorkflowScheme> schemes = (null != contentTypeId) ?
-                    this.workflowHelper.findSchemesByContentType(contentTypeId, initDataObject.getUser()):
-                    this.workflowHelper.findSchemes(true);
+                    ((showArchived)?
+                            this.workflowHelper.findSchemesByContentType(contentTypeId, initDataObject.getUser()):
+                            this.workflowHelper.findSchemesByContentType(contentTypeId, initDataObject.getUser())
+                                    .stream().filter(not(WorkflowScheme::isArchived)).collect(CollectionsUtils.toImmutableList())):
+                    this.workflowHelper.findSchemes(showArchived);
 
             return Response.ok(new ResponseEntityView(schemes)).build(); // 200
         } catch (Exception e) {
@@ -202,8 +212,13 @@ public class WorkflowResource {
 
     /**
      * Finds the available actions for an inode
+     *
      * @param request HttpServletRequest
      * @param inode String
+     * @param renderMode String, this is an uncase sensitive query string (?renderMode=) optional parameter.
+     *                   By default the findAvailableAction will run on WorkflowAPI.RenderMode.EDITING, if you want to run for instance on WorkflowAPI.RenderMode.LISTING
+     *                   you can send the renderMode parameter as ?renderMode=listing
+     *                   This will be used to filter the action based on the show on configuration for each action.
      * @return Response
      */
     @GET
@@ -218,7 +233,10 @@ public class WorkflowResource {
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
         try {
-            Logger.debug(this, "Getting the available actions for the contentlet inode: " + inode);
+            Logger.debug(this, ()->"Getting the available actions for the contentlet inode: " + inode);
+
+            this.workflowHelper.checkRenderMode (renderMode, initDataObject.getUser(), this.validRenderModeSet);
+
             final List<WorkflowAction> actions = this.workflowHelper.findAvailableActions(inode, initDataObject.getUser(),
                     LISTING.equalsIgnoreCase(renderMode)?WorkflowAPI.RenderMode.LISTING:WorkflowAPI.RenderMode.EDITING);
             return Response.ok(new ResponseEntityView(actions)).build(); // 200
@@ -229,6 +247,8 @@ public class WorkflowResource {
             return ResponseUtil.mapExceptionResponse(e);
         }
     } // findAvailableActions.
+
+
 
     /**
      * Get the bulk actions based on the {@link BulkActionForm}

@@ -5,10 +5,12 @@ This jsp gets called in the edit content screen (edit_content_js_inc.jsp) to pai
 <%@page import="com.dotmarketing.business.PermissionLevel"%>
 <%@ include file="/html/portlet/ext/contentlet/init.jsp"%>
 <%@page import="com.dotmarketing.db.DbConnectionFactory"%>
+
 <% String id = request.getParameter("contentletId");%>
+<% Long lang = Long.parseLong(request.getParameter("languageId"));%>
 
 <% if(UtilMethods.isSet(id)){%>
-	<% Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifier(id, false, -1, user, false);%>
+	<% Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifier(id, false, lang, user, false);%>
 	<%if(contentlet !=null && UtilMethods.isSet(contentlet.getIdentifier())){ %>
 		<% request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, contentlet);%>
 		<% APILocator.getPermissionAPI().checkPermission(contentlet, PermissionLevel.EDIT_PERMISSIONS, user);%>

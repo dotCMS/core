@@ -11,11 +11,21 @@
 <%@ page import="com.dotmarketing.business.APILocator" %>
 <%@ page import="com.dotmarketing.util.UtilMethods" %>
 
-<%@ page import="com.dotmarketing.util.UtilMethods" %>
 <script type='text/javascript' src='/dwr/interface/ImportContentletAjax.js'></script>
-<!--  Initialization Code -->
+<!-- Initialization Code -->
 <%
-	List<Structure> structures = StructureFactory.getStructuresWithWritePermissions(user, false);
+	//structs must be wraped within a new list to perform filterig 
+	final List<Structure> structures = new ArrayList<>(StructureFactory.getStructuresWithWritePermissions(user, false));
+
+	final Iterator<Structure> structuresIterator = structures.iterator();
+	while (structuresIterator.hasNext()){
+	    //Remove strutcs of type Host since they are restricted.
+		final Structure structure = structuresIterator.next();
+		if(structure.isHost()){
+			structuresIterator.remove();
+		}
+	}
+
 	request.setAttribute("structures", structures);
 	String selectedStructure = null;
 	if(UtilMethods.isSet(session.getAttribute("selectedStructure"))){

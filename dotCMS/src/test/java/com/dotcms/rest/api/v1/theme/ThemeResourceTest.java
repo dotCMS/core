@@ -16,7 +16,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.PaginatedArrayList;
 
 import com.dotmarketing.util.UUIDGenerator;
@@ -34,6 +33,7 @@ import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static com.dotcms.util.CollectionsUtils.map;
 
@@ -62,7 +62,6 @@ public class ThemeResourceTest {
     private final Contentlet content1 = mock(Contentlet.class);
     private final Contentlet content2 = mock(Contentlet.class);
     private final Host host_1 = mock(Host.class);
-    private final Host host_2 = mock(Host.class);
 
     private  PaginatedArrayList<Map<String, Object>> folders;
 
@@ -70,7 +69,7 @@ public class ThemeResourceTest {
 
     @Before
     public void init() throws Throwable{
-
+        when(host_1.getIdentifier()).thenReturn("1");
         when(content1.getFolder()).thenReturn(FOLDER_1);
         when(content1.getHost()).thenReturn(HOST_1);
         when(content2.getFolder()).thenReturn(FOLDER_2);
@@ -111,7 +110,9 @@ public class ThemeResourceTest {
         );
 
         when(hostAPI.find(hostId, user, false)).thenReturn(host_1);
+        when(host_1.getIdentifier()).thenReturn(hostId);
         when(mockThemePaginator.getItems(user, 3, 0, params)).thenReturn(folders);
+
 
         final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI, folderAPI, webResource);
         final Response response = themeResource.findThemes(request, hostId, 1, 3, "ASC", null);
@@ -144,8 +145,8 @@ public class ThemeResourceTest {
         when(mockThemePaginator.getItems(user, 3, 0, params)).thenReturn(folders);
 
         final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI, folderAPI, webResource);
-        final Response response = themeResource.findThemes(request, null, 1, 3, "ASC", null);
-
+        final Response response = themeResource.findThemes(request, hostId, 1, 3, "ASC", null);
+        verify(mockThemePaginator).getItems(user, 3, 0, params);
         checkSuccessResponse(response);
     }
 
@@ -168,6 +169,7 @@ public class ThemeResourceTest {
         );
 
         when(hostAPI.find(hostId, user, false)).thenReturn(host_1);
+        when(host_1.getIdentifier()).thenReturn(hostId);
         when(mockThemePaginator.getItems(user, 3, 0, params)).thenThrow(exception);
 
         final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI , folderAPI, webResource);

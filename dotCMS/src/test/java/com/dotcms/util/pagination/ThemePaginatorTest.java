@@ -17,6 +17,7 @@ import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.pagination.ThemePaginator.BASE_LUCENE_QUERY;
+import static com.dotcms.util.pagination.ThemePaginator.THEME_THUMBNAIL_KEY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -287,10 +288,10 @@ public class ThemePaginatorTest {
             PaginatedArrayList<Map<String, Object>> themes) {
         assertEquals(contentlets.size(), themes.size());
         assertEquals(contentlets.get(0).getFolder(), themes.get(0).get("inode"));
-        assertTrue(themes.get(0).containsKey("themeThumbnail"));
+        assertTrue(themes.get(0).containsKey(THEME_THUMBNAIL_KEY));
         assertEquals(contentlets.get(1).getFolder(), themes.get(1).get("inode"));
-        assertTrue(themes.get(1).containsKey("themeThumbnail"));
+        assertTrue(themes.get(1).containsKey(THEME_THUMBNAIL_KEY));
         assertEquals(contentlets.get(2).getFolder(), themes.get(2).get("inode"));
-        assertTrue(themes.get(2).containsKey("themeThumbnail"));
+        assertTrue(themes.get(2).containsKey(THEME_THUMBNAIL_KEY));
     }
 }

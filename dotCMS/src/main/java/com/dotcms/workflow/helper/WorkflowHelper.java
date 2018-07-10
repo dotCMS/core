@@ -7,6 +7,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.v1.workflow.*;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.workflow.form.*;
 import com.dotmarketing.beans.Permission;
@@ -29,6 +30,8 @@ import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject
 import com.dotmarketing.util.*;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import org.apache.commons.beanutils.BeanUtils;
@@ -53,6 +56,7 @@ import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
  */
 public class WorkflowHelper {
 
+    private static final String INVALID_RENDER_MODE = "Invalid Render Mode";
     private final WorkflowAPI   workflowAPI;
     private final RoleAPI       roleAPI;
     private final ContentletAPI contentletAPI;
@@ -151,6 +155,7 @@ public class WorkflowHelper {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @CloseDBIfOpened
     private BulkActionView buildBulkActionView (final SearchResponse response,
                                                 final User user) throws DotDataException, DotSecurityException {
 
@@ -273,6 +278,7 @@ public class WorkflowHelper {
      * @throws DotSecurityException
      * @throws DotDataException
      */
+    @CloseDBIfOpened
     public BulkActionsResultView fireBulkActions(final FireBulkActionsForm form,
             final User user) throws DotSecurityException, DotDataException {
 
@@ -288,6 +294,28 @@ public class WorkflowHelper {
             return this.workflowAPI.fireBulkActions(action, user, form.getContentletIds(), form.getPopupParamsBean());
         } else {
             throw new DoesNotExistException("Workflow-does-not-exists-action");
+        }
+    }
+
+    /**
+     * If the render mode is set, it should be a valid one
+     * @param renderMode String renderMode pass by the user
+     * @param user User   the user that makes the request
+     * @param validRenderModeSet Set set of valid values for the render mode
+     */
+    public void checkRenderMode(final String renderMode, final User user, final Set<String> validRenderModeSet) {
+
+        if (UtilMethods.isSet(renderMode) && !validRenderModeSet.contains(renderMode.toLowerCase())) {
+
+            String message = INVALID_RENDER_MODE;
+
+            try {
+                message = LanguageUtil.get(user, "workflow.invalidrendermode");
+            } catch (LanguageException e) {
+                message = INVALID_RENDER_MODE;
+            }
+
+            throw new BadRequestException(message);
         }
     }
 
@@ -598,6 +626,7 @@ public class WorkflowHelper {
      * @return List {@link Permission}
      * @throws DotDataException
      */
+    @CloseDBIfOpened
     public List<Permission> getActionsPermissions (final List<WorkflowAction> workflowActions) throws DotDataException {
 
         final ImmutableList.Builder permissions =
@@ -723,6 +752,7 @@ public class WorkflowHelper {
      * @param user
      * @return
      */
+    @WrapInTransaction
     public WorkflowStep addStep(final WorkflowStepAddForm workflowStepUpdateForm, final User user) {
         final String schemeId = workflowStepUpdateForm.getSchemeId();
         WorkflowStep step = new WorkflowStep();
@@ -769,6 +799,7 @@ public class WorkflowHelper {
      * @throws DotDataException
      * @throws AlreadyExistException
      */
+    @WrapInTransaction
     public WorkflowStep updateStep(final String stepId, final WorkflowStepUpdateForm workflowStepUpdateForm, final User user) throws DotDataException, AlreadyExistException, DotSecurityException {
         final WorkflowStep step;
         try {
@@ -949,6 +980,7 @@ public class WorkflowHelper {
 
     } // findSchemesByContentType.
 
+    @WrapInTransaction
     public void saveSchemesByContentType(final String contentTypeId, final User user, final List<String> workflowIds) {
 
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
@@ -1001,6 +1033,7 @@ public class WorkflowHelper {
      * @param user   User
      * @return List of WorkflowAction
      */
+    @CloseDBIfOpened
     public List<WorkflowAction> findActions(final String stepId, final User user)
             throws DotSecurityException, DotDataException {
 
@@ -1033,6 +1066,7 @@ public class WorkflowHelper {
      * @param schemeId String
      * @return List of WorkflowStep
      */
+    @CloseDBIfOpened
     public List<WorkflowStep> findSteps(final String schemeId)
             throws DotSecurityException, DotDataException {
 
@@ -1119,6 +1153,7 @@ public class WorkflowHelper {
      * @param user     User
      * @return List of WorkflowAction
      */
+    @CloseDBIfOpened
     public List<WorkflowAction> findActionsByScheme(@NotNull final String schemeId,
                                                     final User user) {
 
@@ -1286,9 +1321,9 @@ public class WorkflowHelper {
 
             this.reorderAction(bean, user);
             
-        }else {
+        } else {
 
-        this.workflowAPI.saveAction(actionId,
+            this.workflowAPI.saveAction(actionId,
                 stepId, user, workflowActionStepForm.getOrder());
         }
     } // addActionToStep.
@@ -1339,7 +1374,8 @@ public class WorkflowHelper {
      * @param user          User   the user that makes the request
      * @return List<WorkflowDefaultActionView>
      */
-    public List<WorkflowDefaultActionView> findAvailableDefaultActionsByContentType(final String contentTypeId, final User   user) {
+    @CloseDBIfOpened
+    public List<WorkflowDefaultActionView> findAvailableDefaultActionsByContentType(final String contentTypeId, final User user) {
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
         final ImmutableList.Builder<WorkflowDefaultActionView> results = new ImmutableList.Builder<>();
         try {
@@ -1369,6 +1405,7 @@ public class WorkflowHelper {
      * @param user          User   the user that makes the request
      * @return List<WorkflowDefaultActionView>
      */
+    @CloseDBIfOpened
     public List<WorkflowDefaultActionView> findAvailableDefaultActionsBySchemes(
             final @NotNull String schemeIds, final User user) {
 
@@ -1472,6 +1509,7 @@ public class WorkflowHelper {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @WrapInTransaction
     public WorkflowScheme saveOrUpdate(final String schemeId, final WorkflowSchemeForm workflowSchemeForm, final User user) throws AlreadyExistException, DotDataException, DotSecurityException {
 
         final WorkflowScheme newScheme = new WorkflowScheme();
@@ -1502,6 +1540,7 @@ public class WorkflowHelper {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @WrapInTransaction
     public Future<WorkflowScheme> delete(final String schemeId, final User user)
             throws AlreadyExistException, DotDataException, DotSecurityException {
 
