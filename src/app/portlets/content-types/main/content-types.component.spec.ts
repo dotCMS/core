@@ -15,7 +15,7 @@ import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { Injectable } from '@angular/core';
-import { DotContentletService } from '../../../api/services/dot-contentlet.service';
+import { DotContentletService } from '../../../api/services/dot-contentlet/dot-contentlet.service';
 import { PushPublishContentTypesDialogModule } from '../../../view/components/_common/push-publish-dialog/push-publish-dialog.module';
 import { PushPublishService } from '../../../api/services/push-publish/push-publish.service';
 import { DotAddToBundleModule } from '../../../view/components/_common/dot-add-to-bundle/dot-add-to-bundle.module';

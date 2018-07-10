@@ -3,7 +3,7 @@ import { By } from '@angular/platform-browser';
 import { ComponentFixture, async } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { DebugElement } from '@angular/core';
-import { DotContentletService } from '../../../../../api/services/dot-contentlet.service';
+import { DotContentletService } from '../../../../../api/services/dot-contentlet/dot-contentlet.service';
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { IFrameModule } from '../index';
 import { IframePortletLegacyComponent } from './iframe-porlet-legacy.component';

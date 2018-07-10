@@ -5,7 +5,7 @@ import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 
 import { SiteService, DotcmsEventsService, LoggerService } from 'dotcms-js/dotcms-js';
 
-import { DotContentletService } from '../../../../../api/services/dot-contentlet.service';
+import { DotContentletService } from '../../../../../api/services/dot-contentlet/dot-contentlet.service';
 import { DotLoadingIndicatorService } from '../dot-loading-indicator/dot-loading-indicator.service';
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { DotRouterService } from '../../../../../api/services/dot-router/dot-router.service';

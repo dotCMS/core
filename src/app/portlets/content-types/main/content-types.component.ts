@@ -9,7 +9,7 @@ import { ContentTypesInfoService } from '../../../api/services/content-types-inf
 import { DataTableColumn } from '../../../shared/models/data-table';
 import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { Observable } from 'rxjs/Observable';
-import { DotContentletService } from '../../../api/services/dot-contentlet.service';
+import { DotContentletService } from '../../../api/services/dot-contentlet/dot-contentlet.service';
 import { StructureTypeView } from '../../../shared/models/contentlet/structure-type-view.model';
 import { ButtonModel } from '../../../shared/models/action-header/button.model';
 import { DotDataTableAction } from '../../../shared/models/data-table/dot-data-table-action';

@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { DotContentletService } from '../../../api/services/dot-contentlet.service';
+import { DotContentletService } from '../../../api/services/dot-contentlet/dot-contentlet.service';
 import { StructureTypeView } from '../../../shared/models/contentlet/structure-type-view.model';
 import { Observable } from 'rxjs/Observable';
 import { DotMessageService } from '../../../api/services/dot-messages-service';

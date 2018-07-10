@@ -4,7 +4,7 @@ import { Observable } from 'rxjs/Observable';
 import { DotNavigationService } from '../../../view/components/dot-navigation/dot-navigation.service';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { ContentletGuardService } from './contentlet-guard.service';
-import { DotContentletService } from '../dot-contentlet.service';
+import { DotContentletService } from '../dot-contentlet/dot-contentlet.service';
 
 @Injectable()
 class MockDotContentletService {

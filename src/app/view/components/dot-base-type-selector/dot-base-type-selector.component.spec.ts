@@ -7,7 +7,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { Dropdown, SelectItem } from 'primeng/primeng';
 import { By } from '@angular/platform-browser';
-import { DotContentletService } from '../../../api/services/dot-contentlet.service';
+import { DotContentletService } from '../../../api/services/dot-contentlet/dot-contentlet.service';
 import { Observable } from 'rxjs/Observable';
 
 @Injectable()
