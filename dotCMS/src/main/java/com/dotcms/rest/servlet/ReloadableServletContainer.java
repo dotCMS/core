@@ -165,7 +165,7 @@ public class ReloadableServletContainer extends HttpServlet implements Filter {
                 .register(MyObjectMapperProvider.class)
                 .register(JacksonJaxbJsonProvider.class)
                 .register(HttpStatusCodeExceptionMapper.class)
-                .register(ResourceNotFoundExceptionMapper)
+                .register(ResourceNotFoundExceptionMapper.class)
                 .register(InvalidFormatExceptionMapper.class)
                 .register(JsonParseExceptionMapper.class)
                 .register(ParamExceptionMapper.class)
