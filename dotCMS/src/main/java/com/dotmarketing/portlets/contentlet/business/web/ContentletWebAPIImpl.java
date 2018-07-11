@@ -162,8 +162,6 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				this.pushSaveEvent(contentlet, isNew);
 			}
 		} catch (Exception ae) {
-			contentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
-			//conAPI.refresh(cont);
 			_handleException(ae);
 			throw ae;
 		}
@@ -544,6 +542,12 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 					SessionMessages.add(request, "message", "message.contentlet.published");
 				}
 			}
+		} else {
+			/*
+			No contentlet was returned (probably a delete was executed).
+			Cleaning up the contentlet for upper layers.
+			 */
+			contentletFormData.put(WebKeys.CONTENTLET_EDIT, null);
 		}
 	}
 
