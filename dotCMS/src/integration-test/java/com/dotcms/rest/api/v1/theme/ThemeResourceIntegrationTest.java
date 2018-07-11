@@ -120,7 +120,7 @@ public class ThemeResourceIntegrationTest {
         final ThemeResource resource = new ThemeResource();
         final Response response = resource.findThemeById(getHttpRequest(), folderExpected.getInode());
         assertEquals(Status.OK.getStatusCode(), response.getStatus());
-        HashMap folder =  (HashMap) ((ResponseEntityView) response.getEntity()).getEntity();
+        final HashMap folder =  (HashMap) ((ResponseEntityView) response.getEntity()).getEntity();
 
         assertEquals(folderExpected.getMap(), folder);
     }

@@ -31,7 +31,6 @@ import com.dotcms.repackage.com.fasterxml.jackson.databind.module.SimpleModule;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.HashMap;
 import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.map;
@@ -134,7 +133,7 @@ public class ThemeResource {
     /**
      * Returns a theme given its ID (folder theme inode)
      * @param request
-     * @param id folder inode
+     * @param themeId folder inode
      * @return
      * @throws Throwable
      */
@@ -144,18 +143,19 @@ public class ThemeResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findThemeById(@Context final HttpServletRequest request,
-            @PathParam("id") final String id) throws DotDataException, DotSecurityException {
+            @PathParam("id") final String themeId) throws DotDataException, DotSecurityException {
 
-        Logger.debug(this,
-                "Getting the theme by identifier: " + id);
+        Logger.debug(this, "Getting the theme by identifier: " + themeId);
 
         final InitDataObject initData = this.webResource.init(null, true, request, true, null);
         final User user = initData.getUser();
 
-        final Folder folder = folderAPI.find(id, user, false);
+        final Folder folder = folderAPI.find(themeId, user, false);
 
         if (folder == null) {
-            return Response.status(Status.NOT_FOUND).build();
+            return ExceptionMapperUtil
+                    .createResponse(map("message", "Invalid Theme ID"), "Invalid Theme ID",
+                            Status.NOT_FOUND);
         } else {
             return Response.ok(new ResponseEntityView(folder.getMap())).build();
         }
