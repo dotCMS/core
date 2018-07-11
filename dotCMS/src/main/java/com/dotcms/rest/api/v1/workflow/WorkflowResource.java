@@ -1166,7 +1166,8 @@ public class WorkflowResource {
         Logger.debug(this, "Updating scheme with id: " + schemeId);
         try {
             DotPreconditions.notNull(workflowSchemeForm,"Expected Request body was empty.");
-            final WorkflowScheme scheme = this.workflowHelper.saveOrUpdate(schemeId, workflowSchemeForm, initDataObject.getUser());
+            final User           user   = initDataObject.getUser();
+            final WorkflowScheme scheme = this.workflowHelper.saveOrUpdate(schemeId, workflowSchemeForm, user);
             return Response.ok(new ResponseEntityView(scheme)).build(); // 200
         }  catch (Exception e) {
             Logger.error(this.getClass(), "Exception attempting to update schema identified by : " +schemeId + ", exception message: " + e.getMessage(), e);
