@@ -13,6 +13,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.I18NForm;
+import com.dotcms.util.I18NUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.exception.DotDataException;
@@ -46,7 +47,7 @@ public class LanguagesResource {
 
         this.languageAPI  = languageAPI;
         this.webResource  = webResource;
-        this.oldLanguagesResource = new com.dotcms.rest.api.v1.languages.LanguagesResource();
+        this.oldLanguagesResource = new com.dotcms.rest.api.v1.languages.LanguagesResource(languageAPI, webResource, I18NUtil.INSTANCE);
     }
 
     @GET

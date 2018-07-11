@@ -97,6 +97,8 @@ project.integrationTest {
 //Avoid skipping running tests when the test task is invoked
 project.test {
     outputs.upToDateWhen { false }
+    reports.junitXml.destination = file("$buildDir/test-results/unit-tests/xml")
+    reports.html.destination = file("$buildDir/test-results/unit-tests/html")
 }
 
 idea {
@@ -317,6 +319,8 @@ war {
 war.finalizedBy 'undeployPlugins'
 
 task testDev(type: Test) {
+    reports.junitXml.setDestination(file("$buildDir/test-results/unit-tests/xml"))
+    reports.html.setDestination(file("$buildDir/test-results/unit-tests/html"))
 }
 
 integrationTest{
