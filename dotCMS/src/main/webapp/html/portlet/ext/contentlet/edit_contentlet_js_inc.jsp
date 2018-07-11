@@ -592,33 +592,41 @@
         refreshActionPanel(data["contentletInode"]);
 
         // if we have a referer and the contentlet comes back checked in
-        if((data["referer"] != null && data["referer"] != '' && (!data["contentletLocked"]) || data["htmlPageReferer"] != null)) {
-            if (data['isHtmlPage']) {
-                var customEventDetail = {
-                    name: 'save-page',
-                    payload: data
-                };
+        var customEventDetail;
 
-                if (workingContentletInode.length === 0) {
+        if (data["contentletIdentifier"]) {
+            if((data["referer"] != null && data["referer"] != '' && !data["contentletLocked"])) {
+                if (data['isHtmlPage']) {
                     customEventDetail = {
-                        name: 'close'
+                        name: 'save-page',
+                        payload: data
                     };
 
-                    var params = data['htmlPageReferer'].split('?')[1].split('&');
-                    var languageQueryParam = params.find(function(queryParam) {
-                        return queryParam.startsWith('com.dotmarketing.htmlpage.language');
-                    });
-                    var languageId = languageQueryParam.split('=')[1];
-					
-                    window.top.location = '/dotAdmin/#/edit-page/content?url=' + data['htmlPageReferer'].split('?')[0] + '&language_id=' + languageId;
+                    if (workingContentletInode.length === 0) {
+                        customEventDetail = {
+                            name: 'close'
+                        };
+                        var params = data['htmlPageReferer'].split('?')[1].split('&');
+                        var languageQueryParam = params.find(function(queryParam) {
+                            return queryParam.startsWith('com.dotmarketing.htmlpage.language');
+                        });
+                        var languageId = languageQueryParam.split('=')[1];
+                        
+                        window.top.location = '/dotAdmin/#/edit-page/content?url=' + data['htmlPageReferer'].split('?')[0] + '&language_id=' + languageId;
+                    }
                 }
-
-                var customEvent = document.createEvent('CustomEvent');
-                customEvent.initCustomEvent('ng-event', false, false, customEventDetail);
-                document.dispatchEvent(customEvent);
+                return;
             }
-            return;
+        } else {
+            customEventDetail = {
+                name: 'close'
+            };
         }
+
+        var customEvent = document.createEvent('CustomEvent');
+        customEvent.initCustomEvent('ng-event', false, false, customEventDetail);
+        document.dispatchEvent(customEvent);
+
     }
 
     function refreshPermissionsTab(){
