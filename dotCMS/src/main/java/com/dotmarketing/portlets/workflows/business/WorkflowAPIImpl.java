@@ -593,11 +593,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			throw new DotSecurityException("Workflow-delete-system-workflow");
 		}
 
-		final WorkflowScheme beforeSave = workFlowFactory.findScheme(scheme.getId());
+		final boolean isAlreadyArchived = isSchemeArchived(scheme.getId());
 		workFlowFactory.saveScheme(scheme);
 
-		//Fire only there has been a change in the field archived.
-		if(beforeSave.isArchived() != scheme.isArchived()){
+		//Fire index update only if there has been a change in the field archived.
+		if(isAlreadyArchived != scheme.isArchived()){
 			//Update index
 		    pushIndexUpdate(scheme, user);
 		}
@@ -949,6 +949,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		final WorkflowScheme scheme     = this.findScheme(step.getSchemeId());
 		final List<WorkflowStep> steps  = this.findSteps (scheme);
 
+		final boolean firstStepChanges = (order == 0 ||
+				steps.stream().findFirst().map(
+						workflowStep -> workflowStep.getId().equals(step.getId())
+				).orElse(false)
+		);
+
 		IntStream.range(0, steps.size())
 				.filter(i -> steps.get(i).getId().equals(step.getId()))
 				.boxed()
@@ -964,13 +970,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			this.saveStep(stepp, user);
 		}
 
-		final boolean isFirstStepReOrdered = (order == 1 ||
-			steps.stream().findFirst().map(
-					workflowStep -> workflowStep.getId().equals(step.getId())
-			).orElse(false)
-		);
-
-		if(isFirstStepReOrdered){
+		if(firstStepChanges){
             pushIndexUpdateOnReorder(scheme.getId());
 		}
 	}
@@ -3071,5 +3071,24 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
                 .collect(CollectionsUtils.toImmutableList());
 	}
 
+
+	/**
+	 * Utilily method to load the `isAcrhived` flag fresh from the database.
+	 * If the workflow does not exist the exception is muted and the returned value is false.
+	 * This comes to solve a problem during the import process.
+	 * @param schemeId
+	 * @return
+	 */
+	private boolean isSchemeArchived(final String schemeId){
+	   if(UtilMethods.isSet(schemeId)) {
+		   try {
+			   final WorkflowScheme workflowScheme = workFlowFactory.findScheme(schemeId);
+               return workflowScheme.isArchived();
+		   } catch (DotDataException | DoesNotExistException e) {
+			   //ignore
+		   }
+	   }
+	   return false;
+	}
 
 }
