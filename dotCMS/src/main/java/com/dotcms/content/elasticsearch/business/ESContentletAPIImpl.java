@@ -5701,7 +5701,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
          * Only draft if there is a working version that is not live
          * and always create a new version if the user is different
          */
-            if (!working.isLive() && working.getModUser().equals(contentlet.getModUser())) {
+            if (null != working &&
+                    !working.isLive() && working.getModUser().equals(contentlet.getModUser())) {
 
                 // if we are the latest and greatest and are a draft
                 if (working.getInode().equals(contentlet.getInode())) {

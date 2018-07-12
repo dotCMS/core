@@ -2018,7 +2018,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		}
 
-		final List<WorkflowStep> steps = findStepsByContentlet(contentlet);
+		final List<WorkflowStep> steps = findStepsByContentlet(contentlet, false);
 
 		Logger.debug(this, "#findAvailableActions: for content: "   + contentlet.getIdentifier()
 				+ ", isNew: "    + isNew
