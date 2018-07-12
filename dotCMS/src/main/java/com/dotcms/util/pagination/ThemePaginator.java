@@ -2,6 +2,7 @@ package com.dotcms.util.pagination;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.ThemeAPI;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -20,6 +21,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.dotmarketing.business.ThemeAPI.THEME_THUMBNAIL_KEY;
+
 /**
  * Handle theme pagination
  */
@@ -32,22 +35,19 @@ public class ThemePaginator implements Paginator<Map<String, Object>> {
     @VisibleForTesting
     static final String BASE_LUCENE_QUERY = "+parentpath:/application/themes/* +title:template.vtl ";
 
-    public static final String THEME_PNG = "theme.png";
-
-    public static final String THEME_THUMBNAIL_KEY = "themeThumbnail";
-
     private ContentletAPI contentletAPI;
-
+    private ThemeAPI themeAPI;
     private FolderAPI folderAPI;
 
     public ThemePaginator() {
-        this(APILocator.getContentletAPI(), APILocator.getFolderAPI());
+        this(APILocator.getContentletAPI(), APILocator.getFolderAPI(), APILocator.getThemeAPI());
     }
 
     @VisibleForTesting
-    ThemePaginator(final ContentletAPI contentletAPI, final FolderAPI folderAPI) {
+    ThemePaginator(final ContentletAPI contentletAPI, final FolderAPI folderAPI, final ThemeAPI themeAPI) {
         this.contentletAPI = contentletAPI;
         this.folderAPI     = folderAPI;
+        this.themeAPI = themeAPI;
     }
 
     @Override
@@ -103,7 +103,7 @@ public class ThemePaginator implements Paginator<Map<String, Object>> {
                 final Folder folder = folderAPI.find(contentlet.getFolder(), user, false);
 
                 Map<String, Object> map = new HashMap<>(folder.getMap());
-                map.put(THEME_THUMBNAIL_KEY, getThemeThumbnail(folder, user));
+                map.put(THEME_THUMBNAIL_KEY, themeAPI.getThemeThumbnail(folder, user));
                 result.add(map);
             }
 
@@ -113,18 +113,5 @@ public class ThemePaginator implements Paginator<Map<String, Object>> {
         } catch (DotSecurityException | DotDataException e) {
             throw new PaginationException(e);
         }
-    }
-
-    @VisibleForTesting
-    String getThemeThumbnail(final Folder folder, final User user) throws DotSecurityException, DotDataException {
-
-        final StringBuilder query = new StringBuilder();
-        query.append("+conFolder:").append(folder.getInode()).append(" +title:").append(THEME_PNG)
-                .append(" +live:true +deleted:false");
-        final List<Contentlet> results = contentletAPI
-                .search(query.toString(), -1, 0, null, user, false);
-
-        return UtilMethods.isSet(results) ? results.get(0).getIdentifier() : null;
-
     }
 }

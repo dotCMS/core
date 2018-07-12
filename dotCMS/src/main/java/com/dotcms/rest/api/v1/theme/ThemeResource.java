@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.theme;
 
+import com.dotcms.repackage.com.fasterxml.jackson.core.JsonProcessingException;
 import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.util.JsonProcessingRuntimeException;
@@ -9,8 +10,11 @@ import com.dotcms.util.pagination.PaginationException;
 import com.dotcms.util.pagination.ThemePaginator;
 import com.dotmarketing.beans.Host;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
+import com.dotmarketing.business.ThemeAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.UtilMethods;
@@ -31,9 +35,13 @@ import com.dotcms.repackage.com.fasterxml.jackson.databind.module.SimpleModule;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.HashMap;
 import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotmarketing.business.ThemeAPI.THEME_THUMBNAIL_KEY;
+
+import com.google.common.collect.ImmutableMap;
 
 /**
  * Provides different methods to access information about Themes in dotCMS.
@@ -41,28 +49,30 @@ import static com.dotcms.util.CollectionsUtils.map;
 @Path("/v1/themes")
 public class ThemeResource {
 
-
     private final PaginationUtil paginationUtil;
     private final WebResource webResource;
     private final HostAPI hostAPI;
     private final FolderAPI folderAPI;
+    private final ThemeAPI themeAPI;
 
     public ThemeResource() {
          this(
             new ThemePaginator(),
             APILocator.getHostAPI(),
             APILocator.getFolderAPI(),
+            APILocator.getThemeAPI(),
             new WebResource()
         );
     }
 
     @VisibleForTesting
     ThemeResource(final ThemePaginator themePaginator, final HostAPI hostAPI, final FolderAPI folderAPI,
-                         final WebResource webResource ) {
+                         final ThemeAPI themeAPI, final WebResource webResource ) {
         this.webResource  = webResource;
         this.hostAPI      = hostAPI;
-        this.paginationUtil = new PaginationUtil(themePaginator, this.getMapper());
+        this.paginationUtil = new PaginationUtil(themePaginator);
         this.folderAPI = folderAPI;
+        this.themeAPI = themeAPI;
     }
 
     /**
@@ -95,8 +105,6 @@ public class ThemeResource {
         final User user = initData.getUser();
         Host host = null;
 
-        String hostIdToSearch;
-
 
         if (UtilMethods.isSet(hostId)){
             //Validate hostId is valid
@@ -107,13 +115,11 @@ public class ThemeResource {
             return ExceptionMapperUtil
                     .createResponse(map("message", "Invalid Host ID"), "Invalid Host ID",
                             Status.NOT_FOUND);
-        }else{
-            hostIdToSearch = host.getIdentifier();
         }
 
         try {
             final Map<String, Object> params = map(
-                ThemePaginator.HOST_ID_PARAMETER_NAME, hostIdToSearch
+                ThemePaginator.HOST_ID_PARAMETER_NAME, hostId
             );
 
             if (UtilMethods.isSet(searchParam)){
@@ -134,7 +140,7 @@ public class ThemeResource {
      * Returns a theme given its ID (folder theme inode)
      * @param request
      * @param themeId folder inode
-     * @return
+     * @returnTh
      * @throws Throwable
      */
     @GET
@@ -143,7 +149,7 @@ public class ThemeResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findThemeById(@Context final HttpServletRequest request,
-            @PathParam("id") final String themeId) throws DotDataException, DotSecurityException {
+            @PathParam("id") final String themeId) throws Throwable {
 
         Logger.debug(this, "Getting the theme by identifier: " + themeId);
 
@@ -153,19 +159,13 @@ public class ThemeResource {
         final Folder folder = folderAPI.find(themeId, user, false);
 
         if (folder == null) {
-            return ExceptionMapperUtil
-                    .createResponse(map("message", "Invalid Theme ID"), "Invalid Theme ID",
-                            Status.NOT_FOUND);
+            return Response.status(Status.NOT_FOUND).build();
         } else {
-            return Response.ok(new ResponseEntityView(folder.getMap())).build();
+            final Map<String, Object> map = new HashMap<>();
+            map.putAll(folder.getMap());
+            map.put(THEME_THUMBNAIL_KEY, themeAPI.getThemeThumbnail(folder, user));
+
+            return Response.ok(new ResponseEntityView(map)).build();
         }
-    }
-
-    private ObjectMapper getMapper() {
-        final  ObjectMapper mapper = new ObjectMapper();
-        final  SimpleModule module = new SimpleModule();
-        mapper.registerModule(module);
-
-        return mapper;
     }
 }

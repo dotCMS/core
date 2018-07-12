@@ -1,7 +1,8 @@
 package com.dotcms.rest.api.v1.theme;
 
-import static com.dotcms.util.pagination.ThemePaginator.THEME_PNG;
-import static com.dotcms.util.pagination.ThemePaginator.THEME_THUMBNAIL_KEY;
+
+import static com.dotmarketing.business.ThemeAPI.THEME_PNG;
+import static com.dotmarketing.business.ThemeAPI.THEME_THUMBNAIL_KEY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -29,6 +30,8 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.UtilMethods;
+
+
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import java.io.File;

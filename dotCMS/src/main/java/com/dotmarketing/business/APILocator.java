@@ -888,6 +888,15 @@ public class APILocator extends Locator<APIIndex>{
 	}
 
 	/**
+	 * Creates a single instance of the {@link ThemeAPI} class.
+	 *
+	 * @return The {@link ThemeAPI} class.
+	 */
+	public static ThemeAPI getThemeAPI() {
+		return (ThemeAPI) getInstance(APIIndex.THEME_API);
+	}
+
+	/**
 	 * Generates a unique instance of the specified dotCMS API.
 	 *
 	 * @param index
@@ -1020,7 +1029,8 @@ enum APIIndex
 	VANITY_URLS_API,
 	MULTI_TREE_API,
 	HTMLPAGE_ASSET_RENDERED_API,
-	CLUSTER_API;
+	CLUSTER_API,
+	THEME_API;
 
 
 	Object create() {
@@ -1092,6 +1102,7 @@ enum APIIndex
 			case MULTI_TREE_API: return new MultiTreeAPIImpl();
 			case HTMLPAGE_ASSET_RENDERED_API: return new HTMLPageAssetRenderedAPIImpl();
 			case CLUSTER_API: return new ClusterAPIImpl();
+			case THEME_API: return new ThemeAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

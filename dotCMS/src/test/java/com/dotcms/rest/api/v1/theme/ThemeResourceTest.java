@@ -4,6 +4,7 @@ import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonNode;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.pagination.OrderDirection;
@@ -11,6 +12,7 @@ import com.dotcms.util.pagination.PaginationException;
 import com.dotcms.util.pagination.Paginator;
 import com.dotcms.util.pagination.ThemePaginator;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.ThemeAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -58,6 +60,7 @@ public class ThemeResourceTest {
     private final FolderAPI folderAPI = mock(FolderAPI.class);
     private final ThemePaginator mockThemePaginator = mock(ThemePaginator.class);
     private final HostAPI hostAPI = mock(HostAPI.class);
+    private final ThemeAPI themeAPI = mock(ThemeAPI.class);
 
     private final Contentlet content1 = mock(Contentlet.class);
     private final Contentlet content2 = mock(Contentlet.class);
@@ -114,7 +117,7 @@ public class ThemeResourceTest {
         when(mockThemePaginator.getItems(user, 3, 0, params)).thenReturn(folders);
 
 
-        final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI, folderAPI, webResource);
+        final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI, folderAPI, themeAPI, webResource);
         final Response response = themeResource.findThemes(request, hostId, 1, 3, "ASC", null);
 
         checkSuccessResponse(response);
@@ -128,26 +131,14 @@ public class ThemeResourceTest {
      */
     @Test
     public void testFindThemesDefaultHostId() throws Throwable  {
-        final String hostId = "1";
 
         final HttpSession session = mock(HttpSession.class);
         when(request.getSession()).thenReturn(session);
-        when(session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID)).thenReturn(hostId);
 
-        when(hostAPI.find(hostId, user, false)).thenReturn(host_1);
+        final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI, folderAPI, themeAPI, webResource);
+        final Response response = themeResource.findThemes(request, null, 1, 3, "ASC", null);
 
-        final Map<String, Object> params = map(
-                ThemePaginator.HOST_ID_PARAMETER_NAME, hostId,
-                Paginator.DEFAULT_FILTER_PARAM_NAME, "",
-                Paginator.ORDER_BY_PARAM_NAME, null,
-                Paginator.ORDER_DIRECTION_PARAM_NAME, OrderDirection.ASC
-        );
-        when(mockThemePaginator.getItems(user, 3, 0, params)).thenReturn(folders);
-
-        final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI, folderAPI, webResource);
-        final Response response = themeResource.findThemes(request, hostId, 1, 3, "ASC", null);
-        verify(mockThemePaginator).getItems(user, 3, 0, params);
-        checkSuccessResponse(response);
+        assertEquals(response.getStatus(), Response.Status.NOT_FOUND.getStatusCode());
     }
 
     /**
@@ -172,7 +163,7 @@ public class ThemeResourceTest {
         when(host_1.getIdentifier()).thenReturn(hostId);
         when(mockThemePaginator.getItems(user, 3, 0, params)).thenThrow(exception);
 
-        final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI , folderAPI, webResource);
+        final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI , folderAPI, themeAPI, webResource);
 
         try {
             themeResource.findThemes(request, hostId, 1, 3, "ASC", null);
@@ -183,17 +174,16 @@ public class ThemeResourceTest {
     }
 
     protected void checkSuccessResponse(final Response response) throws IOException {
-        final String responseString = response.getEntity().toString();
-        final JsonNode jsonNode = objectMapper.readTree(responseString);
+        Collection entities = (Collection) ((ResponseEntityView) response.getEntity()).getEntity();
 
-        final List<JsonNode> responseList = CollectionsUtils.asList(jsonNode.get("entity").elements());
+        final List<Map> responseList = CollectionsUtils.asList(entities.iterator());
         assertEquals(2, responseList.size());
-        assertEquals(FOLDER_1, responseList.get(0).get("name").asText());
-        assertEquals(FOLDER_1, responseList.get(0).get("title").asText());
-        assertEquals(FOLDER_INODE_1, responseList.get(0).get("inode").asText());
+        assertEquals(FOLDER_1, responseList.get(0).get("name"));
+        assertEquals(FOLDER_1, responseList.get(0).get("title"));
+        assertEquals(FOLDER_INODE_1, responseList.get(0).get("inode"));
 
-        assertEquals(FOLDER_2, responseList.get(1).get("name").asText());
-        assertEquals(FOLDER_2, responseList.get(1).get("title").asText());
-        assertEquals(FOLDER_INODE_2, responseList.get(1).get("inode").asText());
+        assertEquals(FOLDER_2, responseList.get(1).get("name"));
+        assertEquals(FOLDER_2, responseList.get(1).get("title"));
+        assertEquals(FOLDER_INODE_2, responseList.get(1).get("inode"));
     }
 }
