@@ -14,6 +14,12 @@ describe('DotPersonasService', () => {
 
     it('should get Personas', () => {
         let result;
+        const url = [
+            `content/render/false/query/+contentType:persona `,
+            `+live:true `,
+            `+deleted:false `,
+            `+working:true`
+        ].join('');
 
         this.dotPersonasService.get().subscribe(res => {
             result = res;
@@ -29,5 +35,7 @@ describe('DotPersonasService', () => {
             )
         );
         expect(result).toEqual(Array.of(mockDotPersona));
+        expect(this.lastConnection.request.method).toBe(0); // 0 is GET method
+        expect(this.lastConnection.request.url).toContain(url);
     });
 });

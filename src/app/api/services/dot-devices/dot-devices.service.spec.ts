@@ -15,6 +15,12 @@ describe('DotDevicesService', () => {
 
     it('should get Devices', () => {
         let result;
+        const url = [
+            `content/render/false/query/+contentType:previewDevice `,
+            `+live:true `,
+            `+deleted:false `,
+            `+working:true`
+        ].join('');
 
         this.dotDevicesService.get().subscribe(res => {
             result = res;
@@ -33,5 +39,8 @@ describe('DotDevicesService', () => {
         this.dotDevicesService.get().subscribe((devices: DotDevice[]) => {
             expect(devices).toEqual(mockDotDevices);
         });
+
+        expect(this.lastConnection.request.method).toBe(0); // 0 is GET method
+        expect(this.lastConnection.request.url).toContain(url);
     });
 });

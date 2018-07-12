@@ -172,7 +172,7 @@ describe('DotPageStateService', () => {
     });
 
     describe('get a page state', () => {
-        fit('should get a unlocked page and set default state', () => {
+        it('should get a unlocked page and set default state', () => {
             const { lockedBy, lockMessage, lockedByName, lockedOn, ...noLockedByPage } = mockDotPage;
 
             service.get('/hello/world').subscribe((updatedPageState: DotRenderedPageState) => {
