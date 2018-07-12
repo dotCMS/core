@@ -612,16 +612,23 @@
                 return;
             }
         } else {
+            if (ngEditContentletEvents) {
+                if (data['isHtmlPage']) {
+                    ngEditContentletEvents.next({
+                        name: 'deleted-page',
+                        data: {}
+                    });
+                } else {
+                    ngEditContentletEvents.next({
+                        name: 'deleted-contenlet',
+                        data: {}
+                    });
+                }
+            }
+
             customEventDetail = {
                 name: 'close'
             };
-
-            if (ngEditContentletEvents) {
-                ngEditContentletEvents.next({
-                    name: 'deleted',
-                    data: {}
-                });
-            }
         }
 
         var customEvent = document.createEvent('CustomEvent');
