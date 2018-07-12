@@ -107,7 +107,7 @@ public class OSGIUtil {
                         Config.CONTEXT.getRealPath("/WEB-INF") + File.separator + "felix"))
                 .getAbsolutePath();
 
-        Logger.info(this, "Felix base dir: " + felixDirectory);
+        Logger.info(this, () -> "Felix base dir: " + felixDirectory);
 
         felixProps.put(FELIX_BASE_DIR, felixDirectory);
         felixProps.put(AUTO_DEPLOY_DIR_PROPERTY, felixDirectory + File.separator + "bundle");
@@ -154,7 +154,8 @@ public class OSGIUtil {
         // fetch the 'felix.base.dir' property and check if exists. On the props file the prop needs to
         for (String key : FELIX_DIRECTORIES) {
             if (new File(felixProps.getProperty(key)).mkdirs()) {
-                Logger.info(this.getClass(), "Building Directory:" + felixProps.getProperty(key));
+                Logger.info(this.getClass(),
+                        () -> "Building Directory:" + felixProps.getProperty(key));
             }
         }
 
@@ -200,7 +201,7 @@ public class OSGIUtil {
 
             // Start the framework.
             felixFramework.start();
-            Logger.info(this, "osgi felix framework started");
+            Logger.info(this, () -> "osgi felix framework started");
         } catch (Exception ex) {
             Logger.error(this, "Could not create framework: " + ex);
             throw new RuntimeException(ex);
@@ -246,7 +247,8 @@ public class OSGIUtil {
                         bundleContext.ungetService(workflowService);
                     }
                 } else {
-                    Logger.warn(this, "Unable to unregistering services while stopping felix");
+                    Logger.warn(this,
+                            () -> "Unable to unregistering services while stopping felix");
                 }
             }
         } catch (Exception e) {
@@ -311,12 +313,13 @@ public class OSGIUtil {
                 if (key.equals(FELIX_BASE_DIR)) {
                     // Allow the property in the file to be felix.base.dir
                     properties.put(key, Config.getStringProperty(key));
-                    Logger.info(this, "Found property  " + key + "=" + Config.getStringProperty(key));
+                    Logger.info(this,
+                            () -> "Found property  " + key + "=" + Config.getStringProperty(key));
                 } else {
                     String value = (UtilMethods.isSet(Config.getStringProperty(key, null))) ? Config.getStringProperty(key) : null;
                     String felixKey = key.substring(6);
                     properties.put(felixKey, value);
-                    Logger.info(OSGIUtil.class, "Found property  " + felixKey + "=" + value);
+                    Logger.info(OSGIUtil.class, () -> "Found property  " + felixKey + "=" + value);
                 }
             }
         }
@@ -451,7 +454,7 @@ public class OSGIUtil {
         File directory = new File(path);
         if (!directory.exists()) {
             Logger.debug(this,
-                    String.format("Felix directory %s does not exist. Trying to create it...",
+                    () -> String.format("Felix directory %s does not exist. Trying to create it...",
                             path));
             created = directory.mkdirs();
             if (!created) {
