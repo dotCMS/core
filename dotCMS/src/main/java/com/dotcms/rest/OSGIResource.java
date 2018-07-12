@@ -12,7 +12,7 @@ import com.dotcms.rest.exception.ForbiddenException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.OSGIUtil;
+import org.apache.felix.framework.OSGIUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
@@ -55,7 +55,9 @@ public class OSGIResource  {
             "slf4j.simple",
             "slf4j.api",
             "jcl.over.slf4j",
-            "com.dotcms.tika"
+            "com.dotcms.tika",
+            "org.apache.felix.http.api",
+            "org.apache.felix.configadmin"
     );
 
     private final WebResource webResource = new WebResource();
@@ -100,7 +102,7 @@ public class OSGIResource  {
         This method returns a list of all bundles installed in the OSGi environment at the time of the call to this method. However,
         since the Framework is a very dynamic environment, bundles can be installed or uninstalled at anytime.
          */
-        Bundle[] installedBundles = OSGIUtil.getInstance().getBundleContext().getBundles();
+        Bundle[] installedBundles = OSGIUtil.getInstance().getBundles();
 
         //Read the parameters
         String ignoreSystemBundlesParam = initData.getParamsMap().get( "ignoresystembundles" );
