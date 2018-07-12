@@ -545,9 +545,9 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		} else {
 			/*
 			No contentlet was returned (probably a delete was executed).
-			Cleaning up the contentlet for upper layers.
+			Marking it for upper layers.
 			 */
-			contentletFormData.put(WebKeys.CONTENTLET_EDIT, null);
+			contentletFormData.put(WebKeys.CONTENTLET_DELETED, Boolean.TRUE);
 		}
 	}
 
