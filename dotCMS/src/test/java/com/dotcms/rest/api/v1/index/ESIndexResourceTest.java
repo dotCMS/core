@@ -233,11 +233,12 @@ public class ESIndexResourceTest extends UnitTestBase {
         final LayoutAPI layoutAPI = mock(LayoutAPI.class);
         final IndiciesAPI indiciesAPI = mock(IndiciesAPI.class);
 
-        final User user = new User();
+        final User user = mock(User.class);
         Map<String,String> paramsMap = new HashMap<String,String>();
 
         when(webResource.init(requestParams, true, request, true, null)).thenReturn(initDataObject);
         when(initDataObject.getUser()).thenReturn(user);
+        when(user.getLocale()).thenReturn(Locale.getDefault());
         when(initDataObject.getParamsMap()).thenReturn(paramsMap);
         when(layoutAPI.doesUserHaveAccessToPortlet("maintenance", initDataObject.getUser())).thenReturn(true);
         when(indexHelper.getIndexNameOrAlias(paramsMap, indexAPI)).thenReturn(null);

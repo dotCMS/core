@@ -15,7 +15,6 @@ import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.*;
 import com.dotmarketing.factories.EmailFactory;
@@ -525,8 +524,6 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 			contentletFormData.put(WebKeys.CONTENTLET_EDIT, currentContentlet);
 			contentletFormData.put(WebKeys.CONTENTLET_FORM_EDIT, currentContentlet);
-
-			CacheLocator.getContentletCache().remove(currentContentlet.getInode());
 
 			if (Config.getBooleanProperty("CONTENT_CHANGE_NOTIFICATIONS", false) && !isNew
 					&& !isAutoSave) {

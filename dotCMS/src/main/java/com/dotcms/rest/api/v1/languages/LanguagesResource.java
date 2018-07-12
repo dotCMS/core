@@ -41,8 +41,8 @@ public class LanguagesResource {
                 I18NUtil.INSTANCE);
     }
 
-    @VisibleForTesting
-    protected LanguagesResource(final LanguageAPI languageAPI,
+
+    public LanguagesResource(final LanguageAPI languageAPI,
                                 final WebResource webResource,
                                 final I18NUtil i18NUtil) {
 
