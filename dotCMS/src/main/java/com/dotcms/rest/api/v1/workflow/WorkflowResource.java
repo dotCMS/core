@@ -1,8 +1,20 @@
 package com.dotcms.rest.api.v1.workflow;
 
+import static com.dotcms.rest.ResponseEntityView.OK;
+import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotcms.util.DotLambdas.not;
+
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
-import com.dotcms.repackage.javax.ws.rs.*;
+import com.dotcms.repackage.javax.ws.rs.DELETE;
+import com.dotcms.repackage.javax.ws.rs.DefaultValue;
+import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.POST;
+import com.dotcms.repackage.javax.ws.rs.PUT;
+import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
+import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.QueryParam;
 import com.dotcms.repackage.javax.ws.rs.container.AsyncResponse;
 import com.dotcms.repackage.javax.ws.rs.container.Suspended;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
@@ -19,7 +31,19 @@ import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
-import com.dotcms.workflow.form.*;
+import com.dotcms.workflow.form.BulkActionForm;
+import com.dotcms.workflow.form.FireActionForm;
+import com.dotcms.workflow.form.FireBulkActionsForm;
+import com.dotcms.workflow.form.WorkflowActionForm;
+import com.dotcms.workflow.form.WorkflowActionStepBean;
+import com.dotcms.workflow.form.WorkflowActionStepForm;
+import com.dotcms.workflow.form.WorkflowCopyForm;
+import com.dotcms.workflow.form.WorkflowReorderBean;
+import com.dotcms.workflow.form.WorkflowReorderWorkflowActionStepForm;
+import com.dotcms.workflow.form.WorkflowSchemeForm;
+import com.dotcms.workflow.form.WorkflowSchemeImportObjectForm;
+import com.dotcms.workflow.form.WorkflowStepAddForm;
+import com.dotcms.workflow.form.WorkflowStepUpdateForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -43,17 +67,12 @@ import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-
-import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
-
-import static com.dotcms.rest.ResponseEntityView.OK;
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotcms.util.DotLambdas.*;
+import javax.servlet.http.HttpServletRequest;
 
 @SuppressWarnings("serial")
 @Path("/v1/workflow")
@@ -680,7 +699,7 @@ public class WorkflowResource {
                             ", exception message: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
         }
-    } // reorderStep
+    } // updateStep
 
     /**
      * Creates a new step into a workflow

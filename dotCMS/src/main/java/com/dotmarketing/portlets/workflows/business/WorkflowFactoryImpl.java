@@ -1964,4 +1964,18 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			throw new DotDataException(e.getMessage(), e);
 		}
 	}
+
+	@Override
+	public Set<String> findNullTaskContentletIdenitfiersForScheme(final String workflowSchemeId) throws DotDataException {
+		final DotConnect dc = new DotConnect();
+		try {
+			dc.setSQL(sql.SELECT_NULL_TASK_CONTENTLET_FOR_WORKFLOW);
+			dc.addParam(workflowSchemeId);
+			final List<Map<String, String>> result = dc.loadResults();
+            return result.stream().map(row -> row.get("identifier")).collect(Collectors.toSet());
+		} catch (DotDataException e) {
+			Logger.error(WorkFlowFactory.class,e.getMessage(),e);
+			throw new DotDataException(e.getMessage(), e);
+		}
+	}
 }

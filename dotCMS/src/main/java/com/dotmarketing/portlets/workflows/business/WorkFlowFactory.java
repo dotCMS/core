@@ -18,6 +18,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.liferay.portal.model.User;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 
 /**
@@ -304,6 +305,15 @@ public interface WorkFlowFactory {
 	 * @throws DotSecurityException
 	 */
 	public void deleteScheme(WorkflowScheme scheme) throws DotDataException, DotSecurityException;
+
+	/**
+	 * finds all contentlets with a null task for a specific Workflow
+	 * In other words all contents on which a workflow has been reset or hasn't been kicked off.
+	 * @param workflowSchemeId
+	 * @return
+	 * @throws DotDataException
+	 */
+	public Set<String> findNullTaskContentletIdenitfiersForScheme(final String workflowSchemeId) throws DotDataException;
 
 	/**
 	 * Return the system work flow scheme
