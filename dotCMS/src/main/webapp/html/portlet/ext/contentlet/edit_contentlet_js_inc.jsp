@@ -410,7 +410,6 @@
             isContentSaving = true;
         }
 
-
         ContentletAjax.saveContent(fmData,isAutoSave,isCheckin,publish,saveContentCallback);
     }
 
@@ -531,20 +530,15 @@
 
     function saveContentCallback(data){
         isContentAutoSaving = false;
-        dojo.byId("subcmd").value="";
+        dojo.byId("subcmd").value= "";
+
         if(data["contentletInode"] != null && isInodeSet(data["contentletInode"])){
             $('contentletInode').value = data["contentletInode"];
             currentContentletInode = data["contentletInode"];
             contentAdmin.contentletInode=data["contentletInode"];
             contentAdmin.contentletIdentifier=data["contentletIdentifier"];
         }
-        
-        
 
-        
-        
-        
-        
         dijit.byId('savingContentDialog').hide();
         resetHasChanged();
 
@@ -572,22 +566,10 @@
             errorDisplayElement.show();
             return;
         }
-
-        if (ngEditContentletEvents) {
-            ngEditContentletEvents.next({
-                name: 'save',
-                data: {
-                    identifier: data.contentletIdentifier,
-                    inode: data.contentletInode,
-                    type: null
-                }
-            });
-            return;
-        }
-        
         
         dijit.byId("versionsTab").attr("disabled", false);
         dijit.byId("permissionsTab").attr("disabled", false);
+
 
         refreshActionPanel(data["contentletInode"]);
 
@@ -595,6 +577,18 @@
         var customEventDetail;
 
         if (data["contentletIdentifier"]) {
+
+            if (ngEditContentletEvents) {
+                ngEditContentletEvents.next({
+                    name: 'save',
+                    data: {
+                        identifier: data.contentletIdentifier,
+                        inode: data.contentletInode,
+                        type: null
+                    }
+                });
+            }
+
             if((data["referer"] != null && data["referer"] != '' && !data["contentletLocked"])) {
                 if (data['isHtmlPage']) {
                     customEventDetail = {
@@ -621,6 +615,13 @@
             customEventDetail = {
                 name: 'close'
             };
+
+            if (ngEditContentletEvents) {
+                ngEditContentletEvents.next({
+                    name: 'deleted',
+                    data: {}
+                });
+            }
         }
 
         var customEvent = document.createEvent('CustomEvent');
