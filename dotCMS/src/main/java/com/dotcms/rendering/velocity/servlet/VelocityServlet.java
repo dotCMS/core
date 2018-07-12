@@ -56,10 +56,9 @@ public class VelocityServlet extends HttpServlet {
             return;
         }
 
-        final boolean comeFromAdmin = req.getAttribute(WebKeys.COME_FROM_ADMIN) != null ?
-                (boolean) req.getAttribute(WebKeys.COME_FROM_ADMIN) : false;
+        final boolean comeFromSomeWhere = request.getHeader("referer") != null;
 
-        if (APILocator.getLoginServiceAPI().isLoggedIn(request) && !comeFromAdmin && !this.isTimeMachine(req)){
+        if (APILocator.getLoginServiceAPI().isLoggedIn(request) && !comeFromSomeWhere){
             goToEditPage(uri, response);
         } else {
             request.setRequestUri(uri);
@@ -81,10 +80,6 @@ public class VelocityServlet extends HttpServlet {
                 response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Exception Error on template");
             }
         }
-    }
-
-    private boolean isTimeMachine(HttpServletRequest req) {
-        return req.getSession(false) != null && req.getSession().getAttribute(TM_DATE_VAR) != null;
     }
 
     @Override
