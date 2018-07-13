@@ -51,7 +51,6 @@ public class ThemeResourceIntegrationTest {
     private static UserAPI userAPI;
     private static User user;
     private static Host host;
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -132,10 +131,8 @@ public class ThemeResourceIntegrationTest {
         Map<String, Object> mapExpected = folderExpected.getMap();
         assertEquals(mapExpected.size(), folder.size());
 
-        for (Map.Entry<String, Object> expectedEntry : mapExpected.entrySet()) {
-            Object value = folder.get(expectedEntry.getKey());
-            assertEquals(expectedEntry.getValue(), value);
-        }
+        mapExpected.entrySet().forEach(expectedEntry -> assertEquals(expectedEntry.getValue(),
+                folder.get(expectedEntry.getKey())));
     }
 
     @Test
