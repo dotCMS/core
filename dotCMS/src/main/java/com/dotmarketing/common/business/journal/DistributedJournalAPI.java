@@ -8,6 +8,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 
 import java.sql.Connection;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author Jason Tesser
@@ -200,6 +201,14 @@ public interface DistributedJournalAPI<T> {
 	 * @throws DotDataException
 	 */
 	void addIdentifierReindex(String id) throws DotDataException;
+
+
+	/**
+	 * Adds a list of identifiers to be reindexed
+	 * @param ids
+	 * @throws DotDataException
+	 */
+	int addIdentifierReindex(final Set<String> ids) throws DotDataException;
 
 	/**
 	 * Adds a contentlet to be reindexed
