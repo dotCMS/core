@@ -1484,20 +1484,28 @@ public class ContentletAjax {
 			}
 		}
 
+		  // if it is save and publish, the save event must be not generated
+		  newInode = contentletWebAPI
+				  .saveContent(contentletFormData, isAutoSave, isCheckin, user, !publish);
 
+		  Contentlet contentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
+		  if (null != contentlet) {
 
-			// if it is save and publish, the save event must be not generagted
-            newInode = contentletWebAPI.saveContent(contentletFormData,isAutoSave,isCheckin,user, !publish);
+			  callbackData.put("isHtmlPage", contentlet.isHTMLPage());
+			  callbackData.put("contentletType", contentlet.getContentType().variable());
+			  callbackData.put("contentletBaseType", contentlet.getContentType().baseType().name());
 
-            Contentlet contentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
+			  //Cleaning up as we don't need more calculations as the Contenlet was deleted
+			  if (contentletFormData.containsKey(WebKeys.CONTENTLET_DELETED)
+					  && (Boolean) contentletFormData.get(WebKeys.CONTENTLET_DELETED)) {
+				  contentlet = null;
+			  }
+		  }
 
             if(contentlet != null){
 				callbackData.put("contentletIdentifier", contentlet.getIdentifier());
 				callbackData.put("contentletInode", contentlet.getInode());
 				callbackData.put("contentletLocked", contentlet.isLocked());
-                callbackData.put("isHtmlPage", contentlet.isHTMLPage());
-				callbackData.put("contentletType", contentlet.getContentType().variable());
-				callbackData.put("contentletBaseType", contentlet.getContentType().baseType().name());
 
                 if(contentlet.isHTMLPage()) {
                     HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
