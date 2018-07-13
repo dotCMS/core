@@ -971,8 +971,17 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			this.saveStep(stepp, user);
 		}
 
-		if(firstStepChanges){
-            pushIndexUpdateOnReorder(scheme.getId());
+		if (firstStepChanges) {
+			final DotSubmitter submitter = this.concurrentFactory
+					.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
+			submitter.submit(() -> {
+				try {
+					pushIndexUpdateOnReorder(scheme.getId());
+				} catch (DotDataException e) {
+					Logger.error(getClass(),
+							"An Error occurred while attempting a reindex on reorder.", e);
+				}
+			});
 		}
 	}
 
