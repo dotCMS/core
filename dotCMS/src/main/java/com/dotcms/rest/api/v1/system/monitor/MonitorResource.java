@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.system.monitor;
 
 import java.io.File;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
@@ -70,101 +71,101 @@ public class MonitorResource {
     public Response test(@Context HttpServletRequest request) throws Throwable {
         // force authentication
         //InitDataObject auth = webResource.init(false, httpRequest, false);  cannot require as we cannot assume db or other subsystems are functioning
-
-        String config_ip_acl = Config.getStringProperty("SYSTEM_STATUS_API_IP_ACL", "127.0.0.1");
-        String[] aclIPs = null;
-        if(config_ip_acl != null)
-            aclIPs = config_ip_acl.split(",");
-        System.out.println("config_ip_acl="+ config_ip_acl);
-        System.out.println("request.getRemoteAddr=" + request.getRemoteAddr());
-        Boolean allowedAccess = false;
-        if(aclIPs == null) {
-            allowedAccess = true;
-        }
-        else {
-            for(String aclIP : aclIPs) {
-                if(HttpRequestDataUtil.isIpMatchingNetmask(request.getRemoteAddr(), aclIP)){
-                    allowedAccess = true;
-                    break;
-                }
-            }
-        }
-        System.out.println("allowedAccess=" + allowedAccess);
-
         boolean extendedFormat = false;
         if (request.getQueryString() != null && "extended".equals(request.getQueryString()))
             extendedFormat = true;
 
-        LOCAL_FS_TIMEOUT=Config.getLongProperty("SYSTEM_STATUS_API_LOCAL_FS_TIMEOUT", 5000);
-        CACHE_TIMEOUT=Config.getLongProperty("SYSTEM_STATUS_API_CACHE_TIMEOUT", 5000);;
-        ASSET_FS_TIMEOUT=Config.getLongProperty("SYSTEM_STATUS_API_ASSET_FS_TIMEOUT", 5000);;
-        INDEX_TIMEOUT=Config.getLongProperty("SYSTEM_STATUS_API_INDEX_TIMEOUT", 5000);;
-        DB_TIMEOUT=Config.getLongProperty("SYSTEM_STATUS_API_DB_TIMEOUT", 5000);;
+        String config_ip_acl = Config.getStringProperty("SYSTEM_STATUS_API_IP_ACL", "127.0.0.1/32,0:0:0:0:0:0:0:1");
+        String[] aclIPs = null;
+        if(config_ip_acl != null)
+            aclIPs = config_ip_acl.split(",");
 
-        try{
-            IndiciesInfo idxs=APILocator.getIndiciesAPI().loadIndicies();
-
-            boolean dotCMSHealthy = false;
-            boolean frontendHealthy = false;
-            boolean backendHealthy = false;
-            boolean dbSelectHealthy = dbCount();
-            boolean indexLiveHealthy = indexCount(idxs.live);
-            boolean indexWorkingHealthy = indexCount(idxs.working);
-            boolean cacheHealthy = cache();
-            boolean localFSHealthy = localFiles();
-            boolean assetFSHealthy = assetFiles();
-
-            if(dbSelectHealthy && indexLiveHealthy && indexWorkingHealthy && cacheHealthy && localFSHealthy && assetFSHealthy) {
-                dotCMSHealthy = true;
-                frontendHealthy = true;
-                backendHealthy = true;
-            }
-            else if(!indexWorkingHealthy && dbSelectHealthy && indexLiveHealthy && cacheHealthy && localFSHealthy && assetFSHealthy) {
-                frontendHealthy = true;
-            }
-
-            ResponseBuilder builder = null;
-            if(extendedFormat) {
-                String serverID=getServerID();
-                String clusterID = getClusterID();
-                JSONObject jo = new JSONObject();
-                jo.put("serverID", serverID);
-                jo.put("clusterID", clusterID);
-                jo.put("dotCMSHealthy", dotCMSHealthy);
-                jo.put("frontendHealthy", frontendHealthy);
-                jo.put("backendHealthy", backendHealthy);
-                //jo.put("DOTCMS_STARTUP_TIME", System.getProperty(WebKeys.DOTCMS_STARTUP_TIME));
-
-                JSONObject subsystems = new JSONObject();
-                subsystems.put("dbSelectHealthy", dbSelectHealthy);
-                subsystems.put("indexLiveHealthy", indexLiveHealthy);
-                subsystems.put("indexWorkingHealthy", indexWorkingHealthy);
-                subsystems.put("cacheHealthy", cacheHealthy);
-                subsystems.put("localFSHealthy", localFSHealthy);
-                subsystems.put("assetFSHealthy", assetFSHealthy);
-                jo.put("subsystems", subsystems);
-
-                builder = Response.ok(jo.toString(2), MediaType.APPLICATION_JSON);
-            }
-            else {
-                if (dotCMSHealthy) {
-                    builder = Response.ok("", MediaType.APPLICATION_JSON);
-                } else if (!indexWorkingHealthy && dbSelectHealthy && indexLiveHealthy && cacheHealthy && localFSHealthy && assetFSHealthy) {
-                    builder = Response.status(507).entity("").type(MediaType.APPLICATION_JSON);
-                } else {
-                    builder = Response.status(503).entity("").type(MediaType.APPLICATION_JSON);
+        String clientIP = HttpRequestDataUtil.getIpAddress(request).toString().split("/")[1];
+        Boolean accessAllowed = false;
+        if(aclIPs == null) {
+            accessAllowed = true;
+        }
+        else {
+            for(String aclIP : aclIPs) {
+                if(HttpRequestDataUtil.isIpMatchingNetmask(clientIP, aclIP)){
+                    accessAllowed = true;
+                    break;
                 }
             }
-    
+        }
+
+        try {
+            ResponseBuilder builder = null;
+            if (accessAllowed) {
+                IndiciesInfo idxs = APILocator.getIndiciesAPI().loadIndicies();
+                LOCAL_FS_TIMEOUT = Config.getLongProperty("SYSTEM_STATUS_API_LOCAL_FS_TIMEOUT", 1000);
+                CACHE_TIMEOUT = Config.getLongProperty("SYSTEM_STATUS_API_CACHE_TIMEOUT", 1000);
+                ;
+                ASSET_FS_TIMEOUT = Config.getLongProperty("SYSTEM_STATUS_API_ASSET_FS_TIMEOUT", 1000);
+                ;
+                INDEX_TIMEOUT = Config.getLongProperty("SYSTEM_STATUS_API_INDEX_TIMEOUT", 1000);
+                ;
+                DB_TIMEOUT = Config.getLongProperty("SYSTEM_STATUS_API_DB_TIMEOUT", 1000);
+                ;
+
+                boolean dotCMSHealthy = false;
+                boolean frontendHealthy = false;
+                boolean backendHealthy = false;
+                boolean dbSelectHealthy = dbCount();
+                boolean indexLiveHealthy = indexCount(idxs.live);
+                boolean indexWorkingHealthy = indexCount(idxs.working);
+                boolean cacheHealthy = cache();
+                boolean localFSHealthy = localFiles();
+                boolean assetFSHealthy = assetFiles();
+
+                if (dbSelectHealthy && indexLiveHealthy && indexWorkingHealthy && cacheHealthy && localFSHealthy && assetFSHealthy) {
+                    dotCMSHealthy = true;
+                    frontendHealthy = true;
+                    backendHealthy = true;
+                } else if (!indexWorkingHealthy && dbSelectHealthy && indexLiveHealthy && cacheHealthy && localFSHealthy && assetFSHealthy) {
+                    frontendHealthy = true;
+                }
+
+                if (extendedFormat) {
+                    String serverID = getServerID();
+                    String clusterID = getClusterID();
+                    JSONObject jo = new JSONObject();
+                    jo.put("serverID", serverID);
+                    jo.put("clusterID", clusterID);
+                    jo.put("dotCMSHealthy", dotCMSHealthy);
+                    jo.put("frontendHealthy", frontendHealthy);
+                    jo.put("backendHealthy", backendHealthy);
+
+                    JSONObject subsystems = new JSONObject();
+                    subsystems.put("dbSelectHealthy", dbSelectHealthy);
+                    subsystems.put("indexLiveHealthy", indexLiveHealthy);
+                    subsystems.put("indexWorkingHealthy", indexWorkingHealthy);
+                    subsystems.put("cacheHealthy", cacheHealthy);
+                    subsystems.put("localFSHealthy", localFSHealthy);
+                    subsystems.put("assetFSHealthy", assetFSHealthy);
+                    jo.put("subsystems", subsystems);
+
+                    builder = Response.ok(jo.toString(2), MediaType.APPLICATION_JSON);
+                } else {
+                    if (dotCMSHealthy) {
+                        builder = Response.ok("", MediaType.APPLICATION_JSON);
+                    } else if (!indexWorkingHealthy && dbSelectHealthy && indexLiveHealthy && cacheHealthy && localFSHealthy && assetFSHealthy) {
+                        builder = Response.status(507).entity("").type(MediaType.APPLICATION_JSON);
+                    } else {
+                        builder = Response.status(503).entity("").type(MediaType.APPLICATION_JSON);
+                    }
+                }
+            }
+            else {
+                builder = Response.status(403).entity("").type(MediaType.APPLICATION_JSON); // Access is forbidden because IP is not in any range in ACL list
+            }
             builder.header("Access-Control-Expose-Headers", "Authorization");
             builder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
-    
             return builder.build();
         }
         finally{
             DbConnectionFactory.closeSilently();
         }
-
     }
 
 
