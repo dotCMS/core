@@ -36,8 +36,6 @@ import java.util.Map;
 import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotmarketing.business.ThemeAPI.THEME_THUMBNAIL_KEY;
 
-import com.google.common.collect.ImmutableMap;
-
 /**
  * Provides different methods to access information about Themes in dotCMS.
  */
