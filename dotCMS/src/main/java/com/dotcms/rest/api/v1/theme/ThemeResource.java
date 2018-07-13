@@ -1,6 +1,5 @@
 package com.dotcms.rest.api.v1.theme;
 
-import com.dotcms.repackage.com.fasterxml.jackson.core.JsonProcessingException;
 import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.util.JsonProcessingRuntimeException;
@@ -9,12 +8,9 @@ import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.PaginationException;
 import com.dotcms.util.pagination.ThemePaginator;
 import com.dotmarketing.beans.Host;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotmarketing.business.ThemeAPI;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.UtilMethods;
@@ -31,7 +27,6 @@ import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Logger;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.module.SimpleModule;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
@@ -149,7 +144,7 @@ public class ThemeResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findThemeById(@Context final HttpServletRequest request,
-            @PathParam("id") final String themeId) throws Throwable {
+            @PathParam("id") final String themeId) throws DotDataException, DotSecurityException {
 
         Logger.debug(this, "Getting the theme by identifier: " + themeId);
 

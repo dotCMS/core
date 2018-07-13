@@ -1,6 +1,5 @@
 package com.dotcms.rest.api.v1.theme;
 
-import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonNode;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.InitDataObject;
@@ -13,7 +12,6 @@ import com.dotcms.util.pagination.Paginator;
 import com.dotcms.util.pagination.ThemePaginator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.ThemeAPI;
-import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -35,7 +33,6 @@ import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static com.dotcms.util.CollectionsUtils.map;
 
@@ -95,6 +92,7 @@ public class ThemeResourceTest {
                 .build()));
         folders.setTotalResults(2);
     }
+
     /**
      * Test of {@link ThemeResource#findThemes(HttpServletRequest, String, int, int, String, String)}
      *
@@ -152,7 +150,7 @@ public class ThemeResourceTest {
         final String hostId = "1";
         final Exception exception = new PaginationException(new DotSecurityException(""));
 
-        Map<String, Object> params = map(
+        final Map<String, Object> params = map(
                 ThemePaginator.HOST_ID_PARAMETER_NAME, hostId,
                 Paginator.DEFAULT_FILTER_PARAM_NAME, "",
                 Paginator.ORDER_BY_PARAM_NAME, null,
@@ -173,8 +171,26 @@ public class ThemeResourceTest {
         }
     }
 
+    /**
+     * Test of {@link ThemeResource#findThemeById(HttpServletRequest, String)}
+     *
+     * Given: a user witout READ_PERMISSIION
+     * Should: throw DotSecurityException
+     */
+    @Test(expected = DotSecurityException.class)
+    public void testFindThemesWithLimitedUse() throws Throwable {
+        final String themeId = "2";
+        final DotSecurityException dotSecurityException = mock(DotSecurityException.class);
+
+        when(folderAPI.find(themeId, user, false)).thenThrow(dotSecurityException);
+
+        final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI, folderAPI, themeAPI, webResource);
+        themeResource.findThemeById(request, themeId);
+
+    }
+
     protected void checkSuccessResponse(final Response response) throws IOException {
-        Collection entities = (Collection) ((ResponseEntityView) response.getEntity()).getEntity();
+        final Collection entities = (Collection) ((ResponseEntityView) response.getEntity()).getEntity();
 
         final List<Map> responseList = CollectionsUtils.asList(entities.iterator());
         assertEquals(2, responseList.size());

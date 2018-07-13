@@ -9,8 +9,8 @@ import com.liferay.portal.model.User;
  * It is intended as a Helper class to handle Theme
  */
 public interface ThemeAPI {
-    public static final String THEME_PNG = "theme.png";
-    public static final String THEME_THUMBNAIL_KEY = "themeThumbnail";
+    String THEME_PNG = "theme.png";
+    String THEME_THUMBNAIL_KEY = "themeThumbnail";
 
     String getThemeThumbnail(final Folder folder, final User user) throws DotSecurityException, DotDataException;
 }

@@ -149,7 +149,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             throws DotDataException, DotSecurityException {
         final String pageUri = (UUIDUtil.isUUID(uri) ||( uri.length()>0 && '/' == uri.charAt(0))) ? uri : ("/" + uri);
 
-        final HTMLPageAsset htmlPageAsset = (UUIDUtil.isUUID(pageUri)) ?
+        final HTMLPageAsset htmlPageAsset = UUIDUtil.isUUID(pageUri) ?
                 (HTMLPageAsset) this.htmlPageAssetAPI.findPage(pageUri, user, mode.respectAnonPerms) :
                 (HTMLPageAsset) getPageByUri(mode, host, pageUri);
 

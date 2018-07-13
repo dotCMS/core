@@ -12,7 +12,6 @@ import java.util.List;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -21,6 +20,8 @@ import static org.mockito.Mockito.when;
  * test for {@link ThemeAPIImpl}
  */
 public class ThemeAPIImplTest {
+
+    public static final String LUCENE_QUERY = "+conFolder:1 +title:theme.png +live:true +deleted:false";
 
     @Test
     public void when_FolderAndUserAreNotNull_And_ExceptionIsNotThrown() throws DotDataException, DotSecurityException {
@@ -34,7 +35,7 @@ public class ThemeAPIImplTest {
 
         when(contentlet.getIdentifier()).thenReturn(themeThumbnailExpected);
         when(folder.getInode()).thenReturn(folderInode);
-        when(contentletAPI.search("+conFolder:1 +title:theme.png +live:true +deleted:false", -1,
+        when(contentletAPI.search(LUCENE_QUERY, -1,
                 0, null, user, false)).thenReturn(contentlets);
 
         final ThemeAPIImpl themeAPI = new ThemeAPIImpl(contentletAPI);
@@ -49,11 +50,10 @@ public class ThemeAPIImplTest {
         final User user = mock(User.class);
         final Folder folder = mock(Folder.class);
         final String folderInode = "1";
-        final String themeThumbnailExpected = "themeThumbnail";
         final DotDataException dotDataException = mock(DotDataException.class);
 
         when(folder.getInode()).thenReturn(folderInode);
-        when(contentletAPI.search("+conFolder:1 +title:theme.png +live:true +deleted:false", -1,
+        when(contentletAPI.search(LUCENE_QUERY, -1,
                 0, null, user, false)).thenThrow(dotDataException);
 
 
@@ -70,7 +70,7 @@ public class ThemeAPIImplTest {
         final DotSecurityException dotSecurityException = mock(DotSecurityException.class);
 
         when(folder.getInode()).thenReturn(folderInode);
-        when(contentletAPI.search("+conFolder:1 +title:theme.png +live:true +deleted:false", -1,
+        when(contentletAPI.search(LUCENE_QUERY, -1,
                 0, null, user, false)).thenThrow(dotSecurityException);
 
 
@@ -85,7 +85,7 @@ public class ThemeAPIImplTest {
         final Folder folder = null;
         final DotDataException dotDataException = mock(DotDataException.class);
 
-        when(contentletAPI.search("+conFolder:1 +title:theme.png +live:true +deleted:false", -1,
+        when(contentletAPI.search(LUCENE_QUERY, -1,
                 0, null, user, false)).thenThrow(dotDataException);
 
 
@@ -102,7 +102,7 @@ public class ThemeAPIImplTest {
         final Folder folder = mock(Folder.class);
         final DotDataException dotDataException = mock(DotDataException.class);
 
-        when(contentletAPI.search("+conFolder:1 +title:theme.png +live:true +deleted:false", -1,
+        when(contentletAPI.search(LUCENE_QUERY, -1,
                 0, null, user, false)).thenThrow(dotDataException);
 
 
