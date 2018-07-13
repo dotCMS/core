@@ -127,6 +127,8 @@ public class ThemeResourceIntegrationTest {
         assertEquals(Status.OK.getStatusCode(), response.getStatus());
         final HashMap folder =  (HashMap) ((ResponseEntityView) response.getEntity()).getEntity();
 
+        assertNull(folder.remove(THEME_THUMBNAIL_KEY));
+
         Map<String, Object> mapExpected = folderExpected.getMap();
         assertEquals(mapExpected.size(), folder.size());
 
