@@ -1404,7 +1404,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             		String[] sortbyArr=sortBy.split(",");
 	            	for (String sort : sortbyArr) {
 	            		String[] x=sort.trim().split(" ");
-	            		srb.addSort(SortBuilders.fieldSort(x[0]).order(x.length>1 && x[1].equalsIgnoreCase("desc") ?
+	            		srb.addSort(SortBuilders.fieldSort(x[0].toLowerCase() + "_dotraw").order(x.length>1 && x[1].equalsIgnoreCase("desc") ?
 	                                SortOrder.DESC : SortOrder.ASC));
 
 					}
