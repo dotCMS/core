@@ -18,6 +18,8 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
     pageState: Observable<DotRenderedPageState>;
     private pageUrl: string;
     private destroy$: Subject<boolean> = new Subject<boolean>();
+    private readonly customEventsHandler;
+
 
     constructor(
         private route: ActivatedRoute,
@@ -25,7 +27,20 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
         private dotPageStateService: DotPageStateService,
         private dotRouterService: DotRouterService,
         public dotMessageService: DotMessageService
-    ) {}
+    ) {
+        if (!this.customEventsHandler) {
+            this.customEventsHandler = {
+                'save-page': (e: CustomEvent) => {
+                    if (e.detail.payload) {
+                        this.pageUrl = e.detail.payload.htmlPageReferer.split('?')[0];
+                    }
+                },
+                'deleted-page': () => {
+                    this.dotRouterService.goToSiteBrowser();
+                }
+            };
+        }
+    }
 
     ngOnInit() {
         this.pageState = this.route.data.pluck('content');
@@ -40,14 +55,14 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Call reload method to refresh page based on url
+     * Handle custom events from contentlet editor
      *
-     * @param {any} event
+     * @param {CustomEvent} $event
      * @memberof DotEditPageMainComponent
      */
-    onCustomEvent(event: any): void {
-        if (event.detail.name === 'save-page' && event.detail.payload) {
-            this.pageUrl = event.detail.payload.htmlPageReferer.split('?')[0];
+    onCustomEvent($event: CustomEvent): void {
+        if (this.customEventsHandler[$event.detail.name]) {
+            this.customEventsHandler[$event.detail.name]($event);
         }
     }
 

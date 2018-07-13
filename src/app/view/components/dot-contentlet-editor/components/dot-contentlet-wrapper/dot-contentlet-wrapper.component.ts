@@ -24,7 +24,10 @@ export class DotContentletWrapperComponent implements OnInit {
     ) {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
-                'close': (_e: CustomEvent) => {
+                'close': () => {
+                    this.onClose();
+                },
+                'deleted-page': () => {
                     this.onClose();
                 },
                 'edit-contentlet-data-updated': (e: CustomEvent) => {
@@ -91,7 +94,10 @@ export class DotContentletWrapperComponent implements OnInit {
      * @memberof DotAddContentletComponent
      */
     onCustomEvent($event) {
-        this.customEventsHandler[$event.detail.name]($event);
+        if (this.customEventsHandler[$event.detail.name]) {
+            this.customEventsHandler[$event.detail.name]($event);
+        }
+
         this.custom.emit($event);
     }
 

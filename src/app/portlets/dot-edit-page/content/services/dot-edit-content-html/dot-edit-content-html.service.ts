@@ -508,7 +508,7 @@ export class DotEditContentHtmlService {
     private handlerContentletEvents(event: string): (contentletEvent: any) => void {
         const contentletEventsMap = {
             // When an user create or edit a contentlet from the jsp
-            save: (contentletEvent: any) => {
+            'save': (contentletEvent: any) => {
                 if (this.currentAction === DotContentletAction.ADD) {
                     this.renderAddedContentlet(contentletEvent.data);
                 } else {
@@ -519,15 +519,18 @@ export class DotEditContentHtmlService {
                 }
             },
             // When a user select a content from the search jsp
-            select: (contentletEvent: any) => {
+            'select': (contentletEvent: any) => {
                 this.renderAddedContentlet(contentletEvent.data);
                 this.iframeActions$.next({
                     name: 'select'
                 });
             },
-            // When a user drang and drop a contentlet in the iframe
-            relocate: (contentletEvent: any) => {
+            // When a user drag and drop a contentlet in the iframe
+            'relocate': (contentletEvent: any) => {
                 this.renderRelocatedContentlet(contentletEvent.data);
+            },
+            'deleted-contenlet': (contentletEvent: any) => {
+                this.removeCurrentContentlet();
             }
         };
 
@@ -573,6 +576,15 @@ export class DotEditContentHtmlService {
                 ${contentletToolbarEl.innerHTML}
             `;
         }
+    }
+
+    private removeCurrentContentlet(): void {
+        const doc = this.getEditPageDocument();
+        const contentlets = doc.querySelectorAll(`div[data-dot-object="contentlet"][data-dot-inode="${this.currentContentlet.inode}"]`);
+
+        contentlets.forEach(contentlet => {
+            contentlet.remove();
+        });
     }
 
     private renderHTMLToContentlet(contentletEl: HTMLElement, contentletHtml: string): void {

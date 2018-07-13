@@ -23,12 +23,12 @@ import { DotRouterService } from '../../../../api/services/dot-router/dot-router
 
 @Injectable()
 class MockDotContentletEditorService {
-    close$ = new Subject;
+    close$ = new Subject();
 }
 
 @Injectable()
 class MockDotPageStateService {
-    reload$ = new Subject;
+    reload$ = new Subject();
     reload(): void {
         this.reload$.next(new DotRenderedPageState(mockUser, mockDotRenderedPage));
     }
@@ -121,29 +121,44 @@ describe('DotEditPageMainComponent', () => {
         expect(nav.pageState).toEqual(mockDotRenderedPageState);
     });
 
-    it('should reload page when url attribute in dialog has been changed', () => {
-        spyOn(dotRouterService, 'goToEditPage');
-        let editContentlet: MockDotEditContentletComponent;
-        const mockMessage = {
-            detail: {
-                name: 'save-page',
-                payload: {
-                    htmlPageReferer: '/about-us/index2?com.dotmarketing.htmlpage.language=1&host_id=48190c8c-42c4-46af-8d1a-0cd5db894797'
-                }
-            }
-        };
-
-        editContentlet = fixture.debugElement.query(By.css('dot-edit-contentlet')).componentInstance;
-        editContentlet.custom.emit(mockMessage);
-        dotContentletEditorService.close$.next(true);
-        expect(dotRouterService.goToEditPage).toHaveBeenCalledWith('/about-us/index2');
-    });
-
     it('should call reload pageSte when IframeClose evt happens', () => {
         spyOn(component, 'pageState');
         spyOn(dotPageStateService, 'reload').and.callThrough();
         dotContentletEditorService.close$.next(true);
         expect(dotPageStateService.reload).toHaveBeenCalledWith('/about-us/index');
         expect(component.pageState).toEqual(Observable.of(new DotRenderedPageState(mockUser, mockDotRenderedPage)));
+    });
+
+    describe('handle custom events from contentlet editor', () => {
+        let editContentlet: MockDotEditContentletComponent;
+
+        beforeEach(() => {
+            spyOn(dotRouterService, 'goToEditPage');
+            spyOn(dotRouterService, 'goToSiteBrowser');
+            editContentlet = fixture.debugElement.query(By.css('dot-edit-contentlet')).componentInstance;
+        });
+
+        it('should reload page when url attribute in dialog has been changed', () => {
+            editContentlet.custom.emit({
+                detail: {
+                    name: 'save-page',
+                    payload: {
+                        htmlPageReferer:
+                            '/about-us/index2?com.dotmarketing.htmlpage.language=1&host_id=48190c8c-42c4-46af-8d1a-0cd5db894797'
+                    }
+                }
+            });
+            dotContentletEditorService.close$.next(true);
+            expect(dotRouterService.goToEditPage).toHaveBeenCalledWith('/about-us/index2');
+        });
+
+        it('should go to site-browser when page is deleted', () => {
+            editContentlet.custom.emit({
+                detail: {
+                    name: 'deleted-page'
+                }
+            });
+            expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);
+        });
     });
 });

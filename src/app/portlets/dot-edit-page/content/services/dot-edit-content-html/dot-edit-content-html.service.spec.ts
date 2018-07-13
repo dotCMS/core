@@ -127,7 +127,7 @@ describe('DotEditContentHtmlService', () => {
             StringUtils,
             DotAlertConfirmService,
             { provide: DotMessageService, useValue: messageServiceMock },
-            { provide: DotLicenseService, useClass: MockDotLicenseService },
+            { provide: DotLicenseService, useClass: MockDotLicenseService }
         ]);
         this.dotEditContentHtmlService = <DotEditContentHtmlService>this.injector.get(DotEditContentHtmlService);
         this.dotEditContentToolbarHtmlService = this.injector.get(DotEditContentToolbarHtmlService);
@@ -289,6 +289,29 @@ describe('DotEditContentHtmlService', () => {
         expect(currentModel).toEqual('testing', 'should tigger model change event');
     });
 
+    it('should remove contentlet', () => {
+        const remove = jasmine.createSpy('deleted');
+
+        spyOn(fakeDocument, 'querySelectorAll').and.returnValue([
+            {
+                remove: remove
+            },
+            {
+                remove: remove
+            }
+        ]);
+
+        this.dotEditContentHtmlService.currentContentlet = {
+            inode: '123'
+        };
+
+        this.dotEditContentHtmlService.contentletEvents$.next({
+            name: 'deleted-contenlet'
+        });
+
+        expect(remove).toHaveBeenCalledTimes(2);
+    });
+
     it('should show error message when the content already exists', () => {
         let currentModel = null;
         const currentContainer = {
@@ -322,7 +345,6 @@ describe('DotEditContentHtmlService', () => {
     });
 
     it('should render edit contentlet', () => {
-
         window.top['changed'] = false;
 
         const currentContainer = {
@@ -344,7 +366,8 @@ describe('DotEditContentHtmlService', () => {
         };
 
         const dotEditContentToolbarHtmlService = this.injector.get(DotContainerContentletService);
-        spyOn(dotEditContentToolbarHtmlService, 'getContentletToContainer').and.returnValue(Observable.of(`
+        spyOn(dotEditContentToolbarHtmlService, 'getContentletToContainer').and.returnValue(
+            Observable.of(`
         <div>
             <script>
                 console.log('First');
@@ -367,7 +390,8 @@ describe('DotEditContentHtmlService', () => {
                     </p>
                 </div>
             </div>
-        </div>`));
+        </div>`)
+        );
 
         this.dotEditContentHtmlService.renderEditedContentlet(contentlet);
 
@@ -377,7 +401,6 @@ describe('DotEditContentHtmlService', () => {
     });
 
     describe('document click', () => {
-
         beforeEach(() => {
             spyOn(dotLicenseService, 'isEnterprise').and.returnValue(Observable.of(true));
         });
@@ -397,8 +420,7 @@ describe('DotEditContentHtmlService', () => {
                 });
             });
 
-            const button: HTMLButtonElement = <HTMLButtonElement>
-                fakeDocument.querySelector('[data-dot-object="popup-menu-item"]');
+            const button: HTMLButtonElement = <HTMLButtonElement>fakeDocument.querySelector('[data-dot-object="popup-menu-item"]');
             button.click();
         });
 
