@@ -186,6 +186,8 @@ public class WorkflowHelper {
     private BulkActionView buildBulkActionView (final SearchResponse response,
                                                 final User user) throws DotDataException, DotSecurityException {
 
+        final Set<String> archivedSchemes = workflowAPI.findArchivedSchemes().stream().map(WorkflowScheme::getId).collect(Collectors.toSet());
+
         final Aggregations aggregations     = response.getAggregations();
         final Map<String, Long> stepCounts  = new HashMap<>();
 
@@ -193,8 +195,9 @@ public class WorkflowHelper {
 
             if (aggregation instanceof StringTerms) {
                 StringTerms.class.cast(aggregation)
-                        .getBuckets().forEach
-                            (bucket -> stepCounts.put(bucket.getKeyAsString(), bucket.getDocCount()));
+                .getBuckets().forEach(
+                    bucket -> stepCounts.put(bucket.getKeyAsString(), bucket.getDocCount())
+                );
             }
         }
 
@@ -202,12 +205,21 @@ public class WorkflowHelper {
 
         for (final Map.Entry<String, Long> stepCount : stepCounts.entrySet()) {
 
-            final CountWorkflowStep step =
-                    new CountWorkflowStep(stepCount.getValue(),
-                            this.workflowAPI.findStep(stepCount.getKey()));
+            try {
+                final WorkflowStep workflowStep = this.workflowAPI.findStep(stepCount.getKey());
+                if( archivedSchemes.contains(workflowStep.getSchemeId())){
+                    Logger.info(getClass(),()-> "Step with id "+ stepCount.getKey() + " is linked with an Archived WF and will be skipped." );
+                    continue;
+                }
 
-            stepActionsMap.put(step, this.workflowAPI.findActions(step.getWorkflowStep(), user)
-                    .stream().filter(WorkflowAction::shouldShowOnListing).collect(CollectionsUtils.toImmutableList()));
+                final CountWorkflowStep step = new CountWorkflowStep(stepCount.getValue(),
+                        workflowStep);
+                stepActionsMap.put(step, this.workflowAPI.findActions(step.getWorkflowStep(), user)
+                        .stream().filter(WorkflowAction::shouldShowOnListing)
+                        .collect(CollectionsUtils.toImmutableList()));
+            }catch (Exception e){
+                Logger.warn(getClass(),()-> "Unable to load step with id "+ stepCount.getKey() + " The index is slightly out of sync." );
+            }
         }
 
         return (stepCounts.size() > 0 ?

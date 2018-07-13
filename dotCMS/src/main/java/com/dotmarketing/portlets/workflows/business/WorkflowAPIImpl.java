@@ -593,14 +593,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			throw new DotSecurityException("Workflow-delete-system-workflow");
 		}
 
-		final boolean isAlreadyArchived = isSchemeArchived(scheme.getId());
 		workFlowFactory.saveScheme(scheme);
 
-		//Fire index update only if there has been a change in the field archived.
-		if(isAlreadyArchived != scheme.isArchived()){
-			//Update index
-		    pushIndexUpdate(scheme, user);
-		}
+	}
+
+	@CloseDBIfOpened
+	public List<WorkflowScheme> findArchivedSchemes() throws DotDataException{
+		return workFlowFactory.findArchivedSchemes();
 	}
 
 	/**
@@ -685,6 +684,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			stopWatch.stop();
 			Logger.info(this, "Delete Workflow Scheme task DONE, duration:" +
 					DateUtil.millisToSeconds(stopWatch.getTime()) + " seconds");
+
+			//Update index
+			pushIndexUpdate(scheme, user);
 
 			this.systemMessageEventUtil.pushSimpleTextEvent
 					(LanguageUtil.get(user.getLocale(), "Workflow-deleted", scheme.getName()), user.getUserId());
@@ -949,11 +951,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		final WorkflowScheme scheme     = this.findScheme(step.getSchemeId());
 		final List<WorkflowStep> steps  = this.findSteps (scheme);
 
-		final boolean firstStepChanges = (order == 0 ||
+		final boolean firstStepChanges = order == 0 ||
 				steps.stream().findFirst().map(
 						workflowStep -> workflowStep.getId().equals(step.getId())
-				).orElse(false)
-		);
+				).orElse(false);
 
 		IntStream.range(0, steps.size())
 				.filter(i -> steps.get(i).getId().equals(step.getId()))
@@ -976,13 +977,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	/**
-	 * Must determine if the new order on the steps is different from what is currently saved on the index.
+	 * Once we have determined that a reorder event has affected the first position, we need to update the index.
 	 * @param schemeId
 	 * @return
 	 */
 	@CloseDBIfOpened
 	private int pushIndexUpdateOnReorder(final String schemeId) throws DotDataException {
-       final Set<String> identifiers = workFlowFactory.findNullTaskContentletIdenitfiersForScheme(schemeId);
+       final Set<String> identifiers = workFlowFactory.findNullTaskContentletIdentifiersForScheme(schemeId);
        return distributedJournalAPI.addIdentifierReindex(identifiers);
 	}
 
@@ -3069,26 +3070,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	    return workflowTimelineItems.stream()
                 .sorted(Comparator.comparing(WorkflowTimelineItem::createdDate))
                 .collect(CollectionsUtils.toImmutableList());
-	}
-
-
-	/**
-	 * Utilily method to load the `isAcrhived` flag fresh from the database.
-	 * If the workflow does not exist the exception is muted and the returned value is false.
-	 * This comes to solve a problem during the import process.
-	 * @param schemeId
-	 * @return
-	 */
-	private boolean isSchemeArchived(final String schemeId){
-	   if(UtilMethods.isSet(schemeId)) {
-		   try {
-			   final WorkflowScheme workflowScheme = workFlowFactory.findScheme(schemeId);
-               return workflowScheme.isArchived();
-		   } catch (DotDataException | DoesNotExistException e) {
-			   //ignore
-		   }
-	   }
-	   return false;
 	}
 
 }

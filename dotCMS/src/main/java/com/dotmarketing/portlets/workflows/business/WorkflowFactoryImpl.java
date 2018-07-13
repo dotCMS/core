@@ -707,6 +707,15 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	@Override
+	public List<WorkflowScheme> findArchivedSchemes() throws DotDataException {
+		final DotConnect db = new DotConnect();
+		db.setSQL(sql.SELECT_SCHEMES);
+		db.addParam(true);
+		db.addParam(true);
+		return this.convertListToObjects(db.loadObjectResults(), WorkflowScheme.class);
+	}
+
+	@Override
 	public WorkflowStep findStep(String id) throws DotDataException {
 		WorkflowStep step = cache.getStep(id);
 		if (step == null) {
@@ -1966,7 +1975,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	@Override
-	public Set<String> findNullTaskContentletIdenitfiersForScheme(final String workflowSchemeId) throws DotDataException {
+	public Set<String> findNullTaskContentletIdentifiersForScheme(final String workflowSchemeId) throws DotDataException {
 		final DotConnect dc = new DotConnect();
 		try {
 			dc.setSQL(sql.SELECT_NULL_TASK_CONTENTLET_FOR_WORKFLOW);

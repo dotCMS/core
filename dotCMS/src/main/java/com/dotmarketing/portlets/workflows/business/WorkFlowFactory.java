@@ -96,6 +96,8 @@ public interface WorkFlowFactory {
 
 	public List<WorkflowScheme> findSchemes(boolean showArchived) throws DotDataException;
 
+	public List<WorkflowScheme> findArchivedSchemes() throws DotDataException;
+
 	public WorkflowScheme findScheme(String id) throws DotDataException;
 
 	public List<WorkflowScheme> findSchemesForStruct(final String structId) throws DotDataException;
@@ -313,7 +315,7 @@ public interface WorkFlowFactory {
 	 * @return
 	 * @throws DotDataException
 	 */
-	public Set<String> findNullTaskContentletIdenitfiersForScheme(final String workflowSchemeId) throws DotDataException;
+	public Set<String> findNullTaskContentletIdentifiersForScheme(final String workflowSchemeId) throws DotDataException;
 
 	/**
 	 * Return the system work flow scheme
