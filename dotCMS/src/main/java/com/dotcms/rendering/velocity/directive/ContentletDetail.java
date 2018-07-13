@@ -11,6 +11,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.util.Config;
 
+import com.dotmarketing.util.PageMode;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.ResourceNotFoundException;
 
@@ -58,10 +59,18 @@ public class ContentletDetail extends DotDirective {
       throw new ResourceNotFoundException("cannnot find contentlet id " +  argument + " lang:" + params.language);
     }
 
+    // If the time machine date is after the Publish date of the Contentlet (identifier data)
+    // we need to show the working. If not we only show the live.
+
+    boolean showWorking = false;
+
+    if (context.get("_show_working_") != null && (boolean)context.get("_show_working_")) {
+      showWorking = true;
+    }
 
 
 
-      return  File.separator +  params.mode.name() + File.separator   + argument + "_" + cv.getLang() + "." + EXTENSION;
+      return  File.separator + ( (!showWorking) ? params.mode.name() : PageMode.PREVIEW_MODE.name() ) + File.separator   + argument + "_" + cv.getLang() + "." + EXTENSION;
   }
 }
 

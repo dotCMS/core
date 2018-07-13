@@ -160,8 +160,14 @@ public class PageContextBuilder {
         final Language language = request == null ? APILocator.getLanguageAPI().getDefaultLanguage() :
                 WebAPILocator.getLanguageWebAPI().getLanguage(request);
 
+        boolean live = mode.showLive;
+
+        if (request.getSession(false) != null && request.getSession().getAttribute("tm_date")!=null) {
+            live = false;
+        }
+
         final Table<String, String, Set<String>> pageContents = APILocator.getMultiTreeAPI()
-                .getPageMultiTrees(htmlPage, language, mode.showLive);
+                .getPageMultiTrees(htmlPage, language, live);
 
         if (!pageContents.isEmpty()) {
 
@@ -171,7 +177,7 @@ public class PageContextBuilder {
                     final Set<String> cons = pageContents.get(containerId, uniqueId);
 
                     final User systemUser = APILocator.getUserAPI().getSystemUser();
-                    final Container c = (mode.showLive) ? (Container) APILocator.getVersionableAPI()
+                    final Container c = (live) ? (Container) APILocator.getVersionableAPI()
                             .findLiveVersion(containerId, systemUser, false)
                             : (Container) APILocator.getVersionableAPI()
                             .findWorkingVersion(containerId, systemUser, false);
@@ -202,7 +208,7 @@ public class PageContextBuilder {
 
                     List<Contentlet> contentlets = APILocator.getContentletAPI()
                             .findContentletsByIdentifiers(cons.stream()
-                                    .toArray(String[]::new), mode.showLive,
+                                    .toArray(String[]::new), live,
                                         language != null ? language.getId() : APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
                     // get contentlets only for main frame
 
