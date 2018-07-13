@@ -49,6 +49,7 @@ public class OSGIUtil {
     private List<String> dotCMSJarPrefixes = ImmutableList
             .copyOf(CollectionsUtils.list("dotcms", "ee-"));
 
+    private static final String WEB_INF_FOLDER = "/WEB-INF";
     private static final String FELIX_BASE_DIR = "felix.base.dir";
     private static final String FELIX_FILEINSTALL_DIR = "felix.fileinstall.dir";
     private static final String FELIX_UNDEPLOYED_DIR = "felix.undeployed.dir";
@@ -102,9 +103,9 @@ public class OSGIUtil {
      */
     private Properties defaultProperties() {
         Properties felixProps = new Properties();
-        String felixDirectory = new File(Config
+        final String felixDirectory = new File(Config
                 .getStringProperty(FELIX_BASE_DIR,
-                        Config.CONTEXT.getRealPath("/WEB-INF") + File.separator + "felix"))
+                        Config.CONTEXT.getRealPath(WEB_INF_FOLDER) + File.separator + "felix"))
                 .getAbsolutePath();
 
         Logger.info(this, () -> "Felix base dir: " + felixDirectory);
@@ -230,18 +231,18 @@ public class OSGIUtil {
             if (null != felixFramework) {
 
                 BundleContext bundleContext = HostActivator.instance().getBundleContext();
-                BundleContext frameworkBundleContext = felixFramework.getBundleContext();
+                final BundleContext frameworkBundleContext = felixFramework.getBundleContext();
 
                 if (null != bundleContext && null != frameworkBundleContext) {
                     //Unregistering ToolBox services
-                    ServiceReference toolBoxService = frameworkBundleContext
+                    final ServiceReference toolBoxService = frameworkBundleContext
                             .getServiceReference(PrimitiveToolboxManager.class.getName());
                     if (toolBoxService != null) {
                         bundleContext.ungetService(toolBoxService);
                     }
 
                     //Unregistering Workflow services
-                    ServiceReference workflowService = frameworkBundleContext
+                    final ServiceReference workflowService = frameworkBundleContext
                             .getServiceReference(WorkflowAPIOsgiService.class.getName());
                     if (workflowService != null) {
                         bundleContext.ungetService(workflowService);
@@ -345,17 +346,18 @@ public class OSGIUtil {
         // if neither exist, we generate a FELIX_EXTRA_PACKAGES_FILE_GENERATED
         if (!(extraPackagesFile.exists() || extraPackagesGeneratedFile.exists())) {
 
-            StringBuilder bob = new StringBuilder();
+            final StringBuilder bob = new StringBuilder();
             final Collection<String> list = ResourceCollectorUtil.getResources(dotCMSJarPrefixes);
             for (final String name : list) {
                 if (name.charAt(0) == '/' || name.contains(":")) {
                     continue;
                 }
-                if (File.separator.equals("/")) {
-                    bob.append(name.replace(File.separator, ".") + "," + "\n");
+                if ("/".equals(File.separator)) {
+                    bob.append(name.replace(File.separator, ".")).append(",").append("\n");
                 } else {
                     // Zip entries have '/' as separator on all platforms
-                    bob.append((name.replace(File.separator, ".").replace("/", ".")) + "," + "\n");
+                    bob.append(name.replace(File.separator, ".").replace("/", ".")).append(",")
+                            .append("\n");
                 }
             }
 
@@ -390,7 +392,7 @@ public class OSGIUtil {
                 replaceAll("\\\r", "").replaceAll("\\\\", "");
     }
 
-    private StringWriter readExtraPackagesFiles(File extraPackagesFile)
+    private StringWriter readExtraPackagesFiles(final File extraPackagesFile)
             throws IOException {
 
         final StringWriter writer = new StringWriter();
@@ -422,7 +424,8 @@ public class OSGIUtil {
                     manualDefaultPath, manualDefaultPath), ex);
 
             try {
-                felixPath = Config.CONTEXT.getRealPath("/WEB-INF") + File.separator + "felix" + File.separator + manualDefaultPath;
+                felixPath = Config.CONTEXT.getRealPath(WEB_INF_FOLDER) + File.separator + "felix"
+                        + File.separator + manualDefaultPath;
             } catch (Exception ex2) {
                 Logger.error(this, String.format(
                         "Unable to find the felix '%s' folder real path from Config.CONTEXT. Setting it manually to '/WEB-INF/felix/%s'",
@@ -533,11 +536,11 @@ public class OSGIUtil {
     public String getBaseDirectory(ServletContext context) {
         String baseDirectory = null;
         if (context != null) {
-            baseDirectory = context.getRealPath("/WEB-INF");
+            baseDirectory = context.getRealPath(WEB_INF_FOLDER);
         }
 
         if (!UtilMethods.isSet(baseDirectory)) {
-            baseDirectory = Config.CONTEXT.getRealPath("/WEB-INF");
+            baseDirectory = Config.CONTEXT.getRealPath(WEB_INF_FOLDER);
 
             if (!UtilMethods.isSet(baseDirectory)) {
                 baseDirectory = parseBaseDirectoryFromConfig();
@@ -560,9 +563,9 @@ public class OSGIUtil {
      * @return String
      */
     public String parseBaseDirectoryFromConfig() {
-        String baseDirectory = Config.getStringProperty(FELIX_BASE_DIR, "/WEB-INF");
-        if (baseDirectory.endsWith("/WEB-INF")) {
-            baseDirectory = baseDirectory.substring(0, baseDirectory.indexOf(("/WEB-INF")) + 8);
+        String baseDirectory = Config.getStringProperty(FELIX_BASE_DIR, WEB_INF_FOLDER);
+        if (baseDirectory.endsWith(WEB_INF_FOLDER)) {
+            baseDirectory = baseDirectory.substring(0, baseDirectory.indexOf((WEB_INF_FOLDER)) + 8);
         }
 
         return baseDirectory;

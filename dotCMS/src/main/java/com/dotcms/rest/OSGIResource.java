@@ -102,7 +102,7 @@ public class OSGIResource  {
         This method returns a list of all bundles installed in the OSGi environment at the time of the call to this method. However,
         since the Framework is a very dynamic environment, bundles can be installed or uninstalled at anytime.
          */
-        Bundle[] installedBundles = OSGIUtil.getInstance().getBundles();
+        final Bundle[] installedBundles = OSGIUtil.getInstance().getBundles();
 
         //Read the parameters
         String ignoreSystemBundlesParam = initData.getParamsMap().get( "ignoresystembundles" );
