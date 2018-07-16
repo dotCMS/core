@@ -49,8 +49,8 @@ public class CIDRUtils {
         /* split CIDR to address and prefix part */
         if (this.cidr.contains("/")) {
             final int index = this.cidr.indexOf("/");
-            String addressPart = this.cidr.substring(0, index);
-            String networkPart = this.cidr.substring(index + 1);
+            final String addressPart = this.cidr.substring(0, index);
+            final String networkPart = this.cidr.substring(index + 1);
 
             inetAddress = InetAddress.getByName(addressPart);
             prefixLength = Integer.parseInt(networkPart);
@@ -81,14 +81,14 @@ public class CIDRUtils {
 
         BigInteger mask = new BigInteger(1, maskBuffer.array()).not().shiftRight(prefixLength);
 
-        ByteBuffer buffer = ByteBuffer.wrap(inetAddress.getAddress());
+        final ByteBuffer buffer = ByteBuffer.wrap(inetAddress.getAddress());
         BigInteger ipVal = new BigInteger(1, buffer.array());
 
-        BigInteger startIp = ipVal.and(mask);
-        BigInteger endIp = startIp.add(mask.not());
+        final BigInteger startIp = ipVal.and(mask);
+        final BigInteger endIp = startIp.add(mask.not());
 
-        byte[] startIpArr = toBytes(startIp.toByteArray(), targetSize);
-        byte[] endIpArr = toBytes(endIp.toByteArray(), targetSize);
+        final byte[] startIpArr = toBytes(startIp.toByteArray(), targetSize);
+        final byte[] endIpArr = toBytes(endIp.toByteArray(), targetSize);
 
         this.startAddress = InetAddress.getByAddress(startIpArr);
         this.endAddress = InetAddress.getByAddress(endIpArr);
@@ -125,7 +125,7 @@ public class CIDRUtils {
         return this.endAddress.getHostAddress();
     }
 
-    public boolean isInRange(String ipAddress) throws UnknownHostException {
+    public boolean isInRange(final String ipAddress) throws UnknownHostException {
         final InetAddress address = InetAddress.getByName(ipAddress);
         final BigInteger start = new BigInteger(1, this.startAddress.getAddress());
         final BigInteger end = new BigInteger(1, this.endAddress.getAddress());

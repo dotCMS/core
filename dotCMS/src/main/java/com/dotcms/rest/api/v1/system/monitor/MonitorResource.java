@@ -67,7 +67,7 @@ public class MonitorResource {
     @JSONP
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response test(@Context HttpServletRequest request) throws Throwable {
+    public Response test(final @Context HttpServletRequest request) throws Throwable {
         // force authentication
         //InitDataObject auth = webResource.init(false, httpRequest, false);  cannot require as we cannot assume db or other subsystems are functioning
         boolean extendedFormat = false;
@@ -75,7 +75,7 @@ public class MonitorResource {
             extendedFormat = true;
         }
 
-        String config_ip_acl = Config.getStringProperty("SYSTEM_STATUS_API_IP_ACL", "127.0.0.1/32,0:0:0:0:0:0:0:1/128");
+        final String config_ip_acl = Config.getStringProperty("SYSTEM_STATUS_API_IP_ACL", "127.0.0.1/32,0:0:0:0:0:0:0:1/128");
         String[] aclIPs = null;
         if(config_ip_acl != null)
             aclIPs = config_ip_acl.split(",");
@@ -107,12 +107,12 @@ public class MonitorResource {
                 boolean dotCMSHealthy = false;
                 boolean frontendHealthy = false;
                 boolean backendHealthy = false;
-                boolean dbSelectHealthy = dbCount();
-                boolean indexLiveHealthy = indexCount(idxs.live);
-                boolean indexWorkingHealthy = indexCount(idxs.working);
+                final boolean dbSelectHealthy = dbCount();
+                final boolean indexLiveHealthy = indexCount(idxs.live);
+                final boolean indexWorkingHealthy = indexCount(idxs.working);
                 final boolean cacheHealthy = cache();
-                boolean localFSHealthy = localFiles();
-                boolean assetFSHealthy = assetFiles();
+                final boolean localFSHealthy = localFiles();
+                final boolean assetFSHealthy = assetFiles();
 
                 if (dbSelectHealthy && indexLiveHealthy && indexWorkingHealthy && cacheHealthy && localFSHealthy && assetFSHealthy) {
                     dotCMSHealthy = true;
@@ -123,9 +123,9 @@ public class MonitorResource {
                 }
 
                 if (extendedFormat) {
-                    String serverID = getServerID();
-                    String clusterID = getClusterID();
-                    JSONObject jo = new JSONObject();
+                    final String serverID = getServerID();
+                    final String clusterID = getClusterID();
+                    final JSONObject jo = new JSONObject();
                     jo.put("serverID", serverID);
                     jo.put("clusterID", clusterID);
                     jo.put("dotCMSHealthy", dotCMSHealthy);
@@ -188,7 +188,7 @@ public class MonitorResource {
     }
     
     
-    private boolean indexCount(String idx) throws Throwable {
+    private boolean indexCount(final String idx) throws Throwable {
 
         return Failsafe
             .with(breaker())
@@ -237,7 +237,7 @@ public class MonitorResource {
     
     private boolean localFiles() throws Throwable {
 
-        boolean test = Failsafe
+        return Failsafe
             .with(breaker())
             .withFallback(Boolean.FALSE)
             .get(this.failFastBooleanPolicy(LOCAL_FS_TIMEOUT, () -> {
@@ -258,7 +258,6 @@ public class MonitorResource {
                 file.delete();
                 return Boolean.TRUE;
             }));
-        return test;
     }
     
     
@@ -283,7 +282,7 @@ public class MonitorResource {
             }));
     }
 
-    private Callable<Boolean> failFastBooleanPolicy(long thresholdMilliseconds, Callable<Boolean> callable) throws Throwable{
+    private Callable<Boolean> failFastBooleanPolicy(long thresholdMilliseconds, final Callable<Boolean> callable) throws Throwable{
         return ()-> {
             try {
                 Future<Boolean> task = executorService.submit(callable);
@@ -296,7 +295,7 @@ public class MonitorResource {
         };
     }
 
-    private Callable<String> failFastStringPolicy(long thresholdMilliseconds, Callable<String> callable) throws Throwable{
+    private Callable<String> failFastStringPolicy(long thresholdMilliseconds, final Callable<String> callable) throws Throwable{
         return ()-> {
             try {
                 Future<String> task = executorService.submit(callable);
