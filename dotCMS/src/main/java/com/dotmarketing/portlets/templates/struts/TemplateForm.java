@@ -201,16 +201,16 @@ public class TemplateForm extends ValidatorForm {
 		return countAddContainer;
 	}
 
-	public void setCountAddContainer(int countAddContainer) {
-		this.countAddContainer = countAddContainer;
+	public void setCountAddContainer(Integer countAddContainer) {
+      this.countAddContainer = (countAddContainer==null) ? 0 :countAddContainer ;
 	}
 
 	public int getCountContainers() {
 		return countContainers;
 	}
 
-	public void setCountContainers(int countContainers) {
-		this.countContainers = countContainers;
+	public void setCountContainers(Integer countContainers) {
+		this.countContainers = (countContainers==null) ? 0 :countContainers ;
 	}
 
 	public String getHeadCode() {
