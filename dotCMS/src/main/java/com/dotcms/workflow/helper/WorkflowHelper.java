@@ -1,21 +1,40 @@
 package com.dotcms.workflow.helper;
 
+import static com.dotcms.rest.api.v1.authentication.ResponseUtil.getFormattedMessage;
+import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
-import com.dotcms.rest.api.v1.workflow.*;
+import com.dotcms.rest.api.v1.workflow.BulkActionView;
+import com.dotcms.rest.api.v1.workflow.BulkActionsResultView;
+import com.dotcms.rest.api.v1.workflow.CountWorkflowAction;
+import com.dotcms.rest.api.v1.workflow.CountWorkflowStep;
+import com.dotcms.rest.api.v1.workflow.WorkflowDefaultActionView;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.CollectionsUtils;
-import com.dotcms.workflow.form.*;
+import com.dotcms.workflow.form.BulkActionForm;
+import com.dotcms.workflow.form.FireBulkActionsForm;
+import com.dotcms.workflow.form.IWorkflowStepForm;
+import com.dotcms.workflow.form.WorkflowActionForm;
+import com.dotcms.workflow.form.WorkflowActionStepBean;
+import com.dotcms.workflow.form.WorkflowReorderBean;
+import com.dotcms.workflow.form.WorkflowSchemeForm;
+import com.dotcms.workflow.form.WorkflowStepAddForm;
+import com.dotcms.workflow.form.WorkflowStepUpdateForm;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.exception.*;
+import com.dotmarketing.exception.AlreadyExistException;
+import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet;
@@ -27,27 +46,35 @@ import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.LuceneQueryUtils;
+import com.dotmarketing.util.StringUtils;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang.time.StopWatch;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.bucket.terms.StringTerms;
-
-import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.Future;
-import java.util.stream.Collectors;
-
-import static com.dotcms.rest.api.v1.authentication.ResponseUtil.getFormattedMessage;
-import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
 
 
 /**
@@ -63,7 +90,7 @@ public class WorkflowHelper {
     private final PermissionAPI permissionAPI;
     private final WorkflowImportExportUtil workflowImportExportUtil;
 
-    private static final String BULK_ACTIONS_QUERY_WRAPPER = "{\n"
+    private static final String ES_WFSTEP_AGGREGATES_QUERY = "{\n"
             + "    \"query\" : { \n"
             + "        \"query_string\" : {\n"
             + "            \"query\" : \"%s\"\n"
@@ -119,7 +146,7 @@ public class WorkflowHelper {
             final String sanitizedQuery = LuceneQueryUtils
                     .sanitizeBulkActionsQuery(luceneQuery);
 
-            final String query = String.format(BULK_ACTIONS_QUERY_WRAPPER, sanitizedQuery);
+            final String query = String.format(ES_WFSTEP_AGGREGATES_QUERY, sanitizedQuery);
             //We should only be considering Working content.
             final SearchResponse response = this.contentletAPI
                     .esSearchRaw(query.toLowerCase(), false, user, false);
@@ -159,6 +186,8 @@ public class WorkflowHelper {
     private BulkActionView buildBulkActionView (final SearchResponse response,
                                                 final User user) throws DotDataException, DotSecurityException {
 
+        final Set<String> archivedSchemes = workflowAPI.findArchivedSchemes().stream().map(WorkflowScheme::getId).collect(Collectors.toSet());
+
         final Aggregations aggregations     = response.getAggregations();
         final Map<String, Long> stepCounts  = new HashMap<>();
 
@@ -166,8 +195,9 @@ public class WorkflowHelper {
 
             if (aggregation instanceof StringTerms) {
                 StringTerms.class.cast(aggregation)
-                        .getBuckets().forEach
-                            (bucket -> stepCounts.put(bucket.getKeyAsString(), bucket.getDocCount()));
+                .getBuckets().forEach(
+                    bucket -> stepCounts.put(bucket.getKeyAsString(), bucket.getDocCount())
+                );
             }
         }
 
@@ -175,12 +205,21 @@ public class WorkflowHelper {
 
         for (final Map.Entry<String, Long> stepCount : stepCounts.entrySet()) {
 
-            final CountWorkflowStep step =
-                    new CountWorkflowStep(stepCount.getValue(),
-                            this.workflowAPI.findStep(stepCount.getKey()));
+            try {
+                final WorkflowStep workflowStep = this.workflowAPI.findStep(stepCount.getKey());
+                if( archivedSchemes.contains(workflowStep.getSchemeId())){
+                    Logger.info(getClass(),()-> "Step with id "+ stepCount.getKey() + " is linked with an Archived WF and will be skipped." );
+                    continue;
+                }
 
-            stepActionsMap.put(step, this.workflowAPI.findActions(step.getWorkflowStep(), user)
-                    .stream().filter(WorkflowAction::shouldShowOnListing).collect(CollectionsUtils.toImmutableList()));
+                final CountWorkflowStep step = new CountWorkflowStep(stepCount.getValue(),
+                        workflowStep);
+                stepActionsMap.put(step, this.workflowAPI.findActions(step.getWorkflowStep(), user)
+                        .stream().filter(WorkflowAction::shouldShowOnListing)
+                        .collect(CollectionsUtils.toImmutableList()));
+            }catch (Exception e){
+                Logger.warn(getClass(),()-> "Unable to load step with id "+ stepCount.getKey() + " The index is slightly out of sync." );
+            }
         }
 
         return (stepCounts.size() > 0 ?

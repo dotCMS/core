@@ -3,6 +3,7 @@ package com.dotcms.util;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonNode;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.v1.theme.ThemeResource;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.Paginator;
@@ -15,12 +16,14 @@ import javax.servlet.http.HttpServletRequest;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
@@ -67,11 +70,10 @@ public class PaginationUtilTest {
 
         final Response response = paginationUtil.getPage(req, user, filter, page, perPage, orderBy, direction, map());
 
-        final ObjectMapper objectMapper = new ObjectMapper();
-        final String responseString = response.getEntity().toString();
-        final JsonNode jsonNode = objectMapper.readTree(responseString);
 
-        assertEquals( "testing", jsonNode.get("entity").elements().next().get("testing").asText() );
+        final Collection entity = (Collection) ((ResponseEntityView) response.getEntity()).getEntity();
+
+        assertEquals( entity, items );
         assertEquals( response.getHeaderString("X-Pagination-Per-Page"), String.valueOf( perPage ) );
         assertEquals( response.getHeaderString("X-Pagination-Current-Page"), String.valueOf( page ) );
         assertEquals( response.getHeaderString("X-Pagination-Link-Pages"), "5" );
@@ -189,10 +191,8 @@ public class PaginationUtilTest {
 
         verify(paginator).getItems(user, perPage, offset, params);
 
-        final ObjectMapper objectMapper = new ObjectMapper();
-        final JsonNode jsonNode = objectMapper.readTree(response.getEntity().toString());
-
-        assertFalse(jsonNode.get("entity").elements().hasNext());
+        final Collection entity = (Collection) ((ResponseEntityView) response.getEntity()).getEntity();
+        assertTrue(entity.isEmpty());
     }
 }
 

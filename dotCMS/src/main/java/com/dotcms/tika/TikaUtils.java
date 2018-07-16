@@ -13,7 +13,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.OSGIUtil;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.google.gson.Gson;
@@ -36,6 +35,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.zip.GZIPOutputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
+import org.apache.felix.framework.OSGIUtil;
 
 public class TikaUtils {
 
@@ -56,10 +56,13 @@ public class TikaUtils {
                     .getService(TikaServiceBuilder.class,
                             OSGIConstants.BUNDLE_NAME_DOTCMS_TIKA);
             if (null == tikaServiceBuilder) {
-                throw new IllegalStateException(
+
+                Logger.error(this.getClass(),
                         String.format("OSGI Service [%s] not found for bundle [%s]",
                                 TikaServiceBuilder.class,
                                 OSGIConstants.BUNDLE_NAME_DOTCMS_TIKA));
+                osgiInitialized = false;
+                return;
             }
 
             this.systemUser = APILocator.getUserAPI().getSystemUser();

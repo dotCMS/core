@@ -1,5 +1,7 @@
 package com.dotcms.journal.business;
 
+import com.dotmarketing.common.db.Params;
+import com.google.common.primitives.Ints;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -39,6 +41,7 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
     private String REINDEXENTRIESSELECTSQL = "SELECT * FROM load_records_to_index(?, ?, ?)";
     private String ORACLEREINDEXENTRIESSELECTSQL = "SELECT * FROM table(load_records_to_index(?, ?, ?))";
     private String MYSQLREINDEXENTRIESSELECTSQL = "{call load_records_to_index(?,?,?)}";
+    private String REINDEX_JOURNAL_INSERT = "insert into dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action, time_entered) values (?, ?, ?, ?, ?)";
 
     public ESDistributedJournalFactoryImpl(T newIndexValue) {
         super(newIndexValue);
@@ -481,7 +484,7 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
     @Override
     protected void addIdentifierReindex(final String identifier) throws DotDataException {
 
-         new DotConnect().setSQL("insert into dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action, time_entered) values (?, ?, ?, ?, ?)")
+         new DotConnect().setSQL(REINDEX_JOURNAL_INSERT)
                            .addParam(identifier)
                             .addParam(identifier)
                             .addParam(REINDEX_JOURNAL_PRIORITY_STRUCTURE_REINDEX)
@@ -489,6 +492,47 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
                             .addParam(new Date())
                             .loadResult();
     } // addIdentifierReindex.
+
+
+    @Override
+    protected int addIdentifierReindex(final Set<String> identifiers) throws DotDataException {
+
+        if(identifiers.isEmpty()){
+           return 0;
+        }
+
+        final List<Params> insertParams = new ArrayList<>(identifiers.size());
+        final Date date = new Date();
+        for(final String identifier:identifiers){
+            insertParams.add(
+                 new Params(
+                         identifier,
+                         identifier,
+                         REINDEX_JOURNAL_PRIORITY_STRUCTURE_REINDEX,
+                         REINDEX_ACTION_REINDEX_OBJECT,
+                         date
+                 )
+            );
+        }
+
+        final List<Integer> batchResult =
+                Ints.asList(
+                        new DotConnect().executeBatch(REINDEX_JOURNAL_INSERT,
+                        insertParams,
+                        (preparedStatement, params) -> {
+                            preparedStatement.setString(1, String.class.cast(params.get(0)));
+                            preparedStatement.setString(2, String.class.cast(params.get(1)));
+                            preparedStatement.setInt(3, Integer.class.cast(params.get(2)));
+                            preparedStatement.setInt(4, Integer.class.cast(params.get(3)));
+                            preparedStatement.setObject(5,  Date.class.cast(params.get(4)));
+                        })
+                );
+
+        final int rowsAffected = batchResult.stream().reduce(0, Integer::sum);
+        Logger.info(this, "Batch rows inserted for reindex: " + rowsAffected);
+        return rowsAffected;
+    }
+
 
     @Override
     protected void refreshContentUnderHost(Host host) throws DotDataException {

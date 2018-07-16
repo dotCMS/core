@@ -1,9 +1,9 @@
 package com.dotcms.rest.api.v1.theme;
 
-import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonNode;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.pagination.OrderDirection;
@@ -11,10 +11,11 @@ import com.dotcms.util.pagination.PaginationException;
 import com.dotcms.util.pagination.Paginator;
 import com.dotcms.util.pagination.ThemePaginator;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.ThemeAPI;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.util.PaginatedArrayList;
 
 import com.dotmarketing.util.UUIDGenerator;
@@ -24,6 +25,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.*;
 
@@ -51,11 +53,11 @@ public class ThemeResourceTest {
     private final WebResource webResource = mock(WebResource.class);
     private final InitDataObject initDataObject = mock(InitDataObject.class);
     private final User user = mock(User.class);
-    private final User systemUser = mock(User.class);
     private final HttpServletRequest request = mock(HttpServletRequest.class);
-    private final UserAPI userAPI = mock(UserAPI.class);
+    private final FolderAPI folderAPI = mock(FolderAPI.class);
     private final ThemePaginator mockThemePaginator = mock(ThemePaginator.class);
     private final HostAPI hostAPI = mock(HostAPI.class);
+    private final ThemeAPI themeAPI = mock(ThemeAPI.class);
 
     private final Contentlet content1 = mock(Contentlet.class);
     private final Contentlet content2 = mock(Contentlet.class);
@@ -67,7 +69,7 @@ public class ThemeResourceTest {
 
     @Before
     public void init() throws Throwable{
-
+        when(host_1.getIdentifier()).thenReturn("1");
         when(content1.getFolder()).thenReturn(FOLDER_1);
         when(content1.getHost()).thenReturn(HOST_1);
         when(content2.getFolder()).thenReturn(FOLDER_2);
@@ -75,7 +77,6 @@ public class ThemeResourceTest {
 
         when(initDataObject.getUser()).thenReturn(user);
         when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
-        when(userAPI.getSystemUser()).thenReturn(systemUser);
 
         when(request.getRequestURL()).thenReturn(new StringBuffer("themes"));
 
@@ -91,6 +92,7 @@ public class ThemeResourceTest {
                 .build()));
         folders.setTotalResults(2);
     }
+
     /**
      * Test of {@link ThemeResource#findThemes(HttpServletRequest, String, int, int, String, String)}
      *
@@ -112,10 +114,29 @@ public class ThemeResourceTest {
         when(host_1.getIdentifier()).thenReturn(hostId);
         when(mockThemePaginator.getItems(user, 3, 0, params)).thenReturn(folders);
 
-        final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI, webResource);
+
+        final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI, folderAPI, themeAPI, webResource);
         final Response response = themeResource.findThemes(request, hostId, 1, 3, "ASC", null);
 
         checkSuccessResponse(response);
+    }
+
+    /**
+     * Test of {@link ThemeResource#findThemes(HttpServletRequest, String, int, int, String, String)}
+     *
+     * Given: null host_id query param
+     * Should: Should create the follow lucene query: +parentpath:/application/themes/* +title:template.vtl host:[current_host]
+     */
+    @Test
+    public void testFindThemesDefaultHostId() throws Throwable  {
+
+        final HttpSession session = mock(HttpSession.class);
+        when(request.getSession()).thenReturn(session);
+
+        final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI, folderAPI, themeAPI, webResource);
+        final Response response = themeResource.findThemes(request, null, 1, 3, "ASC", null);
+
+        assertEquals(response.getStatus(), Response.Status.NOT_FOUND.getStatusCode());
     }
 
     /**
@@ -129,7 +150,7 @@ public class ThemeResourceTest {
         final String hostId = "1";
         final Exception exception = new PaginationException(new DotSecurityException(""));
 
-        Map<String, Object> params = map(
+        final Map<String, Object> params = map(
                 ThemePaginator.HOST_ID_PARAMETER_NAME, hostId,
                 Paginator.DEFAULT_FILTER_PARAM_NAME, "",
                 Paginator.ORDER_BY_PARAM_NAME, null,
@@ -140,7 +161,7 @@ public class ThemeResourceTest {
         when(host_1.getIdentifier()).thenReturn(hostId);
         when(mockThemePaginator.getItems(user, 3, 0, params)).thenThrow(exception);
 
-        final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI, webResource);
+        final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI , folderAPI, themeAPI, webResource);
 
         try {
             themeResource.findThemes(request, hostId, 1, 3, "ASC", null);
@@ -150,18 +171,35 @@ public class ThemeResourceTest {
         }
     }
 
+    /**
+     * Test of {@link ThemeResource#findThemeById(HttpServletRequest, String)}
+     *
+     * Given: a user witout READ_PERMISSIION
+     * Should: throw DotSecurityException
+     */
+    @Test(expected = DotSecurityException.class)
+    public void testFindThemesWithLimitedUse() throws Throwable {
+        final String themeId = "2";
+        final DotSecurityException dotSecurityException = mock(DotSecurityException.class);
+
+        when(folderAPI.find(themeId, user, false)).thenThrow(dotSecurityException);
+
+        final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI, folderAPI, themeAPI, webResource);
+        themeResource.findThemeById(request, themeId);
+
+    }
+
     protected void checkSuccessResponse(final Response response) throws IOException {
-        final String responseString = response.getEntity().toString();
-        final JsonNode jsonNode = objectMapper.readTree(responseString);
+        final Collection entities = (Collection) ((ResponseEntityView) response.getEntity()).getEntity();
 
-        final List<JsonNode> responseList = CollectionsUtils.asList(jsonNode.get("entity").elements());
+        final List<Map> responseList = CollectionsUtils.asList(entities.iterator());
         assertEquals(2, responseList.size());
-        assertEquals(FOLDER_1, responseList.get(0).get("name").asText());
-        assertEquals(FOLDER_1, responseList.get(0).get("title").asText());
-        assertEquals(FOLDER_INODE_1, responseList.get(0).get("inode").asText());
+        assertEquals(FOLDER_1, responseList.get(0).get("name"));
+        assertEquals(FOLDER_1, responseList.get(0).get("title"));
+        assertEquals(FOLDER_INODE_1, responseList.get(0).get("inode"));
 
-        assertEquals(FOLDER_2, responseList.get(1).get("name").asText());
-        assertEquals(FOLDER_2, responseList.get(1).get("title").asText());
-        assertEquals(FOLDER_INODE_2, responseList.get(1).get("inode").asText());
+        assertEquals(FOLDER_2, responseList.get(1).get("name"));
+        assertEquals(FOLDER_2, responseList.get(1).get("title"));
+        assertEquals(FOLDER_INODE_2, responseList.get(1).get("inode"));
     }
 }

@@ -5,7 +5,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.OSGIUtil;
+import org.apache.felix.framework.OSGIUtil;
 import java.io.File;
 import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;

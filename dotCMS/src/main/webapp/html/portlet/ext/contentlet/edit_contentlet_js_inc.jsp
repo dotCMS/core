@@ -410,7 +410,6 @@
             isContentSaving = true;
         }
 
-
         ContentletAjax.saveContent(fmData,isAutoSave,isCheckin,publish,saveContentCallback);
     }
 
@@ -531,20 +530,15 @@
 
     function saveContentCallback(data){
         isContentAutoSaving = false;
-        dojo.byId("subcmd").value="";
+        dojo.byId("subcmd").value= "";
+
         if(data["contentletInode"] != null && isInodeSet(data["contentletInode"])){
             $('contentletInode').value = data["contentletInode"];
             currentContentletInode = data["contentletInode"];
             contentAdmin.contentletInode=data["contentletInode"];
             contentAdmin.contentletIdentifier=data["contentletIdentifier"];
         }
-        
-        
 
-        
-        
-        
-        
         dijit.byId('savingContentDialog').hide();
         resetHasChanged();
 
@@ -572,53 +566,70 @@
             errorDisplayElement.show();
             return;
         }
-
-        if (ngEditContentletEvents) {
-            ngEditContentletEvents.next({
-                name: 'save',
-                data: {
-                    identifier: data.contentletIdentifier,
-                    inode: data.contentletInode,
-                    type: null
-                }
-            });
-            return;
-        }
-        
         
         dijit.byId("versionsTab").attr("disabled", false);
         dijit.byId("permissionsTab").attr("disabled", false);
 
+
         refreshActionPanel(data["contentletInode"]);
 
         // if we have a referer and the contentlet comes back checked in
-        if((data["referer"] != null && data["referer"] != '' && (!data["contentletLocked"]) || data["htmlPageReferer"] != null)) {
-            if (data['isHtmlPage']) {
-                var customEventDetail = {
-                    name: 'save-page',
-                    payload: data
-                };
+        var customEventDetail = {
+            name: 'save-page',
+            payload: data
+        };
 
-                if (workingContentletInode.length === 0) {
+
+        if (data["contentletIdentifier"]) {
+            if (ngEditContentletEvents) {
+                ngEditContentletEvents.next({
+                    name: 'save',
+                    data: {
+                        identifier: data.contentletIdentifier,
+                        inode: data.contentletInode,
+                        type: null
+                    }
+                });
+            }
+
+            if((data["referer"] != null && data["referer"] != '' && !data["contentletLocked"])) {
+                if (data['isHtmlPage'] && workingContentletInode.length === 0) {
                     customEventDetail = {
                         name: 'close'
                     };
-
                     var params = data['htmlPageReferer'].split('?')[1].split('&');
                     var languageQueryParam = params.find(function(queryParam) {
                         return queryParam.startsWith('com.dotmarketing.htmlpage.language');
                     });
                     var languageId = languageQueryParam.split('=')[1];
-					
+                    
                     window.top.location = '/dotAdmin/#/edit-page/content?url=' + data['htmlPageReferer'].split('?')[0] + '&language_id=' + languageId;
                 }
-
-                var customEvent = document.createEvent('CustomEvent');
-                customEvent.initCustomEvent('ng-event', false, false, customEventDetail);
-                document.dispatchEvent(customEvent);
             }
-            return;
+        } else {
+            customEventDetail = {
+                name: 'close'
+            };
+
+            if (data['contentletBaseType'] === 'HTMLPAGE') {
+                customEventDetail = {
+                    name: 'deleted-page',
+                    payload: data
+                };
+            }
+
+            if (ngEditContentletEvents) {
+                ngEditContentletEvents.next({
+                    name: 'deleted-contenlet',
+                    data: data
+                });
+            }
         }
+
+        var customEvent = document.createEvent('CustomEvent');
+        customEvent.initCustomEvent('ng-event', false, false, customEventDetail);
+        document.dispatchEvent(customEvent);
+
     }
 
     function refreshPermissionsTab(){

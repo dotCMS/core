@@ -59,17 +59,10 @@ public class PaginationUtil {
 	private final int perPageDefault;
 	private final int nLinks;
 
-	private final ObjectWriter objectWriter;
-
-	public PaginationUtil(Paginator paginator){
-		this(paginator, new ObjectMapper());
-	}
-
-	public PaginationUtil(final Paginator paginator, final ObjectMapper mapper){
+	public PaginationUtil(final Paginator paginator){
 		this.paginator = paginator;
 		perPageDefault = Config.getIntProperty(DOTCMS_PAGINATION_ROWS, 10);
 		nLinks = Config.getIntProperty(DOTCMS_PAGINATION_LINKS, 5);
-		this.objectWriter = mapper.writer().withDefaultPrettyPrinter();
 	}
 
 	/**
@@ -143,18 +136,14 @@ public class PaginationUtil {
 		final String linkHeaderValue = getHeaderValue(req.getRequestURL().toString(), sanitizefilter, pageValue, perPageValue,
 				totalRecords, orderBy, direction, extraParams);
 
-		try {
-			return Response.
-                    ok(objectWriter.writeValueAsString(new ResponseEntityView((Object) items)))
-                    .header(LINK_HEADER_NAME, linkHeaderValue)
-                    .header(PAGINATION_PER_PAGE_HEADER_NAME, perPageValue)
-                    .header(PAGINATION_CURRENT_PAGE_HEADER_NAME, pageValue)
-                    .header(PAGINATION_MAX_LINK_PAGES_HEADER_NAME, nLinks)
-                    .header(PAGINATION_TOTAL_ENTRIES_HEADER_NAME, totalRecords)
-                    .build();
-		} catch (JsonProcessingException e) {
-			throw new JsonProcessingRuntimeException(e);
-		}
+		return Response.
+				ok(new ResponseEntityView((Object) items))
+				.header(LINK_HEADER_NAME, linkHeaderValue)
+				.header(PAGINATION_PER_PAGE_HEADER_NAME, perPageValue)
+				.header(PAGINATION_CURRENT_PAGE_HEADER_NAME, pageValue)
+				.header(PAGINATION_MAX_LINK_PAGES_HEADER_NAME, nLinks)
+				.header(PAGINATION_TOTAL_ENTRIES_HEADER_NAME, totalRecords)
+				.build();
 	}
 
 	protected Map<String, Object> getParameters(final String filter,

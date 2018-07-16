@@ -64,6 +64,7 @@ apply plugin: 'java'
 apply plugin: 'aspectj'
 apply plugin: 'war'
 apply plugin: 'org.unbroken-dome.test-sets'
+apply plugin: 'project-report' /*For gradle dependencies: ./gradlew htmlDependencyReport*/
 apply plugin: 'idea'
 apply plugin: 'eclipse'
 eclipse {
@@ -134,20 +135,17 @@ eclipse.project {
 
 dependencies {
     /*****  Felix libs need to be placed in the WEB-INF/felix/bundle directory. This was previously handled using a pre-build copy task.  *****/
-    felix (group: 'org.apache.felix', name: 'org.apache.felix.bundlerepository', version:'2.0.8') {
-        exclude(group: 'org.easymock')
-    }
-    felix group: 'org.apache.felix', name: 'org.apache.felix.fileinstall',      version:'3.5.8'
-    felix group: 'org.apache.felix', name: 'org.apache.felix.gogo.command',     version:'1.0.2'
-    felix group: 'org.apache.felix', name: 'org.apache.felix.gogo.runtime',     version:'1.0.2'
-    felix group: 'org.apache.felix', name: 'org.apache.felix.gogo.shell',       version:'1.0.0'
-    felix (group: 'org.apache.tika', name: 'tika-core', version: '1.17'){
+    felix group: 'org.apache.felix', name: 'org.apache.felix.fileinstall', version: '3.6.4'
+    felix (group: 'org.apache.felix', name: 'org.apache.felix.configadmin', version: '1.9.2') {
         transitive = false
     }
-    felix (group: 'org.apache.tika', name: 'tika-bundle', version: '1.17'){
+    felix(group: 'org.apache.tika', name: 'tika-core', version: '1.17') {
         transitive = false
     }
-    felix group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.24'
+    felix(group: 'org.apache.tika', name: 'tika-bundle', version: '1.17') {
+        transitive = false
+    }
+    felix group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.25'
     felix group: 'org.slf4j', name: 'jcl-over-slf4j', version: '1.7.25'
     felix group: 'com.dotcms.tika', name: 'com.dotcms.tika', version: '0.2'
 
@@ -294,9 +292,9 @@ war {
         into felixFolder
     }
 
-    from (configurations.compile) {
+    from(configurations.compile) {
         into felixFolder
-        include '**/org.apache.felix.http.bundle*.jar'
+        include '**/org.apache.felix.http.api*.jar'
     }
 
     from (configurations.starter) {

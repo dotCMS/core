@@ -1,6 +1,12 @@
 package com.dotmarketing.portlets.workflows.business;
 
-import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.*;
+import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.FORCE_PUSH;
+import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WF_EXPIRE_DATE;
+import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WF_EXPIRE_TIME;
+import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WF_NEVER_EXPIRE;
+import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WF_PUBLISH_DATE;
+import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WF_PUBLISH_TIME;
+import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WHERE_TO_SEND;
 
 import com.dotcms.api.system.event.SystemMessageEventUtil;
 import com.dotcms.business.CloseDBIfOpened;
@@ -34,6 +40,7 @@ import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
+import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.AlreadyExistException;
@@ -587,6 +594,30 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 
 		workFlowFactory.saveScheme(scheme);
+
+	}
+
+	@CloseDBIfOpened
+	public List<WorkflowScheme> findArchivedSchemes() throws DotDataException{
+		return workFlowFactory.findArchivedSchemes();
+	}
+
+	/**
+	 * This method collects all the identifiers of contents that reference the workflow and then pushes such ids into the 'distributed index journal' queue
+	 * @param scheme
+	 * @param user
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	@CloseDBIfOpened
+	int pushIndexUpdate(final WorkflowScheme scheme, final User user) throws  DotDataException, DotSecurityException {
+		final String schemeId = scheme.getId();
+		final String luceneQuery = String.format(" +wfscheme:( %s ) +working:true ", schemeId);
+
+		//We should only be considering Working content.
+		final List<ContentletSearch> searchResults = contentletAPI.searchIndex(luceneQuery, -1, 0, null, user, RESPECT_FRONTEND_ROLES);
+		final Set<String> identifiers = searchResults.stream().map(ContentletSearch::getIdentifier).collect(Collectors.toSet());
+		return distributedJournalAPI.addIdentifierReindex(identifiers);
 	}
 
 	@Override
@@ -653,6 +684,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			stopWatch.stop();
 			Logger.info(this, "Delete Workflow Scheme task DONE, duration:" +
 					DateUtil.millisToSeconds(stopWatch.getTime()) + " seconds");
+
+			//Update index
+			pushIndexUpdate(scheme, user);
 
 			this.systemMessageEventUtil.pushSimpleTextEvent
 					(LanguageUtil.get(user.getLocale(), "Workflow-deleted", scheme.getName()), user.getUserId());
@@ -917,6 +951,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		final WorkflowScheme scheme     = this.findScheme(step.getSchemeId());
 		final List<WorkflowStep> steps  = this.findSteps (scheme);
 
+		final boolean firstStepChanges = order == 0 ||
+				steps.stream().findFirst().map(
+						workflowStep -> workflowStep.getId().equals(step.getId())
+				).orElse(false);
+
 		IntStream.range(0, steps.size())
 				.filter(i -> steps.get(i).getId().equals(step.getId()))
 				.boxed()
@@ -931,6 +970,30 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			stepp.setMyOrder(i++);
 			this.saveStep(stepp, user);
 		}
+
+		if (firstStepChanges) {
+			final DotSubmitter submitter = this.concurrentFactory
+					.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
+			submitter.submit(() -> {
+				try {
+					pushIndexUpdateOnReorder(scheme.getId());
+				} catch (DotDataException e) {
+					Logger.error(getClass(),
+							"An Error occurred while attempting a reindex on reorder.", e);
+				}
+			});
+		}
+	}
+
+	/**
+	 * Once we have determined that a reorder event has affected the first position, we need to update the index.
+	 * @param schemeId
+	 * @return
+	 */
+	@CloseDBIfOpened
+	private int pushIndexUpdateOnReorder(final String schemeId) throws DotDataException {
+       final Set<String> identifiers = workFlowFactory.findNullTaskContentletIdentifiersForScheme(schemeId);
+       return distributedJournalAPI.addIdentifierReindex(identifiers);
 	}
 
 	@Override
@@ -3017,6 +3080,5 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
                 .sorted(Comparator.comparing(WorkflowTimelineItem::createdDate))
                 .collect(CollectionsUtils.toImmutableList());
 	}
-
 
 }

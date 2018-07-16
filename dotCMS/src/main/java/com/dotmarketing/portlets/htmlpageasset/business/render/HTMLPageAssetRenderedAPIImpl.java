@@ -94,7 +94,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
             final PageMode mode = PageMode.PREVIEW_MODE;
             Host host = this.resolveSite(request, systemUser, mode);
-            final HTMLPageAsset htmlPageAsset = getHtmlPageAsset(systemUser, mode, host, pageUri);
+            final HTMLPageAsset htmlPageAsset = getHtmlPageAsset(systemUser, pageUri, mode, host);
 
             final ContentletVersionInfo info = APILocator.getVersionableAPI().
                     getContentletVersionInfo(htmlPageAsset.getIdentifier(), htmlPageAsset.getLanguageId());
@@ -138,7 +138,11 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
     private HTMLPageAsset getHtmlPageAsset(final User user, final String uri, final PageMode mode, final Host host)
             throws DotDataException, DotSecurityException {
-        final HTMLPageAsset htmlPageAsset = getHtmlPageAsset(user, mode, host, uri);
+        final String pageUri = (UUIDUtil.isUUID(uri) ||( uri.length()>0 && '/' == uri.charAt(0))) ? uri : ("/" + uri);
+
+        final HTMLPageAsset htmlPageAsset = UUIDUtil.isUUID(pageUri) ?
+                (HTMLPageAsset) this.htmlPageAssetAPI.findPage(pageUri, user, mode.respectAnonPerms) :
+                (HTMLPageAsset) getPageByUri(mode, host, pageUri);
 
         if (htmlPageAsset == null){
             throw new HTMLPageAssetNotFoundException(uri);
@@ -154,14 +158,6 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         }
 
         return htmlPageAsset;
-    }
-
-    private HTMLPageAsset getHtmlPageAsset(User user, PageMode mode, Host host, String uri) throws DotDataException, DotSecurityException {
-        final String pageUri = (UUIDUtil.isUUID(uri) ||( uri.length()>0 && '/' == uri.charAt(0))) ? uri : ("/" + uri);
-
-        return (UUIDUtil.isUUID(pageUri)) ?
-                (HTMLPageAsset) this.htmlPageAssetAPI.findPage(pageUri, user, mode.respectAnonPerms) :
-                (HTMLPageAsset) getPageByUri(mode, host, pageUri);
     }
 
     private IHTMLPage getPageByUri(final PageMode mode, final Host host, final String pageUri) throws DotDataException, DotSecurityException {
