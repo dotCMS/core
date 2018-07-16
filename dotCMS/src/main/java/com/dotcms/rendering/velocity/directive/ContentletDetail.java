@@ -64,7 +64,7 @@ public class ContentletDetail extends DotDirective {
     // If the _show_working_ comes in the context, means that is Time Machine we need
     // to show the working. If not we only need to show the live
 
-    final boolean showWorking = (context.get("_show_working_") != null && (boolean)context.get("_show_working_")) ? true : false;
+    final boolean showWorking = (context.get("_show_working_") != null && (boolean)context.get("_show_working_"));
 
     final StringBuilder path=new StringBuilder();
 
