@@ -423,7 +423,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
 
         @Override
         public boolean isAborting() {
-            return (threadPoolExecutor.isTerminated() ||  threadPoolExecutor.isShutdown() || threadPoolExecutor.isTerminating());
+            return threadPoolExecutor.isTerminated() ||  threadPoolExecutor.isShutdown() || threadPoolExecutor.isTerminating();
         }
 
 
