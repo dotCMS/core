@@ -11,9 +11,9 @@ public class BulkActionsNamedThreadFactory implements ThreadFactory {
     private final AtomicInteger threadCount = new AtomicInteger(0);
 
     @Override
-    public Thread newThread(final Runnable r) {
-        final Thread t = Executors.defaultThreadFactory().newThread(r);
-        t.setName(String.format(THREAD_NAME_FORMAT, threadCount.getAndIncrement()));
-        return t;
+    public Thread newThread(final Runnable runnable) {
+        final Thread thread = Executors.defaultThreadFactory().newThread(runnable);
+        thread.setName(String.format(THREAD_NAME_FORMAT, threadCount.getAndIncrement()));
+        return thread;
     }
 }
