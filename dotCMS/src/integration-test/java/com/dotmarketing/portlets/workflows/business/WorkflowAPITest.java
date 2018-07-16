@@ -972,6 +972,91 @@ public class WorkflowAPITest extends IntegrationTestBase {
     }
 
     /**
+     * Test the find findAvailableActions methods
+     */
+    @Test
+    public void findAvailableActions_working_version_get_empty_actions() throws DotDataException, DotSecurityException {
+
+        /*
+        Need to do the test checking with different user the actions displayed. We need to specify
+        the permission for Intranet, Reviewer, Contributor and Publisher to see if the action
+        returned are the right ones
+         */
+
+        Contentlet testContentlet1 = new Contentlet();
+        Contentlet testContentlet1Checkout = null;
+        Contentlet testContentlet2 = new Contentlet();
+        Contentlet testContentlet2Checkout = null;
+        Contentlet testContentletTop = new Contentlet();
+        try {
+            List<WorkflowScheme> worflowSchemes = new ArrayList<>();
+            worflowSchemes.add(workflowScheme1);
+            worflowSchemes.add(workflowScheme2);
+            worflowSchemes.add(workflowScheme3);
+            worflowSchemes.add(workflowScheme4);
+
+            /* Associate the schemas to the content type */
+            workflowAPI.saveSchemesForStruct(contentTypeStructure, worflowSchemes);
+
+            long time = System.currentTimeMillis();
+
+            //Create a test contentlet
+            testContentlet1.setLanguageId(1);
+            testContentlet1.setStringProperty(FIELD_VAR_NAME, "WorkflowContentTest_" + time);
+            testContentlet1.setContentTypeId(contentType.id());
+            testContentlet1.setHost(defaultHost.getIdentifier());
+            testContentlet1 = contentletAPI.checkin(testContentlet1, user, false);
+
+            contentletAPI.isInodeIndexed(testContentlet1.getInode());
+
+
+            //Adding permissions to the just created contentlet
+            List<Permission> permissions = new ArrayList<>();
+            Permission p1 = new Permission(
+                    testContentlet1.getPermissionId(),
+                    APILocator.getRoleAPI().getUserRole(billIntranet).getId(),
+                    (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT),
+                    true);
+
+            permissions.add(p1);
+
+            APILocator.getPermissionAPI().save(permissions, testContentlet1, user, false);
+
+            // making more versions
+            testContentlet1Checkout = contentletAPI.checkout(testContentlet1.getInode(), user, false);
+            testContentlet1Checkout.setStringProperty(FIELD_VAR_NAME, "WorkflowContentTest_" + System.currentTimeMillis());
+            testContentlet2 = contentletAPI.checkin(testContentlet1Checkout, user, false);
+
+            contentletAPI.isInodeIndexed(testContentlet2.getInode());
+
+            // top version
+            testContentlet2Checkout = contentletAPI.checkout(testContentlet2.getInode(), user, false);
+            testContentlet2Checkout.setStringProperty(FIELD_VAR_NAME, "WorkflowContentTest_" + System.currentTimeMillis());
+            testContentletTop = contentletAPI.checkin(testContentlet2Checkout, user, false);
+
+            contentletAPI.isInodeIndexed(testContentletTop.getInode());
+
+            // expected behavior
+            List<WorkflowAction> foundActions = APILocator.getWorkflowAPI()
+                    .findAvailableActions(testContentletTop, billIntranet);
+            assertNotNull(foundActions);
+            assertFalse(foundActions.isEmpty());
+            assertEquals(foundActions.size(), 4);
+
+            // no top version
+            foundActions = APILocator.getWorkflowAPI()
+                    .findAvailableActions(testContentlet2, billIntranet);
+            assertNotNull(foundActions);
+            assertTrue(foundActions.isEmpty());
+        } finally {
+            try {
+                final Contentlet contentletToDelete = contentletAPI.findContentletByIdentifierAnyLanguage(testContentletTop.getIdentifier());
+                contentletAPI.archive(contentletToDelete, user, false);
+                contentletAPI.delete(contentletToDelete, user, false);
+            } catch (Exception e) {}
+        }
+    }
+    /**
      * Test the find findActionRespectingPermissions methods
      */
     @Test
