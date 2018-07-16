@@ -14,7 +14,6 @@ import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonNode;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
 import com.dotcms.repackage.org.glassfish.jersey.internal.util.Base64;
@@ -28,6 +27,7 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.UtilMethods;
 
@@ -49,6 +49,7 @@ public class ThemeResourceIntegrationTest {
     private static ContentletAPI contentletAPI;
     private static HostAPI hostAPI;
     private static UserAPI userAPI;
+    private static FolderAPI folderAPI;
     private static User user;
     private static Host host;
 
@@ -59,8 +60,9 @@ public class ThemeResourceIntegrationTest {
 
         contentletAPI = APILocator.getContentletAPI();
 
-        hostAPI = APILocator.getHostAPI();
-        userAPI = APILocator.getUserAPI();
+        hostAPI   = APILocator.getHostAPI();
+        userAPI   = APILocator.getUserAPI();
+        folderAPI = APILocator.getFolderAPI();
 
         user = userAPI.getSystemUser();
         host = hostAPI.findDefaultHost(user, false);
@@ -119,36 +121,38 @@ public class ThemeResourceIntegrationTest {
 
     @Test
     public void test_FindThemeById() throws Throwable {
-        final Folder folderExpected = APILocator.getFolderAPI()
+        final Folder folderExpected = folderAPI
                 .findFolderByPath("/application/themes/quest", host, user, false);
         final ThemeResource resource = new ThemeResource();
         final Response response = resource.findThemeById(getHttpRequest(), folderExpected.getInode());
         assertEquals(Status.OK.getStatusCode(), response.getStatus());
         final HashMap folder =  (HashMap) ((ResponseEntityView) response.getEntity()).getEntity();
 
-        assertNull(folder.remove(THEME_THUMBNAIL_KEY));
-
         Map<String, Object> mapExpected = folderExpected.getMap();
-        assertEquals(mapExpected.size(), folder.size());
 
-        mapExpected.entrySet().forEach(expectedEntry -> assertEquals(expectedEntry.getValue(),
+        //Considering THEME_THUMBNAIL_KEY
+        assertEquals(mapExpected.size(), folder.size() - 1);
+
+        mapExpected.entrySet().stream().filter(entry -> entry.getKey().equals(THEME_THUMBNAIL_KEY)).forEach(expectedEntry -> assertEquals(expectedEntry.getValue(),
                 folder.get(expectedEntry.getKey())));
     }
 
     @Test
     public void test_FindThemeByIdWithPublishedThemePNG_ReturnsThemeThumbnail()
             throws Throwable {
-        Contentlet thumbnail = null;
-        final Folder folder = APILocator.getFolderAPI()
-                .findFolderByPath("/application/themes/quest", host, user, false);
+        Contentlet thumbnail;
+        Folder destinationFolder = null;
+
+        final String folderName = "/PublishedThemePNGFolder"+System.currentTimeMillis();
 
         final File file = File.createTempFile(THEME_PNG.split("\\.")[0], ".png");
         FileUtil.write(file, "Theme Thumbnail");
 
         try{
-
+            destinationFolder = folderAPI
+                    .createFolders(folderName, host, user, false);
             //Creating theme.png
-            final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(folder,file);
+            final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(destinationFolder,file);
             fileAssetDataGen.setProperty("title", THEME_PNG);
             fileAssetDataGen.setProperty("fileName", THEME_PNG);
             fileAssetDataGen.setProperty("__DOTNAME__", THEME_PNG);
@@ -160,7 +164,7 @@ public class ThemeResourceIntegrationTest {
             contentletAPI.isInodeIndexed(thumbnail.getInode());
 
             final ThemeResource resource = new ThemeResource();
-            final Response response = resource.findThemeById(getHttpRequest(), folder.getInode());
+            final Response response = resource.findThemeById(getHttpRequest(), destinationFolder.getInode());
             assertEquals(Status.OK.getStatusCode(), response.getStatus());
 
             Map entity = (Map) ((ResponseEntityView) response.getEntity()).getEntity();
@@ -168,27 +172,30 @@ public class ThemeResourceIntegrationTest {
             assertEquals(thumbnail.getIdentifier(), entity.get(THEME_THUMBNAIL_KEY));
 
         } finally {
-
-            if (UtilMethods.isSet(thumbnail)){
-                FileAssetDataGen.archive(thumbnail);
-                FileAssetDataGen.delete(thumbnail);
+            if (destinationFolder != null && destinationFolder.getInode() != null) {
+                folderAPI.delete(destinationFolder, user, false);
             }
-
         }
     }
 
     @Test
     public void test_FindThemeByIdWithArchivedThemePNG_MustNotReturnThemeThumbnail()
             throws Throwable {
-        Contentlet thumbnail = null;
-        final Folder folder = APILocator.getFolderAPI()
-                .findFolderByPath("/application/themes/quest", host, user, false);
 
-        final File file = File.createTempFile(THEME_PNG.split("\\.")[0], ".png");
-        FileUtil.write(file, "Theme Thumbnail");
+        Contentlet thumbnail;
+        Folder destinationFolder = null;
+        final String folderName = "/ArchivedThemePNGFolder"+System.currentTimeMillis();
 
         try{
-            final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(folder,file);
+
+            destinationFolder = folderAPI
+                    .createFolders(folderName, host, user, false);
+
+            final File file = File.createTempFile(THEME_PNG.split("\\.")[0], ".png");
+            FileUtil.write(file, "Theme Thumbnail");
+
+
+            final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(destinationFolder,file);
             fileAssetDataGen.setProperty("title", THEME_PNG);
             fileAssetDataGen.setProperty("fileName", THEME_PNG);
             fileAssetDataGen.setProperty("__DOTNAME__", THEME_PNG);
@@ -197,56 +204,52 @@ public class ThemeResourceIntegrationTest {
             FileAssetDataGen.archive(thumbnail);
 
             final ThemeResource resource = new ThemeResource();
-            final Response response = resource.findThemeById(getHttpRequest(), folder.getInode());
+            final Response response = resource.findThemeById(getHttpRequest(), destinationFolder.getInode());
             assertEquals(Status.OK.getStatusCode(), response.getStatus());
 
             Map entity = (Map) ((ResponseEntityView) response.getEntity()).getEntity();
             assertNull(entity.get(THEME_THUMBNAIL_KEY));
 
         } finally {
-
-            if (UtilMethods.isSet(thumbnail)){
-                if (!thumbnail.isArchived()) {
-                    FileAssetDataGen.archive(thumbnail);
-                }
-                FileAssetDataGen.delete(thumbnail);
+            if (destinationFolder != null && destinationFolder.getInode() != null) {
+                folderAPI.delete(destinationFolder, user, false);
             }
-
         }
     }
 
     @Test
     public void test_FindThemeByIdWithUnpublishedThemePNG_MustNotReturnThemeThumbnail()
             throws Throwable {
-        Contentlet thumbnail = null;
-        final Folder folder = APILocator.getFolderAPI()
-                .findFolderByPath("/application/themes/quest", host, user, false);
 
-        final File file = File.createTempFile(THEME_PNG.split("\\.")[0], ".png");
-        FileUtil.write(file, "Theme Thumbnail");
+        Folder destinationFolder = null;
 
         try{
-            final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(folder,file);
+            final String folderName = "/UnpublishedThemePNGFolder"+System.currentTimeMillis();
+
+            destinationFolder = folderAPI
+                    .createFolders(folderName, host, user, false);
+
+            final File file = File.createTempFile(THEME_PNG.split("\\.")[0], ".png");
+            FileUtil.write(file, "Theme Thumbnail");
+
+            final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(destinationFolder,file);
             fileAssetDataGen.setProperty("title", THEME_PNG);
             fileAssetDataGen.setProperty("fileName", THEME_PNG);
             fileAssetDataGen.setProperty("__DOTNAME__", THEME_PNG);
 
-            thumbnail = fileAssetDataGen.nextPersisted();
+            fileAssetDataGen.nextPersisted();
 
             final ThemeResource resource = new ThemeResource();
-            final Response response = resource.findThemeById(getHttpRequest(), folder.getInode());
+            final Response response = resource.findThemeById(getHttpRequest(), destinationFolder.getInode());
             assertEquals(Status.OK.getStatusCode(), response.getStatus());
             final Map entity = (Map) (((ResponseEntityView) response.getEntity())).getEntity();
 
             assertNull(entity.get(THEME_THUMBNAIL_KEY));
 
         } finally {
-
-            if (UtilMethods.isSet(thumbnail)){
-                FileAssetDataGen.archive(thumbnail);
-                FileAssetDataGen.delete(thumbnail);
+            if (destinationFolder != null && destinationFolder.getInode()!= null){
+                folderAPI.delete(destinationFolder, user, false);
             }
-
         }
     }
 
