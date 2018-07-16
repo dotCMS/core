@@ -109,7 +109,7 @@ public abstract class WorkflowTestUtil {
     @SuppressWarnings("unchecked")
     static List<WorkflowScheme> findSchemes(final WorkflowResource workflowResource) {
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response findResponse = workflowResource.findSchemes(request, null);
+        final Response findResponse = workflowResource.findSchemes(request, null, true);
         assertEquals(Response.Status.OK.getStatusCode(), findResponse.getStatus());
         final ResponseEntityView listEv = ResponseEntityView.class.cast(findResponse.getEntity());
         return List.class.cast(listEv.getEntity());

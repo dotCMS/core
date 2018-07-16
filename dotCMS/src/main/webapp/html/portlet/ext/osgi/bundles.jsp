@@ -8,7 +8,7 @@
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint" %>
 <%@ page import="com.dotmarketing.util.UtilMethods" %>
 <%@ page import="org.osgi.framework.Bundle" %>
-<%@ page import="com.dotmarketing.util.OSGIUtil" %>
+<%@ page import="org.apache.felix.framework.OSGIUtil" %>
 <%        
 	request.setAttribute("requiredPortletAccess", "dynamic-plugins"); 
 %>

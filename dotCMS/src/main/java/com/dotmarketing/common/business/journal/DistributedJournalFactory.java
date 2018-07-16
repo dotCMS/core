@@ -8,6 +8,7 @@ import com.dotmarketing.common.business.journal.DistributedJournalAPI.DateType;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Config;
+import java.util.Set;
 
 /**
  * 
@@ -185,4 +186,11 @@ public abstract class DistributedJournalFactory<T> {
 	 * @throws DotDataException
 	 */
 	protected abstract void addIdentifierReindex(String id) throws DotDataException;
+
+	/**
+	 * Adds an list of identifiers to be reindexed.
+	 * @param ids
+	 * @throws DotDataException
+	 */
+	protected abstract int addIdentifierReindex(Set<String> ids) throws DotDataException;
 }

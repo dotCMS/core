@@ -8,10 +8,15 @@ import java.util.Map;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.ImmutableCategoryField;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.contenttype.transform.JsonTransformer;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
@@ -148,6 +153,16 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
       field.put("fieldVariables", new JsonFieldVariableTransformer(f.fieldVariables()).mapList());
       field.remove("acceptedDataTypes");
       field.remove("dbColumn");
+
+      if (ImmutableCategoryField.class.getName().equals(field.get("clazz"))) {
+        try {
+          final Category category = APILocator.getCategoryAPI()
+                  .find(field.get("values").toString(), APILocator.getLoginServiceAPI().getLoggedInUser(), false);
+          field.put(CATEGORIES_PROPERTY_NAME, category.getMap());
+        } catch (final DotSecurityException e) {
+          Logger.error(JsonFieldTransformer.class, e.getMessage());
+        }
+      }
 
       return field;
     } catch (Exception e) {

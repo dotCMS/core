@@ -616,6 +616,7 @@ public class DateUtil {
 		} catch (InterruptedException e) {
 
 			Logger.error(DateUtil.class, e.getMessage(), e);
+			Thread.currentThread().interrupt();
 		}
 	}
 }

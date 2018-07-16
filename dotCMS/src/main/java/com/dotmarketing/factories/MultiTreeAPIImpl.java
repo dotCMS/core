@@ -11,6 +11,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
@@ -47,9 +48,10 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
     }
 
-    public Table<String, String, Set<String>>  getPageMultiTrees(final IHTMLPage page, final boolean liveMode)
-            throws DotDataException, DotSecurityException {
-        
+    @Override
+    public Table<String, String, Set<String>>  getPageMultiTrees(final IHTMLPage page, final Language language,
+                                                                 final boolean liveMode) throws DotDataException, DotSecurityException {
+
         final Table<String, String, Set<String>> pageContents = HashBasedTable.create();
         final List<MultiTree> multiTres = MultiTreeFactory.getMultiTrees(page.getIdentifier());
 
@@ -63,8 +65,8 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
             Contentlet contentlet = null;
             try {
-                contentlet = contentletAPI.findContentletByIdentifier(multiTree.getContentlet(), liveMode, -1,
-                        systemUser, false);
+                contentlet = contentletAPI.findContentletByIdentifier(multiTree.getContentlet(), liveMode,
+                        language != null ? language.getId() : APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
             }catch(DotDataException | DotSecurityException | DotContentletStateException e){
                 Logger.warn(this.getClass(), "invalid contentlet on multitree:" + multiTree);
             }
