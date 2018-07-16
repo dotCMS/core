@@ -1,343 +1,98 @@
 package com.dotcms.rest.api.v1.system.monitor;
 
-import java.io.File;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
-import javax.servlet.http.HttpServletRequest;
-
-import com.dotcms.enterprise.cluster.ClusterFactory;
-import com.dotcms.util.HttpRequestDataUtil;
-import com.dotcms.util.network.IPUtils;
-import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.util.*;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.index.query.QueryBuilders;
-import com.dotcms.repackage.javax.ws.rs.*;
-import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
-import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.core.Response.ResponseBuilder;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
-import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.util.json.JSONObject;
+import com.liferay.util.StringPool;
 
-import net.jodah.failsafe.CircuitBreaker;
-import net.jodah.failsafe.Failsafe;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * 
- * 
- * Call
+ * The Monitor provides a summary of the system status.
+ * It will provide information such as:
+ * - Database Health
+ * - Elastic Search Index Health
+ * - Cache Health
+ * - Local file system
+ * - Share assets
  *
+ * Most of the validation are made by on a timeout, you can use these configuration
+ * settings in order to set your own (1 second is the default, 1000millis)
+ *
+ * - SYSTEM_STATUS_API_LOCAL_FS_TIMEOUT: Local file system timeout
+ * - SYSTEM_STATUS_API_CACHE_TIMEOUT: Cache timeout
+ * - SYSTEM_STATUS_API_ASSET_FS_TIMEOUT: Share assets timeout
+ * - SYSTEM_STATUS_API_INDEX_TIMEOUT: Elastic Search Index timeout
+ * - SYSTEM_STATUS_API_DB_TIMEOUT: Database timeout
+ *
+ * These are the response codes
+ * - 200 all good
+ * - 403 forbidden (if your ip is not allowed)
+ * - 503 some service unavailable
+ * - 507 insufficient storage
+ *
+ * Finally you can get a complete response by using as query string, ?extended
  */
 @Path("/v1/system-status")
 public class MonitorResource {
 
-    static private long LOCAL_FS_TIMEOUT=1000;
-    static private long CACHE_TIMEOUT=1000;
-    static private long ASSET_FS_TIMEOUT=1000;
-    static private long INDEX_TIMEOUT=1000;
-    static private long DB_TIMEOUT=1000;
-    private ExecutorService executorService = Executors.newCachedThreadPool();
+    public  static final String EXTENDED = "extended";
+    private static final int   INSUFFICIENT_STORAGE = 507;
+    private static final int   SERVICE_UNAVAILABLE  = 503;
+    private static final int   FORBIDDEN            = 403;
+    private final MonitorHelper monitorHelper = new MonitorHelper();
 
     @NoCache
     @GET
     @JSONP
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response test(final @Context HttpServletRequest request) throws Throwable {
+    public Response getMonitorStats(final @Context HttpServletRequest request) throws Throwable {
+
         // force authentication
-        //InitDataObject auth = webResource.init(false, httpRequest, false);  cannot require as we cannot assume db or other subsystems are functioning
-        boolean extendedFormat = false;
-        if (request.getQueryString() != null && "extended".equals(request.getQueryString())) {
-            extendedFormat = true;
-        }
+        final boolean extendedFormat = (request.getQueryString() != null && EXTENDED.equals(request.getQueryString()));
+        final Boolean accessAllowed  = this.monitorHelper.getAccessAllowed(request);
+        ResponseBuilder builder = null;
 
-        final String config_ip_acl = Config.getStringProperty("SYSTEM_STATUS_API_IP_ACL", "127.0.0.1/32,0:0:0:0:0:0:0:1/128");
-        String[] aclIPs = null;
-        if(config_ip_acl != null)
-            aclIPs = config_ip_acl.split(",");
+        if (accessAllowed) {
 
-        String clientIP = HttpRequestDataUtil.getIpAddress(request).toString().split("/")[1];
-        Boolean accessAllowed = false;
-        if(aclIPs == null) {
-            accessAllowed = true;
-        }
-        else {
-            for(String aclIP : aclIPs) {
-                if(IPUtils.isIpInCIDR(clientIP, aclIP)){
-                    accessAllowed = true;
-                    break;
-                }
-            }
-        }
+            final MonitorResultView monitorResultView =
+                    this.monitorHelper.getMonitorStats(extendedFormat);
+            if (extendedFormat) {
 
-        try {
-            ResponseBuilder builder = null;
-            if (accessAllowed) {
-                IndiciesInfo idxs = APILocator.getIndiciesAPI().loadIndicies();
-                LOCAL_FS_TIMEOUT = Config.getLongProperty("SYSTEM_STATUS_API_LOCAL_FS_TIMEOUT", 1000);
-                CACHE_TIMEOUT = Config.getLongProperty("SYSTEM_STATUS_API_CACHE_TIMEOUT", 1000);
-                ASSET_FS_TIMEOUT = Config.getLongProperty("SYSTEM_STATUS_API_ASSET_FS_TIMEOUT", 1000);
-                INDEX_TIMEOUT = Config.getLongProperty("SYSTEM_STATUS_API_INDEX_TIMEOUT", 1000);
-                DB_TIMEOUT = Config.getLongProperty("SYSTEM_STATUS_API_DB_TIMEOUT", 1000);
+                builder = Response.ok(monitorResultView);
+            } else {
+                if (monitorResultView.isDotCMSHealthy()) {
 
-                boolean dotCMSHealthy = false;
-                boolean frontendHealthy = false;
-                boolean backendHealthy = false;
-                final boolean dbSelectHealthy = dbCount();
-                final boolean indexLiveHealthy = indexCount(idxs.live);
-                final boolean indexWorkingHealthy = indexCount(idxs.working);
-                final boolean cacheHealthy = cache();
-                final boolean localFSHealthy = localFiles();
-                final boolean assetFSHealthy = assetFiles();
+                    builder = Response.ok(StringPool.BLANK);
+                } else if (!monitorResultView.getSubSystemView().isIndexWorkingHealthy() &&
+                        monitorResultView.getSubSystemView().isDbSelectHealthy() &&
+                        monitorResultView.getSubSystemView().isIndexLiveHealthy() &&
+                        monitorResultView.getSubSystemView().isCacheHealthy() &&
+                        monitorResultView.getSubSystemView().isLocalFSHealthy() &&
+                        monitorResultView.getSubSystemView().isAssetFSHealthy()) {
 
-                if (dbSelectHealthy && indexLiveHealthy && indexWorkingHealthy && cacheHealthy && localFSHealthy && assetFSHealthy) {
-                    dotCMSHealthy = true;
-                    frontendHealthy = true;
-                    backendHealthy = true;
-                } else if (!indexWorkingHealthy && dbSelectHealthy && indexLiveHealthy && cacheHealthy && localFSHealthy && assetFSHealthy) {
-                    frontendHealthy = true;
-                }
-
-                if (extendedFormat) {
-                    final String serverID = getServerID();
-                    final String clusterID = getClusterID();
-                    final JSONObject jo = new JSONObject();
-                    jo.put("serverID", serverID);
-                    jo.put("clusterID", clusterID);
-                    jo.put("dotCMSHealthy", dotCMSHealthy);
-                    jo.put("frontendHealthy", frontendHealthy);
-                    jo.put("backendHealthy", backendHealthy);
-
-                    final JSONObject subsystems = new JSONObject();
-                    subsystems.put("dbSelectHealthy", dbSelectHealthy);
-                    subsystems.put("indexLiveHealthy", indexLiveHealthy);
-                    subsystems.put("indexWorkingHealthy", indexWorkingHealthy);
-                    subsystems.put("cacheHealthy", cacheHealthy);
-                    subsystems.put("localFSHealthy", localFSHealthy);
-                    subsystems.put("assetFSHealthy", assetFSHealthy);
-                    jo.put("subsystems", subsystems);
-
-                    builder = Response.ok(jo.toString(2), MediaType.APPLICATION_JSON);
+                    builder = Response.status(INSUFFICIENT_STORAGE).entity(StringPool.BLANK).type(MediaType.APPLICATION_JSON);
                 } else {
-                    if (dotCMSHealthy) {
-                        builder = Response.ok("", MediaType.APPLICATION_JSON);
-                    } else if (!indexWorkingHealthy && dbSelectHealthy && indexLiveHealthy && cacheHealthy && localFSHealthy && assetFSHealthy) {
-                        builder = Response.status(507).entity("").type(MediaType.APPLICATION_JSON);
-                    } else {
-                        builder = Response.status(503).entity("").type(MediaType.APPLICATION_JSON);
-                    }
+                    builder = Response.status(SERVICE_UNAVAILABLE).entity(StringPool.BLANK).type(MediaType.APPLICATION_JSON);
                 }
             }
-            else {
-                builder = Response.status(403).entity("").type(MediaType.APPLICATION_JSON); // Access is forbidden because IP is not in any range in ACL list
-            }
-            builder.header("Access-Control-Expose-Headers", "Authorization");
-            builder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
-            return builder.build();
+        } else {
+            builder = Response.status(FORBIDDEN).entity(StringPool.BLANK).type(MediaType.APPLICATION_JSON); // Access is forbidden because IP is not in any range in ACL list
         }
-        finally{
-            DbConnectionFactory.closeSilently();
-        }
+
+        // todo: create an AccessControl annotation with a key and value.
+        builder.header("Access-Control-Expose-Headers", "Authorization");
+        builder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+        return builder.build();
     }
 
 
-    
-    private boolean dbCount() throws Throwable {
-
-        return Failsafe
-                .with(breaker())
-                .withFallback(Boolean.FALSE)
-                .get(this.failFastBooleanPolicy(DB_TIMEOUT, () -> {
-                    
-                    try{
-                        final DotConnect dc = new DotConnect();
-                        dc.setSQL("select count(*) as count from contentlet");
-                        final List<Map<String,String>> results = dc.loadResults();
-                        long count = Long.parseLong(results.get(0).get("count"));
-                        return count > 0;
-                    }
-                    finally{
-                        DbConnectionFactory.closeSilently();
-                    }
-                }));
-
-    }
-    
-    
-    private boolean indexCount(final String idx) throws Throwable {
-
-        return Failsafe
-            .with(breaker())
-            .withFallback(Boolean.FALSE)
-            .get(this.failFastBooleanPolicy(INDEX_TIMEOUT, () -> {
-                try{
-                    Client client=new ESClient().getClient();
-                    final long totalHits = client.prepareSearch(idx)
-                        .setQuery(QueryBuilders.termQuery("_type", "content"))
-                        .setSize(0)
-                        .execute()
-                        .actionGet()
-                        .getHits()
-                        .getTotalHits();
-                    return totalHits > 0;
-                }finally{
-                    DbConnectionFactory.closeSilently();
-                }
-        }));
-    }
-    
-    private boolean cache() throws Throwable {
-
-
-        return Failsafe
-            .with(breaker())
-            .withFallback(Boolean.FALSE)
-            .get(this.failFastBooleanPolicy(CACHE_TIMEOUT, () -> {
-                try{
-                    Identifier id =  APILocator.getIdentifierAPI().loadFromCache(Host.SYSTEM_HOST);
-                    if(id==null || !UtilMethods.isSet(id.getId())){
-                         id =  APILocator.getIdentifierAPI().find(Host.SYSTEM_HOST);
-                         id =  APILocator.getIdentifierAPI().loadFromCache(Host.SYSTEM_HOST);
-                    }
-                    return id!=null && UtilMethods.isSet(id.getId());
-                }finally{
-                    DbConnectionFactory.closeSilently();
-                }
-            }));
-
-    }
-    
-    
-    
-    
-    
-    private boolean localFiles() throws Throwable {
-
-        return Failsafe
-            .with(breaker())
-            .withFallback(Boolean.FALSE)
-            .get(this.failFastBooleanPolicy(LOCAL_FS_TIMEOUT, () -> {
-    
-                final String realPath = ConfigUtils.getDynamicContentPath() 
-                        + File.separator 
-                        + "monitor" 
-                        + File.separator 
-                        + System.currentTimeMillis();
-                File file = new File(realPath);
-                file.mkdirs();
-                file.delete();
-                file.createNewFile();
-                
-                try(OutputStream os = Files.newOutputStream(file.toPath())){
-                    os.write(UUIDUtil.uuid().getBytes());
-                }
-                file.delete();
-                return Boolean.TRUE;
-            }));
-    }
-    
-    
-    private boolean assetFiles() throws Throwable {
-    
-        return Failsafe
-            .with(breaker())
-            .withFallback(Boolean.FALSE)
-            .get(this.failFastBooleanPolicy(ASSET_FS_TIMEOUT, () -> {
-                final String realPath =APILocator.getFileAssetAPI().getRealAssetPath(UUIDUtil.uuid());
-                final File file = new File(realPath);
-                file.mkdirs();
-                file.delete();
-                file.createNewFile();
-                
-                try(OutputStream os = Files.newOutputStream(file.toPath())){
-                    os.write(UUIDUtil.uuid().getBytes());
-                }
-                file.delete();
-        
-                return true;
-            }));
-    }
-
-    private Callable<Boolean> failFastBooleanPolicy(long thresholdMilliseconds, final Callable<Boolean> callable) throws Throwable{
-        return ()-> {
-            try {
-                Future<Boolean> task = executorService.submit(callable);
-                return task.get(thresholdMilliseconds, TimeUnit.MILLISECONDS);
-            } catch (ExecutionException e) {
-                throw new InternalServerErrorException("Internal exception ", e.getCause());
-            } catch (TimeoutException e) {
-                throw new InternalServerErrorException("Execution aborted, exceeded allowed " + thresholdMilliseconds + " threshold", e.getCause());
-            }
-        };
-    }
-
-    private Callable<String> failFastStringPolicy(long thresholdMilliseconds, final Callable<String> callable) throws Throwable{
-        return ()-> {
-            try {
-                Future<String> task = executorService.submit(callable);
-                return task.get(thresholdMilliseconds, TimeUnit.MILLISECONDS);
-            } catch (ExecutionException e) {
-                throw new InternalServerErrorException("Internal exception ", e.getCause());
-            } catch (TimeoutException e) {
-                throw new InternalServerErrorException("Execution aborted, exceeded allowed " + thresholdMilliseconds + " threshold", e.getCause());
-            }
-        };
-    }
-
-    private CircuitBreaker breaker(){
-        return new CircuitBreaker();
-    }
-
-    private String getServerID() throws Throwable{
-        return Failsafe
-                .with(breaker())
-                .withFallback("UNKNOWN")
-                .get(failFastStringPolicy(LOCAL_FS_TIMEOUT, () -> {
-                    String serverID = "UNKNOWN";
-                    try {
-                        serverID=APILocator.getServerAPI().readServerId();
-                    }
-                    catch (Throwable t) {
-                        Logger.error(this, "Error - unable to get the serverID", t);
-                    }
-                    return serverID;
-                }));
-
-    }
-
-    private String getClusterID() throws Throwable{
-        return Failsafe
-                .with(breaker())
-                .withFallback("UNKNOWN")
-                .get(failFastStringPolicy(DB_TIMEOUT, () -> {
-                    String clusterID = "UNKNOWN";
-                    try {
-                        clusterID=ClusterFactory.getClusterId();
-                    }
-                    catch (Throwable t) {
-                        Logger.error(this, "Error - unable to get the clusterID", t);
-                    }
-                    return clusterID;
-                }));
-
-    }
 }
