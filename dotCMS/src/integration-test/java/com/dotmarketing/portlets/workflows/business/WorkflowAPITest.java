@@ -3115,7 +3115,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
         final WorkflowScheme scheme = workflowAPI.findSystemWorkflowScheme();
         final WorkflowAPIImpl impl = WorkflowAPIImpl.class.cast(workflowAPI);
         final int rows = impl.pushIndexUpdate(scheme, user);
-        assertTrue(rows > 0);
+        assertTrue(rows >= 1);
 
     }
 
