@@ -95,10 +95,12 @@ describe('DotThemeSelectorComponent', () => {
     describe('On Init', () => {
         beforeEach(() => {});
 
-        it('should set url and the page size for the pagination service', () => {
+        it('should set url, the page size and hostid for the pagination service', () => {
+            spyOn(paginatorService, 'setExtraParams');
             fixture.detectChanges();
             expect(paginatorService.paginationPerPage).toBe(8);
             expect(paginatorService.url).toBe('v1/themes');
+            expect(paginatorService.setExtraParams).toHaveBeenCalledWith('hostId', '123-xyz-567-xxl');
         });
 
         it('should set the current theme variable based on the Input value', () => {

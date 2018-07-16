@@ -4,7 +4,7 @@ import { DotMessageService } from '../../../../../api/services/dot-messages-serv
 import { PaginatorService } from '../../../../../api/services/paginator/paginator.service';
 import { DataGrid, LazyLoadEvent } from 'primeng/primeng';
 import { Observable } from 'rxjs/Observable';
-import { Site } from 'dotcms-js/dotcms-js';
+import { Site, SiteService } from 'dotcms-js/dotcms-js';
 
 /**
  * The DotThemeSelectorComponent is modal that
@@ -28,7 +28,7 @@ export class DotThemeSelectorComponent implements OnInit {
 
     current: DotTheme;
 
-    constructor(public dotMessageService: DotMessageService, public paginatorService: PaginatorService) {}
+    constructor(public dotMessageService: DotMessageService, public paginatorService: PaginatorService, private siteService: SiteService) {}
 
     ngOnInit() {
         this.dotMessageService
@@ -41,8 +41,11 @@ export class DotThemeSelectorComponent implements OnInit {
             ])
             .subscribe();
         this.paginatorService.url = 'v1/themes';
+        this.paginatorService.setExtraParams('hostId', this.siteService.currentSite.identifier);
         this.paginatorService.paginationPerPage = 8;
+
         this.current = this.value;
+
         Observable.fromEvent(this.searchInput.nativeElement, 'keyup')
             .debounceTime(500)
             .subscribe((keyboardEvent: Event) => {
