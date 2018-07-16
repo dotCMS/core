@@ -1833,7 +1833,6 @@
         function clearSearch () {
 
 
-                dijit.byId("structure_inode").set("value",'catchall');
                 dijit.byId("scheme_id").set("value",'catchall');
      			dijit.byId("showingSelect").set("value", "all");
      			dijit.byId("allFieldTB").set("value", "");

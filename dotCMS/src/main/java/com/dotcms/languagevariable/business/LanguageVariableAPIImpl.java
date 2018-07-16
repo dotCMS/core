@@ -14,6 +14,7 @@ import com.dotmarketing.util.UtilMethods;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import java.util.List;
 
 /**
  * Implementation class for the {@link LanguageVariableAPI}.
@@ -75,10 +76,16 @@ public class LanguageVariableAPIImpl implements LanguageVariableAPI {
             }
         } catch (DotDataException | DotSecurityException e) {
 
-            Logger.debug(this, String.format("Could not retrieve Language Variavle '%s': %s", key, e.getMessage()), e);
+            Logger.debug(this, ()-> String.format("Could not retrieve Language Variable '%s': %s", key, e.getMessage(), e));
         }
 
         return (null != languageValue)? languageValue:key;
+    }
+
+    @Override
+    public List<KeyValue> getAllLanguageVariablesKeyStartsWith(final String key,
+            final long languageId, final User user, final int limit) throws DotDataException, DotSecurityException {
+        return this.keyValueAPI.getKeyValuesByKeyStartingWith(key,languageId,APILocator.getContentTypeAPI(user).find(LANGUAGEVARIABLE),user,false,limit);
     }
 
     private String getValueFromUserLanguage(final String key, long languageId,

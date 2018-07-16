@@ -5,6 +5,7 @@ import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.HibernateUtil;
@@ -13,6 +14,7 @@ import com.dotmarketing.portlets.contentlet.action.ImportAuditUtil.ImportAuditRe
 import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.portlets.contentlet.struts.ImportContentletsForm;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.ImportUtil;
 import com.dotmarketing.util.Logger;
@@ -108,7 +110,7 @@ public class ImportContentletsAction extends DotPortletAction {
 				File file = uploadReq.getFile("file");
 				this.detectEncodeType(session, file);
 
-				ImportContentletsForm importContentletsForm = (ImportContentletsForm) form;
+				final ImportContentletsForm importContentletsForm = (ImportContentletsForm) form;
 				if(importContentletsForm.getStructure().isEmpty()){
 					SessionMessages.add(req, "error", "structure-type-is-required");
 					setForward(req, "portlet.ext.contentlet.import_contentlets");
@@ -116,6 +118,16 @@ public class ImportContentletsAction extends DotPortletAction {
 					SessionMessages.add(req, "error", "message.contentlet.file.required");
 					setForward(req, "portlet.ext.contentlet.import_contentlets");
 				} else {
+
+					final Structure hostStrucuture = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(Host.HOST_VELOCITY_VAR_NAME);
+					final boolean isHost = (hostStrucuture.getInode().equals( importContentletsForm.getStructure()));
+					if(isHost){
+						//Security measure to prevent invalid attempts to import a host.
+						SessionMessages.add(req, "error", "message.import.host.invalid");
+						setForward(req, "portlet.ext.contentlet.import_contentlets");
+						return;
+					}
+
 					try {
 						Reader reader = null;
 						CsvReader csvreader = null;

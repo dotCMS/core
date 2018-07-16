@@ -15,6 +15,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 
 import java.sql.Connection;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author Jason Tesser
@@ -144,6 +145,13 @@ public class DistributedJournalAPIImpl<T> implements DistributedJournalAPI<T> {
 	public void addIdentifierReindex(final String id) throws DotDataException {
 
 		this.distributedJournalFactory.addIdentifierReindex(id);
+	}
+
+	@WrapInTransaction
+	@Override
+	public int addIdentifierReindex(final Set<String> ids) throws DotDataException {
+
+		return this.distributedJournalFactory.addIdentifierReindex(ids);
 	}
 
 	@WrapInTransaction

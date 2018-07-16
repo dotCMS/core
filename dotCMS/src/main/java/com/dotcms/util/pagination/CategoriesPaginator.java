@@ -1,6 +1,7 @@
 package com.dotcms.util.pagination;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -21,7 +22,6 @@ import com.liferay.portal.model.User;
 public class CategoriesPaginator implements PaginatorOrdered<Category> {
 
     private final CategoryAPI categoryAPI;
-    private final AtomicInteger lastTotalRecords =  new AtomicInteger(0);
 
     @VisibleForTesting
     public CategoriesPaginator(final CategoryAPI categoryAPI){
@@ -45,10 +45,15 @@ public class CategoriesPaginator implements PaginatorOrdered<Category> {
             final PaginatedArrayList<Category> result = new PaginatedArrayList<>();
             final PaginatedCategories topLevelCategories = categoryAPI.findTopLevelCategories(user, false, offset, limit, filter, categoriesSort);
             result.setTotalResults(topLevelCategories.getTotalCount());
-            result.addAll(topLevelCategories.getCategories());
+
+            final List<Category> categories = topLevelCategories.getCategories();
+
+            if (categories != null) {
+                result.addAll(categories);
+            }
 
             return result;
-        } catch (DotDataException|DotSecurityException e) {
+        } catch (DotDataException | DotSecurityException e) {
             throw new DotRuntimeException(e);
         }
     }

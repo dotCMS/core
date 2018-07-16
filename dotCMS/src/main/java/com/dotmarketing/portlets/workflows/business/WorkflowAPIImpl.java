@@ -1,6 +1,12 @@
 package com.dotmarketing.portlets.workflows.business;
 
-import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.*;
+import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.FORCE_PUSH;
+import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WF_EXPIRE_DATE;
+import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WF_EXPIRE_TIME;
+import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WF_NEVER_EXPIRE;
+import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WF_PUBLISH_DATE;
+import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WF_PUBLISH_TIME;
+import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WHERE_TO_SEND;
 
 import com.dotcms.api.system.event.SystemMessageEventUtil;
 import com.dotcms.business.CloseDBIfOpened;
@@ -34,6 +40,7 @@ import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
+import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.AlreadyExistException;
@@ -287,6 +294,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 
+	@CloseDBIfOpened
     @Override
     public void isUserAllowToModifiedWorkflow(final User user) {
 
@@ -586,6 +594,30 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 
 		workFlowFactory.saveScheme(scheme);
+
+	}
+
+	@CloseDBIfOpened
+	public List<WorkflowScheme> findArchivedSchemes() throws DotDataException{
+		return workFlowFactory.findArchivedSchemes();
+	}
+
+	/**
+	 * This method collects all the identifiers of contents that reference the workflow and then pushes such ids into the 'distributed index journal' queue
+	 * @param scheme
+	 * @param user
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	@CloseDBIfOpened
+	int pushIndexUpdate(final WorkflowScheme scheme, final User user) throws  DotDataException, DotSecurityException {
+		final String schemeId = scheme.getId();
+		final String luceneQuery = String.format(" +wfscheme:( %s ) +working:true ", schemeId);
+
+		//We should only be considering Working content.
+		final List<ContentletSearch> searchResults = contentletAPI.searchIndex(luceneQuery, -1, 0, null, user, RESPECT_FRONTEND_ROLES);
+		final Set<String> identifiers = searchResults.stream().map(ContentletSearch::getIdentifier).collect(Collectors.toSet());
+		return distributedJournalAPI.addIdentifierReindex(identifiers);
 	}
 
 	@Override
@@ -652,6 +684,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			stopWatch.stop();
 			Logger.info(this, "Delete Workflow Scheme task DONE, duration:" +
 					DateUtil.millisToSeconds(stopWatch.getTime()) + " seconds");
+
+			//Update index
+			pushIndexUpdate(scheme, user);
 
 			this.systemMessageEventUtil.pushSimpleTextEvent
 					(LanguageUtil.get(user.getLocale(), "Workflow-deleted", scheme.getName()), user.getUserId());
@@ -916,6 +951,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		final WorkflowScheme scheme     = this.findScheme(step.getSchemeId());
 		final List<WorkflowStep> steps  = this.findSteps (scheme);
 
+		final boolean firstStepChanges = order == 0 ||
+				steps.stream().findFirst().map(
+						workflowStep -> workflowStep.getId().equals(step.getId())
+				).orElse(false);
+
 		IntStream.range(0, steps.size())
 				.filter(i -> steps.get(i).getId().equals(step.getId()))
 				.boxed()
@@ -930,6 +970,30 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			stepp.setMyOrder(i++);
 			this.saveStep(stepp, user);
 		}
+
+		if (firstStepChanges) {
+			final DotSubmitter submitter = this.concurrentFactory
+					.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
+			submitter.submit(() -> {
+				try {
+					pushIndexUpdateOnReorder(scheme.getId());
+				} catch (DotDataException e) {
+					Logger.error(getClass(),
+							"An Error occurred while attempting a reindex on reorder.", e);
+				}
+			});
+		}
+	}
+
+	/**
+	 * Once we have determined that a reorder event has affected the first position, we need to update the index.
+	 * @param schemeId
+	 * @return
+	 */
+	@CloseDBIfOpened
+	private int pushIndexUpdateOnReorder(final String schemeId) throws DotDataException {
+       final Set<String> identifiers = workFlowFactory.findNullTaskContentletIdentifiersForScheme(schemeId);
+       return distributedJournalAPI.addIdentifierReindex(identifiers);
 	}
 
 	@Override
@@ -1637,12 +1701,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@Override
 	public List<WorkFlowActionlet> findActionlets() throws DotDataException {
-		List<WorkFlowActionlet> l = new ArrayList<WorkFlowActionlet>();
-		Map<String,WorkFlowActionlet>  m = getActionlets();
-		for (String x : m.keySet()) {
-			l.add(getActionlets().get(x));
+		final List<WorkFlowActionlet> workFlowActionlets = new ArrayList<WorkFlowActionlet>();
+		final Map<String,WorkFlowActionlet>  actionlets  = getActionlets();
+		for (final String actionletName : actionlets.keySet()) {
+			workFlowActionlets.add(getActionlets().get(actionletName));
 		}
-		return l;
+		return workFlowActionlets;
 
 	}
 
@@ -1750,6 +1814,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return workFlowFactory.findParamsForActionClass(actionClass);
 	}
 
+	// note: does not need WrapInTransaction b/c it is already handling their own transaction
 	@Override
 	public void saveWorkflowActionClassParameters(final List<WorkflowActionClassParameter> params,
 												  final User user) throws DotDataException{
@@ -1788,6 +1853,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 	}
 
+	@WrapInTransaction
 	@Override
 	public WorkflowProcessor fireWorkflowPreCheckin(final Contentlet contentlet, final User user) throws DotDataException,DotWorkflowException, DotContentletValidationException{
 		return fireWorkflowPreCheckin(contentlet, user, null);
@@ -1861,8 +1927,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				if (UtilMethods.isSet(processor.getContentlet())) {
 				    HibernateUtil.addAsyncCommitListener(() -> {
                         try {
-                            APILocator.getContentletAPI().refresh(processor.getContentlet());
-                        } catch (DotDataException e) {
+							this.distributedJournalAPI.addIdentifierReindex(processor.getContentlet().getIdentifier());
+						} catch (DotDataException e) {
                             Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
                         }
                     });
@@ -2015,7 +2081,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		}
 
-		final List<WorkflowStep> steps = findStepsByContentlet(contentlet);
+		final List<WorkflowStep> steps = findStepsByContentlet(contentlet, false);
 
 		Logger.debug(this, "#findAvailableActions: for content: "   + contentlet.getIdentifier()
 				+ ", isNew: "    + isNew
@@ -2261,7 +2327,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				final BatchAction batchAction = BatchAction.class.cast(actionlet);
 				final List <?> objects = batchAction.getObjectsForBatch(actionsContext, actionClass);
 				try {
-					batchAction.executeBatchAction(user, actionsContext, actionClass, params);
+					this.executeBatchAction(user, actionsContext, actionClass, params, batchAction);
 				} catch (Exception e) {
 					failsConsumer.accept(objects, e);
 					Logger.error(getClass(),
@@ -2274,6 +2340,16 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				}
 			}
 		}
+	}
+
+	@WrapInTransaction
+	private void executeBatchAction(final User user,
+									final ConcurrentMap<String, Object> actionsContext,
+									final WorkflowActionClass actionClass,
+									final Map<String, WorkflowActionClassParameter> params,
+									final BatchAction batchAction) {
+
+		batchAction.executeBatchAction(user, actionsContext, actionClass, params);
 	}
 
 	/**
@@ -2517,7 +2593,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 				if (!schemes.stream().anyMatch(scheme -> scheme.getId().equals(action.getSchemeId()))) {
 					throw new IllegalArgumentException(LanguageUtil
-							.get(user.getLocale(), "Invalid-Action-Scheme-Error", actionId));
+							.get(user.getLocale(), "Invalid-Action-Scheme-Error", actionId, contentlet.getContentType().name(), contentlet.getInode()));
 				}
 
 				final WorkflowScheme  scheme = schemes.stream().filter
@@ -2568,6 +2644,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				.findSteps(scheme).stream().findFirst();
 	}
 
+	@WrapInTransaction
 	@Override
 	public WorkflowProcessor fireWorkflowNoCheckin(final Contentlet contentlet, final User user) throws DotDataException,DotWorkflowException, DotContentletValidationException{
 
@@ -3003,6 +3080,5 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
                 .sorted(Comparator.comparing(WorkflowTimelineItem::createdDate))
                 .collect(CollectionsUtils.toImmutableList());
 	}
-
 
 }

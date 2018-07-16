@@ -1,15 +1,5 @@
 package com.dotcms.rest.api.v1.workflow;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.dotcms.UnitTestBase;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
@@ -31,8 +21,17 @@ import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import javax.servlet.http.HttpServletRequest;
 import org.junit.Test;
+
+import javax.servlet.http.HttpServletRequest;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.eq;
 
 public class WorkflowResourceTest extends UnitTestBase {
 
@@ -51,12 +50,20 @@ public class WorkflowResourceTest extends UnitTestBase {
         new WorkflowSchemeForm.Builder().schemeName(StringPool.BLANK).build();
     }
 
+    private WorkflowScheme toWorkflowScheme(final WorkflowSchemeForm workflowSchemeForm) {
+
+        final WorkflowScheme scheme = new WorkflowScheme();
+        scheme.setName(workflowSchemeForm.getSchemeName());
+        scheme.setDescription(workflowSchemeForm.getSchemeDescription());
+        return scheme;
+    }
+
     @SuppressWarnings("unchecked")
-    private WorkflowResource mockWorkflowResource(final boolean throwWorkflowAPIException) throws Exception{
+    private WorkflowResource mockWorkflowResource(final int throwWorkflowAPIException, final WorkflowSchemeForm workflowSchemeForm) throws Exception{
         final User user = new User();
         final PermissionAPI permissionAPI = mock(PermissionAPI.class);
         final WorkflowAPI workflowAPI = mock(WorkflowAPI.class);
-        if(!throwWorkflowAPIException){
+        if(throwWorkflowAPIException == 0){
           when(workflowAPI.findScheme(anyString())).thenReturn(new WorkflowScheme ());
         } else {
             when(workflowAPI.findScheme(anyString())).thenThrow(DoesNotExistException.class);
@@ -66,9 +73,19 @@ public class WorkflowResourceTest extends UnitTestBase {
         final RoleAPI roleAPI = mock(RoleAPI.class);
         final ContentletAPI contentletAPI = mock(ContentletAPI.class);
 
-        final WorkflowHelper workflowHelper = new WorkflowHelper(workflowAPI, roleAPI, contentletAPI, permissionAPI, WorkflowImportExportUtil.getInstance());
+        //final WorkflowHelper workflowHelper = new WorkflowHelper(workflowAPI, roleAPI, contentletAPI, permissionAPI, WorkflowImportExportUtil.getInstance());
+        final WorkflowHelper workflowHelper = mock(WorkflowHelper.class);
         final ContentHelper contentHelper = mock(ContentHelper.class) ;
         final WebResource webResource = mock(WebResource.class);
+
+        if(throwWorkflowAPIException == 0) {
+            when(workflowHelper.saveOrUpdate(anyString(), any(WorkflowSchemeForm.class), eq(user))).thenReturn(this.toWorkflowScheme(workflowSchemeForm));
+        } else if(throwWorkflowAPIException == 1) {
+            doThrow(new DoesNotExistException("No exists workflow")).when(workflowHelper).saveOrUpdate(anyString(), any(WorkflowSchemeForm.class), eq(user));
+        } else {
+            doThrow(new AlreadyExistException("Error Saving workflow")).when(workflowHelper).saveOrUpdate(anyString(), any(WorkflowSchemeForm.class), eq(user));
+        }
+
 
         final InitDataObject dataObject = mock(InitDataObject.class);
         when(dataObject.getUser()).thenReturn(user);
@@ -84,8 +101,8 @@ public class WorkflowResourceTest extends UnitTestBase {
         final String uniqueSchemaName = "anyUniqueSchemaName";
         final String anyDesc = "anyDesc";
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final WorkflowResource workflowResource = mockWorkflowResource(false);
         final WorkflowSchemeForm workflowSchemeForm = new WorkflowSchemeForm.Builder().schemeArchived(false).schemeDescription(anyDesc).schemeName(uniqueSchemaName).build();
+        final WorkflowResource workflowResource = mockWorkflowResource(0, workflowSchemeForm);
         final Response response = workflowResource.saveScheme(request, workflowSchemeForm);
         final ResponseEntityView entityView = ResponseEntityView.class.cast(response.getEntity());
         assertNotNull(entityView);
@@ -100,8 +117,8 @@ public class WorkflowResourceTest extends UnitTestBase {
         final String anyRandomSchemeId = "3a5f1da7-c304-4f2b-867a-df3ef3578955";
         final String anyDesc = "anyDesc";
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final WorkflowResource workflowResource = mockWorkflowResource(false);
         final WorkflowSchemeForm workflowSchemeForm = new WorkflowSchemeForm.Builder().schemeArchived(true).schemeDescription(anyDesc).schemeName(uniqueSchemaName).build();
+        final WorkflowResource workflowResource = mockWorkflowResource(0, workflowSchemeForm);
         final Response response = workflowResource.updateScheme(request, anyRandomSchemeId, workflowSchemeForm);
         final ResponseEntityView entityView = ResponseEntityView.class.cast(response.getEntity());
         assertNotNull(entityView);
@@ -116,8 +133,8 @@ public class WorkflowResourceTest extends UnitTestBase {
         final String uniqueSchemaName = "anyUniqueSchemaName";
         final String anyDesc = "anyDesc";
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final WorkflowResource workflowResource = mockWorkflowResource(true);
         final WorkflowSchemeForm workflowSchemeForm = new WorkflowSchemeForm.Builder().schemeArchived(true).schemeDescription(anyDesc).schemeName(uniqueSchemaName).build();
+        final WorkflowResource workflowResource = mockWorkflowResource(2, workflowSchemeForm);
         final Response response = workflowResource.saveScheme(request, workflowSchemeForm);
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
     }
@@ -128,8 +145,8 @@ public class WorkflowResourceTest extends UnitTestBase {
         final String anyRandomSchemeId = "3a5f1da7-c304-4f2b-867a-df3ef3578955";
         final String anyDesc = "anyDesc";
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final WorkflowResource workflowResource = mockWorkflowResource(true);
         final WorkflowSchemeForm workflowSchemeForm = new WorkflowSchemeForm.Builder().schemeArchived(true).schemeDescription(anyDesc).schemeName(uniqueSchemaName).build();
+        final WorkflowResource workflowResource = mockWorkflowResource(1, workflowSchemeForm);
         final Response response = workflowResource.updateScheme(request, anyRandomSchemeId, workflowSchemeForm);
         assertEquals(Status.NOT_FOUND.getStatusCode(), response.getStatus());
     }

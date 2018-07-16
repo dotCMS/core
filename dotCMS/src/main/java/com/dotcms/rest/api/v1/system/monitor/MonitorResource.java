@@ -15,12 +15,18 @@ import java.util.concurrent.TimeoutException;
 
 import javax.servlet.http.HttpServletRequest;
 
+<<<<<<< HEAD
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.util.*;
+=======
+import com.dotcms.repackage.javax.ws.rs.*;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.util.WebKeys;
+>>>>>>> master
 import org.elasticsearch.client.Client;
 import org.elasticsearch.index.query.QueryBuilders;
 
@@ -37,6 +43,12 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
+<<<<<<< HEAD
+=======
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.UUIDUtil;
+import com.dotmarketing.util.UtilMethods;
+>>>>>>> master
 import com.dotmarketing.util.json.JSONObject;
 
 import net.jodah.failsafe.CircuitBreaker;
@@ -55,6 +67,7 @@ public class MonitorResource {
 
     @Context
     private HttpServletRequest httpRequest;
+<<<<<<< HEAD
 
     static long LOCAL_FS_TIMEOUT=5000;
     static long CACHE_TIMEOUT=5000;
@@ -63,6 +76,19 @@ public class MonitorResource {
     static long DB_TIMEOUT=5000;
     ExecutorService executorService = Executors.newCachedThreadPool();
 
+=======
+    
+
+
+    
+
+    final static long LOCAL_FS_TIMEOUT=5000;
+    final static long CACHE_TIMEOUT=5000;
+    final static long ASSET_FS_TIMEOUT=5000;
+    final static long INDEX_TIMEOUT=5000;
+    final static long DB_TIMEOUT=5000;
+    
+>>>>>>> master
     @NoCache
     @GET
     @JSONP
@@ -74,6 +100,7 @@ public class MonitorResource {
         boolean extendedFormat = false;
         if (request.getQueryString() != null && "extended".equals(request.getQueryString()))
             extendedFormat = true;
+<<<<<<< HEAD
 
         String config_ip_acl = Config.getStringProperty("SYSTEM_STATUS_API_IP_ACL", "127.0.0.1/32,0:0:0:0:0:0:0:1/128");
         String[] aclIPs = null;
@@ -161,11 +188,74 @@ public class MonitorResource {
             }
             builder.header("Access-Control-Expose-Headers", "Authorization");
             builder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+=======
+        System.out.println("********* extendedFormat = |" + extendedFormat + "|");
+
+        try{
+            IndiciesInfo idxs=APILocator.getIndiciesAPI().loadIndicies();
+            
+            
+            boolean dotCMSHealthy = false;
+            boolean frontendHealthy = false;
+            boolean backendHealthy = false;
+            boolean dbSelectHealthy = dbCount();
+            boolean indexLiveHealthy = indexCount(idxs.live);
+            boolean indexWorkingHealthy = indexCount(idxs.working);
+            boolean cacheHealthy = cache();
+            boolean localFSHealthy = localFiles();
+            boolean assetFSHealthy = assetFiles();
+
+            if(dbSelectHealthy && indexLiveHealthy && indexWorkingHealthy && cacheHealthy && localFSHealthy && assetFSHealthy) {
+                dotCMSHealthy = true;
+                frontendHealthy = true;
+                backendHealthy = true;
+            }
+            else if(!indexWorkingHealthy && dbSelectHealthy && indexLiveHealthy && cacheHealthy && localFSHealthy && assetFSHealthy) {
+                frontendHealthy = true;
+            }
+
+            ResponseBuilder builder = null;
+            if(extendedFormat) {
+                JSONObject jo = new JSONObject();
+                jo.put("dotCMSHealthy", dotCMSHealthy);
+                jo.put("frontendHealthy", frontendHealthy);
+                jo.put("backendHealthy", backendHealthy);
+                jo.put("DOTCMS_STARTUP_TIME", System.getProperty(WebKeys.DOTCMS_STARTUP_TIME));
+
+                JSONObject subsystems = new JSONObject();
+                subsystems.put("dbSelectHealthy", dbSelectHealthy);
+                subsystems.put("indexLiveHealthy", indexLiveHealthy);
+                subsystems.put("indexWorkingHealthy", indexWorkingHealthy);
+                subsystems.put("cacheHealthy", cacheHealthy);
+                subsystems.put("localFSHealthy", localFSHealthy);
+                subsystems.put("assetFSHealthy", assetFSHealthy);
+                jo.put("subsystems", subsystems);
+
+                builder = Response.ok(jo.toString(2), MediaType.APPLICATION_JSON);
+            }
+            else {
+                if (dotCMSHealthy) {
+                    builder = Response.ok("", MediaType.APPLICATION_JSON);
+                } else if (!indexWorkingHealthy && dbSelectHealthy && indexLiveHealthy && cacheHealthy && localFSHealthy && assetFSHealthy) {
+                    builder = Response.status(507).entity("").type(MediaType.APPLICATION_JSON);
+                } else {
+                    builder = Response.status(503).entity("").type(MediaType.APPLICATION_JSON);
+                }
+            }
+    
+            builder.header("Access-Control-Expose-Headers", "Authorization");
+            builder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+    
+>>>>>>> master
             return builder.build();
         }
         finally{
             DbConnectionFactory.closeSilently();
         }
+<<<<<<< HEAD
+=======
+
+>>>>>>> master
     }
 
 
@@ -175,7 +265,11 @@ public class MonitorResource {
         return Failsafe
                 .with(breaker())
                 .withFallback(Boolean.FALSE)
+<<<<<<< HEAD
                 .get(this.failFastBooleanPolicy(DB_TIMEOUT, () -> {
+=======
+                .get(failFastPolicy(DB_TIMEOUT, () -> { 
+>>>>>>> master
                     
                     try{
                         DotConnect dc = new DotConnect();
@@ -197,7 +291,11 @@ public class MonitorResource {
         return Failsafe
             .with(breaker())
             .withFallback(Boolean.FALSE)
+<<<<<<< HEAD
             .get(this.failFastBooleanPolicy(INDEX_TIMEOUT, () -> {
+=======
+            .get(failFastPolicy(INDEX_TIMEOUT, () -> {
+>>>>>>> master
                 try{
                     Client client=new ESClient().getClient();
                     long totalHits = client.prepareSearch(idx)
@@ -220,7 +318,11 @@ public class MonitorResource {
         return Failsafe
             .with(breaker())
             .withFallback(Boolean.FALSE)
+<<<<<<< HEAD
             .get(this.failFastBooleanPolicy(CACHE_TIMEOUT, () -> {
+=======
+            .get(failFastPolicy(CACHE_TIMEOUT, () -> { 
+>>>>>>> master
                 try{
                     Identifier id =  APILocator.getIdentifierAPI().loadFromCache(Host.SYSTEM_HOST);
                     if(id==null || !UtilMethods.isSet(id.getId())){
@@ -244,7 +346,11 @@ public class MonitorResource {
         boolean test = Failsafe
             .with(breaker())
             .withFallback(Boolean.FALSE)
+<<<<<<< HEAD
             .get(this.failFastBooleanPolicy(LOCAL_FS_TIMEOUT, () -> {
+=======
+            .get(failFastPolicy(LOCAL_FS_TIMEOUT, () -> { 
+>>>>>>> master
     
                 final String realPath = ConfigUtils.getDynamicContentPath() 
                         + File.separator 
@@ -271,7 +377,11 @@ public class MonitorResource {
         return Failsafe
             .with(breaker())
             .withFallback(Boolean.FALSE)
+<<<<<<< HEAD
             .get(this.failFastBooleanPolicy(ASSET_FS_TIMEOUT, () -> {
+=======
+            .get(failFastPolicy(ASSET_FS_TIMEOUT, () -> { 
+>>>>>>> master
                 final String realPath =APILocator.getFileAssetAPI().getRealAssetPath(UUIDUtil.uuid());
                 File file = new File(realPath);
                 file.mkdirs();
@@ -285,6 +395,7 @@ public class MonitorResource {
         
                 return true;
             }));
+<<<<<<< HEAD
     }
 
     private Callable<Boolean> failFastBooleanPolicy(long thresholdMilliseconds, Callable<Boolean> callable) throws Throwable{
@@ -304,6 +415,15 @@ public class MonitorResource {
         return ()-> {
             try {
                 Future<String> task = executorService.submit(callable);
+=======
+
+    }
+    ExecutorService executorService = Executors.newCachedThreadPool();
+    private Callable<Boolean> failFastPolicy(long thresholdMilliseconds, Callable<Boolean> callable) throws Throwable{
+        return ()-> {
+            try {
+                Future<Boolean> task = executorService.submit(callable);
+>>>>>>> master
                 return task.get(thresholdMilliseconds, TimeUnit.MILLISECONDS);
             } catch (ExecutionException e) {
                 throw new InternalServerErrorException("Internal exception ", e.getCause());
@@ -312,6 +432,7 @@ public class MonitorResource {
             }
         };
     }
+<<<<<<< HEAD
 
     private CircuitBreaker breaker(){
         return new CircuitBreaker();
@@ -350,4 +471,10 @@ public class MonitorResource {
                 }));
 
     }
+=======
+    private CircuitBreaker breaker(){
+        return new CircuitBreaker();
+    }
+    
+>>>>>>> master
 }

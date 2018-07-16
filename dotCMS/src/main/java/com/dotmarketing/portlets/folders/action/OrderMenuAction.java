@@ -27,6 +27,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -61,7 +62,7 @@ public class OrderMenuAction extends DotPortletAction {
 	FolderAPI fapi = APILocator.getFolderAPI();
 	ActionRequestImpl actionRequest = null;
 
-	@WrapInTransaction
+
 	public void processAction(ActionMapping mapping, ActionForm form, PortletConfig config, ActionRequest req, ActionResponse res) throws Exception {
 
 		perAPI = APILocator.getPermissionAPI();
@@ -83,7 +84,6 @@ public class OrderMenuAction extends DotPortletAction {
 			List<Object> items = (List)h.get("menuItems");
 			boolean show = ((Boolean)h.get("showSaveButton")).booleanValue();
 
-			Folder parentFolder = (Folder)h.get("mainMenuFolder");
 			List<Object> l = _getHtmlTreeList(items, show, depth);
 
 			if(!((Boolean)l.get(1)).booleanValue()){
@@ -109,30 +109,25 @@ public class OrderMenuAction extends DotPortletAction {
 					_sendToReferral(req,res,req.getParameter("referer"));
 					return;
 				}
-				
-                // we have to clear navs after db commit
-                for(Treeable treeable : navs){
-                    Identifier id = APILocator.getIdentifierAPI().find(treeable.getIdentifier());
-                    if("folder".equals(id.getAssetType())){
-                        CacheLocator.getNavToolCache().removeNavByPath(id.getHostId(), id.getPath());
-                    }
-                    
-                    Folder folder = APILocator.getFolderAPI().findParentFolder(treeable, user, false);
-                    String folderInode = (folder==null) ? FolderAPI.SYSTEM_FOLDER : folder.getInode();
-                    CacheLocator.getNavToolCache().removeNav(id.getHostId(), folderInode);
-                    CacheLocator.getHTMLPageCache().remove(id.getId());
-                    CacheLocator.getNavToolCache().removeNav(id.getHostId(), FolderAPI.SYSTEM_FOLDER);
-                }
-
-
-                
-                
-                
 				_sendToReferral(req,res,"/html/portlet/ext/folders/redirect_after_order.jsp");
-				
-				
 
-				
+
+				// we have to clear navs after db commit
+				for(Treeable treeable : navs){
+					Identifier id = APILocator.getIdentifierAPI().find(treeable.getIdentifier());
+					if("folder".equals(id.getAssetType())){
+						CacheLocator.getNavToolCache().removeNavByPath(id.getHostId(), id.getPath());
+					}
+
+					Folder folder = APILocator.getFolderAPI().findParentFolder(treeable, user, false);
+					String folderInode = (folder==null) ? FolderAPI.SYSTEM_FOLDER : folder.getInode();
+					CacheLocator.getNavToolCache().removeNav(id.getHostId(), folderInode);
+					CacheLocator.getHTMLPageCache().remove(id.getId());
+					CacheLocator.getNavToolCache().removeNav(id.getHostId(), FolderAPI.SYSTEM_FOLDER);
+				}
+
+				DateUtil.sleep(1500L);
+
 				return;
 			}
 
@@ -254,6 +249,7 @@ public class OrderMenuAction extends DotPortletAction {
 	 *             An error occurred during the save process or the query String
 	 *             parameters may be incorrect.
 	 */
+	@WrapInTransaction
 	private List<Treeable> _orderMenuItemsDragAndDrop(Map<String, String> items)
 			throws Exception {
 		List<Treeable> ret = new ArrayList<Treeable>();
@@ -278,7 +274,7 @@ public class OrderMenuAction extends DotPortletAction {
 						hashInodes.put(index, value);
 						hashMap.put(smallParameterName, hashInodes);
 					} else {
-						HashMap<Integer, String> hashInodes = (HashMap<Integer, String>) hashMap
+						HashMap<Integer, String> hashInodes = hashMap
 								.get(smallParameterName);
 						hashInodes.put(index, value);
 					}
@@ -288,7 +284,7 @@ public class OrderMenuAction extends DotPortletAction {
 			for(String key:hashMap.keySet()) {
 				HashMap<Integer, String> hashInodes = hashMap.get(key);
 				for (int i = 0; i < hashInodes.size(); i++) {
-					final String inode = (String) hashInodes.get(i);
+					final String inode = hashInodes.get(i);
 					ShortyId shorty = APILocator.getShortyAPI().getShorty(inode).orElse(null);
 					if(shorty==null) {
 					    continue;
@@ -311,7 +307,7 @@ public class OrderMenuAction extends DotPortletAction {
 					    final Contentlet out = APILocator.getContentletAPI().checkout(cvi.getWorkingInode(), user,false);
 					    out.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
 					    out.setSortOrder(i);
-					    final boolean isLive = out.isLive();
+					    final boolean isLive = out.hasLiveVersion();
 						final Contentlet in = APILocator.getContentletAPI().checkin(out, user, false);
 						ret.add(in);
 						if(isLive) {

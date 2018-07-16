@@ -1,5 +1,7 @@
 package com.dotcms.keyvalue.business;
 
+import com.dotcms.util.CollectionsUtils;
+import java.util.Collections;
 import java.util.List;
 
 import com.dotcms.cache.KeyValueCache;
@@ -180,6 +182,31 @@ public class KeyValueAPIImpl implements KeyValueAPI {
                             e.getMessage()), e);
         }
         return results.build();
+    }
+
+    public List<KeyValue> getKeyValuesByKeyStartingWith(final String key, final long languageId, final ContentType contentType, final User user,
+            final boolean respectFrontendRoles, final int limit) {
+        final StringBuilder query = new StringBuilder();
+        try {
+
+            if (UtilMethods.isSet(contentType) && UtilMethods.isSet(contentType.variable())) {
+                query.append("+contentType:").append(contentType.variable());
+                query.append(" +").append(contentType.variable()).append(".key:").append(key).append("*");
+            } else {
+                query.append("+baseType:").append(BaseContentType.KEY_VALUE.getType());
+                query.append(" +key:").append(key).append("*");
+            }
+
+            query.append((languageId >= 0) ? " +languageId:" + languageId : StringPool.BLANK);
+            query.append(" +live:true +deleted:false");
+            List<Contentlet> contentResults =
+                    contentletAPI.search(query.toString(), limit, -1, StringPool.BLANK, user, respectFrontendRoles);
+            return contentResults.stream().map(this::fromContentlet).collect(CollectionsUtils.toImmutableList());
+        } catch (DotDataException | DotSecurityException e) {
+            Logger.error(this, String.format("An error occurred when retrieving a KeyValue object with key '%s': %s", key,
+                    e.getMessage()), e);
+        }
+        return Collections.EMPTY_LIST;
     }
 
 }

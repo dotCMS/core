@@ -89,8 +89,17 @@
         var actionRows = '';
         var scheme = schemeWrapper.scheme;
         var steps = schemeWrapper.steps;
+
+        if(!steps || steps.length == 0){
+          return '';
+        }
+
         for(var i=0; i < steps.length; i++){
           actionRows += renderActions(steps[i]);
+        }
+
+        if(actionRows === ''){
+           return '';
         }
 
         var schemeTemplate
@@ -396,7 +405,7 @@
                     dojo.byId('bulkActionsContainer').innerHTML = markUp;
                     dojo.query(".wfAction").onclick(
                        function(e){
-                           var buttonElement = e.toElement;
+                           var buttonElement = e.target;
                            var popupShown = showPopupIfRequired(buttonElement);
                            if(popupShown){
                                return;

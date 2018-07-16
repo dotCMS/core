@@ -2,7 +2,6 @@ package com.dotcms.rest.api.v1.contenttype;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
-import static org.jruby.runtime.Helpers.map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -41,10 +40,15 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -52,7 +56,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 
+@RunWith(DataProviderRunner.class)
 public class ContentTypeResourceTest {
 
 	private static final ObjectMapper mapper = new ObjectMapper();
@@ -193,8 +200,8 @@ public class ContentTypeResourceTest {
 		verify(paginationUtil).getPage(request, user, filter, page, perPage, orderBy, direction, extraParams);
 	}
 
-	@Test
-	public void getContentTypesUnValidType() throws DotDataException {
+	@Test(expected = DotDataException.class)
+	public void getContentTypes_GivenNotExistingTypeName_ShouldThrowError() throws DotDataException {
 		final HttpServletRequest request  = mock(HttpServletRequest.class);
 		final WebResource webResource = mock(WebResource.class);
 		final InitDataObject initDataObject = mock(InitDataObject.class);
@@ -208,18 +215,13 @@ public class ContentTypeResourceTest {
 		String orderBy = "name";
 		OrderDirection direction = OrderDirection.ASC;
 
-		final PaginationUtil paginationUtil = mock(PaginationUtil.class);
 		final PermissionAPI permissionAPI = mock(PermissionAPI.class);
 
 		final ContentTypeResource resource = new ContentTypeResource
-				(new ContentTypeHelper(), webResource, paginationUtil, WorkflowHelper.getInstance(), permissionAPI);
+				(new ContentTypeHelper(), webResource,new PaginationUtil(new ContentTypesPaginator()) , WorkflowHelper.getInstance(), permissionAPI);
 
-		try {
-			resource.getContentTypes(request, filter, page, perPage, orderBy, direction.toString(), "FORM2");
-			assertTrue(false);
-		} catch (DotDataException e) {
-			assertTrue(true);
-		}
+		resource.getContentTypes(request, filter, page, perPage, orderBy, direction.toString(), "FORM2");
+
 	}
 
 	@Test
@@ -518,6 +520,69 @@ public class ContentTypeResourceTest {
 				APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentTypeVisibleByDefault);
 			}
 		}
+	}
+
+	@DataProvider
+	public static Object[] dataProviderExcludeTypesCommunity() {
+		return new Object[] {
+			new TestCase(false, true),
+			new TestCase(true, false)
+		};
+	}
+
+	private static class TestCase {
+		boolean isCommunity;
+		boolean typesIncluded;
+
+		public TestCase(final boolean isCommunity, final boolean typesIncluded) {
+			this.isCommunity = isCommunity;
+			this.typesIncluded = typesIncluded;
+		}
+	}
+
+	@Test
+	@UseDataProvider("dataProviderExcludeTypesCommunity")
+	public void testGetRecentBaseTypes_whenCommunity_excludeTypes(final TestCase testCase)
+		throws DotSecurityException, DotDataException {
+
+		final WebResource webResource = mock(WebResource.class);
+		final InitDataObject dataObject = mock(InitDataObject.class);
+		final User adminUser = APILocator.getUserAPI().loadUserById("dotcms.org.1");
+
+		when(dataObject.getUser()).thenReturn(adminUser);
+
+		when(webResource
+			.init(anyString(), anyBoolean(), any(HttpServletRequest.class), anyBoolean(),
+				anyString())).thenReturn(dataObject);
+
+		final ContentTypeHelper contentTypeHelper = Mockito.spy(new ContentTypeHelper(webResource,
+				APILocator.getStructureAPI(), ContentTypeUtil.getInstance()));
+
+		Mockito.doReturn(!testCase.isCommunity).when(contentTypeHelper).isStandardOrEnterprise();
+
+		final ContentTypeResource resource = new ContentTypeResource
+			(contentTypeHelper, webResource, new PaginationUtil(new ContentTypesPaginator()),
+				WorkflowHelper.getInstance(), APILocator.getPermissionAPI());
+
+		final HttpServletRequest request = mock(HttpServletRequest.class);
+		final HttpSession session = mock(HttpSession.class);
+
+		when(session.getAttribute(WebKeys.CTX_PATH)).thenReturn("/"); //prevents a NPE
+		when(request.getSession()).thenReturn(session);
+
+		final Response response = resource.getRecentBaseTypes(request);
+
+		assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+		final ResponseEntityView responseEntityView = ResponseEntityView.class
+			.cast(response.getEntity());
+		final List<BaseContentTypesView> types = List.class.cast(responseEntityView.getEntity());
+
+		assertEquals(testCase.typesIncluded, types.stream().anyMatch(this::isEnterpriseBaseType));
+	}
+
+	private boolean isEnterpriseBaseType(final BaseContentTypesView baseContentTypesView) {
+		return baseContentTypesView.getName().equals(BaseContentType.FORM.name())
+			|| baseContentTypesView.getName().equals(BaseContentType.PERSONA.name());
 	}
 
 	private static class TestHashMap<K, V> extends HashMap<K, V> {

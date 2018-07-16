@@ -9,6 +9,7 @@ import com.dotmarketing.portlets.personas.model.IPersona;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.dotmarketing.util.PageMode;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.common.collect.ImmutableMap;
 
@@ -22,6 +23,7 @@ public class ViewAsPageStatus {
     private IPersona persona;
     private Language language;
     private Contentlet device;
+    private PageMode pageMode;
 
     ViewAsPageStatus(){}
 
@@ -50,5 +52,14 @@ public class ViewAsPageStatus {
 
     public Contentlet getDevice() {
         return device;
+    }
+
+    ViewAsPageStatus setPageMode(PageMode pageMode) {
+        this.pageMode = pageMode;
+        return this;
+    }
+
+    public PageMode getPageMode() {
+        return pageMode;
     }
 }
