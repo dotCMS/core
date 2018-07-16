@@ -4,19 +4,18 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
-import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.*;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -124,6 +123,12 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         //The second record should have a lower score
         assertTrue(maxScore != searchHits.getHits()[1].getScore());
         assertTrue(searchHits.getHits()[0].getScore() > searchHits.getHits()[1].getScore());
+    }
+
+    @Test
+    public void testModDateDotRawFormatIsValid(){
+        final SearchHits searchHits = instance.indexSearch("+moddate_dotraw: *t*", 20, 0, "modDate desc");
+        assertFalse(UtilMethods.isSet(searchHits.getHits()));
     }
 
     private float getMaxScore(SearchHit[] hits) {
