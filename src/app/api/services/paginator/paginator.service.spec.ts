@@ -33,6 +33,13 @@ describe('PaginatorService setting', () => {
         this.paginatorService.get().subscribe((items) => (this.result = items));
         expect(this.lastConnection.request.url).toContain('v1/urldemo?archive=false&system=true');
     });
+
+    it('should remove extra parameters', () => {
+        this.paginatorService.setExtraParams('name', 'John');
+        this.paginatorService.deleteExtraParams('name');
+
+        expect(this.paginatorService.extraParams.get('name')).toBeNull();
+    });
 });
 
 describe('PaginatorService getting', () => {

@@ -3,7 +3,8 @@
     <ng-content></ng-content>
 </dot-action-header>
 
-<p-dataTable [value]="items"
+<p-dataTable #dataTable
+             [value]="items"
              [rows]="paginatorService.paginationPerPage"
              [paginator]="true"
              [pageLinks]="paginatorService.maxLinksPage"

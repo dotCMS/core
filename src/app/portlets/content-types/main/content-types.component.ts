@@ -79,7 +79,7 @@ export class ContentTypesPortletComponent implements OnInit {
             this.dotContentletService.getAllContentTypes(),
             this.dotLicenseService.isEnterprise(),
             this.pushPublishService.getEnvironments().map((environments: DotEnvironment[]) => !!environments.length)
-        ).subscribe((res) => {
+        ).subscribe(res => {
             const baseTypes: StructureTypeView[] = res[1];
             const rowActionsMap = {
                 delete: true,
@@ -105,8 +105,10 @@ export class ContentTypesPortletComponent implements OnInit {
     }
 
     public changeBaseTypeSelector(value: string) {
-        this.listing.paginatorService.setExtraParams('type', value);
-        this.listing.loadData(0);
+        value !== ''
+            ? this.listing.paginatorService.setExtraParams('type', value)
+            : this.listing.paginatorService.deleteExtraParams('type');
+        this.listing.loadFirstPage();
     }
 
     private createRowActions(rowActionsMap: any): DotDataTableAction[] {
@@ -116,10 +118,10 @@ export class ContentTypesPortletComponent implements OnInit {
             listingActions.push({
                 menuItem: {
                     label: this.dotMessageService.get('contenttypes.action.delete'),
-                    command: (item) => this.removeConfirmation(item),
+                    command: item => this.removeConfirmation(item),
                     icon: 'fa-trash'
                 },
-                shouldShow: (item) => !item.fixed
+                shouldShow: item => !item.fixed
             });
         }
 
@@ -131,7 +133,7 @@ export class ContentTypesPortletComponent implements OnInit {
             listingActions.push({
                 menuItem: {
                     label: this.dotMessageService.get('contenttypes.content.push_publish'),
-                    command: (item) => this.pushPublishContentType(item)
+                    command: item => this.pushPublishContentType(item)
                 }
             });
         }
@@ -140,7 +142,7 @@ export class ContentTypesPortletComponent implements OnInit {
             listingActions.push({
                 menuItem: {
                     label: this.dotMessageService.get('contenttypes.content.add_to_bundle'),
-                    command: (item) => this.addToBundleContentType(item)
+                    command: item => this.addToBundleContentType(item)
                 }
             });
         }
@@ -160,9 +162,9 @@ export class ContentTypesPortletComponent implements OnInit {
     }
 
     private setContentTypes(s: StructureTypeView[]): ButtonModel[] {
-        return s.map((structureTypeView) => {
+        return s.map((structureTypeView: StructureTypeView) => {
             return {
-                command: ($event) => {
+                command: $event => {
                     this.createContentType(structureTypeView.name.toLocaleLowerCase(), $event);
                 },
                 icon: this.contentTypesInfoService.getIcon(structureTypeView.name),

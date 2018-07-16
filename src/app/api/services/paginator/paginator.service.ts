@@ -72,6 +72,16 @@ export class PaginatorService {
         }
     }
 
+    /**
+     * Delete extra parameters of the eventual request.
+     * @param {string} name
+     *
+     * @memberof DotThemeSelectorComponent
+     */
+    deleteExtraParams(name: string): void {
+        this.extraParams.delete(name);
+    }
+
     get extraParams(): URLSearchParams {
         return this._extraParams;
     }

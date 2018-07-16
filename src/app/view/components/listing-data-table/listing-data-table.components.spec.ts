@@ -304,4 +304,14 @@ describe('ListingDataTableComponent', () => {
         comp.loadCurrentPage();
         expect(comp.loading).toEqual(false);
     });
+
+    it('should load first page of resutls and set pagination to 1', () => {
+        comp.dataTable.first = 3;
+        spyOn(this.paginatorService, 'get').and.returnValue(Observable.of(this.items));
+
+        comp.loadFirstPage();
+
+        expect(comp.dataTable.first).toBe(1);
+        expect(comp.items.length).toBe(7);
+    });
 });
