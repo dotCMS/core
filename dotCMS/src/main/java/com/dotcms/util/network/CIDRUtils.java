@@ -82,7 +82,7 @@ public class CIDRUtils {
         BigInteger mask = new BigInteger(1, maskBuffer.array()).not().shiftRight(prefixLength);
 
         final ByteBuffer buffer = ByteBuffer.wrap(inetAddress.getAddress());
-        BigInteger ipVal = new BigInteger(1, buffer.array());
+        final BigInteger ipVal = new BigInteger(1, buffer.array());
 
         final BigInteger startIp = ipVal.and(mask);
         final BigInteger endIp = startIp.add(mask.not());
