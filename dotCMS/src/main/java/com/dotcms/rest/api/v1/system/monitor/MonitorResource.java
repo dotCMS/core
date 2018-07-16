@@ -50,17 +50,12 @@ import net.jodah.failsafe.Failsafe;
 @Path("/v1/system-status")
 public class MonitorResource {
 
-    private final WebResource webResource = new WebResource();
-
-    @Context
-    private HttpServletRequest httpRequest;
-
-    static long LOCAL_FS_TIMEOUT=1000;
-    static long CACHE_TIMEOUT=1000;
-    static long ASSET_FS_TIMEOUT=1000;
-    static long INDEX_TIMEOUT=1000;
-    static long DB_TIMEOUT=1000;
-    ExecutorService executorService = Executors.newCachedThreadPool();
+    static private long LOCAL_FS_TIMEOUT=1000;
+    static private long CACHE_TIMEOUT=1000;
+    static private long ASSET_FS_TIMEOUT=1000;
+    static private long INDEX_TIMEOUT=1000;
+    static private long DB_TIMEOUT=1000;
+    private ExecutorService executorService = Executors.newCachedThreadPool();
 
     @NoCache
     @GET
