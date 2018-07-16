@@ -2,41 +2,32 @@ package com.dotmarketing.portlets.htmlpageasset.business.render;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.cms.login.LoginServiceAPI;
-import com.dotcms.rendering.velocity.services.VelocityResourceKey;
-import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
-import com.dotmarketing.beans.ContainerStructure;
+import com.dotcms.rendering.velocity.viewtools.LanguageWebAPI;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionLevel;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.containers.business.ContainerAPI;
-import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
-import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetInfo;
-import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRendered;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRenderedBuilder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.templates.business.TemplateAPI;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
-import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UUIDUtil;
 import com.liferay.portal.model.User;
-import org.apache.velocity.context.Context;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * {@link HTMLPageAssetRenderedAPI} implementation
@@ -178,7 +169,9 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         final IHTMLPage htmlPage = this.htmlPageAssetAPI.getPageByPath(pageUri, host, language.getId(), mode.showLive);
 
         return htmlPage != null || defaultLanguage.equals(language)? htmlPage :
-                this.htmlPageAssetAPI.getPageByPath(pageUri, host, defaultLanguage.getId(), mode.showLive);
+                (LanguageWebAPI.canDefaultPageToDefaultLanguage())?
+                        this.htmlPageAssetAPI.getPageByPath(pageUri, host, defaultLanguage.getId(), mode.showLive):
+                        htmlPage;
     }
 
     private Host resolveSite(final HttpServletRequest request, final User user, final PageMode mode) throws DotDataException, DotSecurityException {
