@@ -68,7 +68,7 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
      */
     onModelChange(value) {
         this.value = value;
-        this.propagateChange(value);
+        this.propagateChange(value ? value.replace(/\r/g, '').split('\n').join('\r\n') : value);
     }
 
     /**
