@@ -181,6 +181,17 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
     }
 
     @Override
+    public Boolean shutdown(final String name){
+        final DotConcurrentImpl dotConcurrent =
+                this.submitterMap.get(name);
+        if(null == dotConcurrent){
+           return false;
+        }
+        dotConcurrent.shutdown();
+        return true;
+    }
+
+    @Override
     public String getObjectName() {
 
         return MBEAN_OBJECT_NAME;
@@ -409,6 +420,12 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
             this.shutdown = true;
             return this.threadPoolExecutor.shutdownNow();
         }
+
+        @Override
+        public boolean isAborting() {
+            return (threadPoolExecutor.isTerminated() ||  threadPoolExecutor.isShutdown() || threadPoolExecutor.isTerminating());
+        }
+
 
         @Override
         public String toString() {

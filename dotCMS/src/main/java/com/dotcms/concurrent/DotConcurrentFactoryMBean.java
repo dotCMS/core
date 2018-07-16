@@ -16,4 +16,12 @@ public interface DotConcurrentFactoryMBean extends DotMBean {
      * @return Map
      */
     public Map<String, Object> getStats (String name);
+
+    /**
+     * Shuts down a particular submitter
+     * @param name
+     * @return boolean
+     */
+    public Boolean shutdown(String name);
+
 } // E:O:F:DotConcurrentFactoryMBean.

@@ -51,5 +51,11 @@ public interface DotSubmitter extends Executor, Serializable {
      */
     public List<Runnable> shutdownNow();
 
+    /**
+     * Checks if the thread pool is terminated terminating or shutdown
+     * @return
+     */
+    public boolean isAborting();
+
 
 } // E:O:F:DotExecutor.
