@@ -1,22 +1,12 @@
 package com.dotcms.journal.business;
 
-import com.dotmarketing.common.db.Params;
-import com.google.common.primitives.Ints;
-import java.sql.CallableStatement;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.*;
-
-import oracle.jdbc.OracleTypes;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI.DateType;
 import com.dotmarketing.common.business.journal.DistributedJournalFactory;
 import com.dotmarketing.common.business.journal.IndexJournal;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.db.Params;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -25,6 +15,19 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.primitives.Ints;
+import java.sql.CallableStatement;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import oracle.jdbc.OracleTypes;
 
 /**
  * Provides access to all the routines associated to the re-indexation process 
@@ -502,7 +505,7 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
         }
 
         final List<Params> insertParams = new ArrayList<>(identifiers.size());
-        final Date date = new Date();
+        final Date date = DbConnectionFactory.now();
         for(final String identifier:identifiers){
             insertParams.add(
                  new Params(
