@@ -102,6 +102,10 @@ public class ThemeResource {
         if (UtilMethods.isSet(hostId)){
             //Validate hostId is valid
             host = hostAPI.find(hostId, user, false);
+        }else{
+            return ExceptionMapperUtil
+                    .createResponse(map("message", "Host ID is required"), "Host ID is required",
+                            Status.BAD_REQUEST);
         }
 
         if (!UtilMethods.isSet(host)){
