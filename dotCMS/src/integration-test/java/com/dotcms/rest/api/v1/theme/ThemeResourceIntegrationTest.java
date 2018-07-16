@@ -36,11 +36,13 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import java.util.Map;
 
 public class ThemeResourceIntegrationTest {
 
@@ -49,7 +51,6 @@ public class ThemeResourceIntegrationTest {
     private static UserAPI userAPI;
     private static User user;
     private static Host host;
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -72,7 +73,7 @@ public class ThemeResourceIntegrationTest {
         final Response response = resource.findThemes(getHttpRequest(), host.getIdentifier(), 0, -1,
                 OrderDirection.ASC.name(), null);
 
-        validateResponse(response, -1);
+        validateFindThemesResponse(response, -1);
     }
 
     @Test
@@ -92,7 +93,7 @@ public class ThemeResourceIntegrationTest {
         final Response response = resource.findThemes(getHttpRequest(), host.getIdentifier(), 0, 1,
                 OrderDirection.ASC.name(), null);
 
-        validateResponse(response, 1);
+        validateFindThemesResponse(response, 1);
     }
 
 
@@ -103,7 +104,7 @@ public class ThemeResourceIntegrationTest {
         final Response response = resource.findThemes(getHttpRequest(), host.getIdentifier(), 0, -1,
                 OrderDirection.ASC.name(), "ne");
 
-        validateResponse(response, -1);
+        validateFindThemesResponse(response, -1);
     }
 
     @Test
@@ -113,7 +114,7 @@ public class ThemeResourceIntegrationTest {
         final Response response = resource.findThemes(getHttpRequest(), host.getIdentifier(), 0, 1,
                 OrderDirection.ASC.name(), "ne");
 
-        validateResponse(response, 1);
+        validateFindThemesResponse(response, 1);
     }
 
     @Test
@@ -125,7 +126,13 @@ public class ThemeResourceIntegrationTest {
         assertEquals(Status.OK.getStatusCode(), response.getStatus());
         final HashMap folder =  (HashMap) ((ResponseEntityView) response.getEntity()).getEntity();
 
-        assertEquals(folderExpected.getMap(), folder);
+        assertNull(folder.remove(THEME_THUMBNAIL_KEY));
+
+        Map<String, Object> mapExpected = folderExpected.getMap();
+        assertEquals(mapExpected.size(), folder.size());
+
+        mapExpected.entrySet().forEach(expectedEntry -> assertEquals(expectedEntry.getValue(),
+                folder.get(expectedEntry.getKey())));
     }
 
     @Test
@@ -155,14 +162,10 @@ public class ThemeResourceIntegrationTest {
             final ThemeResource resource = new ThemeResource();
             final Response response = resource.findThemeById(getHttpRequest(), folder.getInode());
             assertEquals(Status.OK.getStatusCode(), response.getStatus());
-            final String responseString = response.getEntity().toString();
-            final JsonNode jsonNode = objectMapper.readTree(responseString);
 
-            final List<JsonNode> responseList = CollectionsUtils
-                    .asList(jsonNode.get("entity").elements());
-
-            assertNotNull(responseList.get(0).get(THEME_THUMBNAIL_KEY));
-            assertEquals(thumbnail.getIdentifier(), responseList.get(0).get(THEME_THUMBNAIL_KEY).textValue());
+            Map entity = (Map) ((ResponseEntityView) response.getEntity()).getEntity();
+            assertNotNull(entity.get(THEME_THUMBNAIL_KEY));
+            assertEquals(thumbnail.getIdentifier(), entity.get(THEME_THUMBNAIL_KEY));
 
         } finally {
 
@@ -196,12 +199,9 @@ public class ThemeResourceIntegrationTest {
             final ThemeResource resource = new ThemeResource();
             final Response response = resource.findThemeById(getHttpRequest(), folder.getInode());
             assertEquals(Status.OK.getStatusCode(), response.getStatus());
-            final String responseString = response.getEntity().toString();
-            final JsonNode jsonNode = objectMapper.readTree(responseString);
 
-            final List<JsonNode> responseList = CollectionsUtils
-                    .asList(jsonNode.get("entity").elements());
-            assertNull(responseList.get(0).get(THEME_THUMBNAIL_KEY).textValue());
+            Map entity = (Map) ((ResponseEntityView) response.getEntity()).getEntity();
+            assertNull(entity.get(THEME_THUMBNAIL_KEY));
 
         } finally {
 
@@ -236,12 +236,9 @@ public class ThemeResourceIntegrationTest {
             final ThemeResource resource = new ThemeResource();
             final Response response = resource.findThemeById(getHttpRequest(), folder.getInode());
             assertEquals(Status.OK.getStatusCode(), response.getStatus());
-            final String responseString = response.getEntity().toString();
-            final JsonNode jsonNode = objectMapper.readTree(responseString);
+            final Map entity = (Map) (((ResponseEntityView) response.getEntity())).getEntity();
 
-            final List<JsonNode> responseList = CollectionsUtils
-                    .asList(jsonNode.get("entity").elements());
-            assertNull(responseList.get(0).get(THEME_THUMBNAIL_KEY).textValue());
+            assertNull(entity.get(THEME_THUMBNAIL_KEY));
 
         } finally {
 
@@ -260,15 +257,14 @@ public class ThemeResourceIntegrationTest {
         assertEquals(Status.NOT_FOUND.getStatusCode(), response.getStatus());
     }
 
-    private void validateResponse(final Response response, final int perPage) throws IOException {
+    private void validateFindThemesResponse(final Response response, final int perPage) throws IOException {
         assertEquals(Status.OK.getStatusCode(), response.getStatus());
 
         final String totalEntries = response.getHeaderString("X-Pagination-Total-Entries");
-        final String responseString = response.getEntity().toString();
-        final JsonNode jsonNode = objectMapper.readTree(responseString);
+        final Collection entities = (Collection) ((ResponseEntityView) response.getEntity()).getEntity();
 
         final List<JsonNode> responseList = CollectionsUtils
-                .asList(jsonNode.get("entity").elements());
+                .asList(entities.iterator());
 
         assertTrue(UtilMethods.isSet(responseList));
 
