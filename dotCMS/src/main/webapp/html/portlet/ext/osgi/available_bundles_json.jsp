@@ -3,7 +3,7 @@
 <%@page import="java.util.ArrayList"%>
 <%@page import="java.io.File"%>
 <%@page import="java.util.List"%>
-<%@ page import="com.dotmarketing.util.OSGIUtil" %>
+<%@ page import="org.apache.felix.framework.OSGIUtil" %>
 
 <%!
     /**

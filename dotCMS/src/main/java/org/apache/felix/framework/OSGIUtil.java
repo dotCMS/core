@@ -1,12 +1,16 @@
-package com.dotmarketing.util;
+package org.apache.felix.framework;
 
-import com.dotcms.rendering.velocity.viewtools.StringsWebApi;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.osgi.OSGIProxyServlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.ResourceCollectorUtil;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -21,10 +25,10 @@ import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import javax.servlet.ServletContext;
 import org.apache.commons.io.FileUtils;
-import org.apache.felix.framework.FrameworkFactory;
 import org.apache.felix.framework.util.FelixConstants;
 import org.apache.felix.http.proxy.DispatcherTracker;
 import org.apache.felix.main.AutoProcessor;
@@ -45,6 +49,7 @@ public class OSGIUtil {
     private List<String> dotCMSJarPrefixes = ImmutableList
             .copyOf(CollectionsUtils.list("dotcms", "ee-"));
 
+    private static final String WEB_INF_FOLDER = "/WEB-INF";
     private static final String FELIX_BASE_DIR = "felix.base.dir";
     private static final String FELIX_FILEINSTALL_DIR = "felix.fileinstall.dir";
     private static final String FELIX_UNDEPLOYED_DIR = "felix.undeployed.dir";
@@ -75,7 +80,7 @@ public class OSGIUtil {
     private OSGIUtil () {
     }
 
-    private static Framework felixFramework;
+    private Framework felixFramework;
     private ServletContext servletContext;
 
     /**
@@ -98,9 +103,12 @@ public class OSGIUtil {
      */
     private Properties defaultProperties() {
         Properties felixProps = new Properties();
-        String felixDirectory = new File(Config.getStringProperty(FELIX_BASE_DIR, Config.CONTEXT.getRealPath("/WEB-INF") + File.separator + "felix")).getAbsolutePath();
+        final String felixDirectory = new File(Config
+                .getStringProperty(FELIX_BASE_DIR,
+                        Config.CONTEXT.getRealPath(WEB_INF_FOLDER) + File.separator + "felix"))
+                .getAbsolutePath();
 
-        Logger.info(this, "Felix base dir: " + felixDirectory);
+        Logger.info(this, () -> "Felix base dir: " + felixDirectory);
 
         felixProps.put(FELIX_BASE_DIR, felixDirectory);
         felixProps.put(AUTO_DEPLOY_DIR_PROPERTY, felixDirectory + File.separator + "bundle");
@@ -147,7 +155,8 @@ public class OSGIUtil {
         // fetch the 'felix.base.dir' property and check if exists. On the props file the prop needs to
         for (String key : FELIX_DIRECTORIES) {
             if (new File(felixProps.getProperty(key)).mkdirs()) {
-                Logger.info(this.getClass(), "Building Directory:" + felixProps.getProperty(key));
+                Logger.info(this.getClass(),
+                        () -> "Building Directory:" + felixProps.getProperty(key));
             }
         }
 
@@ -193,7 +202,7 @@ public class OSGIUtil {
 
             // Start the framework.
             felixFramework.start();
-            Logger.info(this, "osgi felix framework started");
+            Logger.info(this, () -> "osgi felix framework started");
         } catch (Exception ex) {
             Logger.error(this, "Could not create framework: " + ex);
             throw new RuntimeException(ex);
@@ -222,19 +231,33 @@ public class OSGIUtil {
             if (null != felixFramework) {
 
                 BundleContext bundleContext = HostActivator.instance().getBundleContext();
+                final BundleContext frameworkBundleContext = felixFramework.getBundleContext();
 
-                //Unregistering ToolBox services
-                ServiceReference toolBoxService = getBundleContext().getServiceReference(PrimitiveToolboxManager.class.getName());
-                if (toolBoxService != null) {
-                    bundleContext.ungetService(toolBoxService);
+                if (null != bundleContext && null != frameworkBundleContext) {
+                    //Unregistering ToolBox services
+                    final ServiceReference toolBoxService = frameworkBundleContext
+                            .getServiceReference(PrimitiveToolboxManager.class.getName());
+                    if (toolBoxService != null) {
+                        bundleContext.ungetService(toolBoxService);
+                    }
+
+                    //Unregistering Workflow services
+                    final ServiceReference workflowService = frameworkBundleContext
+                            .getServiceReference(WorkflowAPIOsgiService.class.getName());
+                    if (workflowService != null) {
+                        bundleContext.ungetService(workflowService);
+                    }
+                } else {
+                    Logger.warn(this,
+                            () -> "Unable to unregistering services while stopping felix");
                 }
+            }
+        } catch (Exception e) {
+            Logger.warn(this, "Error unregistering services while stopping felix", e);
+        }
 
-                //Unregistering Workflow services
-                ServiceReference workflowService = getBundleContext().getServiceReference(WorkflowAPIOsgiService.class.getName());
-                if (workflowService != null) {
-                    bundleContext.ungetService(workflowService);
-                }
-
+        try {
+            if (null != felixFramework) {
                 // Stop felix
                 felixFramework.stop();
 
@@ -242,17 +265,8 @@ public class OSGIUtil {
                 felixFramework.waitForStop(0);
             }
         } catch (Exception e) {
-            Logger.warn(this, "exception while stopping felix!", e);
+            Logger.warn(this, "Error while stopping felix!", e);
         }
-    }
-
-    /**
-     * Get bundle context
-     *
-     * @return BundleContext
-     */
-    public BundleContext getBundleContext() {
-        return felixFramework.getBundleContext();
     }
 
     public Boolean isInitialized() {
@@ -300,12 +314,13 @@ public class OSGIUtil {
                 if (key.equals(FELIX_BASE_DIR)) {
                     // Allow the property in the file to be felix.base.dir
                     properties.put(key, Config.getStringProperty(key));
-                    Logger.info(this, "Found property  " + key + "=" + Config.getStringProperty(key));
+                    Logger.info(this,
+                            () -> "Found property  " + key + "=" + Config.getStringProperty(key));
                 } else {
                     String value = (UtilMethods.isSet(Config.getStringProperty(key, null))) ? Config.getStringProperty(key) : null;
                     String felixKey = key.substring(6);
                     properties.put(felixKey, value);
-                    Logger.info(OSGIUtil.class, "Found property  " + felixKey + "=" + value);
+                    Logger.info(OSGIUtil.class, () -> "Found property  " + felixKey + "=" + value);
                 }
             }
         }
@@ -313,69 +328,79 @@ public class OSGIUtil {
     }
 
     /**
-     * Returns the packages inside the <strong>osgi-extra.conf</strong> and the osgi-extra-generate.conf files
-     * If neither of those files are there, it will generate the osgi-extra-generate.conf based off the classpath
-     * for the OSGI configuration property <strong>org.osgi.framework.system.packages.extra</strong>.
-     * <br/><br/>
-     * The property <strong>org.osgi.framework.system.packages.extra</strong> is use to set the list of packages the
-     * dotCMS context in going to expose to the OSGI context.
+     * Returns the packages inside the <strong>osgi-extra.conf</strong> and the
+     * osgi-extra-generate.conf files If neither of those files are there, it will generate the
+     * osgi-extra-generate.conf based off the classpath for the OSGI configuration property
+     * <strong>org.osgi.framework.system.packages.extra</strong>. <br/><br/> The property
+     * <strong>org.osgi.framework.system.packages.extra</strong> is use to set the list of packages
+     * the dotCMS context in going to expose to the OSGI context.
      *
      * @return String
      * @throws IOException Any IOException
      */
     public String getExtraOSGIPackages() throws IOException {
 
+        final File extraPackagesFile = new File(FELIX_EXTRA_PACKAGES_FILE);
+        final File extraPackagesGeneratedFile = new File(FELIX_EXTRA_PACKAGES_FILE_GENERATED);
 
-		final File[] felixExtras = { new File(FELIX_EXTRA_PACKAGES_FILE),
-				new File(FELIX_EXTRA_PACKAGES_FILE_GENERATED) };
+        // if neither exist, we generate a FELIX_EXTRA_PACKAGES_FILE_GENERATED
+        if (!(extraPackagesFile.exists() || extraPackagesGeneratedFile.exists())) {
 
-    // if neither exist, we generate a FELIX_EXTRA_PACKAGES_FILE_GENERATED
-    if (!(felixExtras[0].exists() || felixExtras[1].exists())) {
-      StringBuilder bob = new StringBuilder();
-      final Collection<String> list = ResourceCollectorUtil.getResources(dotCMSJarPrefixes);
-      for (final String name : list) {
-        if (name.charAt(0) == '/' || name.contains(":")) {
-          continue;
-        }
-        if (File.separator.equals("/")) {
-          bob.append(name.replace(File.separator, ".") + "," + "\n");
-        } else {
-          // Zip entries have '/' as separator on all platforms
-          bob.append((name.replace(File.separator, ".").replace("/", ".")) + "," + "\n");
-        }
-      }
-
-        	bob.append("org.osgi.framework,\n")
-            .append( "org.osgi.framework.wiring,\n" )
-            .append( "org.osgi.service.packageadmin,\n" )
-            .append( "org.osgi.framework.startlevel,\n")
-            .append( "org.osgi.service.startlevel,\n" )
-            .append( "org.osgi.service.url,\n" )
-			.append( "org.osgi.util.tracker,\n" )
-			.append( "javax.inject.Qualifier,\n")
-			.append( "javax.servlet.resources,\n" )
-			.append( "javax.servlet;javax.servlet.http;version=3.1.0\n"
-            );
-
-			try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(
-					Files.newOutputStream(Paths.get(FELIX_EXTRA_PACKAGES_FILE_GENERATED)), "utf-8"))) {
-				writer.write(bob.toString());
-			}
-        }
-
-        final StringWriter sw = new StringWriter();
-        for(File f: felixExtras) {
-            if(f.exists()) {
-                try(InputStream inputStream = Files.newInputStream(f.toPath())){
-                    sw.append(IOUtils.toString(inputStream));
+            final StringBuilder bob = new StringBuilder();
+            final Collection<String> list = ResourceCollectorUtil.getResources(dotCMSJarPrefixes);
+            for (final String name : list) {
+                if (name.charAt(0) == '/' || name.contains(":")) {
+                    continue;
                 }
+                if ("/".equals(File.separator)) {
+                    bob.append(name.replace(File.separator, ".")).append(",").append("\n");
+                } else {
+                    // Zip entries have '/' as separator on all platforms
+                    bob.append(name.replace(File.separator, ".").replace("/", ".")).append(",")
+                            .append("\n");
+                }
+            }
+
+            bob.append("org.osgi.framework,\n")
+                    .append("org.osgi.framework.wiring,\n")
+                    .append("org.osgi.service.packageadmin,\n")
+                    .append("org.osgi.framework.startlevel,\n")
+                    .append("org.osgi.service.startlevel,\n")
+                    .append("org.osgi.service.url,\n")
+                    .append("org.osgi.util.tracker,\n")
+                    .append("javax.inject.Qualifier,\n")
+                    .append("javax.servlet.resources,\n")
+                    .append("javax.servlet;javax.servlet.http;version=3.1.0\n"
+                    );
+
+            try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(
+                    Files.newOutputStream(Paths.get(FELIX_EXTRA_PACKAGES_FILE_GENERATED)),
+                    "utf-8"))) {
+                writer.write(bob.toString());
             }
         }
 
+        StringWriter stringWriter;
+        if (extraPackagesFile.exists()) {
+            stringWriter = readExtraPackagesFiles(extraPackagesFile);
+        } else {
+            stringWriter = readExtraPackagesFiles(extraPackagesGeneratedFile);
+        }
 
         //Clean up the properties, it is better to keep it simple and in a standard format
-        return sw.toString().replaceAll("\\\n", "").replaceAll("\\\r", "").replaceAll("\\\\", "");
+        return stringWriter.toString().replaceAll("\\\n", "").
+                replaceAll("\\\r", "").replaceAll("\\\\", "");
+    }
 
+    private StringWriter readExtraPackagesFiles(final File extraPackagesFile)
+            throws IOException {
+
+        final StringWriter writer = new StringWriter();
+        try (InputStream inputStream = Files.newInputStream(extraPackagesFile.toPath())) {
+            writer.append(IOUtils.toString(inputStream));
+        }
+
+        return writer;
     }
 
     /**
@@ -387,23 +412,32 @@ public class OSGIUtil {
      * @return String
      */
     private String getFelixPath(String felixDirProperty, String manualDefaultPath) {
-        String felixPath;
+        String felixPath = null;
 
         try {
-            felixPath = getBundleContext().getProperty(felixDirProperty);
+            if (this.getConfig().containsKey(felixDirProperty)) {
+                felixPath = (String) this.getConfig().get(felixDirProperty);
+            }
         } catch (Exception ex) {
-            Logger.error(this, String.format("Unable to find the felix '%s' folder path from OSGI bundle context. Trying to fetch it from Config.CONTEXT as real path from '/WEB-INF/felix/%s'", manualDefaultPath, manualDefaultPath), ex);
+            Logger.error(this, String.format(
+                    "Unable to find the felix '%s' folder path from OSGI bundle context. Trying to fetch it from Config.CONTEXT as real path from '/WEB-INF/felix/%s'",
+                    manualDefaultPath, manualDefaultPath), ex);
 
             try {
-                felixPath = Config.CONTEXT.getRealPath("/WEB-INF") + File.separator + "felix" + File.separator + manualDefaultPath;
+                felixPath = Config.CONTEXT.getRealPath(WEB_INF_FOLDER) + File.separator + "felix"
+                        + File.separator + manualDefaultPath;
             } catch (Exception ex2) {
-                Logger.error(this, String.format("Unable to find the felix '%s' folder real path from Config.CONTEXT. Setting it manually to '/WEB-INF/felix/%s'", manualDefaultPath, manualDefaultPath), ex2);
+                Logger.error(this, String.format(
+                        "Unable to find the felix '%s' folder real path from Config.CONTEXT. Setting it manually to '/WEB-INF/felix/%s'",
+                        manualDefaultPath, manualDefaultPath), ex2);
                 felixPath = "/WEB-INF/felix/" + manualDefaultPath;
             }
         }
 
         if (felixPath == null) {
-            Logger.error(this, String.format("Path '%s' was not successfully set. Setting it manually to '/WEB-INF/felix/%s'", manualDefaultPath, manualDefaultPath));
+            Logger.error(this, String.format(
+                    "Path '%s' was not successfully set. Setting it manually to '/WEB-INF/felix/%s'",
+                    manualDefaultPath, manualDefaultPath));
             felixPath = "/WEB-INF/felix/" + manualDefaultPath;
         }
 
@@ -422,7 +456,9 @@ public class OSGIUtil {
         boolean created = false;
         File directory = new File(path);
         if (!directory.exists()) {
-            Logger.debug(this, String.format("Felix directory %s does not exist. Trying to create it...", path));
+            Logger.debug(this,
+                    () -> String.format("Felix directory %s does not exist. Trying to create it...",
+                            path));
             created = directory.mkdirs();
             if (!created) {
                 Logger.error(this, String.format("Unable to create Felix directory: %s", path));
@@ -500,11 +536,11 @@ public class OSGIUtil {
     public String getBaseDirectory(ServletContext context) {
         String baseDirectory = null;
         if (context != null) {
-            baseDirectory = context.getRealPath("/WEB-INF");
+            baseDirectory = context.getRealPath(WEB_INF_FOLDER);
         }
 
         if (!UtilMethods.isSet(baseDirectory)) {
-            baseDirectory = Config.CONTEXT.getRealPath("/WEB-INF");
+            baseDirectory = Config.CONTEXT.getRealPath(WEB_INF_FOLDER);
 
             if (!UtilMethods.isSet(baseDirectory)) {
                 baseDirectory = parseBaseDirectoryFromConfig();
@@ -527,9 +563,9 @@ public class OSGIUtil {
      * @return String
      */
     public String parseBaseDirectoryFromConfig() {
-        String baseDirectory = Config.getStringProperty(FELIX_BASE_DIR, "/WEB-INF");
-        if (baseDirectory.endsWith("/WEB-INF")) {
-            baseDirectory = baseDirectory.substring(0, baseDirectory.indexOf(("/WEB-INF")) + 8);
+        String baseDirectory = Config.getStringProperty(FELIX_BASE_DIR, WEB_INF_FOLDER);
+        if (baseDirectory.endsWith(WEB_INF_FOLDER)) {
+            baseDirectory = baseDirectory.substring(0, baseDirectory.indexOf((WEB_INF_FOLDER)) + 8);
         }
 
         return baseDirectory;
@@ -545,7 +581,7 @@ public class OSGIUtil {
         Bundle foundBundle = null;
 
         //Get the list of existing bundles
-        Bundle[] bundles = OSGIUtil.getInstance().getBundleContext().getBundles();
+        Bundle[] bundles = this.getBundles();
         for (Bundle bundle : bundles) {
             if (bundleName.equalsIgnoreCase(bundle.getSymbolicName())) {
                 foundBundle = bundle;
@@ -596,6 +632,34 @@ public class OSGIUtil {
         }
 
         return osgiBundleService;
+    }
+
+    private Framework getFelixFramework() {
+        return this.felixFramework;
+    }
+
+    public Map<String, Object> getConfig() {
+        return ((Felix) getFelixFramework()).getConfig();
+    }
+
+    public Bundle[] getBundles() {
+        return ((Felix) getFelixFramework()).getBundles();
+    }
+
+    public Bundle getBundle(long id) {
+        return ((Felix) getFelixFramework()).getBundle(id);
+    }
+
+    public Bundle getBundle(String location) {
+        return ((Felix) getFelixFramework()).getBundle(location);
+    }
+
+    public Bundle getBundle(Class clazz) {
+        return ((Felix) getFelixFramework()).getBundle(clazz);
+    }
+
+    public Bundle getBundle() {
+        return ((Felix) getFelixFramework()).getBundle();
     }
 
 }
