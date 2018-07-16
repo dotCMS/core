@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.htmlpageasset.business.render;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.cms.login.LoginServiceAPI;
+import com.dotcms.rendering.velocity.viewtools.LanguageWebAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -24,7 +25,6 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDUtil;
 import com.liferay.portal.model.User;
-import org.apache.velocity.exception.ResourceNotFoundException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -168,13 +168,10 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
         final IHTMLPage htmlPage = this.htmlPageAssetAPI.getPageByPath(pageUri, host, language.getId(), mode.showLive);
 
-        if (null == htmlPage) {
-            throw new ResourceNotFoundException(
-                    "Can't find page. Page: " + pageUri + ", Live: " + mode.showLive + ", Lang: " + language.getId());
-        }
-
         return htmlPage != null || defaultLanguage.equals(language)? htmlPage :
-                this.htmlPageAssetAPI.getPageByPath(pageUri, host, defaultLanguage.getId(), mode.showLive);
+                (LanguageWebAPI.canDefaultPageToDefaultLanguage())?
+                        this.htmlPageAssetAPI.getPageByPath(pageUri, host, defaultLanguage.getId(), mode.showLive):
+                        htmlPage;
     }
 
     private Host resolveSite(final HttpServletRequest request, final User user, final PageMode mode) throws DotDataException, DotSecurityException {
