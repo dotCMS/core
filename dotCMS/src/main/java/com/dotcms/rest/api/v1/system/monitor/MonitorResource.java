@@ -2,7 +2,6 @@ package com.dotcms.rest.api.v1.system.monitor;
 
 import java.io.File;
 import java.io.OutputStream;
-import java.net.InetAddress;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +18,7 @@ import javax.servlet.http.HttpServletRequest;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.util.HttpRequestDataUtil;
+import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.util.*;
 import org.elasticsearch.client.Client;
@@ -75,7 +75,7 @@ public class MonitorResource {
         if (request.getQueryString() != null && "extended".equals(request.getQueryString()))
             extendedFormat = true;
 
-        String config_ip_acl = Config.getStringProperty("SYSTEM_STATUS_API_IP_ACL", "127.0.0.1/32,0:0:0:0:0:0:0:1");
+        String config_ip_acl = Config.getStringProperty("SYSTEM_STATUS_API_IP_ACL", "127.0.0.1/32,0:0:0:0:0:0:0:1/128");
         String[] aclIPs = null;
         if(config_ip_acl != null)
             aclIPs = config_ip_acl.split(",");
@@ -87,7 +87,7 @@ public class MonitorResource {
         }
         else {
             for(String aclIP : aclIPs) {
-                if(HttpRequestDataUtil.isIpMatchingNetmask(clientIP, aclIP)){
+                if(IPUtils.isIpInCIDR(clientIP, aclIP)){
                     accessAllowed = true;
                     break;
                 }
