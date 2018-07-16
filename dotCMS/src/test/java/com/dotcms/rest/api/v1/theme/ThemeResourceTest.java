@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.theme;
 
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -128,7 +129,7 @@ public class ThemeResourceTest {
      * Should: Should create the follow lucene query: +parentpath:/application/themes/* +title:template.vtl host:[current_host]
      */
     @Test
-    public void testFindThemesDefaultHostId() throws Throwable  {
+    public void testFindThemesNoHostId() throws Throwable  {
 
         final HttpSession session = mock(HttpSession.class);
         when(request.getSession()).thenReturn(session);
@@ -136,7 +137,7 @@ public class ThemeResourceTest {
         final ThemeResource themeResource = new ThemeResource(mockThemePaginator, hostAPI, folderAPI, themeAPI, webResource);
         final Response response = themeResource.findThemes(request, null, 1, 3, "ASC", null);
 
-        assertEquals(response.getStatus(), Response.Status.NOT_FOUND.getStatusCode());
+        assertEquals(response.getStatus(), Status.BAD_REQUEST.getStatusCode());
     }
 
     /**
