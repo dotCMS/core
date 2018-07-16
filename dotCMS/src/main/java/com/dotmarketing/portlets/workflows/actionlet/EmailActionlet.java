@@ -158,10 +158,8 @@ public class EmailActionlet extends WorkFlowActionlet {
             }
 
             Mailer mail = new Mailer();
-
-            InternetAddress to = new InternetAddress(toName + "<" + toEmail + ">");
-            mail.setToEmail(to.toString());
-
+            mail.setToName(toName);
+            mail.setToEmail(toEmail);
             mail.setFromEmail(fromEmail);
             mail.setFromName(fromName);
             mail.setSubject(emailSubject);
