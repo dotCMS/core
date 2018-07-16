@@ -23,7 +23,7 @@ import javax.servlet.http.HttpServletRequest;
  * - Local file system
  * - Share assets
  *
- * Most of the validation are made by on a timeout, you can use these configuration
+ * Most of the validations are made based on a timeout, you can use these configuration
  * settings in order to set your own (1 second is the default, 1000millis)
  *
  * - SYSTEM_STATUS_API_LOCAL_FS_TIMEOUT: Local file system timeout
