@@ -42,13 +42,13 @@ public class CIDRUtils {
     private final int prefixLength;
 
 
-    public CIDRUtils(String cidr) throws UnknownHostException {
+    public CIDRUtils(final String cidr) throws UnknownHostException {
 
         this.cidr = cidr;
 
         /* split CIDR to address and prefix part */
         if (this.cidr.contains("/")) {
-            int index = this.cidr.indexOf("/");
+            final int index = this.cidr.indexOf("/");
             String addressPart = this.cidr.substring(0, index);
             String networkPart = this.cidr.substring(index + 1);
 
@@ -79,7 +79,7 @@ public class CIDRUtils {
             targetSize = 16;
         }
 
-        BigInteger mask = (new BigInteger(1, maskBuffer.array())).not().shiftRight(prefixLength);
+        BigInteger mask = new BigInteger(1, maskBuffer.array()).not().shiftRight(prefixLength);
 
         ByteBuffer buffer = ByteBuffer.wrap(inetAddress.getAddress());
         BigInteger ipVal = new BigInteger(1, buffer.array());
@@ -98,12 +98,12 @@ public class CIDRUtils {
     private byte[] toBytes(byte[] array, int targetSize) {
         int counter = 0;
         List<Byte> newArr = new ArrayList<Byte>();
-        while (counter < targetSize && (array.length - 1 - counter >= 0)) {
+        while (counter < targetSize && array.length - 1 - counter >= 0) {
             newArr.add(0, array[array.length - 1 - counter]);
             counter++;
         }
 
-        int size = newArr.size();
+        final int size = newArr.size();
         for (int i = 0; i < (targetSize - size); i++) {
 
             newArr.add(0, (byte) 0);
@@ -126,13 +126,13 @@ public class CIDRUtils {
     }
 
     public boolean isInRange(String ipAddress) throws UnknownHostException {
-        InetAddress address = InetAddress.getByName(ipAddress);
-        BigInteger start = new BigInteger(1, this.startAddress.getAddress());
-        BigInteger end = new BigInteger(1, this.endAddress.getAddress());
-        BigInteger target = new BigInteger(1, address.getAddress());
+        final InetAddress address = InetAddress.getByName(ipAddress);
+        final BigInteger start = new BigInteger(1, this.startAddress.getAddress());
+        final BigInteger end = new BigInteger(1, this.endAddress.getAddress());
+        final BigInteger target = new BigInteger(1, address.getAddress());
 
-        int st = start.compareTo(target);
-        int te = target.compareTo(end);
+        final int st = start.compareTo(target);
+        final int te = target.compareTo(end);
 
         return (st == -1 || st == 0) && (te == -1 || te == 0);
     }

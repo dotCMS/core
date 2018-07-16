@@ -16,14 +16,13 @@ import java.util.concurrent.TimeoutException;
 import javax.servlet.http.HttpServletRequest;
 
 import com.dotcms.enterprise.cluster.ClusterFactory;
-import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.util.*;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.index.query.QueryBuilders;
-
+import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
@@ -72,8 +71,9 @@ public class MonitorResource {
         // force authentication
         //InitDataObject auth = webResource.init(false, httpRequest, false);  cannot require as we cannot assume db or other subsystems are functioning
         boolean extendedFormat = false;
-        if (request.getQueryString() != null && "extended".equals(request.getQueryString()))
+        if (request.getQueryString() != null && "extended".equals(request.getQueryString())) {
             extendedFormat = true;
+        }
 
         String config_ip_acl = Config.getStringProperty("SYSTEM_STATUS_API_IP_ACL", "127.0.0.1/32,0:0:0:0:0:0:0:1/128");
         String[] aclIPs = null;
@@ -110,7 +110,7 @@ public class MonitorResource {
                 boolean dbSelectHealthy = dbCount();
                 boolean indexLiveHealthy = indexCount(idxs.live);
                 boolean indexWorkingHealthy = indexCount(idxs.working);
-                boolean cacheHealthy = cache();
+                final boolean cacheHealthy = cache();
                 boolean localFSHealthy = localFiles();
                 boolean assetFSHealthy = assetFiles();
 
@@ -132,7 +132,7 @@ public class MonitorResource {
                     jo.put("frontendHealthy", frontendHealthy);
                     jo.put("backendHealthy", backendHealthy);
 
-                    JSONObject subsystems = new JSONObject();
+                    final JSONObject subsystems = new JSONObject();
                     subsystems.put("dbSelectHealthy", dbSelectHealthy);
                     subsystems.put("indexLiveHealthy", indexLiveHealthy);
                     subsystems.put("indexWorkingHealthy", indexWorkingHealthy);
@@ -174,9 +174,9 @@ public class MonitorResource {
                 .get(this.failFastBooleanPolicy(DB_TIMEOUT, () -> {
                     
                     try{
-                        DotConnect dc = new DotConnect();
+                        final DotConnect dc = new DotConnect();
                         dc.setSQL("select count(*) as count from contentlet");
-                        List<Map<String,String>> results = dc.loadResults();
+                        final List<Map<String,String>> results = dc.loadResults();
                         long count = Long.parseLong(results.get(0).get("count"));
                         return count > 0;
                     }
@@ -196,7 +196,7 @@ public class MonitorResource {
             .get(this.failFastBooleanPolicy(INDEX_TIMEOUT, () -> {
                 try{
                     Client client=new ESClient().getClient();
-                    long totalHits = client.prepareSearch(idx)
+                    final long totalHits = client.prepareSearch(idx)
                         .setQuery(QueryBuilders.termQuery("_type", "content"))
                         .setSize(0)
                         .execute()
@@ -256,7 +256,7 @@ public class MonitorResource {
                     os.write(UUIDUtil.uuid().getBytes());
                 }
                 file.delete();
-                return new Boolean(true);
+                return Boolean.TRUE;
             }));
         return test;
     }
@@ -269,7 +269,7 @@ public class MonitorResource {
             .withFallback(Boolean.FALSE)
             .get(this.failFastBooleanPolicy(ASSET_FS_TIMEOUT, () -> {
                 final String realPath =APILocator.getFileAssetAPI().getRealAssetPath(UUIDUtil.uuid());
-                File file = new File(realPath);
+                final File file = new File(realPath);
                 file.mkdirs();
                 file.delete();
                 file.createNewFile();
@@ -291,7 +291,7 @@ public class MonitorResource {
             } catch (ExecutionException e) {
                 throw new InternalServerErrorException("Internal exception ", e.getCause());
             } catch (TimeoutException e) {
-                throw new InternalServerErrorException("Execution aborted, exceeded allowed " + thresholdMilliseconds + " threshold");
+                throw new InternalServerErrorException("Execution aborted, exceeded allowed " + thresholdMilliseconds + " threshold", e.getCause());
             }
         };
     }
@@ -304,7 +304,7 @@ public class MonitorResource {
             } catch (ExecutionException e) {
                 throw new InternalServerErrorException("Internal exception ", e.getCause());
             } catch (TimeoutException e) {
-                throw new InternalServerErrorException("Execution aborted, exceeded allowed " + thresholdMilliseconds + " threshold");
+                throw new InternalServerErrorException("Execution aborted, exceeded allowed " + thresholdMilliseconds + " threshold", e.getCause());
             }
         };
     }
