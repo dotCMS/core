@@ -1,14 +1,5 @@
 package com.dotmarketing.portlets.workflows.business;
 
-import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
@@ -21,11 +12,7 @@ import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -37,38 +24,22 @@ import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.DeleteContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.ResetTaskActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
-import com.dotmarketing.portlets.workflows.model.WorkflowComment;
-import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowState;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
-import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.workflows.actionlet.*;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+
+import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
+import static org.junit.Assert.*;
 
 /**
  * Test the workflowAPI
@@ -1000,6 +971,91 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
     }
 
+    /**
+     * Test the find findAvailableActions methods
+     */
+    @Test
+    public void findAvailableActions_working_version_get_empty_actions() throws DotDataException, DotSecurityException {
+
+        /*
+        Need to do the test checking with different user the actions displayed. We need to specify
+        the permission for Intranet, Reviewer, Contributor and Publisher to see if the action
+        returned are the right ones
+         */
+
+        Contentlet testContentlet1 = new Contentlet();
+        Contentlet testContentlet1Checkout = null;
+        Contentlet testContentlet2 = new Contentlet();
+        Contentlet testContentlet2Checkout = null;
+        Contentlet testContentletTop = new Contentlet();
+        try {
+            List<WorkflowScheme> worflowSchemes = new ArrayList<>();
+            worflowSchemes.add(workflowScheme1);
+            worflowSchemes.add(workflowScheme2);
+            worflowSchemes.add(workflowScheme3);
+            worflowSchemes.add(workflowScheme4);
+
+            /* Associate the schemas to the content type */
+            workflowAPI.saveSchemesForStruct(contentTypeStructure, worflowSchemes);
+
+            long time = System.currentTimeMillis();
+
+            //Create a test contentlet
+            testContentlet1.setLanguageId(1);
+            testContentlet1.setStringProperty(FIELD_VAR_NAME, "WorkflowContentTest_" + time);
+            testContentlet1.setContentTypeId(contentType.id());
+            testContentlet1.setHost(defaultHost.getIdentifier());
+            testContentlet1 = contentletAPI.checkin(testContentlet1, user, false);
+
+            contentletAPI.isInodeIndexed(testContentlet1.getInode());
+
+
+            //Adding permissions to the just created contentlet
+            List<Permission> permissions = new ArrayList<>();
+            Permission p1 = new Permission(
+                    testContentlet1.getPermissionId(),
+                    APILocator.getRoleAPI().getUserRole(billIntranet).getId(),
+                    (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT),
+                    true);
+
+            permissions.add(p1);
+
+            APILocator.getPermissionAPI().save(permissions, testContentlet1, user, false);
+
+            // making more versions
+            testContentlet1Checkout = contentletAPI.checkout(testContentlet1.getInode(), user, false);
+            testContentlet1Checkout.setStringProperty(FIELD_VAR_NAME, "WorkflowContentTest_" + System.currentTimeMillis());
+            testContentlet2 = contentletAPI.checkin(testContentlet1Checkout, user, false);
+
+            contentletAPI.isInodeIndexed(testContentlet2.getInode());
+
+            // top version
+            testContentlet2Checkout = contentletAPI.checkout(testContentlet2.getInode(), user, false);
+            testContentlet2Checkout.setStringProperty(FIELD_VAR_NAME, "WorkflowContentTest_" + System.currentTimeMillis());
+            testContentletTop = contentletAPI.checkin(testContentlet2Checkout, user, false);
+
+            contentletAPI.isInodeIndexed(testContentletTop.getInode());
+
+            // expected behavior
+            List<WorkflowAction> foundActions = APILocator.getWorkflowAPI()
+                    .findAvailableActions(testContentletTop, billIntranet);
+            assertNotNull(foundActions);
+            assertFalse(foundActions.isEmpty());
+            assertEquals(foundActions.size(), 4);
+
+            // no top version
+            foundActions = APILocator.getWorkflowAPI()
+                    .findAvailableActions(testContentlet2, billIntranet);
+            assertNotNull(foundActions);
+            assertTrue(foundActions.isEmpty());
+        } finally {
+            try {
+                final Contentlet contentletToDelete = contentletAPI.findContentletByIdentifierAnyLanguage(testContentletTop.getIdentifier());
+                contentletAPI.archive(contentletToDelete, user, false);
+                contentletAPI.delete(contentletToDelete, user, false);
+            } catch (Exception e) {}
+        }
+    }
     /**
      * Test the find findActionRespectingPermissions methods
      */
