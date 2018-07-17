@@ -53,6 +53,7 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
+import com.liferay.util.StringPool;
 import com.liferay.util.servlet.SessionMessages;
 
 /**
@@ -209,6 +210,8 @@ public class CalendarAjax {
 			eventMap.put("locked", ev.isLocked());
 			eventMap.put("inode", ev.getInode());
 			eventMap.put("recurr", ev.isRecurrent());
+			final String eventTags = ev.getTags();
+			eventMap.put("tags", UtilMethods.isSet(eventTags) ? eventTags : StringPool.BLANK);
 			ev.setIdentifier(origIdent);
 			
 			eventMap.put("categories", categoryMaps);

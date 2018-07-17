@@ -8,7 +8,7 @@ import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.OSGIUtil;
+import org.apache.felix.framework.OSGIUtil;
 import com.dotmarketing.util.SecurityLogger;
 import com.liferay.util.FileUtil;
 import java.io.BufferedWriter;
@@ -39,9 +39,9 @@ public class OSGIAJAX extends OSGIBaseAJAX {
         Bundle bundle;
         try {
             try {
-                bundle = OSGIUtil.getInstance().getBundleContext().getBundle( new Long( bundleId ) );
+                bundle = OSGIUtil.getInstance().getBundle(new Long(bundleId));
             } catch ( NumberFormatException e ) {
-                bundle = OSGIUtil.getInstance().getBundleContext().getBundle( bundleId );
+                bundle = OSGIUtil.getInstance().getBundle(bundleId);
             }
 
             bundle.uninstall();
@@ -95,9 +95,9 @@ public class OSGIAJAX extends OSGIBaseAJAX {
         String jar = request.getParameter( "jar" );
         try {
             try {
-                OSGIUtil.getInstance().getBundleContext().getBundle( new Long( bundleID ) ).stop();
+                OSGIUtil.getInstance().getBundle(new Long(bundleID)).stop();
             } catch ( NumberFormatException e ) {
-                OSGIUtil.getInstance().getBundleContext().getBundle( bundleID ).stop();
+                OSGIUtil.getInstance().getBundle(bundleID).stop();
             }
             Logger.info( OSGIAJAX.class, "OSGI Bundle "+jar+ " Stopped");
         } catch ( BundleException e ) {
@@ -112,9 +112,9 @@ public class OSGIAJAX extends OSGIBaseAJAX {
         String jar = request.getParameter( "jar" );
         try {
             try {
-                OSGIUtil.getInstance().getBundleContext().getBundle( new Long( bundleID ) ).start();
+                OSGIUtil.getInstance().getBundle(new Long(bundleID)).start();
             } catch ( NumberFormatException e ) {
-                OSGIUtil.getInstance().getBundleContext().getBundle( bundleID ).start();
+                OSGIUtil.getInstance().getBundle(bundleID).start();
             }
             Logger.info( OSGIAJAX.class, "OSGI Bundle "+jar+ " Started");
         } catch ( BundleException e ) {
@@ -153,9 +153,6 @@ public class OSGIAJAX extends OSGIBaseAJAX {
                         SecurityLogger.logInfo(this.getClass(),  "Invalid OSGI Upload request:" + osgiJar.getCanonicalPath() + " from:" +request.getRemoteHost() + " " );
                         return;
                     }
-                    
-                    
-                    
 
                     final OutputStream out = Files.newOutputStream(osgiJar.toPath());
                     IOUtils.copyLarge( in, out );

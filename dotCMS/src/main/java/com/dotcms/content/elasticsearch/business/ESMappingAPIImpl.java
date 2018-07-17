@@ -266,8 +266,13 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 				if (UtilMethods.isSet(lcasev) && lcasev instanceof String){
 					lcasev = ((String) lcasev).toLowerCase();
+
 					if (!lcasek.endsWith(TEXT)){
-						mlowered.put(lcasek + "_dotraw", lcasev);
+						//for example: when lcasev=moddate, moddate_dotraw must be created from its moddate_text if exists
+						//when the moddate_text is evaluated.
+						if (!contentletMap.containsKey(entry.getKey() + TEXT)){
+							mlowered.put(lcasek + "_dotraw", lcasev);
+						}
 					}else{
 						mlowered.put(lcasek.replace(TEXT, "_dotraw"), lcasev);
 					}

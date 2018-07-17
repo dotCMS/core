@@ -2,41 +2,32 @@ package com.dotmarketing.portlets.htmlpageasset.business.render;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.cms.login.LoginServiceAPI;
-import com.dotcms.rendering.velocity.services.VelocityResourceKey;
-import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
-import com.dotmarketing.beans.ContainerStructure;
+import com.dotcms.rendering.velocity.viewtools.LanguageWebAPI;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionLevel;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.containers.business.ContainerAPI;
-import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
-import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetInfo;
-import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRendered;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRenderedBuilder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.templates.business.TemplateAPI;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
-import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UUIDUtil;
 import com.liferay.portal.model.User;
-import org.apache.velocity.context.Context;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * {@link HTMLPageAssetRenderedAPI} implementation
@@ -82,7 +73,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                                     final User user, final String pageUri, final PageMode mode)
             throws DotDataException, DotSecurityException {
 
-        final PageMode pageMode = mode != null ? mode : this.getDefaultPageMode(request, pageUri);
+        final PageMode pageMode = mode != null ? mode : this.getDefaultPageMode(user, request, pageUri);
         PageMode.setPageMode(request, pageMode);
 
         final Host host = resolveSite(request, user, pageMode);
@@ -97,18 +88,18 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .build(true, pageMode);
     }
 
-    private PageMode getDefaultPageMode(final HttpServletRequest request, final String pageUri) {
+    private PageMode getDefaultPageMode(final User user, final HttpServletRequest request, final String pageUri) {
         try {
             User systemUser = userAPI.getSystemUser();
 
             final PageMode mode = PageMode.PREVIEW_MODE;
             Host host = this.resolveSite(request, systemUser, mode);
-            final HTMLPageAsset htmlPageAsset = getHtmlPageAsset(systemUser, mode, host, pageUri);
+            final HTMLPageAsset htmlPageAsset = getHtmlPageAsset(systemUser, pageUri, mode, host);
 
             final ContentletVersionInfo info = APILocator.getVersionableAPI().
                     getContentletVersionInfo(htmlPageAsset.getIdentifier(), htmlPageAsset.getLanguageId());
 
-            return loginServiceAPI.getLoggedInUser().getUserId().equals(info.getLockedBy())
+            return user.getUserId().equals(info.getLockedBy())
                     ? PageMode.EDIT_MODE : mode;
         } catch (DotDataException | DotSecurityException e) {
             throw new DotRuntimeException(e);
@@ -147,7 +138,11 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
     private HTMLPageAsset getHtmlPageAsset(final User user, final String uri, final PageMode mode, final Host host)
             throws DotDataException, DotSecurityException {
-        final HTMLPageAsset htmlPageAsset = getHtmlPageAsset(user, mode, host, uri);
+        final String pageUri = (UUIDUtil.isUUID(uri) ||( uri.length()>0 && '/' == uri.charAt(0))) ? uri : ("/" + uri);
+
+        final HTMLPageAsset htmlPageAsset = UUIDUtil.isUUID(pageUri) ?
+                (HTMLPageAsset) this.htmlPageAssetAPI.findPage(pageUri, user, mode.respectAnonPerms) :
+                (HTMLPageAsset) getPageByUri(mode, host, pageUri);
 
         if (htmlPageAsset == null){
             throw new HTMLPageAssetNotFoundException(uri);
@@ -165,14 +160,6 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         return htmlPageAsset;
     }
 
-    private HTMLPageAsset getHtmlPageAsset(User user, PageMode mode, Host host, String uri) throws DotDataException, DotSecurityException {
-        final String pageUri = (UUIDUtil.isUUID(uri) ||( uri.length()>0 && '/' == uri.charAt(0))) ? uri : ("/" + uri);
-
-        return (UUIDUtil.isUUID(pageUri)) ?
-                (HTMLPageAsset) this.htmlPageAssetAPI.findPage(pageUri, user, mode.respectAnonPerms) :
-                (HTMLPageAsset) getPageByUri(mode, host, pageUri);
-    }
-
     private IHTMLPage getPageByUri(final PageMode mode, final Host host, final String pageUri) throws DotDataException, DotSecurityException {
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         final Language defaultLanguage = this.languageAPI.getDefaultLanguage();
@@ -182,7 +169,9 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         final IHTMLPage htmlPage = this.htmlPageAssetAPI.getPageByPath(pageUri, host, language.getId(), mode.showLive);
 
         return htmlPage != null || defaultLanguage.equals(language)? htmlPage :
-                this.htmlPageAssetAPI.getPageByPath(pageUri, host, defaultLanguage.getId(), mode.showLive);
+                (LanguageWebAPI.canDefaultPageToDefaultLanguage())?
+                        this.htmlPageAssetAPI.getPageByPath(pageUri, host, defaultLanguage.getId(), mode.showLive):
+                        htmlPage;
     }
 
     private Host resolveSite(final HttpServletRequest request, final User user, final PageMode mode) throws DotDataException, DotSecurityException {

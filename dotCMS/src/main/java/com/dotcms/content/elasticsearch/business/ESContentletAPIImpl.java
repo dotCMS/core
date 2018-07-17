@@ -889,7 +889,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                 });
 
-                return; // Binary fields have nothing to do with database.
+                // Binary fields have nothing to do with database.
             } else if(Field.FieldType.TAG.toString().equals(field.getFieldType())){
                 List<Contentlet> contentlets = contentFactory.findByStructure(structure.getInode(),0,0);
 
@@ -897,10 +897,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     tagAPI.deleteTagInodesByInodeAndFieldVarName(contentlet.getInode(), field.getVelocityVarName());
                 }
 
-                return;
-            }
+            } else {
 
-            contentFactory.clearField(structure.getInode(), field);
+                contentFactory.clearField(structure.getInode(), field);
+            }
 
             if(localTransaction){
                 HibernateUtil.commitTransaction();
@@ -5701,7 +5701,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
          * Only draft if there is a working version that is not live
          * and always create a new version if the user is different
          */
-            if (!working.isLive() && working.getModUser().equals(contentlet.getModUser())) {
+            if (null != working &&
+                    !working.isLive() && working.getModUser().equals(contentlet.getModUser())) {
 
                 // if we are the latest and greatest and are a draft
                 if (working.getInode().equals(contentlet.getInode())) {

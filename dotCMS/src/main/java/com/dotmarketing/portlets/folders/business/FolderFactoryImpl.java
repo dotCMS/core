@@ -104,7 +104,14 @@ public class FolderFactoryImpl extends FolderFactory {
 								 "UNION select f.*,i.idate,i.owner from folder f join inode i on f.inode = i.inode where f.identifier = ?")
 			             .addParam(folderInode)
 			             .addParam(folderInode);
-				folder = TransformerLocator.createFolderTransformer(dc.loadObjectResults()).asList().get(0);
+
+				List<Folder> folders = TransformerLocator.createFolderTransformer(dc.loadObjectResults()).asList();
+
+				if (folders.isEmpty()) {
+					return null;
+				}
+
+				folder = folders.get(0);
 				Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
 				fc.addFolder(folder, id);
 			}

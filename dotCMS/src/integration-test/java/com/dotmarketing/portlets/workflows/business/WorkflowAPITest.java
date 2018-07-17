@@ -3166,4 +3166,13 @@ public class WorkflowAPITest extends IntegrationTestBase {
         return contentType;
     }
 
+    @Test
+    public void testPushIndexUpdate() throws Exception{
+        final WorkflowScheme scheme = workflowAPI.findSystemWorkflowScheme();
+        final WorkflowAPIImpl impl = WorkflowAPIImpl.class.cast(workflowAPI);
+        final int rows = impl.pushIndexUpdate(scheme, user);
+        assertTrue(rows >= 1);
+
+    }
+
 }
