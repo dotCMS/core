@@ -3,17 +3,13 @@ package com.dotmarketing.portlets.workflows.actionlet;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.workflows.actionlet.event.CopyActionletEvent;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
@@ -35,8 +31,6 @@ public class CopyActionlet extends WorkFlowActionlet {
 
     private static final long serialVersionUID              = 1L;
     public static final String NOTIFY_SYNC_COPY_EVENT       = "notify.sync.copy.event";
-    private final HostAPI       hostAPI                     = APILocator.getHostAPI();
-    private final FolderAPI     folderAPI                   = APILocator.getFolderAPI();
     private final ContentletAPI contentletAPI               = APILocator.getContentletAPI();
     private final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
 
