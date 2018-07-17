@@ -1,7 +1,7 @@
 package com.dotcms.concurrent;
 
 import com.dotcms.jmx.DotMBean;
-
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -23,5 +23,12 @@ public interface DotConcurrentFactoryMBean extends DotMBean {
      * @return boolean
      */
     public Boolean shutdown(String name);
+
+
+    /**
+     * Returns a list of all the available Thread Pools at the time.
+     * @return
+     */
+    public List<String> list();
 
 } // E:O:F:DotConcurrentFactoryMBean.
