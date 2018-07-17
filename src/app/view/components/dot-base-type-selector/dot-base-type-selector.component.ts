@@ -25,7 +25,7 @@ export class DotBaseTypeSelectorComponent implements OnInit {
             .pipe(take(1))
             .subscribe(() => {
                 this.options = this.dotContentletService
-                    .getContentTypes()
+                    .getAllContentTypes()
                     .pipe(
                         take(1),
                         map((structures: StructureTypeView[]) =>
