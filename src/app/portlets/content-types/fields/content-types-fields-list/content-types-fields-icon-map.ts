@@ -20,5 +20,7 @@ export const FIELD_ICONS = {
     'com.dotcms.contenttype.model.field.ImmutableTextAreaField': 'fa-paragraph',
     'com.dotcms.contenttype.model.field.ImmutableTextField': 'fa-font',
     'com.dotcms.contenttype.model.field.ImmutableTimeField': 'fa-clock-o',
-    'com.dotcms.contenttype.model.field.ImmutableWysiwygField': 'fa-eye'
+    'com.dotcms.contenttype.model.field.ImmutableWysiwygField': 'fa-eye',
+    'com.dotcms.contenttype.model.field.ImmutableTabDividerField': 'fa-folder',
+    'com.dotcms.contenttype.model.field.ImmutableLineDividerField': 'fa-ellipsis-h',
 };
