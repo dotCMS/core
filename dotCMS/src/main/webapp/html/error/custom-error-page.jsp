@@ -1,3 +1,4 @@
+<%@page isErrorPage="true" %>
 <%@page import="com.dotcms.vanityurl.model.CachedVanityUrl"%>
 <%@page import="com.dotmarketing.beans.Host"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
@@ -14,8 +15,20 @@
   int status = response.getStatus();
   String title = LanguageUtil.get(pageContext, status + "-page-title");
   String body = LanguageUtil.get(pageContext, status + "-body1");
-  long languageId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
   try {
+    long languageId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
+    boolean isAPICall = pageContext.getErrorData().getRequestURI().startsWith("/api/");
+
+    if(isAPICall) {
+      if(status == 500) {
+        if(request.getAttribute("javax.servlet.error.message")!=null){    
+          String err = request.getAttribute("javax.servlet.error.message") + " on " + request.getRequestURI();
+          Logger.warn(this.getClass(),err);
+        }
+      }
+      return; // empty response is better than an HTML response to a REST API call
+    }
+    
     String errorPage = "/cms" + status + "Page";
     Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
     // Get from virtual link
@@ -60,7 +73,7 @@
   }
 %>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
 <html>
 <head>
@@ -68,29 +81,29 @@
 
 <style type="text/css">
 body {
-	font-family: helvetica, san-serif;
-	padding: 20px;
-	margin-top: 0px;
+  font-family: helvetica, san-serif;
+  padding: 20px;
+  margin-top: 0px;
 }
 
 #main {
-	width: 400px;
+  width: 400px;
 }
 
 #footer {
-	text-align: center;
+  text-align: center;
 }
 
 h1 {
-	font-size: 20px;
+  font-size: 20px;
 }
 
 #logo {
-	float: left;
+  float: left;
 }
 
 #text {
-	float: left;
+  float: left;
 }
 </style>
 
@@ -98,14 +111,14 @@ h1 {
 
 </head>
 <body>
-	<div id="main">
-		<div id="text">
+  <div id="main">
+    <div id="text">
 
-			<h1><%=title%></h1>
+      <h1><%=title%></h1>
 
-			<p><%=body%></p>
+      <p><%=body%></p>
 
-		</div>
-	</div>
+    </div>
+  </div>
 </body>
 </html>

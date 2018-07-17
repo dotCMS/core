@@ -2,6 +2,7 @@ package com.dotcms.util;
 
 import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
 import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils.SubnetInfo;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
@@ -121,7 +122,8 @@ public class HttpRequestDataUtil {
 	 */
 	public static boolean isIpMatchingNetmask(String ipAddress, String netmask) {
 		boolean isMatching = false;
-		if (UtilMethods.isSet(ipAddress) && UtilMethods.isSet(netmask)) {
+		// function only handles IPv4 addresses - this check for period prevents exceptions until IPv6 functionality is added
+		if (UtilMethods.isSet(ipAddress) && ipAddress.contains(".") && UtilMethods.isSet(netmask) && netmask.contains(".")) {
 			String[] netmaskParts = netmask.split("/");
 			if (netmaskParts != null && netmaskParts.length == 2) {
 				SubnetUtils subnetUtils = null;
@@ -134,10 +136,18 @@ public class HttpRequestDataUtil {
 				} else {
 					subnetUtils = new SubnetUtils(netmask);
 				}
+				subnetUtils.setInclusiveHostCount(true); // Necessary to get proper resolution of CIDRs like 127.0.0.1/32
 				SubnetInfo info = subnetUtils.getInfo();
 				isMatching = info.isInRange(ipAddress);
 			}
+			else {
+				isMatching = netmask.equals(ipAddress);
+			}
 		}
+		else {
+			isMatching = netmask.equals(ipAddress); // to handle direct IPv6 IP matches even though IPv6 CIDRs not yet supported
+		}
+		Logger.debug(HttpRequestDataUtil.class, "ipAddress=" + ipAddress + "; netmask=" + netmask + "; isMatching=" + isMatching);
 		return isMatching;
 	}
 

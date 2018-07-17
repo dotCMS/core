@@ -39,6 +39,7 @@ import com.dotcms.rest.api.v1.system.i18n.I18NResource;
 import com.dotcms.rest.api.v1.system.role.RoleResource;
 import com.dotcms.rest.api.v1.system.ruleengine.actionlets.ActionletsResource;
 import com.dotcms.rest.api.v1.system.ruleengine.conditionlets.ConditionletsResource;
+import com.dotcms.rest.api.v1.system.monitor.MonitorResource;
 import com.dotcms.rest.api.v1.user.UserResource;
 import com.dotcms.rest.personas.PersonasResourcePortlet;
 import com.dotcms.rest.api.v1.page.NavResource;
@@ -99,6 +100,7 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 					REST_CLASSES.add(PersonasResourcePortlet.class);
 
 					REST_CLASSES.add(ConditionletsResource.class);
+					REST_CLASSES.add(MonitorResource.class);
 					REST_CLASSES.add(ActionResource.class);
 					REST_CLASSES.add(ActionletsResource.class);
 					REST_CLASSES.add(I18NResource.class);
