@@ -18,7 +18,6 @@ import { Injectable } from '@angular/core';
 import { DotContentletService } from '../../../api/services/dot-contentlet/dot-contentlet.service';
 import { PushPublishContentTypesDialogModule } from '../../../view/components/_common/push-publish-dialog/push-publish-dialog.module';
 import { PushPublishService } from '../../../api/services/push-publish/push-publish.service';
-import { DotAddToBundleModule } from '../../../view/components/_common/dot-add-to-bundle/dot-add-to-bundle.module';
 import { DotLicenseService } from '../../../api/services/dot-license/dot-license.service';
 import { SelectItem } from 'primeng/primeng';
 
@@ -59,6 +58,15 @@ class MockPushPublishService {
     }
 }
 
+@Component({
+    selector: 'dot-add-to-bundle ',
+    template: ``
+})
+class MockDotAddToBundleComponent {
+    @Input() assetIdentifier: string;
+    @Output() cancel = new EventEmitter<boolean>();
+}
+
 describe('ContentTypesPortletComponent', () => {
     let comp: ContentTypesPortletComponent;
     let fixture: ComponentFixture<ContentTypesPortletComponent>;
@@ -83,13 +91,12 @@ describe('ContentTypesPortletComponent', () => {
         });
 
         DOTTestBed.configureTestingModule({
-            declarations: [ContentTypesPortletComponent, MockDotBaseTypeSelectorComponent],
+            declarations: [ContentTypesPortletComponent, MockDotBaseTypeSelectorComponent, MockDotAddToBundleComponent],
             imports: [
                 RouterTestingModule.withRoutes([{ path: 'test', component: ContentTypesPortletComponent }]),
                 BrowserAnimationsModule,
                 ListingDataTableModule,
-                PushPublishContentTypesDialogModule,
-                DotAddToBundleModule
+                PushPublishContentTypesDialogModule
             ],
             providers: [
                 ContentTypesInfoService,

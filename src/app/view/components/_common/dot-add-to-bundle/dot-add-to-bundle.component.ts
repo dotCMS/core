@@ -54,7 +54,9 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit {
     }
 
     ngAfterViewInit(): void {
-        this.addBundleDropdown.editableInputViewChild.nativeElement.focus();
+        setTimeout(() => {
+            this.addBundleDropdown.editableInputViewChild.nativeElement.focus();
+        });
     }
 
     /**
