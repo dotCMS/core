@@ -8,6 +8,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.servlets.test.ServletTestRunner;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
@@ -48,6 +49,7 @@ public class JSONToolFTest {
 
             assertEquals(unicodeText, ((JSONObject) ((JSONArray) object.get("contentlets")).get(0)).get("body"));
         } finally {
+            DateUtil.sleep(1000L);
             ContentletDataGen.remove(contentWithUnicode);
         }
     }
