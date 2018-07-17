@@ -8,6 +8,7 @@ import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -178,6 +179,22 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
                         "queue",       "noInfo",
                         "isShutdown",  false
                 );
+    }
+
+    @Override
+    public Boolean shutdown(final String name){
+        final DotConcurrentImpl dotConcurrent =
+                this.submitterMap.get(name);
+        if(null == dotConcurrent){
+           return false;
+        }
+        dotConcurrent.shutdown();
+        return true;
+    }
+
+    @Override
+    public List<String> list() {
+        return new ArrayList<>(submitterMap.keySet());
     }
 
     @Override
@@ -409,6 +426,12 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
             this.shutdown = true;
             return this.threadPoolExecutor.shutdownNow();
         }
+
+        @Override
+        public boolean isAborting() {
+            return threadPoolExecutor.isTerminated() ||  threadPoolExecutor.isShutdown() || threadPoolExecutor.isTerminating();
+        }
+
 
         @Override
         public String toString() {
