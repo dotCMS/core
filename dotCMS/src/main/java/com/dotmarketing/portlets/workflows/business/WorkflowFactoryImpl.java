@@ -790,22 +790,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	@Override
-	public Optional<WorkflowStep> findCurrentStep(final Contentlet contentlet) {
-		try {
-			final DotConnect db = new DotConnect();
-			db.setSQL(sql.SELECT_STEP_BY_CONTENTLET);
-			db.addParam(contentlet.getIdentifier());
-			db.addParam(contentlet.getLanguageId());
-			final List<Map<String, Object>> dbResults = db.loadObjectResults();
-			final WorkflowStep step = WorkflowStep.class.cast(convertListToObjects(dbResults, WorkflowStep.class).get(0));
-            return Optional.of(step);
-		} catch (final Exception e) {
-			Logger.debug(this.getClass(), e.getMessage());
-		}
-		return Optional.empty();
-	}
-
-	@Override
 	public boolean existSchemeIdOnSchemesList(String schemeId, List<WorkflowScheme> schemes){
 	    boolean exist = false;
 	    for(WorkflowScheme scheme : schemes){

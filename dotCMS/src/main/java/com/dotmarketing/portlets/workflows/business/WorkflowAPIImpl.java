@@ -430,7 +430,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@Override
 	@CloseDBIfOpened
 	public Optional<WorkflowStep> findCurrentStep(final Contentlet contentlet) throws DotDataException {
-		return workFlowFactory.findCurrentStep(contentlet);
+
+		final WorkflowTask task = findTaskByContentlet(contentlet);
+		if(task != null && task.getId() != null && null != task.getStatus()) {
+			final WorkflowStep step = findStep(task.getStatus());
+			return Optional.of(step);
+		}
+
+		return Optional.empty();
 	}
 
 	@Override

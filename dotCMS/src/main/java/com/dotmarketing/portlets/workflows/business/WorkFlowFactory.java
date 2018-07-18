@@ -18,7 +18,6 @@ import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.liferay.portal.model.User;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -71,14 +70,6 @@ public interface WorkFlowFactory {
 	 * @throws DotDataException
 	 */
 	public List<WorkflowStep> findStepsByContentlet(Contentlet contentlet, final List<WorkflowScheme> schemes) throws DotDataException;
-
-	/**
-	 * This method will get the current workflow step of the contentlet or empty.
-	 * @param contentlet
-	 * @return
-	 * @throws DotDataException
-	 */
-	public Optional<WorkflowStep> findCurrentStep(final Contentlet contentlet);
 
 	/**
 	 * Check if the schemeId pass exist n the list of workflow scheme.
