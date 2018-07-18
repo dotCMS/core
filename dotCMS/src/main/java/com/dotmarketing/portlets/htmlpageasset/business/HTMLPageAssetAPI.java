@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.List;
 
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -289,5 +290,8 @@ public interface HTMLPageAssetAPI {
 	}
 
     IHTMLPage findPage(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+
+    IHTMLPage findByIdentifier(Identifier id, long tryLang, boolean live) throws DotDataException, DotSecurityException;
 
 }

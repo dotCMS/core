@@ -815,4 +815,52 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         } 
 
     }
+	
+    /**
+     * This returns the proper ihtml page based on id, state and language
+     * 
+     * @param id
+     * @param tryLang
+     * @param live
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+	@Override
+    public IHTMLPage findByIdentifier(Identifier id, long tryLang, boolean live)
+            throws DotDataException, DotSecurityException {
+
+
+        IHTMLPage htmlPage;
+
+        Contentlet contentlet;
+
+        try {
+            contentlet = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), live, tryLang,
+                    APILocator.getUserAPI().getSystemUser(), false);
+            htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
+
+        } catch (DotStateException dse) {
+            if (APILocator.getLanguageAPI().canDefaultPageToDefaultLanguage() && tryLang != APILocator.getLanguageAPI().getDefaultLanguage().getId()) {
+                contentlet = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), live,
+                        APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
+                htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
+            } else {
+                throw new ResourceNotFoundException(
+                        "Can't find content. Identifier: " + id.getId() + ", Live: " + live + ", Lang: " + tryLang, dse);
+            }
+
+        }
+
+
+        return htmlPage;
+    }
+	
+	
+	
+	
+	
+	
+	
+	
 }

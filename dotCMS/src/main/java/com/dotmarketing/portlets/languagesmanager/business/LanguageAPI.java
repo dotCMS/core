@@ -253,4 +253,12 @@ public interface LanguageAPI {
 	public List<Language> getAvailableContentLanguages(final String contentletInode, final User user)
 			throws DotSecurityException, DotDataException;
 
+    boolean canDefaultContentToDefaultLanguage();
+
+    boolean canDefaultWidgetToDefaultLanguage();
+
+    boolean canDefaultPageToDefaultLanguage();
+
+    boolean canDefaultFileToDefaultLanguage();
+
 }

@@ -2,7 +2,7 @@ package com.dotmarketing.portlets.htmlpageasset.business.render;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.cms.login.LoginServiceAPI;
-import com.dotcms.rendering.velocity.viewtools.LanguageWebAPI;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -169,7 +169,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         final IHTMLPage htmlPage = this.htmlPageAssetAPI.getPageByPath(pageUri, host, language.getId(), mode.showLive);
 
         return htmlPage != null || defaultLanguage.equals(language)? htmlPage :
-                (LanguageWebAPI.canDefaultPageToDefaultLanguage())?
+                (APILocator.getLanguageAPI().canDefaultPageToDefaultLanguage())?
                         this.htmlPageAssetAPI.getPageByPath(pageUri, host, defaultLanguage.getId(), mode.showLive):
                         htmlPage;
     }

@@ -4,7 +4,7 @@ package com.dotcms.rendering.velocity.viewtools.navigation;
 import com.dotmarketing.beans.Inode;
 import com.google.common.annotations.VisibleForTesting;
 
-import com.dotcms.rendering.velocity.viewtools.LanguageWebAPI;
+
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -241,14 +241,14 @@ public class NavTool implements ViewTool {
 
     @VisibleForTesting
     boolean shouldAddHTMLPageInAnotherLang(List<?> menuItems, IHTMLPage itemPage, long languageId) {
-        return (LanguageWebAPI.canDefaultPageToDefaultLanguage() &&
+        return (APILocator.getLanguageAPI().canDefaultPageToDefaultLanguage() &&
             itemPage.getLanguageId()  == defaultLanguage &&
             !doesHTMLPageInRequestedLanguageExists(menuItems,itemPage.getIdentifier(),languageId));
     }
 
     @VisibleForTesting
     boolean shouldAddFileInAnotherLang(final List<?> menuItems, final IFileAsset itemFile, final long languageId) {
-        return (LanguageWebAPI.canDefaultFileToDefaultLanguage() &&
+        return (APILocator.getLanguageAPI().canDefaultFileToDefaultLanguage() &&
                 itemFile.getLanguageId() == defaultLanguage &&
                 !doesFileAssetInRequestedLanguageExists(menuItems, itemFile.getPermissionId(), languageId));
     }

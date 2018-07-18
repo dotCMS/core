@@ -73,7 +73,7 @@ public class VelocityPreviewMode extends VelocityModeHandler {
         Context context = VelocityUtil.getWebContext(request, response);
 
         long langId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
-        IHTMLPage htmlPage = VelocityUtil.getPage(id, langId, mode.showLive);
+        IHTMLPage htmlPage = APILocator.getHTMLPageAssetAPI().findByIdentifier(id, langId, mode.showLive);
         context.put("dotPageContent", new ContentMap(((Contentlet) htmlPage), user, mode, host, context));
 
 

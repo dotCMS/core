@@ -18,7 +18,7 @@ import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
-import com.dotcms.rendering.velocity.viewtools.LanguageWebAPI;
+
 import com.dotcms.services.VanityUrlServices;
 
 import com.dotmarketing.beans.Identifier;
@@ -589,7 +589,7 @@ public class ContentletLoader implements DotLoader {
 
         long language = new Long(key.language);
         ContentletVersionInfo info = APILocator.getVersionableAPI().getContentletVersionInfo(key.id1, language);
-        if (info == null && language != defualtLang && LanguageWebAPI.canDefaultContentToDefaultLanguage()) {
+        if (info == null && language != defualtLang && APILocator.getLanguageAPI().canDefaultContentToDefaultLanguage()) {
             info = APILocator.getVersionableAPI().getContentletVersionInfo(key.id1, defualtLang);
         }
 

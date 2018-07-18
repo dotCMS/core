@@ -22,7 +22,7 @@ import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
 
-public class LanguageWebAPI implements ViewTool {
+public class LanguageViewtool implements ViewTool {
 
 	private HttpServletRequest request;
 	Context ctx;
@@ -73,34 +73,44 @@ public class LanguageWebAPI implements ViewTool {
 	 * Return if the MULTILINGUAGE_FALLBACK property is activated or not
 	 * defaults to false
 	 * @return boolean
+	 * 
+	 * @deprecated use {@link com.dotmarketing.portlets.languagesmanager.business.LanguageAPI.canDefaultContentToDefaultLanguage()} instead.  
 	 */
+	@Deprecated
 	public static boolean canDefaultContentToDefaultLanguage() {
-		return Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",false);
+		return APILocator.getLanguageAPI().canDefaultContentToDefaultLanguage();
 	}
 	
 	/**
 	 * Return if the DEFAULT_WIDGET_TO_DEFAULT_LANGUAGE property is activated or not
 	 * deaults to true
 	 * @return
+	 *      
+	 * @deprecated use {@link com.dotmarketing.portlets.languagesmanager.business.LanguageAPI.canDefaultWidgetToDefaultLanguage()} instead.  
 	 */
+	@Deprecated
 	public static boolean canDefaultWidgetToDefaultLanguage() {
-        return Config.getBooleanProperty("DEFAULT_WIDGET_TO_DEFAULT_LANGUAGE",true);
+        return APILocator.getLanguageAPI().canDefaultWidgetToDefaultLanguage();
     }
 
     /**
      * Return if the DEFAULT_PAGE_TO_DEFAULT_LANGUAGE property is activated or not, defaults to true
      *
      * @return
+     * @deprecated use {@link com.dotmarketing.portlets.languagesmanager.business.LanguageAPI.canDefaultPageToDefaultLanguage()} instead.  
      */
+	@Deprecated
     public static boolean canDefaultPageToDefaultLanguage () {
-        return Config.getBooleanProperty( "DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", true );
+        return APILocator.getLanguageAPI().canDefaultPageToDefaultLanguage();
     }
     
     /**
      * Return if the DEFAULT_FILE_TO_DEFAULT_LANGUAGE property is activated or not
      * defaults to false
      * @return boolean
+     * @deprecated use {@link com.dotmarketing.portlets.languagesmanager.business.LanguageAPI.canDefaultFileToDefaultLanguage()} instead.  
      */
+    @Deprecated
     public static boolean canDefaultFileToDefaultLanguage() {
         return Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE",true);
     }
