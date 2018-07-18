@@ -6,11 +6,14 @@ import com.dotcms.rendering.velocity.directive.DotDirective;
 import com.dotcms.rendering.velocity.directive.RenderParams;
 import com.dotcms.rendering.velocity.services.VelocityType;
 
+import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.util.Config;
 
+import com.dotmarketing.util.PageMode;
+import com.liferay.util.StringPool;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.ResourceNotFoundException;
 
@@ -58,10 +61,17 @@ public class ContentletDetail extends DotDirective {
       throw new ResourceNotFoundException("cannnot find contentlet id " +  argument + " lang:" + params.language);
     }
 
+    // If the _show_working_ comes in the context, means that is Time Machine we need
+    // to show the working. If not we only need to show the live
 
+    final boolean showWorking = (context.get("_show_working_") != null && (boolean)context.get("_show_working_"));
 
+    final StringBuilder path=new StringBuilder();
 
-      return  File.separator +  params.mode.name() + File.separator   + argument + "_" + cv.getLang() + "." + EXTENSION;
+    path.append(File.separator).append(!showWorking ? params.mode.name() : PageMode.PREVIEW_MODE.name()).append(File.separator)
+            .append(argument).append(StringPool.UNDERLINE).append(cv.getLang()).append(StringPool.PERIOD).append(EXTENSION);
+
+      return path.toString();
   }
 }
 

@@ -80,14 +80,14 @@ public class WorkflowResourceResponseCodeIntegrationTest {
     @Test
     public void Find_Scheme_Null_Content_Type(){
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response findResponse = workflowResource.findSchemes(request, null);
+        final Response findResponse = workflowResource.findSchemes(request, null, true);
         assertEquals(Response.Status.OK.getStatusCode(), findResponse.getStatus());
     }
 
     @Test
     public void Find_Scheme_Invalid_Content_Type(){
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response findResponse = workflowResource.findSchemes(request, "LOL");
+        final Response findResponse = workflowResource.findSchemes(request, "LOL", true);
         assertEquals(Status.NOT_FOUND.getStatusCode(), findResponse.getStatus());
     }
 

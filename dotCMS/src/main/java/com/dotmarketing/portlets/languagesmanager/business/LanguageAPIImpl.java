@@ -4,7 +4,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
-
+import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -21,13 +21,12 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.TreeSet;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.velocity.tools.view.context.ViewContext;
@@ -193,20 +192,12 @@ public class LanguageAPIImpl implements LanguageAPI {
 	public List<LanguageKey> getLanguageKeys(final Language lang) {
 		final String langCode = lang.getLanguageCode();
         final String countryCode = lang.getCountryCode();
-		final List<LanguageKey> list = new ArrayList<LanguageKey>(factory.getLanguageKeys(langCode));
-		Collections.sort(list, LANGUAGE_KEY_COMPARATOR);
 
-		final List<LanguageKey> keys = factory.getLanguageKeys(langCode, countryCode);
-		for(LanguageKey key : keys) { // todo: analize it but it could be used an set instead of arraylist.
-			int index = -1;
-			if((index = Collections.binarySearch(list, key, LANGUAGE_KEY_COMPARATOR)) >= 0) {
-				list.remove(index);
-			}
-			list.add(key);
-		}
+		final Set<LanguageKey>  list = new TreeSet<>(LANGUAGE_KEY_COMPARATOR);
+		list.addAll(factory.getLanguageKeys(langCode));
+		list.addAll(factory.getLanguageKeys(langCode, countryCode));
 
-		Collections.sort(list, LANGUAGE_KEY_COMPARATOR);
-		return list;
+		return ImmutableList.copyOf(list);
 	}
 
 	@Override

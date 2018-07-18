@@ -15,7 +15,6 @@ import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.*;
 import com.dotmarketing.factories.EmailFactory;
@@ -163,8 +162,6 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				this.pushSaveEvent(contentlet, isNew);
 			}
 		} catch (Exception ae) {
-			contentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
-			//conAPI.refresh(cont);
 			_handleException(ae);
 			throw ae;
 		}
@@ -526,8 +523,6 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			contentletFormData.put(WebKeys.CONTENTLET_EDIT, currentContentlet);
 			contentletFormData.put(WebKeys.CONTENTLET_FORM_EDIT, currentContentlet);
 
-			CacheLocator.getContentletCache().remove(currentContentlet.getInode());
-
 			if (Config.getBooleanProperty("CONTENT_CHANGE_NOTIFICATIONS", false) && !isNew
 					&& !isAutoSave) {
 
@@ -547,6 +542,12 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 					SessionMessages.add(request, "message", "message.contentlet.published");
 				}
 			}
+		} else {
+			/*
+			No contentlet was returned (probably a delete was executed).
+			Marking it for upper layers.
+			 */
+			contentletFormData.put(WebKeys.CONTENTLET_DELETED, Boolean.TRUE);
 		}
 	}
 

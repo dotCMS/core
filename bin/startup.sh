@@ -70,12 +70,15 @@ JAVA_OPTS="$JAVA_OPTS -XX:+UseG1GC"
 # Set agent opts
 JAVA_OPTS="$JAVA_OPTS -javaagent:$DOTCMS_HOME/WEB-INF/lib/byte-buddy-agent-1.6.12.jar"
 
+# Set encoding
+JAVA_OPTS="$JAVA_OPTS -Dsun.jnu.encoding=UTF-8"
+
 if [ "$1" = "debug" ] ; then
 
     DEBUG_PORT="8000"
     if [ ! -x $2 ] ; then
         re='^[0-9]+$'
-        if ! [[ $2 =~ $re ]] ; then
+        if !(echo "$2" | grep -Eq $re); then
            echo "Using default debug port [$DEBUG_PORT]"
         else
             DEBUG_PORT="$2"

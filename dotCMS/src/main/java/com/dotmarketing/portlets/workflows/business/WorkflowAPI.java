@@ -240,6 +240,14 @@ public interface WorkflowAPI {
 	 */
 	public void saveScheme(WorkflowScheme scheme, User user) throws DotDataException, DotSecurityException ,AlreadyExistException;
 
+
+	/**
+	 * Exclusively Serves archived schemes
+	 * @return
+	 * @throws DotDataException
+	 */
+	public List<WorkflowScheme> findArchivedSchemes() throws DotDataException;
+
 	/**
 	 * Delete the workflow scheme with all the steps, action, actionlets and
 	 * associations with content types

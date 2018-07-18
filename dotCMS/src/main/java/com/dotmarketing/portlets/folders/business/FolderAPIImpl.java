@@ -553,7 +553,7 @@ public class FolderAPIImpl implements FolderAPI  {
 
 		final Folder folder = this.folderFactory.find(id);
 
-		if (!this.permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_READ, user)) {
+		if (folder!= null && !this.permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
 
 			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + folder.getPath());
 		}

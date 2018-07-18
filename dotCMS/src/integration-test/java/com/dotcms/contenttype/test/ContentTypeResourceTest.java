@@ -2,10 +2,16 @@ package com.dotcms.contenttype.test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.util.UtilMethods;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.io.File;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -26,13 +32,16 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.glassfish.jersey.internal.util.Base64;
 import com.dotcms.rest.api.v1.contenttype.ContentTypeResource;
 import com.dotmarketing.util.Logger;
+import org.junit.runner.RunWith;
 
+@RunWith(DataProviderRunner.class)
 public class ContentTypeResourceTest extends ContentTypeBaseTest {
 	final String base = "/com/dotcms/contenttype/test/";
 
-	@Test
-	public void jsonTests() throws Exception {
+	@DataProvider
+	public static Object[] testCases() throws URISyntaxException {
 
+		List testCases = new ArrayList();
 		URL resource = ConfigTestHelper.getUrlToTestResource("com/dotcms/contenttype/test/file-asset.json");
 		File pivotResource = new File(resource.toURI());
 		File directory = pivotResource.getParentFile();
@@ -40,11 +49,16 @@ public class ContentTypeResourceTest extends ContentTypeBaseTest {
 
 		for (String file : directory.list()) {
 			if (file.endsWith(".json")) {
-				testJson(file);
+				testCases.add(file);
 			}
 		}
+
+		return testCases.toArray();
 	}
 
+	@Test
+	@UseDataProvider("testCases")
+	@WrapInTransaction
 	public void testJson(String jsonFile) throws Exception {
 		Logger.info(this.getClass(), "testing:" + jsonFile);
 

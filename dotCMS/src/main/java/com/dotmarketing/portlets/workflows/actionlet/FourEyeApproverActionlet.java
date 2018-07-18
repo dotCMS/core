@@ -125,7 +125,7 @@ public class FourEyeApproverActionlet extends WorkFlowActionlet {
                         DEFAULT_MINIMUM_CONTENT_APPROVERS);
         final String emailSubject = getParameterValue(params.get(PARAM_EMAIL_SUBJECT));
         final String emailBody = getParameterValue(params.get(PARAM_EMAIL_BODY));
-        final boolean isHtml = getParameterValue(params.get(PARAM_IS_HTML), false);
+        final boolean isHtml = getParameterValue(params.get(PARAM_IS_HTML), true);
         final Set<User> requiredContentApprovers = getUsersFromIds(userIds, ID_DELIMITER);
         // Add this approval to the history
         final WorkflowHistory history = new WorkflowHistory();

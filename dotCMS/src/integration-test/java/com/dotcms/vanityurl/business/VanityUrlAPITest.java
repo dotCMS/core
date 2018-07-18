@@ -4,6 +4,7 @@ package com.dotcms.vanityurl.business;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.cache.VanityUrlCache;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.util.FiltersUtil;
@@ -449,6 +450,7 @@ public class VanityUrlAPITest {
      * @throws DotSecurityException
      */
     @Test
+    @WrapInTransaction
     public void removeVanityURLDefaultLanguaguefromCacheTest() throws DotDataException, DotSecurityException {
         long currentTime = System.currentTimeMillis();
         Contentlet vanityURLContentletEnglish = null;

@@ -1,5 +1,6 @@
 package com.dotcms.util.pagination;
 
+import com.dotmarketing.business.ThemeAPI;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -17,6 +18,8 @@ import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.pagination.ThemePaginator.BASE_LUCENE_QUERY;
+import static com.dotmarketing.business.ThemeAPI.THEME_PNG;
+import static com.dotmarketing.business.ThemeAPI.THEME_THUMBNAIL_KEY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -30,6 +33,7 @@ public class ThemePaginatorTest {
 
     private final ContentletAPI contentletAPI = mock(ContentletAPI.class);
     private final FolderAPI folderAPI         = mock(FolderAPI.class);
+    private final ThemeAPI themeAPI         = mock(ThemeAPI.class);
 
     private static final String QUERY_WITH_HOST = "+parentpath:/application/themes/* +title:template.vtl +conhost:1";
 
@@ -52,7 +56,7 @@ public class ThemePaginatorTest {
 
         final List<String> elements = list("1", "2", "3");
 
-        final ThemePaginator themePaginator = new ThemePaginator(contentletAPI, folderAPI);
+        final ThemePaginator themePaginator = new ThemePaginator(contentletAPI, folderAPI, themeAPI);
 
         when(contentletAPI.searchIndex(QUERY_WITH_HOST, 0, -1, "parentPath asc", user, false))
                 .thenReturn(contentletSearchList);
@@ -94,7 +98,7 @@ public class ThemePaginatorTest {
 
         final List<String> elements = list("1", "2", "3");
 
-        final ThemePaginator themePaginator = new ThemePaginator(contentletAPI, folderAPI);
+        final ThemePaginator themePaginator = new ThemePaginator(contentletAPI, folderAPI, themeAPI);
 
         when(contentletAPI.searchIndex(BASE_LUCENE_QUERY, 0, -1, "parentPath asc", user, false))
                 .thenReturn(contentletSearchList);
@@ -133,7 +137,7 @@ public class ThemePaginatorTest {
             when(contentletAPI.searchIndex(BASE_LUCENE_QUERY, 0, -1, "parentPath asc", user, false))
                     .thenThrow(exception);
 
-            final ThemePaginator themePaginator = new ThemePaginator(contentletAPI, folderAPI);
+            final ThemePaginator themePaginator = new ThemePaginator(contentletAPI, folderAPI, themeAPI);
 
             themePaginator.getItems(user, 0, -1, null);
             assertTrue(false);
@@ -157,7 +161,7 @@ public class ThemePaginatorTest {
             when(contentletAPI.searchIndex(BASE_LUCENE_QUERY, 0, -1, "parentPath asc", user, false))
                     .thenThrow(exception);
 
-            final ThemePaginator themePaginator = new ThemePaginator(contentletAPI, folderAPI);
+            final ThemePaginator themePaginator = new ThemePaginator(contentletAPI, folderAPI, themeAPI);
 
             themePaginator.getItems(user, 0, -1, null);
             assertTrue(false);
@@ -183,7 +187,7 @@ public class ThemePaginatorTest {
 
         final List<String> elements = list("1", "2", "3");
 
-        final ThemePaginator themePaginator = new ThemePaginator(contentletAPI, folderAPI);
+        final ThemePaginator themePaginator = new ThemePaginator(contentletAPI, folderAPI, themeAPI);
 
         when(contentletAPI.searchIndex(QUERY_WITH_HOST, 0, -1, "parentPath desc", user, false))
                 .thenReturn(contentletSearchList);
@@ -228,7 +232,7 @@ public class ThemePaginatorTest {
 
         final List<String> elements = list("1", "2", "3");
 
-        final ThemePaginator themePaginator = new ThemePaginator(contentletAPI, folderAPI);
+        final ThemePaginator themePaginator = new ThemePaginator(contentletAPI, folderAPI, themeAPI);
 
         when(contentletAPI.searchIndex(BASE_LUCENE_QUERY, -1, 0, "parentPath desc", user, false))
                 .thenReturn(contentletSearchList);
@@ -278,7 +282,7 @@ public class ThemePaginatorTest {
 
     private String getFolderQuery(final String folderInode){
         final StringBuilder query = new StringBuilder();
-        query.append("+conFolder:").append(folderInode).append(" +title:").append(ThemePaginator.THEME_PNG);
+        query.append("+conFolder:").append(folderInode).append(" +title:").append(THEME_PNG);
 
         return query.toString();
     }
@@ -287,10 +291,10 @@ public class ThemePaginatorTest {
             PaginatedArrayList<Map<String, Object>> themes) {
         assertEquals(contentlets.size(), themes.size());
         assertEquals(contentlets.get(0).getFolder(), themes.get(0).get("inode"));
-        assertTrue(themes.get(0).containsKey("themeThumbnail"));
+        assertTrue(themes.get(0).containsKey(THEME_THUMBNAIL_KEY));
         assertEquals(contentlets.get(1).getFolder(), themes.get(1).get("inode"));
-        assertTrue(themes.get(1).containsKey("themeThumbnail"));
+        assertTrue(themes.get(1).containsKey(THEME_THUMBNAIL_KEY));
         assertEquals(contentlets.get(2).getFolder(), themes.get(2).get("inode"));
-        assertTrue(themes.get(2).containsKey("themeThumbnail"));
+        assertTrue(themes.get(2).containsKey(THEME_THUMBNAIL_KEY));
     }
 }

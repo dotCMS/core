@@ -266,6 +266,11 @@ public class ESClient {
 
     private void updateServerTransportConfFromSettings(Server currentServer, final Builder externalSettings) {
 
+        if (!UtilMethods
+                .isSet(externalSettings.get(ServerPort.ES_TRANSPORT_TCP_PORT.getPropertyName()))) {
+            return;
+        }
+
         final int transportTCPPort = Integer.parseInt(externalSettings
             .get(ServerPort.ES_TRANSPORT_TCP_PORT.getPropertyName()));
 

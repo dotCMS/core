@@ -6,7 +6,6 @@ import com.dotcms.rendering.velocity.viewtools.LanguageWebAPI;
 import com.dotcms.rendering.velocity.viewtools.RequestWrapper;
 import com.dotcms.rest.api.v1.container.ContainerResource;
 import com.dotcms.visitor.domain.Visitor;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -19,25 +18,9 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.DisplayedLanguage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Constants;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.PortletURLUtil;
-import com.dotmarketing.util.StringUtils;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
-
-import java.io.File;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
+import com.dotmarketing.util.*;
+import com.liferay.portal.model.User;
+import com.liferay.util.SystemProperties;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
@@ -48,15 +31,19 @@ import org.apache.velocity.tools.view.ToolboxManager;
 import org.apache.velocity.tools.view.context.ChainedContext;
 import org.apache.velocity.tools.view.servlet.ServletToolboxManager;
 
-import com.liferay.portal.model.User;
-import com.liferay.util.SystemProperties;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import java.io.File;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.List;
 
 public class VelocityUtil {
     public final static String REFRESH="refresh";
     public final static String NO="no";
     public final static String DOTCACHE="dotcache";
 	private static VelocityEngine ve = null;
-	private static boolean DEFAULT_PAGE_TO_DEFAULT_LANGUAGE = LanguageWebAPI.canDefaultPageToDefaultLanguage();
 
 	private static class Holder {
 		private static final VelocityUtil INSTANCE = new VelocityUtil();
@@ -388,7 +375,7 @@ public class VelocityUtil {
 							"The page is not available in language "
 									+ language.getId() + ". Just keep going.");
 
-					if(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE) {
+					if(LanguageWebAPI.canDefaultPageToDefaultLanguage()) {
 						allDisplayLanguages.add(new DisplayedLanguage(language, true));
 					}
 
@@ -401,12 +388,12 @@ public class VelocityUtil {
 
 			languages.add(new DisplayedLanguage(language, false));
 
-			if(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE) {
+			if(LanguageWebAPI.canDefaultPageToDefaultLanguage()) {
 				allDisplayLanguages.add(new DisplayedLanguage(language, false));
 			}
 		}
 
-		if(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE && doesContentHaveDefaultLang){
+		if(LanguageWebAPI.canDefaultPageToDefaultLanguage() && doesContentHaveDefaultLang){
 			return allDisplayLanguages;
 		}
 
@@ -438,7 +425,7 @@ public class VelocityUtil {
             htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
 
         } catch (DotStateException dse) {
-            if (DEFAULT_PAGE_TO_DEFAULT_LANGUAGE && tryLang != APILocator.getLanguageAPI().getDefaultLanguage().getId()) {
+            if (LanguageWebAPI.canDefaultPageToDefaultLanguage() && tryLang != APILocator.getLanguageAPI().getDefaultLanguage().getId()) {
                 contentlet = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), live,
                         APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
                 htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);

@@ -1,13 +1,12 @@
-<%@page import="java.util.Map"%>
-<%@page import="java.util.HashMap"%>
-<%@page import="java.util.stream.Collectors"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
-<%@page import="com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.*"%>
 <%@page import="com.dotmarketing.util.DateUtil"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
+<%@page import="java.util.HashMap"%>
 <%@page import="java.util.List"%>
+<%@page import="java.util.Map"%>
+<%@ page import="com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo" %>
 <%
 
 if(user == null){
@@ -17,7 +16,6 @@ boolean isUserCMSAdmin = APILocator.getRoleAPI().doesUserHaveRole(user, APILocat
 boolean isHost = ("Host".equals(structure.getVelocityVarName()));
 
 boolean isContLocked=(request.getParameter("sibbling") != null) ? false : contentlet.isLocked();
-List<WorkflowScheme> schemes = APILocator.getWorkflowAPI().findSchemesForStruct(structure);
 WorkflowTask wfTask = APILocator.getWorkflowAPI().findTaskByContentlet(contentlet);
 
 List<WorkflowStep> wfSteps = null;
@@ -105,7 +103,14 @@ function setMyWorkflowScheme(){
 						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Revert-Working-Changes")) %>
 					</a>
 				<%}%>
-			<%} else if (InodeUtils.isSet(contentlet.getInode())) {%>
+			<%} else if (InodeUtils.isSet(contentlet.getInode())) {
+
+				final ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
+				final String 				latestInode		  	  = contentletVersionInfo.getWorkingInode();
+			%>
+				<a  onClick="editVersion('<%=latestInode%>');">
+					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "See-Latest-Version")) %>
+				</a>
 				<a  onClick="selectVersion('<%=contentlet.getInode()%>');">
 					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Bring-Back-Version")) %>
 				</a>

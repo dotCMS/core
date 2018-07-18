@@ -92,6 +92,7 @@ public final class WebKeys {
     public static final String CONTENTLETS_VIEW_COUNT = "com.dotmarketing.contentlet.view.count";
     public static final String CONTENTLET_VIEW_PORTLET = "com.dotmarketing.contentlet.view.portlet";
     public static final String CONTENTLET_EDIT = "com.dotmarketing.contentlet.edit";
+    public static final String CONTENTLET_DELETED = "com.dotmarketing.contentlet.deleted";
     public static final String CONTENTLET_RELATIONSHIPS_EDIT = "com.dotmarketing.contentlet.relationships.edit";
     public static final String CONTENTLET_SIBBLING_EDIT = "com.dotmarketing.contentlet.edit.sibbling";
     public static final String CONTENTLET_FORM_EDIT = "com.dotmarketing.contentlet.formedit";
@@ -409,6 +410,7 @@ public final class WebKeys {
 
     public static final String CRUMB_TRAIL = "com.dotmarketing.viewtool.crumbtrail";
 	public static final String REDIRECT_AFTER_LOGIN = "REDIRECT_AFTER_LOGIN";
+    public static final String DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE = "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE";
 
 	// CMS USER LOGIN
     public static final String CMS_USER = "cms.user";

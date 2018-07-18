@@ -20,10 +20,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringUtil;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.StringUtils;
 
@@ -62,17 +59,10 @@ public class PaginationUtil {
 	private final int perPageDefault;
 	private final int nLinks;
 
-	private final ObjectWriter objectWriter;
-
-	public PaginationUtil(Paginator paginator){
-		this(paginator, new ObjectMapper());
-	}
-
-	public PaginationUtil(final Paginator paginator, final ObjectMapper mapper){
+	public PaginationUtil(final Paginator paginator){
 		this.paginator = paginator;
 		perPageDefault = Config.getIntProperty(DOTCMS_PAGINATION_ROWS, 10);
 		nLinks = Config.getIntProperty(DOTCMS_PAGINATION_LINKS, 5);
-		this.objectWriter = mapper.writer().withDefaultPrettyPrinter();
 	}
 
 	/**
@@ -138,9 +128,7 @@ public class PaginationUtil {
 		PaginatedArrayList items = paginator.getItems(user, perPageValue, minIndex, params);
 
 		if (!UtilMethods.isSet(items)){
-			return ExceptionMapperUtil
-					.createResponse(map("message", "No items found"), "No items found",
-							Response.Status.NOT_FOUND);
+			items = new PaginatedArrayList();
 		}
 
 		final long totalRecords = items.getTotalResults();
@@ -148,18 +136,14 @@ public class PaginationUtil {
 		final String linkHeaderValue = getHeaderValue(req.getRequestURL().toString(), sanitizefilter, pageValue, perPageValue,
 				totalRecords, orderBy, direction, extraParams);
 
-		try {
-			return Response.
-                    ok(objectWriter.writeValueAsString(new ResponseEntityView((Object) items)))
-                    .header(LINK_HEADER_NAME, linkHeaderValue)
-                    .header(PAGINATION_PER_PAGE_HEADER_NAME, perPageValue)
-                    .header(PAGINATION_CURRENT_PAGE_HEADER_NAME, pageValue)
-                    .header(PAGINATION_MAX_LINK_PAGES_HEADER_NAME, nLinks)
-                    .header(PAGINATION_TOTAL_ENTRIES_HEADER_NAME, totalRecords)
-                    .build();
-		} catch (JsonProcessingException e) {
-			throw new JsonProcessingRuntimeException(e);
-		}
+		return Response.
+				ok(new ResponseEntityView((Object) items))
+				.header(LINK_HEADER_NAME, linkHeaderValue)
+				.header(PAGINATION_PER_PAGE_HEADER_NAME, perPageValue)
+				.header(PAGINATION_CURRENT_PAGE_HEADER_NAME, pageValue)
+				.header(PAGINATION_MAX_LINK_PAGES_HEADER_NAME, nLinks)
+				.header(PAGINATION_TOTAL_ENTRIES_HEADER_NAME, totalRecords)
+				.build();
 	}
 
 	protected Map<String, Object> getParameters(final String filter,
@@ -288,7 +272,22 @@ public class PaginationUtil {
 				final Object value = extraParamsEntry.getValue();
 
 				if (value != null) {
-					params.put(extraParamsEntry.getKey(), value.toString());
+					if (value instanceof Collection) {
+						final Collection valueCollection = (Collection) value;
+						final StringBuilder buffer = new StringBuilder();
+
+						for (final Object valueItem : valueCollection) {
+							if (buffer.length() != 0) {
+								buffer.append(",");
+							}
+
+							buffer.append(valueItem.toString());
+						}
+
+						params.put(extraParamsEntry.getKey(), buffer.toString());
+					} else {
+						params.put(extraParamsEntry.getKey(), value.toString());
+					}
 				}
 			}
 		}

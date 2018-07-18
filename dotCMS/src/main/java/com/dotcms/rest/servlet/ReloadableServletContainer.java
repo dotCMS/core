@@ -55,19 +55,12 @@ import com.dotcms.rest.exception.mapper.*;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Logger;
 
-import java.io.IOException;
-
-import java.util.List;
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
+import javax.servlet.*;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.List;
 
 public class ReloadableServletContainer extends HttpServlet implements Filter {
 
@@ -172,8 +165,10 @@ public class ReloadableServletContainer extends HttpServlet implements Filter {
                 .register(MyObjectMapperProvider.class)
                 .register(JacksonJaxbJsonProvider.class)
                 .register(HttpStatusCodeExceptionMapper.class)
+                .register(ResourceNotFoundExceptionMapper.class)
                 .register(InvalidFormatExceptionMapper.class)
                 .register(JsonParseExceptionMapper.class)
+                .register(ParamExceptionMapper.class)
                 .register(JsonMappingExceptionMapper.class)
                 .register(UnrecognizedPropertyExceptionMapper.class)
                 .register(InvalidLicenseExceptionMapper.class)

@@ -1,16 +1,17 @@
 package com.dotmarketing.portlets.contentlet.ajax;
 
+import static com.dotcms.integrationtestutil.content.ContentUtils.createTestKeyValueContent;
+import static com.dotcms.integrationtestutil.content.ContentUtils.deleteContentlets;
+
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-
-import org.junit.After;
 import org.junit.Assert;
-
 import org.junit.BeforeClass;
 import org.junit.Test;
-
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -152,6 +153,40 @@ public class ContentletAjaxTest {
 		contentlet = APILocator.getContentletAPI().find(String.valueOf(result.get("inode")),systemUser,false);
 		APILocator.getContentletAPI().archive(contentlet,systemUser,false);
 		APILocator.getContentletAPI().delete(contentlet,systemUser,false);
+	}
+
+	@Test
+	public void test_doSearchGlossaryTerm_ReturnsListLanguageVariables()
+			throws Exception {
+		Contentlet languageVariable1 = null;
+		Contentlet languageVariable2 = null;
+		try {
+			final ContentType languageVariableContentType = APILocator.getContentTypeAPI(systemUser)
+					.find(LanguageVariableAPI.LANGUAGEVARIABLE);
+			languageVariable1 = createTestKeyValueContent(
+					"test1", "test1", 1,
+					languageVariableContentType, systemUser);
+			languageVariable2 = createTestKeyValueContent(
+					"powered.by.IT", "hello world", 1,
+					languageVariableContentType, systemUser);
+
+			final ContentletAjax contentletAjax = new ContentletAjax();
+			List<String[]> languageVariablesList = contentletAjax.doSearchGlossaryTerm("test","1");
+			Assert.assertEquals(1,languageVariablesList.size());
+			languageVariablesList = contentletAjax.doSearchGlossaryTerm("powered.by.dot","1");
+			Assert.assertEquals(1,languageVariablesList.size());
+			languageVariablesList = contentletAjax.doSearchGlossaryTerm("powered.by","1");
+			Assert.assertEquals(2,languageVariablesList.size());
+
+		}finally {
+			if(languageVariable1 != null){
+				deleteContentlets(systemUser,languageVariable1);
+			}
+			if(languageVariable2 != null){
+				deleteContentlets(systemUser,languageVariable2);
+			}
+		}
+
 	}
 
 }

@@ -1,5 +1,7 @@
 package com.dotcms.rendering.velocity.servlet;
 
+import static com.dotmarketing.filters.TimeMachineFilter.TM_DATE_VAR;
+
 import com.dotcms.business.CloseDB;
 import com.dotcms.rendering.velocity.viewtools.RequestWrapper;
 
@@ -54,10 +56,9 @@ public class VelocityServlet extends HttpServlet {
             return;
         }
 
-        final boolean comeFromAdmin = req.getAttribute(WebKeys.COME_FROM_ADMIN) != null ?
-                (boolean) req.getAttribute(WebKeys.COME_FROM_ADMIN) : false;
+        final boolean comeFromSomeWhere = request.getHeader("referer") != null;
 
-        if (APILocator.getLoginServiceAPI().isLoggedIn(request) && !comeFromAdmin){
+        if (APILocator.getLoginServiceAPI().isLoggedIn(request) && !comeFromSomeWhere){
             goToEditPage(uri, response);
         } else {
             request.setRequestUri(uri);

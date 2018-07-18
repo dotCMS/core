@@ -234,7 +234,7 @@
 
 			strHTML += '<a href="javascript: markForCopy(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
 		    	//strHTML += '<span class="folderCopyIcon"></span>';
-		        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Copy")) %>';
+		        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "markForCopy")) %>';
 			strHTML += '</a>';
 
 			strHTML += '<a href="javascript: markForCut(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
@@ -461,7 +461,7 @@
 
             strHTML += '<a href="javascript: markForCopy(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
             strHTML += '<span class="docCopyIcon"></span>';
-            strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Copy")) %>';
+            strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "markForCopy")) %>';
             strHTML += '</a>';
 
 			strHTML += '<a href="javascript: markForCut(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
@@ -588,7 +588,7 @@
 
 			strHTML += '<a href="javascript: markForCopy(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
 	    		strHTML += '<span class="docCopyIcon"></span>';
-	        	strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Copy")) %>';
+	        	strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "markForCopy")) %>';
 			strHTML += '</a>';
 
 			strHTML += '<a href="javascript: markForCut(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
@@ -640,7 +640,7 @@
 		var hasLiveVersion = page.hasLiveVersion;
 		var strHTML = '';
 		if ((live || working) && read && !archived) {
-			strHTML += '<a href="javascript: previewHTMLPage(\'' + pageURI + '\');" class="context-menu__item">';
+			strHTML += '<a href="javascript: previewHTMLPage(\'' + pageURI + '\', { languageId: ' + page.languageId + '});" class="context-menu__item">';
 		    	//strHTML += '<span class="pageIcon"></span>';
 	    	    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Open-Preview")) %>';
 			strHTML += '</a>';
@@ -722,7 +722,7 @@
 
             strHTML += '<a href="javascript: markForCopy(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
             strHTML += '<span class="docCopyIcon"></span>';
-            strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Copy")) %>';
+            strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "markForCopy")) %>';
             strHTML += '</a>';
 
 			strHTML += '<a href="javascript: markForCut(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';

@@ -4,6 +4,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.ContentMappingAPI;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
@@ -171,6 +172,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	 *
 	 * Jun 7, 2013 - 3:47:26 PM
 	 */
+	@CloseDBIfOpened
 	public Map<String,Object> toMap(final Contentlet contentlet) throws DotMappingException {
 
 		try {
@@ -264,8 +266,13 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 				if (UtilMethods.isSet(lcasev) && lcasev instanceof String){
 					lcasev = ((String) lcasev).toLowerCase();
+
 					if (!lcasek.endsWith(TEXT)){
-						mlowered.put(lcasek + "_dotraw", lcasev);
+						//for example: when lcasev=moddate, moddate_dotraw must be created from its moddate_text if exists
+						//when the moddate_text is evaluated.
+						if (!contentletMap.containsKey(entry.getKey() + TEXT)){
+							mlowered.put(lcasek + "_dotraw", lcasev);
+						}
 					}else{
 						mlowered.put(lcasek.replace(TEXT, "_dotraw"), lcasev);
 					}
@@ -612,6 +619,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	public String toJsonString(Map<String, Object> map) throws IOException{
 		return mapper.writeValueAsString(map);
 	}
+
+	@CloseDBIfOpened
 	public List<String> dependenciesLeftToReindex(Contentlet con) throws DotStateException, DotDataException, DotSecurityException {
 		List<String> dependenciesToReindex = new ArrayList<String>();
 

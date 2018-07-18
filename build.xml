@@ -994,7 +994,7 @@
         <copy todir="${tomcat.home}/lib/">
             <fileset dir="libs/buildlibs/">
                 <include name="mail.jar"/>
-                <include name="sqljdbc42.jar"/>
+                <include name="mssql-jdbc-6.2.2.jre8.jar"/>
                 <include name="mysql-connector-java-5.1.37-bin.jar"/>
                 <include name="postgresql-42.2.2.jar"/>
                 <include name="ojdbc5.jar"/>

@@ -5,6 +5,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
@@ -17,11 +18,13 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -41,6 +44,8 @@ import org.apache.velocity.context.Context;
 
 import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
+
+import javax.servlet.http.HttpServletRequest;
 
 public class PageContextBuilder {
     private static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
@@ -151,49 +156,56 @@ public class PageContextBuilder {
 
 
     private void populateContainers() throws DotDataException, DotSecurityException {
-        Table<String, String, Set<String>> pageContents = APILocator.getMultiTreeAPI().getPageMultiTrees(htmlPage, mode.showLive);
+        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        final Language language = request == null ? APILocator.getLanguageAPI().getDefaultLanguage() :
+                WebAPILocator.getLanguageWebAPI().getLanguage(request);
 
+        final boolean live = (request.getSession(false) != null && request.getSession().getAttribute("tm_date")!=null) ? false : mode.showLive;
 
+        final Table<String, String, Set<String>> pageContents = APILocator.getMultiTreeAPI()
+                .getPageMultiTrees(htmlPage, language, live);
 
         if (!pageContents.isEmpty()) {
+
             for (final String containerId : pageContents.rowKeySet()) {
                 for (final String uniqueId : pageContents.row(containerId)
                     .keySet()) {
                     final Set<String> cons = pageContents.get(containerId, uniqueId);
 
                     final User systemUser = APILocator.getUserAPI().getSystemUser();
-                    final Container c = (mode.showLive) ? (Container) APILocator.getVersionableAPI()
+                    final Container container = live ? (Container) APILocator.getVersionableAPI()
                             .findLiveVersion(containerId, systemUser, false)
                             : (Container) APILocator.getVersionableAPI()
                             .findWorkingVersion(containerId, systemUser, false);
 
 
                     boolean hasWritePermissionOnContainer =
-                            permissionAPI.doesUserHavePermission(c, PERMISSION_WRITE, user, false) && APILocator.getPortletAPI()
+                            permissionAPI.doesUserHavePermission(container, PERMISSION_WRITE, user, false) && APILocator.getPortletAPI()
                                 .hasContainerManagerRights(user);
-                    boolean hasReadPermissionOnContainer = permissionAPI.doesUserHavePermission(c, PERMISSION_READ, user, false);
-                    ctxMap.put("EDIT_CONTAINER_PERMISSION" + c.getIdentifier(), hasWritePermissionOnContainer);
+                    boolean hasReadPermissionOnContainer = permissionAPI.doesUserHavePermission(container, PERMISSION_READ, user, false);
+                    ctxMap.put("EDIT_CONTAINER_PERMISSION" + container.getIdentifier(), hasWritePermissionOnContainer);
                     if (Config.getBooleanProperty("SIMPLE_PAGE_CONTENT_PERMISSIONING", true))
-                        ctxMap.put("USE_CONTAINER_PERMISSION" + c.getIdentifier(), true);
+                        ctxMap.put("USE_CONTAINER_PERMISSION" + container.getIdentifier(), true);
                     else
-                        ctxMap.put("USE_CONTAINER_PERMISSION" + c.getIdentifier(), hasReadPermissionOnContainer);
+                        ctxMap.put("USE_CONTAINER_PERMISSION" + container.getIdentifier(), hasReadPermissionOnContainer);
 
                     // to check user has permission to write this container
                     boolean hasWritePermOverTheStructure = false;
 
                     for (ContainerStructure cs : APILocator.getContainerAPI()
-                        .getContainerStructures(c)) {
+                        .getContainerStructures(container)) {
                         Structure st = CacheLocator.getContentTypeCache()
                             .getStructureByInode(cs.getStructureId());
 
                         hasWritePermOverTheStructure |= permissionAPI.doesUserHavePermission(st, PERMISSION_WRITE, user);
                     }
 
-                    ctxMap.put("ADD_CONTENT_PERMISSION" + c.getIdentifier(), new Boolean(hasWritePermOverTheStructure));
+                    ctxMap.put("ADD_CONTENT_PERMISSION" + container.getIdentifier(), new Boolean(hasWritePermOverTheStructure));
 
                     List<Contentlet> contentlets = APILocator.getContentletAPI()
                             .findContentletsByIdentifiers(cons.stream()
-                                    .toArray(String[]::new), mode.showLive, -1, systemUser, false);
+                                    .toArray(String[]::new), live,
+                                        language != null ? language.getId() : APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
                     // get contentlets only for main frame
 
                     if (contentlets != null) {
@@ -236,15 +248,15 @@ public class PageContextBuilder {
                             .toArray(size -> new String[size]);
                     // sets contentletlist with all the files to load per
                     // container
-                    ctxMap.put("contentletList" + c.getIdentifier() + uniqueId, contentlist);
+                    ctxMap.put("contentletList" + container.getIdentifier() + uniqueId, contentlist);
 
                     if (ContainerUUID.UUID_LEGACY_VALUE.equals(uniqueId)) {
-                        ctxMap.put("contentletList" + c.getIdentifier() + ContainerUUID.UUID_START_VALUE, contentlist);
+                        ctxMap.put("contentletList" + container.getIdentifier() + ContainerUUID.UUID_START_VALUE, contentlist);
                     } else  if (ContainerUUID.UUID_START_VALUE.equals(uniqueId)) {
-                        ctxMap.put("contentletList" + c.getIdentifier() + ContainerUUID.UUID_LEGACY_VALUE, contentlist);
+                        ctxMap.put("contentletList" + container.getIdentifier() + ContainerUUID.UUID_LEGACY_VALUE, contentlist);
                     }
 
-                    ctxMap.put("totalSize" + c.getIdentifier() + uniqueId, new Integer(contentlets.size()));
+                    ctxMap.put("totalSize" + container.getIdentifier() + uniqueId, new Integer(contentlets.size()));
 
                 }
             }

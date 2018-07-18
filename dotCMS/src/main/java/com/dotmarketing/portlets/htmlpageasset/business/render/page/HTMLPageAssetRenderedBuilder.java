@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
 import com.dotcms.business.CloseDB;
+import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.rendering.velocity.directive.RenderParams;
 import com.dotcms.rendering.velocity.services.PageContextBuilder;
 import com.dotcms.enterprise.license.LicenseManager;
@@ -49,7 +50,7 @@ public class HTMLPageAssetRenderedBuilder {
     private final UserAPI userAPI;
     private final ContentletAPI contentletAPI;
     private final LayoutAPI layoutAPI;
-    private final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
+    private final VersionableAPI versionableAPI;
 
     private final ContainerRenderedBuilder containerRenderedBuilder;
 
@@ -59,6 +60,7 @@ public class HTMLPageAssetRenderedBuilder {
         contentletAPI = APILocator.getContentletAPI();
         layoutAPI = APILocator.getLayoutAPI();
         containerRenderedBuilder = new ContainerRenderedBuilder();
+        versionableAPI = APILocator.getVersionableAPI();
     }
 
     public HTMLPageAssetRenderedBuilder setHtmlPageAsset(HTMLPageAsset htmlPageAsset) {
@@ -116,7 +118,7 @@ public class HTMLPageAssetRenderedBuilder {
                     PermissionLevel.EDIT.getType(), user);
 
             return new HTMLPageAssetRendered(site, template, containers, htmlPageAssetInfo, layout, pageHTML,
-                    canCreateTemplates, canEditTemplate, this.getViewAsStatus()
+                    canCreateTemplates, canEditTemplate, this.getViewAsStatus(mode)
             );
         }
     }
@@ -183,13 +185,14 @@ public class HTMLPageAssetRenderedBuilder {
         }
     }
 
-    private ViewAsPageStatus getViewAsStatus()
+    private ViewAsPageStatus getViewAsStatus(PageMode pageMode)
             throws DotDataException {
 
         return new ViewAsPageStatus()
             .setPersona(this.getCurrentPersona())
             .setLanguage(WebAPILocator.getLanguageWebAPI().getLanguage(request))
-            .setDevice(getCurrentDevice());
+            .setDevice(getCurrentDevice())
+            .setPageMode(pageMode);
     }
 
     private IPersona getCurrentPersona() {

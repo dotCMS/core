@@ -63,6 +63,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipFile;
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.felix.framework.OSGIUtil;
 
 import static com.dotcms.enterprise.LicenseUtil.IMPORTED_LICENSE_PACK_PREFIX;
 import static com.dotcms.enterprise.LicenseUtil.LICENSE_NAME;

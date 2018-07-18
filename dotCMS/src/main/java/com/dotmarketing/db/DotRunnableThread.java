@@ -1,11 +1,5 @@
 package com.dotmarketing.db;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -14,6 +8,12 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.bulk.BulkResponse;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class DotRunnableThread extends Thread {
 
@@ -95,22 +95,27 @@ public class DotRunnableThread extends Thread {
 
       reindexList.add(contentToIndex);
 
-      for (final List<Contentlet> batchList : reindexList) {
+      if (reindexList.isEmpty()) {
 
-          try {
-              APILocator.getContentletIndexAPI().indexContentList(batchList, null, false, new ActionListener<BulkResponse>() {
-                  @Override
-                  public void onResponse(BulkResponse bulkItemResponses) {
-                      otherListenerList.stream().forEach(DotRunnable::run);
-                  }
+          otherListenerList.stream().forEach(DotRunnable::run);
+      } else {
+          for (final List<Contentlet> batchList : reindexList) {
 
-                  @Override
-                  public void onFailure(Exception e) {
-                      Logger.error(this, e.getMessage(), e);
-                  }
-              });
-          } catch (DotDataException e) {
-              Logger.error(this, e.getMessage(), e);
+              try {
+                  APILocator.getContentletIndexAPI().indexContentList(batchList, null, false, new ActionListener<BulkResponse>() {
+                      @Override
+                      public void onResponse(BulkResponse bulkItemResponses) {
+                          otherListenerList.stream().forEach(DotRunnable::run);
+                      }
+
+                      @Override
+                      public void onFailure(Exception e) {
+                          Logger.error(this, e.getMessage(), e);
+                      }
+                  });
+              } catch (DotDataException e) {
+                  Logger.error(this, e.getMessage(), e);
+              }
           }
       }
   }

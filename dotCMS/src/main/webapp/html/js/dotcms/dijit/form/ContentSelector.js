@@ -142,6 +142,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	},
 
 	_structureChanged: function () {
+        this.currentSortBy = "";
         this.setDotFieldTypeStr = "";
 		LanguageAjax.getLanguagesWithAllOption(dojo.hitch(this, this._fillLanguages));
 		StructureAjax.getSearchableStructureFields (this.structureInode,dojo.hitch(this, this._fillFields));
