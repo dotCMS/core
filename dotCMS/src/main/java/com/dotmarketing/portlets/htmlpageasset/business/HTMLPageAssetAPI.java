@@ -291,7 +291,31 @@ public interface HTMLPageAssetAPI {
 
     IHTMLPage findPage(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
-
+    /**
+     * Returns page based on identifier and respects the language fallback settings
+     * @param id
+     * @param tryLang
+     * @param live
+     * @param user
+     * @param respectFrontEndPermissions
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     IHTMLPage findByIdLanguageFallback(Identifier id, long tryLang, boolean live, User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException;
+
+    /**
+     * Returns page based on identifier and respects the language fallback settings
+     * @param id
+     * @param tryLang
+     * @param live
+     * @param user
+     * @param respectFrontEndPermissions
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    IHTMLPage findByIdLanguageFallback(String id, long tryLang, boolean live, User user, boolean respectFrontEndPermissions)
+            throws DotDataException, DotSecurityException;
 
 }
