@@ -22,6 +22,8 @@
  * */
 package com.dotcms.util.network;
 
+import com.liferay.util.StringPool;
+
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -40,15 +42,15 @@ public class CIDRUtils {
     private InetAddress startAddress;
     private InetAddress endAddress;
     private final int prefixLength;
-
+    private final static int LENGTH_TEST = 4;
 
     public CIDRUtils(final String cidr) throws UnknownHostException {
 
         this.cidr = cidr;
 
         /* split CIDR to address and prefix part */
-        if (this.cidr.contains("/")) {
-            final int index = this.cidr.indexOf("/");
+        if (this.cidr.contains(StringPool.SLASH)) {
+            final int index = this.cidr.indexOf(StringPool.SLASH);
             final String addressPart = this.cidr.substring(0, index);
             final String networkPart = this.cidr.substring(index + 1);
 
@@ -66,10 +68,10 @@ public class CIDRUtils {
 
         ByteBuffer maskBuffer;
         int targetSize;
-        if (inetAddress.getAddress().length == 4) {
+        if (inetAddress.getAddress().length == LENGTH_TEST) {
             maskBuffer =
                     ByteBuffer
-                            .allocate(4)
+                            .allocate(LENGTH_TEST)
                             .putInt(-1);
             targetSize = 4;
         } else {
@@ -79,7 +81,7 @@ public class CIDRUtils {
             targetSize = 16;
         }
 
-        BigInteger mask = new BigInteger(1, maskBuffer.array()).not().shiftRight(prefixLength);
+        final BigInteger mask = new BigInteger(1, maskBuffer.array()).not().shiftRight(prefixLength);
 
         final ByteBuffer buffer = ByteBuffer.wrap(inetAddress.getAddress());
         final BigInteger ipVal = new BigInteger(1, buffer.array());

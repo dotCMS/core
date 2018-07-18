@@ -16,13 +16,13 @@ public class IPUtils {
      * @return If the IP address matches the given CIDR, returns {@code true}
      *         . Otherwise, returns {@code false}.
      */
-    public static boolean isIpInCIDR(String ip, String CIDR) {
+    public static boolean isIpInCIDR(final String ip, final String CIDR) {
         boolean isMatching = false;
         if (UtilMethods.isSet(ip) && UtilMethods.isSet(CIDR)) {
-            String[] netmaskParts = CIDR.split("/");
+            final String[] netmaskParts = CIDR.split("/");
             if (netmaskParts != null && netmaskParts.length == 2) {
                 try{
-                    CIDRUtils cidr = new CIDRUtils(CIDR);
+                    final CIDRUtils cidr = new CIDRUtils(CIDR);
                     isMatching = cidr.isInRange(ip);
                 }
                 catch (UnknownHostException e) {
