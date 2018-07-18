@@ -396,13 +396,13 @@
     </servlet-mapping>
     
     <servlet-mapping>
-      <servlet-name>CSSPreProcessServlet</servlet-name>
-      <url-pattern>/DOTSASS/*</url-pattern>
+      <servlet-name>SassPreProcessServlet</servlet-name>
+      <url-pattern>*.dotsass</url-pattern>
     </servlet-mapping>
     
     <servlet-mapping>
-      <servlet-name>SassPreProcessServlet</servlet-name>
-      <url-pattern>*.dotsass</url-pattern>
+      <servlet-name>CSSPreProcessServlet</servlet-name>
+      <url-pattern>/DOTSASS/*</url-pattern>
     </servlet-mapping>
     
     <servlet-mapping>
@@ -448,32 +448,34 @@
 		<servlet-name>TailLogServlet</servlet-name>
 		<url-pattern>/dotTailLogServlet/*</url-pattern>
 	</servlet-mapping>
-
+	<servlet-mapping>
+		<servlet-name>WebDav</servlet-name>
+		<url-pattern>/webdav/autopub/*</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>WebDav</servlet-name>
+		<url-pattern>/webdav/nonpub/*</url-pattern>
+	</servlet-mapping>
 	<servlet-mapping>
 		<servlet-name>WebDav</servlet-name>
 		<url-pattern>/webdav/live/*</url-pattern>
 	</servlet-mapping>
-	
 	<servlet-mapping>
 		<servlet-name>WebDav</servlet-name>
 		<url-pattern>/webdav/working/*</url-pattern>
 	</servlet-mapping>
-	
 	<servlet-mapping>
     	<servlet-name>AjaxFileUploadServlet</servlet-name>
     	<url-pattern>/servlets/ajax_file_upload</url-pattern>
     </servlet-mapping>
-    
 	<servlet-mapping>
 		<servlet-name>VelocityServlet</servlet-name>
 		<url-pattern>/servlets/VelocityServlet</url-pattern>
 	</servlet-mapping>
-	
 	<servlet-mapping>
 		<servlet-name>SpeedyAssetServlet</servlet-name>
 		<url-pattern>/dotAsset/*</url-pattern>
 	</servlet-mapping>
-	
 	<servlet-mapping>
 		<servlet-name>ShortyServlet</servlet-name>
 		<url-pattern>/dA/*</url-pattern>
