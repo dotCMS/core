@@ -2,6 +2,7 @@ package com.dotcms.contenttype.test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.util.UtilMethods;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
@@ -57,6 +58,7 @@ public class ContentTypeResourceTest extends ContentTypeBaseTest {
 
 	@Test
 	@UseDataProvider("testCases")
+	@WrapInTransaction
 	public void testJson(String jsonFile) throws Exception {
 		Logger.info(this.getClass(), "testing:" + jsonFile);
 
