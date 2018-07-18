@@ -161,7 +161,7 @@ public class ThemeResourceIntegrationTest {
 
             //Publishing theme.png
             contentletAPI.publish(thumbnail, user, false);
-            contentletAPI.isInodeIndexed(thumbnail.getInode());
+            contentletAPI.isInodeIndexed(thumbnail.getInode(), true);
 
             final ThemeResource resource = new ThemeResource();
             final Response response = resource.findThemeById(getHttpRequest(), destinationFolder.getInode());
