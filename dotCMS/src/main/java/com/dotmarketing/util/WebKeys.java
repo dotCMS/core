@@ -719,4 +719,6 @@ public final class WebKeys {
 
     public static final String CURRENT_DEVICE = "previewAsDeviceId";
 
+    public static final String PAGE_MODE_PARAMETER= "mode";
+
 }
