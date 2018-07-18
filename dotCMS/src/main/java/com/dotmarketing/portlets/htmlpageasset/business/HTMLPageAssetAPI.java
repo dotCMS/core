@@ -292,6 +292,6 @@ public interface HTMLPageAssetAPI {
     IHTMLPage findPage(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 
-    IHTMLPage findByIdentifier(Identifier id, long tryLang, boolean live) throws DotDataException, DotSecurityException;
+    IHTMLPage findByIdLanguageFallback(Identifier id, long tryLang, boolean live, User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException;
 
 }

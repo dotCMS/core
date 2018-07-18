@@ -21,6 +21,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.LanguageWebAPI;
@@ -827,7 +828,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
      * @throws DotSecurityException
      */
 	@Override
-    public IHTMLPage findByIdentifier(Identifier id, long tryLang, boolean live)
+    public IHTMLPage findByIdLanguageFallback(final Identifier id, final long tryLang, final boolean live, final User user, final boolean respectFrontEndPermissions)
             throws DotDataException, DotSecurityException {
 
 
@@ -837,13 +838,13 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
         try {
             contentlet = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), live, tryLang,
-                    APILocator.getUserAPI().getSystemUser(), false);
+                    user, respectFrontEndPermissions);
             htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
 
-        } catch (DotStateException dse) {
+        } catch (Exception dse) {
             if (APILocator.getLanguageAPI().canDefaultPageToDefaultLanguage() && tryLang != APILocator.getLanguageAPI().getDefaultLanguage().getId()) {
                 contentlet = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), live,
-                        APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
+                        APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, respectFrontEndPermissions);
                 htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
             } else {
                 throw new ResourceNotFoundException(
@@ -851,7 +852,6 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
             }
 
         }
-
 
         return htmlPage;
     }
