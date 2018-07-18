@@ -29,6 +29,7 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.UtilMethods;
 
 
@@ -163,6 +164,7 @@ public class ThemeResourceIntegrationTest {
             contentletAPI.publish(thumbnail, user, false);
             contentletAPI.isInodeIndexed(thumbnail.getInode());
 
+            DateUtil.sleep(2000L);
             final ThemeResource resource = new ThemeResource();
             final Response response = resource.findThemeById(getHttpRequest(), destinationFolder.getInode());
             assertEquals(Status.OK.getStatusCode(), response.getStatus());
