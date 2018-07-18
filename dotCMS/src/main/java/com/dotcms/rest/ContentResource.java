@@ -393,7 +393,7 @@ public class ContentResource {
 
     @GET
     @Path("/{params:.*}")
-    @Produces(MediaType.TEXT_PLAIN)
+    @Produces(MediaType.APPLICATION_JSON)
     public Response getContent(@Context HttpServletRequest request,
             @Context HttpServletResponse response, @PathParam("params") String params) {
 
