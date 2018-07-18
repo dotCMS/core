@@ -224,6 +224,8 @@ dependencies {
         transitive = false
     }
 
+    compile group: 'net.jodah', name: 'failsafe', version:'1.0.4'
+
     compile group: 'redis.clients', name: 'jedis', version:'2.7.3'
     compile group: 'org.apache.commons', name: 'commons-pool2', version:'2.0'
     compile group: 'com.dotcms.lib', name: 'dot.maxmind-db', version:'1.0.0_2'
