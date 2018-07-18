@@ -96,6 +96,14 @@ public interface WorkflowAPI {
 	public WorkflowStep findStepByContentlet(Contentlet contentlet) throws DotDataException;
 
 	/**
+	 * Return the contentlet current step if there is one or empty
+	 * @param contentlet
+	 * @return
+	 * @throws DotDataException
+	 */
+	public Optional<WorkflowStep> findCurrentStep(final Contentlet contentlet) throws DotDataException;
+
+	/**
 	 * Check if the schemeId pass exist n the list of workflow scheme.
 	 * @param schemeId WorkflowScheme ID to validate
 	 * @param schemes List of WorkflowScheme to compare
