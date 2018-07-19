@@ -1,4 +1,5 @@
 
+<%@page import="com.dotmarketing.portlets.structure.model.Field"%>
 <%@page import="com.dotcms.contenttype.model.field.ColumnField"%>
 <%@page import="com.dotcms.contenttype.model.field.RowField"%>
 <%@page import="com.dotcms.contenttype.transform.field.LegacyFieldTransformer"%>
@@ -175,6 +176,14 @@
 			break;
 		}
 	}
+
+    Iterator itr = fields.iterator();
+    while (itr.hasNext()) {
+        Field field = (Field)itr.next();
+        if (Field.FieldType.COLUMN.toString().equals(field.getFieldType()) || Field.FieldType.ROW.toString().equals(field.getFieldType())) {
+            itr.remove();
+        }
+    }
 
 	boolean canEditAsset = conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user);
 	final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
