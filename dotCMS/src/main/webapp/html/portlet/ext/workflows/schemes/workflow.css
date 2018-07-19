@@ -270,7 +270,7 @@ ol.wfStepsList li{padding:8px 16px;margin:0 10px; list-style:decimal;  list-styl
 }
 
 .wfStepTitle {
-	background-color: #0F75C4;
+	background-color: var(--color-main);
 	color: #fff;
 	margin-bottom: 0;
 }
@@ -282,12 +282,9 @@ ol.wfStepsList li{padding:8px 16px;margin:0 10px; list-style:decimal;  list-styl
 	padding: 12px 12px;
 
 }
-.wf-action-wrapper:hover{
-	background: #E6EFF7;
-}
-
+.wf-action-wrapper:hover,
 .makeMeBlue{
-	background:#E6EFF7;
+	background-color: rgba(var(--color-main_rgb), 0.2);
 }
 
 .pull-right {
@@ -322,7 +319,7 @@ ol.wfStepsList li{padding:8px 16px;margin:0 10px; list-style:decimal;  list-styl
 }
 
 .btn-primary {
-	color: #0F75C4;
+	color: var(--color-main);
 }
 
 .box-wrapper:hover .ghost-box {
