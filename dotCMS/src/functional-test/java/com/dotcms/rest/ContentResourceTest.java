@@ -48,8 +48,10 @@ import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
+import com.ettrema.httpclient.PropFindMethod;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import org.junit.*;
@@ -155,6 +157,53 @@ public class ContentResourceTest {
 
     }
 
+    @Test
+    public void getContent_HeaderMimeTypeIsApplicationJson() throws Exception{
+        Structure st=CacheLocator.getContentTypeCache().getStructureByVelocityVarName("webPageContent");
+        Host demo=hostAPI.findByName("demo.dotcms.com", user, false);
+
+        String demoId=demo.getIdentifier();
+
+        Response responsePut = webTarget.path("/publish/1/").request()
+                .header(authheader, authvalue)
+                .put(Entity.entity(new JSONObject()
+                        .put("stInode", st.getInode())
+                        .put("languageId", 1)
+                        .put("title", "嗨")
+                        .put("body", "this is an example text")
+                        .put("contentHost", demoId).toString(), MediaType.APPLICATION_JSON_TYPE));
+
+
+        Assert.assertEquals(200, responsePut.getStatus());
+        String location=responsePut.getLocation().toString();
+        String inode=location.substring(location.lastIndexOf("/")+1);
+        Contentlet cont=contentletAPI.find(inode, user, false);
+        Assert.assertNotNull(cont);
+
+        Response responseGet = webTarget.path("/id/"+cont.getIdentifier())
+                .request()
+                .header(authheader, authvalue)
+                .get();
+
+        assertNotNull(responseGet);
+        assertEquals("application/json", responseGet.getHeaderString("Content-Type"));
+
+        String responseGetString = webTarget.path("/id/"+cont.getIdentifier())
+                .request()
+                .header(authheader, authvalue)
+                .get(String.class);
+
+        assertNotNull(responseGetString);
+        JSONObject json = new JSONObject(responseGetString);
+        assertNotNull(json);
+
+        JSONArray contentlets = (JSONArray) json.get("contentlets");
+        assertNotNull(contentlets);
+        assertEquals("嗨", contentlets.getJSONObject(0).get("title"));
+
+        contentletAPI.archive(cont,user,false);
+        contentletAPI.delete(cont,user,false);
+    }
     @Test
     @Ignore
     public void singlePUT() throws Exception {
