@@ -4,6 +4,7 @@ import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectWriter;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
@@ -22,7 +23,13 @@ import java.util.Map;
  * {@link VelocityModeHandler} to render a page into {@link com.dotmarketing.util.PageMode#NAVIGATE_EDIT_MODE}, this
  * is the default mode when in HttpSession is set EDIT_MODE but not any mode is set into HttpRequest
  */
-public class VelocityNavigateEditMode extends VelocityEditMode {
+public class VelocityNavigateEditMode  extends VelocityModeHandler {
+
+    protected final HttpServletRequest request;
+    protected final HttpServletResponse response;
+    protected final String uri;
+    private final Host host;
+    private final User user;
 
     private final HTMLPageAssetRenderedAPI htmlPageAssetRenderedAPI = APILocator.getHTMLPageAssetRenderedAPI();
 
@@ -36,22 +43,43 @@ public class VelocityNavigateEditMode extends VelocityEditMode {
                 "window.top.document.dispatchEvent(customEvent);" +
             "</script>";
 
-    public VelocityNavigateEditMode(HttpServletRequest request, HttpServletResponse response, String uri, Host host) {
-        super(request, response, uri, host);
+    public VelocityNavigateEditMode(final HttpServletRequest request,
+                                    final HttpServletResponse response,
+                                    final String uri,
+                                    final Host host) {
+        this.request = request;
+        this.response = response;
+        this.uri = uri;
+        this.host = host;
+        this.user = WebAPILocator.getUserWebAPI().getUser(request);
     }
 
     public VelocityNavigateEditMode(HttpServletRequest request, HttpServletResponse response) {
-        super(request, response);
+        this(request, response, request.getRequestURI(), hostWebAPI.getCurrentHostNoThrow(request));
+    }
+
+    @Override
+    void serve() throws DotDataException, IOException, DotSecurityException {
+        serve(response.getOutputStream());
     }
 
     @Override
     public void serve(final OutputStream out) throws DotDataException, IOException, DotSecurityException {
         final User user = APILocator.getLoginServiceAPI().getLoggedInUser();
+
+        final PageMode mode = this.getMode();
+
         final PageView htmlPageAssetRendered = htmlPageAssetRenderedAPI.getPageRendered(this.request,
-                this.response, user, this.uri, PageMode.EDIT_MODE);
+                this.response, user, this.uri, mode);
         final ObjectWriter objectWriter = new ObjectMapper().writer().withDefaultPrettyPrinter();
         final String renderedPageString = objectWriter.writeValueAsString(htmlPageAssetRendered)
                 .replace("</script>", "\\</script\\>");
         this.response.getOutputStream().write(String.format(JS_CODE, renderedPageString).getBytes());
+    }
+
+    private PageMode getMode() {
+        final PageMode currentMode = PageMode.get(request);
+        return currentMode.showLive ? currentMode :
+                APILocator.getHTMLPageAssetRenderedAPI().getDefaultEditPageMode(user, request, uri);
     }
 }

@@ -33,7 +33,7 @@ public enum PageMode {
     ADMIN_MODE(true, true), 
     PREVIEW_MODE(false, true), 
     EDIT_MODE(false, true),
-    NAVIGATE_EDIT_MODE(false, true);;
+    NAVIGATE_EDIT_MODE(false, true);
 
     private static PageMode DEFAULT_PAGE_MODE = LIVE;
 

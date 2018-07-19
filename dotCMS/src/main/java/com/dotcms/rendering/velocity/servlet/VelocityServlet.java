@@ -62,7 +62,7 @@ public class VelocityServlet extends HttpServlet {
             goToEditPage(uri, response);
         } else {
             request.setRequestUri(uri);
-            PageMode mode = PageMode.getWithNavigateMode(request);
+            final PageMode mode = PageMode.getWithNavigateMode(request);
 
             try {
                 VelocityModeHandler.modeHandler(mode, request, response).serve();

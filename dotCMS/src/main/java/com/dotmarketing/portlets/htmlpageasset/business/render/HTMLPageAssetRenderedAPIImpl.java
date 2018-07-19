@@ -73,7 +73,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                                     final User user, final String pageUri, final PageMode mode)
             throws DotDataException, DotSecurityException {
 
-        final PageMode pageMode = mode != null ? mode : this.getDefaultPageMode(user, request, pageUri);
+        final PageMode pageMode = mode != null ? mode : this.getDefaultEditPageMode(user, request, pageUri);
         PageMode.setPageMode(request, pageMode);
 
         final Host host = resolveSite(request, user, pageMode);
@@ -88,12 +88,12 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .build(true, pageMode);
     }
 
-    private PageMode getDefaultPageMode(final User user, final HttpServletRequest request, final String pageUri) {
+    public PageMode getDefaultEditPageMode(final User user, final HttpServletRequest request, final String pageUri) {
         try {
-            User systemUser = userAPI.getSystemUser();
+            final User systemUser = userAPI.getSystemUser();
 
             final PageMode mode = PageMode.PREVIEW_MODE;
-            Host host = this.resolveSite(request, systemUser, mode);
+            final Host host = this.resolveSite(request, systemUser, mode);
             final HTMLPageAsset htmlPageAsset = getHtmlPageAsset(systemUser, pageUri, mode, host);
 
             final ContentletVersionInfo info = APILocator.getVersionableAPI().
