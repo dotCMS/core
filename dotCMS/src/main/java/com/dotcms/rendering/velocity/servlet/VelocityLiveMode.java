@@ -144,7 +144,7 @@ public class VelocityLiveMode extends VelocityModeHandler {
             if (v.isPresent() && v.get().getPersona() != null) {
                 persona = v.get().getPersona().getKeyTag();
             }
-            final Context context = VelocityUtil.getWebContext(request, response);
+            final Context context = VelocityUtil.getInstance().getContext(request, response);
 
             final PageCacheParameters cacheParameters =
                     new BlockPageCache.PageCacheParameters(userId, language, urlMap, queryString, persona);
