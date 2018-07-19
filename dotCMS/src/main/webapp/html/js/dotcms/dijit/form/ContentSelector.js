@@ -118,8 +118,11 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
         StructureAjax.getStructureDetails(this.structureInode,dojo.hitch(this, this._structureDetailsCallback));
 	},
 
-	show: function () {
-		this._clearSearch();
+	show: function (noclear) {
+		if (!noclear) {
+            this._clearSearch();
+		}
+
 		!isNg && this.dialog.show();
 	},
 
@@ -195,7 +198,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		htmlstr += "<dt><label for='langcombo+"+this.dialogCounter+"'>"+data[0].title+"</label></dt>";
 		htmlstr += "<dd>";
 		dojo.require("dijit.form.FilteringSelect");
-		htmlstr += "<select dojoType='dijit.form.FilteringSelect' dojoAttachPoint='langDropdown' id='langcombo+"+this.dialogCounter+"' required='false' name='langcombo+"+this.dialogCounter+">";
+		htmlstr += "<select dojoType='dijit.form.FilteringSelect' dojoAttachPoint='langDropdown' id='langcombo+"+this.dialogCounter+"' required='false' name='langcombo+"+this.dialogCounter+"'>";
 		
 		for (var i = 0; i < data.length; i++) {
 			

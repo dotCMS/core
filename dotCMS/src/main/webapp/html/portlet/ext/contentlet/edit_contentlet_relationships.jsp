@@ -495,7 +495,8 @@
 
 				//Invoked to open the select contentlet popup
 				function <%= relationJsName %>_addRelationship(){
-					dijit.byId("<%= relationJsName %>Dialog").show();
+					dijit.byId("<%= relationJsName %>Dialog").show(true);
+                    dijit.byId("<%= relationJsName %>Dialog")._doSearchPage1();
 				}
 
 				//Callback received from the relate content
