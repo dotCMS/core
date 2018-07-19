@@ -9,7 +9,7 @@
     [dismissableMask]="true"
     [responsive]="true"
     [modal]="true"
-    [styleClass]="header.length > 0 ? 'ui-dialog-titlebar-animate' : ''">
+    [styleClass]="header?.length > 0 ? 'ui-dialog-titlebar-animate' : ''">
 
     <a href="#" (click)="onClose($event)" role="button" class="ui-dialog-titlebar-icon ui-dialog-titlebar-close dialog__close">
         <span class="fa fa-fw fa-close"></span>

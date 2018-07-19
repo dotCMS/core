@@ -12,7 +12,7 @@ import { Observable } from 'rxjs/Observable';
 
 @Injectable()
 class MockDotContentletService {
-    getContentTypes = jasmine
+    getAllContentTypes = jasmine
         .createSpy('getContentTypes')
         .and.returnValue(Observable.of([{ name: 'FORM', label: 'Form' }, { name: 'WIDGET', label: 'Widget' }]));
 }

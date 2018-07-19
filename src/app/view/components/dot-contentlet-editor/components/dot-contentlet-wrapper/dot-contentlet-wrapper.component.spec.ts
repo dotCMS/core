@@ -102,13 +102,15 @@ describe('DotContentletWrapperComponent', () => {
             });
 
             it('should close the dialog', () => {
+                component.header = 'header';
+
                 dotIframeDialog.triggerEventHandler('custom', {
                     detail: {
                         name: 'close'
                     }
                 });
                 expect(dotAddContentletService.clear).toHaveBeenCalledTimes(1);
-                expect(component.header).toBe(null);
+                expect(component.header).toBe('header');
                 expect(component.custom.emit).toHaveBeenCalledTimes(1);
                 expect(component.close.emit).toHaveBeenCalledTimes(1);
             });
