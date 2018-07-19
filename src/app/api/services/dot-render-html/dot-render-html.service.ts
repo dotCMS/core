@@ -98,7 +98,7 @@ export class DotRenderHTMLService {
     }
 
     private getPropertyValue(object: DotPersona | DotLanguage | DotDevice, propertyName: string ): any {
-        return object[propertyName] || null;
+        return object ? object[propertyName] : null;
     }
 
     private getOptionalViewAsParams(viewAsConfig: DotEditPageViewAsParams) {

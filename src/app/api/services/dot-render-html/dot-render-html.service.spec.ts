@@ -21,10 +21,13 @@ describe('DotRenderHTMLService', () => {
         lastConnection = [];
 
         injector = DOTTestBed.configureTestingModule({
-            providers: [DotRenderHTMLService, {
-                provide: LoginService,
-                useClass: LoginServiceMock
-            }],
+            providers: [
+                DotRenderHTMLService,
+                {
+                    provide: LoginService,
+                    useClass: LoginServiceMock
+                }
+            ],
             imports: [RouterTestingModule]
         });
 
@@ -36,9 +39,22 @@ describe('DotRenderHTMLService', () => {
         });
     });
 
-    it('should get a rendered page in edit mode', () => {
+    it('should get a rendered page in edit mode with ViewAs params', () => {
         let result: DotRenderedPage;
-        editPageService.getEdit('about-us').subscribe((renderedPage: DotRenderedPage) => (result = renderedPage));
+        spyOn(editPageService, 'get').and.callThrough();
+
+        const viewAs = {
+            language: {
+                country: 'United States',
+                countryCode: 'US',
+                id: 1,
+                language: 'English',
+                languageCode: 'en'
+            },
+            mode: 'EDIT_MODE'
+        };
+
+        editPageService.getEdit('about-us', viewAs).subscribe((renderedPage: DotRenderedPage) => (result = renderedPage));
 
         lastConnection[0].mockRespond(
             new Response(
@@ -49,10 +65,21 @@ describe('DotRenderHTMLService', () => {
                 })
             )
         );
+
+        const expectedResponse = {
+            url: 'about-us',
+            mode: 1,
+            viewAs: {
+                persona_id: null,
+                language_id: viewAs.language.id,
+                device_inode: null
+            }
+        };
+
         expect(lastConnection[0].request.url).toContain('/api/v1/page/render/about-us?mode=EDIT_MODE');
         expect(result).toEqual(mockDotRenderedPage);
+        expect(editPageService.get).toHaveBeenCalledWith(expectedResponse);
     });
-
 
     it('should get a rendered page in preview mode', () => {
         let result: DotRenderedPage;
@@ -73,13 +100,17 @@ describe('DotRenderHTMLService', () => {
 
     it('should get a rendered page in live mode', () => {
         let result: DotRenderedPage;
-        editPageService.getLive('about-us').subscribe((renderedPage: DotRenderedPage) => result = renderedPage);
+        editPageService.getLive('about-us').subscribe((renderedPage: DotRenderedPage) => (result = renderedPage));
 
-        lastConnection[0].mockRespond(new Response(new ResponseOptions({
-            body: {
-                entity: mockDotRenderedPage
-            }
-        })));
+        lastConnection[0].mockRespond(
+            new Response(
+                new ResponseOptions({
+                    body: {
+                        entity: mockDotRenderedPage
+                    }
+                })
+            )
+        );
         expect(lastConnection[0].request.url).toContain('/api/v1/page/render/about-us?mode=ADMIN_MODE');
         expect(result).toEqual(mockDotRenderedPage);
     });
