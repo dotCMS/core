@@ -68,34 +68,32 @@ public class ContentTypeResourceTest extends ContentTypeBaseTest {
 		String json = IOUtils.toString(stream);
 		stream.close();
 		List<ContentType> delTypes = new JsonContentTypeTransformer(json).asList();
-		for(ContentType delType:delTypes){
-			try {
-				if (UtilMethods.isSet(delType.id())){
-					contentTypeApi.delete(contentTypeApi.find(delType.id()));
-				}
-			} catch (NotFoundInDbException e) {
-
-			}
-			try {
-				if (UtilMethods.isSet(delType.variable())){
-					contentTypeApi.delete(contentTypeApi.find(delType.variable()));
-				}
-			} catch (NotFoundInDbException ee) {
-
-			}
-		}
 
 		final ContentTypeResource resource = new ContentTypeResource();
 
 		final ContentTypeForm.ContentTypeFormDeserialize contentTypeFormDeserialize = new ContentTypeForm.ContentTypeFormDeserialize();
 		ContentTypeForm contentTypeForm = contentTypeFormDeserialize.buildForm(json);
-		Response response = resource.createType(getHttpRequest(), contentTypeForm);
+		try{
+			Response response = resource.createType(getHttpRequest(), contentTypeForm);
 
-		int x = response.getStatus();
-		assertThat("result:200 with json " + jsonFile + "got :" + x, x == 200);
-		for(ContentType delType:delTypes){
-			if(delType.variable().contains("test")) {
-				contentTypeApi.delete(contentTypeApi.find(delType.variable()));
+			int x = response.getStatus();
+			assertThat("result:200 with json " + jsonFile + "got :" + x, x == 200);
+		}finally{
+			for(ContentType delType:delTypes){
+				try {
+					if (UtilMethods.isSet(delType.id())){
+						contentTypeApi.delete(contentTypeApi.find(delType.id()));
+					}
+				} catch (NotFoundInDbException e) {
+
+				}
+				try {
+					if (UtilMethods.isSet(delType.variable())){
+						contentTypeApi.delete(contentTypeApi.find(delType.variable()));
+					}
+				} catch (NotFoundInDbException ee) {
+
+				}
 			}
 		}
 	}

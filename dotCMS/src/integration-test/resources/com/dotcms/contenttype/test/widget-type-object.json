@@ -4,7 +4,7 @@
   "defaultType" : false,
   "fixed" : false,
   "system" : false,
-  "variable" : "PhotoGallery",
+  "variable" : "PhotoGalleryTest",
   "folder" : "SYSTEM_FOLDER",
   "clazz" : "com.dotcms.contenttype.model.type.WidgetContentType",
   "fields" : [ {

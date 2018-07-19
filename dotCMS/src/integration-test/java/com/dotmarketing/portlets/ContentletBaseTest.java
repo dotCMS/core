@@ -190,7 +190,6 @@ public class ContentletBaseTest extends IntegrationTestBase {
         contentlets.add( newContentlet );
         
         IntegrationTestInitService.getInstance().mockStrutsActionModule();
-        HibernateUtil.setAsyncCommitListenersFinalization(false);
     }
 
     @AfterClass

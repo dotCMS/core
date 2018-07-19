@@ -38,6 +38,7 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
@@ -400,6 +401,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
     }
 
     @Test
+    @WrapInTransaction
     public void testCreateSchemeThenAddStepsThenDeleteSteps() {
         final int numSteps = 5;
         final WorkflowScheme savedScheme = createScheme(workflowResource);
