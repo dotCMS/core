@@ -27,6 +27,7 @@ import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 
 /**
  * Created by Jonathan Gamba.
@@ -43,6 +44,11 @@ public abstract class IntegrationTestBase extends BaseMessageResources {
     private static Boolean debugMode = Boolean.FALSE;
     private final static PrintStream stdout = System.out;
     private final static ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+    @BeforeClass
+    public static void beforeInit() throws Exception {
+        HibernateUtil.setAsyncCommitListenersFinalization(false);
+    }
 
     protected static void setDebugMode (final boolean mode) throws UnsupportedEncodingException {
 

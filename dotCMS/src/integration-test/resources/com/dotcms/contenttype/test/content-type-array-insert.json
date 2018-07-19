@@ -514,6 +514,6 @@
 		"name": "Wiki",
 		"owner": "dotcms.org.1",
 		"system": false,
-		"variable": "Wiki"
+		"variable": "WikiTest"
 	}
 ]
