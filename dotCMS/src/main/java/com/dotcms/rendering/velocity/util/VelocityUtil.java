@@ -4,6 +4,8 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.rendering.velocity.viewtools.LanguageWebAPI;
 import com.dotcms.rendering.velocity.viewtools.RequestWrapper;
+import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
+import com.dotcms.rendering.velocity.viewtools.content.ContentTool;
 import com.dotcms.rest.api.v1.container.ContainerResource;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
@@ -199,10 +201,29 @@ public class VelocityUtil {
 		 */
 		context.setToolbox(getToolboxManager().getToolboxContext(context));
 
+		HttpSession session = request.getSession(false);
+		if(session!=null) {
+		    session.removeAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
+		}
+		if(request !=null && request.getAttribute(WebKeys.WIKI_CONTENTLET) !=null) {
+		    final String urlMapId  = ( request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE)  !=null)
+		            ? (String) request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE)
+		            : (String) request.getAttribute(WebKeys.WIKI_CONTENTLET);
+            ContentTool tool = new ContentTool();
+            tool.init(context);
+            ContentMap cMap = tool.find(urlMapId);
+            context.put("URLMapContent", cMap);
+            if(session!=null && request.getAttribute(WebKeys.WIKI_CONTENTLET_URL)!=null) {
+                session.setAttribute(WebKeys.REDIRECT_AFTER_LOGIN, request.getAttribute(WebKeys.WIKI_CONTENTLET_URL));
+            }
+		}
+		
+		
+		
 
 		// put the list of languages on the page
 		context.put("languages", getLanguages());
-		HttpSession session = request.getSession(false);
+		
 		if(!UtilMethods.isSet(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)) && session!=null)
 		    context.put("language", (String) session.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE));
 		else
