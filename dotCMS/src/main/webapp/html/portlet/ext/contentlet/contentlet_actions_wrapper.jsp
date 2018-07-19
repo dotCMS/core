@@ -19,6 +19,9 @@ if(!UtilMethods.isSet(x)){
 
 
 Contentlet contentlet = APILocator.getContentletAPI().find(x, user, false);
+if(null==contentlet){
+    return;
+}
 PermissionAPI conPerAPI = APILocator.getPermissionAPI();
 boolean canUserPublishContentlet = conPerAPI.doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_PUBLISH,user);
 
