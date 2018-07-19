@@ -201,22 +201,22 @@ public class VelocityUtil {
 		 */
 		context.setToolbox(getToolboxManager().getToolboxContext(context));
 
-		HttpSession session = request.getSession(false);
-		if(session!=null) {
-		    session.removeAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
-		}
-		if(request !=null && request.getAttribute(WebKeys.WIKI_CONTENTLET) !=null) {
-		    final String urlMapId  = ( request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE)  !=null)
-		            ? (String) request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE)
-		            : (String) request.getAttribute(WebKeys.WIKI_CONTENTLET);
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.removeAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
+        }
+        if (request != null && request.getAttribute(WebKeys.WIKI_CONTENTLET) != null) {
+            final String urlMapId = (request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE) != null)
+                    ? (String) request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE)
+                    : (String) request.getAttribute(WebKeys.WIKI_CONTENTLET);
             ContentTool tool = new ContentTool();
             tool.init(context);
             ContentMap cMap = tool.find(urlMapId);
             context.put("URLMapContent", cMap);
-            if(session!=null && request.getAttribute(WebKeys.WIKI_CONTENTLET_URL)!=null) {
+            if (session != null && request.getAttribute(WebKeys.WIKI_CONTENTLET_URL) != null) {
                 session.setAttribute(WebKeys.REDIRECT_AFTER_LOGIN, request.getAttribute(WebKeys.WIKI_CONTENTLET_URL));
             }
-		}
+        }
 		
 		
 		
