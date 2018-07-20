@@ -156,7 +156,7 @@ public class PageResource {
     public Response render(@Context final HttpServletRequest request,
                                    @Context final HttpServletResponse response,
                                    @PathParam("uri") final String uri,
-                                   @QueryParam("mode") final String modeParam,
+                                   @QueryParam(WebKeys.PAGE_MODE_PARAMETER) final String modeParam,
                                    @QueryParam(WebKeys.CMS_PERSONA_PARAMETER) final String personaId,
                                    @QueryParam("language_id") final String languageId,
                                    @QueryParam("device_inode") final String deviceInode,

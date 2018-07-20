@@ -33,7 +33,7 @@ public enum PageMode {
     ADMIN_MODE(true, true), 
     PREVIEW_MODE(false, true), 
     EDIT_MODE(false, true),
-    NAVIGATE_EDIT_MODE(false, true);;
+    NAVIGATE_EDIT_MODE(false, true);
 
     private static PageMode DEFAULT_PAGE_MODE = LIVE;
 
@@ -117,9 +117,9 @@ public enum PageMode {
         PageMode sessionPageMode = (PageMode) ses.getAttribute(WebKeys.PAGE_MODE_SESSION);
         HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
 
-        return  sessionPageMode == PageMode.EDIT_MODE &&
+        return  sessionPageMode != PageMode.LIVE &&
                 request != null &&
-                request.getAttribute(WebKeys.PAGE_MODE_SESSION) == null;
+                request.getAttribute(WebKeys.PAGE_MODE_PARAMETER) == null ;
     }
 
 }
