@@ -331,7 +331,10 @@
     	<servlet-name>CSSPreProcessServlet</servlet-name>
     	<servlet-class>com.dotcms.csspreproc.CSSPreProcessServlet</servlet-class>
     </servlet>
-    
+    <servlet>
+        <servlet-name>SassPreProcessServlet</servlet-name>
+        <servlet-class>com.dotcms.csspreproc.SassPreProcessServlet</servlet-class>
+    </servlet>
     <!-- REST -->
     <servlet>
 		<servlet-name>RESTAPI</servlet-name>
@@ -390,6 +393,11 @@
     <servlet-mapping>
       <servlet-name>CSSPreProcessServlet</servlet-name>
       <url-pattern>/DOTLESS/*</url-pattern>
+    </servlet-mapping>
+    
+    <servlet-mapping>
+      <servlet-name>SassPreProcessServlet</servlet-name>
+      <url-pattern>*.dotsass</url-pattern>
     </servlet-mapping>
     
     <servlet-mapping>
