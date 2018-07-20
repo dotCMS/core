@@ -1,7 +1,10 @@
 package com.dotcms.contenttype.test;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.DateTimeField;
@@ -18,7 +21,10 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.Expireable;
 import com.dotcms.contenttype.model.type.UrlMapable;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -26,13 +32,13 @@ import java.io.File;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+
+import com.liferay.portal.model.User;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
@@ -383,7 +389,63 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 			}
 		}
 	}
-	
+
+
+	@Test(expected = DotSecurityException.class)
+	public void testUpdateContentType_WithLimitedUserNoEditPermissionsPermission_ShouldThrowException()
+			throws DotDataException, DotSecurityException {
+
+		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+		ContentType contentGenericType = contentTypeAPI.find("webPageContent");
+
+		User limitedUserNoEditPermsOnCT = APILocator.getUserAPI().loadUserById("dotcms.org.2793",
+				APILocator.systemUser(), false);
+
+		contentTypeAPI = APILocator.getContentTypeAPI(limitedUserNoEditPermsOnCT);
+		contentTypeAPI.save(contentGenericType, Collections.emptyList());
+	}
+
+	@Test
+	public void testUpdateContentType_WithUserWithEditPermissionsPermission_ShouldUpdate()
+			throws DotDataException, DotSecurityException {
+
+		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+		ContentType contentGenericType = contentTypeAPI.find("webPageContent");
+		final String updatedContentTypeName = "Updated Content Generic";
+		final String originalName = contentGenericType.name();
+		contentGenericType = ContentTypeBuilder.builder(contentGenericType).name(updatedContentTypeName).build();
+
+		final User limitedUserEditPermsPermOnCT = APILocator.getUserAPI().loadUserById("dotcms.org.2795",
+				APILocator.systemUser(), false);
+
+		final Permission editPermissionsPermission = new Permission( contentGenericType.getPermissionId(),
+				APILocator.getRoleAPI().getUserRole(limitedUserEditPermsPermOnCT).getId(),
+				PermissionAPI.PERMISSION_EDIT_PERMISSIONS, true );
+		APILocator.getPermissionAPI().save( editPermissionsPermission, contentGenericType, user,
+				false );
+
+
+		final PermissionAPI permAPI = Mockito.spy(APILocator.getPermissionAPI());
+		Mockito.doReturn(true).when(permAPI).doesUserHavePermissions(contentGenericType.getParentPermissionable(),
+				"PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + PermissionAPI.PERMISSION_PUBLISH,
+				limitedUserEditPermsPermOnCT);
+
+		contentTypeAPI = new ContentTypeAPIImpl(limitedUserEditPermsPermOnCT, false, FactoryLocator.getContentTypeFactory(),
+				FactoryLocator.getFieldFactory(), permAPI, APILocator.getContentTypeFieldAPI());
+
+		try {
+			contentGenericType = contentTypeAPI.save(contentGenericType, Collections.emptyList());
+			assertEquals(updatedContentTypeName, contentGenericType.name());
+		} finally {
+			// restore original name
+			contentGenericType = contentTypeAPI.find("webPageContent");
+			contentGenericType = ContentTypeBuilder.builder(contentGenericType).name(originalName).build();
+			ContentTypeAPI contentTypeAPI1 = APILocator.getContentTypeAPI(user);
+			contentTypeAPI1.save(contentGenericType);
+
+		}
+	}
+
 	/**
 	 * This test create a Content type with fixed fields, update some fields and delete the content type
 	 * @throws Exception

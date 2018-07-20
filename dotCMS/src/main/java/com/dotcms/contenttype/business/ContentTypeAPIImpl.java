@@ -426,6 +426,17 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
           "User-does-not-have-add-children-or-structure-permission-on-host-folder:" + parent);
     }
 
+    try {
+      if (contentType.id() != null) {
+        final ContentType oldType = this.contentTypeFactory.find(contentType.id());
+        if (!perms.doesUserHavePermission(oldType, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user, respectFrontendRoles)) {
+          throw new DotSecurityException("You don't have permission to edit this content type.");
+        }
+      }
+    } catch (NotFoundInDbException notThere) {
+      Logger.info(this, "Content type not found with given id: " + contentType.id() + ". Continuing...");
+    }
+
     return transactionalSave(newFields, newFieldVariables, contentType);
   }
 
