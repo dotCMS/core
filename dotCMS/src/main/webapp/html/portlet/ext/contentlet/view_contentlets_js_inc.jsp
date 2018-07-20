@@ -1584,6 +1584,8 @@
                 	return "<a href=\"javascript: doSearch (1, 'title')\">" + fieldName + "</a>";
                 }else if(fieldContentlet == '__type__'){
                 	return "<a href=\"javascript: doSearch (1, 'structurename')\">" + fieldName + "</a>";
+                }else if(fieldContentlet == '__wfstep__'){
+                    return  fieldName;  // not sortable
                 }else{
                 	return "<a href=\"javascript: doSearch (1, '" + stVar + "." + fieldContentlet + "')\">" + fieldName + "</a>";
                 }
