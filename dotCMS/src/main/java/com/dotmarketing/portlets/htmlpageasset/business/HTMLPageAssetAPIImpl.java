@@ -864,9 +864,5 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
         return htmlPage;
     }
-	
-	
-	
-	
-	
+
 }

@@ -306,11 +306,11 @@ public interface HTMLPageAssetAPI {
 
     /**
      * Returns page based on identifier and respects the language fallback settings
-     * @param id
-     * @param tryLang
-     * @param live
-     * @param user
-     * @param respectFrontEndPermissions
+     * @param id identifier of page
+     * @param tryLang requested language
+     * @param live live or working version of page
+     * @param user user to perform operation with
+     * @param respectFrontEndPermissions respect front end permissions
      * @return
      * @throws DotDataException
      * @throws DotSecurityException

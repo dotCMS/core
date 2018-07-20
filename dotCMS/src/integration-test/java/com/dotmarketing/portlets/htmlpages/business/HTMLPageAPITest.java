@@ -9,6 +9,14 @@ import java.util.List;
 
 import com.dotcms.IntegrationTestBase;
 
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import org.apache.velocity.exception.ResourceNotFoundException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -41,7 +49,9 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
+import org.junit.runner.RunWith;
 
+@RunWith(DataProviderRunner.class)
 public class HTMLPageAPITest extends IntegrationTestBase {
 	
     @BeforeClass
@@ -308,5 +318,75 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 			TemplateDataGen.remove(template);
 
 	}
+
+	@DataProvider
+	public static Object[] testCasesFindByIdLanguageFallback() {
+		return new Object[] {
+			new TestCaseFindByIdLanguageFallback(1, 1, 1, true, false),
+			new TestCaseFindByIdLanguageFallback(2,1, 1, true, true),
+			new TestCaseFindByIdLanguageFallback(1,-1, 2, false, false),
+		};
+	}
+
+	private static class TestCaseFindByIdLanguageFallback {
+		long requestedLanguage;
+		long expectedLanguage;
+		long pageLanguage;
+		boolean shouldReturnPage;
+		boolean defaultPageToDefaultLang;
+
+		TestCaseFindByIdLanguageFallback(final long requestedLanguage, final long expectedLanguage,
+												final long pageLanguage, final boolean shouldReturnPage,
+												final boolean defaultPageToDefaultLang) {
+			this.requestedLanguage = requestedLanguage;
+			this.expectedLanguage = expectedLanguage;
+			this.pageLanguage = pageLanguage;
+			this.shouldReturnPage = shouldReturnPage;
+			this.defaultPageToDefaultLang = defaultPageToDefaultLang;
+		}
+	}
+
+	@Test
+	@UseDataProvider("testCasesFindByIdLanguageFallback")
+	public void testFindByIdLanguageFallback(final TestCaseFindByIdLanguageFallback testCase) throws DotDataException, DotSecurityException {
+		final User sysuser=APILocator.getUserAPI().getSystemUser();
+		final Template template = new TemplateDataGen().nextPersisted();
+		final Folder folder = new FolderDataGen().nextPersisted();
+		final HTMLPageDataGen pageDataGen = new HTMLPageDataGen(folder, template);
+		final HTMLPageAsset pageAsset = pageDataGen.languageId(testCase.pageLanguage)
+				.nextPersisted();
+
+		final boolean originalValue = Config.getBooleanProperty( "DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", true );
+		Config.setProperty( "DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", testCase.defaultPageToDefaultLang );
+
+		final HTMLPageAssetAPI pageAssetAPI = APILocator.getHTMLPageAssetAPI();
+
+		try {
+
+			final IHTMLPage returnedPage = pageAssetAPI.findByIdLanguageFallback(pageAsset.getIdentifier(),
+					testCase.requestedLanguage, false, sysuser, false);
+
+			assertEquals(testCase.expectedLanguage, returnedPage.getLanguageId());
+
+		} catch(ResourceNotFoundException e) {
+			assertTrue(!testCase.shouldReturnPage);
+		} finally {
+			// restore original value
+			Config.setProperty( "DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", originalValue );
+			if(pageAsset!=null) {
+				ContentletDataGen.remove(pageAsset);
+			}
+
+			if(template!=null) {
+				TemplateDataGen.remove(template);
+			}
+
+			FolderDataGen.remove(folder);
+		}
+
+
+	}
+
+
 
 }
