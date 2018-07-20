@@ -47,6 +47,7 @@ public class VelocityNavigateEditMode  extends VelocityModeHandler {
                                     final HttpServletResponse response,
                                     final String uri,
                                     final Host host) {
+        super();
         this.request = request;
         this.response = response;
         this.uri = uri;

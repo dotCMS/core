@@ -93,5 +93,5 @@ public interface HTMLPageAssetRenderedAPI {
      * @param pageUri
      * @return
      */
-    public PageMode getDefaultEditPageMode(final User user, final HttpServletRequest request, final String pageUri);
+     PageMode getDefaultEditPageMode(final User user, final HttpServletRequest request, final String pageUri);
 }
