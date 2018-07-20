@@ -412,6 +412,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
 		ContentType contentGenericType = contentTypeAPI.find("webPageContent");
 		final String updatedContentTypeName = "Updated Content Generic";
+		final String originalName = contentGenericType.name();
 		contentGenericType = ContentTypeBuilder.builder(contentGenericType).name(updatedContentTypeName).build();
 
 		final User limitedUserEditPermsPermOnCT = APILocator.getUserAPI().loadUserById("dotcms.org.2795",
@@ -431,8 +432,18 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
 		contentTypeAPI = new ContentTypeAPIImpl(limitedUserEditPermsPermOnCT, false, FactoryLocator.getContentTypeFactory(),
 				FactoryLocator.getFieldFactory(), permAPI, APILocator.getContentTypeFieldAPI());
-		contentGenericType = contentTypeAPI.save(contentGenericType, Collections.emptyList());
-		assertEquals(updatedContentTypeName, contentGenericType.name());
+
+		try {
+			contentGenericType = contentTypeAPI.save(contentGenericType, Collections.emptyList());
+			assertEquals(updatedContentTypeName, contentGenericType.name());
+		} finally {
+			// restore original name
+			contentGenericType = contentTypeAPI.find("webPageContent");
+			contentGenericType = ContentTypeBuilder.builder(contentGenericType).name(originalName).build();
+			ContentTypeAPI contentTypeAPI1 = APILocator.getContentTypeAPI(user);
+			contentTypeAPI1.save(contentGenericType);
+
+		}
 	}
 
 	/**
