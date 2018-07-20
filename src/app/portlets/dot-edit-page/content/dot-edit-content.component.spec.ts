@@ -281,7 +281,7 @@ describe('DotEditContentComponent', () => {
 
         beforeEach(() => {
             viewAsToolbar = fixture.debugElement.query(By.css('dot-edit-content-view-as-toolbar'));
-            component.pageState = new DotRenderedPageState(mockUser, mockDotRenderedPage, null);
+            component.pageState = new DotRenderedPageState(mockUser, mockDotRenderedPage);
         });
 
         it('should not show by default', () => {
@@ -350,7 +350,7 @@ describe('DotEditContentComponent', () => {
 
         beforeEach(() => {
             viewAsToolbar = fixture.debugElement.query(By.css('dot-edit-content-view-as-toolbar'));
-            component.pageState = new DotRenderedPageState(mockUser, mockDotRenderedPage, null);
+            component.pageState = new DotRenderedPageState(mockUser, mockDotRenderedPage);
         });
 
         it('should have a View As toolbar', () => {
@@ -479,6 +479,9 @@ describe('DotEditContentComponent', () => {
                     ...mockDotRenderedPage.page,
                     lockedBy: mockUser.userId,
                     canLock: true
+                },
+                viewAs: {
+                    mode: PageMode[PageMode.EDIT]
                 }
             };
 
@@ -504,7 +507,7 @@ describe('DotEditContentComponent', () => {
         });
 
         it('should set preview mode', () => {
-            spyStateSet(new DotRenderedPageState(mockUser, mockDotRenderedPage, PageMode.PREVIEW));
+            spyStateSet(new DotRenderedPageState(mockUser, mockDotRenderedPage));
 
             fixture.detectChanges();
 
@@ -529,7 +532,10 @@ describe('DotEditContentComponent', () => {
         });
 
         it('should set live mode', () => {
-            spyStateSet(new DotRenderedPageState(mockUser, mockDotRenderedPage, PageMode.LIVE));
+            const mockDotRenderedPageCopy: DotRenderedPage = _.cloneDeep(mockDotRenderedPage);
+            mockDotRenderedPageCopy.viewAs.mode = PageMode[PageMode.LIVE];
+
+            spyStateSet(new DotRenderedPageState(mockUser, mockDotRenderedPageCopy));
             fixture.detectChanges();
 
             toolbarComponent.changeState.emit({
@@ -819,7 +825,7 @@ describe('DotEditContentComponent', () => {
         describe('listen load-edit-mode-page event', () => {
             beforeEach(() => {
                 route.parent.parent.data = Observable.of({
-                    content: new DotRenderedPageState(mockUser, mockDotRenderedPage, PageMode.EDIT)
+                    content: new DotRenderedPageState(mockUser, mockDotRenderedPage)
                 });
 
                 spyOn(dotRouterService, 'goToEditPage');
@@ -866,7 +872,7 @@ describe('DotEditContentComponent', () => {
                 document.dispatchEvent(customEvent);
 
                 expect(dotEditPageDataService.set).toHaveBeenCalledWith(
-                    new DotRenderedPageState(mockUser, copyMockDotRenderedPage, PageMode.EDIT)
+                    new DotRenderedPageState(mockUser, copyMockDotRenderedPage)
                 );
 
                 expect(dotRouterService.goToEditPage).toHaveBeenCalledWith(copyMockDotRenderedPage.page.pageURI);

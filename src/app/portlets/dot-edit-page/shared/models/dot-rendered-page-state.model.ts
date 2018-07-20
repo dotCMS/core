@@ -15,14 +15,17 @@ export interface DotPageState {
 export class DotRenderedPageState {
     private _state: DotPageState;
 
-    constructor(private _user: User, private dotRenderedPage: DotRenderedPage, mode?: PageMode) {
+    constructor(private _user: User, private dotRenderedPage: DotRenderedPage) {
         const locked = !!dotRenderedPage.page.lockedBy;
         const lockedByAnotherUser = locked ? dotRenderedPage.page.lockedBy !== _user.userId : false;
+
+        const ngModeName = dotRenderedPage.viewAs.mode.replace('_MODE', '');
+        const mode = ngModeName === 'ADMIN' ? PageMode.LIVE : PageMode[ngModeName];
 
         this._state = {
             locked: locked,
             lockedByAnotherUser: lockedByAnotherUser,
-            mode: mode || this.getDefaultMode(lockedByAnotherUser, locked)
+            mode: mode
         };
     }
 
@@ -64,13 +67,5 @@ export class DotRenderedPageState {
 
     set dotRenderedPageState(dotRenderedPageState: DotRenderedPageState) {
         this.dotRenderedPage = dotRenderedPageState;
-    }
-
-    private getPageMode(locked: boolean, lockedByAnotherUser: boolean): PageMode {
-        return (locked && !lockedByAnotherUser) ? PageMode.EDIT : PageMode.PREVIEW;
-    }
-
-    private getDefaultMode(lockedByAnotherUser: boolean, locked: boolean): PageMode {
-        return lockedByAnotherUser ? PageMode.PREVIEW : this.getPageMode(locked, lockedByAnotherUser);
     }
 }

@@ -174,7 +174,8 @@ describe('DotEditContentViewAsToolbarComponent', () => {
             expect(component.changePersonaHandler).toHaveBeenCalledWith(mockDotPersona);
             expect(component.changeViewAs.emit).toHaveBeenCalledWith({
                 language: mockDotLanguage,
-                persona: mockDotPersona
+                persona: mockDotPersona,
+                mode: 'PREVIEW'
             });
         });
 
@@ -189,7 +190,8 @@ describe('DotEditContentViewAsToolbarComponent', () => {
             expect(component.changeDeviceHandler).toHaveBeenCalledWith(mockDotDevices[0]);
             expect(component.changeViewAs.emit).toHaveBeenCalledWith({
                 language: mockDotLanguage,
-                device: mockDotDevices[0]
+                device: mockDotDevices[0],
+                mode: 'PREVIEW'
             });
         });
 
@@ -213,7 +215,11 @@ describe('DotEditContentViewAsToolbarComponent', () => {
             languageSelector.selected.emit(testlanguage);
 
             expect(component.changeLanguageHandler).toHaveBeenCalledWith(testlanguage);
-            expect(component.changeViewAs.emit).toHaveBeenCalledWith({ language: testlanguage });
+            expect(component.changeViewAs.emit).toHaveBeenCalledWith(
+                {
+                    language: testlanguage,
+                    mode: 'PREVIEW'
+                });
         });
 
         it('should have What is Changed selector', () => {
@@ -255,8 +261,7 @@ describe('DotEditContentViewAsToolbarComponent', () => {
                 spyOn(component.whatschange, 'emit');
                 componentHost.pageState = new DotRenderedPageState(
                     mockUser,
-                    JSON.parse(JSON.stringify(mockDotRenderedPage)),
-                    PageMode.PREVIEW
+                    JSON.parse(JSON.stringify(mockDotRenderedPage))
                 );
                 spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
                 fixtureHost.detectChanges();

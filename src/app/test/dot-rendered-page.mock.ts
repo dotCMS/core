@@ -3,6 +3,7 @@ import { DotPage } from './../portlets/dot-edit-page/shared/models/dot-page.mode
 import { DotRenderedPage } from '../portlets/dot-edit-page/shared/models/dot-rendered-page.model';
 import { DotLayout } from '../portlets/dot-edit-page/shared/models/dot-layout.model';
 import { mockDotLanguage } from './dot-language.mock';
+import { PageMode } from '../portlets/dot-edit-page/shared/models/page-mode.enum';
 
 export const mockDotPage: DotPage = {
     canEdit: true,
@@ -105,5 +106,8 @@ export const mockDotRenderedPage: DotRenderedPage = {
     page: mockDotPage,
     template: mockDotTemplate,
     canCreateTemplate: true,
-    viewAs: { language: mockDotLanguage }
+    viewAs: {
+        language: mockDotLanguage,
+        mode: PageMode[PageMode.PREVIEW]
+     }
 };

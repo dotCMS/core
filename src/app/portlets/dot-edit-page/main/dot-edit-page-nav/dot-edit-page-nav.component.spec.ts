@@ -125,7 +125,7 @@ describe('DotEditPageNavComponent', () => {
             dotLicenseService = de.injector.get(DotLicenseService);
             const menuListItems = fixture.debugElement.queryAll(By.css('.edit-page-nav__item'));
             const { layout, ...noLayoutPage } = mockDotRenderedPage;
-            fixture.componentInstance.pageState = new DotRenderedPageState(mockUser, noLayoutPage, null);
+            fixture.componentInstance.pageState = new DotRenderedPageState(mockUser, noLayoutPage);
             component.model = undefined;
             spyOn(dotLicenseService, 'isEnterprise').and.returnValue(Observable.of(true));
             fixture.detectChanges();
@@ -150,7 +150,7 @@ describe('DotEditPageNavComponent', () => {
         });
         // Disable advance template commit https://github.com/dotCMS/core-web/pull/589
         it('should have menu items: Content and Layout', () => {
-            fixture.componentInstance.pageState = new DotRenderedPageState(mockUser, mockDotRenderedPageAdvanceTemplate, null);
+            fixture.componentInstance.pageState = new DotRenderedPageState(mockUser, mockDotRenderedPageAdvanceTemplate);
 
             fixture.detectChanges();
             const menuListItems: DebugElement[] = fixture.debugElement.queryAll(By.css('.edit-page-nav__item'));
@@ -166,7 +166,7 @@ describe('DotEditPageNavComponent', () => {
             spyOn(dotLicenseService, 'isEnterprise').and.returnValue(Observable.of(true));
 
             component.model = undefined;
-            fixture.componentInstance.pageState = new DotRenderedPageState(mockUser, mockDotRenderedPageAdvanceTemplate, null);
+            fixture.componentInstance.pageState = new DotRenderedPageState(mockUser, mockDotRenderedPageAdvanceTemplate);
             fixture.detectChanges();
 
             const menuListItems = fixture.debugElement.queryAll(By.css('.edit-page-nav__item'));
@@ -175,7 +175,7 @@ describe('DotEditPageNavComponent', () => {
         });
 
         it('should have layout option disabled and enterprise only message when template is advance and license is comunity', () => {
-            fixture.componentInstance.pageState = new DotRenderedPageState(mockUser, mockDotRenderedPageAdvanceTemplate, null);
+            fixture.componentInstance.pageState = new DotRenderedPageState(mockUser, mockDotRenderedPageAdvanceTemplate);
             fixture.detectChanges();
 
             const menuListItems = fixture.debugElement.queryAll(By.css('.edit-page-nav__item'));
@@ -193,8 +193,7 @@ describe('DotEditPageNavComponent', () => {
                         ...mockDotRenderedPageAdvanceTemplate.page,
                         canEdit: false
                     }
-                },
-                null
+                }
             );
             fixture.detectChanges();
 

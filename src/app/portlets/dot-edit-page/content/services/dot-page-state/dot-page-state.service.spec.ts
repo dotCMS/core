@@ -14,6 +14,7 @@ import { mockDotRenderedPage, mockDotPage } from '../../../../../test/dot-render
 import { mockUser } from '../../../../../test/login-service.mock';
 import * as _ from 'lodash';
 import { Observable } from 'rxjs/Observable';
+import { DotRenderedPage } from '../../../shared/models/dot-rendered-page.model';
 
 describe('DotPageStateService', () => {
     let service: DotPageStateService;
@@ -71,11 +72,14 @@ describe('DotPageStateService', () => {
                 )
             );
 
+            const mockDotRenderedPageCopy: DotRenderedPage = _.cloneDeep(mockDotRenderedPage);
+            mockDotRenderedPageCopy.viewAs.mode = PageMode[PageMode.LIVE];
+
             lastConnection[1].mockRespond(
                 new Response(
                     new ResponseOptions({
                         body: {
-                            entity: mockDotRenderedPage
+                            entity: mockDotRenderedPageCopy
                         }
                     })
                 )
@@ -188,7 +192,10 @@ describe('DotPageStateService', () => {
                     new ResponseOptions({
                         body: {
                             entity: {
-                                page: noLockedByPage
+                                page: noLockedByPage,
+                                viewAs: {
+                                    mode: PageMode[PageMode.PREVIEW]
+                                }
                             }
                         }
                     })
@@ -214,7 +221,10 @@ describe('DotPageStateService', () => {
                     new ResponseOptions({
                         body: {
                             entity: {
-                                page: noLockedByPage
+                                page: noLockedByPage,
+                                viewAs: {
+                                    mode: PageMode[PageMode.PREVIEW]
+                                }
                             }
                         }
                     })
@@ -243,11 +253,14 @@ describe('DotPageStateService', () => {
                     });
                 });
 
+                const mockDotRenderedPageCopy: DotRenderedPage = _.cloneDeep(mockDotRenderedPage);
+                mockDotRenderedPageCopy.viewAs.mode = PageMode[PageMode.EDIT];
+
                 lastConnection[0].mockRespond(
                     new Response(
                         new ResponseOptions({
                             body: {
-                                entity: mockDotRenderedPage
+                                entity: mockDotRenderedPageCopy
                             }
                         })
                     )
@@ -265,11 +278,14 @@ describe('DotPageStateService', () => {
                     });
                 });
 
+                const mockDotRenderedPageCopy: DotRenderedPage = _.cloneDeep(mockDotRenderedPage);
+                mockDotRenderedPageCopy.viewAs.mode = PageMode[PageMode.EDIT];
+
                 lastConnection[0].mockRespond(
                     new Response(
                         new ResponseOptions({
                             body: {
-                                entity: mockDotRenderedPage
+                                entity: mockDotRenderedPageCopy
                             }
                         })
                     )

@@ -43,7 +43,7 @@ export class DotPageStateService {
         return lockUnlock$.mergeMap(() =>
             pageMode$.map(
                 (updatedPage: DotRenderedPage) =>
-                    new DotRenderedPageState(this.loginService.auth.loginAsUser || this.loginService.auth.user, updatedPage, state.mode)
+                    new DotRenderedPageState(this.loginService.auth.loginAsUser || this.loginService.auth.user, updatedPage)
             )
         );
     }

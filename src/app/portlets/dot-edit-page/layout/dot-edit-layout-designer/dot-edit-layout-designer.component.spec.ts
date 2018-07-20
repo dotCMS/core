@@ -133,8 +133,7 @@ describe('DotEditLayoutDesignerComponent', () => {
                     ...mockDotRenderedPage,
                     template: { ...mockDotTemplate, theme: '123' },
                     canCreateTemplate: false
-                },
-                null
+                }
             );
             fixture.detectChanges();
         });
@@ -230,8 +229,7 @@ describe('DotEditLayoutDesignerComponent', () => {
                         ...mockDotRenderedPage,
                         template: null,
                         canCreateTemplate: true
-                    },
-                    null
+                    }
                 );
                 component.editTemplate = true;
                 fixture.detectChanges();
@@ -280,8 +278,7 @@ describe('DotEditLayoutDesignerComponent', () => {
                     ...mockDotRenderedPage,
                     template: { ...mockDotTemplate, theme: '123' },
                     canCreateTemplate: false
-                },
-                null
+                }
             );
             component.themeDialogVisibility = true;
         });
@@ -458,8 +455,7 @@ describe('DotEditLayoutDesignerComponent', () => {
                             ...mockDotRenderedPage.template,
                             canEdit: false
                         }
-                    },
-                    null
+                    }
                 );
                 fixture.detectChanges();
                 expect(dotDialogService.alert).not.toHaveBeenCalled();
@@ -475,8 +471,7 @@ describe('DotEditLayoutDesignerComponent', () => {
                             ...mockDotRenderedPage.template,
                             anonymous: true
                         }
-                    },
-                    null
+                    }
                 );
                 fixture.detectChanges();
                 expect(dotDialogService.alert).not.toHaveBeenCalled();
@@ -492,8 +487,7 @@ describe('DotEditLayoutDesignerComponent', () => {
                             ...mockDotRenderedPage.template,
                             canEdit: true
                         }
-                    },
-                    null
+                    }
                 );
                 fixture.detectChanges();
                 expect(dotDialogService.alert).not.toHaveBeenCalled();
@@ -511,8 +505,7 @@ describe('DotEditLayoutDesignerComponent', () => {
                     ...mockDotRenderedPage,
                     template: { ...mockDotTemplate, theme: '123' },
                     canCreateTemplate: false
-                },
-                null
+                }
             );
             component.pageState.layout.sidebar = null;
             fixture.detectChanges();

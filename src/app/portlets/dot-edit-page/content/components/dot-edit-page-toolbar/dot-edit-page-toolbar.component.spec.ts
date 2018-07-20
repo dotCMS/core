@@ -128,9 +128,10 @@ describe('DotEditPageToolbarComponent', () => {
                 },
                 layout: mockDotLayout,
                 canCreateTemplate: true,
-                viewAs: null
-            },
-            PageMode.PREVIEW
+                viewAs: {
+                    mode: PageMode[PageMode.EDIT]
+                }
+            }
         );
 
         dotGlobalMessageService = de.injector.get(DotGlobalMessageService);
@@ -265,9 +266,10 @@ describe('DotEditPageToolbarComponent', () => {
                 page: unpublishedPage,
                 layout: mockDotLayout,
                 canCreateTemplate: true,
-                viewAs: null
-            },
-            PageMode.PREVIEW
+                viewAs: {
+                    mode: PageMode[PageMode.LIVE]
+                }
+            }
         );
 
         fixture.detectChanges();

@@ -196,7 +196,7 @@ describe('DotEditPageResolver', () => {
     });
 
     describe('with dotRenderedPageState', () => {
-        const renderedPageState: DotRenderedPageState = new DotRenderedPageState(mockUser, mockDotRenderedPage, PageMode.EDIT);
+        const renderedPageState: DotRenderedPageState = new DotRenderedPageState(mockUser, mockDotRenderedPage);
 
         beforeEach(() => {
             dotEditPageDataService.set(renderedPageState);
