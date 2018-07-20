@@ -125,7 +125,7 @@ public class ESClient {
     }
 
     @VisibleForTesting
-    Settings loadNodeSettings(Builder extSettings) throws IOException {
+    Settings loadNodeSettings(final Builder extSettings) throws IOException {
 
         final String node_id = ConfigUtils.getServerId();
         final String esPathHome = getESPathHome();
@@ -134,9 +134,9 @@ public class ESClient {
 
         final String yamlPath = getDefaultYaml().toString();
 
-        try(InputStream in = new BufferedInputStream(new FileInputStream(yamlPath))) {
+        try(InputStream inputStream = new BufferedInputStream(new FileInputStream(yamlPath))) {
             final Builder builder = Settings.builder().
-                    loadFromStream(yamlPath, in, false).
+                    loadFromStream(yamlPath, inputStream, false).
                     put("node.name", node_id).
                     put("path.home", esPathHome);
 
@@ -158,8 +158,8 @@ public class ESClient {
         }
     }
 
-    private void setAbsolutePath(String key, Builder builder){
-        String pathData = builder.get(key);
+    private void setAbsolutePath(final String key, final Builder builder){
+        final String pathData = builder.get(key);
         if(UtilMethods.isSet(pathData) && !new File(pathData).isAbsolute()){
             builder.put(key, ConfigUtils.getDynamicContentPath() + File.separator + pathData);
         }
