@@ -10133,6 +10133,8 @@ dd .buttonCaption {
 .portlet-sidebar-wrapper {
   background-color: #FAFAFA;
   border-right: solid 1px #ECEDEE;
+  width:200px;
+  min-height:700px;
 }
 
 .portlet-wrapper {

@@ -4,7 +4,7 @@
 	
 
         <!-- START Left Column -->
-        <div class="portlet-sidebar-wrapper" style="width:200px;min-height:700px;">
+        <div class="portlet-sidebar-wrapper" >
             <div class="portlet-sidebar">
                 <input type="hidden" name="hostField" dojoAttachPoint="hostField" value=""/>
                 <input type="hidden" name="folderField" dojoAttachPoint="folderField" value=""/>
