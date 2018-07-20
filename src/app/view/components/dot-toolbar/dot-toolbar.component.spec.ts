@@ -8,10 +8,12 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { DotNavigationService } from '../dot-navigation/dot-navigation.service';
 import { SiteServiceMock, mockSites } from '../../../test/site-service.mock';
-import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
+import { RouterTestingModule } from '../../../../../node_modules/@angular/router/testing';
 
 @Injectable()
-class MockDotNavigationService {}
+class MockDotNavigationService {
+    goToFirstPortlet() {}
+}
 
 @Component({
     selector: 'dot-site-selector',
@@ -48,18 +50,11 @@ class MockToolbarUsersComponent {}
 })
 class MockToolbarAddContentletComponent {}
 
-@Injectable()
-class MockDotRouterService {
-    goToSiteBrowser() {}
-}
-
 describe('ToolbarComponent', () => {
-    let dotRouterService: DotRouterService;
-    let siteService: SiteService;
+    let dotNavigationService: DotNavigationService;
     let comp: ToolbarComponent;
     let fixture: ComponentFixture<ToolbarComponent>;
     let de: DebugElement;
-    let el: HTMLElement;
 
     const siteServiceMock = new SiteServiceMock();
     const siteMock = mockSites[0];
@@ -74,11 +69,10 @@ describe('ToolbarComponent', () => {
                 MockToolbarUsersComponent,
                 MockToolbarAddContentletComponent
             ],
-            imports: [BrowserAnimationsModule],
+            imports: [BrowserAnimationsModule, RouterTestingModule],
             providers: [
                 { provide: DotNavigationService, useClass: MockDotNavigationService },
                 { provide: SiteService, useValue: siteServiceMock },
-                { provide: DotRouterService, useClass: MockDotRouterService },
                 IframeOverlayService
             ]
         });
@@ -86,17 +80,15 @@ describe('ToolbarComponent', () => {
         fixture = DOTTestBed.createComponent(ToolbarComponent);
         comp = fixture.componentInstance;
         de = fixture.debugElement;
-        el = de.nativeElement;
-        dotRouterService = fixture.debugElement.injector.get(DotRouterService);
-        siteService = fixture.debugElement.injector.get(SiteService);
+        dotNavigationService = fixture.debugElement.injector.get(DotNavigationService);
     }));
 
     it('should trigger "siteChange" call "goToSiteBrowser" in "DotRouterService" when the "siteChange" method is actioned', () => {
         const siteSelector: DebugElement = fixture.debugElement.query(By.css('dot-site-selector'));
         spyOn(comp, 'siteChange').and.callThrough();
-        spyOn(dotRouterService, 'goToSiteBrowser');
+        spyOn(dotNavigationService, 'goToFirstPortlet');
         siteSelector.triggerEventHandler('change', { value: siteMock });
-        expect(dotRouterService.goToSiteBrowser).toHaveBeenCalled();
+        expect(dotNavigationService.goToFirstPortlet).toHaveBeenCalled();
         expect(comp.siteChange).toHaveBeenCalledWith({ value: siteMock });
     });
 });
