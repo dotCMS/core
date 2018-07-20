@@ -1,20 +1,22 @@
 <%@ page import="com.liferay.portal.language.LanguageUtil" %>
-<form dojoAttachPoint="search_form" onsubmit="return false;" id="searchForm" class="related-content-form">
-    <div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" dojoAttachPoint="borderContainer" class="related-content-container">
+<form dojoAttachPoint="search_form" onsubmit="return false;" id="searchForm" >
+<div style="display:flex;flex-direction: row;">
+	
 
         <!-- START Left Column -->
-        <div dojoType="dijit.layout.ContentPane" splitter="false" region="leading" class="portlet-sidebar-wrapper">
+        <div class="portlet-sidebar-wrapper" >
             <div class="portlet-sidebar">
                 <input type="hidden" name="hostField" dojoAttachPoint="hostField" value=""/>
                 <input type="hidden" name="folderField" dojoAttachPoint="folderField" value=""/>
+                <input type="hidden" name="structure_inode" dojoAttachPoint="structure_inode" value="strInode">
                 <div class="sideMenuWrapper">
-
-                    <input type="hidden" name="structure_inode" dojoAttachPoint="structure_inode" value="strInode">
+                    
+                    
                     <div dojoAttachPoint="structures_select"></div>
                     <div dojoAttachPoint="search_languages_table"></div>
                     <div dojoAttachPoint="search_fields_table"></div>
                     <div dojoAttachPoint="search_categories_table">
-                    <dl class="vertical" dojoAttachPoint="search_categories_list"></dl>
+                        <dl class="vertical" dojoAttachPoint="search_categories_list"></dl>
                     </div>
                     <div class="clear"></div>
                     <div class="buttonRow">
@@ -23,38 +25,38 @@
                     </div>
                 </div>
             </div>
-            </div>
-
-        <!-- START Right Column -->
-        <div dojoType="dijit.layout.ContentPane" splitter="true" region="center" class="portlet-main-wrapper">
-            <div class="portlet-main">
-                <div dojoAttachPoint="contentWrapper">
-                    <div class="portlet-toolbar">
-                        <div dojoAttachPoint="matchingResultsDiv" class="portlet-toolbar__matching-results" style="visibility: hidden"><%= LanguageUtil.get(pageContext, "Results") %></div>
-                        <div id='addContentTypeDropdown'></div>
-                        <div dojoAttachPoint="addContentletButton" class="portlet-toolbar__add-contentlet" style="display: none">
-                            <button dojoType="dijit.form.Button" onClick="addNewContentlet()"><%= LanguageUtil.get(pageContext, "Add-New-Content") %></button>
-                        </div>
-                        <div dojoAttachPoint="relateDiv">
-                            <button dojoType="dijit.form.Button" dojoAttachEvent='onClick:_doRelateContent' iconClass="searchIcon"><%= LanguageUtil.get(pageContext, "Relate") %></button>
-                        </div>
-                    </div>
-                    <table dojoAttachPoint="results_table" class="listingTable relateContent"></table>
-                </div>
-                <div class="portlet-pagination">
-                    <div dojoAttachPoint="previousDiv" style="display: none;">
-                        <button dojoType="dijit.form.Button" class="bg" dojoAttachEvent='onClick:_previousPage' iconClass="previousIcon"><%= LanguageUtil.get(pageContext, "Previous") %></button>
-                    </div>
-                    <div></div>
-                    <div dojoAttachPoint="nextDiv" style="display: none;">
-                        <button dojoType="dijit.form.Button" class="bg" dojoAttachEvent='onClick:_nextPage' iconClass="nextIcon"><%= LanguageUtil.get(pageContext, "Next") %></button>
-                    </div>
-                </div>
-            </div>
         </div>
 
-    </div>
-</form>
+	   <!-- START Right Column -->
+	   <div style="overflow:auto;">
+		   <div dojoAttachPoint="contentWrapper">
+		       <div class="portlet-toolbar">
+		           <div dojoAttachPoint="matchingResultsDiv" class="portlet-toolbar__matching-results" style="visibility: hidden"><%= LanguageUtil.get(pageContext, "Results") %></div>
+		           <div id='addContentTypeDropdown'></div>
+		           <div dojoAttachPoint="addContentletButton" class="portlet-toolbar__add-contentlet" style="display: none">
+		               <button dojoType="dijit.form.Button" onClick="addNewContentlet()"><%= LanguageUtil.get(pageContext, "Add-New-Content") %></button>
+		           </div>
+		           <div dojoAttachPoint="relateDiv">
+		               <button dojoType="dijit.form.Button" dojoAttachEvent='onClick:_doRelateContent' iconClass="searchIcon"><%= LanguageUtil.get(pageContext, "Relate") %></button>
+		           </div>
+		       </div>
+		       <table dojoAttachPoint="results_table" class="listingTable relateContent"></table>
+		   </div>
+		   <div class="portlet-pagination">
+		       <div dojoAttachPoint="previousDiv" style="display: none;">
+		           <button dojoType="dijit.form.Button" class="bg" dojoAttachEvent='onClick:_previousPage' iconClass="previousIcon"><%= LanguageUtil.get(pageContext, "Previous") %></button>
+		       </div>
+		       <div></div>
+		       <div dojoAttachPoint="nextDiv" style="display: none;">
+		           <button dojoType="dijit.form.Button" class="bg" dojoAttachEvent='onClick:_nextPage' iconClass="nextIcon"><%= LanguageUtil.get(pageContext, "Next") %></button>
+		       </div>
+		   </div>
+	
+	    </div>
+
+</div>
+    </form>
+
 
 <!-- Dynamic Variables/Language specific content from request/session/context -->
 <div style="display: none;">

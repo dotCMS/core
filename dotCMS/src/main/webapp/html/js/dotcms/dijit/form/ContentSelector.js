@@ -89,6 +89,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	multiple: 'false',
 	containerStructures: new Array(),
 	availableLanguages: new Array(),
+	numberOfResults:20,
 
 	postCreate: function () {
         var structuresParam = this.containerStructures.toString();
@@ -117,8 +118,11 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
         StructureAjax.getStructureDetails(this.structureInode,dojo.hitch(this, this._structureDetailsCallback));
 	},
 
-	show: function () {
-		this._clearSearch();
+	show: function (noclear) {
+		if (!noclear) {
+            this._clearSearch();
+		}
+
 		!isNg && this.dialog.show();
 	},
 
@@ -194,12 +198,14 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		htmlstr += "<dt><label for='langcombo+"+this.dialogCounter+"'>"+data[0].title+"</label></dt>";
 		htmlstr += "<dd>";
 		dojo.require("dijit.form.FilteringSelect");
-		htmlstr += "<select dojoType='dijit.form.FilteringSelect' dojoAttachPoint='langDropdown' id='langcombo+"+this.dialogCounter+"' required='true' name='langcombo+"+this.dialogCounter+">";
-
+		htmlstr += "<select dojoType='dijit.form.FilteringSelect' dojoAttachPoint='langDropdown' id='langcombo+"+this.dialogCounter+"' required='false' name='langcombo+"+this.dialogCounter+"'>";
+		
 		for (var i = 0; i < data.length; i++) {
+			
 			htmlstr += "<option  value='"+data[i].id+"'";
 			if(this.contentletLanguageId == data[i].id) {
-				htmlstr += " selected='selected' ";
+			
+				htmlstr += " selected='true' ";
 			}
 			htmlstr += ">"+data[i].language + (data[i].country == "" ? "" : " - " + data[i].country) + "</option>";
 		}
@@ -209,6 +215,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		htmlstr += "</dl>";
 		dojo.place(htmlstr,this.search_languages_table);
 		dojo.parser.parse(this.search_languages_table);
+		
 	},
 
 	_fillFields: function (data){
@@ -674,7 +681,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
             false,
             false,
             this.currentPage,
-            10,
+            this.numberOfResults,
             this.currentSortBy,
             null,
             null,
