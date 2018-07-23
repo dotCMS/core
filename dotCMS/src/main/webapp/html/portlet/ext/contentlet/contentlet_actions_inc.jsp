@@ -61,23 +61,6 @@ function setMyWorkflowScheme(){
 	});
 }
 
-var workflowParams={};
-function runWorkflowByKeypress(event){
-    const keyName = event.key;
-    if (keyName==='s' && (event.ctrlKey || event.metaKey) ){
-        if(workflowParams.action){
-            event.preventDefault();
-            var action=workflowParams.action;
-            var showPopup=workflowParams.showPopup;
-            workflowParams={};
-            contentAdmin.executeWfAction(action, showPopup);
-            
-            return false;
-        }
-    }
-}
-
-
 </script>
 
 
@@ -161,27 +144,19 @@ function runWorkflowByKeypress(event){
 
 	<%--Start workflow tasks --%>
 	<%if(wfActions.size()>0) {%>
-        <%boolean saveKey=false; %>
+
 		<%for(WorkflowAction action : wfActions){ %>
 			<% List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(action); %>
 
-            
+
 
 			<a
 			style="<%if(schemesAvailable.size()>1){%>display:none;<%} %>" class="schemeId<%=action.getSchemeId()%> schemeActionsDiv"
 			onclick="contentAdmin.executeWfAction('<%=action.getId()%>', <%= action.hasPushPublishActionlet() || action.isAssignable() || action.isCommentable() || UtilMethods.isSet(action.getCondition()) %>)">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, action.getName())) %>   
 				<%if(action.hasSaveActionlet()){ %>
-					<%if(!saveKey){ %>
-					    <script>
-						    workflowParams.action='<%=action.getId()%>';
-						    workflowParams.showPopup=<%= action.hasPushPublishActionlet() || action.isAssignable() || action.isCommentable() || UtilMethods.isSet(action.getCondition()) %>;
-	                        document.addEventListener('keydown', runWorkflowByKeypress, false);
-					    </script>
-					    <% saveKey=true; %>
-				    <%} %>
-				    <i class="fa fa-save" style="opacity:.35;float:right"></i>
-				<%} %>
+                    <i class="fa fa-save" style="opacity:.35;float:right"></i>
+                <%} %>
 
 			</a>
 		<%} %>
