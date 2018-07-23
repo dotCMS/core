@@ -325,11 +325,10 @@ public class MultiTreeFactory {
             }
 
             db.executeBatch(INSERT_SQL, insertParams);
-
-            final MultiTree mTree = mTrees.get(0);
-            updateHTMLPageVersionTS(mTree.getHtmlPage());
-            refreshPageInCache(mTree.getHtmlPage());
         }
+
+        updateHTMLPageVersionTS(pageId);
+        refreshPageInCache(pageId);
     }
 
     @CloseDBIfOpened
