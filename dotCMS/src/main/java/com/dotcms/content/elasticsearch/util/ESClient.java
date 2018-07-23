@@ -132,11 +132,11 @@ public class ESClient {
 
         Logger.info(this, "***PATH HOME: " + esPathHome);
 
-        final String yamlPath = getDefaultYaml().toString();
+        final Path yamlPath = getDefaultYaml();
 
-        try(InputStream inputStream = new BufferedInputStream(new FileInputStream(yamlPath))) {
+        try(InputStream inputStream = Files.newInputStream(yamlPath)) {
             final Builder builder = Settings.builder().
-                    loadFromStream(yamlPath, inputStream, false).
+                    loadFromStream(yamlPath.toString(), inputStream, false).
                     put("node.name", node_id).
                     put("path.home", esPathHome);
 
