@@ -17,11 +17,7 @@ import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.rendering.velocity.util.VelocityUtil;
-import com.dotcms.rendering.velocity.viewtools.LanguageWebAPI;
-import com.dotcms.services.VanityUrlServices;
 
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -32,12 +28,9 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.form.business.FormAPI;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -55,7 +48,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.velocity.exception.ResourceNotFoundException;
-import org.apache.velocity.runtime.resource.ResourceManager;
 
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
@@ -75,7 +67,7 @@ public class ContentletLoader implements DotLoader {
         this.categoryAPI = categoryAPI;
     }
 
-    private final long defualtLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+    private final long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 
 
     public InputStream buildVelocity(Contentlet content, PageMode mode, String filePath)
@@ -589,8 +581,8 @@ public class ContentletLoader implements DotLoader {
 
         long language = new Long(key.language);
         ContentletVersionInfo info = APILocator.getVersionableAPI().getContentletVersionInfo(key.id1, language);
-        if (info == null && language != defualtLang && LanguageWebAPI.canDefaultContentToDefaultLanguage()) {
-            info = APILocator.getVersionableAPI().getContentletVersionInfo(key.id1, defualtLang);
+        if (info == null && language != defaultLang && APILocator.getLanguageAPI().canDefaultContentToDefaultLanguage()) {
+            info = APILocator.getVersionableAPI().getContentletVersionInfo(key.id1, defaultLang);
         }
 
         if (info == null || key.mode.showLive && info.getLiveInode() == null) {

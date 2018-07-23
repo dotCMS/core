@@ -253,4 +253,32 @@ public interface LanguageAPI {
 	public List<Language> getAvailableContentLanguages(final String contentletInode, final User user)
 			throws DotSecurityException, DotDataException;
 
+	/**
+	 * Return if the MULTILINGUAGE_FALLBACK property is activated or not
+	 * defaults to false
+	 * @return boolean
+	 */
+    boolean canDefaultContentToDefaultLanguage();
+
+	/**
+	 * Return if the DEFAULT_WIDGET_TO_DEFAULT_LANGUAGE property is activated or not
+	 * deaults to true
+	 * @return boolean
+	 */
+    boolean canDefaultWidgetToDefaultLanguage();
+
+	/**
+	 * Return if the DEFAULT_PAGE_TO_DEFAULT_LANGUAGE property is activated or not, defaults to true
+	 *
+	 * @return boolean
+	 */
+    boolean canDefaultPageToDefaultLanguage();
+
+	/**
+	 * Return if the DEFAULT_FILE_TO_DEFAULT_LANGUAGE property is activated or not
+	 * defaults to false
+	 * @return boolean
+	 */
+    boolean canDefaultFileToDefaultLanguage();
+
 }

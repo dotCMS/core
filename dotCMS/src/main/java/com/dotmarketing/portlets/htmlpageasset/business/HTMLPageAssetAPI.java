@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.List;
 
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -289,5 +290,32 @@ public interface HTMLPageAssetAPI {
 	}
 
     IHTMLPage findPage(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+    /**
+     * Returns page based on identifier and respects the language fallback settings
+     * @param id
+     * @param tryLang
+     * @param live
+     * @param user
+     * @param respectFrontEndPermissions
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    IHTMLPage findByIdLanguageFallback(Identifier identifier, long tryLang, boolean live, User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException;
+
+    /**
+     * Returns page based on identifier and respects the language fallback settings
+     * @param id identifier of page
+     * @param tryLang requested language
+     * @param live live or working version of page
+     * @param user user to perform operation with
+     * @param respectFrontEndPermissions respect front end permissions
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    IHTMLPage findByIdLanguageFallback(String identifier, long tryLang, boolean live, User user, boolean respectFrontEndPermissions)
+            throws DotDataException, DotSecurityException;
 
 }

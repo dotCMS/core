@@ -2,7 +2,7 @@ package com.dotcms.rendering.velocity.util;
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotcms.rendering.velocity.viewtools.LanguageWebAPI;
+
 import com.dotcms.rendering.velocity.viewtools.RequestWrapper;
 import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
 import com.dotcms.rendering.velocity.viewtools.content.ContentTool;
@@ -396,7 +396,7 @@ public class VelocityUtil {
 							"The page is not available in language "
 									+ language.getId() + ". Just keep going.");
 
-					if(LanguageWebAPI.canDefaultPageToDefaultLanguage()) {
+					if(APILocator.getLanguageAPI().canDefaultPageToDefaultLanguage()) {
 						allDisplayLanguages.add(new DisplayedLanguage(language, true));
 					}
 
@@ -409,57 +409,19 @@ public class VelocityUtil {
 
 			languages.add(new DisplayedLanguage(language, false));
 
-			if(LanguageWebAPI.canDefaultPageToDefaultLanguage()) {
+			if(APILocator.getLanguageAPI().canDefaultPageToDefaultLanguage()) {
 				allDisplayLanguages.add(new DisplayedLanguage(language, false));
 			}
 		}
 
-		if(LanguageWebAPI.canDefaultPageToDefaultLanguage() && doesContentHaveDefaultLang){
+		if(APILocator.getLanguageAPI().canDefaultPageToDefaultLanguage() && doesContentHaveDefaultLang){
 			return allDisplayLanguages;
 		}
 
 		return languages;
 	}
 
-    /**
-     * This returns the proper ihtml page based on id, state and language
-     * 
-     * @param id
-     * @param tryLang
-     * @param live
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    public static IHTMLPage getPage(Identifier id, long tryLang, boolean live)
-            throws DotDataException, DotSecurityException {
 
-
-        IHTMLPage htmlPage;
-
-
-        Contentlet contentlet;
-
-        try {
-            contentlet = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), live, tryLang,
-                    APILocator.getUserAPI().getSystemUser(), false);
-            htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
-
-        } catch (DotStateException dse) {
-            if (LanguageWebAPI.canDefaultPageToDefaultLanguage() && tryLang != APILocator.getLanguageAPI().getDefaultLanguage().getId()) {
-                contentlet = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), live,
-                        APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
-                htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
-            } else {
-                throw new ResourceNotFoundException(
-                        "Can't find content. Identifier: " + id.getId() + ", Live: " + live + ", Lang: " + tryLang, dse);
-            }
-
-        }
-
-
-        return htmlPage;
-    }
 
 	/**
 	 * Gets the Velocity Root Path. Looks for it on the Config, if not found the it get defaulted to /WEB-INF/velocity

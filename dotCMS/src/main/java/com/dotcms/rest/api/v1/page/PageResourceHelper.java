@@ -162,15 +162,17 @@ public class PageResourceHelper implements Serializable {
             throws DotDataException, DotSecurityException {
 
         try {
+            final PageMode mode = PageMode.get(request);
             final Language currentLanguage = WebAPILocator.getLanguageWebAPI().getLanguage(request);
-            final Contentlet page = this.contentletAPI.findContentletByIdentifier(pageId, false,
-                    currentLanguage.getId(), user, false);
+            
+            
+            final IHTMLPage page = this.htmlPageAssetAPI.findByIdLanguageFallback(pageId, currentLanguage.getId(), mode.showLive, user, mode.respectAnonPerms);
 
             if (page == null) {
                 throw new HTMLPageAssetNotFoundException(pageId);
             }
 
-            return this.htmlPageAssetAPI.fromContentlet(page);
+            return page;
         }catch (DotContentletStateException e) {
             throw new HTMLPageAssetNotFoundException(pageId, e);
         }

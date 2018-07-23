@@ -15,6 +15,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.DisplayedLanguage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
@@ -349,6 +350,7 @@ public class LanguageAPIImpl implements LanguageAPI {
     }
 
 	@Override
+	@CloseDBIfOpened
 	public List<Language> getAvailableContentLanguages(final String contentletInode, final User user)
 			throws DotSecurityException, DotDataException {
 
@@ -380,5 +382,36 @@ public class LanguageAPIImpl implements LanguageAPI {
 
         return this.languageVariableAPI;
     }
-    
+
+	/**
+	 * {@inheritDoc}
+	 */
+    @Override
+    public boolean canDefaultContentToDefaultLanguage() {
+        return Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",false);
+    }
+
+	/**
+	 * {@inheritDoc}
+	 */
+    @Override
+    public boolean canDefaultWidgetToDefaultLanguage() {
+        return Config.getBooleanProperty("DEFAULT_WIDGET_TO_DEFAULT_LANGUAGE",true);
+    }
+
+	/**
+	 * {@inheritDoc}
+	 */
+    @Override
+    public boolean canDefaultPageToDefaultLanguage () {
+        return Config.getBooleanProperty( "DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", true );
+    }
+
+	/**
+	 * {@inheritDoc}
+	 */
+    @Override
+    public boolean canDefaultFileToDefaultLanguage() {
+        return Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE",true);
+    }
 }

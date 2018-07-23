@@ -21,6 +21,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.LanguageWebAPI;
@@ -815,4 +816,53 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         } 
 
     }
+	
+    /**
+     * This returns the proper ihtml page based on id, state and language
+     * 
+     * @param id
+     * @param tryLang
+     * @param live
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+	@Override
+    public IHTMLPage findByIdLanguageFallback(final Identifier identifier, final long tryLang, final boolean live, final User user, final boolean respectFrontEndPermissions)
+            throws DotDataException, DotSecurityException {
+
+
+	    return findByIdLanguageFallback(identifier.getId(), tryLang, live, user, respectFrontEndPermissions);
+
+    }
+	
+	@Override
+    public IHTMLPage findByIdLanguageFallback(final String identifier, final long tryLang, final boolean live, final User user, final boolean respectFrontEndPermissions)
+            throws DotDataException, DotSecurityException {
+
+
+        IHTMLPage htmlPage;
+
+        Contentlet contentlet;
+
+        try {
+            contentlet = APILocator.getContentletAPI().findContentletByIdentifier(identifier, live, tryLang,
+                    user, respectFrontEndPermissions);
+            htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
+
+        } catch (Exception dse) {
+            if (APILocator.getLanguageAPI().canDefaultPageToDefaultLanguage() && tryLang != APILocator.getLanguageAPI().getDefaultLanguage().getId()) {
+                contentlet = APILocator.getContentletAPI().findContentletByIdentifier(identifier, live,
+                        APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, respectFrontEndPermissions);
+                htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
+            } else {
+                throw new ResourceNotFoundException(
+                        "Can't find content. Identifier: " + identifier + ", Live: " + live + ", Lang: " + tryLang, dse);
+            }
+
+        }
+
+        return htmlPage;
+    }
+
 }

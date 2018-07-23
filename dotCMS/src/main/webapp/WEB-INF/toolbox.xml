@@ -32,7 +32,7 @@
 	<tool>
 		<key>text</key>
 		<scope>request</scope>
-		<class>com.dotcms.rendering.velocity.viewtools.LanguageWebAPI</class>
+		<class>com.dotcms.rendering.velocity.viewtools.LanguageViewtool</class>
 	</tool>
 	<tool>
 		<key>listTool</key>
@@ -161,12 +161,12 @@
 	<tool>
 		<key>globalvars</key>
 		<scope>request</scope>
-		<class>com.dotcms.rendering.velocity.viewtools.LanguageWebAPI</class>
+		<class>com.dotcms.rendering.velocity.viewtools.LanguageViewtool</class>
 	</tool>
 	<tool>
 		<key>glossary</key>
 		<scope>request</scope>
-		<class>com.dotcms.rendering.velocity.viewtools.LanguageWebAPI</class>
+		<class>com.dotcms.rendering.velocity.viewtools.LanguageViewtool</class>
 	</tool>
 	<tool>
 		<key>utilHtml</key>
@@ -206,7 +206,7 @@
 	<tool>
 		<key>languagewebapi</key>
 		<scope>request</scope>
-		<class>com.dotcms.rendering.velocity.viewtools.LanguageWebAPI</class>
+		<class>com.dotcms.rendering.velocity.viewtools.LanguageViewtool</class>
 	</tool>
 	<tool>
 		<key>pluginapitool</key>
@@ -222,7 +222,7 @@
 	<tool>
 		<key>langbackendwebapi</key>
 		<scope>request</scope>
-		<class>com.dotcms.rendering.velocity.viewtools.LanguageWebAPI</class>
+		<class>com.dotcms.rendering.velocity.viewtools.LanguageViewtool</class>
 	</tool>
 	<tool>
 		<key>xsstool</key>
