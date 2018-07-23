@@ -20,6 +20,9 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.Settings;
@@ -101,7 +104,7 @@ public class ESClient {
 
 
                     try{
-                        _nodeInstance = new Node(loadNodeSettings(extSettings).build()).start();
+                        _nodeInstance = new Node(loadNodeSettings(extSettings)).start();
                     } catch (IOException | NodeValidationException e){
                         Logger.error(this, "Error validating ES node at start.", e);
                     }
@@ -122,29 +125,44 @@ public class ESClient {
     }
 
     @VisibleForTesting
-    Builder loadNodeSettings(Builder extSettings) throws IOException {
+    Settings loadNodeSettings(final Builder extSettings) throws IOException {
 
         final String node_id = ConfigUtils.getServerId();
         final String esPathHome = getESPathHome();
 
         Logger.info(this, "***PATH HOME: " + esPathHome);
 
-        final String yamlPath = getDefaultYaml().toString();
+        final Path yamlPath = getDefaultYaml();
 
-        final Builder builder = Settings.builder().
-                loadFromStream(yamlPath, getClass().getResourceAsStream(yamlPath), false).
-                put( "node.name", node_id ).
-                put("path.home", esPathHome).
-                put(extSettings!=null?extSettings.build():getExtSettingsBuilder().build());
+        try(InputStream inputStream = Files.newInputStream(yamlPath)) {
+            final Builder builder = Settings.builder().
+                    loadFromStream(yamlPath.toString(), inputStream, false).
+                    put("node.name", node_id).
+                    put("path.home", esPathHome);
 
-        //Remove any discovery property when using community license
-        if (isCommunityOrStandard()){
-            List<String> keysToRemove = builder.keys().stream()
-                    .filter(key -> key.startsWith("discovery.") && !key
-                            .equals(ES_ZEN_UNICAST_HOSTS)).collect(Collectors.toList());
-            keysToRemove.forEach(elem -> builder.remove(elem));
+            setAbsolutePath("path.data", builder);
+            setAbsolutePath("path.repo", builder);
+            setAbsolutePath("path.logs", builder);
+
+            builder.put(
+                    extSettings != null ? extSettings.build() : getExtSettingsBuilder().build());
+
+            //Remove any discovery property when using community license
+            if (isCommunityOrStandard()) {
+                List<String> keysToRemove = builder.keys().stream()
+                        .filter(key -> key.startsWith("discovery.") && !key
+                                .equals(ES_ZEN_UNICAST_HOSTS)).collect(Collectors.toList());
+                keysToRemove.forEach(elem -> builder.remove(elem));
+            }
+            return builder.build();
         }
-        return builder;
+    }
+
+    private void setAbsolutePath(final String key, final Builder builder){
+        final String pathData = builder.get(key);
+        if(UtilMethods.isSet(pathData) && !new File(pathData).isAbsolute()){
+            builder.put(key, ConfigUtils.getDynamicContentPath() + File.separator + pathData);
+        }
     }
 
     public void shutDownNode () {

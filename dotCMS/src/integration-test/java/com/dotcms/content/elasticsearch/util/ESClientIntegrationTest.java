@@ -8,6 +8,7 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 
+import java.io.File;
 import org.elasticsearch.common.settings.Settings;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -121,21 +122,33 @@ public class ESClientIntegrationTest {
     @UseDataProvider("testCases")
     public void testLoadNodeSettings(final ESClientTestCase testCase) throws IOException {
         final ESClient esClient = Mockito.spy(new ESClient());
+
         Mockito.doReturn(testCase.getOverrideFilePath()).when(esClient).getOverrideYamlPath();
         if (UtilMethods.isSet(testCase.getDefaultFilePath()) && !testCase.getDefaultFilePath()
                 .equals(Paths.get(NON_EXISTING_PATH))) {
             Mockito.doReturn(testCase.getDefaultFilePath()).when(esClient).getDefaultYaml();
         }
         Mockito.doReturn(testCase.isCommunity()).when(esClient).isCommunityOrStandard();
-        final Settings.Builder builder = esClient
+        final Settings builder = esClient
                 .loadNodeSettings(esClient.getExtSettingsBuilder());
 
         if (testCase.isCommunity()) {
-            assertTrue(builder.keys().stream().filter(key -> key.startsWith("discovery.") && !key
+            assertTrue(builder.keySet().stream().filter(key -> key.startsWith("discovery.") && !key
                     .equals(ES_ZEN_UNICAST_HOSTS)).count() == 0);
         } else {
-            assertTrue(builder.keys().stream().filter(key -> key.startsWith("discovery.") && !key
+            assertTrue(builder.keySet().stream().filter(key -> key.startsWith("discovery.") && !key
                     .equals(ES_ZEN_UNICAST_HOSTS)).count() > 0);
+        }
+
+        if (UtilMethods.isSet(builder.get("path.data"))){
+            assertTrue(new File(builder.get("path.data")).isAbsolute());
+        }
+        if (UtilMethods.isSet(builder.get("path.repo"))) {
+            assertTrue(new File(builder.get("path.repo")).isAbsolute());
+        }
+
+        if (UtilMethods.isSet(builder.get("path.logs"))) {
+            assertTrue(new File(builder.get("path.logs")).isAbsolute());
         }
     }
 
