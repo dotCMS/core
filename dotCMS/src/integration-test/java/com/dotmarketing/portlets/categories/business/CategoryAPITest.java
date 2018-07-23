@@ -16,7 +16,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -225,8 +224,6 @@ public class CategoryAPITest extends IntegrationTestBase {
         //***************************************************************
         //Creating new categories
 
-        HibernateUtil.startTransaction();
-
         //Adding the parent category
         Category parentCategory = new Category();
         parentCategory.setCategoryName( "Movies" + time );
@@ -259,8 +256,6 @@ public class CategoryAPITest extends IntegrationTestBase {
         categoryAPI.save( parentCategory, childCategory2, user, false );
         categories.add( childCategory2 );
 
-        HibernateUtil.closeAndCommitTransaction();
-
         //***************************************************************
         //Verify If we find the parent for the categories we just added categories
         List<Category> parents = categoryAPI.getParents( childCategory1, user, false );
@@ -275,8 +270,6 @@ public class CategoryAPITest extends IntegrationTestBase {
 
         //***************************************************************
         //Set up a new structure with categories
-
-        HibernateUtil.startTransaction();
 
         //Create the new structure
         Structure testStructure = createStructure( "JUnit Test Categories Structure_" + String.valueOf( new Date().getTime() ), "junit_test_categories_structure_" + String.valueOf( new Date().getTime() ) );
@@ -302,8 +295,6 @@ public class CategoryAPITest extends IntegrationTestBase {
         contentlet = APILocator.getContentletAPI().checkin( contentlet, categories, permissionAPI.getPermissions( contentlet, false, true ), user, false );
         APILocator.getContentletAPI().isInodeIndexed( contentlet.getInode() );
         APILocator.getVersionableAPI().setLive( contentlet );
-
-        HibernateUtil.closeAndCommitTransaction();
 
         //***************************************************************
         //Verify If we find the parent for these categories
