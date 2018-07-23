@@ -90,7 +90,7 @@ public class FolderAPIImpl implements FolderAPI  {
 			if(FolderAPI.SYSTEM_FOLDER.equals(folder.getInode())) {
 				if(!Host.SYSTEM_HOST.equals(host.getIdentifier())){
 					if(!permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
-						throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read folder " + folder.getPath());
+						throw new DotSecurityException("User " + (user.getUserId() != null ? user.getUserId() : "") + " does not have permission to read folder " + folder.getPath());
 					}
 				}
 			}
@@ -116,7 +116,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		boolean renamed = false;
 
 		if (!permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_EDIT, user, respectFrontEndPermissions)) {
-			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to edit folder" + folder.getPath());
+			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId() : "") + " does not have permission to edit folder" + folder.getPath());
 		}
 
 		try {
@@ -144,12 +144,12 @@ public class FolderAPIImpl implements FolderAPI  {
 		if (!permissionAPI.doesUserHavePermission(f, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
 		    if(UtilMethods.isSet(f.getPath())){
 		        //Folder exists in DB, but the user does not have permissions to read it.
-		        Logger.error(this, "User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + f.getPath());
+		        Logger.error(this, "User " + (user.getUserId() != null?user.getUserId():"") + " does not have permission to read Folder " + f.getPath());
 		    }else{
 		        //Despite the Folder Object is not null, It may return an empty Folder Object because the Parent Folder is missing.
-		        Logger.error(this, "User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + id.getParentPath() + " Please check the folder exists.");
+		        Logger.error(this, "User " + (user.getUserId() != null?user.getUserId():"") + " does not have permission to read Folder " + id.getParentPath() + " Please check the folder exists.");
 		    }
-			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + f.getPath());
+			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():"") + " does not have permission to read Folder " + f.getPath());
 		}
 		return f;
 
@@ -169,7 +169,7 @@ public class FolderAPIImpl implements FolderAPI  {
 
 		if (!this.permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
 
-			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + folder.getPath());
+			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():"") + " does not have permission to read Folder " + folder.getPath());
 		}
 
 		return this.folderFactory.getFoldersByParent(folder, user, respectFrontEndPermissions);
@@ -187,7 +187,7 @@ public class FolderAPIImpl implements FolderAPI  {
 			DotSecurityException {
 
 		if (!permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
-			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Host " + host.getHostname());
+			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():"") + " does not have permission to read Host " + host.getHostname());
 		}
 
 		final List<Folder> allFolders = folderFactory.findFoldersByHost(host);
@@ -205,7 +205,7 @@ public class FolderAPIImpl implements FolderAPI  {
 	DotSecurityException {
 
 		if (!permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
-			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Host " + host.getHostname());
+			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():"") + " does not have permission to read Host " + host.getHostname());
 		}
 
 		List<Folder> full = folderFactory.findThemesByHost(host);
@@ -229,7 +229,7 @@ public class FolderAPIImpl implements FolderAPI  {
 			DotSecurityException {
 
 		if (!permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
-			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + folder.getPath());
+			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():"") + " does not have permission to read Folder " + folder.getPath());
 		}
 
 		List<Folder> subFolders = findSubFolders(folder, user, respectFrontEndPermissions);
@@ -252,7 +252,7 @@ public class FolderAPIImpl implements FolderAPI  {
 	public List<Folder> findSubFoldersRecursively(Host host, User user, boolean respectFrontEndPermissions) throws DotDataException,
 			DotSecurityException {
 		if (!permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
-			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Host " + host.getHostname());
+			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():"") + " does not have permission to read Host " + host.getHostname());
 		}
 		List<Folder> subFolders = folderFactory.findFoldersByHost(host);
 		List<Folder> toIterateOver = new ArrayList<Folder>(subFolders);
@@ -280,11 +280,11 @@ public class FolderAPIImpl implements FolderAPI  {
 			DotSecurityException, DotStateException, IOException {
 
 		if (!permissionAPI.doesUserHavePermission(folderToCopy, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
-			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + folderToCopy.getPath());
+			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():"") + " does not have permission to read Folder " + folderToCopy.getPath());
 		}
 
 		if (!permissionAPI.doesUserHavePermission(newParentFolder, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontEndPermissions)) {
-			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to add to Folder " + newParentFolder.getPath());
+			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():"") + " does not have permission to add to Folder " + newParentFolder.getPath());
 		}
 
 		folderFactory.copy(folderToCopy, newParentFolder);
@@ -299,11 +299,11 @@ public class FolderAPIImpl implements FolderAPI  {
 			DotSecurityException, DotStateException, IOException {
 
 		if (!permissionAPI.doesUserHavePermission(folderToCopy, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
-			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + folderToCopy.getPath());
+			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():"") + " does not have permission to read Folder " + folderToCopy.getPath());
 		}
 
 		if (!permissionAPI.doesUserHavePermission(newParentHost, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontEndPermissions)) {
-			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to add to Host " + newParentHost.getHostname());
+			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():"") + " does not have permission to add to Host " + newParentHost.getHostname());
 		}
 
 		folderFactory.copy(folderToCopy, newParentHost);
@@ -349,7 +349,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		if (!permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_EDIT, user, respectFrontEndPermissions)) {
 
 			Logger.debug(getClass(), "The user: " + user.getEmailAddress() + " does not have permission for: " + folder );
-			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to edit Folder " + folder.getPath());
+			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():"") + " does not have permission to edit Folder " + folder.getPath());
 		}
 
 
@@ -366,8 +366,8 @@ public class FolderAPIImpl implements FolderAPI  {
 			PermissionAPI papi = getPermissionAPI();
 			if (!papi.doesUserHavePermission(folder, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user)) {
 
-				Logger.error(this.getClass(), "User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to Folder " + folder.getPath());
-				throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" +  "does not have edit permissions on Folder " + folder.getPath());
+				Logger.error(this.getClass(), "User " + (user.getUserId() != null?user.getUserId():"") + " does not have permission to Folder " + folder.getPath());
+				throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():"") +  "does not have edit permissions on Folder " + folder.getPath());
 			}
 
 			Folder faker = new Folder();
@@ -555,7 +555,7 @@ public class FolderAPIImpl implements FolderAPI  {
 
 		if (folder!= null && !this.permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
 
-			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + folder.getPath());
+			throw new DotSecurityException("User " + ( user.getUserId() != null ? user.getUserId(): "" ) + " does not have permission to read Folder " + folder.getPath());
 		}
 
 		return folder;
@@ -687,7 +687,7 @@ public class FolderAPIImpl implements FolderAPI  {
 								throws DotStateException, DotDataException, DotSecurityException {
 
         if (!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_READ, user,respectFrontEndPermissions)) {
-            throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + parent.getPath());
+            throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():"") + " does not have permission to read Folder " + parent.getPath());
         }
 
         final ChildrenCondition cond = new ChildrenCondition();
@@ -701,7 +701,7 @@ public class FolderAPIImpl implements FolderAPI  {
     public List<Link> getLinks ( Host host, boolean working, boolean deleted, User user, boolean respectFrontEndPermissions ) throws DotStateException, DotDataException, DotSecurityException {
 
         if ( !permissionAPI.doesUserHavePermission( host, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions ) ) {
-            throw new DotSecurityException( "User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Host " + host.getHostname() );
+            throw new DotSecurityException( "User " + (user.getUserId() != null?user.getUserId():"") + " does not have permission to read Host " + host.getHostname() );
         }
 
         ChildrenCondition cond = new ChildrenCondition();
@@ -715,7 +715,7 @@ public class FolderAPIImpl implements FolderAPI  {
     public List<Link> getLinks ( Host host, User user, boolean respectFrontEndPermissions ) throws DotStateException, DotDataException, DotSecurityException {
 
         if ( !permissionAPI.doesUserHavePermission( host, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions ) ) {
-            throw new DotSecurityException( "User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Host " + host.getHostname() );
+            throw new DotSecurityException( "User " + (user.getUserId() != null?user.getUserId():"") + " does not have permission to read Host " + host.getHostname() );
         }
 
         List list = folderFactory.getChildrenClass( host, Link.class );
@@ -726,7 +726,7 @@ public class FolderAPIImpl implements FolderAPI  {
     public List<Link> getLinks ( Folder parent, User user, boolean respectFrontEndPermissions ) throws DotStateException, DotDataException, DotSecurityException {
 
         if ( !permissionAPI.doesUserHavePermission( parent, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions ) ) {
-            throw new DotSecurityException( "User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + parent.getPath() );
+            throw new DotSecurityException( "User " + (user.getUserId() != null?user.getUserId():"") + " does not have permission to read Folder " + parent.getPath() );
         }
 
         List list = folderFactory.getChildrenClass( parent, Link.class );
@@ -737,7 +737,7 @@ public class FolderAPIImpl implements FolderAPI  {
 	public  List<Contentlet> getContent(Folder parent, User user, boolean respectFrontEndPermissions) throws DotStateException,
 		DotDataException, DotSecurityException{
 		if (!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_READ, user,respectFrontEndPermissions)) {
-			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + parent.getPath());
+			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():"") + " does not have permission to read Folder " + parent.getPath());
 		}
 
 		List list = folderFactory.getChildrenClass(parent, Contentlet.class);
@@ -748,7 +748,7 @@ public class FolderAPIImpl implements FolderAPI  {
 	public  List<Structure> getStructures(Folder parent, User user, boolean respectFrontEndPermissions) throws DotStateException,
 		DotDataException, DotSecurityException{
 		if (!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_READ, user,respectFrontEndPermissions)) {
-			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + parent.getPath());
+			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():"") + " does not have permission to read Folder " + parent.getPath());
 		}
 		List list = StructureFactory.getStructures("folder='"+parent.getInode()+"'", "mod_date", Integer.MAX_VALUE, 0, "asc");
 		return permissionAPI.filterCollection(list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user);
@@ -782,11 +782,11 @@ public class FolderAPIImpl implements FolderAPI  {
 	@WrapInTransaction
 	public boolean move(Folder folderToMove, Folder newParentFolder,User user,boolean respectFrontEndPermissions)throws DotDataException, DotSecurityException {
 		if (!permissionAPI.doesUserHavePermission(folderToMove, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
-			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + folderToMove.getPath());
+			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():"") + " does not have permission to read Folder " + folderToMove.getPath());
 		}
 
 		if (!permissionAPI.doesUserHavePermission(newParentFolder, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontEndPermissions)) {
-			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to add to Folder " + newParentFolder.getName());
+			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():"") + " does not have permission to add to Folder " + newParentFolder.getName());
 		}
 		boolean move = folderFactory.move(folderToMove, newParentFolder);
 
@@ -799,11 +799,11 @@ public class FolderAPIImpl implements FolderAPI  {
 	@WrapInTransaction
 	public boolean move(Folder folderToMove, Host newParentHost,User user,boolean respectFrontEndPermissions)throws DotDataException, DotSecurityException {
 		if (!permissionAPI.doesUserHavePermission(folderToMove, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
-			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + folderToMove.getPath());
+			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():"") + " does not have permission to read Folder " + folderToMove.getPath());
 		}
 
 		if (!permissionAPI.doesUserHavePermission(newParentHost, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontEndPermissions)) {
-			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to add to Folder " + newParentHost.getHostname());
+			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():"") + " does not have permission to add to Folder " + newParentHost.getHostname());
 		}
 		boolean move = folderFactory.move(folderToMove, newParentHost);
 
@@ -848,7 +848,7 @@ public class FolderAPIImpl implements FolderAPI  {
 	@CloseDBIfOpened
 	public List<Contentlet> getLiveContent(Folder parent, User user,boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 		if (!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_READ, user,respectFrontEndPermissions)) {
-			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + parent.getName());
+			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():"") + " does not have permission to read Folder " + parent.getName());
 		}
 		ChildrenCondition cond = new ChildrenCondition();
 		cond.live=true;
@@ -864,7 +864,7 @@ public class FolderAPIImpl implements FolderAPI  {
 								   throws DotDataException, DotSecurityException {
 
 		if (!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_READ, user,respectFrontEndPermissions)) {
-			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + parent.getPath());
+			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():"") + " does not have permission to read Folder " + parent.getPath());
 		}
 
 		final ChildrenCondition cond = new ChildrenCondition();
@@ -878,7 +878,7 @@ public class FolderAPIImpl implements FolderAPI  {
 	@CloseDBIfOpened
 	public List<Contentlet> getWorkingContent(Folder parent, User user,boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 		if (!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_READ, user,respectFrontEndPermissions)) {
-			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + parent.getPath());
+			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():"") + " does not have permission to read Folder " + parent.getPath());
 		}
 		ChildrenCondition cond = new ChildrenCondition();
         cond.working=true;
@@ -891,7 +891,7 @@ public class FolderAPIImpl implements FolderAPI  {
 	@CloseDBIfOpened
 	public List<Link> getWorkingLinks(Folder parent, User user,boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 		if (!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_READ, user,respectFrontEndPermissions)) {
-			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + parent.getPath());
+			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():"") + " does not have permission to read Folder " + parent.getPath());
 		}
 		ChildrenCondition cond = new ChildrenCondition();
         cond.working=true;
