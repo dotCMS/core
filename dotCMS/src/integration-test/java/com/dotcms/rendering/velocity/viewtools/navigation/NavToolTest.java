@@ -36,9 +36,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.map;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * NavToolTest
@@ -66,7 +64,7 @@ public class NavToolTest extends IntegrationTestBase{
     @Test
     public void testAboutUsDefaultPageToLanguageTrue() throws Exception { // https://github.com/dotCMS/core/issues/7678
         Config.setProperty("DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", true);
-        assertEquals(APILocator.getLanguageAPI().canDefaultPageToDefaultLanguage(), true);
+        assertTrue(APILocator.getLanguageAPI().canDefaultPageToDefaultLanguage());
 
         //Using System User.
         User user = APILocator.getUserAPI().getSystemUser();
@@ -126,7 +124,7 @@ public class NavToolTest extends IntegrationTestBase{
     @Test
     public void testAboutUsDefaultPageToLanguageFalse() throws Exception { // https://github.com/dotCMS/core/issues/7678
         Config.setProperty("DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", false);
-        assertEquals(APILocator.getLanguageAPI().canDefaultPageToDefaultLanguage(), false);
+        assertFalse(APILocator.getLanguageAPI().canDefaultPageToDefaultLanguage());
 
         //Using System User.
         User user = APILocator.getUserAPI().getSystemUser();
