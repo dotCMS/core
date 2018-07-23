@@ -81,17 +81,10 @@ public class ContentTypeResourceTest extends ContentTypeBaseTest {
 		}finally{
 			for(ContentType delType:delTypes){
 				try {
-					if (UtilMethods.isSet(delType.id())){
-						contentTypeApi.delete(contentTypeApi.find(delType.id()));
-					}
-				} catch (NotFoundInDbException e) {
-
-				}
-				try {
-					if (UtilMethods.isSet(delType.variable())){
+					if (UtilMethods.isSet(delType) && !UtilMethods.isSet(delType.id())){
 						contentTypeApi.delete(contentTypeApi.find(delType.variable()));
 					}
-				} catch (NotFoundInDbException ee) {
+				} catch (NotFoundInDbException e) {
 
 				}
 			}

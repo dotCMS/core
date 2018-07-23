@@ -183,10 +183,10 @@
         "host": "48190c8c-42c4-46af-8d1a-0cd5db894797",
         "clazz": "com.dotcms.contenttype.model.type.ImmutableSimpleContentType",
         "multilingualable": false,
-        "name": "Banner",
+        "name": "BannerTest",
         "owner": "dotcms.org.1",
         "system": false,
-        "variable": "Banner",
+        "variable": "BannerTest",
         "versionable": true
     }
 

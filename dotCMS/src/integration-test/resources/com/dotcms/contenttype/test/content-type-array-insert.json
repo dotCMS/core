@@ -511,7 +511,7 @@
 		"folder": "SYSTEM_FOLDER",
 		"host": "SYSTEM_HOST",
 		"clazz": "com.dotcms.contenttype.model.type.SimpleContentType",
-		"name": "Wiki",
+		"name": "WikiTest",
 		"owner": "dotcms.org.1",
 		"system": false,
 		"variable": "WikiTest"
