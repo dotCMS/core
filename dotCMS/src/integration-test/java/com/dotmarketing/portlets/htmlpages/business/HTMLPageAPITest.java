@@ -1,9 +1,5 @@
 package com.dotmarketing.portlets.htmlpages.business;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,6 +46,8 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import org.junit.runner.RunWith;
+
+import static org.junit.Assert.*;
 
 @RunWith(DataProviderRunner.class)
 public class HTMLPageAPITest extends IntegrationTestBase {
@@ -369,7 +367,7 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 			assertEquals(testCase.expectedLanguage, returnedPage.getLanguageId());
 
 		} catch(ResourceNotFoundException e) {
-			assertTrue(!testCase.shouldReturnPage);
+			assertFalse(testCase.shouldReturnPage);
 		} finally {
 			// restore original value
 			Config.setProperty( "DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", originalValue );

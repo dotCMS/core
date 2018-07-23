@@ -837,7 +837,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     }
 	
 	@Override
-    public IHTMLPage findByIdLanguageFallback(final String id, final long tryLang, final boolean live, final User user, final boolean respectFrontEndPermissions)
+    public IHTMLPage findByIdLanguageFallback(final String identifier, final long tryLang, final boolean live, final User user, final boolean respectFrontEndPermissions)
             throws DotDataException, DotSecurityException {
 
 
@@ -846,18 +846,18 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         Contentlet contentlet;
 
         try {
-            contentlet = APILocator.getContentletAPI().findContentletByIdentifier(id, live, tryLang,
+            contentlet = APILocator.getContentletAPI().findContentletByIdentifier(identifier, live, tryLang,
                     user, respectFrontEndPermissions);
             htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
 
         } catch (Exception dse) {
             if (APILocator.getLanguageAPI().canDefaultPageToDefaultLanguage() && tryLang != APILocator.getLanguageAPI().getDefaultLanguage().getId()) {
-                contentlet = APILocator.getContentletAPI().findContentletByIdentifier(id, live,
+                contentlet = APILocator.getContentletAPI().findContentletByIdentifier(identifier, live,
                         APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, respectFrontEndPermissions);
                 htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
             } else {
                 throw new ResourceNotFoundException(
-                        "Can't find content. Identifier: " + id + ", Live: " + live + ", Lang: " + tryLang, dse);
+                        "Can't find content. Identifier: " + identifier + ", Live: " + live + ", Lang: " + tryLang, dse);
             }
 
         }
