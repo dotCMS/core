@@ -265,8 +265,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             return contentlet;
         }else{
-            final String u = (user == null) ? "Unknown" : user.getUserId();
-            throw new DotSecurityException("User:" + u + " does not have permissions on Contentlet "+ContentletUtil
+            final String userId = (user == null) ? "Unknown" : user.getUserId();
+            throw new DotSecurityException("User:" + userId + " does not have permissions on Contentlet "+ContentletUtil
                     .toShortString(contentlet));
         }
     }
