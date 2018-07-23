@@ -183,6 +183,10 @@ public class PageLoader implements DotLoader {
         }
         sb.append("#end");
 
+        sb.append("#if($hasForm || $EDIT_MODE)");
+        sb.append("#parse (\"/static/content/init_form_macro.vtl\")");
+        sb.append("#end");
+
         return writeOutVelocity(filePath, sb.toString());
 
 
