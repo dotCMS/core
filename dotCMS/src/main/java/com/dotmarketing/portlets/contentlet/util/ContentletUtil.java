@@ -172,7 +172,23 @@ public class ContentletUtil {
 
 		return m;
 	}
-	
+
+	public static String toShortString(final Contentlet contentlet) {
+		if (null == contentlet) {
+			return null;
+		}
+
+		final String contentType = contentlet.getContentType() != null ? contentlet.getContentType().name() : "Unknown";
+
+		return String.format("Contentlet[name: %s, type: %s, lang: %s ,identifier: %s, inode: %s]",
+				contentlet.getName(),
+				contentType,
+				contentlet.getLanguageId(),
+				contentlet.getIdentifier(),
+				contentlet.getInode()
+		);
+	}
+
 }
 
 
