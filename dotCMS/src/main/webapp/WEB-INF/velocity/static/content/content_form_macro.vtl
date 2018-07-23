@@ -4,6 +4,14 @@
 	#set($contentFormReferer = "${VTLSERVLET_URI}")
 #end
 
+<script>
+    var tabCounterCalls = [];
+
+    function addTabCounterCall(value) {
+        tabCounterCalls.push(value);
+    }
+</script>
+
 
 <link rel="stylesheet" href="/html/css/content/forms.css" type="text/css" media="screen" />
 #if($UtilMethods.isSet($contentFormMacroCSS))
@@ -310,7 +318,7 @@
 								#set($fieldAux = $field)
 								#parse('/static/content/relationships_tab_render.vtl')
 								<script language="javascript">
-									updateTabCounter("$currentTab");
+									addTabCounterCall("$currentTab");
 								</script>
 							</dd>
 						</div>
@@ -353,7 +361,7 @@
 							#else
 								#parse('/static/content/text_field_render.vtl')
 								<script language="javascript">
-									updateTabCounter("$currentTab");
+									addTabCounterCall("$currentTab");
 								</script>
 							#end
 
@@ -378,7 +386,7 @@
 							#else
 								#parse('/static/content/textarea_field_render.vtl')
 								<script language="javascript">
-									updateTabCounter("$currentTab");
+									addTabCounterCall("$currentTab");
 								</script>
 							#end
 
@@ -403,7 +411,7 @@
 							#else
 								#parse('/static/content/keyvalue_field_render.vtl')
 								<script language="javascript">
-									updateTabCounter("$currentTab");
+									addTabCounterCall("$currentTab");
 								</script>
 							#end
 
@@ -427,7 +435,7 @@
 							#else
 								#parse('/static/content/wysiwyg_field_render.vtl')
 								<script language="javascript">
-									updateTabCounter("$currentTab");
+									addTabCounterCall("$currentTab");
 								</script>
 							#end
 
@@ -451,7 +459,7 @@
 							#else
 								#parse('/static/content/tag_field_render.vtl')
 								<script language="javascript">
-									updateTabCounter("$currentTab");
+									addTabCounterCall("$currentTab");
 								</script>
 							#end
 
@@ -476,7 +484,7 @@
 							#else
 								#parse('/static/content/checkbox_field_render.vtl')
 								<script language="javascript">
-									updateTabCounter("$currentTab");
+									addTabCounterCall("$currentTab");
 								</script>
 							#end
 
@@ -500,7 +508,7 @@
 							#else
 								#parse('/static/content/radio_field_render.vtl')
 								<script language="javascript">
-									updateTabCounter("$currentTab");
+									addTabCounterCall("$currentTab");
 								</script>
 							#end
 
@@ -524,7 +532,7 @@
 							#else
 								#parse('/static/content/select_field_render.vtl')
 								<script language="javascript">
-									updateTabCounter("$currentTab");
+									addTabCounterCall("$currentTab");
 								</script>
 							#end
 
@@ -548,7 +556,7 @@
 							#else
 								#parse('/static/content/multiselect_field_render.vtl')
 								<script language="javascript">
-									updateTabCounter("$currentTab");
+									addTabCounterCall("$currentTab");
 								</script>
 							#end
 
@@ -574,7 +582,7 @@
 							#else
 								#parse('/static/content/date_field_render.vtl')
 								<script language="javascript">
-									updateTabCounter("$currentTab");
+									addTabCounterCall("$currentTab");
 								</script>
 							#end
 
@@ -602,7 +610,7 @@
 							#else
 								#parse('/static/content/time_field_render.vtl')
 								<script language="javascript">
-									updateTabCounter("$currentTab");
+									addTabCounterCall("$currentTab");
 								</script>
 							#end
 
@@ -631,7 +639,7 @@
 							#else
 								#parse('/static/content/datetime_field_render.vtl')
 								<script language="javascript">
-									updateTabCounter("$currentTab");
+									addTabCounterCall("$currentTab");
 								</script>
 							#end
 
@@ -655,7 +663,7 @@
 							#else
 								#parse('/static/content/file_field_render.vtl')
 								<script language="javascript">
-									updateTabCounter("$currentTab");
+									addTabCounterCall("$currentTab");
 								</script>
 							#end
 
@@ -679,7 +687,7 @@
 							#else
 								#parse('/static/content/image_field_render.vtl')
 								<script language="javascript">
-									updateTabCounter("$currentTab");
+									addTabCounterCall("$currentTab");
 								</script>
 							#end
 
@@ -703,7 +711,7 @@
 							#else
 								#parse('/static/content/binary_field_render.vtl')
 								<script language="javascript">
-									updateTabCounter("$currentTab");
+									addTabCounterCall("$currentTab");
 								</script>
 							#end
 
@@ -723,7 +731,7 @@
 								#else
 									#parse('/static/content/custom_field_render.vtl')
 									<script language="javascript">
-										updateTabCounter("$currentTab");
+										addTabCounterCall("$currentTab");
 									</script>
 								#end
 						#elseif($field.fieldType == 'host or folder' && !($showOnlyRequiredFields && !$field.isRequired()))
@@ -745,7 +753,7 @@
 									#else
 										#parse('/static/content/host_folder_field_render.vtl')
 										<script language="javascript">
-											updateTabCounter("$currentTab");
+											addTabCounterCall("$currentTab");
 										</script>
 									#end
 								#end
@@ -767,7 +775,7 @@
 							#else
 								#parse('/static/content/category_field_render.vtl')
 								<script language="javascript">
-									updateTabCounter("$currentTab");
+									addTabCounterCall("$currentTab");
 								</script>
 							#end
 						#end
@@ -864,7 +872,7 @@
 
 <script language="javascript">
 
-	function checkTabFields(tab){
+	function checkTabFields(tab) {
 
 
 	if("$firstTabName"==tab) {
@@ -1021,7 +1029,7 @@
     return true;
 }
 
-var captcha_audio_play;
+    var captcha_audio_play;
 
 	function playAudioCaptcha(){
 		captcha_audio_play = document.getElementById('captcha-audio-play');
@@ -1048,15 +1056,5 @@ var captcha_audio_play;
     function userLang() {
         return "$text.getFromSessionLanguage('org.dotcms.frontend.content.submission.does.not.comply.format')";
 	}
-
-updateTabList();
-
-
-
-
-
-
-
-
 
 </script>
