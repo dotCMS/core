@@ -10134,6 +10134,7 @@ dd .buttonCaption {
   background-color: #FAFAFA;
   border-right: solid 1px #ECEDEE;
   min-height: 700px;
+  width: 200px;
 }
 
 .portlet-wrapper {
