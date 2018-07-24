@@ -79,7 +79,6 @@ import javax.servlet.http.HttpSession;
  * <ul>
  * <li>Content Types.</li>
  * <li>Folders.</li>
- * <li>Workflows.</li>
  * <li>Legacy Pages and Content Pages.</li>
  * <li>File Assets.</li>
  * </ul>
@@ -156,7 +155,7 @@ public class IntegrityResource {
 
 
     /**
-     * <p>Returns a zip with data from structures, workflow schemes and folders for integrity check
+     * <p>Returns a zip with data from structures and folders for integrity check
      *
      * Usage: /getdata
      *
@@ -845,8 +844,8 @@ public class IntegrityResource {
             //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             //Structures tab data
-            JSONArray tabResponse = null;
-            JSONObject errorContent = null;
+            JSONArray tabResponse;
+            JSONObject errorContent;
 
             IntegrityType[] types = IntegrityType.values();
             boolean isThereAnyConflict = false;
