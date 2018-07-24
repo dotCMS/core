@@ -1685,7 +1685,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         logContentletActivity(contentlets, "Deleting Content", user);
         for (Contentlet contentlet : contentlets){
-            if(!contentlet.isArchived()){
+            if(!contentlet.isArchived() && !contentlet.getBoolProperty(Contentlet.DONT_VALIDATE_ME)){
                 throw new DotContentletStateException(
                     getLocalizedMessageOrDefault(user, "Failed-to-delete-unarchived-content", FAILED_TO_DELETE_UNARCHIVED_CONTENT, getClass())
                 );
@@ -2016,11 +2016,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             // If the user calling this method is System, no other condition is required.
             // Note: no need to validate this on DELETE SITE/HOST.
-            if (contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) != null ||
-                    user == null ||
-                    !workingContentlet.isLocked() ||
-                    workingContentlet.getModUser().equals(user.getUserId()) ||
-                    user.getUserId().equals(systemUser.getUserId())) {
+            if (contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) != null || canLock(contentlet, user)) {
 
                 if (liveContentlet != null && InodeUtils.isSet(liveContentlet.getInode())) {
                     APILocator.getVersionableAPI().removeLive(liveContentlet);
