@@ -35,7 +35,9 @@ export class IframePortletLegacyComponent implements OnInit {
 
     ngOnInit(): void {
         this.dotRouterService.portletReload$.subscribe((portletId: string) => {
-            this.reloadIframePortlet(portletId);
+            if (this.dotRouterService.isJSPPortlet()) {
+                this.reloadIframePortlet(portletId);
+            }
         });
         this.siteService.switchSite$.subscribe(() => {
             // prevent set empty URL - when the page first loads.

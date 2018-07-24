@@ -76,4 +76,9 @@ describe('DotRouterService', () => {
         service.goToEditTask('123');
         expect(router.navigate).toHaveBeenCalledWith(['/c/workflow/123']);
     });
+
+    it('should return if a portlet if based on JSP code', () => {
+        spyOnProperty(router, 'url', 'get').and.returnValue('/c/test');
+        expect(service.isJSPPortlet()).toBeTruthy();
+    });
 });

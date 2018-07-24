@@ -90,6 +90,15 @@ export class DotRouterService {
         return url === '/';
     }
 
+    /**
+     * Check if Portlet is based on a JSP/iframe page
+     * @returns {boolean}
+     * @memberof DotRouterService
+     */
+    isJSPPortlet(): boolean {
+        return this.router.url.startsWith('/c/');
+    }
+
     gotoPortlet(link: string, replaceUrl?: boolean): Promise<boolean> {
         return this.router.navigateByUrl(link, { replaceUrl: replaceUrl });
     }
