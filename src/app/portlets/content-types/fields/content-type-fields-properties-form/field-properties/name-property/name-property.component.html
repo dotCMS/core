@@ -1,6 +1,7 @@
 <div [formGroup]="group">
     <label class="form__label">{{ i18nMessages['contenttypes.field.properties.name.label'] }}*</label>
     <input
+        #name
         pInputText
         type="text"
         [formControlName]="property.name">

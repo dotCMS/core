@@ -8,6 +8,7 @@ export class FieldRow {
 
     constructor(nColumns?: number) {
         this.columns = [];
+        this.lineDivider = FieldUtil.createLineDivider();
 
         if (nColumns) {
             for (let i = 0; i < nColumns; i++) {
@@ -15,7 +16,6 @@ export class FieldRow {
             }
         }
 
-        this.lineDivider = FieldUtil.createLineDivider();
     }
 
     /**
@@ -61,5 +61,15 @@ export class FieldRow {
         fieldsSplitByTabDivider.forEach((tabDividerFields) => {
             this.columns.push(new FieldColumn(tabDividerFields));
         });
+    }
+
+    /**
+     * Create first column
+     *
+     * @memberof FieldRow
+     */
+    addFirstColumn(): void {
+        this.columns[0] = new FieldColumn();
+        this.columns[0].tabDivider = { 'clazz': 'com.dotcms.contenttype.model.field.ImmutableColumnField' };
     }
 }

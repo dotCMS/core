@@ -138,7 +138,8 @@ describe('ContentTypeFieldsRowComponent', () => {
         });
     });
 
-    describe('remove rows', () => {
+    // Until 5.1
+    xdescribe('remove rows', () => {
         it('should emit row remove event after confirmation dialog', () => {
             comp.fieldRow = mockFieldRow;
             fixture.detectChanges();

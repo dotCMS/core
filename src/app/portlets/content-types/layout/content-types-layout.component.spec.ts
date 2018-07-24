@@ -146,7 +146,8 @@ describe('ContentTypesLayoutComponent', () => {
                 expect(contentTypesFieldsList).not.toBeNull();
             });
 
-            it('should have a field row list', () => {
+            // Hiding the rows list for 5.0
+            xit('should have a field row list', () => {
                 const layoutTitle = this.pTabPanel.queryAll(By.css('.content-type__fields-sidebar-title'))[1];
                 const fieldRowList = this.pTabPanel.query(By.css('dot-content-type-fields-row-list'));
 

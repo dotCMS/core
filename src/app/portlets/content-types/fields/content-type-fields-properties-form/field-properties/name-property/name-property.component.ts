@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ViewChild, OnInit, ElementRef } from '@angular/core';
 import { FormGroup } from '@angular/forms/forms';
 import { FieldProperty } from '../field-properties.model';
 import { DotMessageService } from '../../../../../../api/services/dot-messages-service';
@@ -8,7 +8,9 @@ import { BaseComponent } from '../../../../../../view/components/_common/_base/b
     selector: 'dot-name-property',
     templateUrl: './name-property.component.html'
 })
-export class NamePropertyComponent extends BaseComponent {
+export class NamePropertyComponent extends BaseComponent implements OnInit {
+    @ViewChild('name') name: ElementRef;
+
     property: FieldProperty;
     group: FormGroup;
 
@@ -17,5 +19,11 @@ export class NamePropertyComponent extends BaseComponent {
             ['contenttypes.field.properties.name.label', 'contenttypes.field.properties.name.error.required'],
             dotMessageService
         );
+    }
+
+    ngOnInit(): void {
+        if (!this.group.get('name').disabled) {
+            this.name.nativeElement.focus();
+        }
     }
 }

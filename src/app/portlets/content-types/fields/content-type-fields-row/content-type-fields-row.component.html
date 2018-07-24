@@ -1,12 +1,13 @@
-<div class="row-header">
+<!-- Bring it back in 5.1 -->
+<!-- <div class="row-header">
     <span class="row-header__drag"><i class="fa fa-bars"></i></span>
-    <dot-icon-button-tooltip 
+    <dot-icon-button-tooltip
         class="row-header__remove"
         icon="fa-trash"
         [tooltipText]="i18nMessages['contenttypes.action.delete']"
         (click)="onRemoveFieldRow()">
     </dot-icon-button-tooltip>
-</div>
+</div> -->
 <div class="row-columns">
     <span
         *ngFor="let column of fieldRow.columns"
@@ -16,8 +17,8 @@
         class="row-columns__item"
         data-drag-type="target"
         dragula="fields-bag">
-       
-        <dot-content-type-field-dragabble-item 
+
+        <dot-content-type-field-dragabble-item
             *ngFor="let field of column.fields"
             [field]="field"
             (remove)="onRemoveField($event)"

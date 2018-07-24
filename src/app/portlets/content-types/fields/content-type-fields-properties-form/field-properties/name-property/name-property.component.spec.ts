@@ -36,6 +36,12 @@ describe('NamePropertyComponent', () => {
             fixture = DOTTestBed.createComponent(NamePropertyComponent);
             comp = fixture.componentInstance;
             de = fixture.debugElement;
+
+            comp.property = {
+                name: 'name',
+                value: 'value',
+                field: {}
+            };
         })
     );
 
@@ -52,11 +58,6 @@ describe('NamePropertyComponent', () => {
         comp.group = new FormGroup({
             name: new FormControl('')
         });
-        comp.property = {
-            name: 'name',
-            value: 'value',
-            field: {}
-        };
 
         fixture.detectChanges();
 
@@ -69,11 +70,6 @@ describe('NamePropertyComponent', () => {
         comp.group = new FormGroup({
             name: new FormControl('')
         });
-        comp.property = {
-            name: 'name',
-            value: 'value',
-            field: {}
-        };
 
         fixture.detectChanges();
 
@@ -81,5 +77,29 @@ describe('NamePropertyComponent', () => {
 
         expect(fieldValidationmessage).not.toBeNull();
         expect(comp.group.controls['name']).toBe(fieldValidationmessage.componentInstance.field);
+    });
+
+    it('should focus on input on load', () => {
+        spyOn(comp.name.nativeElement, 'focus');
+
+        comp.group = new FormGroup({
+            name: new FormControl('')
+        });
+
+        fixture.detectChanges();
+
+        expect(comp.name.nativeElement.focus).toHaveBeenCalledTimes(1);
+    });
+
+    it('should NOT focus on input on load', () => {
+        spyOn(comp.name.nativeElement, 'focus');
+
+        comp.group = new FormGroup({
+            name: new FormControl({value: '', disabled: true})
+        });
+
+        fixture.detectChanges();
+
+        expect(comp.name.nativeElement.focus).not.toHaveBeenCalled();
     });
 });
