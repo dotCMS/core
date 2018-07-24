@@ -10133,8 +10133,7 @@ dd .buttonCaption {
 .portlet-sidebar-wrapper {
   background-color: #FAFAFA;
   border-right: solid 1px #ECEDEE;
-  width:200px;
-  min-height:700px;
+  min-height: 700px;
 }
 
 .portlet-wrapper {
@@ -11419,11 +11418,16 @@ a.category_higlighted, a.tag_higlighted {
   padding: 0 16px;
 }
 
+.file-selector-tree.dijitDialog {
+  height: 90vh;
+}
+
 .file-selector-tree .dijitDialogPaneContent {
   padding: 0;
 }
 
 .file-selector-tree .portlet-sidebar-wrapper {
+  height: 84vh !important;
   width: 200px;
 }
 
@@ -11439,6 +11443,7 @@ a.category_higlighted, a.tag_higlighted {
   display: flex;
   flex-direction: column;
   flex: 1;
+  height: 84vh !important;
   justify-content: space-between;
   padding: 0;
   overflow-y: scroll;
@@ -11446,7 +11451,7 @@ a.category_higlighted, a.tag_higlighted {
 
 .file-selector-tree__container {
   width: 900px;
-  height: 500px;
+  height: 84vh !important;
 }
 
 .file-selector-tree__pagination.portlet-pagination {
@@ -11471,6 +11476,7 @@ a.category_higlighted, a.tag_higlighted {
 
 .file-selector-tree__main {
   display: flex;
+  height: 84vh !important;
 }
 
 .file-selector-tree__sidebar {
@@ -11704,18 +11710,16 @@ a.category_higlighted, a.tag_higlighted {
   font-weight: bolder;
 }
 
-.related-content-dialog{
-	  background: url('/html/images/backgrounds/relate-content-dia.png') !important;
-	  background-position: left;  
-	  background-repeat:repeat-y;
-	  width:90%;
-	  height:90%;
-	  
+.related-content-dialog {
+  background: url("/html/images/backgrounds/relate-content-dia.png") !important;
+  background-position: left;
+  background-repeat: repeat-y;
+  height: 90%;
+  width: 90%;
 }
+
 .related-content-dialog .dijitDialogPaneContent {
   padding: 0;
-
-
 }
 
 .related-content-dialog .portlet-sidebar-wrapper {
