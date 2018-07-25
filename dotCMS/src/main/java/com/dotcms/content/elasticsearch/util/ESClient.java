@@ -20,8 +20,6 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
 import java.io.InputStream;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.elasticsearch.client.Client;
@@ -109,7 +107,9 @@ public class ESClient {
                         Logger.error(this, "Error validating ES node at start.", e);
                     }
 
-                    setReplicasSettings();
+                    if (UtilMethods.isSet(extSettings)){
+                        setReplicasSettings();
+                    }
 
                     try {
                         // wait a bit while the node gets available for requests
