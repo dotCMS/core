@@ -176,7 +176,7 @@
         if (keyName==='Escape'  || event.type==='click' ){
         	event.preventDefault();
         	if(actionAdmin.actionChanged){
-        		if(confirm("Action Changed, do you want to save?")){
+        		if(confirm("<%=LanguageUtil.get(pageContext, "editpage.content.save.changes.confirmation.header") %>")){
         	         actionAdmin.saveAction('<%=schemeId %>');
         	         
         	         document.removeEventListener('keydown', returnToWorkflowStep, false);
