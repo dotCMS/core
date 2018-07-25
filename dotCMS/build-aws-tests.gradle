@@ -350,7 +350,7 @@ task setupDBInstance(dependsOn: describeDBInstance) {
 
 			case "MYSQL":
 				groovy.sql.Sql sql = groovy.sql.Sql.newInstance(
-					dbInstanceUrl, dbInstanceUsername, dbInstancePassword, dbDriverClassName
+					dbInstanceUrl.replaceAll("\\\\", ""), dbInstanceUsername, dbInstancePassword, dbDriverClassName
 				)
 
 				sql.execute( "ALTER DATABASE "+ dbInstanceName +" CHARACTER SET utf8 COLLATE utf8_general_ci;" )
