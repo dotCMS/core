@@ -89,11 +89,6 @@
         .portlet-sidebar-wrapper {
             width: 200px;
         }
-
-        .portlet-toolbar__matching-results{
-            margin: 0 auto;
-            align-self: start;
-        }
     </style>
 
     <script type="text/javascript">

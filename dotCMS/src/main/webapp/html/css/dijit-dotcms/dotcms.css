@@ -11732,11 +11732,16 @@ a.category_higlighted, a.tag_higlighted {
 
 .related-content-form {
   width: 100%;
-  height: 660px;
+  height: 80vh;
 }
 
 .related-content-form .portlet-toolbar {
   margin-top: 24px;
+}
+
+.portlet-toolbar__matching-results {
+  margin: 0 auto;
+  align-self: start;
 }
 
 .context-menu {
