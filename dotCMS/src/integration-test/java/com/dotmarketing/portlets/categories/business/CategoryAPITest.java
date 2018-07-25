@@ -27,6 +27,7 @@ import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
@@ -219,89 +220,119 @@ public class CategoryAPITest extends IntegrationTestBase {
         PermissionAPI permissionAPI = APILocator.getPermissionAPI();
         ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
+        Category parentCategory = null;
+        Contentlet contentlet   = null;
+        Structure testStructure = null;
+
         List<Category> categories = new ArrayList<Category>();
 
         //***************************************************************
         //Creating new categories
 
-        //Adding the parent category
-        Category parentCategory = new Category();
-        parentCategory.setCategoryName( "Movies" + time );
-        parentCategory.setKey( "movies" + time );
-        parentCategory.setCategoryVelocityVarName( "movies" + time );
-        parentCategory.setSortOrder( (String) null );
-        parentCategory.setKeywords( null );
-        //Saving it
-        categoryAPI.save( null, parentCategory, user, false );
+        try {
+            //Adding the parent category
+            parentCategory = new Category();
+            parentCategory.setCategoryName("Movies" + time);
+            parentCategory.setKey("movies" + time);
+            parentCategory.setCategoryVelocityVarName("movies" + time);
+            parentCategory.setSortOrder((String) null);
+            parentCategory.setKeywords(null);
+            //Saving it
+            categoryAPI.save(null, parentCategory, user, false);
 
-        //Creating child categories
-        //New Child category
-        Category childCategory1 = new Category();
-        childCategory1.setCategoryName( "Action" + time );
-        childCategory1.setKey( "action" + time );
-        childCategory1.setCategoryVelocityVarName( "action" + time );
-        childCategory1.setSortOrder( (String) null );
-        childCategory1.setKeywords( null );
-        //Saving it
-        categoryAPI.save( parentCategory, childCategory1, user, false );
-        categories.add( childCategory1 );
-        //New Child category
-        Category childCategory2 = new Category();
-        childCategory2.setCategoryName( "Drama" + time );
-        childCategory2.setKey( "drama" + time );
-        childCategory2.setCategoryVelocityVarName( "drama" + time );
-        childCategory2.setSortOrder( (String) null );
-        childCategory2.setKeywords( null );
-        //Saving it
-        categoryAPI.save( parentCategory, childCategory2, user, false );
-        categories.add( childCategory2 );
+            //Creating child categories
+            //New Child category
+            Category childCategory1 = new Category();
+            childCategory1.setCategoryName("Action" + time);
+            childCategory1.setKey("action" + time);
+            childCategory1.setCategoryVelocityVarName("action" + time);
+            childCategory1.setSortOrder((String) null);
+            childCategory1.setKeywords(null);
+            //Saving it
+            categoryAPI.save(parentCategory, childCategory1, user, false);
+            categories.add(childCategory1);
+            //New Child category
+            Category childCategory2 = new Category();
+            childCategory2.setCategoryName("Drama" + time);
+            childCategory2.setKey("drama" + time);
+            childCategory2.setCategoryVelocityVarName("drama" + time);
+            childCategory2.setSortOrder((String) null);
+            childCategory2.setKeywords(null);
+            //Saving it
+            categoryAPI.save(parentCategory, childCategory2, user, false);
+            categories.add(childCategory2);
 
-        //***************************************************************
-        //Verify If we find the parent for the categories we just added categories
-        List<Category> parents = categoryAPI.getParents( childCategory1, user, false );
-        assertNotNull( parents );
-        assertTrue( parents.size() > 0 );
-        assertEquals( parents.get( 0 ), parentCategory );
+            //***************************************************************
+            //Verify If we find the parent for the categories we just added categories
+            List<Category> parents = categoryAPI.getParents(childCategory1, user, false);
+            assertNotNull(parents);
+            assertTrue(parents.size() > 0);
+            assertEquals(parents.get(0), parentCategory);
 
-        parents = categoryAPI.getParents( childCategory2, user, false );
-        assertNotNull( parents );
-        assertTrue( parents.size() > 0 );
-        assertEquals( parents.get( 0 ), parentCategory );
+            parents = categoryAPI.getParents(childCategory2, user, false);
+            assertNotNull(parents);
+            assertTrue(parents.size() > 0);
+            assertEquals(parents.get(0), parentCategory);
 
-        //***************************************************************
-        //Set up a new structure with categories
+            //***************************************************************
+            //Set up a new structure with categories
 
-        //Create the new structure
-        Structure testStructure = createStructure( "JUnit Test Categories Structure_" + String.valueOf( new Date().getTime() ), "junit_test_categories_structure_" + String.valueOf( new Date().getTime() ) );
-        //Add a Text field
-        Field textField = new Field( "JUnit Test Text", Field.FieldType.TEXT, Field.DataType.TEXT, testStructure, false, true, true, 1, false, false, false );
-        FieldFactory.saveField( textField );
-        //Add a Category field
-        Field categoryField = new Field( "JUnit Movies", Field.FieldType.CATEGORY, Field.DataType.TEXT, testStructure, true, true, true, 2, false, false, true );
-        categoryField.setValues( parentCategory.getInode() );
-        FieldFactory.saveField( categoryField );
+            //Create the new structure
+            testStructure = createStructure(
+                    "JUnit Test Categories Structure_" + String.valueOf(new Date().getTime()),
+                    "junit_test_categories_structure_" + String.valueOf(new Date().getTime()));
+            //Add a Text field
+            Field textField = new Field("JUnit Test Text", Field.FieldType.TEXT,
+                    Field.DataType.TEXT, testStructure, false, true, true, 1, false, false, false);
+            FieldFactory.saveField(textField);
+            //Add a Category field
+            Field categoryField = new Field("JUnit Movies", Field.FieldType.CATEGORY,
+                    Field.DataType.TEXT, testStructure, true, true, true, 2, false, false, true);
+            categoryField.setValues(parentCategory.getInode());
+            FieldFactory.saveField(categoryField);
 
-        //***************************************************************
-        //Set up a content for the categories structure
-        Contentlet contentlet = new Contentlet();
-        contentlet.setStructureInode( testStructure.getInode() );
-        contentlet.setHost( defaultHost.getIdentifier() );
-        contentlet.setLanguageId( APILocator.getLanguageAPI().getDefaultLanguage().getId() );
+            //***************************************************************
+            //Set up a content for the categories structure
+            contentlet = new Contentlet();
+            contentlet.setStructureInode(testStructure.getInode());
+            contentlet.setHost(defaultHost.getIdentifier());
+            contentlet.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
 
-        //Validate if the contenlet is OK
-        contentletAPI.validateContentlet( contentlet, categories );
+            //Validate if the contenlet is OK
+            contentletAPI.validateContentlet(contentlet, categories);
 
-        //Saving the contentlet
-        contentlet = APILocator.getContentletAPI().checkin( contentlet, categories, permissionAPI.getPermissions( contentlet, false, true ), user, false );
-        APILocator.getContentletAPI().isInodeIndexed( contentlet.getInode() );
-        APILocator.getVersionableAPI().setLive( contentlet );
+            //Saving the contentlet
+            contentlet = APILocator.getContentletAPI().checkin(contentlet, categories,
+                    permissionAPI.getPermissions(contentlet, false, true), user, false);
+            APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode());
+            APILocator.getVersionableAPI().setLive(contentlet);
 
-        //***************************************************************
-        //Verify If we find the parent for these categories
-        parents = categoryAPI.getParents( contentlet, user, false );
-        assertNotNull( parents );
-        assertTrue( parents.size() == 2 );
-        contentTypeApi.delete(new StructureTransformer(testStructure).from());
+            //***************************************************************
+            //Verify If we find the parent for these categories
+            parents = categoryAPI.getParents(contentlet, user, false);
+            assertNotNull(parents);
+            assertTrue(parents.size() == 2);
+        } finally{
+            if (UtilMethods.isSet(contentlet) && UtilMethods.isSet(contentlet.getIdentifier())){
+                contentletAPI.archive(contentlet, user, false);
+                contentletAPI.delete(contentlet, user, false);
+            }
+
+            if (UtilMethods.isSet(testStructure) && UtilMethods.isSet(testStructure.id())){
+                contentTypeApi.delete(new StructureTransformer(testStructure).from());
+            }
+
+            if (UtilMethods.isSet(categories)){
+                for (Category category: categories){
+                    categoryAPI.delete(category, user, false);
+                }
+            }
+
+            if (UtilMethods.isSet(parentCategory)){
+                categoryAPI.delete(parentCategory, user, false);
+            }
+        }
+
     }
 
     /**
