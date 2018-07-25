@@ -169,7 +169,32 @@
 
     });
 
+    document.removeEventListener('keydown', returnToWorkflowStep, false);
+    function returnToWorkflowStep(event){
+        const keyName = event.key;
 
+        if (keyName==='Escape'  || event.type==='click' ){
+        	event.preventDefault();
+        	if(actionAdmin.actionChanged){
+        		if(confirm("Action Changed, do you want to save?")){
+        	         actionAdmin.saveAction('<%=schemeId %>');
+        	         
+        	         document.removeEventListener('keydown', returnToWorkflowStep, false);
+        	         return false;
+        		}
+        	}
+            mainAdmin.show(stepAdmin.baseJsp + "?schemeId=<%=schemeId%>")
+            document.removeEventListener('keydown', returnToWorkflowStep, false);
+            return false;
+        }
+        if (keyName==='s' && (event.ctrlKey || event.metaKey) ){
+        	event.preventDefault();
+        	actionAdmin.saveAction('<%=schemeId %>');
+        	document.removeEventListener('keydown', returnToWorkflowStep, false);
+        	return false;
+        }               
+    }
+    document.addEventListener('keydown', returnToWorkflowStep, false);
 </script>
 
 
@@ -201,7 +226,7 @@
 
 			<div class="row" >
 				<div class="col-xs-5 view-actions__permissions">
-					<button dojoType="dijit.form.Button" class="view-actions__back-btn" onClick='mainAdmin.show(stepAdmin.baseJsp + "?schemeId=<%=schemeId%>")'>
+					<button dojoType="dijit.form.Button" class="view-actions__back-btn" onClick='returnToWorkflowStep'>
 						<i class="fa fa-level-up" aria-hidden="true"></i>
 					</button>
 					<dl class="vertical">

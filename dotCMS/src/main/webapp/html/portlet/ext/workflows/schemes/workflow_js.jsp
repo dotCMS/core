@@ -755,12 +755,14 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 	baseJsp : "/html/portlet/ext/workflows/schemes/view_action.jsp",
 	crumbTitle:"<%=LanguageUtil.get(pageContext, "Actions")%>",
 	whoCanUse:new Array(),
+	actionChanged:false,
 	reorderAction : function (nodes){
 
 
 		var movedId = dojo.attr(nodes[0],"id");
 		var stepId = movedId.split("_")[2];
 		var actionId = movedId.split("_")[1];
+		
 		var i=0;
 		dojo.query("#jsNode" + stepId + " tr").forEach(function(node){
 			if(node.id == movedId ){
@@ -1004,6 +1006,7 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 							var actionId  = dataOrError.split(":")[1];
 							actionAdmin.viewAction(schemeId, actionId);
 							showDotCMSSystemMessage("Saved");
+							actionAdmin.actionChanged=false;
 						}
 					} else {
 
@@ -1017,14 +1020,7 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 
 
 	},
-	saveSuccess : function(message) {
 
-		showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Saved")%>");
-		var actionId  = message.split(":")[1];
-		mainAdmin.show(this.baseJsp + "?stepId=" + stepId + "&actionId=" + actionId);
-
-
-	},
 	saveError : function(message) {
 		showDotCMSSystemMessage(message, true);
 
@@ -1095,6 +1091,7 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 	doChange: function(){
 		dojo.attr("saveButtonDiv","className", "saveButtonDivShow");
 		var x = dijit.byId("actionAssignToSelect");
+		this.actionChanged=true;
 		if(!x || x == undefined || !x.displayedValue || x.displayedValue==undefined){
 			return;
 		}
