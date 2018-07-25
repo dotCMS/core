@@ -2089,7 +2089,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			return Collections.emptyList();
 		}
 
-		final boolean isValidContentlet = isNew || contentlet.isLive() || contentlet.isWorking();
+		final boolean isValidContentlet = isNew || contentlet.isWorking();
 		if (!isValidContentlet) {
 
 			Logger.debug(this, () -> "The contentlet: " +
@@ -2663,7 +2663,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			try {
 
 				final boolean isValidContentlet = !InodeUtils.isSet(contentlet.getInode())
-						|| contentlet.isLive() || contentlet.isWorking();
+						|| contentlet.isWorking();
 				if (!isValidContentlet) {
 
 					throw new IllegalArgumentException(LanguageUtil
