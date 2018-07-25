@@ -507,8 +507,6 @@ describe('DotEditContentHtmlService', () => {
                 }
             });
 
-            const doc: HTMLElement = <HTMLElement>fakeDocument.querySelector('html');
-            expect(doc.id).toContain('iframeId');
             expect(this.dotEditContentHtmlService.renderEditedContentlet).toHaveBeenCalledWith({
                 identifier: '456',
                 inode: '999',
