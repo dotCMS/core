@@ -88,7 +88,6 @@
 
         .portlet-sidebar-wrapper {
             width: 200px;
-            margin-right: 16px;
         }
 
         .portlet-toolbar__matching-results{
