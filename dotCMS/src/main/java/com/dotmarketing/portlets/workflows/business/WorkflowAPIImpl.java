@@ -613,7 +613,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		if (SYSTEM_WORKFLOW_ID.equals(scheme.getId()) && scheme.isArchived()) {
 
 			Logger.warn(this, "Can not archive the system workflow");
-			throw new DotSecurityException("Workflow-delete-system-workflow");
+			throw new DotSecurityException("Workflow-cannot-archive-system-workflow");
 		}
 
 		workFlowFactory.saveScheme(scheme);
