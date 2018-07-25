@@ -11421,6 +11421,7 @@ a.category_higlighted, a.tag_higlighted {
 
 .file-selector-tree.dijitDialog {
   height: 90vh;
+  width: 90vw;
 }
 
 .file-selector-tree .dijitDialogPaneContent {
@@ -11451,7 +11452,7 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .file-selector-tree__container {
-  width: 900px;
+  width: 90vw;
   height: 84vh !important;
 }
 
@@ -11478,6 +11479,7 @@ a.category_higlighted, a.tag_higlighted {
 .file-selector-tree__main {
   display: flex;
   height: 84vh !important;
+  width: calc(100% - 200px) !important;
 }
 
 .file-selector-tree__sidebar {
