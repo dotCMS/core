@@ -850,21 +850,23 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
             htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
 
         } catch (DotContentletStateException dse) {
-            htmlPage = findPageInDefaultLanguage(identifier, tryLang, live, user, respectFrontEndPermissions, dse);
+            htmlPage = findPageInDefaultLanguageDifferentThanProvided(identifier, tryLang, live, user,
+                    respectFrontEndPermissions, dse);
 
         }
 
         return htmlPage;
     }
 
-    private IHTMLPage findPageInDefaultLanguage(String identifier, long tryLang, boolean live, User user,
-                                                boolean respectFrontEndPermissions, DotContentletStateException dse)
+    private IHTMLPage findPageInDefaultLanguageDifferentThanProvided(String identifier, long providedLang, boolean live,
+                                                                     User user, boolean respectFrontEndPermissions,
+                                                                     DotContentletStateException dse)
             throws DotDataException, DotSecurityException {
         Contentlet contentlet;
         IHTMLPage htmlPage;
 
         if (APILocator.getLanguageAPI().canDefaultPageToDefaultLanguage()
-                && tryLang != APILocator.getLanguageAPI().getDefaultLanguage().getId()) {
+                && providedLang != APILocator.getLanguageAPI().getDefaultLanguage().getId()) {
             try {
                 contentlet = APILocator.getContentletAPI().findContentletByIdentifier(identifier, live,
                         APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, respectFrontEndPermissions);
@@ -876,7 +878,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
             }
         } else {
             throw new ResourceNotFoundException(
-                    "Can't find content. Identifier: " + identifier + ", Live: " + live + ", Lang: " + tryLang, dse);
+                    "Can't find content. Identifier: " + identifier + ", Live: " + live + ", Lang: " + providedLang, dse);
         }
         return htmlPage;
     }
