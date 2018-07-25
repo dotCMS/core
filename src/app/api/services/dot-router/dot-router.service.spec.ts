@@ -77,8 +77,13 @@ describe('DotRouterService', () => {
         expect(router.navigate).toHaveBeenCalledWith(['/c/workflow/123']);
     });
 
-    it('should return if a portlet if based on JSP code', () => {
+    it('should return true if a portlet is jsp', () => {
         spyOnProperty(router, 'url', 'get').and.returnValue('/c/test');
         expect(service.isJSPPortlet()).toBeTruthy();
+    });
+
+    it('should return true if edit page url', () => {
+        router.routerState.snapshot.url = 'edit-page';
+        expect(service.isEditPage()).toBe(true);
     });
 });

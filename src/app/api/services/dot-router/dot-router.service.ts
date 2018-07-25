@@ -28,6 +28,14 @@ export class DotRouterService {
         this.portletReload$.next(id);
     }
 
+    /**
+     * Go to edit page
+     *
+     * @param {string} url
+     * @param {string} [languageId]
+     * @returns {Promise<boolean>}
+     * @memberof DotRouterService
+     */
     goToEditPage(url: string, languageId?: string): Promise<boolean> {
         return this.router.navigate(['/edit-page/content'],
             { queryParams: !!languageId ? { url: url, language_id: languageId} : { url: url } });
@@ -97,6 +105,17 @@ export class DotRouterService {
      */
     isJSPPortlet(): boolean {
         return this.router.url.startsWith('/c/');
+    }
+
+    /**
+     * Check if the current route is an edit page
+     *
+     * @returns {boolean}
+     * @memberof DotRouterService
+     */
+    isEditPage(): boolean {
+        return this.currentPortlet.id === 'edit-page';
+
     }
 
     gotoPortlet(link: string, replaceUrl?: boolean): Promise<boolean> {

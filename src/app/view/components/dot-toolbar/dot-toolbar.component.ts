@@ -2,7 +2,6 @@ import { Component, Output, EventEmitter, Input, OnInit } from '@angular/core';
 import { SiteService, Site, DotcmsEventsService } from 'dotcms-js/dotcms-js';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
-import { DotNavigationService } from '../dot-navigation/dot-navigation.service';
 
 @Component({
     selector: 'dot-toolbar',
@@ -17,8 +16,7 @@ export class ToolbarComponent implements OnInit {
         public iframeOverlayService: IframeOverlayService,
         private siteService: SiteService,
         private dotcmsEventsService: DotcmsEventsService,
-        private dotRouterService: DotRouterService,
-        private dotNavigationService: DotNavigationService
+        private dotRouterService: DotRouterService
     ) {}
 
     ngOnInit(): void {
@@ -33,7 +31,10 @@ export class ToolbarComponent implements OnInit {
 
     siteChange(site: Site): void {
         this.siteService.switchSite(site);
-        this.dotNavigationService.goToFirstPortlet();
+
+        if (this.dotRouterService.isEditPage()) {
+            this.dotRouterService.goToSiteBrowser();
+        }
     }
 
     handleMainButtonClick($event): void {
