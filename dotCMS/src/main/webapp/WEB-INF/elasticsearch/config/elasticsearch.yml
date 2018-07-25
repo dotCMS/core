@@ -87,10 +87,10 @@
 #
 #action.destructive_requires_name: true
 
-cluster.name: dotCMSContentIndex_3x
-path.data: dotsecure/esdata
-path.repo: dotsecure/essnapshot/snapshots
-path.logs: tomcat/logs
+cluster.name: dotCMSContentIndex_5x
+path.data: esdata
+path.repo: essnapshot/snapshots
+path.logs: tomcat8/logs
 http.port: 9200
 http.host: localhost
 http.enabled: false
