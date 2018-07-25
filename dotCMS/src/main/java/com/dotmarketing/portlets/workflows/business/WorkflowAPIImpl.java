@@ -2324,7 +2324,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 												try {
 													fails.add(ActionFail.newInstance(user, inode, e));
 													acceptingExceptions
-															.set(fails.size() <= maxExceptions);
+															.set(fails.size() < maxExceptions);
 												} finally {
 													lock.unlock();
 												}

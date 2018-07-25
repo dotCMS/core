@@ -1,7 +1,4 @@
 <Context path="${catalina.home}/webapps/ROOT" docBase="${catalina.home}/webapps/ROOT" reloadable="false" crossContext="true">
-<JarScanner scanBootstrapClassPath="false" scanClassPath="false">
-	<JarScanFilter tldSkip="*.jar" pluggabilitySkip="*.jar"/>
-</JarScanner>
 <Resources allowLinking="true" />
     <!--
     The class loader behaviour changed on recent tomcat versions, with the new default behaviour
