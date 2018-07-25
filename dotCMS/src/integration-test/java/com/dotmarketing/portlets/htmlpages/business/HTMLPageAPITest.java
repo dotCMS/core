@@ -320,9 +320,11 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 	@DataProvider
 	public static Object[] testCasesFindByIdLanguageFallback() {
 		return new Object[] {
-			new TestCaseFindByIdLanguageFallback(1, 1, 1, true, false),
-			new TestCaseFindByIdLanguageFallback(2,1, 1, true, true),
-			new TestCaseFindByIdLanguageFallback(1,-1, 2, false, false),
+			new TestCaseFindByIdLanguageFallback(1, 1, 1, null, false, new User()),
+			new TestCaseFindByIdLanguageFallback(2,1, 1, null, true, new User()),
+			new TestCaseFindByIdLanguageFallback(1,-1, 2, ResourceNotFoundException.class, false, new User()),
+			new TestCaseFindByIdLanguageFallback(1,-1, 2, ResourceNotFoundException.class, false, new User()),
+			new TestCaseFindByIdLanguageFallback(1, 1, 1, DotSecurityException.class, false, null),
 		};
 	}
 
@@ -330,17 +332,19 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 		long requestedLanguage;
 		long expectedLanguage;
 		long pageLanguage;
-		boolean shouldReturnPage;
+		Class<? extends Exception> expectedException;
 		boolean defaultPageToDefaultLang;
+		User user;
 
 		TestCaseFindByIdLanguageFallback(final long requestedLanguage, final long expectedLanguage,
-												final long pageLanguage, final boolean shouldReturnPage,
-												final boolean defaultPageToDefaultLang) {
+										 final long pageLanguage, final Class<? extends Exception> expectedException,
+										 final boolean defaultPageToDefaultLang, final User user) {
 			this.requestedLanguage = requestedLanguage;
 			this.expectedLanguage = expectedLanguage;
 			this.pageLanguage = pageLanguage;
-			this.shouldReturnPage = shouldReturnPage;
+			this.expectedException = expectedException;
 			this.defaultPageToDefaultLang = defaultPageToDefaultLang;
+			this.user = user;
 		}
 	}
 
@@ -361,13 +365,15 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 
 		try {
 
+			final User user = testCase.user!=null?sysuser:testCase.user;
+
 			final IHTMLPage returnedPage = pageAssetAPI.findByIdLanguageFallback(pageAsset.getIdentifier(),
-					testCase.requestedLanguage, false, sysuser, false);
+					testCase.requestedLanguage, false, user, false);
 
 			assertEquals(testCase.expectedLanguage, returnedPage.getLanguageId());
 
-		} catch(ResourceNotFoundException e) {
-			assertFalse(testCase.shouldReturnPage);
+		} catch(Exception e) {
+			assertEquals(testCase.expectedException.getName(),e.getClass().getName());
 		} finally {
 			// restore original value
 			Config.setProperty( "DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", originalValue );
