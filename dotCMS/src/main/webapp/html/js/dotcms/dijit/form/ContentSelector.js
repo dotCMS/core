@@ -850,8 +850,13 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 
 	_getHeader: function (field) {
 		var fieldContentlet = this.structureVelVar+"."+field["fieldVelocityVarName"];
-		var fieldName = field["fieldName"];
-		return "<a class=\"beta\" id=\"" + fieldContentlet + "header" +	"\""
+        var fieldName = field["fieldName"];
+
+        if(fieldName === 'Step'){
+           return fieldName; // not sortable
+		}
+
+        return "<a class=\"beta\" id=\"" + fieldContentlet + "header" +	"\""
 		+ " href=\"#\"><b>" + fieldName + "</b></a>";
 	},
 
