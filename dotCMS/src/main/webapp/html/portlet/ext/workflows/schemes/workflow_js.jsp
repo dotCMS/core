@@ -286,33 +286,36 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 
 		var optionalName = prompt ("<%=LanguageUtil.get(pageContext, "Workflow-Name")%>", name);
 
-		var xhrArgs = {
-			url: "/api/v1/workflow/schemes/" + schemeId + "/copy?name=" + optionalName,
+		if (null != optionalName) {
 
-			postData: '',
-			handleAs: 'json',
-			headers : {
-			'Accept' : 'application/json',
-			'Content-Type' : 'application/json;charset=utf-8'
-            },
+			var xhrArgs = {
+				url: "/api/v1/workflow/schemes/" + schemeId + "/copy?name=" + optionalName,
 
-			timeout : 30000,
-			handle : function(dataOrError, ioArgs) {
-						if (ioArgs.xhr.status != 200) {
+				postData: '',
+				handleAs: 'json',
+				headers : {
+				'Accept' : 'application/json',
+				'Content-Type' : 'application/json;charset=utf-8'
+				},
 
-							if (ioArgs.xhr.getResponseHeader("error-message")) {
-								schemeAdmin.copyError(ioArgs.xhr.getResponseHeader("error-message"));
+				timeout : 30000,
+				handle : function(dataOrError, ioArgs) {
+							if (ioArgs.xhr.status != 200) {
+
+								if (ioArgs.xhr.getResponseHeader("error-message")) {
+									schemeAdmin.copyError(ioArgs.xhr.getResponseHeader("error-message"));
+								} else {
+									schemeAdmin.copyError("<%=LanguageUtil.get(pageContext, "Unable-to-copy-Scheme")%>");
+								}
 							} else {
-								schemeAdmin.copyError("<%=LanguageUtil.get(pageContext, "Unable-to-copy-Scheme")%>");
-							}
-						} else {
 
-							schemeAdmin.copySuccess(dataOrError);
-						}
-                        schemeAdmin.show(); // refresh so changes can be seen
-			}
-		};
-		dojo.xhrPost(xhrArgs);
+								schemeAdmin.copySuccess(dataOrError);
+							}
+							schemeAdmin.show(); // refresh so changes can be seen
+				}
+			};
+			dojo.xhrPost(xhrArgs);
+		}
 		return;
 	},
     deleteScheme : function(schemeId) {
