@@ -109,7 +109,8 @@ public class VelocityLiveMode extends VelocityModeHandler {
 
 
 
-            IHTMLPage htmlPage = APILocator.getHTMLPageAssetAPI().findByIdLanguageFallback(id, langId, mode.showLive,user, mode.respectAnonPerms);
+            IHTMLPage htmlPage = APILocator.getHTMLPageAssetAPI().findByIdLanguageFallback(id, langId, mode.showLive,
+                    APILocator.systemUser(), mode.respectAnonPerms);
 
 
             // Verify and handle the case for unauthorized access of this contentlet

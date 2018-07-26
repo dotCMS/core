@@ -114,7 +114,7 @@ public class ContentTypeResource implements Serializable {
 			response = Response.ok(new ResponseEntityView(retTypes)).build();
 
 		} catch (DotStateException | DotDataException e) {
-
+			Logger.error(this, e.getMessage(), e);
 			response = ExceptionMapperUtil
 					.createResponse(null, "Content-type is not valid (" + e.getMessage() + ")");
 		} catch (DotSecurityException e) {

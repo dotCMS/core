@@ -347,6 +347,15 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return null;
 	}
 
+    private Class<? extends WorkFlowActionlet> getActionletClass(String className) {
+        for ( Class<? extends WorkFlowActionlet> z : actionletClasses ) {
+            if ( z.getName().equals(className.trim())) {
+                return z;
+            }
+        }
+        return null;
+    }
+
 	@Override
 	public String addActionlet(final Class<? extends WorkFlowActionlet> workFlowActionletClass) {
 
@@ -1265,7 +1274,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         for (final WorkflowActionClass actionClass : actionClasses) {
 
             final Actionlet actionlet = AnnotationUtils.
-                    getBeanAnnotation(ReflectionUtils.getClassFor(actionClass.getClazz()), Actionlet.class);
+                    getBeanAnnotation(this.getActionletClass(actionClass.getClazz()), Actionlet.class);
 
                 isSave        |= (null != actionlet) && actionlet.save();
                 isPublish     |= (null != actionlet) && actionlet.publish();
@@ -2089,7 +2098,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			return Collections.emptyList();
 		}
 
-		final boolean isValidContentlet = isNew || contentlet.isLive() || contentlet.isWorking();
+		final boolean isValidContentlet = isNew || contentlet.isWorking();
 		if (!isValidContentlet) {
 
 			Logger.debug(this, () -> "The contentlet: " +
@@ -2663,7 +2672,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			try {
 
 				final boolean isValidContentlet = !InodeUtils.isSet(contentlet.getInode())
-						|| contentlet.isLive() || contentlet.isWorking();
+						|| contentlet.isWorking();
 				if (!isValidContentlet) {
 
 					throw new IllegalArgumentException(LanguageUtil

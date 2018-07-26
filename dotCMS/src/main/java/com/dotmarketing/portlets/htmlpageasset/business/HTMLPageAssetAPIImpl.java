@@ -32,6 +32,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.CMSUrlUtil;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -840,9 +841,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     public IHTMLPage findByIdLanguageFallback(final String identifier, final long tryLang, final boolean live, final User user, final boolean respectFrontEndPermissions)
             throws DotDataException, DotSecurityException {
 
-
         IHTMLPage htmlPage;
-
         Contentlet contentlet;
 
         try {
@@ -850,19 +849,39 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                     user, respectFrontEndPermissions);
             htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
 
-        } catch (Exception dse) {
-            if (APILocator.getLanguageAPI().canDefaultPageToDefaultLanguage() && tryLang != APILocator.getLanguageAPI().getDefaultLanguage().getId()) {
-                contentlet = APILocator.getContentletAPI().findContentletByIdentifier(identifier, live,
-                        APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, respectFrontEndPermissions);
-                htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
-            } else {
-                throw new ResourceNotFoundException(
-                        "Can't find content. Identifier: " + identifier + ", Live: " + live + ", Lang: " + tryLang, dse);
-            }
+        } catch (DotContentletStateException dse) {
+            htmlPage = findPageInDefaultLanguageDifferentThanProvided(identifier, tryLang, live, user,
+                    respectFrontEndPermissions, dse);
 
         }
 
         return htmlPage;
     }
+
+    private IHTMLPage findPageInDefaultLanguageDifferentThanProvided(String identifier, long providedLang, boolean live,
+                                                                     User user, boolean respectFrontEndPermissions,
+                                                                     DotContentletStateException dse)
+            throws DotDataException, DotSecurityException {
+        Contentlet contentlet;
+        IHTMLPage htmlPage;
+
+        if (APILocator.getLanguageAPI().canDefaultPageToDefaultLanguage()
+                && providedLang != APILocator.getLanguageAPI().getDefaultLanguage().getId()) {
+            try {
+                contentlet = APILocator.getContentletAPI().findContentletByIdentifier(identifier, live,
+                        APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, respectFrontEndPermissions);
+                htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
+            } catch(DotContentletStateException e) {
+                throw new ResourceNotFoundException(
+                        "Can't find content. Identifier: " + identifier + ", Live: " + live + ", Lang: "
+                                + APILocator.getLanguageAPI().getDefaultLanguage().getId(), e);
+            }
+        } else {
+            throw new ResourceNotFoundException(
+                    "Can't find content. Identifier: " + identifier + ", Live: " + live + ", Lang: " + providedLang, dse);
+        }
+        return htmlPage;
+    }
+
 
 }
