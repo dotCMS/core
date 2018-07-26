@@ -18,7 +18,7 @@ import { DotLayoutRow } from '../../../shared/models/dot-layout-row.model';
 import { DotMessageService } from '../../../../../api/services/dot-messages-service';
 import { DotPageContainer } from '../../../shared/models/dot-page-container.model';
 import { DotPageContent } from '../../../shared/models/dot-page-content.model';
-import { EDIT_PAGE_CSS } from '../../shared/iframe-edit-mode.css';
+import { getEditPageCss } from '../../shared/iframe-edit-mode.css';
 import { GOOGLE_FONTS } from '../html/iframe-edit-mode.js';
 import { MODEL_VAR_NAME } from '../html/iframe-edit-mode.js';
 import { ContentType } from '../../../../content-types/shared/content-type.model';
@@ -549,10 +549,12 @@ export class DotEditContentHtmlService {
     }
 
     private setEditContentletStyles(): void {
-        const style = this.dotDOMHtmlUtilService.createStyleElement(EDIT_PAGE_CSS);
+        const timeStampId = `iframeId_${Math.floor(Date.now() / 100).toString()}`;
+        const style = this.dotDOMHtmlUtilService.createStyleElement(getEditPageCss(`#${timeStampId}`));
         const robotoFontElement = this.dotDOMHtmlUtilService.createLinkElement(GOOGLE_FONTS);
 
         const doc = this.getEditPageDocument();
+        doc.documentElement.id = timeStampId;
         doc.head.appendChild(style);
         doc.head.appendChild(robotoFontElement);
     }
