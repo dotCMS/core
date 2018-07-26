@@ -190,7 +190,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	private static final int MAX_EXCEPTIONS_REPORTED_ON_BULK_ACTIONS_DEFAULT = 1000;
 
-	private static final int BULK_ACTIONS_SLEEP_THRESHOLD_DEFAULT = 700;
+	private static final int BULK_ACTIONS_SLEEP_THRESHOLD_DEFAULT = 400;
 
 	private static final String BULK_ACTIONS_SLEEP_THRESHOLD = "workflow.action.bulk.sleep";
 
@@ -2514,19 +2514,19 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		for (Contentlet contentlet : contentlets) {
 			try {
-                if(requiresAdditionalParams){
-					// additional params applied directly to the contentlet.
-                   contentlet = applyAdditionalParams(additionalParamsBean, contentlet);
+				try {
+					if (requiresAdditionalParams) {
+						// additional params applied directly to the contentlet.
+						contentlet = applyAdditionalParams(additionalParamsBean, contentlet);
+					}
+					fireBulkActionTask(action, contentlet, dependencies, successConsumer,
+							failConsumer, context);
+				} catch (Exception e) {
+					// Additional catch block to handle any exceptions when processing the Transactional Annotation.
+					Logger.error(getClass(), "Error processing fire Action Task", e);
 				}
-				fireBulkActionTask(action, contentlet, dependencies, successConsumer, failConsumer, context);
-			} catch (Exception e) {
-				// Additional catch block to handle any exceptions when processing the Transactional Annotation.
-				Logger.error(getClass(), "Error processing fire Action Task", e);
-			}
-			try {
-				Thread.sleep(sleep);
-			} catch (InterruptedException e) {
-				//Mute exception. Doesn't matter if we had exceptions or not we should always sleep.
+			} finally {
+				DateUtil.sleep(sleep);
 			}
 		}
 	}

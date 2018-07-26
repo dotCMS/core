@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', function(){
     loadContentletCustomEvent.initCustomEvent("ng-event", false, false,  {
         name: "edit-contentlet-loaded",
         data: {
-            contentType: 'Event'
+            contentType: '<%=CacheLocator.getContentTypeCache().getStructureByInode(structure.getInode() ).getName()%>'
         }
     });
     setTimeout(function () {
