@@ -82,7 +82,7 @@ export class MockDotFormSelectorComponent {
     @Output() close = new EventEmitter<any>();
 }
 
-describe('DotEditContentComponent', () => {
+xdescribe('DotEditContentComponent', () => {
     const siteServiceMock = new SiteServiceMock();
     let component: DotEditContentComponent;
     let de: DebugElement;

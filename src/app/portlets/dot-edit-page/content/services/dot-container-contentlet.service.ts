@@ -36,12 +36,13 @@ export class DotContainerContentletService {
      * @returns {Observable<string>}
      * @memberof DotContainerContentletService
      */
-    getFormToContainer(container: DotPageContainer, form: ContentType): Observable<string>  {
+    getFormToContainer(container: DotPageContainer, form: ContentType): Observable<{render: string, content: any}>  {
         return this.coreWebService
             .requestView({
                 method: RequestMethod.Get,
                 url: `v1/containers/${container.identifier}/form/${form.id}`
             })
-            .pluck('entity', 'render');
+            .pluck('entity');
     }
 }
+

@@ -22,6 +22,7 @@ import { getEditPageCss } from '../../shared/iframe-edit-mode.css';
 import { GOOGLE_FONTS } from '../html/iframe-edit-mode.js';
 import { MODEL_VAR_NAME } from '../html/iframe-edit-mode.js';
 import { ContentType } from '../../../../content-types/shared/content-type.model';
+import { DotEditPageService } from '../../../../../api/services/dot-edit-page/dot-edit-page.service';
 
 export enum DotContentletAction {
     EDIT,
@@ -92,6 +93,7 @@ export class DotEditContentHtmlService {
 
                 resolve(true);
             });
+
             // Load content after bind 'load' event.
             this.loadCodeIntoIframe(editPageHTML);
         });
@@ -180,12 +182,36 @@ export class DotEditContentHtmlService {
      * @param {ContentType} form
      * @memberof DotEditContentHtmlService
      */
-    renderAddedForm(form: ContentType): void {
-        this.renderAddedItem({
-            item: form,
-            checkExistFunc: this.isFormExistInContainer.bind(this),
-            getContent: this.dotContainerContentletService.getFormToContainer.bind(this.dotContainerContentletService)
-        });
+    renderAddedForm(form: ContentType): Observable<DotPageContainer[]> {
+        const doc = this.getEditPageDocument();
+        const containerEl = doc.querySelector(
+            [
+                'div[data-dot-object="container"]',
+                `[data-dot-identifier="${this.currentContainer.identifier}"]`,
+                `[data-dot-uuid="${this.currentContainer.uuid}"]`
+            ].join()
+        );
+
+        if (this.isFormExistInContainer(form, containerEl)) {
+            this.showContentAlreadyAddedError();
+            return Observable.of(null);
+        } else {
+            return this.dotContainerContentletService.getFormToContainer(this.currentContainer, form).map(response => {
+                const containers: DotPageContainer[]  = this.getContentModel();
+
+                containers.filter(container =>
+                    container.identifier === this.currentContainer.identifier && container.uuid === this.currentContainer.uuid)
+                    .forEach(container => {
+                        if (!container.contentletsId) {
+                            container.contentletsId = [];
+                        }
+
+                        container.contentletsId.push(response.content.identifier);
+                    });
+
+                return containers;
+            });
+        }
     }
 
     /**
