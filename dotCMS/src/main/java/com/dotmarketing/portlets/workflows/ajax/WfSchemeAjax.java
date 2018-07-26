@@ -42,7 +42,8 @@ public class WfSchemeAjax extends WfBaseAction {
             final String responseMessage = saveScheme(schemeId, schemeForm, user);
             response.getWriter().println(responseMessage);
         } catch (Exception e) {
-            Logger.error(this.getClass(), e.getMessage(), e);
+            Logger.error(this.getClass(), e.getMessage());
+            Logger.debug(this.getClass(), e.getMessage(), e);
             writeError(response, e.getMessage());
         }
 
