@@ -39,9 +39,9 @@ public class PageContainerForm {
 
     static final class ContainerDeserialize extends JsonDeserializer<PageContainerForm> {
 
-        private static final String CONTAINER_ID_ATTRIBUTE_NAME = "id";
+        private static final String CONTAINER_ID_ATTRIBUTE_NAME = "identifier";
         private static final String CONTAINER_UUID_ATTRIBUTE_NAME = "uuid";
-        private static final String CONTAINER_CONTENTLETSID_ATTRIBUTE_NAME = "contentlets";
+        private static final String CONTAINER_CONTENTLETSID_ATTRIBUTE_NAME = "contentletsId";
 
         @Override
         public PageContainerForm deserialize(final JsonParser jsonParser,

@@ -147,10 +147,10 @@ public class PageLoader implements DotLoader {
             sb.append("#end");
         }
 
-        sb.append("#if($HTMLPAGE_REDIRECT != \"\")");
-        sb.append("$response.setStatus(301)");
-        sb.append("$response.setHeader(\"Location\", \"$HTMLPAGE_REDIRECT\")");
-        sb.append("#end");
+        sb.append("#if($HTMLPAGE_REDIRECT != \"\")")
+            .append("$response.setStatus(301)")
+            .append("$response.setHeader(\"Location\", \"$HTMLPAGE_REDIRECT\")")
+            .append("#end");
 
 
         sb.append("#if(!$doNotParseTemplate)");
@@ -181,6 +181,10 @@ public class PageLoader implements DotLoader {
                 .append(VelocityType.TEMPLATE.fileExtension)
                 .append("')");
         }
+        sb.append("#end");
+
+        sb.append("#if($hasForm)");
+        sb.append("#parse (\"/static/content/init_form_macro.vtl\")");
         sb.append("#end");
 
         return writeOutVelocity(filePath, sb.toString());
