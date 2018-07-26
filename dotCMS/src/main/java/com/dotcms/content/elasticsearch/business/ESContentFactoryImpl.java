@@ -2295,7 +2295,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 if ( DbConnectionFactory.isMsSql() ) {
                     whereField.append(" DATALENGTH (").append(field.getFieldContentlet()).append(")");
                 } else if ( DbConnectionFactory.isOracle() ) {
-                	whereField.append("TO_CHAR(").append(field.getFieldContentlet()).append(") != ");
+                	whereField.append("LENGTH(").append(field.getFieldContentlet()).append(")");
                 } else {
                     whereField.append(field.getFieldContentlet()).append(" != ");
                 }
@@ -2330,7 +2330,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             update.append(0);
             whereField.append(0);
         } else {
-            if (DbConnectionFactory.isMsSql() && field.getFieldContentlet().contains("text_area")){
+            if ((DbConnectionFactory.isMsSql() || DbConnectionFactory.isOracle()) && field.getFieldContentlet().contains("text_area")){
                 update.append("''");
                 whereField.append(" > 0");
             }else {
