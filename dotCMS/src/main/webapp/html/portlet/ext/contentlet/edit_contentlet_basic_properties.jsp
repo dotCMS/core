@@ -210,21 +210,14 @@
 			
 				<script>
 					function changeLanguage(url){
-						/*
-							lang ="<%=contentletForm.getLanguageId()%>";
+						url=url+"";
+						if(url.indexOf("_content_sibbling=&")>-1){
+							url=url.replace("_content_sibbling=&","_content_sibbling=" + currentContentletInode +"&");
+						}
+						else if(url.indexOf("_content_sibbling=")<0){
+							url+="&_content_sibbling=" + currentContentletInode ;
+						}
 
-							if(url.indexOf("lang=<%=contentletForm.getLanguageId()%>") <0){
-								x = url.substring(url.indexOf("lang="), url.length);
-								if(x.indexOf("&") > -1){
-									x=x.substring(5, x.indexOf("&"));
-								}
-								else{
-									x=x.substring(5, x.length);
-								}
-
-							}
-							var langElement = document.getElementById("languageId");
-						*/
 						if(url.indexOf("lang=<%=contentletForm.getLanguageId()%>&") <0){
 							if(url.indexOf("host=") <0){
 								if(dojo.byId('hostId')){
