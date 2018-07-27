@@ -222,9 +222,11 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
             sb.append("#end");
 
             if (mode == PageMode.EDIT_MODE) {
-                sb.append(
-                        String.format("#set($hasPageLanguageVersion = \"#if($%1$s) $%1$s==$CONTENT_LANGUAGE #{else} true#end\")",
-                                PageContextBuilder.LANGUAGE_ID_CONTENT_PARAMETER_NAME));
+                sb.append(String.format("#if($%s)", PageContextBuilder.LANGUAGE_ID_CONTENT_PARAMETER_NAME))
+                    .append(String.format("#set($hasPageLanguageVersion = $%s==$CONTENT_LANGUAGE)", PageContextBuilder.LANGUAGE_ID_CONTENT_PARAMETER_NAME))
+                    .append("#else")
+                    .append("#set($hasPageLanguageVersion = true)")
+                    .append("#end");
 
                 sb.append("<div")
                     .append(" data-dot-object=")
