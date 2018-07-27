@@ -665,12 +665,9 @@
 		      strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "View-Statistics")) %>';
 	      strHTML += '</a>';
 	    }
-        
-        if(page.isContentlet) {
+
             strHTML += wfActionsMenu(objId, page);
-        }
-        
-        if(!page.isContentlet) {
+
 			if (working && !archived && publish) {
 	
 	            if (enterprise) {
@@ -715,7 +712,7 @@
                 strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-Page")) %>';
                 strHTML += '</a>';
             }
-        }
+
 
 		if (write && !archived)  {
 			strHTML += '<div class="pop_divider" ></div>';
