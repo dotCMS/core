@@ -49,10 +49,10 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     }
 
     @Override
-    public Table<String, String, Set<String>>  getPageMultiTrees(final IHTMLPage page, final Language language,
+    public Table<String, String, Set<Contentlet>>  getPageMultiTrees(final IHTMLPage page, final Language language,
                                                                  final boolean liveMode) throws DotDataException, DotSecurityException {
 
-        final Table<String, String, Set<String>> pageContents = HashBasedTable.create();
+        final Table<String, String, Set<Contentlet>> pageContents = HashBasedTable.create();
         final List<MultiTree> multiTres = MultiTreeFactory.getMultiTrees(page.getIdentifier());
 
         for (final MultiTree multiTree : multiTres) {
@@ -67,15 +67,18 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             try {
                 contentlet = contentletAPI.findContentletByIdentifier(multiTree.getContentlet(), liveMode,
                         language != null ? language.getId() : APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
-            }catch(DotDataException | DotSecurityException | DotContentletStateException e){
+            }catch(DotContentletStateException e) {
+                contentlet = contentletAPI.findContentletByIdentifier(multiTree.getContentlet(), liveMode,
+                        APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
+            }catch(DotDataException | DotSecurityException  e){
                 Logger.warn(this.getClass(), "invalid contentlet on multitree:" + multiTree);
             }
             if(contentlet!=null ) {
-                final Set<String> myContents = pageContents.contains(multiTree.getContainer(), multiTree.getRelationType())
+                final Set<Contentlet> myContents = pageContents.contains(multiTree.getContainer(), multiTree.getRelationType())
                         ? pageContents.get(multiTree.getContainer(), multiTree.getRelationType())
                         : new LinkedHashSet<>();
                 if(container != null && myContents.size() < container.getMaxContentlets()) {
-                    myContents.add(multiTree.getContentlet());
+                    myContents.add(contentlet);
                 }
 
                 pageContents.put(multiTree.getContainer(), multiTree.getRelationType(), myContents);
@@ -88,7 +91,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         return pageContents;
     }
 
-    private void addEmptyContainers(final IHTMLPage page, Table<String, String, Set<String>> pageContents,
+    private void addEmptyContainers(final IHTMLPage page, final Table<String, String, Set<Contentlet>> pageContents,
                                     final boolean liveMode) throws DotDataException, DotSecurityException {
 
         try {

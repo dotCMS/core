@@ -222,6 +222,9 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
             sb.append("#end");
 
             if (mode == PageMode.EDIT_MODE) {
+                sb.append(
+                        String.format("#set($hasPageLanguageVersion = \"#if($%1$s) $%1$s==$CONTENT_LANGUAGE #{else} true#end\")",
+                                PageContextBuilder.LANGUAGE_ID_CONTENT_PARAMETER_NAME));
 
                 sb.append("<div")
                     .append(" data-dot-object=")
@@ -242,6 +245,8 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
                     .append("\"$contents.doesUserHasPermission($CONTENT_INODE, 2, true)\"")
                     .append(" data-dot-content-type-id=")
                     .append("\"$CONTENT_TYPE_ID\"")
+                    .append(" data-dot-has-page-lang-version=")
+                    .append("\"$hasPageLanguageVersion\"")
                     .append(">");
 
 
