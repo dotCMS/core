@@ -578,7 +578,6 @@
             name: 'save-page',
             payload: data
         };
-        
 
 
         if (data["contentletIdentifier"]) {
