@@ -234,6 +234,7 @@
 									url = url + "&folder=" + dojo.byId('folderInode').value;
 								}
 							}
+                            console.log('changeLanguage', url);
 							window.location=url;
 						}
 					}
@@ -294,7 +295,7 @@
                                  style: "width: 100%",
 								 onChange: function() {
 									 var obj=dijit.byId("langcombo");
-									 changeLanguage(obj.item.value);
+									 changeLanguage(obj.item.value + currentContentletInode);
 								 },
 								 labelFunc: function(item, store) { return store.getValue(item, "label"); }
 							},

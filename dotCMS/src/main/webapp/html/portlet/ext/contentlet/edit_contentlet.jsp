@@ -202,7 +202,6 @@
 	boolean isLocked=(request.getParameter("sibbling") != null) ? false : contentlet.isLocked();
 %>
 
-
 <!-- global included dependencies -->
 
 
@@ -538,7 +537,8 @@
 </div>
 
 
-
+<h1>1: <%= InodeUtils.isSet(request.getParameter("inode")) %></h1>
+<h1>2: <%= UtilMethods.isSet(request.getSession().getAttribute("ContentletForm_lastLanguage")) %></h1>
 
 
 <%
@@ -604,18 +604,22 @@
 	    	String editURL = com.dotmarketing.util.PortletURLUtil.getActionURL(request, WindowState.MAXIMIZED
 	    	.toString(), params)+"&inode=&lang="+ contentletForm.getLanguageId()+ "&reuseLastLang=true&populateaccept=true";
 
-	    	%>
+        %>
 
 
 
 
 
 		<script type="text/javascript">
+            console.log('inti some stuff')
 			 function runpopulate(){
 		      	window.location="<%=editURL%>";
 		      	dijit.byId('populateDialog').hide();
 		     }
-			 dojo.addOnLoad(function () { dijit.byId('populateDialog').show(); });
+			 dojo.addOnLoad(function () {
+                 console.log('populateDialog show');
+                 dijit.byId('populateDialog').show();
+             });
 		</script>
 
         <div dojoType="dijit.Dialog" id="populateDialog" title='<%=LanguageUtil.get(pageContext, "Populate-Confirmation") %>' style="display: none">
