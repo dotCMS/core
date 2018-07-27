@@ -101,13 +101,15 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     public static final String WORKFLOW_NEVER_EXPIRE = "wfNeverExpire";
 	public static final String TEMP_BINARY_IMAGE_INODES_LIST = "tempBinaryImageInodesList";
 
-   protected Map<String, Object> map = new ContentletHashMap();
-   private boolean lowIndexPriority = false;
+	private transient ContentType contentType;
+    protected Map<String, Object> map = new ContentletHashMap();
+    private boolean lowIndexPriority = false;
 
-   private transient ContentletAPI contentletAPI;
-   private transient UserAPI userAPI;
+    private transient ContentletAPI contentletAPI;
+    private transient UserAPI userAPI;
 
-    @Override
+
+	@Override
     public String getCategoryId() {
     	return getInode();
     }
@@ -1104,12 +1106,18 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @throws DotSecurityException
 	 */
 	public ContentType getContentType() {
-	    try {
-		return APILocator.getContentTypeAPI(APILocator.systemUser()).find(getContentTypeId());
-	    }
-	    catch(DotDataException | DotSecurityException e) {
-	        throw new DotStateException(e);
-	    }
+
+		if (null == this.contentType) {
+			try {
+				this.contentType =
+						APILocator.getContentTypeAPI(APILocator.systemUser())
+								.find(getContentTypeId());
+			} catch (DotDataException | DotSecurityException e) {
+				throw new DotStateException(e);
+			}
+		}
+
+		return this.contentType;
     }
 	
 	/**
