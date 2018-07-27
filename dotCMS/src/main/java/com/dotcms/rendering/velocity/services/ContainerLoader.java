@@ -223,7 +223,8 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
 
             if (mode == PageMode.EDIT_MODE) {
                 sb.append(String.format("#if($%s)", PageContextBuilder.LANGUAGE_ID_CONTENT_PARAMETER_NAME))
-                    .append(String.format("#set($hasPageLanguageVersion = $%s==$CONTENT_LANGUAGE)", PageContextBuilder.LANGUAGE_ID_CONTENT_PARAMETER_NAME))
+                    .append(String.format("#set($hasPageLanguageVersion = $%s==$CONTENT_LANGUAGE && $langbackendwebapi.canApplyToAllLanguages(\"$CONTENT_INODE\"))",
+                            PageContextBuilder.LANGUAGE_ID_CONTENT_PARAMETER_NAME))
                     .append("#else")
                     .append("#set($hasPageLanguageVersion = true)")
                     .append("#end");
