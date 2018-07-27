@@ -597,13 +597,11 @@ if(!InodeUtils.isSet(request.getParameter("inode")) && UtilMethods.isSet(sib) &&
 
 
 		<script type="text/javascript">
-            console.log('inti some stuff')
 			 function runpopulate(){
 		      	window.location="<%=editURL%>";
 		      	dijit.byId('populateDialog').hide();
 		     }
 			 dojo.addOnLoad(function () {
-                 console.log('populateDialog show');
                  dijit.byId('populateDialog').show();
              });
 		</script>

@@ -210,9 +210,7 @@
 			
 				<script>
 					function changeLanguage(url){
-
 						url=url+"";
-						console.log("original:" + url)
 						if(url.indexOf("_content_sibbling=&")>-1){
 							url=url.replace("_content_sibbling=&","_content_sibbling=" + currentContentletInode +"&");
 						}
