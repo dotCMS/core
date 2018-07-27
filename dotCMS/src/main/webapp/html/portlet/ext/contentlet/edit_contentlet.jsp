@@ -537,72 +537,58 @@
 </div>
 
 
-<h1>1: <%= InodeUtils.isSet(request.getParameter("inode")) %></h1>
-<h1>2: <%= UtilMethods.isSet(request.getSession().getAttribute("ContentletForm_lastLanguage")) %></h1>
-
-
 <%
-	/*########################## BEGINNING  DOTCMS-2692 ###############################*/
-    if(InodeUtils.isSet(request.getParameter("inode"))){
-    	request.getSession().setAttribute("ContentletForm_lastLanguage",contentletForm);
-    	request.getSession().setAttribute("ContentletForm_lastLanguage_permissions", contentlet);
-    }
-    if(!InodeUtils.isSet(request.getParameter("inode")) && UtilMethods.isSet(request.getSession().getAttribute("ContentletForm_lastLanguage"))){
-	    if(!InodeUtils.isSet(request.getParameter("inode")) && (UtilMethods.isSet(request.getParameter("reuseLastLang"))
-	    		&& Boolean.parseBoolean(request.getParameter("reuseLastLang")))){
-	    	long newlanguage = contentletForm.getLanguageId();
-	    	if(UtilMethods.isSet(request.getSession().getAttribute("ContentletForm_lastLanguage"))){
-	    		contentletForm = (ContentletForm) request.getSession().getAttribute("ContentletForm_lastLanguage");
-	    		contentletForm.setLanguageId(newlanguage);
-	    		contentletForm.setInode("");
-	    		request.setAttribute("ContentletForm", contentletForm);
-	    	}
-	    } else {
-	    	LanguageAPI langAPI = APILocator.getLanguageAPI();
-	    	Language prepopulateLanguage = langAPI.getLanguage( ((ContentletForm) request.getSession().getAttribute("ContentletForm_lastLanguage")).getLanguageId());
-	    	String previousLanguage = prepopulateLanguage.getLanguage() + " - " + prepopulateLanguage.getCountry().trim();
-
-	    	Map<String, String[]> params = new HashMap<String, String[]>();
-	    	params.put("struts_action", new String[] { "/ext/contentlet/edit_contentlet" });
-	    	params.put("cmd", new String[] { "edit" });
-
-	    	if (request.getParameter("referer") != null) {
-	    		params.put("referer", new String[] { request.getParameter("referer") });
-	    	}
-
-	    	// container inode
-	    	if (request.getParameter("contentcontainer_inode") != null) {
-	    		params.put("contentcontainer_inode", new String[] { request.getParameter("contentcontainer_inode") });
-	    	}
-
-	    	// html page inode
-	    	if (request.getParameter("htmlpage_inode") != null) {
-	    		params.put("htmlpage_inode", new String[] { request.getParameter("htmlpage_inode") });
-	    	}
-
-	    	if (InodeUtils.isSet(contentlet.getInode())) {
-	    		params.put("sibbling", new String[] { contentlet.getInode() + "" });
-	    	} else {
-	    		params.put("sibbling", new String[] { (request.getParameter("sibbling") != null) ? request
-	    		.getParameter("sibbling") : "" });
-	    	}
-
-	    	if (InodeUtils.isSet(contentlet.getInode())) {
+String sib = request.getParameter("sibbling");
+String populateaccept = request.getParameter("populateaccept");
 
 
-	    		params.put("sibblingStructure", new String[] { ""+structure.getInode() });
-	    	}else if(InodeUtils.isSet(request.getParameter("selectedStructure"))){
-	    		params.put("sibblingStructure", new String[] { request.getParameter("selectedStructure")});
+if(!InodeUtils.isSet(request.getParameter("inode")) && UtilMethods.isSet(sib) && !UtilMethods.isSet(populateaccept)){
+	// Sibbling content
+	Contentlet sibbling=conAPI.find(sib, user,false);
+	Language previousLanguage = APILocator.getLanguageAPI().getLanguage(sibbling.getLanguageId());   
+	Language newLanguage=APILocator.getLanguageAPI().getLanguage(contentletForm.getLanguageId());
 
-	    	}else if(InodeUtils.isSet(request.getParameter("sibblingStructure"))){
-	    		params.put("sibblingStructure", new String[] { request.getParameter("sibblingStructure")});
-	    	} else {
-	    		params.put("sibblingStructure", new String[] { (request.getParameter("selectedStructureFake") != null) ? request
-	    		.getParameter("selectedStructureFake") : "" });
-	    	}
+   	Map<String, String[]> params = new HashMap<String, String[]>();
+   	params.put("struts_action", new String[] { "/ext/contentlet/edit_contentlet" });
+   	params.put("cmd", new String[] { "edit" });
 
-	    	String editURL = com.dotmarketing.util.PortletURLUtil.getActionURL(request, WindowState.MAXIMIZED
-	    	.toString(), params)+"&inode=&lang="+ contentletForm.getLanguageId()+ "&reuseLastLang=true&populateaccept=true";
+   	if (request.getParameter("referer") != null) {
+   		params.put("referer", new String[] { request.getParameter("referer") });
+   	}
+
+   	// container inode
+   	if (request.getParameter("contentcontainer_inode") != null) {
+   		params.put("contentcontainer_inode", new String[] { request.getParameter("contentcontainer_inode") });
+   	}
+
+   	// html page inode
+   	if (request.getParameter("htmlpage_inode") != null) {
+   		params.put("htmlpage_inode", new String[] { request.getParameter("htmlpage_inode") });
+   	}
+
+   	if (InodeUtils.isSet(contentlet.getInode())) {
+   		params.put("sibbling", new String[] { contentlet.getInode() + "" });
+   	} else {
+   		params.put("sibbling", new String[] { (request.getParameter("sibbling") != null) ? request
+   		.getParameter("sibbling") : "" });
+   	}
+
+   	if (InodeUtils.isSet(contentlet.getInode())) {
+
+
+   		params.put("sibblingStructure", new String[] { ""+structure.getInode() });
+   	}else if(InodeUtils.isSet(request.getParameter("selectedStructure"))){
+   		params.put("sibblingStructure", new String[] { request.getParameter("selectedStructure")});
+
+   	}else if(InodeUtils.isSet(request.getParameter("sibblingStructure"))){
+   		params.put("sibblingStructure", new String[] { request.getParameter("sibblingStructure")});
+   	} else {
+   		params.put("sibblingStructure", new String[] { (request.getParameter("selectedStructureFake") != null) ? request
+   		.getParameter("selectedStructureFake") : "" });
+   	}
+
+   	String editURL = com.dotmarketing.util.PortletURLUtil.getActionURL(request, WindowState.MAXIMIZED
+   	.toString(), params)+"&inode=&lang="+ contentletForm.getLanguageId()+ "&reuseLastLang=true&populateaccept=true";
 
         %>
 
@@ -626,11 +612,11 @@
         <table>
 	        <tr>
 	        	<%
-	        		long newlanguage = contentletForm.getLanguageId();
-		    		Language newLang=langAPI.getLanguage(contentletForm.getLanguageId());
-	    			String newLanguageName=newLang.getLanguage() + " - " + newLang.getCountry().trim();
+
+	        	    String previousLanguageName     =previousLanguage.getLanguage() + " - " + previousLanguage.getCountry();
+	    			String newLanguageName          =newLanguage.getLanguage() + " - " + newLanguage.getCountry();
 	        		String message = LanguageUtil.get(pageContext, "Populate-the-new-language-content-with-previous-language-content");
-	        		message = LanguageUtil.format(pageContext, "Populate-the-new-language-content-with-previous-language-content",new String[]{newLanguageName,previousLanguage},false);
+	        		message = LanguageUtil.format(pageContext, "Populate-the-new-language-content-with-previous-language-content",new String[]{newLanguageName,previousLanguageName},false);
 	        	%>
 		        <td colspan="2" align="center"><%= message %></td>
 		    </tr>
@@ -648,7 +634,7 @@
         </div>
 
 	<%}
-    }
+    
 	/*########################## END  DOTCMS-2692 ###############################*/
 
 
