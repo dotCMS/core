@@ -170,7 +170,7 @@ public class PageContextBuilder {
             for (final String containerId : pageContents.rowKeySet()) {
                 for (final String uniqueId : pageContents.row(containerId)
                     .keySet()) {
-                    final Set<Contentlet> cons = pageContents.get(containerId, uniqueId);
+                    final Set<Contentlet> contentlets = pageContents.get(containerId, uniqueId);
 
                     final User systemUser = APILocator.getUserAPI().getSystemUser();
                     final Container container = live ? (Container) APILocator.getVersionableAPI()
@@ -203,19 +203,6 @@ public class PageContextBuilder {
                     ctxMap.put("ADD_CONTENT_PERMISSION" + container.getIdentifier(), new Boolean(hasWritePermOverTheStructure));
                     final long languageId = language != null ? language.getId() :
                             APILocator.getLanguageAPI().getDefaultLanguage().getId();
-
-                    List<Contentlet> contentlets = APILocator.getContentletAPI()
-                            .findContentletsByIdentifiers(
-                                    cons.stream()
-                                            .filter(contentlet -> contentlet.getLanguageId() == languageId)
-                                            .map(contentlet -> contentlet.getIdentifier()).toArray(String[]::new),
-                                    live, languageId, systemUser, false);
-
-                    List<Contentlet> contentletsDefaultLang = cons.stream()
-                            .filter(contentlet -> contentlet.getLanguageId() != languageId)
-                            .collect(Collectors.toList());
-
-                    contentlets.addAll(contentletsDefaultLang);
 
                     // get contentlets only for main frame
 
@@ -252,8 +239,6 @@ public class PageContextBuilder {
                         }
                     }
 
-                    
-                    
                     String[] contentlist = contentlets.stream()
                             .map(con -> con.getIdentifier())
                             .toArray(size -> new String[size]);

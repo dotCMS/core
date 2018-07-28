@@ -254,10 +254,13 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
 
 
             }
+
             // ##Checking permission to see content
             if (mode.showLive) {
                 sb.append("#if($contents.doesUserHasPermission($CONTENT_INODE, 1, $user, true))");
             }
+
+            sb.append("#if($UtilMethods.isSet($ContentIdentifier))");
 
             // ### START BODY ###
             sb.append("#if($isWidget==true)");
@@ -278,18 +281,19 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
                 // ### END BODY ###
             sb.append("#end");
 
+            sb.append("#end");
+
             if (mode.showLive) {
                 sb.append("#end");
             }
-
-
                // end content dot-data-content
             if (mode == PageMode.EDIT_MODE) {
                sb.append("</div>");
             }
-                // ##End of foreach loop
+
+            // ##End of foreach loop
             sb.append("#end");
-                
+
             // end content dot-data-container
             if (mode == PageMode.EDIT_MODE) {
                 sb.append("#if($");
@@ -306,7 +310,7 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
                 sb.append(container.getPostLoop());
                 sb.append("#end");
             }
-
+            
             // end if maxContentlets >0
         } else {
 
