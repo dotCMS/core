@@ -216,7 +216,7 @@ public class PageResourceHelper implements Serializable {
 
         final Language language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
 
-        final Table<String, String, Set<Contentlet>> pageContents = multiTreeAPI.getPageMultiTrees(page, language, false);
+        final Table<String, String, Set<Contentlet>> pageContents = multiTreeAPI.getPageMultiTrees(page, false);
 
         final String pageIdentifier = page.getIdentifier();
         MultiTreeFactory.deleteMultiTreeByParent(pageIdentifier);

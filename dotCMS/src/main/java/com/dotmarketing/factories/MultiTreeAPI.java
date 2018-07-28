@@ -1,16 +1,15 @@
 package com.dotmarketing.factories;
 
-import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.google.common.collect.Table;
 
 import java.util.List;
 import java.util.Set;
+
+import com.google.common.collect.Table;
 
 /**
  * API for {@link com.dotmarketing.beans.MultiTree}
@@ -22,7 +21,7 @@ public interface MultiTreeAPI {
 
     void deleteMultiTree(MultiTree multiTree) throws DotDataException;
 
-    Table<String, String, Set<Contentlet>> getPageMultiTrees(final IHTMLPage page, final Language language, final boolean liveMode)
+    Table<String, String, Set<Contentlet>> getPageMultiTrees(final IHTMLPage page, final boolean liveMode)
             throws DotDataException, DotSecurityException;
 
     void updateMultiTree(final String pageId, final String containerId, final String oldRelationType,

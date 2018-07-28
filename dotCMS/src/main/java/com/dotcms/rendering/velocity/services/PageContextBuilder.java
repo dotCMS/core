@@ -163,7 +163,7 @@ public class PageContextBuilder {
         final boolean live = (request!=null && request.getSession(false) != null && request.getSession().getAttribute("tm_date")!=null) ? false : mode.showLive;
 
         final Table<String, String, Set<Contentlet>> pageContents = APILocator.getMultiTreeAPI()
-                .getPageMultiTrees(htmlPage, language, live);
+                .getPageMultiTrees(htmlPage,  live);
 
         if (!pageContents.isEmpty()) {
 
