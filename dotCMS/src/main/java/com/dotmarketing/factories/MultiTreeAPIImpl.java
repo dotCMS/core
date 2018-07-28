@@ -17,9 +17,7 @@ import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.util.Logger;
 
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
@@ -77,6 +75,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                 final Set<Contentlet> myContents = pageContents.contains(multiTree.getContainer(), multiTree.getRelationType())
                         ? pageContents.get(multiTree.getContainer(), multiTree.getRelationType())
                         : new LinkedHashSet<>();
+
                 if(container != null && myContents.size() < container.getMaxContentlets()) {
                     myContents.add(contentlet);
                 }
