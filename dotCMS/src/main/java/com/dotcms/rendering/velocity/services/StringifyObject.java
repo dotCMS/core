@@ -79,10 +79,10 @@ final class StringifyObject {
     private String  stringifyObject(final String x) {
         StringWriter sw = new StringWriter();
         if (x.startsWith("$")) {
-            return  sw.toString();
+            return x;
         } else {
             sw.append('"');
-            sw.append(x.toString());
+            sw.append(x);
             sw.append('"');
             return  sw.toString();
         }
