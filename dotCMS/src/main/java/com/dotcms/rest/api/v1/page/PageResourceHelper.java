@@ -208,15 +208,8 @@ public class PageResourceHelper implements Serializable {
 
     @WrapInTransaction
     protected void updateMultiTrees(final IHTMLPage page, final PageForm pageForm) throws DotDataException, DotSecurityException {
-        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
 
-        if (request == null) {
-            throw new IllegalStateException("Need a HttpRequest in progress");
-        }
-
-        final Language language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
-
-        final Table<String, String, Set<Contentlet>> pageContents = multiTreeAPI.getPageMultiTrees(page, false);
+        final Table<String, String, Set<String>> pageContents = multiTreeAPI.getPageMultiTrees(page, false);
 
         final String pageIdentifier = page.getIdentifier();
         MultiTreeFactory.deleteMultiTreeByParent(pageIdentifier);
@@ -226,15 +219,15 @@ public class PageResourceHelper implements Serializable {
             int treeOrder = 0;
 
             for (final String uniqueId : pageContents.row(containerId).keySet()) {
-                final Map<String, Set<Contentlet>> row = pageContents.row(containerId);
-                final Set<Contentlet> contents = row.get(uniqueId);
+                final Map<String, Set<String>> row = pageContents.row(containerId);
+                final Set<String> contents = row.get(uniqueId);
 
                 if (!contents.isEmpty()) {
                     final String newUUID = getNewUUID(pageForm, containerId, uniqueId);
 
-                    for (final Contentlet contentlet : contents) {
+                    for (final String identifier : contents) {
                         final MultiTree multiTree = new MultiTree().setContainer(containerId)
-                                .setContentlet(contentlet.getIdentifier())
+                                .setContentlet(identifier)
                                 .setRelationType(newUUID)
                                 .setTreeOrder(treeOrder++)
                                 .setHtmlPage(pageIdentifier);

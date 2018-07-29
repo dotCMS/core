@@ -17,6 +17,7 @@ import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -39,6 +40,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import org.apache.velocity.context.Context;
 
@@ -157,8 +160,6 @@ public class PageContextBuilder {
 
     private void populateContainers() throws DotDataException, DotSecurityException {
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-        final Language language = request == null ? APILocator.getLanguageAPI().getDefaultLanguage() :
-                WebAPILocator.getLanguageWebAPI().getLanguage(request);
 
         final boolean live = (request!=null && request.getSession(false) != null && request.getSession().getAttribute("tm_date")!=null) ? false : mode.showLive;
 
@@ -202,10 +203,16 @@ public class PageContextBuilder {
 
                     ctxMap.put("ADD_CONTENT_PERMISSION" + container.getIdentifier(), new Boolean(hasWritePermOverTheStructure));
 
-                    List<Contentlet> contentlets = APILocator.getContentletAPI()
-                            .findContentletsByIdentifiers(cons.stream()
-                                    .toArray(String[]::new), live,
-                                        language != null ? language.getId() : APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
+                    List<Contentlet> contentlets = cons.stream().map(id -> {
+                        try{
+                            return APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(id);
+                        }
+                        catch(Exception e) {
+                            throw new DotStateException(e);
+                        }
+                    }
+                    ).collect(Collectors.toList());
+                    
                     // get contentlets only for main frame
 
                     if (contentlets != null) {
