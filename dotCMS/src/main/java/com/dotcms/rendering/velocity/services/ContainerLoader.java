@@ -217,6 +217,10 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
             sb.append("#end");
 
             sb.append("#set($CONTENT_INODE = '')");
+            sb.append("#set($CONTENT_BASE_TYPE = '')");
+            sb.append("#set($CONTENT_LANGUAGE = '')");
+            sb.append("#set($ContentletTitle = '')");
+            sb.append("#set($CONTENT_TYPE_ID = '')");
             sb.append("#if($contentletId != '')");
             sb.append("#contentDetail($contentletId)");
             sb.append("#end");
@@ -229,7 +233,7 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
                     .append(" data-dot-inode=")
                     .append("\"$CONTENT_INODE\"")
                     .append(" data-dot-identifier=")
-                    .append("\"$IDENTIFIER_INODE\"")
+                    .append("\"$contentletId\"")
                     .append(" data-dot-type=")
                     .append("\"$CONTENT_TYPE\"")
                     .append(" data-dot-basetype=")

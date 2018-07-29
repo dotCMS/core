@@ -194,8 +194,7 @@ public class ContainerResource implements Serializable {
 
             final Contentlet contentlet =
                     (contentShorty.type == ShortType.IDENTIFIER) ? APILocator.getContentletAPI()
-                            .findContentletByIdentifier(contentShorty.longId, mode.showLive,
-                                    landId.getId(), user, mode.respectAnonPerms)
+                            .findContentletByIdentifierAnyLanguage(contentShorty.longId)
                             : APILocator.getContentletAPI()
                                     .find(contentShorty.longId, user, mode.respectAnonPerms);
 
