@@ -209,10 +209,14 @@ public class PageResourceHelper implements Serializable {
     @WrapInTransaction
     protected void updateMultiTrees(final IHTMLPage page, final PageForm pageForm) throws DotDataException, DotSecurityException {
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-        final Language language = request == null ? APILocator.getLanguageAPI().getDefaultLanguage() :
-                WebAPILocator.getLanguageWebAPI().getLanguage(request);
 
-        final Table<String, String, Set<String>> pageContents = multiTreeAPI.getPageMultiTrees(page, language, false);
+        if (request == null) {
+            throw new IllegalStateException("Need a HttpRequest in progress");
+        }
+
+        final Language language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
+
+        final Table<String, String, Set<Contentlet>> pageContents = multiTreeAPI.getPageMultiTrees(page, false);
 
         final String pageIdentifier = page.getIdentifier();
         MultiTreeFactory.deleteMultiTreeByParent(pageIdentifier);
@@ -222,15 +226,15 @@ public class PageResourceHelper implements Serializable {
             int treeOrder = 0;
 
             for (final String uniqueId : pageContents.row(containerId).keySet()) {
-                final Map<String, Set<String>> row = pageContents.row(containerId);
-                final Set<String> contents = row.get(uniqueId);
+                final Map<String, Set<Contentlet>> row = pageContents.row(containerId);
+                final Set<Contentlet> contents = row.get(uniqueId);
 
                 if (!contents.isEmpty()) {
                     final String newUUID = getNewUUID(pageForm, containerId, uniqueId);
 
-                    for (String contentId : contents) {
+                    for (final Contentlet contentlet : contents) {
                         final MultiTree multiTree = new MultiTree().setContainer(containerId)
-                                .setContentlet(contentId)
+                                .setContentlet(contentlet.getIdentifier())
                                 .setRelationType(newUUID)
                                 .setTreeOrder(treeOrder++)
                                 .setHtmlPage(pageIdentifier);

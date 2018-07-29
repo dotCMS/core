@@ -2,6 +2,9 @@ package com.dotcms.rendering.velocity.viewtools;
 import static com.dotcms.contenttype.model.type.KeyValueContentType.MULTILINGUABLE_FALLBACK_KEY;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -132,6 +135,19 @@ public class LanguageViewtool implements ViewTool {
                 || cc.getStructure().getVelocityVarName().equalsIgnoreCase("forms") // forms? apply to all languages
                 || (cc.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_WIDGET // widgets default to all langs?
                      && canDefaultWidgetToDefaultLanguage()));
+	}
+
+	public static boolean canApplyToAllLanguages(final String contentletInode) {
+
+		try {
+			final User systemUser = APILocator.getUserAPI().getSystemUser();
+
+			final Contentlet contentlet = APILocator.getContentletAPI().find(contentletInode, systemUser, false);
+
+			return canApplyToAllLanguages(contentlet);
+		} catch (DotDataException | DotSecurityException e) {
+			throw new DotRuntimeException(e);
+		}
 	}
 
 	/**

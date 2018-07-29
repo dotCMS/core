@@ -216,40 +216,57 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
                 .append("#end");
             sb.append("#end");
 
+            // Wipe any old content variables
             sb.append("#set($CONTENT_INODE = '')");
+            sb.append("#set($CONTENT_BASE_TYPE = '')");
+            sb.append("#set($CONTENT_LANGUAGE = '')");
+            sb.append("#set($ContentletTitle = '')");
+            sb.append("#set($CONTENT_TYPE_ID = '')");
+            
             sb.append("#if($contentletId != '')");
             sb.append("#contentDetail($contentletId)");
             sb.append("#end");
 
             if (mode == PageMode.EDIT_MODE) {
+                sb.append(String.format("#if($%s)", PageContextBuilder.LANGUAGE_ID_CONTENT_PARAMETER_NAME))
+                    .append(String.format("#set($hasPageLanguageVersion = $%s==$CONTENT_LANGUAGE || $langbackendwebapi.canApplyToAllLanguages(\"$CONTENT_INODE\"))",
+                            PageContextBuilder.LANGUAGE_ID_CONTENT_PARAMETER_NAME))
+                    .append("#else")
+                    .append("#set($hasPageLanguageVersion = true)")
+                    .append("#end");
 
                 sb.append("<div")
                     .append(" data-dot-object=")
                     .append("\"contentlet\"")
                     .append(" data-dot-inode=")
-                    .append("\"$CONTENT_INODE\"")
+                    .append("\"$!CONTENT_INODE\"")
                     .append(" data-dot-identifier=")
-                    .append("\"$IDENTIFIER_INODE\"")
+                    .append("\"$!contentletId\"")
                     .append(" data-dot-type=")
                     .append("\"$CONTENT_TYPE\"")
                     .append(" data-dot-basetype=")
-                    .append("\"$CONTENT_BASE_TYPE\"")
+                    .append("\"$!CONTENT_BASE_TYPE\"")
                     .append(" data-dot-lang=")
-                    .append("\"$CONTENT_LANGUAGE\"")
+                    .append("\"$!CONTENT_LANGUAGE\"")
                     .append(" data-dot-title=")
                     .append("\"$UtilMethods.javaScriptify($ContentletTitle)\"")
                     .append(" data-dot-can-edit=")
                     .append("\"$contents.doesUserHasPermission($CONTENT_INODE, 2, true)\"")
                     .append(" data-dot-content-type-id=")
                     .append("\"$CONTENT_TYPE_ID\"")
+                    .append(" data-dot-has-page-lang-version=")
+                    .append("\"$hasPageLanguageVersion\"")
                     .append(">");
 
 
             }
+
             // ##Checking permission to see content
             if (mode.showLive) {
                 sb.append("#if($contents.doesUserHasPermission($CONTENT_INODE, 1, $user, true))");
             }
+
+            sb.append("#if($UtilMethods.isSet($ContentIdentifier))");
 
             // ### START BODY ###
             sb.append("#if($isWidget==true)");
@@ -270,18 +287,19 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
                 // ### END BODY ###
             sb.append("#end");
 
+            sb.append("#end");
+
             if (mode.showLive) {
                 sb.append("#end");
             }
-
-
                // end content dot-data-content
             if (mode == PageMode.EDIT_MODE) {
                sb.append("</div>");
             }
-                // ##End of foreach loop
+
+            // ##End of foreach loop
             sb.append("#end");
-                
+
             // end content dot-data-container
             if (mode == PageMode.EDIT_MODE) {
                 sb.append("#if($");
@@ -298,7 +316,7 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
                 sb.append(container.getPostLoop());
                 sb.append("#end");
             }
-
+            
             // end if maxContentlets >0
         } else {
 

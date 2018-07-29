@@ -1,6 +1,7 @@
 package com.dotmarketing.factories;
 
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
+
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.VersionableAPI;
@@ -8,10 +9,8 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
@@ -49,10 +48,10 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     }
 
     @Override
-    public Table<String, String, Set<String>>  getPageMultiTrees(final IHTMLPage page, final Language language,
+    public Table<String, String, Set<Contentlet>>  getPageMultiTrees(final IHTMLPage page,
                                                                  final boolean liveMode) throws DotDataException, DotSecurityException {
 
-        final Table<String, String, Set<String>> pageContents = HashBasedTable.create();
+        final Table<String, String, Set<Contentlet>> pageContents = HashBasedTable.create();
         final List<MultiTree> multiTres = MultiTreeFactory.getMultiTrees(page.getIdentifier());
 
         for (final MultiTree multiTree : multiTres) {
@@ -63,19 +62,16 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                 continue;
             }
 
-            Contentlet contentlet = null;
-            try {
-                contentlet = contentletAPI.findContentletByIdentifier(multiTree.getContentlet(), liveMode,
-                        language != null ? language.getId() : APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
-            }catch(DotDataException | DotSecurityException | DotContentletStateException e){
-                Logger.warn(this.getClass(), "invalid contentlet on multitree:" + multiTree);
-            }
+            Contentlet contentlet = contentletAPI.findContentletByIdentifierAnyLanguage(multiTree.getContentlet());;
+            
+
             if(contentlet!=null ) {
-                final Set<String> myContents = pageContents.contains(multiTree.getContainer(), multiTree.getRelationType())
+                final Set<Contentlet> myContents = pageContents.contains(multiTree.getContainer(), multiTree.getRelationType())
                         ? pageContents.get(multiTree.getContainer(), multiTree.getRelationType())
                         : new LinkedHashSet<>();
+
                 if(container != null && myContents.size() < container.getMaxContentlets()) {
-                    myContents.add(multiTree.getContentlet());
+                    myContents.add(contentlet);
                 }
 
                 pageContents.put(multiTree.getContainer(), multiTree.getRelationType(), myContents);
@@ -88,7 +84,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         return pageContents;
     }
 
-    private void addEmptyContainers(final IHTMLPage page, Table<String, String, Set<String>> pageContents,
+    private void addEmptyContainers(final IHTMLPage page, final Table<String, String, Set<Contentlet>> pageContents,
                                     final boolean liveMode) throws DotDataException, DotSecurityException {
 
         try {

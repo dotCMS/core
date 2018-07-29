@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.velocity.context.Context;
 
@@ -48,6 +49,7 @@ import com.liferay.portal.model.User;
 import javax.servlet.http.HttpServletRequest;
 
 public class PageContextBuilder {
+    public static final String LANGUAGE_ID_CONTENT_PARAMETER_NAME = "PAGE_LANGUAGE_ID";
     private static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
     final IHTMLPage htmlPage;
@@ -149,9 +151,6 @@ public class PageContextBuilder {
         ctxMap.put("friendlyName", UtilMethods.espaceForVelocity(htmlPage.getFriendlyName()));
         ctxMap.put("HTML_PAGE_LAST_MOD_DATE", UtilMethods.espaceForVelocity(htmlPage.getFriendlyName()));
         ctxMap.put("HTMLPAGE_MOD_DATE", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(htmlPage.getModDate()));
-
-
-
     }
 
 
@@ -160,17 +159,18 @@ public class PageContextBuilder {
         final Language language = request == null ? APILocator.getLanguageAPI().getDefaultLanguage() :
                 WebAPILocator.getLanguageWebAPI().getLanguage(request);
 
+        ctxMap.put(LANGUAGE_ID_CONTENT_PARAMETER_NAME, language.getId());
         final boolean live = (request!=null && request.getSession(false) != null && request.getSession().getAttribute("tm_date")!=null) ? false : mode.showLive;
 
-        final Table<String, String, Set<String>> pageContents = APILocator.getMultiTreeAPI()
-                .getPageMultiTrees(htmlPage, language, live);
+        final Table<String, String, Set<Contentlet>> pageContents = APILocator.getMultiTreeAPI()
+                .getPageMultiTrees(htmlPage,  live);
 
         if (!pageContents.isEmpty()) {
 
             for (final String containerId : pageContents.rowKeySet()) {
                 for (final String uniqueId : pageContents.row(containerId)
                     .keySet()) {
-                    final Set<String> cons = pageContents.get(containerId, uniqueId);
+                    final Set<Contentlet> contentlets = pageContents.get(containerId, uniqueId);
 
                     final User systemUser = APILocator.getUserAPI().getSystemUser();
                     final Container container = live ? (Container) APILocator.getVersionableAPI()
@@ -201,11 +201,9 @@ public class PageContextBuilder {
                     }
 
                     ctxMap.put("ADD_CONTENT_PERMISSION" + container.getIdentifier(), new Boolean(hasWritePermOverTheStructure));
+                    final long languageId = language != null ? language.getId() :
+                            APILocator.getLanguageAPI().getDefaultLanguage().getId();
 
-                    List<Contentlet> contentlets = APILocator.getContentletAPI()
-                            .findContentletsByIdentifiers(cons.stream()
-                                    .toArray(String[]::new), live,
-                                        language != null ? language.getId() : APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
                     // get contentlets only for main frame
 
                     if (contentlets != null) {
@@ -241,8 +239,6 @@ public class PageContextBuilder {
                         }
                     }
 
-                    
-                    
                     String[] contentlist = contentlets.stream()
                             .map(con -> con.getIdentifier())
                             .toArray(size -> new String[size]);
