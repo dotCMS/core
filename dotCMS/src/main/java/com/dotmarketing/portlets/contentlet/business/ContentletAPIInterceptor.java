@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -2427,5 +2428,22 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 			post.updateUserReferences(userToReplace,replacementUserId, user);
 		}
 	}
+
+    @Override
+    public Optional<Contentlet> findContentletByIdentifierRespectFallback(String identifier, long tryLang, boolean live,
+            User user, boolean respectAnonPerms) throws NotFoundInDbException, DotSecurityException {
+        for(ContentletAPIPreHook pre : preHooks){
+            boolean preResult = pre.findContentletByIdentifierRespectFallback(identifier, tryLang, live, user, respectAnonPerms);
+            if(!preResult){
+                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+                throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+            }
+        }
+        Optional<Contentlet> c= conAPI.findContentletByIdentifierRespectFallback(identifier, tryLang, live, user, respectAnonPerms);
+        for(ContentletAPIPostHook post : postHooks){
+            post.findContentletByIdentifierRespectFallback(identifier, tryLang, live, user, respectAnonPerms);
+        }
+        return c;
+    }
     
 }

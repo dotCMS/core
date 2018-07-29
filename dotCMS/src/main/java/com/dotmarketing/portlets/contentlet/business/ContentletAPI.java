@@ -2,6 +2,8 @@ package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -29,6 +31,7 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Provides access to a wide range of routines aimed to interact with
@@ -1700,5 +1703,20 @@ public interface ContentletAPI {
 	 * @throws DotDataException
 	 */
 	public ESSearchResults esSearch ( String esQuery, boolean live, User user, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException;
+
+	/**
+	 * This will return the either the contentlet in the language requested, or will fall back to the default contentlet
+	 * based on configuration setting
+	 * @param identifier
+	 * @param live
+	 * @param tryLang
+	 * @param user
+	 * @param respectAnonPerms
+	 * @return
+	 * @throws NotFoundInDbException
+	 * @throws DotSecurityException
+	 */
+    Optional<Contentlet> findContentletByIdentifierRespectFallback(String identifier, long tryLang,  boolean live, User user,
+            boolean respectAnonPerms) throws NotFoundInDbException, DotSecurityException;
 
 }

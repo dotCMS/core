@@ -1466,6 +1466,8 @@ public interface ContentletAPIPostHook {
 	 */
 	public default void addPermissionsToQuery ( StringBuffer buffy, User user, List<Role> roles, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException{}
 
-
+	
+    public default void findContentletByIdentifierRespectFallback(String identifier, long tryLang, boolean live, User user,  boolean respectAnonPerms) {};
+    
 
 }

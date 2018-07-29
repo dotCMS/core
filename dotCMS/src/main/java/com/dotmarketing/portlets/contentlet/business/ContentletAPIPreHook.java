@@ -1747,6 +1747,10 @@ public interface ContentletAPIPreHook {
       return true;
     }
 
+    public default boolean findContentletByIdentifierRespectFallback(String identifier, long tryLang, boolean live, User user,  boolean respectAnonPerms) {
+        return true;
+    }
+
 
 
 }

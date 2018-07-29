@@ -51,6 +51,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import javax.servlet.http.Cookie;
@@ -841,47 +842,15 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     public IHTMLPage findByIdLanguageFallback(final String identifier, final long tryLang, final boolean live, final User user, final boolean respectFrontEndPermissions)
             throws DotDataException, DotSecurityException {
 
-        IHTMLPage htmlPage;
-        Contentlet contentlet;
 
-        try {
-            contentlet = APILocator.getContentletAPI().findContentletByIdentifier(identifier, live, tryLang,
-                    user, respectFrontEndPermissions);
-            htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
+        Optional<Contentlet> con = contentletAPI.findContentletByIdentifierRespectFallback(identifier,  tryLang, live, user, respectFrontEndPermissions);
 
-        } catch (DotContentletStateException dse) {
-            htmlPage = findPageInDefaultLanguageDifferentThanProvided(identifier, tryLang, live, user,
-                    respectFrontEndPermissions, dse);
+        return (con.isPresent()) ? fromContentlet(con.get()) : null;
 
-        }
 
-        return htmlPage;
     }
 
-    private IHTMLPage findPageInDefaultLanguageDifferentThanProvided(String identifier, long providedLang, boolean live,
-                                                                     User user, boolean respectFrontEndPermissions,
-                                                                     DotContentletStateException dse)
-            throws DotDataException, DotSecurityException {
-        Contentlet contentlet;
-        IHTMLPage htmlPage;
 
-        if (APILocator.getLanguageAPI().canDefaultPageToDefaultLanguage()
-                && providedLang != APILocator.getLanguageAPI().getDefaultLanguage().getId()) {
-            try {
-                contentlet = APILocator.getContentletAPI().findContentletByIdentifier(identifier, live,
-                        APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, respectFrontEndPermissions);
-                htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
-            } catch(DotContentletStateException e) {
-                throw new ResourceNotFoundException(
-                        "Can't find content. Identifier: " + identifier + ", Live: " + live + ", Lang: "
-                                + APILocator.getLanguageAPI().getDefaultLanguage().getId(), e);
-            }
-        } else {
-            throw new ResourceNotFoundException(
-                    "Can't find content. Identifier: " + identifier + ", Live: " + live + ", Lang: " + providedLang, dse);
-        }
-        return htmlPage;
-    }
 
 
 }

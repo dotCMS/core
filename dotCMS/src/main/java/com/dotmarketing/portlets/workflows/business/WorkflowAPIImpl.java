@@ -493,7 +493,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@Override
-	@WrapInTransaction
 	public void saveSchemesForStruct(final Structure contentType,
 									 final List<WorkflowScheme> schemes) throws DotDataException {
 
@@ -508,6 +507,23 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			throw e;
 		}
 	}
+	
+    @Override
+    @WrapInTransaction
+    public void saveSchemesForContentType(final ContentType contentType,
+                                     final List<WorkflowScheme> schemes) throws DotDataException {
+
+            try {
+    
+                Logger.debug(this, ()-> "Saving schemes: " + schemes +
+                                        ", to the content type: " + contentType);
+    
+                this.workFlowFactory.saveSchemesForStruct(contentType.id(), schemes,
+                        this::consumeWorkflowTask);
+            } catch(DotDataException e){
+                throw e;
+            }
+    }
 
 	@Override
 	@WrapInTransaction

@@ -790,5 +790,12 @@ public interface WorkflowAPI {
 			return state;
 		}
 	}
+    /**
+     * Saves the scheme for content type
+     * @param contentType
+     * @param schemes
+     * @throws DotDataException
+     */
+    void saveSchemesForContentType(ContentType contentType, List<WorkflowScheme> schemes) throws DotDataException;
 
 }

@@ -7,6 +7,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.DataTypes;
@@ -149,11 +150,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.apache.commons.lang.StringUtils;
+import org.apache.velocity.exception.ResourceNotFoundException;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
@@ -330,7 +333,44 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotContentletStateException("Can't find contentlet: " + identifier, e);
         }
     }
+    
+    @CloseDBIfOpened
+    @Override
+    public Optional<Contentlet> findContentletByIdentifierRespectFallback(final String identifier, final long tryLang,
+            final boolean live, final User user, final boolean respectAnonPerms) throws DotSecurityException {
 
+        final long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        Contentlet con = null;
+        try {
+            ContentletVersionInfo cv = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, tryLang);
+            if (cv == null && defaultLang != tryLang) {
+                cv = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, defaultLang);
+            }
+            String inode = (live) ? cv.getLiveInode() : cv.getWorkingInode();
+            con = APILocator.getContentletAPI().find(inode, user, respectAnonPerms);
+
+            if (cv.getLang() != tryLang) {
+                ContentType type = con.getContentType();
+                if (type.baseType() == BaseContentType.FORM || type.baseType() == BaseContentType.PERSONA
+                        || "Host".equalsIgnoreCase(type.variable())) {
+                    con = null;
+                } else if (type.baseType() == BaseContentType.CONTENT
+                        && APILocator.getLanguageAPI().canDefaultContentToDefaultLanguage()) {
+                    con = null;
+                } else if (type.baseType() == BaseContentType.WIDGET
+                        && APILocator.getLanguageAPI().canDefaultWidgetToDefaultLanguage()) {
+                    con = null;
+                }
+
+            }
+
+        } catch (DotDataException | NullPointerException e) {
+            Logger.debug(this.getClass(), e.getMessage());
+        }
+        return Optional.ofNullable(con);
+
+    }
+    
     @CloseDBIfOpened
     @Override
     public List<Contentlet> findContentletsByIdentifiers(String[] identifiers, boolean live, long languageId, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException, DotContentletStateException {
