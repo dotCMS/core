@@ -70,6 +70,7 @@ export const EDIT_PAGE_JS = `
         if (forbiddenTarget && forbiddenTarget.classList.contains('no')) {
             forbiddenTarget.classList.remove('no');
         }
+        window.${MODEL_VAR_NAME}.next(getDotNgModel());
     });
     drake.on('drop', function(el, target, source, sibling) {
         if (target !== source) {
@@ -86,7 +87,6 @@ export const EDIT_PAGE_JS = `
                     }
                 }
             });
-            window.${MODEL_VAR_NAME}.next(getDotNgModel());
         }
     })
 

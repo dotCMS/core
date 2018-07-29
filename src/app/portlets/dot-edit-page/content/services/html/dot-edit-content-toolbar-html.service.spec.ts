@@ -186,7 +186,7 @@ describe('DotEditContentToolbarHtmlService', () => {
             beforeEach(() => {
                 dummyContainer.innerHTML = `
                     <div data-dot-object="container">
-                        <div data-dot-object="contentlet" data-dot-can-edit="false">
+                        <div data-dot-object="contentlet" data-dot-can-edit="false" data-dot-has-page-lang-version="true">
                             <div class="large-column"></div>
                         </div>
                     </div>
@@ -209,11 +209,34 @@ describe('DotEditContentToolbarHtmlService', () => {
             xit('should bind events');
         });
 
+        describe('not show', () => {
+            beforeEach(() => {
+                dummyContainer.innerHTML = `
+                    <div data-dot-object="container">
+                        <div data-dot-object="contentlet" data-dot-can-edit="false" data-dot-has-page-lang-version="true">
+                            <div class="large-column"></div>
+                        </div>
+                        <div data-dot-object="contentlet" data-dot-can-edit="false" data-dot-has-page-lang-version="false">
+                            <div class="large-column"></div>
+                        </div>
+                    </div>
+                `;
+                htmlElement.appendChild(dummyContainer);
+                dotEditContentToolbarHtmlService.addContentletMarkup(testDoc);
+            });
+
+            it('should create buttons for only one contentlet', () => {
+                expect(testDoc.querySelectorAll('.dotedit-contentlet__drag').length).toEqual(1);
+                expect(testDoc.querySelectorAll('.dotedit-contentlet__edit').length).toEqual(1);
+                expect(testDoc.querySelectorAll('.dotedit-contentlet__remove').length).toEqual(1);
+            });
+        });
+
         describe('form', () => {
             beforeEach(() => {
                 dummyContainer.innerHTML = `
                     <div data-dot-object="container">
-                        <div data-dot-object="contentlet" data-dot-basetype="FORM">
+                        <div data-dot-object="contentlet" data-dot-basetype="FORM" data-dot-has-page-lang-version="true">
                             <div class="large-column"></div>
                         </div>
                     </div>
@@ -228,13 +251,16 @@ describe('DotEditContentToolbarHtmlService', () => {
         });
 
         describe('with vtl files', () => {
-
             describe('enabled', () => {
                 beforeEach(() => {
                     dummyContainer.innerHTML = `
                         <div data-dot-object="container">
-                            <div data-dot-object="contentlet" data-dot-can-edit="false">
-                                <div data-dot-object="vtl-file" data-dot-inode="123" data-dot-url="/news/personalized-news-listing.vtl" data-dot-can-edit="true"></div>
+                            <div data-dot-object="contentlet" data-dot-can-edit="false" data-dot-has-page-lang-version="true">
+                                <div
+                                    data-dot-object="vtl-file"
+                                    data-dot-inode="123"
+                                    data-dot-url="/news/personalized-news-listing.vtl"
+                                    data-dot-can-edit="true"></div>
                                 <div class="large-column"></div>
                             </div>
                         </div>
@@ -258,8 +284,12 @@ describe('DotEditContentToolbarHtmlService', () => {
                 beforeEach(() => {
                     dummyContainer.innerHTML = `
                         <div data-dot-object="container">
-                            <div data-dot-object="contentlet" data-dot-can-edit="false">
-                                <div data-dot-object="vtl-file" data-dot-inode="123" data-dot-url="/news/personalized-news-listing.vtl" data-dot-can-edit="false"></div>
+                            <div data-dot-object="contentlet" data-dot-can-edit="false" data-dot-has-page-lang-version="true">
+                                <div data-dot-object="vtl-file"
+                                    data-dot-inode="123"
+                                    data-dot-url="/news/personalized-news-listing.vtl"
+                                    data-dot-can-edit="false">
+                                </div>
                                 <div class="large-column"></div>
                             </div>
                         </div>
@@ -274,7 +304,6 @@ describe('DotEditContentToolbarHtmlService', () => {
                     expect(links[0].classList.contains('dotedit-menu__item--disabled')).toBe(true);
                 });
             });
-
         });
     });
 });
