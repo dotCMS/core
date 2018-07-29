@@ -39,6 +39,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -203,15 +204,19 @@ public class PageContextBuilder {
 
                     ctxMap.put("ADD_CONTENT_PERMISSION" + container.getIdentifier(), new Boolean(hasWritePermOverTheStructure));
 
-                    List<Contentlet> contentlets = cons.stream().map(id -> {
-                        try{
-                            return APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(id);
-                        }
-                        catch(Exception e) {
-                            throw new DotStateException(e);
-                        }
-                    }
-                    ).collect(Collectors.toList());
+                    List<Contentlet> contentlets = cons
+                            .stream()
+                            .map(id -> {
+                                    try{
+                                        return APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(id);
+                                    }
+                                    catch(Exception e) {
+                                        throw new DotStateException(e);
+                                    }
+                                }
+                            )
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toList());
                     
                     // get contentlets only for main frame
 
