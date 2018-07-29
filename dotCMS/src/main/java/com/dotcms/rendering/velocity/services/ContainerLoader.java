@@ -239,7 +239,7 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
                     .append(" data-dot-type=")
                     .append("\"$CONTENT_TYPE\"")
                     .append(" data-dot-basetype=")
-                    .append("\"$CONTENT_BASE_TYPE\"")
+                    .append("\"$!CONTENT_BASE_TYPE\"")
                     .append(" data-dot-lang=")
                     .append("\"$!CONTENT_LANGUAGE\"")
                     .append(" data-dot-title=")
