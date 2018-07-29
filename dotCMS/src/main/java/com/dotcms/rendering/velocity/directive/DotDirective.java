@@ -19,6 +19,7 @@ import org.apache.velocity.runtime.parser.node.Node;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
 
 import com.dotcms.rendering.velocity.directive.RenderParams;
+import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 
 import com.dotmarketing.util.Logger;
@@ -46,16 +47,19 @@ abstract class DotDirective extends InputBase {
       RuntimeServices rsvc = VelocityUtil.getEngine().getRuntimeServices();
       return rsvc.getTemplate(templatePath, getInputEncoding(context));
     } catch (ResourceNotFoundException rnfe) {
-      Logger.error(this, this.getName() + ": cannot find template '" + templatePath + "', called at "
-          + VelocityException.formatFileString(this));
+        if(VelocityType.resolveVelocityType(templatePath) != VelocityType.CONTENT) {
+            Logger.warn(this, this.getName() + ": cannot find template '" + templatePath + "', called at "+ VelocityException.formatFileString(this));
+        }
+        Logger.debug(this, () -> this.getName() + ": cannot find template '" + templatePath + "', called at "+ VelocityException.formatFileString(this));
+
       throw rnfe;
     } catch (ParseErrorException pee) {
-      Logger.error(this, this.getName() + ": syntax error in template '" + templatePath + "', called at "
+      Logger.warn(this, this.getName() + ": syntax error in template '" + templatePath + "', called at "
           + VelocityException.formatFileString(this));
       throw pee;
     }
     catch (RuntimeException e) {
-      Logger.error(this, "Exception rendering " + this.getName() + " (" + templatePath + ") at "
+      Logger.warn(this, "Exception rendering " + this.getName() + " (" + templatePath + ") at "
           + VelocityException.formatFileString(this));
       throw e;
     } catch (Exception e) {

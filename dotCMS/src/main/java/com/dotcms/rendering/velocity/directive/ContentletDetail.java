@@ -7,7 +7,6 @@ import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 
 import java.io.File;
@@ -62,7 +61,7 @@ public class ContentletDetail extends DotDirective {
 
             }
         } catch (Exception e) {
-            Logger.warn(this.getClass(), e.getMessage());
+
             throw new ResourceNotFoundException("cannnot find contentlet id " + identifier + " lang:" + tryingLang, e);
         }
         throw new ResourceNotFoundException("cannnot find contentlet id " + identifier + " lang:" + tryingLang);
