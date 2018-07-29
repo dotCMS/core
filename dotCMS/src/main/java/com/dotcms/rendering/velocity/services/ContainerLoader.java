@@ -203,7 +203,7 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
 
             // if the content has expired we rewrite the identifier so it isn't loaded
             sb.append("#if($UtilMethods.isSet($_ident.sysExpireDate) && $_tmdate.after($_ident.sysExpireDate))");
-            sb.append("#set($contentletId='')");
+            sb.append("#set($contentletId=null)");
             sb.append("#end");
 
             // if the content should be published then force to show the working version
@@ -212,12 +212,18 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
             sb.append("#end");
 
             sb.append("#if(! $webapi.contentHasLiveVersion($contentletId) && ! $_show_working_)")
-                .append("#set($contentletId='')") // working contentlet still not published
+                .append("#set($contentletId=null)") // working contentlet still not published
                 .append("#end");
             sb.append("#end");
 
-            sb.append("#set($CONTENT_INODE = '')");
-            sb.append("#if($contentletId != '')");
+            // Wipe any old content variables
+            sb.append("#set($CONTENT_INODE = null)");
+            sb.append("#set($CONTENT_BASE_TYPE = null)");
+            sb.append("#set($CONTENT_LANGUAGE = null)");
+            sb.append("#set($ContentletTitle = null)");
+            sb.append("#set($CONTENT_TYPE_ID = null)");
+            
+            sb.append("#if($contentletId )");
             sb.append("#contentDetail($contentletId)");
             sb.append("#end");
 
