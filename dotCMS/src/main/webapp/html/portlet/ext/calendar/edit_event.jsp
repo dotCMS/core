@@ -29,7 +29,6 @@
  %>
 
 <script type='text/javascript' src='/dwr/interface/LanguageAjax.js'></script>
-<script type='text/javascript' src='/html/js/scriptaculous/prototype.js'></script>
 
 <%
 	PermissionAPI conPerAPI = APILocator.getPermissionAPI();
@@ -130,6 +129,7 @@ document.addEventListener('DOMContentLoaded', function(){
     setTimeout(function () {
         document.dispatchEvent(loadContentletCustomEvent);
     },2000);
+
 }, false);
 
 </script>
