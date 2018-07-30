@@ -1027,19 +1027,7 @@ public class ImportExportUtil {
             new File(assetRealPath);
 
         assetDirectory.mkdirs();
-        /*
-        final String[] assetsFileList = assetDirectory.list();
-        for (String fileName : assetsFileList) {
-            if(fileName.toLowerCase().startsWith(LICENSE_NAME)
-                || fileName.toLowerCase().startsWith(IMPORTED_LICENSE_PACK_PREFIX)) continue;
-            File f = new File(assetDirectory.getPath() + File.separator + fileName);
-            if(f.isDirectory()) {
-                FileUtil.deltree(f);
-            } else {
-                f.delete();
-            }
-        }
-        */
+
     }
 
     @WrapInTransaction
