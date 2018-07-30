@@ -1027,6 +1027,7 @@ public class ImportExportUtil {
             new File(assetRealPath);
 
         assetDirectory.mkdirs();
+        /*
         final String[] assetsFileList = assetDirectory.list();
         for (String fileName : assetsFileList) {
             if(fileName.toLowerCase().startsWith(LICENSE_NAME)
@@ -1038,6 +1039,7 @@ public class ImportExportUtil {
                 f.delete();
             }
         }
+        */
     }
 
     @WrapInTransaction
