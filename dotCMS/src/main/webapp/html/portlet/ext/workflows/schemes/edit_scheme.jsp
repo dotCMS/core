@@ -41,7 +41,19 @@
 	<div class="form-horizontal" <%if(scheme.isArchived()){%>style="opacity: .6"<%} %>>
 
 
-
+		<%if(!scheme.isNew()){%>
+			<dl>
+				<dt>
+					<label for=""><%=LanguageUtil.get(pageContext, "Scheme")%> <%=LanguageUtil.get(pageContext, "Id")%>:</label>
+				</dt>
+				<dd>
+					<strong>
+						<a onclick="this.parentNode.innerHTML='<%=scheme.getId()%>'; return false;" href="#"><%=schemeShortyId %></a>
+					</strong>
+					(<a href="/api/v1/workflow/schemes/<%=scheme.getId()%>/export" target="_blank" onclick="event.stopPropagation();">json</a>)
+				</dd>
+			</dl>
+		<%}%>
 		<dl>
 			<dt>
 				<label for=""><%=LanguageUtil.get(pageContext, "Name")%>:</label>
@@ -53,20 +65,7 @@
 					   maxlength="255" style="width:250px;<%if(scheme.isArchived()){%>;text-decoration:line-through;<%}%>">
 			</dd>
 		</dl>
-        <%if(!scheme.isNew()){%>
-	        <dl>
-	            <dt>
-	                <label for=""><%=LanguageUtil.get(pageContext, "Scheme")%> <%=LanguageUtil.get(pageContext, "Id")%>:</label>
-	            </dt>
-	            <dd>
-	                <strong>
-	                    <a onclick="this.parentNode.innerHTML='<%=scheme.getId()%>'; return false;" href="#"><%=schemeShortyId %></a>
-	                </strong>
-	                (<a href="/api/v1/workflow/schemes/<%=scheme.getId()%>/export" target="_blank" onclick="event.stopPropagation();">json</a>)
-	            </dd>
-	
-	        </dl>
-        <%}%>
+
 		<dl>
 			<dt>
 				<label for=""><%=LanguageUtil.get(pageContext, "Description")%>:</label>
@@ -106,7 +105,7 @@
 
 	</div>
 
-	<div class="buttonRow" style="position:absolute;bottom:20px;left:20px;right:20px; margin-top: 10px;">
+	<div class="buttonRow" style="position:absolute; bottom:20px; margin-left:146px">
 
 		<%if(!scheme.isNew()){%>
 			<button dojoType="dijit.form.Button" onClick='schemeAdmin.copyScheme("<%=UtilMethods.webifyString(scheme.getId())%>", "<%=UtilMethods.webifyString(scheme.getName())%>")' iconClass="saveIcon" type="button">
