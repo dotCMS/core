@@ -49,7 +49,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     }
 
     @Override
-    public Table<String, String, Set<String>>  getPageMultiTrees(final IHTMLPage page, final Language language,
+    public Table<String, String, Set<String>>  getPageMultiTrees(final IHTMLPage page, 
                                                                  final boolean liveMode) throws DotDataException, DotSecurityException {
 
         final Table<String, String, Set<String>> pageContents = HashBasedTable.create();
@@ -65,8 +65,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
             Contentlet contentlet = null;
             try {
-                contentlet = contentletAPI.findContentletByIdentifier(multiTree.getContentlet(), liveMode,
-                        language != null ? language.getId() : APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
+                contentlet = contentletAPI.findContentletByIdentifierAnyLanguage(multiTree.getContentlet());;
             }catch(DotDataException | DotSecurityException | DotContentletStateException e){
                 Logger.warn(this.getClass(), "invalid contentlet on multitree:" + multiTree);
             }

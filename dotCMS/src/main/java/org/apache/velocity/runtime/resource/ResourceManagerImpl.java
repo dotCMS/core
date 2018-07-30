@@ -20,7 +20,11 @@ package org.apache.velocity.runtime.resource;
  */
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.rendering.velocity.services.DotResourceLoader;
+import com.dotcms.rendering.velocity.services.VelocityResourceKey;
+import com.dotcms.rendering.velocity.services.VelocityType;
+
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -364,13 +368,16 @@ public class ResourceManagerImpl
             }
             catch (ResourceNotFoundException rnfe)
             {
-                Logger.error(this,"ResourceManager : unable to find resource '" +
+                if(VelocityType.resolveVelocityType(resourceName) != VelocityType.CONTENT) {
+                Logger.warn(this,"ResourceManager : unable to find resource '" +
                           resourceName + "' in any resource loader.");
+                }
+                Logger.debug(this, () ->  "ResourceManager : unable to find resource '" + resourceName + "' in any resource loader.");
                 throw rnfe;
             }
             catch (ParseErrorException pee)
             {
-                Logger.error(this,"ResourceManager.getResource() parse exception", pee);
+                Logger.warn(this,"ResourceManager.getResource() parse exception", pee);
                 throw pee;
             }
             catch (RuntimeException re)

@@ -208,11 +208,8 @@ public class PageResourceHelper implements Serializable {
 
     @WrapInTransaction
     protected void updateMultiTrees(final IHTMLPage page, final PageForm pageForm) throws DotDataException, DotSecurityException {
-        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-        final Language language = request == null ? APILocator.getLanguageAPI().getDefaultLanguage() :
-                WebAPILocator.getLanguageWebAPI().getLanguage(request);
 
-        final Table<String, String, Set<String>> pageContents = multiTreeAPI.getPageMultiTrees(page, language, false);
+        final Table<String, String, Set<String>> pageContents = multiTreeAPI.getPageMultiTrees(page, false);
 
         final String pageIdentifier = page.getIdentifier();
         MultiTreeFactory.deleteMultiTreeByParent(pageIdentifier);
@@ -228,9 +225,9 @@ public class PageResourceHelper implements Serializable {
                 if (!contents.isEmpty()) {
                     final String newUUID = getNewUUID(pageForm, containerId, uniqueId);
 
-                    for (String contentId : contents) {
+                    for (final String identifier : contents) {
                         final MultiTree multiTree = new MultiTree().setContainer(containerId)
-                                .setContentlet(contentId)
+                                .setContentlet(identifier)
                                 .setRelationType(newUUID)
                                 .setTreeOrder(treeOrder++)
                                 .setHtmlPage(pageIdentifier);
