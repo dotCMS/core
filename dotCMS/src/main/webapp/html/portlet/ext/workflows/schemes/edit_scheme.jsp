@@ -109,22 +109,22 @@
 	<div class="buttonRow" style="position:absolute;bottom:20px;left:20px;right:20px; margin-top: 10px;">
 
 		<%if(!scheme.isNew()){%>
-		<button dojoType="dijit.form.Button" onClick='schemeAdmin.copyScheme("<%=UtilMethods.webifyString(scheme.getId())%>", "<%=UtilMethods.webifyString(scheme.getName())%>")' iconClass="saveIcon" type="button">
-			<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Copy"))%>
-		</button>
-		
-		<%if(scheme.isArchived()){%>
-        <button dojoType="dijit.form.Button" onClick='schemeAdmin.unArchiveScheme("<%=UtilMethods.webifyString(scheme.getId())%>")' iconClass="archiveIcon"  type="button">
-            <%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unarchive"))%>
-        </button>
-		<button dojoType="dijit.form.Button" onClick='schemeAdmin.deleteScheme("<%=UtilMethods.webifyString(scheme.getId())%>")' iconClass="deleteIcon" style="background:black;color:white" type="button">
-			<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete"))%>
-		</button>
-		<%}else{%>
-        <button dojoType="dijit.form.Button" onClick='schemeAdmin.archiveScheme("<%=UtilMethods.webifyString(scheme.getId())%>")' iconClass="archiveIcon"  type="button">
-            <%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Archive"))%>
-        </button>
-		<%} %>
+			<button dojoType="dijit.form.Button" onClick='schemeAdmin.copyScheme("<%=UtilMethods.webifyString(scheme.getId())%>", "<%=UtilMethods.webifyString(scheme.getName())%>")' iconClass="saveIcon" type="button">
+				<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Copy"))%>
+			</button>
+			
+			<%if(scheme.isArchived()){%>
+	        <button dojoType="dijit.form.Button" onClick='schemeAdmin.unArchiveScheme("<%=UtilMethods.webifyString(scheme.getId())%>")' iconClass="archiveIcon"  type="button">
+	            <%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unarchive"))%>
+	        </button>
+			<button dojoType="dijit.form.Button" onClick='schemeAdmin.deleteScheme("<%=UtilMethods.webifyString(scheme.getId())%>")' iconClass="deleteIcon" style="background:black;color:white" type="button">
+				<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete"))%>
+			</button>
+			<%}else{%>
+	        <button dojoType="dijit.form.Button" onClick='schemeAdmin.archiveScheme("<%=UtilMethods.webifyString(scheme.getId())%>")' iconClass="archiveIcon"  type="button">
+	            <%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Archive"))%>
+	        </button>
+			<%} %>
 		<%}%>
 		&nbsp; &nbsp; 
 		<button dojoType="dijit.form.Button" onClick='schemeAdmin.saveAddEdit()' iconClass="saveIcon" type="button">
