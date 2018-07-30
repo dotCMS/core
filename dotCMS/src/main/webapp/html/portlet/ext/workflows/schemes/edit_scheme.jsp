@@ -112,7 +112,7 @@
 		<button dojoType="dijit.form.Button" onClick='schemeAdmin.copyScheme("<%=UtilMethods.webifyString(scheme.getId())%>", "<%=UtilMethods.webifyString(scheme.getName())%>")' iconClass="saveIcon" type="button">
 			<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Copy"))%>
 		</button>
-		<%}%>
+		
 		<%if(scheme.isArchived()){%>
         <button dojoType="dijit.form.Button" onClick='schemeAdmin.unArchiveScheme("<%=UtilMethods.webifyString(scheme.getId())%>")' iconClass="archiveIcon"  type="button">
             <%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unarchive"))%>
@@ -125,6 +125,7 @@
             <%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Archive"))%>
         </button>
 		<%} %>
+		<%}%>
 		&nbsp; &nbsp; 
 		<button dojoType="dijit.form.Button" onClick='schemeAdmin.saveAddEdit()' iconClass="saveIcon" type="button">
             <%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save"))%>
