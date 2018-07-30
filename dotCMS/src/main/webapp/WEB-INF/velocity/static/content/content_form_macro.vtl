@@ -1,65 +1,22 @@
-#set($dojoPath = $webapi.getConfigVar("path.to.dojo"))
-#if(!$UtilMethods.isSet($dojoPath))
-	#set($dojoPath = "/html/js/dojo/1.4.0")
-#end
+#set($hasForm = true)
+
 #if(!$UtilMethods.isSet($contentFormReferer))
 	#set($contentFormReferer = "${VTLSERVLET_URI}")
 #end
 
-<link rel="stylesheet" type="text/css" href="${dojoPath}/dijit/themes/dmundra/dmundra.css" media="screen">
-<link rel="stylesheet" type="text/css" href="${dojoPath}/dojox/grid/resources/Grid.css" media="screen">
-<link rel="stylesheet" type="text/css" href="${dojoPath}/dojox/grid/resources/tundraGrid.css" media="screen">
+<script>
+    var tabCounterCalls = [];
+
+    function addTabCounterCall(value) {
+        tabCounterCalls.push(value);
+    }
+</script>
+
+
 <link rel="stylesheet" href="/html/css/content/forms.css" type="text/css" media="screen" />
 #if($UtilMethods.isSet($contentFormMacroCSS))
 	<link rel="stylesheet" href="$contentFormMacroCSS" type="text/css" media="screen" />
 #end
-
-<script type="text/javascript">
-djConfig={
-               parseOnLoad: true,
-               isDebug: false
-       };
-</script>
-<script type="text/javascript" src="${dojoPath}/dojo/dojo.js"></script>
-<script type="text/javascript" src="${dojoPath}/dojo/dot-dojo.js"></script>
-<script type="text/javascript" src="/html/js/content/content_form_macro.js"></script>
-<script type="text/javascript" src="/dwr/engine.js"></script>
-<script type="text/javascript" src="/dwr/util.js"></script>
-<script type="text/javascript" src="/dwr/interface/TagAjax.js"></script>
-<script type="text/javascript" src="/dwr/interface/CategoryAjax.js"></script>
-<script type="text/javascript" src="/dwr/interface/BrowserAjax.js"></script>
-<script type="text/javascript" src="/dwr/interface/HostAjax.js"></script>
-<script type="text/javascript" src="/dwr/interface/TemplateAjax.js"></script>
-<script type="text/javascript" src="/dwr/interface/StructureAjax.js"></script>
-
-<script type="text/javascript">
-dojo.ready(function(){
-var theme = 'dmundra';
-	if(dojo.body()){
-		if(!dojo.hasClass(dojo.body(),theme)){
-	    	    dojo.addClass(dojo.body(),theme);
-		}
-	}
-});
-
-	dojo.require("dojo.parser");
-	dojo.require("dijit.form.TextBox");
-	dojo.require("dijit.form.Textarea");
-	dojo.require("dijit.form.Button");
-	dojo.require("dijit.form.FilteringSelect");
-	dojo.require("dijit.form.CheckBox");
-	dojo.require("dijit.form.DateTextBox");
-	dojo.require("dijit.form.MultiSelect");
-	dojo.require("dijit.form.Slider");
-	dojo.require("dijit.Tooltip");
-	dojo.require("dijit.Dialog");
-	dojo.registerModulePath("dotcms","/html/js/dotcms");
-	dojo.require("dotcms.dijit.form.HostFolderFilteringSelect");
-	dojo.require("dotcms.dijit.form.FileSelector");
-	dojo.require("dotcms.dijit.FileBrowserDialog");
-	dojo.require("dojo.dnd.Source");
-	var DWRUtil = dwr.util;
-</script>
 
 #if(!$UtilMethods.isSet("$!errorMessagesPath"))
 	#set($errorMessagesPath = 'static/content/error_messages.vtl')
@@ -361,7 +318,7 @@ var theme = 'dmundra';
 								#set($fieldAux = $field)
 								#parse('/static/content/relationships_tab_render.vtl')
 								<script language="javascript">
-									updateTabCounter("$currentTab");
+									addTabCounterCall("$currentTab");
 								</script>
 							</dd>
 						</div>
@@ -404,7 +361,7 @@ var theme = 'dmundra';
 							#else
 								#parse('/static/content/text_field_render.vtl')
 								<script language="javascript">
-									updateTabCounter("$currentTab");
+									addTabCounterCall("$currentTab");
 								</script>
 							#end
 
@@ -429,7 +386,7 @@ var theme = 'dmundra';
 							#else
 								#parse('/static/content/textarea_field_render.vtl')
 								<script language="javascript">
-									updateTabCounter("$currentTab");
+									addTabCounterCall("$currentTab");
 								</script>
 							#end
 
@@ -454,7 +411,7 @@ var theme = 'dmundra';
 							#else
 								#parse('/static/content/keyvalue_field_render.vtl')
 								<script language="javascript">
-									updateTabCounter("$currentTab");
+									addTabCounterCall("$currentTab");
 								</script>
 							#end
 
@@ -478,7 +435,7 @@ var theme = 'dmundra';
 							#else
 								#parse('/static/content/wysiwyg_field_render.vtl')
 								<script language="javascript">
-									updateTabCounter("$currentTab");
+									addTabCounterCall("$currentTab");
 								</script>
 							#end
 
@@ -502,7 +459,7 @@ var theme = 'dmundra';
 							#else
 								#parse('/static/content/tag_field_render.vtl')
 								<script language="javascript">
-									updateTabCounter("$currentTab");
+									addTabCounterCall("$currentTab");
 								</script>
 							#end
 
@@ -527,7 +484,7 @@ var theme = 'dmundra';
 							#else
 								#parse('/static/content/checkbox_field_render.vtl')
 								<script language="javascript">
-									updateTabCounter("$currentTab");
+									addTabCounterCall("$currentTab");
 								</script>
 							#end
 
@@ -551,7 +508,7 @@ var theme = 'dmundra';
 							#else
 								#parse('/static/content/radio_field_render.vtl')
 								<script language="javascript">
-									updateTabCounter("$currentTab");
+									addTabCounterCall("$currentTab");
 								</script>
 							#end
 
@@ -575,7 +532,7 @@ var theme = 'dmundra';
 							#else
 								#parse('/static/content/select_field_render.vtl')
 								<script language="javascript">
-									updateTabCounter("$currentTab");
+									addTabCounterCall("$currentTab");
 								</script>
 							#end
 
@@ -599,7 +556,7 @@ var theme = 'dmundra';
 							#else
 								#parse('/static/content/multiselect_field_render.vtl')
 								<script language="javascript">
-									updateTabCounter("$currentTab");
+									addTabCounterCall("$currentTab");
 								</script>
 							#end
 
@@ -625,7 +582,7 @@ var theme = 'dmundra';
 							#else
 								#parse('/static/content/date_field_render.vtl')
 								<script language="javascript">
-									updateTabCounter("$currentTab");
+									addTabCounterCall("$currentTab");
 								</script>
 							#end
 
@@ -653,7 +610,7 @@ var theme = 'dmundra';
 							#else
 								#parse('/static/content/time_field_render.vtl')
 								<script language="javascript">
-									updateTabCounter("$currentTab");
+									addTabCounterCall("$currentTab");
 								</script>
 							#end
 
@@ -682,7 +639,7 @@ var theme = 'dmundra';
 							#else
 								#parse('/static/content/datetime_field_render.vtl')
 								<script language="javascript">
-									updateTabCounter("$currentTab");
+									addTabCounterCall("$currentTab");
 								</script>
 							#end
 
@@ -706,7 +663,7 @@ var theme = 'dmundra';
 							#else
 								#parse('/static/content/file_field_render.vtl')
 								<script language="javascript">
-									updateTabCounter("$currentTab");
+									addTabCounterCall("$currentTab");
 								</script>
 							#end
 
@@ -730,7 +687,7 @@ var theme = 'dmundra';
 							#else
 								#parse('/static/content/image_field_render.vtl')
 								<script language="javascript">
-									updateTabCounter("$currentTab");
+									addTabCounterCall("$currentTab");
 								</script>
 							#end
 
@@ -754,7 +711,7 @@ var theme = 'dmundra';
 							#else
 								#parse('/static/content/binary_field_render.vtl')
 								<script language="javascript">
-									updateTabCounter("$currentTab");
+									addTabCounterCall("$currentTab");
 								</script>
 							#end
 
@@ -774,7 +731,7 @@ var theme = 'dmundra';
 								#else
 									#parse('/static/content/custom_field_render.vtl')
 									<script language="javascript">
-										updateTabCounter("$currentTab");
+										addTabCounterCall("$currentTab");
 									</script>
 								#end
 						#elseif($field.fieldType == 'host or folder' && !($showOnlyRequiredFields && !$field.isRequired()))
@@ -796,7 +753,7 @@ var theme = 'dmundra';
 									#else
 										#parse('/static/content/host_folder_field_render.vtl')
 										<script language="javascript">
-											updateTabCounter("$currentTab");
+											addTabCounterCall("$currentTab");
 										</script>
 									#end
 								#end
@@ -818,7 +775,7 @@ var theme = 'dmundra';
 							#else
 								#parse('/static/content/category_field_render.vtl')
 								<script language="javascript">
-									updateTabCounter("$currentTab");
+									addTabCounterCall("$currentTab");
 								</script>
 							#end
 						#end
@@ -915,7 +872,7 @@ var theme = 'dmundra';
 
 <script language="javascript">
 
-	function checkTabFields(tab){
+	function checkTabFields(tab) {
 
 
 	if("$firstTabName"==tab) {
@@ -1072,7 +1029,7 @@ var theme = 'dmundra';
     return true;
 }
 
-var captcha_audio_play;
+    var captcha_audio_play;
 
 	function playAudioCaptcha(){
 		captcha_audio_play = document.getElementById('captcha-audio-play');
@@ -1099,15 +1056,5 @@ var captcha_audio_play;
     function userLang() {
         return "$text.getFromSessionLanguage('org.dotcms.frontend.content.submission.does.not.comply.format')";
 	}
-
-updateTabList();
-
-
-
-
-
-
-
-
 
 </script>

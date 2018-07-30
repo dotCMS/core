@@ -1,10 +1,10 @@
 <%@ page import="com.liferay.portal.language.LanguageUtil" %>
-<form dojoAttachPoint="search_form" onsubmit="return false;" id="searchForm" >
-<div style="display:flex;flex-direction: row;">
+<form dojoAttachPoint="search_form" onsubmit="return false;" id="searchForm" class="related-content-form">
+<div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" dojoAttachPoint="borderContainer" class="related-content-container">
 	
 
         <!-- START Left Column -->
-        <div class="portlet-sidebar-wrapper" >
+        <div dojoType="dijit.layout.ContentPane" splitter="false" region="leading" class="portlet-sidebar-wrapper">
             <div class="portlet-sidebar">
                 <input type="hidden" name="hostField" dojoAttachPoint="hostField" value=""/>
                 <input type="hidden" name="folderField" dojoAttachPoint="folderField" value=""/>
@@ -28,7 +28,7 @@
         </div>
 
 	   <!-- START Right Column -->
-	   <div style="overflow:auto;">
+        <div dojoType="dijit.layout.ContentPane" splitter="true" region="center" class="portlet-main-wrapper">
 		   <div dojoAttachPoint="contentWrapper">
 		       <div class="portlet-toolbar">
 		           <div dojoAttachPoint="matchingResultsDiv" class="portlet-toolbar__matching-results" style="visibility: hidden"><%= LanguageUtil.get(pageContext, "Results") %></div>

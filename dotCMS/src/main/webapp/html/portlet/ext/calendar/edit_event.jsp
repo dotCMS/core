@@ -29,7 +29,6 @@
  %>
 
 <script type='text/javascript' src='/dwr/interface/LanguageAjax.js'></script>
-<script type='text/javascript' src='/html/js/scriptaculous/prototype.js'></script>
 
 <%
 	PermissionAPI conPerAPI = APILocator.getPermissionAPI();
@@ -118,6 +117,21 @@
 
 <script language='javascript' type='text/javascript'>
 var editButtonRow="editEventButtonRow";
+document.addEventListener('DOMContentLoaded', function(){
+
+    var loadContentletCustomEvent = document.createEvent("CustomEvent");
+    loadContentletCustomEvent.initCustomEvent("ng-event", false, false,  {
+        name: "edit-contentlet-loaded",
+        data: {
+            contentType: '<%=CacheLocator.getContentTypeCache().getStructureByInode(structure.getInode() ).getName()%>'
+        }
+    });
+    setTimeout(function () {
+        document.dispatchEvent(loadContentletCustomEvent);
+    },2000);
+
+}, false);
+
 </script>
 
 <jsp:include page="/html/portlet/ext/contentlet/field/edit_field_js.jsp" />
@@ -325,12 +339,11 @@ var editButtonRow="editEventButtonRow";
 	<div class="content-edit__sidebar" id="editEventButtonRow">
 		<jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_basic_properties.jsp" />
 
-		<div class="content-edit-actions">
 			<%--<h3><%=LanguageUtil.get(pageContext, "Actions") %></h3>--%>
 			<div id="contentletActionsHanger">
 				<%@ include file="/html/portlet/ext/contentlet/contentlet_actions_inc.jsp" %>
 			</div>
-		</div>
+
 	</div>
 <% } %>
 

@@ -41,6 +41,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -891,22 +892,17 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 	@Override
     protected Contentlet findContentletByIdentifierAnyLanguage(String identifier) throws DotDataException, DotSecurityException {
-        Contentlet contentlet = null;
-        final StringBuilder sb = new StringBuilder()
-                .append("SELECT c.inode FROM contentlet c, contentlet_version_info cvi ")
-                .append("WHERE c.identifier=? AND c.inode = cvi.working_inode ")
-                .append("AND cvi.deleted = ")
-                .append(DbConnectionFactory.getDBFalse());
-        final List<HashMap<String, String>> inodes = new DotConnect()
-                .setSQL(sb.toString())
-                .addParam(identifier)
-                .setMaxRows(1)
-                .getResults();
-        if (CollectionUtils.isNotEmpty(inodes)) {
-            final String inode = inodes.get(0).get("inode");
-            contentlet = find(inode);
-        }
-        return contentlet;
+	    
+	    // Looking content up this way can avoid any DB hits as these calls are all cached.
+	    List<Language> langs = APILocator.getLanguageAPI().getLanguages();
+	    for(Language l : langs) {
+	        ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, l.getId());
+	        if(cvi!=null && !cvi.isDeleted()) {
+	            return find(cvi.getWorkingInode());
+	        }
+	    }
+	    return null;
+
     }
 
 	@Override
@@ -2295,7 +2291,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 if ( DbConnectionFactory.isMsSql() ) {
                     whereField.append(" DATALENGTH (").append(field.getFieldContentlet()).append(")");
                 } else if ( DbConnectionFactory.isOracle() ) {
-                	whereField.append("TO_CHAR(").append(field.getFieldContentlet()).append(") != ");
+                	whereField.append("LENGTH(").append(field.getFieldContentlet()).append(")");
                 } else {
                     whereField.append(field.getFieldContentlet()).append(" != ");
                 }
@@ -2330,7 +2326,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             update.append(0);
             whereField.append(0);
         } else {
-            if (DbConnectionFactory.isMsSql() && field.getFieldContentlet().contains("text_area")){
+            if ((DbConnectionFactory.isMsSql() || DbConnectionFactory.isOracle()) && field.getFieldContentlet().contains("text_area")){
                 update.append("''");
                 whereField.append(" > 0");
             }else {

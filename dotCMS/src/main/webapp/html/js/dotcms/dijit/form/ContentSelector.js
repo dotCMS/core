@@ -693,10 +693,13 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 
 	_fillResults: function (data) {
 
+
+
 		var counters = data[0];
 		var hasNext = counters["hasNext"];
 		var hasPrevious = counters["hasPrevious"];
-		var total = counters["total"];
+        var total = counters["total"];
+        
 
 		this.headers = data[1];
 
@@ -706,7 +709,19 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 
 		data.length = data.length - 3;
 
-		dwr.util.removeAllRows(this.results_table);
+        dwr.util.removeAllRows(this.results_table);
+        
+        if (hasNext) {
+			this.nextDiv.style.display = "";
+		} else {
+			this.nextDiv.style.display = "none";
+		}
+
+		if (hasPrevious) {
+			this.previousDiv.style.display = "";
+		} else {
+			this.previousDiv.style.display = "none";
+		}
 
 		var funcs = new Array ();
 		if (data.length <= 0) {
@@ -719,19 +734,10 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		}
 
 		this._fillResultsTable (this.headers, data);
-		this._showMatchingResults (total);
+        this._showMatchingResults (total);
+        
 
-		if (hasNext) {
-			this.nextDiv.style.display = "";
-		} else {
-			this.nextDiv.style.display = "none";
-		}
 
-		if (hasPrevious) {
-			this.previousDiv.style.display = "";
-		} else {
-			this.previousDiv.style.display = "none";
-		}
 
 	},
 
@@ -849,9 +855,16 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	},
 
 	_getHeader: function (field) {
-		var fieldContentlet = this.structureVelVar+"."+field["fieldVelocityVarName"];
-		var fieldName = field["fieldName"];
-		return "<a class=\"beta\" id=\"" + fieldContentlet + "header" +	"\""
+
+        var fieldName = field["fieldName"];
+
+        if(field["fieldVelocityVarName"] === '__wfstep__'){
+            return '<b>' + fieldName + '</b>'; // not sortable
+        }
+        
+        var fieldContentlet = this.structureVelVar+"."+field["fieldVelocityVarName"];
+
+        return "<a class=\"beta\" id=\"" + fieldContentlet + "header" +	"\""
 		+ " href=\"#\"><b>" + fieldName + "</b></a>";
 	},
 

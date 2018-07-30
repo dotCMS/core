@@ -7,6 +7,14 @@ var enabledWYSIWYG = new Array();
 var lastTabId = '';
 var errorFieldName='';
 
+if (tabCounterCalls.length) {
+    tabCounterCalls.forEach(function(val) {
+        updateTabCounter(val);
+    })
+
+    updateTabList();
+}
+
 function submitContent(tabName){
 	dojo.byId("buttonSubmitButton").disabled=true;
 	errorFieldName='';

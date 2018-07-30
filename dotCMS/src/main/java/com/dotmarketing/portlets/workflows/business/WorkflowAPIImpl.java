@@ -190,7 +190,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	private static final int MAX_EXCEPTIONS_REPORTED_ON_BULK_ACTIONS_DEFAULT = 1000;
 
-	private static final int BULK_ACTIONS_SLEEP_THRESHOLD_DEFAULT = 700;
+	private static final int BULK_ACTIONS_SLEEP_THRESHOLD_DEFAULT = 400;
 
 	private static final String BULK_ACTIONS_SLEEP_THRESHOLD = "workflow.action.bulk.sleep";
 
@@ -346,6 +346,15 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 		return null;
 	}
+
+    private Class<? extends WorkFlowActionlet> getActionletClass(String className) {
+        for ( Class<? extends WorkFlowActionlet> z : actionletClasses ) {
+            if ( z.getName().equals(className.trim())) {
+                return z;
+            }
+        }
+        return null;
+    }
 
 	@Override
 	public String addActionlet(final Class<? extends WorkFlowActionlet> workFlowActionletClass) {
@@ -613,7 +622,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		if (SYSTEM_WORKFLOW_ID.equals(scheme.getId()) && scheme.isArchived()) {
 
 			Logger.warn(this, "Can not archive the system workflow");
-			throw new DotSecurityException("Workflow-delete-system-workflow");
+			throw new DotSecurityException("Workflow-cannot-archive-system-workflow");
 		}
 
 		workFlowFactory.saveScheme(scheme);
@@ -1265,7 +1274,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         for (final WorkflowActionClass actionClass : actionClasses) {
 
             final Actionlet actionlet = AnnotationUtils.
-                    getBeanAnnotation(ReflectionUtils.getClassFor(actionClass.getClazz()), Actionlet.class);
+                    getBeanAnnotation(this.getActionletClass(actionClass.getClazz()), Actionlet.class);
 
                 isSave        |= (null != actionlet) && actionlet.save();
                 isPublish     |= (null != actionlet) && actionlet.publish();
@@ -2089,7 +2098,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			return Collections.emptyList();
 		}
 
-		final boolean isValidContentlet = isNew || contentlet.isLive() || contentlet.isWorking();
+		final boolean isValidContentlet = isNew || contentlet.isWorking();
 		if (!isValidContentlet) {
 
 			Logger.debug(this, () -> "The contentlet: " +
@@ -2514,19 +2523,19 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		for (Contentlet contentlet : contentlets) {
 			try {
-                if(requiresAdditionalParams){
-					// additional params applied directly to the contentlet.
-                   contentlet = applyAdditionalParams(additionalParamsBean, contentlet);
+				try {
+					if (requiresAdditionalParams) {
+						// additional params applied directly to the contentlet.
+						contentlet = applyAdditionalParams(additionalParamsBean, contentlet);
+					}
+					fireBulkActionTask(action, contentlet, dependencies, successConsumer,
+							failConsumer, context);
+				} catch (Exception e) {
+					// Additional catch block to handle any exceptions when processing the Transactional Annotation.
+					Logger.error(getClass(), "Error processing fire Action Task", e);
 				}
-				fireBulkActionTask(action, contentlet, dependencies, successConsumer, failConsumer, context);
-			} catch (Exception e) {
-				// Additional catch block to handle any exceptions when processing the Transactional Annotation.
-				Logger.error(getClass(), "Error processing fire Action Task", e);
-			}
-			try {
-				Thread.sleep(sleep);
-			} catch (InterruptedException e) {
-				//Mute exception. Doesn't matter if we had exceptions or not we should always sleep.
+			} finally {
+				DateUtil.sleep(sleep);
 			}
 		}
 	}
@@ -2663,7 +2672,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			try {
 
 				final boolean isValidContentlet = !InodeUtils.isSet(contentlet.getInode())
-						|| contentlet.isLive() || contentlet.isWorking();
+						|| contentlet.isWorking();
 				if (!isValidContentlet) {
 
 					throw new IllegalArgumentException(LanguageUtil

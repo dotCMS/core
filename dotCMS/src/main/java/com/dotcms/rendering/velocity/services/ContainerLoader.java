@@ -193,92 +193,99 @@ public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
                 .append(uuid)
                 .append(")");
 
-            // sb.append("\n#if($webapi.canParseContent($contentletId,"+EDIT_MODE+")) ");
-            sb.append("#set($_show_working_=false)");
-
-            // if timemachine future enabled
-            sb.append("#if($UtilMethods.isSet($request.getSession(false)) && $request.session.getAttribute(\"tm_date\"))");
-            sb.append("#set($_tmdate=$date.toDate($webapi.parseLong($request.session.getAttribute(\"tm_date\"))))");
-            sb.append("#set($_ident=$webapi.findIdentifierById($contentletId))");
-
-            // if the content has expired we rewrite the identifier so it isn't loaded
-            sb.append("#if($UtilMethods.isSet($_ident.sysExpireDate) && $_tmdate.after($_ident.sysExpireDate))");
-            sb.append("#set($contentletId='')");
-            sb.append("#end");
-
-            // if the content should be published then force to show the working version
-            sb.append("#if($UtilMethods.isSet($_ident.sysPublishDate) && $_tmdate.after($_ident.sysPublishDate))");
-            sb.append("#set($_show_working_=true)");
-            sb.append("#end");
-
-            sb.append("#if(! $webapi.contentHasLiveVersion($contentletId) && ! $_show_working_)")
-                .append("#set($contentletId='')") // working contentlet still not published
-                .append("#end");
-            sb.append("#end");
-
-            sb.append("#set($CONTENT_INODE = '')");
-            sb.append("#if($contentletId != '')");
-            sb.append("#contentDetail($contentletId)");
-            sb.append("#end");
-
-            if (mode == PageMode.EDIT_MODE) {
-
-                sb.append("<div")
-                    .append(" data-dot-object=")
-                    .append("\"contentlet\"")
-                    .append(" data-dot-inode=")
-                    .append("\"$CONTENT_INODE\"")
-                    .append(" data-dot-identifier=")
-                    .append("\"$IDENTIFIER_INODE\"")
-                    .append(" data-dot-type=")
-                    .append("\"$CONTENT_TYPE\"")
-                    .append(" data-dot-basetype=")
-                    .append("\"$CONTENT_BASE_TYPE\"")
-                    .append(" data-dot-lang=")
-                    .append("\"$CONTENT_LANGUAGE\"")
-                    .append(" data-dot-title=")
-                    .append("\"$UtilMethods.javaScriptify($ContentletTitle)\"")
-                    .append(" data-dot-can-edit=")
-                    .append("\"$contents.doesUserHasPermission($CONTENT_INODE, 2, true)\"")
-                    .append(" data-dot-content-type-id=")
-                    .append("\"$CONTENT_TYPE_ID\"")
-                    .append(">");
-
-
-            }
-            // ##Checking permission to see content
-            if (mode.showLive) {
-                sb.append("#if($contents.doesUserHasPermission($CONTENT_INODE, 1, $user, true))");
-            }
-
-            // ### START BODY ###
-            sb.append("#if($isWidget==true)");
-                sb.append("$widgetCode");
-            sb.append("#elseif($isForm==true)");
-                sb.append("$formCode");
-            sb.append("#else");
-
-            for (int i = 0; i < csList.size(); i++) {
-                ContainerStructure cs = csList.get(i);
-                String ifelse = (i == 0) ? "if" : "elseif";
-                sb.append("#" + ifelse + "($ContentletStructure ==\"" + cs.getStructureId() + "\")");
-                sb.append(cs.getCode());
-            }
-            if (csList.size() > 0) {
+                // sb.append("\n#if($webapi.canParseContent($contentletId,"+EDIT_MODE+")) ");
+                sb.append("#set($_show_working_=false)");
+    
+                // if timemachine future enabled
+                sb.append("#if($UtilMethods.isSet($request.getSession(false)) && $request.session.getAttribute(\"tm_date\"))");
+                sb.append("#set($_tmdate=$date.toDate($webapi.parseLong($request.session.getAttribute(\"tm_date\"))))");
+                sb.append("#set($_ident=$webapi.findIdentifierById($contentletId))");
+    
+                // if the content has expired we rewrite the identifier so it isn't loaded
+                sb.append("#if($UtilMethods.isSet($_ident.sysExpireDate) && $_tmdate.after($_ident.sysExpireDate))");
+                sb.append("#set($contentletId='')");
                 sb.append("#end");
-            }
-                // ### END BODY ###
-            sb.append("#end");
-
-            if (mode.showLive) {
+    
+                // if the content should be published then force to show the working version
+                sb.append("#if($UtilMethods.isSet($_ident.sysPublishDate) && $_tmdate.after($_ident.sysPublishDate))");
+                sb.append("#set($_show_working_=true)");
                 sb.append("#end");
-            }
+    
+                sb.append("#if(! $webapi.contentHasLiveVersion($contentletId) && ! $_show_working_)")
+                    .append("#set($contentletId='')") // working contentlet still not published
+                    .append("#end");
+                sb.append("#end");
+    
+                sb.append("#set($CONTENT_INODE = '')");
+                sb.append("#set($CONTENT_BASE_TYPE = '')");
+                sb.append("#set($CONTENT_LANGUAGE = '')");
+                sb.append("#set($ContentletTitle = '')");
+                sb.append("#set($CONTENT_TYPE_ID = '')");
+                sb.append("#set($CONTENT_TYPE = '')");
+                
+                // read in the content
+                sb.append("#if($contentletId != '')");
+                sb.append("#contentDetail($contentletId)");
+                sb.append("#end");
+    
+                sb.append("#set($HAVE_A_VERSION=($CONTENT_INODE != ''))");
+                
+                if (mode == PageMode.EDIT_MODE) {
+                    sb.append("<div")
+                        .append(" data-dot-object=")
+                        .append("\"contentlet\"")
+                        .append(" data-dot-inode=")
+                        .append("\"$CONTENT_INODE\"")
+                        .append(" data-dot-identifier=")
+                        .append("\"$contentletId\"")
+                        .append(" data-dot-type=")
+                        .append("\"$CONTENT_TYPE\"")
+                        .append(" data-dot-basetype=")
+                        .append("\"$CONTENT_BASE_TYPE\"")
+                        .append(" data-dot-lang=")
+                        .append("\"$CONTENT_LANGUAGE\"")
+                        .append(" data-dot-title=")
+                        .append("\"$UtilMethods.javaScriptify($ContentletTitle)\"")
+                        .append(" data-dot-can-edit=")
+                        .append("\"$contents.doesUserHasPermission($CONTENT_INODE, 2, true)\"")
+                        .append(" data-dot-content-type-id=")
+                        .append("\"$CONTENT_TYPE_ID\"")
+                        .append(" data-dot-has-page-lang-version=")
+                        .append("\"$HAVE_A_VERSION\"")
+                        .append(">");
+                }
+                
 
+                // if content exists in language 
+                sb.append("#if($HAVE_A_VERSION)");
+                
+                    // ##Checking permission to see content
+                    if (mode.showLive) sb.append("#if($contents.doesUserHasPermission($CONTENT_INODE, 1, $user, true))");
+                    
+                        // ### START BODY ###
+                        sb.append("#if($isWidget==true)").append("$widgetCode");
+                        sb.append("#elseif($isForm==true)").append("$formCode");
+                        sb.append("#else");
+            
+                            for (int i = 0; i < csList.size(); i++) {
+                                ContainerStructure cs = csList.get(i);
+                                String ifelse = (i == 0) ? "if" : "elseif";
+                                sb.append("#" + ifelse + "($ContentletStructure ==\"" + cs.getStructureId() + "\")");
+                                sb.append(cs.getCode());
+                            }
+                            if (csList.size() > 0) sb.append("#end");
+                            
+                        // ### END BODY ###
+                        sb.append("#end");
+        
+                    if (mode.showLive) sb.append("#end");
+                    
+                // end if content exists in language 
+                sb.append("#end");
 
                // end content dot-data-content
-            if (mode == PageMode.EDIT_MODE) {
-               sb.append("</div>");
-            }
+            if (mode == PageMode.EDIT_MODE) sb.append("</div>");
+                
                 // ##End of foreach loop
             sb.append("#end");
                 

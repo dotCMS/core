@@ -7,11 +7,6 @@ public enum IntegrityType {
     	"FoldersToCheck.csv", "FoldersToFix.csv"
     ),
 
-    SCHEMES(
-    	new SchemeIntegrityChecker(), "push_publish_integrity_schemes_conflicts", "name",
-    	"SchemesToCheck.csv", "SchemesToFix.csv"
-    ),
-
     STRUCTURES(
     	new StructureIntegrityChecker(), "push_publish_integrity_structures_conflicts", "velocity_name",
     	"StructuresToCheck.csv", "StructuresToFix.csv"
