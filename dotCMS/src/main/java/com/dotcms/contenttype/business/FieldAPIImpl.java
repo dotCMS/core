@@ -94,7 +94,7 @@ public class FieldAPIImpl implements FieldAPI {
 
 		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
 		ContentType type = contentTypeAPI.find(field.contentTypeId()) ;
-		permissionAPI.checkPermission(type, PermissionLevel.PUBLISH, user);
+		permissionAPI.checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
 
 	    Field oldField = null;
 	    if (UtilMethods.isSet(field.id())) {
@@ -153,7 +153,7 @@ public class FieldAPIImpl implements FieldAPI {
       Field field = fieldFactory.byId(var.fieldId());
 
       ContentType type = contentTypeAPI.find(field.contentTypeId()) ;
-      APILocator.getPermissionAPI().checkPermission(type, PermissionLevel.PUBLISH, user);
+      APILocator.getPermissionAPI().checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
 
       FieldVariable newFieldVariable = fieldFactory.save(ImmutableFieldVariable.builder().from(var).userId(user.getUserId()).build());
       
