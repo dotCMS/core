@@ -37,6 +37,7 @@ import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.util.*;
 
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
@@ -432,6 +433,9 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		final User limitedUserEditPermsPermOnCT = APILocator.getUserAPI().loadUserById("dotcms.org.2795",
 				APILocator.systemUser(), false);
 
+		final List<Integer> existingPermissions = APILocator.getPermissionAPI()
+				.getPermissionIdsFromUser(contentGenericType, limitedUserEditPermsPermOnCT);
+
 		final Permission editPermissionsPermission = new Permission( contentGenericType.getPermissionId(),
 				APILocator.getRoleAPI().getUserRole(limitedUserEditPermsPermOnCT).getId(),
 				testCase.permissions, true );
@@ -461,6 +465,8 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 			ContentTypeAPI contentTypeAPI1 = APILocator.getContentTypeAPI(user);
 			contentTypeAPI1.save(contentGenericType);
 
+			restorePermissionsForUser(contentTypeAPI, limitedUserEditPermsPermOnCT, existingPermissions);
+
 		}
 
 		assertTrue(testCase.shouldSave);
@@ -477,6 +483,9 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		final User limitedUserEditPermsPermOnCT = APILocator.getUserAPI().loadUserById("dotcms.org.2795",
 				APILocator.systemUser(), false);
 
+		final List<Integer> existingPermissions = APILocator.getPermissionAPI()
+				.getPermissionIdsFromUser(contentGenericType, limitedUserEditPermsPermOnCT);
+
 		final Permission editPermissionsPermission = new Permission( contentGenericType.getPermissionId(),
 				APILocator.getRoleAPI().getUserRole(limitedUserEditPermsPermOnCT).getId(),
 				testCase.permissions, true );
@@ -492,8 +501,28 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		} catch(DotSecurityException e) {
 			assertFalse(testCase.shouldSave);
 			return;
+		} finally {
+			restorePermissionsForUser(contentTypeAPI, limitedUserEditPermsPermOnCT, existingPermissions);
 		}
 		assertTrue(testCase.shouldSave);
+	}
+
+	private void restorePermissionsForUser(ContentTypeAPI contentTypeAPI, User limitedUserEditPermsPermOnCT, List<Integer> existingPermissions) throws DotSecurityException, DotDataException {
+		final ContentType restoredContentGeneric = contentTypeAPI.find("webPageContent");
+
+		// restore original permissions
+		existingPermissions.forEach((permission)-> {
+			try {
+				final Permission originalPermissions = new Permission( restoredContentGeneric.getPermissionId(),
+						APILocator.getRoleAPI().getUserRole(limitedUserEditPermsPermOnCT).getId(),
+						permission, true );
+				APILocator.getPermissionAPI().save( originalPermissions, restoredContentGeneric, user,
+						false );
+			} catch (DotDataException | DotSecurityException e) {
+				Logger.error(this, "Error restoring original state");
+			}
+
+		});
 	}
 
 	/**
