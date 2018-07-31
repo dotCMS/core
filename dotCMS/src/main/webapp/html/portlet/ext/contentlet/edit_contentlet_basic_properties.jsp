@@ -58,7 +58,11 @@
 
 	Map<String, String[]> params = new HashMap<String, String[]>();
 	params.put("struts_action", new String[] { "/ext/contentlet/edit_contentlet" });
-	params.put("cmd", new String[] { "edit" });
+	params.put("cmd", new String[] { contentlet != null && InodeUtils.isSet(contentlet.getInode()) ? "edit" : "new" });
+
+	if (InodeUtils.isSet(request.getParameter("selectedStructure"))) {
+		params.put("selectedStructure", new String[] {request.getParameter("selectedStructure")});
+	}
 	
 	if (request.getParameter("referer") != null) {
 		params.put("referer", new String[] { request.getParameter("referer") });
