@@ -192,7 +192,7 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
             const field = fields[i];
 
             if (this.formData.id === field.id) {
-                result = Object.assign(field, fieldToSave);
+                result = Object.assign({}, field, fieldToSave);
                 break;
             }
         }

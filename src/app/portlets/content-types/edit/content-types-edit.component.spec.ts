@@ -415,6 +415,33 @@ describe('ContentTypesEditComponent edit mode', () => {
         expect(comp.fields).toEqual(fieldsReturnByServer);
     });
 
+    it('should handle 403 when user doesn\'t have permission to save feld', () => {
+        const newFieldsAdded: ContentTypeField[] = [
+            {
+                name: 'field 1',
+                id: '1',
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
+                sortOrder: 1
+            },
+            {
+                name: 'field 2',
+                id: '2',
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
+                sortOrder: 2
+            }
+        ];
+        const fieldService = fixture.debugElement.injector.get(FieldService);
+        spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
+        spyOn(fieldService, 'saveFields').and.returnValue(Observable.throw(mockResponseView(403)));
+
+        const contentTypeFieldsDropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
+
+        // when: the saveFields event is tiggered in content-type-fields-drop-zone
+        contentTypeFieldsDropZone.componentInstance.saveFields.emit(newFieldsAdded);
+
+        expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
+    });
+
     it('should remove fields on dropzone event', () => {
         const fieldsReturnByServer: ContentTypeField[] = currentFieldsInServer.slice(-1);
         const fieldService = fixture.debugElement.injector.get(FieldService);

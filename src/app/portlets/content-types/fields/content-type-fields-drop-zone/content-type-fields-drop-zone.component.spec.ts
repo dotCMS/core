@@ -477,7 +477,9 @@ describe('Load fields and drag and drop', () => {
         fixture.detectChanges();
         comp.editField(fakeFields[8]);
 
-        comp.saveFields.subscribe((fields) => (saveFields = fields));
+        comp.saveFields.subscribe((fields) => {
+            saveFields = fields;
+        });
 
         const fieldUpdated = {
             fixed: true,
@@ -486,9 +488,11 @@ describe('Load fields and drag and drop', () => {
 
         comp.saveFieldsHandler(fieldUpdated);
 
-        expect([fakeFields[8]]).toEqual(saveFields);
-        expect(fakeFields[8].fixed).toEqual(true);
-        expect(fakeFields[8].indexed).toEqual(true);
+        const {fixed, indexed, ...original} = saveFields[0];
+
+        expect(original).toEqual(fakeFields[8]);
+        expect(saveFields[0].fixed).toEqual(true);
+        expect(saveFields[0].indexed).toEqual(true);
     });
 
     it('should handler removeField event', () => {
