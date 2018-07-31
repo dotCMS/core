@@ -74,7 +74,9 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
 
         const container = de.query(By.css('.field__attribute'));
         expect(container).not.toBeNull();
-        expect(container.nativeElement.textContent).toEqual('Required · Indexed · Show on list');
+        expect(container.nativeElement.textContent).toEqual(
+            'Required\u00A0\u00A0•\u00A0\u00A0Indexed\u00A0\u00A0•\u00A0\u00A0Show on list'
+        );
     });
 
     it(

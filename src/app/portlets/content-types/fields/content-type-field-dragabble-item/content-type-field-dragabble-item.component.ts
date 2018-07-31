@@ -49,7 +49,7 @@ export class ContentTypesFieldDragabbleItemComponent extends BaseComponent imple
                 ]
                     .filter((field) => field.value)
                     .map((field) => field.name)
-                    .join(' &centerdot; ');
+                    .join('&nbsp;&nbsp;&#8226;&nbsp;&nbsp;');
             });
     }
 
