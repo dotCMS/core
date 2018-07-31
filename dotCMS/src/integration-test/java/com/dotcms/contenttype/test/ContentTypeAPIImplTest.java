@@ -1,10 +1,13 @@
 package com.dotcms.contenttype.test;
 
+import static junit.framework.Assert.assertTrue;
 import static junit.framework.TestCase.assertEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertFalse;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
+import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.DateTimeField;
@@ -34,12 +37,18 @@ import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.util.*;
 
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
+@RunWith(DataProviderRunner.class)
 public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
 	@Test
@@ -390,23 +399,29 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		}
 	}
 
+	private static class TestCaseUpdateContentTypePermissions {
+		int permissions;
+		boolean shouldSave;
 
-	@Test(expected = DotSecurityException.class)
-	public void testUpdateContentType_WithLimitedUserNoEditPermissionsPermission_ShouldThrowException()
-			throws DotDataException, DotSecurityException {
+		TestCaseUpdateContentTypePermissions(final int permissions, final boolean shouldSave) {
+			this.permissions = permissions;
+			this.shouldSave = shouldSave;
+		}
+	}
 
-		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
-		ContentType contentGenericType = contentTypeAPI.find("webPageContent");
-
-		User limitedUserNoEditPermsOnCT = APILocator.getUserAPI().loadUserById("dotcms.org.2793",
-				APILocator.systemUser(), false);
-
-		contentTypeAPI = APILocator.getContentTypeAPI(limitedUserNoEditPermsOnCT);
-		contentTypeAPI.save(contentGenericType, Collections.emptyList());
+	@DataProvider
+	public static Object[] testCasesUpdateTypePermissions() {
+		return new Object[] {
+				new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_EDIT_PERMISSIONS, true),
+				new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_PUBLISH, false),
+				new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_EDIT, false),
+				new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_READ, false)
+		};
 	}
 
 	@Test
-	public void testUpdateContentType_WithUserWithEditPermissionsPermission_ShouldUpdate()
+	@UseDataProvider("testCasesUpdateTypePermissions")
+	public void testSaveLimitedUserPermissions(final TestCaseUpdateContentTypePermissions testCase)
 			throws DotDataException, DotSecurityException {
 
 		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
@@ -418,9 +433,12 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		final User limitedUserEditPermsPermOnCT = APILocator.getUserAPI().loadUserById("dotcms.org.2795",
 				APILocator.systemUser(), false);
 
+		final List<Integer> existingPermissions = APILocator.getPermissionAPI()
+				.getPermissionIdsFromUser(contentGenericType, limitedUserEditPermsPermOnCT);
+
 		final Permission editPermissionsPermission = new Permission( contentGenericType.getPermissionId(),
 				APILocator.getRoleAPI().getUserRole(limitedUserEditPermsPermOnCT).getId(),
-				PermissionAPI.PERMISSION_EDIT_PERMISSIONS, true );
+				testCase.permissions, true );
 		APILocator.getPermissionAPI().save( editPermissionsPermission, contentGenericType, user,
 				false );
 
@@ -434,16 +452,77 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 				FactoryLocator.getFieldFactory(), permAPI, APILocator.getContentTypeFieldAPI());
 
 		try {
-			contentGenericType = contentTypeAPI.save(contentGenericType, Collections.emptyList());
+			List<Field> fields = APILocator.getContentTypeFieldAPI().byContentTypeId(contentGenericType.id());
+			contentGenericType = contentTypeAPI.save(contentGenericType, fields);
 			assertEquals(updatedContentTypeName, contentGenericType.name());
-		} finally {
+		} catch(DotSecurityException e) {
+			assertFalse(testCase.shouldSave);
+			return;
+		}finally {
 			// restore original name
 			contentGenericType = contentTypeAPI.find("webPageContent");
 			contentGenericType = ContentTypeBuilder.builder(contentGenericType).name(originalName).build();
 			ContentTypeAPI contentTypeAPI1 = APILocator.getContentTypeAPI(user);
 			contentTypeAPI1.save(contentGenericType);
 
+			restorePermissionsForUser(contentTypeAPI, limitedUserEditPermsPermOnCT, existingPermissions);
+
 		}
+
+		assertTrue(testCase.shouldSave);
+	}
+
+	@Test
+	@UseDataProvider("testCasesUpdateTypePermissions")
+	public void testFieldAPISaveLimitedUserPermissions(final TestCaseUpdateContentTypePermissions testCase)
+			throws DotDataException, DotSecurityException {
+
+		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+		final ContentType contentGenericType = contentTypeAPI.find("webPageContent");
+
+		final User limitedUserEditPermsPermOnCT = APILocator.getUserAPI().loadUserById("dotcms.org.2795",
+				APILocator.systemUser(), false);
+
+		final List<Integer> existingPermissions = APILocator.getPermissionAPI()
+				.getPermissionIdsFromUser(contentGenericType, limitedUserEditPermsPermOnCT);
+
+		final Permission editPermissionsPermission = new Permission( contentGenericType.getPermissionId(),
+				APILocator.getRoleAPI().getUserRole(limitedUserEditPermsPermOnCT).getId(),
+				testCase.permissions, true );
+		APILocator.getPermissionAPI().save( editPermissionsPermission, contentGenericType, user,
+				false );
+
+		final FieldAPI fieldAPI = APILocator.getContentTypeFieldAPI();
+		final Field titleField = fieldAPI.byContentTypeAndVar(contentGenericType, "title");
+
+
+		try {
+			fieldAPI.save(titleField,limitedUserEditPermsPermOnCT);
+		} catch(DotSecurityException e) {
+			assertFalse(testCase.shouldSave);
+			return;
+		} finally {
+			restorePermissionsForUser(contentTypeAPI, limitedUserEditPermsPermOnCT, existingPermissions);
+		}
+		assertTrue(testCase.shouldSave);
+	}
+
+	private void restorePermissionsForUser(ContentTypeAPI contentTypeAPI, User limitedUserEditPermsPermOnCT, List<Integer> existingPermissions) throws DotSecurityException, DotDataException {
+		final ContentType restoredContentGeneric = contentTypeAPI.find("webPageContent");
+
+		// restore original permissions
+		existingPermissions.forEach((permission)-> {
+			try {
+				final Permission originalPermissions = new Permission( restoredContentGeneric.getPermissionId(),
+						APILocator.getRoleAPI().getUserRole(limitedUserEditPermsPermOnCT).getId(),
+						permission, true );
+				APILocator.getPermissionAPI().save( originalPermissions, restoredContentGeneric, user,
+						false );
+			} catch (DotDataException | DotSecurityException e) {
+				Logger.error(this, "Error restoring original state");
+			}
+
+		});
 	}
 
 	/**
