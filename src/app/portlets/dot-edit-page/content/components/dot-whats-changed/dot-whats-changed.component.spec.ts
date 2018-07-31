@@ -41,6 +41,7 @@ describe('DotWhatsChangedComponent', () => {
         de = fixture.debugElement;
 
         component.pageId = '123';
+        component.languageId = '321';
         dotIframe = de.query(By.css('dot-iframe')).componentInstance;
         fixture.detectChanges();
     });
@@ -50,6 +51,8 @@ describe('DotWhatsChangedComponent', () => {
     });
 
     it('should set url based on the page id', () => {
-        expect(dotIframe.src).toEqual('/html/portlet/ext/htmlpages/view_live_working_diff.jsp?id=123&pageLang=1');
+        expect(dotIframe.src).toEqual(
+            `/html/portlet/ext/htmlpages/view_live_working_diff.jsp?id=${component.pageId}&pageLang=${component.languageId}`
+        );
     });
 });

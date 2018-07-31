@@ -70,6 +70,7 @@ class MockDotEditContentViewAsToolbarComponent {
 })
 class MockDotWhatsChangedComponent {
     @Input() pageId: string;
+    @Input() languageId: string;
 }
 
 @Component({
