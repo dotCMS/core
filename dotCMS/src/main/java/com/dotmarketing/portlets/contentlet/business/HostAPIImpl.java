@@ -875,7 +875,7 @@ public class HostAPIImpl implements HostAPI {
             Role cmsAdminRole = APILocator.getRoleAPI().loadCMSAdminRole();
 
             APILocator.getNotificationAPI().generateNotification(
-                    new I18NMessage("NO DEFUALT HOST"), // title = Reindex Notification
+                    new I18NMessage("NO DEFAULT HOST"), // title = Reindex Notification
                     new I18NMessage("THERE IS NO DEFAULT HOST " ),
                     null, // no action
 
@@ -886,7 +886,7 @@ public class HostAPIImpl implements HostAPI {
                     APILocator.systemUser().getUserId(),
                     APILocator.systemUser().getLocale());
 
-            throw new DotStateException("NO DEFUALT HOST, creating a fake one");
+            throw new DotStateException("NO DEFAULT HOST, creating a fake one");
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
         }
