@@ -21,7 +21,7 @@
 <script type="text/javascript">
 	require(["dojo/parser", "dijit/form/SimpleTextarea", "dotcms/dojo/data/RoleReadStore",  "dijit/form/FilteringSelect"]);
 
-	var myRoleReadStore = new dotcms.dojo.data.RoleReadStore({nodeId: "whoCanUseSelect", includeFake:false});
+	var myRoleReadStore = new dotcms.dojo.data.RoleReadStore({nodeId: "whoCanUseSelect", includeFake:true});
 
 	dojo.ready( function(){	        
 		if(dojo.isIE){
@@ -88,6 +88,7 @@
             maxHeight:400,
 			width:200,
             pageSize:30,
+            autoComplete:false,
             searchDelay:300,
             required:false,
             onClick:function(){
@@ -99,7 +100,7 @@
         "actionWhoCanUseSelect");
 
 		permissionSelect.watch('displayedValue', function(property, oldValue, newValue) {
-			if (newValue) {
+			if (newValue && dijit.byId("whoCanUseSelect").isValid()) {
 				addSelectedToWhoCanUse();
 			}
 		});
