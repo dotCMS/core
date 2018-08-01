@@ -212,9 +212,7 @@ public class VanityUrlServices {
                 ifOrElse(this.contentletAPI.isInodeIndexed
                                 (contentlet.getInode(), contentlet.isLive(), contentlet.isWorking()),
                         () -> this.invalidateVanityUrl(contentlet),
-                        () -> Logger.error(this,
-                                "Unable to invalidate VanityURL in cache:" +
-                                        contentlet));
+                        () -> this.invalidateVanityCache(contentlet));
             }
         } catch (DotStateException | NotFoundInDbException e) {
 
@@ -230,6 +228,18 @@ public class VanityUrlServices {
             Logger.error(this,
                     String.format("Unable to invalidate VanityURL in cache [%s]",
                             contentlet.getIdentifier()), e);
+        }
+    }
+
+    private void invalidateVanityCache (final Contentlet vanityUrl) {
+
+        try {
+            // here we do not have more info on the index nor db, just the contentlet itself, so we try to delete just it.
+            this.vanityURLCache.remove(vanityUrl);
+        } catch (DotRuntimeException e) {
+            Logger.error(this,
+                    "Unable to invalidate VanityURL in cache:" +
+                            vanityUrl);
         }
     }
 

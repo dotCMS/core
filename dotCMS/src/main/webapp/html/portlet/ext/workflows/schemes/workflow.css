@@ -171,7 +171,7 @@ ol.wfStepsList li{padding:8px 16px;margin:0 10px; list-style:decimal;  list-styl
 .portlet-toolbar {
 	background-color: #fff; 
 	margin: 0 0 0 0; 
-	padding: 32px 0 16px 24px;
+	padding: 32px 16px 16px 24px;
 	border-bottom: #e3e3e3;
 	box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 3px 1px -2px rgba(0, 0, 0, 0.12), 0 1px 5px 0 rgba(0, 0, 0, 0.2);
 	position: absolute;
@@ -181,14 +181,11 @@ ol.wfStepsList li{padding:8px 16px;margin:0 10px; list-style:decimal;  list-styl
 	height: 92px;
 }
 .board-wrapper {
-	position: absolute;
-	left: 0px;
-	right: 0px;
-	top: 92px;
 	bottom: 0;
-	padding-top: 30px;
+	padding-top: 120px;
 	background-color: #F4F3F4;
 }
+
 .board-main-content{
 	height: 100%;
 	display: -webkit-box;

@@ -294,7 +294,11 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	@CloseDBIfOpened
 	@Override
 	public boolean doesUserHavePermission(final Permissionable permissionable, int permissionType, final User user, final boolean respectFrontendRoles) throws DotDataException {
-
+	    
+        if(user!=null && user.getUserId().equals(APILocator.getUserAPI().getSystemUser().getUserId())){
+            return true;
+        }
+        
 		// if we have bad data
 		if ((permissionable == null) || (!InodeUtils.isSet(permissionable.getPermissionId()))) {
 			if(permissionable != null){
@@ -308,9 +312,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			return false;
 		}
 
-		if(user!=null && user.getUserId().equals(APILocator.getUserAPI().getSystemUser().getUserId())){
-			return true;
-		}
+
 		
 		// Folders do not have PUBLISH, use EDIT instead
 		if(PermissionableType.FOLDERS.getCanonicalName().equals(permissionable.getPermissionType()) && permissionType == PERMISSION_PUBLISH){

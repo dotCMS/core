@@ -59,7 +59,8 @@ public class Task04390ShowEditingListingWorkflowActionTable implements StartupTa
 
                 dc.setSQL(updateShowOnActions())
                         .addParam(this.isLocked(row.get("requires_checkout"))?
-                                row.get("show_on") +","+ WorkflowState.EDITING.name(): row.get("show_on") +","+ WorkflowState.LISTING.name())
+                                row.get("show_on") +","+ WorkflowState.EDITING.name():
+                                row.get("show_on") +","+ WorkflowState.LISTING.name() +","+ WorkflowState.EDITING.name())
                         .addParam(row.get("id").toString())
                         .loadResult();
             } catch (DotDataException e) {
