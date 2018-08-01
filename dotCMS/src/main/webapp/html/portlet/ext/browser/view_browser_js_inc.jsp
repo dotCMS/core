@@ -966,29 +966,29 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
     }
 
     function getStatusHTML (asset) {
-        var html =  '<table class="browserTableStatus"><tr>';
+        var table = document.createElement( 'table' );
+        table.setAttribute('class','browserTableStatus');
+        table.innerHTML = asset.statusIcons;
+        var spans = Array.prototype.slice.call(table.children);
 
-        if(!asset.live && asset.working && !asset.deleted) {
-            html += '       <td><span id="' + asset.inode + '-StatusArchIMG" class="workingIcon"></span></td>\n';
-        } else {
-            html += '       <td><span id="' + asset.inode + '-StatusArchIMG" class="greyDotIcon" style="opacity:.4"></span></td>\n';
+        while (table.firstChild) {
+          table.removeChild(table.firstChild);
         }
 
-        if (asset.deleted) {
-            html += '       <td><span id="' + asset.inode + '-StatusArchIMG" class="archivedIcon"></span></td>\n';
-        } else if (asset.hasLiveVersion) {
-            html += '       <td><span id="' + asset.inode + '-StatusArchIMG" class="liveIcon"></span></td>\n';
-        } else {
-            html += '       <td><span id="' + asset.inode + '-StatusArchIMG" class="greyDotIcon" style="opacity:.4"></span></td>\n';
+        var tds = new Array();
+        for (var i = 0; i < spans.length; i++) {
+           var td = document.createElement( 'td' );
+           td.appendChild(spans[i]);
+           tds.push(td);
         }
 
-        if (asset.isLocked)
-            html += '       <td><span id="' + asset.inode + '-StatusLockedIMG" class="lockIcon"><span></td>\n';
-        else
-            html += '       <td><span id="' + asset.inode + '-StatusLockedIMG" class="shimIcon"></span></td>\n';
+        var tr = document.createElement( 'tr' );
+        for (var i = 0; i < tds.length; i++) {
+           tr.appendChild(tds[i]);
+        }
 
-        html += "</tr></table>";
-        return html;
+        table.appendChild(tr);
+        return table.outerHTML;
     }
 
     function getPrettyDate (date) {

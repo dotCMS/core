@@ -383,7 +383,10 @@
 					</dl>
 					<dl class="vertical">
 						<dt>
-							<select name="wfActionlets" id="wfActionlets" dojoType="dijit.form.FilteringSelect" onChange="actionClassAdmin.addSelectedToActionClasses()">
+							<select name="wfActionlets" id="wfActionlets" 
+							dojoType="dijit.form.FilteringSelect" 
+                            autocomplete="false"
+                            onChange="actionClassAdmin.addSelectedToActionClasses()">
 								<option value=""></option>
 								<%for(WorkFlowActionlet a : wapi.findActionlets()){%>
 								<option value="<%=a.getClass().getCanonicalName()%>"><%=a.getName() %></option>

@@ -1,9 +1,15 @@
 package com.dotcms.rendering.velocity.viewtools;
 
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.Versionable;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.comparators.WebAssetMapComparator;
@@ -26,14 +32,17 @@ import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
-
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 
 public class BrowserAPI {
 
@@ -339,7 +348,7 @@ public class BrowserAPI {
 					}
 
                     pageMap.put("hasLiveVersion", APILocator.getVersionableAPI().hasLiveVersion(page));
-					
+					pageMap.put("statusIcons", UtilHTML.getStatusIcons(page));
 					returnList.add(pageMap);
 				}
 			}
@@ -460,7 +469,7 @@ public class BrowserAPI {
 			fileMap.put("languageFlag", LanguageUtil.getLiteralLocale(lang.getLanguageCode(), lang.getCountryCode()));
 
             fileMap.put("hasLiveVersion", APILocator.getVersionableAPI().hasLiveVersion(file));
-
+			fileMap.put("statusIcons", UtilHTML.getStatusIcons(file));
 			returnList.add(fileMap);
 		}
 
@@ -501,7 +510,7 @@ public class BrowserAPI {
 					linkMap.put("description", link.getFriendlyName());
 					linkMap.put("extension", "link");
                     linkMap.put("hasLiveVersion", APILocator.getVersionableAPI().hasLiveVersion(link));
-
+					linkMap.put("statusIcons", UtilHTML.getStatusIcons(link));
                     returnList.add(linkMap);
 				}
 
