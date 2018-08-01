@@ -336,6 +336,17 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                     this.dotRouterService.goToEditPage(pageRendered.page.pageURI);
                 }
             });
+
+
+            Observable.fromEvent(window.document, 'ng-event')
+                .pipe(
+                    pluck('detail'),
+                    filter((eventDetail: any) => eventDetail.name === 'in-iframe'),
+                    takeUntil(this.destroy$)
+                )
+                .subscribe(() => {
+                    this.reload();
+                });
     }
 
     private removeContentlet($event: any): void {
