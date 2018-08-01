@@ -8,7 +8,7 @@
 	@import "/html/js/dragula-3.7.2/dragula.min.css"; 
 </style>	
 
-<div class="portlet-wrapper" style="background: #F4F3F4;" <%if(LicenseUtil.getLevel() < LicenseLevel.STANDARD.level){ %>style="background:#F4F3F4 url(/html/images/skin/workflow-background.png) repeat-x 0 0 " <%} %>>
+<div class="portlet-wrapper" <%if(LicenseUtil.getLevel() < LicenseLevel.STANDARD.level){ %>style="background:#F4F3F4 url(/html/images/skin/workflow-background.png) repeat-x 0 0 " <%} %>>
 	<div class="subNavCrumbTrail">
 		<ul id="subNavCrumbUl">
 			<li>

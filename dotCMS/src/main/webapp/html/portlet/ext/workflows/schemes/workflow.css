@@ -180,6 +180,17 @@ ol.wfStepsList li{padding:8px 16px;margin:0 10px; list-style:decimal;  list-styl
 	width: 100%;
 	height: 92px;
 }
+
+#hangWorkflowMainHere,
+#workflowSchemeMain,
+.board-wrapper {
+    height: 100%;
+}
+
+#workflowSchemeMain {
+    overflow: hidden;
+}
+
 .board-wrapper {
 	bottom: 0;
 	padding-top: 120px;
@@ -197,7 +208,8 @@ ol.wfStepsList li{padding:8px 16px;margin:0 10px; list-style:decimal;  list-styl
 	flex-direction: column;
 	margin-right: 0;
 	-webkit-transition: margin .1s ease-in;
-	transition: margin .1s ease-in;
+    transition: margin .1s ease-in;
+    overflow: auto;
 }
 .board-canvas {
 	position: relative;
