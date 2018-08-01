@@ -68,7 +68,13 @@ describe('PushPublishContentTypesDialogComponent', () => {
         el = de.nativeElement;
     });
 
+    it('should have a dialog', () => {
+        const dialog: DebugElement = fixture.debugElement.query(By.css('p-dialog'));
+        expect(dialog).not.toBeNull();
+    });
+
     it('should have a form', () => {
+        fixture.detectChanges();
         const form: DebugElement = fixture.debugElement.query(By.css('form'));
         expect(form).not.toBeNull();
         expect(comp.form).toEqual(form.componentInstance.form);

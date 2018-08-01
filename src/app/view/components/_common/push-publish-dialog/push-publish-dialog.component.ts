@@ -28,20 +28,6 @@ export class PushPublishContentTypesDialogComponent implements OnInit {
     ) {}
 
     ngOnInit() {
-        this.pushActions = [
-            {
-                label: this.dotMessageService.get('contenttypes.content.push_publish.action.push'),
-                value: 'publish'
-            },
-            {
-                label: this.dotMessageService.get('contenttypes.content.push_publish.action.remove'),
-                value: 'expire'
-            },
-            {
-                label: this.dotMessageService.get('contenttypes.content.push_publish.action.pushremove'),
-                value: 'publishexpire'
-            }
-        ];
 
         this.dotMessageService
             .getMessages([
@@ -60,9 +46,24 @@ export class PushPublishContentTypesDialogComponent implements OnInit {
                 'contenttypes.content.push_publish.publish_date_errormsg',
                 'contenttypes.content.push_publish.expire_date_errormsg'
             ])
-            .subscribe();
+            .subscribe(() => {
+                this.pushActions = [
+                    {
+                        label: this.dotMessageService.get('contenttypes.content.push_publish.action.push'),
+                        value: 'publish'
+                    },
+                    {
+                        label: this.dotMessageService.get('contenttypes.content.push_publish.action.remove'),
+                        value: 'expire'
+                    },
+                    {
+                        label: this.dotMessageService.get('contenttypes.content.push_publish.action.pushremove'),
+                        value: 'publishexpire'
+                    }
+                ];
 
-        this.initForm();
+                this.initForm();
+            });
     }
 
     /**

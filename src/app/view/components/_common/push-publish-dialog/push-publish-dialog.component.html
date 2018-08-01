@@ -12,7 +12,7 @@
         {{ dotMessageService.get('contenttypes.content.push_publish') }}
     </p-header>
 
-    <form [formGroup]="form" (ngSubmit)="submitPushAction($event)" (keyup.enter)="submitPushAction($event)" novalidate #formEl="ngForm">
+    <form *ngIf="pushActions" [formGroup]="form" (ngSubmit)="submitPushAction($event)" (keyup.enter)="submitPushAction($event)" novalidate #formEl="ngForm">
         <div class="form__group">
             <label class="form__label">{{ dotMessageService.get('contenttypes.content.push_publish.I_want_To') }}: </label>
             <p-dropdown [style]="{'width':'100%'}" [options]="pushActions" formControlName="pushActionSelected" autofocus="true"></p-dropdown>
@@ -46,6 +46,6 @@
     </form>
     <p-footer>
         <button pButton type="button" (click)="close($event)" label="{{ dotMessageService.get('contenttypes.content.push_publish.form.cancel') }}" class="push-publish-dialog__form-cancel"></button>
-        <button pButton type="submit" (click)="submitForm()" label="{{ dotMessageService.get('contenttypes.content.push_publish.form.push') }}" [disabled]="!form.valid"></button>
+        <button pButton type="submit" (click)="submitForm()" label="{{ dotMessageService.get('contenttypes.content.push_publish.form.push') }}" [disabled]="form && !form.valid"></button>
     </p-footer>
 </p-dialog>
