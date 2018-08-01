@@ -241,10 +241,6 @@ public class HostAjax {
 		Host host = hostAPI.find(id, user, respectFrontendRoles);
 		if(host.isDefault())
 			throw new DotStateException("the default host can't be archived");
-		
-		if(host.isLocked()) {
-		  APILocator.getContentletAPI().unlock(host, user, respectFrontendRoles);
-		}
 		hostAPI.archive(host, user, respectFrontendRoles);
 	}
 

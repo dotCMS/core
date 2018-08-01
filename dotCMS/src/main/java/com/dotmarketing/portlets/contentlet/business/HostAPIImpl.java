@@ -100,15 +100,9 @@ public class HostAPIImpl implements HostAPI {
             catch(Exception e){
                 Logger.warn(this, "Content Index is fouled up, need to try db: " + e.getMessage());
             }
-            
-            
-            
-            
-            
-            
-            if(list == null || list.size() ==0) {
+            if(list == null || list.size() ==0)
                 return createDefaultHost();
-            }
+
             else if (list.size() >1){
                 Logger.fatal(this, "More of one host is marked as default!!");
             }
@@ -848,22 +842,21 @@ public class HostAPIImpl implements HostAPI {
                   " where " + isDefault.dbColumn() +" = ? and structure_inode =?");
         dc.addParam(true);
         dc.addParam(hostType().inode());
-        String inode = dc.getString("working_inode");
-        
+
         Host defaultHost = new Host();
         User systemUser = APILocator.systemUser();
 
+        String inode = dc.getString("working_inode");
         if(!UtilMethods.isSet(inode)){
 
             defaultHost.setDefault(true);
-            defaultHost.setHostname("noDefault-"  + System.currentTimeMillis());
+            defaultHost.setHostname("localhost");
 
             for(Field f : fields){
                 if(f.required() && UtilMethods.isSet(f.defaultValue())){
                     defaultHost.setProperty(f.variable(), f.defaultValue());
                 }
             }
-            defaultHost.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
             defaultHost = save(defaultHost, systemUser, false);
         } else {
              defaultHost = new Host(APILocator.getContentletAPI().find(inode, systemUser, false));
@@ -871,35 +864,6 @@ public class HostAPIImpl implements HostAPI {
 
         hostCache.remove(defaultHost);
 
-        
-        try {
-          
-          Role cmsAdminRole = APILocator.getRoleAPI().loadCMSAdminRole();
-    
-          APILocator.getNotificationAPI().generateNotification(
-              new I18NMessage("NO DEFUALT HOST"), // title = Reindex Notification
-              new I18NMessage("THERE IS NO DEFAULT HOST " ), 
-              null, // no action
-                                                                                                                      
-              NotificationLevel.INFO, 
-              NotificationType.GENERIC, 
-              Visibility.ROLE, 
-              cmsAdminRole.getId(), 
-              systemUser.getUserId(),
-              systemUser.getLocale());
-    
-          throw new DotStateException("NO DEFUALT HOST, creating a fake one");
-        } catch (Exception e) {
-    
-          Logger.error(this, e.getMessage(), e);
-        }
-    
-        
-        
-        
-        
-        
-        
         return defaultHost;
 
     }
@@ -971,11 +935,9 @@ public class HostAPIImpl implements HostAPI {
         hostCache.clearAliasCache();
     }
 
-    @WrapInTransaction
     @Override
     public void makeDefault(Host host, User user, boolean respectFrontendRoles) throws DotContentletStateException, DotDataException, DotSecurityException {
         host.setDefault(true);
-        host.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
         save(host, user, respectFrontendRoles);
     }
 
