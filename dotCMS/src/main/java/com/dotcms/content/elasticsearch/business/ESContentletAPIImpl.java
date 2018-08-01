@@ -3591,6 +3591,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                     fieldVar.getFieldContentlet());
                             for (Contentlet c: findAllVersions(APILocator.getIdentifierAPI().find(identifier), user, false)){
                                 CacheLocator.getContentletCache().remove(c);
+                                CacheLocator.getHTMLPageCache().remove(c.getInode());
                                 APILocator.getContentletIndexAPI().addContentToIndex(c,false);
                             }
                         } catch (DotDataException | DotSecurityException e) {
