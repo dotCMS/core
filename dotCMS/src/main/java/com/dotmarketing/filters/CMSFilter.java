@@ -9,6 +9,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.rules.business.RulesEngine;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.Config;
@@ -30,7 +31,9 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.liferay.util.HttpHeaders;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.http.MediaType;
 
 public class CMSFilter implements Filter {
 
@@ -67,6 +70,11 @@ public class CMSFilter implements Filter {
         HttpServletResponse response = (HttpServletResponse) res;
 
         IAm iAm = IAm.NOTHING_IN_THE_CMS;
+
+        if (isFormSubmitFromEdit(request)){
+            sendReloadEvent(request, response);
+            return;
+        }
 
         // Set the request in the thread local.
         this.requestThreadLocal.setRequest(request);
@@ -198,6 +206,21 @@ public class CMSFilter implements Filter {
 
         chain.doFilter(req, res);
 
+    }
+
+    private void sendReloadEvent(final HttpServletRequest request, final HttpServletResponse response) {
+        try {
+            request.getRequestDispatcher("/html/trigger_reload_edit_page_event.jsp").forward(request, response);
+        } catch (ServletException | IOException e) {
+            Logger.error(CMSFilter.class, e.getMessage(), e);
+            throw new DotRuntimeException(e);
+        }
+    }
+
+    private boolean isFormSubmitFromEdit(final HttpServletRequest request) {
+        return  APILocator.getLoginServiceAPI().isLoggedIn(request) &&
+                MediaType.APPLICATION_FORM_URLENCODED_VALUE.equals(request.getHeader(HttpHeaders.CONTENT_TYPE)) &&
+                request.getRequestURI().endsWith("dotAdmin/");
     }
 
     @Override
