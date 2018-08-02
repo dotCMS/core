@@ -1467,6 +1467,22 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
     }
 
+    @Override
+    protected void updateContentletTemplate(final String identifier, final String newTemplate, final String fieldContentlet)
+            throws DotDataException {
+        final DotConnect dc = new DotConnect();
+        try {
+            dc.setSQL("UPDATE contentlet SET " + fieldContentlet + "= ? WHERE identifier = ?");
+            dc.addParam(newTemplate);
+            dc.addParam(identifier);
+            dc.loadResult();
+
+        } catch (DotDataException e) {
+            Logger.error(this.getClass(),e.getMessage(),e);
+            throw new DotDataException(e.getMessage(), e);
+        }
+    }
+
     /**
      * Performs a re-indexation of contents whose user references have been updated with a new
      * user ID. This change requires contents to be re-indexed for them to have the correct
