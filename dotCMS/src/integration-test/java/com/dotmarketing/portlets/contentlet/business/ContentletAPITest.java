@@ -1371,6 +1371,23 @@ public class ContentletAPITest extends ContentletBaseTest {
         APILocator.getStructureAPI().delete(testStructure, user);
     }
 
+    @Test
+    public void delete_GivenUnarchivedContentAndDontValidateMeInTrue_ShouldDeleteSuccessfully () throws Exception {
+        Structure testStructure = null;
+        try {
+            testStructure = createStructure("JUnit Test Structure_" + String.valueOf(new Date().getTime()), "junit_test_structure_" + String.valueOf(new Date().getTime()));
+            final Contentlet newContentlet = createContentlet(testStructure, null, false);
+            newContentlet.setStringProperty(Contentlet.DONT_VALIDATE_ME, "anarchy");
+            contentletAPI.delete(newContentlet, user, false);
+            final Contentlet foundContentlet = contentletAPI.find(newContentlet.getInode(), user, false);
+            assertTrue( !UtilMethods.isSet(foundContentlet) || !UtilMethods.isSet(foundContentlet.getInode()) );
+
+            AssetUtil.assertDeleted(newContentlet.getInode(), newContentlet.getIdentifier(), "contentlet");
+        } finally {
+            APILocator.getStructureAPI().delete(testStructure, user);
+        }
+    }
+
     /**
      * Testing {@link ContentletAPI#delete(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean, boolean)}
      *
