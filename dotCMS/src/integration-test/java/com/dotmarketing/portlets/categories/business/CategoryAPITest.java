@@ -27,7 +27,6 @@ import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
@@ -399,7 +398,6 @@ public class CategoryAPITest extends IntegrationTestBase {
         //The find should add the category to the cache
         foundCategory = categoryAPI.find( childCategory1.getCategoryId(), user, false );
         assertNotNull( foundCategory );
-        DateUtil.sleep(1000L);
         //Now it should be in cache
         cachedCategory = categoryCache.get( childCategory1.getCategoryId() );
         assertNotNull( cachedCategory );
