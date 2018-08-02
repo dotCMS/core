@@ -1688,7 +1688,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         logContentletActivity(contentlets, "Deleting Content", user);
         for (Contentlet contentlet : contentlets){
-            if(!contentlet.isArchived() && !contentlet.getBoolProperty(Contentlet.DONT_VALIDATE_ME)){
+            if(!contentlet.isArchived() && !contentlet.validateMe()){
                 throw new DotContentletStateException(
                     getLocalizedMessageOrDefault(user, "Failed-to-delete-unarchived-content", FAILED_TO_DELETE_UNARCHIVED_CONTENT, getClass())
                 );
