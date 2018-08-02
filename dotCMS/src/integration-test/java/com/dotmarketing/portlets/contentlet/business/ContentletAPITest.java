@@ -1376,11 +1376,11 @@ public class ContentletAPITest extends ContentletBaseTest {
         Structure testStructure = null;
         try {
             testStructure = createStructure("JUnit Test Structure_" + String.valueOf(new Date().getTime()), "junit_test_structure_" + String.valueOf(new Date().getTime()));
-            Contentlet newContentlet = createContentlet(testStructure, null, false);
+            final Contentlet newContentlet = createContentlet(testStructure, null, false);
             newContentlet.setStringProperty(Contentlet.DONT_VALIDATE_ME, "anarchy");
             contentletAPI.delete(newContentlet, user, false);
-            Contentlet foundContentlet = contentletAPI.find(newContentlet.getInode(), user, false);
-            assertTrue( foundContentlet == null || foundContentlet.getInode() == null || foundContentlet.getInode().isEmpty() );
+            final Contentlet foundContentlet = contentletAPI.find(newContentlet.getInode(), user, false);
+            assertTrue( !UtilMethods.isSet(foundContentlet) || !UtilMethods.isSet(foundContentlet.getInode()) );
 
             AssetUtil.assertDeleted(newContentlet.getInode(), newContentlet.getIdentifier(), "contentlet");
         } finally {
