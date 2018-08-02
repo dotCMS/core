@@ -18,6 +18,7 @@ import com.dotmarketing.beans.*;
 import com.dotmarketing.business.*;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
@@ -31,6 +32,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -1367,6 +1369,23 @@ public class ContentletAPITest extends ContentletBaseTest {
         AssetUtil.assertDeleted(newContentlet.getInode(), newContentlet.getIdentifier(), "contentlet");
 
         APILocator.getStructureAPI().delete(testStructure, user);
+    }
+
+    @Test
+    public void delete_GivenUnarchivedContentAndDontValidateMeInTrue_ShouldDeleteSuccessfully () throws Exception {
+        Structure testStructure = null;
+        try {
+            testStructure = createStructure("JUnit Test Structure_" + String.valueOf(new Date().getTime()), "junit_test_structure_" + String.valueOf(new Date().getTime()));
+            final Contentlet newContentlet = createContentlet(testStructure, null, false);
+            newContentlet.setStringProperty(Contentlet.DONT_VALIDATE_ME, "anarchy");
+            contentletAPI.delete(newContentlet, user, false);
+            final Contentlet foundContentlet = contentletAPI.find(newContentlet.getInode(), user, false);
+            assertTrue( !UtilMethods.isSet(foundContentlet) || !UtilMethods.isSet(foundContentlet.getInode()) );
+
+            AssetUtil.assertDeleted(newContentlet.getInode(), newContentlet.getIdentifier(), "contentlet");
+        } finally {
+            APILocator.getStructureAPI().delete(testStructure, user);
+        }
     }
 
     /**
@@ -4260,6 +4279,84 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertFalse(result.stream().anyMatch(
                 e -> !(e.getStringProperty("fileName").toLowerCase().endsWith("jpg") || e
                         .getStringProperty("fileName").toLowerCase().endsWith("jpeg"))));
+    }
+
+    @Test
+    public void testCreatePageAssetInDifferentLanguagesMustShareTheSameTemplate()
+            throws Exception {
+
+        Contentlet result   = null;
+        Container container = null;
+        Folder folder       = null;
+        Structure structure = null;
+
+        HTMLPageAsset englishPage = null;
+        Template englishTemplate  = null;
+        Template spanishTemplate  = null;
+
+        try{
+            structure = new StructureDataGen().nextPersisted();
+            container = new ContainerDataGen().withStructure(structure, "")
+                    .nextPersisted();
+            englishTemplate = new TemplateDataGen().title("English Template")
+                    .withContainer(container).nextPersisted();
+            spanishTemplate = new TemplateDataGen().title("Spanish Template")
+                    .withContainer(container).nextPersisted();
+            folder = new FolderDataGen().nextPersisted();
+
+            //Create a page in English
+            HTMLPageDataGen htmlPageDataGen = new HTMLPageDataGen(folder, englishTemplate);
+            englishPage = htmlPageDataGen.languageId(1).nextPersisted();
+
+            //Create the Spanish version of the page using a different template
+            Contentlet spanishPage = HTMLPageDataGen.checkout(englishPage);
+
+            spanishPage.setLanguageId(2);
+            spanishPage.setProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, spanishTemplate.getIdentifier());
+            spanishPage.setProperty(HTMLPageAssetAPI.URL_FIELD, englishPage.getPageUrl() + "SP");
+
+            result = LocalTransaction.wrapReturnWithListeners(() -> HTMLPageDataGen.checkin(spanishPage));
+
+            //Verify that both pages have the same template
+            assertEquals(result.get(HTMLPageAssetAPI.TEMPLATE_FIELD), spanishTemplate.getIdentifier());
+
+            assertEquals(spanishPage.get(HTMLPageAssetAPI.TEMPLATE_FIELD),
+                    contentletAPI.find(englishPage.getInode(), user, false)
+                            .get(HTMLPageAssetAPI.TEMPLATE_FIELD));
+
+
+        } finally{
+
+            //Clean up environment
+            if (UtilMethods.isSet(englishPage) && UtilMethods.isSet(englishPage.getInode())){
+                HTMLPageDataGen.remove(englishPage);
+            }
+
+            if (UtilMethods.isSet(result) && UtilMethods.isSet(result.getInode())){
+                HTMLPageDataGen.remove(result);
+            }
+
+            if (UtilMethods.isSet(folder) && UtilMethods.isSet(folder.getInode())){
+                FolderDataGen.remove(folder);
+            }
+
+            if (UtilMethods.isSet(spanishTemplate) && UtilMethods.isSet(spanishTemplate.getInode())){
+                TemplateDataGen.remove(spanishTemplate);
+            }
+
+            if (UtilMethods.isSet(englishTemplate) && UtilMethods.isSet(englishTemplate.getInode())){
+                TemplateDataGen.remove(englishTemplate);
+            }
+
+            if (UtilMethods.isSet(container) && UtilMethods.isSet(container.getInode())){
+                ContainerDataGen.remove(container);
+            }
+
+            if (UtilMethods.isSet(structure) && UtilMethods.isSet(structure.getInode())){
+                StructureDataGen.remove(structure);
+            }
+        }
+
     }
 
     private File getBinaryAsset(String inode, String varName, String binaryName) {
