@@ -19,11 +19,9 @@ import com.dotcms.repackage.org.glassfish.jersey.media.multipart.BodyPart;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.ContentDisposition;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import com.dotcms.rest.exception.ForbiddenException;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
+import com.dotcms.uuid.shorty.ShortyId;
+import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -34,7 +32,6 @@ import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
@@ -979,32 +976,7 @@ public class ContentResource {
             }
 
             // running a workflow action?
-            for (WorkflowAction action : APILocator.getWorkflowAPI()
-                    .findAvailableActions(contentlet, init.getUser())) {
-                if (init.getParamsMap().containsKey(action.getName().toLowerCase())) {
-
-                    contentlet.setActionId(action.getId());
-
-                    if (action.isCommentable()) {
-                        String comment = init.getParamsMap()
-                                .get(Contentlet.WORKFLOW_COMMENTS_KEY.toLowerCase());
-                        if (UtilMethods.isSet(comment)) {
-                            contentlet.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY, comment);
-                        }
-                    }
-
-                    if (action.isAssignable()) {
-                        String assignTo = init.getParamsMap()
-                                .get(Contentlet.WORKFLOW_ASSIGN_KEY.toLowerCase());
-                        if (UtilMethods.isSet(assignTo)) {
-                            contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, assignTo);
-                        }
-                    }
-
-                    live = false; // avoid manually publishing
-                    break;
-                }
-            }
+            live = processWorkflowAction(contentlet, init, live);
 
             Map<Relationship, List<Contentlet>> relationships = (Map<Relationship, List<Contentlet>>) contentlet
                     .get(RELATIONSHIP_KEY);
@@ -1128,6 +1100,90 @@ public class ContentResource {
                     .status(Status.OK).build();
         }
     }
+
+    private boolean processWorkflowAction(final Contentlet contentlet,
+                                          final InitDataObject init,
+                                          boolean live) throws DotDataException, DotSecurityException {
+
+        final Optional<WorkflowAction> foundWorkflowAction =
+                init.getParamsMap().containsKey(Contentlet.WORKFLOW_ACTION_KEY.toLowerCase())?
+                    this.findWorkflowActionById  (contentlet, init, this.getLongActionId(init.getParamsMap().get(Contentlet.WORKFLOW_ACTION_KEY.toLowerCase()))):
+                    this.findWorkflowActionByName(contentlet, init);
+
+        if (foundWorkflowAction.isPresent()) {
+
+            contentlet.setActionId(foundWorkflowAction.get().getId());
+
+            if (foundWorkflowAction.get().isCommentable()) {
+                final String comment = init.getParamsMap()
+                        .get(Contentlet.WORKFLOW_COMMENTS_KEY.toLowerCase());
+                if (UtilMethods.isSet(comment)) {
+                    contentlet.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY, comment);
+                }
+            }
+
+            if (foundWorkflowAction.get().isAssignable()) {
+                final String assignTo = init.getParamsMap()
+                        .get(Contentlet.WORKFLOW_ASSIGN_KEY.toLowerCase());
+                if (UtilMethods.isSet(assignTo)) {
+                    contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, assignTo);
+                }
+            }
+
+            live = false; // avoid manually publishing
+        }
+
+        return live;
+    } // processWorkflowAction.
+
+    private Optional<WorkflowAction> findWorkflowActionByName(final Contentlet contentlet,
+                                                              final InitDataObject init) throws DotSecurityException, DotDataException {
+
+        final List<WorkflowAction> availableActions =
+                APILocator.getWorkflowAPI().findAvailableActions(contentlet, init.getUser());
+
+        for (final WorkflowAction action : availableActions) {
+
+            if (init.getParamsMap().containsKey(action.getName().toLowerCase())) {
+
+                return Optional.of(action);
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    private Optional<WorkflowAction> findWorkflowActionById(final Contentlet contentlet,
+                                                            final InitDataObject init,
+                                                            final String workflowActionId) throws DotSecurityException, DotDataException {
+
+        final List<WorkflowAction> availableActions =
+                APILocator.getWorkflowAPI().findAvailableActions(contentlet, init.getUser());
+
+        for (final WorkflowAction action : availableActions) {
+
+            if (action.getId().equals(workflowActionId)) {
+
+                return Optional.of(action);
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    /**
+     * Converts the shortyId to long id
+     * @param shortyId String
+     * @return String id
+     */
+    private String getLongActionId (final String shortyId) {
+
+        final Optional<ShortyId> shortyIdOptional =
+                APILocator.getShortyAPI().getShorty(shortyId, ShortyIdAPI.ShortyInputType.WORKFLOW_ACTION);
+
+        return shortyIdOptional.isPresent()?
+                shortyIdOptional.get().longId:shortyId;
+    } // getLongId.
 
     @SuppressWarnings("unchecked")
     protected void processXML(Contentlet contentlet, InputStream inputStream)
