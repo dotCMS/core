@@ -38,10 +38,12 @@ public class ResetTaskActionlet extends WorkFlowActionlet {
 		
 		try {
 
-			task.setStatus(null);
-			APILocator.getWorkflowAPI().saveWorkflowTask(task);
+			if (null != task) {
+				task.setStatus(null);
+				APILocator.getWorkflowAPI().saveWorkflowTask(task);
+				processor.setTask(null);
+			}
 
-			processor.setTask(null);
 			processor.setContentlet(null);
 			processor.abortProcessor();
 		} catch (DotDataException e) {
