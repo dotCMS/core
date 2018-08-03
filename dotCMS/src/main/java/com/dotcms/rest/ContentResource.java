@@ -1131,11 +1131,11 @@ public class ContentResource {
         final boolean exists = UtilMethods.isSet(contentlet.getIdentifier()) && !UtilMethods.isSet(contentlet.getInode());
         if (exists) {
 
-            final ContentletVersionInfo clvi = APILocator.getVersionableAPI().
+            final ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI().
                     getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
-            if (null != clvi && UtilMethods.isSet(clvi.getWorkingInode())) {
+            if (null != contentletVersionInfo && UtilMethods.isSet(contentletVersionInfo.getWorkingInode())) {
 
-                contentlet.setInode(clvi.getWorkingInode());
+                contentlet.setInode(contentletVersionInfo.getWorkingInode());
             }
         }
 
