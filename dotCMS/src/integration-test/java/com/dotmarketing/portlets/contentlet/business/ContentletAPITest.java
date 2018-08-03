@@ -4317,10 +4317,11 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             result = LocalTransaction.wrapReturnWithListeners(() -> HTMLPageDataGen.checkin(spanishPage));
 
+            APILocator.getContentletAPI().isInodeIndexed( result.getInode() );
             //Verify that both pages have the same template
             assertEquals(result.get(HTMLPageAssetAPI.TEMPLATE_FIELD), spanishTemplate.getIdentifier());
 
-            assertEquals(spanishPage.get(HTMLPageAssetAPI.TEMPLATE_FIELD),
+            assertEquals(result.get(HTMLPageAssetAPI.TEMPLATE_FIELD),
                     contentletAPI.find(englishPage.getInode(), user, false)
                             .get(HTMLPageAssetAPI.TEMPLATE_FIELD));
 
