@@ -335,7 +335,7 @@
         var additionalParams = {
             assignComment:assignComment,
             pushPublish:pushPublish
-        }
+        };
 
         var data ;
         if(Array.isArray(selectedInodes)){
@@ -372,7 +372,7 @@
             error: function(error){
                 dojo.byId('bulkActionsContainer').innerHTML = '<%=LanguageUtil.get(pageContext, "Available-actions-error")%>';
             }
-        }
+        };
 
         dojo.xhrPut(xhrArgs);
         return true;
