@@ -330,6 +330,14 @@ function validate() {
                 setDates();
 
                 try {
+                    dojo.empty("whereToSendTable");
+                    pushHandler.clear();
+                } catch (e) {
+                    console.error("Error cleaning up selected environments.", e)
+                }
+
+                try {
+
                     if (window.lastSelectedEnvironments && window.lastSelectedEnvironments.length > 0) {
 						for (var count = 0; count < window.lastSelectedEnvironments.length; count++) {
 							pushHandler.addToWhereToSend(window.lastSelectedEnvironments[count].id, window.lastSelectedEnvironments[count].name);
@@ -340,7 +348,12 @@ function validate() {
 						environmentSelectStore.query().then(function(response) {
 
 							let items = response.slice(0);
-							if (items && items.length > 1) {
+
+							/*
+							 Auto select if there is only one environment.
+							 The first value is an empty item, does not count, that's why === 2
+							 */
+							if (items && items.length === 2) {
 								dijit.byId("environmentSelect").set("value", items[1].id);
 							}
 
