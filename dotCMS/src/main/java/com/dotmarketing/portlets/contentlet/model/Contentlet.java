@@ -459,7 +459,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public boolean getBoolProperty(String fieldVarName) throws DotRuntimeException {
 		try{
-			return (Boolean)map.get(fieldVarName);
+			return map.get(fieldVarName)!=null?(Boolean)map.get(fieldVarName):false;
 		}catch (Exception e) {
 			 throw new DotRuntimeException("Unable to retrive field value", e);
 		}
@@ -1165,5 +1165,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	@VisibleForTesting
 	protected void setUserAPI(UserAPI userAPI) {
 		this.userAPI = userAPI;
+	}
+
+	public boolean validateMe() {
+		return !UtilMethods.isSet(map.get(Contentlet.DONT_VALIDATE_ME));
 	}
 }

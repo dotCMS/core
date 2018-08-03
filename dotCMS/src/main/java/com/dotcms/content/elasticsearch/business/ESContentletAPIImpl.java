@@ -1688,7 +1688,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         logContentletActivity(contentlets, "Deleting Content", user);
         for (Contentlet contentlet : contentlets){
-            if(!contentlet.isArchived()){
+            if(!contentlet.isArchived() && contentlet.validateMe()){
                 throw new DotContentletStateException(
                     getLocalizedMessageOrDefault(user, "Failed-to-delete-unarchived-content", FAILED_TO_DELETE_UNARCHIVED_CONTENT, getClass())
                 );
@@ -2019,11 +2019,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             // If the user calling this method is System, no other condition is required.
             // Note: no need to validate this on DELETE SITE/HOST.
-            if (contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) != null ||
-                    user == null ||
-                    !workingContentlet.isLocked() ||
-                    workingContentlet.getModUser().equals(user.getUserId()) ||
-                    user.getUserId().equals(systemUser.getUserId())) {
+            if (contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) != null || canLock(contentlet, user)) {
 
                 if (liveContentlet != null && InodeUtils.isSet(liveContentlet.getInode())) {
                     APILocator.getVersionableAPI().removeLive(liveContentlet);
@@ -2959,11 +2955,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
                  for HTMLPages must be retrieve it from the Identifier.
                  */
                 String htmlPageURL = null;
+
                 if ( contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE ) {
                     //Getting the URL saved on the contentlet form
                     htmlPageURL = contentletRaw.getStringProperty( HTMLPageAssetAPI.URL_FIELD );
                     //Clean-up the contentlet object, we don' want to persist this URL in the db
                     removeURLFromContentlet( contentlet );
+
+                    //Verify if the template needs to be update for all versions of the content page
+                    updateTemplateInAllLanguageVersions(contentlet, user);
                 }
 
                 boolean structureHasAHostField = hasAHostField(contentlet.getStructureInode());
@@ -3011,6 +3011,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     contentlet = contentFactory.save(contentlet, existingInode);
                 else
                     contentlet = contentFactory.save(contentlet);
+
 
                 //Relate the tags with the saved contentlet
                 for ( Entry<String, String> tagEntry : tagsValues.entrySet() ) {
@@ -3510,6 +3511,40 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         return contentlet;
+    }
+
+    private void updateTemplateInAllLanguageVersions(final Contentlet contentlet, final User user)
+            throws DotDataException, DotSecurityException{
+
+        if (UtilMethods.isSet(contentlet.getIdentifier())){
+            final Field fieldVar = contentlet.getStructure()
+                    .getFieldVar(HTMLPageAssetAPI.TEMPLATE_FIELD);
+            final String identifier = contentlet.getIdentifier();
+            final String newTemplate = contentlet.get(HTMLPageAssetAPI.TEMPLATE_FIELD).toString();
+            final String existingTemplate = loadField(
+                    findContentletByIdentifierAnyLanguage(contentlet.getIdentifier())
+                            .getInode(), fieldVar).toString();
+            if (!existingTemplate.equals(newTemplate)){
+
+                HibernateUtil.addCommitListener(new DotRunnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            contentFactory.updateContentletTemplate(identifier, newTemplate,
+                                    fieldVar.getFieldContentlet());
+                            for (Contentlet c: findAllVersions(APILocator.getIdentifierAPI().find(identifier), user, false)){
+                                CacheLocator.getContentletCache().remove(c);
+                                CacheLocator.getHTMLPageCache().remove(c.getInode());
+                                APILocator.getContentletIndexAPI().addContentToIndex(c,false);
+                            }
+                        } catch (DotDataException | DotSecurityException e) {
+                            Logger.error(this, e.getMessage(), e);
+                        }
+
+                    }
+                });
+            }
+        }
     }
 
     private void pushSaveEvent (final Contentlet eventContentlet, final boolean eventCreateNewVersion) throws DotHibernateException {
