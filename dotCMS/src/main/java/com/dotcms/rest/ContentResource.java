@@ -1,10 +1,19 @@
 package com.dotcms.rest;
 
+import static com.dotmarketing.util.NumberUtil.toInt;
+import static com.dotmarketing.util.NumberUtil.toLong;
+
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
-import com.dotcms.repackage.javax.ws.rs.*;
+import com.dotcms.repackage.javax.ws.rs.Consumes;
+import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.POST;
+import com.dotcms.repackage.javax.ws.rs.PUT;
+import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
+import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -37,8 +46,14 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UUIDUtil;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.converters.Converter;
 import com.thoughtworks.xstream.converters.MarshallingContext;
@@ -46,21 +61,29 @@ import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.DomDriver;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.Part;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
-
-import static com.dotmarketing.util.NumberUtil.toInt;
-import static com.dotmarketing.util.NumberUtil.toLong;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
 
 @Path("/content")
 public class ContentResource {
@@ -1105,6 +1128,17 @@ public class ContentResource {
                                           final InitDataObject init,
                                           boolean live) throws DotDataException, DotSecurityException {
 
+        final boolean exists = UtilMethods.isSet(contentlet.getIdentifier()) && !UtilMethods.isSet(contentlet.getInode());
+        if (exists) {
+
+            final ContentletVersionInfo clvi = APILocator.getVersionableAPI().
+                    getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
+            if (null != clvi && UtilMethods.isSet(clvi.getWorkingInode())) {
+
+                contentlet.setInode(clvi.getWorkingInode());
+            }
+        }
+
         final Optional<WorkflowAction> foundWorkflowAction =
                 init.getParamsMap().containsKey(Contentlet.WORKFLOW_ACTION_KEY.toLowerCase())?
                     this.findWorkflowActionById  (contentlet, init, this.getLongActionId(init.getParamsMap().get(Contentlet.WORKFLOW_ACTION_KEY.toLowerCase()))):
@@ -1133,14 +1167,28 @@ public class ContentResource {
             live = false; // avoid manually publishing
         }
 
+        if(exists){
+            contentlet.setInode(StringPool.BLANK);
+        }
+
         return live;
     } // processWorkflowAction.
 
     private Optional<WorkflowAction> findWorkflowActionByName(final Contentlet contentlet,
                                                               final InitDataObject init) throws DotSecurityException, DotDataException {
 
-        final List<WorkflowAction> availableActions =
-                APILocator.getWorkflowAPI().findAvailableActions(contentlet, init.getUser());
+        final List<WorkflowAction> availableActionsOnListing =
+                APILocator.getWorkflowAPI().findAvailableActionsListing(contentlet, init.getUser());
+
+        final List<WorkflowAction> availableActionsOnEditing =
+                APILocator.getWorkflowAPI().findAvailableActionsEditing(contentlet, init.getUser());
+
+        final Stream<WorkflowAction> combinedStream = Stream.concat(
+                availableActionsOnListing.stream(),
+                availableActionsOnEditing.stream()
+        );
+
+        final Set<WorkflowAction> availableActions = combinedStream.collect(Collectors.toCollection(LinkedHashSet::new));
 
         for (final WorkflowAction action : availableActions) {
 
@@ -1157,8 +1205,18 @@ public class ContentResource {
                                                             final InitDataObject init,
                                                             final String workflowActionId) throws DotSecurityException, DotDataException {
 
-        final List<WorkflowAction> availableActions =
-                APILocator.getWorkflowAPI().findAvailableActions(contentlet, init.getUser());
+        final List<WorkflowAction> availableActionsOnListing =
+                APILocator.getWorkflowAPI().findAvailableActionsListing(contentlet, init.getUser());
+
+        final List<WorkflowAction> availableActionsOnEditing =
+                APILocator.getWorkflowAPI().findAvailableActionsEditing(contentlet, init.getUser());
+
+        final Stream<WorkflowAction> combinedStream = Stream.concat(
+                availableActionsOnListing.stream(),
+                availableActionsOnEditing.stream()
+        );
+
+        final Set<WorkflowAction> availableActions = combinedStream.collect(Collectors.toCollection(LinkedHashSet::new));
 
         for (final WorkflowAction action : availableActions) {
 
