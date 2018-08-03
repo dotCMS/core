@@ -207,22 +207,22 @@ public class ContentTypeResource implements Serializable {
 		final InitDataObject initData = this.webResource.init(null, true, req, true, null);
 		final User user = initData.getUser();
 
-		ContentTypeAPI tapi = APILocator.getContentTypeAPI(user, true);
+		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, true);
 
 		try {
 
 			ContentType type = null;
 			try {
-				type = tapi.find(id);
+				type = contentTypeAPI.find(id);
 			} catch (NotFoundInDbException nfdb) {
 				try {
-					type = tapi.find(id);
+					type = contentTypeAPI.find(id);
 				} catch (NotFoundInDbException nfdb2) {
 					return Response.status(404).build();
 				}
 			}
 
-			tapi.delete(type);
+			contentTypeAPI.delete(type);
 
 			JSONObject joe = new JSONObject();
 			joe.put("deleted", type.id());

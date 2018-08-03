@@ -70,7 +70,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @WrapInTransaction
   @Override
   public void delete(ContentType type) throws DotSecurityException, DotDataException {
-    perms.checkPermission(type, PermissionLevel.PUBLISH, user);
+    perms.checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
 
     // permission check delete related contentlets
     DotConnect dc = new DotConnect();
