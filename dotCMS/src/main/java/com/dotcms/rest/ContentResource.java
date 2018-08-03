@@ -53,7 +53,6 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.converters.Converter;
 import com.thoughtworks.xstream.converters.MarshallingContext;
@@ -1168,7 +1167,7 @@ public class ContentResource {
         }
 
         if(exists){
-            contentlet.setInode(StringPool.BLANK);
+            contentlet.getMap().put(Contentlet.DONT_VALIDATE_ME, true);
         }
 
         return live;
