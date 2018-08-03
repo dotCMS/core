@@ -14,6 +14,14 @@ dojo.declare("dotcms.dijit.AssignWorkflowDialog", null, {
 	windowTitle:"Workflow Actions",
 	onAssign:this.saveAssign,
 	show : function(){
+
+        //Required clean up as these modals has duplicated widgets and collide without a clean up
+        var remoteDia = dijit.byId("remotePublisherDia");
+        if(remoteDia){
+            remoteDia.destroyRecursive();
+        }
+
+        this.myDialog = dijit.byId("contentletWfDialog");
 		if(this.myDialog){
 			this.myDialog.destroyRecursive();
 		}
