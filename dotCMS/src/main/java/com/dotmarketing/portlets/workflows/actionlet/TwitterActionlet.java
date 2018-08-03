@@ -91,21 +91,19 @@ public class TwitterActionlet extends WorkFlowActionlet {
 
 			
 				Status stat = twitter.updateStatus(tweatThis);
-				
-				
 
-				WorkflowComment comment = new WorkflowComment();
-				comment.setPostedBy(processor.getUser().getUserId());
-				comment.setComment("Tweeted: " + tweatThis + " twitterId:" + stat.getId());
-				comment.setWorkflowtaskId(processor.getTask().getId());
-				try {
-					APILocator.getWorkflowAPI().saveComment(comment);
-				} catch (DotDataException e) {
-					Logger.error(CommentOnWorkflowActionlet.class,e.getMessage(),e);
+				if (null != processor.getTask()) {
+					WorkflowComment comment = new WorkflowComment();
+					comment.setPostedBy(processor.getUser().getUserId());
+					comment.setComment("Tweeted: " + tweatThis + " twitterId:" + stat.getId());
+					comment.setWorkflowtaskId(processor.getTask().getId());
+					try {
+						APILocator.getWorkflowAPI().saveComment(comment);
+					} catch (DotDataException e) {
+						Logger.error(CommentOnWorkflowActionlet.class, e.getMessage(), e);
+					}
 				}
-				
-				
-				
+
 
 			}
 			
