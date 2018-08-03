@@ -83,12 +83,14 @@ public class CommentOnWorkflowActionlet extends WorkFlowActionlet {
             try {
                 HibernateUtil.addAsyncCommitListener(() -> {
 
-                    if (!UtilMethods.isSet(comment.getWorkflowtaskId())) {
+                    if (null != processor.getTask()) {
+                        if (!UtilMethods.isSet(comment.getWorkflowtaskId())) {
 
-                        comment.setWorkflowtaskId(processor.getTask().getId());
+                            comment.setWorkflowtaskId(processor.getTask().getId());
+                        }
+
+                        this.saveComment(contentlet, comment);
                     }
-
-                    this.saveComment(contentlet, comment);
                 });
             } catch (DotHibernateException e1) {
 

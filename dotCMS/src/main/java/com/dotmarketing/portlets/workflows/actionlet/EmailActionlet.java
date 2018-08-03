@@ -119,8 +119,14 @@ public class EmailActionlet extends WorkFlowActionlet {
             ctx.put("nextStepResolved", processor.getNextStep().isResolved());
             ctx.put("nextStepId", processor.getNextStep().getId());
             ctx.put("nextStepName", processor.getNextStep().getName());
-            ctx.put("workflowTaskTitle", UtilMethods.isSet(processor.getTask().getTitle()) ? processor.getTask().getTitle() : processor.getContentlet().getTitle());
-            ctx.put("modDate", processor.getTask().getModDate());
+            if(UtilMethods.isSet(processor.getTask())) {
+                ctx.put("workflowTaskTitle", UtilMethods.isSet(processor.getTask().getTitle()) ? processor.getTask().getTitle() : processor.getContentlet().getTitle());
+                ctx.put("modDate", processor.getTask().getModDate());
+            }
+            else {
+                ctx.put("workflowTaskTitle",  processor.getContentlet().getTitle());
+                ctx.put("modDate",  processor.getContentlet().getModDate());
+            }
             ctx.put("structureName", processor.getContentlet().getStructure().getName());
 
             ctx.put("contentlet", c);
