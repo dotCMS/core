@@ -2342,11 +2342,18 @@
     	executeWfAction: function(wfId, assignable, commentable, hasPushPublishActionlet, inode ){
     		this.wfActionId=wfId;
     		if(assignable == 'true' || commentable == 'true' || hasPushPublishActionlet == 'true'){
+
+                //Required clean up as these modals has duplicated widgets and collide without a clean up
+                var remoteDia = dijit.byId("remotePublisherDia");
+                if(remoteDia){
+                    remoteDia.destroyRecursive();
+                }
+
     			var dia = dijit.byId("contentletWfDialog");
     			if(dia){
     				dia.destroyRecursive();
-
     			}
+
     			dia = new dijit.Dialog({
     				id			:	"contentletWfDialog",
     				title		: 	"<%=LanguageUtil.get(pageContext, "Workflow-Actions")%>",

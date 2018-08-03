@@ -381,6 +381,13 @@
 
 		actionStore.fetch({query: {id:actionId}, onComplete:function(item){
 			if(item[0].assignable =="true" || item[0].commentable == "true"){
+
+                //Required clean up as these modals has duplicated widgets and collide without a clean up
+                var remoteDia = dijit.byId("remotePublisherDia");
+                if(remoteDia){
+                    remoteDia.destroyRecursive();
+                }
+
 				var dia = dijit.byId("contentletWfDialog");
     			if(dia){
     				dia.destroyRecursive();
