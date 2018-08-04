@@ -179,7 +179,7 @@ public class FieldAPIImpl implements FieldAPI {
 		  final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
 		  final ContentType type = contentTypeAPI.find(field.contentTypeId());
 
-		  permissionAPI.checkPermission(type, PermissionLevel.PUBLISH, user);
+		  permissionAPI.checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
 
 		  Field oldField = fieldFactory.byId(field.id());
 		  if(oldField.fixed() || oldField.readOnly()){

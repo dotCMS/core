@@ -33,7 +33,7 @@ String min = (cal.get(GregorianCalendar.MINUTE) < 10) ? "0"+cal.get(GregorianCal
 <!--  DOTCMS-7085 -->
 <input name="assetIdentifier" id="assetIdentifier" type="hidden" value="<%=inode%>">
 
-<dd class="form-horizontal" dojoType="dijit.form.Form" id="publishForm">
+<div class="form-horizontal" dojoType="dijit.form.Form" id="publishForm">
 
         <%--DATE FILTERING BOX--%>
         <dl id="filterTimeDiv" style="display: none;">

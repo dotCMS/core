@@ -117,6 +117,12 @@
 	    			if (myCp) {
 	    				myCp.destroyRecursive(true);
 	    			}
+
+                    //Required clean up as these modals has duplicated widgets and collide without a clean up
+                    var remoteDia = dijit.byId("remotePublisherDia");
+                    if(remoteDia){
+                        remoteDia.destroyRecursive();
+                    }
 	    			
 	    			var dia = dijit.byId("contentletWfDialog");
 	    			if(dia){

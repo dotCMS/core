@@ -17,6 +17,12 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
 
     show: function () {
 
+        //Required clean up as these modals has duplicated widgets and collide without a clean up
+        var workflowPPDialog = dijit.byId("contentletWfDialog");
+        if(workflowPPDialog){
+            workflowPPDialog.destroyRecursive();
+        }
+
         var dia = dijit.byId(this.myId);
         if (dia) {
             dia.destroyRecursive();

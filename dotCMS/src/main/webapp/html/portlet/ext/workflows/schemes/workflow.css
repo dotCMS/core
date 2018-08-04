@@ -188,7 +188,7 @@ ol.wfStepsList li{padding:8px 16px;margin:0 10px; list-style:decimal;  list-styl
 }
 
 #workflowSchemeMain {
-    overflow: hidden;
+    overflow: auto;
 }
 
 .board-wrapper {
