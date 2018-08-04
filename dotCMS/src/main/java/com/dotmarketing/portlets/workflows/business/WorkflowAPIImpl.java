@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.workflows.business;
 
+import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isHost;
+import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isNew;
 import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.FORCE_PUSH;
 import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WF_EXPIRE_DATE;
 import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WF_EXPIRE_TIME;
@@ -24,7 +26,6 @@ import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.FriendClass;
 import com.dotcms.util.LicenseValiditySupplier;
-import com.dotcms.util.ReflectionUtils;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.workflow.form.AdditionalParamsBean;
@@ -57,7 +58,6 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletValidationExce
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.util.ActionletUtil;
-import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.MessageActionlet;
@@ -101,7 +101,6 @@ import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.portlets.workflows.model.WorkflowTimelineItem;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.LuceneQueryUtils;
 import com.dotmarketing.util.SecurityLogger;
@@ -2086,7 +2085,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			throw new DotStateException("content is null");
 		}
 
-		final boolean isNew  								= !UtilMethods.isSet(contentlet.getInode());
+		final boolean isNew  								=  isNew(contentlet);
 		final ImmutableList.Builder<WorkflowAction> actions =
 				new ImmutableList.Builder<>();
 
@@ -2577,7 +2576,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@Override
 	public Contentlet fireContentWorkflow(final Contentlet contentlet, final ContentletDependencies dependencies) throws DotDataException, DotSecurityException {
 
-		if (ContentletUtil.isHost(contentlet)) {
+		if (isHost(contentlet)) {
 			final User user = dependencies.getModUser();
 			throw new DotSecurityException(
 					ExceptionUtil
@@ -2615,7 +2614,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@WrapInTransaction
 	private Contentlet fireContentWorkflow(final Contentlet contentlet, final ContentletDependencies dependencies, final ConcurrentMap<String,Object> context) throws DotDataException, DotSecurityException {
 
-		if (ContentletUtil.isHost(contentlet)) {
+		if (isHost(contentlet)) {
 			final User user = dependencies.getModUser();
 			throw new DotSecurityException(
 					ExceptionUtil
@@ -2671,8 +2670,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 			try {
 
-				final boolean isValidContentlet = !InodeUtils.isSet(contentlet.getInode())
-						|| contentlet.isWorking();
+				final boolean isValidContentlet = (isNew(contentlet) || contentlet.isWorking());
 				if (!isValidContentlet) {
 
 					throw new IllegalArgumentException(LanguageUtil
