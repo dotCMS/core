@@ -228,9 +228,9 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 
 		// BEGIN: PUSH PUBLISHING ACTIONLET
 
-		var publishDate = (dijit.byId("wfPublishDateAux") && dijit.byId("wfPublishDateAux")!='undefined')
+		var publishDate = (dijit.byId("wfPublishDateAux"))
 			? dojo.date.locale.format(dijit.byId("wfPublishDateAux").getValue(),{datePattern: "yyyy-MM-dd", selector: "date"})
-				: (dojo.byId("wfPublishDateAux") && dojo.byId("wfPublishDateAux")!='undefined')
+				: (dojo.byId("wfPublishDateAux"))
 					? dojo.date.locale.format(dojo.byId("wfPublishDateAux").value,{datePattern: "yyyy-MM-dd", selector: "date"})
 							: "";
 

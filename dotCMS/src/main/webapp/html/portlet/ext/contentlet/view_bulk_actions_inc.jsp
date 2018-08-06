@@ -259,6 +259,12 @@
 
         var actionId = dojo.attr(buttonElement, 'data-acction-id');
 
+        //Required clean up as these modals has duplicated widgets and collide without a clean up
+        var remoteDia = dijit.byId("remotePublisherDia");
+        if(remoteDia){
+            remoteDia.destroyRecursive();
+        }
+
         var dia = dijit.byId("contentletWfDialog");
         if(dia){
             dia.destroyRecursive();
@@ -283,12 +289,6 @@
 
             }
         );
-
-        //There might be an instance of the other dialog hanging somewhere.
-        var remoteDia = dijit.byId("remotePublisherDia");
-        if(remoteDia){
-            remoteDia.destroyRecursive();
-        }
 
         var myCp = dijit.byId("contentletWfCP");
         if(myCp){
@@ -335,7 +335,7 @@
         var additionalParams = {
             assignComment:assignComment,
             pushPublish:pushPublish
-        }
+        };
 
         var data ;
         if(Array.isArray(selectedInodes)){
@@ -372,7 +372,7 @@
             error: function(error){
                 dojo.byId('bulkActionsContainer').innerHTML = '<%=LanguageUtil.get(pageContext, "Available-actions-error")%>';
             }
-        }
+        };
 
         dojo.xhrPut(xhrArgs);
         return true;
