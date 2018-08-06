@@ -3530,12 +3530,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     @Override
                     public void run() {
                         try {
-                            contentFactory.updateContentletTemplate(identifier, newTemplate,
-                                    fieldVar.getFieldContentlet());
                             for (Contentlet c: findAllVersions(APILocator.getIdentifierAPI().find(identifier), user, false)){
-                                CacheLocator.getContentletCache().remove(c);
-                                CacheLocator.getHTMLPageCache().remove(c.getInode());
-                                APILocator.getContentletIndexAPI().addContentToIndex(c,false);
+
+                                if (c.isWorking()){
+                                    if (!c.isLive()){
+                                        //Update all working versions of a page
+                                        updateContentletTemplate(c, newTemplate, fieldVar);
+                                    }else{
+                                        //Create a new working version with the template when the page version is live and working
+                                        Contentlet newPageVersion = checkout(c.getInode(), user, false);
+                                        newPageVersion.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, newTemplate);
+                                        checkin(newPageVersion, user, false);
+                                    }
+                                }
+
                             }
                         } catch (DotDataException | DotSecurityException e) {
                             Logger.error(this, e.getMessage(), e);
@@ -3545,6 +3553,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 });
             }
         }
+    }
+
+    private void updateContentletTemplate(Contentlet c, String newTemplate, Field fieldVar) throws DotDataException {
+        contentFactory.updateContentletTemplate(c.getInode(), newTemplate,
+                fieldVar.getFieldContentlet());
+        CacheLocator.getContentletCache().remove(c);
+        CacheLocator.getHTMLPageCache().remove(c.getInode());
+        APILocator.getContentletIndexAPI().addContentToIndex(c,false);
     }
 
     private void pushSaveEvent (final Contentlet eventContentlet, final boolean eventCreateNewVersion) throws DotHibernateException {
