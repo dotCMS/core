@@ -1,3 +1,12 @@
+.buttonRow.scheme {
+    position:absolute;
+    bottom:0; right: 0;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 16px;
+    width: 100%;
+}
+
 .portlet-toolbar__actions-secondary{padding-right: 50px;}
 
 .flex-container {
