@@ -71,7 +71,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
@@ -1461,22 +1460,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 reindexReplacedUserContent(userToReplace, user);
 
             });
-        } catch (DotDataException e) {
-            Logger.error(this.getClass(),e.getMessage(),e);
-            throw new DotDataException(e.getMessage(), e);
-        }
-    }
-
-    @Override
-    protected void updateContentletTemplate(final String identifier, final String newTemplate, final String fieldContentlet)
-            throws DotDataException {
-        final DotConnect dc = new DotConnect();
-        try {
-            dc.setSQL("UPDATE contentlet SET " + fieldContentlet + "= ? WHERE identifier = ?");
-            dc.addParam(newTemplate);
-            dc.addParam(identifier);
-            dc.loadResult();
-
         } catch (DotDataException e) {
             Logger.error(this.getClass(),e.getMessage(),e);
             throw new DotDataException(e.getMessage(), e);

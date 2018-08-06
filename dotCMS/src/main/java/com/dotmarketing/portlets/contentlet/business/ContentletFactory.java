@@ -353,16 +353,6 @@ public abstract class ContentletFactory {
 	 */	
 	protected abstract void updateUserReferences(User userToReplace, String replacementUserId, User user) throws DotDataException, DotStateException, ElasticsearchException, DotSecurityException;
 
-	/**
-	 * Update template field in all versions of a contentlet (page asset)
-	 * @param identifier contentlet identifier
-	 * @param newTemplate template id
-	 * @param fieldContentlet db field name
-	 * @throws DotDataException
-	 */
-	protected abstract void updateContentletTemplate(final String identifier,
-			final String newTemplate, final String fieldContentlet) throws DotDataException;
-
 	protected abstract void deleteVersion(Contentlet contentlet)throws DotDataException;
 	
 	/**
