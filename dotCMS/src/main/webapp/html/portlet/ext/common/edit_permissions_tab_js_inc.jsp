@@ -833,6 +833,7 @@
 	function resetPermissionsCallback () {
 		dijit.byId('savingPermissionsDialog').hide();
 		loadPermissions();
+		resetPermmisionTab();
 	}
 
 	//Permissions tab utility functions
@@ -1001,6 +1002,7 @@
 		dijit.byId('savingPermissionsDialog').hide();
 		loadPermissions();
 		dojo.style('permissionsActions', { display: '' });
+		resetPermmisionTab();
 	}
 
 	function destroyChecks(){
@@ -1017,6 +1019,15 @@
 		}
 	}
 
-
+    function resetPermmisionTab(){
+        if(dijit.byId("mainTabContainer"))  {
+            var tabs = dijit.byId("mainTabContainer");
+            var me = tabs.selectedChildWidget;
+            var first = tabs.getChildren()[0];
+            tabs.selectChild(first);
+            tabs.selectChild(me);
+            return;
+        }
+    }
 
 --></script>
