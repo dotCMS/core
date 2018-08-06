@@ -194,17 +194,6 @@ public class ContentletUtil {
 		);
 	}
 
-	/**
-	 * Tells if a contentlet isn't persisted
-	 * @param contentlet
-	 * @return
-	 */
-	public static boolean isNew(final Contentlet contentlet){
-		return (
-			!UtilMethods.isSet(contentlet.getIdentifier()) && !UtilMethods.isSet(contentlet.getInode())
-		);
-	}
-
 }
 
 
