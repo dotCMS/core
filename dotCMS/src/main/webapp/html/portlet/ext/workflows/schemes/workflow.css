@@ -1,3 +1,7 @@
+.portlet-main {
+    padding: 0;
+}
+
 .buttonRow.scheme {
     position:absolute;
     bottom:0; right: 0;
@@ -24,7 +28,8 @@
 .flex-wrap{ 
 	-webkit-flex-wrap: wrap;
 	flex-wrap: wrap;
-	padding-left:10px;
+    padding-left:10px;
+    background-color: #F4F3F4;
 }
 .flex-item {
 	position: relative;
