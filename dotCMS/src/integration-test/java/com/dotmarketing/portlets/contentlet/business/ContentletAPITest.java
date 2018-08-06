@@ -4282,7 +4282,7 @@ public class ContentletAPITest extends ContentletBaseTest {
     }
 
     @Test
-    public void testCreatePageAssetInDifferentLanguagesMustShareTheSameTemplate()
+    public void testSetTemplateForAPageMustKeepTheSameTemplateForWorkingVersionsOnly()
             throws Exception {
 
         Contentlet result   = null;
@@ -4335,6 +4335,79 @@ public class ContentletAPITest extends ContentletBaseTest {
             if (UtilMethods.isSet(result) && UtilMethods.isSet(result.getInode())){
                 HTMLPageDataGen.remove(result);
             }
+
+            if (UtilMethods.isSet(folder) && UtilMethods.isSet(folder.getInode())){
+                FolderDataGen.remove(folder);
+            }
+
+            if (UtilMethods.isSet(spanishTemplate) && UtilMethods.isSet(spanishTemplate.getInode())){
+                TemplateDataGen.remove(spanishTemplate);
+            }
+
+            if (UtilMethods.isSet(englishTemplate) && UtilMethods.isSet(englishTemplate.getInode())){
+                TemplateDataGen.remove(englishTemplate);
+            }
+
+            if (UtilMethods.isSet(container) && UtilMethods.isSet(container.getInode())){
+                ContainerDataGen.remove(container);
+            }
+
+            if (UtilMethods.isSet(structure) && UtilMethods.isSet(structure.getInode())){
+                StructureDataGen.remove(structure);
+            }
+        }
+
+    }
+
+    @Test
+    public void testSetTemplateForAPageMustKeepTheSameTemplateForWorkingVersionsNoLive()
+            throws Exception {
+
+        Contentlet result   = null;
+        Container container = null;
+        Folder folder       = null;
+        Structure structure = null;
+
+        Template englishTemplate  = null;
+        Template spanishTemplate  = null;
+
+        try{
+            structure = new StructureDataGen().nextPersisted();
+            container = new ContainerDataGen().withStructure(structure, "")
+                    .nextPersisted();
+            englishTemplate = new TemplateDataGen().title("English Template")
+                    .withContainer(container).nextPersisted();
+            spanishTemplate = new TemplateDataGen().title("Spanish Template")
+                    .withContainer(container).nextPersisted();
+            folder = new FolderDataGen().nextPersisted();
+
+            //Create a page in English
+            HTMLPageDataGen htmlPageDataGen = new HTMLPageDataGen(folder, englishTemplate);
+            HTMLPageAsset englishPage = htmlPageDataGen.languageId(1).nextPersisted();
+
+            //Publish this page to set it as working and live
+            contentletAPI.publish(englishPage, user, false);
+            contentletAPI.isInodeIndexed(englishPage.getInode(), true);
+            //Create the Spanish version of the page using a different template
+            Contentlet spanishPage = HTMLPageDataGen.checkout(englishPage);
+
+            spanishPage.setLanguageId(2);
+            spanishPage.setProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, spanishTemplate.getIdentifier());
+            spanishPage.setProperty(HTMLPageAssetAPI.URL_FIELD, englishPage.getPageUrl() + "SP");
+
+            result = LocalTransaction.wrapReturnWithListeners(() -> HTMLPageDataGen.checkin(spanishPage));
+
+            //Verify that the Spanish page has the same template
+            assertEquals(result.get(HTMLPageAssetAPI.TEMPLATE_FIELD), spanishTemplate.getIdentifier());
+
+            assertNotEquals(spanishPage.get(HTMLPageAssetAPI.TEMPLATE_FIELD),
+                    contentletAPI.find(englishPage.getInode(), user, false)
+                            .get(HTMLPageAssetAPI.TEMPLATE_FIELD));
+
+        } finally{
+
+            //Clean up environment
+            contentletAPI.destroy(result, user, false);
 
             if (UtilMethods.isSet(folder) && UtilMethods.isSet(folder.getInode())){
                 FolderDataGen.remove(folder);
