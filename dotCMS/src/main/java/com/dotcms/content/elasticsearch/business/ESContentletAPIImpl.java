@@ -5591,18 +5591,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (-1 != secondsToWait) {
             limit = (secondsToWait / 10);
         }
-        long lc=0;
+        SearchHits lc;
         boolean found = false;
         int counter = 0;
         while (counter < limit) {
             try {
-                lc = contentFactory.indexCount(
-                        luceneQuery);
+                lc = contentFactory.indexSearch(
+                        luceneQuery,
+                        0, 0, "modDate");
             } catch (Exception e) {
                 Logger.error(this.getClass(), e.getMessage(), e);
                 return false;
             }
-            if (lc > 0) {
+            if (lc.getTotalHits() > 0) {
                 found = true;
                 break;
             }
