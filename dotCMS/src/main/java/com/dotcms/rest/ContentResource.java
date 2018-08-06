@@ -53,7 +53,6 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.converters.Converter;
 import com.thoughtworks.xstream.converters.MarshallingContext;
@@ -1128,17 +1127,6 @@ public class ContentResource {
                                           final InitDataObject init,
                                           boolean live) throws DotDataException, DotSecurityException {
 
-        final boolean exists = UtilMethods.isSet(contentlet.getIdentifier()) && !UtilMethods.isSet(contentlet.getInode());
-        if (exists) {
-
-            final ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI().
-                    getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
-            if (null != contentletVersionInfo && UtilMethods.isSet(contentletVersionInfo.getWorkingInode())) {
-
-                contentlet.setInode(contentletVersionInfo.getWorkingInode());
-            }
-        }
-
         final Optional<WorkflowAction> foundWorkflowAction =
                 init.getParamsMap().containsKey(Contentlet.WORKFLOW_ACTION_KEY.toLowerCase())?
                     this.findWorkflowActionById  (contentlet, init, this.getLongActionId(init.getParamsMap().get(Contentlet.WORKFLOW_ACTION_KEY.toLowerCase()))):
@@ -1165,10 +1153,6 @@ public class ContentResource {
             }
 
             live = false; // avoid manually publishing
-        }
-
-        if(exists){
-            contentlet.setInode(StringPool.BLANK);
         }
 
         return live;

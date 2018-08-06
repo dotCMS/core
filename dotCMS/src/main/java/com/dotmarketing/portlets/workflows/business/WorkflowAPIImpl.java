@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.workflows.business;
 
 import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isHost;
-import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isNew;
 import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.FORCE_PUSH;
 import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WF_EXPIRE_DATE;
 import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WF_EXPIRE_TIME;
@@ -101,6 +100,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.portlets.workflows.model.WorkflowTimelineItem;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.LuceneQueryUtils;
 import com.dotmarketing.util.SecurityLogger;
@@ -2085,7 +2085,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			throw new DotStateException("content is null");
 		}
 
-		final boolean isNew  								=  isNew(contentlet);
+		final boolean isNew  								= !UtilMethods.isSet(contentlet.getInode());
 		final ImmutableList.Builder<WorkflowAction> actions =
 				new ImmutableList.Builder<>();
 
@@ -2670,7 +2670,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 			try {
 
-				final boolean isValidContentlet = (isNew(contentlet) || contentlet.isWorking());
+				final boolean isValidContentlet = !InodeUtils.isSet(contentlet.getInode())
+						|| contentlet.isWorking();
 				if (!isValidContentlet) {
 
 					throw new IllegalArgumentException(LanguageUtil
