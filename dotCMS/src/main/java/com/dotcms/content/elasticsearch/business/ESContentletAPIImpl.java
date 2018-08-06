@@ -3538,29 +3538,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         continue;
                     }
 
-
                     //Create a new working version with the template when the page version is live and working
                     Contentlet newPageVersion = checkout(c.getInode(), user, false);
                     newPageVersion.setBoolProperty(DO_NOT_UPDATE_TEMPLATES, true);
                     newPageVersion.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, newTemplate);
                     newPageVersion.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
                     checkin(newPageVersion,  user, false);
-
-
                 }
    
 
 
             }
         }
-    }
-
-    private void updateContentletTemplate(Contentlet c, String newTemplate, Field fieldVar) throws DotDataException {
-        contentFactory.updateContentletTemplate(c.getInode(), newTemplate,
-                fieldVar.getFieldContentlet());
-        CacheLocator.getContentletCache().remove(c);
-        CacheLocator.getHTMLPageCache().remove(c.getInode());
-        APILocator.getContentletIndexAPI().addContentToIndex(c,false);
     }
 
     private void pushSaveEvent (final Contentlet eventContentlet, final boolean eventCreateNewVersion) throws DotHibernateException {

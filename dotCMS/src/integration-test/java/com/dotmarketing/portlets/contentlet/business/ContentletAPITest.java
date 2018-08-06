@@ -18,7 +18,6 @@ import com.dotmarketing.beans.*;
 import com.dotmarketing.business.*;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
@@ -4285,12 +4284,11 @@ public class ContentletAPITest extends ContentletBaseTest {
     public void testSetTemplateForAPageMustKeepTheSameTemplateForWorkingVersionsOnly()
             throws Exception {
 
-        Contentlet result   = null;
+        Contentlet spanishPage = null;
         Container container = null;
         Folder folder       = null;
         Structure structure = null;
 
-        HTMLPageAsset englishPage = null;
         Template englishTemplate  = null;
         Template spanishTemplate  = null;
 
@@ -4305,36 +4303,40 @@ public class ContentletAPITest extends ContentletBaseTest {
             folder = new FolderDataGen().nextPersisted();
 
             //Create a page in English
-            HTMLPageDataGen htmlPageDataGen = new HTMLPageDataGen(folder, englishTemplate);
-            englishPage = htmlPageDataGen.languageId(1).nextPersisted();
+            final HTMLPageDataGen htmlPageDataGen = new HTMLPageDataGen(folder, englishTemplate);
+            final HTMLPageAsset englishPage = htmlPageDataGen.languageId(1).nextPersisted();
 
             //Create the Spanish version of the page using a different template
-            Contentlet spanishPage = HTMLPageDataGen.checkout(englishPage);
+            spanishPage = HTMLPageDataGen.checkout(englishPage);
 
             spanishPage.setLanguageId(2);
             spanishPage.setProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, spanishTemplate.getIdentifier());
             spanishPage.setProperty(HTMLPageAssetAPI.URL_FIELD, englishPage.getPageUrl() + "SP");
 
-            result = LocalTransaction.wrapReturnWithListeners(() -> HTMLPageDataGen.checkin(spanishPage));
+            spanishPage = HTMLPageDataGen.checkin(spanishPage);
 
             //Verify that both pages have the same template
-            assertEquals(result.get(HTMLPageAssetAPI.TEMPLATE_FIELD), spanishTemplate.getIdentifier());
+            assertEquals(spanishPage.get(HTMLPageAssetAPI.TEMPLATE_FIELD), spanishTemplate.getIdentifier());
+
+            //Verify that the initial English version was not modified
+            assertNotEquals(spanishPage.get(HTMLPageAssetAPI.TEMPLATE_FIELD),
+                    contentletAPI.find(englishPage.getInode(), user, false)
+                            .get(HTMLPageAssetAPI.TEMPLATE_FIELD));
+
+            //Verify that a new English version with the Spanish template was created
+            final String newEnglishInode = APILocator.getVersionableAPI()
+                    .getContentletVersionInfo(englishPage.getIdentifier(),
+                            englishPage.getLanguageId()).getWorkingInode();
 
             assertEquals(spanishPage.get(HTMLPageAssetAPI.TEMPLATE_FIELD),
-                    contentletAPI.find(englishPage.getInode(), user, false)
+                    contentletAPI.find(newEnglishInode, user, false)
                             .get(HTMLPageAssetAPI.TEMPLATE_FIELD));
 
 
         } finally{
 
             //Clean up environment
-            if (UtilMethods.isSet(englishPage) && UtilMethods.isSet(englishPage.getInode())){
-                HTMLPageDataGen.remove(englishPage);
-            }
-
-            if (UtilMethods.isSet(result) && UtilMethods.isSet(result.getInode())){
-                HTMLPageDataGen.remove(result);
-            }
+            contentletAPI.destroy(spanishPage, user, false);
 
             if (UtilMethods.isSet(folder) && UtilMethods.isSet(folder.getInode())){
                 FolderDataGen.remove(folder);
@@ -4395,13 +4397,23 @@ public class ContentletAPITest extends ContentletBaseTest {
             spanishPage.setProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, spanishTemplate.getIdentifier());
             spanishPage.setProperty(HTMLPageAssetAPI.URL_FIELD, englishPage.getPageUrl() + "SP");
 
-            result = LocalTransaction.wrapReturnWithListeners(() -> HTMLPageDataGen.checkin(spanishPage));
+            result = HTMLPageDataGen.checkin(spanishPage);
 
             //Verify that the Spanish page has the same template
             assertEquals(result.get(HTMLPageAssetAPI.TEMPLATE_FIELD), spanishTemplate.getIdentifier());
 
+            //Verify that the initial English version was not modified
             assertNotEquals(spanishPage.get(HTMLPageAssetAPI.TEMPLATE_FIELD),
                     contentletAPI.find(englishPage.getInode(), user, false)
+                            .get(HTMLPageAssetAPI.TEMPLATE_FIELD));
+
+            //Verify that a new English version with the Spanish template was created
+            final String newEnglishInode = APILocator.getVersionableAPI()
+                    .getContentletVersionInfo(englishPage.getIdentifier(),
+                            englishPage.getLanguageId()).getWorkingInode();
+
+            assertEquals(spanishPage.get(HTMLPageAssetAPI.TEMPLATE_FIELD),
+                    contentletAPI.find(newEnglishInode, user, false)
                             .get(HTMLPageAssetAPI.TEMPLATE_FIELD));
 
         } finally{
