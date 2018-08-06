@@ -4319,7 +4319,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             assertEquals(spanishPage.get(HTMLPageAssetAPI.TEMPLATE_FIELD), spanishTemplate.getIdentifier());
 
             //Verify that the initial English version was not modified
-            assertNotEquals(spanishPage.get(HTMLPageAssetAPI.TEMPLATE_FIELD),
+            assertEquals(englishTemplate.getIdentifier(),
                     contentletAPI.find(englishPage.getInode(), user, false)
                             .get(HTMLPageAssetAPI.TEMPLATE_FIELD));
 
@@ -4403,7 +4403,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             assertEquals(result.get(HTMLPageAssetAPI.TEMPLATE_FIELD), spanishTemplate.getIdentifier());
 
             //Verify that the initial English version was not modified
-            assertNotEquals(spanishPage.get(HTMLPageAssetAPI.TEMPLATE_FIELD),
+            assertEquals(englishTemplate.getIdentifier(),
                     contentletAPI.find(englishPage.getInode(), user, false)
                             .get(HTMLPageAssetAPI.TEMPLATE_FIELD));
 
