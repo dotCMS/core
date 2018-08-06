@@ -277,6 +277,21 @@ public interface WorkflowAPI {
 
 	public void saveStep(WorkflowStep step, User user) throws DotDataException, AlreadyExistException;
 
+	/**
+	 * Deletes a given step step with all dependencies: actions, actionlets and tasks
+	 * <strong>WITHOUT</strong> validating next steps references in other steps or if Contentlets
+	 * are in the step we want to remove.
+	 * <p><strong>Note:</strong> Use this method with caution, was created for hard deletes from
+	 * Push publish avoiding all validations.</p>
+	 *
+	 * @param step WorkflowStep   from the step to delete the action
+	 * @param user The current User
+	 * @return Future {@link WorkflowStep} the process runs async, returns a future with the steps
+	 * deleted.
+	 */
+	public Future<WorkflowStep> deleteStepHardMode(final WorkflowStep step, final User user)
+			throws DotDataException;
+
     /**
      * Delete a step with all dependencies: actions, actionlets and tasks.
      * @param step WorkflowStep   from the step to delete the action

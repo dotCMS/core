@@ -845,53 +845,85 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@CloseDBIfOpened
-	public  Future<WorkflowStep>  deleteStep(final WorkflowStep step, final User user) throws DotDataException {
+	public Future<WorkflowStep> deleteStepHardMode(final WorkflowStep step, final User user)
+			throws DotDataException {
 
-		return this.doDeleteStep(step, user, true); // runs async
+		return this.doDeleteStep(step, user, false, true);
 	}
 
-	private Future<WorkflowStep> doDeleteStep(final WorkflowStep step, final User user, final boolean async) throws DotDataException {
+	@CloseDBIfOpened
+	public Future<WorkflowStep> deleteStep(final WorkflowStep step, final User user)
+			throws DotDataException {
+
+		return this.doDeleteStep(step, user, true, false); // runs async
+	}
+
+	private Future<WorkflowStep> doDeleteStep(final WorkflowStep step, final User user,
+			final boolean async) throws DotDataException {
+		return doDeleteStep(step, user, async, false);
+	}
+
+	/**
+	 * Deletes a given step with all dependencies: actions, actionlets and tasks.
+	 *
+	 * @param step Workflow step to delte
+	 * @param user To who perform the delete operation
+	 * @param async If the delete should run in separated thread
+	 * @param hardMode If validations should be skipped. <strong>Note:</strong> Use this parameter
+	 * with caution, was created for hard deletes from Push publish avoiding all validations.
+	 */
+	private Future<WorkflowStep> doDeleteStep(final WorkflowStep step, final User user,
+			final boolean async, final boolean hardMode) throws DotDataException {
 
 		this.isUserAllowToModifiedWorkflow(user);
 
 		try {
 
-			// Checking for Next Step references
-			for(final WorkflowStep otherStep : findSteps(findScheme(step.getSchemeId()))){
+			if (!hardMode) {
+				// Checking for Next Step references
+				for (final WorkflowStep otherStep : findSteps(findScheme(step.getSchemeId()))) {
 
-				/*
-				Verify we are not validating the next step is the step we want to delete.
-				Remember the step can point to itself and that should not be a restriction when deleting.
-				 */
-				if (!otherStep.getId().equals(step.getId())) {
-					for(final WorkflowAction action : findActions(otherStep, APILocator.getUserAPI().getSystemUser())){
+					/*
+					Verify we are not validating the next step is the step we want to delete.
+					Remember the step can point to itself and that should not be a restriction when deleting.
+					 */
+					if (!otherStep.getId().equals(step.getId())) {
+						for (final WorkflowAction action : findActions(otherStep,
+								APILocator.getUserAPI().getSystemUser())) {
 
-						if (action.getNextStep().equals(step.getId())) {
-							final String validationExceptionMessage = LanguageUtil.format(user.getLocale(),
-									"Workflow-delete-step-reference-by-step-error",
-									new String[]{step.getName(), otherStep.getName(),
-											action.getName()}, false);
-							throw new DotDataValidationException(validationExceptionMessage);
+							if (action.getNextStep().equals(step.getId())) {
+								final String validationExceptionMessage = LanguageUtil
+										.format(user.getLocale(),
+												"Workflow-delete-step-reference-by-step-error",
+												new String[]{step.getName(), otherStep.getName(),
+														action.getName()}, false);
+								throw new DotDataValidationException(validationExceptionMessage);
+							}
 						}
 					}
 				}
 			}
 
-			final int countContentletsReferencingStep = getCountContentletsReferencingStep(step);
-			if(countContentletsReferencingStep > 0){
+			if (!hardMode) {
+				final int countContentletsReferencingStep = getCountContentletsReferencingStep(
+						step);
+				if (countContentletsReferencingStep > 0) {
 
-				final String validationExceptionMessage = LanguageUtil.format(user.getLocale(),
-						"Workflow-delete-step-reference-by-contentlet-error",
-						new String[]{step.getName(), Integer.toString(countContentletsReferencingStep)}, false);
-				throw new DotDataValidationException(validationExceptionMessage);
+					final String validationExceptionMessage = LanguageUtil.format(user.getLocale(),
+							"Workflow-delete-step-reference-by-contentlet-error",
+							new String[]{step.getName(),
+									Integer.toString(countContentletsReferencingStep)}, false);
+					throw new DotDataValidationException(validationExceptionMessage);
+				}
 			}
 
-			final DotSubmitter submitter = this.concurrentFactory.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
+			final DotSubmitter submitter = this.concurrentFactory
+					.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
 			//Delete the Scheme in a separated thread
-			return (async)?
-					submitter.submit(() -> deleteStepTask(step, user, true)):
+			return (async) ?
+					submitter.submit(() -> deleteStepTask(step, user, true)) :
 					ConcurrentUtils.constantFuture(deleteStepTask(step, user, false));
-		} catch(Exception e){
+		} catch (Exception e) {
 
 			throw new DotDataException(e.getMessage(), e);
 		}
