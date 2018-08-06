@@ -3515,7 +3515,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private void updateTemplateInAllLanguageVersions(final Contentlet contentlet, final User user)
             throws DotDataException, DotSecurityException{
-        if(contentlet.getBoolProperty("DO_NOT_UPDATE_TEMPLATES")){
+        
+        final String DO_NOT_UPDATE_TEMPLATES= "DO_NOT_UPDATE_TEMPLATES";
+        
+        if(contentlet.getBoolProperty(DO_NOT_UPDATE_TEMPLATES)){
             return;
         }
         if (UtilMethods.isSet(contentlet.getIdentifier())){
@@ -3538,8 +3541,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                     //Create a new working version with the template when the page version is live and working
                     Contentlet newPageVersion = checkout(c.getInode(), user, false);
-                    newPageVersion.setBoolProperty("DO_NOT_UPDATE_TEMPLATES", true);
+                    newPageVersion.setBoolProperty(DO_NOT_UPDATE_TEMPLATES, true);
                     newPageVersion.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, newTemplate);
+                    newPageVersion.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
                     checkin(newPageVersion,  user, false);
 
 
