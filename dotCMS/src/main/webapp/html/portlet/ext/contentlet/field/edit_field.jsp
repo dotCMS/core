@@ -10,8 +10,6 @@
 <%@page import="com.dotmarketing.util.Parameter"%>
 <%@page import="com.dotmarketing.portlets.categories.model.Category"%>
 <%@page import="com.dotmarketing.portlets.categories.business.CategoryAPI"%>
-<%@page import="com.dotmarketing.business.APILocator"%>
-<%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.dotmarketing.util.InodeUtils"%>
 <%@page import="com.dotmarketing.exception.DotSecurityException"%>
 <%@page import="com.dotmarketing.util.Logger"%>
@@ -31,6 +29,9 @@
 
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
+<%@page import="com.dotmarketing.portlets.contentlet.util.ResourceLink.ResourceLinkBuilder" %>
+<%@page import="com.dotmarketing.portlets.contentlet.util.ResourceLink" %>
+<%@page import="com.dotmarketing.portlets.fileassets.business.FileAsset" %>
 
 <%
     long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
@@ -534,54 +535,26 @@
 
 
     <%
-        com.dotmarketing.portlets.structure.model.Structure structure   = (com.dotmarketing.portlets.structure.model.Structure) request.getAttribute("structure");
+        com.dotmarketing.portlets.structure.model.Structure structure  = (com.dotmarketing.portlets.structure.model.Structure) request.getAttribute("structure");
         boolean canUserWriteToContentlet = APILocator.getPermissionAPI().doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_WRITE,user);
         if(UtilMethods.isSet(value) && structure.getStructureType()==com.dotmarketing.portlets.structure.model.Structure.STRUCTURE_TYPE_FILEASSET && field.getVelocityVarName().equals(FileAssetAPI.BINARY_FIELD)){ %>
 
     <%if(canUserWriteToContentlet){%>
     <div id="<%=field.getVelocityVarName()%>dt" class="field__editable-content">
-        <%= LanguageUtil.get(pageContext, "Resource-Link") %>:
-
 
         <%
-            StringBuffer resourceLink = new StringBuffer();
-            String resourceLinkUri = "";
-            Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
-            Host host = APILocator.getHostAPI().find((String)request.getAttribute("host") , user, false);
-            if (identifier!=null && InodeUtils.isSet(identifier.getInode())){
-                if(request.isSecure()){
-                    resourceLink.append("https://");
-                }else{
-                    resourceLink.append("http://");
-                }
-                resourceLink.append(host.getHostname());
-                if(request.getServerPort() != 80 && request.getServerPort() != 443){
-                    resourceLink.append(":" + request.getServerPort());
-                }
-                resourceLinkUri = identifier.getParentPath()+contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD);
-                resourceLink.append(UtilMethods.encodeURIComponent(resourceLinkUri));
-                //resourceLinkUri.concat("?language_id="+contentlet.getLanguageId());
-                resourceLinkUri+="?language_id="+contentlet.getLanguageId();
-                resourceLink.append("?language_id="+contentlet.getLanguageId());
-            }
-
-            com.dotmarketing.portlets.fileassets.business.FileAsset fa = APILocator.getFileAssetAPI().fromContentlet(contentlet);
-            String mimeType = fa.getMimeType();
-            String fileAssetName = fa.getFileName();
-        %>
-
-        <div style="padding:10px;">
-            <a href="<%=resourceLink %>" target="_new"><%=resourceLinkUri %></a>
-        </div>
+          final ResourceLink resourceLink = ResourceLinkBuilder.build(request, user, contentlet);
+          final FileAsset fa = resourceLink.getFileAsset();
+          if(!resourceLink.isDownloadRestricted()){ %>
+           <%= LanguageUtil.get(pageContext, "Resource-Link") %>:
+           <div style="padding:10px;">
+            <a href="<%=resourceLink.getResourceLinkAsString() %>" target="_new"><%=resourceLink.getResourceLinkUriAsString() %></a>
+           </div>
+         <% } else { %>
+            <br>
+         <% }  %>
     </div>
-    <% if (mimeType.indexOf("officedocument") == -1
-            && mimeType.indexOf("svg") == -1
-            && (mimeType.indexOf("text") != -1
-                || mimeType.indexOf("javascript") != -1
-                || mimeType.indexOf("json") != -1
-                || mimeType.indexOf("xml") != -1
-                || mimeType.indexOf("php") != -1)
-            || fileAssetName.endsWith(".vm")) { %>
+    <% if (resourceLink.isEditableAsText()) { %>
         <% if (InodeUtils.isSet(binInode) && canUserWriteToContentlet) { %>
             <%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp"%>
         <% } %>
