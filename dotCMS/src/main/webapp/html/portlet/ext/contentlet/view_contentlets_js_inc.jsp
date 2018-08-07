@@ -1240,7 +1240,13 @@
         }
         const debouncedSearch = debounce(doSearch1, 250);
         
+        var currentPage;
         function doSearch (page, sortBy) {
+            if (page) {
+                currentPage = page;
+            } else {
+                page = currentPage
+            }
 			// Wait for the "HostFolderFilteringSelect" widget to end the values updating process before proceeding with the search, if necessary.
 			if (dijit.byId('FolderHostSelector') && dijit.byId('FolderHostSelector').attr('updatingSelectedValue')) {
 			        setTimeout("doSearch (" + page + ", '" + sortBy + "');", 250);
