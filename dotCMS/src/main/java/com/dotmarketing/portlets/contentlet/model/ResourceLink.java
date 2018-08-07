@@ -1,11 +1,10 @@
-package com.dotmarketing.portlets.contentlet.util;
+package com.dotmarketing.portlets.contentlet.model;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.InodeUtils;
@@ -15,17 +14,23 @@ import javax.servlet.http.HttpServletRequest;
 
 public class ResourceLink {
 
-    private String resourceLinkAsString;
+    private static final String HTTP_PREFIX = "http://";
 
-    private String resourceLinkUriAsString;
+    private static final String HTTPS_PREFIX = "https://";
 
-    private String mimeType;
+    private static final String LANG_ID_PARAM = "?language_id=";
 
-    private FileAsset fileAsset;
+    private final String resourceLinkAsString;
 
-    private boolean editableAsText;
+    private final String resourceLinkUriAsString;
 
-    private boolean downloadRestricted;
+    private final String mimeType;
+
+    private final FileAsset fileAsset;
+
+    private final boolean editableAsText;
+
+    private final boolean downloadRestricted;
 
     private ResourceLink(final String resourceLinkAsString, final String resourceLinkUriAsString,
             final String mimeType,
@@ -71,34 +76,34 @@ public class ResourceLink {
 
     public static class ResourceLinkBuilder {
 
-        public static ResourceLink build(final HttpServletRequest request, final User user, final Contentlet contentlet) throws DotDataException, DotSecurityException {
+        public ResourceLink build(final HttpServletRequest request, final User user, final Contentlet contentlet) throws DotDataException, DotSecurityException {
 
             final StringBuilder resourceLink = new StringBuilder();
-            String resourceLinkUri = "";
+            final StringBuilder resourceLinkUri = new StringBuilder();
 
-            final Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
-            final Host host = APILocator.getHostAPI().find((String)request.getAttribute("host") , user, false);
+            final Identifier identifier = getIdentifier(contentlet);
+            final Host host = getHost((String)request.getAttribute("host") , user);
             if (identifier != null && InodeUtils.isSet(identifier.getInode())){
                 if(request.isSecure()){
-                    resourceLink.append("https://");
+                    resourceLink.append(HTTPS_PREFIX);
                 }else{
-                    resourceLink.append("http://");
+                    resourceLink.append(HTTP_PREFIX);
                 }
                 resourceLink.append(host.getHostname());
                 if(request.getServerPort() != 80 && request.getServerPort() != 443){
                     resourceLink.append(":").append(request.getServerPort());
                 }
-                resourceLinkUri = identifier.getParentPath() + contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD);
-                resourceLink.append(UtilMethods.encodeURIComponent(resourceLinkUri));
-                resourceLinkUri+="?language_id="+contentlet.getLanguageId();
-                resourceLink.append("?language_id=").append(contentlet.getLanguageId());
+                resourceLinkUri.append(identifier.getParentPath()).append(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD));
+                resourceLink.append(UtilMethods.encodeURIComponent(resourceLinkUri.toString()));
+                resourceLinkUri.append(LANG_ID_PARAM).append(contentlet.getLanguageId());
+                resourceLink.append(LANG_ID_PARAM).append(contentlet.getLanguageId());
             }
 
-            final FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
+            final FileAsset fileAsset = getFileAsset(contentlet);
             final String mimeType = fileAsset.getMimeType();
             final String fileAssetName = fileAsset.getFileName();
 
-            return new ResourceLink(resourceLink.toString(), resourceLinkUri, mimeType, fileAsset, isEdiatbleAsText(mimeType, fileAssetName), isDownloadRestricted(fileAssetName));
+            return new ResourceLink(resourceLink.toString(), resourceLinkUri.toString(), mimeType, fileAsset, isEdiatbleAsText(mimeType, fileAssetName), isDownloadRestricted(fileAssetName));
         }
 
         private static boolean isEdiatbleAsText(final String mimeType, final String fileAssetName ){
@@ -125,5 +130,16 @@ public class ResourceLink {
           return fileAssetName.endsWith(".vm") || fileAssetName.endsWith(".vtl");
         }
 
+        Host getHost(final String host, final User user) throws DotDataException, DotSecurityException{
+            return APILocator.getHostAPI().find(host , user, false);
+        }
+
+        Identifier getIdentifier(final Contentlet contentlet) throws DotDataException {
+            return APILocator.getIdentifierAPI().find(contentlet);
+        }
+
+        FileAsset getFileAsset(final Contentlet contentlet){
+           return APILocator.getFileAssetAPI().fromContentlet(contentlet);
+        }
     }
 }

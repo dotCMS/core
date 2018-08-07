@@ -29,8 +29,8 @@
 
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
-<%@page import="com.dotmarketing.portlets.contentlet.util.ResourceLink.ResourceLinkBuilder" %>
-<%@page import="com.dotmarketing.portlets.contentlet.util.ResourceLink" %>
+<%@page import="com.dotmarketing.portlets.contentlet.model.ResourceLink.ResourceLinkBuilder" %>
+<%@page import="com.dotmarketing.portlets.contentlet.model.ResourceLink" %>
 <%@page import="com.dotmarketing.portlets.fileassets.business.FileAsset" %>
 
 <%
@@ -543,7 +543,7 @@
     <div id="<%=field.getVelocityVarName()%>dt" class="field__editable-content">
 
         <%
-          final ResourceLink resourceLink = ResourceLinkBuilder.build(request, user, contentlet);
+          final ResourceLink resourceLink = new ResourceLinkBuilder().build(request, user, contentlet);
           final FileAsset fa = resourceLink.getFileAsset();
           if(!resourceLink.isDownloadRestricted()){ %>
            <%= LanguageUtil.get(pageContext, "Resource-Link") %>:
