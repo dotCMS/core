@@ -7,6 +7,9 @@ import { LoggerService } from 'dotcms-js/dotcms-js';
 import { AddToBundleService } from '../../../../api/services/add-to-bundle/add-to-bundle.service';
 import { DotBundle } from '../../../../shared/models/dot-bundle/dot-bundle';
 import { Dropdown } from 'primeng/primeng';
+import { mergeMap } from 'rxjs/operators';
+
+const LAST_BUNDLE_USED = 'lastBundleUsed';
 
 @Component({
     encapsulation: ViewEncapsulation.None,
@@ -40,17 +43,23 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit {
             'contenttypes.content.add_to_bundle.form.add'
         ];
 
-        this.bundle$ = this.addToBundleService.getBundles();
-
-        this.dotMessageService.getMessages(keys).subscribe(messages => {
-            this.addToBundleService.getBundles().subscribe(bundles => {
-                this.placeholder = bundles.length
-                    ? messages['contenttypes.content.add_to_bundle.select']
-                    : messages['contenttypes.content.add_to_bundle.type'];
-            });
-        });
-
         this.initForm();
+
+        this.bundle$ = this.dotMessageService.getMessages(keys).pipe(
+            mergeMap(messages => {
+                return this.addToBundleService.getBundles().pipe(
+                    mergeMap((bundles: DotBundle[]) => {
+                        setTimeout(() => {
+                            this.placeholder = bundles.length
+                                ? messages['contenttypes.content.add_to_bundle.select']
+                                : messages['contenttypes.content.add_to_bundle.type'];
+                        });
+                        this.form.get('addBundle').setValue(this.getDefaultBundle(bundles) ? this.getDefaultBundle(bundles).name : '');
+                        return Observable.of(bundles);
+                    })
+                );
+            })
+        );
     }
 
     ngAfterViewInit(): void {
@@ -77,12 +86,13 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit {
         if (this.form.valid) {
             this.addToBundleService.addToBundle(this.assetIdentifier, this.setBundleData()).subscribe((result: any) => {
                 if (!result.errors) {
+                    sessionStorage.setItem(LAST_BUNDLE_USED, JSON.stringify(this.setBundleData()));
+                    this.form.reset();
                     this.close();
                 } else {
                     this.loggerService.debug(result.errorMessages);
                 }
             });
-            this.form.reset();
         }
     }
 
@@ -109,5 +119,11 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit {
         } else {
             return this.form.value.addBundle;
         }
+    }
+
+    private getDefaultBundle(bundles: DotBundle[]): DotBundle {
+        const lastBundle: DotBundle = JSON.parse(sessionStorage.getItem(LAST_BUNDLE_USED));
+        // return lastBundle ? this.bundle$.find(bundle => bundle.name === lastBundle.name) : null;
+        return lastBundle ? bundles.find(bundle => bundle.name === lastBundle.name) : null;
     }
 }

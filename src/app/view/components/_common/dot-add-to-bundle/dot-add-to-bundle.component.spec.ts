@@ -1,4 +1,4 @@
-import { ComponentFixture } from '@angular/core/testing';
+import { ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
 import { DebugElement, Component } from '@angular/core';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
@@ -145,13 +145,32 @@ describe('DotAddToBundleComponent', () => {
         });
     });
 
-    it('should set placeholder "Type bundle name" if NO bundles exist', () => {
-        spyOn(addToBundleServiceMock, 'getBundles').and.returnValue(Observable.of([]));
-        fixture.detectChanges();
-        expect(comp.placeholder).toEqual('Type bundle name');
-    });
+    it('should set placeholder "Type bundle name" if NO bundles exist',
+        fakeAsync(() => {
+            spyOn(addToBundleServiceMock, 'getBundles').and.returnValue(Observable.of([]));
+            fixture.detectChanges();
+            tick();
+            expect(comp.placeholder).toEqual('Type bundle name');
+        })
+    );
 
-    it('should set placeholder "Select or type bundle" if bundles exist', () => {
+    it('should set placeholder "Select or type bundle" if bundles exist',
+        fakeAsync(() => {
+            spyOn(addToBundleServiceMock, 'getBundles').and.returnValue(
+                Observable.of([
+                    {
+                        id: '1234',
+                        name: 'my bundle'
+                    }
+                ])
+            );
+            fixture.detectChanges();
+            tick();
+            expect(comp.placeholder).toEqual('Select or type bundle');
+        })
+    );
+
+    it('should set as default Bundle previously selected', () => {
         spyOn(addToBundleServiceMock, 'getBundles').and.returnValue(
             Observable.of([
                 {
@@ -160,8 +179,15 @@ describe('DotAddToBundleComponent', () => {
                 }
             ])
         );
+        sessionStorage.setItem(
+            'lastBundleUsed',
+            JSON.stringify({
+                id: '1234',
+                name: 'my bundle'
+            })
+        );
         fixture.detectChanges();
-        expect(comp.placeholder).toEqual('Select or type bundle');
+        expect(comp.form.value.addBundle).toEqual('my bundle');
     });
 
     describe('should call addToBundle service method with the right params when the form is submitted and is valid', () => {
