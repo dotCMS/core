@@ -152,7 +152,7 @@ public class VelocityLiveMode extends VelocityModeHandler {
 
 
             String key = VelocityUtil.getPageCacheKey(request, htmlPage);
-            if (key != null && request.getSession().getAttribute("tm_date")==null) {
+            if (key != null) {
                 String cachedPage = CacheLocator.getBlockPageCache().get(htmlPage, cacheParameters);
                 if (cachedPage != null) {
                     // have cached response and are not refreshing, send it
