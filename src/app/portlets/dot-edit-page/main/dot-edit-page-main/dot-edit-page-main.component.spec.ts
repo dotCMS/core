@@ -125,7 +125,7 @@ describe('DotEditPageMainComponent', () => {
         spyOn(component, 'pageState');
         spyOn(dotPageStateService, 'reload').and.callThrough();
         dotContentletEditorService.close$.next(true);
-        expect(dotPageStateService.reload).toHaveBeenCalledWith('/about-us/index');
+        expect(dotPageStateService.reload).toHaveBeenCalledWith('/about-us/index', mockDotRenderedPage.page.languageId);
         expect(component.pageState).toEqual(Observable.of(new DotRenderedPageState(mockUser, mockDotRenderedPage)));
     });
 
@@ -149,7 +149,7 @@ describe('DotEditPageMainComponent', () => {
                 }
             });
             dotContentletEditorService.close$.next(true);
-            expect(dotRouterService.goToEditPage).toHaveBeenCalledWith('/about-us/index2');
+            expect(dotRouterService.goToEditPage).toHaveBeenCalledWith('/about-us/index2', mockDotRenderedPage.page.languageId.toString());
         });
 
         it('should go to site-browser when page is deleted', () => {

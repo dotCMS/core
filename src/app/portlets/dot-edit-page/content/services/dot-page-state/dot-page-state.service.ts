@@ -52,10 +52,11 @@ export class DotPageStateService {
      * Get page state
      *
      * @param {string} url
+     * @param {number} [languageId]
      * @memberof DotPageStateService
      */
-    reload(url: string): void {
-        this.get(url)
+    reload(url: string, languageId?: number): void {
+        this.get(url, languageId)
             .pipe(take(1))
             .subscribe((page: DotRenderedPageState) => {
                 this.reload$.next(page);
@@ -66,6 +67,7 @@ export class DotPageStateService {
      * Get page state
      *
      * @param {string} url
+     * @param {number} [languageId]
      * @returns {Observable<DotRenderedPageState>}
      * @memberof DotPageStateService
      */

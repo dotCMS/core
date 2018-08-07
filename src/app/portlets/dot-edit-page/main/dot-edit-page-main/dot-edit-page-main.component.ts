@@ -20,7 +20,6 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private readonly customEventsHandler;
 
-
     constructor(
         private route: ActivatedRoute,
         private dotContentletEditorService: DotContentletEditorService,
@@ -68,11 +67,13 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
 
     private subscribeIframeCloseAction(): void {
         this.dotContentletEditorService.close$.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            if (this.pageUrl !== this.route.snapshot.queryParams.url) {
-                this.dotRouterService.goToEditPage(this.pageUrl);
-            } else {
-                this.dotPageStateService.reload(this.route.snapshot.queryParams.url);
-            }
+            this.pageState.take(1).subscribe((pageState: DotRenderedPageState) => {
+                if (this.pageUrl !== this.route.snapshot.queryParams.url) {
+                    this.dotRouterService.goToEditPage(this.pageUrl, pageState.page.languageId.toString());
+                } else {
+                    this.dotPageStateService.reload(this.route.snapshot.queryParams.url, pageState.page.languageId);
+                }
+            });
         });
 
         this.dotPageStateService.reload$.pipe(takeUntil(this.destroy$)).subscribe((page: DotRenderedPageState) => {

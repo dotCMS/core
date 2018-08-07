@@ -145,6 +145,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
             .subscribe(
                 (pageState: DotRenderedPageState) => {
                     this.setPageState(pageState);
+                    this.dotPageStateService.reload(this.route.snapshot.queryParams.url, viewAsConfig.language.id);
                 },
                 (err: ResponseView) => {
                     this.handleSetPageStateFailed(err);
