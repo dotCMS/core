@@ -11094,6 +11094,10 @@ a.category_higlighted, a.tag_higlighted {
   box-sizing: content-box;
 }
 
+.view-users .dijitTabPaneWrapper .dijitContentPane#userPermissionsTab {
+  overflow: auto;
+}
+
 .view-users .portlet-main,
 .view-users .view-users__profile-tabs,
 .view-users .view-users__profile-tabs-container {
