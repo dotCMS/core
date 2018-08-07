@@ -118,6 +118,13 @@ ol.wfStepsList li{padding:8px 16px;margin:0 10px; list-style:decimal;  list-styl
 	cursor: pointer;
 }
 
+.showPointer h2 {
+    max-width: 220px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
 .wfAddActionButtonRow{
 	margin:10px;
 	text-align: center;	
