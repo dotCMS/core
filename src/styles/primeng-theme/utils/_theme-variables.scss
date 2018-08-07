@@ -3,7 +3,7 @@
 // COMMON
 $field-animation-speed: $basic-speed;
 $field-bgcolor: transparent;
-$field-border-color: $gray-light;
+$field-border-color: $gray;
 $field-border-radius: $border-radius;
 $field-border-size: 1px;
 $field-padding: $basic-padding;
@@ -28,7 +28,7 @@ $field-active-border-color: $brand-primary;
 $field-disabled-bgcolor: rgba($gray-dark, 0.1);
 $field-disabled-color: rgba($black, 0.26);
 $field-disabled-border-size: $field-border-size;
-$field-disabled-border-color: $gray-lighter;
+$field-disabled-border-color: $gray-bg;
 
 // BUTTONS
 $button-border: 0;
@@ -134,8 +134,8 @@ $check-checked-bgcolor: $brand-primary;
 $check-checked-border: solid $check-border-width $black;
 $check-checked-color: $white;
 
-$check-disabled-border: solid $check-border-width $gray-light;
-$check-disabled-bgcolor: $gray-lighter;
+$check-disabled-border: solid $check-border-width $gray;
+$check-disabled-bgcolor: $gray-bg;
 $check-disabled-color: $field-disabled-color;
 $check-disabled-label-color: $field-disabled-color;
 
@@ -151,7 +151,7 @@ $radio-checked-bgcolor: $white;
 $radio-checked-border: solid $check-border-width $brand-primary;
 $radio-checked-color: $brand-primary;
 
-$radio-disabled-border: solid $check-border-width $gray-light;
+$radio-disabled-border: solid $check-border-width $gray;
 $radio-disabled-bgcolor: $field-disabled-bgcolor;
 $radio-disabled-color: $field-disabled-color;
 $radio-disabled-label-color: $field-disabled-color;
@@ -164,17 +164,17 @@ $radio-hover-border: $check-checked-border;
 
 // DATATABLE
 $datatable-cell-padding: 10px $basic-padding * 2; // We need to have 40px min height in the cell
-$datatable-cell-border: 1px solid $gray-lighter;
-$datatable-highlight-row-bgcolor: $gray-lightest;
+$datatable-cell-border: 1px solid $gray-bg;
+$datatable-highlight-row-bgcolor: $gray-bg;
 $datatable-row-color: $black;
 $datatable-row-bgcolor: $white;
-$datatable-head-bgcolor: $gray-lighter;
+$datatable-head-bgcolor: $gray-bg;
 $datatable-head-color: $gray-dark;
 
 // PAGINATOR
 $paginator-page-selected-bgcolor: $brand-primary;
 $paginator-page-selected-border-color: $brand-primary;
-$paginator-page-hover-bgcolor: $gray-light;
+$paginator-page-hover-bgcolor: $gray;
 $paginator-page-border-radius: 10px;
 $paginator-page-size: 21px;
 
@@ -199,7 +199,7 @@ $dialog-close-button-normal-color: rgba($black, 0.7);
 $dialog-close-button-hover-color: $black;
 
 // INPUTSWITCH
-$inputswitch-normal-track-color: $gray-lighter;
+$inputswitch-normal-track-color: $gray-bg;
 $inputswitch-checked-track-color: rgba($brand-primary_rgb, 0.38);
 
 $inputswitch-normal-thumb-color: $white;

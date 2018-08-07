@@ -2,7 +2,7 @@
 @import 'variables';
 
 :host {
-    border-left: solid 3px $gray-lighter;
+    border-left: solid 3px $gray-bg;
     cursor: move;
     display: flex;
     margin: $basic-padding 0;

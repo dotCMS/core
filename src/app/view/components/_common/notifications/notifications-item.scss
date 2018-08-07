@@ -15,7 +15,7 @@ $notification-icon-size: 16px;
     }
 
     .notification-item {
-        border-top: solid 1px $gray-lighter;
+        border-top: solid 1px $gray-bg;
         position: relative;
     }
 
@@ -24,7 +24,7 @@ $notification-icon-size: 16px;
     }
 
     .notification-item__close {
-        color: $gray-light;
+        color: $gray;
         height: $notification-icon-size;
         position: absolute;
         right: 0;

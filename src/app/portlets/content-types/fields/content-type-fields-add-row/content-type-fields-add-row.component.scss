@@ -13,7 +13,7 @@ $row-height: 70px;
 }
 
 .dot-add-rows__container {
-    border: 1px solid $gray-light;
+    border: 1px solid $gray;
     overflow: hidden;
     height: $row-height;
     position: relative;
@@ -54,7 +54,7 @@ $row-height: 70px;
     display: flex;
     flex-grow: 1;
     padding: $basic-padding * 2;
-    border-right: 1px $gray-light solid;
+    border-right: 1px $gray solid;
     outline: none;
 
     &:last-child {
@@ -62,7 +62,7 @@ $row-height: 70px;
     }
 
     .dot-add-rows-columns-list__item-col {
-        background-color: $gray-light;
+        background-color: $gray;
         flex-grow: 1;
         margin: 0 $basic-padding / 2;
 
@@ -79,7 +79,7 @@ $row-height: 70px;
         background-color: $brand-primary;
 
         .dot-add-rows-columns-list__item-col {
-            background-color: $gray-lightest;
+            background-color: $gray-bg;
         }
     }
 }

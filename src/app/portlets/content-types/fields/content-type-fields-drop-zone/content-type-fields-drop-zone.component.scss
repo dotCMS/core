@@ -15,13 +15,13 @@
     padding-bottom: $basic-padding * 2;
 
     &.empty {
-        border: 1px $gray-light dashed;
+        border: 1px $gray dashed;
         position: relative;
     }
 }
 
 .content-type-fields-drop-zone__message {
-    color: $gray-light;
+    color: $gray;
     font-size: $font-size-large;
     margin-top: -9px;
     position: absolute;

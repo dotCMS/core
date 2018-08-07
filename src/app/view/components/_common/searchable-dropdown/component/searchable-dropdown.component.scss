@@ -54,7 +54,7 @@ dot-searchable-dropdown {
             }
 
             &:hover {
-                background-color: $gray-lighter;
+                background-color: $gray-bg;
             }
         }
     }
@@ -70,7 +70,7 @@ dot-searchable-dropdown {
 }
 
 .searchable-dropdown__search-icon {
-    color: $gray-light;
+    color: $gray;
     position: absolute;
     right: 0;
     top: 9px;

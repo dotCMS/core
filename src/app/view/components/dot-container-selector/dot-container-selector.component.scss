@@ -13,7 +13,7 @@
 
 .container-selector__list-item {
     @include naked-list;
-    border-top: 1px solid $gray-lighter;
+    border-top: 1px solid $gray-bg;
     color: $black;
     font-size: $font-size-medium;
     overflow: hidden;

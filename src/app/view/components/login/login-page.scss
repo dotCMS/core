@@ -67,12 +67,12 @@
     position: relative;
 
     @media (min-width: $screen-md-min) {
-        border-left: solid 1px $gray-light;
+        border-left: solid 1px $gray;
         padding-left: $basic-padding * 4;
 
         &:before {
             background-color: $white;
-            border: solid $gray-light;
+            border: solid $gray;
             border-width: 1px 1px 0 0;
             content: '';
             height: 14px;

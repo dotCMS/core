@@ -4,7 +4,7 @@
     display: flex;
     opacity: 0;
     transition: $basic-speed * 2;
-    border-right: solid 1px $gray-lighter;
+    border-right: solid 1px $gray-bg;
     padding-right: $basic-padding * 2;
 }
 
@@ -20,5 +20,5 @@
 .dot-global-message__text {
     line-height: 19px;
     vertical-align: top;
-    color: $gray-light;
+    color: $gray;
 }

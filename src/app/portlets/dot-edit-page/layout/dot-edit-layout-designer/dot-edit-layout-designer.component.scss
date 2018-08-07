@@ -4,7 +4,7 @@
 $toolbar-height: 48px;
 
 :host {
-    background-color: $gray-lightest;
+    background-color: $gray-bg;
     display: flex;
     flex-shrink: 0;
     flex-direction: column;
@@ -37,7 +37,7 @@ dot-layout-designer {
 
     ::ng-deep {
         .ui-toolbar {
-            border-bottom: solid 1px $gray-lighter;
+            border-bottom: solid 1px $gray-bg;
             height: $toolbar-height;
             padding-left: 0;
         }

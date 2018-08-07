@@ -86,7 +86,7 @@ p-toolbar::ng-deep {
 }
 
 .toolbar__sep {
-    border-left: solid 1px $gray-lighter;
+    border-left: solid 1px $gray-bg;
     margin: 0 $basic-padding 0 $basic-padding * 3 !important;
     display: block;
     height: 40px;
