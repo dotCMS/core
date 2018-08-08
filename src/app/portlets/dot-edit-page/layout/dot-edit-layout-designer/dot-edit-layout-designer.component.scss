@@ -14,7 +14,11 @@ $toolbar-height: 48px;
 }
 
 dot-layout-designer {
+    background-color: $white;
+    box-shadow: $md-shadow-1;
     flex-grow: 1;
+    margin: 0 $basic-padding * 2 $basic-padding * 2;
+    padding: $basic-padding * 2;
 }
 
 .dot-edit-layout__actions {

@@ -13,7 +13,7 @@ $field-placeholder-color: $label-color;
 $field-normal-bgcolor: $field-bgcolor;
 $field-normal-color: $body-font-color;
 $field-normal-border-size: $field-border-size;
-$field-normal-border-color: $field-border-color;
+$field-normal-border-color: $gray-light;
 
 $field-hover-bgcolor: $field-bgcolor;
 $field-hover-color: $body-font-color;
@@ -25,8 +25,8 @@ $field-active-color: $body-font-color;
 $field-active-border-size: 2px;
 $field-active-border-color: $brand-primary;
 
-$field-disabled-bgcolor: rgba($gray-dark, 0.1);
-$field-disabled-color: rgba($black, 0.26);
+$field-disabled-bgcolor: #DEDEE1;
+$field-disabled-color: $white;
 $field-disabled-border-size: $field-border-size;
 $field-disabled-border-color: $gray-bg;
 
@@ -92,9 +92,9 @@ $button-sec: (
         border: $button-border,
     ),
     disabled: (
-        background: $field-disabled-bgcolor,
-        color: $field-disabled-color,
-        border: $button-border,
+        background: $white,
+        color: $field-disabled-bgcolor,
+        border: solid 1px $field-disabled-bgcolor,
     )
 );
 

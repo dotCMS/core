@@ -14,7 +14,6 @@
 .dot-layout-designer__main {
     display: flex;
     flex-grow: 1;
-    margin: 0 $basic-padding * 2;
 }
 
 .dot-layout-designer__footer,
@@ -67,14 +66,18 @@
 .dot-layout-designer__footer,
 .dot-layout-designer__header {
     height: 80px;
-    margin: 0 $basic-padding $basic-padding * 2;
+}
+
+.dot-layout-designer__header,
+.dot-layout-designer__main {
+    margin-bottom: $basic-padding * 2;
 }
 
 .dot-layout-designer__body {
     display: flex;
     flex-grow: 1;
     flex-direction: column;
-    border: solid 1px $gray;
+    border: solid 1px $gray-light;
     padding: $basic-padding;
 
     &::ng-deep .action-button--no-label .ui-button.ui-button-icon-only {
