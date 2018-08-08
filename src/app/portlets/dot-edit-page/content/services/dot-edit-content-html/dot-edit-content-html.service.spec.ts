@@ -25,7 +25,7 @@ class MockDotLicenseService {
     }
 }
 
-xdescribe('DotEditContentHtmlService', () => {
+describe('DotEditContentHtmlService', () => {
     let dotLicenseService: DotLicenseService;
     let fakeDocument: Document;
 
@@ -34,7 +34,13 @@ xdescribe('DotEditContentHtmlService', () => {
         <head>
             <script>
                 function getDotNgModel() {
-                    return 'testing';
+                    return [
+                        {
+                            identifier: '123',
+                            uuid: '456',
+                            contentletsId: ['3']
+                        }
+                    ];
                 }
             </script>
         </head>
@@ -46,7 +52,8 @@ xdescribe('DotEditContentHtmlService', () => {
                         data-dot-identifier="456"
                         data-dot-inode="456"
                         data-dot-type="NewsWidgets"
-                        data-dot-basetype="CONTENT">
+                        data-dot-basetype="CONTENT"
+                        data-dot-has-page-lang-version="true">
                         <div class="large-column">
                             <div
                                 data-dot-object="vtl-file"
@@ -72,7 +79,8 @@ xdescribe('DotEditContentHtmlService', () => {
                         data-dot-identifier="456"
                         data-dot-inode="456"
                         data-dot-type="NewsWidgets"
-                        data-dot-basetype="CONTENT">
+                        data-dot-basetype="CONTENT"
+                        data-dot-has-page-lang-version="true">
                         <div class="large-column">
                             <h3>This is a title</h3>
                             <p>this is a paragraph</p>
@@ -89,7 +97,8 @@ xdescribe('DotEditContentHtmlService', () => {
                         data-dot-identifier="367"
                         data-dot-inode="908"
                         data-dot-type="NewsWidgets"
-                        data-dot-basetype="CONTENT">
+                        data-dot-basetype="CONTENT"
+                        data-dot-has-page-lang-version="true">
                         <div class="large-column">
                             <h3>This is a title</h3>
                             <p>this is a paragraph</p>
@@ -248,6 +257,14 @@ xdescribe('DotEditContentHtmlService', () => {
     });
 
     it('should render added contentlet', () => {
+        const modelExpected = [
+            {
+                identifier: '123',
+                uuid: '456',
+                contentletsId: ['3']
+            }
+        ];
+
         let currentModel;
         const currentContainer = {
             identifier: '123',
@@ -286,7 +303,7 @@ xdescribe('DotEditContentHtmlService', () => {
             'currentContainer must be the same after add content'
         );
 
-        expect(currentModel).toEqual('testing', 'should tigger model change event');
+        expect(currentModel).toEqual(modelExpected, 'should tigger model change event');
     });
 
     it('should remove contentlet', () => {
@@ -432,7 +449,7 @@ xdescribe('DotEditContentHtmlService', () => {
                     dataset: button.dataset
                 });
             });
-            const button: HTMLButtonElement = <HTMLButtonElement>fakeDocument.querySelector('.dotedit-contentlet__edit');
+            const button: HTMLButtonElement = <HTMLButtonElement> fakeDocument.querySelector('.dotedit-contentlet__edit');
             const container = <HTMLElement>button.closest('div[data-dot-object="container"]');
             button.click();
         });
@@ -619,15 +636,28 @@ xdescribe('DotEditContentHtmlService', () => {
         });
 
         it('should render added form', () => {
+            const modelExpected = [
+                {
+                    identifier: '123',
+                    uuid: '456',
+                    contentletsId: ['3', '4']
+                }
+            ];
+
             let currentModel;
 
             const dotEditContentToolbarHtmlService = this.injector.get(DotContainerContentletService);
 
-            spyOn(dotEditContentToolbarHtmlService, 'getFormToContainer').and.returnValue(Observable.of('<i>testing</i>'));
+            spyOn(dotEditContentToolbarHtmlService, 'getFormToContainer').and.returnValue(Observable.of({
+                render: '<i>testing</i>',
+                content: {
+                    identifier: '4'
+                }
+            }));
 
-            this.dotEditContentHtmlService.pageModel$.subscribe((model) => (currentModel = model));
-
-            this.dotEditContentHtmlService.renderAddedForm(form);
+            this.dotEditContentHtmlService.renderAddedForm(form).subscribe((model) => {
+                currentModel = model;
+            });
 
             expect(dotEditContentToolbarHtmlService.getFormToContainer).toHaveBeenCalledWith(currentContainer, form);
 
@@ -639,7 +669,7 @@ xdescribe('DotEditContentHtmlService', () => {
                 'currentContainer must be the same after add form'
             );
 
-            expect(currentModel).toEqual('testing', 'should tigger model change event');
+            expect(currentModel).toEqual(modelExpected, 'should tigger model change event');
         });
     });
 });

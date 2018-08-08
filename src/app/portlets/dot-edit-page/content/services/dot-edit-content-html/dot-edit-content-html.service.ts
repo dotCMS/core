@@ -197,6 +197,7 @@ export class DotEditContentHtmlService {
             return Observable.of(null);
         } else {
             return this.dotContainerContentletService.getFormToContainer(this.currentContainer, form).map(response => {
+
                 const containers: DotPageContainer[]  = this.getContentModel();
 
                 containers.filter(container =>
