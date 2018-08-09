@@ -20,6 +20,7 @@ import org.junit.runners.MethodSorters;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * VelocityUtilTest
@@ -93,6 +94,12 @@ public class VelocityUtilTest {
         page.setCacheTTL(0);
         pageCacheKey = VelocityUtil.getPageCacheKey(request,page);
         Assert.assertNull(pageCacheKey);
+
+        page.setCacheTTL(15);
+
+        when(request.getMethod()).thenReturn("GET");
+        pageCacheKey = VelocityUtil.getPageCacheKey(request,page);
+        Assert.assertNotNull(pageCacheKey);
 
     }
 
