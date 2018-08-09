@@ -116,10 +116,10 @@ public class ResourceLink {
             final String mimeType = fileAsset.getMimeType();
             final String fileAssetName = fileAsset.getFileName();
 
-            return new ResourceLink(resourceLink.toString(), resourceLinkUri.toString(), mimeType, fileAsset, isEdiatbleAsText(mimeType, fileAssetName), isDownloadRestricted(fileAssetName));
+            return new ResourceLink(resourceLink.toString(), resourceLinkUri.toString(), mimeType, fileAsset, isEditableAsText(mimeType, fileAssetName), isDownloadRestricted(fileAssetName));
         }
 
-        private static boolean isEdiatbleAsText(final String mimeType, final String fileAssetName ){
+        private static boolean isEditableAsText(final String mimeType, final String fileAssetName ){
              return  (
                  !isRestrictedMimeType(mimeType) && (isEditableMimeType(mimeType) || fileAssetName.endsWith(".vm"))
              );
