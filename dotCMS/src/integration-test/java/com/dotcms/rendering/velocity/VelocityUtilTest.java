@@ -11,7 +11,6 @@ import com.dotmarketing.util.Config;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 
 import javax.servlet.http.HttpServletRequest;
-import org.apache.velocity.app.Velocity;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -19,7 +18,6 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -66,7 +64,7 @@ public class VelocityUtilTest {
 
     @Test
     public void test_getPageCacheKey_returnNull() throws Exception{
-        HttpServletRequest request = new MockSessionRequest(
+        final HttpServletRequest request = new MockSessionRequest(
                 new MockAttributeRequest(
                         new MockHttpRequest("localhost", "/").request()
                 ).request())
@@ -97,6 +95,7 @@ public class VelocityUtilTest {
 
         page.setCacheTTL(15);
 
+        //Use Cached Page Scenario
         when(request.getMethod()).thenReturn("GET");
         pageCacheKey = VelocityUtil.getPageCacheKey(request,page);
         Assert.assertNotNull(pageCacheKey);
