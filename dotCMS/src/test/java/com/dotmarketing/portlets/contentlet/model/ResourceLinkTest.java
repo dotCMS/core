@@ -21,6 +21,8 @@ import org.junit.Test;
 
 public class ResourceLinkTest {
 
+    private static final String HOST_ID = "48190c8c-42c4-46af-8d1a-0cd5db894797";
+
     private ContentType mockFileAssetContentType(){
         return new FileAssetContentType(){
 
@@ -76,6 +78,15 @@ public class ResourceLinkTest {
         return resourceLinkBuilder;
     }
 
+    private User mockAdminUser(){
+        final User adminUser = mock(User.class);
+        when(adminUser.getUserId()).thenReturn("dotcms.org.1");
+        when(adminUser.getEmailAddress()).thenReturn("admin@dotcms.com");
+        when(adminUser.getFirstName()).thenReturn("Admin");
+        when(adminUser.getLastName()).thenReturn("User");
+        return adminUser;
+    }
+
     @Test
     public void test_Html_ResourceLink_Expect_Downloadable_No_Port_Number() throws Exception{
 
@@ -86,11 +97,7 @@ public class ResourceLinkTest {
         final long languageId = 1L;
         final boolean isSecure = false;
 
-        final User adminUser = mock(User.class);
-        when(adminUser.getUserId()).thenReturn("dotcms.org.1");
-        when(adminUser.getEmailAddress()).thenReturn("admin@dotcms.com");
-        when(adminUser.getFirstName()).thenReturn("Admin");
-        when(adminUser.getLastName()).thenReturn("User");
+        final User adminUser = mockAdminUser();
 
         final Contentlet contentlet = mock(Contentlet.class);
         when(contentlet.getContentType()).thenReturn(mockFileAssetContentType());
@@ -98,7 +105,7 @@ public class ResourceLinkTest {
         when(contentlet.getLanguageId()).thenReturn(languageId);
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        when(request.getAttribute(ResourceLink.HOST_REQUEST_ATTRIBUTE)).thenReturn("48190c8c-42c4-46af-8d1a-0cd5db894797");
+        when(request.getAttribute(ResourceLink.HOST_REQUEST_ATTRIBUTE)).thenReturn(HOST_ID);
         when(request.isSecure()).thenReturn(isSecure);
         when(request.getServerPort()).thenReturn(80);
 
@@ -119,11 +126,7 @@ public class ResourceLinkTest {
         final long languageId = 1L;
         final boolean isSecure = false;
 
-        final User adminUser = mock(User.class);
-        when(adminUser.getUserId()).thenReturn("dotcms.org.1");
-        when(adminUser.getEmailAddress()).thenReturn("admin@dotcms.com");
-        when(adminUser.getFirstName()).thenReturn("Admin");
-        when(adminUser.getLastName()).thenReturn("User");
+        final User adminUser = mockAdminUser();
 
         final Contentlet contentlet = mock(Contentlet.class);
         when(contentlet.getContentType()).thenReturn(mockFileAssetContentType());
@@ -131,7 +134,7 @@ public class ResourceLinkTest {
         when(contentlet.getLanguageId()).thenReturn(languageId);
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        when(request.getAttribute(ResourceLink.HOST_REQUEST_ATTRIBUTE)).thenReturn("48190c8c-42c4-46af-8d1a-0cd5db894797");
+        when(request.getAttribute(ResourceLink.HOST_REQUEST_ATTRIBUTE)).thenReturn(HOST_ID);
         when(request.isSecure()).thenReturn(isSecure);
         when(request.getServerPort()).thenReturn(8080);
 
@@ -153,11 +156,7 @@ public class ResourceLinkTest {
         final long languageId = 2L;
         final boolean isSecure = false;
 
-        final User adminUser = mock(User.class);
-        when(adminUser.getUserId()).thenReturn("dotcms.org.1");
-        when(adminUser.getEmailAddress()).thenReturn("admin@dotcms.com");
-        when(adminUser.getFirstName()).thenReturn("Admin");
-        when(adminUser.getLastName()).thenReturn("User");
+        final User adminUser = mockAdminUser();
 
         final Contentlet contentlet = mock(Contentlet.class);
         when(contentlet.getContentType()).thenReturn(mockFileAssetContentType());
@@ -165,7 +164,7 @@ public class ResourceLinkTest {
         when(contentlet.getLanguageId()).thenReturn(languageId);
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        when(request.getAttribute(ResourceLink.HOST_REQUEST_ATTRIBUTE)).thenReturn("48190c8c-42c4-46af-8d1a-0cd5db894797");
+        when(request.getAttribute(ResourceLink.HOST_REQUEST_ATTRIBUTE)).thenReturn(HOST_ID);
         when(request.isSecure()).thenReturn(isSecure);
         when(request.getServerPort()).thenReturn(80);
 
@@ -187,11 +186,7 @@ public class ResourceLinkTest {
         final long languageId = 2L;
         final boolean isSecure = false;
 
-        final User adminUser = mock(User.class);
-        when(adminUser.getUserId()).thenReturn("dotcms.org.1");
-        when(adminUser.getEmailAddress()).thenReturn("admin@dotcms.com");
-        when(adminUser.getFirstName()).thenReturn("Admin");
-        when(adminUser.getLastName()).thenReturn("User");
+        final User adminUser = mockAdminUser();
 
         final Contentlet contentlet = mock(Contentlet.class);
         when(contentlet.getContentType()).thenReturn(mockFileAssetContentType());
@@ -199,7 +194,7 @@ public class ResourceLinkTest {
         when(contentlet.getLanguageId()).thenReturn(languageId);
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        when(request.getAttribute(ResourceLink.HOST_REQUEST_ATTRIBUTE)).thenReturn("48190c8c-42c4-46af-8d1a-0cd5db894797");
+        when(request.getAttribute(ResourceLink.HOST_REQUEST_ATTRIBUTE)).thenReturn(HOST_ID);
         when(request.isSecure()).thenReturn(isSecure);
         when(request.getServerPort()).thenReturn(80);
 

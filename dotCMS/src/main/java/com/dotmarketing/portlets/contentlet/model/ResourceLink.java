@@ -16,8 +16,8 @@ import com.liferay.util.StringPool;
 import javax.servlet.http.HttpServletRequest;
 
 /***
- * This class is the result of o refactoring from an old JSP Snippet that was originally located
- * html/portlet/ext/contentlet/field/edit_field.jsp
+ * This class is the result of a refactoring from an old JSP Snippet that was originally located in:
+ * `html/portlet/ext/contentlet/field/edit_field.jsp`
  */
 public class ResourceLink {
 
@@ -153,7 +153,7 @@ public class ResourceLink {
     }
 
     /**
-     * This method is used to determined if file with determined extesnion should be allowed to download or not.
+     * This method is used to determined if file the extension should be allowed for download or not.
      * @param fileAssetName
      * @return
      */
