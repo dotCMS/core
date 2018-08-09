@@ -153,7 +153,7 @@ public class CalendarWebAPI implements ViewTool {
 						return event1.getStartDate().compareTo(event2.getStartDate());
 					}else if(sortBy.contains("endDate")){
 						if(isDesc){
-							return event2.getEndDate().compareTo(event2.getEndDate());
+							return event2.getEndDate().compareTo(event1.getEndDate());
 						}
 						return event1.getEndDate().compareTo(event2.getEndDate());
 					}
