@@ -25,6 +25,7 @@ import com.dotmarketing.portlets.contentlet.business.BinaryContentExporterExcept
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ResourceLink;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Constants;
@@ -317,7 +318,7 @@ public class BinaryExporterServlet extends HttpServlet {
 
 
 			
-			if(downloadName.endsWith(".vtl") || downloadName.endsWith(".vm")){
+			if(ResourceLink.isDownloadRestricted(downloadName)){
 				resp.sendError(404);
 			    DbConnectionFactory.closeSilently();
 			    return;

@@ -1,8 +1,10 @@
 package com.dotmarketing.portlets.contentlet.model;
 
+import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
@@ -10,9 +12,16 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import javax.servlet.http.HttpServletRequest;
 
+/***
+ * This class is the result of o refactoring from an old JSP Snippet that was originally located
+ * html/portlet/ext/contentlet/field/edit_field.jsp
+ */
 public class ResourceLink {
+
+    static final String HOST_REQUEST_ATTRIBUTE = "host";
 
     private static final String HTTP_PREFIX = "http://";
 
@@ -76,13 +85,17 @@ public class ResourceLink {
 
     public static class ResourceLinkBuilder {
 
-        public ResourceLink build(final HttpServletRequest request, final User user, final Contentlet contentlet) throws DotDataException, DotSecurityException {
+        public final ResourceLink build(final HttpServletRequest request, final User user, final Contentlet contentlet) throws DotDataException, DotSecurityException {
+
+            if(!(contentlet.getContentType() instanceof FileAssetContentType)){
+                throw new DotStateException("Can only build Resource Links out of content with type `File Asset`.");
+            }
 
             final StringBuilder resourceLink = new StringBuilder();
             final StringBuilder resourceLinkUri = new StringBuilder();
 
             final Identifier identifier = getIdentifier(contentlet);
-            final Host host = getHost((String)request.getAttribute("host") , user);
+            final Host host = getHost((String)request.getAttribute(HOST_REQUEST_ATTRIBUTE) , user);
             if (identifier != null && InodeUtils.isSet(identifier.getInode())){
                 if(request.isSecure()){
                     resourceLink.append(HTTPS_PREFIX);
@@ -91,7 +104,7 @@ public class ResourceLink {
                 }
                 resourceLink.append(host.getHostname());
                 if(request.getServerPort() != 80 && request.getServerPort() != 443){
-                    resourceLink.append(":").append(request.getServerPort());
+                    resourceLink.append(StringPool.COLON).append(request.getServerPort());
                 }
                 resourceLinkUri.append(identifier.getParentPath()).append(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD));
                 resourceLink.append(UtilMethods.encodeURIComponent(resourceLinkUri.toString()));
@@ -126,12 +139,8 @@ public class ResourceLink {
             );
         }
 
-        private static boolean isDownloadRestricted(final String fileAssetName ){
-          return fileAssetName.endsWith(".vm") || fileAssetName.endsWith(".vtl");
-        }
-
-        Host getHost(final String host, final User user) throws DotDataException, DotSecurityException{
-            return APILocator.getHostAPI().find(host , user, false);
+        Host getHost(final String hostId, final User user) throws DotDataException, DotSecurityException{
+            return APILocator.getHostAPI().find(hostId , user, false);
         }
 
         Identifier getIdentifier(final Contentlet contentlet) throws DotDataException {
@@ -142,4 +151,15 @@ public class ResourceLink {
            return APILocator.getFileAssetAPI().fromContentlet(contentlet);
         }
     }
+
+    /**
+     * This method is used to determined if file with determined extesnion should be allowed to download or not.
+     * @param fileAssetName
+     * @return
+     */
+    public static boolean isDownloadRestricted(final String fileAssetName ){
+        final String lowerCaseAssetName = fileAssetName.toLowerCase();
+        return lowerCaseAssetName.endsWith(".vm") || lowerCaseAssetName.endsWith(".vtl");
+    }
+
 }
