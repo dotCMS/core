@@ -52,6 +52,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 @Path("/v1/contenttype")
 public class ContentTypeResource implements Serializable {
@@ -96,7 +97,7 @@ public class ContentTypeResource implements Serializable {
 
 		try {
 			Logger.debug(this, String.format("Saving new content type", form.getRequestJson()));
-
+			final HttpSession session = req.getSession(false);
 			final Iterable<ContentTypeForm.ContentTypeFormEntry> typesToSave = form.getIterable();
 			final List<Map<Object, Object>> retTypes = new ArrayList<>();
 
@@ -116,8 +117,10 @@ public class ContentTypeResource implements Serializable {
 						.put("workflows", this.workflowHelper.findSchemesByContentType(contentTypeSaved.id(), initData.getUser()))
 						.build();
 				retTypes.add(responseMap);
-				// save the latest to the session to be compliant with #13719
-				req.getSession().setAttribute("selectedStructure",contentTypeSaved.inode());
+				// save the last one to the session to be compliant with #13719
+				if(null != session){
+                    session.setAttribute("selectedStructure", contentTypeSaved.inode());
+				}
 			}
 
 

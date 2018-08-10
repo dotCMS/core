@@ -42,15 +42,20 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -518,6 +523,37 @@ public class ContentTypeResourceTest {
 
 			if (contentTypeVisibleByDefault != null) {
 				APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentTypeVisibleByDefault);
+			}
+		}
+	}
+
+	@Test
+	public void testCreateType_whenSuccessfulCreation_shouldPutCreatedStructureInSession() throws Exception{
+		Object value = null;
+
+			final String selectedStructureKey = "selectedStructure";
+			final ContentTypeResource resource = new ContentTypeResource();
+			final ContentTypeForm.ContentTypeFormDeserialize contentTypeFormDeserialize = new ContentTypeForm.ContentTypeFormDeserialize();
+			final HttpServletRequest request = getHttpRequest();
+		try {
+			final Response response = resource.createType(request,
+					contentTypeFormDeserialize.buildForm(JSON_CONTENT_TYPE_CREATE));
+			RestUtilTest.verifySuccessResponse(response);
+			final HttpSession session = request.getSession();
+			assertNotNull(session);
+			final List<String> attributes = Collections.list(session.getAttributeNames());
+			assertFalse(attributes.isEmpty());
+			final Map<String, Object> sessionMap = attributes.stream()
+					.collect(Collectors.toMap(o -> o, session::getAttribute));
+			assertTrue(sessionMap.containsKey(selectedStructureKey));
+			value = sessionMap.get(selectedStructureKey);
+			assertNotNull(value);
+
+		}finally{
+			if(null != value){
+				resource.deleteType(
+						value.toString(), getHttpRequest()
+				);
 			}
 		}
 	}
