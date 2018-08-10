@@ -4,6 +4,7 @@ import { NgModule } from '@angular/core';
 import { PatternLibraryComponent } from './pattern-library.component';
 import { Routes, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { DotIconButtonModule } from '../dot-icon-button/dot-icon-button.module';
 
 const routes: Routes = [
     {
@@ -17,7 +18,8 @@ const routes: Routes = [
         CommonModule,
         FormsModule,
         ...NGFACES_MODULES,
-        RouterModule.forChild(routes)
+        RouterModule.forChild(routes),
+        DotIconButtonModule
     ],
     declarations: [PatternLibraryComponent]
 })
