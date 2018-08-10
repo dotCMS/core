@@ -8,12 +8,12 @@ describe('ContentTypesInfoService', () => {
         this.iconsService = this.injector.get(ContentTypesInfoService);
     });
 
-    it('should return a fa-newspaper-o for content', () => {
-        expect(this.iconsService.getIcon('content')).toBe('fa-newspaper-o');
+    it('should return a event_note for content', () => {
+        expect(this.iconsService.getIcon('content')).toBe('event_note');
     });
 
-    it('should return a fa-file-text-o for page', () => {
-        expect(this.iconsService.getIcon('htmlpage')).toBe('fa-file-text-o');
+    it('should return a description for page', () => {
+        expect(this.iconsService.getIcon('htmlpage')).toBe('description');
     });
 
     it('should return a ImmutableWidgetContentType for page', () => {

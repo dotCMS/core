@@ -15,15 +15,8 @@ $icon-size: $basic-padding * 3;
     align-items: center;
 }
 
-.content-types-fields-list__item-icon {
-    color: $gray;
-    font-size: $basic-padding * 2;
-    height: $icon-size;
-    line-height: $icon-size;
+dot-icon {
     margin-right: $basic-padding * 2;
-    text-align: center;
-    transition: color $basic-speed ease;
-    width: $icon-size;
 
     .content-types-fields-list__item:hover & {
         color: $body-font-color;

@@ -8,25 +8,24 @@ import { FieldService, FieldDragDropService } from '../service';
 import { DragulaModule } from 'ng2-dragula';
 import { DragulaService } from 'ng2-dragula';
 import { Observable } from 'rxjs/Observable';
+import { DotIconModule } from '../../../../view/components/_common/dot-icon/dot-icon.module';
 
 describe('ContentTypesFieldsListComponent', () => {
     let comp: ContentTypesFieldsListComponent;
     let fixture: ComponentFixture<ContentTypesFieldsListComponent>;
     let de: DebugElement;
 
-    beforeEach(
-        async(() => {
-            DOTTestBed.configureTestingModule({
-                declarations: [ContentTypesFieldsListComponent],
-                imports: [DragulaModule],
-                providers: [DragulaService, FieldDragDropService, FieldService]
-            });
+    beforeEach(async(() => {
+        DOTTestBed.configureTestingModule({
+            declarations: [ContentTypesFieldsListComponent],
+            imports: [DragulaModule, DotIconModule],
+            providers: [DragulaService, FieldDragDropService, FieldService]
+        });
 
-            fixture = DOTTestBed.createComponent(ContentTypesFieldsListComponent);
-            comp = fixture.componentInstance;
-            de = fixture.debugElement;
-        })
-    );
+        fixture = DOTTestBed.createComponent(ContentTypesFieldsListComponent);
+        comp = fixture.componentInstance;
+        de = fixture.debugElement;
+    }));
 
     it('should renderer each items', () => {
         const fieldService = fixture.debugElement.injector.get(FieldService);
@@ -57,9 +56,7 @@ describe('ContentTypesFieldsListComponent', () => {
         const itemsElements = de.queryAll(By.css('li'));
 
         expect(itemsData.length).toEqual(itemsElements.length);
-        itemsData.forEach((fieldType, index) =>
-            expect(itemsElements[index].nativeElement.textContent).toContain(fieldType.label)
-        );
+        itemsData.forEach((fieldType, index) => expect(itemsElements[index].nativeElement.textContent).toContain(fieldType.label));
 
         const ulElement = de.query(By.css('ul'));
 

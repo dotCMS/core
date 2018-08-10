@@ -31,7 +31,7 @@
     (onHide)="removeFieldsWithoutId()">
 
     <p-header>
-        {{ currentFieldType?.label }} <i class="fa fa-question form__hint-icon content-type-fields-drop-zone__hint-icon" (click)="fieldHelperOverlay.toggle($event)"></i>
+        {{ currentFieldType?.label }} <dot-icon-button icon="help_outline" (click)="fieldHelperOverlay.toggle($event)"></dot-icon-button>
     </p-header>
 
     <dot-content-type-fields-properties-form

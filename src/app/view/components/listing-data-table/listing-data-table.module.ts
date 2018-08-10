@@ -9,11 +9,12 @@ import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { NgModule } from '@angular/core';
 import { DataTableModule, InputTextModule } from 'primeng/primeng';
 import { ActionMenuButtonModule } from '../_common/action-menu-button/action-menu-button.module';
+import { DotIconModule } from '../_common/dot-icon/dot-icon.module';
 
 @NgModule({
     declarations: [ListingDataTableComponent],
     exports: [ListingDataTableComponent],
-    imports: [ActionHeaderModule, CommonModule, DataTableModule, FormsModule, InputTextModule, ActionMenuButtonModule],
+    imports: [ActionHeaderModule, CommonModule, DataTableModule, FormsModule, InputTextModule, ActionMenuButtonModule, DotIconModule],
     providers: [CrudService, FormatDateService, DotcmsConfig, LoggerService, DotMessageService]
 })
 export class ListingDataTableModule {}

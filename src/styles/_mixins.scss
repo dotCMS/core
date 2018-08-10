@@ -5,6 +5,14 @@
     @return #{$remSize}rem;
 }
 
+@mixin dot-icon_tiny {
+    font-size: $md-icon-size / 2;
+}
+
+@mixin dot-icon_inverted {
+    color: $white;
+}
+
 @mixin box_shadow ($level) {
     @if $level == 1 {
         box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);

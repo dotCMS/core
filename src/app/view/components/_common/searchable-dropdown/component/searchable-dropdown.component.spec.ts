@@ -8,6 +8,7 @@ import { SEARCHABLE_NGFACES_MODULES } from '../searchable-dropdown.module';
 import { SearchableDropdownComponent } from './searchable-dropdown.component';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { DotIconModule } from '../../dot-icon/dot-icon.module';
 
 describe('SearchableDropdownComponent', () => {
     const NROWS = 6;
@@ -28,7 +29,7 @@ describe('SearchableDropdownComponent', () => {
 
             DOTTestBed.configureTestingModule({
                 declarations: [SearchableDropdownComponent],
-                imports: [...SEARCHABLE_NGFACES_MODULES, BrowserAnimationsModule],
+                imports: [...SEARCHABLE_NGFACES_MODULES, BrowserAnimationsModule, DotIconModule],
                 providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
             });
 

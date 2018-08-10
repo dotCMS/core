@@ -1,0 +1,18 @@
+@import 'variables';
+@import 'mixins';
+
+:host {
+    &[tiny] i {
+        @include dot_icon_tiny;
+    }
+
+    &[inverted] i {
+        @include dot_icon_inverted;
+    }
+
+    i {
+        color: $gray;
+        font-size: $md-icon-size;
+        user-select: none;
+    }
+}

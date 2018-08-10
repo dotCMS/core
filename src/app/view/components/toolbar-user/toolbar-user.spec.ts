@@ -20,6 +20,7 @@ import { DOTTestBed } from '../../../test/dot-test-bed';
 import { LoginServiceMock, mockAuth } from '../../../test/login-service.mock';
 import { ToolbarUserComponent } from './toolbar-user';
 import { DotNavigationService } from '../dot-navigation/dot-navigation.service';
+import { DotIconModule } from '../_common/dot-icon/dot-icon.module';
 
 @Injectable()
 class MockDotNavigationService {
@@ -55,7 +56,7 @@ describe('ToolbarUserComponent', () => {
                 GravatarService,
                 Jsonp
             ],
-            imports: [DataListModule, OverlayPanelModule, BrowserAnimationsModule]
+            imports: [DataListModule, OverlayPanelModule, BrowserAnimationsModule, DotIconModule]
         });
 
         fixture = DOTTestBed.createComponent(ToolbarUserComponent);

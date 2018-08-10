@@ -1,7 +1,7 @@
 <p-dialog visible="true" [draggable]="false" [modal]="true" [dismissableMask]="true" (onHide)="hideDialog()" header="{{ dotMessageService.get('editpage.layout.theme.header') }}">
     <dot-site-selector #siteSelector (change)="siteChange($event)" [archive]="false"></dot-site-selector>
     <div class="dot-theme-search-box">
-        <i class="fa fa-search searchable-dropdown__search-icon"></i>
+        <dot-icon class="searchable-dropdown__search-icon" name="search" tiny="true"></dot-icon>
         <input #searchInput pInputText placeholder="{{ dotMessageService.get('editpage.layout.theme.search') }}" type="text" class="searchable-dropdown__search-field"/>
     </div>
     <div class="dot-themes-container">

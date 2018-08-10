@@ -15,6 +15,7 @@ import { SiteService } from 'dotcms-js/dotcms-js';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { PaginatorService } from '../../../../../api/services/paginator/paginator.service';
 import { DotThemesServiceMock } from '../../../../../test/dot-themes-service.mock';
+import { DotIconModule } from '../../../../../view/components/_common/dot-icon/dot-icon.module';
 
 describe('DotThemeSelectorComponent', () => {
     let component: DotThemeSelectorComponent;
@@ -34,7 +35,7 @@ describe('DotThemeSelectorComponent', () => {
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
             declarations: [DotThemeSelectorComponent],
-            imports: [DataGridModule, SiteSelectorModule, BrowserAnimationsModule],
+            imports: [DataGridModule, SiteSelectorModule, BrowserAnimationsModule, DotIconModule],
             providers: [
                 {
                     provide: DotThemesService,

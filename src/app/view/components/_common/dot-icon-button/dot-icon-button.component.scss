@@ -1,0 +1,50 @@
+@import 'primeng-theme/utils/theme-variables';
+@import 'mixins';
+
+:host {
+    &[tiny] button {
+        height: 16px;
+        width: 16px;
+
+        ::ng-deep i {
+            @include dot_icon_tiny;
+        }
+    }
+
+    &[inverted] button ::ng-deep i {
+        @include dot_icon_inverted;
+    }
+
+    &[disabled] button {
+        background-color: transparent;
+
+        &:hover {
+            background-color: transparent;
+            cursor: not-allowed;
+        }
+
+        ::ng-deep i {
+            color: $field-disabled-bgcolor;
+        }
+    }
+
+    button {
+        align-items: center;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        display: inline-flex;
+        height: 32px;
+        justify-content: center;
+        width: 32px;
+
+        &:focus {
+            outline: 0;
+        }
+
+        &:hover {
+            background-color: $gray-bg;
+        }
+    }
+}
+

@@ -18,6 +18,7 @@ import { PaginatorService } from '../../../api/services/paginator';
 import { ActionHeaderComponent } from './action-header/action-header';
 import { DotDataTableAction } from '../../../shared/models/data-table/dot-data-table-action';
 import { DotMenuModule } from '../_common/dot-menu/dot-menu.module';
+import { DotIconModule } from '../_common/dot-icon/dot-icon.module';
 
 describe('ListingDataTableComponent', () => {
     let comp: ListingDataTableComponent;
@@ -43,7 +44,8 @@ describe('ListingDataTableComponent', () => {
                 RouterTestingModule.withRoutes([{ path: 'test', component: ListingDataTableComponent }]),
                 IconButtonTooltipModule,
                 MenuModule,
-                DotMenuModule
+                DotMenuModule,
+                DotIconModule
             ],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },

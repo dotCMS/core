@@ -167,7 +167,7 @@ export class ContentTypesPortletComponent implements OnInit {
                 command: $event => {
                     this.createContentType(structureTypeView.name.toLocaleLowerCase(), $event);
                 },
-                icon: this.contentTypesInfoService.getIcon(structureTypeView.name),
+                icon: this.contentTypesInfoService.getIcon(`${structureTypeView.name}_old`),
                 label: this.dotMessageService.get('contenttypes.content.' + structureTypeView.name.toLocaleLowerCase())
             };
         });

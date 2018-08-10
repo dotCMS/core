@@ -25,6 +25,8 @@ import { mockResponseView } from '../../../test/response-view.mock';
 import { DotHttpErrorManagerService } from '../../../api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { HotkeysService } from 'angular2-hotkeys';
 import { TestHotkeysMock } from '../../../test/hotkeys-service.mock';
+import { DotIconModule } from '../../../view/components/_common/dot-icon/dot-icon.module';
+import { DotIconButtonModule } from '../../../view/components/_common/dot-icon-button/dot-icon-button.module';
 
 @Component({
     selector: 'dot-content-type-fields-drop-zone',
@@ -86,7 +88,9 @@ const getConfig = (route) => {
                     component: ContentTypesEditComponent
                 }
             ]),
-            BrowserAnimationsModule
+            BrowserAnimationsModule,
+            DotIconModule,
+            DotIconButtonModule
         ],
         providers: [
             {

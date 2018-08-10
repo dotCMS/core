@@ -62,6 +62,8 @@ import { DotDirectivesModule } from '../../shared/dot-directives.module';
 import { DotWorkflowsSelectorFieldModule } from '../../view/components/_common/dot-workflows-selector-field/dot-workflows-selector-field.module';
 import { DotPageSelectorModule } from '../../view/components/_common/dot-page-selector/dot-page-selector.module';
 import { DotBaseTypeSelectorModule } from '../../view/components/dot-base-type-selector/dot-base-type-selector.module';
+import { DotIconModule } from '../../view/components/_common/dot-icon/dot-icon.module';
+import { DotIconButtonModule } from '../../view/components/_common/dot-icon-button/dot-icon-button.module';
 
 @NgModule({
     declarations: [
@@ -103,6 +105,8 @@ import { DotBaseTypeSelectorModule } from '../../view/components/dot-base-type-s
         ConfirmDialogModule,
         ContentTypesRoutingModule,
         DialogModule,
+        DotIconModule,
+        DotIconButtonModule,
         DragulaModule,
         DropdownModule,
         FieldValidationMessageModule,

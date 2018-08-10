@@ -19,6 +19,8 @@ import { Subject } from 'rxjs/Subject';
 import { FieldDragDropService } from '../service/index';
 import { FieldPropertyService } from '../service/field-properties.service';
 import { FieldService } from '../service/field.service';
+import { DotIconButtonModule } from '../../../../view/components/_common/dot-icon-button/dot-icon-button.module';
+import { DotIconModule } from '../../../../view/components/_common/dot-icon/dot-icon.module';
 
 @Component({
     selector: 'dot-content-type-fields-row',
@@ -104,7 +106,9 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 DragulaModule,
                 FieldValidationMessageModule,
                 ReactiveFormsModule,
-                BrowserAnimationsModule
+                BrowserAnimationsModule,
+                DotIconModule,
+                DotIconButtonModule
             ],
             providers: [
                 { provide: FieldDragDropService, useValue: this.testFieldDragDropService },
@@ -204,8 +208,7 @@ let fakeFields: ContentTypeField[];
 class TestHostComponent {
     fields: ContentTypeField[];
 
-    constructor() {
-    }
+    constructor() {}
 }
 
 describe('Load fields and drag and drop', () => {
@@ -246,7 +249,9 @@ describe('Load fields and drag and drop', () => {
                 DragulaModule,
                 FieldValidationMessageModule,
                 ReactiveFormsModule,
-                BrowserAnimationsModule
+                BrowserAnimationsModule,
+                DotIconModule,
+                DotIconButtonModule
             ],
             providers: [
                 { provide: FieldDragDropService, useValue: this.testFieldDragDropService },
@@ -488,7 +493,7 @@ describe('Load fields and drag and drop', () => {
 
         comp.saveFieldsHandler(fieldUpdated);
 
-        const {fixed, indexed, ...original} = saveFields[0];
+        const { fixed, indexed, ...original } = saveFields[0];
 
         expect(original).toEqual(fakeFields[8]);
         expect(saveFields[0].fixed).toEqual(true);

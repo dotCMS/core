@@ -27,6 +27,7 @@
             [style]="{'width': col.width, 'text-align': getAlign(col)}">
             <ng-template let-item="rowData" pTemplate="body">
                 <i class="fa {{ col.icon(item) }} listing-datatable__icon" *ngIf="col.icon"></i>
+                <dot-icon name="{{ col.icon(item) }}" tiny="true" *ngIf="col.icon"></dot-icon>
                 {{ item[col.fieldName] }}
             </ng-template>
         </p-column>

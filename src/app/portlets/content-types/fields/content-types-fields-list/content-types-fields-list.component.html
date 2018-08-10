@@ -7,7 +7,7 @@
     
     <li class="content-types-fields-list__item"
         *ngFor="let fieldType of fieldTypes">
-        <i class="fa content-types-fields-list__item-icon" [ngClass]="fieldService.getIcon(fieldType.clazz)"></i>
+        <dot-icon name="{{ fieldService.getIcon(fieldType.clazz) }}"></dot-icon>
         <span class="content-types-fields-list__item-name">{{ fieldType.name }}</span>
     </li>
 </ul>

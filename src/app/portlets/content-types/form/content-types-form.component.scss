@@ -10,4 +10,12 @@
             width: 100%;
         }
     }
+
+    .form__group dot-icon-button.content-type-form-url-pattern {
+        margin: 0;
+        position: absolute;
+        right: 0;
+        top: 32px;
+        z-index: 1;
+    }
 }

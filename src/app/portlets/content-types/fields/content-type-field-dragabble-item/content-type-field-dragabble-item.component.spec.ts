@@ -8,6 +8,7 @@ import { IconButtonTooltipModule } from '../../../../view/components/_common/ico
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { DotMessageService } from '../../../../api/services/dot-messages-service';
 import { FieldService } from '../service';
+import { DotIconModule } from '../../../../view/components/_common/dot-icon/dot-icon.module';
 
 describe('ContentTypesFieldDragabbleItemComponent', () => {
     let comp: ContentTypesFieldDragabbleItemComponent;
@@ -26,7 +27,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
     beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
             declarations: [ContentTypesFieldDragabbleItemComponent],
-            imports: [IconButtonTooltipModule],
+            imports: [IconButtonTooltipModule, DotIconModule],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }, FieldService]
         });
 

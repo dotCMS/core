@@ -11,6 +11,7 @@ import { LoginService } from 'dotcms-js/dotcms-js';
 import { LoginServiceMock } from '../../../test/login-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { IframeComponent } from '../_common/iframe/iframe-component';
+import { DotIconModule } from '../_common/dot-icon/dot-icon.module';
 
 let component: DotIframeDialogComponent;
 let de: DebugElement;
@@ -23,7 +24,7 @@ let closeButton: DebugElement;
 
 const getTestConfig = (hostComponent) => {
     return {
-        imports: [DialogModule, BrowserAnimationsModule, IFrameModule, RouterTestingModule],
+        imports: [DialogModule, BrowserAnimationsModule, IFrameModule, RouterTestingModule, DotIconModule],
         providers: [
             {
                 provide: LoginService,
