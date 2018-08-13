@@ -15,6 +15,7 @@ buildscript {
 plugins {
     id "com.moowork.node" version "1.2.0"
     id "com.palantir.docker" version "0.17.2"  // reference:  https://github.com/palantir/gradle-docker
+    id 'net.saliman.cobertura' version '2.2.7'
 }
 
 project.ext {
@@ -55,6 +56,10 @@ configurations.all({
     Resolution will only pick dependencies of the relocated element.  Artifacts and other metadata will be ignored.*/
     resolutionStrategy {
         force 'xml-apis:xml-apis:1.4.01'
+        // Cobertura includes an ASM version that can't handle Java 8, ASM 5.0.3 handles Java8
+        // Please note that doesn't resolve all of the issues, such as the lack of support for Lambda expressions
+        force 'org.ow2.asm:asm:5.0.3'
+        forcedModules = [ 'org.ow2.asm:asm:5.0.3' ]
     }
 })
 
@@ -177,6 +182,7 @@ dependencies {
 // Import and apply the dependencies from the dependencies scripts.
 apply from: "$rootDir/dependencies.gradle"
 
+test.finalizedBy(project.tasks.cobertura)
 
 def enterpriseSrcFolder = file("$enterpriseProjectHome/src/main/java")
 
