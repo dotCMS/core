@@ -51,4 +51,8 @@ $nav-size: 80px;
     background-color: $brand-background;
     color: $white;
     pointer-events: none;
+
+    ::ng-deep dot-icon i {
+        @include dot-icon_inverted;
+    }
 }

@@ -82,7 +82,7 @@ export class DotEditPageNavComponent implements OnChanges {
             {
                 needsEntepriseLicense: false,
                 disabled: false,
-                icon: 'fa fa-file-text',
+                icon: 'description',
                 label: this.dotMessageService.get('editpage.toolbar.nav.content'),
                 link: 'content'
             },
@@ -90,7 +90,7 @@ export class DotEditPageNavComponent implements OnChanges {
             {
                 needsEntepriseLicense: false,
                 disabled: false,
-                icon: 'fa fa-plus',
+                icon: 'add',
                 label: this.dotMessageService.get('editpage.toolbar.nav.properties'),
                 action: (inode) => {
                     this.dotContentletEditorService.edit({
@@ -111,7 +111,7 @@ export class DotEditPageNavComponent implements OnChanges {
         return {
             needsEntepriseLicense: !enterpriselicense,
             disabled: !this.canGoToLayout(dotRenderedPage),
-            icon: 'fa fa-th-large',
+            icon: 'view_quilt',
             label: this.getTemplateItemLabel(dotRenderedPage.template),
             link: 'layout',
             tooltip: dotRenderedPage.template.drawed ? null : this.dotMessageService.get('editpage.toolbar.nav.layout.advance.disabled')

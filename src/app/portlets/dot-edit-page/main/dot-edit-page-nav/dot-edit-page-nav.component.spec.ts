@@ -15,6 +15,7 @@ import { mockUser } from './../../../../test/login-service.mock';
 import { Injectable, Component, Input } from '@angular/core';
 import { Observable } from 'rxjs/Observable';
 import { ActivatedRoute } from '@angular/router';
+import { DotIconModule } from '../../../../view/components/_common/dot-icon/dot-icon.module';
 
 @Injectable()
 class MockDotContentletEditorService {
@@ -55,7 +56,7 @@ describe('DotEditPageNavComponent', () => {
 
     beforeEach(async(() => {
         testbed = DOTTestBed.configureTestingModule({
-            imports: [RouterTestingModule, TooltipModule],
+            imports: [RouterTestingModule, TooltipModule, DotIconModule],
             declarations: [DotEditPageNavComponent, TestHostComponent],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
@@ -113,9 +114,9 @@ describe('DotEditPageNavComponent', () => {
             expect(menuListItems.length).toEqual(3);
 
             const labels = ['Content', 'Layout', 'Properties'];
-            const icons = ['fa fa-file-text', 'fa fa-th-large', 'fa fa-plus'];
+            const icons = ['description', 'view_quilt', 'add'];
             menuListItems.forEach((item, index) => {
-                const iconClass = item.query(By.css('i')).nativeElement.classList.value;
+                const iconClass = item.query(By.css('i')).nativeElement.innerHTML.trim();
                 expect(iconClass).toEqual(icons[index]);
                 expect(item.nativeElement.textContent).toContain(labels[index]);
             });
@@ -154,10 +155,10 @@ describe('DotEditPageNavComponent', () => {
 
             fixture.detectChanges();
             const menuListItems: DebugElement[] = fixture.debugElement.queryAll(By.css('.edit-page-nav__item'));
-            const iconClass = menuListItems[0].query(By.css('i')).nativeElement.classList.value;
+            const iconClass = menuListItems[0].query(By.css('i')).nativeElement.innerHTML.trim();
 
             expect(menuListItems.length).toEqual(3);
-            expect(iconClass).toEqual('fa fa-file-text');
+            expect(iconClass).toEqual('description');
             expect(menuListItems[0].nativeElement.textContent).toContain('Content');
             expect(menuListItems[1].nativeElement.textContent).toContain('Layout');
         });
@@ -201,9 +202,9 @@ describe('DotEditPageNavComponent', () => {
             expect(menuListItems[1].nativeElement.classList).toContain('edit-page-nav__item--disabled');
 
             const labels = ['Content', 'Layout', 'Properties'];
-            const icons = ['fa fa-file-text', 'fa fa-th-large', 'fa fa-plus'];
+            const icons = ['description', 'view_quilt', 'add'];
             menuListItems.forEach((item, index) => {
-                const iconClass = item.query(By.css('i')).nativeElement.classList.value;
+                const iconClass = item.query(By.css('i')).nativeElement.innerHTML.trim();
                 expect(iconClass).toEqual(icons[index]);
                 expect(item.nativeElement.textContent).toContain(labels[index]);
             });
