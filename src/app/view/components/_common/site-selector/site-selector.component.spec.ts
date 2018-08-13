@@ -1,4 +1,4 @@
-import { ComponentFixture, async } from '@angular/core/testing';
+import { ComponentFixture, async, fakeAsync, tick } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
 import { SiteSelectorComponent } from './site-selector.component';
 import { By } from '@angular/platform-browser';
@@ -13,6 +13,7 @@ import { SearchableDropdownComponent } from '../searchable-dropdown/component/se
 import { PaginatorService } from '../../../../api/services/paginator';
 import { IframeOverlayService } from '../iframe/service/iframe-overlay.service';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { DotEventsService } from '../../../../api/services/dot-events/dot-events.service';
 
 describe('SiteSelectorComponent', () => {
     let comp: SiteSelectorComponent;
@@ -20,29 +21,41 @@ describe('SiteSelectorComponent', () => {
     let de: DebugElement;
     let paginatorService: PaginatorService;
 
-    beforeEach(
-        async(() => {
-            const messageServiceMock = new MockDotMessageService({
-                search: 'Search'
-            });
+    beforeEach(async(() => {
+        const messageServiceMock = new MockDotMessageService({
+            search: 'Search'
+        });
 
-            const siteServiceMock = new SiteServiceMock();
+        const siteServiceMock = new SiteServiceMock();
 
-            DOTTestBed.configureTestingModule({
-                declarations: [SiteSelectorComponent],
-                imports: [SearchableDropDownModule, BrowserAnimationsModule],
-                providers: [
-                    { provide: DotMessageService, useValue: messageServiceMock },
-                    { provide: SiteService, useValue: siteServiceMock },
-                    IframeOverlayService,
-                    PaginatorService
-                ]
-            });
+        DOTTestBed.configureTestingModule({
+            declarations: [SiteSelectorComponent],
+            imports: [SearchableDropDownModule, BrowserAnimationsModule],
+            providers: [
+                { provide: DotMessageService, useValue: messageServiceMock },
+                { provide: SiteService, useValue: siteServiceMock },
+                IframeOverlayService,
+                PaginatorService
+            ]
+        });
 
-            fixture = DOTTestBed.createComponent(SiteSelectorComponent);
-            comp = fixture.componentInstance;
-            de = fixture.debugElement;
-            paginatorService = de.injector.get(PaginatorService);
+        fixture = DOTTestBed.createComponent(SiteSelectorComponent);
+        comp = fixture.componentInstance;
+        de = fixture.debugElement;
+        paginatorService = de.injector.get(PaginatorService);
+    }));
+
+    it(
+        'should send notification when login-as/logout-as',
+        fakeAsync(() => {
+            const dotEventsService = de.injector.get(DotEventsService);
+            spyOn(comp, 'getSitesList');
+            fixture.detectChanges();
+            dotEventsService.notify('login-as');
+            tick(0);
+            dotEventsService.notify('logout-ass');
+            tick(0);
+            expect(comp.getSitesList).toHaveBeenCalledTimes(2);
         })
     );
 
@@ -179,10 +192,10 @@ describe('SiteSelectorComponent', () => {
         fixture.detectChanges();
         const searchableDropdownComponent: DebugElement = de.query(By.css('dot-searchable-dropdown'));
         let result: any;
-        comp.change.subscribe(res => result = res);
-        searchableDropdownComponent.triggerEventHandler('change',  {fake: 'site'});
+        comp.change.subscribe((res) => (result = res));
+        searchableDropdownComponent.triggerEventHandler('change', { fake: 'site' });
 
-        expect(result).toEqual({fake: 'site'});
+        expect(result).toEqual({ fake: 'site' });
     });
 
     it('should set current site correctly', () => {
@@ -193,7 +206,7 @@ describe('SiteSelectorComponent', () => {
         fixture.detectChanges();
 
         let result: any;
-        comp.currentSite.subscribe(res => result = res);
+        comp.currentSite.subscribe((res) => (result = res));
 
         expect(result).toEqual(mockSites[0]);
     });

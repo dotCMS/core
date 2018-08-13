@@ -15,6 +15,7 @@ import { Site, SiteService } from 'dotcms-js/dotcms-js';
 import { PaginatorService } from '../../../../api/services/paginator';
 import { SearchableDropdownComponent } from '../searchable-dropdown/component';
 import { Observable } from 'rxjs/Observable';
+import { DotEventsService } from '../../../../api/services/dot-events/dot-events.service';
 
 /**
  * It is dropdown of sites, it handle pagination and global search
@@ -53,7 +54,7 @@ export class SiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
 
     private refreshSitesSub: Subscription;
 
-    constructor(private siteService: SiteService, public paginationService: PaginatorService) {}
+    constructor(private siteService: SiteService, public paginationService: PaginatorService, private dotEventsService: DotEventsService) {}
 
     propagateChange = (_: any) => {};
 
@@ -67,6 +68,11 @@ export class SiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
         this.refreshSitesSub = this.siteService.refreshSites$.subscribe((_site: Site) => this.handleSitesRefresh());
 
         this.getSitesList();
+        ['login-as', 'logout-as'].forEach((event: string) => {
+            this.dotEventsService.listen(event).subscribe(() => {
+                this.getSitesList();
+            });
+        });
     }
 
     ngOnChanges(changes: SimpleChanges): void {

@@ -20,6 +20,7 @@ import { DOTTestBed } from '../../../test/dot-test-bed';
 import { LoginServiceMock, mockAuth } from '../../../test/login-service.mock';
 import { ToolbarUserComponent } from './toolbar-user';
 import { DotNavigationService } from '../dot-navigation/dot-navigation.service';
+import { DotEventsService } from '../../../api/services/dot-events/dot-events.service';
 import { DotIconModule } from '../_common/dot-icon/dot-icon.module';
 
 @Injectable()
@@ -34,6 +35,7 @@ describe('ToolbarUserComponent', () => {
     let dotDropdownComponent: DotDropdownComponent;
     let loginService: LoginService;
     let dotNavigationService: DotNavigationService;
+    let dotEventsService: DotEventsService;
 
     beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
@@ -66,10 +68,12 @@ describe('ToolbarUserComponent', () => {
 
         dotNavigationService = de.injector.get(DotNavigationService);
         loginService = de.injector.get(LoginService);
+        dotEventsService = de.injector.get(DotEventsService);
     }));
 
     it('should call "logoutAs" in "LoginService" when logout as happen', () => {
-        spyOn(loginService, 'logoutAs');
+        spyOn(loginService, 'logoutAs').and.callThrough();
+        spyOn(dotEventsService, 'notify');
         comp.auth = mockAuth;
         fixture.detectChanges();
         dotDropdownComponent = de.query(By.css('dot-dropdown-component')).componentInstance;
@@ -78,5 +82,6 @@ describe('ToolbarUserComponent', () => {
         const logoutAsLink = de.query(By.css('#dot-toolbar-user-link-logout-as'));
         logoutAsLink.nativeElement.click();
         expect(loginService.logoutAs).toHaveBeenCalledTimes(1);
+        expect(dotEventsService.notify).toHaveBeenCalledWith('logout-as');
     });
 });

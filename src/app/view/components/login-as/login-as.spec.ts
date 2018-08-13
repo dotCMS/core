@@ -16,6 +16,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { DotNavigationService } from '../dot-navigation/dot-navigation.service';
+import { DotEventsService } from '../../../api/services/dot-events/dot-events.service';
 
 @Injectable()
 class MockDotNavigationService {
@@ -30,6 +31,7 @@ describe('LoginAsComponent', () => {
     let paginatorService: PaginatorService;
     let loginService: LoginService;
     let dotNavigationService: DotNavigationService;
+    let dotEventsService: DotEventsService;
 
     const users: User[] = [
         {
@@ -85,6 +87,7 @@ describe('LoginAsComponent', () => {
         loginService = de.injector.get(LoginService);
         spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of(users));
         dotNavigationService = de.injector.get(DotNavigationService);
+        dotEventsService = de.injector.get(DotEventsService);
     }));
 
     it('should load the first page', () => {
@@ -117,7 +120,8 @@ describe('LoginAsComponent', () => {
     });
 
     it('should call "loginAs" in "LoginService" when login as happens', () => {
-        spyOn(loginService, 'loginAs');
+        spyOn(loginService, 'loginAs').and.callThrough();
+        spyOn(dotEventsService, 'notify');
         comp.visible = true;
         comp.ngOnInit();
         fixture.detectChanges();
@@ -126,6 +130,7 @@ describe('LoginAsComponent', () => {
         const button = de.query(By.css('#dot-login-as-button-change'));
         button.nativeElement.click();
         expect(loginService.loginAs).toHaveBeenCalledTimes(1);
+        expect(dotEventsService.notify).toHaveBeenCalledWith('login-as');
     });
 
     it('should focus on Password input after an Error haapens in "loginAs" in "LoginService"', () => {

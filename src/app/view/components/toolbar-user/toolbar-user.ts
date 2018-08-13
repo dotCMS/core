@@ -5,6 +5,7 @@ import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.s
 import { LoginService, Auth, LoggerService } from 'dotcms-js/dotcms-js';
 import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { DotNavigationService } from '../dot-navigation/dot-navigation.service';
+import { DotEventsService } from '../../../api/services/dot-events/dot-events.service';
 
 @Component({
     selector: 'dot-toolbar-user',
@@ -20,6 +21,7 @@ export class ToolbarUserComponent extends BaseComponent implements OnInit {
 
     constructor(
         dotMessageService: DotMessageService,
+        private dotEventsService: DotEventsService,
         private loggerService: LoggerService,
         private loginService: LoginService,
         public iframeOverlayService: IframeOverlayService,
@@ -64,6 +66,7 @@ export class ToolbarUserComponent extends BaseComponent implements OnInit {
                 this.dropdown.closeIt();
                 this.iframeOverlayService.hide();
                 this.dotNavigationService.goToFirstPortlet();
+                this.dotEventsService.notify('logout-as');
             },
             (error) => {
                 this.loggerService.error(error);

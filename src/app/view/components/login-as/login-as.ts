@@ -6,6 +6,7 @@ import { PaginatorService } from '../../../api/services/paginator';
 import { FormGroup, FormBuilder, FormControl, Validators } from '@angular/forms';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { DotNavigationService } from '../dot-navigation/dot-navigation.service';
+import { DotEventsService } from '../../../api/services/dot-events/dot-events.service';
 
 @Component({
     encapsulation: ViewEncapsulation.None,
@@ -26,6 +27,7 @@ export class LoginAsComponent extends BaseComponent implements OnInit {
 
     constructor(
         dotMessageService: DotMessageService,
+        private dotEventsService: DotEventsService,
         private fb: FormBuilder,
         private loginService: LoginService,
         public paginationService: PaginatorService,
@@ -70,6 +72,7 @@ export class LoginAsComponent extends BaseComponent implements OnInit {
                     this.close();
                     this.iframeOverlayService.hide();
                     this.dotNavigationService.goToFirstPortlet();
+                    this.dotEventsService.notify('login-as');
                 }
             },
             (response) => {
