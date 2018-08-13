@@ -1363,21 +1363,27 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		}
 	}
 
-	@Override
-	public void deleteSchemeForStruct(String struc) throws DotDataException {
-		if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
-			return;
-		}
+	public void forceDeleteSchemeForContentType(final String contentTypeId) throws DotDataException {
 
 		try {
-			final DotConnect db = new DotConnect();
-			db.setSQL(sql.DELETE_SCHEME_FOR_STRUCT);
-			db.addParam(struc);
-			db.loadResult();
+
+			Logger.info(this, "Deleting the schemes associated to the content type: " + contentTypeId);
+
+			new DotConnect().setSQL(sql.DELETE_SCHEME_FOR_STRUCT)
+				.addParam(contentTypeId).loadResult();
 		} catch (final Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
 			throw new DotDataException(e.getMessage(),e);
 		}
+	}
+
+	@Override
+	public void deleteSchemeForStruct(final String struc) throws DotDataException {
+		if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
+			return;
+		}
+
+		this.forceDeleteSchemeForContentType(struc);
 	}
 
 	@Override
