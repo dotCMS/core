@@ -139,7 +139,7 @@ public class ContentletLoader implements DotLoader {
                 String contField = field.dbColumn();
                 String contFieldValue = null;
                 Object contFieldValueObject = null;
-                String velPath = mode.name() + "/";
+                String velPath = mode.name() + File.separator;
                 if (field instanceof HiddenField || field instanceof ConstantField) {
                     if (field.variable().equals("widgetPreexecute")) {
                         continue;

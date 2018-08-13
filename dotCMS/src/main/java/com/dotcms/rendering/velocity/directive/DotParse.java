@@ -19,6 +19,8 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+
+import java.io.File;
 import java.io.Writer;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.velocity.context.Context;
@@ -59,8 +61,8 @@ public class DotParse extends DotDirective {
       // if we have a host
       if (templatePath.startsWith(hostIndicator)) {
         templatePath = templatePath.substring(hostIndicator.length(), templatePath.length());
-        String hostName = templatePath.substring(0, templatePath.indexOf('/'));
-        templatePath = templatePath.substring(templatePath.indexOf('/'), templatePath.length());
+        String hostName = templatePath.substring(0, templatePath.indexOf(File.separator));
+        templatePath = templatePath.substring(templatePath.indexOf(File.separator), templatePath.length());
         host = APILocator.getHostAPI().resolveHostName(hostName, user, params.mode.respectAnonPerms);
       }
 
