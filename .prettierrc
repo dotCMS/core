@@ -5,5 +5,13 @@
     "singleQuote": true,
     "trailingComma": "none",
     "jsxBracketSameLine": false,
-    "arrowParens": "always"
+    "arrowParens": "always",
+    "overrides": [
+        {
+            "files": "*.scss",
+            "options": {
+                "singleQuote": false
+            }
+        }
+    ]
 }
