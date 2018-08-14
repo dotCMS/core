@@ -1,16 +1,11 @@
 package com.dotcms.rendering.velocity.directive;
 
-import com.dotcms.rendering.velocity.directive.DotDirective;
-import com.dotcms.rendering.velocity.directive.RenderParams;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.filters.Constants;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
@@ -20,7 +15,6 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
-import java.io.File;
 import java.io.Writer;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.velocity.context.Context;
