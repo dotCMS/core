@@ -10,6 +10,7 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 
+import java.io.File;
 import java.io.Serializable;
 import java.io.StringWriter;
 
@@ -31,34 +32,34 @@ public class VelocityResourceKey implements Serializable {
     }
     
     public VelocityResourceKey(final Field asset, Contentlet con, PageMode mode) {
-        this("/" + mode.name() + "/" + con.getIdentifier() + "/" + asset.id() +  "." + VelocityType.FIELD.fileExtension);
+        this(File.separator + mode.name() + File.separator + con.getIdentifier() + File.separator + asset.id() +  "." + VelocityType.FIELD.fileExtension);
     }
     
     public VelocityResourceKey(final Template asset, final PageMode mode) {
-        this("/" + mode.name() + "/" + asset.getIdentifier() +  "." + VelocityType.TEMPLATE.fileExtension);
+        this(File.separator + mode.name() + File.separator + asset.getIdentifier() +  "." + VelocityType.TEMPLATE.fileExtension);
     }
     public VelocityResourceKey(final Container asset, final PageMode mode) {
         this(asset, Container.LEGACY_RELATION_TYPE, mode);
     }
     
     public VelocityResourceKey(final Container asset, final String uuid, final PageMode mode) {
-        this("/" + mode.name() + "/" + asset.getIdentifier() + "/" + uuid +  "." + VelocityType.CONTAINER.fileExtension);
+        this(File.separator + mode.name() + File.separator + asset.getIdentifier() + File.separator + uuid +  "." + VelocityType.CONTAINER.fileExtension);
     }
 
 
     public VelocityResourceKey(final HTMLPageAsset asset, final PageMode mode, final long language) {
-        this("/" + mode.name() + "/" + asset.getIdentifier() + "_" + language + "." + VelocityType.HTMLPAGE.fileExtension);
+        this(File.separator + mode.name() + File.separator + asset.getIdentifier() + "_" + language + "." + VelocityType.HTMLPAGE.fileExtension);
     }
     public VelocityResourceKey(final Contentlet asset, final PageMode mode, final long language) {
-        this("/" + mode.name() + "/" + asset.getIdentifier() + "_" + language + "." + VelocityType.CONTENT.fileExtension);
+        this(File.separator + mode.name() + File.separator + asset.getIdentifier() + "_" + language + "." + VelocityType.CONTENT.fileExtension);
     }
     public VelocityResourceKey(final String filePath) {
         path = cleanKey(filePath);
 
-        final String[] pathArry = path.split("[/\\.]", 0);
+        final String[] pathArry = path.split("["+File.separator+"\\.]", 0);
         this.mode = PageMode.get(pathArry[1]);
-        this.id1 = pathArry[2].indexOf("_") > -1 ? pathArry[2].substring(0, pathArry[2].indexOf("_")) : pathArry[2];
-        this.language = pathArry[2].indexOf("_") > -1 ? pathArry[2].substring(pathArry[2].indexOf("_") + 1, pathArry[2].length())
+        this.id1 = pathArry[2].contains("_") ? pathArry[2].substring(0, pathArry[2].indexOf("_")) : pathArry[2];
+        this.language = pathArry[2].contains("_") ? pathArry[2].substring(pathArry[2].indexOf("_") + 1, pathArry[2].length())
                 : String.valueOf(APILocator.getLanguageAPI().getDefaultLanguage().getId());
 
         this.id2 = pathArry.length > 4 ? pathArry[3] : null;
@@ -87,8 +88,8 @@ public class VelocityResourceKey implements Serializable {
 
     private String cleanKey(final String key) {
         String newkey = (key.charAt(0) == RESOURCE_TEMPLATE) ? key.substring(1) : key;
-        newkey = (newkey.charAt(0) != '/') ? "/" + newkey : newkey;
-        return (newkey.contains("\\")) ? UtilMethods.replace(newkey, "\\", "/") : newkey;
+        newkey = (newkey.charAt(0) != File.separator.charAt(0)) ? File.separator + newkey : newkey;
+        return (newkey.contains("\\")) ? UtilMethods.replace(newkey, "\\", File.separator) : newkey;
 
     }
 

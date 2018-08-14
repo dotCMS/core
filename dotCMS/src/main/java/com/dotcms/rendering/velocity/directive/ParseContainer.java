@@ -5,6 +5,7 @@ import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.util.UtilMethods;
 
+import java.io.File;
 import java.io.Writer;
 
 import org.apache.velocity.context.Context;
@@ -34,7 +35,7 @@ public class ParseContainer extends DotDirective {
 	    final String id = arguments[0];
         final String uid = (arguments.length > 1 && UtilMethods.isSet(arguments[1])) ? arguments[1] :  DEFAULT_UUID_VALUE;
 
-		return "/" +params.mode.name() + "/" + id  + "/" + uid + "." + VelocityType.CONTAINER.fileExtension ;
+		return File.separator  +params.mode.name() + File.separator + id  + File.separator + uid + "." + VelocityType.CONTAINER.fileExtension ;
 		             
 	}
 }
