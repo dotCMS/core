@@ -48,21 +48,21 @@ public class DotParse extends DotDirective {
 
   @Override
   String resolveTemplatePath(final Context context, final Writer writer, final RenderParams params,final String[] arguments) {
-      
+
     final String argument = arguments[0];
     String templatePath = argument;
     Host host = params.currentHost;
     User user = params.user;
-    
+
     HttpServletRequest request = (HttpServletRequest) context.get("request");
-    
+
     try {
 
       // if we have a host
       if (templatePath.startsWith(hostIndicator)) {
         templatePath = templatePath.substring(hostIndicator.length(), templatePath.length());
-        String hostName = templatePath.substring(0, templatePath.indexOf(File.separator));
-        templatePath = templatePath.substring(templatePath.indexOf(File.separator), templatePath.length());
+        String hostName = templatePath.substring(0, templatePath.indexOf('/'));
+        templatePath = templatePath.substring(templatePath.indexOf('/'), templatePath.length());
         host = APILocator.getHostAPI().resolveHostName(hostName, user, params.mode.respectAnonPerms);
       }
 
