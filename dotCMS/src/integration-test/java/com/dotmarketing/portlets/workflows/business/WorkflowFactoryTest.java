@@ -114,19 +114,33 @@ public class WorkflowFactoryTest extends BaseWorkflowIntegrationTest {
     } // cleanup
 
     @Test
-    public void force_workflow_scheme_delete_without_license_delete_success_Test() throws DotDataException, DotSecurityException {
+    public void force_workflow_scheme_delete_without_license_delete_success_Test() throws Exception {
 
         final List<WorkflowScheme> workflowSchemesBeforeDelete = workflowAPI.findSchemesForContentType(type);
+        final WorkFlowFactory workFlowFactory = FactoryLocator.getWorkFlowFactory();
 
         Assert.assertNotNull(workflowSchemesBeforeDelete);
         Assert.assertTrue(workflowSchemesBeforeDelete.size() > 0);
 
-        final WorkFlowFactory workFlowFactory = FactoryLocator.getWorkFlowFactory();
-        workFlowFactory.forceDeleteSchemeForContentType(type.id());
+        runNoLicense(()-> {
 
-        final List<WorkflowScheme> workflowSchemesAfterDelete = workflowAPI.findSchemesForContentType(type);
+            try {
 
-        Assert.assertNotNull(workflowSchemesAfterDelete);
-        Assert.assertTrue(workflowSchemesAfterDelete.size() == 0);
+                workFlowFactory.deleteSchemeForStruct(type.id()); // does not delete anything
+                final List<WorkflowScheme> workflowSchemesAfterDelete = workflowAPI.findSchemesForContentType(type);
+                Assert.assertNotNull(workflowSchemesAfterDelete);
+                Assert.assertTrue(workflowSchemesAfterDelete.size() > 0);
+            } catch (Exception e) {
+                // quiet
+            }
+
+            workFlowFactory.forceDeleteSchemeForContentType(type.id());
+        });
+
+
+        final List<WorkflowScheme> workflowSchemesAfterForceDelete = workflowAPI.findSchemesForContentType(type);
+
+        Assert.assertNotNull(workflowSchemesAfterForceDelete);
+        Assert.assertTrue(workflowSchemesAfterForceDelete.size() == 0);
     }
 }

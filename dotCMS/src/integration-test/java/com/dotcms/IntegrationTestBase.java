@@ -1,5 +1,9 @@
 package com.dotcms;
 
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.repackage.net.sf.hibernate.HibernateException;
+import com.dotcms.util.VoidDelegate;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
@@ -17,17 +21,17 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.BaseMessageResources;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import org.apache.commons.io.FileUtils;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.sql.SQLException;
 import java.util.List;
-import com.dotcms.repackage.net.sf.hibernate.HibernateException;
-import org.apache.commons.io.FileUtils;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.BeforeClass;
 
 /**
  * Created by Jonathan Gamba.
@@ -74,6 +78,32 @@ public abstract class IntegrationTestBase extends BaseMessageResources {
 
     }
 
+    /**
+     * Runs a delegate on non-license mode
+     * @param delegate
+     * @throws Exception
+     */
+    protected static void runNoLicense(final VoidDelegate delegate) throws Exception {
+
+
+        final String licenseSerial = LicenseUtil.getSerial();
+
+        try {
+
+            LicenseUtil.freeLicenseOnRepo();
+            Assert.assertFalse(LicenseUtil.getLevel() > LicenseLevel.STANDARD.level);
+
+            delegate.execute();
+        } finally {
+            try {
+                LicenseUtil.pickLicense(licenseSerial);
+                Assert.assertTrue(LicenseUtil.getLevel() > LicenseLevel.STANDARD.level);
+            } catch (Exception e) {
+                Assert.fail(e.getMessage());
+            }
+        }
+
+    } // runNoLicense.
 
 
     @After
