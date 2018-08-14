@@ -1371,6 +1371,8 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 			new DotConnect().setSQL(sql.DELETE_SCHEME_FOR_STRUCT)
 				.addParam(contentTypeId).loadResult();
+
+			cache.removeStructure(contentTypeId);
 		} catch (final Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
 			throw new DotDataException(e.getMessage(),e);
