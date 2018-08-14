@@ -54,15 +54,15 @@ export class AccordionComponent {
     styleUrls: ['./accordion-group.scss'],
     template: `
         <a href="#" dotMdRipple (click)="toggleOpen($event)" class="accordion-group__title" [ngClass]="{'is-active': isOpen}">
-            <i class="fa fa-th-list {{ icon }}" aria-hidden="true" *ngIf="icon"></i>
+            <dot-icon [name]="icon.toLocaleLowerCase()" aria-hidden="true" *ngIf="icon"></dot-icon>
             <span class="accordion-group__title-text">
                 {{ heading }}
             </span>
-            <i
-                class="fa accordion-group__title-arrow"
-                [ngClass]="{'fa-caret-down': !isOpen, 'fa-caret-up': isOpen}"
+            <dot-icon
+                class="accordion-group__title-arrow"
+                name="{{isOpen ? 'arrow_drop_up' : 'arrow_drop_down'}}"
                 aria-hidden="true">
-            </i>
+            </dot-icon>
         </a>
         <div class="accordion-group__content" [@expandAnimation]="isOpen ? 'expanded' : 'collapsed'">
             <div class="accordion-group__content-inner" #accordionGroupContentInner>

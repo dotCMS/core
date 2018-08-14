@@ -29,13 +29,13 @@
             }
 
             .accordion-group__title-text {
-                margin-left: $basic-padding;
+                margin-left: 12px;
                 flex-grow: 1;
             }
 
             .accordion-group__title-arrow {
                 opacity: 0.5;
-                margin-right: $basic-padding * 2;
+                margin-right: $basic-padding;
             }
 
             .main-nav__submenu {
@@ -43,7 +43,7 @@
                 padding: 0 0 10px 0;
 
                 a {
-                    padding-left: 47px;
+                    padding-left: 58px;
                 }
             }
 

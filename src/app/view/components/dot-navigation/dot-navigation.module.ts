@@ -5,9 +5,10 @@ import { RouterModule } from '@angular/router';
 import { DotNavigationComponent } from './dot-navigation.component';
 import { AccordionComponent, AccordionGroupComponent } from '../_common/accordion/accordion';
 import { DotNavigationService } from './dot-navigation.service';
+import { DotIconModule } from '../_common/dot-icon/dot-icon.module';
 
 @NgModule({
-    imports: [CommonModule, RouterModule],
+    imports: [CommonModule, RouterModule, DotIconModule],
     declarations: [DotNavigationComponent, AccordionGroupComponent, AccordionComponent],
     providers: [DotNavigationService],
     exports: [DotNavigationComponent]
