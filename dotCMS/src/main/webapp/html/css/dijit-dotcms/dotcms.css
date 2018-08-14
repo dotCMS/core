@@ -11095,15 +11095,15 @@ a.category_higlighted, a.tag_higlighted {
   box-sizing: content-box;
 }
 
-.view-users .dijitTabPaneWrapper .dijitContentPane#userPermissionsTab {
-  overflow: auto;
-}
-
 .view-users .portlet-main,
 .view-users .view-users__profile-tabs,
 .view-users .view-users__profile-tabs-container {
   height: 100%;
   width: 100%;
+}
+
+.view-users__profile-tabs-container#userTabsContainer .dijitTabPaneWrapper {
+  overflow: auto;
 }
 
 .view-users__filter-form {
@@ -11213,7 +11213,8 @@ a.category_higlighted, a.tag_higlighted {
   background-color: #ECEDEE;
 }
 
-.view-users .view-users__users-list .dojoxGridRow .dojoxGridRowTable .dojoxGridCell, .view-users .view-users__users-list .dojoxGridHeader .dojoxGridRowTable .dojoxGridCell {
+.view-users .view-users__users-list .dojoxGridRow .dojoxGridRowTable .dojoxGridCell,
+.view-users .view-users__users-list .dojoxGridHeader .dojoxGridRowTable .dojoxGridCell {
   padding: 8px;
 }
 
@@ -12115,7 +12116,7 @@ body {
 }
 
 .material-icons {
-  font-family: 'Material Icons';
+  font-family: "Material Icons";
   font-weight: normal;
   font-style: normal;
   font-size: 24px;
@@ -12134,5 +12135,5 @@ body {
   /* Support for Firefox. */
   -moz-osx-font-smoothing: grayscale;
   /* Support for IE. */
-  font-feature-settings: 'liga';
+  font-feature-settings: "liga";
 }
