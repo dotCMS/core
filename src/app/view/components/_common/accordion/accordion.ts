@@ -54,7 +54,8 @@ export class AccordionComponent {
     styleUrls: ['./accordion-group.scss'],
     template: `
         <a href="#" dotMdRipple (click)="toggleOpen($event)" class="accordion-group__title" [ngClass]="{'is-active': isOpen}">
-            <dot-icon [name]="icon.toLocaleLowerCase()" aria-hidden="true" *ngIf="icon"></dot-icon>
+            <dot-icon inverted [name]="icon.toLocaleLowerCase()" aria-hidden="true" *ngIf="!isFaIcon(icon)"></dot-icon>
+            <i class="fa fa-th-list {{ icon }}" aria-hidden="true" *ngIf="isFaIcon(icon)"></i>
             <span class="accordion-group__title-text">
                 {{ heading }}
             </span>
@@ -91,6 +92,10 @@ export class AccordionGroupComponent implements AfterViewInit, OnDestroy {
     }
     get isOpen(): boolean {
         return this._isOpen;
+    }
+
+    isFaIcon(icon: string): boolean {
+        return icon.startsWith('fa-');
     }
 
     ngAfterViewInit(): void {
