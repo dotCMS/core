@@ -2,6 +2,8 @@
 @import 'mixins';
 
 :host {
+    display: inline-flex;
+
     &[tiny] i {
         @include dot_icon_tiny;
     }

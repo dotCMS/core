@@ -11,8 +11,18 @@
         }
     }
 
-    &[inverted] button ::ng-deep i {
-        @include dot_icon_inverted;
+    &[inverted] button {
+
+        background-color: transparent;
+
+        &:hover {
+            background-color:rgba(255,255,255,0.3);
+        }
+
+        ::ng-deep i {
+            @include dot_icon_inverted;
+        }
+    
     }
 
     &[disabled] button {
@@ -36,6 +46,7 @@
         display: inline-flex;
         height: 32px;
         justify-content: center;
+        transition: background-color $field-animation-speed ease-in;
         width: 32px;
 
         &:focus {
