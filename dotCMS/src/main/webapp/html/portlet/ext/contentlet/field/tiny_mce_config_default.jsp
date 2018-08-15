@@ -21,7 +21,7 @@ var tinyMCEProps = {
         		"emoticons template paste textcolor colorpicker textpattern validation dotimageclipboard compat3x"
     		],
 
-    		toolbar1: "styleselect | bold italic underline strikethrough |  alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | image dotimageclipboard  | link unlink  | <%= LicenseUtil.getLevel()>=LicenseLevel.STANDARD.level ? ",validation":"" %>",
+    		toolbar1: "styleselect | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | image dotimageclipboard  | link unlink | fullscreen | <%= LicenseUtil.getLevel()>=LicenseLevel.STANDARD.level ? ",validation":"" %>",
 
     		paste_auto_cleanup_on_paste : true,
 
