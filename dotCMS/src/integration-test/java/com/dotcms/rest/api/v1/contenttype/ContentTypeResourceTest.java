@@ -42,15 +42,20 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -521,6 +526,83 @@ public class ContentTypeResourceTest {
 			}
 		}
 	}
+
+	private static final String SELECTED_STRUCTURE_KEY = ContentTypeResource.SELECTED_STRUCTURE_KEY;
+
+	@Test
+	public void testCreateType_whenSuccessfulCreation_shouldPutCreatedStructureInSession() throws Exception{
+		Object value = null;
+
+			final ContentTypeResource resource = new ContentTypeResource();
+			final ContentTypeForm.ContentTypeFormDeserialize contentTypeFormDeserialize = new ContentTypeForm.ContentTypeFormDeserialize();
+			final HttpServletRequest request = getHttpRequest();
+		try {
+			final Response response = resource.createType(request,
+					contentTypeFormDeserialize.buildForm(JSON_CONTENT_TYPE_CREATE));
+			RestUtilTest.verifySuccessResponse(response);
+			final HttpSession session = request.getSession();
+			assertNotNull(session);
+			final List<String> attributes = Collections.list(session.getAttributeNames());
+			assertFalse(attributes.isEmpty());
+			final Map<String, Object> sessionMap = attributes.stream()
+					.collect(Collectors.toMap(o -> o, session::getAttribute));
+			assertTrue(sessionMap.containsKey(SELECTED_STRUCTURE_KEY));
+			value = sessionMap.get(SELECTED_STRUCTURE_KEY);
+			assertNotNull(value);
+
+		}finally{
+			if(null != value){
+				resource.deleteType(
+						value.toString(), getHttpRequest()
+				);
+			}
+		}
+	}
+
+
+	@Test
+	public void testCreateType_then_call_getType_ThenVerifyStructureInSession() throws Exception{
+		String identifier = null;
+
+		final ContentTypeResource resource = new ContentTypeResource();
+		final ContentTypeForm.ContentTypeFormDeserialize contentTypeFormDeserialize = new ContentTypeForm.ContentTypeFormDeserialize();
+
+		try {
+			final HttpServletRequest request1 = getHttpRequest();
+			final Response createTypeResponse = resource.createType(request1,
+					contentTypeFormDeserialize.buildForm(JSON_CONTENT_TYPE_CREATE));
+			RestUtilTest.verifySuccessResponse(createTypeResponse);
+
+			final ResponseEntityView entityView = ResponseEntityView.class.cast(createTypeResponse.getEntity());
+			final List list = (List)entityView.getEntity();
+			final Map<String, Object> resultMap = (Map<String, Object>)list.get(0);
+
+			identifier = (String)resultMap.get("id");
+			final HttpServletRequest request2 = getHttpRequest();
+			final Response getTypeResponse = resource.getType(identifier, request2);
+			RestUtilTest.verifySuccessResponse(getTypeResponse);
+
+			final HttpSession session = request2.getSession();
+			assertNotNull(session);
+
+			final List<String> attributes = Collections.list(session.getAttributeNames());
+			assertFalse(attributes.isEmpty());
+			final Map<String, Object> sessionMap = attributes.stream()
+					.collect(Collectors.toMap(o -> o, session::getAttribute));
+			assertTrue(sessionMap.containsKey(SELECTED_STRUCTURE_KEY));
+			Object value = sessionMap.get(SELECTED_STRUCTURE_KEY);
+			assertNotNull(value);
+			assertEquals(identifier,value);
+
+		}finally{
+			if(null != identifier){
+				resource.deleteType(
+						identifier, getHttpRequest()
+				);
+			}
+		}
+	}
+
 
 	@DataProvider
 	public static Object[] dataProviderExcludeTypesCommunity() {
