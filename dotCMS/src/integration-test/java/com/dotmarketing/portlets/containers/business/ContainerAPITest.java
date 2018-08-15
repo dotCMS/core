@@ -185,6 +185,15 @@ public class ContainerAPITest extends ContentletBaseTest {
         assertFalse(results.isEmpty());
     }
 
+    @Test
+    public void testFindContainersWithParent() throws DotDataException, DotSecurityException {
+        final List<Container> results = containerAPI
+                .findContainers(user, false, null, defaultHost.getIdentifier(), null, null,
+                        "4c441ada-944a-43af-a653-9bb4f3f0cb2b", 0,
+                        -1, null);
+        assertTrue(UtilMethods.isSet(results));
+    }
+
     private Container createContainer() throws DotSecurityException, DotDataException {
         Container container = new Container();
         container.setFriendlyName("test container");
