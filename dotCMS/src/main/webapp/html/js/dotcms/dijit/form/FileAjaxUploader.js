@@ -54,6 +54,7 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
 	name: '',
 	fileName: '',
 	fileNameExpression: '',
+    dowloadRestricted: false,
 	uploading: false,
 	uploadCompleted:false,
 	identifier:'0',
@@ -176,21 +177,38 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
 	
 	_info: function () {
 		console.log(this);
+		var template = this.fileInfoTemplate;
 		var fileInfo = {};
-		fileInfo['fileName'] = this.fileName;
-		fileInfo['path'] = location.protocol +"//"+ location.host + '/dA/';
-		
-		fileInfo['path'] += (this.identifier != '0') ? this.idShorty : this.inodeShorty;
-		fileInfo['path'] += (this.id != 'fileAsset') ? '/' +  this.id : "";
-		fileInfo['path'] += "/" + this.fileName +'?language_id='+this.lang;
-
-
-		var html = dojo.replace(this.fileInfoTemplate, fileInfo);
+        fileInfo['fileName'] = this.fileName;
+		if(this.dowloadRestricted) {
+			template = this._restrictedDownloadTemplate();
+		} else {
+          fileInfo['path'] = location.protocol + "//" + location.host + '/dA/';
+          fileInfo['path'] += (this.identifier != '0') ? this.idShorty : this.inodeShorty;
+          fileInfo['path'] += (this.id != 'fileAsset') ? '/' + this.id : "";
+          fileInfo['path'] += "/" + this.fileName + '?language_id=' + this.lang;
+        }
+        var html = dojo.replace(template, fileInfo);
 		
 		this.fileInfoDialog.title = this.fileName;
 		var domObj = dojo._toDom(html);
 		this.fileInfoDialog.setContent(domObj);
 		this.fileInfoDialog.show();
+	},
+
+	_restrictedDownloadTemplate: function(){
+		return '<div>\
+		<table class="listingTable">\
+			<tr class="alternate_1">\
+	    		<td nowrap><b>File Name</b></td>\
+				<td>{fileName}</td>\
+			</tr>\
+			<tr class="alternate_2">\
+	    		<td><b>File Link</b></td>\
+				<td>Unavailable for download.</td>\
+			</tr>\
+		</table>\
+	    </div>';
 	},
 
 	_checkStatus: function () {
@@ -279,4 +297,4 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
 	uninitialize : function (event) {
 	}
 
-})
+});
