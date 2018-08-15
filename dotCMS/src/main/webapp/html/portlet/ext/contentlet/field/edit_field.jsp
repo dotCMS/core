@@ -521,6 +521,7 @@
             name="<%=field.getFieldContentlet()%>"
             <%= UtilMethods.isSet(fileName)?"fileName=\"" + fileName.replaceAll("\"", "\\\"") +"\"":"" %>
             fieldName="<%=field.getVelocityVarName()%>"
+            dowloadRestricted="<%= UtilMethods.isSet(resourceLink) ? resourceLink.isDownloadRestricted() : false %>"
             inode="<%= binInode%>"
             lang="<%=contentlet.getLanguageId() %>"
             identifier="<%=contentlet.getIdentifier()%>"

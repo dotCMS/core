@@ -527,11 +527,12 @@ public class ContentTypeResourceTest {
 		}
 	}
 
+	private static final String SELECTED_STRUCTURE_KEY = ContentTypeResource.SELECTED_STRUCTURE_KEY;
+
 	@Test
 	public void testCreateType_whenSuccessfulCreation_shouldPutCreatedStructureInSession() throws Exception{
 		Object value = null;
 
-			final String selectedStructureKey = "selectedStructure";
 			final ContentTypeResource resource = new ContentTypeResource();
 			final ContentTypeForm.ContentTypeFormDeserialize contentTypeFormDeserialize = new ContentTypeForm.ContentTypeFormDeserialize();
 			final HttpServletRequest request = getHttpRequest();
@@ -545,8 +546,8 @@ public class ContentTypeResourceTest {
 			assertFalse(attributes.isEmpty());
 			final Map<String, Object> sessionMap = attributes.stream()
 					.collect(Collectors.toMap(o -> o, session::getAttribute));
-			assertTrue(sessionMap.containsKey(selectedStructureKey));
-			value = sessionMap.get(selectedStructureKey);
+			assertTrue(sessionMap.containsKey(SELECTED_STRUCTURE_KEY));
+			value = sessionMap.get(SELECTED_STRUCTURE_KEY);
 			assertNotNull(value);
 
 		}finally{
@@ -557,6 +558,51 @@ public class ContentTypeResourceTest {
 			}
 		}
 	}
+
+
+	@Test
+	public void testCreateType_then_call_getType_ThenVerifyStructureInSession() throws Exception{
+		String identifier = null;
+
+		final ContentTypeResource resource = new ContentTypeResource();
+		final ContentTypeForm.ContentTypeFormDeserialize contentTypeFormDeserialize = new ContentTypeForm.ContentTypeFormDeserialize();
+
+		try {
+			final HttpServletRequest request1 = getHttpRequest();
+			final Response createTypeResponse = resource.createType(request1,
+					contentTypeFormDeserialize.buildForm(JSON_CONTENT_TYPE_CREATE));
+			RestUtilTest.verifySuccessResponse(createTypeResponse);
+
+			final ResponseEntityView entityView = ResponseEntityView.class.cast(createTypeResponse.getEntity());
+			final List list = (List)entityView.getEntity();
+			final Map<String, Object> resultMap = (Map<String, Object>)list.get(0);
+
+			identifier = (String)resultMap.get("id");
+			final HttpServletRequest request2 = getHttpRequest();
+			final Response getTypeResponse = resource.getType(identifier, request2);
+			RestUtilTest.verifySuccessResponse(getTypeResponse);
+
+			final HttpSession session = request2.getSession();
+			assertNotNull(session);
+
+			final List<String> attributes = Collections.list(session.getAttributeNames());
+			assertFalse(attributes.isEmpty());
+			final Map<String, Object> sessionMap = attributes.stream()
+					.collect(Collectors.toMap(o -> o, session::getAttribute));
+			assertTrue(sessionMap.containsKey(SELECTED_STRUCTURE_KEY));
+			Object value = sessionMap.get(SELECTED_STRUCTURE_KEY);
+			assertNotNull(value);
+			assertEquals(identifier,value);
+
+		}finally{
+			if(null != identifier){
+				resource.deleteType(
+						identifier, getHttpRequest()
+				);
+			}
+		}
+	}
+
 
 	@DataProvider
 	public static Object[] dataProviderExcludeTypesCommunity() {

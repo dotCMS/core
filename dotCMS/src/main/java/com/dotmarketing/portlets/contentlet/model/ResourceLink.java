@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.contentlet.model;
 
+import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
+
 import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -10,6 +12,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -88,7 +91,9 @@ public class ResourceLink {
         public final ResourceLink build(final HttpServletRequest request, final User user, final Contentlet contentlet) throws DotDataException, DotSecurityException {
 
             if(!(contentlet.getContentType() instanceof FileAssetContentType)){
-                throw new DotStateException("Can only build Resource Links out of content with type `File Asset`.");
+                throw new DotStateException(getLocalizedMessageOrDefault(user,"File-asset-contentlet-type-expected",
+                        "Can only build Resource Links out of content with type `File Asset`.",getClass())
+                );
             }
 
             final StringBuilder resourceLink = new StringBuilder();
@@ -110,17 +115,19 @@ public class ResourceLink {
                 resourceLink.append(UtilMethods.encodeURIComponent(resourceLinkUri.toString()));
                 resourceLinkUri.append(LANG_ID_PARAM).append(contentlet.getLanguageId());
                 resourceLink.append(LANG_ID_PARAM).append(contentlet.getLanguageId());
+
+                final FileAsset fileAsset = getFileAsset(contentlet);
+                final String mimeType = fileAsset.getMimeType();
+                final String fileAssetName = fileAsset.getFileName();
+
+                return new ResourceLink(resourceLink.toString(), resourceLinkUri.toString(), mimeType, fileAsset, isEditableAsText(mimeType, fileAssetName), isDownloadRestricted(fileAssetName));
             }
 
-            final FileAsset fileAsset = getFileAsset(contentlet);
-            final String mimeType = fileAsset.getMimeType();
-            final String fileAssetName = fileAsset.getFileName();
-
-            return new ResourceLink(resourceLink.toString(), resourceLinkUri.toString(), mimeType, fileAsset, isEditableAsText(mimeType, fileAssetName), isDownloadRestricted(fileAssetName));
+            return new ResourceLink(StringPool.BLANK, StringPool.BLANK, StringPool.BLANK, null, false, true);
         }
 
         private static boolean isEditableAsText(final String mimeType, final String fileAssetName ){
-             return  (
+             return  mimeType != null && fileAssetName != null && (
                  !isRestrictedMimeType(mimeType) && (isEditableMimeType(mimeType) || fileAssetName.endsWith(".vm"))
              );
         }
@@ -130,12 +137,12 @@ public class ResourceLink {
         }
 
         private static boolean isEditableMimeType(final String mimeType) {
-            return (
+            return mimeType != null && (
                     mimeType.contains("text") ||
-                    mimeType.contains("javascript") ||
-                    mimeType.contains("json") ||
-                    mimeType.contains("xml") ||
-                    mimeType.contains("php")
+                            mimeType.contains("javascript") ||
+                            mimeType.contains("json") ||
+                            mimeType.contains("xml") ||
+                            mimeType.contains("php")
             );
         }
 
@@ -144,7 +151,15 @@ public class ResourceLink {
         }
 
         Identifier getIdentifier(final Contentlet contentlet) throws DotDataException {
-            return APILocator.getIdentifierAPI().find(contentlet);
+            Identifier identifier = null;
+            if(!contentlet.isNew()){
+                try {
+                    identifier = APILocator.getIdentifierAPI().find(contentlet);
+                }catch(Exception e){
+                    Logger.warn(getClass(),"Unable to get identifier from contentlet", e);
+                }
+            }
+            return identifier;
         }
 
         FileAsset getFileAsset(final Contentlet contentlet){
