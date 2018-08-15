@@ -96,7 +96,7 @@ jacocoTestReport {
     additionalSourceDirs = files([
             "${buildDir.parent}/src/main/java/generated",
     ])
-
+    
     reports {
         xml.enabled = true
         html.enabled = true
