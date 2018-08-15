@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.contentlet.model;
 
+import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
+
 import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -89,7 +91,9 @@ public class ResourceLink {
         public final ResourceLink build(final HttpServletRequest request, final User user, final Contentlet contentlet) throws DotDataException, DotSecurityException {
 
             if(!(contentlet.getContentType() instanceof FileAssetContentType)){
-                throw new DotStateException("Can only build Resource Links out of content with type `File Asset`.");
+                throw new DotStateException(getLocalizedMessageOrDefault(user,"File-asset-contentlet-type-expected",
+                        "Can only build Resource Links out of content with type `File Asset`.",getClass())
+                );
             }
 
             final StringBuilder resourceLink = new StringBuilder();
@@ -119,11 +123,11 @@ public class ResourceLink {
                 return new ResourceLink(resourceLink.toString(), resourceLinkUri.toString(), mimeType, fileAsset, isEditableAsText(mimeType, fileAssetName), isDownloadRestricted(fileAssetName));
             }
 
-            return new ResourceLink("", "", "", null, false, true);
+            return new ResourceLink(StringPool.BLANK, StringPool.BLANK, StringPool.BLANK, null, false, true);
         }
 
         private static boolean isEditableAsText(final String mimeType, final String fileAssetName ){
-             return  (
+             return  mimeType != null && fileAssetName != null && (
                  !isRestrictedMimeType(mimeType) && (isEditableMimeType(mimeType) || fileAssetName.endsWith(".vm"))
              );
         }
