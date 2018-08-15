@@ -102,6 +102,13 @@ public interface WorkFlowFactory {
 
 	public List<WorkflowScheme> findSchemesForStruct(final String structId) throws DotDataException;
 
+	/**
+	 * Do a force for the delete scheme, avoiding some validations
+	 * @param contentTypeId
+	 * @throws DotDataException
+	 */
+	public void forceDeleteSchemeForContentType(String contentTypeId) throws DotDataException;
+
 	public void deleteSchemeForStruct(String struc) throws DotDataException;
 
 	/**

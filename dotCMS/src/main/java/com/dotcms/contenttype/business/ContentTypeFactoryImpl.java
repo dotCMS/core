@@ -5,20 +5,11 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.HostFolderField;
-import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.contenttype.model.type.Expireable;
-import com.dotcms.contenttype.model.type.FileAssetContentType;
-import com.dotcms.contenttype.model.type.UrlMapable;
+import com.dotcms.contenttype.model.type.*;
 import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.ImplClassContentTypeTransformer;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.DotValidationException;
-import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -28,22 +19,11 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UUIDUtil;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
-
+import com.dotmarketing.util.*;
 import org.apache.commons.lang.time.DateUtils;
-import org.elasticsearch.index.IndexNotFoundException;
 
-import java.util.ArrayList;
+import java.util.*;
 import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
 
 public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
@@ -535,8 +515,8 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
   }
 
   private void deleteWorkflowSchemeReference(ContentType type) throws DotDataException {
-    WorkFlowFactory wff = FactoryLocator.getWorkFlowFactory();
-    wff.deleteSchemeForStruct(type.id());
+    final WorkFlowFactory workFlowFactory = FactoryLocator.getWorkFlowFactory();
+    workFlowFactory.forceDeleteSchemeForContentType(type.id());
   }
 
   private void deleteContentletsByType(ContentType type) throws DotDataException {
