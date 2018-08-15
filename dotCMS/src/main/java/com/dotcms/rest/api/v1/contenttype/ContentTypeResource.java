@@ -82,6 +82,7 @@ public class ContentTypeResource implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
+	static final String SELECTED_STRUCTURE_KEY = "selectedStructure";
 
 	@POST
 	@JSONP
@@ -119,7 +120,7 @@ public class ContentTypeResource implements Serializable {
 				retTypes.add(responseMap);
 				// save the last one to the session to be compliant with #13719
 				if(null != session){
-                    session.setAttribute("selectedStructure", contentTypeSaved.inode());
+                    session.setAttribute(SELECTED_STRUCTURE_KEY, contentTypeSaved.inode());
 				}
 			}
 
@@ -264,12 +265,17 @@ public class ContentTypeResource implements Serializable {
 		ContentTypeAPI tapi = APILocator.getContentTypeAPI(user, true);
 		Response response = Response.status(404).build();
 		final Map<String, Object> resultMap = new HashMap<>();
-
+		final HttpSession session = req.getSession(false);
 		try {
 
 			Logger.debug(this, ()-> "Getting the Type: " + idOrVar);
 
 			final ContentType type = tapi.find(idOrVar);
+
+			if(null != session && null != type){
+				session.setAttribute(SELECTED_STRUCTURE_KEY, type.inode());
+			}
+
 			resultMap.putAll(new JsonContentTypeTransformer(type).mapObject());
 			resultMap.put("workflows", 		 this.workflowHelper.findSchemesByContentType(type.id(), initData.getUser()));
 

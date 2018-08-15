@@ -16,6 +16,7 @@ import com.dotmarketing.portlets.contentlet.model.ResourceLink.ResourceLinkBuild
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import javax.servlet.http.HttpServletRequest;
 import org.junit.Test;
 
@@ -60,6 +61,9 @@ public class ResourceLinkTest {
 
             @Override
             Identifier getIdentifier(final Contentlet contentlet) throws DotDataException {
+                if(contentlet.isNew()){
+                   return null;
+                }
                 final Identifier identifier = mock(Identifier.class);
                 when(identifier.getInode()).thenReturn("83864b2c-3988-4acc-953d-ff8d0ba5e093");
                 when(identifier.getParentPath()).thenReturn(path);
@@ -103,6 +107,7 @@ public class ResourceLinkTest {
         when(contentlet.getContentType()).thenReturn(mockFileAssetContentType());
         when(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)).thenReturn(htmlFileName);
         when(contentlet.getLanguageId()).thenReturn(languageId);
+        when(contentlet.isNew()).thenReturn(false);
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getAttribute(ResourceLink.HOST_REQUEST_ATTRIBUTE)).thenReturn(HOST_ID);
@@ -132,6 +137,7 @@ public class ResourceLinkTest {
         when(contentlet.getContentType()).thenReturn(mockFileAssetContentType());
         when(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)).thenReturn(htmlFileName);
         when(contentlet.getLanguageId()).thenReturn(languageId);
+        when(contentlet.isNew()).thenReturn(false);
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getAttribute(ResourceLink.HOST_REQUEST_ATTRIBUTE)).thenReturn(HOST_ID);
@@ -162,6 +168,7 @@ public class ResourceLinkTest {
         when(contentlet.getContentType()).thenReturn(mockFileAssetContentType());
         when(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)).thenReturn(htmlFileName);
         when(contentlet.getLanguageId()).thenReturn(languageId);
+        when(contentlet.isNew()).thenReturn(false);
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getAttribute(ResourceLink.HOST_REQUEST_ATTRIBUTE)).thenReturn(HOST_ID);
@@ -192,6 +199,7 @@ public class ResourceLinkTest {
         when(contentlet.getContentType()).thenReturn(mockFileAssetContentType());
         when(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)).thenReturn(htmlFileName);
         when(contentlet.getLanguageId()).thenReturn(languageId);
+        when(contentlet.isNew()).thenReturn(false);
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getAttribute(ResourceLink.HOST_REQUEST_ATTRIBUTE)).thenReturn(HOST_ID);
@@ -204,4 +212,36 @@ public class ResourceLinkTest {
         assertEquals("http://demo.dotcms.com/any/any.vm?language_id=2",link.getResourceLinkAsString());
 
     }
+
+
+    @Test
+    public void test_new_contentlet_expect_empty_link() throws Exception{
+
+        final String mimeType = "text/velocity";
+        final String htmlFileName = "widget-code.vtl";
+        final String path = "/application/comments/angular/";
+        final String hostName = "demo.dotcms.com";
+        final long languageId = 2L;
+        final boolean isSecure = false;
+
+        final User adminUser = mockAdminUser();
+
+        final Contentlet contentlet = mock(Contentlet.class);
+        when(contentlet.getContentType()).thenReturn(mockFileAssetContentType());
+        when(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)).thenReturn(htmlFileName);
+        when(contentlet.getLanguageId()).thenReturn(languageId);
+        when(contentlet.isNew()).thenReturn(true);
+
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getAttribute(ResourceLink.HOST_REQUEST_ATTRIBUTE)).thenReturn(HOST_ID);
+        when(request.isSecure()).thenReturn(isSecure);
+        when(request.getServerPort()).thenReturn(80);
+
+        final ResourceLinkBuilder resourceLinkBuilder = getResourceLinkBuilder(hostName, path, mimeType, htmlFileName);
+        final ResourceLink link = resourceLinkBuilder.build(request, adminUser, contentlet);
+        assertTrue(link.isDownloadRestricted());
+        assertEquals(StringPool.BLANK,link.getResourceLinkAsString());
+
+    }
+
 }
