@@ -42,6 +42,7 @@ configurations {
     profilerDependencies
     provided
     felix
+    jacocoReport
 }
 
 configurations.all({
@@ -67,11 +68,42 @@ apply plugin: 'org.unbroken-dome.test-sets'
 apply plugin: 'project-report' /*For gradle dependencies: ./gradlew htmlDependencyReport*/
 apply plugin: 'idea'
 apply plugin: 'eclipse'
+apply plugin: "jacoco"
 eclipse {
     project {
         name = 'dotcms_5'
     }
 }
+
+
+jacoco {
+    toolVersion = "0.8.1"
+    reportsDir = file("$buildDir/reports/jacoco")
+}
+jacocoTestReport {
+    reports {
+        xml.enabled false
+        csv.enabled false
+        html.destination file("${buildDir}/reports/jacoco/jacocoHtml")
+    }
+}
+
+jacocoTestReport {
+    group = "Reporting"
+    description = "Generate Jacoco coverage reports"
+
+    sourceDirectories = files("${buildDir.parent}/src/main/java")
+    additionalSourceDirs = files([
+            "${buildDir.parent}/src/main/java/generated",
+    ])
+
+    reports {
+        xml.enabled = true
+        html.enabled = true
+    }
+}
+
+check.dependsOn jacocoTestReport
 
 // In this section you declare where to find the dependencies of your project.
 repositories {
