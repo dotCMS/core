@@ -1,9 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.ContentMappingAPI;
 import com.dotcms.content.business.DotMappingException;
@@ -18,11 +14,7 @@ import com.dotcms.tika.TikaUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
@@ -35,34 +27,14 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
-import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.portlets.structure.model.FieldVariable;
-import com.dotmarketing.portlets.structure.model.KeyValueFieldUtil;
-import com.dotmarketing.portlets.structure.model.Relationship;
-import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.structure.model.*;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.tag.model.Tag;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.ThreadSafeSimpleDateFormat;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.liferay.util.StringPool;
-import java.io.File;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.elasticsearch.ElasticsearchException;
@@ -70,6 +42,16 @@ import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 import org.elasticsearch.common.xcontent.XContentType;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.*;
+import java.util.Map.Entry;
+
+import static com.dotmarketing.business.PermissionAPI.*;
 
 
 public class ESMappingAPIImpl implements ContentMappingAPI {
@@ -318,30 +300,37 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
      * Adds the current workflow task to the contentlet in order to be reindexed.
      * 
      * @param contentlet {@link Contentlet}
-     * @param contentletMap {@link Map}
+     * @return {@link Map}
      */
     protected Map<String, Object> getWorkflowInfoForContentlet(final Contentlet contentlet) {
         
-        final Map<String, Object> wfMap = new HashMap<>();
-        final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
-        try {
-            final WorkflowTask task = workflowAPI.findTaskByContentlet(contentlet);
+        final Map<String, Object> workflowMap = new HashMap<>();
+        final WorkflowAPI workflowAPI 		  = APILocator.getWorkflowAPI();
 
-            if(task!=null && task.getId()!=null && null != task.getStatus()) {
+        try {
+
+            final WorkflowTask task 		  = workflowAPI.findTaskByContentlet(contentlet);
+
+            if(task != null && task.getId() != null && null != task.getStatus()) {
+
                 final WorkflowStep step = workflowAPI.findStep(task.getStatus());
-                wfMap.put(ESMappingConstants.WORKFLOW_SCHEME, step.getSchemeId());
-                wfMap.put(ESMappingConstants.WORKFLOW_STEP, task.getStatus());
-                wfMap.put(ESMappingConstants.WORKFLOW_CREATED_BY, task.getCreatedBy());
-                wfMap.put(ESMappingConstants.WORKFLOW_ASSIGN, task.getAssignedTo());
-                wfMap.put(ESMappingConstants.WORKFLOW_MOD_DATE, elasticSearchDateTimeFormat.format(task.getModDate()));
-                wfMap.put(ESMappingConstants.WORKFLOW_MOD_DATE + TEXT, datetimeFormat.format(task.getModDate()));
+                workflowMap.put(ESMappingConstants.WORKFLOW_SCHEME, step.getSchemeId());
+                workflowMap.put(ESMappingConstants.WORKFLOW_STEP, task.getStatus());
+				workflowMap.put(ESMappingConstants.WORKFLOW_CURRENT_STEP, step.getName());
+                workflowMap.put(ESMappingConstants.WORKFLOW_CREATED_BY, task.getCreatedBy());
+                workflowMap.put(ESMappingConstants.WORKFLOW_ASSIGN, task.getAssignedTo());
+                workflowMap.put(ESMappingConstants.WORKFLOW_MOD_DATE, elasticSearchDateTimeFormat.format(task.getModDate()));
+                workflowMap.put(ESMappingConstants.WORKFLOW_MOD_DATE + TEXT, datetimeFormat.format(task.getModDate()));
             }
                 
         } catch (Exception e) {
             Logger.debug(this.getClass(), "No workflow info for contentlet " +  contentlet.getIdentifier());
         }
-	        if(wfMap.isEmpty()) {
+
+        if(workflowMap.isEmpty()) {
+
             try {
+
                 final List<String> stepIds = new ArrayList<>();
                 final Set<String> schemeWriter = new HashSet<>();
                 final List<WorkflowScheme> schemes = workflowAPI.findSchemesForContentType(contentlet.getContentType());
@@ -353,16 +342,15 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                     }
                 }
     
-                wfMap.put(ESMappingConstants.WORKFLOW_SCHEME, String.join(" ", schemeWriter));
-                wfMap.put(ESMappingConstants.WORKFLOW_STEP, stepIds);
-        
-             
+                workflowMap.put(ESMappingConstants.WORKFLOW_SCHEME, String.join(" ", schemeWriter));
+                workflowMap.put(ESMappingConstants.WORKFLOW_STEP, stepIds);
+				workflowMap.put(ESMappingConstants.WORKFLOW_CURRENT_STEP, ESMappingConstants.WORKFLOW_CURRENT_STEP_NOT_ASSIGNED_VALUE); // multiple steps -> not assigned.
             } catch (Exception e) {
                 Logger.error(this.getClass(), "unable to add workflow info to index:" + e, e);
             }
         }
-        return wfMap;
 
+        return workflowMap;
     }
 
 	public Object toMappedObj(Contentlet con) throws DotMappingException {
