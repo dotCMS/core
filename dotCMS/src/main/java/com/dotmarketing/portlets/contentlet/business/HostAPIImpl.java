@@ -850,13 +850,14 @@ public class HostAPIImpl implements HostAPI {
         if(!UtilMethods.isSet(inode)){
 
             defaultHost.setDefault(true);
-            defaultHost.setHostname("localhost");
+            defaultHost.setHostname("noDefault-"  + System.currentTimeMillis());
 
             for(Field f : fields){
                 if(f.required() && UtilMethods.isSet(f.defaultValue())){
                     defaultHost.setProperty(f.variable(), f.defaultValue());
                 }
             }
+            defaultHost.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
             defaultHost = save(defaultHost, systemUser, false);
         } else {
              defaultHost = new Host(APILocator.getContentletAPI().find(inode, systemUser, false));
