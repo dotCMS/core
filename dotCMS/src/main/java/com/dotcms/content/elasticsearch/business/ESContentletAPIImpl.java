@@ -5727,6 +5727,54 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @WrapInTransaction
     @Override
+    public Contentlet saveDraft(final Contentlet contentlet,
+                                final ContentletRelationships contentletRelationships,
+                                final List<Category> cats,
+                                final List<Permission> permissions,
+                                final User user,boolean respectFrontendRoles)
+            throws IllegalArgumentException,DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException {
+
+        if (!InodeUtils.isSet(contentlet.getInode())) {
+            return checkin(contentlet, contentletRelationships, cats, permissions, user, false);
+        } else {
+            canLock(contentlet, user);
+            //get the latest and greatest from db
+            final Contentlet working = contentFactory
+                    .findContentletByIdentifier(contentlet.getIdentifier(), false,
+                            contentlet.getLanguageId());
+
+            /*
+             * Only draft if there is a working version that is not live
+             * and always create a new version if the user is different
+             */
+            if (null != working &&
+                    !working.isLive() && working.getModUser().equals(contentlet.getModUser())) {
+
+                // if we are the latest and greatest and are a draft
+                if (working.getInode().equals(contentlet.getInode())) {
+
+                    return checkin(contentlet, contentletRelationships, cats ,
+                            user, false, false, false);
+
+                } else {
+                    final String workingInode = working.getInode();
+                    copyProperties(working, contentlet.getMap());
+                    working.setInode(workingInode);
+                    working.setModUser(user.getUserId());
+                    return checkin(contentlet, contentletRelationships, cats ,
+                            user, false, false, false);
+                }
+            }
+
+            contentlet.setInode(null);
+            return checkin(contentlet, contentletRelationships,
+                    cats,
+                    permissions, user, false);
+        }
+    }
+
+    @WrapInTransaction
+    @Override
     public Contentlet saveDraft(Contentlet contentlet,
             Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats,
             List<Permission> permissions, User user, boolean respectFrontendRoles)
