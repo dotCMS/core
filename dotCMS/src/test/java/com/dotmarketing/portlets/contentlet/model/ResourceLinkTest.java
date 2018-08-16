@@ -56,7 +56,7 @@ public class ResourceLinkTest {
 
             @Override
             Host getHost(final String hostId, final User user) throws DotDataException, DotSecurityException {
-                Host host = mock(Host.class);
+                final Host host = mock(Host.class);
                 when(host.getHostname()).thenReturn(hostName);
                 return host;
             }
@@ -74,15 +74,15 @@ public class ResourceLinkTest {
 
             @Override
             FileAsset getFileAsset(final Contentlet contentlet){
-                FileAsset fileAsset = mock(FileAsset.class);
+                final FileAsset fileAsset = mock(FileAsset.class);
                 when(fileAsset.getMimeType()).thenReturn(mimeType);
                 when(fileAsset.getFileName()).thenReturn(htmlFileName);
                 return fileAsset;
             }
 
             @Override
-            boolean isDownloadPermissionBasedRestricted(Contentlet contentlet,
-                    User user) throws DotDataException {
+            boolean isDownloadPermissionBasedRestricted(final Contentlet contentlet,
+                    final User user) throws DotDataException {
                 return !USER_ADMIN_ID.equals(user.getUserId());
             }
         };
