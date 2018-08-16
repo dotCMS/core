@@ -1,11 +1,12 @@
 @charset "UTF-8";
 @import url("https://fonts.googleapis.com/css?family=Roboto:400,700");
+@import url("https://fonts.googleapis.com/icon?family=Material+Icons");
 :root {
-  --color-background: #3A3847;
-  --color-main: #C336E5;
-  --color-main_mod: #D369EC;
+  --color-background: #3a3847;
+  --color-main: #c336e5;
+  --color-main_mod: #d369ec;
   --color-main_rgb: 195, 54, 229;
-  --color-sec: #54428E;
+  --color-sec: #54428e;
   --color-sec_rgb: 84, 66, 142;
 }
 
@@ -11101,6 +11102,10 @@ a.category_higlighted, a.tag_higlighted {
   width: 100%;
 }
 
+.view-users__profile-tabs-container#userTabsContainer .dijitTabPaneWrapper {
+  overflow: auto;
+}
+
 .view-users__filter-form {
   margin-bottom: 16px;
 }
@@ -11208,7 +11213,8 @@ a.category_higlighted, a.tag_higlighted {
   background-color: #ECEDEE;
 }
 
-.view-users .view-users__users-list .dojoxGridRow .dojoxGridRowTable .dojoxGridCell, .view-users .view-users__users-list .dojoxGridHeader .dojoxGridRowTable .dojoxGridCell {
+.view-users .view-users__users-list .dojoxGridRow .dojoxGridRowTable .dojoxGridCell,
+.view-users .view-users__users-list .dojoxGridHeader .dojoxGridRowTable .dojoxGridCell {
   padding: 8px;
 }
 
@@ -12107,4 +12113,27 @@ Resize Handle
 body {
   margin: 0;
   padding: 0;
+}
+
+.material-icons {
+  font-family: "Material Icons";
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  /* Preferred icon size */
+  display: inline-block;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+  /* Support for all WebKit browsers. */
+  -webkit-font-smoothing: antialiased;
+  /* Support for Safari and Chrome. */
+  text-rendering: optimizeLegibility;
+  /* Support for Firefox. */
+  -moz-osx-font-smoothing: grayscale;
+  /* Support for IE. */
+  font-feature-settings: "liga";
 }

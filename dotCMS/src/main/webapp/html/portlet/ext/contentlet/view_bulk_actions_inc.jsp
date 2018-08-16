@@ -272,7 +272,7 @@
         dia = new dijit.Dialog({
             id			:	"contentletWfDialog",
             title		: 	"<%=LanguageUtil.get(pageContext, "Workflow-Actions")%>",
-            style		:	"width:520px;height:400px;resize: both;overflow: auto;"
+            style		:	"width:520px;height:513px"
         });
 
         var closeHandle = dojo.connect(dijit.byId('contentletWfDialog'), "hide",
@@ -297,7 +297,7 @@
         }
         myCp = new dojox.layout.ContentPane({
             id 			: "contentletWfCP",
-            style		: "width:500px;height:400px;margin:auto;"
+            style		: "width:500px;height:433px;margin:auto;"
         }).placeAt("contentletWfDialog");
 
         dia.show();

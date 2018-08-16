@@ -24,7 +24,8 @@
 .flex-wrap{ 
 	-webkit-flex-wrap: wrap;
 	flex-wrap: wrap;
-	padding-left:10px;
+    padding-left:10px;
+    background-color: #F4F3F4;
 }
 .flex-item {
 	position: relative;
@@ -115,6 +116,13 @@ ol.wfStepsList li{padding:8px 16px;margin:0 10px; list-style:decimal;  list-styl
 
 .showPointer{
 	cursor: pointer;
+}
+
+.showPointer h2 {
+    max-width: 220px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
 }
 
 .wfAddActionButtonRow{

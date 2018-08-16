@@ -24,6 +24,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.Expireable;
 import com.dotcms.contenttype.model.type.UrlMapable;
+import com.dotcms.datagen.ContentletDataGen;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -31,6 +32,7 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import java.io.File;
 import java.io.ObjectInputStream;
@@ -605,6 +607,44 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 			contentTypeApi.delete(newType);
 		}
 		assertTrue(testCase.shouldExecuteAction);
+	}
+
+	@Test(expected = NotFoundInDbException.class)
+	public void testDeleteContentType_GivenLimitedUserWithNoPermissionsUnderContentAndEnoughPermissionsToDeleteType_ShouldDeleteTypeRegardless()
+			throws DotDataException, DotSecurityException {
+
+		final long now = System.currentTimeMillis();
+
+		ContentType newType = ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
+				.description("description").folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+				.name("ContentTypeTesting"+now).owner("owner").variable("velocityVarNameTesting"+now).build();
+		newType = contentTypeApi.save(newType);
+		final String newTypeId = newType.id();
+
+		final User limitedUserEditPermsPermOnCT = APILocator.getUserAPI().loadUserById("dotcms.org.2795",
+				APILocator.systemUser(), false);
+
+		final List<Integer> existingPermissions = APILocator.getPermissionAPI()
+				.getPermissionIdsFromUser(newType, limitedUserEditPermsPermOnCT);
+
+		final Permission editPermissionsPermission = new Permission( newType.getPermissionId(),
+				APILocator.getRoleAPI().getUserRole(limitedUserEditPermsPermOnCT).getId(),
+				PermissionAPI.PERMISSION_EDIT_PERMISSIONS, true );
+		APILocator.getPermissionAPI().save( editPermissionsPermission, newType, user,
+				false );
+
+		ContentletDataGen contentletDataGen = new ContentletDataGen(newTypeId);
+		contentletDataGen.nextPersisted();
+		final ContentTypeAPI contentTypeAPI = new ContentTypeAPIImpl(limitedUserEditPermsPermOnCT, false, FactoryLocator.getContentTypeFactory(),
+				FactoryLocator.getFieldFactory(), APILocator.getPermissionAPI(), APILocator.getContentTypeFieldAPI());
+
+		try {
+			contentTypeAPI.delete(newType);
+			contentTypeAPI.find(newTypeId);
+		}  finally {
+			restorePermissionsForUser(limitedUserEditPermsPermOnCT, existingPermissions);
+			contentTypeApi.delete(newType);
+		}
 	}
 
 	private void restorePermissionsForUser(User limitedUserEditPermsPermOnCT, List<Integer> existingPermissions) throws DotSecurityException, DotDataException {
