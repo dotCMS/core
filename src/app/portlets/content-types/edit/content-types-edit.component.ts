@@ -151,6 +151,8 @@ export class ContentTypesEditComponent implements OnInit {
             .pluck('fields')
             .subscribe((fields: ContentTypeField[]) => {
                 this.fields = fields;
+            }, (err: ResponseView) => {
+                this.dotHttpErrorManagerService.handle(err).subscribe((() => {}));
             });
     }
 

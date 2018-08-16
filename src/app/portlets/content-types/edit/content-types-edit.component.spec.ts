@@ -469,6 +469,26 @@ describe('ContentTypesEditComponent edit mode', () => {
         expect(comp.fields).toEqual(fieldsReturnByServer);
     });
 
+    it('should handle remove field error', () => {
+        spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
+        const fieldService = fixture.debugElement.injector.get(FieldService);
+        spyOn(fieldService, 'deleteFields').and.returnValue(Observable.throw(mockResponseView(403)));
+
+        const contentTypeFieldsDropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
+
+        const fieldToRemove = {
+            name: 'field 3',
+            id: '3',
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
+            sortOrder: 3
+        };
+
+        // when: the saveFields event is tiggered in content-type-fields-drop-zone
+        contentTypeFieldsDropZone.componentInstance.removeFields.emit(fieldToRemove);
+
+        expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
+    });
+
     describe('update', () => {
         let contentTypeForm: DebugElement;
 
