@@ -24,6 +24,8 @@ public class ResourceLinkTest {
 
     private static final String HOST_ID = "48190c8c-42c4-46af-8d1a-0cd5db894797";
 
+    private static final String USER_ADMIN_ID = "dotcms.org.1";
+
     private ContentType mockFileAssetContentType(){
         return new FileAssetContentType(){
 
@@ -78,16 +80,30 @@ public class ResourceLinkTest {
                 return fileAsset;
             }
 
+            @Override
+            boolean isDownloadPermissionBasedRestricted(Contentlet contentlet,
+                    User user) throws DotDataException {
+                return !USER_ADMIN_ID.equals(user.getUserId());
+            }
         };
         return resourceLinkBuilder;
     }
 
     private User mockAdminUser(){
         final User adminUser = mock(User.class);
-        when(adminUser.getUserId()).thenReturn("dotcms.org.1");
+        when(adminUser.getUserId()).thenReturn(USER_ADMIN_ID);
         when(adminUser.getEmailAddress()).thenReturn("admin@dotcms.com");
         when(adminUser.getFirstName()).thenReturn("Admin");
         when(adminUser.getLastName()).thenReturn("User");
+        return adminUser;
+    }
+
+    private User mockLimitedUser(){
+        final User adminUser = mock(User.class);
+        when(adminUser.getUserId()).thenReturn("anonymous");
+        when(adminUser.getEmailAddress()).thenReturn("anonymous@dotcmsfakeemail.org");
+        when(adminUser.getFirstName()).thenReturn("anonymous user");
+        when(adminUser.getLastName()).thenReturn("anonymous");
         return adminUser;
     }
 
@@ -153,7 +169,7 @@ public class ResourceLinkTest {
 
 
     @Test
-    public void test_vtl_ResourceLink_Expect_Restricted_Download_No_Port_Number() throws Exception{
+    public void test_vtl_ResourceLink_WithAdminUser_Expect_Downloadable_No_Port_Number() throws Exception{
 
         final String mimeType = "text/velocity";
         final String htmlFileName = "widget-code.vtl";
@@ -177,14 +193,45 @@ public class ResourceLinkTest {
 
         final ResourceLinkBuilder resourceLinkBuilder = getResourceLinkBuilder(hostName, path, mimeType, htmlFileName);
         final ResourceLink link = resourceLinkBuilder.build(request, adminUser, contentlet);
+        assertFalse(link.isDownloadRestricted());
+        assertEquals("http://demo.dotcms.com/application/comments/angular/widget-code.vtl?language_id=2",link.getResourceLinkAsString());
+
+    }
+
+    @Test
+    public void test_vtl_ResourceLink_WithLimitedUser_Expect_Downloadable_No_Port_Number() throws Exception{
+
+        final String mimeType = "text/velocity";
+        final String htmlFileName = "widget-code.vtl";
+        final String path = "/application/comments/angular/";
+        final String hostName = "demo.dotcms.com";
+        final long languageId = 2L;
+        final boolean isSecure = false;
+
+        final User limitedUser = mockLimitedUser();
+
+        final Contentlet contentlet = mock(Contentlet.class);
+        when(contentlet.getContentType()).thenReturn(mockFileAssetContentType());
+        when(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)).thenReturn(htmlFileName);
+        when(contentlet.getLanguageId()).thenReturn(languageId);
+        when(contentlet.isNew()).thenReturn(false);
+
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getAttribute(ResourceLink.HOST_REQUEST_ATTRIBUTE)).thenReturn(HOST_ID);
+        when(request.isSecure()).thenReturn(isSecure);
+        when(request.getServerPort()).thenReturn(80);
+
+        final ResourceLinkBuilder resourceLinkBuilder = getResourceLinkBuilder(hostName, path, mimeType, htmlFileName);
+        final ResourceLink link = resourceLinkBuilder.build(request, limitedUser, contentlet);
         assertTrue(link.isDownloadRestricted());
         assertEquals("http://demo.dotcms.com/application/comments/angular/widget-code.vtl?language_id=2",link.getResourceLinkAsString());
 
     }
 
 
+
     @Test
-    public void test_vm_ResourceLink_Expect_Restricted_Download_No_Port_Number() throws Exception{
+    public void test_vm_ResourceLink_With_Admin_User_Expect_Downloadable_NoPortNumber() throws Exception{
 
         final String mimeType = "text/velocity";
         final String htmlFileName = "any.vm";
@@ -208,6 +255,36 @@ public class ResourceLinkTest {
 
         final ResourceLinkBuilder resourceLinkBuilder = getResourceLinkBuilder(hostName, path, mimeType, htmlFileName);
         final ResourceLink link = resourceLinkBuilder.build(request, adminUser, contentlet);
+        assertFalse(link.isDownloadRestricted());
+        assertEquals("http://demo.dotcms.com/any/any.vm?language_id=2",link.getResourceLinkAsString());
+
+    }
+
+    @Test
+    public void test_vm_ResourceLink_With_LimitedUser_ExpectRestricted_NoPortNumber() throws Exception{
+
+        final String mimeType = "text/velocity";
+        final String htmlFileName = "any.vm";
+        final String path = "/any/";
+        final String hostName = "demo.dotcms.com";
+        final long languageId = 2L;
+        final boolean isSecure = false;
+
+        final User limitedUser = mockLimitedUser();
+
+        final Contentlet contentlet = mock(Contentlet.class);
+        when(contentlet.getContentType()).thenReturn(mockFileAssetContentType());
+        when(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)).thenReturn(htmlFileName);
+        when(contentlet.getLanguageId()).thenReturn(languageId);
+        when(contentlet.isNew()).thenReturn(false);
+
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getAttribute(ResourceLink.HOST_REQUEST_ATTRIBUTE)).thenReturn(HOST_ID);
+        when(request.isSecure()).thenReturn(isSecure);
+        when(request.getServerPort()).thenReturn(80);
+
+        final ResourceLinkBuilder resourceLinkBuilder = getResourceLinkBuilder(hostName, path, mimeType, htmlFileName);
+        final ResourceLink link = resourceLinkBuilder.build(request, limitedUser, contentlet);
         assertTrue(link.isDownloadRestricted());
         assertEquals("http://demo.dotcms.com/any/any.vm?language_id=2",link.getResourceLinkAsString());
 
@@ -215,7 +292,7 @@ public class ResourceLinkTest {
 
 
     @Test
-    public void test_new_contentlet_expect_empty_link() throws Exception{
+    public void test_newContentlet_withAdminUser_expectEmptyLink() throws Exception{
 
         final String mimeType = "text/velocity";
         final String htmlFileName = "widget-code.vtl";
@@ -239,6 +316,36 @@ public class ResourceLinkTest {
 
         final ResourceLinkBuilder resourceLinkBuilder = getResourceLinkBuilder(hostName, path, mimeType, htmlFileName);
         final ResourceLink link = resourceLinkBuilder.build(request, adminUser, contentlet);
+        assertTrue(link.isDownloadRestricted());
+        assertEquals(StringPool.BLANK,link.getResourceLinkAsString());
+
+    }
+
+    @Test
+    public void test_new_contentlet_limited_user_expect_empty_link() throws Exception{
+
+        final String mimeType = "text/velocity";
+        final String htmlFileName = "widget-code.vtl";
+        final String path = "/application/comments/angular/";
+        final String hostName = "demo.dotcms.com";
+        final long languageId = 2L;
+        final boolean isSecure = false;
+
+        final User limited = mockLimitedUser();
+
+        final Contentlet contentlet = mock(Contentlet.class);
+        when(contentlet.getContentType()).thenReturn(mockFileAssetContentType());
+        when(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)).thenReturn(htmlFileName);
+        when(contentlet.getLanguageId()).thenReturn(languageId);
+        when(contentlet.isNew()).thenReturn(true);
+
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getAttribute(ResourceLink.HOST_REQUEST_ATTRIBUTE)).thenReturn(HOST_ID);
+        when(request.isSecure()).thenReturn(isSecure);
+        when(request.getServerPort()).thenReturn(80);
+
+        final ResourceLinkBuilder resourceLinkBuilder = getResourceLinkBuilder(hostName, path, mimeType, htmlFileName);
+        final ResourceLink link = resourceLinkBuilder.build(request, limited, contentlet);
         assertTrue(link.isDownloadRestricted());
         assertEquals(StringPool.BLANK,link.getResourceLinkAsString());
 
