@@ -1501,6 +1501,25 @@ public interface ContentletAPIPreHook {
     }
 
 	/**
+	 * Checks if the version you are saving is live=false.  If it is, this method will save
+	 * WITHOUT creating a new version.  Otherwise, it will create a new working (Draft) version and return it to you
+	 * @param contentlet - The inode of your contentlet must not be null.
+	 * @param contentletRelationships - throws IllegalArgumentException if null. Used to set relationships to new contentlet version
+	 * @param cats - throws IllegalArgumentException if null. Used to set categories to new contentlet version
+	 * @param permissions - throws IllegalArgumentException if null. Used to set permissions to new contentlet version
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @throws IllegalArgumentException
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 * @throws DotContentletStateException If inode null
+	 * @throws DotContentletValidationException If content is not valid
+	 */
+	public default boolean  saveDraft(Contentlet contentlet, ContentletRelationships contentletRelationships, List<Category> cats ,List<Permission> permissions, User user,boolean respectFrontendRoles) throws IllegalArgumentException,DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException{
+		return true;
+	}
+
+	/**
 	 * The search here takes a lucene query and pulls Contentlets for you, using the identifier of the contentlet.You can pass sortBy as null if you do not 
 	 * have a field to sort by.  limit should be 0 if no limit and the offset should be -1 is you are not paginating.
 	 * The returned list will be filtered with only the contentlets that the user can read(use).  you can of course also
