@@ -479,10 +479,22 @@ function fillExistingTagsOptionsLinks(tags) {
 	});
 }
 
+function getHashCode(tag) {
+    var hash = 0;
+    var chr;
+
+    if (tag.length === 0) return hash;
+
+    for (var i = 0; i < tag.length; i++) {
+        chr   = tag.charCodeAt(i);
+        hash  = ((hash << 5) - hash) + chr;
+        hash |= 0; // Convert to 32bit integer
+    }
+    return hash;
+}
+
 function getTagId(tag) {
-	return "tag-" + tag.toLowerCase()
-	.replace(/ /g, "-")
-	.replace(/[^\w-]+/g, "");
+	return "tag-" + getHashCode(tag);
 }
 
 function getInputPosition() {

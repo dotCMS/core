@@ -280,7 +280,7 @@
                             </div>
                         </div>
                         <div id="<%=f.getVelocityVarName()%>" class="custom-tab" dojoType="dijit.layout.ContentPane" title="<%=f.getFieldName()%>">
-                            <div class="wrapperRight">
+                            <div class="content-edit__advaced-form">
 
                     <%}else if(f.getFieldType().equals(Field.FieldType.CATEGORIES_TAB.toString()) && !categoriesTabFieldExists) {
                         categoriesTabFieldExists = true;%>
