@@ -326,13 +326,13 @@ public class InitServlet extends HttpServlet {
                 List<Host> hosts = hostAPI.findAll(APILocator.getUserAPI().getSystemUser(), false);
                 for (Host h : hosts) {
                     if(!"System Host".equals(h.getHostname())){
-                        sb.append(h.getHostname() + "\n");
+                        sb.append(h.getHostname() + "\r\n");
                     }
                     if (UtilMethods.isSet(h.getAliases())) {
                         String[] x = h.getAliases().split("\\n|\\r");
                         for(String y : x){
                             if(UtilMethods.isSet(y) && !y.contains("dotcms.com") || !"host".equals(y)){
-                                sb.append(y + "\\n");
+                                sb.append(y + "\r\n");
                             }
                         }
                     }

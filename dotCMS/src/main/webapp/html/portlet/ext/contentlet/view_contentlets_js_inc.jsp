@@ -711,7 +711,7 @@
 			if(structureInode == undefined || structureInode==""){
         		structureInode = dijit.byId('structure_inode').value;
         	}
-			if(structureInode == undefined || structureInode == "catchall"){
+			if(structureInode == undefined || structureInode=="" || structureInode == "catchall"){
 				dijit.byId("selectStructureDiv").show();
 				return;
 			}
