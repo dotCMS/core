@@ -600,17 +600,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
     /**
-     * Checks if the inode is orphan, in case that the inode has an orphan record, this will be deleted
+     * If the orphan exists will be deleted.
      * @param inode String
      */
     private void checkOrphanInode(final String inode) throws DotDataException {
-
-        final Collection results =
-                new DotConnect().setSQL("select * from inode where inode = ?").addParam(inode).loadResults();
-        if (UtilMethods.isSet(results)) {
-
-            new DotConnect().setSQL("delete from inode where inode = ?").addParam(inode).loadResult();
-        }
+         new DotConnect().setSQL("delete from inode where inode = ?").addParam(inode).loadResult();
     }
 
     /**
