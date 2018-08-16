@@ -1,11 +1,12 @@
 @charset "UTF-8";
 @import url("https://fonts.googleapis.com/css?family=Roboto:400,700");
+@import url("https://fonts.googleapis.com/icon?family=Material+Icons");
 :root {
-  --color-background: #3A3847;
-  --color-main: #C336E5;
-  --color-main_mod: #D369EC;
+  --color-background: #3a3847;
+  --color-main: #c336e5;
+  --color-main_mod: #d369ec;
   --color-main_rgb: 195, 54, 229;
-  --color-sec: #54428E;
+  --color-sec: #54428e;
   --color-sec_rgb: 84, 66, 142;
 }
 
@@ -6708,7 +6709,7 @@ hr {
 .dijitTextBox,
 .dijitSelect {
   width: 100%;
-  max-width: 900px;
+  max-width: 1100px;
 }
 
 .dijitComboBox {
@@ -9636,7 +9637,7 @@ Styles for commons fields along the backend
   border-radius: 2px;
   border: solid 1px #C5C5C5;
   margin-top: 8px;
-  max-width: 900px;
+  max-width: 1100px;
   min-height: 38px;
   padding: 4px;
 }
@@ -9685,7 +9686,7 @@ Styles for commons fields along the backend
 }
 
 .editor-toolbar {
-  max-width: 900px;
+  max-width: 1100px;
   width: 100%;
 }
 
@@ -9700,7 +9701,7 @@ Styles for commons fields along the backend
 
 .wysiwyg-wrapper {
   width: 100%;
-  max-width: 900px;
+  max-width: 1100px;
 }
 
 .key-value-form {
@@ -10646,7 +10647,7 @@ a.category_higlighted, a.tag_higlighted {
 
 .aceText {
   border: 1px solid #C5C5C5;
-  max-width: 900px;
+  max-width: 1100px;
   width: 100%;
   height: 100%;
   min-height: 200px;
@@ -10679,9 +10680,12 @@ a.category_higlighted, a.tag_higlighted {
   z-index: 1;
 }
 
-.content-edit__form {
+.content-edit__form,
+.content-edit__advaced-form {
+  padding: 30px;
+  box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.1);
   width: 100%;
-  max-width: 900px;
+  max-width: 1100px;
   margin: 0 auto;
   position: relative;
 }
@@ -11101,6 +11105,10 @@ a.category_higlighted, a.tag_higlighted {
   width: 100%;
 }
 
+.view-users__profile-tabs-container#userTabsContainer .dijitTabPaneWrapper {
+  overflow: auto;
+}
+
 .view-users__filter-form {
   margin-bottom: 16px;
 }
@@ -11208,7 +11216,8 @@ a.category_higlighted, a.tag_higlighted {
   background-color: #ECEDEE;
 }
 
-.view-users .view-users__users-list .dojoxGridRow .dojoxGridRowTable .dojoxGridCell, .view-users .view-users__users-list .dojoxGridHeader .dojoxGridRowTable .dojoxGridCell {
+.view-users .view-users__users-list .dojoxGridRow .dojoxGridRowTable .dojoxGridCell,
+.view-users .view-users__users-list .dojoxGridHeader .dojoxGridRowTable .dojoxGridCell {
   padding: 8px;
 }
 
@@ -12107,4 +12116,27 @@ Resize Handle
 body {
   margin: 0;
   padding: 0;
+}
+
+.material-icons {
+  font-family: "Material Icons";
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  /* Preferred icon size */
+  display: inline-block;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+  /* Support for all WebKit browsers. */
+  -webkit-font-smoothing: antialiased;
+  /* Support for Safari and Chrome. */
+  text-rendering: optimizeLegibility;
+  /* Support for Firefox. */
+  -moz-osx-font-smoothing: grayscale;
+  /* Support for IE. */
+  font-feature-settings: "liga";
 }

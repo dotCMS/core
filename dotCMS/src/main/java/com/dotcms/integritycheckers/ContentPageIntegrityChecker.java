@@ -642,6 +642,7 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
 			boolean fixAllVersions, boolean addNewVersionInfo,
 			String workingInode, String liveInode) throws DotDataException,
 			DotSecurityException {
+
         DotConnect dc = new DotConnect();
         String oldHtmlPageIdentifier = (String) pageData.get("local_identifier");
         String newHtmlPageIdentifier = (String) pageData.get("remote_identifier");
@@ -650,7 +651,7 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
         String localLiveInode = (String) pageData.get("local_live_inode");
         String remoteWorkingInode = (String) pageData.get("remote_working_inode");
         String remoteLiveInode = (String) pageData.get("remote_live_inode");
-        Long languageId = null;
+        Long languageId;
         if (DbConnectionFactory.isOracle()) {
             BigDecimal lang = (BigDecimal) pageData.get("language_id");
             languageId = new Long(lang.toPlainString());
@@ -772,6 +773,17 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
 	        dc.addParam(localWorkingInode);
 	        dc.loadResult();
         }
+
+		// Update the webasset (identifier) in case the page is in a Workflow step
+		if (UtilMethods.isSet(oldHtmlPageIdentifier) && UtilMethods.isSet(newHtmlPageIdentifier)
+				&& !oldHtmlPageIdentifier.equals(newHtmlPageIdentifier)) {
+
+			dc.setSQL("UPDATE workflow_task SET webasset = ? WHERE webasset = ?");
+			dc.addParam(newHtmlPageIdentifier);
+			dc.addParam(oldHtmlPageIdentifier);
+			dc.loadResult();
+		}
+
         // Remove the conflicting working version of the Contentlet record
         dc.setSQL("DELETE FROM contentlet WHERE identifier = ? AND inode = ? AND language_id = ?");
         dc.addParam(oldHtmlPageIdentifier);

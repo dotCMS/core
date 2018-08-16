@@ -1,46 +1,39 @@
 
-<%@page import="com.dotmarketing.util.PortletID"%>
-<%@page import="com.dotmarketing.portlets.structure.model.Field"%>
-<%@page import="com.dotmarketing.util.UtilMethods"%>
-<%@page import="com.dotmarketing.business.APILocator"%>
-<%@page import="java.util.GregorianCalendar"%>
-<%@page import="java.util.Date"%>
-<%@page import="java.util.Arrays"%>
-<%@page import="java.text.SimpleDateFormat"%>
-<%@page import="com.dotmarketing.util.Parameter"%>
-<%@page import="com.dotmarketing.portlets.categories.model.Category"%>
-<%@page import="com.dotmarketing.portlets.categories.business.CategoryAPI"%>
-<%@page import="com.dotmarketing.business.APILocator"%>
-<%@page import="com.dotmarketing.util.UtilMethods"%>
-<%@page import="com.dotmarketing.util.InodeUtils"%>
-<%@page import="com.dotmarketing.exception.DotSecurityException"%>
-<%@page import="com.dotmarketing.util.Logger"%>
-<%@page import="com.dotmarketing.portlets.structure.business.FieldAPI"%>
-<%@page import="com.dotmarketing.util.VelocityUtil"%>
-<%@ include file="/html/portlet/ext/contentlet/init.jsp"%>
-
-<%@page import="com.dotmarketing.portlets.folders.business.FolderAPI"%>
-<%@page import="com.dotmarketing.portlets.contentlet.struts.ContentletForm"%>
-<%@page import="com.dotmarketing.beans.Identifier"%>
-<%@page import="com.dotmarketing.portlets.fileassets.business.FileAssetAPI"%>
-<%@page import="com.dotmarketing.business.PermissionAPI"%>
-<%@page import="com.dotmarketing.beans.Host"%>
-<%@page import="com.dotmarketing.portlets.structure.model.FieldVariable"%>
-<%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
-
-
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
+<%@page import="com.dotmarketing.business.APILocator"%>
+<%@page import="com.dotmarketing.business.PermissionAPI"%>
+<%@page import="com.dotmarketing.exception.DotSecurityException"%>
+<%@page import="com.dotmarketing.portlets.categories.business.CategoryAPI"%>
+<%@page import="com.dotmarketing.portlets.categories.model.Category"%>
+<%@page import="com.dotmarketing.portlets.contentlet.model.ResourceLink"%>
+<%@page import="com.dotmarketing.portlets.contentlet.model.ResourceLink.ResourceLinkBuilder"%>
+<%@page import="com.dotmarketing.portlets.contentlet.struts.ContentletForm"%>
+<%@page import="com.dotmarketing.portlets.fileassets.business.FileAsset"%>
+<%@page import="com.dotmarketing.portlets.fileassets.business.FileAssetAPI"%>
+<%@page import="com.dotmarketing.portlets.folders.business.FolderAPI"%>
+<%@page import="com.dotmarketing.portlets.structure.business.FieldAPI"%>
+<%@page import="com.dotmarketing.portlets.structure.model.Field"%>
+<%@page import="com.dotmarketing.portlets.structure.model.FieldVariable"%>
+<%@ include file="/html/portlet/ext/contentlet/init.jsp"%>
+
+<%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
+<%@page import="com.dotmarketing.util.InodeUtils"%>
+<%@page import="com.dotmarketing.util.Logger"%>
+<%@page import="com.dotmarketing.util.Parameter"%>
+<%@page import="com.dotmarketing.util.PortletID"%>
+<%@page import="com.dotmarketing.util.VelocityUtil"%>
+
 
 <%
     long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-    Contentlet contentlet = (Contentlet) request.getAttribute("contentlet");
+    final Structure structure = Structure.class.cast(request.getAttribute("structure"));
+    final Contentlet contentlet = Contentlet.class.cast(request.getAttribute("contentlet"));
     long contentLanguage = contentlet.getLanguageId();
-    Field field = (Field) request.getAttribute("field");
+    final Field field = Field.class.cast(request.getAttribute("field"));
 
     Object value = (Object) request.getAttribute("value");
-    String hint = UtilMethods.isSet(field.getHint()) ? field.getHint()
-            : null;
+    String hint = UtilMethods.isSet(field.getHint()) ? field.getHint() : null;
     boolean isReadOnly = field.isReadOnly();
     String defaultValue = field.getDefaultValue() != null ? field
             .getDefaultValue().trim() : "";
@@ -430,6 +423,13 @@
             if(!UtilMethods.isSet(inode) && UtilMethods.isSet(sib)) {
                 binInode=sib;
             }
+
+            ResourceLink resourceLink = null;
+
+            if(structure.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET){
+                resourceLink = new ResourceLinkBuilder().build(request, user, contentlet);
+            }
+
         %>
 
         <!--  display -->
@@ -500,12 +500,16 @@
 
 
     <%}else{%>
-    <div id="<%=field.getVelocityVarName()%>ThumbnailSliderWrapper">
-        <a class="bg" href="javascript: serveFile('','<%=binInode%>','<%=field.getVelocityVarName()%>');"
-           id="<%=field.getVelocityVarName()%>BinaryFile"><%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "download"))%></a>
-        <br/>
-    </div>
 
+            <% if(UtilMethods.isSet(resourceLink) && !resourceLink.isDownloadRestricted()){ %>
+
+                <div id="<%=field.getVelocityVarName()%>ThumbnailSliderWrapper">
+                    <a class="bg" href="javascript: serveFile('','<%=binInode%>','<%=field.getVelocityVarName()%>');"
+                       id="<%=field.getVelocityVarName()%>BinaryFile"><%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "download"))%></a>
+                    <br/>
+                </div>
+
+            <% } %>
 
     <%}
 
@@ -517,6 +521,7 @@
             name="<%=field.getFieldContentlet()%>"
             <%= UtilMethods.isSet(fileName)?"fileName=\"" + fileName.replaceAll("\"", "\\\"") +"\"":"" %>
             fieldName="<%=field.getVelocityVarName()%>"
+            dowloadRestricted="<%= UtilMethods.isSet(resourceLink) ? resourceLink.isDownloadRestricted() : false %>"
             inode="<%= binInode%>"
             lang="<%=contentlet.getLanguageId() %>"
             identifier="<%=contentlet.getIdentifier()%>"
@@ -534,60 +539,36 @@
 
 
     <%
-        com.dotmarketing.portlets.structure.model.Structure structure   = (com.dotmarketing.portlets.structure.model.Structure) request.getAttribute("structure");
-        boolean canUserWriteToContentlet = APILocator.getPermissionAPI().doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_WRITE,user);
-        if(UtilMethods.isSet(value) && structure.getStructureType()==com.dotmarketing.portlets.structure.model.Structure.STRUCTURE_TYPE_FILEASSET && field.getVelocityVarName().equals(FileAssetAPI.BINARY_FIELD)){ %>
 
-    <%if(canUserWriteToContentlet){%>
-    <div id="<%=field.getVelocityVarName()%>dt" class="field__editable-content">
-        <%= LanguageUtil.get(pageContext, "Resource-Link") %>:
+        if(UtilMethods.isSet(value) && UtilMethods.isSet(resourceLink)){
 
+          boolean canUserWriteToContentlet = APILocator.getPermissionAPI().doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_WRITE, user);
 
-        <%
-            StringBuffer resourceLink = new StringBuffer();
-            String resourceLinkUri = "";
-            Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
-            Host host = APILocator.getHostAPI().find((String)request.getAttribute("host") , user, false);
-            if (identifier!=null && InodeUtils.isSet(identifier.getInode())){
-                if(request.isSecure()){
-                    resourceLink.append("https://");
-                }else{
-                    resourceLink.append("http://");
-                }
-                resourceLink.append(host.getHostname());
-                if(request.getServerPort() != 80 && request.getServerPort() != 443){
-                    resourceLink.append(":" + request.getServerPort());
-                }
-                resourceLinkUri = identifier.getParentPath()+contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD);
-                resourceLink.append(UtilMethods.encodeURIComponent(resourceLinkUri));
-                //resourceLinkUri.concat("?language_id="+contentlet.getLanguageId());
-                resourceLinkUri+="?language_id="+contentlet.getLanguageId();
-                resourceLink.append("?language_id="+contentlet.getLanguageId());
-            }
+    %>
 
-            com.dotmarketing.portlets.fileassets.business.FileAsset fa = APILocator.getFileAssetAPI().fromContentlet(contentlet);
-            String mimeType = fa.getMimeType();
-            String fileAssetName = fa.getFileName();
-        %>
+        <%if(canUserWriteToContentlet){%>
+        <div id="<%=field.getVelocityVarName()%>dt" class="field__editable-content">
 
-        <div style="padding:10px;">
-            <a href="<%=resourceLink %>" target="_new"><%=resourceLinkUri %></a>
+            <%
+              if(!resourceLink.isDownloadRestricted()){ %>
+               <%= LanguageUtil.get(pageContext, "Resource-Link") %>:
+               <div style="padding:10px;">
+                <a href="<%=resourceLink.getResourceLinkAsString() %>" target="_new"><%=resourceLink.getResourceLinkUriAsString() %></a>
+               </div>
+             <% } else { %>
+                <br>
+             <% }  %>
         </div>
-    </div>
-    <% if (mimeType.indexOf("officedocument") == -1
-            && mimeType.indexOf("svg") == -1
-            && (mimeType.indexOf("text") != -1
-                || mimeType.indexOf("javascript") != -1
-                || mimeType.indexOf("json") != -1
-                || mimeType.indexOf("xml") != -1
-                || mimeType.indexOf("php") != -1)
-            || fileAssetName.endsWith(".vm")) { %>
-        <% if (InodeUtils.isSet(binInode) && canUserWriteToContentlet) { %>
-            <%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp"%>
-        <% } %>
-    <% } %>
+            <% if (resourceLink.isEditableAsText()) { %>
+                <%
+                    if (InodeUtils.isSet(binInode) && canUserWriteToContentlet) {
+                        final FileAsset fa = resourceLink.getFileAsset();
+                %>
+                    <%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp"%>
+                <%  } %>
+            <% } %>
 
-    <% } %>
+        <% } %>
     <% } %>
 
     <!--  END display -->

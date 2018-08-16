@@ -711,7 +711,7 @@
 			if(structureInode == undefined || structureInode==""){
         		structureInode = dijit.byId('structure_inode').value;
         	}
-			if(structureInode == undefined || structureInode == "catchall"){
+			if(structureInode == undefined || structureInode=="" || structureInode == "catchall"){
 				dijit.byId("selectStructureDiv").show();
 				return;
 			}
@@ -1240,7 +1240,13 @@
         }
         const debouncedSearch = debounce(doSearch1, 250);
         
+        var currentPage;
         function doSearch (page, sortBy) {
+            if (page) {
+                currentPage = page;
+            } else {
+                page = currentPage
+            }
 			// Wait for the "HostFolderFilteringSelect" widget to end the values updating process before proceeding with the search, if necessary.
 			if (dijit.byId('FolderHostSelector') && dijit.byId('FolderHostSelector').attr('updatingSelectedValue')) {
 			        setTimeout("doSearch (" + page + ", '" + sortBy + "');", 250);
@@ -2342,11 +2348,18 @@
     	executeWfAction: function(wfId, assignable, commentable, hasPushPublishActionlet, inode ){
     		this.wfActionId=wfId;
     		if(assignable == 'true' || commentable == 'true' || hasPushPublishActionlet == 'true'){
+
+                //Required clean up as these modals has duplicated widgets and collide without a clean up
+                var remoteDia = dijit.byId("remotePublisherDia");
+                if(remoteDia){
+                    remoteDia.destroyRecursive();
+                }
+
     			var dia = dijit.byId("contentletWfDialog");
     			if(dia){
     				dia.destroyRecursive();
-
     			}
+
     			dia = new dijit.Dialog({
     				id			:	"contentletWfDialog",
     				title		: 	"<%=LanguageUtil.get(pageContext, "Workflow-Actions")%>",

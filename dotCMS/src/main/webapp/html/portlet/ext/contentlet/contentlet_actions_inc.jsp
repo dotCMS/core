@@ -7,6 +7,7 @@
 <%@page import="java.util.List"%>
 <%@page import="java.util.Map"%>
 <%@ page import="com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo" %>
+<%@ page import="com.dotmarketing.util.Logger" %>
 <%
 
 if(user == null){
@@ -33,6 +34,7 @@ try{
 	}
 }
 catch(Exception e){
+	Logger.error(getClass(),"Exception calculating actions", e);
 	wfActions = new ArrayList<>();
 }
 

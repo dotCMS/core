@@ -1168,6 +1168,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	public boolean validateMe() {
-		return map.get(Contentlet.DONT_VALIDATE_ME) != null;
+		return !UtilMethods.isSet(map.get(Contentlet.DONT_VALIDATE_ME));
 	}
 }

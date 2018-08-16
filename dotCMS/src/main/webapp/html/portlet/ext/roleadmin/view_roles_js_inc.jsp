@@ -1401,8 +1401,8 @@
 
 	}
 	
-	function updateIcon(fontAwesomeClass){
+	function updateIcon(iconName){
 		var icon = document.getElementById('tabIcon');
-		icon.className ='fa '+fontAwesomeClass;
+		icon.innerHTML = iconName;
 	}
 </script>

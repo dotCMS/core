@@ -105,8 +105,8 @@
 
 	</div>
 
-	<div class="buttonRow" style="position:absolute; bottom:20px; margin-left:146px">
-
+	<div class="buttonRow scheme">
+        <div>
 		<%if(!scheme.isNew()){%>
 			<button dojoType="dijit.form.Button" onClick='schemeAdmin.copyScheme("<%=UtilMethods.webifyString(scheme.getId())%>", "<%=UtilMethods.webifyString(scheme.getName())%>")' iconClass="saveIcon" type="button">
 				<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Copy"))%>
@@ -125,14 +125,16 @@
 	        </button>
 			<%} %>
 		<%}%>
-		&nbsp; &nbsp; 
-		<button dojoType="dijit.form.Button" onClick='schemeAdmin.saveAddEdit()' iconClass="saveIcon" type="button">
-            <%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save"))%>
-        </button>
-		<button dojoType="dijit.form.Button"
-				onClick='schemeAdmin.hideAddEdit()' class="dijitButtonFlat" type="button">
-			<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel"))%>
-		</button>
+        </div>
+        <div>
+            <button dojoType="dijit.form.Button"
+                    onClick='schemeAdmin.hideAddEdit()' class="dijitButtonFlat" type="button">
+                <%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel"))%>
+            </button>
+            <button dojoType="dijit.form.Button" onClick='schemeAdmin.saveAddEdit()' iconClass="saveIcon" type="button">
+                <%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save"))%>
+            </button>
+        </div>
 	</div>
 
 </div>

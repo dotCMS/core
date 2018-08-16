@@ -578,7 +578,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     }
                 }
                 catch(Exception ex) {
-                    Logger.warn(this, "error deleting contentlet inode "+con.getInode()+". Maybe were deleted already?");
+                    Logger.warn(this, "Error deleting contentlet inode "+con.getInode()+". Probably it was already deleted?");
+                    Logger.debug(this, "Error deleting contentlet inode "+con.getInode()+". Probably it was already deleted?", ex);
                     this.checkOrphanInode (con.getInode());
                 }
 
@@ -1457,22 +1458,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 reindexReplacedUserContent(userToReplace, user);
 
             });
-        } catch (DotDataException e) {
-            Logger.error(this.getClass(),e.getMessage(),e);
-            throw new DotDataException(e.getMessage(), e);
-        }
-    }
-
-    @Override
-    protected void updateContentletTemplate(final String identifier, final String newTemplate, final String fieldContentlet)
-            throws DotDataException {
-        final DotConnect dc = new DotConnect();
-        try {
-            dc.setSQL("UPDATE contentlet SET " + fieldContentlet + "= ? WHERE identifier = ?");
-            dc.addParam(newTemplate);
-            dc.addParam(identifier);
-            dc.loadResult();
-
         } catch (DotDataException e) {
             Logger.error(this.getClass(),e.getMessage(),e);
             throw new DotDataException(e.getMessage(), e);

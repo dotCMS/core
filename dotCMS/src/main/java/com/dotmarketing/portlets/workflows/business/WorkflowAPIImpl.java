@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.workflows.business;
 
+import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isHost;
 import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.FORCE_PUSH;
 import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WF_EXPIRE_DATE;
 import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WF_EXPIRE_TIME;
@@ -24,7 +25,6 @@ import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.FriendClass;
 import com.dotcms.util.LicenseValiditySupplier;
-import com.dotcms.util.ReflectionUtils;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.workflow.form.AdditionalParamsBean;
@@ -57,7 +57,6 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletValidationExce
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.util.ActionletUtil;
-import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.MessageActionlet;
@@ -846,53 +845,85 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@CloseDBIfOpened
-	public  Future<WorkflowStep>  deleteStep(final WorkflowStep step, final User user) throws DotDataException {
+	public Future<WorkflowStep> deleteStepHardMode(final WorkflowStep step, final User user)
+			throws DotDataException {
 
-		return this.doDeleteStep(step, user, true); // runs async
+		return this.doDeleteStep(step, user, false, true);
 	}
 
-	private Future<WorkflowStep> doDeleteStep(final WorkflowStep step, final User user, final boolean async) throws DotDataException {
+	@CloseDBIfOpened
+	public Future<WorkflowStep> deleteStep(final WorkflowStep step, final User user)
+			throws DotDataException {
+
+		return this.doDeleteStep(step, user, true, false); // runs async
+	}
+
+	private Future<WorkflowStep> doDeleteStep(final WorkflowStep step, final User user,
+			final boolean async) throws DotDataException {
+		return doDeleteStep(step, user, async, false);
+	}
+
+	/**
+	 * Deletes a given step with all dependencies: actions, actionlets and tasks.
+	 *
+	 * @param step Workflow step to delte
+	 * @param user To who perform the delete operation
+	 * @param async If the delete should run in separated thread
+	 * @param hardMode If validations should be skipped. <strong>Note:</strong> Use this parameter
+	 * with caution, was created for hard deletes from Push publish avoiding all validations.
+	 */
+	private Future<WorkflowStep> doDeleteStep(final WorkflowStep step, final User user,
+			final boolean async, final boolean hardMode) throws DotDataException {
 
 		this.isUserAllowToModifiedWorkflow(user);
 
 		try {
 
-			// Checking for Next Step references
-			for(final WorkflowStep otherStep : findSteps(findScheme(step.getSchemeId()))){
+			if (!hardMode) {
+				// Checking for Next Step references
+				for (final WorkflowStep otherStep : findSteps(findScheme(step.getSchemeId()))) {
 
-				/*
-				Verify we are not validating the next step is the step we want to delete.
-				Remember the step can point to itself and that should not be a restriction when deleting.
-				 */
-				if (!otherStep.getId().equals(step.getId())) {
-					for(final WorkflowAction action : findActions(otherStep, APILocator.getUserAPI().getSystemUser())){
+					/*
+					Verify we are not validating the next step is the step we want to delete.
+					Remember the step can point to itself and that should not be a restriction when deleting.
+					 */
+					if (!otherStep.getId().equals(step.getId())) {
+						for (final WorkflowAction action : findActions(otherStep,
+								APILocator.getUserAPI().getSystemUser())) {
 
-						if (action.getNextStep().equals(step.getId())) {
-							final String validationExceptionMessage = LanguageUtil.format(user.getLocale(),
-									"Workflow-delete-step-reference-by-step-error",
-									new String[]{step.getName(), otherStep.getName(),
-											action.getName()}, false);
-							throw new DotDataValidationException(validationExceptionMessage);
+							if (action.getNextStep().equals(step.getId())) {
+								final String validationExceptionMessage = LanguageUtil
+										.format(user.getLocale(),
+												"Workflow-delete-step-reference-by-step-error",
+												new String[]{step.getName(), otherStep.getName(),
+														action.getName()}, false);
+								throw new DotDataValidationException(validationExceptionMessage);
+							}
 						}
 					}
 				}
 			}
 
-			final int countContentletsReferencingStep = getCountContentletsReferencingStep(step);
-			if(countContentletsReferencingStep > 0){
+			if (!hardMode) {
+				final int countContentletsReferencingStep = getCountContentletsReferencingStep(
+						step);
+				if (countContentletsReferencingStep > 0) {
 
-				final String validationExceptionMessage = LanguageUtil.format(user.getLocale(),
-						"Workflow-delete-step-reference-by-contentlet-error",
-						new String[]{step.getName(), Integer.toString(countContentletsReferencingStep)}, false);
-				throw new DotDataValidationException(validationExceptionMessage);
+					final String validationExceptionMessage = LanguageUtil.format(user.getLocale(),
+							"Workflow-delete-step-reference-by-contentlet-error",
+							new String[]{step.getName(),
+									Integer.toString(countContentletsReferencingStep)}, false);
+					throw new DotDataValidationException(validationExceptionMessage);
+				}
 			}
 
-			final DotSubmitter submitter = this.concurrentFactory.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
+			final DotSubmitter submitter = this.concurrentFactory
+					.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
 			//Delete the Scheme in a separated thread
-			return (async)?
-					submitter.submit(() -> deleteStepTask(step, user, true)):
+			return (async) ?
+					submitter.submit(() -> deleteStepTask(step, user, true)) :
 					ConcurrentUtils.constantFuture(deleteStepTask(step, user, false));
-		} catch(Exception e){
+		} catch (Exception e) {
 
 			throw new DotDataException(e.getMessage(), e);
 		}
@@ -2577,7 +2608,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@Override
 	public Contentlet fireContentWorkflow(final Contentlet contentlet, final ContentletDependencies dependencies) throws DotDataException, DotSecurityException {
 
-		if (ContentletUtil.isHost(contentlet)) {
+		if (isHost(contentlet)) {
 			final User user = dependencies.getModUser();
 			throw new DotSecurityException(
 					ExceptionUtil
@@ -2615,7 +2646,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@WrapInTransaction
 	private Contentlet fireContentWorkflow(final Contentlet contentlet, final ContentletDependencies dependencies, final ConcurrentMap<String,Object> context) throws DotDataException, DotSecurityException {
 
-		if (ContentletUtil.isHost(contentlet)) {
+		if (isHost(contentlet)) {
 			final User user = dependencies.getModUser();
 			throw new DotSecurityException(
 					ExceptionUtil

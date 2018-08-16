@@ -1688,7 +1688,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         logContentletActivity(contentlets, "Deleting Content", user);
         for (Contentlet contentlet : contentlets){
-            if(!contentlet.isArchived() && !contentlet.validateMe()){
+            if(!contentlet.isArchived() && contentlet.validateMe()){
                 throw new DotContentletStateException(
                     getLocalizedMessageOrDefault(user, "Failed-to-delete-unarchived-content", FAILED_TO_DELETE_UNARCHIVED_CONTENT, getClass())
                 );
@@ -3515,7 +3515,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private void updateTemplateInAllLanguageVersions(final Contentlet contentlet, final User user)
             throws DotDataException, DotSecurityException{
-
+        
+        final String DO_NOT_UPDATE_TEMPLATES= "DO_NOT_UPDATE_TEMPLATES";
+        
+        if(contentlet.getBoolProperty(DO_NOT_UPDATE_TEMPLATES)){
+            return;
+        }
         if (UtilMethods.isSet(contentlet.getIdentifier())){
             final Field fieldVar = contentlet.getStructure()
                     .getFieldVar(HTMLPageAssetAPI.TEMPLATE_FIELD);
@@ -3525,24 +3530,24 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     findContentletByIdentifierAnyLanguage(contentlet.getIdentifier())
                             .getInode(), fieldVar).toString();
             if (!existingTemplate.equals(newTemplate)){
-
-                HibernateUtil.addCommitListener(new DotRunnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            contentFactory.updateContentletTemplate(identifier, newTemplate,
-                                    fieldVar.getFieldContentlet());
-                            for (Contentlet c: findAllVersions(APILocator.getIdentifierAPI().find(identifier), user, false)){
-                                CacheLocator.getContentletCache().remove(c);
-                                CacheLocator.getHTMLPageCache().remove(c.getInode());
-                                APILocator.getContentletIndexAPI().addContentToIndex(c,false);
-                            }
-                        } catch (DotDataException | DotSecurityException e) {
-                            Logger.error(this, e.getMessage(), e);
-                        }
-
+                List<ContentletVersionInfo> vers = APILocator.getVersionableAPI().findContentletVersionInfos(identifier);
+                
+                for(ContentletVersionInfo ver : vers) {
+                    Contentlet c = find(ver.getWorkingInode(), user, false);
+                    if(contentlet.getInode().equals(c.getInode())) {
+                        continue;
                     }
-                });
+
+                    //Create a new working version with the template when the page version is live and working
+                    Contentlet newPageVersion = checkout(c.getInode(), user, false);
+                    newPageVersion.setBoolProperty(DO_NOT_UPDATE_TEMPLATES, true);
+                    newPageVersion.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, newTemplate);
+                    newPageVersion.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
+                    checkin(newPageVersion,  user, false);
+                }
+   
+
+
             }
         }
     }
@@ -5586,19 +5591,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (-1 != secondsToWait) {
             limit = (secondsToWait / 10);
         }
-        SearchHits lc;
+        long lc=0;
         boolean found = false;
         int counter = 0;
         while (counter < limit) {
             try {
-                lc = contentFactory.indexSearch(
-                        luceneQuery,
-                        0, 0, "modDate");
+                lc = contentFactory.indexCount(luceneQuery);
             } catch (Exception e) {
                 Logger.error(this.getClass(), e.getMessage(), e);
                 return false;
             }
-            if (lc.getTotalHits() > 0) {
+            if (lc > 0) {
                 found = true;
                 break;
             }

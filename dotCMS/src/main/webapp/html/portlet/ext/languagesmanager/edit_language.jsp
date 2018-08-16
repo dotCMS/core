@@ -59,6 +59,7 @@ dojo.ready(function() {
 	new dijit.form.ValidationTextBox({
 		name: "languageCode",
 		value: "<%=language.getLanguageCode()%>",
+        maxLength: 2,
 		style: "width: " + fieldWidth,
 		promptMessage: "<%= LanguageUtil.get(pageContext, "LanguageCode-Required") %>"
 	}, "languageCode");
@@ -66,6 +67,7 @@ dojo.ready(function() {
 	new dijit.form.TextBox({
 		name: "countryCode",
 		value: "<%=language.getCountryCode()%>",
+        maxLength: 2,
 		style: "width: " + fieldWidth
 	}, "countryCode");
 

@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -66,6 +67,19 @@ public class SetValueActionlet extends WorkFlowActionlet {
                 HttpServletRequest requestProxy = new MockHttpRequest(host.getHostname(), null).request();
                 HttpServletResponse responseProxy = new BaseResponse().response();
 
+                final String workflowTaskTitle;
+                final Date modDate;
+                if (null != processor.getTask()) {
+                    workflowTaskTitle =
+                            UtilMethods.isSet(processor.getTask().getTitle()) ? processor.getTask()
+                                    .getTitle() : processor.getContentlet().getTitle();
+
+                    modDate = processor.getTask().getModDate();
+                } else {
+                    workflowTaskTitle = processor.getContentlet().getTitle();
+                    modDate = processor.getContentlet().getModDate();
+                }
+
                 org.apache.velocity.context.Context ctx = VelocityUtil.getWebContext(requestProxy, responseProxy);
                 ctx.put("host", host);
                 ctx.put("host_id", host.getIdentifier());
@@ -78,9 +92,8 @@ public class SetValueActionlet extends WorkFlowActionlet {
                 ctx.put("nextStepResolved", processor.getNextStep().isResolved());
                 ctx.put("nextStepId", processor.getNextStep().getId());
                 ctx.put("nextStepName", processor.getNextStep().getName());
-                ctx.put("workflowTaskTitle", UtilMethods.isSet(processor.getTask().getTitle()) ? processor.getTask()
-                        .getTitle() : processor.getContentlet().getTitle());
-                ctx.put("modDate", processor.getTask().getModDate());
+                ctx.put("workflowTaskTitle", workflowTaskTitle);
+                ctx.put("modDate", modDate);
                 ctx.put("structureName", processor.getContentlet().getStructure().getName());
 
                 ctx.put("contentlet", con);
