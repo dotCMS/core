@@ -208,7 +208,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 				query.append(
 						" where asset.inode = inode.inode and asset.identifier = identifier.id")
 						.append(
-								" and exists ( from container_structures cs where cs.container_id = asset.identifier")
+								" and exists (select * from container_structures cs where cs.container_id = asset.identifier")
 						.append(" and cs.structure_id = '");
 				query.append(parent);
 				query.append("' ) ");

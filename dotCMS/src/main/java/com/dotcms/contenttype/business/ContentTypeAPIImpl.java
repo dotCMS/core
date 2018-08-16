@@ -72,29 +72,6 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   public void delete(ContentType type) throws DotSecurityException, DotDataException {
     perms.checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
 
-    // permission check delete related contentlets
-    DotConnect dc = new DotConnect();
-    List<Map<String, Object>> ids = null;
-
-    // test permissions over content
-    int maxRows = 100;
-    int offset = 0;
-    do {
-      ids = dc.setSQL(ContentTypeSql.getInstance().SELECT_CONTENTLET_IDS_BY_TYPE).setMaxRows(100).setStartRow(offset)
-          .addParam(type.id()).loadObjectResults();
-      for (Map<String, Object> id : ids) {
-        PermissionableProxy proxy = new PermissionableProxy();
-        proxy.setIdentifier((String) id.get("identifier"));
-        proxy.setInode((String) id.get("identifier"));
-        proxy.setOwner(null);
-        proxy.setType(new Contentlet().getType());
-        APILocator.getPermissionAPI().checkPermission(proxy, PermissionLevel.PUBLISH, user);
-      }
-      offset += maxRows;
-    } while (ids.size() > 0);
-
-
-
     try {
       contentTypeFactory.delete(type);
     } catch (DotStateException | DotDataException e) {

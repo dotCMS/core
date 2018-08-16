@@ -354,7 +354,8 @@ public class VelocityUtil {
         // request attribute
         if (NO.equals(request.getParameter(DOTCACHE)) || REFRESH.equals(request.getParameter(DOTCACHE))
                 || NO.equals(request.getAttribute(DOTCACHE))
-                || (request.getSession(false) != null && NO.equals(request.getSession(true).getAttribute(DOTCACHE)))) {
+                || (request.getSession(false) != null && NO.equals(request.getSession(true).getAttribute(DOTCACHE)))
+				|| (request.getSession(false) != null && REFRESH.equals(request.getSession(true).getAttribute(DOTCACHE))) ) {
             return null;
         }
 

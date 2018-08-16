@@ -66,7 +66,7 @@
 			<dt><label for="layoutDescription"><%= LanguageUtil.get(pageContext, "Icon") %>:</label></dt>
 			<dd style="position:relative;">
 				<input id="layoutDescription" type="text" dojoType="dijit.form.TextBox" onchange="updateIcon(this.value)"/>
-				<i id="tabIcon" class="fa" style="position:absolute;top: 8px; right:20px;" aria-hidden="true"></i>
+				<i id="tabIcon" class="material-icons" style="position:absolute; top: 6px; right: 7px;" aria-hidden="true"></i>
 				<div class="hint-text"><%= LanguageUtil.get(pageContext, "Icon-hint") %></div>
 			</dd>
 			<dt><label for="layoutOrder"><%= LanguageUtil.get(pageContext, "order") %>:</label></dt>

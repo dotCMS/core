@@ -80,9 +80,9 @@ public class ContentletDetail extends DotDirective {
 
         final StringBuilder path = new StringBuilder();
 
-        path.append(File.separator)
+        path.append(StringPool.FORWARD_SLASH)
             .append(!showWorking ? params.mode.name() : PageMode.PREVIEW_MODE.name())
-            .append(File.separator)
+            .append(StringPool.FORWARD_SLASH)
             .append(identifier)
             .append(StringPool.UNDERLINE)
             .append(lang)
