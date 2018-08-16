@@ -8,13 +8,13 @@
                 [routerLink]="!item.disabled && item.link ? ['./' + item.link] : null"
                 (click)="item.action ? item.action(pageState.page.inode) : ''"
                 [queryParams]="route.queryParams | async">
-                <dot-icon name="{{ item.icon }}" tiny></dot-icon>
+                <dot-icon name="{{ item.icon }}"></dot-icon>
                 <span class="edit-page-nav__item-text">{{ item.label }}</span>
             </a>
         </ng-template>
         <ng-template #enterprise>
             <span pTooltip="{{ dotMessageService.get('editpage.toolbar.nav.license.enterprise.only') }}" tooltipPosition="left" class="edit-page-nav__item edit-page-nav__item--disabled">
-                <dot-icon name="{{ item.icon }}" tiny></dot-icon>
+                <dot-icon name="{{ item.icon }}"></dot-icon>
                 <span class="edit-page-nav__item-text">{{ item.label }}</span>
             </span>
         </ng-template>
