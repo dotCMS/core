@@ -22,8 +22,6 @@ import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -40,7 +38,7 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
-import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformer;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
@@ -1123,30 +1121,7 @@ public class ContentResource {
     private ContentletRelationships getContentletRelationshipsFromMap(final Contentlet contentlet,
                                                                       final Map<Relationship, List<Contentlet>> contentRelationships) {
 
-        if(contentRelationships == null) {
-            return null;
-        }
-
-        Structure st = CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getStructureInode());
-        ContentletRelationships relationshipsData = new ContentletRelationships(contentlet);
-        List<ContentletRelationships.ContentletRelationshipRecords> relationshipsRecords = new ArrayList<ContentletRelationships.ContentletRelationshipRecords>();
-        relationshipsData.setRelationshipsRecords(relationshipsRecords);
-        for(Entry<Relationship, List<Contentlet>> relEntry : contentRelationships.entrySet()) {
-            Relationship relationship = relEntry.getKey();
-            boolean hasParent = FactoryLocator.getRelationshipFactory().isParent(relationship, st);
-            boolean hasChildren = FactoryLocator.getRelationshipFactory().isChild(relationship, st);
-
-            // self-join (same CT for parent and child) relationships return true to both, so since we can't
-            // determine if it's parent or child we always assume child (e.g. Coming from the Content REST API)
-            if (hasParent && hasChildren) {
-                hasParent = false;
-            }
-            ContentletRelationships.ContentletRelationshipRecords
-                    records = relationshipsData.new ContentletRelationshipRecords(relationship, hasParent);
-            records.setRecords(relEntry.getValue());
-            relationshipsRecords.add(records);
-        }
-        return relationshipsData;
+        return new ContentletRelationshipsTransformer(contentlet, contentRelationships).findFirst();
     }
 
     private ContentWorkflowResult processWorkflowAction(final Contentlet contentlet,
