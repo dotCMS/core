@@ -113,29 +113,6 @@ describe('ContentTypeFieldsRowComponent', () => {
 
             expect(field).toEqual(editField);
         });
-
-        it('should handle remove field event', () => {
-            let removeField;
-
-            const field = mockFieldRow.columns[0].fields[0];
-            fixture.detectChanges();
-
-            const column = de.query(By.css('.row-columns__item'));
-            const dragableItem = column.query(By.css('dot-content-type-field-dragabble-item'));
-
-            spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
-                conf.accept();
-            });
-
-            comp.removeField.subscribe((eventField) => {
-                removeField = eventField;
-            });
-            dragableItem.componentInstance.remove.emit(field);
-
-            expect(field).toEqual(removeField);
-            const fieldRemoved = mockFieldRow.columns[0].fields.filter((columnField) => columnField === field);
-            expect(fieldRemoved).toEqual([]);
-        });
     });
 
     // Until 5.1

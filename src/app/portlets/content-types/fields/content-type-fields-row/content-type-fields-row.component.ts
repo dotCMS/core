@@ -46,7 +46,6 @@ export class ContentTypeFieldsRowComponent extends BaseComponent {
     onRemoveField(field: ContentTypeField): void {
         this.dotDialogService.confirm({
             accept: () => {
-                this.getField(field);
                 this.removeField.emit(field);
             },
             header: `${this.i18nMessages['contenttypes.action.delete']} ${this.i18nMessages['contenttypes.content.field']}`,
@@ -87,16 +86,6 @@ export class ContentTypeFieldsRowComponent extends BaseComponent {
                 }
             });
         }
-    }
-
-    private getField(field: ContentTypeField): any {
-        this.fieldRow.columns = this.fieldRow.columns.map((col) => {
-            const index: number = col.fields.indexOf(field);
-            if (index !== -1) {
-                col.fields.splice(index, 1);
-            }
-            return col;
-        });
     }
 
     private isRowFieldEmpty(): boolean {
