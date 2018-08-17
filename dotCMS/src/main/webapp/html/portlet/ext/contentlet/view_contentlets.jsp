@@ -343,6 +343,12 @@
                             textLabel: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All" )) %>" }]
                     };
 
+                    dataItems.items[dataItems.items.length] = {
+                            name: "<%=ESMappingConstants.WORKFLOW_CURRENT_STEP_NOT_ASSIGNED_VALUE%>",
+                            label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "workflow.notassigned" )) %>",
+                            textLabel: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "workflow.notassigned" )) %>"
+                        };
+
                     for (let i=0; i<data.entity.length;++i) {
 
                         let stepEntity = data.entity[i];

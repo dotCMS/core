@@ -668,7 +668,14 @@ public class ContentletAjax {
 				} else if (ESMappingConstants.WORKFLOW_STEP.equalsIgnoreCase(fieldName)) {
 
 					try {
-						luceneQuery.append("+(" + ESMappingConstants.WORKFLOW_STEP + ":" + fieldValue + "*) ");
+
+						if (ESMappingConstants.WORKFLOW_CURRENT_STEP_NOT_ASSIGNED_VALUE.equalsIgnoreCase(fieldValue)) { // special case for [Not Assigned]
+
+							luceneQuery.append("+(" + ESMappingConstants.WORKFLOW_CURRENT_STEP + ":" + fieldValue + "*) ");
+						} else {
+
+							luceneQuery.append("+(" + ESMappingConstants.WORKFLOW_STEP + ":" + fieldValue + "*) ");
+						}
                         sess.setAttribute(ESMappingConstants.WORKFLOW_STEP, fieldValue);
 					} catch (Exception e) {
 						Logger.error(ContentletAjax.class,e.getMessage(),e);
