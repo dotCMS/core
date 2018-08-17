@@ -12,6 +12,8 @@ import { mockUser } from '../../../../test/login-service.mock';
 import { DotRenderedPageState } from '../../shared/models/dot-rendered-page-state.model';
 import { mockDotRenderedPage } from '../../../../test/dot-rendered-page.mock';
 import { DotClipboardUtil } from '../../../../api/util/clipboard/ClipboardUtil';
+import { SiteServiceMock } from '../../../../test/site-service.mock';
+import { SiteService } from '../../../../../../node_modules/dotcms-js/dotcms-js';
 
 const messageServiceMock = new MockDotMessageService({
     'dot.common.message.pageurl.copied.clipboard': 'Copied to clipboard',
@@ -26,6 +28,7 @@ describe('DotEditPageInfoComponent', () => {
     let de: DebugElement;
     let dotGlobalMessageService: DotGlobalMessageService;
     let dotClipboardUtil: DotClipboardUtil;
+    let siteService: SiteService;
 
     beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
@@ -36,7 +39,8 @@ describe('DotEditPageInfoComponent', () => {
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock
-                }
+                },
+                { provide: SiteService, useClass: SiteServiceMock },
             ]
         }).compileComponents();
     }));
@@ -47,10 +51,14 @@ describe('DotEditPageInfoComponent', () => {
         de = fixture.debugElement;
         dotGlobalMessageService = de.injector.get(DotGlobalMessageService);
         dotClipboardUtil = de.injector.get(DotClipboardUtil);
+        siteService = de.injector.get(SiteService);
     });
 
     describe('default', () => {
         beforeEach(() => {
+            spyOnProperty(siteService, 'currentSite', 'get').and.returnValue({
+                name: 'demo.dotcms.com'
+            });
             component.pageState = new DotRenderedPageState(mockUser, JSON.parse(JSON.stringify(mockDotRenderedPage)));
             fixture.detectChanges();
         });
@@ -75,7 +83,7 @@ describe('DotEditPageInfoComponent', () => {
                 copyUrlButton.nativeElement.click();
 
                 tick();
-                expect(dotClipboardUtil.copy).toHaveBeenCalledWith('an/url/test');
+                expect(dotClipboardUtil.copy).toHaveBeenCalledWith('http://demo.dotcms.com:9876/an/url/test');
                 expect(dotGlobalMessageService.display).toHaveBeenCalledWith('Copied to clipboard');
             })
         );

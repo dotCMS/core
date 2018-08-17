@@ -3,6 +3,7 @@ import { DotRenderedPageState } from '../../shared/models/dot-rendered-page-stat
 import { DotGlobalMessageService } from '../../../../view/components/_common/dot-global-message/dot-global-message.service';
 import { DotMessageService } from '../../../../api/services/dot-messages-service';
 import { DotClipboardUtil } from '../../../../api/util/clipboard/ClipboardUtil';
+import { SiteService } from '../../../../../../node_modules/dotcms-js/dotcms-js';
 
 /**
  * Basic page information for edit mode
@@ -23,7 +24,9 @@ export class DotEditPageInfoComponent implements OnInit {
     constructor(
         private dotClipboardUtil: DotClipboardUtil,
         private dotGlobalMessageService: DotGlobalMessageService,
-        public dotMessageService: DotMessageService
+        private siteService: SiteService,
+        public dotMessageService: DotMessageService,
+
     ) {}
 
     ngOnInit() {
@@ -59,12 +62,22 @@ export class DotEditPageInfoComponent implements OnInit {
      */
     copyUrlToClipboard(): void {
         this.dotClipboardUtil
-            .copy(this.pageState.page.pageURI)
+            .copy(this.getFullUrl(this.pageState.page.pageURI))
             .then(() => {
                 this.dotGlobalMessageService.display(this.dotMessageService.get('dot.common.message.pageurl.copied.clipboard'));
             })
             .catch(() => {
                 this.dotGlobalMessageService.error(this.dotMessageService.get('dot.common.message.pageurl.copied.clipboard.error'));
             });
+    }
+
+    private getFullUrl(url: string): string {
+        return [
+            location.protocol,
+            '//',
+            this.siteService.currentSite['name'],
+            (location.port ? `:${location.port}` : ''),
+            url
+        ].join('');
     }
 }

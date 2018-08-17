@@ -15,7 +15,7 @@ export const mockDotPage: DotPage = {
     lockedBy: 'someone',
     lockedByName: 'Some One',
     lockedOn: new Date(1517330917295),
-    pageURI: 'an/url/test',
+    pageURI: '/an/url/test',
     shortyLive: '',
     shortyWorking: '',
     title: 'A title',

@@ -5,7 +5,7 @@ import { DebugElement } from '@angular/core/src/debug/debug_node';
 import { DotAlertConfirmService } from '../../../../api/services/dot-alert-confirm';
 import { DotEditLayoutDesignerComponent } from './dot-edit-layout-designer.component';
 import { DotEditLayoutGridModule } from '../components/dot-edit-layout-grid/dot-edit-layout-grid.module';
-import { LoginService, SocketFactory } from 'dotcms-js/dotcms-js';
+import { LoginService, SocketFactory, SiteService } from 'dotcms-js/dotcms-js';
 import { DotMessageService } from '../../../../api/services/dot-messages-service';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { PageViewService } from '../../../../api/services/page-view/page-view.service';
@@ -30,6 +30,7 @@ import { DotThemesServiceMock } from '../../../../test/dot-themes-service.mock';
 import { TooltipModule } from 'primeng/primeng';
 import { Observable } from 'rxjs/Observable';
 import * as _ from 'lodash';
+import { SiteServiceMock } from '../../../../test/site-service.mock';
 
 @Component({
     selector: 'dot-template-addtional-actions-menu',
@@ -108,7 +109,8 @@ const testConfigObject = {
         DotEditLayoutService,
         TemplateContainersCacheService,
         { provide: DotMessageService, useValue: messageServiceMock },
-        { provide: DotThemesService, useClass: DotThemesServiceMock }
+        { provide: DotThemesService, useClass: DotThemesServiceMock },
+        { provide: SiteService, useClass: SiteServiceMock }
     ]
 };
 
@@ -165,7 +167,7 @@ describe('DotEditLayoutDesignerComponent', () => {
             spyOn(dotRouterService, 'goToEditPage');
             const cancelButton: DebugElement = fixture.debugElement.query(By.css('.dot-edit-layout__toolbar-action-cancel'));
             cancelButton.triggerEventHandler('click', {});
-            expect(dotRouterService.goToEditPage).toHaveBeenCalledWith('an/url/test');
+            expect(dotRouterService.goToEditPage).toHaveBeenCalledWith('/an/url/test');
         });
 
         it('should show save button', () => {

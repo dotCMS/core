@@ -6,7 +6,7 @@ import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DotEditLayoutAdvancedModule } from '../dot-edit-layout-advanced/dot-edit-layout-advanced.module';
 import { DotEditLayoutComponent } from './dot-edit-layout.component';
 import { DotEditLayoutDesignerModule } from '../dot-edit-layout-designer/dot-edit-layout-designer.module';
-import { LoginService } from 'dotcms-js/dotcms-js';
+import { LoginService, SiteService } from 'dotcms-js/dotcms-js';
 import { LoginServiceMock } from '../../../../test/login-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -16,6 +16,7 @@ import { mockDotRenderedPage } from '../../../../test/dot-rendered-page.mock';
 import { mockDotPageState } from '../../content/dot-edit-content.component.spec';
 import { DotPageStateServiceMock } from '../../../../test/dot-page-state.service.mock';
 import { DotPageStateService } from '../../content/services/dot-page-state/dot-page-state.service';
+import { SiteServiceMock } from '../../../../test/site-service.mock';
 
 const getTestingModule = (dotRenderedPage?: DotRenderedPage) => {
     return {
@@ -44,6 +45,10 @@ const getTestingModule = (dotRenderedPage?: DotRenderedPage) => {
             {
                 provide: DotPageStateService,
                 useClass: DotPageStateServiceMock
+            },
+            {
+                provide: SiteService,
+                useClass: SiteServiceMock
             }
         ]
     };
