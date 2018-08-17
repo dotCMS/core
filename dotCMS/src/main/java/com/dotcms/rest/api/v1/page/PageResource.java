@@ -169,7 +169,7 @@ public class PageResource {
         // Force authentication
         final InitDataObject auth = webResource.init(false, request, true);
         final User user = auth.getUser();
-        Response res = null;
+        Response res;
 
         final PageMode mode = modeParam != null ? PageMode.get(modeParam) : (live ? PageMode.LIVE : null);
 
@@ -178,6 +178,8 @@ public class PageResource {
             if (deviceInode != null) {
                 request.getSession().setAttribute(WebKeys.CURRENT_DEVICE, deviceInode);
             }
+
+            request.getSession().setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
 
             final PageView pageRendered = this.htmlPageAssetRenderedAPI.getPageRendered(request, response, user, uri, mode);
             final Response.ResponseBuilder responseBuilder = Response.ok(new ResponseEntityView(pageRendered));
