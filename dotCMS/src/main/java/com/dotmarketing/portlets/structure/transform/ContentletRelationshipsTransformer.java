@@ -44,32 +44,38 @@ public class ContentletRelationshipsTransformer implements DBTransformer<Content
         return relationshipsList;
     }
 
-    private ContentletRelationships getContentletRelationshipsFromMap(Contentlet contentlet,
-                                                                      Map<Relationship, List<Contentlet>> contentRelationships) {
+    private ContentletRelationships getContentletRelationshipsFromMap(final Contentlet contentlet,
+                                                                      final Map<Relationship, List<Contentlet>> contentRelationships) {
 
         if(contentRelationships == null) {
+
             return null;
         }
 
-        Structure st = CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getStructureInode());
-        ContentletRelationships relationshipsData = new ContentletRelationships(contentlet);
-        List<ContentletRelationships.ContentletRelationshipRecords> relationshipsRecords = new ArrayList<ContentletRelationships.ContentletRelationshipRecords>();
+        final Structure structure = CacheLocator.getContentTypeCache()
+                .getStructureByInode(contentlet.getStructureInode());
+        final ContentletRelationships relationshipsData = new ContentletRelationships(contentlet);
+        final List<ContentletRelationships.ContentletRelationshipRecords> relationshipsRecords = new ArrayList<ContentletRelationships.ContentletRelationshipRecords>();
         relationshipsData.setRelationshipsRecords(relationshipsRecords);
-        for(Map.Entry<Relationship, List<Contentlet>> relEntry : contentRelationships.entrySet()) {
-            Relationship relationship = relEntry.getKey();
-            boolean hasParent = FactoryLocator.getRelationshipFactory().isParent(relationship, st);
-            boolean hasChildren = FactoryLocator.getRelationshipFactory().isChild(relationship, st);
+
+        for(final Map.Entry<Relationship, List<Contentlet>> relEntry : contentRelationships.entrySet()) {
+
+            final Relationship relationship = relEntry.getKey();
+            final boolean hasChildren       = FactoryLocator.getRelationshipFactory().isChild(relationship, structure);
+            boolean hasParent               = FactoryLocator.getRelationshipFactory().isParent(relationship, structure);
 
             // self-join (same CT for parent and child) relationships return true to both, so since we can't
             // determine if it's parent or child we always assume child (e.g. Coming from the Content REST API)
             if (hasParent && hasChildren) {
                 hasParent = false;
             }
-            ContentletRelationships.ContentletRelationshipRecords
+            
+            final ContentletRelationships.ContentletRelationshipRecords
                     records = relationshipsData.new ContentletRelationshipRecords(relationship, hasParent);
             records.setRecords(relEntry.getValue());
             relationshipsRecords.add(records);
         }
+
         return relationshipsData;
     }
 }
