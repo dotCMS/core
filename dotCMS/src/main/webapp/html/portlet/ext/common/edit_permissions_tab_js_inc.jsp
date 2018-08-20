@@ -721,11 +721,11 @@
 	}
 
 	function permissionsIndividually () {
-
 	  if(assetType == 'com.dotmarketing.portlets.folders.model.Folder' ||
 		   assetType == 'com.dotmarketing.beans.Host') {
 		 dijit.byId('savingPermissionsDialog').show();
 		 changesMadeToPermissions=false;
+		 permissionsLoaded = false;
 		 PermissionAjax.permissionIndividually(assetId, languageId, permissionIndividuallyCallback);
 
 	  }else{
@@ -826,6 +826,7 @@
 		if(confirm(removeIndividualPermissionConfirm)) {
 			changesMadeToPermissions=false;
 			dijit.byId('savingPermissionsDialog').show();
+            permissionsLoaded = false;
 			PermissionAjax.resetAssetPermissions(assetId, languageId, resetPermissionsCallback);
 		}
 	}
@@ -1007,9 +1008,11 @@
 		try{
 		   if (dijits) {
 			  for (var i = 0, n = dijits.length; i < n; i++) {
-				  for (var j = 0, n = dijits[i].length; j < n; j++) {
-					  dijits[i][j].destroyRecursive();
-				  }
+			      if(dijits[i]){
+                      for (var j = 0, n = dijits[i].length; j < n; j++) {
+                          dijits[i][j].destroyRecursive();
+                      }
+			      }
 			   }
 		   }
 		}catch(ex){
