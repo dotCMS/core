@@ -3,6 +3,8 @@ package com.dotcms.rendering.velocity.servlet;
 import static com.dotmarketing.filters.TimeMachineFilter.TM_DATE_VAR;
 
 import com.dotcms.business.CloseDB;
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.rendering.velocity.viewtools.RequestWrapper;
 
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,6 +12,7 @@ import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectWriter;
 import com.dotcms.rest.api.v1.page.PageResource;
 import com.dotcms.rest.api.v1.page.PageResourceHelper;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.filters.Constants;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -61,6 +64,15 @@ public class VelocityServlet extends HttpServlet {
         if (APILocator.getLoginServiceAPI().isLoggedIn(request) && !comeFromSomeWhere){
             goToEditPage(uri, response);
         } else {
+
+            if ((DbConnectionFactory.isMsSql() && LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) ||
+                    (DbConnectionFactory.isOracle() && LicenseUtil.getLevel() < LicenseLevel.PRIME.level) ||
+                    (!LicenseUtil.isASAllowed())) {
+                Logger.error(this, "Enterprise License is required");
+                response.sendError(HttpServletResponse.SC_NOT_FOUND);
+                return;
+            }
+
             request.setRequestUri(uri);
             final PageMode mode = PageMode.getWithNavigateMode(request);
 
