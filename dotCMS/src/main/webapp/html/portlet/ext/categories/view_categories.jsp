@@ -166,6 +166,21 @@
         });
     }
 
+    function convertStringToUnicode(name) {
+        var unicodeString = '';
+        for (var i = 0; i < name.length; i++) {
+            if (name.charCodeAt(i) > 128) {
+                var str = name.charCodeAt(i).toString(16).toUpperCase();
+                while (str.length < 4)
+                    str = "0" + str;
+                unicodeString += "\\u" + str;
+            } else {
+                unicodeString += name[i];
+            }
+        }
+        return unicodeString;
+    }
+
     function createGrid() {
         var layout = [
             {
@@ -279,8 +294,7 @@
     // search handling
     function doSearch(reorder, importing) {
         var params = dojo.byId("catFilter").value.trim();
-
-        params = "?donothing&inode="+currentInodeOrIdentifier+"&name="+encodeURIComponent(currentCatName)+"&q="+params;
+        params = "?donothing&inode="+currentInodeOrIdentifier+"&name="+encodeURIComponent(currentCatName)+"&q="+encodeURIComponent(params);
         if(reorder) {
             params = params + "&reorder=true";
         }
