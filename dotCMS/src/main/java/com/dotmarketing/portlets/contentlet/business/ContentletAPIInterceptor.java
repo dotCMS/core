@@ -2140,6 +2140,23 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	}
 
 	@Override
+	public Contentlet saveDraft(Contentlet contentlet, ContentletRelationships contentletRelationships, List<Category> cats ,List<Permission> permissions, User user,boolean respectFrontendRoles) throws IllegalArgumentException,DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException {
+		for(ContentletAPIPreHook pre : preHooks){
+			boolean preResult = pre.saveDraft(contentlet,contentletRelationships, cats,permissions, user, respectFrontendRoles);
+			if(!preResult){
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+			}
+		}
+		Contentlet savedContentlet = conAPI.saveDraft(contentlet,contentletRelationships, cats,permissions, user, respectFrontendRoles);
+		for(ContentletAPIPostHook post : postHooks){
+			post.saveDraft(savedContentlet,contentletRelationships, cats,permissions, user, respectFrontendRoles);
+		}
+
+		return savedContentlet;
+	}
+
+	@Override
 	public List<Contentlet> searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles)	throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.searchByIdentifier(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles);
