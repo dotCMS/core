@@ -32,8 +32,8 @@
     flex-flow: column wrap;
     h4 {
         margin: 0;
-        color: $gray-dark;
-        font-size: $font-size-large;
+        color: $black;
+        font-weight: normal;
     }
 }
 
@@ -51,4 +51,5 @@
 .content-type__edit-actions {
     display: flex;
     justify-content: flex-end;
+    align-self: center;
 }

@@ -3,7 +3,6 @@
 :host {
     display: flex;
     flex-direction: column;
-    padding-top: $basic-padding * 2;
     height: 100%;
 
     ::ng-deep {
@@ -14,9 +13,16 @@
 
         .ui-datatable-tablewrapper {
             flex-grow: 1;
+            background: $white;
 
-            table tbody.ui-datatable-data td {
-                cursor: pointer;
+            table tbody.ui-datatable-data tr {
+                td {
+                    cursor: pointer;
+
+                    span {
+                        word-break: break-word;
+                    }
+                }
             }
         }
 
@@ -25,6 +31,19 @@
                 padding-bottom: 0;
                 padding-top: 0;
             }
+        }
+
+        .listing-datatable__column-icon{
+            display: flex;
+            align-items: center;
+
+            dot-icon {
+                margin-right: 8px;
+            }
+        }
+
+        dot-action-header {
+            background: $white;
         }
     }
 }

@@ -6,6 +6,7 @@ import { MenuModule } from 'primeng/primeng';
 import { DotActionButtonComponent } from './dot-action-button.component';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { DotIconButtonModule } from '../dot-icon-button/dot-icon-button.module';
 
 describe('ActionButtonComponent', () => {
     let comp: DotActionButtonComponent;
@@ -19,6 +20,7 @@ describe('ActionButtonComponent', () => {
                 imports: [
                     BrowserAnimationsModule,
                     MenuModule,
+                    DotIconButtonModule,
                     RouterTestingModule.withRoutes([
                         {
                             component: DotActionButtonComponent,
@@ -114,9 +116,9 @@ describe('ActionButtonComponent', () => {
         comp.disabled = true;
         comp.label = 'Label';
         fixture.detectChanges();
-        const button = fixture.debugElement.query(By.css('button'));
+        const button = fixture.debugElement.query(By.css('dot-icon-button'));
         const label = fixture.debugElement.query(By.css('.action-button__label'));
-        expect(button.nativeElement.attributes.disabled).toBeDefined('Button disabled attr');
+        expect(button.nativeElement.getAttribute('ng-reflect-disabled')).toBeDefined('Button disabled attr');
         expect(label.nativeElement.classList).toContain('action-button__label--disabled', 'Label disabled class');
     });
 });

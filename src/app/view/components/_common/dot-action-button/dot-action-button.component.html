@@ -1,3 +1,4 @@
 <p-menu *ngIf="isHaveOptions()" appendTo="body" #menu popup="popup" [model]="model"></p-menu>
-<button type="button" pButton [icon]="icon" (click)="buttonOnClick($event)" [disabled]="disabled" [class.action-button--selected]="selected"></button>
+<dot-icon-button (click)="buttonOnClick($event)" [disabled]="disabled" [icon]="icon"></dot-icon-button>
+
 <p *ngIf="label" class="action-button__label" [class.action-button__label--disabled]="disabled">{{ label }}</p>

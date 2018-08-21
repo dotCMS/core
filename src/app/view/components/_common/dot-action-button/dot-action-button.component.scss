@@ -1,11 +1,11 @@
 @import 'primeng-theme/utils/theme-variables';
 
-$action-button-height: 56px;
+$action-button-height: 48px;
 
 :host(.action-button--no-label) ::ng-deep {
     display: inline-block;
 
-    .ui-button.ui-button-icon-only {
+    dot-icon-button button {
         border-radius: 50%;
         font-size: $font-size-large;
         height: $action-button-height;
@@ -27,7 +27,8 @@ $action-button-height: 56px;
 
             [class^='ui-button-icon'],
             .ui-button-text,
-            .ui-c {
+            .ui-c,
+            i {
                 color: $white;
             }
         }

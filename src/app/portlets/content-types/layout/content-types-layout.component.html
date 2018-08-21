@@ -5,7 +5,9 @@
                 <ng-content></ng-content>
             </div>
             <div class="content-type__fields-sidebar">
-                <h4 class="content-type__fields-sidebar-title">{{ i18nMessages['contenttypes.sidebar.components.title'] }}</h4>
+                <h4 class="content-type__fields-sidebar-title">
+                    <dot-icon name="view_quilt"></dot-icon><span>{{ i18nMessages['contenttypes.sidebar.components.title'] }}</span>
+                </h4>
                 <dot-content-types-fields-list></dot-content-types-fields-list>
                 <!-- <h4 class="content-type__fields-sidebar-title">{{ i18nMessages['contenttypes.sidebar.layouts.title'] }}</h4>
                 <dot-content-type-fields-row-list></dot-content-type-fields-row-list> -->

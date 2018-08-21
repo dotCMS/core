@@ -5,9 +5,9 @@
 }
 
 .action-header {
-    align-items: flex-end;
+    align-items: flex-start;
     display: flex;
-    height: 83px; // 60px + actionButton height / 2
+    height: 85px;
     position: relative;
     z-index: 1;
 
@@ -30,7 +30,6 @@
 }
 
 .action-header__container {
-    border-top: 1px solid $gray;
     flex: 1;
     height: 61px;
     overflow: hidden;
@@ -39,8 +38,8 @@
 .action-header__primary-button {
     opacity: 1;
     position: absolute;
-    right: $basic-padding * 2;
-    top: 0;
+    right: $basic-padding * 3;
+    top: $basic-padding;
     transform: translateY(0);
     transition: background-color 100ms, transform 0.2s ease, opacity 0.2s ease;
     z-index: 1;
@@ -51,7 +50,7 @@
     background: $white;
     display: flex;
     height: 60px;
-    padding-left: $basic-padding * 2;
+    padding-left: $basic-padding * 3;
     transform: translateY(0px);
     transition: transform 0.2s ease;
 

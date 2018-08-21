@@ -1,7 +1,13 @@
 @import 'variables';
 
-:host ::ng-deep listing-data-table tr {
-    cursor: pointer;
+:host {
+    padding: $basic-padding * 3;
+    display: flex;
+    background: $gray-bg;
+
+    &::ng-deep listing-data-table tr {
+        cursor: pointer;
+    }
 }
 
 dot-base-type-selector {

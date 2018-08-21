@@ -1,20 +1,24 @@
-<dot-icon name="{{ fieldService.getIcon(field.clazz) }}"></dot-icon>
-
 <div class="field__properties">
-    <div class="field__name">{{ field.name }} <span class="field__variable">({{ field.variable }})</span></div>
+    <div class="field__icon">
+        <dot-icon name="{{ fieldService.getIcon(field.clazz) }}"></dot-icon>
+        <div class="field__name">{{ field.name }} <span class="field__variable">({{ field.variable }})</span></div>
+    </div>
     <div class="field__attribute" innerHTML="{{ fieldAttributes }}"></div>
 </div>
 
+
 <div class="field__actions">
     <dot-icon-button-tooltip *ngIf="!field.fixed"
+        tiny
         class="field__actions-delete"
-        icon="fa-trash"
+        icon="delete"
         [tooltipText]="i18nMessages['contenttypes.action.delete']"
         (click)="removeItem($event)">
     </dot-icon-button-tooltip>
-    <dot-icon-button-tooltip 
+    <dot-icon-button-tooltip
+        tiny
         class="field__actions-edit"
-        icon="fa-edit"
+        icon="edit"
         [tooltipText]="i18nMessages['contenttypes.action.edit']"
         (click)="this.onClick($event)">
     </dot-icon-button-tooltip>

@@ -1,15 +1,12 @@
 <dot-content-type-layout [contentTypeId]="data?.id" *ngIf="isEditMode()">
     <div class="content-type__edit-header container-fluid" id="content-type-edit-header">
         <div class="content-type__form-header-left">
-            <div class="content-type__edit-title-icon">
-                <i class="fa" [ngClass]="templateInfo.icon"></i>
-                <dot-icon name="{{ templateInfo.icon }}"></dot-icon>
-            </div>
+
             <div class="content-type__edit-title">
                 <h4>{{ data.name }} </h4>
                 <div class="content-type__edit-subtitle">
                     <span class="content-type__edit-variable">
-                        {{ dotMessageService.get('contenttypes.content.variable') }}: {{ data.variable }} 
+                        {{ dotMessageService.get('contenttypes.content.variable') }}: {{ data.variable }}
                         <span class="content-type__edit-dot-separator">•</span> {{ dotMessageService.get('contenttypes.form.identifier') }}: {{ data.id }}
                     </span>
                 </div>
@@ -36,8 +33,8 @@
     [responsive]="true"
     [resizable]="false"
     [draggable]="false"
-    [closable]="isEditMode()"> 
-    
+    [closable]="isEditMode()">
+
     <p-header>{{ templateInfo.header }}</p-header>
 
     <dot-content-types-form

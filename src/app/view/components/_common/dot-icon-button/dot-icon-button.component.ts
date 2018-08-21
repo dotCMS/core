@@ -1,4 +1,4 @@
-import { Component, Input, EventEmitter, Output, HostListener } from '@angular/core';
+import { Component, Input } from '@angular/core';
 
 /**
  * The DotIconButtonComponent is a round button which
@@ -16,13 +16,6 @@ export class DotIconButtonComponent {
     @Input() disabled?: boolean;
     @Input() icon: string;
 
-    @Output() click: EventEmitter<any> = new EventEmitter();
-
-    @HostListener('click', ['$event'])
-    public onClick($event: any): void {
-        $event.stopPropagation();
-    }
-
     /**
      * Emits the click of the button
      *
@@ -30,8 +23,8 @@ export class DotIconButtonComponent {
      * @memberof DotIconButtonComponent
      */
     buttonOnClick($event): void {
-        if (!this.disabled) {
-            this.click.emit($event);
+        if (this.disabled) {
+            $event.stopPropagation();
         }
     }
 }

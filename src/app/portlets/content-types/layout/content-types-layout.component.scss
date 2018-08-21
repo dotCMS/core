@@ -7,7 +7,7 @@ $top-height: ($toolbar-height + $tabview-nav-height);
 :host {
     ::ng-deep {
         .ui-tabview-nav {
-            box-shadow: 0 2px 2px $gray;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
             position: relative;
             z-index: 1;
         }
@@ -47,13 +47,21 @@ $top-height: ($toolbar-height + $tabview-nav-height);
             height: 200px;
         }
     }
-
     .content-type__fields-sidebar-title {
-        background-color: $gray-bg;
         font-size: $font-size-medium;
         font-weight: normal;
         margin: 0;
         padding: $basic-padding $basic-padding * 2;
+        border-bottom: 1px solid $gray-light;
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
+        line-height: $basic-padding * 4;
+        text-transform: uppercase;
+
+        dot-icon {
+            margin-right: $basic-padding * 2;
+        }
     }
 
     .content-type-fields-row {

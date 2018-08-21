@@ -8,14 +8,7 @@
     padding: $basic-padding * 2;
     position: relative;
     transition: box-shadow $basic-speed;
-
-    // &:hover {
-    //     box-shadow: $md-shadow-2;
-
-    //     .row-header {
-    //         opacity: 1;
-    //     }
-    // }
+    background: $white;
 
     &:last-child {
         margin-bottom: 0;
@@ -24,12 +17,14 @@
 
 .row-columns {
     display: flex;
+    background: $gray-bg;
 }
 
 .row-columns__item {
     margin: 0 $basic-padding / 2;
     display: flex;
     flex-direction: column;
+    padding: $basic-padding;
 
     &:first-child {
         margin-left: 0;
@@ -38,19 +33,28 @@
     &:last-child {
         margin-right: 0;
     }
+
+    &.empty {
+        background: $gray-bg;
+
+        .row-columns__item-empty-message {
+            min-height: 150px;
+        }
+    }
 }
 
 .row-columns__item-empty-message {
     text-align: center;
     width: 100%;
-    border: solid 1px $gray-bg;
+    border: dashed 1px $gray;
     color: $gray;
-    min-height: 48px;
+    min-height: 68px;
     flex: 1;
     flex-grow: 1;
     display: flex;
     justify-content: center;
     flex-direction: column;
+    font-size: $font-size-small;
 }
 
 .row-header {

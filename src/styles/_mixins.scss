@@ -9,6 +9,15 @@
     font-size: $md-icon-size / 2;
 }
 
+@mixin tiny-button {
+    height: 16px;
+    width: 16px;
+
+    ::ng-deep i {
+        @include dot_icon_tiny;
+    }
+}
+
 @mixin dot-icon_inverted {
     color: $white;
 }

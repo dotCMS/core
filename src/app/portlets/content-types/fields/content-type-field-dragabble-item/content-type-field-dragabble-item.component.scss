@@ -2,25 +2,25 @@
 @import 'variables';
 
 :host {
-    border-left: solid 3px $gray-bg;
     cursor: move;
     display: flex;
-    margin: $basic-padding 0;
+    margin: 0 0 $basic-padding 0;
     padding: $basic-padding * 2;
     transition: border-left-color $basic-speed, box-shadow $basic-speed;
+    background: $white;
 
     &:hover {
-        border-left-color: $brand-primary;
-        box-shadow: $md-shadow-2;
-    }
-
-    &:first-child {
-        margin-top: 0;
+        box-shadow: $md-shadow-5;
+        z-index: 1;
     }
 
     &:last-child {
         margin-bottom: 0;
     }
+}
+
+.field__icon {
+    display: flex;
 }
 
 .field__properties {
@@ -29,12 +29,18 @@
 
 .field__name {
     color: black;
+    line-height: $basic-padding * 3;
 }
 
 .field__attribute,
 .field__variable {
     color: gray;
-    font-size: 11px;
+    font-size: $font-size-small;
+    line-height: $font-size-small;
+}
+
+.field__attribute{
+    margin-top: 6px;
 }
 
 .field__actions {
@@ -42,7 +48,7 @@
     transition: opacity $basic-speed;
 
     & > * {
-        margin: 0 $basic-padding / 2;
+        margin: 0 $basic-padding / 4;
     }
 
     :host:hover & {
@@ -51,5 +57,5 @@
 }
 
 dot-icon {
-    margin-right: $basic-padding * 2;
+    margin-right: $basic-padding;
 }

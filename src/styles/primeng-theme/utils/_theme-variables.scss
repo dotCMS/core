@@ -163,13 +163,14 @@ $radio-hover-bgcolor: $white;
 $radio-hover-border: $check-checked-border;
 
 // DATATABLE
-$datatable-cell-padding: 10px $basic-padding * 2; // We need to have 40px min height in the cell
+$datatable-cell-padding: 18px $basic-padding * 2; // We need to have 40px min height in the cell
+$datatable-header-cell-padding: 10px $basic-padding * 2;
 $datatable-cell-border: 1px solid $gray-bg;
 $datatable-highlight-row-bgcolor: $gray-bg;
 $datatable-row-color: $black;
 $datatable-row-bgcolor: $white;
 $datatable-head-bgcolor: $gray-bg;
-$datatable-head-color: $gray-dark;
+$datatable-head-color: $gray;
 
 // PAGINATOR
 $paginator-page-selected-bgcolor: $brand-primary;
@@ -181,10 +182,10 @@ $paginator-page-size: 21px;
 // TABVIEW
 $tabview-item-color: $gray-dark;
 $tabview-item-selected-color: $brand-primary;
-$tabview-item-padding: 10px $basic-padding * 2; // To match the 40px height
+$tabview-item-padding: $basic-padding * 2 $basic-padding * 2 10px; // To match the 48px height
 $tabview-item-border: 3px solid $white;
 $tabview-item-selected-border: 3px solid $brand-primary;
-$tabview-nav-height: 40px;
+$tabview-nav-height: 48px;
 
 // MENU
 $menu-link-color: $black;

@@ -98,7 +98,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
 
             const button = de.query(By.css('.field__actions-delete'));
             expect(button).not.toBeNull();
-            expect(button.attributes['icon']).toEqual('fa-trash');
+            expect(button.attributes['icon']).toEqual('delete');
 
             let resp: ContentTypeField;
             comp.remove.subscribe((fieldItem) => (resp = fieldItem));
@@ -149,7 +149,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
 
             const button = de.query(By.css('.field__actions-edit'));
             expect(button).not.toBeNull();
-            expect(button.attributes['icon']).toEqual('fa-edit');
+            expect(button.attributes['icon']).toEqual('edit');
 
             let resp: ContentTypeField;
             comp.edit.subscribe((field) => (resp = field));

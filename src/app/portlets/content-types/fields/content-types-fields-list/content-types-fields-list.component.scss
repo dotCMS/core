@@ -2,7 +2,7 @@
 $icon-size: $basic-padding * 3;
 
 .content-types-fields-list {
-    margin: $basic-padding 0 0;
+    margin: 0;
     padding: 0;
     list-style: none;
 }
@@ -13,6 +13,7 @@ $icon-size: $basic-padding * 3;
     touch-action: none;
     display: flex;
     align-items: center;
+    line-height: $basic-padding * 4;
 }
 
 dot-icon {

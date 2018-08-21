@@ -2,7 +2,7 @@ import { Component, Input } from '@angular/core';
 
 @Component({
     selector: 'dot-icon-button-tooltip',
-    template: `<button pButton [icon]="icon" pTooltip="{{ tooltipText }}" tooltipPosition="bottom"></button>`
+    template: `<dot-icon-button [icon]="icon" pTooltip="{{ tooltipText }}" tooltipPosition="bottom"></dot-icon-button>`
 })
 export class IconButtonTooltipComponent {
     @Input() icon: string;

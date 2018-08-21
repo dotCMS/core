@@ -19,6 +19,7 @@ import { ActionHeaderComponent } from './action-header/action-header';
 import { DotDataTableAction } from '../../../shared/models/data-table/dot-data-table-action';
 import { DotMenuModule } from '../_common/dot-menu/dot-menu.module';
 import { DotIconModule } from '../_common/dot-icon/dot-icon.module';
+import {DotIconButtonModule} from '../_common/dot-icon-button/dot-icon-button.module';
 
 describe('ListingDataTableComponent', () => {
     let comp: ListingDataTableComponent;
@@ -45,7 +46,8 @@ describe('ListingDataTableComponent', () => {
                 IconButtonTooltipModule,
                 MenuModule,
                 DotMenuModule,
-                DotIconModule
+                DotIconModule,
+                DotIconButtonModule
             ],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },

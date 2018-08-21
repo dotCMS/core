@@ -4,6 +4,7 @@ import { DotIconModule } from '../dot-icon/dot-icon.module';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DotIconButtonComponent } from './dot-icon-button.component';
 import { By } from '@angular/platform-browser';
+import createSpy = jasmine.createSpy;
 
 describe('DotIconButtonComponent', () => {
     let comp: DotIconButtonComponent;
@@ -29,32 +30,24 @@ describe('DotIconButtonComponent', () => {
         expect(icon.componentInstance.name).toBe('test');
     });
 
-    it('should emit event on button click', () => {
-        let res;
-
-        comp.click.subscribe((event) => {
-            res = event;
-        });
+    it('should call buttonOnClick on button click', () => {
+        spyOn(comp, 'buttonOnClick').and.callThrough();
         fixture.detectChanges();
 
         const button = fixture.debugElement.query(By.css('button'));
         button.nativeElement.click();
-        expect(res).toBeDefined();
+
+        expect(comp.buttonOnClick).toHaveBeenCalled();
     });
 
-    it('should set button to disabled state', () => {
+    it('should stop propagation if disabled', () => {
         comp.disabled = true;
         comp.icon = 'test';
+        const event = {
+            stopPropagation: jasmine.createSpy('stopPropagation')
+        }
 
-        let res;
-
-        comp.click.subscribe((event) => {
-            res = event;
-        });
-        fixture.detectChanges();
-
-        const button = fixture.debugElement.query(By.css('button'));
-        button.nativeElement.click();
-        expect(res).not.toBeDefined();
+        comp.buttonOnClick(event);
+        expect(event.stopPropagation).toHaveBeenCalled();
     });
 });

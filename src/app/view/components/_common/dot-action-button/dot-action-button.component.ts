@@ -33,7 +33,7 @@ export class DotActionButtonComponent implements OnInit, OnChanges {
 
     ngOnInit(): void {
         this.isNotLabeled = !this.label;
-        this.icon = this.icon ? `fa ${this.icon}` : 'fa fa-plus';
+        this.icon = this.icon ? `${this.icon}` : 'add';
     }
 
     ngOnChanges(changes: SimpleChanges) {

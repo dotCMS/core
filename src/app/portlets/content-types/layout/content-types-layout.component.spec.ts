@@ -9,6 +9,7 @@ import { By } from '@angular/platform-browser';
 import { DotMenuService } from '../../../api/services/dot-menu.service';
 import { Observable } from 'rxjs/Observable';
 import { FieldDragDropService } from '../fields/service';
+import {DotIconModule} from '../../../view/components/_common/dot-icon/dot-icon.module';
 
 @Component({
     selector: 'dot-content-types-fields-list',
@@ -78,7 +79,7 @@ describe('ContentTypesLayoutComponent', () => {
                 TestContentTypesRelationshipListingComponent,
                 TestHostComponent
             ],
-            imports: [TabViewModule],
+            imports: [TabViewModule, DotIconModule],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: DotMenuService, useClass: MockDotMenuService },
@@ -139,9 +140,8 @@ describe('ContentTypesLayoutComponent', () => {
             });
 
             it('should have a field types list', () => {
-                const fieldTitle = this.pTabPanel.query(By.css('.content-type__fields-sidebar-title'));
+                const fieldTitle = this.pTabPanel.query(By.css('.content-type__fields-sidebar-title span'));
                 const contentTypesFieldsList = this.pTabPanel.query(By.css('dot-content-types-fields-list'));
-
                 expect(fieldTitle.nativeElement.textContent).toBe('Field Title');
                 expect(contentTypesFieldsList).not.toBeNull();
             });
