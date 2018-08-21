@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.transform.field;
 
+import com.dotmarketing.util.UtilMethods;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -148,17 +149,26 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
 
   public Map<String, Object> mapObject() {
     try {
-      Field f = from();
-      Map<String, Object> field = mapper.convertValue(f, HashMap.class);
+      final Field f = from();
+      final Map<String, Object> field = mapper.convertValue(f, HashMap.class);
       field.put("fieldVariables", new JsonFieldVariableTransformer(f.fieldVariables()).mapList());
       field.remove("acceptedDataTypes");
       field.remove("dbColumn");
 
       if (ImmutableCategoryField.class.getName().equals(field.get("clazz"))) {
         try {
-          final Category category = APILocator.getCategoryAPI()
-                  .find(field.get("values").toString(), APILocator.getLoginServiceAPI().getLoggedInUser(), false);
-          field.put(CATEGORIES_PROPERTY_NAME, category.getMap());
+          final Object values = field.get("values");
+          if (UtilMethods.isSet(values)) {
+            final Category category = APILocator.getCategoryAPI()
+                    .find(values.toString(), APILocator.getLoginServiceAPI().getLoggedInUser(),
+                            false);
+            if (null == category) {
+              Logger.warn(JsonFieldTransformer.class, () -> String
+                      .format("Unable to find category with id '%s' for field named %s. ", values.toString(), f.name()));
+            } else {
+              field.put(CATEGORIES_PROPERTY_NAME, category.getMap());
+            }
+          }
         } catch (final DotSecurityException e) {
           Logger.error(JsonFieldTransformer.class, e.getMessage());
         }
@@ -169,5 +179,6 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
       throw new DotStateException(e);
     }
   }
+
 }
 
