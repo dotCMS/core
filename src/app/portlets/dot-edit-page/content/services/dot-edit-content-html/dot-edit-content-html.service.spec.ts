@@ -13,10 +13,12 @@ import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { DotAlertConfirmService } from '../../../../../api/services/dot-alert-confirm/dot-alert-confirm.service';
 import { DotPageContent } from '../../../../dot-edit-page/shared/models/dot-page-content.model';
 import { Observable } from 'rxjs/Observable';
-import { mockDotLayout } from '../../../../../test/dot-rendered-page.mock';
+import { mockDotLayout, mockDotRenderedPage, mockDotPage } from '../../../../../test/dot-rendered-page.mock';
 import { ContentType } from '../../../../content-types/shared/content-type.model';
 import { DotLicenseService } from '../../../../../api/services/dot-license/dot-license.service';
 import { Injectable } from '@angular/core';
+import { DotRenderedPageState } from '../../../shared/models/dot-rendered-page-state.model';
+import { mockUser } from '../../../../../test/login-service.mock';
 
 @Injectable()
 class MockDotLicenseService {
@@ -150,7 +152,16 @@ describe('DotEditContentHtmlService', () => {
             TODO: in the refactor we need to make this service just to generate and return stuff, pass the iframe
             is not a good architecture.
         */
-        this.dotEditContentHtmlService.initEditMode(fakeHTML, { nativeElement: fakeIframeEl });
+
+        const pageState: DotRenderedPageState = new DotRenderedPageState(mockUser, {
+            ...mockDotRenderedPage,
+            page: {
+                ...mockDotPage,
+                rendered: fakeHTML
+            }
+        });
+
+        this.dotEditContentHtmlService.initEditMode(pageState, { nativeElement: fakeIframeEl });
         dotLicenseService = this.injector.get(DotLicenseService);
         fakeDocument = fakeIframeEl.contentWindow.document;
     }));
@@ -220,6 +231,11 @@ describe('DotEditContentHtmlService', () => {
         xit('should redraw the body', () => {
             // TODO need to test the change of the body.style.style but right now not sure how.
         });
+    });
+
+    it('should add base tag', () => {
+        const base = fakeDocument.querySelector('base');
+        expect(base.outerHTML).toEqual('<base href="/an/url/">');
     });
 
     it('should add contentlet', () => {

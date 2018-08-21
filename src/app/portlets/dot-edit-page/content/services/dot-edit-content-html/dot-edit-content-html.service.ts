@@ -23,6 +23,7 @@ import { GOOGLE_FONTS } from '../html/iframe-edit-mode.js';
 import { MODEL_VAR_NAME } from '../html/iframe-edit-mode.js';
 import { ContentType } from '../../../../content-types/shared/content-type.model';
 import { DotEditPageService } from '../../../../../api/services/dot-edit-page/dot-edit-page.service';
+import { DotRenderedPageState } from '../../../shared/models/dot-rendered-page-state.model';
 
 export enum DotContentletAction {
     EDIT,
@@ -80,7 +81,7 @@ export class DotEditContentHtmlService {
      * @returns {Promise<any>}
      * @memberof DotEditContentHtmlService
      */
-    renderPage(editPageHTML: string, iframeEl: ElementRef): Promise<any> {
+    renderPage(pageState: DotRenderedPageState, iframeEl: ElementRef): Promise<any> {
         return new Promise((resolve, _reject) => {
             this.iframe = iframeEl;
             const iframeElement = this.getEditPageIframe();
@@ -95,7 +96,7 @@ export class DotEditContentHtmlService {
             });
 
             // Load content after bind 'load' event.
-            this.loadCodeIntoIframe(editPageHTML);
+            this.loadCodeIntoIframe(pageState);
         });
     }
 
@@ -106,8 +107,8 @@ export class DotEditContentHtmlService {
      * @param {ElementRef} iframeEl
      * @memberof DotEditContentHtmlService
      */
-    initEditMode(editPageHTML: string, iframeEl: ElementRef): void {
-        this.renderPage(editPageHTML, iframeEl).then(() => {
+    initEditMode(pageState: DotRenderedPageState, iframeEl: ElementRef): void {
+        this.renderPage(pageState, iframeEl).then(() => {
             this.setEditMode();
         });
     }
@@ -568,10 +569,34 @@ export class DotEditContentHtmlService {
         return target.dataset.dotObject === 'edit-content' && target.tagName === 'BUTTON';
     }
 
-    private loadCodeIntoIframe(editPageHTML: string): void {
+    private updateHtml(pageState: DotRenderedPageState): string {
+        const fakeHtml = document.createElement('html');
+        fakeHtml.innerHTML = pageState.html;
+
+        if (fakeHtml.querySelector('base')) {
+            return pageState.html;
+        } else {
+            const head = fakeHtml.querySelector('head');
+            head.insertBefore(this.getBaseTag(pageState.page.pageURI), head.childNodes[0]);
+        }
+
+        return fakeHtml.innerHTML;
+    }
+
+    private getBaseTag(url: string): HTMLBaseElement {
+        const base = document.createElement('base');
+        const href = url.split('/');
+        href.pop();
+
+        base.href = href.join('/') + '/';
+
+        return base;
+    }
+
+    private loadCodeIntoIframe(pageState: DotRenderedPageState): void {
         const doc = this.getEditPageDocument();
         doc.open();
-        doc.write(editPageHTML);
+        doc.write(this.updateHtml(pageState));
         doc.close();
     }
 

@@ -372,9 +372,9 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
 
     private renderPage(pageState: DotRenderedPageState): void {
         if (this.shouldEditMode(pageState)) {
-            this.dotEditContentHtmlService.initEditMode(pageState.html, this.iframe);
+            this.dotEditContentHtmlService.initEditMode(pageState, this.iframe);
         } else {
-            this.dotEditContentHtmlService.renderPage(pageState.html, this.iframe);
+            this.dotEditContentHtmlService.renderPage(pageState, this.iframe);
         }
     }
 
@@ -387,7 +387,11 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     }
 
     private setInitalData(): void {
-        this.route.parent.parent.data.pipe(pluck('content'), takeUntil(this.destroy$)).subscribe((pageState: DotRenderedPageState) => {
+        this.route.parent.parent.data.pipe(
+            pluck('content'),
+            takeUntil(this.destroy$)
+        )
+        .subscribe((pageState: DotRenderedPageState) => {
             this.setPageState(pageState);
         });
 

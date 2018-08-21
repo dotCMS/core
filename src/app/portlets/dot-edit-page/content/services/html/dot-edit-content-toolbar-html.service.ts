@@ -234,7 +234,6 @@ export class DotEditContentToolbarHtmlService {
                             <li class="dotedit-menu__item ${item.disabled ? 'dotedit-menu__item--disabled' : ''}"
                                 ${item.tooltip ? 'title="' + item.tooltip + '"' : ''}">
                                     <a
-                                        href="#"
                                         data-dot-object="popup-menu-item"
                                         ${this.getDotEditPopupMenuItemDataSet(item.dataset)} role="button">
                                         ${item.label}

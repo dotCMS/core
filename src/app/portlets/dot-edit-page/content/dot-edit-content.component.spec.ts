@@ -540,7 +540,7 @@ describe('DotEditContentComponent', () => {
                 lockedByAnotherUser: false
             });
             expect(component.pageState.page).toEqual(customMockDotRenderedPage.page);
-            expect(dotEditContentHtmlService.initEditMode).toHaveBeenCalledWith('<html></html>', component.iframe);
+            expect(dotEditContentHtmlService.initEditMode).toHaveBeenCalledWith(component.pageState, component.iframe);
         }));
 
         it('should set preview mode', fakeAsync(() => {
@@ -567,7 +567,7 @@ describe('DotEditContentComponent', () => {
                 lockedByAnotherUser: true
             });
             expect(dotEditContentHtmlService.initEditMode).not.toHaveBeenCalled();
-            expect(dotEditContentHtmlService.renderPage).toHaveBeenCalledWith('<html></html>', component.iframe);
+            expect(dotEditContentHtmlService.renderPage).toHaveBeenCalledWith(component.pageState, component.iframe);
         }));
 
         it('should set live mode', fakeAsync(() => {
@@ -595,7 +595,7 @@ describe('DotEditContentComponent', () => {
             });
             expect(dotGlobalMessageService.display).not.toHaveBeenCalled();
             expect(dotEditContentHtmlService.initEditMode).not.toHaveBeenCalled();
-            expect(dotEditContentHtmlService.renderPage).toHaveBeenCalledWith('<html></html>', component.iframe);
+            expect(dotEditContentHtmlService.renderPage).toHaveBeenCalledWith(component.pageState, component.iframe);
         }));
     });
 
@@ -1027,7 +1027,7 @@ describe('DotEditContentComponent', () => {
         waitForDetectChanges(fixture);
         component.pageState.state.mode = PageMode.EDIT;
         fixture.detectChanges();
-      
+
         const iframe: DebugElement = de.query(By.css('.dot-edit__iframe'));
         iframe.triggerEventHandler('load', {
             currentTarget: {
