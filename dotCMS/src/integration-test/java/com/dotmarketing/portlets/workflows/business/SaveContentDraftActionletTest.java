@@ -202,8 +202,22 @@ public class SaveContentDraftActionletTest extends BaseWorkflowIntegrationTest {
     public void save_content_draft_test_with_categories_success() throws DotDataException, DotSecurityException {
 
         final long       languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-        final Contentlet contentlet = new Contentlet();
         final User       user       = APILocator.systemUser();
+        // content to related
+        Contentlet contentletRelated = new Contentlet();
+        contentletRelated.setContentTypeId(SaveContentDraftActionletTest.type.id());
+        contentletRelated.setOwner(user.toString());
+        contentletRelated.setModUser(user.getUserId());
+        contentletRelated.setModDate(new Date());
+        contentletRelated.setLanguageId(languageId);
+        contentletRelated.setStringProperty("title", "Test Saves Related");
+        contentletRelated.setStringProperty("txt",   "Test Saves Related Text");
+        contentletRelated.setHost(Host.SYSTEM_HOST);
+        contentletRelated.setFolder(FolderAPI.SYSTEM_FOLDER);
+        contentletRelated = SaveContentDraftActionletTest.contentletAPI.checkin(contentletRelated, user, false);
+
+        // begin test
+        final Contentlet contentlet = new Contentlet();
         contentlet.setContentTypeId(SaveContentDraftActionletTest.type.id());
         contentlet.setOwner(user.toString());
         contentlet.setModUser(user.getUserId());
@@ -247,6 +261,8 @@ public class SaveContentDraftActionletTest extends BaseWorkflowIntegrationTest {
 
         final List<Category> categories    =  APILocator.getCategoryAPI().findAll(user, false);
         final Relationship relationship    = SaveContentDraftActionletTest.relationship;
+
+        APILocator.getRelationshipAPI().addRelationship(contentlet4.getInode(), contentletRelated.getInode(), relationship.getParentRelationName());
         final List<Contentlet> contentlets = APILocator.getRelationshipAPI().dbRelatedContent(relationship, contentlet4);
         final Map<Relationship, List<Contentlet>> contentRelationshipsMap = new HashMap<>();
         contentRelationshipsMap.put(relationship, contentlets);
@@ -261,9 +277,13 @@ public class SaveContentDraftActionletTest extends BaseWorkflowIntegrationTest {
                 (SaveContentDraftActionletTest.contentlet2.getIdentifier(),
                         false, languageId, user, false);
 
+        final ContentletRelationships contentRelationship = APILocator.getContentletAPI().getAllRelationships(contentlet5);
+
         // the contentlet save by the action must be not null, should has the same version.
         Assert.assertNotNull(contentlet5);
         Assert.assertNotNull(contentlet5.getInode());
+        Assert.assertNotNull(contentRelationship);
+        Assert.assertTrue(contentRelationship.getRelationshipsRecords().size() > 0);
         Assert.assertTrue(contentlet5.getInode().equals(contentlet3.getInode()));
         Assert.assertEquals("Test Saves 3", contentlet5.getStringProperty("title"));
         Assert.assertEquals("Test Saves Text 3", contentlet5.getStringProperty("txt"));
