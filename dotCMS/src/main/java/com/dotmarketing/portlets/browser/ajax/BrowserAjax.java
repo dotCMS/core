@@ -1401,62 +1401,63 @@ public class BrowserAjax {
        return _publishAsset(inode); 
 
     }
-    
-    
-    private boolean _publishAsset ( String inode ) throws Exception {
 
-    	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-        User user = getUser(req);
 
-        Identifier id  = APILocator.getIdentifierAPI().findFromInode(inode);
-    	if (!permissionAPI.doesUserHavePermission(id, PERMISSION_PUBLISH, user)) {
-            throw new DotRuntimeException( "The user doesn't have the required permissions." );
-        }
+	private boolean _publishAsset(String inode) throws Exception {
 
-        HTMLPageAsset htmlPageAsset = null;
-        if ( id != null && id.getAssetType().equals( "contentlet" ) ) {
-            Contentlet cont = APILocator.getContentletAPI().find( inode, user, false );
+		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+		User user = getUser(req);
 
-            //Verify if it is a HTMLPage, if not let do a normal contentlet publish
-            if (cont.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE) {
-                htmlPageAsset = APILocator.getHTMLPageAssetAPI().fromContentlet( cont );
-            } else {
-                APILocator.getContentletAPI().publish( cont, user, false );
-                return true;
-            }
-        }
+		Identifier id = APILocator.getIdentifierAPI().findFromInode(inode);
+		if (!permissionAPI.doesUserHavePermission(id, PERMISSION_PUBLISH, user)) {
+			throw new DotRuntimeException("The user doesn't have the required permissions.");
+		}
+
+		HTMLPageAsset htmlPageAsset = null;
+		if (id != null && id.getAssetType().equals("contentlet")) {
+			Contentlet cont = APILocator.getContentletAPI().find(inode, user, false);
+
+			//Verify if it is a HTMLPage, if not let do a normal contentlet publish
+			if (cont.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE) {
+				htmlPageAsset = APILocator.getHTMLPageAssetAPI().fromContentlet(cont);
+			} else {
+				APILocator.getContentletAPI().publish(cont, user, false);
+				return true;
+			}
+		}
 
         /*
 		Verify if we have unpublish content related to this page
          */
 		java.util.List relatedAssets = new java.util.ArrayList();
-		Inode asset = null;
-		if ( htmlPageAsset != null && InodeUtils.isSet( htmlPageAsset.getInode() ) ) {//Verify for HTMLPages as content
-			relatedAssets = PublishFactory.getUnpublishedRelatedAssetsForPage( htmlPageAsset, relatedAssets, false, user, false );
+		if (htmlPageAsset != null && InodeUtils
+				.isSet(htmlPageAsset.getInode())) {//Verify for HTMLPages as content
+			relatedAssets = PublishFactory
+					.getUnpublishedRelatedAssetsForPage(htmlPageAsset, relatedAssets, false, user,
+							false);
 		}
+		/*
+		Publishing the HTMLPage
+        */
+		if (htmlPageAsset != null && InodeUtils
+				.isSet(htmlPageAsset.getInode())) {//Publish for the new HTMLPages as content
 
-		//Only publish the content if there is not related unpublished content
-		//if ( (relatedAssets == null) || (relatedAssets.size() == 0) ) {
-
-            /*
-			Publishing the HTMLPage
-             */
-			if ( htmlPageAsset != null && InodeUtils.isSet( htmlPageAsset.getInode() ) ) {//Publish for the new HTMLPages as content
-
-				if ( !permissionAPI.doesUserHavePermission( htmlPageAsset, PERMISSION_PUBLISH, user ) ) {
-					throw new Exception( "The user doesn't have the required permissions." );
-				}
-
-				//Publish the page
-				return PublishFactory.publishHTMLPage( htmlPageAsset, req );
+			if (!permissionAPI.doesUserHavePermission(htmlPageAsset, PERMISSION_PUBLISH, user)) {
+				throw new Exception("The user doesn't have the required permissions.");
 			}
 
-		//} else {
-		//	throw new Exception( "Related assets needs to be published" );
-		//}
+			//Publish the page
+			return PublishFactory.publishHTMLPage(htmlPageAsset, req);
+		}
 
-        return false;
-    }
+		if(htmlPageAsset == null){
+			Link menuLink = APILocator.getMenuLinkAPI().find(inode,user,false);
+			return PublishFactory.publishAsset(menuLink,req);
+
+		}
+
+		return false;
+	}
 
     public boolean unPublishAsset (String inode) throws Exception {
     	HibernateUtil.startTransaction();

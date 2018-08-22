@@ -390,7 +390,7 @@ public class ContentTypeResourceTest {
 	}
 
 
-	private static HttpServletRequest getHttpRequest() {
+	static HttpServletRequest getHttpRequest() {
 		MockHeaderRequest request = new MockHeaderRequest(
 				(
 						new MockSessionRequest(new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())

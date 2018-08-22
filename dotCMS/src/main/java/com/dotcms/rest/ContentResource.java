@@ -1,19 +1,10 @@
 package com.dotcms.rest;
 
-import static com.dotmarketing.util.NumberUtil.toInt;
-import static com.dotmarketing.util.NumberUtil.toLong;
-
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
-import com.dotcms.repackage.javax.ws.rs.Consumes;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.POST;
-import com.dotcms.repackage.javax.ws.rs.PUT;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -39,19 +30,17 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformer;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.SecurityLogger;
-import com.dotmarketing.util.UUIDUtil;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.converters.Converter;
@@ -60,29 +49,23 @@ import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.DomDriver;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.Part;
+
+import static com.dotmarketing.util.NumberUtil.toInt;
+import static com.dotmarketing.util.NumberUtil.toLong;
 
 @Path("/content")
 public class ContentResource {
@@ -998,8 +981,9 @@ public class ContentResource {
             }
 
             // running a workflow action?
-            live = processWorkflowAction(contentlet, init, live);
+            final ContentWorkflowResult contentWorkflowResult = processWorkflowAction(contentlet, init, live);
 
+            live = contentWorkflowResult.publish;
             Map<Relationship, List<Contentlet>> relationships = (Map<Relationship, List<Contentlet>>) contentlet
                     .get(RELATIONSHIP_KEY);
 
@@ -1007,12 +991,23 @@ public class ContentResource {
 
             cats = UtilMethods.isSet(cats)?cats:null;
 
-            contentlet = APILocator.getContentletAPI()
-                    .checkin(contentlet, relationships, cats, init.getUser(), ALLOW_FRONT_END_SAVING);
+            // if one of the actions does not have save, so call the checkin
+            if (!contentWorkflowResult.save) {
 
-            if (live) {
-                APILocator.getContentletAPI()
-                        .publish(contentlet, init.getUser(), ALLOW_FRONT_END_SAVING);
+                contentlet = APILocator.getContentletAPI()
+                        .checkin(contentlet, relationships, cats, init.getUser(), ALLOW_FRONT_END_SAVING);
+                if (live) {
+                    APILocator.getContentletAPI()
+                            .publish(contentlet, init.getUser(), ALLOW_FRONT_END_SAVING);
+                }
+            } else {
+
+                contentlet = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet,
+                        new ContentletDependencies.Builder()
+                        .respectAnonymousPermissions(ALLOW_FRONT_END_SAVING)
+                        .modUser(init.getUser()).categories(cats)
+                        .relationships(this.getContentletRelationshipsFromMap(contentlet, relationships))
+                        .build());
             }
 
             HibernateUtil.closeAndCommitTransaction();
@@ -1123,10 +1118,17 @@ public class ContentResource {
         }
     }
 
-    private boolean processWorkflowAction(final Contentlet contentlet,
+    private ContentletRelationships getContentletRelationshipsFromMap(final Contentlet contentlet,
+                                                                      final Map<Relationship, List<Contentlet>> contentRelationships) {
+
+        return new ContentletRelationshipsTransformer(contentlet, contentRelationships).findFirst();
+    }
+
+    private ContentWorkflowResult processWorkflowAction(final Contentlet contentlet,
                                           final InitDataObject init,
                                           boolean live) throws DotDataException, DotSecurityException {
 
+        boolean save = false;
         final Optional<WorkflowAction> foundWorkflowAction =
                 init.getParamsMap().containsKey(Contentlet.WORKFLOW_ACTION_KEY.toLowerCase())?
                     this.findWorkflowActionById  (contentlet, init, this.getLongActionId(init.getParamsMap().get(Contentlet.WORKFLOW_ACTION_KEY.toLowerCase()))):
@@ -1152,10 +1154,11 @@ public class ContentResource {
                 }
             }
 
+            save = foundWorkflowAction.get().hasSaveActionlet(); // avoid manually saving
             live = false; // avoid manually publishing
         }
 
-        return live;
+        return new ContentWorkflowResult(save, live);
     } // processWorkflowAction.
 
     private Optional<WorkflowAction> findWorkflowActionByName(final Contentlet contentlet,
@@ -1356,5 +1359,18 @@ public class ContentResource {
             Logger.error(this.getClass(), "Cannot set ACCEPT_LANGUAGE" + e);
 
         }
+    }
+
+    private class ContentWorkflowResult {
+
+        private final boolean save;
+        private final boolean publish;
+
+        public ContentWorkflowResult(boolean save, boolean publish) {
+            this.save = save;
+            this.publish = publish;
+        }
+
+
     }
 }

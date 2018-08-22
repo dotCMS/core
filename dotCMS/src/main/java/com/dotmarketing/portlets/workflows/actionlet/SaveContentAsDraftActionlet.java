@@ -10,6 +10,7 @@ import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.Logger;
@@ -57,13 +58,14 @@ public class SaveContentAsDraftActionlet extends WorkFlowActionlet {
 	public void executeAction(final WorkflowProcessor processor,
 							  final Map<String, WorkflowActionClassParameter> params) throws WorkflowActionFailureException {
 
-		final Map<Relationship, List<Contentlet>> contentRelationships = new HashMap<Relationship, List<Contentlet>>();
-
+		Map<Relationship, List<Contentlet>> relationshipListHashMap = new HashMap<Relationship, List<Contentlet>>();
+		ContentletRelationships contentletRelationships          = null;
+		Contentlet contentletNew 								 = null;
 		try {
 
 			final Contentlet contentlet             = processor.getContentlet();
 			final User user                         = processor.getUser();
-			final List<Category > categories        =
+			List<Category > categories        =
 					this.categoryAPI.getParents(contentlet, user, false);
 			final List< Permission > permissions    =
 					this.permissionAPI.getPermissions(contentlet, false, true);
@@ -73,16 +75,32 @@ public class SaveContentAsDraftActionlet extends WorkFlowActionlet {
 
 			contentlet.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
 
-			this.buildRelationships(processor.getUser(), contentRelationships, contentlet);
+			this.buildRelationships(processor.getUser(), relationshipListHashMap, contentlet);
 
-			if (null != processor.getContentletDependencies()
-					&& null != processor.getContentletDependencies().getModUser()) {
+			if (null != processor.getContentletDependencies()) {
 
-				contentlet.setModUser(processor.getContentletDependencies().getModUser().getUserId());
+				if(null != processor.getContentletDependencies().getModUser()) {
+
+					contentlet.setModUser(processor.getContentletDependencies().getModUser().getUserId());
+				}
+
+				if(null != processor.getContentletDependencies().getCategories()) {
+
+					categories = processor.getContentletDependencies().getCategories();
+				}
+
+				if(null != processor.getContentletDependencies().getRelationships()) {
+
+					contentletRelationships
+							= processor.getContentletDependencies().getRelationships();
+				}
 			}
 
-			final Contentlet contentletNew = this.contentletAPI.saveDraft(
-					contentlet, contentRelationships, categories, permissions, user, true);
+			contentletNew = (null != contentletRelationships)?
+					this.contentletAPI.saveDraft(
+							contentlet, contentletRelationships, categories, permissions, user, true):
+					this.contentletAPI.saveDraft(
+						contentlet, relationshipListHashMap, categories, permissions, user, true);
 
 			processor.setContentlet(contentletNew);
 			Logger.debug(this,

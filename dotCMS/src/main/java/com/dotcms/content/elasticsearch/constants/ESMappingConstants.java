@@ -64,6 +64,8 @@ public final class ESMappingConstants {
     public static final String WORKFLOW_CREATED_BY = "wfcreatedBy";
     public static final String WORKFLOW_ASSIGN = "wfassign";
     public static final String WORKFLOW_STEP   = "wfstep";
+    public static final String WORKFLOW_CURRENT_STEP   = "wfCurrentStepName";
+    public static final String WORKFLOW_CURRENT_STEP_NOT_ASSIGNED_VALUE   = "notassigned";
     public static final String WORKFLOW_SCHEME = "wfscheme";
     public static final String WORKFLOW_MOD_DATE = "wfModDate";
     public static final String PUBLISH_DATE = "pubdate";

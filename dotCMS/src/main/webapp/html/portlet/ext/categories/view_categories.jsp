@@ -162,7 +162,7 @@
         if (params == null) params = '';
 
         myStore = new dojox.data.QueryReadStore({
-            url: '/categoriesServlet' + convertStringToUnicode(params)
+            url: '/categoriesServlet' + params
         });
     }
 
@@ -294,7 +294,7 @@
     // search handling
     function doSearch(reorder, importing) {
         var params = dojo.byId("catFilter").value.trim();
-        params = "?donothing&inode="+currentInodeOrIdentifier+"&name="+currentCatName+"&q="+params;
+        params = "?donothing&inode="+currentInodeOrIdentifier+"&name="+encodeURIComponent(currentCatName)+"&q="+encodeURIComponent(params);
         if(reorder) {
             params = params + "&reorder=true";
         }

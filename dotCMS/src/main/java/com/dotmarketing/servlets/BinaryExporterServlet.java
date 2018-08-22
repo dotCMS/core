@@ -317,8 +317,8 @@ public class BinaryExporterServlet extends HttpServlet {
 			}
 
 
-			
-			if(ResourceLink.isDownloadRestricted(downloadName)){
+			//if we're looking at a front end user then we should always restrict (vtl, vm) files.
+			if(ResourceLink.isDownloadRestricted(downloadName, req)){
 				resp.sendError(404);
 			    DbConnectionFactory.closeSilently();
 			    return;

@@ -7,15 +7,19 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 
 /***
@@ -23,6 +27,8 @@ import javax.servlet.http.HttpServletRequest;
  * `html/portlet/ext/contentlet/field/edit_field.jsp`
  */
 public class ResourceLink {
+
+    private static final Set<String> RESTRICTED_FILE_EXTENSIONS = ImmutableSet.of("vm","vtl");
 
     static final String HOST_REQUEST_ATTRIBUTE = "host";
 
@@ -96,12 +102,16 @@ public class ResourceLink {
                 );
             }
 
-            final StringBuilder resourceLink = new StringBuilder();
-            final StringBuilder resourceLinkUri = new StringBuilder();
-
             final Identifier identifier = getIdentifier(contentlet);
-            final Host host = getHost((String)request.getAttribute(HOST_REQUEST_ATTRIBUTE) , user);
             if (identifier != null && InodeUtils.isSet(identifier.getInode())){
+
+                final boolean downloadRestricted = isDownloadPermissionBasedRestricted(contentlet, user);
+
+                final StringBuilder resourceLink = new StringBuilder();
+                final StringBuilder resourceLinkUri = new StringBuilder();
+
+                final Host host = getHost((String)request.getAttribute(HOST_REQUEST_ATTRIBUTE) , user);
+
                 if(request.isSecure()){
                     resourceLink.append(HTTPS_PREFIX);
                 }else{
@@ -120,7 +130,7 @@ public class ResourceLink {
                 final String mimeType = fileAsset.getMimeType();
                 final String fileAssetName = fileAsset.getFileName();
 
-                return new ResourceLink(resourceLink.toString(), resourceLinkUri.toString(), mimeType, fileAsset, isEditableAsText(mimeType, fileAssetName), isDownloadRestricted(fileAssetName));
+                return new ResourceLink(resourceLink.toString(), resourceLinkUri.toString(), mimeType, fileAsset, isEditableAsText(mimeType, fileAssetName), downloadRestricted);
             }
 
             return new ResourceLink(StringPool.BLANK, StringPool.BLANK, StringPool.BLANK, null, false, true);
@@ -165,16 +175,23 @@ public class ResourceLink {
         FileAsset getFileAsset(final Contentlet contentlet){
            return APILocator.getFileAssetAPI().fromContentlet(contentlet);
         }
+
+        boolean isDownloadPermissionBasedRestricted(final Contentlet contentlet, final User user) throws DotDataException {
+            return !APILocator.getPermissionAPI().doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, false);
+        }
     }
 
     /**
-     * This method is used to determined if file the extension should be allowed for download or not.
+     * This method is used to determined if a front-end user based on the file the extension should be allowed for download or not.
      * @param fileAssetName
      * @return
      */
-    public static boolean isDownloadRestricted(final String fileAssetName ){
-        final String lowerCaseAssetName = fileAssetName.toLowerCase();
-        return lowerCaseAssetName.endsWith(".vm") || lowerCaseAssetName.endsWith(".vtl");
+    public static boolean isDownloadRestricted(final String fileAssetName, final HttpServletRequest request ){
+        final String extension = UtilMethods.getFileExtension(fileAssetName);
+        if(RESTRICTED_FILE_EXTENSIONS.contains(extension)){
+            return !PageMode.get(request).isAdmin;
+        }
+        return false;
     }
 
 }
