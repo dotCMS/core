@@ -44,6 +44,12 @@
 .classAce{
   display: none;
 }
+.lineDivider{
+	display: flex;
+}
+.tabDivider {
+	flex: 1;
+}
 </style>
 
 
@@ -259,21 +265,34 @@
                 </div>
             <% } %>
 
+			<div class="lineDivider">
+				<span class="tabDivider">
+
             <%-- Begin Looping over fields --%>
-            <% boolean fieldSetOpen = false;
+            <%
+            	boolean legacyContenTType = !fields.get(0).getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString());
+            	boolean fieldSetOpen = false;
                 int fieldCounter =0;
-                for (Field f : fields) {
+                int i = legacyContenTType ? 0 : 2;
+                for (; i < fields.size(); i++) {
+                    Field f = fields.get(i);
                     com.dotcms.contenttype.model.field.Field newField = new LegacyFieldTransformer(f).from();
-                    if(fieldCounter ==0 &&(newField instanceof RowField || newField instanceof ColumnField)){
-                        continue;
-                    }
+
                     if (fieldSetOpen &&
                         (f.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString()) ||
                          f.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString()) )) {
                         fieldSetOpen = false;%>
                     <%}%>
 
-                    <%if(f.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString())) {%>
+					<%if(newField instanceof RowField){%>
+						</div>
+
+						<div class="lineDivider">
+                    <%} else if(newField instanceof ColumnField){%>
+						</span>
+
+						<span class="tabDivider">
+                    <%} else if(f.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString())) {%>
                         <div class="lineDividerTitle"><%=f.getFieldName() %></div>
                     <%}else if(f.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString())) {
                         tabDividerOpen = true;%>
@@ -396,7 +415,12 @@
 
                     <jsp:include page="/html/portlet/ext/contentlet/field/edit_field.jsp" />
                 <%}%>
-            <%}%>
+            <%}
+			if (legacyContenTType) {
+			%>
+				</span>
+			</div>
+			<%}%>
         </div>
         <!-- END START EDIT CONTENT FORM -->
 	</div>
