@@ -571,6 +571,26 @@ public class CategoryAPIImpl implements CategoryAPI {
 		return categoryTree;
 	}
 
+	@CloseDBIfOpened
+	public List<Category> removeAllChildren(final Category parentCategory, final User user,
+										 final boolean respectFrontendRoles)
+			throws DotDataException, DotSecurityException {
+
+		List<Category> unableToDelete = new ArrayList<>();
+
+		List<Category> categoriesToDelete = getChildren(parentCategory, user, false);
+		categoriesToDelete.forEach((category)-> {
+			try {
+				delete(category, user, false);
+			} catch (DotDataException | DotSecurityException e) {
+				Logger.error(this, "Category has dependencies. Category name: " + category.getCategoryName());
+				unableToDelete.add(category);
+			}
+		});
+
+		return unableToDelete;
+	}
+
 	public void clearCache() {
 		categoryFactory.clearCache();
 	}

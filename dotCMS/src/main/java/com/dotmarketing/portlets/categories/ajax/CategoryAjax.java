@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -230,16 +231,21 @@ public class CategoryAjax {
 	}
 
 	public Integer deleteSelectedCategories(String[] inodes) throws Exception {
+		final WebContext ctx = WebContextFactory.get();
+		final HttpServletRequest request = ctx.getHttpServletRequest();
+		final User user =  WebAPILocator.getUserWebAPI().getLoggedInUser(request);
 		Integer catsWithDependencies = 0;
 
 		for (String inode : inodes) {
-			int result = deleteCategory(inode);
-
-			if(result==2) {
+			final Category catToDelete = categoryAPI.find(inode, user, false);
+			try {
+				categoryAPI.delete(catToDelete, user, false);
+			} catch(DotSecurityException | DotDataException e) {
 				catsWithDependencies++;
+				Logger.error(this, "Error delete Category. Name: " +
+						catToDelete.getCategoryName() + ". Error: " + e.getMessage());
 			}
 		}
-
 
 		if(catsWithDependencies>0) {
 			return 1;
@@ -253,54 +259,20 @@ public class CategoryAjax {
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
 		User user = uWebAPI.getLoggedInUser(request);
-		Integer catsWithDependencies = 0;
+		AtomicInteger returnValue = new AtomicInteger(0);
 
-		if(UtilMethods.isSet(contextInode)) {
-			Category contextCat = categoryAPI.find(contextInode, user, false);
-			List<Category> catsToDelete =  categoryAPI.getChildren(contextCat, user, false);
-			for (Category category : catsToDelete) {
-				int result = deleteCategory(category.getInode());
+		if (UtilMethods.isSet(contextInode)) {
+			Category parent = categoryAPI.find(contextInode, user, false);
+			List<Category> unableToDelete = categoryAPI.removeAllChildren(parent, user, false);
 
-				if(result==2) {
-					catsWithDependencies++;
-				}
+			if(UtilMethods.isSet(unableToDelete)) {
+				returnValue.set(1);
 			}
 		} else {
-			List<Category> catsToDelete =  categoryAPI.findTopLevelCategories(user, false);
-			for (Category category : catsToDelete) {
-				int result = deleteCategory(category.getInode());
-
-				if(result==2) {
-					catsWithDependencies++;
-				}
-			}
+			categoryAPI.deleteAll(user, false);
 		}
 
-		if(catsWithDependencies>0) {
-			return 1;
-		}
-
-		return 0;
-	}
-
-	public Integer deleteCategory(String inode) throws Exception {
-		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest request = ctx.getHttpServletRequest();
-		User user = uWebAPI.getLoggedInUser(request);
-		Category cat = categoryAPI.find(inode, user, false);
-
-		try {
-			if(!categoryAPI.hasDependencies(cat)){
-				categoryAPI.delete(cat, user, false);
-				return 0;
-			}
-			else{
-				return 2; // has children
-			}
-		} catch(DotDataException e) {
-			return 1;
-		}
+		return returnValue.get();
 	}
 
 	public Integer saveOrUpdateCategory(Boolean save, String inode, String name, String var, String key, String keywords) throws Exception {
@@ -435,28 +407,14 @@ public class CategoryAjax {
 			String content = new String(uploadFile);
 			StringReader sr = new StringReader(content);
 			BufferedReader br = new BufferedReader(sr);
-			Integer catsWithDependencies = 0;
+			List<Category> unableToDeleteCats = null;
 
 			if(exportType.equals("replace")) {
 				if(UtilMethods.isSet(contextInode)) {
 					Category contextCat = categoryAPI.find(contextInode, user, false);
-					List<Category> catsToDelete =  categoryAPI.getChildren(contextCat, user, false);
-					for (Category category : catsToDelete) {
-						int result = deleteCategory(category.getInode());
-
-						if(result==2) {
-							catsWithDependencies++;
-						}
-					}
+					unableToDeleteCats = categoryAPI.removeAllChildren(contextCat, user, false);
 				} else {
-					List<Category> catsToDelete =  categoryAPI.findTopLevelCategories(user, false);
-					for (Category category : catsToDelete) {
-						int result = deleteCategory(category.getInode());
-
-						if(result==2) {
-							catsWithDependencies++;
-						}
-					}
+					categoryAPI.deleteAll(user, false);
 				}
 
 				saveOrUpdateCat(contextInode, br, false);
@@ -466,14 +424,9 @@ public class CategoryAjax {
 
 			br.close();
 
-			if(catsWithDependencies>0) {
-				return 1;
-			}
-
-			return 0;
-
+			return UtilMethods.isSet(unableToDeleteCats) ? 1 : 0;
 		} catch(Exception e) {
-			e.printStackTrace();
+			Logger.error(this, "Error importing categories", e);
 			return 1;
 		}
 	}

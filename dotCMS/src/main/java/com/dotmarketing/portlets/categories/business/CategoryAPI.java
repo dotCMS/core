@@ -416,6 +416,14 @@ public interface CategoryAPI {
 	 */
 	public List<Category> getAllChildren(Category category, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
+
+	/**
+	 * Recursive Method that deletes all the categories children of the
+	 * given parent category
+	 * @param parentCategory
+	 * @return The List of categories that could not be deleted
+	 */
+	public List<Category>  removeAllChildren(Category parentCategory, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	/**
 	 * Retrieves a list all the line of parent categories of the given child category
 	 * a final fake top category is added at the beginning of the list to represent the top of
