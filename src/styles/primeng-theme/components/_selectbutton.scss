@@ -6,6 +6,7 @@
     @extend #button-basic;
     @extend #button-main;
     @include button-base($selectbutton-normal-bgcolor, $selectbutton-normal-border, $selectbutton-normal-shadow);
+    height: 48px;
 
     [secondary] & {
         box-shadow: none;
@@ -20,16 +21,16 @@
             border-bottom: solid 4px transparent;
 
             &:hover {
-                background-color: rgba($brand-secondary_rgb, 0.1);
+                background-color: $selectbutton-button-hover-bgcolor;
             }
 
             .ui-button-text {
-                color: $brand-secondary;
+                color: $gray;
             }
 
             &.ui-state-active {
                 background: none;
-                border-bottom: solid 4px $brand-secondary;
+                border-bottom: solid 5px $brand-secondary;
 
                 .ui-button-text {
                     color: $brand-secondary;
@@ -40,7 +41,8 @@
 
     .ui-button {
         box-shadow: none;
-        line-height: $button-height;
+        line-height: $tabview-nav-height;
+        height: $tabview-nav-height;
         transition: background-color $field-animation-speed ease-in;
 
         &:hover {
@@ -67,6 +69,7 @@
 
         .ui-button-text {
             display: inline;
+            padding: 0 $basic-padding * 3;
         }
     }
 }
