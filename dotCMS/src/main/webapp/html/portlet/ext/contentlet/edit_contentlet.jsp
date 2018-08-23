@@ -44,10 +44,10 @@
 .classAce{
   display: none;
 }
-.lineDivider{
+.rowDivider{
 	display: flex;
 }
-.tabDivider {
+.columnDivider {
 	flex: 1;
 }
 </style>
@@ -183,14 +183,6 @@
 		}
 	}
 
-    Iterator itr = fields.iterator();
-    while (itr.hasNext()) {
-        Field field = (Field)itr.next();
-        if (Field.FieldType.COLUMN.toString().equals(field.getFieldType()) || Field.FieldType.ROW.toString().equals(field.getFieldType())) {
-            itr.remove();
-        }
-    }
-
 	boolean canEditAsset = conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user);
 	final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
     boolean canSeeRules = layoutAPI.doesUserHaveAccessToPortlet("rules", user)
@@ -265,8 +257,8 @@
                 </div>
             <% } %>
 
-			<div class="lineDivider">
-				<span class="tabDivider">
+			<div class="rowDivider">
+				<span class="columnDivider">
 
             <%-- Begin Looping over fields --%>
             <%
@@ -287,11 +279,11 @@
 					<%if(newField instanceof RowField){%>
 						</div>
 
-						<div class="lineDivider">
+						<div class="rowDivider">
                     <%} else if(newField instanceof ColumnField){%>
 						</span>
 
-						<span class="tabDivider">
+						<span class="columnDivider">
                     <%} else if(f.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString())) {%>
                         <div class="lineDividerTitle"><%=f.getFieldName() %></div>
                     <%}else if(f.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString())) {
