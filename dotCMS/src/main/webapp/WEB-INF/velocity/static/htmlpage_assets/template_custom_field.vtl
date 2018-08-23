@@ -73,24 +73,27 @@ dojo.ready(function(){
     var defaultTemplateName = '$config.getStringProperty("DEFAULT_TEMPLATE_NAME", "Default Template")';
 
     var onTemplateFetchComplete = function(templates, currentRequest){
+
         debugger;
         var normalizeKey = function (obj) {
-            return obj.fullTitle.replace(new RegExp("\\("+obj.hostName+"\\)"), '').replace(/\s+/g,'');
+            return obj.fullTitle.replace(new RegExp("\\("+obj.hostName+"\\)"), '').replace(/\s+/g,'').toLowerCase();
         }
 
         if((templates) && (templates.length > 0)){
             var templatesMap = templates.reduce(function(map, obj) {
                 var key = normalizeKey(obj);
-                map[key] = obj;
+                if (!(key in map)){
+                    map[key] = obj;
+                }
                 return map;
             }, {});
 
-            var normalizedTemplateName = defaultTemplateName.replace(/\s+/g,'');
+            var normalizedTemplateName = defaultTemplateName.replace(/\s+/g,'').toLowerCase();
             var obj = templatesMap[normalizedTemplateName];
             if(obj){
                 var value = obj.identifier;
                 var fullTitle = obj.fullTitle;
-                // We set the values directly because setting direcrtly a value on`templateSel` fires a load operation again.
+                // We set the values directly into the components because setting it direcrtly into`templateSel` fires another load operation.
                 dojo.byId("currentTemplateId").value = value;
                 dojo.byId("template").value = value;
                 dijit.byId('templateSel').set("displayedValue", fullTitle);
@@ -98,8 +101,6 @@ dojo.ready(function(){
             }
         }
     };
-
-    console.log(defaultTemplateName);
 
     if(defaultTemplateName) {
         var templateFetchParams = {
