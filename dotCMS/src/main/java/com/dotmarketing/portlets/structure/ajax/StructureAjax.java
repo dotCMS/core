@@ -131,7 +131,7 @@ public class StructureAjax {
 		return searchableFields;
 	}
 
-	public List<Map> getStructureSearchFields (String structureInode) {
+	public List<Map> getStructureSearchFields (String structureInode, boolean saveStructToSession) {
 		Structure st = StructureFactory.getStructureByInode(structureInode);
 		List<Field> fields = st.getFields();
 		ArrayList<Map> searchableFields = new ArrayList<Map> ();
@@ -151,8 +151,13 @@ public class StructureAjax {
 			  }
 		  }
 		}
+
 		Structure structure = StructureFactory.getStructureByInode(structureInode);
-		req.getSession().setAttribute("selectedStructure", structureInode);
+		if(saveStructToSession){
+		   req.getSession().setAttribute("selectedStructure", structureInode);
+		} else {
+			req.getSession().removeAttribute("selectedStructure");
+		}
 
 		return searchableFields;
 	}

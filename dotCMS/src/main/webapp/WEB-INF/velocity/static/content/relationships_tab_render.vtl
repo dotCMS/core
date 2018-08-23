@@ -57,7 +57,7 @@
 		structureIdentifier=structureId;
 		relation=relationshipName;
 		structureName=structure;
-		StructureAjax.getStructureSearchFields(structureIdentifier, loadStructureSearchFields);
+		StructureAjax.getStructureSearchFields(structureIdentifier, true, loadStructureSearchFields);
 		document.getElementById('searchResults').innerHTML="<ul><li>No results find yet</li></ul>";
 		dijit.byId('relationshipsDialog').show();
 	}

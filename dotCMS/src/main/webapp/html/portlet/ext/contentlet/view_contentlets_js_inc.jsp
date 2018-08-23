@@ -1026,9 +1026,12 @@
 		    hasHostFolderField = false;
 		    loadingSearchFields = true;
 		    setDotFieldTypeStr = "";
-		
-		    StructureAjax.getStructureSearchFields (structureInode,
-		            { callback:fillFields, async: async });
+
+            var saveStructInodeToSession = <%=!("vanity-urls".equals(request.getParameter("angularCurrentPortlet")))%>;
+
+		    StructureAjax.getStructureSearchFields (structureInode, saveStructInodeToSession,
+		            { callback:fillFields, async: async })
+
 		    StructureAjax.getStructureCategories (structureInode,
 		            { callback:fillCategories, async: async });
 		
@@ -2259,7 +2262,9 @@
 
 
     dojo.addOnLoad(function () {
+
         structureChanged(true);
+
         //useLoadingMessage("<i class='loadingIcon'></i> Loading");
 
         //DWR sync mode doesn't work in Chrome. Forcing sync with the flag 'loadingSearchFields'
