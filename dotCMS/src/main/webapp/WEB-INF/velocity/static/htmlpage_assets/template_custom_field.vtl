@@ -73,8 +73,7 @@ dojo.ready(function(){
     var defaultTemplateName = '$config.getStringProperty("DEFAULT_TEMPLATE_NAME", "Default Template")';
 
     var onTemplateFetchComplete = function(templates, currentRequest){
-
-        debugger;
+        
         var normalizeKey = function (obj) {
             return obj.fullTitle.replace(new RegExp("\\("+obj.hostName+"\\)"), '').replace(/\s+/g,'').toLowerCase();
         }
