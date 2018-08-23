@@ -73,7 +73,7 @@ dojo.ready(function(){
     var defaultTemplateName = '$config.getStringProperty("DEFAULT_TEMPLATE_NAME", "Default Template")';
 
     var onTemplateFetchComplete = function(templates, currentRequest){
-        
+
         var normalizeKey = function (obj) {
             return obj.fullTitle.replace(new RegExp("\\("+obj.hostName+"\\)"), '').replace(/\s+/g,'').toLowerCase();
         }
@@ -101,7 +101,8 @@ dojo.ready(function(){
         }
     };
 
-    if(defaultTemplateName) {
+    //We fire the fetch action if there isn't a template already set.
+    if(defaultTemplateName && (val == undefined || val == "" || val == "0" )) {
         var templateFetchParams = {
             query: {
                 fullTitle: '*',
