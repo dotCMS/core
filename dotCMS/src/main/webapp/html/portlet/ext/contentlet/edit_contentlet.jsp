@@ -44,12 +44,7 @@
 .classAce{
   display: none;
 }
-.rowDivider{
-	display: flex;
-}
-.columnDivider {
-	flex: 1;
-}
+
 </style>
 
 
@@ -257,8 +252,8 @@
                 </div>
             <% } %>
 
-			<div class="rowDivider">
-				<span class="columnDivider">
+			<div class="editcontentlet__row">
+				<span class="editcontentlet__col">
 
             <%-- Begin Looping over fields --%>
             <%
@@ -279,11 +274,11 @@
 					<%if(newField instanceof RowField){%>
 						</div>
 
-						<div class="rowDivider">
+						<div class="editcontentlet__row">
                     <%} else if(newField instanceof ColumnField){%>
 						</span>
 
-						<span class="columnDivider">
+						<span class="editcontentlet__col">
                     <%} else if(f.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString())) {%>
                         <div class="lineDividerTitle"><%=f.getFieldName() %></div>
                     <%}else if(f.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString())) {
