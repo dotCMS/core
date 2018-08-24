@@ -26,6 +26,7 @@ public class HostBundlerHandlerTest extends IntegrationTestBase {
 
     private static User user;
     private static HostAPI hostAPI;
+    private static int originalHostSize;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -36,6 +37,7 @@ public class HostBundlerHandlerTest extends IntegrationTestBase {
 
         hostAPI = APILocator.getHostAPI();
         user = APILocator.getUserAPI().getSystemUser();
+        originalHostSize = APILocator.getHostAPI().findAll(user, false).size();
     }
 
     /**
@@ -68,7 +70,7 @@ public class HostBundlerHandlerTest extends IntegrationTestBase {
 
             APILocator.getContentletAPI().isInodeIndexed(host.getInode());
 
-            Assert.assertEquals(3, APILocator.getHostAPI().findAll(user, false).size());
+            Assert.assertEquals(originalHostSize + 1, APILocator.getHostAPI().findAll(user, false).size());
 
             contentSet.add(host.getIdentifier());
 
@@ -94,7 +96,7 @@ public class HostBundlerHandlerTest extends IntegrationTestBase {
             final HostHandler hostHandler = new HostHandler(config);
             hostHandler.handle(tempDir);
 
-            Assert.assertEquals(2, APILocator.getHostAPI().findAll(user, false).size());
+            Assert.assertEquals(originalHostSize, APILocator.getHostAPI().findAll(user, false).size());
         } finally {
             tempDir.delete();
         }
@@ -127,7 +129,7 @@ public class HostBundlerHandlerTest extends IntegrationTestBase {
 
             APILocator.getContentletAPI().isInodeIndexed(host.getInode());
 
-            Assert.assertEquals(3, APILocator.getHostAPI().findAll(user, false).size());
+            Assert.assertEquals(originalHostSize + 1, APILocator.getHostAPI().findAll(user, false).size());
 
             contentSet.add(host.getIdentifier());
 
