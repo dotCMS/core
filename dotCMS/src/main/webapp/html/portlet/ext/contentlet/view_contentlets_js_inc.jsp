@@ -1027,11 +1027,8 @@
 		    loadingSearchFields = true;
 		    setDotFieldTypeStr = "";
 
-            var saveStructInodeToSession = <%=!("vanity-urls".equals(request.getParameter("angularCurrentPortlet")))%>;
-
-		    StructureAjax.getStructureSearchFields (structureInode, saveStructInodeToSession,
-		            { callback:fillFields, async: async })
-
+		    StructureAjax.getStructureSearchFields (structureInode,
+		            { callback:fillFields, async: async });
 		    StructureAjax.getStructureCategories (structureInode,
 		            { callback:fillCategories, async: async });
 		
