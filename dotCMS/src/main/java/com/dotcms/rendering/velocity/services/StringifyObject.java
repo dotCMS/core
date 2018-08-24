@@ -78,14 +78,12 @@ final class StringifyObject {
 
     private String  stringifyObject(final String x) {
         StringWriter sw = new StringWriter();
-        if (x.startsWith("$")) {
-            return  sw.toString();
-        } else {
+
             sw.append('"');
-            sw.append(x.toString());
+            sw.append(x.toString().replace("\"", "${esc.q}"));
             sw.append('"');
             return  sw.toString();
-        }
+        
     }
 
     private String  stringifyObject(final Date x) {

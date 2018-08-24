@@ -130,7 +130,13 @@ public class PageLoader implements DotLoader {
         if(mode == PageMode.LIVE) {
             sb.append(new PageContextBuilder(htmlPage, sys, mode).asString());
         }
-
+        
+        
+        
+        sb.append("$!{" + PageContextBuilder.WIDGET_PRE_EXECUTE+"}");
+        
+        
+        
         // Now we need to use the found tags in order to accrue them each time this page is visited
         if (!pageFoundTags.isEmpty()) {
             // Velocity call to accrue tags on each request to this page

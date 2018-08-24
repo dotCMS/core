@@ -226,13 +226,13 @@ public class PageContextBuilder {
                                     permissionAPI.doesUserHavePermission(contentlet, PERMISSION_WRITE, user));
                             ContentType type = contentlet.getContentType();
                             if (type.baseType() == BaseContentType.WIDGET) {
-                                com.dotcms.contenttype.model.field.Field field = type.fieldMap()
-                                    .get("widgetPreexecute");
+                                com.dotcms.contenttype.model.field.Field field = type.fieldMap() .get("widgetPreexecute");
                                 if (field != null && UtilMethods.isSet(field.values())) {
 
-                                    String x = ctxMap.containsKey(WIDGET_PRE_EXECUTE) ? ""
-                                            : (String) ctxMap.get(WIDGET_PRE_EXECUTE);
-                                    ctxMap.put(WIDGET_PRE_EXECUTE, x + field.values() + "\n");
+                                    String widgetCode = !UtilMethods.isSet(ctxMap.get(WIDGET_PRE_EXECUTE)) 
+                                        ? field.values()
+                                            : ((String) ctxMap.get(WIDGET_PRE_EXECUTE)+ field.values() );
+                                    ctxMap.put(WIDGET_PRE_EXECUTE, widgetCode );
                                 }
                             }
 
@@ -277,10 +277,6 @@ public class PageContextBuilder {
 
     public List<Tag> getPageFoundTags() {
         return pageFoundTags;
-    }
-
-    public String getWidgetPreExecute() {
-        return (String) ctxMap.getOrDefault(WIDGET_PRE_EXECUTE, null);
     }
 
 
