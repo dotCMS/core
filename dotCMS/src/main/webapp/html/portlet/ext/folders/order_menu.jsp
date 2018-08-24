@@ -78,7 +78,7 @@ function emitCancelEvent() {
 function emitOkEvent() {
     var customEvent = document.createEvent("CustomEvent");
     customEvent.initCustomEvent("ng-event", false, false,  {
-        name: "ok-save-menu-order"
+        name: "save-menu-order"
     });
     document.dispatchEvent(customEvent)
 }
