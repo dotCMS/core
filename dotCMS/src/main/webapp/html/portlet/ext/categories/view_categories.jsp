@@ -713,8 +713,6 @@
     }
 
     function importCategories() {
-        var dia = dijit.byId('dotImportCategoriesDialog');
-        dia.show();
 
         var file = dwr.util.getValue('uploadFile');
         var filter = dojo.byId("catFilter").value;
@@ -726,6 +724,8 @@
         }
 
         CategoryAjax.importCategories(currentInodeOrIdentifier, filter, file, exportType, function(result) {
+            var dia = dijit.byId('importCategoriesOptions');
+
             if(result==0) {
                 dojo.byId("warningDiv").innerHTML = '';
             }  else if (result==1) {
@@ -739,9 +739,10 @@
                 t.start();
             }
 
+            dia.hide();
             doSearch(false, true);
             grid.selection.clear();
-            dia.hide();
+
         });
     }
 
@@ -1078,10 +1079,10 @@
 
 <!-- Import Categories Popup -->
 <div id="importCategoriesOptions" dojoType="dijit.Dialog" style="display:none" title="<%= LanguageUtil.get(pageContext, "import") %>">
-	<div dojoType="dijit.layout.ContentPane" style="width:300px;height:400px;" class="box" hasShadow="true">
+	<div dojoType="dijit.layout.ContentPane" style="width:300px;" class="box" hasShadow="true">
 		<dl class="vertical">
 			<dt><label><%= LanguageUtil.get(pageContext, "Import-Options") %>:</label></dt>
-			<dd><input type="file" id="uploadFile" onchange="importCategories()" class="upload"  /></dd>
+			<dd><input type="file" id="uploadFile" class="upload"/></dd>
 			<div class="clear"></div>
 
 			<dt><label><%= LanguageUtil.get(pageContext, "Import-Options") %>:</label></dt>
@@ -1095,7 +1096,7 @@
 			<div class="clear"></div>
 		</dl>
 		<div class="buttonRow">
-			<button dojoType="dijit.form.Button" type="button" iconClass="uploadIcon" ><%= LanguageUtil.get(pageContext, "import") %></button>
+			<button dojoType="dijit.form.Button" type="button" onclick="importCategories()" iconClass="uploadIcon" ><%= LanguageUtil.get(pageContext, "import") %></button>
 		</div>
 	</div>
 </div>
