@@ -26,7 +26,7 @@ public interface CategoryAPI {
 	 * @throws DotDataException 
 	 */
 	
-	public boolean canUseCategory(Category cat, User user, boolean respectFrontendRoles) throws DotDataException;
+	boolean canUseCategory(Category cat, User user, boolean respectFrontendRoles) throws DotDataException;
 	
 	/**
 	 * 
@@ -36,14 +36,14 @@ public interface CategoryAPI {
 	 * @return boolean on whether or not a user can add a child category.  
 	 * @throws DotDataException 
 	 */
-	public boolean canAddChildren(Category cat, User user, boolean respectFrontendRoles) throws DotDataException;
+	boolean canAddChildren(Category cat, User user, boolean respectFrontendRoles) throws DotDataException;
 	
 	/**
 	 * 
 	 * @param user
 	 * @return Whether the user can add a category to the top level.  If it is a top parent category.
 	 */
-	public boolean canAddToTopLevel(User user);
+	boolean canAddToTopLevel(User user);
 	
 	/**
 	 * 
@@ -53,7 +53,7 @@ public interface CategoryAPI {
 	 * @return boolean on whether or not a user can edit a category.  
 	 * @throws DotDataException 
 	 */
-	public boolean canEditCategory(Category cat, User user, boolean respectFrontendRoles) throws DotDataException;
+	boolean canEditCategory(Category cat, User user, boolean respectFrontendRoles) throws DotDataException;
 	
 	/**
 	 * Totally removes a category from the system
@@ -61,7 +61,7 @@ public interface CategoryAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException 
 	 */
-	public void delete(Category object, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	void delete(Category object, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	
 	/**
 	 * Remove all categories from the system
@@ -69,7 +69,7 @@ public interface CategoryAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException 
 	 */
-	public void deleteAll(User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	void deleteAll(User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	
 	
 	/**
@@ -82,7 +82,7 @@ public interface CategoryAPI {
 	 * @throws DotSecurityException 
 	 */
 	/*public Category find(long id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;*/
-	public Category find(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	Category find(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	
 	/**
 	 * This method get a category object from the cache based
@@ -92,7 +92,7 @@ public interface CategoryAPI {
 	 * @return 
 	 * @throws DotDataException
 	 */
-	public Category findByKey(String key, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	Category findByKey(String key, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	
 	/**
 	 * This method get a category object based on its name
@@ -105,49 +105,49 @@ public interface CategoryAPI {
 	 * 	category with the same name
 	 * 
 	 */
-	public Category findByName(String name, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	Category findByName(String name, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	
 	/**
 	 * Retrieves the list of all the categories in the system
 	 * @return
 	 * @throws DotDataException
 	 */
-	public List<Category> findAll(User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	List<Category> findAll(User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Deletes the top level categories
 	 * @return
 	 */
 	
-	public void deleteTopLevelCategories(User user) throws DotSecurityException, DotDataException ;
+	void deleteTopLevelCategories(User user) throws DotSecurityException, DotDataException ;
 	/**
 	 * Retrieves the list of all top level categories in the system
 	 * @return
 	 * @throws DotDataException
 	 */
 	
-	public List<Category> findTopLevelCategories(User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	List<Category> findTopLevelCategories(User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	/**
 	 * Retrieves a list of all top level categories in the system filtered by a String that can match the name, key, or variable. 
 	 * @param filter  String used to filter the Categories. Compares to attributes name, key or variable.  
 	 * @return
 	 * @throws DotDataException
 	 */
-	public List<Category> findTopLevelCategories(User user, boolean respectFrontendRoles, String filter) throws DotDataException, DotSecurityException;
+	List<Category> findTopLevelCategories(User user, boolean respectFrontendRoles, String filter) throws DotDataException, DotSecurityException;
 
 	/**
 	 *  Retrieves a list of all top level categories in the system filtered by a String that can match the name, key, or variable and delimited by start and count params.
 	 * @return
 	 * @throws DotDataException
 	 */
-	public PaginatedCategories findTopLevelCategories(User user, boolean respectFrontendRoles, int start, int count, String filter, String sort) throws DotDataException, DotSecurityException;
+	PaginatedCategories findTopLevelCategories(User user, boolean respectFrontendRoles, int start, int count, String filter, String sort) throws DotDataException, DotSecurityException;
 	
 	/**
 	 * Retrieves a Paginated list of all the children of the Category with the given inode
 	 * @return
 	 * @throws DotDataException
 	 */
-	public PaginatedCategories findChildren(User user, String inode, boolean respectFrontendRoles, int start, int count, String filter, String sort) throws DotDataException, DotSecurityException;
+	PaginatedCategories findChildren(User user, String inode, boolean respectFrontendRoles, int start, int count, String filter, String sort) throws DotDataException, DotSecurityException;
 	
 	/**
 	 * Deletes all the children of a given parent inode
@@ -155,13 +155,13 @@ public interface CategoryAPI {
 	 * @deprecated this will mess up with your transaction. Use removeXXXX methods instead
 	 */
 	
-	public void deleteChilren(String inode);
+	void deleteChilren(String inode);
 	/**
 	 * Retrieves the list of all top level categories in the system
 	 * @return
 	 * @throws DotDataException
 	 */
-	public List<Category> findChildren(User user, String inode, boolean respectFrontendRoles, String filter) throws DotDataException, DotSecurityException;
+	List<Category> findChildren(User user, String inode, boolean respectFrontendRoles, String filter) throws DotDataException, DotSecurityException;
 
 	
 	/**
@@ -175,7 +175,7 @@ public interface CategoryAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException 
 	 */
-	public void save(Category parent, Category object, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	void save(Category parent, Category object, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
     /**
      * Important: should be use only for Push Publish.
@@ -194,7 +194,7 @@ public interface CategoryAPI {
 	 * 
 	 * Mar 6, 2013 - 10:12:47 AM
 	 */
-	public void publishRemote(Category parent, Category object, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	void publishRemote(Category parent, Category object, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	
 	/**
 	 * Retrieves the list of children categories associated
@@ -207,7 +207,7 @@ public interface CategoryAPI {
 	 * @return
 	 * @throws DotDataException
 	 */
-	public List<Category> getChildren(Categorizable parent, boolean onlyActive, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	List<Category> getChildren(Categorizable parent, boolean onlyActive, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	
 	/**
 	 * Retrieves the list of children categories associated
@@ -223,7 +223,7 @@ public interface CategoryAPI {
 	 * @throws DotDataException
 	 * @deprecated this version doesn't leverage cache at all (!)
 	 */
-	public List<Category> getChildren(Categorizable parent, String relationType, boolean onlyActive,String orderBy, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	List<Category> getChildren(Categorizable parent, String relationType, boolean onlyActive,String orderBy, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Retrieves the list of children categories associated
@@ -236,7 +236,7 @@ public interface CategoryAPI {
 	 * @return
 	 * @throws DotDataException
 	 */
-	public List<Category> getChildren(Categorizable parent, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	List<Category> getChildren(Categorizable parent, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Retrieves the list of children categories associated
@@ -251,7 +251,7 @@ public interface CategoryAPI {
 	 * @throws DotDataException
 	 * @deprecated this version doesn't leverage cache at all (!)
 	 */
-	public List<Category> getChildren(Categorizable parent, boolean onlyActive, String orderBy, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	List<Category> getChildren(Categorizable parent, boolean onlyActive, String orderBy, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Retrieves the list of children categories associated
@@ -266,7 +266,7 @@ public interface CategoryAPI {
 	 * @throws DotDataException
 	 * @deprecated this version doesn't leverage cache at all (!)
 	 */
-	public List<Category> getChildren(Categorizable parent, String orderBy, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	List<Category> getChildren(Categorizable parent, String orderBy, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 * This methods associates the given children list to the given parent
@@ -276,7 +276,7 @@ public interface CategoryAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException 
 	 */
-	public void setChildren(Categorizable parent, List<Category> children, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	void setChildren(Categorizable parent, List<Category> children, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 * This method adds the given category to parent children list
@@ -286,7 +286,7 @@ public interface CategoryAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException 
 	 */
-	public void addChild(Categorizable parent, Category child, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	void addChild(Categorizable parent, Category child, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	
 	/**
 	 * This method adds the given category to parent children list
@@ -296,7 +296,7 @@ public interface CategoryAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException 
 	 */
-	public void addChild(Categorizable parent, Category child, String relationType, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	void addChild(Categorizable parent, Category child, String relationType, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Removes all the associated children categories
@@ -307,7 +307,7 @@ public interface CategoryAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException 
 	 */
-	public void removeChildren(Categorizable parent, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	void removeChildren(Categorizable parent, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	
 	/**
 	 * Removes from the list of children categories the 
@@ -318,7 +318,7 @@ public interface CategoryAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException 
 	 */
-	public void removeChild(Categorizable parent, Category child, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	void removeChild(Categorizable parent, Category child, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	
 	/**
 	 * Removes from the list of children categories the 
@@ -332,7 +332,7 @@ public interface CategoryAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException 
 	 */
-	public void removeChild(Categorizable parent, Category child, String relationType ,User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	void removeChild(Categorizable parent, Category child, String relationType ,User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	
 	/**
 	 * Retrieves the list of parents categories associated to the given
@@ -341,7 +341,7 @@ public interface CategoryAPI {
 	 * @return
 	 * @throws DotDataException
 	 */
-	public List<Category> getParents(Categorizable child, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	List<Category> getParents(Categorizable child, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	
 	/**
 	 * Retrieves the list of parents categories associated to the given
@@ -352,7 +352,7 @@ public interface CategoryAPI {
 	 * @return
 	 * @throws DotDataException
 	 */
-	public List<Category> getParents(Categorizable child, boolean onlyActive, String relationType,User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	List<Category> getParents(Categorizable child, boolean onlyActive, String relationType,User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Retrieves the list of parents categories associated to the given
@@ -361,7 +361,7 @@ public interface CategoryAPI {
 	 * @return
 	 * @throws DotDataException
 	 */
-	public List<Category> getParents(Categorizable child, boolean onlyActive, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	List<Category> getParents(Categorizable child, boolean onlyActive, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Associates to the given list of categories as parents of the child id/inode
@@ -372,7 +372,7 @@ public interface CategoryAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException 
 	 */
-	public void setParents(Categorizable child, List<Category> parents, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	void setParents(Categorizable child, List<Category> parents, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Adds the given category as a parent of the given children category
@@ -382,7 +382,7 @@ public interface CategoryAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException 
 	 */
-	public void addParent(Categorizable child, Category parent, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	void addParent(Categorizable child, Category parent, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Removes the parents associated to the given children category
@@ -392,7 +392,7 @@ public interface CategoryAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException 
 	 */
-	public void removeParents(Categorizable child, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	void removeParents(Categorizable child, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	
 	/**
 	 * Associates the given the list of categories as parents of the given children id
@@ -404,7 +404,7 @@ public interface CategoryAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException 
 	 */
-	public void removeParent(Categorizable child, Category parent, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	void removeParent(Categorizable child, Category parent, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	
 	/**
 	 * Recursive Method that returns a list of categories
@@ -414,7 +414,7 @@ public interface CategoryAPI {
 	 * @param category
 	 * @return
 	 */
-	public List<Category> getAllChildren(Category category, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	List<Category> getAllChildren(Category category, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 
 	/**
@@ -423,7 +423,7 @@ public interface CategoryAPI {
 	 * @param parentCategory
 	 * @return The List of categories that could not be deleted
 	 */
-	public List<Category>  removeAllChildren(Category parentCategory, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	List<Category>  removeAllChildren(Category parentCategory, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	/**
 	 * Retrieves a list all the line of parent categories of the given child category
 	 * a final fake top category is added at the beginning of the list to represent the top of
@@ -433,7 +433,7 @@ public interface CategoryAPI {
 	 * @return
 	 * @throws DotDataException 
 	 */
-	public List<Category> getCategoryTreeUp(Category child, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	List<Category> getCategoryTreeUp(Category child, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	
 	/**
 	 * 
@@ -448,12 +448,12 @@ public interface CategoryAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public List<Category> getCategoryTreeDown(Categorizable categorizable,Category catToSearchFrom, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	List<Category> getCategoryTreeDown(Categorizable categorizable,Category catToSearchFrom, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	
 	/**
 	 * This is a low level method only intended to be use for maintenance purposes 
 	 */
-	public void clearCache();
+	void clearCache();
 
 	 
 	
@@ -464,27 +464,27 @@ public interface CategoryAPI {
 	 * @throws DotSecurityException 
 	 * @throws DotDataException 
 	 */
-	public boolean hasDependencies(Category cat) throws DotDataException;
+	boolean hasDependencies(Category cat) throws DotDataException;
 	
-	public void sortTopLevelCategories()  throws DotDataException;
+	void sortTopLevelCategories()  throws DotDataException;
 	
-	public void sortChildren(String inode)  throws DotDataException;
+	void sortChildren(String inode)  throws DotDataException;
 	
 	/**
 	 * This method flushes the children cache 
 	 */
-	public void flushChildrenCache();
+	void flushChildrenCache();
 	
 	
 	/**
 	 * Determines if a givenParent is parent/grandParent/... and so on of a givenSon, recursively
 	 */
-	public boolean isParent(Category givenChild, Category givenParent, User user);
+	boolean isParent(Category givenChild, Category givenParent, User user);
 
 	/**
 	 * Determines if a givenParent is parent/grandParent/... and so on of a givenSon, recursively
 	 */
-	public boolean isParent(Category givenChild, Category givenParent, User user, boolean respectFrontendRoles);
+	boolean isParent(Category givenChild, Category givenParent, User user, boolean respectFrontendRoles);
 	
 	
 	/**
@@ -494,6 +494,6 @@ public interface CategoryAPI {
 	 * @return Suggestion for the Velocity Variable Name
 	 * @throws DotDataException Error occurred when performing the action.
 	 */
-	public String suggestVelocityVarName (String categoryVelVarName) throws DotDataException;
+	String suggestVelocityVarName (String categoryVelVarName) throws DotDataException;
 
 }

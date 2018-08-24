@@ -51,6 +51,9 @@ public class CategoryAjax {
 
 	private int maxLevel = 5;
 
+	private static int ALL_CATEGORIES_DELETED = 0;
+	private static int SOME_CATEGORIES_DELETED = 1;
+
 //	/**
 //	 * Returns all the categories and sub-categories of the given entity
 //	 * @param entityName The name of the entity to search over
@@ -234,24 +237,20 @@ public class CategoryAjax {
 		final WebContext ctx = WebContextFactory.get();
 		final HttpServletRequest request = ctx.getHttpServletRequest();
 		final User user =  WebAPILocator.getUserWebAPI().getLoggedInUser(request);
-		Integer catsWithDependencies = 0;
+		int returnValue = ALL_CATEGORIES_DELETED;
 
 		for (String inode : inodes) {
 			final Category catToDelete = categoryAPI.find(inode, user, false);
 			try {
 				categoryAPI.delete(catToDelete, user, false);
 			} catch(DotSecurityException | DotDataException e) {
-				catsWithDependencies++;
+				returnValue = SOME_CATEGORIES_DELETED;
 				Logger.error(this, "Error delete Category. Name: " +
 						catToDelete.getCategoryName() + ". Error: " + e.getMessage());
 			}
 		}
 
-		if(catsWithDependencies>0) {
-			return 1;
-		}
-
-		return 0;
+		return returnValue;
 	}
 
 	public Integer deleteCategories(String contextInode) throws Exception {
@@ -259,20 +258,20 @@ public class CategoryAjax {
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
 		User user = uWebAPI.getLoggedInUser(request);
-		AtomicInteger returnValue = new AtomicInteger(0);
+		int returnValue = ALL_CATEGORIES_DELETED;
 
 		if (UtilMethods.isSet(contextInode)) {
 			Category parent = categoryAPI.find(contextInode, user, false);
 			List<Category> unableToDelete = categoryAPI.removeAllChildren(parent, user, false);
 
 			if(UtilMethods.isSet(unableToDelete)) {
-				returnValue.set(1);
+				returnValue = SOME_CATEGORIES_DELETED;
 			}
 		} else {
 			categoryAPI.deleteAll(user, false);
 		}
 
-		return returnValue.get();
+		return returnValue;
 	}
 
 	public Integer saveOrUpdateCategory(Boolean save, String inode, String name, String var, String key, String keywords) throws Exception {

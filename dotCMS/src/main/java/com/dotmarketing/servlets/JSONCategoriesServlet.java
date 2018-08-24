@@ -33,24 +33,22 @@ public class JSONCategoriesServlet extends HttpServlet implements Servlet {
 
 		UtilMethods.removeBrowserCache(response);
 
-		final UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
+		final UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
 		User user;
 
 		try {
 
 			final boolean isAuthenticationNeeded = Config.getBooleanProperty
 								(JSON_CATEGORIES_SERVLET_AUTHENTICATION_NEEDED, true);
-			if ((user = uWebAPI.getLoggedInUser(request)) == null && isAuthenticationNeeded) {
+			if ((user = userWebAPI.getLoggedInUser(request)) == null && isAuthenticationNeeded) {
 
 				response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
 				return;
 			}
 
 			String inode = request.getParameter("inode");
-			final String action = request.getParameter("action");
 			String q = request.getParameter("q");
 			final String permission = request.getParameter("permission");
-			final String reorder = request.getParameter("reorder");
 
 			if(UtilMethods.isSet(permission)) {
 				loadPermission(inode, request, response);
@@ -60,6 +58,8 @@ public class JSONCategoriesServlet extends HttpServlet implements Servlet {
             q = StringEscapeUtils.unescapeJava( q );
 			inode = (UtilMethods.isSet(inode) && inode.equals("undefined")) ? null : inode;
 			q = (UtilMethods.isSet(q) && q.equals("undefined")) ? null : q;
+
+			final String action = request.getParameter("action");
 
 			if(UtilMethods.isSet(action) && action.equals("export")) {
 				exportCategories(request, response, inode, q);
@@ -82,6 +82,7 @@ public class JSONCategoriesServlet extends HttpServlet implements Servlet {
 			}
 
 			final Boolean topLevelCats = !UtilMethods.isSet(inode);
+			final String reorder = request.getParameter("reorder");
 
 			if(UtilMethods.isSet(reorder) && reorder.equalsIgnoreCase("TRUE")) {
 				if(topLevelCats) {
@@ -94,12 +95,12 @@ public class JSONCategoriesServlet extends HttpServlet implements Servlet {
 			final PaginatedCategories pagCategories = topLevelCats?catAPI.findTopLevelCategories(user, false, start, count, q, sort):
 					catAPI.findChildren(user, inode, false, start, count, q, sort);
 
-			List<Map<String,Object>> items = new ArrayList<>();
-			List<Category> categories = pagCategories.getCategories();
+			final List<Map<String,Object>> items = new ArrayList<>();
+			final List<Category> categories = pagCategories.getCategories();
 
 			if(categories!=null) {
 				for (Category category : categories) {
-					Map<String,Object> catMap = new HashMap();
+					final Map<String,Object> catMap = new HashMap();
 					catMap.put("inode", category.getInode());
 					catMap.put("category_name", category.getCategoryName());
 					catMap.put("category_key", category.getKey());

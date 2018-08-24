@@ -14,11 +14,9 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.UUID;
+
+import java.util.*;
+
 /**
  *	This class is an specific implementation of the CategoryAPI API to manage
  *  dotCMS categories
@@ -576,7 +574,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 										 final boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
 
-		List<Category> unableToDelete = new ArrayList<>();
+		List<Category> unableToDelete = Collections.unmodifiableList(new ArrayList<>());
 
 		List<Category> categoriesToDelete = getChildren(parentCategory, user, false);
 		categoriesToDelete.forEach((category)-> {
