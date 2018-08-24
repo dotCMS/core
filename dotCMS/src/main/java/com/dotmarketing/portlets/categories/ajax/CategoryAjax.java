@@ -51,8 +51,8 @@ public class CategoryAjax {
 
 	private int maxLevel = 5;
 
-	private static int ALL_CATEGORIES_DELETED = 0;
-	private static int SOME_CATEGORIES_DELETED = 1;
+	private static final int ALL_CATEGORIES_DELETED = 0;
+	private static final int SOME_CATEGORIES_DELETED = 1;
 
 //	/**
 //	 * Returns all the categories and sub-categories of the given entity
