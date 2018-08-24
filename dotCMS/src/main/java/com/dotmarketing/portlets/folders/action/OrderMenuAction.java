@@ -109,8 +109,6 @@ public class OrderMenuAction extends DotPortletAction {
 					_sendToReferral(req,res,req.getParameter("referer"));
 					return;
 				}
-				_sendToReferral(req,res,"/html/portlet/ext/folders/redirect_after_order.jsp");
-
 
 				// we have to clear navs after db commit
 				for(Treeable treeable : navs){
@@ -127,7 +125,7 @@ public class OrderMenuAction extends DotPortletAction {
 				}
 
 				DateUtil.sleep(1500L);
-
+				setForward(req,"blank");
 				return;
 			}
 
