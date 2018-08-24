@@ -65,6 +65,13 @@ function goBack()
 	<% } %>
 }
 
+function emmitCancelEvent() {
+    var customEvent = document.createEvent("CustomEvent");
+    customEvent.initCustomEvent("ng-event", false, false,  {
+        name: "cancel-save-menu-order"
+    });
+    document.dispatchEvent(customEvent)
+}
 </script>
 
 <%
@@ -163,7 +170,7 @@ td li li{
 			   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save-changes")) %>
 	                    </button>       
 		<%} %>
-        <button dojoType="dijit.form.Button" onClick="parent.window.location.href='/html/portlet/ext/folders/redirect_after_order.jsp'" iconClass="cancelIcon">
+        <button dojoType="dijit.form.Button" onClick="emmitCancelEvent()" iconClass="cancelIcon">
 
          <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
        </button>
