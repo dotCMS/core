@@ -41,7 +41,9 @@ function savechanges() {
 	form.cmd.value = "generatemenu";
 	form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/folders/order_menu" /></portlet:actionURL>';
 	document.getElementById('reorder_result').value = serialize();
-	submitForm(form);
+    submitForm(form, null, null, function(){
+        emitOkEvent();
+    });
 }
 function moveMenuItemDown(menuItem,parentFolder){
  	document.getElementById('item').value=menuItem;
@@ -65,10 +67,18 @@ function goBack()
 	<% } %>
 }
 
-function emmitCancelEvent() {
+function emitCancelEvent() {
     var customEvent = document.createEvent("CustomEvent");
     customEvent.initCustomEvent("ng-event", false, false,  {
         name: "cancel-save-menu-order"
+    });
+    document.dispatchEvent(customEvent)
+}
+
+function emitOkEvent() {
+    var customEvent = document.createEvent("CustomEvent");
+    customEvent.initCustomEvent("ng-event", false, false,  {
+        name: "ok-save-menu-order"
     });
     document.dispatchEvent(customEvent)
 }
@@ -112,7 +122,7 @@ pagePath=<%=pagePath%>
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
 	<liferay:param name="box_title" value="Order Menu Items" />
 
-	<form id="fm" method="post">
+	<form id="fm" method="post" onSubmit="emitOkEvent()">
 		<input type="hidden" name="referer" value="<%=referer%>">
 		<input type="hidden" name="cmd" value="reorder">
 		<input type="hidden" name="item" id="item" value="">
@@ -170,7 +180,7 @@ td li li{
 			   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save-changes")) %>
 	                    </button>       
 		<%} %>
-        <button dojoType="dijit.form.Button" onClick="emmitCancelEvent()" iconClass="cancelIcon">
+        <button dojoType="dijit.form.Button" onClick="emitCancelEvent()" iconClass="cancelIcon">
 
          <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
        </button>
