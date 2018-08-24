@@ -6,15 +6,11 @@ import com.dotcms.enterprise.publishing.remote.bundler.HostBundler;
 import com.dotcms.enterprise.publishing.remote.handler.HostHandler;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publishing.BundlerStatus;
-import com.dotcms.publishing.DotBundleException;
-import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
@@ -42,8 +38,12 @@ public class HostBundlerHandlerTest extends IntegrationTestBase {
         user = APILocator.getUserAPI().getSystemUser();
     }
 
+    /**
+     * This test creates a host and add it to a bundle as an unpublish operation (push-remove option).
+     * After a couple of seconds, the HostHandler handle this bundle and apply the operation (removes the host)
+     */
     @Test
-    public void testBundlerHandler_Unpublish_Success() throws Exception {
+    public void testBundlerHandler_UnpublishHost_Success() throws Exception {
         final BundlerStatus status;
         final String assetRealPath = Config.getStringProperty("ASSET_REAL_PATH", "test-resources");
         final File tempDir = new File(assetRealPath + "/bundles/" + System.currentTimeMillis());
@@ -91,7 +91,7 @@ public class HostBundlerHandlerTest extends IntegrationTestBase {
             Thread.sleep(5000); //Let's wait a couple of seconds before running the Hanlder
 
             //Handler
-            HostHandler hostHandler = new HostHandler(config);
+            final HostHandler hostHandler = new HostHandler(config);
             hostHandler.handle(tempDir);
 
             Assert.assertEquals(2, APILocator.getHostAPI().findAll(user, false).size());
