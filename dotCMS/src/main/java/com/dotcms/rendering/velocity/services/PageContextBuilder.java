@@ -60,7 +60,7 @@ public class PageContextBuilder {
     final PageMode mode;
     final Date timeMachine;
     List<Tag> pageFoundTags;
-
+    final StringBuilder widgetPreExecute = new StringBuilder();
     final static String WIDGET_PRE_EXECUTE = "WIDGET_PRE_EXECUTE";
 
     public PageContextBuilder(IHTMLPage htmlPage, User user, PageMode mode, Date timeMachine)
@@ -228,11 +228,7 @@ public class PageContextBuilder {
                             if (type.baseType() == BaseContentType.WIDGET) {
                                 com.dotcms.contenttype.model.field.Field field = type.fieldMap() .get("widgetPreexecute");
                                 if (field != null && UtilMethods.isSet(field.values())) {
-
-                                    String widgetCode = !UtilMethods.isSet(ctxMap.get(WIDGET_PRE_EXECUTE)) 
-                                        ? field.values()
-                                            : ((String) ctxMap.get(WIDGET_PRE_EXECUTE)+ field.values() );
-                                    ctxMap.put(WIDGET_PRE_EXECUTE, widgetCode );
+                                  widgetPreExecute.append(field.values());
                                 }
                             }
 
@@ -280,6 +276,9 @@ public class PageContextBuilder {
     }
 
 
+    final String getWidgetPreExecute() {
+      return this.widgetPreExecute.toString();
+    }
 
 
     public Context addAll(Context incoming) {

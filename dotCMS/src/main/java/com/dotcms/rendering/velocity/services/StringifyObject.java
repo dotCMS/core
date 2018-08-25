@@ -80,7 +80,7 @@ final class StringifyObject {
         StringWriter sw = new StringWriter();
 
             sw.append('"');
-            sw.append(x.toString().replace("\"", "${esc.q}"));
+            sw.append(x.toString().replace("\"", "`"));
             sw.append('"');
             return  sw.toString();
         

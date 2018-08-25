@@ -109,6 +109,17 @@ public class PageLoader implements DotLoader {
             }
         }
 
+        /**
+         * Serializes the page variables and pointers to 
+         * the content (multitree ebtries)
+         * in the page velocity template
+         */
+        if (mode == PageMode.LIVE) {
+          final PageContextBuilder pce = new PageContextBuilder(htmlPage, sys, mode);
+          sb.append(pce.getWidgetPreExecute());
+          sb.append(pce.asString());
+        }
+      
 
 
         sb.append("#set($dotPageContent = $dotcontent.find(\"" + htmlPage.getInode() + "\" ))");
@@ -127,13 +138,7 @@ public class PageLoader implements DotLoader {
             .append("')")
             .append("#end");
 
-        if(mode == PageMode.LIVE) {
-            sb.append(new PageContextBuilder(htmlPage, sys, mode).asString());
-        }
-        
-        
-        
-        sb.append("$!{" + PageContextBuilder.WIDGET_PRE_EXECUTE+"}");
+
         
         
         
