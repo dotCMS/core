@@ -1,5 +1,10 @@
 package com.dotcms.rendering.velocity.services;
 
+import java.io.File;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -16,14 +21,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.TagUtil;
-
-import java.io.File;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.velocity.runtime.resource.ResourceManager;
-
 import com.liferay.portal.model.User;
 
 /**

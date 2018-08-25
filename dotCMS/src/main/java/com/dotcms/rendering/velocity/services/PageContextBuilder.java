@@ -5,35 +5,6 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
-import com.dotcms.repackage.com.ibm.icu.text.SimpleDateFormat;
-
-import com.dotmarketing.beans.ContainerStructure;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
-import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.tag.model.Tag;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.UtilMethods;
-
 import java.io.StringWriter;
 import java.util.Date;
 import java.util.HashMap;
@@ -41,18 +12,42 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
-
-import org.apache.velocity.context.Context;
-
-import com.google.common.collect.Table;
-import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.velocity.context.Context;
+
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.repackage.com.ibm.icu.text.SimpleDateFormat;
+import com.dotmarketing.beans.ContainerStructure;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
+import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.tag.model.Tag;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.Table;
+import com.liferay.portal.model.User;
+
 public class PageContextBuilder {
-    private static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+    private  final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
     final IHTMLPage htmlPage;
     final User user;
@@ -60,7 +55,7 @@ public class PageContextBuilder {
     final PageMode mode;
     final Date timeMachine;
     List<Tag> pageFoundTags;
-    final StringBuilder widgetPreExecute = new StringBuilder();
+    final StringBuilder widgetPreExecute;
     final static String WIDGET_PRE_EXECUTE = "WIDGET_PRE_EXECUTE";
 
     public PageContextBuilder(IHTMLPage htmlPage, User user, PageMode mode, Date timeMachine)
@@ -71,6 +66,7 @@ public class PageContextBuilder {
         this.ctxMap = new HashMap<>();
         this.mode = mode;
         this.timeMachine = timeMachine;
+        this.widgetPreExecute = new StringBuilder();
         populateContext();
         populateContainers();
     }
