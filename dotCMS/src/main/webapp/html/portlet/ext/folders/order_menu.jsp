@@ -41,8 +41,14 @@ function savechanges() {
 	form.cmd.value = "generatemenu";
 	form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/folders/order_menu" /></portlet:actionURL>';
 	document.getElementById('reorder_result').value = serialize();
-    submitForm(form, null, null, function(){
-        emitOkEvent();
+    submitAjaxForm({
+        form: form,
+        success: function() {
+            emitOkEvent();
+        },
+        error: function(){
+            console.log('ERROR');
+        }
     });
 }
 function moveMenuItemDown(menuItem,parentFolder){

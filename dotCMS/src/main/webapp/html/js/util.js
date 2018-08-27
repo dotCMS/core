@@ -763,6 +763,24 @@ function submitForm(form, action, singleSubmit, callback) {
 	}
 }
 
+function submitAjaxForm(options) {
+    var request = new XMLHttpRequest();
+    request.open('POST', options.form.action, true);
+
+    var formData = new FormData(form);
+    request.send(formData);
+
+    request.onreadystatechange = function () {
+        if (request.readyState === 4) {
+            // 200 - 299 = successful
+            if (request.status == 200 && request.status < 300)
+                options.success();
+            else
+                options.error();
+        }
+    };
+}
+
 // String functions
 
 function startsWith(str, x) {
