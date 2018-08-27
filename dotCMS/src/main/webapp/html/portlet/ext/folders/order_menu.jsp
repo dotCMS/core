@@ -46,9 +46,7 @@ function savechanges() {
         success: function() {
             emitOkEvent();
         },
-        error: function(){
-            console.log('ERROR');
-        }
+        error: emitErrorEvent
     });
 }
 function moveMenuItemDown(menuItem,parentFolder){
@@ -72,6 +70,15 @@ function goBack()
 		window.location.href = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/folders/order_menu" /></portlet:actionURL>';
 	<% } %>
 }
+
+function emitErrorEvent() {
+    var customEvent = document.createEvent("CustomEvent");
+    customEvent.initCustomEvent("ng-event", false, false,  {
+        name: "error-saving-menu-order"
+    });
+    document.dispatchEvent(customEvent)
+}
+
 
 function emitCancelEvent() {
     var customEvent = document.createEvent("CustomEvent");
