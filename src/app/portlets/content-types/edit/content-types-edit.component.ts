@@ -162,9 +162,7 @@ export class ContentTypesEditComponent implements OnInit {
      */
     saveFields(fieldsToSave: ContentTypeField[]): void {
         this.fieldService.saveFields(this.data.id, fieldsToSave).subscribe((fields: ContentTypeField[]) => {
-            if (!fieldsToSave[0].id) {
-                this.fields = fields;
-            }
+            this.fields = fields;
         }, (err: ResponseView) => {
             this.dotHttpErrorManagerService.handle(err).subscribe((() => {}));
         });
