@@ -72,28 +72,28 @@ function goBack()
 }
 
 function emitErrorEvent() {
-    var customEvent = document.createEvent("CustomEvent");
+    var customEvent = window.top.document.createEvent("CustomEvent");
     customEvent.initCustomEvent("ng-event", false, false,  {
         name: "error-saving-menu-order"
     });
-    document.dispatchEvent(customEvent)
+    window.top.document.dispatchEvent(customEvent)
 }
 
 
 function emitCancelEvent() {
-    var customEvent = document.createEvent("CustomEvent");
+    var customEvent = window.top.document.createEvent("CustomEvent");
     customEvent.initCustomEvent("ng-event", false, false,  {
         name: "cancel-save-menu-order"
     });
-    document.dispatchEvent(customEvent)
+    window.top.document.dispatchEvent(customEvent)
 }
 
 function emitOkEvent() {
-    var customEvent = document.createEvent("CustomEvent");
+    var customEvent = window.top.document.createEvent("CustomEvent");
     customEvent.initCustomEvent("ng-event", false, false,  {
         name: "save-menu-order"
     });
-    document.dispatchEvent(customEvent)
+    window.top.document.dispatchEvent(customEvent)
 }
 </script>
 
