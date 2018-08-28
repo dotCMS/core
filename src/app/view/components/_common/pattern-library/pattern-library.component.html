@@ -2,6 +2,8 @@
 <div class="pl__forms">
     <p-dropdown [options]="dropdownOptions"></p-dropdown>
     <p-dropdown tiny [options]="dropdownOptions"></p-dropdown>
+    <p-multiSelect [options]="selectButtonStates" [maxSelectedLabels]="2"></p-multiSelect>
+    <p-multiSelect [options]="selectButtonStates" [maxSelectedLabels]="2" [disabled]="true"></p-multiSelect>
     <input type="text" pInputText value="Hello World"/>
     <textarea pInputTextarea>Hello World</textarea>
     <div class="pl__buttons">

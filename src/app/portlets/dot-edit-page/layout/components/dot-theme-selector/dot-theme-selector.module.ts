@@ -6,6 +6,7 @@ import { ButtonModule, DataGridModule, DialogModule, DropdownModule, InputTextMo
 import { FormsModule } from '@angular/forms';
 import { SiteSelectorModule } from '../../../../../view/components/_common/site-selector/site-selector.module';
 import { DotIconModule } from '../../../../../view/components/_common/dot-icon/dot-icon.module';
+import { DotDialogModule } from '../../../../../view/components/dot-dialog/dot-dialog.module';
 
 @NgModule({
     declarations: [DotThemeSelectorComponent],
@@ -18,6 +19,7 @@ import { DotIconModule } from '../../../../../view/components/_common/dot-icon/d
         SiteSelectorModule,
         InputTextModule,
         DataGridModule,
+        DotDialogModule,
         DotIconModule
     ],
     exports: [DotThemeSelectorComponent],

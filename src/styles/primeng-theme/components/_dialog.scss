@@ -22,14 +22,13 @@
     }
 
     .ui-dialog-footer {
-        border-top: solid 1px $gray-bg;
         padding: $dialog-padding-footer;
     }
 
     .ui-dialog-content,
     &.ui-confirmdialog .ui-dialog-content {
         margin: 0;
-        padding: 0 $dialog-padding $dialog-padding;
+        padding: 17px $basic-padding * 4 $dialog-padding;
     }
 
     .ui-dialog-content {
@@ -58,7 +57,7 @@
     }
 
     .ui-dialog-titlebar {
-        padding: $dialog-padding;
+        padding: $dialog-padding $basic-padding * 4;
     }
 
     .ui-dialog-titlebar-close,

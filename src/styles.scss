@@ -11,7 +11,7 @@
 @import "styles/primeng-theme/base";
 
 // MATERIAL DESIGN ICONS
-@import "../node_modules/material-design-icons/iconfont/material-icons.css";
+@import url("https://fonts.googleapis.com/icon?family=Material+Icons");
 
 // DIRECTIVES
 @import "app/view/directives/ripple/ripple-effect.directive.scss";

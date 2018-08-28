@@ -1,19 +1,36 @@
 @import 'variables';
+@import 'primeng-theme/utils/theme-variables';
 
 $theme-item-dimension: 240px;
 
-::ng-deep {
+:host ::ng-deep {
+
+    .ui-dialog{
+        min-width: 1056px !important;
+    }
+
+    @media (max-width: 1100px) {
+        .ui-dialog{
+            min-width: calc(100vw - 5vw) !important;
+        }
+    }
+    
+    .ui-dialog .ui-dialog-content {
+        padding: 17px $basic-padding + 12 $dialog-padding;
+    }
+
     dot-site-selector {
+        margin-left: 12px;
+
         dot-searchable-dropdown .ui-button,
         .site-selector__title {
             font-size: $font-size-large;
-            min-width: 180px;
+            min-width: 200px;
         }
     }
 
     .ui-datagrid-content {
-        width: $theme-item-dimension * 4 + $basic-padding * 6;
-        height: $theme-item-dimension * 2 + $basic-padding * 4;
+        max-width: 1056px;
 
         .ui-g {
             margin: 0;
@@ -27,8 +44,9 @@ $theme-item-dimension: 240px;
     }
 }
 
-.dot-themes-container {
-    margin-top: $basic-padding * 2;
+.dot-theme-container {
+    margin-top: $basic-padding;
+    min-height: 550px;
 }
 
 .dot-theme-search-box {
@@ -43,16 +61,17 @@ $theme-item-dimension: 240px;
 }
 
 .dot-theme-item {
-    margin: $basic-padding * 2 $basic-padding * 2 0 0;
-    width: $theme-item-dimension;
-    height: $theme-item-dimension;
-    background: $gray-bg;
     align-items: center;
-    padding: $basic-padding * 3 $basic-padding * 2;
+    background: $gray-bg;
+    border-radius: 4px;
+    cursor: pointer;
     display: flex;
     flex-direction: column;
-    cursor: pointer;
-    border-radius: 4px;
+    height: $theme-item-dimension;
+    margin: $basic-padding * 3 $basic-padding * 3 / 2 0;
+    padding: $basic-padding * 3 $basic-padding * 2;
+    transition: background-color $field-animation-speed ease-in;
+    width: $theme-item-dimension;
 
     svg {
         fill: $gray;
@@ -64,21 +83,6 @@ $theme-item-dimension: 240px;
         box-shadow: $md-shadow-3;
         background: $white;
     }
-}
-
-.dot-theme-item:nth-child(4n) {
-    margin-right: 0;
-}
-
-.dot-theme-item__name {
-    padding-top: $basic-padding * 3;
-    font-size: $font-size-x-large;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    text-align: center;
-    width: 100%;
-    line-height: 20px;
 }
 
 .dot-theme-iteme__image{

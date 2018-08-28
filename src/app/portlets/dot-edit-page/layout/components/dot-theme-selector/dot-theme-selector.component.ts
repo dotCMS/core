@@ -5,6 +5,7 @@ import { PaginatorService } from '../../../../../api/services/paginator/paginato
 import { DataGrid, LazyLoadEvent } from 'primeng/primeng';
 import { Observable } from 'rxjs/Observable';
 import { Site, SiteService } from 'dotcms-js/dotcms-js';
+import { DotDialogAction, DotDialogComponent } from '../../../../../view/components/dot-dialog/dot-dialog.component';
 
 /**
  * The DotThemeSelectorComponent is modal that
@@ -20,12 +21,15 @@ import { Site, SiteService } from 'dotcms-js/dotcms-js';
 })
 export class DotThemeSelectorComponent implements OnInit {
     themes: Observable<DotTheme[]>;
+    @ViewChild('dotDialog') dotDialog: DotDialogComponent;
     @Input() value: DotTheme;
     @Output() selected = new EventEmitter<DotTheme>();
     @Output() close = new EventEmitter<boolean>();
     @ViewChild('searchInput') searchInput: ElementRef;
     @ViewChild('dataGrid') datagrid: DataGrid;
 
+    closeDialogAction: DotDialogAction = { label: '', action: () => {} };
+    applyDialogAction: DotDialogAction = { label: '', action: () => {} };
     current: DotTheme;
 
     constructor(public dotMessageService: DotMessageService, public paginatorService: PaginatorService, private siteService: SiteService) {}
@@ -39,7 +43,19 @@ export class DotThemeSelectorComponent implements OnInit {
                 'dot.common.apply',
                 'dot.common.cancel'
             ])
-            .subscribe();
+            .subscribe(() => {
+                this.closeDialogAction = {
+                    label: this.dotMessageService.get('dot.common.cancel'),
+                    action: () => {}
+                };
+                this.applyDialogAction  = {
+                    label: this.dotMessageService.get('dot.common.apply'),
+                    disabled: true,
+                    action: () => {
+                        this.apply();
+                    }
+                };
+            });
         this.paginatorService.url = 'v1/themes';
         this.paginatorService.setExtraParams('hostId', this.siteService.currentSite.identifier);
         this.paginatorService.paginationPerPage = 8;
@@ -85,6 +101,9 @@ export class DotThemeSelectorComponent implements OnInit {
      */
     selectTheme(theme: DotTheme): void {
         this.current = theme;
+        this.applyDialogAction = Object.assign({}, this.applyDialogAction, {
+            disabled : this.value.inode === this.current.inode
+        });
     }
 
     /**

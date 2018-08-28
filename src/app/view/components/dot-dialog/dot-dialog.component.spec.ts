@@ -6,6 +6,7 @@ import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DialogModule, Dialog } from 'primeng/primeng';
 import { By } from '@angular/platform-browser';
 import { DotDialogComponent, DotDialogAction } from './dot-dialog.component';
+import { DotIconButtonModule } from '../_common/dot-icon-button/dot-icon-button.module';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -31,7 +32,7 @@ describe('DotDialogComponent', () => {
 
     beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
-            imports: [DialogModule, BrowserAnimationsModule],
+            imports: [DialogModule, BrowserAnimationsModule, DotIconButtonModule],
             providers: [],
             declarations: [DotDialogComponent, TestHostComponent]
         }).compileComponents();
@@ -62,11 +63,20 @@ describe('DotDialogComponent', () => {
             expect(dialogComponent.draggable).toEqual(false, 'draggable');
             expect(dialogComponent.dismissableMask).toEqual(true, 'dismissableMask');
             expect(dialogComponent.modal).toEqual(true, 'modal');
-            expect(dialogComponent.header).toBe('This is a header');
+            expect(component.header).toBe('This is a header');
         });
     });
 
     describe('events', () => {
+        it('header "x" button should trigger the close action', () => {
+            hostFixture.detectChanges();
+
+            spyOn(component.close, 'emit');
+            const closeButton = dialog.query(By.css('p-header dot-icon-button'));
+            closeButton.nativeElement.click();
+            expect(component.close.emit).toHaveBeenCalledTimes(1);
+        });
+
         it('should emit close', () => {
             hostComponent.show = true;
             hostFixture.detectChanges();
@@ -104,7 +114,6 @@ describe('DotDialogComponent', () => {
     });
 
     describe('body content', () => {
-
         beforeEach(() => {
             hostFixture.detectChanges();
         });
@@ -117,7 +126,6 @@ describe('DotDialogComponent', () => {
         });
     });
 
-
     describe('actions', () => {
         it('should not have footer', () => {
             hostFixture.detectChanges();
@@ -126,22 +134,28 @@ describe('DotDialogComponent', () => {
 
             expect(footer).toBeNull('must have not footer');
 
-            const buttons = dialog.queryAll(By.css('button'));
+            const buttons = dialog.queryAll(By.css('ui-dialog-footer button'));
             expect(buttons.length).toBe(0, 'must have not buttons');
         });
 
-        describe('ok button', () => {
+        describe('re-center', () => {
+            it('should have ok button', fakeAsync(() => {
+                spyOn(dialogComponent, 'center');
+                component.reRecenter();
+                tick();
+                expect(dialogComponent.center).toHaveBeenCalled();
+            }));
+        });
 
-            beforeEach(() => {
+        describe('ok button', () => {
+            it('should have ok button', () => {
                 hostComponent.ok = {
                     label: 'Ok',
-                    action: jasmine.createSpy('ok'),
+                    disabled: true,
+                    action: jasmine.createSpy('ok')
                 };
 
                 hostFixture.detectChanges();
-            });
-
-            it('shouls have ok button', () => {
                 const footer = dialog.query(By.css('p-footer'));
                 expect(footer).not.toBeNull('must have footer');
 
@@ -149,10 +163,18 @@ describe('DotDialogComponent', () => {
                 expect(buttons.length).toBe(1, 'should have ok button');
 
                 expect(buttons[0].nativeElement.className).toContain('dot-dialog__ok', 'should have the right class');
+                expect(buttons[0].properties.disabled).toBe(true, 'should be disabled');
                 // expect(buttons[0].componentInstance.label).toBe('Ok', 'should have the right label');
             });
 
-            it('shouls tigger the right action', () => {
+            it('should trigger the right action', () => {
+                hostComponent.ok = {
+                    label: 'Ok',
+                    action: jasmine.createSpy('ok')
+                };
+
+                hostFixture.detectChanges();
+
                 const footer = dialog.query(By.css('p-footer'));
                 const buttons = footer.queryAll(By.css('button'));
 
@@ -161,13 +183,11 @@ describe('DotDialogComponent', () => {
             });
         });
 
-
         describe('cancel button', () => {
-
             beforeEach(() => {
                 hostComponent.cancel = {
                     label: 'Cancel',
-                    action: jasmine.createSpy('cancel'),
+                    action: jasmine.createSpy('cancel')
                 };
 
                 hostFixture.detectChanges();
@@ -184,26 +204,27 @@ describe('DotDialogComponent', () => {
                 // expect(buttons[0].componentInstance.label).toBe('Cancel', 'should have the right label');
             });
 
-            it('shouls tigger the right action', () => {
+            it('shouls trigger the right action', () => {
                 const footer = dialog.query(By.css('p-footer'));
                 const buttons = footer.queryAll(By.css('button'));
+                spyOn(component, 'closeDialog');
 
                 buttons[0].triggerEventHandler('click', null);
+                expect(component.closeDialog).toHaveBeenCalled();
                 expect(hostComponent.cancel.action).toHaveBeenCalled();
             });
         });
 
         describe('both buttons', () => {
-
             beforeEach(() => {
                 hostComponent.cancel = {
                     label: 'Cancel',
-                    action: jasmine.createSpy('cancel'),
+                    action: jasmine.createSpy('cancel')
                 };
 
                 hostComponent.ok = {
                     label: 'Ok',
-                    action: jasmine.createSpy('ok'),
+                    action: jasmine.createSpy('ok')
                 };
 
                 hostFixture.detectChanges();

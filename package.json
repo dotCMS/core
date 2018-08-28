@@ -38,7 +38,6 @@
         "core-js": "^2.5.3",
         "dotcms-rules-engine": "^0.0.7",
         "lodash": "^4.17.4",
-        "material-design-icons": "^3.0.1",
         "md5": "^2.2.1",
         "moment": "^2.19.4",
         "ng2-ace-editor": "^0.2.5",

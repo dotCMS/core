@@ -26,7 +26,8 @@ export class PatternLibraryComponent implements OnInit {
         this.selectButtonStates = [
             { label: 'Value 1', value: 'one' },
             { label: 'Value 2', value: 'two' },
-            { label: 'Value 3', value: 'three' }
+            { label: 'Value 3', value: 'three' },
+            { label: 'Value 4', value: 'four' }
         ];
 
         this.selectButtonValue = 'one';

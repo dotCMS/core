@@ -16,6 +16,8 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { PaginatorService } from '../../../../../api/services/paginator/paginator.service';
 import { DotThemesServiceMock } from '../../../../../test/dot-themes-service.mock';
 import { DotIconModule } from '../../../../../view/components/_common/dot-icon/dot-icon.module';
+import { DotDialogModule } from '../../../../../view/components/dot-dialog/dot-dialog.module';
+import { DotDialogComponent } from '../../../../../view/components/dot-dialog/dot-dialog.component';
 
 describe('DotThemeSelectorComponent', () => {
     let component: DotThemeSelectorComponent;
@@ -29,13 +31,14 @@ describe('DotThemeSelectorComponent', () => {
     });
     const siteServiceMock = new SiteServiceMock();
     let dialog;
+    let dotDialog: DotDialogComponent;
     let paginatorService: PaginatorService;
     let dotThemesService: DotThemesService;
 
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
             declarations: [DotThemeSelectorComponent],
-            imports: [DataGridModule, SiteSelectorModule, BrowserAnimationsModule, DotIconModule],
+            imports: [DataGridModule, SiteSelectorModule, BrowserAnimationsModule, DotDialogModule, DotIconModule],
             providers: [
                 {
                     provide: DotThemesService,
@@ -54,6 +57,7 @@ describe('DotThemeSelectorComponent', () => {
         component = fixture.componentInstance;
         de = fixture.debugElement;
         dialog = de.query(By.css('p-dialog')).componentInstance;
+        dotDialog = de.query(By.css('dot-dialog')).componentInstance;
         component.value = Object.assign({}, mockDotThemes[0]);
         paginatorService = de.injector.get(PaginatorService);
         dotThemesService = de.injector.get(DotThemesService);
@@ -68,28 +72,28 @@ describe('DotThemeSelectorComponent', () => {
             expect(dialog.visible).toBeTruthy();
         });
 
-        it('should emit close event when click on cancel button', () => {
-            const cancelBtn = de.query(By.css('.cancel'));
-            spyOn(component.close, 'emit');
-            cancelBtn.triggerEventHandler('click', {});
-            expect(component.close.emit).toHaveBeenCalled();
-        });
-
         it('should not be draggable, modal and have dismissable Mask', () => {
-            expect(dialog.closable).toBe(true, 'closable');
+            expect(dialog.closable).toBe(false, 'closable');
             expect(dialog.draggable).toBe(false, 'draggable');
             expect(dialog.modal).toBe(true, 'modal');
         });
 
-        it('should call the apply method and emit the selected value', () => {
-            const applyBtn = de.query(By.css('.apply'));
-            spyOn(component, 'apply').and.callThrough();
-            spyOn(component.selected, 'emit');
-            component.current = Object.assign({}, mockDotThemes[1]);
-            fixture.detectChanges();
-            applyBtn.triggerEventHandler('click', {});
-
-            expect(component.selected.emit).toHaveBeenCalledWith(mockDotThemes[1]);
+        it('should have defined Dialog actions for Apply/Cancel buttons', () => {
+            const applyDialogActionTpl = {
+                label: messageServiceMock.get('dot.common.apply'),
+                disabled: true,
+                action: () => {
+                    this.apply();
+                }
+            };
+            const closeDialogActionTpl = {
+                label: messageServiceMock.get('dot.common.cancel'),
+                action: (dialogElem) => {
+                    dialogElem.closeDialog();
+                }
+            };
+            expect(JSON.stringify(component.applyDialogAction)).toBe(JSON.stringify(applyDialogActionTpl));
+            expect(JSON.stringify(component.closeDialogAction)).toBe(JSON.stringify(closeDialogActionTpl));
         });
     });
 
@@ -122,9 +126,7 @@ describe('DotThemeSelectorComponent', () => {
 
         it('should disable the apply button', () => {
             fixture.detectChanges();
-            const applyButton: DebugElement = fixture.debugElement.query(By.css('.apply'));
-
-            expect(applyButton.nativeElement.disabled).toBe(true);
+            expect(component.applyDialogAction.disabled).toBe(true);
         });
 
         it('should show theme image when available', () => {
@@ -172,22 +174,18 @@ describe('DotThemeSelectorComponent', () => {
             themes[1].nativeElement.click();
             fixture.detectChanges();
 
-            expect(applyButton.nativeElement.disabled).toBe(false);
-            expect(themes[1].nativeElement.classList.contains('active')).toBe(true);
+            expect(component.applyDialogAction.disabled).toBe(false);
         });
 
-        it(
-            'should call theme enpoint on search',
-            fakeAsync(() => {
-                spyOn(component, 'paginate');
-                fixture.detectChanges();
-                component.searchInput.nativeElement.value = 'test';
-                component.searchInput.nativeElement.dispatchEvent(new Event('keyup'));
-                tick(550);
+        it('should call theme enpoint on search', fakeAsync(() => {
+            spyOn(component, 'paginate');
+            fixture.detectChanges();
+            component.searchInput.nativeElement.value = 'test';
+            component.searchInput.nativeElement.dispatchEvent(new Event('keyup'));
+            tick(550);
 
-                expect(paginatorService.extraParams.get('searchParam')).toBe('test');
-                expect(component.paginate).toHaveBeenCalled();
-            })
-        );
+            expect(paginatorService.extraParams.get('searchParam')).toBe('test');
+            expect(component.paginate).toHaveBeenCalled();
+        }));
     });
 });

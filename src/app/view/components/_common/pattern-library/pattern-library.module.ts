@@ -5,6 +5,7 @@ import { PatternLibraryComponent } from './pattern-library.component';
 import { Routes, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DotIconButtonModule } from '../dot-icon-button/dot-icon-button.module';
+import { MultiSelectModule } from 'primeng/primeng';
 
 const routes: Routes = [
     {
@@ -19,7 +20,8 @@ const routes: Routes = [
         FormsModule,
         ...NGFACES_MODULES,
         RouterModule.forChild(routes),
-        DotIconButtonModule
+        DotIconButtonModule,
+        MultiSelectModule
     ],
     declarations: [PatternLibraryComponent]
 })

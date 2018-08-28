@@ -1,35 +1,28 @@
 @import "mixins";
 @import "variables";
 
-h1, h2, h3, h4, h5, h6 {
-    line-height: 1.5em;
-}
-
-h1, h2, h3 {
-    color: $brand-primary;
+h1, h2, h3, h4, h5 {
     font-weight: normal;
 }
 
 h1 {
-    font-size: rem-cal(36px);
+    font-size: rem-cal(60px);
+    letter-spacing: -0.5px;
 }
 
 h2 {
-    font-size: rem-cal(30px);
+    font-size: rem-cal(48px);
 }
 
 h3 {
-    font-size: rem-cal(24px);
+    font-size: rem-cal(34px);
+    letter-spacing: 0.25px;
 }
 
 h4 {
-    font-size: rem-cal(18px);
+    font-size: rem-cal(24px);
 }
 
 h5 {
-    font-size: rem-cal(14px);
-}
-
-h6 {
-    font-size: rem-cal(12px);
+    font-size: rem-cal(20px);
 }

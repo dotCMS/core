@@ -3,18 +3,16 @@
 
 .dialog ::ng-deep {
     .ui-dialog {
-        max-width: 1200px;
-        width: 95vw;
 
         .ui-dialog-content {
-            overflow: hidden;
-            height: 80vh !important;
-            padding: 0;
+            overflow: auto;
         }
 
-        .ui-dialog-titlebar {
-            background-color: $gray-bg;
-            border-bottom: solid 1px $gray-bg;
+        p-header {
+            align-items: center;
+            display: flex;
+            justify-content: space-between;
         }
+
     }
 }
