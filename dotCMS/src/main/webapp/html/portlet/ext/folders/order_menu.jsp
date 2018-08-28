@@ -44,10 +44,10 @@ function savechanges() {
     submitAjaxForm({
         form: form,
         success: function() {
-            tiggerCustomEvent("save-menu-order");
+            triggerCustomEvent("save-menu-order");
         },
         error: function() {
-            tiggerCustomEvent("error-saving-menu-order");
+            triggerCustomEvent("error-saving-menu-order");
         }
     });
 }
@@ -170,7 +170,7 @@ td li li{
 			   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save-changes")) %>
 	                    </button>       
 		<%} %>
-        <button dojoType="dijit.form.Button" onClick="tiggerCustomEvent('cancel-save-menu-order')" iconClass="cancelIcon">
+        <button dojoType="dijit.form.Button" onClick="triggerCustomEvent('cancel-save-menu-order')" iconClass="cancelIcon">
 
          <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
        </button>

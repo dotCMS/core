@@ -889,7 +889,7 @@ function getMouseXY () {
 	return { mouseX: _currentMouseX, mouseY: _currentMouseY };
 }
 
-function tiggerCustomEvent(name, data) {
+function triggerCustomEvent(name, data) {
     var customEvent = document.createEvent("CustomEvent");
     customEvent.initCustomEvent("ng-event", false, false,  {
         name: name,
