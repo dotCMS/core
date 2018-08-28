@@ -44,9 +44,11 @@ function savechanges() {
     submitAjaxForm({
         form: form,
         success: function() {
-            emitOkEvent();
+            tiggerCustomEvent("save-menu-order");
         },
-        error: emitErrorEvent
+        error: function() {
+            tiggerCustomEvent("error-saving-menu-order");
+        }
     });
 }
 function moveMenuItemDown(menuItem,parentFolder){
@@ -69,31 +71,6 @@ function goBack()
 	<% } else { %>
 		window.location.href = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/folders/order_menu" /></portlet:actionURL>';
 	<% } %>
-}
-
-function emitErrorEvent() {
-    var customEvent = window.top.document.createEvent("CustomEvent");
-    customEvent.initCustomEvent("ng-event", false, false,  {
-        name: "error-saving-menu-order"
-    });
-    window.top.document.dispatchEvent(customEvent)
-}
-
-
-function emitCancelEvent() {
-    var customEvent = window.top.document.createEvent("CustomEvent");
-    customEvent.initCustomEvent("ng-event", false, false,  {
-        name: "cancel-save-menu-order"
-    });
-    window.top.document.dispatchEvent(customEvent)
-}
-
-function emitOkEvent() {
-    var customEvent = window.top.document.createEvent("CustomEvent");
-    customEvent.initCustomEvent("ng-event", false, false,  {
-        name: "save-menu-order"
-    });
-    window.top.document.dispatchEvent(customEvent)
 }
 </script>
 
@@ -193,7 +170,7 @@ td li li{
 			   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save-changes")) %>
 	                    </button>       
 		<%} %>
-        <button dojoType="dijit.form.Button" onClick="emitCancelEvent()" iconClass="cancelIcon">
+        <button dojoType="dijit.form.Button" onClick="tiggerCustomEvent('cancel-save-menu-order')" iconClass="cancelIcon">
 
          <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
        </button>

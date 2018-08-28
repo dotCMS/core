@@ -773,10 +773,11 @@ function submitAjaxForm(options) {
     request.onreadystatechange = function () {
         if (request.readyState === 4) {
             // 200 - 299 = successful
-            if (request.status == 200 && request.status < 300)
+            if (request.status === 200 && request.status < 300) {
                 options.success();
-            else
+            } else {
                 options.error();
+            }
         }
     };
 }
@@ -888,3 +889,11 @@ function getMouseXY () {
 	return { mouseX: _currentMouseX, mouseY: _currentMouseY };
 }
 
+function tiggerCustomEvent(name, data) {
+    var customEvent = document.createEvent("CustomEvent");
+    customEvent.initCustomEvent("ng-event", false, false,  {
+        name: name,
+		data: data
+    });
+    window.top.document.dispatchEvent(customEvent);
+}
