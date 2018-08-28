@@ -503,7 +503,7 @@
                 <%if(canReindexContentlets){%>
                 <td style="width:140px;text-align: right">
                     <button id="reindexButton" dojoType="dijit.form.Button" class="dijitButton" data-dojo-props="onClick: reindexSelectedContentletsProxy">
-                        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Reindex")) %>
+                        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Refresh")) %>
                     </button>
                 </td>
                 <%}%>
