@@ -110,7 +110,7 @@ describe('DotContentletWrapperComponent', () => {
                     }
                 });
                 expect(dotAddContentletService.clear).toHaveBeenCalledTimes(1);
-                expect(component.header).toBe('header');
+                expect(component.header).toBe('');
                 expect(component.custom.emit).toHaveBeenCalledTimes(1);
                 expect(component.close.emit).toHaveBeenCalledTimes(1);
             });

@@ -84,6 +84,7 @@ export class DotContentletWrapperComponent implements OnInit {
         this.dotContentletEditorService.clear();
         this.isContentletModified = false;
         this.close.emit();
+        this.header = '';
     }
 
     /**
