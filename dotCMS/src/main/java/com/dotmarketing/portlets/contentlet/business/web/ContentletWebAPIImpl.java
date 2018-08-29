@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.contentlet.business.web;
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.repackage.javax.portlet.WindowState;
@@ -863,7 +864,12 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 		if(InodeUtils.isSet(inodeStr))
 		{
-			contentlet = conAPI.find(inodeStr, user, false);
+			Contentlet contentletFind = conAPI.find(inodeStr, user, false);
+			if(contentletFind != null) {
+				contentlet.getMap().putAll(contentletFind.getMap());
+			} else{
+				throw new NotFoundInDbException("contentlet with that inode does not exist");
+			}
 		}else {
 
 			/*In case of multi-language first ocurrence new contentlet*/
