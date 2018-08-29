@@ -20,6 +20,11 @@ import { PushPublishContentTypesDialogModule } from '../../../view/components/_c
 import { PushPublishService } from '../../../api/services/push-publish/push-publish.service';
 import { DotLicenseService } from '../../../api/services/dot-license/dot-license.service';
 import { SelectItem } from 'primeng/primeng';
+import { ResponseView } from 'dotcms-js/dotcms-js';
+import {
+    DotHttpErrorHandled,
+    DotHttpErrorManagerService
+} from '../../../api/services/dot-http-error-manager/dot-http-error-manager.service';
 
 @Injectable()
 class MockDotContentletService {
@@ -58,6 +63,15 @@ class MockPushPublishService {
     }
 }
 
+@Injectable()
+class MockDotHttpErrorManagerService {
+    handle(err: ResponseView): Observable<DotHttpErrorHandled> {
+        return Observable.of({
+            redirected: false
+        });
+    }
+}
+
 @Component({
     selector: 'dot-add-to-bundle ',
     template: ``
@@ -77,6 +91,7 @@ describe('ContentTypesPortletComponent', () => {
     let pushPublishService: PushPublishService;
     let dotLicenseService: DotLicenseService;
     let baseTypesSelector: MockDotBaseTypeSelectorComponent;
+    let dotHttpErrorManagerService: DotHttpErrorManagerService;
 
     beforeEach(() => {
         const messageServiceMock = new MockDotMessageService({
@@ -106,7 +121,8 @@ describe('ContentTypesPortletComponent', () => {
                 { provide: DotContentletService, useClass: MockDotContentletService },
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: PushPublishService, useClass: MockPushPublishService },
-                { provide: DotLicenseService, useClass: MockDotLicenseService }
+                { provide: DotLicenseService, useClass: MockDotLicenseService },
+                { provide: DotHttpErrorManagerService, useClass: MockDotHttpErrorManagerService }
             ]
         });
 
@@ -118,6 +134,7 @@ describe('ContentTypesPortletComponent', () => {
         dotContentletService = fixture.debugElement.injector.get(DotContentletService);
         pushPublishService = fixture.debugElement.injector.get(PushPublishService);
         dotLicenseService = fixture.debugElement.injector.get(DotLicenseService);
+        dotHttpErrorManagerService = fixture.debugElement.injector.get(DotHttpErrorManagerService);
 
         spyOn(dotContentletService, 'getAllContentTypes').and.returnValue(
             Observable.of([
@@ -284,5 +301,45 @@ describe('ContentTypesPortletComponent', () => {
         baseTypesSelector.selected.emit('test');
 
         expect(comp.changeBaseTypeSelector).toHaveBeenCalledWith('test');
+    });
+
+    it('should handle error if is not possible delete the content type', () => {
+        const forbiddenError = {
+            bodyJsonObject: {
+                error: ''
+            },
+            response: {
+                status: 403,
+            }
+        };
+
+        fixture.detectChanges();
+
+        const mockContentType: ContentType = {
+            clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+            id: '1234567890',
+            name: 'Nuevo',
+            variable: 'Nuevo',
+            defaultType: false,
+            fixed: false,
+            folder: 'SYSTEM_FOLDER',
+            host: null,
+            owner: '123',
+            system: false
+        };
+
+        const dotDialogService = fixture.debugElement.injector.get(DotAlertConfirmService);
+        spyOn(dotDialogService, 'confirm').and.callFake(conf => {
+            conf.accept();
+        });
+
+        spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
+        spyOn(crudService, 'delete').and.returnValue(Observable.throw(forbiddenError));
+
+        comp.rowActions[0].menuItem.command(mockContentType);
+
+        fixture.detectChanges();
+
+        expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(forbiddenError);
     });
 });
