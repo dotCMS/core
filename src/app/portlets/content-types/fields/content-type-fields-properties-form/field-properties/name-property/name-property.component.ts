@@ -16,7 +16,11 @@ export class NamePropertyComponent extends BaseComponent implements OnInit {
 
     constructor(public dotMessageService: DotMessageService) {
         super(
-            ['contenttypes.field.properties.name.label', 'contenttypes.field.properties.name.error.required'],
+            [
+                'contenttypes.field.properties.name.label',
+                'contenttypes.field.properties.name.error.required',
+                'contenttypes.field.properties.name.variable'
+            ],
             dotMessageService
         );
     }

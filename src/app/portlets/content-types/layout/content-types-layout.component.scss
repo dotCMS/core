@@ -7,7 +7,6 @@ $top-height: ($toolbar-height + $tabview-nav-height);
 :host {
     ::ng-deep {
         .ui-tabview-nav {
-            border-bottom: 1px solid rgba(0,0,0,0.1);
             position: relative;
             z-index: 1;
         }

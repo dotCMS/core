@@ -5,6 +5,10 @@
     display: flex;
     background: $gray-bg;
 
+    dot-listing-data-table{
+        box-shadow: $md-shadow-4;
+    }
+
     &::ng-deep listing-data-table tr {
         cursor: pointer;
     }

@@ -415,6 +415,25 @@ describe('ContentTypesEditComponent edit mode', () => {
 
         // then: the saveFields method has to be called in FileService ...
         expect(fieldService.saveFields).toHaveBeenCalledWith('1234567890', newFieldsAdded);
+    });
+
+    it('should update fields on dropzone event when creating a new one or update', () => {
+        const newFieldsAdded: ContentTypeField[] = [
+            {
+                name: 'field 1',
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
+                sortOrder: 1
+            }
+        ];
+
+        const fieldsReturnByServer: ContentTypeField[] = newFieldsAdded.concat(currentFieldsInServer);
+        const fieldService = fixture.debugElement.injector.get(FieldService);
+        spyOn(fieldService, 'saveFields').and.returnValue(Observable.of(fieldsReturnByServer));
+
+        const contentTypeFieldsDropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
+
+        // when: the saveFields event is tiggered in content-type-fields-drop-zone
+        contentTypeFieldsDropZone.componentInstance.saveFields.emit(newFieldsAdded);
         // ...and the comp.data.fields has to be set to the fields return by the service
         expect(comp.fields).toEqual(fieldsReturnByServer);
     });

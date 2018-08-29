@@ -122,7 +122,7 @@ export class ContentTypesPortletComponent implements OnInit {
                 menuItem: {
                     label: this.dotMessageService.get('contenttypes.action.delete'),
                     command: item => this.removeConfirmation(item),
-                    icon: 'fa-trash'
+                    icon: 'delete'
                 },
                 shouldShow: item => !item.fixed
             });

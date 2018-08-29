@@ -99,6 +99,7 @@ $button-sec: (
 );
 
 // SELECT BUTTON
+$select-button-color: $gray;
 $selectbutton-normal-bgcolor: $white;
 $selectbutton-normal-border: $button-border;
 $selectbutton-normal-shadow: 0;
@@ -107,7 +108,7 @@ $selectbutton-hover-bgcolor: $white;
 $selectbutton-hover-border: $button-border;
 $selectbutton-hover-shadow: $md-shadow-2;
 
-$selectbutton-button-hover-bgcolor: rgba($brand-primary_rgb, 0.1);
+$selectbutton-button-hover-bgcolor: rgba($brand-secondary_rgb, 0.1);
 $selectbutton-button-active-bgcolor: $brand-primary_mod;
 $selectbutton-button-active-color: $white;
 
@@ -180,11 +181,11 @@ $paginator-page-border-radius: 10px;
 $paginator-page-size: 21px;
 
 // TABVIEW
-$tabview-item-color: $gray-dark;
-$tabview-item-selected-color: $brand-primary;
-$tabview-item-padding: $basic-padding * 2 $basic-padding * 2 10px; // To match the 48px height
+$tabview-item-color: $gray;
+$tabview-item-selected-color: $brand-secondary;
+$tabview-item-padding: $basic-padding * 2 $basic-padding * 3 10px; // To match the 48px height
 $tabview-item-border: 3px solid $white;
-$tabview-item-selected-border: 3px solid $brand-primary;
+$tabview-item-selected-border: 5px solid $brand-secondary;
 $tabview-nav-height: 48px;
 
 // MENU

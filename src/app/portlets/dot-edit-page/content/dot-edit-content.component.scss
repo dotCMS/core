@@ -13,12 +13,13 @@ dot-whats-changed,
 .dot-edit__iframe {
     background: $white;
     border-radius: $border-radius;
-    box-shadow: $md-shadow-2;
+    box-shadow: $md-shadow-4;
     flex-grow: 1;
     overflow: hidden;
 }
 
 .dot-edit__toolbar {
+    border-bottom: 1px solid rgba(0,0,0,0.1);
     flex-shrink: 0;
 }
 

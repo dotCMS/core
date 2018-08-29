@@ -9,12 +9,14 @@
         .ui-tabview-nav li {
             top: 0;
             font-size: $font-size-small;
+            font-weight: 500;
 
             a {
                 border-bottom: $tabview-item-border;
 
                 &:hover {
-                    border-bottom: $tabview-item-selected-border;
+                    background-color: $selectbutton-button-hover-bgcolor;
+                    border-bottom: 0;
                 }
             }
         }
@@ -51,6 +53,8 @@
     }
 
     .ui-tabview-nav {
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+
         &.ui-corner-all {
             @extend #reset-border-radius;
         }
