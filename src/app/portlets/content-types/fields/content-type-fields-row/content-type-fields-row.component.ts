@@ -71,21 +71,7 @@ export class ContentTypeFieldsRowComponent extends BaseComponent {
      * Tigger the removeRow event whit the current FieldRow
      */
     onRemoveFieldRow(): void {
-        if (this.isRowFieldEmpty()) {
-            this.removeRow.emit(this.fieldRow);
-        } else {
-            this.dotDialogService.confirm({
-                accept: () => {
-                    this.removeRow.emit(this.fieldRow);
-                },
-                header: `${this.i18nMessages['contenttypes.action.delete']} ${this.i18nMessages['contenttypes.content.row']}`,
-                message: this.dotMessageService.get('contenttypes.confirm.message.delete.row'),
-                footerLabel: {
-                    accept: this.i18nMessages['contenttypes.action.delete'],
-                    reject: this.i18nMessages['contenttypes.action.cancel']
-                }
-            });
-        }
+        this.removeRow.emit(this.fieldRow);
     }
 
     private isRowFieldEmpty(): boolean {

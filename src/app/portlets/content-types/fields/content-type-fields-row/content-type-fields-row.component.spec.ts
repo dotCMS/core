@@ -115,15 +115,13 @@ describe('ContentTypeFieldsRowComponent', () => {
         });
     });
 
-    // Until 5.1
-    xdescribe('remove rows', () => {
+    describe('remove rows', () => {
         it('should emit row remove event after confirmation dialog', () => {
-            comp.fieldRow = mockFieldRow;
+            comp.fieldRow = new FieldRow();
+            comp.fieldRow.columns = [
+                new FieldColumn()
+            ];
             fixture.detectChanges();
-
-            spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
-                conf.accept();
-            });
 
             let result;
             comp.removeRow.subscribe((rowToRemove: FieldRow) => {
@@ -134,7 +132,6 @@ describe('ContentTypeFieldsRowComponent', () => {
             removeRowButon.nativeElement.click();
 
             expect(comp.fieldRow).toEqual(result);
-            expect(dotDialogService.confirm).toHaveBeenCalledTimes(1);
         });
 
         it('should emit row remove event with no confirmation dialog', () => {

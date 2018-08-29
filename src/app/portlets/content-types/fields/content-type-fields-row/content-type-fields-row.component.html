@@ -1,13 +1,6 @@
-<!-- Bring it back in 5.1 -->
-<!-- <div class="row-header">
-    <span class="row-header__drag"><i class="fa fa-bars"></i></span>
-    <dot-icon-button-tooltip
-        class="row-header__remove"
-        icon="fa-trash"
-        [tooltipText]="i18nMessages['contenttypes.action.delete']"
-        (click)="onRemoveFieldRow()">
-    </dot-icon-button-tooltip>
-</div> -->
+<div class="row-header">
+    <span class="row-header__drag"></span>
+</div>
 <div class="row-columns">
     <span
         *ngFor="let column of fieldRow.columns"
@@ -26,6 +19,14 @@
         </dot-content-type-field-dragabble-item>
 
         <div class="row-columns__item-empty-message" data-drag-type="not_field">
+            <dot-icon-button-tooltip
+                tiny
+                *ngIf="fieldRow.columns[0].fields.length === 0"
+                class="row-header__remove"
+                icon="delete"
+                [tooltipText]="i18nMessages['contenttypes.action.delete']"
+                (click)="onRemoveFieldRow()">
+            </dot-icon-button-tooltip>
             {{ i18nMessages['contenttypes.dropzone.rows.empty.message'] }}
         </div>
     </span>

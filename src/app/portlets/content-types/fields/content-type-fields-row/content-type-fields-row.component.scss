@@ -5,7 +5,7 @@
     border-radius: $border-radius;
     display: block;
     margin-bottom: $basic-padding * 2;
-    padding: $basic-padding * 2;
+    padding:  0 $basic-padding * 2 $basic-padding * 2;
     position: relative;
     transition: box-shadow $basic-speed;
     background: $white;
@@ -58,18 +58,22 @@
 }
 
 .row-header {
-    margin-bottom: $basic-padding * 2;
     opacity: 0.25;
     text-align: center;
     transition: opacity $basic-speed;
+    margin: 0 -#{$basic-padding * 2}
 }
 
 .row-header__drag {
     cursor: move;
+    display: block;
+    height: $basic-padding * 2;
+    width: 100%;
 }
 
 .row-header__remove {
     cursor: pointer;
     position: absolute;
-    right: $basic-padding * 2;
+    right: 32px;
+    top: 32px;
 }
