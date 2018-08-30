@@ -1026,7 +1026,7 @@
 		    hasHostFolderField = false;
 		    loadingSearchFields = true;
 		    setDotFieldTypeStr = "";
-		
+
 		    StructureAjax.getStructureSearchFields (structureInode,
 		            { callback:fillFields, async: async });
 		    StructureAjax.getStructureCategories (structureInode,

@@ -68,7 +68,7 @@
         String ssstruc = (String)session.getAttribute("selectedStructure");
         if(session.getAttribute("selectedStructure") != null && CacheLocator.getContentTypeCache().getStructureByInode((String)session.getAttribute("selectedStructure")) !=null){
             structure = CacheLocator.getContentTypeCache().getStructureByInode((String)session.getAttribute("selectedStructure"));
-            if(structures.contains(structure)){
+            if( !structure.isHost() && structures.contains(structure)){
                 structureSelected = structure.getInode();
             }else{
                 session.removeAttribute("selectedStructure");
