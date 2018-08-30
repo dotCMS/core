@@ -1288,7 +1288,6 @@ public class UtilMethods {
     public static String espaceForVelocity(String text) {
           if (isSet(text)) {
             text = replace(text, "\"", "${esc.q}");
-            text = replace(text, "'", "${esc.s}");
             text = replace(text, "##", "${esc.h}${esc.h}");
             text = replace(text, "\\", "&#92;"); //this fixes issue 10529
             return text.trim();
