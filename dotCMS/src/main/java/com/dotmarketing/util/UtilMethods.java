@@ -1286,38 +1286,19 @@ public class UtilMethods {
     }
 
     public static String espaceForVelocity(String text) {
-        if (isSet(text)) {
-            text = replace(text, "\"", "${quote}");
-            text = replace(text, "##", "${pounds}");
+          if (isSet(text)) {
+            text = replace(text, "\"", "${esc.q}");
+            text = replace(text, "'", "${esc.s}");
+            text = replace(text, "##", "${esc.h}${esc.h}");
             text = replace(text, "\\", "&#92;"); //this fixes issue 10529
             return text.trim();
         }
 
-        return "";
-    }
-
-    // Uses by the code generated in the contentletmapservices
-    public static String espaceVariableForVelocity(String text) {
-        if (isSet(text)) {
-            text = replace(text, "'", "${singleQuote}");
-            text = replace(text, "##", "${pounds}");
-            text = replace(text, "\\", "${backSlash}");
-            return text;
-        }
 
         return "";
     }
 
-    // Uses by the code generated in the contentletmapservices
-    public static String restoreVariableForVelocity(String text) {
-        if (isSet(text)) {
-            text = text.replaceAll("\\$\\{singleQuote}", "\'");
-            text = text.replaceAll("\\$\\{pounds}", "##");
-            text = text.replaceAll("\\$\\{backSlash}", "\\\\");
-        }
 
-        return text;
-    }
 
     // Used by the code generated in the contentletmapservices
     public static String evaluateVelocity(String vtl, Context ctx) {
