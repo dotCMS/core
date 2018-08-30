@@ -34,8 +34,9 @@ function getTemplateCallBack(data) {
 }
 
 dojo.ready(function(){
-    var templateStore=new dotcms.dojo.data.TemplateReadStore({ 
-        hostId: "$request.getSession().getAttribute('CMS_SELECTED_HOST_ID')",
+    var hostId = "$request.getSession().getAttribute('CMS_SELECTED_HOST_ID')";
+    var templateStore = new dotcms.dojo.data.TemplateReadStore({
+        hostId: hostId,
         templateSelected: dojo.byId("template").value
     });
 
@@ -66,6 +67,56 @@ dojo.ready(function(){
 
     var currentTemplateIdElement = dojo.byId("currentTemplateId");
     currentTemplateIdElement.value = val;
+
+
+    // try to preload the default template.
+    var defaultTemplateName = '$config.getStringProperty("DEFAULT_TEMPLATE_NAME", "Default Template")';
+
+    var onTemplateFetchComplete = function(templates, currentRequest){
+
+        var normalizeKey = function (obj) {
+            return obj.fullTitle.replace(new RegExp("\\("+obj.hostName+"\\)"), '').replace(/\s+/g,'').toLowerCase();
+        }
+
+        if((templates) && (templates.length > 0)){
+            var templatesMap = templates.reduce(function(map, obj) {
+                var key = normalizeKey(obj);
+                if (!(key in map)){
+                    map[key] = obj;
+                }
+                return map;
+            }, {});
+
+            var normalizedTemplateName = defaultTemplateName.replace(/\s+/g,'').toLowerCase();
+            var obj = templatesMap[normalizedTemplateName];
+            if(obj){
+                var value = obj.identifier;
+                var fullTitle = obj.fullTitle;
+                // We set the values directly into the components because setting it direcrtly into`templateSel` fires another load operation.
+                dojo.byId("currentTemplateId").value = value;
+                dojo.byId("template").value = value;
+                dijit.byId('templateSel').set("displayedValue", fullTitle);
+                TemplateAjax.fetchTemplateImage(value, dojo.hitch(getTemplateCallBack));
+            }
+        }
+    };
+
+    //We fire the fetch action if there isn't a template already set.
+    if(defaultTemplateName && (val == undefined || val == "" || val == "0" )) {
+        var templateFetchParams = {
+            query: {
+                fullTitle: '*',
+                hostId: hostId
+            },
+            queryOptions: {},
+            start: 0,
+            count: 1000,
+            sort: [],
+            onComplete: onTemplateFetchComplete
+        };
+
+        window.top._templateStore.fetch(templateFetchParams);
+    }
 });
 </script>
 
