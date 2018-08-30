@@ -130,14 +130,15 @@
 			allowContentLang.clear();
 			List<Contentlet> contentlets = APILocator.getContentletAPIImpl().getAllLanguages(contentlet, false, user, false);
 
-			lang:
-			for (Language lang: languages){
-				for (Contentlet c : contentlets){
+			Map<Long, Language> languagesMap = new HashMap();
 
-					if (lang.getId() == c.getLanguageId()) {
-						allowContentLang.add(lang);
-						continue lang;
-					}
+			for (Language lang: languages) {
+				languagesMap.put(lang.getId(), lang);
+			}
+
+			for (Contentlet content : contentlets){
+				if (languagesMap.containsKey(content.getLanguageId())) {
+					allowContentLang.add(languagesMap.get(content.getLanguageId()));
 				}
 			}
 		}
