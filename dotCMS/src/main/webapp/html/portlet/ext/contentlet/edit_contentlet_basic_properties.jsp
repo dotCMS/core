@@ -1,6 +1,5 @@
 <%@page import="com.dotmarketing.portlets.calendar.business.EventAPI"%>
 <%@page import="com.dotmarketing.util.DateUtil"%>
-<%@page import="com.dotmarketing.business.VersionableAPI"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowAction"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowStep"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowTask"%>
@@ -13,11 +12,9 @@
 <%@page import="com.dotmarketing.beans.Host"%>
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
-<%@page import="com.dotmarketing.business.IdentifierFactory"%>
 <%@page import="com.dotmarketing.beans.Identifier"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.dotmarketing.portlets.languagesmanager.business.*"%>
-<%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Field"%>
 
@@ -31,6 +28,8 @@
 <%@page import="com.dotmarketing.util.XMLUtils"%>
 <%@page import="com.dotmarketing.util.InodeUtils"%>
 <%@page import="com.dotmarketing.business.CacheLocator"%>
+
+<%@ page import="com.dotmarketing.business.PermissionLevel" %>
 
 
 <%
@@ -119,7 +118,32 @@
 	}
 
 %>
-	
+
+<%
+	List<Language> allowContentLang = new ArrayList(languages);
+	boolean haveEditPermission = true;
+
+	if (UtilMethods.isSet(contentlet.getInode())) {
+		haveEditPermission = APILocator.getPermissionAPI().doesUserHavePermission(contentlet, PermissionLevel.EDIT.getType(), user, false);
+
+		if (!haveEditPermission) {
+			allowContentLang.clear();
+			List<Contentlet> contentlets = APILocator.getContentletAPIImpl().getAllLanguages(contentlet, false, user, false);
+
+			lang:
+			for (Language lang: languages){
+				for (Contentlet c : contentlets){
+
+					if (lang.getId() == c.getLanguageId()) {
+						allowContentLang.add(lang);
+						continue lang;
+					}
+				}
+			}
+		}
+	}
+%>
+
 	<input type="hidden" name="submitParent" id="submitParent" value="">
 	<input type="hidden" name="wysiwyg_image" id="wysiwyg_image" value="">
 	<input type="hidden" name="selectedwysiwyg_image" id="selectedwysiwyg_image" value="">
@@ -206,7 +230,9 @@
 			<%if (languages.size() > 1
 				&& !structure.getVelocityVarName().equalsIgnoreCase("Host")
 				&& structure.getStructureType() != Structure.STRUCTURE_TYPE_FORM
-				&& structure.getStructureType() != Structure.STRUCTURE_TYPE_PERSONA ) { %>
+				&& structure.getStructureType() != Structure.STRUCTURE_TYPE_PERSONA
+				|| !haveEditPermission) {
+			%>
 
 				<h3>
 					<%= LanguageUtil.get(pageContext, "language") %>
@@ -246,7 +272,7 @@
 						   buff.append("{identifier:'id', label:'label',imageurl:'imageurl',items:[");
 
 						   boolean first=true;
-						   for (Language lang : languages) {
+						   for (Language lang : allowContentLang) {
 							   Contentlet langContentlet= new Contentlet();
 							   ContentletAPI conAPI = APILocator.getContentletAPI();
 							   try {
@@ -288,7 +314,7 @@
 								 searchAttr: "lang",
 								 labelAttr: "label",
 								 labelType: "html",
-                                 style: "width: 100%",
+								 style: "width: 100%",
 								 onChange: function() {
 									 var obj=dijit.byId("langcombo");
 									 changeLanguage(obj.item.value);
@@ -296,6 +322,8 @@
 								 labelFunc: function(item, store) { return store.getValue(item, "label"); }
 							},
 							dojo.byId("langcombo"));
+
+                        	dijit.byId('langcombo').set('disabled', <%=!haveEditPermission && allowContentLang.size() == 1%>);
 					</script>
 				</div>
 			<%} %>
