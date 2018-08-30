@@ -177,19 +177,39 @@ public class ResourceLink {
         }
 
         boolean isDownloadPermissionBasedRestricted(final Contentlet contentlet, final User user) throws DotDataException {
-            return !APILocator.getPermissionAPI().doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, false);
+            return ResourceLink.isDownloadPermissionBasedRestricted(contentlet, user);
         }
+
     }
 
     /**
-     * This method is used to determined if a front-end user based on the file the extension should be allowed for download or not.
-     * @param fileAssetName
+     *
+     * @param contentlet
+     * @param user
      * @return
+     * @throws DotDataException
      */
-    public static boolean isDownloadRestricted(final String fileAssetName, final HttpServletRequest request ){
+    private static boolean isDownloadPermissionBasedRestricted(final Contentlet contentlet, final User user) throws DotDataException {
+        return !APILocator.getPermissionAPI().doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, false);
+    }
+
+    /**
+     *  This method is used to determined if a front-end user based on the file the extension should be allowed for download or not.
+     * @param fileAssetName
+     * @param contentlet
+     * @param user
+     * @param request
+     * @return
+     * @throws DotDataException
+     */
+    public static boolean isDownloadRestricted(final String fileAssetName, final Contentlet contentlet, final User user, final HttpServletRequest request) throws DotDataException{
         final String extension = UtilMethods.getFileExtension(fileAssetName);
         if(RESTRICTED_FILE_EXTENSIONS.contains(extension)){
-            return !PageMode.get(request).isAdmin;
+            if(!PageMode.get(request).isAdmin ){
+                return false;
+            }
+            //if we're not navigating on the backend then we should still restrict access based on permissions.
+            return isDownloadPermissionBasedRestricted(contentlet, user);
         }
         return false;
     }
