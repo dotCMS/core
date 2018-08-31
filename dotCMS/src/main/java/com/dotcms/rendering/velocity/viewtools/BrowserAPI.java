@@ -26,10 +26,8 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
-import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilHTML;
@@ -120,16 +118,14 @@ public class BrowserAPI {
 
             try {
                 if (permissions.contains(PERMISSION_READ)) {
-                    boolean hasPushPublishActionlet = false;
                     if (!showArchived && contentlet.isArchived()) {
                         skip=true;
                         return;
                     }
                     final boolean showScheme = (wfActions!=null) ?  wfActions.stream().collect(Collectors.groupingBy(WorkflowAction::getSchemeId)).size()>1 : false;
                     
-                    for (WorkflowAction action : wfActions) {
-                        List<WorkflowActionClass> actionlets = APILocator
-                                .getWorkflowAPI().findActionClasses(action);
+                    for (final WorkflowAction action : wfActions) {
+
 						WorkflowScheme wfScheme = APILocator.getWorkflowAPI().findScheme(action.getSchemeId());
                         Map<String, Object> wfActionMap = new HashMap<String, Object>();
                         wfActionMap.put("name", action.getName());
@@ -142,23 +138,9 @@ public class BrowserAPI {
                                 action.requiresCheckout());
                         
                         final String actionNameStr = (showScheme) ? LanguageUtil.get(user, action.getName()) +" ( "+LanguageUtil.get(user,wfScheme.getName())+" )" : LanguageUtil.get(user, action.getName());
-                        
-                        
-                        
-                        
+
                         wfActionMap.put("wfActionNameStr",actionNameStr);
-                        for (WorkflowActionClass actionlet : actionlets) {
-                            if (actionlet
-                                    .getActionlet()
-                                    .getClass()
-                                    .getCanonicalName()
-                                    .equals(PushPublishActionlet.class
-                                            .getCanonicalName())) {
-                                hasPushPublishActionlet = true;
-                            }
-                        }
-                        wfActionMap.put("hasPushPublishActionlet",
-                                hasPushPublishActionlet);
+                        wfActionMap.put("hasPushPublishActionlet", action.hasPushPublishActionlet());
                         wfActionMapList.add(wfActionMap);
                     }
 
