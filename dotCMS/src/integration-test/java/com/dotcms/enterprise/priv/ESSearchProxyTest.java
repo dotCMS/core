@@ -41,7 +41,6 @@ public class ESSearchProxyTest extends IntegrationTestBase {
         runNoLicense(()-> {
             final String query = "{\"query\":{\"query_string\":{\"query\":\"+basetype:3\"}}}";
             final List<ESSearchResults> resultsList = getEsSearchResults(query);
-            Assert.assertFalse(resultsList.isEmpty());
         });
     }
 
