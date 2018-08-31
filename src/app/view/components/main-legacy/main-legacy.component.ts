@@ -15,7 +15,6 @@ import { DotIframeService } from '../_common/iframe/service/dot-iframe/dot-ifram
 })
 export class MainComponentLegacyComponent implements OnInit {
     isMenuCollapsed = false;
-    isTablet = false;
 
     constructor(
         private dotEventsService: DotEventsService,
@@ -24,35 +23,9 @@ export class MainComponentLegacyComponent implements OnInit {
         private dotIframeService: DotIframeService,
     ) {}
 
-    /**
-     * Set isTablet when resizing the window size
-     *
-     * @param {*} event
-     * @memberof MainComponentLegacyComponent
-     */
-    @HostListener('window:resize', ['$event'])
-    onResize(event: any) {
-        this.isTablet = event.target.innerWidth < 1025;
-    }
-
-    /**
-     * Respond to document events and collapse the sidenav if is clicked outside
-     *
-     * @param {*} _event
-     * @memberof MainComponentLegacyComponent
-     */
-    @HostListener('click', ['$event'])
-    onClickOutside(_event: any) {
-        if (this.isTablet && !this.isMenuCollapsed) {
-            this.isMenuCollapsed = true;
-        }
-    }
-
     ngOnInit(): void {
         document.body.style.backgroundColor = '';
         document.body.style.backgroundImage = '';
-        this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe((_event) => this.setMenuState());
-        this.setMenuState();
     }
 
     /**
@@ -77,18 +50,6 @@ export class MainComponentLegacyComponent implements OnInit {
     }
 
     /**
-     * Set collapsed menu state base on the screen size
-     *
-     * @memberof MainComponentLegacyComponent
-     */
-    setMenuState(): void {
-        if (window.innerWidth < 1025) {
-            this.isTablet = true;
-            this.isMenuCollapsed = true;
-        }
-    }
-
-    /**
      * Toggle show/hide sidenav
      *
      * @memberof MainComponentLegacyComponent
@@ -97,6 +58,4 @@ export class MainComponentLegacyComponent implements OnInit {
         this.isMenuCollapsed = !this.isMenuCollapsed;
         this.dotEventsService.notify('dot-side-nav-toggle');
     }
-
-
 }
