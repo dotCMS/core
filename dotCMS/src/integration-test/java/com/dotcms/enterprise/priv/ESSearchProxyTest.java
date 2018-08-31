@@ -30,8 +30,8 @@ public class ESSearchProxyTest extends IntegrationTestBase {
     @Test
     public void test_esSearch_WithoutLicense_Success() throws Exception {
         runNoLicense(()-> {
-                String query = "{\"query\":{\"query_string\":{\"query\":\"+basetype:5 +parentpath:*\\\\\\/abou*\"}}}";
-                List<ESSearchResults> resultsList = getEsSearchResults(query);
+                final String query = "{\"query\":{\"query_string\":{\"query\":\"+basetype:5 +parentpath:*\\\\\\/abou*\"}}}";
+                final List<ESSearchResults> resultsList = getEsSearchResults(query);
                 Assert.assertFalse(resultsList.isEmpty());
         });
     }
@@ -39,21 +39,22 @@ public class ESSearchProxyTest extends IntegrationTestBase {
     @Test (expected = DotStateException.class)
     public void test_esSearch_WithoutLicense_ThrowsException() throws Exception {
         runNoLicense(()-> {
-            String query = "{\"query\":{\"query_string\":{\"query\":\"+basetype:3\"}}}";
-            List<ESSearchResults> resultsList = getEsSearchResults(query);
+            final String query = "{\"query\":{\"query_string\":{\"query\":\"+basetype:3\"}}}";
+            final List<ESSearchResults> resultsList = getEsSearchResults(query);
+            Assert.assertFalse(resultsList.isEmpty());
         });
     }
 
     @Test
     public void test_esSearch_WithLicense_Success() throws Exception {
-        String query = "{\"query\":{\"query_string\":{\"query\":\"+basetype:5 +parentpath:*\\\\\\/abou*\"}}}";
-        List<ESSearchResults> resultsList = getEsSearchResults(query);
+        final String query = "{\"query\":{\"query_string\":{\"query\":\"+basetype:5 +parentpath:*\\\\\\/abou*\"}}}";
+        final List<ESSearchResults> resultsList = getEsSearchResults(query);
         Assert.assertFalse(resultsList.isEmpty());
     }
 
-    private List<ESSearchResults> getEsSearchResults(String query)
+    private List<ESSearchResults> getEsSearchResults(final String query)
             throws DotSecurityException, DotDataException {
-        ESSearchProxy esSearchProxy = new ESSearchProxy();
+        final ESSearchProxy esSearchProxy = new ESSearchProxy();
         return (List<ESSearchResults>) esSearchProxy.esSearch(query,true,user,false);
     }
 
