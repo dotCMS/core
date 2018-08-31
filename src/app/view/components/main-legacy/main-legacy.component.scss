@@ -28,6 +28,7 @@
 
 .layout__main {
     flex-grow: 1;
+    background-color: $gray-bg;
 
     &.layout__main--tablet-only {
         &::after {
