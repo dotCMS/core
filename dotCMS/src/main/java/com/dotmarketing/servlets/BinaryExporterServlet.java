@@ -5,7 +5,6 @@ import static com.liferay.util.HttpHeaders.EXPIRES;
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
-
 import com.dotcms.util.DownloadUtil;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
@@ -314,14 +313,14 @@ public class BinaryExporterServlet extends HttpServlet {
 					return;
 				}
 				downloadName = inputFile.getName();
-			}
 
+				//if we're looking at a front end user then we should always restrict (vtl, vm) files, .
+				if(ResourceLink.isDownloadRestricted(downloadName, content, user, req)){
+					resp.sendError(404);
+					DbConnectionFactory.closeSilently();
+					return;
+				}
 
-			//if we're looking at a front end user then we should always restrict (vtl, vm) files.
-			if(ResourceLink.isDownloadRestricted(downloadName, req)){
-				resp.sendError(404);
-			    DbConnectionFactory.closeSilently();
-			    return;
 			}
 			
 			
