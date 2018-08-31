@@ -2,6 +2,7 @@ package com.dotcms.util;
 
 
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 
 /**
  * <p>
@@ -34,6 +35,6 @@ public interface VoidDelegate {
 	 * This method will be called by the parent routine, delegating the specific job.
 	 * 
 	 */
-	public void execute() throws DotDataException;
+	public void execute() throws DotDataException, DotSecurityException;
 
 } // E:O:F:Delegate.
