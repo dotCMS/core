@@ -1,0 +1,4 @@
+<i class="fa fa-th-list {{ icon }}" aria-hidden="true" *ngIf="isFaIcon(icon); else mdIcon"></i>
+<ng-template #mdIcon>
+    <dot-icon inverted [name]="icon.toLocaleLowerCase()" aria-hidden="true"></dot-icon>
+</ng-template>

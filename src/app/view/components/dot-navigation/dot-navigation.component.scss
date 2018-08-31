@@ -1,55 +1,29 @@
-@import 'variables';
+@import "mixins";
+@import "variables";
+@import "primeng-theme/utils/theme-variables";
 
 :host {
-    ::ng-deep {
-        dot-accordion {
-            a {
-                font-size: 14px;
-                display: block;
-                color: $white;
-                padding-left: $basic-padding * 3;
-                height: 48px;
-                display: flex;
-                align-items: center;
-                text-decoration: none;
-                outline: 0;
-            }
+    color: $white;
+    text-decoration: none;
+}
 
-            .accordion-group__title {
-                display: flex;
-                transition: background-color 0.15s ease-in;
+nav {
+    transition: width $basic-speed ease;
+    width: 200px;
+}
 
-                &.is-active {
-                    background-color: rgba($white, 0.1);
-                }
+ul {
+    @include naked-list;
+}
 
-                .fa {
-                    font-size: $font-size-large;
-                }
-            }
-
-            .accordion-group__title-text {
-                margin-left: 12px;
-                flex-grow: 1;
-            }
-
-            .accordion-group__title-arrow {
-                opacity: 0.5;
-                margin-right: $basic-padding;
-            }
-
-            .main-nav__submenu {
-                background-color: rgba($white, 0.1);
-                padding: 0 0 10px 0;
-
-                a {
-                    padding-left: 58px;
-                }
-            }
-
-            .main-nav__submenu--active {
-                background-color: $brand-primary;
-            }
+.dot-nav {
+    &__item {
+        &--active {
+            background-color: rgba(255, 255, 255, 0.1);
         }
     }
+}
+
+.collapsed {
+    width: 70px;
 }

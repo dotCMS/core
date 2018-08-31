@@ -3,13 +3,15 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 
 import { DotNavigationComponent } from './dot-navigation.component';
-import { AccordionComponent, AccordionGroupComponent } from '../_common/accordion/accordion';
-import { DotNavigationService } from './dot-navigation.service';
+import { DotNavigationService } from './services/dot-navigation.service';
+import { DotNavIconModule } from './components/dot-nav-icon/dot-nav-icon.module';
 import { DotIconModule } from '../_common/dot-icon/dot-icon.module';
+import { DotSubNavComponent } from './components/dot-sub-nav/dot-sub-nav.component';
+import { DotNavItemComponent } from './components/dot-nav-item/dot-nav-item.component';
 
 @NgModule({
-    imports: [CommonModule, RouterModule, DotIconModule],
-    declarations: [DotNavigationComponent, AccordionGroupComponent, AccordionComponent],
+    imports: [CommonModule, RouterModule, DotNavIconModule, DotIconModule],
+    declarations: [DotNavigationComponent, DotSubNavComponent, DotNavItemComponent],
     providers: [DotNavigationService],
     exports: [DotNavigationComponent]
 })

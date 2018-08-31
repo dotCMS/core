@@ -29,7 +29,9 @@ class MockDotToolbarComponent {
     selector: 'dot-main-nav',
     template: ''
 })
-class MockDotMainNavComponent {}
+class MockDotMainNavComponent {
+    @Input() collapsed: boolean;
+}
 
 describe('MainComponentLegacyComponent', () => {
     let component: MainComponentLegacyComponent;

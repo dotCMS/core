@@ -1,11 +1,11 @@
 import { Auth } from 'dotcms-js/core/login.service';
-import { DOTTestBed } from '../../../test/dot-test-bed';
-import { DotMenu } from '../../../shared/models/navigation';
-import { DotMenuService } from '../../../api/services/dot-menu.service';
+import { DOTTestBed } from '../../../../test/dot-test-bed';
+import { DotMenu } from '../../../../shared/models/navigation';
+import { DotMenuService } from '../../../../api/services/dot-menu.service';
 import { DotNavigationService } from './dot-navigation.service';
-import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
+import { DotRouterService } from '../../../../api/services/dot-router/dot-router.service';
 import { DotcmsEventsService, LoginService } from 'dotcms-js/dotcms-js';
-import { LoginServiceMock } from '../../../test/login-service.mock';
+import { LoginServiceMock } from '../../../../test/login-service.mock';
 import { Observable } from 'rxjs/Observable';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -13,6 +13,7 @@ import { async } from '@angular/core/testing';
 
 const mockMenu: DotMenu[] = [
     {
+        active: false,
         id: '123',
         name: 'Parent 1',
         tabDescription: '',
@@ -20,6 +21,7 @@ const mockMenu: DotMenu[] = [
         url: '',
         menuItems: [
             {
+                active: false,
                 ajax: true,
                 angular: true,
                 id: '',
@@ -28,7 +30,8 @@ const mockMenu: DotMenu[] = [
                 menuLink: ''
             }
         ],
-        isOpen: true
+        isOpen: true,
+        tabIcon: ''
     }
 ];
 
@@ -122,7 +125,7 @@ describe('DotNavigationService', () => {
 
         let result: DotMenu[];
 
-        dotNavigationService.items$.subscribe((menu: DotMenu[]) => {
+        dotNavigationService._items$.subscribe((menu: DotMenu[]) => {
             result = menu;
         });
 

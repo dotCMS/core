@@ -1,23 +1,22 @@
 import { Injectable } from '@angular/core';
 import { PlatformLocation } from '@angular/common';
-import { Router, NavigationEnd } from '@angular/router';
+import { Router, NavigationEnd, Event } from '@angular/router';
 
 import { Observable } from 'rxjs/Observable';
 import { BehaviorSubject } from 'rxjs/BehaviorSubject';
+import { filter, mergeMap, take } from 'rxjs/operators';
 
 import { Auth } from 'dotcms-js/core/login.service';
-import { DotcmsEventsService } from 'dotcms-js/core/dotcms-events.service';
-import { LoginService } from 'dotcms-js/dotcms-js';
+import { DotcmsEventsService, LoginService } from 'dotcms-js/dotcms-js';
 
-import { DotMenu, DotMenuItem } from '../../../shared/models/navigation';
-import { DotMenuService } from '../../../api/services/dot-menu.service';
-import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
-import { DotIframeService } from '../_common/iframe/service/dot-iframe/dot-iframe.service';
-import { filter, mergeMap } from 'rxjs/operators';
+import { DotMenu, DotMenuItem } from '../../../../shared/models/navigation';
+import { DotMenuService } from '../../../../api/services/dot-menu.service';
+import { DotRouterService } from '../../../../api/services/dot-router/dot-router.service';
+import { DotIframeService } from '../../_common/iframe/service/dot-iframe/dot-iframe.service';
 
 @Injectable()
 export class DotNavigationService {
-    items$: BehaviorSubject<DotMenu[]> = new BehaviorSubject([]);
+    _items$: BehaviorSubject<DotMenu[]> = new BehaviorSubject([]);
 
     constructor(
         private dotMenuService: DotMenuService,
@@ -28,8 +27,11 @@ export class DotNavigationService {
         private dotIframeService: DotIframeService,
         private router: Router
     ) {
-        this.router.events
-            .filter(event => event instanceof NavigationEnd && !this.dotRouterService.isPublicPage())
+        this.onNavigationEnd()
+            .pipe(
+                filter(() => !this.dotRouterService.isPublicPage()),
+                take(1)
+            )
             .subscribe((_event: NavigationEnd) => {
                 this.dotMenuService.loadMenu().subscribe((menu: DotMenu[]) => {
                     this.setMenu(menu);
@@ -50,6 +52,10 @@ export class DotNavigationService {
             .subscribe(() => {
                 this.goToFirstPortlet();
             });
+    }
+
+    get items$(): Observable<DotMenu[]> {
+        return this._items$.asObservable();
     }
 
     /**
@@ -83,6 +89,16 @@ export class DotNavigationService {
     }
 
     /**
+     * Emit event when navigation end
+     *
+     * @returns {Observable<Event>}
+     * @memberof DotNavigationService
+     */
+    onNavigationEnd(): Observable<Event> {
+        return this.router.events.filter((event: Event) => event instanceof NavigationEnd);
+    }
+
+    /**
      * Reload current portlet
      *
      * @param {string} id
@@ -107,6 +123,14 @@ export class DotNavigationService {
         });
     }
 
+    /**
+     * Navigate to portlet
+     * @param url
+     */
+    goTo(url: string): void {
+        this.dotRouterService.gotoPortlet(url);
+    }
+
     private reloadIframePage(): void {
         if (this.router.url.indexOf('c/') > -1) {
             this.dotIframeService.reload();
@@ -126,6 +150,8 @@ export class DotNavigationService {
                 menuItem.menuLink = menuItem.angular ? menuItem.url : this.getMenuLink(menuItem.id);
                 menuGroup.isOpen =
                     menuGroup.isOpen || this.isFirstMenuActive(currentUrl, menuIndex) || this.isMenuItemCurrentUrl(currentUrl, menuItem.id);
+                menuGroup.active = menuGroup.isOpen;
+                menuItem.active = this.isMenuItemCurrentUrl(currentUrl, menuItem.id);
             });
             return menuGroup;
         });
@@ -148,6 +174,6 @@ export class DotNavigationService {
     }
 
     private setMenu(menu: DotMenu[]) {
-        this.items$.next(this.formatMenuItems(menu));
+        this._items$.next(this.formatMenuItems(menu));
     }
 }

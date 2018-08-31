@@ -4,7 +4,7 @@ import { DotDropdownComponent } from '../_common/dropdown-component/dot-dropdown
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { LoginService, Auth, LoggerService } from 'dotcms-js/dotcms-js';
 import { DotMessageService } from '../../../api/services/dot-messages-service';
-import { DotNavigationService } from '../dot-navigation/dot-navigation.service';
+import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
 import { DotEventsService } from '../../../api/services/dot-events/dot-events.service';
 
 @Component({

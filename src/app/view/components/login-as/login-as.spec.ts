@@ -15,7 +15,7 @@ import { InputTextModule } from 'primeng/primeng';
 import { ReactiveFormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
-import { DotNavigationService } from '../dot-navigation/dot-navigation.service';
+import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
 import { DotEventsService } from '../../../api/services/dot-events/dot-events.service';
 
 @Injectable()

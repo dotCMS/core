@@ -5,7 +5,7 @@ import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { PaginatorService } from '../../../api/services/paginator';
 import { FormGroup, FormBuilder, FormControl, Validators } from '@angular/forms';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
-import { DotNavigationService } from '../dot-navigation/dot-navigation.service';
+import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
 import { DotEventsService } from '../../../api/services/dot-events/dot-events.service';
 
 @Component({

@@ -1,16 +1,12 @@
-<dot-accordion>
-    <nav>
-        <ng-template ngFor let-menu [ngForOf]="menu | async">
-            <dot-accordion-group [heading]="menu.tabName" [icon]="menu.tabIcon" [open]="menu.isOpen">
-                <div class="main-nav__submenu">
-                    <ng-template ngFor let-menuItem [ngForOf]="menu.menuItems">
-                        <a dotMdRipple (click)="onClick($event, menuItem.id)" [routerLink]="menuItem.menuLink"
-                            [class.main-nav__submenu--active]="isActive(menuItem.id)">
-                            {{ menuItem.label }}
-                        </a>
-                    </ng-template>
-                </div>
-            </dot-accordion-group>
-        </ng-template>
-    </nav>
-</dot-accordion>
+<nav [class.collapsed]="collapsed" role="navigation">
+    <ul class="dot-nav">
+        <li *ngFor="let item of menu" class="dot-nav__item" [class.dot-nav__item--active]="item.isOpen">
+            <dot-nav-item
+                [data]="item"
+                [class.collapsed]="collapsed"
+                (menuClick)="onMenuClick($event)"
+                (itemClick)="onClick($event)">
+            </dot-nav-item>
+        </li>
+    </ul>
+</nav>

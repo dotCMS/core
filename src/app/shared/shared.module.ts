@@ -20,7 +20,7 @@ import { DotDropdownModule } from '../view/components/_common/dropdown-component
 import { GravatarModule } from '../view/components/_common/gravatar/gravatar.module';
 import { MainNavigationModule } from '../view/components/dot-navigation/dot-navigation.module';
 import { DotEventsService } from '../api/services/dot-events/dot-events.service';
-import { DotNavigationService } from '../view/components/dot-navigation/dot-navigation.service';
+import { DotNavigationService } from '../view/components/dot-navigation/services/dot-navigation.service';
 
 @NgModule({
     declarations: [],

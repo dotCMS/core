@@ -7,7 +7,7 @@ import { SiteService } from 'dotcms-js/dotcms-js';
 import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
-import { DotNavigationService } from '../dot-navigation/dot-navigation.service';
+import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
 import { SiteServiceMock, mockSites } from '../../../test/site-service.mock';
 import { RouterTestingModule } from '../../../../../node_modules/@angular/router/testing';
 import { ActivatedRoute } from '@angular/router';

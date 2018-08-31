@@ -1,7 +1,6 @@
-@import 'mixins';
-@import '../../../../styles/primeng-theme/utils/_mixins.scss';
-@import 'variables';
-$sidebar-width: 200px;
+@import "mixins";
+@import "../../../../styles/primeng-theme/utils/_mixins.scss";
+@import "variables";
 
 .layout {
     display: flex;
@@ -33,7 +32,7 @@ $sidebar-width: 200px;
     &.layout__main--tablet-only {
         &::after {
             background-color: $black;
-            content: '';
+            content: "";
             position: absolute;
             height: 100%;
             top: 0;
@@ -58,7 +57,6 @@ $sidebar-width: 200px;
     background-color: $brand-background;
     flex-shrink: 0;
     transition: width $basic-speed * 2 cubic-bezier(0.25, 0.8, 0.25, 1);
-    width: $sidebar-width;
     position: absolute;
     z-index: 10;
     height: 100%;

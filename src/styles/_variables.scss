@@ -53,6 +53,7 @@ $basic-padding: 8px;
 $toolbar-height: 60px;
 $toolbar-background: $white;
 $toolbar-color: $black;
+$navigation-item-height: 48px;
 
 // GRIDS
 $gutter-width: $basic-padding * 4;
@@ -81,7 +82,7 @@ $container-lg: (975px + $gutter-width);
 $container-xl: (1381px + $gutter-width);
 
 // MATERIAL DESIGN
-$md-icon-size: 24px;
+$md-icon-size: 18px;
 $md-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
 $md-shadow-2: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
 $md-shadow-3: 0 10px 24px 0 rgba(0,0,0,0.2);

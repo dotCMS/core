@@ -69,7 +69,7 @@ p-toolbar::ng-deep {
     position: absolute;
     top: 0;
     width: 130px;
-    transition: width $basic-speed * 2 cubic-bezier(0.25, 0.8, 0.25, 1);
+    transition: width $basic-speed ease;
 
     .toolbar__logo-wrapper--collapsed & {
         width: 0;
