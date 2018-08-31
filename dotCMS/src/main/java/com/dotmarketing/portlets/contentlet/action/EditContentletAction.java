@@ -1316,12 +1316,11 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 						APILocator.getVersionableAPI().getContentletVersionInfo(content.getIdentifier(), content.getLanguageId());
 
 				if (user.getUserId().equals(contentletVersionInfo.getLockedBy())) {
-
 						conAPI.unlock(content, user, false);
-
 				}
 			}
 		} catch (DotDataException|DotSecurityException e) {
+			Logger.error(EditContentletAction.class, e.getMessage(), e);
 			new DotRuntimeException(e);
 		}
 	}
