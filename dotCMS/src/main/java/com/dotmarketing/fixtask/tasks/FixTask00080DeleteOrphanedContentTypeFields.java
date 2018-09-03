@@ -51,7 +51,7 @@ public class FixTask00080DeleteOrphanedContentTypeFields implements FixTask {
 	private List<Map<String, String>> modifiedData = new ArrayList<Map<String, String>>();
 
 	/** Lookup invalid inodes in Field table referencing the Structure table */
-	private static final String VERIFICATION_QUERY = "SELECT inode FROM field WHERE structure_inode NOT IN (SELECT inode FROM structure)";
+	private static final String VERIFICATION_QUERY = "SELECT inode FROM field WHERE NOT EXISTS (SELECT inode FROM structure WHERE structure.inode = field.structure_inode)";
 
 	@Override
 	public List<Map<String, Object>> executeFix() throws DotDataException,

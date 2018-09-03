@@ -85,9 +85,9 @@ public class MaintenanceUtil {
 
 	public static int cleanMultiTreeTable(){
 		final String countSQL = "select count(*) as count from multi_tree t";
-		final String deleteChildFromSQL ="delete from multi_tree where child not in (select i.id from identifier i)";
-		final String deleteParent1FromSQL ="delete from multi_tree where parent1 not in (select i.id from identifier i)";
-		final String deleteParent2FromSQL ="delete from multi_tree where parent2 not in (select i.id from identifier i)";
+		final String deleteChildFromSQL ="delete from multi_tree where not exists (select i.id from identifier i where multi_tree.child = i.id)";
+		final String deleteParent1FromSQL ="delete from multi_tree where not exists (select i.id from identifier i where multi_tree.parent1 = i.id)";
+		final String deleteParent2FromSQL ="delete from multi_tree where parent2 not exists (select i.id from identifier i where multi_tree.parent2 = i.id)";
 		DotConnect dc = new DotConnect();
 		dc.setSQL(countSQL);
 		List<HashMap<String, String>> result=null;
@@ -178,12 +178,12 @@ public class MaintenanceUtil {
 	 * @return
 	 */
 	public static void cleanInodeTableData(String tableName, String inodeType){
-		String sql = "update inode set type = ? where inode in " +
-					 "(select inode from " + tableName + ") and type <> ?";
-		String inodesToDeleteSql = "select inode from inode where type = ? and inode not in " +
-									"(select inode from " + tableName + ")";
-		String deleteSQL = "delete from inode where type = ? and inode not in " +
-							"(select inode from " + tableName + ")";
+		String sql = "update inode set type = ? where exists " +
+					 "(select t.inode from " + tableName + " t where t.inode = inode) and type <> ?";
+		String inodesToDeleteSql = "select inode from inode i where type = ? and not exists " +
+									"(select inode from " + tableName + " t where i.inode = t.inode)";
+		String deleteSQL = "delete from inode i where type = ? and not exists " +
+							"(select inode from \" + tableName + \" t where i.inode = t.inode)";
 		DotConnect dc = new DotConnect();
 		dc.setSQL(sql);
 		dc.addParam(inodeType);
@@ -233,10 +233,10 @@ public class MaintenanceUtil {
 	 * @return
 	 */
 	public static void removeOphanedInodes(String tableName, String inodeType){
-		String inodesToDeleteSql = "select inode from inode where type = ? and inode not in " +
-									"(select inode from " + tableName + ")";
-		String deleteSQL = "delete from inode where type = ? and inode not in " +
-							"(select inode from " + tableName + ")";
+		String inodesToDeleteSql = "select inode from inode i where type = ? and not exists " +
+									"(select inode from " + tableName + " t where i.inode = t.inode)";
+		String deleteSQL = "delete from inode where type = ? and inode not exists " +
+							"(select inode from " + tableName + " t where i.inode = t.inode)";
 		DotConnect dc = new DotConnect();
 
 		dc.setSQL(inodesToDeleteSql);
@@ -303,7 +303,7 @@ public class MaintenanceUtil {
 	 */
 	public static int deleteContentletsWithNoStructure(){
 		final String countSQL = "select count(*) as count from contentlet t";
-		String selectSQL = "select inode from contentlet where structure_inode not in (select inode from structure)";
+		String selectSQL = "select inode from contentlet where not exists (select inode from structure where contentlet.structure_inode = structure.inode)";
 		DotConnect dc = new DotConnect();
 		dc.setSQL(countSQL);
 		List<HashMap<String, String>> result =null;
