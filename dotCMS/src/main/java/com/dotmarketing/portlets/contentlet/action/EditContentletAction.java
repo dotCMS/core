@@ -47,6 +47,7 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.ajax.ContentletAjax;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.business.DotLockException;
@@ -2891,14 +2892,17 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 			public void reindex() throws DotContentletStateException, DotStateException, DotSecurityException, DotDataException {
 				//DistributedJournalAPI jAPI = APILocator.getDistributedJournalAPI();
-				int count = 0;
-				for(String inode  : inodes){
 
-					Contentlet contentlet = new Contentlet();
+				final ContentletCache contentletCache = CacheLocator.getContentletCache();
+
+				int count = 0;
+				for(final String inode  : inodes){
+
 					try{
-						contentlet = conAPI.find(inode, APILocator.getUserAPI().getSystemUser(), false);
+						final Contentlet contentlet = conAPI.find(inode, APILocator.getUserAPI().getSystemUser(), false);
 						if(contentlet != null && UtilMethods.isSet(contentlet.getInode())){
 							contentlet.setLowIndexPriority(true);
+							contentletCache.remove(contentlet.getInode());
 							conAPI.reindex(contentlet);
 							count++;
 						}else{
