@@ -126,7 +126,8 @@ describe('DotEditContentComponent', () => {
             'editpage.content.steal.lock.confirmation_message.accept': 'Cancel',
             'editpage.content.save.changes.confirmation.header': 'Save header',
             'editpage.content.save.changes.confirmation.message': 'Save message',
-            'dot.common.content.search': 'Content Search'
+            'dot.common.content.search': 'Content Search',
+            'an-unexpected-system-error-occurred': 'Error msg'
         });
 
         DOTTestBed.configureTestingModule({
@@ -933,6 +934,67 @@ describe('DotEditContentComponent', () => {
                 expect(dotEditPageDataService.set).not.toHaveBeenCalled();
                 expect(dotRouterService.goToEditPage).not.toHaveBeenCalled();
             });
+        });
+
+        describe('listen reorder-menu event', () => {
+            it('should set the reorder menu url', () => {
+                fixture.detectChanges();
+
+                const customEvent = document.createEvent('CustomEvent');
+                customEvent.initCustomEvent('ng-event', false, false, {
+                    name: 'reorder-menu',
+                    data: 'testUrl'
+                });
+                document.dispatchEvent(customEvent);
+                expect(component.reorderMenuUrl).toEqual('testUrl');
+            });
+
+            it('should clean the reorder menu url & reload iframe (Saved Menu)', () => {
+                spyOn(component, 'reload');
+                fixture.detectChanges();
+
+                const customEvent = document.createEvent('CustomEvent');
+                customEvent.initCustomEvent('ng-event', false, false, {
+                    name: 'save-menu-order',
+                    data: ''
+                });
+                document.dispatchEvent(customEvent);
+                expect(component.reorderMenuUrl).toEqual('');
+                expect(component.reload).toHaveBeenCalled();
+            });
+
+            it('should clean the reorder menu url & display error msg (Error saving Menu)', () => {
+                spyOn(dotGlobalMessageService, 'display');
+                fixture.detectChanges();
+
+                const customEvent = document.createEvent('CustomEvent');
+                customEvent.initCustomEvent('ng-event', false, false, {
+                    name: 'error-saving-menu-order',
+                    data: ''
+                });
+                document.dispatchEvent(customEvent);
+                expect(component.reorderMenuUrl).toEqual('');
+                expect(dotGlobalMessageService.display).toHaveBeenCalledWith('Error msg');
+            });
+
+            it('should clean the reorder menu url (Cancel custom event)', () => {
+                fixture.detectChanges();
+                const customEvent = document.createEvent('CustomEvent');
+                customEvent.initCustomEvent('ng-event', false, false, {
+                    name: 'cancel-save-menu-order',
+                    data: ''
+                });
+                document.dispatchEvent(customEvent);
+                expect(component.reorderMenuUrl).toEqual('');
+            });
+
+            it('should close menu dialog on close()', () => {
+                const reorderMenuElement = de.query(By.css('dot-reorder-menu')).nativeElement;
+                fixture.detectChanges();
+                reorderMenuElement.dispatchEvent(new Event('close'));
+                expect(component.reorderMenuUrl).toEqual('');
+            });
+
         });
     });
 

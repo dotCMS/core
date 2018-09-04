@@ -1,0 +1,6 @@
+<dot-iframe-dialog
+    *ngIf="!!url"
+    (close)="onClose($event)"
+    [header]="dotMessageService.get('editpage.content.contentlet.menu.reorder.title')"
+    [url]="url">
+</dot-iframe-dialog>

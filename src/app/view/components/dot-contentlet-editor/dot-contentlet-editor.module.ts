@@ -6,6 +6,7 @@ import { DotEditContentletComponent } from './components/dot-edit-contentlet/dot
 import { DotIframeDialogModule } from '../dot-iframe-dialog/dot-iframe-dialog.module';
 import { DotContentletEditorService } from './services/dot-contentlet-editor.service';
 import { DotContentletWrapperComponent } from './components/dot-contentlet-wrapper/dot-contentlet-wrapper.component';
+import { DotReorderMenuComponent } from './components/dot-reorder-menu/dot-reorder-menu.component';
 
 @NgModule({
     imports: [CommonModule, DotIframeDialogModule],
@@ -13,9 +14,10 @@ import { DotContentletWrapperComponent } from './components/dot-contentlet-wrapp
         DotAddContentletComponent,
         DotContentletWrapperComponent,
         DotCreateContentletComponent,
-        DotEditContentletComponent
+        DotEditContentletComponent,
+        DotReorderMenuComponent
     ],
-    exports: [DotEditContentletComponent, DotAddContentletComponent, DotCreateContentletComponent],
+    exports: [DotEditContentletComponent, DotAddContentletComponent, DotCreateContentletComponent, DotReorderMenuComponent],
     providers: [DotContentletEditorService]
 })
 export class DotContentletEditorModule {}
