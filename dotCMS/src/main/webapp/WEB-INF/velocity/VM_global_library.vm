@@ -105,3 +105,21 @@
     #set ($content = $_dotParseContentHeap.remove($math.sub($_dotParseContentHeap.size(), 1)))
   #end
 #end
+
+#macro(orderMenu)
+    <a href="#" onclick="openReorderDialog()" class="btn btn-primary btn-xs normaltip" data-original-title="Reorder Menu">
+        <i class="fa fa-arrow-up"></i>
+        <i class="fa fa-arrow-down"></i>
+    </a>
+    <script>
+        function openReorderDialog() {
+            var reorderUrl = "${directorURL}&startLevel=1&depth=2&pagePath=${VTLSERVLET_URI}&hostId=${host.identifier}";
+            var customEvent = window.top.document.createEvent("CustomEvent");
+            customEvent.initCustomEvent("ng-event", false, false,  {
+                name: "reorder-menu",
+                data: reorderUrl
+            });
+            window.top.document.dispatchEvent(customEvent);
+        }
+    </script>
+#end
