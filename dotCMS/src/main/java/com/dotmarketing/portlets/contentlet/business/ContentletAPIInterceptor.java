@@ -2447,26 +2447,26 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	}
 
 	@Override
-	public int touch(final Set<String> inodes) throws DotDataException {
+	public int touch(final Set<String> inodes, final User user) throws DotDataException {
 		for(ContentletAPIPreHook pre : preHooks){
 			pre.touch(inodes);
 		}
-		final int num = conAPI.touch(inodes);
+		final int num = conAPI.touch(inodes, user);
 		for(ContentletAPIPostHook post : postHooks){
-			post.touch(inodes);
+			post.touch(inodes, user);
 		}
 		return num;
 	}
 
 	@Override
-	public Set<String> touch(final ContentType contentType) throws DotDataException {
+	public Set<String> touch(final ContentType contentType, final User user) throws DotDataException {
 
 		for(ContentletAPIPreHook pre : preHooks){
 			pre.touch(contentType);
 		}
-		final Set<String> inodes = conAPI.touch(contentType);
+		final Set<String> inodes = conAPI.touch(contentType, user);
 		for(ContentletAPIPostHook post : postHooks){
-			post.touch(contentType);
+			post.touch(contentType, user);
 		}
 		return inodes;
 	}

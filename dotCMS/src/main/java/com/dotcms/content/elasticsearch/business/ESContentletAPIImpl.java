@@ -6135,13 +6135,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * This method is named after the linux command touch.
      * Basically this updates the mod_date on a piece of content
      * @param inodes
+     * @param user
      * @return
      * @throws DotDataException
      */
     @WrapInTransaction
     @Override
-    public int touch(final Set<String> inodes) throws DotDataException {
-       return contentFactory.touch(inodes);
+    public int touch(final Set<String> inodes, final User user) throws DotDataException {
+       return contentFactory.touch(inodes, user);
     }
 
 
@@ -6149,12 +6150,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * This method is named after the linux command touch.
      * Given a CT this will update the mod_date on all the most recent instances of content for a given Content type
      * @param contentType
+     * @param user
      * @return
      * @throws DotDataException
      */
     @WrapInTransaction
     @Override
-    public Set<String> touch(final ContentType contentType) throws DotDataException {
-        return contentFactory.touch(contentType);
+    public Set<String> touch(final ContentType contentType, final User user) throws DotDataException {
+        return contentFactory.touch(contentType, user);
     }
 }

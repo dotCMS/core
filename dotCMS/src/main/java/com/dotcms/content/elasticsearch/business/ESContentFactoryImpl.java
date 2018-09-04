@@ -2385,20 +2385,21 @@ public class ESContentFactoryImpl extends ContentletFactory {
      * This method is named after the linux command touch.
      * Basically this updates the mod_date on a piece of content
      * @param inodes
+     * @param user
      * @return
      * @throws DotDataException
      */
     @WrapInTransaction
     @Override
-    public int touch(final Set<String> inodes) throws DotDataException {
+    public int touch(final Set<String> inodes, final User user) throws DotDataException {
         if (inodes.isEmpty()) {
             return 0;
         }
-        final String SQL_STATEMENT = "UPDATE contentlet SET mod_date = ? WHERE inode = ?";
+        final String SQL_STATEMENT = "UPDATE contentlet SET mod_date = ?, mod_user = ? WHERE inode = ?";
         final Date now = DbConnectionFactory.now();
-        final List<Params> updateParams = new ArrayList<>(2);
+        final List<Params> updateParams = new ArrayList<>(inodes.size());
         for (final String inode : inodes) {
-            updateParams.add(new Params(now, inode));
+            updateParams.add(new Params(now, user.getUserId() ,inode));
         }
         final List<Integer> batchResult =
                 Ints.asList(
@@ -2416,8 +2417,13 @@ public class ESContentFactoryImpl extends ContentletFactory {
                                     } else {
                                         Logger.error(getClass(),"Un-recognized SQL Date instance. "+date);
                                     }
+
                                     preparedStatement.setString(2,
                                             String.class.cast(params.get(1))
+                                    );
+
+                                    preparedStatement.setString(3,
+                                            String.class.cast(params.get(2))
                                     );
                                 })
                 );
@@ -2436,12 +2442,13 @@ public class ESContentFactoryImpl extends ContentletFactory {
      * This method is named after the linux command touch.
      * Given a CT this will update the mod_date on all the most recent instances of content for a given Content type
      * @param contentType
+     * @param user
      * @return
      * @throws DotDataException
      */
     @WrapInTransaction
     @Override
-    public Set<String> touch(final ContentType contentType) throws DotDataException {
+    public Set<String> touch(final ContentType contentType, final User user) throws DotDataException {
         final String SELECT_CONTENT = "SELECT c.inode FROM contentlet c INNER JOIN contentlet_version_info cvi \n"
                 + " ON (c.inode = cvi.working_inode OR c.inode = cvi.live_inode) \n"
                 + " WHERE c.structure_inode = ?\n" ;
@@ -2453,7 +2460,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         final Set<String> inodes = results.stream().map(map -> map.get("inode").toString())
                 .collect(Collectors.toSet());
 
-        int count = touch(inodes);
+        int count = touch(inodes, user);
         Logger.debug(getClass(),()->String.format("%d records were touched.",count));
 
         return inodes;

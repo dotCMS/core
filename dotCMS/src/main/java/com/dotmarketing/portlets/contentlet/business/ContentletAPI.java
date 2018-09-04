@@ -1722,17 +1722,19 @@ public interface ContentletAPI {
 	/**
 	 *
 	 * @param inodes
+	 * @param user
 	 * @return
 	 * @throws DotDataException
 	 */
-	int touch(final Set<String> inodes) throws DotDataException;
+	int touch(final Set<String> inodes, final User user) throws DotDataException;
 
 	/**
 	 *
 	 * @param contentType
+	 * @param user
 	 * @return
 	 * @throws DotDataException
 	 */
-	Set<String> touch(final ContentType contentType) throws DotDataException;
+	Set<String> touch(final ContentType contentType, final User user) throws DotDataException;
 
 }

@@ -4503,10 +4503,11 @@ public class ContentletAPITest extends ContentletBaseTest {
         final Contentlet beforeTouch = list.get(0);
 
         final Set<String> inodes = Stream.of(beforeTouch).map(Contentlet::getInode).collect(Collectors.toSet());
-        contentletAPI.touch(inodes);
+        contentletAPI.touch(inodes, user);
         final Contentlet afterTouch = contentletFactory.find(beforeTouch.getInode());
         assertEquals(beforeTouch.getInode(),afterTouch.getInode());
         assertNotEquals(afterTouch.getModDate(), beforeTouch.getModDate());
+        assertEquals(user.getUserId(),afterTouch.getModUser());
     }
 
 
@@ -4536,7 +4537,7 @@ public class ContentletAPITest extends ContentletBaseTest {
                 contentletAPI.find(contentlet1.getInode(), user, false);
             }
 
-            final Set<String> inodes = contentletAPI.touch(contentType);
+            final Set<String> inodes = contentletAPI.touch(contentType, user);
             assertEquals(inodes.size(),3);
 
         } finally {
