@@ -123,7 +123,31 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 		dojo.style('editFolderButtonRow', { display: '' });
 		changesMadeToPermissions = false;
 	}
+    function refreshPermissionsTab(){
+        var y = Math.floor(Math.random() * 1123213213);
+       
+        var dojoDigit=dijit.byId("permissionsRoleSelector-rolesTree")
+        if (dojoDigit) {
+            dojoDigit.destroyRecursive(false);
+        }
+    
+        var myCp = dijit.byId("folderPermissionCp");
+        if (myCp) {
+            myCp.destroyRecursive(false);
+        }
 
+        var myDiv = dojo.byId("permissionsTabDiv");
+        if(myDiv){
+            dojo.empty(myDiv);
+        }
+
+        myCp = new dojox.layout.ContentPane({
+            id : "folderPermissionCp",
+            style: "height:100%",
+            href: "/html/portlet/ext/folders/edit_permissions_tab_inc_wrapper.jsp?folderId=<%= folder.getInode() %>&r=" + y
+        }).placeAt(myDiv);
+        
+    }
 </script>
 
 
@@ -248,11 +272,8 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 		boolean canEditAsset = perAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user);
 		if (canEditAsset) {
 	%>
-		<div id="permissionsTab" refreshOnShow="true" preload="true"  dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Permissions") %>" onShow="hideEditButtonsRow()" >
-			<%
-				request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, folder);
-			%>
-			<%@ include file="/html/portlet/ext/common/edit_permissions_tab_inc.jsp" %>
+		<div id="permissionsTab" refreshOnShow="true"  dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Permissions") %>" onShow="refreshPermissionsTab();hideEditButtonsRow()" >
+            <div id="permissionsTabDiv"></div>
 		</div>
 
 		<div id="versions" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_push_history") %>" onShow="hideEditButtonsRow();">
