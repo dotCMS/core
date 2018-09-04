@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -2407,7 +2408,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
          }
          return ret;
     }
-    
+
     @Override
     public SearchResponse esSearchRaw(String esQuery, boolean live, User user,
     		boolean respectFrontendRoles) throws DotSecurityException,
@@ -2444,5 +2445,32 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 			post.updateUserReferences(userToReplace,replacementUserId, user);
 		}
 	}
-    
+
+	@Override
+	public int touch(final Set<String> inodes) throws DotDataException {
+		for(ContentletAPIPreHook pre : preHooks){
+			pre.touch(inodes);
+		}
+		final int num = conAPI.touch(inodes);
+		for(ContentletAPIPostHook post : postHooks){
+			post.touch(inodes);
+		}
+		return num;
+	}
+
+	@Override
+	public Set<String> touch(final ContentType contentType) throws DotDataException {
+
+		for(ContentletAPIPreHook pre : preHooks){
+			pre.touch(contentType);
+		}
+		final Set<String> inodes = conAPI.touch(contentType);
+		for(ContentletAPIPostHook post : postHooks){
+			post.touch(contentType);
+		}
+		return inodes;
+	}
+
+
+
 }

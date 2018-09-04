@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -24,11 +25,11 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
-
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Provides access to a wide range of routines aimed to interact with
@@ -1717,5 +1718,21 @@ public interface ContentletAPI {
 	 * @throws DotDataException
 	 */
 	public ESSearchResults esSearch ( String esQuery, boolean live, User user, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException;
+
+	/**
+	 *
+	 * @param inodes
+	 * @return
+	 * @throws DotDataException
+	 */
+	int touch(final Set<String> inodes) throws DotDataException;
+
+	/**
+	 *
+	 * @param contentType
+	 * @return
+	 * @throws DotDataException
+	 */
+	Set<String> touch(final ContentType contentType) throws DotDataException;
 
 }

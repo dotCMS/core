@@ -521,6 +521,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			workFlowFactory.saveSchemeIdsForContentType(contentType.inode(),
 					schemesIds.stream().map(this::getLongIdForScheme).collect(CollectionsUtils.toImmutableList()),
 					this::consumeWorkflowTask);
+
+
+			if(schemesIds.isEmpty()){
+              // This action has caused a reset workflow action on all contents of this specific CT
+              contentletAPI.touch(contentType);
+			}
+
 		} catch(DotDataException e) {
 
 			Logger.error(WorkflowAPIImpl.class, String.format("Error saving Schemas: %s for Content type %s",

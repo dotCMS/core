@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import com.dotcms.contenttype.model.type.ContentType;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
@@ -27,6 +28,7 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
+import java.util.Set;
 
 /**
  * @author Jason Tesser
@@ -1484,6 +1486,18 @@ public interface ContentletAPIPostHook {
 	 */
 	public default void addPermissionsToQuery ( StringBuffer buffy, User user, List<Role> roles, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException{}
 
+	/**
+	 *
+	 * @param inodes
+	 * @throws DotDataException
+	 */
+	public default void touch(final Set<String> inodes) throws DotDataException {}
 
+	/**
+	 *
+	 * @param contentType
+	 * @throws DotDataException
+	 */
+	public default  void touch(final ContentType contentType) throws DotDataException {}
 
 }

@@ -1,8 +1,12 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.datetimeFormat;
+
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
@@ -11,7 +15,13 @@ import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.util.I18NMessage;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.IdentifierCache;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.query.ComplexCriteria;
 import com.dotmarketing.business.query.Criteria;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
@@ -19,6 +29,7 @@ import com.dotmarketing.business.query.SimpleCriteria;
 import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.db.Params;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -39,9 +50,33 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.NumberUtil;
+import com.dotmarketing.util.RegEX;
+import com.dotmarketing.util.RegExMatch;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.primitives.Ints;
 import com.liferay.portal.model.User;
+import java.io.Serializable;
+import java.io.StringWriter;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.stream.Collectors;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
@@ -60,17 +95,6 @@ import org.elasticsearch.search.sort.ScriptSortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.util.NumberUtils;
-
-import java.io.Serializable;
-import java.io.StringWriter;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.*;
-import java.util.Calendar;
-
-import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.datetimeFormat;
 
 /**
  * Implementation class for the {@link ContentletFactory} interface. This class
@@ -2354,6 +2378,85 @@ public class ESContentFactoryImpl extends ContentletFactory {
         public String getUpdate() {
             return update;
         }
+    }
+
+
+    /**
+     * This method is named after the linux command touch.
+     * Basically this updates the mod_date on a piece of content
+     * @param inodes
+     * @return
+     * @throws DotDataException
+     */
+    @WrapInTransaction
+    @Override
+    public int touch(final Set<String> inodes) throws DotDataException {
+        if (inodes.isEmpty()) {
+            return 0;
+        }
+        final String SQL_STATEMENT = "UPDATE contentlet SET mod_date = ? WHERE inode = ?";
+        final Date now = DbConnectionFactory.now();
+        final List<Params> updateParams = new ArrayList<>(2);
+        for (final String inode : inodes) {
+            updateParams.add(new Params(now, inode));
+        }
+        final List<Integer> batchResult =
+                Ints.asList(
+                        new DotConnect().executeBatch(SQL_STATEMENT,
+                                updateParams,
+                                (preparedStatement, params) -> {
+                                    final Date date = Date.class.cast(params.get(0));
+                                    if (date instanceof java.sql.Date) {
+                                        preparedStatement
+                                                .setDate(1,
+                                                        java.sql.Date.class.cast(date));
+                                    } else if (date instanceof java.sql.Timestamp) {
+                                        preparedStatement.setTimestamp(1,
+                                                java.sql.Timestamp.class.cast(date));
+                                    } else {
+                                        Logger.error(getClass(),"Un-recognized SQL Date instance. "+date);
+                                    }
+                                    preparedStatement.setString(2,
+                                            String.class.cast(params.get(1))
+                                    );
+                                })
+                );
+
+        final int count = batchResult.stream().reduce(0, Integer::sum);
+
+        for(final String inode :inodes){
+           cc.remove(inode);
+        }
+
+        return count;
+    }
+
+
+    /**
+     * This method is named after the linux command touch.
+     * Given a CT this will update the mod_date on all the most recent instances of content for a given Content type
+     * @param contentType
+     * @return
+     * @throws DotDataException
+     */
+    @WrapInTransaction
+    @Override
+    public Set<String> touch(final ContentType contentType) throws DotDataException {
+        final String SELECT_CONTENT = "SELECT c.inode FROM contentlet c INNER JOIN contentlet_version_info cvi \n"
+                + " ON (c.inode = cvi.working_inode OR c.inode = cvi.live_inode) \n"
+                + " WHERE c.structure_inode = ?\n" ;
+
+        final DotConnect dotConnect = new DotConnect();
+        dotConnect.setSQL(SELECT_CONTENT).addParam(contentType.inode());
+        final List<Map<String,Object>> results = dotConnect.loadObjectResults();
+
+        final Set<String> inodes = results.stream().map(map -> map.get("inode").toString())
+                .collect(Collectors.toSet());
+
+        int count = touch(inodes);
+        Logger.debug(getClass(),()->String.format("%d records were touched.",count));
+
+        return inodes;
     }
 
 }

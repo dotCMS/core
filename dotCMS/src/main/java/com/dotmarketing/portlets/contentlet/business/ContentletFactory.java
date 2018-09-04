@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.content.business.DotMappingException;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
@@ -12,14 +13,13 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.liferay.portal.model.User;
-
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.search.SearchHits;
-
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.search.SearchHits;
 
 /**
  * Provides utility methods to interact with {@link Contentlet} objects in
@@ -384,5 +384,9 @@ public abstract class ContentletFactory {
         // TODO Auto-generated method stub
         return null;
     }
+
+	public abstract int touch(final Set<String> inodes) throws DotDataException;
+
+	public abstract Set<String> touch(final ContentType contentType) throws DotDataException;
 
 }
