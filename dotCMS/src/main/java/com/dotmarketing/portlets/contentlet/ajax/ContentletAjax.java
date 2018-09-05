@@ -1885,6 +1885,7 @@ public class ContentletAjax {
 				String errorString = LanguageUtil.get(user, "message.relationship.required_ext");
 				errorString = errorString.replace("{0}", sb.toString());
 				saveContentErrors.add(errorString);
+				clearBinary = false;
 			}
 
 			if (ve.hasUniqueErrors()) {
