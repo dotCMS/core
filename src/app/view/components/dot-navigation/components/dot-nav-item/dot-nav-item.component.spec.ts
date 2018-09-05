@@ -28,7 +28,7 @@ describe('DotNavItemComponent', () => {
         fixture = TestBed.createComponent(DotNavItemComponent);
         de = fixture.debugElement;
         component = fixture.componentInstance;
-        component.data = dotMenuMock;
+        component.data = dotMenuMock();
         fixture.detectChanges();
     });
 
@@ -52,6 +52,6 @@ describe('DotNavItemComponent', () => {
 
     it('should have dot-sub-nav', () => {
         const subNav: DebugElement = de.query(By.css('dot-sub-nav'));
-        expect(subNav.componentInstance.data).toBe(dotMenuMock);
+        expect(subNav.componentInstance.data).toEqual(dotMenuMock());
     });
 });

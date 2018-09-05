@@ -20,59 +20,60 @@ import { DotMenu } from '../../../shared/models/navigation';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { skip } from 'rxjs/operators';
 
-
-export const dotMenuMock: DotMenu = {
-    active: true,
-    id: '123',
-    isOpen: false,
-    menuItems: [
-        {
-            active: false,
-            ajax: true,
-            angular: true,
-            id: '123',
-            label: 'Label 1',
-            url: 'url/one',
-            menuLink: 'url/link1'
-        },
-        {
-            active: true,
-            ajax: true,
-            angular: true,
-            id: '456',
-            label: 'Label 2',
-            url: 'url/two',
-            menuLink: 'url/link2'
-        }
-    ],
-    name: 'Menu 1',
-    tabDescription: 'Description',
-    tabIcon: 'icon',
-    tabName: 'Name',
-    url: '/url/index'
+export const dotMenuMock = () => {
+    return {
+        active: true,
+        id: '123',
+        isOpen: false,
+        menuItems: [
+            {
+                active: false,
+                ajax: true,
+                angular: true,
+                id: '123',
+                label: 'Label 1',
+                url: 'url/one',
+                menuLink: 'url/link1'
+            },
+            {
+                active: true,
+                ajax: true,
+                angular: true,
+                id: '456',
+                label: 'Label 2',
+                url: 'url/two',
+                menuLink: 'url/link2'
+            }
+        ],
+        name: 'Menu 1',
+        tabDescription: 'Description',
+        tabIcon: 'icon',
+        tabName: 'Name',
+        url: '/url/index'
+    };
 };
 
-const dotMenuMock1: DotMenu = {
-    ...dotMenuMock,
-    active: false,
-    id: '456',
-    name: 'Menu 2',
-    url: '/url/456',
-    menuItems: [
-        {
-            ...dotMenuMock.menuItems[0],
-            active: false,
-            id: '789'
-        },
-        {
-            ...dotMenuMock.menuItems[1],
-            active: false,
-            id: '000'
-        }
-    ]
+const dotMenuMock1 = () => {
+    return {
+        ...dotMenuMock(),
+        active: false,
+        id: '456',
+        name: 'Menu 2',
+        url: '/url/456',
+        menuItems: [
+            {
+                ...dotMenuMock().menuItems[0],
+                active: false,
+                id: '789'
+            },
+            {
+                ...dotMenuMock().menuItems[1],
+                active: false,
+                id: '000'
+            }
+        ]
+    };
 };
-
-const data = [dotMenuMock, dotMenuMock1];
 
 @Component({
     selector: 'dot-test',
@@ -90,7 +91,7 @@ class FakeNavigationService {
     _routeEvents: BehaviorSubject<NavigationEnd> = new BehaviorSubject(new NavigationEnd(0, '', ''));
 
     get items$(): Observable<DotMenu[]> {
-        return of([...data]);
+        return of([dotMenuMock(), dotMenuMock1()]);
     }
 
     onNavigationEnd(): Observable<NavigationEnd> {
@@ -151,10 +152,8 @@ describe('DotNavigationComponent', () => {
     it('should have dot-nav-item print correctly', () => {
         const items: DebugElement[] = compDe.queryAll(By.css('dot-nav-item'));
         expect(items.length).toBe(2);
-
-        items.forEach((item: DebugElement, i: number) => {
-            expect(item.componentInstance.data).toEqual(data[i]);
-        });
+        expect(items[0].componentInstance.data).toEqual(dotMenuMock());
+        expect(items[1].componentInstance.data).toEqual(dotMenuMock1());
     });
 
     it('should handle menuClick event', () => {
@@ -167,7 +166,7 @@ describe('DotNavigationComponent', () => {
 
         expect(comp.menu.map((menuItem: DotMenu) => menuItem.isOpen)).toEqual([false, false]);
 
-        navItem.triggerEventHandler('menuClick', { originalEvent: {}, data: data[0] });
+        navItem.triggerEventHandler('menuClick', { originalEvent: {}, data: dotMenuMock() });
 
         expect(changeResult).toBe(true);
         expect(comp.menu.map((menuItem: DotMenu) => menuItem.isOpen)).toEqual([true, false]);
@@ -175,7 +174,7 @@ describe('DotNavigationComponent', () => {
     });
 
     it('should navigate to portlet', () => {
-        navItem.triggerEventHandler('menuClick', { originalEvent: {}, data: data[0] });
+        navItem.triggerEventHandler('menuClick', { originalEvent: {}, data: dotMenuMock() });
         expect(dotNavigationService.goTo).toHaveBeenCalledWith('url/link1');
     });
 
@@ -188,7 +187,7 @@ describe('DotNavigationComponent', () => {
                 ctrlKey: false,
                 metaKey: false
             },
-            data: data[0]
+            data: dotMenuMock()
         });
 
         expect(stopProp).toHaveBeenCalledTimes(1);
@@ -204,7 +203,7 @@ describe('DotNavigationComponent', () => {
                 ctrlKey: true,
                 metaKey: false
             },
-            data: data[0]
+            data: dotMenuMock()
         });
 
         expect(stopProp).toHaveBeenCalledTimes(1);

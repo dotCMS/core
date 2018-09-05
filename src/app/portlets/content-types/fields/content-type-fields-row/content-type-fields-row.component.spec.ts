@@ -1,6 +1,6 @@
 import { async, ComponentFixture } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
-import { DebugElement, Component, Input, Output, EventEmitter } from '@angular/core';
+import { DebugElement, Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { ContentTypeFieldsRowComponent } from './';
 import { By } from '@angular/platform-browser';
 import { FieldDragDropService } from '../service';
@@ -44,9 +44,24 @@ class TestContentTypeFieldDraggableItemComponent {
     @Output() edit: EventEmitter<ContentTypeField> = new EventEmitter();
 }
 
+@Component({
+    selector: 'dot-test-host',
+    template: '<dot-content-type-fields-row [fieldRow]="data"></dot-content-type-fields-row>'
+})
+class DotTestHostComponent {
+    data: FieldRow;
+
+    setData(data: FieldRow): void {
+        this.data = data;
+    }
+}
+
 describe('ContentTypeFieldsRowComponent', () => {
+    let hostFixture: ComponentFixture<DotTestHostComponent>;
+    let hostDe: DebugElement;
+    let hostComp: DotTestHostComponent;
+
     let comp: ContentTypeFieldsRowComponent;
-    let fixture: ComponentFixture<ContentTypeFieldsRowComponent>;
     let de: DebugElement;
     let dotDialogService: DotAlertConfirmService;
 
@@ -60,28 +75,39 @@ describe('ContentTypeFieldsRowComponent', () => {
         'dot.common.dialog.reject': 'No'
     });
 
-    beforeEach(
-        async(() => {
-            DOTTestBed.configureTestingModule({
-                declarations: [ContentTypeFieldsRowComponent, TestContentTypeFieldDraggableItemComponent],
-                imports: [DragulaModule, IconButtonTooltipModule],
-                providers: [FieldDragDropService, DotAlertConfirmService, { provide: DotMessageService, useValue: messageServiceMock }]
-            });
+    beforeEach(async(() => {
+        DOTTestBed.configureTestingModule({
+            declarations: [
+                ContentTypeFieldsRowComponent,
+                TestContentTypeFieldDraggableItemComponent,
+                DotTestHostComponent
+            ],
+            imports: [DragulaModule, IconButtonTooltipModule],
+            providers: [
+                FieldDragDropService,
+                DotAlertConfirmService,
+                {
+                    provide: DotMessageService,
+                    useValue: messageServiceMock
+                }
+            ]
+        });
 
-            fixture = DOTTestBed.createComponent(ContentTypeFieldsRowComponent);
-            comp = fixture.componentInstance;
-            de = fixture.debugElement;
-            dotDialogService = fixture.debugElement.injector.get(DotAlertConfirmService);
-        })
-    );
+        hostFixture = DOTTestBed.createComponent(DotTestHostComponent);
+        hostComp = hostFixture.componentInstance;
+        hostDe = hostFixture.debugElement;
+        de = hostDe.query(By.css('dot-content-type-fields-row'));
+        comp = de.componentInstance;
+        dotDialogService = de.injector.get(DotAlertConfirmService);
+    }));
 
     describe('setting rows and columns', () => {
         beforeEach(() => {
-            comp.fieldRow = mockFieldRow;
+            hostComp.setData(mockFieldRow);
+            hostFixture.detectChanges();
         });
 
         it('should has row and columns', () => {
-            fixture.detectChanges();
 
             const columns = de.queryAll(By.css('.row-columns__item'));
             expect(2).toEqual(columns.length);
@@ -103,8 +129,6 @@ describe('ContentTypeFieldsRowComponent', () => {
                 name: 'field-1'
             };
 
-            fixture.detectChanges();
-
             const column = de.query(By.css('.row-columns__item'));
             const dragableItem = column.query(By.css('dot-content-type-field-dragabble-item'));
 
@@ -113,31 +137,25 @@ describe('ContentTypeFieldsRowComponent', () => {
 
             expect(field).toEqual(editField);
         });
+
+        it('should not show the remove row button', () => {
+            const removeRowButon = de.query(By.css('.row-header__remove'));
+            expect(removeRowButon === null).toBe(true);
+        });
     });
 
     describe('remove rows', () => {
-        it('should emit row remove event after confirmation dialog', () => {
-            comp.fieldRow = new FieldRow();
-            comp.fieldRow.columns = [
-                new FieldColumn()
-            ];
-            fixture.detectChanges();
+        beforeEach(() => {
+            hostComp.setData(mockFieldRowFieldEmpty);
+            hostFixture.detectChanges();
+        });
 
-            let result;
-            comp.removeRow.subscribe((rowToRemove: FieldRow) => {
-                result = rowToRemove;
-            });
-
+        it('should show remove row button', () => {
             const removeRowButon = de.query(By.css('.row-header__remove'));
-            removeRowButon.nativeElement.click();
-
-            expect(comp.fieldRow).toEqual(result);
+            expect(removeRowButon !== null).toBe(true);
         });
 
         it('should emit row remove event with no confirmation dialog', () => {
-            comp.fieldRow = mockFieldRowFieldEmpty;
-            fixture.detectChanges();
-
             spyOn(dotDialogService, 'confirm');
 
             let result;

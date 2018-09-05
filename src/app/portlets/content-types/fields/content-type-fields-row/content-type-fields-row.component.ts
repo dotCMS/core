@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
 
 import { ContentTypeField, FieldRow } from '../shared';
 import { BaseComponent } from '../../../../view/components/_common/_base/base-component';
@@ -17,12 +17,14 @@ import { FieldColumn } from '..';
     styleUrls: ['./content-type-fields-row.component.scss'],
     templateUrl: './content-type-fields-row.component.html'
 })
-export class ContentTypeFieldsRowComponent extends BaseComponent {
+export class ContentTypeFieldsRowComponent extends BaseComponent implements OnChanges {
     @Input() fieldRow: FieldRow;
 
     @Output() editField: EventEmitter<ContentTypeField> = new EventEmitter();
     @Output() removeField: EventEmitter<ContentTypeField> = new EventEmitter();
     @Output() removeRow: EventEmitter<FieldRow> = new EventEmitter();
+
+    showRemoveRow = true;
 
     constructor(dotMessageService: DotMessageService, private dotDialogService: DotAlertConfirmService) {
         super(
@@ -37,6 +39,13 @@ export class ContentTypeFieldsRowComponent extends BaseComponent {
             ],
             dotMessageService
         );
+    }
+
+    ngOnChanges(changes: SimpleChanges): void {
+        if (changes.fieldRow && changes.fieldRow.currentValue) {
+            const cols: FieldColumn[] = changes.fieldRow.currentValue.columns;
+            this.showRemoveRow = cols.every((col: FieldColumn) => col.fields.length === 0);
+        }
     }
 
     /**

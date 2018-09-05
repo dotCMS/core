@@ -21,7 +21,7 @@
         <div class="row-columns__item-empty-message" data-drag-type="not_field">
             <dot-icon-button-tooltip
                 tiny
-                *ngIf="fieldRow.columns[0].fields.length === 0"
+                *ngIf="showRemoveRow"
                 class="row-header__remove"
                 icon="delete"
                 [tooltipText]="i18nMessages['contenttypes.action.delete']"
