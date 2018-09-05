@@ -98,8 +98,8 @@ class FakeNavigationService {
         return this._routeEvents.asObservable().pipe(skip(1));
     }
 
-    triggerOnNavigationEnd() {
-        return this._routeEvents.next(new NavigationEnd(0, '/url/789', '/url/789'));
+    triggerOnNavigationEnd(url?: string) {
+        return this._routeEvents.next(new NavigationEnd(0, url || '/url/789', url || '/url/789'));
     }
 
     goTo() {}
@@ -243,5 +243,13 @@ describe('DotNavigationComponent', () => {
         expect(comp.menu[1].isOpen).toBe(true);
         expect(comp.menu[1].menuItems[0].active).toBe(true);
         expect(comp.menu[1].menuItems[1].active).toBe(false);
+    });
+
+    it('should NOT set active nav item', () => {
+        expect(comp.menu[0].menuItems[1].active).toBe(true);
+
+        dotNavigationService.triggerOnNavigationEnd('/edit-page/content');
+
+        expect(comp.menu[0].menuItems[1].active).toBe(true);
     });
 });

@@ -1,9 +1,12 @@
 import { Component, OnInit, Input, OnChanges, SimpleChanges, EventEmitter, Output, SimpleChange } from '@angular/core';
-import { take } from 'rxjs/operators';
 import { NavigationEnd } from '@angular/router';
+import { Observable } from 'rxjs/Observable';
+import { of } from 'rxjs/observable/of';
+import { take, retryWhen, concatMap } from 'rxjs/operators';
 
 import { DotMenu, DotMenuItem } from '../../../shared/models/navigation';
 import { DotNavigationService } from './services/dot-navigation.service';
+
 
 @Component({
     providers: [],
@@ -28,14 +31,20 @@ export class DotNavigationComponent implements OnInit, OnChanges {
     }
 
     ngOnInit() {
-        this.dotNavigationService.items$.pipe(take(1)).subscribe((menu: DotMenu[]) => {
-            this.menu = menu;
-        });
+        this.dotNavigationService.items$
+            .pipe(
+                concatMap((menu: DotMenu[]) => (menu.length ? of(menu) : Observable.throw('Nav is not ready'))),
+                retryWhen(() => Observable.timer(100)),
+                take(1)
+            )
+            .subscribe((menu: DotMenu[]) => {
+                this.menu = menu;
+            });
 
         this.dotNavigationService.onNavigationEnd().subscribe((event: NavigationEnd) => {
             const urlSegments: string[] = event.url.split('/');
 
-            if (urlSegments.length < 4) {
+            if (this.shouldUpdateActiveState(urlSegments)) {
                 this.setActive(urlSegments.pop());
             }
         });
@@ -48,7 +57,7 @@ export class DotNavigationComponent implements OnInit, OnChanges {
      * @param {string} id menu item id
      * @memberof MainNavigationComponent
      */
-    onClick($event: {originalEvent: MouseEvent, data: DotMenuItem}): void {
+    onClick($event: { originalEvent: MouseEvent; data: DotMenuItem }): void {
         $event.originalEvent.stopPropagation();
 
         if (!$event.originalEvent.ctrlKey && !$event.originalEvent.metaKey) {
@@ -62,7 +71,7 @@ export class DotNavigationComponent implements OnInit, OnChanges {
      * @param {DotMenu} currentItem
      * @memberof DotNavigationComponent
      */
-    onMenuClick(event: {originalEvent: MouseEvent, data: DotMenu}): void {
+    onMenuClick(event: { originalEvent: MouseEvent; data: DotMenu }): void {
         this.change.emit();
 
         if (this.collapsed) {
@@ -82,7 +91,6 @@ export class DotNavigationComponent implements OnInit, OnChanges {
             if (item.id === id) {
                 item.active = true;
                 isActive = true;
-
             } else {
                 item.active = false;
             }
@@ -100,5 +108,11 @@ export class DotNavigationComponent implements OnInit, OnChanges {
 
     private shouldOpenMenuWhenUncollapse(collapsed: SimpleChange, item: DotMenu): boolean {
         return !collapsed.currentValue && item.active;
+    }
+
+    private shouldUpdateActiveState(urlSegments: string[]): boolean {
+        const blackList = ['edit-page'];
+        const isBlackListed = !!urlSegments.filter(element => blackList.includes(element)).length;
+        return urlSegments.length < 4 && !isBlackListed;
     }
 }
