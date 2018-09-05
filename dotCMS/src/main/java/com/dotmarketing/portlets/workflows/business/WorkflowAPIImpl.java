@@ -521,6 +521,22 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			workFlowFactory.saveSchemeIdsForContentType(contentType.inode(),
 					schemesIds.stream().map(this::getLongIdForScheme).collect(CollectionsUtils.toImmutableList()),
 					this::consumeWorkflowTask);
+
+
+			if(schemesIds.isEmpty()){
+			  final DotSubmitter submitter = this.concurrentFactory.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
+			  submitter.submit(() -> {
+				  try {
+					  // This action has caused a workflow-reset on all contents of this specific CT.
+					  // This will update the modification date.
+					  final Set<String> inodes = contentletAPI.touch(contentType, APILocator.systemUser());
+					  Logger.debug(getClass(), ()->String.format("field mod_date was successfully updated on %d pieces of content.",inodes.size()));
+				  } catch (DotDataException e) {
+					  Logger.error(getClass(),"An exception occurred while updating content mod_date. ", e);
+				  }
+			  });
+			}
+
 		} catch(DotDataException e) {
 
 			Logger.error(WorkflowAPIImpl.class, String.format("Error saving Schemas: %s for Content type %s",
