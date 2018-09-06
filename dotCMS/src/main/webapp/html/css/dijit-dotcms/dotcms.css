@@ -9608,12 +9608,12 @@ Styles for commons fields along the backend
   display: flex;
   align-items: center;
   border-radius: 2px;
-  border: solid 1px #C5C5C5;
   position: relative;
   height: 36px;
 }
 
 .fileAjaxUploader .fileAjaxUploaderForm {
+  border: solid 1px #C5C5C5;
   width: 100%;
 }
 
@@ -9629,9 +9629,8 @@ Styles for commons fields along the backend
   background-color: var(--color-main_mod);
 }
 
-.fileAjaxUploaderActions {
-  position: absolute;
-  right: 0;
+.fileAjaxUploaderActions div {
+  display: inline-block;
 }
 
 .fileAjaxUploaderActions div:first-child {
@@ -9643,9 +9642,10 @@ Styles for commons fields along the backend
 }
 
 .fileAjaxUploaderStatus {
-  margin-right: 16px;
-  display: flex;
   align-items: center;
+  display: flex;
+  position: absolute;
+  right: 16px;
 }
 
 .fileAjaxUploaderStatusMsg {
