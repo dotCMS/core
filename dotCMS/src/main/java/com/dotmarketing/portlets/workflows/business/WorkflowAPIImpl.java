@@ -1634,6 +1634,23 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return step;
 	}
 
+    @Override
+    @CloseDBIfOpened
+    public boolean isSystemStep (final String stepId) {
+
+	    boolean isSystemStep = false;
+	    WorkflowStep step = null;
+
+        try {
+            step = this.workFlowFactory.findStep(this.getLongId(stepId, ShortyIdAPI.ShortyInputType.WORKFLOW_STEP));
+            isSystemStep = null != step && SYSTEM_WORKFLOW_ID.equals(step.getSchemeId());
+        } catch (DotDataException e) {
+            isSystemStep = false;
+        }
+
+        return isSystemStep;
+    } // isSystemStep.
+
 	@Override
 	@WrapInTransaction
 	public void deleteAction(final WorkflowAction action, final User user) throws DotDataException, AlreadyExistException {
