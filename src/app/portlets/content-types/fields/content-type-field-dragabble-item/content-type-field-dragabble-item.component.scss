@@ -51,15 +51,8 @@
 }
 
 .field__actions {
-    opacity: 0.25;
-    transition: opacity $basic-speed;
-
     & > * {
         margin: 0 $basic-padding / 4;
-    }
-
-    :host:hover & {
-        opacity: 1;
     }
 }
 
