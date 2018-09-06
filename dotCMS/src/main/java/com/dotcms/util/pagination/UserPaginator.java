@@ -10,9 +10,10 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.Nullable;
 
@@ -83,16 +84,11 @@ public class UserPaginator implements PaginatorOrdered<Map<String, Object>> {
     }
 
     private List<String> collectAdminRolesIfAny() throws DotDataException {
-        final List <Role> availableRoles = new ArrayList<>(2);
-        final Role admin  = roleAPI.loadRoleByKey(Role.ADMINISTRATOR);
-        if(null != admin){
-            availableRoles.add(admin);
-        }
-        final Role cmsAdmin = roleAPI.loadCMSAdminRole();
-        if(null != cmsAdmin){
-            availableRoles.add(cmsAdmin);
-        }
-        return availableRoles.stream().map(Role::getId).collect(CollectionsUtils.toImmutableList());
+        final List <Role> availableRoles = Arrays.asList(
+                roleAPI.loadRoleByKey(Role.ADMINISTRATOR),
+                roleAPI.loadCMSAdminRole()
+        );
+        return availableRoles.stream().filter(Objects::nonNull).map(Role::getId).collect(CollectionsUtils.toImmutableList());
     }
 
     @Nullable
