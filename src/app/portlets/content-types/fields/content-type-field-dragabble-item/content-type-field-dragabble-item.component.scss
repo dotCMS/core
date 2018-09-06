@@ -1,5 +1,5 @@
-@import 'mixins';
-@import 'variables';
+@import "mixins";
+@import "variables";
 
 :host {
     cursor: move;
@@ -32,6 +32,12 @@
     line-height: $basic-padding * 3;
 }
 
+.field__name-wrapper {
+    display: flex;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
 .field__attribute,
 .field__variable {
     color: gray;
@@ -39,8 +45,8 @@
     line-height: $font-size-small;
 }
 
-.field__attribute{
-    margin-top: 6px;
+.field__attribute {
+    margin-left: 26px;
     min-height: $font-size-small;
 }
 

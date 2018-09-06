@@ -1,9 +1,11 @@
-<dot-icon name="{{ fieldService.getIcon(field.clazz) }}"></dot-icon>
-
 <div class="field__properties">
-    <div class="field__name">{{ field.name }} <span class="field__variable">({{ field.variable }})</span></div>
+    <div class="field__name-wrapper">
+        <dot-icon name="{{ fieldService.getIcon(field.clazz) }}"></dot-icon>
+        <div class="field__name">{{ field.name }} <span class="field__variable" *ngIf="field.variable">({{ field.variable }})</span></div>
+    </div>
     <div class="field__attribute" innerHTML="{{ fieldAttributes }}"></div>
 </div>
+
 
 <div class="field__actions">
     <dot-icon-button-tooltip *ngIf="!field.fixed"

@@ -19,15 +19,15 @@
         </dot-content-type-field-dragabble-item>
 
         <div class="row-columns__item-empty-message" data-drag-type="not_field">
-            <dot-icon-button-tooltip
-                tiny
-                *ngIf="showRemoveRow"
-                class="row-header__remove"
-                icon="delete"
-                [tooltipText]="i18nMessages['contenttypes.action.delete']"
-                (click)="onRemoveFieldRow()">
-            </dot-icon-button-tooltip>
             {{ i18nMessages['contenttypes.dropzone.rows.empty.message'] }}
         </div>
     </span>
+    <dot-icon-button-tooltip
+        tiny
+        *ngIf="rowHaveFields(fieldRow)"
+        class="row-header__remove"
+        icon="delete"
+        [tooltipText]="i18nMessages['contenttypes.action.delete']"
+        (click)="onRemoveFieldRow()">
+    </dot-icon-button-tooltip>
 </div>

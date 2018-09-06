@@ -17,14 +17,12 @@ import { FieldColumn } from '..';
     styleUrls: ['./content-type-fields-row.component.scss'],
     templateUrl: './content-type-fields-row.component.html'
 })
-export class ContentTypeFieldsRowComponent extends BaseComponent implements OnChanges {
+export class ContentTypeFieldsRowComponent extends BaseComponent {
     @Input() fieldRow: FieldRow;
 
     @Output() editField: EventEmitter<ContentTypeField> = new EventEmitter();
     @Output() removeField: EventEmitter<ContentTypeField> = new EventEmitter();
     @Output() removeRow: EventEmitter<FieldRow> = new EventEmitter();
-
-    showRemoveRow = true;
 
     constructor(dotMessageService: DotMessageService, private dotDialogService: DotAlertConfirmService) {
         super(
@@ -41,16 +39,11 @@ export class ContentTypeFieldsRowComponent extends BaseComponent implements OnCh
         );
     }
 
-    ngOnChanges(changes: SimpleChanges): void {
-        if (changes.fieldRow && changes.fieldRow.currentValue) {
-            const cols: FieldColumn[] = changes.fieldRow.currentValue.columns;
-            this.showRemoveRow = cols.every((col: FieldColumn) => col.fields.length === 0);
-        }
-    }
-
     /**
      * Remove a field
-     * @param field field to remove
+     *
+     * @param {ContentTypeField} field
+     * @memberof ContentTypeFieldsRowComponent
      */
     onRemoveField(field: ContentTypeField): void {
         this.dotDialogService.confirm({
@@ -68,6 +61,7 @@ export class ContentTypeFieldsRowComponent extends BaseComponent implements OnCh
 
     /**
      * Return the width for each column
+     *
      * @returns {string} Return the column's width width '%', for example, '30%'
      * @memberof ContentTypeFieldsRowComponent
      */
@@ -78,12 +72,22 @@ export class ContentTypeFieldsRowComponent extends BaseComponent implements OnCh
 
     /**
      * Tigger the removeRow event whit the current FieldRow
+     *
+     * @memberof ContentTypeFieldsRowComponent
      */
     onRemoveFieldRow(): void {
         this.removeRow.emit(this.fieldRow);
     }
 
-    private isRowFieldEmpty(): boolean {
-        return this.fieldRow.columns.map((column: FieldColumn) => column.fields.length).every(fieldsNumber => fieldsNumber === 0);
+
+    /**
+     * Check if a given row have fields in any of the columns
+     *
+     * @param {FieldRow} row
+     * @returns {boolean}
+     * @memberof ContentTypeFieldsRowComponent
+     */
+    rowHaveFields(row: FieldRow): boolean {
+        return row.columns.map((column: FieldColumn) => column.fields.length).every(fieldsNumber => fieldsNumber === 0);
     }
 }
