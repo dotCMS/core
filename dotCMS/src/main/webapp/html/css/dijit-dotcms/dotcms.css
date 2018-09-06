@@ -9604,6 +9604,10 @@ Styles for commons fields along the backend
   position: absolute;
 }
 
+#fileAssetThumbnailSliderWrapper {
+  margin-bottom: 8px;
+}
+
 .fileAjaxUploader {
   display: flex;
   align-items: center;
@@ -9638,7 +9642,6 @@ Styles for commons fields along the backend
 }
 
 .fileAjaxUploaderFileName {
-  margin-left: 8px;
   margin-right: 8px;
 }
 
