@@ -206,7 +206,7 @@ public class ResourceLink {
         final String extension = UtilMethods.getFileExtension(fileAssetName);
         if(RESTRICTED_FILE_EXTENSIONS.contains(extension)){
             //if we're not on admin mode or we just happen to be an anonymous user (null) we must restrict access right away.
-            if((user == null) || (!PageMode.get(request).isAdmin)){
+            if((user == null) || !PageMode.get(request).isAdmin){
                return true;
             }
             //if we're navigating on the backend then we should still restrict access based on permissions.

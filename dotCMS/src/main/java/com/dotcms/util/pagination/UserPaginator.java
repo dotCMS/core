@@ -1,7 +1,8 @@
 package com.dotcms.util.pagination;
 
+import static com.dotcms.util.CollectionsUtils.list;
+
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
@@ -10,7 +11,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -67,32 +67,19 @@ public class UserPaginator implements PaginatorOrdered<Map<String, Object>> {
     public PaginatedArrayList<Map<String, Object>> getItems(final User user, final String filter, final int limit, final int offset) {
 
         try {
-            final List<String> rolesId = collectAdminRolesIfAny();
+            final List<String> rolesId = list( roleAPI.loadRoleByKey(Role.ADMINISTRATOR).getId(), roleAPI.loadCMSAdminRole().getId() );
             final List<User> users = userAPI.getUsersByName(filter, offset, limit, user, false);
             final List<Map<String, Object>> usersMap = users.stream()
                     .map(userItem -> getUserObjectMap(rolesId, userItem))
                     .collect(Collectors.toList());
 
-            final PaginatedArrayList<Map<String, Object>> result = new PaginatedArrayList<>();
+            final PaginatedArrayList<Map<String, Object>> result = new PaginatedArrayList();
             result.addAll(usersMap);
             result.setTotalResults(this.getTotalRecords(filter));
             return result;
         } catch (DotDataException e) {
             throw new DotRuntimeException(e);
         }
-    }
-
-    private List<String> collectAdminRolesIfAny() throws DotDataException {
-        final List <Role> availableRoles = new ArrayList<>(2);
-        final Role admin  = roleAPI.loadRoleByKey(Role.ADMINISTRATOR);
-        if(null != admin){
-            availableRoles.add(admin);
-        }
-        final Role cmsAdmin = roleAPI.loadCMSAdminRole();
-        if(null != cmsAdmin){
-            availableRoles.add(cmsAdmin);
-        }
-        return availableRoles.stream().map(Role::getId).collect(CollectionsUtils.toImmutableList());
     }
 
     @Nullable
