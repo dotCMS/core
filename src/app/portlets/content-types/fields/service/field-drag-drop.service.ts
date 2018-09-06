@@ -17,6 +17,9 @@ export class FieldDragDropService {
     private _fieldRowDropFromTarget: Subject<any> = new Subject();
 
     constructor(private dragulaService: DragulaService) {
+        dragulaService.over.subscribe(this.toggleOverClass);
+        dragulaService.out.subscribe(this.toggleOverClass);
+
         dragulaService.dropModel.subscribe((value) => {
             this.handleDrop(value[0], value[3].dataset.dragType);
         });
@@ -79,6 +82,12 @@ export class FieldDragDropService {
 
     get fieldRowDropFromTarget$(): Observable<any> {
         return this._fieldRowDropFromTarget.asObservable();
+    }
+
+    private toggleOverClass([bag, el, target, source]: [string, HTMLElement, HTMLElement, HTMLElement]): void {
+        if (target.classList.contains('row-columns__item')) {
+            target.classList.toggle('row-columns__item--over');
+        }
     }
 
     private handleDrop(dragType: string, source: string) {

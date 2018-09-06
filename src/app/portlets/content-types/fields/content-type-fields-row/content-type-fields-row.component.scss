@@ -18,13 +18,13 @@
 .row-columns {
     display: flex;
     background: $gray-bg;
-    padding: $basic-padding $basic-padding / 2;
+    padding: $basic-padding;
 }
 
 .row-columns__item {
     display: flex;
     flex-direction: column;
-    padding: 0 $basic-padding / 2;
+    margin: 0 $basic-padding / 2;
 
     &:first-child {
         margin-left: 0;
@@ -41,20 +41,25 @@
             min-height: 150px;
         }
     }
+    &--over {
+        .row-columns__item-empty-message {
+            display: none;
+        }
+    }
 }
 
 .row-columns__item-empty-message {
-    text-align: center;
-    width: 100%;
     border: dashed 1px $gray;
     color: $gray;
-    min-height: 68px;
-    flex: 1;
-    flex-grow: 1;
     display: flex;
-    justify-content: center;
     flex-direction: column;
+    flex-grow: 1;
+    flex: 1;
     font-size: $font-size-small;
+    justify-content: center;
+    min-height: 68px;
+    text-align: center;
+    width: 100%;
 }
 
 .row-header {

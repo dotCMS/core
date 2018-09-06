@@ -6,6 +6,8 @@ import { EventEmitter } from '@angular/core';
 class MockDragulaService {
     dropModel = new EventEmitter<any>();
     removeModel = new EventEmitter<any>();
+    over = new EventEmitter<any>();
+    out = new EventEmitter<any>();
 
     name: string;
     options: any;
@@ -177,5 +179,28 @@ describe('FieldDragDropService', () => {
         ]);
 
         expect(true).toBe(this.fieldRowDropFromTarget);
+    });
+
+    it('should toggle class to the target', () => {
+        const el = document.createElement('div');
+        el.classList.add('row-columns__item');
+
+        this.dragulaService.over.emit([
+            '',
+            null,
+            el,
+            null
+        ]);
+
+        expect(el.classList.contains('row-columns__item--over')).toBe(true);
+
+        this.dragulaService.out.emit([
+            '',
+            null,
+            el,
+            null
+        ]);
+
+        expect(el.classList.contains('row-columns__item--over')).toBe(false);
     });
 });
