@@ -2,11 +2,17 @@ package com.dotcms.rendering.velocity.viewtools.navigation;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.mock.request.MockAttributeRequest;
+import com.dotcms.mock.request.MockHeaderRequest;
+import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -22,6 +28,8 @@ import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 
 import java.io.File;
+import javax.servlet.http.HttpServletRequest;
+import org.apache.velocity.tools.view.context.ViewContext;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -34,9 +42,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import org.mockito.Mockito;
 
 import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * NavToolTest
@@ -238,6 +249,46 @@ public class NavToolTest extends IntegrationTestBase{
             }
         }
 
+    }
+
+    @Test
+    public void test_getNavLevelAsParameter() throws Exception {
+        final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
+        final ViewContext viewContext = mock(ViewContext.class);
+
+        Mockito.when(request.getRequestURI()).thenReturn("/about-us");
+        Mockito.when(request.getServerName()).thenReturn("demo.dotcms.com");
+        Mockito.when(viewContext.getRequest()).thenReturn(request);
+
+
+        NavTool navTool = new NavTool();
+        navTool.init(viewContext);
+        NavResult navResult = navTool.getNav(1);
+        assertNotNull(navResult);
+
+        //We are expecting 3 children result
+        int resultChildren = navResult.getChildren().size();
+        assertEquals(resultChildren, 3);
+    }
+
+    @Test
+    public void test_getNavWithoutParameters() throws Exception {
+        final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
+        final ViewContext viewContext = mock(ViewContext.class);
+
+        Mockito.when(request.getRequestURI()).thenReturn("/about-us");
+        Mockito.when(request.getServerName()).thenReturn("demo.dotcms.com");
+        Mockito.when(viewContext.getRequest()).thenReturn(request);
+
+
+        NavTool navTool = new NavTool();
+        navTool.init(viewContext);
+        NavResult navResult = navTool.getNav();
+        assertNotNull(navResult);
+
+        //We are expecting 3 children result
+        int resultChildren = navResult.getChildren().size();
+        assertEquals(resultChildren, 3);
     }
 
     @DataProvider

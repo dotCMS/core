@@ -287,7 +287,7 @@ public class NavTool implements ViewTool {
     }
 
     public NavResult getNav() throws DotDataException, DotSecurityException {
-        return getNav((String) request.getAttribute("javax.servlet.forward.request_uri"));
+        return getNav(request.getRequestURI().replace("/api/v1/page/render/","/"));
     }
 
     public NavResult getNav(String path) throws DotDataException, DotSecurityException {
