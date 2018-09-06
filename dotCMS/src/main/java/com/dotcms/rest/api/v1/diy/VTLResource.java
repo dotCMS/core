@@ -1,7 +1,10 @@
 package com.dotcms.rest.api.v1.diy;
 
 import com.dotcms.rendering.velocity.util.VelocityUtil;
-import com.dotcms.repackage.javax.ws.rs.*;
+import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
+import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.*;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -24,31 +27,27 @@ import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
+import java.io.InputStream;
 import java.io.StringWriter;
-import java.nio.charset.Charset;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.StringTokenizer;
 
 @Path("/v1/diy")
-public class DIYResource {
+public class VTLResource {
 
     private final WebResource webResource = new WebResource();
-    private final String DIYPath = "/diy";
+    private final String VTLPath = "/api/vtl";
     private final HostAPI hostAPI;
     private final IdentifierAPI identifierAPI;
     private final ContentletAPI contentletAPI;
-    private final String GET_FILE_NAME = "get";
     private final String FILE_EXTENSION = ".vtl";
 
-    public DIYResource() {
+    public VTLResource() {
         this(APILocator.getHostAPI(), APILocator.getIdentifierAPI(), APILocator.getContentletAPI());
     }
 
     @VisibleForTesting
-    DIYResource(final HostAPI hostAPI, final IdentifierAPI identifierAPI, final ContentletAPI contentletAPI) {
+    VTLResource(final HostAPI hostAPI, final IdentifierAPI identifierAPI, final ContentletAPI contentletAPI) {
         this.hostAPI = hostAPI;
         this.identifierAPI = identifierAPI;
         this.contentletAPI = contentletAPI;
@@ -63,20 +62,18 @@ public class DIYResource {
                              @PathParam("path") final String pathParams) {
 
         final InitDataObject initDataObject = this.webResource.init
-                (pathParams, true, request, true, null);
-
+                (pathParams, false, request, false, null);
         final User user = initDataObject.getUser();
         final Language currentLanguage = WebAPILocator.getLanguageWebAPI().getLanguage(request);
-
-        MultivaluedMap<String, String> queryParameters = uriInfo.getQueryParameters();
-
+        final MultivaluedMap<String, String> queryParameters = uriInfo.getQueryParameters();
         Map<String, String> dotJSON;
 
         try {
             Host site = this.hostAPI.resolveHostName(request.getServerName(), user, false);
-            final String getFilePath = DIYPath + "/" + folderName + "/" + GET_FILE_NAME + FILE_EXTENSION;
+            final String getFilePath = VTLPath + "/" + folderName + "/" + HTTPMethod.GET.fileName + FILE_EXTENSION;
             Identifier identifier = identifierAPI.find(site, getFilePath);
-            Contentlet getFileContent = contentletAPI.findContentletByIdentifier(identifier.getId(), true, currentLanguage.getId(), user, false);
+            Contentlet getFileContent = contentletAPI.findContentletByIdentifier(identifier.getId(), true,
+                    currentLanguage.getId(), user, false);
             FileAsset getFileAsset = APILocator.getFileAssetAPI().fromContentlet(getFileContent);
 
             org.apache.velocity.context.Context context = VelocityUtil.getInstance().getContext(request, response);
@@ -85,14 +82,34 @@ public class DIYResource {
             context.put("dotJSON", new HashMap());
 
             StringWriter evalResult = new StringWriter();
-            VelocityUtil.getEngine().evaluate(context, evalResult, "", getFileAsset.getInputStream());
 
-            dotJSON = (Map<String, String>) context.get("dotJSON");
+            try(final InputStream fileAssetIputStream = getFileAsset.getInputStream()) {
+                VelocityUtil.getEngine().evaluate(context, evalResult, "", fileAssetIputStream);
+                dotJSON = (Map<String, String>) context.get("dotJSON");
+            }
         } catch(Exception e) {
             Logger.error(this.getClass(),"Exception on DIY endpoint. GET method: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
         }
 
-        return Response.ok(new ResponseEntityView(dotJSON)).build();
+        return Response.ok(new ResponseEntityView(dotJSON)).build(); //todo don't return like this
+    }
+
+    private enum HTTPMethod {
+        GET("get"),
+        POST("post"),
+        PUT("put"),
+        PATCH("patch"),
+        DELETE("delete");
+
+        private String fileName;
+
+        HTTPMethod(String fileName) {
+            this.fileName = fileName;
+        }
+
+        public String fileName() {
+            return fileName;
+        }
     }
 }

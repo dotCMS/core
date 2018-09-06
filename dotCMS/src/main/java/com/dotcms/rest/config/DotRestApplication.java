@@ -13,7 +13,7 @@ import com.dotcms.rest.api.v1.authentication.ForgotPasswordResource;
 import com.dotcms.rest.api.v1.authentication.LoginFormResource;
 import com.dotcms.rest.api.v1.authentication.LogoutResource;
 import com.dotcms.rest.api.v1.authentication.ResetPasswordResource;
-import com.dotcms.rest.api.v1.diy.DIYResource;
+import com.dotcms.rest.api.v1.diy.VTLResource;
 import com.dotcms.rest.api.v1.theme.ThemeResource;
 import com.dotcms.rest.api.v1.browsertree.BrowserTreeResource;
 import com.dotcms.rest.api.v1.categories.CategoriesResource;
@@ -140,7 +140,7 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 					REST_CLASSES.add(ThemeResource.class);
 					REST_CLASSES.add(NavResource.class);
 
-					REST_CLASSES.add(DIYResource.class);
+					REST_CLASSES.add(VTLResource.class);
 				}
 			}
 		}
