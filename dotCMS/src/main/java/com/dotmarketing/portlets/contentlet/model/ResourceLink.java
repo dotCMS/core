@@ -205,10 +205,11 @@ public class ResourceLink {
     public static boolean isDownloadRestricted(final String fileAssetName, final Contentlet contentlet, final User user, final HttpServletRequest request) throws DotDataException{
         final String extension = UtilMethods.getFileExtension(fileAssetName);
         if(RESTRICTED_FILE_EXTENSIONS.contains(extension)){
-            if(!PageMode.get(request).isAdmin ){
-                return false;
+            //if we're not on admin mode or we just happen to be an anonymous user (null) we must restrict access right away.
+            if(user == null || !PageMode.get(request).isAdmin){
+               return true;
             }
-            //if we're not navigating on the backend then we should still restrict access based on permissions.
+            //if we're navigating on the backend then we should still restrict access based on permissions.
             return isDownloadPermissionBasedRestricted(contentlet, user);
         }
         return false;
