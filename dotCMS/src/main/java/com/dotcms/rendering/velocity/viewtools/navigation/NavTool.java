@@ -25,6 +25,7 @@ import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UtilMethods;
 
+import com.liferay.util.StringPool;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -288,7 +289,7 @@ public class NavTool implements ViewTool {
     }
 
     public NavResult getNav() throws DotDataException, DotSecurityException {
-        return getNav(request.getRequestURI().replace("/api/v1/page/render/","/"));
+        return getNav(request.getRequestURI().replace("/api/v1/page/render/", StringPool.SLASH));
     }
 
     public NavResult getNav(String path) throws DotDataException, DotSecurityException {

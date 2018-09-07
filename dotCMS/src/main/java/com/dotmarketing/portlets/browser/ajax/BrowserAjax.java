@@ -73,7 +73,7 @@ public class BrowserAjax {
 	private IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
 
 	String activeHostId = "";
-    String activeFolderInode = "";
+    volatile String activeFolderInode = "";
     private static String SELECTED_BROWSER_PATH_OBJECT = "SELECTED_BROWSER_PATH_OBJECT";
     List<String> openFolders = new ArrayList<String> ();
 
