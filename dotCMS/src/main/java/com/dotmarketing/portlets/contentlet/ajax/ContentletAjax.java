@@ -28,11 +28,7 @@ import com.dotmarketing.business.PublishStateException;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotLanguageException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.*;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -1077,11 +1073,7 @@ public class ContentletAjax {
 				Boolean locked = con.isLocked();
 				searchResult.put("locked", locked.toString());
 				searchResult.put("structureInode", con.getStructureInode());
-				final Optional<WorkflowStep> step = APILocator.getWorkflowAPI().findCurrentStep(contentlet);
-				final String currentStep = (step.isPresent())?
-						step.get().getName():
-						LanguageUtil.get(currentUser, "workflow.notassigned");
-				searchResult.put("__wfstep__", currentStep);
+				setCurrentStep(currentUser, searchResult, contentlet);
 
 				searchResult.put("contentStructureType", "" + con.getStructure().getStructureType());
 
@@ -1160,6 +1152,20 @@ public class ContentletAjax {
 		Logger.debug(ContentletAjax.class, "searchContentletsByUser: Time to process results= " + (after - before) + " ms.");
 
 		return results;
+	}
+
+	private void setCurrentStep(final User currentUser,
+								final Map<String, String> searchResult,
+								final Contentlet contentlet) throws DotDataException, LanguageException {
+		try {
+			final Optional<WorkflowStep> step = APILocator.getWorkflowAPI().findCurrentStep(contentlet);
+			final String currentStep = (step.isPresent()) ?
+					step.get().getName() :
+					LanguageUtil.get(currentUser, "workflow.notassigned");
+			searchResult.put("__wfstep__", currentStep);
+		} catch (InvalidLicenseException e) {
+			searchResult.put("__wfstep__", LanguageUtil.get(currentUser, "workflow.licenserequired"));
+		}
 	}
 
 	private boolean hasContentTypesInodeSeparator(String structureInode) {
