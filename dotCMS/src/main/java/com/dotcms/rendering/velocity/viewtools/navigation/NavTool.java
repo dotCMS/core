@@ -2,6 +2,7 @@ package com.dotcms.rendering.velocity.viewtools.navigation;
 
 
 import com.dotmarketing.beans.Inode;
+import com.dotmarketing.portlets.browser.ajax.BrowserAjax;
 import com.google.common.annotations.VisibleForTesting;
 
 
@@ -291,6 +292,11 @@ public class NavTool implements ViewTool {
     }
 
     public NavResult getNav(String path) throws DotDataException, DotSecurityException {
+        if(path.contains("/api/v1/containers")){
+            final String folderInode = ((BrowserAjax)this.request.getSession().getAttribute("BrowserAjax")).getActiveFolderInode();
+            final String folderIdentifier = APILocator.getFolderAPI().find(folderInode,systemUser,false).getIdentifier();
+            path = APILocator.getIdentifierAPI().find(folderIdentifier).getPath();
+        }
 
         Host host = getHostFromPath(path);
 

@@ -2245,4 +2245,8 @@ public class BrowserAjax {
     	}
 	}
 
+	public String getActiveFolderInode(){
+		return activeFolderInode;
+	}
+
 }
