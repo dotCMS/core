@@ -6,7 +6,8 @@
 }
 
 @mixin dot-icon_tiny {
-    font-size: $font-size-small;
+    // The icon size is not related to a font-size, that's why I use the value directly
+    font-size: 14px;
 }
 
 @mixin tiny-button {
