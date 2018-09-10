@@ -2,6 +2,7 @@ package com.dotcms.rendering.velocity.viewtools.navigation;
 
 
 import com.dotmarketing.beans.Inode;
+import com.dotmarketing.portlets.browser.ajax.BrowserAjax;
 import com.google.common.annotations.VisibleForTesting;
 
 
@@ -24,6 +25,7 @@ import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UtilMethods;
 
+import com.liferay.util.StringPool;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -287,10 +289,15 @@ public class NavTool implements ViewTool {
     }
 
     public NavResult getNav() throws DotDataException, DotSecurityException {
-        return getNav((String) request.getAttribute("javax.servlet.forward.request_uri"));
+        return getNav(request.getRequestURI().replace("/api/v1/page/render/", StringPool.SLASH));
     }
 
     public NavResult getNav(String path) throws DotDataException, DotSecurityException {
+        if(path.contains("/api/v1/containers")){
+            final String folderInode = ((BrowserAjax)this.request.getSession().getAttribute("BrowserAjax")).getActiveFolderInode();
+            final String folderIdentifier = APILocator.getFolderAPI().find(folderInode,systemUser,false).getIdentifier();
+            path = APILocator.getIdentifierAPI().find(folderIdentifier).getPath();
+        }
 
         Host host = getHostFromPath(path);
 
