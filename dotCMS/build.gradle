@@ -427,6 +427,12 @@ task createDistPrep(dependsOn: ['clonePullTomcatDist', 'deployWarTomcatDist']) {
         }
 
         copy {
+            into "$distLocation$confDistLocation"
+            from sourceSets.main.resources
+            exclude "com", "org", "release.properties"
+        }
+
+        copy {
             into "$distLocation$pluginsDistLocation"
             from "src/main/plugins"
             exclude "**/.git"
@@ -620,6 +626,10 @@ task deployConfig(type: Copy) {
 
     if (new File('src/main/resources').exists()){
         from 'src/main/resources'
+    }else{
+        webAppFolder = "$dotcmsDistBase$webAppRootFolder"
+        from "../$confDistLocation"
+
     }
     into "$webAppFolder/WEB-INF/classes"
 

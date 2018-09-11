@@ -25,6 +25,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import com.dotcms.repackage.net.sf.hibernate.CallbackException;
 import com.dotcms.repackage.net.sf.hibernate.FlushMode;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
@@ -975,8 +978,7 @@ public class HibernateUtil {
 					} else if (listener instanceof DotAsyncRunnable) {
 						asyncCommitListeners.get().put(tag, listener);
 					} else {
-						if (getAsyncCommitListenersFinalization() && Config.getBooleanProperty
-								("REINDEX_ON_SAVE_IN_SEPARATE_THREAD", true)) {
+						if (getAsyncCommitListenersFinalization() && isReindexingOnSeparateThread()) {
 							asyncCommitListeners.get().put(tag, listener);
 						} else {
 							syncCommitListeners.get().put(tag, listener);
@@ -1060,13 +1062,22 @@ public class HibernateUtil {
 		final List<DotRunnable> syncListeners = new ArrayList<>(syncCommitListeners.get().values());
 		asyncCommitListeners.get().clear();
 		syncCommitListeners.get().clear();
-		if (!asyncListeners.isEmpty()) {
-			final DotRunnableThread thread = new DotRunnableThread(asyncListeners);
-			thread.start();
-		}
-		if (!syncListeners.isEmpty()) {
-			final DotRunnableThread thread = new DotRunnableThread(syncListeners);
-			thread.run();
+
+		if (isReindexingOnSeparateThread()) {
+			if (!asyncListeners.isEmpty()) {
+				final DotRunnableThread thread = new DotRunnableThread(asyncListeners);
+				thread.start();
+			}
+			if (!syncListeners.isEmpty()) {
+				final DotRunnableThread thread = new DotRunnableThread(syncListeners);
+				thread.run();
+			}
+		} else {
+			List<DotRunnable> allListeners = Stream.concat(asyncListeners.stream(), syncListeners.stream())
+					.collect(Collectors.toList());
+
+			 final DotRunnableThread thread = new DotRunnableThread(allListeners);
+			 thread.run();                                                          
 		}
 	}
 
@@ -1251,5 +1262,9 @@ public class HibernateUtil {
         	throw new DotHibernateException("Unable to evict from Hibernate Session ", e);
         }
     }
+
+    private static boolean isReindexingOnSeparateThread() {
+		return Config.getBooleanProperty("REINDEX_ON_SAVE_IN_SEPARATE_THREAD", true);
+	}
 
 }

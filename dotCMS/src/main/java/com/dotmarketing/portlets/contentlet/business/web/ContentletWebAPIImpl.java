@@ -159,26 +159,30 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			// attached to the identifier rather than contentlet as
 			// before DOTCMS-6383
 			//conAPI.unlock(cont, user, false);
-			if (null != contentlet) {
-				this.pushSaveEvent(contentlet, isNew);
-			}
+//			if (null != contentlet) {
+//				this.pushSaveEvent(contentlet, isNew);
+//			}
 		} catch (Exception ae) {
 			_handleException(ae);
 			throw ae;
+		}
+
+		if (null != contentlet) {
+			contentletSystemEventUtil.pushSaveEvent(contentlet, isNew);
 		}
 
 		contentletFormData.put("cache_control", "0");
 		return ((contentlet!=null) ? contentlet.getInode() : null);
 	}
 
-	private void pushSaveEvent (final Contentlet eventContentlet, final boolean eventCreateNewVersion) throws DotHibernateException {
-
-		HibernateUtil.addAsyncCommitListener(() -> {
-			if (APILocator.getContentletAPI().isInodeIndexed(eventContentlet.getInode())) {
-				this.contentletSystemEventUtil.pushSaveEvent(eventContentlet, eventCreateNewVersion);
-			}
-		} , 1000);
-	}
+//	private void pushSaveEvent (final Contentlet eventContentlet, final boolean eventCreateNewVersion) throws DotHibernateException {
+//
+//		HibernateUtil.addAsyncCommitListener(() -> {
+//			if (APILocator.getContentletAPI().isInodeIndexed(eventContentlet.getInode())) {
+//				this.contentletSystemEventUtil.pushSaveEvent(eventContentlet, eventCreateNewVersion);
+//			}
+//		} , 1000);
+//	}
 
 
 	private boolean isNew(Map<String, Object> contentletFormData) {
