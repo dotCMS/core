@@ -944,7 +944,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	private void consumeWorkflowTask (final WorkflowTask workflowTask) {
 
 		try {
-			HibernateUtil.addAsyncCommitListener( () -> {
+			HibernateUtil.addCommitListener( () -> {
 				try {
 					this.distributedJournalAPI.addIdentifierReindex(workflowTask.getWebasset());
 				} catch (DotDataException e) {
@@ -978,7 +978,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					DateUtil.millisToSeconds(stopWatch.getTime()) + " seconds");
 
 			if (sendSystemEvent) {
-				HibernateUtil.addAsyncCommitListener(() -> {
+				HibernateUtil.addCommitListener(() -> {
 					try {
 						this.systemMessageEventUtil.pushSimpleTextEvent
 								(LanguageUtil.get(user.getLocale(), "Workflow-Step-deleted", step.getName()), user.getUserId());
@@ -1138,7 +1138,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				"The Workflow Task with id:" + task.getId() + " was deleted.");
 		try {
 			if (UtilMethods.isSet(task.getWebasset())) {
-				HibernateUtil.addAsyncCommitListener(() -> {
+				HibernateUtil.addCommitListener(() -> {
 					try {
 						this.distributedJournalAPI.addIdentifierReindex(task.getWebasset());
 					} catch (DotDataException e) {
@@ -1181,7 +1181,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		this.workFlowFactory.saveWorkflowTask(task);
 		try {
 			if (UtilMethods.isSet(task.getWebasset())) {
-				HibernateUtil.addAsyncCommitListener(() -> {
+				HibernateUtil.addCommitListener(() -> {
 					try {
 						this.distributedJournalAPI.addIdentifierReindex(task.getWebasset());
 					} catch (DotDataException e) {
@@ -2054,7 +2054,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				this.saveWorkflowTask(processor);
 
 				if (UtilMethods.isSet(processor.getContentlet())) {
-				    HibernateUtil.addAsyncCommitListener(() -> {
+				    HibernateUtil.addCommitListener(() -> {
                         try {
 							this.distributedJournalAPI.addIdentifierReindex(processor.getContentlet().getIdentifier());
 						} catch (DotDataException e) {
