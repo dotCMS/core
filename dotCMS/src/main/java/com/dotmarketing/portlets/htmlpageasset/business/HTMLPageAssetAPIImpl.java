@@ -727,7 +727,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
           cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( ident.getId(), languageAPI.getDefaultLanguage().getId() );
         }
         // if we still have nothing.
-        if (!InodeUtils.isSet(ident.getId()) || cinfo==null || cinfo.getLiveInode() == null) {
+        if (!InodeUtils.isSet(ident.getId()) || cinfo==null || cinfo.getLiveInode() == null && liveMode) {
             throw new ResourceNotFoundException(String.format("Resource %s not found in Live mode!", uri));
         }
 
