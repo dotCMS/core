@@ -13,6 +13,7 @@ import { DotRouterService } from '../../../api/services/dot-router/dot-router.se
 import { DotHttpErrorManagerService, DotHttpErrorHandled } from '../../../api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { ResponseView } from 'dotcms-js/dotcms-js';
 import { HotkeysService, Hotkey } from 'angular2-hotkeys';
+import { DotEventsService } from '../../../api/services/dot-events/dot-events.service';
 
 /**
  * Portlet component for edit content types
@@ -36,11 +37,14 @@ export class ContentTypesEditComponent implements OnInit {
         icon: '',
         header: ''
     };
+    messagesKey: {[key: string]: string} = {};
+    editButtonLbl: string;
 
     constructor(
         private contentTypesInfoService: ContentTypesInfoService,
         private crudService: CrudService,
         private dotHttpErrorManagerService: DotHttpErrorManagerService,
+        private dotEventsService: DotEventsService,
         private dotRouterService: DotRouterService,
         private fieldService: FieldService,
         private hotkeysService: HotkeysService,
@@ -63,7 +67,6 @@ export class ContentTypesEditComponent implements OnInit {
             .getMessages([
                 'contenttypes.action.create',
                 'contenttypes.action.edit',
-                'contenttypes.action.form.cancel',
                 'contenttypes.action.update',
                 'contenttypes.content.content',
                 'contenttypes.content.create.contenttype',
@@ -76,9 +79,12 @@ export class ContentTypesEditComponent implements OnInit {
                 'contenttypes.content.vanity_url',
                 'contenttypes.content.variable',
                 'contenttypes.content.widget',
-                'contenttypes.form.identifier'
+                'contenttypes.form.identifier',
+                'contenttypes.dropzone.rows.add'
             ])
-            .subscribe();
+            .subscribe((messages: {[key: string]: string}) => {
+                this.messagesKey = messages;
+            });
 
         this.setTemplateInfo();
 
@@ -109,7 +115,7 @@ export class ContentTypesEditComponent implements OnInit {
     setTemplateInfo(): void {
         this.dotMessageService.messageMap$.subscribe(() => {
             const type = this.contentTypesInfoService.getLabel(this.data.baseType);
-            const contentTypeName = this.dotMessageService.get(`contenttypes.content.${type}`);
+            const contentTypeName = this.messagesKey[`contenttypes.content.${type}`];
 
             this.templateInfo = {
                 icon: this.contentTypesInfoService.getIcon(type),
@@ -144,6 +150,7 @@ export class ContentTypesEditComponent implements OnInit {
     /**
      * Remove fields from the content type
      * @param fieldsToDelete Fields to be removed
+     * @memberof ContentTypesEditComponent
      */
     removeFields(fieldsToDelete: ContentTypeField[]): void {
         this.fieldService
@@ -159,6 +166,7 @@ export class ContentTypesEditComponent implements OnInit {
     /**
      * Save fields to the content type
      * @param fieldsToSave Fields to be save
+     * @memberof ContentTypesEditComponent
      */
     saveFields(fieldsToSave: ContentTypeField[]): void {
         this.fieldService.saveFields(this.data.id, fieldsToSave).subscribe((fields: ContentTypeField[]) => {
@@ -168,6 +176,15 @@ export class ContentTypesEditComponent implements OnInit {
         }, (err: ResponseView) => {
             this.dotHttpErrorManagerService.handle(err).subscribe((() => {}));
         });
+    }
+
+    /**
+     * Send a notification of Add Row event to be handle elsewhere
+     *
+     * @memberof ContentTypesEditComponent
+     */
+    notifyAddRowsEvt(): void {
+        this.dotEventsService.notify('add-row');
     }
 
     private updateOrNewField(fieldsToSave: ContentTypeField[]): boolean {

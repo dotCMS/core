@@ -52,4 +52,12 @@
     display: flex;
     justify-content: flex-end;
     align-self: center;
+
+    button {
+        margin-right: $basic-padding;
+        
+        &:last-child {
+            margin-right: 0;
+        }
+    }
 }

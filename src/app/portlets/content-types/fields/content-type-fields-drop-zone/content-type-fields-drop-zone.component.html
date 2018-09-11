@@ -1,5 +1,4 @@
 <div
-    [class.empty]="!fieldRows.length"
     [dragulaModel]="fieldRows"
     class="content-type-fields-drop-zone__container"
     data-drag-type="target"
@@ -15,10 +14,7 @@
         </dot-content-type-fields-row>
     </ng-template>
 
-    <div *ngIf="!fieldRows.length"
-        class="content-type-fields-drop-zone__message">
-        {{ i18nMessages['contenttypes.dropzone.empty.message'] }}
-    </div>
+    <dot-add-rows (selectColums)="addRow($event)"></dot-add-rows>
 </div>
 <p-dialog
     modal="modal"

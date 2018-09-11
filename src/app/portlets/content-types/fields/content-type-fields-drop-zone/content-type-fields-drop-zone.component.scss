@@ -12,21 +12,6 @@
 .content-type-fields-drop-zone__container {
     flex-grow: 1;
     padding-bottom: $basic-padding * 2;
-
-    &.empty {
-        border: 1px $gray dashed;
-        position: relative;
-    }
-}
-
-.content-type-fields-drop-zone__message {
-    color: $gray;
-    font-size: $font-size-large;
-    margin-top: -9px;
-    position: absolute;
-    text-align: center;
-    top: 50%;
-    width: 100%;
 }
 
 .content-type-fields-drop-zone__hint-icon {

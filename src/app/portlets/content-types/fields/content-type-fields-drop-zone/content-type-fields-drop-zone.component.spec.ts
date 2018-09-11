@@ -3,7 +3,7 @@ import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DebugElement, Component, Input, SimpleChange, Output, EventEmitter, Injectable } from '@angular/core';
 import { ContentTypeFieldsDropZoneComponent } from './';
 import { By } from '@angular/platform-browser';
-import { ContentTypeField, FieldRow } from '../';
+import { ContentTypeField, FieldRow, ContentTypeFieldsAddRowModule } from '../';
 import { DragulaModule } from 'ng2-dragula';
 import { ReactiveFormsModule } from '@angular/forms';
 import { FieldValidationMessageModule } from '../../../../view/components/_common/field-validation-message/file-validation-message.module';
@@ -21,6 +21,8 @@ import { FieldPropertyService } from '../service/field-properties.service';
 import { FieldService } from '../service/field.service';
 import { DotIconButtonModule } from '../../../../view/components/_common/dot-icon-button/dot-icon-button.module';
 import { DotIconModule } from '../../../../view/components/_common/dot-icon/dot-icon.module';
+import { HotkeysService } from 'angular2-hotkeys';
+import { TestHotkeysMock } from '../../../../test/hotkeys-service.mock';
 
 @Component({
     selector: 'dot-content-type-fields-row',
@@ -76,6 +78,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
     let fixture: ComponentFixture<ContentTypeFieldsDropZoneComponent>;
     let de: DebugElement;
     let el: HTMLElement;
+    let testHotKeysMock: TestHotkeysMock;
     const mockRouter = {
         navigate: jasmine.createSpy('navigate')
     };
@@ -108,7 +111,8 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 ReactiveFormsModule,
                 BrowserAnimationsModule,
                 DotIconModule,
-                DotIconButtonModule
+                DotIconButtonModule,
+                ContentTypeFieldsAddRowModule
             ],
             providers: [
                 { provide: FieldDragDropService, useValue: this.testFieldDragDropService },
@@ -118,7 +122,8 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 FieldPropertyService,
                 FieldService,
                 { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: Router, useValue: mockRouter }
+                { provide: Router, useValue: mockRouter },
+                { provide: HotkeysService, useValue: testHotKeysMock },
             ]
         });
 
@@ -126,6 +131,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         comp = fixture.componentInstance;
         de = fixture.debugElement;
         el = de.nativeElement;
+        testHotKeysMock = new TestHotkeysMock();
     }));
 
     it('should has fieldsContainer', () => {
@@ -251,7 +257,8 @@ describe('Load fields and drag and drop', () => {
                 ReactiveFormsModule,
                 BrowserAnimationsModule,
                 DotIconModule,
-                DotIconButtonModule
+                DotIconButtonModule,
+                ContentTypeFieldsAddRowModule
             ],
             providers: [
                 { provide: FieldDragDropService, useValue: this.testFieldDragDropService },
@@ -261,7 +268,8 @@ describe('Load fields and drag and drop', () => {
                 FieldPropertyService,
                 FieldService,
                 { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: Router, useValue: mockRouter }
+                { provide: Router, useValue: mockRouter },
+                { provide: HotkeysService, useValue: new TestHotkeysMock() },
             ]
         });
 
@@ -344,7 +352,6 @@ describe('Load fields and drag and drop', () => {
         const fieldsContainer = de.query(By.css('.content-type-fields-drop-zone__container'));
         const fieldRows = fieldsContainer.queryAll(By.css('dot-content-type-fields-row'));
         fieldRows[0].componentInstance.editField.emit(field);
-
         expect(spy).toHaveBeenCalledWith(field);
     });
 
@@ -380,6 +387,16 @@ describe('Load fields and drag and drop', () => {
 
         expect(fakeFields[8]).toBe(comp.formData);
     });
+
+    it('should display dialog if a drop event happen from source', () => {
+        spyOn(comp, 'addRow');
+        fixture.detectChanges();
+        const addRowsContainer = de.query(By.css('dot-add-rows')).componentInstance;
+        addRowsContainer.selectColums.emit(2);
+        expect(comp.addRow).toHaveBeenCalled();
+        expect(comp.fieldRows[0].columns.length).toBe(2);
+    });
+
 
     it('should display dialog if a drop event happen from source', () => {
         fixture.detectChanges();

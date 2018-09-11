@@ -6,14 +6,15 @@
                 <h4>{{ data.name }} </h4>
                 <div class="content-type__edit-subtitle">
                     <span class="content-type__edit-variable">
-                        {{ dotMessageService.get('contenttypes.content.variable') }}: {{ data.variable }}
-                        <span class="content-type__edit-dot-separator">•</span> {{ dotMessageService.get('contenttypes.form.identifier') }}: {{ data.id }}
+                        {{ messagesKey['contenttypes.content.variable'] }}: {{ data.variable }}
+                        <span class="content-type__edit-dot-separator">•</span> {{ messagesKey['contenttypes.form.identifier'] }}: {{ data.id }}
                     </span>
                 </div>
             </div>
         </div>
         <div class="content-type__edit-actions">
-            <button type="button" pButton secondary label="Edit" (click)="show = true" icon="fa-edit" id="form-edit-button"></button>
+            <button type="button" pButton secondary label="{{ messagesKey['contenttypes.action.edit'] }}" (click)="show = true" icon="fa-edit" id="form-edit-button"></button>
+            <button type="button" pButton label="{{ messagesKey['contenttypes.dropzone.rows.add'] }}" icon="fa-plus" (click)="notifyAddRowsEvt()" id="form-add-row"></button>
         </div>
     </div>
     <dot-content-type-fields-drop-zone
@@ -46,6 +47,6 @@
 
     <p-footer>
         <button type="button" pButton label="Cancel" class="content-type__cancel cancel" (click)="cancelForm()"></button>
-        <button type="button" pButton class="content-type__save" [label]="isEditMode() ? dotMessageService.get('contenttypes.action.update') : dotMessageService.get('contenttypes.action.create')" [disabled]="!form.canSave" (click)="form.submitForm()"></button>
+        <button type="button" pButton class="content-type__save" [label]="isEditMode() ? messagesKey['contenttypes.action.update'] : messagesKey['contenttypes.action.create']" [disabled]="!form.canSave" (click)="form.submitForm()"></button>
     </p-footer>
 </p-dialog>
