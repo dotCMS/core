@@ -121,22 +121,16 @@ public class MainServlet extends ActionServlet {
 				DbConnectionFactory.closeSilently();
 			}
 
-			
-	        
-	        HashSet<String> suppressProperties = new HashSet<>();
-	        suppressProperties.add("class");
-	        suppressProperties.add("multipartRequestHandler");
-	        suppressProperties.add("resultValueMap");
-	        PropertyUtils.addBeanIntrospector( new SuppressPropertiesBeanIntrospector(suppressProperties));
-	        PropertyUtils.clearDescriptors();
-	        Logger.info(this.getClass(),"SuppressPropertiesBeanIntrospector enabled for legacy Struts applications");
+            HashSet<String> suppressProperties = new HashSet<>();
+            suppressProperties.add("class");
+            suppressProperties.add("multipartRequestHandler");
+            suppressProperties.add("resultValueMap");
+            PropertyUtils.addBeanIntrospector(new SuppressPropertiesBeanIntrospector(suppressProperties));
+            PropertyUtils.clearDescriptors();
+            Logger.info(this.getClass(), "SuppressPropertiesBeanIntrospector enabled for legacy Struts applications");
 
-			
-			
-			
-			
+
 			// Context path
-
 			ServletConfig sc = getServletConfig();
 			ServletContext ctx = getServletContext();
 
@@ -450,25 +444,18 @@ public class MainServlet extends ActionServlet {
 			}
 		}
 
-		
-        Optional<String> badProp  = req.getParameterMap().keySet().stream().filter(k -> k.startsWith("class.")).findFirst();
-        
-        
-        ClassLoader clazz = this.getClass().getClassLoader();
-
-        
-        if(badProp.isPresent()) {
-          SecurityLogger.logInfo(this.getClass(), "Possible exploit probe from "+ req.getRemoteAddr() + ".  See: CVE-2014-0114 -  class parameter found in request: " + badProp.get());
+        Optional<String> badProp = req.getParameterMap().keySet().stream().filter(k -> k.startsWith("class.")).findFirst();
+    
+        if (badProp.isPresent()) {
+          SecurityLogger.logInfo(this.getClass(), "Possible exploit probe from " + req.getRemoteAddr()
+              + ".  See: CVE-2014-0114 -  class parameter found in request: " + badProp.get());
           try {
-            Object clz= PropertyUtils.getNestedProperty(this,"class") ;
-
+            PropertyUtils.getNestedProperty(this, "class");
             Logger.error(this, "SECURITY ISSUE- `class` attribute NOT DISABLED for BeanUtil introspection, See: CVE-2014-0114 ");
-
-          }catch(java.lang.NoSuchMethodException nse) { 
+          } catch (java.lang.NoSuchMethodException nse) {
             Logger.info(this, "`class` is disabled as a property for introspection in struts for security");
-          }
-          catch (Exception e) {
-            Logger.warn(this, e.getMessage(),e);
+          } catch (Exception e) {
+            Logger.warn(this, e.getMessage(), e);
           }
         }
     
