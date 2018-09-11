@@ -2048,6 +2048,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 new ContentletLoader().invalidate(contentlet);
 
                 publishRelatedHtmlPages(contentlet);
+
+                if (contentlet.isHTMLPage()) {
+                    CacheLocator.getHTMLPageCache().remove(contentlet.getInode());
+                }
+                
                 HibernateUtil.addAsyncCommitListener(() -> this.contentletSystemEventUtil.pushArchiveEvent(workingContentlet), 1000);
             } else {
                 throw new DotContentletStateException("Contentlet with Identifier '" + contentlet.getIdentifier() +
