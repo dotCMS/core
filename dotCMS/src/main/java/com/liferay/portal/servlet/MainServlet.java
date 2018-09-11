@@ -445,7 +445,6 @@ public class MainServlet extends ActionServlet {
 		}
 
         Optional<String> badProp = req.getParameterMap().keySet().stream().filter(k -> k.startsWith("class.")).findFirst();
-    
         if (badProp.isPresent()) {
           SecurityLogger.logInfo(this.getClass(), "Possible exploit probe from " + req.getRemoteAddr()
               + ".  See: CVE-2014-0114 -  class parameter found in request: " + badProp.get());
@@ -459,19 +458,7 @@ public class MainServlet extends ActionServlet {
           }
         }
     
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
+
 		// Process pre service events
 
 		try {
