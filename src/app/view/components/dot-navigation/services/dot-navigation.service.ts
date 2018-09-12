@@ -1,10 +1,10 @@
 import { Injectable } from '@angular/core';
-import { PlatformLocation } from '@angular/common';
 import { Router, NavigationEnd, Event } from '@angular/router';
 
 import { Observable } from 'rxjs/Observable';
+
 import { BehaviorSubject } from 'rxjs/BehaviorSubject';
-import { filter, mergeMap, take } from 'rxjs/operators';
+import { filter, switchMap, map, flatMap, toArray, tap } from 'rxjs/operators';
 
 import { Auth } from 'dotcms-js/core/login.service';
 import { DotcmsEventsService, LoginService } from 'dotcms-js/dotcms-js';
@@ -13,6 +13,40 @@ import { DotMenu, DotMenuItem } from '../../../../shared/models/navigation';
 import { DotMenuService } from '../../../../api/services/dot-menu.service';
 import { DotRouterService } from '../../../../api/services/dot-router/dot-router.service';
 import { DotIframeService } from '../../_common/iframe/service/dot-iframe/dot-iframe.service';
+
+const replaceSectionsMap = {
+    'edit-page': 'site-browser'
+};
+
+const replaceIdForNonMenuSection = id => {
+    return replaceSectionsMap[id];
+};
+
+const setActiveItems = (id: string) => (source: Observable<DotMenu[]>) => {
+    id = replaceIdForNonMenuSection(id) || id;
+
+    return source.pipe(
+        flatMap((menu: DotMenu[]) => menu),
+        map((menu: DotMenu) => getActiveUpdatedMenu(menu, id)),
+        toArray()
+    );
+};
+
+const getActiveUpdatedMenu = (menu: DotMenu, id: string) => {
+    let isActive = false;
+
+    menu.menuItems.forEach((item: DotMenuItem) => {
+        if (item.id === id) {
+            item.active = true;
+            isActive = true;
+        } else {
+            item.active = false;
+        }
+    });
+
+    menu.active = menu.isOpen = isActive;
+    return menu;
+};
 
 @Injectable()
 export class DotNavigationService {
@@ -23,32 +57,30 @@ export class DotNavigationService {
         private dotRouterService: DotRouterService,
         private dotcmsEventsService: DotcmsEventsService,
         private loginService: LoginService,
-        private location: PlatformLocation,
         private dotIframeService: DotIframeService,
         private router: Router
     ) {
+        this.dotMenuService.loadMenu().subscribe((menus: DotMenu[]) => {
+            this.setMenu(menus);
+        });
+
         this.onNavigationEnd()
             .pipe(
-                filter(() => !this.dotRouterService.isPublicPage()),
-                take(1)
+                map((event: NavigationEnd) => this.getTheUrlId(event.url)),
+                switchMap((id: string) => this.dotMenuService.loadMenu().pipe(setActiveItems(id)))
             )
-            .subscribe((_event: NavigationEnd) => {
-                this.dotMenuService.loadMenu().subscribe((menu: DotMenu[]) => {
-                    this.setMenu(menu);
-                });
+            .subscribe((menus: DotMenu[]) => {
+                this.setMenu(menus);
             });
 
         this.dotcmsEventsService.subscribeTo('UPDATE_PORTLET_LAYOUTS').subscribe(() => {
-            this.reloadNavigation();
+            this.reloadNavigation().subscribe((menus: DotMenu[]) => {
+                this.setMenu(menus);
+            });
         });
 
         this.loginService.auth$
-            .pipe(
-                filter((auth: Auth) => !!(auth.loginAsUser || auth.user)),
-                mergeMap(() => {
-                    return this.reloadNavigation().filter(() => !this.dotRouterService.previousSavedURL);
-                })
-            )
+            .pipe(filter((auth: Auth) => !!(auth.loginAsUser || auth.user)))
             .subscribe(() => {
                 this.goToFirstPortlet();
             });
@@ -59,15 +91,56 @@ export class DotNavigationService {
     }
 
     /**
+     * Close all the sections in the menu
+     *
+     * @memberof DotNavigationService
+     */
+    collapseMenu(): void {
+        const closedMenu: DotMenu[] = this._items$.getValue().map((menu: DotMenu) => {
+            menu.isOpen = false;
+            return menu;
+        });
+        this.setMenu(closedMenu);
+    }
+
+    /**
+     * Open menu section that have menulink active
+     *
+     * @memberof DotNavigationService
+     */
+    expandMenu(): void {
+        const expandedMenu: DotMenu[] = this._items$.getValue().map((menu: DotMenu) => {
+            let isActive = false;
+
+            menu.menuItems.forEach((item: DotMenuItem) => {
+                if (item.active) {
+                    isActive = true;
+                }
+            });
+            menu.isOpen = isActive;
+            return menu;
+        });
+        this.setMenu(expandedMenu);
+    }
+
+    /**
+     * Navigate to portlet by id
+     *
+     * @param {string} url
+     * @memberof DotNavigationService
+     */
+    goTo(url: string): void {
+        this.dotRouterService.gotoPortlet(url);
+    }
+
+    /**
      * Navigates to the first portlet
      *
      * @memberof DotNavigationService
      */
-    goToFirstPortlet(): Promise<boolean> {
+    goToFirstPortlet(): Promise <boolean> {
         return this.getFirstMenuLink()
-            .map((link: string) => {
-                return this.dotRouterService.gotoPortlet(link);
-            })
+            .map((link: string) => this.dotRouterService.gotoPortlet(link))
             .toPromise()
             .then((isRouted: Promise<boolean>) => {
                 if (!isRouted) {
@@ -75,27 +148,6 @@ export class DotNavigationService {
                 }
                 return isRouted;
             });
-    }
-
-    /**
-     * Check if menu option is active
-     *
-     * @param {string} id
-     * @returns {boolean}
-     * @memberof DotNavigationService
-     */
-    isActive(id: string): boolean {
-        return this.dotRouterService.currentPortlet.id === id;
-    }
-
-    /**
-     * Emit event when navigation end
-     *
-     * @returns {Observable<Event>}
-     * @memberof DotNavigationService
-     */
-    onNavigationEnd(): Observable<Event> {
-        return this.router.events.filter((event: Event) => event instanceof NavigationEnd);
     }
 
     /**
@@ -111,24 +163,48 @@ export class DotNavigationService {
     }
 
     /**
-     * Reloads and return a new version of the menu and
-     * decide where to go if the user do not have access to the current route.
+     * Set menu open base on the id of the menulink
      *
-     * @returns {Observable<DotMenu[]>}
+     * @param {string} id
      * @memberof DotNavigationService
      */
-    reloadNavigation(): Observable<DotMenu[]> {
-        return this.dotMenuService.reloadMenu().do((menu: DotMenu[]) => {
-            this.setMenu(menu);
+    setOpen(id: string): void {
+        const updatedMenu: DotMenu[] = this._items$.getValue().map((menu: DotMenu) => {
+            menu.isOpen = menu.isOpen ? false : id === menu.id;
+            return menu;
+        });
+        this.setMenu(updatedMenu);
+    }
+
+    private addMenuLinks(menu: DotMenu[]): DotMenu[] {
+        return menu.map((menuGroup: DotMenu) => {
+            menuGroup.menuItems.forEach((menuItem: DotMenuItem) => {
+                menuItem.menuLink = menuItem.angular ? menuItem.url : this.getLegacyPortletUrl(menuItem.id);
+            });
+            return menuGroup;
         });
     }
 
-    /**
-     * Navigate to portlet
-     * @param url
-     */
-    goTo(url: string): void {
-        this.dotRouterService.gotoPortlet(url);
+    private extractFirtsMenuLink(menus: DotMenu[]): string {
+        const firstMenuItem: DotMenuItem = menus[0].menuItems[0];
+        return firstMenuItem.angular ? firstMenuItem.url : this.getLegacyPortletUrl(firstMenuItem.id);
+    }
+
+    private getFirstMenuLink(): Observable <string> {
+        return this.dotMenuService.loadMenu().map((menus: DotMenu[]) => this.extractFirtsMenuLink(menus));
+    }
+
+    private getLegacyPortletUrl(menuItemId: string): string {
+        return `/c/${menuItemId}`;
+    }
+
+    private getTheUrlId(url: string): string {
+        const urlSegments: string[] = url.split('/').filter((item: string) => item.length);
+        return urlSegments[0] === 'c' ? urlSegments.pop() : urlSegments[0];
+    }
+
+    private onNavigationEnd(): Observable <Event> {
+        return this.router.events.filter((event: Event) => event instanceof NavigationEnd);
     }
 
     private reloadIframePage(): void {
@@ -137,43 +213,16 @@ export class DotNavigationService {
         }
     }
 
-    private extractFirtsMenuLink(menus: DotMenu[]): string {
-        const firstMenuItem: DotMenuItem = menus[0].menuItems[0];
-        return firstMenuItem.angular ? firstMenuItem.url : this.getMenuLink(firstMenuItem.id);
-    }
-
-    private formatMenuItems(menu: DotMenu[]): DotMenu[] {
-        const currentUrl = this.location.hash;
-
-        return menu.map((menuGroup: DotMenu, menuIndex: number) => {
-            menuGroup.menuItems.forEach((menuItem: DotMenuItem) => {
-                menuItem.menuLink = menuItem.angular ? menuItem.url : this.getMenuLink(menuItem.id);
-                menuGroup.isOpen =
-                    menuGroup.isOpen || this.isFirstMenuActive(currentUrl, menuIndex) || this.isMenuItemCurrentUrl(currentUrl, menuItem.id);
-                menuGroup.active = menuGroup.isOpen;
-                menuItem.active = this.isMenuItemCurrentUrl(currentUrl, menuItem.id);
-            });
-            return menuGroup;
-        });
-    }
-
-    private getFirstMenuLink(): Observable<string> {
-        return this.dotMenuService.loadMenu().map((menus: DotMenu[]) => this.extractFirtsMenuLink(menus));
-    }
-
-    private getMenuLink(menuItemId: string): string {
-        return `/c/${menuItemId}`;
-    }
-
-    private isFirstMenuActive(currentUrl: string, index: number): boolean {
-        return currentUrl === '#/' && index === 0;
-    }
-
-    private isMenuItemCurrentUrl(currentUrl: string, menuItemId: string): boolean {
-        return this.dotRouterService.getPortletId(currentUrl) === menuItemId;
+    private reloadNavigation(): Observable <DotMenu[] > {
+        return this.dotMenuService.reloadMenu().pipe(
+            setActiveItems(this.dotRouterService.currentPortlet.id),
+            tap((menus: DotMenu[]) => {
+                this.setMenu(menus);
+            })
+        );
     }
 
     private setMenu(menu: DotMenu[]) {
-        this._items$.next(this.formatMenuItems(menu));
+        this._items$.next(this.addMenuLinks(menu));
     }
 }

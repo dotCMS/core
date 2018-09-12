@@ -5,7 +5,21 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DotSubNavComponent } from './dot-sub-nav.component';
-import { dotMenuMock } from '../../dot-navigation.component.spec';
+import { dotMenuMock } from '../../services/dot-navigation.service.spec';
+import { DotMenu } from '../../../../../shared/models/navigation';
+
+const data: DotMenu = {
+    ...dotMenuMock(),
+    menuItems: [
+        {
+            ...dotMenuMock().menuItems[0],
+        },
+        {
+            ...dotMenuMock().menuItems[1],
+            active: true
+        }
+    ]
+};
 
 describe('DotSubNavComponent', () => {
     let component: DotSubNavComponent;
@@ -23,7 +37,7 @@ describe('DotSubNavComponent', () => {
         fixture = TestBed.createComponent(DotSubNavComponent);
         de = fixture.debugElement;
         component = fixture.componentInstance;
-        component.data = dotMenuMock();
+        component.data = data;
         fixture.detectChanges();
     });
 
@@ -59,7 +73,7 @@ describe('DotSubNavComponent', () => {
         component.itemClick.subscribe((event) => {
             expect(event).toEqual({
                 originalEvent: {hello: 'world'},
-                data: dotMenuMock().menuItems[0]
+                data: data.menuItems[0]
             });
         });
 

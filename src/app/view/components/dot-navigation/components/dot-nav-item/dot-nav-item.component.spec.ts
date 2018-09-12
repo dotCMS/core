@@ -9,7 +9,13 @@ import { DotIconModule } from '../../../_common/dot-icon/dot-icon.module';
 import { DotSubNavComponent } from '../dot-sub-nav/dot-sub-nav.component';
 import { RouterTestingModule } from '@angular/router/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { dotMenuMock } from '../../dot-navigation.component.spec';
+import { dotMenuMock } from '../../services/dot-navigation.service.spec';
+import { DotMenu } from '../../../../../shared/models/navigation';
+
+const data: DotMenu = {
+    ...dotMenuMock(),
+    active: true
+};
 
 
 describe('DotNavItemComponent', () => {
@@ -28,7 +34,7 @@ describe('DotNavItemComponent', () => {
         fixture = TestBed.createComponent(DotNavItemComponent);
         de = fixture.debugElement;
         component = fixture.componentInstance;
-        component.data = dotMenuMock();
+        component.data = data;
         fixture.detectChanges();
     });
 
@@ -52,6 +58,6 @@ describe('DotNavItemComponent', () => {
 
     it('should have dot-sub-nav', () => {
         const subNav: DebugElement = de.query(By.css('dot-sub-nav'));
-        expect(subNav.componentInstance.data).toEqual(dotMenuMock());
+        expect(subNav.componentInstance.data).toEqual(data);
     });
 });
