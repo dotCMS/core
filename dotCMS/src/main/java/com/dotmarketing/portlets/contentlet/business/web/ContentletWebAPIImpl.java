@@ -173,11 +173,11 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 	private void pushSaveEvent (final Contentlet eventContentlet, final boolean eventCreateNewVersion) throws DotHibernateException {
 
-		HibernateUtil.addAsyncCommitListener(() -> {
+		HibernateUtil.addCommitListener(() -> {
 			if (APILocator.getContentletAPI().isInodeIndexed(eventContentlet.getInode())) {
 				this.contentletSystemEventUtil.pushSaveEvent(eventContentlet, eventCreateNewVersion);
 			}
-		} , 1000);
+		});
 	}
 
 
