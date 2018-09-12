@@ -1,7 +1,6 @@
 package com.dotmarketing.db;
 
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
-import com.dotcms.system.event.local.type.content.CommitListenerEvent;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -220,8 +219,8 @@ public class HibernateUtilTest {
 
             HibernateUtil.addCommitListener(testCase.getDotRunnable());
 
-            Map<String, Runnable> asyncCommitListeners = HibernateUtil.asyncCommitListeners.get();
-            Map<String, Runnable> syncCommitListeners = HibernateUtil.syncCommitListeners.get();
+            final Map<String, Runnable> asyncCommitListeners = HibernateUtil.asyncCommitListeners.get();
+            final Map<String, Runnable> syncCommitListeners = HibernateUtil.syncCommitListeners.get();
             assertEquals(testCase.getExpectedAsyncListeners(), asyncCommitListeners.size());
             assertEquals(testCase.getExpectedSyncListeners(), syncCommitListeners.size());
             HibernateUtil.getSession().connection().setAutoCommit(true);

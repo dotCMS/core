@@ -1,11 +1,11 @@
 package com.dotmarketing.db;
 
 class AddCommitListenerTestCase {
-    private boolean asyncReindexCommitListeners;
-    private boolean asyncCommitListeners;
-    private Runnable dotRunnable;
-    private int expectedAsyncListeners;
-    private int expectedSyncListeners;
+    final private boolean asyncReindexCommitListeners;
+    final private boolean asyncCommitListeners;
+    final private Runnable dotRunnable;
+    final private int expectedAsyncListeners;
+    final private int expectedSyncListeners;
 
     public boolean isAsyncReindexCommitListeners() {
         return asyncReindexCommitListeners;
@@ -44,17 +44,17 @@ class AddCommitListenerTestCase {
         private int expectedAsyncListeners;
         private int expectedSyncListeners;
 
-        public Builder asyncReindexCommitListeners(boolean asyncReindexCommitListeners) {
+        public Builder asyncReindexCommitListeners(final boolean asyncReindexCommitListeners) {
             this.asyncReindexCommitListeners = asyncReindexCommitListeners;
             return this;
         }
 
-        public Builder asyncCommitListeners(boolean asyncCommitListeners) {
+        public Builder asyncCommitListeners(final boolean asyncCommitListeners) {
             this.asyncCommitListeners = asyncCommitListeners;
             return this;
         }
 
-        public Builder dotRunnable(Runnable dotRunnable) {
+        public Builder dotRunnable(final Runnable dotRunnable) {
             this.dotRunnable = dotRunnable;
             return this;
         }
