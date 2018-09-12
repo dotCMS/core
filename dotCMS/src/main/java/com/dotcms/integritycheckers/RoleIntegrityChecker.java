@@ -10,7 +10,6 @@ import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.DotRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -216,14 +215,11 @@ public class RoleIntegrityChecker extends AbstractIntegrityChecker {
         	}
         }
 
-        HibernateUtil.addCommitListener(new DotRunnable() {
-			@Override
-			public void run() {
-            	CacheLocator.getCmsRoleCache().clearCache();
+        HibernateUtil.addCommitListener(
+            	CacheLocator.getCmsRoleCache()::clearCache
             	//we should remove permissions cached for edited roles only
             	//CacheLocator.getPermissionCache().clearCache();
-			}
-		});
+		);
 	}
 
     private void applyFixToRole( DotConnect dc, Role oldRole, String oldRoleId, String newRoleId) throws DotDataException, DotSecurityException {

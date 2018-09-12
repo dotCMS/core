@@ -21,27 +21,27 @@ import java.util.stream.Collectors;
 
 public class DotRunnableThread extends Thread {
 
-    private static final int INDEX_ONLY                          = 0;
-    private static final int RUN_ONLY_LISTENERS                  = 1;
-    private static final int INDEX_AND_RUN_LISTENERS             = 2;
+    private static final int INDEX_ONLY = 0;
+    private static final int RUN_ONLY_LISTENERS = 1;
+    private static final int INDEX_AND_RUN_LISTENERS = 2;
 
-    private final static String LISTENER_SUBMITTER               = DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL;
-    public static final String  NETWORK_CACHE_FLUSH_DELAY        = "NETWORK_CACHE_FLUSH_DELAY";
-    public static final String  INDEX_COMMIT_LISTENER_BATCH_SIZE = "INDEX_COMMIT_LISTENER_BATCH_SIZE";
+    private final static String LISTENER_SUBMITTER = DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL;
+    public static final String NETWORK_CACHE_FLUSH_DELAY = "NETWORK_CACHE_FLUSH_DELAY";
+    public static final String INDEX_COMMIT_LISTENER_BATCH_SIZE = "INDEX_COMMIT_LISTENER_BATCH_SIZE";
 
-    private final List<DotRunnable> listeners;
-    private final List<DotRunnable> flushers;
+    private final List<Runnable> listeners;
+    private final List<Runnable> flushers;
     private final boolean isSync;
 
 
-    public DotRunnableThread(final List<DotRunnable> allListeners) {
-    this(allListeners, false);
-  }
+    public DotRunnableThread(final List<Runnable> allListeners) {
+        this(allListeners, false);
+    }
 
-    public DotRunnableThread(final List<DotRunnable> allListeners, final boolean isSync) {
-        this.isSync    = isSync;
+    public DotRunnableThread(final List<Runnable> allListeners, final boolean isSync) {
+        this.isSync = isSync;
         this.listeners = getListeners(allListeners);
-        this.flushers  = getFlushers(allListeners);
+        this.flushers = getFlushers(allListeners);
     }
 
     private void runNetworkflowCacheFlushThread() {
@@ -63,95 +63,95 @@ public class DotRunnableThread extends Thread {
 
             LocalTransaction.wrap(this::internalRunner);
         } catch (Exception dde) {
-              throw new DotStateException(dde);
+            throw new DotStateException(dde);
         }
     }
 
-  private void internalRunner() {
+    private void internalRunner() {
 
-      final Set<String> reindexInodes                = new HashSet<>();
-      final List<List<Contentlet>> reindexList       = new ArrayList<>();
-      final List<DotRunnable>      otherListenerList = new ArrayList<>();
-      List<Contentlet> contentToIndex                = new ArrayList<>();
-      final int batchSize = Config.getIntProperty(INDEX_COMMIT_LISTENER_BATCH_SIZE, 50);
+        final Set<String> reindexInodes = new HashSet<>();
+        final List<List<Contentlet>> reindexList = new ArrayList<>();
+        final List<Runnable> otherListenerList = new ArrayList<>();
+        List<Contentlet> contentToIndex = new ArrayList<>();
+        final int batchSize = Config.getIntProperty(INDEX_COMMIT_LISTENER_BATCH_SIZE, 50);
 
-      for (final DotRunnable runner : listeners) {
+        for (final Runnable runner : listeners) {
 
-          if (runner instanceof ReindexRunnable) {
+            if (runner instanceof ReindexRunnable) {
 
-              final ReindexRunnable reindexRunnable = (ReindexRunnable) runner;
+                final ReindexRunnable reindexRunnable = (ReindexRunnable) runner;
 
-              if (ReindexRunnable.Action.REMOVING.equals(reindexRunnable.getAction())) {
+                if (ReindexRunnable.Action.REMOVING.equals(reindexRunnable.getAction())) {
 
-                  reindexRunnable.run();
-                  continue;
-              }
-
-              for (final Contentlet contentlet : reindexRunnable.getReindexIds()) {
-
-                if (reindexInodes.add(contentlet.getInode())) {
-
-                  contentToIndex.add(contentlet);
-
-                  if (contentToIndex.size() == batchSize) {
-
-                    reindexList.add(contentToIndex);
-                    contentToIndex = new ArrayList<>();
-                  }
+                    reindexRunnable.run();
+                    continue;
                 }
-              }
-          } else {
 
-            if (this.isOrdered (runner)) {
-                otherListenerList.add(runner);
+                for (final Contentlet contentlet : reindexRunnable.getReindexIds()) {
+
+                    if (reindexInodes.add(contentlet.getInode())) {
+
+                        contentToIndex.add(contentlet);
+
+                        if (contentToIndex.size() == batchSize) {
+
+                            reindexList.add(contentToIndex);
+                            contentToIndex = new ArrayList<>();
+                        }
+                    }
+                }
             } else {
-                runner.run();
+
+                if (this.isOrdered(runner)) {
+                    otherListenerList.add(runner);
+                } else {
+                    runner.run();
+                }
             }
-          }
-      }
+        }
 
-      // If there is some contentlet left
-      if (UtilMethods.isSet(contentToIndex)) {
+        // If there is some contentlet left
+        if (UtilMethods.isSet(contentToIndex)) {
 
-          reindexList.add(contentToIndex);
-      }
+            reindexList.add(contentToIndex);
+        }
 
-      if (reindexList.isEmpty()) {
+        if (reindexList.isEmpty()) {
 
-          otherListenerList.stream().forEach(DotRunnable::run);
-      } else {
+            otherListenerList.stream().forEach(Runnable::run);
+        } else {
 
-          this.indexContentList(reindexList, otherListenerList);
-      }
-  }
+            this.indexContentList(reindexList, otherListenerList);
+        }
+    }
 
-  private void indexContentList(final List<List<Contentlet>> reindexList,
-                                  final List<DotRunnable> otherListenerList) {
+    private void indexContentList(final List<List<Contentlet>> reindexList,
+                                  final List<Runnable> otherListenerList) {
 
         for (int i = 0; i < reindexList.size(); ++i) {
 
             try {
 
-                int action                       = INDEX_ONLY;
+                int action = INDEX_ONLY;
                 final List<Contentlet> batchList = reindexList.get(i);
 
-                if (i == reindexList.size() -1) { // if it is the last one batch
+                if (i == reindexList.size() - 1) { // if it is the last one batch
 
-                    action = (UtilMethods.isSet(batchList))?
-                                UtilMethods.isSet(otherListenerList)?
-                                        INDEX_AND_RUN_LISTENERS: INDEX_ONLY
-                                :RUN_ONLY_LISTENERS;
+                    action = (UtilMethods.isSet(batchList)) ?
+                            UtilMethods.isSet(otherListenerList) ?
+                                    INDEX_AND_RUN_LISTENERS : INDEX_ONLY
+                            : RUN_ONLY_LISTENERS;
                 }
 
                 switch (action) {
 
                     case RUN_ONLY_LISTENERS:
-                        otherListenerList.stream().forEach(DotRunnable::run);
-                    break;
+                        otherListenerList.stream().forEach(Runnable::run);
+                        break;
 
                     case INDEX_AND_RUN_LISTENERS:
                         APILocator.getContentletIndexAPI().indexContentList(batchList, null, false, new ReindexActionListeners(otherListenerList));
-                    break;
+                        break;
 
                     default:
                         APILocator.getContentletIndexAPI().indexContentList(batchList, null, false);
@@ -164,15 +164,15 @@ public class DotRunnableThread extends Thread {
 
     private static class ReindexActionListeners implements ActionListener<BulkResponse> {
 
-        private final List<DotRunnable> listeners;
+        private final List<Runnable> listeners;
 
-        public ReindexActionListeners(final List<DotRunnable> listeners) {
+        public ReindexActionListeners(final List<Runnable> listeners) {
             this.listeners = listeners;
         }
 
         @Override
         public void onResponse(BulkResponse bulkItemResponses) {
-            listeners.stream().forEach(DotRunnable::run);
+            listeners.stream().forEach(Runnable::run);
         }
 
         @Override
@@ -181,45 +181,46 @@ public class DotRunnableThread extends Thread {
         }
     }
 
-    private boolean isOrdered(final DotRunnable runner) {
 
-    return this.getOrder(runner) > 0;
-  }
+    private boolean isOrdered(final Runnable runner) {
 
-  private List<DotRunnable> getFlushers(final List<DotRunnable> allListeners) {
-    return allListeners.stream().filter(this::isFlushCacheRunnable).collect(Collectors.toList());
-  }
+        return this.getOrder(runner) > 0;
+    }
 
-  private List<DotRunnable> getListeners(final List<DotRunnable> allListeners) {
-    return allListeners.stream().filter(this::isNotFlushCacheRunnable).sorted(this::compare).collect(Collectors.toList());
-  }
+    private List<Runnable> getFlushers(final List<Runnable> allListeners) {
+        return allListeners.stream().filter(this::isFlushCacheRunnable).collect(Collectors.toList());
+    }
 
-  private int compare(final DotRunnable runnable, final DotRunnable runnable1) {
-    return this.getOrder(runnable).compareTo(this.getOrder(runnable1));
-  }
+    private List<Runnable> getListeners(final List<Runnable> allListeners) {
+        return allListeners.stream().filter(this::isNotFlushCacheRunnable).sorted(this::compare).collect(Collectors.toList());
+    }
 
-  private Integer  getOrder(final DotRunnable runnable) {
+    private int compare(final Runnable runnable, final Runnable runnable1) {
+        return this.getOrder(runnable).compareTo(this.getOrder(runnable1));
+    }
 
-    final int order = (runnable instanceof HibernateUtil.DotSyncRunnable)?
-            HibernateUtil.DotSyncRunnable.class.cast(runnable).getOrder():0;
+    private Integer getOrder(final Runnable runnable) {
 
-    return (runnable instanceof HibernateUtil.DotAsyncRunnable)?
-            HibernateUtil.DotAsyncRunnable.class.cast(runnable).getOrder(): order;
-  }
+        final int order = (runnable instanceof HibernateUtil.DotSyncRunnable) ?
+                HibernateUtil.DotSyncRunnable.class.cast(runnable).getOrder() : 0;
 
-  private boolean isNotFlushCacheRunnable (final DotRunnable listener) {
+        return (runnable instanceof HibernateUtil.DotAsyncRunnable) ?
+                HibernateUtil.DotAsyncRunnable.class.cast(runnable).getOrder() : order;
+    }
 
-      return !this.isFlushCacheRunnable(listener);
-  }
+    private boolean isNotFlushCacheRunnable(final Runnable listener) {
 
-  private boolean isFlushCacheRunnable (final DotRunnable listener) {
+        return !this.isFlushCacheRunnable(listener);
+    }
 
-      return  (
+    private boolean isFlushCacheRunnable(final Runnable listener) {
+
+        return (
                 listener instanceof FlushCacheRunnable ||
-                (listener instanceof HibernateUtil.DotAsyncRunnable
-                        && HibernateUtil.DotAsyncRunnable.class.cast(listener).getRunnable() instanceof FlushCacheRunnable) ||
-                (listener instanceof HibernateUtil.DotSyncRunnable
-                        && HibernateUtil.DotSyncRunnable.class.cast(listener).getRunnable() instanceof FlushCacheRunnable)
-              );
-  }
+                        (listener instanceof HibernateUtil.DotAsyncRunnable
+                                && HibernateUtil.DotAsyncRunnable.class.cast(listener).getRunnable() instanceof FlushCacheRunnable) ||
+                        (listener instanceof HibernateUtil.DotSyncRunnable
+                                && HibernateUtil.DotSyncRunnable.class.cast(listener).getRunnable() instanceof FlushCacheRunnable)
+        );
+    }
 }
