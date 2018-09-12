@@ -50,7 +50,6 @@ import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.liferay.util.servlet.SessionMessages;
-import org.apache.commons.collections.CollectionUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.text.DateFormat;
@@ -160,7 +159,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			// before DOTCMS-6383
 			//conAPI.unlock(cont, user, false);
 			if (null != contentlet) {
-				this.pushSaveEvent(contentlet, isNew);
+				contentletSystemEventUtil.pushSaveEvent(contentlet, isNew);
 			}
 		} catch (Exception ae) {
 			_handleException(ae);
@@ -170,16 +169,6 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		contentletFormData.put("cache_control", "0");
 		return ((contentlet!=null) ? contentlet.getInode() : null);
 	}
-
-	private void pushSaveEvent (final Contentlet eventContentlet, final boolean eventCreateNewVersion) throws DotHibernateException {
-
-		HibernateUtil.addAsyncCommitListener(() -> {
-			if (APILocator.getContentletAPI().isInodeIndexed(eventContentlet.getInode())) {
-				this.contentletSystemEventUtil.pushSaveEvent(eventContentlet, eventCreateNewVersion);
-			}
-		} , 1000);
-	}
-
 
 	private boolean isNew(Map<String, Object> contentletFormData) {
 		Contentlet currentContentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
