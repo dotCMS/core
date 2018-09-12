@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import com.dotcms.contenttype.model.type.ContentType;
 import java.util.List;
 
 import com.dotcms.contenttype.model.type.ContentTypeIf;
@@ -82,5 +83,6 @@ public interface RelationshipAPI {
 
   void addRelationship(String parent, String child, String relationType) throws DotDataException;
 
-
+  List<Relationship> getOneSidedRelationships(final ContentType contentType, final int limit,
+          final int offset) throws DotDataException;
 }
