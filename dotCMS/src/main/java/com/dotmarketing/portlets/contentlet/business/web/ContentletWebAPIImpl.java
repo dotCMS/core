@@ -50,6 +50,7 @@ import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.liferay.util.servlet.SessionMessages;
+import org.apache.commons.collections.CollectionUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.text.DateFormat;
