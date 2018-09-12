@@ -17,8 +17,8 @@ import java.util.stream.Collectors;
 
 public class DotRunnableThread extends Thread {
 
-  private final List<DotRunnable> listeners;
-  private final List<DotRunnable> flushers;
+  private final List<Runnable> listeners;
+  private final List<Runnable> flushers;
   private final Thread networkCacheFlushThread = new Thread("NetworkCacheFlushThread") {
     @Override
     public void run() {
@@ -31,7 +31,7 @@ public class DotRunnableThread extends Thread {
     }
   };
 
-  public DotRunnableThread(final List<DotRunnable> allListeners) {
+  public DotRunnableThread(final List<Runnable> allListeners) {
     this.listeners = getListeners(allListeners);
     this.flushers = getFlushers(allListeners);
   }
@@ -55,10 +55,10 @@ public class DotRunnableThread extends Thread {
 
 
       final List<List<Contentlet>> reindexList        = new ArrayList<>();
-      final List<DotRunnable>      otherListenerList = new ArrayList<>();
+      final List<Runnable>      otherListenerList = new ArrayList<>();
       final int batchSize = Config.getIntProperty("INDEX_COMMIT_LISTENER_BATCH_SIZE", 50);
 
-      for (final DotRunnable runner : listeners) {
+      for (final Runnable runner : listeners) {
 
           if (runner instanceof ReindexRunnable) {
 
@@ -97,7 +97,7 @@ public class DotRunnableThread extends Thread {
 
       if (reindexList.isEmpty()) {
 
-          otherListenerList.stream().forEach(DotRunnable::run);
+          otherListenerList.stream().forEach(Runnable::run);
       } else {
           for (final List<Contentlet> batchList : reindexList) {
 
@@ -105,7 +105,7 @@ public class DotRunnableThread extends Thread {
                   APILocator.getContentletIndexAPI().indexContentList(batchList, null, false, new ActionListener<BulkResponse>() {
                       @Override
                       public void onResponse(BulkResponse bulkItemResponses) {
-                          otherListenerList.stream().forEach(DotRunnable::run);
+                          otherListenerList.stream().forEach(Runnable::run);
                       }
 
                       @Override
@@ -120,24 +120,24 @@ public class DotRunnableThread extends Thread {
       }
   }
 
-  private boolean isOrdered(final DotRunnable runner) {
+  private boolean isOrdered(final Runnable runner) {
 
     return this.getOrder(runner) > 0;
   }
 
-  private List<DotRunnable> getFlushers(final List<DotRunnable> allListeners) {
+  private List<Runnable> getFlushers(final List<Runnable> allListeners) {
     return allListeners.stream().filter(this::isFlushCacheRunnable).collect(Collectors.toList());
   }
 
-  private List<DotRunnable> getListeners(final List<DotRunnable> allListeners) {
+  private List<Runnable> getListeners(final List<Runnable> allListeners) {
     return allListeners.stream().filter(this::isNotFlushCacheRunnable).sorted(this::compare).collect(Collectors.toList());
   }
 
-  private int compare(final DotRunnable runnable, final DotRunnable runnable1) {
+  private int compare(final Runnable runnable, final Runnable runnable1) {
     return this.getOrder(runnable).compareTo(this.getOrder(runnable1));
   }
 
-  private Integer  getOrder(final DotRunnable runnable) {
+  private Integer  getOrder(final Runnable runnable) {
 
     final int order = (runnable instanceof HibernateUtil.DotSyncRunnable)?
             HibernateUtil.DotSyncRunnable.class.cast(runnable).getOrder():0;
@@ -146,12 +146,12 @@ public class DotRunnableThread extends Thread {
             HibernateUtil.DotAsyncRunnable.class.cast(runnable).getOrder(): order;
   }
 
-  private boolean isNotFlushCacheRunnable (final DotRunnable listener) {
+  private boolean isNotFlushCacheRunnable (final Runnable listener) {
 
       return !this.isFlushCacheRunnable(listener);
   }
 
-  private boolean isFlushCacheRunnable (final DotRunnable listener) {
+  private boolean isFlushCacheRunnable (final Runnable listener) {
 
       return  (
                 listener instanceof FlushCacheRunnable ||

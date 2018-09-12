@@ -9,7 +9,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
-public abstract class ReindexRunnable extends DotRunnable {
+public abstract class ReindexRunnable implements Runnable {
 
 	public enum Action{ADDING, REMOVING};
 

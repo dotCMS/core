@@ -81,7 +81,7 @@ public class CommentOnWorkflowActionlet extends WorkFlowActionlet {
 
         if (null == processor.getTask() || processor.getTask().isNew()) {
             try {
-                HibernateUtil.addAsyncCommitListener(() -> {
+                HibernateUtil.addCommitListener(() -> {
 
                     if (null != processor.getTask()) {
                         if (!UtilMethods.isSet(comment.getWorkflowtaskId())) {
