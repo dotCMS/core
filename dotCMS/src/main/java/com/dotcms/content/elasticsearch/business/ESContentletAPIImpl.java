@@ -2041,8 +2041,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 if (contentlet.isHTMLPage()) {
                     CacheLocator.getHTMLPageCache().remove(contentlet.getInode());
                 }
-
-                HibernateUtil.addAsyncCommitListener(() -> this.contentletSystemEventUtil.pushArchiveEvent(workingContentlet), 1000);
+                
                 HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushArchiveEvent(workingContentlet));
 
             } else {
