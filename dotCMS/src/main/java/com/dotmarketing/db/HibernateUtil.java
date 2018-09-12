@@ -1,5 +1,10 @@
 package com.dotmarketing.db;
 
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.repackage.net.sf.hibernate.*;
+import com.dotcms.repackage.net.sf.hibernate.cfg.Configuration;
+import com.dotcms.repackage.net.sf.hibernate.cfg.Mappings;
+import com.dotcms.repackage.net.sf.hibernate.type.Type;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -9,35 +14,14 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.WebKeys;
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Serializable;
+
+import java.io.*;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Savepoint;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import com.dotcms.repackage.net.sf.hibernate.CallbackException;
-import com.dotcms.repackage.net.sf.hibernate.FlushMode;
-import com.dotcms.repackage.net.sf.hibernate.HibernateException;
-import com.dotcms.repackage.net.sf.hibernate.Interceptor;
-import com.dotcms.repackage.net.sf.hibernate.MappingException;
-import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
-import com.dotcms.repackage.net.sf.hibernate.Query;
-import com.dotcms.repackage.net.sf.hibernate.Session;
-import com.dotcms.repackage.net.sf.hibernate.SessionFactory;
-import com.dotcms.repackage.net.sf.hibernate.cfg.Configuration;
-import com.dotcms.repackage.net.sf.hibernate.cfg.Mappings;
-import com.dotcms.repackage.net.sf.hibernate.type.Type;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * This class provides a great number of utility methods that allow developers to interact with
@@ -1060,13 +1044,15 @@ public class HibernateUtil {
 		final List<DotRunnable> syncListeners = new ArrayList<>(syncCommitListeners.get().values());
 		asyncCommitListeners.get().clear();
 		syncCommitListeners.get().clear();
+
 		if (!asyncListeners.isEmpty()) {
-			final DotRunnableThread thread = new DotRunnableThread(asyncListeners);
-			thread.start();
+			DotConcurrentFactory.getInstance()
+					.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL)
+					.submit(new DotRunnableThread(asyncListeners, true));
 		}
+
 		if (!syncListeners.isEmpty()) {
-			final DotRunnableThread thread = new DotRunnableThread(syncListeners);
-			thread.run();
+			new DotRunnableThread(syncListeners).run();
 		}
 	}
 

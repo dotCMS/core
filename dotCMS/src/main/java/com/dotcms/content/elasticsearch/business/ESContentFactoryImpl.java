@@ -44,10 +44,12 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
@@ -69,6 +71,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.Calendar;
+import java.util.function.Consumer;
 
 import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.datetimeFormat;
 
@@ -1268,6 +1271,56 @@ public class ESContentFactoryImpl extends ContentletFactory {
         searchRequestBuilder.setIndices(indexToHit);
         return searchRequestBuilder.execute().actionGet().getHits().getTotalHits();
 	}
+
+    @Override
+    protected void indexCount(final String query,
+                              final long timeoutMillis,
+                              final Consumer<Long> indexCountSuccess,
+                              final Consumer<Exception> indexCountFailure) {
+
+        final String qq=findAndReplaceQueryDates(translateQuery(query, null).getQuery());
+
+        // we check the query to figure out wich indexes to hit
+        String indexToHit;
+        IndiciesInfo info;
+        try {
+            info=APILocator.getIndiciesAPI().loadIndicies();
+        } catch(DotDataException ee) {
+            Logger.fatal(this, "Can't get indicies information",ee);
+            if (null != indexCountFailure) {
+
+                indexCountFailure.accept(ee);
+            }
+            return;
+        }
+
+        indexToHit = (query.contains("+live:true") && !query.contains("+deleted:true"))?
+                info.live: info.working;
+
+        final Client client=new ESClient().getClient();
+        final QueryStringQueryBuilder qb = QueryBuilders.queryStringQuery(qq);
+        final SearchRequestBuilder searchRequestBuilder = client.prepareSearch().setSize(0);
+        searchRequestBuilder.setQuery(qb);
+        searchRequestBuilder.setIndices(indexToHit);
+        searchRequestBuilder.setTimeout(TimeValue.timeValueMillis(timeoutMillis));
+
+        searchRequestBuilder.execute(new ActionListener<SearchResponse>() {
+            @Override
+            public void onResponse(SearchResponse searchResponse) {
+
+                indexCountSuccess.accept(searchResponse.getHits().getTotalHits());
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+
+                if (null != indexCountFailure) {
+
+                    indexCountFailure.accept(e);
+                }
+            }
+        });
+    }
 
     /**
      * It will call createRequest with null as sortBy parameter

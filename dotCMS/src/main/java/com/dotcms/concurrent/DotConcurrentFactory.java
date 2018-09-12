@@ -1,31 +1,18 @@
 package com.dotcms.concurrent;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.RejectedExecutionHandler;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
+
+import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * Factory for concurrent {@link Executor} & {@link DotSubmitter}
@@ -389,6 +376,25 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         } // submit.
 
         @Override
+        public final Future<?> submit(final Runnable task, final long delay, final TimeUnit unit) {
+
+            return this.submit(() -> {
+
+                sleep(delay, unit);
+                task.run();
+            });
+        }
+
+        private void sleep(final long delay, final TimeUnit unit) {
+
+            try {
+                unit.sleep(delay);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        @Override
         public final <T> Future<T> submit(final Callable<T> task) {
 
             final ExecutorService executor =
@@ -406,6 +412,16 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
 
             return future;
         } // submit.
+
+        @Override
+        public final <T> Future<T> submit(Callable<T> callable, long delay, TimeUnit unit) {
+
+            return this.submit(() -> {
+
+                sleep(delay, unit);
+                return callable.call();
+            });
+        }
 
         @Override
         public int getActiveCount() {

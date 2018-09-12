@@ -1,6 +1,10 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import com.dotcms.api.system.event.ContentletSystemEventUtil;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.business.DotMappingException;
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -18,6 +22,7 @@ import com.dotmarketing.beans.*;
 import com.dotmarketing.business.*;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
@@ -67,6 +72,9 @@ import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static com.dotcms.util.CollectionsUtils.map;
 import static java.io.File.separator;
@@ -107,6 +115,118 @@ public class ContentletAPITest extends ContentletBaseTest {
         //Validations
         assertTrue( contentlet != null && ( contentlet.getInode() != null && !contentlet.getInode().isEmpty() ) );
     }
+
+    @Ignore ( "Not Ready to Run." )
+    @Test
+    public void run_listener_after_save_result_called_all_listeners () throws DotDataException, DotSecurityException {
+
+        ContentType typeResult = null;
+        final int        numberOfContents    = 20000;
+        final CountDownLatch countDownLatch  = new CountDownLatch(numberOfContents);
+        DotSubmitter dotSubmitter = DotConcurrentFactory.getInstance().getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
+        try {
+
+            final long       languageId          = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+            final String velocityContentTypeName = "RunListenerAfterSaveTest3";
+
+
+            LocalTransaction.wrap(() -> {
+
+                final ContentType type = contentTypeAPI.save(
+                        ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
+                                .expireDateVar(null).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+                                .name("RunListenerAfterSaveTest").owner(APILocator.systemUser().toString())
+                                .variable(velocityContentTypeName).build());
+
+                final List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>(type.fields());
+
+                fields.add(FieldBuilder.builder(TextField.class).name("title").variable("title")
+                        .contentTypeId(type.id()).dataType(DataTypes.TEXT).indexed(true).build());
+                fields.add(FieldBuilder.builder(TextField.class).name("txt").variable("txt")
+                        .contentTypeId(type.id()).dataType(DataTypes.TEXT).indexed(true).build());
+
+                contentTypeAPI.save(type, fields);
+            });
+
+            final ContentType type = contentTypeAPI.find(velocityContentTypeName);
+            final List<Future> futures = new ArrayList<>();
+
+            for (int i = 0; i < numberOfContents; ++i) {
+
+                futures.add(dotSubmitter.submit(() -> {
+
+                    try {
+                        List<Contentlet> contentlets =
+                                APILocator.getContentletAPI().search("+type:" + velocityContentTypeName, 1000, 0, null, APILocator.systemUser(), false);
+                        if (UtilMethods.isSet(contentlets)) {
+
+                            for (final Contentlet contentlet1 : contentlets) {
+                                APILocator.getContentletAPI().find(contentlet1.getInode(), APILocator.systemUser(), false);
+                            }
+                        }
+                    } catch (DotDataException  | DotSecurityException e) {
+                        e.printStackTrace();
+                    }
+                }));
+
+                LocalTransaction.wrapReturnWithListeners(() -> {
+
+
+                    final Contentlet contentlet = new Contentlet();
+                    final User user = APILocator.systemUser();
+                    contentlet.setContentTypeId(type.id());
+                    contentlet.setOwner(APILocator.systemUser().toString());
+                    contentlet.setModDate(new Date());
+                    contentlet.setLanguageId(languageId);
+                    contentlet.setStringProperty("title", "Test Save");
+                    contentlet.setStringProperty("txt", "Test Save Text");
+                    contentlet.setHost(Host.SYSTEM_HOST);
+                    contentlet.setFolder(FolderAPI.SYSTEM_FOLDER);
+
+                    // first save
+                    final Contentlet contentlet1 = contentletAPI.checkin(contentlet, user, false);
+                    if (null != contentlet1) {
+                        HibernateUtil.addAsyncCommitListener(() -> {
+                            if (APILocator.getContentletAPI().isInodeIndexed(contentlet1.getInode())) {
+                                ContentletSystemEventUtil.getInstance().pushSaveEvent(contentlet1, true);
+                            }
+
+                            countDownLatch.countDown();
+                        }, 1000);
+                    }
+
+                    return null;
+                });
+            }
+
+            for (final Future future: futures) {
+
+                future.get();
+                countDownLatch.await(1, TimeUnit.SECONDS);
+            }
+
+            if (countDownLatch.getCount() > 0) {
+
+                countDownLatch.await(30, TimeUnit.SECONDS);
+            }
+
+            assertEquals(0 , countDownLatch.getCount());
+
+            typeResult = type;
+        } catch (Exception e) {
+
+            fail(e.getMessage());
+        } finally {
+
+            if (null != typeResult) {
+
+                ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+                contentTypeAPI.delete(typeResult);
+            }
+        }
+
+    }
+
 
     /**
      * Testing {@link ContentletAPI#find(String, com.liferay.portal.model.User, boolean)}

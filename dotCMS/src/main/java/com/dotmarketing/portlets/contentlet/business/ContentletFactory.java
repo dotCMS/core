@@ -20,6 +20,7 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * Provides utility methods to interact with {@link Contentlet} objects in
@@ -366,6 +367,18 @@ public abstract class ContentletFactory {
     protected abstract Object loadField(String inode, String fieldContentlet) throws DotDataException;
     
     protected abstract long indexCount(String query);
+
+	/**
+	 * This indexCount will use the thirdparty mechanism to async known when the query is returning something.
+	 * @param query
+	 * @param timeoutMillis
+	 * @param indexCountSuccess
+	 * @param indexCountFailure
+	 */
+	protected abstract void indexCount(final String query,
+					final long timeoutMillis,
+					final Consumer<Long> indexCountSuccess,
+					final Consumer<Exception> indexCountFailure);
     
     /**
      * Gets the top viewed contents identifier and numberOfViews for a particular structure for a specified date interval

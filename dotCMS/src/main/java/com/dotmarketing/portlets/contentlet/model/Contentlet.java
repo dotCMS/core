@@ -107,7 +107,27 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
     private transient ContentletAPI contentletAPI;
     private transient UserAPI userAPI;
+	private transient boolean waitForIndex = false;
 
+	/**
+	 * If true, means when the content add to the index wait until it is already indexed.
+	 * @return Boolean
+	 */
+	public boolean isWaitForIndex() {
+		return waitForIndex;
+	}
+
+	/**
+	 * Set to true if you want to block the indexing process until the content is indexed
+	 * @param waitForIndex {@link Boolean} true if wants to wait
+	 */
+	public void setWaitForIndex(final boolean waitForIndex) {
+		this.waitForIndex = waitForIndex;
+	}
+
+	public void setContentType(ContentType contentType) {
+		this.contentType = contentType;
+	}
 
 	@Override
     public String getCategoryId() {

@@ -23,19 +23,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.gson.Gson;
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.sql.Connection;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
@@ -50,6 +37,13 @@ import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
 import org.elasticsearch.index.reindex.DeleteByQueryAction;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.sql.Connection;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 public class ESContentletIndexAPI implements ContentletIndexAPI{
 	private static final ESIndexAPI iapi  = new ESIndexAPI();
@@ -318,7 +312,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	    else {
             // add a commit listener to index the contentlet if the entire
             // transaction finish clean
-            HibernateUtil.addCommitListener(content.getInode()+ ReindexRunnable.Action.ADDING,indexAction);
+            HibernateUtil.addCommitListener(content.getInode()+ ReindexRunnable.Action.ADDING, indexAction);
 	    }	    
 	}
 
@@ -384,7 +378,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 		for(Contentlet con : contentToIndexSet) {
             String id=con.getIdentifier()+"_"+con.getLanguageId();
             IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
-            Gson gson=new Gson();
+            Gson gson=new Gson(); // why do we create a new Gson everytime
             String mapping=null;
             try {
 
@@ -427,6 +421,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 		
 	}
 
+	@CloseDBIfOpened
 	@SuppressWarnings("unchecked")
 	public List<Contentlet> loadDeps(Contentlet content) throws DotDataException, DotSecurityException {
 	    List<Contentlet> contentToIndex=new ArrayList<Contentlet>();
