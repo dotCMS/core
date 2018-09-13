@@ -141,6 +141,7 @@ describe('DotNavigationService', () => {
     let dotRouterService: DotRouterService;
     let dotcmsEventsService: DotcmsEventsService;
     let dotEventService: DotEventsService;
+    let dotMenuService: DotMenuService;
     let loginService: LoginServiceMock;
     let router;
 
@@ -172,6 +173,7 @@ describe('DotNavigationService', () => {
             service = testbed.get(DotNavigationService);
             dotRouterService = testbed.get(DotRouterService);
             dotcmsEventsService = testbed.get(DotcmsEventsService);
+            dotMenuService = testbed.get(DotMenuService);
             loginService = testbed.get(LoginService);
             dotEventService = testbed.get(DotEventsService);
             router = testbed.get(Router);
@@ -179,6 +181,7 @@ describe('DotNavigationService', () => {
             spyOn(dotRouterService, 'gotoPortlet').and.callFake(() => new Promise((resolve) => resolve(true)));
             spyOn(dotRouterService, 'reloadCurrentPortlet');
             spyOn(dotEventService, 'notify');
+            spyOn(dotMenuService, 'reloadMenu').and.callThrough();
         })
     );
 
@@ -298,6 +301,7 @@ describe('DotNavigationService', () => {
         spyOn(service, 'goToFirstPortlet');
         loginService.triggerNewAuth(baseMockAuth);
         expect(service.goToFirstPortlet).toHaveBeenCalledTimes(1);
+        expect(dotMenuService.reloadMenu).toHaveBeenCalledTimes(1);
     });
 
     it('should expand and set active menu option by url when is not collapsed', () => {

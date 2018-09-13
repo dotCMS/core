@@ -87,8 +87,12 @@ export class DotNavigationService {
         });
 
         this.loginService.auth$
-            .pipe(filter((auth: Auth) => !!(auth.loginAsUser || auth.user)))
-            .subscribe(() => {
+            .pipe(
+                filter((auth: Auth) => !!(auth.loginAsUser || auth.user)),
+                switchMap(() => this.dotMenuService.reloadMenu())
+            )
+            .subscribe((menus: DotMenu[]) => {
+                this.setMenu(menus);
                 this.goToFirstPortlet();
             });
     }
