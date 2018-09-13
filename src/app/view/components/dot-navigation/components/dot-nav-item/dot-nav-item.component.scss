@@ -7,14 +7,25 @@
 
     &.collapsed {
         dot-icon,
+        dot-sub-nav,
         .dot-nav__item-label {
             opacity: 0;
         }
 
-        .dot-nav__item-wrapper--active {
+        .dot-nav__item--active {
             background-color: $brand-primary;
         }
+
+        dot-sub-nav {
+            width: $navigation-width-collased;
+        }
     }
+}
+
+dot-sub-nav {
+    opacity: 1;
+    transition: opacity $basic-speed ease, width $basic-speed ease;
+    width: $navigation-width;
 }
 
 .dot-nav {
@@ -33,10 +44,6 @@
 
         dot-icon {
             margin-left: auto;
-        }
-
-        &--active {
-            background-color: rgba(255, 255, 255, 0.1);
         }
 
         &-label {

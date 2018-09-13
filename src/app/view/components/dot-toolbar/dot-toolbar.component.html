@@ -1,14 +1,9 @@
 <p-toolbar>
     <div class="ui-toolbar-group-left">
         <div class="toolbar__button-wrapper">
-            <div class="toolbar__button" [class.toolbar__button--hide]="collapsed">
-                <dot-icon-button icon="arrow_back" inverted (click)="handleMainButtonClick($event)"></dot-icon-button>
-            </div>
-            <div class="toolbar__button" [class.toolbar__button--hide]="!collapsed">
-                <dot-icon-button icon="menu" inverted (click)="handleMainButtonClick($event)"></dot-icon-button>
-            </div>
+            <dot-icon-button [icon]="dotNavigationService.collapsed ? 'menu' : 'arrow_back'" inverted (click)="handleMainButtonClick($event)"></dot-icon-button>
         </div>
-        <div class="toolbar__logo-wrapper" [class.toolbar__logo-wrapper--collapsed]="collapsed">
+        <div class="toolbar__logo-wrapper" [class.toolbar__logo-wrapper--collapsed]="dotNavigationService.collapsed">
             <span class="toolbar__logo"></span>
             <span class="toolbar__logo-bg"></span>
         </div>

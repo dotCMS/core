@@ -1,4 +1,4 @@
-<div class="dot-nav__item" (click)="clickHandler($event, data)" [class.dot-nav__item-wrapper--active]="data.active">
+<div class="dot-nav__item" (click)="clickHandler($event, data)" [class.dot-nav__item--active]="data.active">
     <dot-nav-icon [icon]="data.tabIcon" aria-hidden="true"></dot-nav-icon>
     <span class="dot-nav__item-label">{{data.tabName}}</span>
     <dot-icon

@@ -16,7 +16,11 @@ import { DotIconModule } from '../_common/dot-icon/dot-icon.module';
 
 @Injectable()
 class MockDotNavigationService {
-    goToFirstPortlet() {}
+    collapsed = false;
+
+    toggle() {
+        this.collapsed = !this.collapsed;
+    }
 }
 
 @Injectable()
@@ -67,7 +71,7 @@ class MockToolbarAddContentletComponent {}
 
 describe('ToolbarComponent', () => {
     let dotRouterService: DotRouterService;
-    let routeService: ActivatedRoute;
+    let dotNavigationService: DotNavigationService;
     let comp: ToolbarComponent;
     let fixture: ComponentFixture<ToolbarComponent>;
     let de: DebugElement;
@@ -97,8 +101,8 @@ describe('ToolbarComponent', () => {
         fixture = DOTTestBed.createComponent(ToolbarComponent);
         comp = fixture.componentInstance;
         de = fixture.debugElement;
-        dotRouterService = fixture.debugElement.injector.get(DotRouterService);
-        routeService = fixture.debugElement.injector.get(ActivatedRoute);
+        dotRouterService = de.injector.get(DotRouterService);
+        dotNavigationService = de.injector.get(DotNavigationService);
         spyOn(comp, 'siteChange').and.callThrough();
         spyOn(dotRouterService, 'goToSiteBrowser');
 
@@ -122,5 +126,26 @@ describe('ToolbarComponent', () => {
 
         expect(dotRouterService.goToSiteBrowser).toHaveBeenCalled();
         expect(comp.siteChange).toHaveBeenCalledWith({ value: siteMock });
+    });
+
+    it('should toggle menu and update icon on click', () => {
+        spyOn(dotNavigationService, 'toggle').and.callThrough();
+        const stopPro = jasmine.createSpy();
+
+        fixture.detectChanges();
+
+        const button: DebugElement = de.query(By.css('dot-icon-button'));
+
+        expect(button.componentInstance.icon).toEqual('arrow_back');
+
+        button.triggerEventHandler('click', {
+            stopPropagation: stopPro
+        });
+
+        fixture.detectChanges();
+
+        expect(dotNavigationService.toggle).toHaveBeenCalledTimes(1);
+        expect(stopPro).toHaveBeenCalledTimes(1);
+        expect(button.componentInstance.icon).toEqual('menu');
     });
 });

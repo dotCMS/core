@@ -13,6 +13,7 @@ import { DotMenu, DotMenuItem } from '../../../../shared/models/navigation';
 import { DotMenuService } from '../../../../api/services/dot-menu.service';
 import { DotRouterService } from '../../../../api/services/dot-router/dot-router.service';
 import { DotIframeService } from '../../_common/iframe/service/dot-iframe/dot-iframe.service';
+import { DotEventsService } from '../../../../api/services/dot-events/dot-events.service';
 
 const replaceSectionsMap = {
     'edit-page': 'site-browser'
@@ -22,17 +23,22 @@ const replaceIdForNonMenuSection = id => {
     return replaceSectionsMap[id];
 };
 
-const setActiveItems = (id: string) => (source: Observable<DotMenu[]>) => {
+const setActiveItems = (id: string, collapsed: boolean) => (source: Observable<DotMenu[]>) => {
     id = replaceIdForNonMenuSection(id) || id;
 
     return source.pipe(
         flatMap((menu: DotMenu[]) => menu),
-        map((menu: DotMenu) => getActiveUpdatedMenu(menu, id)),
+        map((menu: DotMenu) => {
+            setActiveUpdatedMenu(menu, id);
+            menu.isOpen = !collapsed && menu.active;
+
+            return menu;
+        }),
         toArray()
     );
 };
 
-const getActiveUpdatedMenu = (menu: DotMenu, id: string) => {
+const setActiveUpdatedMenu = (menu: DotMenu, id: string) => {
     let isActive = false;
 
     menu.menuItems.forEach((item: DotMenuItem) => {
@@ -44,20 +50,21 @@ const getActiveUpdatedMenu = (menu: DotMenu, id: string) => {
         }
     });
 
-    menu.active = menu.isOpen = isActive;
-    return menu;
+    menu.active = isActive;
 };
 
 @Injectable()
 export class DotNavigationService {
-    _items$: BehaviorSubject<DotMenu[]> = new BehaviorSubject([]);
+    private _collapsed = false;
+    private _items$: BehaviorSubject<DotMenu[]> = new BehaviorSubject([]);
 
     constructor(
+        private dotEventsService: DotEventsService,
+        private dotIframeService: DotIframeService,
         private dotMenuService: DotMenuService,
         private dotRouterService: DotRouterService,
         private dotcmsEventsService: DotcmsEventsService,
         private loginService: LoginService,
-        private dotIframeService: DotIframeService,
         private router: Router
     ) {
         this.dotMenuService.loadMenu().subscribe((menus: DotMenu[]) => {
@@ -67,7 +74,7 @@ export class DotNavigationService {
         this.onNavigationEnd()
             .pipe(
                 map((event: NavigationEnd) => this.getTheUrlId(event.url)),
-                switchMap((id: string) => this.dotMenuService.loadMenu().pipe(setActiveItems(id)))
+                switchMap((id: string) => this.dotMenuService.loadMenu().pipe(setActiveItems(id, this._collapsed)))
             )
             .subscribe((menus: DotMenu[]) => {
                 this.setMenu(menus);
@@ -86,6 +93,10 @@ export class DotNavigationService {
             });
     }
 
+    get collapsed(): boolean {
+        return this._collapsed;
+    }
+
     get items$(): Observable<DotMenu[]> {
         return this._items$.asObservable();
     }
@@ -96,6 +107,8 @@ export class DotNavigationService {
      * @memberof DotNavigationService
      */
     collapseMenu(): void {
+        this._collapsed = true;
+
         const closedMenu: DotMenu[] = this._items$.getValue().map((menu: DotMenu) => {
             menu.isOpen = false;
             return menu;
@@ -109,6 +122,8 @@ export class DotNavigationService {
      * @memberof DotNavigationService
      */
     expandMenu(): void {
+        this._collapsed = false;
+
         const expandedMenu: DotMenu[] = this._items$.getValue().map((menu: DotMenu) => {
             let isActive = false;
 
@@ -163,12 +178,25 @@ export class DotNavigationService {
     }
 
     /**
+     * Toogle expanded/collapsed state of the nav
+     *
+     * @memberof DotNavigationService
+     */
+    toggle(): void {
+        this.dotEventsService.notify('dot-side-nav-toggle');
+        this._collapsed ? this.expandMenu() : this.collapseMenu();
+    }
+
+    /**
      * Set menu open base on the id of the menulink
      *
      * @param {string} id
      * @memberof DotNavigationService
      */
     setOpen(id: string): void {
+        if (this._collapsed) {
+            this._collapsed = false;
+        }
         const updatedMenu: DotMenu[] = this._items$.getValue().map((menu: DotMenu) => {
             menu.isOpen = menu.isOpen ? false : id === menu.id;
             return menu;
@@ -215,7 +243,7 @@ export class DotNavigationService {
 
     private reloadNavigation(): Observable <DotMenu[] > {
         return this.dotMenuService.reloadMenu().pipe(
-            setActiveItems(this.dotRouterService.currentPortlet.id),
+            setActiveItems(this.dotRouterService.currentPortlet.id, this._collapsed),
             tap((menus: DotMenu[]) => {
                 this.setMenu(menus);
             })

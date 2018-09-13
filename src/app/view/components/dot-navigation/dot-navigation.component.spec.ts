@@ -1,5 +1,5 @@
 import { ComponentFixture } from '@angular/core/testing';
-import { DebugElement, Component } from '@angular/core';
+import { DebugElement } from '@angular/core';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { By } from '@angular/platform-browser';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -20,24 +20,18 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { skip } from 'rxjs/operators';
 import { dotMenuMock, dotMenuMock1 } from './services/dot-navigation.service.spec';
 
-@Component({
-    selector: 'dot-test',
-    template: `<dot-main-nav [collapsed]="collapsed"></dot-main-nav>`
-})
-class HostTestComponent {
-    collapsed = true;
-
-    toggleCollapsed(): void {
-        this.collapsed = !this.collapsed;
-    }
-}
-
 class FakeNavigationService {
+    _collapsed = false;
+
     _routeEvents: BehaviorSubject<NavigationEnd> = new BehaviorSubject(new NavigationEnd(0, '', ''));
     _items$: BehaviorSubject<DotMenu[]> = new BehaviorSubject([dotMenuMock(), dotMenuMock1()]);
 
     get items$(): Observable<DotMenu[]> {
         return this._items$.asObservable();
+    }
+
+    get collapsed(): boolean {
+        return this._collapsed;
     }
 
     onNavigationEnd(): Observable<NavigationEnd> {
@@ -48,7 +42,7 @@ class FakeNavigationService {
         this._items$.next([
             {
                 ...dotMenuMock(),
-                isOpen: true,
+                isOpen: true
             },
             dotMenuMock1()
         ]);
@@ -62,11 +56,11 @@ class FakeNavigationService {
                 menuItems: [
                     {
                         ...dotMenuMock().menuItems[0],
-                        active: true,
+                        active: true
                     },
                     {
                         ...dotMenuMock().menuItems[1],
-                        active: false,
+                        active: false
                     }
                 ]
             },
@@ -83,19 +77,16 @@ class FakeNavigationService {
 }
 
 describe('DotNavigationComponent', () => {
-    let hostComp: HostTestComponent;
-    let hostFixture: ComponentFixture<HostTestComponent>;
-    let hostDe: DebugElement;
-
+    let fixture: ComponentFixture<DotNavigationComponent>;
     let comp: DotNavigationComponent;
-    let compDe: DebugElement;
+    let de: DebugElement;
     let navItem: DebugElement;
 
     let dotNavigationService;
 
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
-            declarations: [HostTestComponent, DotNavigationComponent, DotSubNavComponent, DotNavItemComponent],
+            declarations: [DotNavigationComponent, DotSubNavComponent, DotNavItemComponent],
             imports: [DotNavIconModule, DotIconModule, RouterTestingModule, BrowserAnimationsModule],
             providers: [
                 DotMenuService,
@@ -110,24 +101,22 @@ describe('DotNavigationComponent', () => {
             ]
         });
 
-        hostFixture = DOTTestBed.createComponent(HostTestComponent);
-        hostDe = hostFixture.debugElement;
-        hostComp = hostFixture.componentInstance;
+        fixture = DOTTestBed.createComponent(DotNavigationComponent);
+        de = fixture.debugElement;
+        comp = fixture.componentInstance;
 
-        compDe = hostDe.query(By.css('dot-main-nav'));
-        comp = compDe.componentInstance;
-        dotNavigationService = compDe.injector.get(DotNavigationService);
+        dotNavigationService = de.injector.get(DotNavigationService);
 
         spyOn(dotNavigationService, 'goTo');
         spyOn(dotNavigationService, 'reloadCurrentPortlet');
         spyOn(dotNavigationService, 'setOpen').and.callThrough();
 
-        hostFixture.detectChanges();
-        navItem = compDe.query(By.css('dot-nav-item'));
+        fixture.detectChanges();
+        navItem = de.query(By.css('dot-nav-item'));
     });
 
     it('should have all menus closed', () => {
-        const items: DebugElement[] = compDe.queryAll(By.css('.dot-nav__list-item'));
+        const items: DebugElement[] = de.queryAll(By.css('.dot-nav__list-item'));
 
         items.forEach((item: DebugElement) => {
             expect(item.nativeElement.classList.contains('dot-nav__list-item--active')).toBe(false);
@@ -135,90 +124,84 @@ describe('DotNavigationComponent', () => {
     });
 
     it('should have dot-nav-item print correctly', () => {
-        const items: DebugElement[] = compDe.queryAll(By.css('dot-nav-item'));
+        const items: DebugElement[] = de.queryAll(By.css('dot-nav-item'));
         expect(items.length).toBe(2);
         expect(items[0].componentInstance.data).toEqual(dotMenuMock());
         expect(items[1].componentInstance.data).toEqual(dotMenuMock1());
     });
 
-    describe('menuClick event', () => {
-        it('should emit change', () => {
-            let changeResult = false;
+    describe('itemClick event', () => {
+        let stopProp;
 
-            comp.change.subscribe((e) => {
-                changeResult = true;
+        beforeEach(() => {
+            stopProp = jasmine.createSpy();
+        });
+
+        it('should reload portlet', () => {
+            navItem.triggerEventHandler('itemClick', {
+                originalEvent: {
+                    stopPropagation: stopProp,
+                    ctrlKey: false,
+                    metaKey: false
+                },
+                data: dotMenuMock()
             });
 
-            navItem.triggerEventHandler('menuClick', { originalEvent: {}, data: dotMenuMock() });
-            expect(changeResult).toBe(true);
+            expect(stopProp).toHaveBeenCalledTimes(1);
+            expect(dotNavigationService.reloadCurrentPortlet).toHaveBeenCalledWith('123');
         });
 
-        it('should open menu', () => {
-            navItem.triggerEventHandler('menuClick', { originalEvent: {}, data: dotMenuMock() });
-            expect(dotNavigationService.setOpen).toHaveBeenCalledWith('123');
+        it('should NOT reload portlet', () => {
+            navItem.triggerEventHandler('itemClick', {
+                originalEvent: {
+                    stopPropagation: stopProp,
+                    ctrlKey: true,
+                    metaKey: false
+                },
+                data: dotMenuMock()
+            });
 
-            hostFixture.detectChanges();
-
-            const firstItem: DebugElement = compDe.query(By.css('.dot-nav__list-item'));
-            expect(firstItem.nativeElement.classList.contains('dot-nav__list-item--active')).toBe(true);
-        });
-
-        it('should expand menu', () => {
-            hostFixture.detectChanges();
-            hostComp.collapsed = false;
-            hostFixture.detectChanges();
-
-            const firstItem: DebugElement = compDe.query(By.css('.dot-nav__list-item'));
-            expect(firstItem.nativeElement.classList.contains('dot-nav__list-item--active')).toBe(true);
-            const firstMenuLink: DebugElement = firstItem.query(By.css('.dot-nav-sub__link'));
-            expect(firstMenuLink.nativeElement.classList.contains('dot-nav-sub__link--actuve')).toBe(false);
-        });
-
-        it('should NOT navigate to porlet', () => {
-            hostComp.collapsed = false;
-            hostFixture.detectChanges();
-
-            navItem.triggerEventHandler('menuClick', { originalEvent: {}, data: dotMenuMock() });
-            expect(dotNavigationService.goTo).not.toHaveBeenCalled();
-        });
-
-        it('should navigate to portlet', () => {
-            navItem.triggerEventHandler('menuClick', { originalEvent: {}, data: dotMenuMock() });
-            hostFixture.detectChanges();
-
-            expect(dotNavigationService.goTo).toHaveBeenCalledWith('url/link1');
+            expect(stopProp).toHaveBeenCalledTimes(1);
+            expect(dotNavigationService.reloadCurrentPortlet).not.toHaveBeenCalled();
         });
     });
 
-    it('should reload portlet', () => {
-        const stopProp = jasmine.createSpy();
+    describe('menuClick event ', () => {
+        describe('collapsed', () => {
+            beforeEach(() => {
+                spyOnProperty(dotNavigationService, 'collapsed', 'get').and.returnValue(true);
+                navItem.triggerEventHandler('menuClick', { originalEvent: {}, data: dotMenuMock() });
+                fixture.detectChanges();
+            });
 
-        navItem.triggerEventHandler('itemClick', {
-            originalEvent: {
-                stopPropagation: stopProp,
-                ctrlKey: false,
-                metaKey: false
-            },
-            data: dotMenuMock()
+            it('should open menu', () => {
+                expect(dotNavigationService.setOpen).toHaveBeenCalledWith('123');
+                const firstItem: DebugElement = de.query(By.css('.dot-nav__list-item'));
+                expect(firstItem.nativeElement.classList.contains('dot-nav__list-item--active')).toBe(true);
+            });
+
+            it('should expand menu', () => {
+                const firstItem: DebugElement = de.query(By.css('.dot-nav__list-item'));
+                expect(firstItem.nativeElement.classList.contains('dot-nav__list-item--active')).toBe(true);
+                const firstMenuLink: DebugElement = firstItem.query(By.css('.dot-nav-sub__link'));
+                expect(firstMenuLink.nativeElement.classList.contains('dot-nav-sub__link--actuve')).toBe(false);
+            });
+
+            it('should navigate to portlet when menu is collapsed', () => {
+                expect(dotNavigationService.goTo).toHaveBeenCalledWith('url/link1');
+            });
         });
 
-        expect(stopProp).toHaveBeenCalledTimes(1);
-        expect(dotNavigationService.reloadCurrentPortlet).toHaveBeenCalledWith('123');
-    });
+        describe('expanded', () => {
+            beforeEach(() => {
+                spyOnProperty(dotNavigationService, 'collapsed', 'get').and.returnValue(false);
+                navItem.triggerEventHandler('menuClick', { originalEvent: {}, data: dotMenuMock() });
+                fixture.detectChanges();
+            });
 
-    it('should NOT reload portlet', () => {
-        const stopProp = jasmine.createSpy();
-
-        navItem.triggerEventHandler('itemClick', {
-            originalEvent: {
-                stopPropagation: stopProp,
-                ctrlKey: true,
-                metaKey: false
-            },
-            data: dotMenuMock()
+            it('should NOT navigate to porlet', () => {
+                expect(dotNavigationService.goTo).not.toHaveBeenCalled();
+            });
         });
-
-        expect(stopProp).toHaveBeenCalledTimes(1);
-        expect(dotNavigationService.reloadCurrentPortlet).not.toHaveBeenCalled();
     });
 });

@@ -9,7 +9,7 @@
 
 nav {
     transition: width $basic-speed ease;
-    width: 200px;
+    width: $navigation-width;
 }
 
 ul {
@@ -25,5 +25,5 @@ ul {
 }
 
 .collapsed {
-    width: 70px;
+    width: $navigation-width-collased;
 }

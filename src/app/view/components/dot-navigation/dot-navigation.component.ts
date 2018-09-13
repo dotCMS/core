@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, EventEmitter, Output, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Observable } from 'rxjs/Observable';
 
 import { DotMenu, DotMenuItem } from '../../../shared/models/navigation';
@@ -10,18 +10,10 @@ import { DotNavigationService } from './services/dot-navigation.service';
     styleUrls: ['./dot-navigation.component.scss'],
     templateUrl: 'dot-navigation.component.html'
 })
-export class DotNavigationComponent implements OnInit, OnChanges {
-    @Input() collapsed = false;
-    @Output() change = new EventEmitter<boolean>();
+export class DotNavigationComponent implements OnInit {
     menu$: Observable<DotMenu[]>;
 
-    constructor(private dotNavigationService: DotNavigationService) {}
-
-    ngOnChanges(changes: SimpleChanges): void {
-        if (!changes.collapsed.firstChange) {
-            changes.collapsed.currentValue ? this.dotNavigationService.collapseMenu() : this.dotNavigationService.expandMenu();
-        }
-    }
+    constructor(public dotNavigationService: DotNavigationService) {}
 
     ngOnInit() {
         this.menu$ = this.dotNavigationService.items$;
@@ -49,9 +41,7 @@ export class DotNavigationComponent implements OnInit, OnChanges {
      * @memberof DotNavigationComponent
      */
     onMenuClick(event: { originalEvent: MouseEvent; data: DotMenu }): void {
-        this.change.emit();
-
-        if (this.collapsed) {
+        if (this.dotNavigationService.collapsed) {
             this.dotNavigationService.goTo(event.data.menuItems[0].menuLink);
         }
 
