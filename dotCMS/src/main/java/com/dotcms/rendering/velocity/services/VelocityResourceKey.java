@@ -31,7 +31,7 @@ public class VelocityResourceKey implements Serializable {
     }
     
     public VelocityResourceKey(final Field asset, Contentlet con, PageMode mode) {
-        this("/" + mode.name() + "/" + con.getIdentifier() + "/" + asset.id() +  "." + VelocityType.FIELD.fileExtension);
+        this("/" + mode.name() + "/" + ((con==null) ? "constant" : con.getIdentifier() ) + "/" + asset.id() +  "." + VelocityType.FIELD.fileExtension);
     }
     
     public VelocityResourceKey(final Template asset, final PageMode mode) {

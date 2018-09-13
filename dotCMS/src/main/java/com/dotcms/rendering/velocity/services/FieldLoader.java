@@ -1,14 +1,15 @@
 package com.dotcms.rendering.velocity.services;
 
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.util.Optional;
+
 import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.HiddenField;
-import com.dotcms.rendering.velocity.util.VelocityUtil;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -17,20 +18,13 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-
-import org.apache.velocity.runtime.resource.ResourceManager;
-
 /**
  * @author Jason Tesser
  * @since 1.6.5
  *
  */
 public class FieldLoader implements DotLoader {
-	public void invalidate(String fieldInode, String contentletIdent, PageMode mode,String filePath) throws DotDataException, DotSecurityException {
-		removeFieldFile(fieldInode, contentletIdent, mode);
-	}
+
 	
 	public InputStream buildVelocity(String fieldInode, String contentInode, PageMode mode,String filePath) throws DotDataException, DotSecurityException {
 		InputStream result;
@@ -39,13 +33,7 @@ public class FieldLoader implements DotLoader {
 			Logger.warn(this.getClass(),"Field not found.  Unable to load velocity code");
 			return new ByteArrayInputStream("".toString().getBytes());
 		}
-		ContentletAPI conAPI = APILocator.getContentletAPI();
-		Contentlet content = conAPI.find(contentInode, APILocator.getUserAPI().getSystemUser(), true);
-		if(!UtilMethods.isSet(content)){
-			Logger.warn(this.getClass(),"Content not found.  Unable to load velocity code");
-			return new ByteArrayInputStream("".toString().getBytes());
-		}
-		Object contFieldValueObject = conAPI.getFieldValue(content, field);
+
 		String contFieldValue = "";
 		
 		
@@ -53,6 +41,13 @@ public class FieldLoader implements DotLoader {
 		if(field instanceof ConstantField || field instanceof HiddenField){
 			contFieldValue = field.values() == null ? "" : field.values();
 		}else{
+	        ContentletAPI conAPI = APILocator.getContentletAPI();
+	        Contentlet content = conAPI.find(contentInode, APILocator.getUserAPI().getSystemUser(), true);
+	        if(!UtilMethods.isSet(content)){
+	            Logger.warn(this.getClass(),"Content not found.  Unable to load velocity code");
+	            return new ByteArrayInputStream("".toString().getBytes());
+	        }
+	        Object contFieldValueObject = conAPI.getFieldValue(content, field);
 			contFieldValue = contFieldValueObject == null ? "" : contFieldValueObject.toString();
 		}
 		
@@ -77,18 +72,27 @@ public class FieldLoader implements DotLoader {
             return this.buildVelocity(key.id2, key.id1, key.mode, key.path);
         
     }
+    
+    public void invalidate(Field field, Optional<Contentlet> con) {
+      for(PageMode mode : PageMode.values()) {
+        invalidate(field, con, mode);
+      }
+    }
+
+    public void invalidate(Field field) {
+      Optional<Contentlet> con = Optional.empty();
+      this.invalidate(field, con);
+    }
 
 
-    public void invalidate(Field field, Contentlet content) {
-        for(PageMode mode : PageMode.values()) {
-            VelocityResourceKey key = new VelocityResourceKey(field, content, mode);
-            CacheLocator.getVeloctyResourceCache().remove(key );
-        }
+    public void invalidate(Object obj, Optional<Contentlet> con, PageMode mode) {
+      VelocityResourceKey key = new VelocityResourceKey((Field) obj, con.orElse(null), mode);
+      CacheLocator.getVeloctyResourceCache().remove(key );
     }
 
     @Override
     public void invalidate(Object obj, PageMode mode) {
-        throw new DotStateException("Not Implemented, use invalidate(String fieldInode, String contentInode, PageMode mode) ");
-        
+      this.invalidate(obj,Optional.empty(), mode);
+      
     }
 }

@@ -20,6 +20,7 @@ import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.DbFieldTransformer;
 import com.dotcms.contenttype.transform.field.DbFieldVariableTransformer;
+import com.dotcms.rendering.velocity.services.FieldLoader;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
@@ -130,6 +131,7 @@ public class FieldFactoryImpl implements FieldFactory {
   public Field save(final Field throwAwayField) throws DotDataException {
       final Field field =  dbSaveUpdate(throwAwayField);
       APILocator.getContentTypeAPI(APILocator.systemUser()).updateModDate(field);
+      new FieldLoader().invalidate(field);
       return field;
 
   }
