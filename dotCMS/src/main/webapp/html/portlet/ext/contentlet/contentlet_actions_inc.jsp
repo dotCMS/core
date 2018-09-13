@@ -163,11 +163,6 @@ function setMyWorkflowScheme(){
 			</a>
 		<%} %>
 
-	<%} else { %>
-
-			<span>
-				<%=LanguageUtil.get(pageContext, "No-Available-Actions")%>
-			</span>
 	<%}  %>
 
 </div>
