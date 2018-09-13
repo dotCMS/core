@@ -5,6 +5,7 @@ import com.dotcms.filters.interceptor.WebInterceptor;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletURLUtil;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.WebKeys;
@@ -37,13 +38,13 @@ public class DefaultBackEndLoginRequiredWebInterceptor implements WebInterceptor
     public void init() {
 
         //Set the list of allowed paths without authentication
-        String allowedPaths = Config
+        final String allowedPaths = Config
                 .getStringProperty(ALLOWED_HTML_PATHS_WITHOUT_AUTHENTICATION, DEFAULT_ALLOWED_URLS);
         ALLOWED_URLS = allowedPaths.split(",");
     }
 
     @Override
-    public Result intercept(HttpServletRequest request, HttpServletResponse response)
+    public Result intercept(final HttpServletRequest request, HttpServletResponse response)
             throws IOException {
 
         Result result = Result.NEXT;
@@ -69,6 +70,7 @@ public class DefaultBackEndLoginRequiredWebInterceptor implements WebInterceptor
                 isLoggedToBackend = WebAPILocator.getUserWebAPI().isLoggedToBackend(request);
             } catch (Exception e) {
                 //Do nothing...
+                Logger.warn(this.getClass(), e.getMessage(), e);
             }
 
             // if we are not logged in...
