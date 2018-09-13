@@ -49,41 +49,7 @@ public class RelationshipsResourceTest {
     }
 
     @Test
-    public void testGetOneSidedRelationshipsContentTypesOnly()
-            throws Throwable {
-        final RelationshipsResource relationshipsResource = new RelationshipsResource();
-
-        final long time = System.currentTimeMillis();
-        final ContentType contentType = contentTypeAPI.save(
-                ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
-                        .description("description" + time).folder(FolderAPI.SYSTEM_FOLDER)
-                        .host(Host.SYSTEM_HOST)
-                        .name("ContentType" + time).owner("owner")
-                        .variable("velocityVarName" + time).build());
-
-        try {
-            final Response response = relationshipsResource
-                    .getOneSidedRelationships(contentType.id(), -1, 100, getHttpRequest());
-
-            //Validate response
-            assertEquals(Status.OK.getStatusCode(), response.getStatus());
-
-            final Collection entities = (Collection) ((ResponseEntityView) response.getEntity())
-                    .getEntity();
-
-            final List<Map> responseList = CollectionsUtils
-                    .asList(entities.iterator());
-
-            assertTrue(UtilMethods.isSet(entities));
-
-            assertEquals(contentTypeAPI.findAll().size(), responseList.get(0).size());
-        } finally {
-            contentTypeAPI.delete(contentType);
-        }
-    }
-
-    @Test
-    public void testGetOneSidedRelationshipsAll() throws Throwable {
+    public void testGetOneSidedRelationships() throws Throwable {
 
         final RelationshipsResource relationshipsResource = new RelationshipsResource();
 
@@ -116,9 +82,7 @@ public class RelationshipsResourceTest {
 
             assertTrue(UtilMethods.isSet(entities));
 
-            assertEquals(contentTypeAPI.findAll().size(), responseList.get(0).size());
-
-            assertEquals(1, responseList.get(1).size());
+            assertEquals(1, responseList.get(0).size());
         } finally {
             contentTypeAPI.delete(contentType);
         }

@@ -41,13 +41,8 @@ public class RelationshipPaginator implements Paginator<Map<String, Object>> {
 
             final PaginatedArrayList<Map<String, Object>> result = new PaginatedArrayList();
 
-            final List<ContentType> contentTypes = contentTypeAPI.search(null, "name asc", limit, offset);
-
             final List<Relationship> relationships = relationshipAPI
                     .getOneSidedRelationships((ContentType) params.get(CONTENT_TYPE_PARAM), limit, offset);
-
-            //Adding content types
-            result.add(contentTypes.stream().collect(Collectors.toMap(ContentType::id, c -> c)));
 
             //Adding one sided relationships
             result.add(relationships.stream()
