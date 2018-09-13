@@ -40,7 +40,7 @@ describe('DotNavItemComponent', () => {
 
     it('should set classes', () => {
         const label = de.query(By.css('.dot-nav__item'));
-        expect(label.nativeElement.classList.contains('dot-nav__item-wrapper--active')).toBe(true);
+        expect(label.nativeElement.classList.contains('dot-nav__item--active')).toBe(true);
     });
 
     it('should have icons set', () => {

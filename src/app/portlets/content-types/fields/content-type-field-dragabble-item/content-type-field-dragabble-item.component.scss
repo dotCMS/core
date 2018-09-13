@@ -2,12 +2,12 @@
 @import "variables";
 
 :host {
+    background: $white;
     cursor: move;
     display: flex;
-    margin: 0 0 $basic-padding 0;
+    height: $content-type-field-height;
     padding: $basic-padding * 2;
     transition: border-left-color $basic-speed, box-shadow $basic-speed;
-    background: $white;
 
     &:hover {
         box-shadow: $md-shadow-5;
@@ -19,11 +19,14 @@
     }
 }
 
+.field__properties,
 .field__icon {
     display: flex;
 }
 
 .field__properties {
+    justify-content: center;
+    flex-direction: column;
     flex-grow: 1;
 }
 
@@ -35,7 +38,6 @@
 .field__name-wrapper {
     display: flex;
     align-items: center;
-    margin-bottom: 6px;
 }
 
 .field__attribute,
@@ -46,8 +48,9 @@
 }
 
 .field__attribute {
-    margin-left: 26px;
     min-height: $font-size-small;
+    margin-top: 6px;
+    margin-left: 26px;
 }
 
 .field__actions {

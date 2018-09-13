@@ -1,11 +1,11 @@
-@import 'variables';
+@import "variables";
+
 
 :host {
-    // box-shadow: $md-shadow-1;
     border-radius: $border-radius;
     display: block;
     margin-bottom: $basic-padding * 2;
-    padding:  0 $basic-padding * 2 $basic-padding * 2;
+    padding: 0 $basic-padding * 2 $basic-padding * 2;
     position: relative;
     transition: box-shadow $basic-speed;
     background: $white;
@@ -25,23 +25,44 @@
     display: flex;
     flex-direction: column;
     margin: 0 $basic-padding / 2;
+    padding-bottom: $content-type-field-height;
+    position: relative;
+
+    &::ng-deep {
+        li {
+            background-color: $white;
+            height: $content-type-field-height;
+            margin: 0;
+        }
+    }
+
+    dot-content-type-field-dragabble-item {
+        margin-bottom: $basic-padding;
+    }
 
     &:first-child {
         margin-left: 0;
     }
 
-    &:last-child {
+    &:last-of-type {
         margin-right: 0;
     }
 
     &.empty {
         background: $gray-bg;
+        min-height: $content-type-field-height * 2;
+
+        dot-content-type-field-dragabble-item {
+            margin-bottom: 0;
+        }
 
         .row-columns__item-empty-message {
-            min-height: 150px;
+            min-height: 100%;
         }
     }
     &--over {
+        padding-bottom: 0;
+
         .row-columns__item-empty-message {
             display: none;
         }
@@ -50,23 +71,26 @@
 
 .row-columns__item-empty-message {
     border: dashed 1px $gray;
+    bottom: 0;
     color: $gray;
     display: flex;
     flex-direction: column;
     flex-grow: 1;
-    flex: 1;
     font-size: $font-size-small;
     justify-content: center;
-    min-height: 68px;
+    min-height: $content-type-field-height;
+    pointer-events: none;
+    position: absolute;
     text-align: center;
     width: 100%;
+
 }
 
 .row-header {
     opacity: 0.25;
     text-align: center;
     transition: opacity $basic-speed;
-    margin: 0 -#{$basic-padding * 2}
+    margin: 0 -#{$basic-padding * 2};
 }
 
 .row-header__drag {

@@ -3,7 +3,7 @@
         <dot-icon name="{{ fieldService.getIcon(field.clazz) }}"></dot-icon>
         <div class="field__name">{{ field.name }} <span class="field__variable" *ngIf="field.variable">({{ field.variable }})</span></div>
     </div>
-    <div class="field__attribute" innerHTML="{{ fieldAttributes }}"></div>
+    <div class="field__attribute" innerHTML="{{ fieldAttributes }}" *ngIf="fieldAttributes"></div>
 </div>
 
 
