@@ -7,8 +7,10 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import java.io.IOException;
+import com.liferay.util.StringPool;
+
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 /**
  * This class implements the methods defined in the {@link VanityUrlHandler}
@@ -30,9 +32,9 @@ public class DefaultVanityUrlHandler implements VanityUrlHandler {
             final HttpServletResponse response, final Host host,
             final long languageId, final User user) throws IOException {
 
-        CachedVanityUrl vanityUrl = APILocator.getVanityUrlAPI()
-                .getLiveCachedVanityUrl(("/".equals(uri) ? CMS_HOME_PAGE
-                                : uri.endsWith("/") ? uri.substring(0, uri.length() - 1) : uri), host,
+        final CachedVanityUrl vanityUrl = APILocator.getVanityUrlAPI()
+                .getLiveCachedVanityUrl((StringPool.SLASH.equals(uri) ? CMS_HOME_PAGE
+                                : uri), host,
                         languageId, user);
 
         return handle(vanityUrl, response, host, languageId);

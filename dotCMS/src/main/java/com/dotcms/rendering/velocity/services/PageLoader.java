@@ -1,5 +1,10 @@
 package com.dotcms.rendering.velocity.services;
 
+import java.io.File;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -16,14 +21,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.TagUtil;
-
-import java.io.File;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.velocity.runtime.resource.ResourceManager;
-
 import com.liferay.portal.model.User;
 
 /**
@@ -109,6 +106,17 @@ public class PageLoader implements DotLoader {
             }
         }
 
+        /**
+         * Serializes the page variables and pointers to 
+         * the content (multitree ebtries)
+         * in the page velocity template
+         */
+        if (mode == PageMode.LIVE) {
+          final PageContextBuilder pce = new PageContextBuilder(htmlPage, sys, mode);
+          sb.append(pce.getWidgetPreExecute());
+          sb.append(pce.asString());
+        }
+      
 
 
         sb.append("#set($dotPageContent = $dotcontent.find(\"" + htmlPage.getInode() + "\" ))");
@@ -127,10 +135,10 @@ public class PageLoader implements DotLoader {
             .append("')")
             .append("#end");
 
-        if(mode == PageMode.LIVE) {
-            sb.append(new PageContextBuilder(htmlPage, sys, mode).asString());
-        }
 
+        
+        
+        
         // Now we need to use the found tags in order to accrue them each time this page is visited
         if (!pageFoundTags.isEmpty()) {
             // Velocity call to accrue tags on each request to this page

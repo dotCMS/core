@@ -1007,11 +1007,7 @@
 
         window.onbeforeunload=true;
 
-        if(_hasUserChanged){
-            if(!confirm("<%=LanguageUtil.get(pageContext, "checkin-without-saving-changes")%>")){
-                return;
-            };
-        }
+
         ContentletAjax.unlockContent(contentletInode, unlockContentCallback);
         //dojo.empty("contentletActionsHanger");
         //dojo.byId("contentletActionsHanger").innerHTML="<div style='text-align:center;padding-top:20px;'><span class='dijitContentPaneLoading'></span></div>";
