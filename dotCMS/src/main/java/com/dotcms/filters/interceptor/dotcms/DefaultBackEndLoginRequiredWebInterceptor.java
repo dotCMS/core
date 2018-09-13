@@ -20,7 +20,9 @@ public class DefaultBackEndLoginRequiredWebInterceptor implements WebInterceptor
             .format("/%s/#/public/login", PortletURLUtil.URL_ADMIN_PREFIX);
 
     private static final String[] ALLOWED_URLS =
-            new String[]{"/html/js/dojo", "/html/images/backgrounds", "/html/portal/login.jsp"};
+            new String[]{"/html/js/dojo",
+                    "/html/images/backgrounds", "/html/images/persona",
+                    "/html/portal/login.jsp"};
 
     @Override
     public String[] getFilters() {
@@ -65,7 +67,7 @@ public class DefaultBackEndLoginRequiredWebInterceptor implements WebInterceptor
                             .stripReferer(request, completeRequestedURL));
                 }
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.sendRedirect(LOGIN_URL + "?referer=" + completeRequestedURL);
+                response.sendRedirect(LOGIN_URL);
 
                 result = Result.SKIP_NO_CHAIN; // needs to stop the filter chain.
             }
