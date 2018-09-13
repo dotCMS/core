@@ -3,6 +3,8 @@ package com.dotcms.filters.interceptor.dotcms;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
 import com.dotcms.util.SecurityUtils;
+import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.PortletURLUtil;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.WebKeys;
@@ -16,13 +18,15 @@ import javax.servlet.http.HttpSession;
  */
 public class DefaultBackEndLoginRequiredWebInterceptor implements WebInterceptor {
 
+    public static final String ALLOWED_HTML_PATHS_WITHOUT_AUTHENTICATION = "ALLOWED_HTML_PATHS_WITHOUT_AUTHENTICATION";
+
     private static final String LOGIN_URL = String
             .format("/%s/#/public/login", PortletURLUtil.URL_ADMIN_PREFIX);
 
-    private static final String[] ALLOWED_URLS =
-            new String[]{"/html/js/dojo",
-                    "/html/images/backgrounds", "/html/images/persona",
-                    "/html/portal/login.jsp"};
+    private static final String DEFAULT_ALLOWED_URLS = "/html/js/dojo,"
+            + "/html/images/backgrounds,/html/images/persona,"
+            + "/html/portal/login.jsp";
+    private static String[] ALLOWED_URLS;
 
     @Override
     public String[] getFilters() {
@@ -30,10 +34,18 @@ public class DefaultBackEndLoginRequiredWebInterceptor implements WebInterceptor
     }
 
     @Override
+    public void init() {
+
+        //Set the list of allowed paths without authentication
+        String allowedPaths = Config
+                .getStringProperty(ALLOWED_HTML_PATHS_WITHOUT_AUTHENTICATION, DEFAULT_ALLOWED_URLS);
+        ALLOWED_URLS = allowedPaths.split(",");
+    }
+
+    @Override
     public Result intercept(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
 
-        final HttpSession session = request.getSession(false);
         Result result = Result.NEXT;
 
         boolean requiresAuthentication = true;
@@ -52,8 +64,15 @@ public class DefaultBackEndLoginRequiredWebInterceptor implements WebInterceptor
 
         if (requiresAuthentication) {
 
+            boolean isLoggedToBackend = false;
+            try {
+                isLoggedToBackend = WebAPILocator.getUserWebAPI().isLoggedToBackend(request);
+            } catch (Exception e) {
+                //Do nothing...
+            }
+
             // if we are not logged in...
-            if (null == session || session.getAttribute(WebKeys.CMS_USER) == null) {
+            if (!isLoggedToBackend) {
 
                 final String queryStringToAppend =
                         null != request.getQueryString() ? "?" + request.getQueryString() : "";
@@ -62,6 +81,7 @@ public class DefaultBackEndLoginRequiredWebInterceptor implements WebInterceptor
                 SecurityLogger.logInfo(this.getClass(),
                         "LoginRequiredFilter for requested url: " + completeRequestedURL);
 
+                final HttpSession session = request.getSession(false);
                 if (null != session) {
                     session.setAttribute(WebKeys.REDIRECT_AFTER_LOGIN, SecurityUtils
                             .stripReferer(request, completeRequestedURL));
