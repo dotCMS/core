@@ -25,9 +25,9 @@ import com.dotmarketing.util.UtilMethods;
  */
 public class FieldLoader implements DotLoader {
 
-	
+	public static final String FIELD_CONSTANT="FIELD_CONSTANT";
 	public InputStream buildVelocity(String fieldInode, String contentInode, PageMode mode,String filePath) throws DotDataException, DotSecurityException {
-		InputStream result;
+
 		Field field = APILocator.getContentTypeFieldAPI().find(fieldInode);
 		if(!UtilMethods.isSet(field)){
 			Logger.warn(this.getClass(),"Field not found.  Unable to load velocity code");
@@ -45,7 +45,7 @@ public class FieldLoader implements DotLoader {
 	        Contentlet content = conAPI.find(contentInode, APILocator.getUserAPI().getSystemUser(), true);
 	        if(!UtilMethods.isSet(content)){
 	            Logger.warn(this.getClass(),"Content not found.  Unable to load velocity code");
-	            return new ByteArrayInputStream("".toString().getBytes());
+	            return new ByteArrayInputStream("".getBytes());
 	        }
 	        Object contFieldValueObject = conAPI.getFieldValue(content, field);
 			contFieldValue = contFieldValueObject == null ? "" : contFieldValueObject.toString();
@@ -62,15 +62,10 @@ public class FieldLoader implements DotLoader {
 
 	}
 	
-	public void removeFieldFile (String fieldInode, String contentInode, PageMode mode) {
-
-    }
 
     @Override
     public InputStream writeObject(final VelocityResourceKey key) throws DotDataException, DotSecurityException {
-
-            return this.buildVelocity(key.id2, key.id1, key.mode, key.path);
-        
+            return this.buildVelocity(key.id2, key.id1, key.mode, key.path);      
     }
     
     public void invalidate(Field field, Optional<Contentlet> con) {
@@ -86,7 +81,7 @@ public class FieldLoader implements DotLoader {
 
 
     public void invalidate(Object obj, Optional<Contentlet> con, PageMode mode) {
-      VelocityResourceKey key = new VelocityResourceKey((Field) obj, con.orElse(null), mode);
+      VelocityResourceKey key = new VelocityResourceKey((Field) obj, con, mode);
       CacheLocator.getVeloctyResourceCache().remove(key );
     }
 

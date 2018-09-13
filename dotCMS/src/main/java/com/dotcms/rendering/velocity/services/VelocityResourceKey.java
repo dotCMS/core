@@ -12,6 +12,7 @@ import com.dotmarketing.util.UtilMethods;
 
 import java.io.Serializable;
 import java.io.StringWriter;
+import java.util.Optional;
 
 import org.apache.velocity.runtime.resource.ResourceManager;
 
@@ -30,8 +31,8 @@ public class VelocityResourceKey implements Serializable {
         this((String) obj);
     }
     
-    public VelocityResourceKey(final Field asset, Contentlet con, PageMode mode) {
-        this("/" + mode.name() + "/" + ((con==null) ? "constant" : con.getIdentifier() ) + "/" + asset.id() +  "." + VelocityType.FIELD.fileExtension);
+    public VelocityResourceKey(final Field asset, Optional<Contentlet> con, PageMode mode) {
+        this("/" + mode.name() + "/" + (con.isPresent() ?  con.get().getInode() : FieldLoader.FIELD_CONSTANT  ) + "/" + asset.id() +  "." + VelocityType.FIELD.fileExtension);
     }
     
     public VelocityResourceKey(final Template asset, final PageMode mode) {

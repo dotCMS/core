@@ -146,7 +146,7 @@ public class ContentletLoader implements DotLoader {
                 Object contFieldValueObject = null;
 
                 if (field instanceof HiddenField || field instanceof ConstantField) {
-                  String velPath = new VelocityResourceKey(field, null, mode).path ;
+                  String velPath = new VelocityResourceKey(field, Optional.empty(), mode).path ;
                     if (field.variable().equals("widgetPreexecute")) {
                         continue;
                     }
@@ -186,7 +186,7 @@ public class ContentletLoader implements DotLoader {
                             sb.append("#set($")
                                     .append(field.variable())
                                     .append("=$velutil.mergeTemplate(\"")
-                                    .append(new VelocityResourceKey(field, content, mode).path)
+                                    .append(new VelocityResourceKey(field, Optional.ofNullable(content), mode).path)
                                     .append("\"))");
                         } else {
                             sb.append("#set($")
@@ -611,7 +611,7 @@ public class ContentletLoader implements DotLoader {
 
         fields = asset.getContentType().fields();
         for (Field field : fields) {
-            new FieldLoader().invalidate(field, Optional.<Contentlet>of(asset));
+            new FieldLoader().invalidate(field, Optional.<Contentlet>ofNullable(asset));
         }
 
 
