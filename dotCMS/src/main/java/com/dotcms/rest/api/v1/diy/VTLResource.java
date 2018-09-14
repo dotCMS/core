@@ -26,6 +26,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -69,22 +70,23 @@ public class VTLResource {
         final Language currentLanguage = WebAPILocator.getLanguageWebAPI().getLanguage(request);
         final MultivaluedMap<String, String> queryParameters = uriInfo.getQueryParameters();
 
-        Map<String, String> dotJSON = null;
+        Map<String, String> dotJSON;
 
         try {
-            Host site = this.hostAPI.resolveHostName(request.getServerName(), user, false);
-            final String getFilePath = VTLPath + "/" + folderName + "/" + HTTPMethod.GET.fileName + FILE_EXTENSION;
-            Identifier identifier = identifierAPI.find(site, getFilePath);
-            Contentlet getFileContent = contentletAPI.findContentletByIdentifier(identifier.getId(), true,
-                    currentLanguage.getId(), user, false);
-            FileAsset getFileAsset = APILocator.getFileAssetAPI().fromContentlet(getFileContent);
+            final Host site = this.hostAPI.resolveHostName(request.getServerName(), APILocator.systemUser(), false);
+            final String getFilePath = VTLPath + StringPool.SLASH + folderName + StringPool.SLASH
+                    + HTTPMethod.GET.fileName + FILE_EXTENSION;
+            final Identifier identifier = identifierAPI.find(site, getFilePath);
+            final Contentlet getFileContent = contentletAPI.findContentletByIdentifier(identifier.getId(), true,
+                    currentLanguage.getId(), user, true);
+            final FileAsset getFileAsset = APILocator.getFileAssetAPI().fromContentlet(getFileContent);
 
-            org.apache.velocity.context.Context context = VelocityUtil.getInstance().getContext(request, response);
+            final org.apache.velocity.context.Context context = VelocityUtil.getInstance().getContext(request, response);
             context.put("urlParams", initDataObject.getParamsMap());
             context.put("queryParams", queryParameters);
             context.put("dotJSON", new HashMap());
 
-            StringWriter evalResult = new StringWriter();
+            final StringWriter evalResult = new StringWriter();
 
             try (final InputStream fileAssetIputStream = getFileAsset.getInputStream()) {
                 VelocityUtil.getEngine().evaluate(context, evalResult, "", fileAssetIputStream);
@@ -96,7 +98,7 @@ public class VTLResource {
             Logger.error(this, errorMessage, e);
             return ResponseUtil.mapExceptionResponse(new DotDataException(errorMessage));
         } catch(Exception e) {
-            Logger.error(this,"Exception on DIY endpoint. GET method: " + e.getMessage(), e);
+            Logger.error(this,"Exception on VTL endpoint. GET method: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
         }
 
