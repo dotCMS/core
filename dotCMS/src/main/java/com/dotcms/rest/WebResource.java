@@ -277,10 +277,8 @@ public  class WebResource {
         User user = null;
 
         try {
-
             user = APILocator.getUserAPI().getAnonymousUser();
         } catch (DotDataException e) {
-            user = null;
             Logger.debug(getClass(), "Could not get Anonymous User. ");
         }
         return user;
