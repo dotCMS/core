@@ -16,7 +16,9 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
@@ -32,11 +34,11 @@ import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 
-@Path("/v1/diy")
+@Path("/vtl")
 public class VTLResource {
 
     private final WebResource webResource = new WebResource();
-    private final String VTLPath = "/api/vtl";
+    private final String VTLPath = "/application/apivtl";
     private final HostAPI hostAPI;
     private final IdentifierAPI identifierAPI;
     private final ContentletAPI contentletAPI;
@@ -66,7 +68,8 @@ public class VTLResource {
         final User user = initDataObject.getUser();
         final Language currentLanguage = WebAPILocator.getLanguageWebAPI().getLanguage(request);
         final MultivaluedMap<String, String> queryParameters = uriInfo.getQueryParameters();
-        Map<String, String> dotJSON;
+
+        Map<String, String> dotJSON = null;
 
         try {
             Host site = this.hostAPI.resolveHostName(request.getServerName(), user, false);
@@ -83,12 +86,17 @@ public class VTLResource {
 
             StringWriter evalResult = new StringWriter();
 
-            try(final InputStream fileAssetIputStream = getFileAsset.getInputStream()) {
+            try (final InputStream fileAssetIputStream = getFileAsset.getInputStream()) {
                 VelocityUtil.getEngine().evaluate(context, evalResult, "", fileAssetIputStream);
                 dotJSON = (Map<String, String>) context.get("dotJSON");
             }
+        } catch(DotContentletStateException e) {
+            final String errorMessage = "Unable to find velocity file '" + HTTPMethod.GET.fileName + FILE_EXTENSION
+                    + "' under path '" + VTLPath + "'";
+            Logger.error(this, errorMessage, e);
+            return ResponseUtil.mapExceptionResponse(new DotDataException(errorMessage));
         } catch(Exception e) {
-            Logger.error(this.getClass(),"Exception on DIY endpoint. GET method: " + e.getMessage(), e);
+            Logger.error(this,"Exception on DIY endpoint. GET method: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
         }
 
