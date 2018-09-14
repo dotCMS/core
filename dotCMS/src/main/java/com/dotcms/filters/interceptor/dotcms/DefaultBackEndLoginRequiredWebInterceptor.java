@@ -15,6 +15,10 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 /**
+ * Interceptor created mainly to intercept requests to the internal <i>/html</i> folder but can be use
+ * to verify if any internal folder requires authentication just changing the <i>getFilters()</i> method.
+ *
+ * <p>Open access to internal web folders opens the door for XSS attacks.</p>
  * @author Jonathan Gamba 9/12/18
  */
 public class DefaultBackEndLoginRequiredWebInterceptor implements WebInterceptor {
@@ -25,8 +29,7 @@ public class DefaultBackEndLoginRequiredWebInterceptor implements WebInterceptor
             .format("/%s/#/public/login", PortletURLUtil.URL_ADMIN_PREFIX);
 
     private static final String DEFAULT_ALLOWED_URLS = "/html/js/dojo,"
-            + "/html/images/backgrounds,/html/images/persona,"
-            + "/html/portal/login.jsp";
+            + "/html/images/backgrounds,/html/images/persona";
     private static String[] ALLOWED_URLS;
 
     @Override
