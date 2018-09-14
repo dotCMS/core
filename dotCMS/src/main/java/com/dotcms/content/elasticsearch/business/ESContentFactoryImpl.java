@@ -1273,6 +1273,37 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
     @Override
+    protected long indexCount(final String query,
+                        final long timeoutMillis) {
+
+        String qq=findAndReplaceQueryDates(translateQuery(query, null).getQuery());
+
+        // we check the query to figure out wich indexes to hit
+        String indexToHit;
+        IndiciesInfo info;
+        try {
+            info=APILocator.getIndiciesAPI().loadIndicies();
+        }
+        catch(DotDataException ee) {
+            Logger.fatal(this, "Can't get indicies information",ee);
+            return 0;
+        }
+        if(query.contains("+live:true") && !query.contains("+deleted:true"))
+            indexToHit=info.live;
+        else
+            indexToHit=info.working;
+
+        Client client=new ESClient().getClient();
+        QueryStringQueryBuilder qb = QueryBuilders.queryStringQuery(qq);
+        SearchRequestBuilder searchRequestBuilder = client.prepareSearch().setSize(0);
+        searchRequestBuilder.setQuery(qb);
+        searchRequestBuilder.setIndices(indexToHit);
+        searchRequestBuilder.setTimeout(TimeValue.timeValueMillis(timeoutMillis));
+
+        return searchRequestBuilder.execute().actionGet().getHits().getTotalHits();
+    }
+
+    @Override
     protected void indexCount(final String query,
                               final long timeoutMillis,
                               final Consumer<Long> indexCountSuccess,

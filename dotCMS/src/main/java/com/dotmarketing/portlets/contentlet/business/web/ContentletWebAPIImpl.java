@@ -491,6 +491,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 								.workflowActionComments((String) contentletFormData.get("wfActionComments"))
 								.workflowAssignKey((String) contentletFormData.get("wfActionAssign"))
 								.categories(categories)
+                                .waitUntilContentRefresh()
 								.generateSystemEvent(generateSystemEvent).build());
 			} else {
 
@@ -500,6 +501,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 					Logger.info(this, "Saving the Host");
 					currentContentlet.setInode(null);
+					currentContentlet.waitUntilContentRefresh();
 					currentContentlet = this.conAPI.checkin
 							(currentContentlet, contentletRelationships, categories, null, user, false, generateSystemEvent);
 				}

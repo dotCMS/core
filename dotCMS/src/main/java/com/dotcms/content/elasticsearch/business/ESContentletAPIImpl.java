@@ -2973,10 +2973,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                 }
 
-                if(saveWithExistingID)
+                final Object refreshPolicy = contentlet.getRefreshPolicy();
+                if(saveWithExistingID) {
                     contentlet = contentFactory.save(contentlet, existingInode);
-                else
+                } else {
                     contentlet = contentFactory.save(contentlet);
+                }
+                contentlet.setRefreshPolicy(refreshPolicy);
 
 
                 //Relate the tags with the saved contentlet
@@ -3012,6 +3015,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                     contentlet.setIdentifier(ident.getId() );
                     contentlet = contentFactory.save(contentlet);
+                    contentlet.setRefreshPolicy(refreshPolicy);
                 } else {
 
                     Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
@@ -3397,7 +3401,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     VanityUrlServices.getInstance().invalidateVanityUrl(contentlet);
                 }
 
-                if(contentlet != null && contentlet.isKeyValue()){
+                    if(contentlet != null && contentlet.isKeyValue()){
                     //remove from cache
                     CacheLocator.getKeyValueCache().remove(contentlet);
                 }
@@ -5551,33 +5555,42 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return isInodeIndexedWithQuery(luceneQuery, -1);
     }
 
-    private boolean isInodeIndexedWithQuery(String luceneQuery, int secondsToWait) {
+    private final List<Integer> fibonacciMapping = Arrays.asList(1, 2, 3, 5, 8, 13, 21, 34, 55); // it is around 14 + 9 (by the timeout delay) seconds, enough to wait
 
-        int limit = 300;
-        if (-1 != secondsToWait) {
-            limit = (secondsToWait / 10);
+    private boolean isInodeIndexedWithQuery(final String luceneQuery,
+                                            final int milliSecondsToWait) {
+
+        final long indexTimeOut    = Config.getLongProperty("TIMEOUT_INDEX_COUNT", 1000);
+        final long millistoWait    = Config.getLongProperty("IS_NODE_INDEXED_INDEX_MILLIS_WAIT", 100);
+        final int limit            = - 1 != milliSecondsToWait?milliSecondsToWait: 300;
+        boolean   found            = false;
+        int       counter          = 0;
+        int       fibonacciIndex   = 0;
+
+        if (this.contentFactory.indexCount(luceneQuery, indexTimeOut) > 0) {
+
+            found = true;
+        } else {
+
+            while (counter < limit && fibonacciIndex < this.fibonacciMapping.size()) {
+
+                counter += millistoWait * this.fibonacciMapping.get(fibonacciIndex++); // 100, 200, 300, 500, 800, 1300, 2100, 3400 ...
+                DateUtil.sleep(counter);
+
+                try {
+
+                    found = this.contentFactory.indexCount(luceneQuery, indexTimeOut) > 0;
+                } catch (Exception e) {
+                    Logger.error(this.getClass(), e.getMessage(), e);
+                    return false;
+                }
+
+                if (found) {
+                    break;
+                }
+            }
         }
-        long lc=0;
-        boolean found = false;
-        int counter = 0;
-        while (counter < limit) {
-            try {
-                lc = contentFactory.indexCount(luceneQuery);
-            } catch (Exception e) {
-                Logger.error(this.getClass(), e.getMessage(), e);
-                return false;
-            }
-            if (lc > 0) {
-                found = true;
-                break;
-            }
-            try {
-                Thread.sleep(100);
-            } catch (Exception e) {
-                Logger.debug(this, "Cannot sleep : ", e);
-            }
-            counter++;
-        }
+
         return found;
     }
 
@@ -6038,6 +6051,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @Override
     public Contentlet checkin(final Contentlet contentlet, final ContentletDependencies contentletDependencies) throws DotSecurityException, DotDataException {
+
+        if (null != contentletDependencies.getRefreshPolicy()) {
+
+            contentlet.setRefreshPolicy(contentletDependencies.getRefreshPolicy());
+        }
 
         return checkin(contentlet, contentletDependencies.getRelationships(), contentletDependencies.getCategories(), null, contentletDependencies.getModUser(),
                 contentletDependencies.isRespectAnonymousPermissions(), contentletDependencies.isGenerateSystemEvent());

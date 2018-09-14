@@ -46,7 +46,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+
 import org.apache.commons.lang.builder.ToStringBuilder;
+import org.elasticsearch.action.support.WriteRequest;
 
 /**
  * Represents a content unit in the system. Ideally, every single domain object
@@ -107,22 +109,68 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
     private transient ContentletAPI contentletAPI;
     private transient UserAPI userAPI;
-	private transient boolean waitForIndex = false;
+	private transient WriteRequest.RefreshPolicy refreshPolicy;
 
-	/**
-	 * If true, means when the content add to the index wait until it is already indexed.
-	 * @return Boolean
-	 */
-	public boolean isWaitForIndex() {
-		return waitForIndex;
+	public Object getRefreshPolicy () {
+
+		return refreshPolicy;
 	}
 
 	/**
-	 * Set to true if you want to block the indexing process until the content is indexed
-	 * @param waitForIndex {@link Boolean} true if wants to wait
+	 * This method is used more a low-level library see these methods to assign the refresh policy
+	 * {@link #waitUntilContentRefresh()}
+	 * {@link #immediateContentRefresh()}
+	 *
+	 * @param refreshPolicy
 	 */
-	public void setWaitForIndex(final boolean waitForIndex) {
-		this.waitForIndex = waitForIndex;
+	public void setRefreshPolicy (final Object refreshPolicy) {
+
+		if (null != refreshPolicy && refreshPolicy instanceof WriteRequest.RefreshPolicy) {
+			this.refreshPolicy = (WriteRequest.RefreshPolicy) refreshPolicy;
+		}
+	}
+	/**
+	 * If true, if the content refresh strategy is the default one.
+	 * @return Boolean
+	 */
+	public boolean isDefaultContentRefresh() {
+		return null == refreshPolicy || refreshPolicy == WriteRequest.RefreshPolicy.NONE;
+	}
+
+	/**
+	 * If true, if the content refresh strategy is the wait until content research.
+	 * @return Boolean
+	 */
+	public boolean isWaitUntilContentRefresh() {
+		return null != refreshPolicy && refreshPolicy == WriteRequest.RefreshPolicy.WAIT_UNTIL;
+	}
+
+
+	/**
+	 * If true, if the content refresh strategy is the immediate content research.
+	 * @return Boolean
+	 */
+	public boolean isImmediateContentRefresh () {
+
+		return null != refreshPolicy && this.refreshPolicy == WriteRequest.RefreshPolicy.IMMEDIATE;
+	}
+
+	/**
+	 * A process saved with this flag on, will wait until the content is already searchable in the index.
+	 */
+	public void waitUntilContentRefresh () {
+
+		this.refreshPolicy = WriteRequest.RefreshPolicy.WAIT_UNTIL;
+	}
+
+	/**
+	 * The contentlet refreshing on the index will be immediate refreshed.
+	 * Important node: use this flag only and just only development environments, on production might experiments high scalability issues.
+	 */
+	@VisibleForTesting
+	public void immediateContentRefresh () {
+
+		this.refreshPolicy = WriteRequest.RefreshPolicy.IMMEDIATE;
 	}
 
 	public void setContentType(ContentType contentType) {
@@ -140,6 +188,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      */
     public Contentlet(Map<String, Object> map) {
     	this.map = map;
+		this.refreshPolicy = WriteRequest.RefreshPolicy.NONE;
     }
 
     /**
@@ -152,6 +201,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		setContentTypeId("");
 		setSortOrder(0);
 		setDisabledWysiwyg(new ArrayList<String>());
+		this.refreshPolicy = WriteRequest.RefreshPolicy.NONE;
     }
 
     @Override

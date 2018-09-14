@@ -205,7 +205,7 @@ public interface DistributedJournalAPI<T> {
 
 	/**
 	 * Adds a list of identifiers to be reindexed
-	 * @param ids
+	 * @param ids {@link Set} of identifier
 	 * @throws DotDataException
 	 */
 	int addIdentifierReindex(final Set<String> ids) throws DotDataException;

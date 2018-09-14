@@ -19,6 +19,9 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+/**
+ * This thread is charge of running the commit listener in async or sync mode.
+ */
 public class DotRunnableThread extends Thread {
 
     private static final int INDEX_ONLY = 0;
@@ -26,12 +29,12 @@ public class DotRunnableThread extends Thread {
     private static final int INDEX_AND_RUN_LISTENERS = 2;
 
     private final static String LISTENER_SUBMITTER = DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL;
-    public static final String NETWORK_CACHE_FLUSH_DELAY = "NETWORK_CACHE_FLUSH_DELAY";
-    public static final String INDEX_COMMIT_LISTENER_BATCH_SIZE = "INDEX_COMMIT_LISTENER_BATCH_SIZE";
+    public static final  String NETWORK_CACHE_FLUSH_DELAY = "NETWORK_CACHE_FLUSH_DELAY";
+    public static final  String INDEX_COMMIT_LISTENER_BATCH_SIZE = "INDEX_COMMIT_LISTENER_BATCH_SIZE";
 
     private final List<Runnable> listeners;
     private final List<Runnable> flushers;
-    private final boolean isSync;
+    private final boolean        isSync;
 
 
     public DotRunnableThread(final List<Runnable> allListeners) {
@@ -54,6 +57,10 @@ public class DotRunnableThread extends Thread {
 
         try {
 
+            Logger.debug(this, ()-> "Running the thread: "
+                    + Thread.currentThread().getName() + (this.isSync?" in Sync":"in Async")
+                    + " Mode");
+
             if (UtilMethods.isSet(this.flushers)) {
 
                 final DotSubmitter submitter = DotConcurrentFactory.getInstance().getSubmitter(LISTENER_SUBMITTER);
@@ -61,7 +68,10 @@ public class DotRunnableThread extends Thread {
                         Config.getLongProperty(NETWORK_CACHE_FLUSH_DELAY, 3000), TimeUnit.MILLISECONDS);
             }
 
-            LocalTransaction.wrap(this::internalRunner);
+            if (UtilMethods.isSet(this.listeners)) {
+
+                LocalTransaction.wrap(this::internalRunner);
+            }
         } catch (Exception dde) {
             throw new DotStateException(dde);
         }
@@ -69,11 +79,12 @@ public class DotRunnableThread extends Thread {
 
     private void internalRunner() {
 
-        final Set<String> reindexInodes = new HashSet<>();
+        final Set<String> reindexInodes          = new HashSet<>();
         final List<List<Contentlet>> reindexList = new ArrayList<>();
-        final List<Runnable> otherListenerList = new ArrayList<>();
-        List<Contentlet> contentToIndex = new ArrayList<>();
-        final int batchSize = Config.getIntProperty(INDEX_COMMIT_LISTENER_BATCH_SIZE, 50);
+        final List<Runnable> otherListenerList   = new ArrayList<>();
+        final int batchSize                      = Config.getIntProperty(INDEX_COMMIT_LISTENER_BATCH_SIZE, 50);
+        List<Contentlet> contentToIndex          = new ArrayList<>();
+
 
         for (final Runnable runner : listeners) {
 
@@ -204,8 +215,8 @@ public class DotRunnableThread extends Thread {
         final int order = (runnable instanceof HibernateUtil.DotSyncRunnable) ?
                 HibernateUtil.DotSyncRunnable.class.cast(runnable).getOrder() : 0;
 
-        return (runnable instanceof HibernateUtil.DotAsyncRunnable) ?
-                HibernateUtil.DotAsyncRunnable.class.cast(runnable).getOrder() : order;
+        return (runnable instanceof HibernateUtil.DotOrderedRunnable) ?
+                HibernateUtil.DotOrderedRunnable.class.cast(runnable).getOrder() : order;
     }
 
     private boolean isNotFlushCacheRunnable(final Runnable listener) {
@@ -217,8 +228,8 @@ public class DotRunnableThread extends Thread {
 
         return (
                 listener instanceof FlushCacheRunnable ||
-                        (listener instanceof HibernateUtil.DotAsyncRunnable
-                                && HibernateUtil.DotAsyncRunnable.class.cast(listener).getRunnable() instanceof FlushCacheRunnable) ||
+                        (listener instanceof HibernateUtil.DotOrderedRunnable
+                                && HibernateUtil.DotOrderedRunnable.class.cast(listener).getRunnable() instanceof FlushCacheRunnable) ||
                         (listener instanceof HibernateUtil.DotSyncRunnable
                                 && HibernateUtil.DotSyncRunnable.class.cast(listener).getRunnable() instanceof FlushCacheRunnable)
         );

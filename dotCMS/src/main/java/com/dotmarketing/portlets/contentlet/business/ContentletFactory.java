@@ -372,6 +372,15 @@ public abstract class ContentletFactory {
 	 * This indexCount will use the thirdparty mechanism to async known when the query is returning something.
 	 * @param query
 	 * @param timeoutMillis
+	 */
+	protected abstract long indexCount(final String query,
+							  final long timeoutMillis);
+
+	/**
+	 * This indexCount will use the thirdparty mechanism to async known when the query is returning something.
+	 * this one use an async response, the indexCountSuccess will be called if the count is success, otherwise if the indexCountFailure is not null will be invoked.
+	 * @param query
+	 * @param timeoutMillis
 	 * @param indexCountSuccess
 	 * @param indexCountFailure
 	 */

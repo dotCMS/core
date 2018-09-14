@@ -1,8 +1,10 @@
 package com.dotmarketing.portlets.contentlet.model;
 
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.liferay.portal.model.User;
+import org.elasticsearch.action.support.WriteRequest;
 
 import java.util.List;
 
@@ -16,6 +18,7 @@ public class ContentletDependencies {
     private final List<Category>          categories;
     private final boolean                 respectAnonymousPermissions;
     private final boolean                 generateSystemEvent;
+    private final Object                  refreshPolicy;
 
     private ContentletDependencies(final ContentletDependencies.Builder builder) {
 
@@ -27,6 +30,7 @@ public class ContentletDependencies {
         this.categories                  = builder.categories;
         this.respectAnonymousPermissions = builder.respectAnonymousPermissions;
         this.generateSystemEvent         = builder.generateSystemEvent;
+        this.refreshPolicy               = builder.refreshPolicy;
 
     }
 
@@ -62,6 +66,10 @@ public class ContentletDependencies {
         return generateSystemEvent;
     }
 
+    public Object getRefreshPolicy() {
+        return refreshPolicy;
+    }
+
     public static final class Builder {
 
         private User modUser;
@@ -72,6 +80,7 @@ public class ContentletDependencies {
         private List<Category> categories;
         private boolean respectAnonymousPermissions;
         private boolean generateSystemEvent;
+        private Object  refreshPolicy = null;
 
         public ContentletDependencies build() {
             return new ContentletDependencies(this);
@@ -114,6 +123,26 @@ public class ContentletDependencies {
 
         public ContentletDependencies.Builder generateSystemEvent(final boolean generateSystemEvent) {
             this.generateSystemEvent = generateSystemEvent;
+            return this;
+        }
+
+        /**
+         * A process saved with this flag on, will wait until the content is already searchable in the index.
+         */
+        public ContentletDependencies.Builder waitUntilContentRefresh () {
+
+            this.refreshPolicy = WriteRequest.RefreshPolicy.WAIT_UNTIL;
+            return this;
+        }
+
+        /**
+         * The contentlet refreshing on the index will be immediate refreshed.
+         * Important node: use this flag only and just only development environments, on production might experiments high scalability issues.
+         */
+        @VisibleForTesting
+        public ContentletDependencies.Builder immediateContentRefresh () {
+
+            this.refreshPolicy = WriteRequest.RefreshPolicy.IMMEDIATE;
             return this;
         }
     }
