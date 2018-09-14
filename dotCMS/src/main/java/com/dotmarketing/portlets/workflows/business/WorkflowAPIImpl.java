@@ -2603,17 +2603,21 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 							.getInode() +" Executed by Thread: " +Thread.currentThread().getName());
 
 			contentlet.getMap().put(Contentlet.WORKFLOW_BULK_KEY, true);
+			try{
+				final Contentlet afterFireContentlet = fireContentWorkflow(contentlet, dependencies, context);
+				if(afterFireContentlet != null){
+					successInode = afterFireContentlet.getInode();
+				} else {
+					successInode = "Unavailable";
+				}
 
-			final Contentlet afterFireContentlet = fireContentWorkflow(contentlet, dependencies, context);
-			if(afterFireContentlet != null){
-				successInode = afterFireContentlet.getInode();
-			} else {
-				successInode = "Unavailable";
+				Logger.debug(this, () -> "Successfully fired the contentlet: " + contentlet.getInode() +
+						", success inode: " + successInode);
+				successConsumer.accept(1L);
+			}finally{
+				// This tends to stick around in cache. So.. get rid of it.
+				contentlet.getMap().remove(Contentlet.WORKFLOW_BULK_KEY);
 			}
-
-			Logger.debug(this, () -> "Successfully fired the contentlet: " + contentlet.getInode() +
-					", success inode: " + successInode);
-			successConsumer.accept(1L);
 
 		} catch (Exception e) {
 			failConsumer.accept(contentlet.getInode(), e);

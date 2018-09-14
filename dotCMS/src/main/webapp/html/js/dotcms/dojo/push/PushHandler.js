@@ -6,7 +6,7 @@ dojo.require("dotcms.dijit.RemotePublisherDialog");
 dojo.require("dotcms.dijit.AddToBundleDialog");
 dojo.require("dojox.data.QueryReadStore");
 dojo.require("dojox.data.JsonRestStore");
-
+dojo.require("dojo.NodeList-traverse");
 dojo.declare("dotcms.dojo.push.PushHandler", null, {
 
     assetIdentifier: "",
@@ -14,10 +14,24 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
     title: "",
     bundleStore : null,
     environmentStore : null,
+    roleReadStore :null,
     user : null,
-    whereToSend : new Array(),
+    whereToSend : [],
     isBundle : false,
-    inialStateEnvs : new Array(),
+    inialStateEnvs : [],
+
+    //Optional params when a Workflow-action like behavior is desired.
+    workflow:null,
+    /*
+    workflow:{
+        actionId:null,
+        inode:null,
+        publishDate:null,
+        expireDate:null,
+        structInode:null
+    },
+    */
+    fireWorkflowDelegate:null,
 
     constructor: function (title, isBundle) {
         this.title = title;
@@ -73,23 +87,24 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         dialog.container = this;
         dialog.show();
 
-        var thes=this;
+        var self = this;
         setTimeout(function() {
-	        thes.environmentStore.fetch({
+	        self.environmentStore.fetch({
 	    		onComplete:function(items,request) {
-	    			if(items.length==2) {
-	    				thes.addToWhereToSend(items[1].id, items[1].name);
-	    				thes.refreshWhereToSend();
-	    			}
+                    //Pre-select the environment only if there is one single instance.
+                    items = items.filter(item => item.id != '0');
+                    if(items.length === 1) {
+                        self.addToWhereToSend(items[0].id, items[0].name);
+                        self.refreshWhereToSend();
+                    }
 	    		}
 	    	})},200);
 
     },
     
     showRestrictedDialog: function (assetId, displayDateFilter) {
-    	if(this.environmentStore==null) {
+    	if(this.environmentStore == null) {
     		this.environmentStore = new dojox.data.JsonRestStore({ target: "/api/environment/loadenvironments/roleId/"+this.user.roleId, labelAttribute:"name", urlPreventCache: true});
-
     	}
 
     	this.clear();
@@ -107,14 +122,16 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         dialog.restricted = true;
         dialog.show();
         
-        var thes=this;
+        var self = this;
         setTimeout(function() {
-	        thes.environmentStore.fetch({
+	        self.environmentStore.fetch({
 	    		onComplete:function(items,request) {
-	    			if(items.length==2) {
-	    				thes.addToWhereToSend(items[1].id, items[1].name);
-	    				thes.refreshWhereToSend();
-	    			}
+                    //Pre-select the environment only if there is one single instance.
+                    items = items.filter(item => item.id != '0');
+                    if(items.length === 1) {
+                        self.addToWhereToSend(items[0].id, items[0].name);
+                        self.refreshWhereToSend();
+                    }
 	    		}
 	    	})},200);
 
@@ -137,6 +154,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         dialog = new dotcms.dijit.AddToBundleDialog();
         dialog.title = title;
         dialog.dateFilter = dateFilter;
+        dialog.container = this;
         dialog.show();
     },
 
@@ -153,19 +171,57 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         dialog.cats = true;
         dialog.show();
 
-        var thes=this;
+        var self = this;
         setTimeout(function() {
-            thes.environmentStore.fetch({
+            self.environmentStore.fetch({
                 onComplete:function(items,request) {
-                    if(items.length==2) {
-                        thes.addToWhereToSend(items[1].id, items[1].name);
-                        thes.refreshWhereToSend();
+                    //Pre-select an environment only if there is one.
+                    items = items.filter(item => item.id != '0');
+                    if(items.length === 1) {
+                        self.addToWhereToSend(items[0].id, items[0].name);
+                        self.refreshWhereToSend();
                     }
                 }
             })},200);
     },
     
-    
+    showWorkflowEnabledDialog:function(workflow, fireWorkflowDelegate){
+
+        this.assetIdentifier = null;
+
+        this.workflow = workflow;
+        this.fireWorkflowDelegate = fireWorkflowDelegate;
+
+        if(this.environmentStore == null) {
+            this.environmentStore = new dojox.data.JsonRestStore({ target: "/api/environment/loadenvironments/roleId/"+this.user.roleId, labelAttribute:"name", urlPreventCache: true});
+        }
+
+        if(this.roleReadStore == null) {
+           this.roleReadStore = new dojox.data.QueryReadStore({url: '/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfRoleStoreAjax?cmd=assignable&actionId='+workflow.actionId});
+        }
+
+        this.clear();
+
+        dialog = new dotcms.dijit.RemotePublisherDialog();
+        dialog.title = this.title;
+        dialog.container = this;
+        dialog.workflow = this.workflow;
+        dialog.show();
+
+        var self = this;
+        setTimeout(function() {
+            self.environmentStore.fetch({
+                onComplete:function(items,request) {
+                    //Pre-select the environment only if there is one single instance.
+                    items = items.filter(item => item.id != '0');
+                    if(items.length === 1) {
+                        self.addToWhereToSend(items[0].id, items[0].name);
+                        self.refreshWhereToSend();
+                    }
+                }
+            })},200);
+
+    },
 
     togglePublishExpireDivs: function () {
 
@@ -221,12 +277,12 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 
 	remotePublish : function(){
 
-		if(this.whereToSend.length==0) {
-			alert(dojo.byId("whereToSendRequired").value);
+		if(this.whereToSend.length === 0) {
+            showDotCMSSystemMessage(dojo.byId("whereToSendRequired").value);
 			return;
 		}
 
-		// BEGIN: PUSH PUBLISHING ACTIONLET
+		// BEGIN: PUSH PUBLISHING ACTIONLET These are the fields that we set on the publishForm (The dialog)
 
 		var publishDate = (dijit.byId("wfPublishDateAux"))
 			? dojo.date.locale.format(dijit.byId("wfPublishDateAux").getValue(),{datePattern: "yyyy-MM-dd", selector: "date"})
@@ -263,22 +319,91 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 
 		var forcePush = dijit.byId("forcePush").checked;
 
-
 		// END: PUSH PUBLISHING ACTIONLET
 
 
-		// BEGIN: PUSH PUBLISHING ACTIONLET
-        dojo.byId("assetIdentifier").value = this.assetIdentifier;
+        if(this._isWorkflowEnabled()){
+
+            let actionId = this.workflow.actionId;
+
+            var hasCondition = (dijit.byId("hasCondition")
+                ? dijit.byId("hasCondition").getValue()
+                : dojo.byId("hasCondition")
+                    ? dojo.byId("hasCondition").value
+                    : "");
+
+            if(hasCondition == 'true'){
+                this._evaluateCondition(actionId);
+                return;
+            }
+
+            var comment = (dijit.byId("taskCommentsAux")
+                ? dijit.byId("taskCommentsAux").getValue()
+                : dojo.byId("taskCommentsAux")
+                    ? dojo.byId("taskCommentsAux").value
+                    : "");
+
+            var assign = (dijit.byId("taskAssignmentAux")
+                ? dijit.byId("taskAssignmentAux").getValue()
+                : dojo.byId("taskAssignmentAux")
+                    ? dojo.byId("taskAssignmentAux").value
+                    : "");
+
+            if(dijit.byId("taskAssignmentAux") && !assign){
+                showDotCMSSystemMessage(dojo.byId("assignToRequired").value);
+                return;
+            }
+
+            let inode = this.workflow.inode;
+            let structureInode = this.workflow.structureInode;
+
+            let assignComment = {
+                comment: comment,
+                assign: assign,
+            };
+
+            let pushPublish = {
+                whereToSend:whereToSend,
+                publishDate:publishDate,
+                publishTime:publishTime,
+                expireDate:expireDate,
+                expireTime:expireTime,
+                forcePush:forcePush,
+                inode:inode,
+                actionId:actionId,
+                structureInode:structureInode,
+                hasCondition:hasCondition
+            };
+
+            let formData = {
+                assignComment:assignComment,
+                pushPublish:pushPublish
+            };
+
+           //Hide the buttons and display the progress
+           dojo.query("#publishForm .buttonRow").style("display", "none");
+           dojo.query("#publishForm .progressRow").style("display", "block");
+
+           this.fireWorkflowDelegate(actionId, formData);
+           this.fireWorkflowDelegate = null;
+           this.workflow = null;
+           dialog.hide();
+           return;
+        }
+
+
+        // BEGIN: PUSH PUBLISHING ACTIONLET
+        dojo.byId("remoteAssetIdentifier").value = this.assetIdentifier;
         dojo.byId("remotePublishDate").value = publishDate;
         dojo.byId("remotePublishTime").value = publishTime;
         dojo.byId("remotePublishExpireDate").value = expireDate;
         dojo.byId("remotePublishExpireTime").value = expireTime;
-        dojo.byId("iWantTo").value = iWantTo;
+        dojo.byId("remoteIWantTo").value = iWantTo;
         if (dojo.byId("remoteFilterDate")) {
             dojo.byId("remoteFilterDate").value = this._getFilterDate();
         }
-        dojo.byId("whoToSend").value = whereToSend;
-        dojo.byId("forcePush").value = forcePush;
+        dojo.byId("remoteWhoToSend").value = whereToSend;
+        dojo.byId("remoteForcePush").value = forcePush;
 		// END: PUSH PUBLISHING ACTIONLET
 
         //Hide the buttons and display the progress
@@ -286,7 +411,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         dojo.query("#publishForm .progressRow").style("display", "block");
 
         var currentObject = this;
-        var urlStr = this.isBundle?"/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/pushBundle":"/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish";
+        var urlStr = this.isBundle ? "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/pushBundle":"/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish";
 		var xhrArgs = {
 			url: urlStr,
 			form: dojo.byId("remotePublishForm"),
@@ -337,7 +462,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         }
 
         if (window.lastSelectedBundle == undefined || window.lastSelectedBundle == null || window.lastSelectedBundle.id == undefined) {
-            window.lastSelectedBundle = new Array();
+            window.lastSelectedBundle = [];
             window.lastSelectedBundle = {name: bundleName, id: bundleId};
         }
 
@@ -345,12 +470,12 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 
 
         // BEGIN: PUSH PUBLISHING ACTIONLET
-        dojo.byId("assetIdentifier").value = this.assetIdentifier;
+        dojo.byId("remoteAssetIdentifier").value = this.assetIdentifier;
         if (dojo.byId("remoteFilterDate")) {
             dojo.byId("remoteFilterDate").value = this._getFilterDate('true');
         }
-        dojo.byId("bundleName").value = bundleName;
-        dojo.byId("bundleSelect").value = bundleId;
+        dojo.byId("remoteBundleName").value = bundleName;
+        dojo.byId("remoteBundleSelect").value = bundleId;
         // END: PUSH PUBLISHING ACTIONLET
 
         //Disable the save button
@@ -434,12 +559,13 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 	},
 
 	refreshWhereToSend: function(){
+        var self = this;
 		dojo.empty("whereToSendTable");
 		var table = dojo.byId("whereToSendTable");
 		var x = "";
 
         if (window.lastSelectedEnvironments ==  undefined || window.lastSelectedEnvironments == null || window.lastSelectedEnvironments.length == 0) {
-            window.lastSelectedEnvironments = new Array();
+            window.lastSelectedEnvironments = [];
         }
 
 		this.whereToSend = this.whereToSend.sort(function(a,b){
@@ -456,10 +582,18 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 			var what = (this.whereToSend[i].id.indexOf("user") > -1) ? " EnvironmentNotLanguaged" : "";
 			x = x + this.whereToSend[i].id + ",";
 			var tr = dojo.create("tr", null, table);
-			dojo.create("td", { width: 10, innerHTML: "<span class='deleteIcon'></span>",className:"wfXBox", onClick:"pushHandler.removeFromWhereToSend('" + this.whereToSend[i].id +"');pushHandler.refreshWhereToSend()" }, tr);
+            const id = self.whereToSend[i].id;
+            var td = dojo.create("td", { width: 10, innerHTML: "<span class='deleteIcon'></span>",className:"wfXBox", id:id }, tr);
 			dojo.create("td", { innerHTML: this.whereToSend[i].name + what}, tr);
 
+            dojo.connect(td, "onclick", function(e){
+                //Dunno why the 'target' property of the event doesn't not point to the real element that originates the event.
+                var target = dojo.query(e.target).parent("td")[0];
+                self.removeFromWhereToSend(target.id);
+                self.refreshWhereToSend();
+            });
 		}
+
 		dojo.byId('whereToSend').value = x;
 
 	},
@@ -467,7 +601,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 	removeFromWhereToSend: function(myId){
 
 		var x=0;
-		var newCanUse = new Array();
+		var newCanUse = [];
 		for(i=0;i < this.whereToSend.length;i++){
 			if(myId != this.whereToSend[i].id){
 				newCanUse[x] = this.whereToSend[i];
@@ -485,7 +619,38 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 	},
 
     clear: function () {
-        this.whereToSend = new Array();
+        this.whereToSend = [];
+    },
+
+    _isWorkflowEnabled: function(){
+        return (this.workflow !== null);
+    },
+
+    _evaluateCondition: function (actionId) {
+
+        let urlTemplate = "/api/v1/workflow/actions/{actionId}/condition";
+        const url = urlTemplate.replace('{actionId}',actionId);
+        let dataAsJson = {};
+        let xhrArgs = {
+            url: url,
+            postData: dataAsJson,
+            handleAs: "json",
+            headers : {
+                'Accept' : 'application/json',
+                'Content-Type' : 'application/json;charset=utf-8',
+            },
+            load: function(data) {
+                if(data && data.entity){
+                     console.log(data.entity);
+                     showDotCMSSystemMessage(data.entity);
+                }
+            },
+            error: function(error){
+                showDotCMSSystemMessage(error, true);
+            }
+        };
+
+        dojo.xhrGet(xhrArgs);
     }
 
 });

@@ -227,15 +227,4 @@
 		</tr>
 	</table>
 
-    <form id="remotePublishForm">
-        <input name="assetIdentifier" id="assetIdentifier" type="hidden" value="">
-        <input name="remotePublishDate" id="remotePublishDate" type="hidden" value="">
-        <input name="remotePublishTime" id="remotePublishTime" type="hidden" value="">
-        <input name="remotePublishExpireDate" id="remotePublishExpireDate" type="hidden" value="">
-        <input name="remotePublishExpireTime" id="remotePublishExpireTime" type="hidden" value="">
-        <input name="iWantTo" id=iWantTo type="hidden" value="">
-        <input name="whoToSend" id=whoToSend type="hidden" value="">
-        <input name="forcePush" id=forcePush type="hidden" value="">
-    </form>
-
 <% }%>
