@@ -169,7 +169,7 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
             // include the parseContainer for every container added
             StringBuilder sb = new StringBuilder();
             for (Container container : containers) {
-                sb.append("#parseContainer('").append(container.getIdentifier()).append(")')")
+                sb.append("#parseContainer('").append(container.getIdentifier()).append("')")
                     .append(System.getProperty("line.separator"));
             }
 
