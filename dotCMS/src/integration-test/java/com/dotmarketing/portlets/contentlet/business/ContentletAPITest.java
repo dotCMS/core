@@ -121,13 +121,13 @@ public class ContentletAPITest extends ContentletBaseTest {
     public void run_listener_after_save_result_called_all_listeners () throws DotDataException, DotSecurityException {
 
         ContentType typeResult = null;
-        final int        numberOfContents    = 20000;
+        final int        numberOfContents    = 1000;//20000;
         final CountDownLatch countDownLatch  = new CountDownLatch(numberOfContents);
         DotSubmitter dotSubmitter = DotConcurrentFactory.getInstance().getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
         try {
 
             final long       languageId          = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-            final String velocityContentTypeName = "RunListenerAfterSaveTest3";
+            final String velocityContentTypeName = "RunListenerAfterSaveTest8";
 
 
             LocalTransaction.wrap(() -> {
@@ -182,11 +182,19 @@ public class ContentletAPITest extends ContentletBaseTest {
                     contentlet.setStringProperty("txt", "Test Save Text");
                     contentlet.setHost(Host.SYSTEM_HOST);
                     contentlet.setFolder(FolderAPI.SYSTEM_FOLDER);
+                    contentlet.waitUntilContentRefresh();
 
                     // first save
                     final Contentlet contentlet1 = contentletAPI.checkin(contentlet, user, false);
                     if (null != contentlet1) {
-                        HibernateUtil.addAsyncCommitListener(() -> {
+                        HibernateUtil.addCommitListener(() -> {
+
+                            try {
+                                assertTrue(APILocator.getContentletAPI().indexCount("+inode:" + contentlet1.getInode(), user, false) > 0);
+                            } catch (DotDataException | DotSecurityException e) {
+                                fail(e.getMessage());
+                            }
+
                             if (APILocator.getContentletAPI().isInodeIndexed(contentlet1.getInode())) {
                                 ContentletSystemEventUtil.getInstance().pushSaveEvent(contentlet1, true);
                             }

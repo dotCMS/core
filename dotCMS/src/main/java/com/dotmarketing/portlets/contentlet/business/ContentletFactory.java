@@ -370,8 +370,8 @@ public abstract class ContentletFactory {
 
 	/**
 	 * This indexCount will use the thirdparty mechanism to async known when the query is returning something.
-	 * @param query
-	 * @param timeoutMillis
+	 * @param query          {@link String} query to test if get results
+	 * @param timeoutMillis  {@link Long}   time in millis to timeout
 	 */
 	protected abstract long indexCount(final String query,
 							  final long timeoutMillis);

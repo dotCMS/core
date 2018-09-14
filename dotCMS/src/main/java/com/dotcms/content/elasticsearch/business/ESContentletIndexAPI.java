@@ -6,6 +6,7 @@ import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.tika.TikaUtils;
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -356,7 +357,6 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 
 		// we do right now the reindex of the simple contentlet without dependencies
 		if (content.isWaitUntilContentRefresh()) {
-
 			this.indexContentListWaitFor(contentToIndex, bulk, reindexOnly);
 		} else {
 			this.indexContentListNow(contentToIndex, bulk, reindexOnly);
@@ -385,53 +385,39 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 
 	private class AddReindexRunnable extends ReindexRunnable {
 
-		public AddReindexRunnable(List<Contentlet> reindexIds, Action action, BulkRequestBuilder bulk, boolean reindexOnly) {
+		public AddReindexRunnable(final List<Contentlet> reindexIds, final Action action, final BulkRequestBuilder bulk, final boolean reindexOnly) {
 			super(reindexIds, action, bulk, reindexOnly);
-		}
-
-		public AddReindexRunnable(Contentlet reindexId, Action action, BulkRequestBuilder bulk) {
-			super(reindexId, action, bulk);
 		}
 	}
 
 	@Override
-	public void indexContentList(List<Contentlet> contentToIndex, BulkRequestBuilder bulk, boolean reindexOnly) throws  DotDataException{
-    	if(contentToIndex==null || contentToIndex.size()==0){
+	public void indexContentList(final List<Contentlet> contentToIndex,
+                                 final BulkRequestBuilder bulk,
+                                 final boolean reindexOnly) throws  DotDataException {
+
+    	if (contentToIndex==null || contentToIndex.size()==0) {
     		return;
     	}
+
 		if (null == bulk) {
 
-			final List<Contentlet> defaultContentToIndex = new ArrayList<>();
-			final List<Contentlet> waitForContentToIndex = new ArrayList<>();
-			final List<Contentlet> nowContentToIndex     = new ArrayList<>();
+		    // split the list on three possible subset, one with the default refresh strategy, second one is the wait for and finally the immediate
+		    final List<List<Contentlet>> partitions = CollectionsUtils.partition(contentToIndex,
+                    Contentlet::isDefaultContentRefresh, Contentlet::isWaitUntilContentRefresh, Contentlet::isImmediateContentRefresh);
 
-			for (int i = 0; i < contentToIndex.size(); ++i) {
+			if (UtilMethods.isSet(partitions.get(0))) {
 
-				if (contentToIndex.get(i).isWaitUntilContentRefresh()) {
-
-					waitForContentToIndex.add(contentToIndex.get(i));
-				} else if (contentToIndex.get(i).isImmediateContentRefresh()) {
-
-					nowContentToIndex.add(contentToIndex.get(i));
-				} else {
-
-					defaultContentToIndex.add(contentToIndex.get(i));
-				}
+				this.runIndexBulk(partitions.get(0), new ESClient().getClient().prepareBulk(), reindexOnly);
 			}
 
-			if (UtilMethods.isSet(defaultContentToIndex)) {
+			if (UtilMethods.isSet(partitions.get(1))) {
 
-				this.runIndexBulk(contentToIndex, new ESClient().getClient().prepareBulk(), reindexOnly);
+				this.indexContentListWaitFor(partitions.get(1), null, reindexOnly);
 			}
 
-			if (UtilMethods.isSet(waitForContentToIndex)) {
+			if (UtilMethods.isSet(partitions.get(2))) {
 
-				this.indexContentListWaitFor(waitForContentToIndex, null, reindexOnly);
-			}
-
-			if (UtilMethods.isSet(nowContentToIndex)) {
-
-				this.indexContentListNow(waitForContentToIndex, null, reindexOnly);
+				this.indexContentListNow(partitions.get(2), null, reindexOnly);
 			}
 		} else {
 
@@ -489,6 +475,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 		HibernateUtil.addCommitListener(()-> {
 			try {
 
+			    // todo: set the highest priority here
 				this.journalAPI.addIdentifierReindex
 						(contentToIndex.stream().map(Contentlet::getIdentifier).collect(Collectors.toSet()));
 			} catch (DotDataException e) {
@@ -543,7 +530,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 		for(Contentlet con : contentToIndexSet) {
             String id=con.getIdentifier()+"_"+con.getLanguageId();
             IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
-            Gson gson=new Gson(); // why do we create a new Gson everytime
+            Gson gson=new Gson(); // todo why do we create a new Gson everytime
             String mapping=null;
             try {
 
