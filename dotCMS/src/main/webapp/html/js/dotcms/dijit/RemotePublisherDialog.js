@@ -94,7 +94,9 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
             });
 
             dojo.connect(dijit.byId("remotePublishCancelButton"), "onClick", function(){
-                window.lastSelectedEnvironments = container.inialStateEnvs;
+                var lastSelectedEnvironments = JSON.parse(sessionStorage.getItem("lastSelectedEnvironments"));
+                lastSelectedEnvironments = container.inialStateEnvs;
+                sessionStorage.setItem("lastSelectedEnvironments", JSON.stringify(lastSelectedEnvironments));
                 container.inialStateEnvs = [];
                 self.hide();
             });
@@ -114,11 +116,11 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
         });
 
         dojo.connect(dia, "onDownloadEnd", function () {
-
-            if (window.lastSelectedEnvironments) {
-                for (var count = 0; count < window.lastSelectedEnvironments.length; count++) {
-                	container.addToWhereToSend(window.lastSelectedEnvironments[count].id, window.lastSelectedEnvironments[count].name);
-                	container.inialStateEnvs[count] = {name: window.lastSelectedEnvironments[count].name, id: window.lastSelectedEnvironments[count].id};
+            var lastSelectedEnvironments = JSON.parse(sessionStorage.getItem("lastSelectedEnvironments"));
+            if (lastSelectedEnvironments) {
+                for (var count = 0; count < lastSelectedEnvironments.length; count++) {
+                	container.addToWhereToSend(lastSelectedEnvironments[count].id, lastSelectedEnvironments[count].name);
+                	container.inialStateEnvs[count] = {name: lastSelectedEnvironments[count].name, id: lastSelectedEnvironments[count].id};
                 }
                 container.refreshWhereToSend();
             }

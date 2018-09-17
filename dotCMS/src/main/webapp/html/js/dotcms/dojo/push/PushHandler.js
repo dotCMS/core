@@ -20,9 +20,9 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
     isBundle : false,
     inialStateEnvs : [],
 
-    //Optional params when a Workflow-action like behavior is desired.
     workflow:null,
-    /*
+    //Optional params when a Workflow-action like behavior is desired.
+    /* The stored info should look like this:
     workflow:{
         actionId:null,
         inode:null,
@@ -441,8 +441,10 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 
     addToBundle: function () {
 
+        var lastSelectedBundle = JSON.parse(sessionStorage.getItem("lastSelectedBundle"));
+
         if (dijit.byId("bundleSelect").value == '') {
-            alert(dojo.byId("bundleRequired").value);
+            showDotCMSSystemMessage(dojo.byId("bundleRequired").value);
             return;
         }
 
@@ -461,9 +463,9 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
             bundleId = dijit.byId("bundleSelect").value;
         }
 
-        if (window.lastSelectedBundle == undefined || window.lastSelectedBundle == null || window.lastSelectedBundle.id == undefined) {
-            window.lastSelectedBundle = [];
-            window.lastSelectedBundle = {name: bundleName, id: bundleId};
+        if (lastSelectedBundle == undefined || lastSelectedBundle == null || lastSelectedBundle.id == undefined) {
+            lastSelectedBundle = [];
+            lastSelectedBundle = {name: bundleName, id: bundleId};
         }
 
         // END: PUSH PUBLISHING ACTIONLET
@@ -507,6 +509,9 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
             }
         };
         dojo.xhrPost(xhrArgs);
+
+        sessionStorage.setItem("lastSelectedBundle",JSON.stringify(lastSelectedBundle));
+
     },
 
     _showResultMessage : function (data) {
@@ -559,13 +564,16 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 	},
 
 	refreshWhereToSend: function(){
+
+        var lastSelectedEnvironments = JSON.parse(sessionStorage.getItem("lastSelectedEnvironments"));
+
         var self = this;
 		dojo.empty("whereToSendTable");
 		var table = dojo.byId("whereToSendTable");
 		var x = "";
 
-        if (window.lastSelectedEnvironments ==  undefined || window.lastSelectedEnvironments == null || window.lastSelectedEnvironments.length == 0) {
-            window.lastSelectedEnvironments = [];
+        if (lastSelectedEnvironments ==  undefined || lastSelectedEnvironments == null || lastSelectedEnvironments.length == 0) {
+            lastSelectedEnvironments = [];
         }
 
 		this.whereToSend = this.whereToSend.sort(function(a,b){
@@ -577,7 +585,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 
 		for(i=0; i< this.whereToSend.length ; i++){
 
-            window.lastSelectedEnvironments[i] = {name: this.whereToSend[i].name, id: this.whereToSend[i].id};
+            lastSelectedEnvironments[i] = {name: this.whereToSend[i].name, id: this.whereToSend[i].id};
 
 			var what = (this.whereToSend[i].id.indexOf("user") > -1) ? " EnvironmentNotLanguaged" : "";
 			x = x + this.whereToSend[i].id + ",";
@@ -596,9 +604,12 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 
 		dojo.byId('whereToSend').value = x;
 
+		sessionStorage.setItem("lastSelectedEnvironments",JSON.stringify(lastSelectedEnvironments));
 	},
 
 	removeFromWhereToSend: function(myId){
+
+        var lastSelectedEnvironments = JSON.parse(sessionStorage.getItem("lastSelectedEnvironments"));
 
 		var x=0;
 		var newCanUse = [];
@@ -608,14 +619,15 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 				x++;
 			}
 		}
-		this.whereToSend= newCanUse;
+		this.whereToSend = newCanUse;
 
-		for(i=0; i< window.lastSelectedEnvironments.length ; i++){
-			if(window.lastSelectedEnvironments[i].id == myId) {
-				window.lastSelectedEnvironments.splice(i,1);
+		for(i=0; i< lastSelectedEnvironments.length ; i++){
+			if(lastSelectedEnvironments[i].id == myId) {
+			   lastSelectedEnvironments.splice(i,1);
 			}
 		}
 
+        sessionStorage.setItem("lastSelectedEnvironments",JSON.stringify(lastSelectedEnvironments));
 	},
 
     clear: function () {
