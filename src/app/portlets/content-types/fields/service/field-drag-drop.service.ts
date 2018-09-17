@@ -85,7 +85,7 @@ export class FieldDragDropService {
     }
 
     private toggleOverClass([bag, el, target, source]: [string, HTMLElement, HTMLElement, HTMLElement]): void {
-        if (target.classList.contains('row-columns__item')) {
+        if (target.classList.contains('row-columns__item') && source !== target) {
             target.classList.toggle('row-columns__item--over');
         }
     }

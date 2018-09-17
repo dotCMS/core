@@ -25,8 +25,22 @@
     display: flex;
     flex-direction: column;
     margin: 0 $basic-padding / 2;
-    padding-bottom: $content-type-field-height;
-    position: relative;
+    padding-bottom: 0;
+
+    &:after {
+        border: dashed 1px $gray;
+        bottom: 0;
+        color: $gray;
+        content: var(--empty-message);
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+        font-size: $font-size-small;
+        justify-content: center;
+        min-height: $content-type-field-height;
+        pointer-events: none;
+        text-align: center;
+    }
 
     &::ng-deep {
         li {
@@ -56,34 +70,15 @@
             margin-bottom: 0;
         }
 
-        .row-columns__item-empty-message {
+        &:after {
             min-height: 100%;
         }
     }
     &--over {
-        padding-bottom: 0;
-
-        .row-columns__item-empty-message {
+        &:after {
             display: none;
         }
     }
-}
-
-.row-columns__item-empty-message {
-    border: dashed 1px $gray;
-    bottom: 0;
-    color: $gray;
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
-    font-size: $font-size-small;
-    justify-content: center;
-    min-height: $content-type-field-height;
-    pointer-events: none;
-    position: absolute;
-    text-align: center;
-    width: 100%;
-
 }
 
 .row-header {
