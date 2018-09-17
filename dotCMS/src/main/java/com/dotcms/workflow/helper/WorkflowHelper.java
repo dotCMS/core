@@ -637,7 +637,7 @@ public class WorkflowHelper {
     }
 
     /**
-     *
+     * Evaluates the action condition using the Velocity Template Engine
      * @param actionId
      * @param user
      * @return

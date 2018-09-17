@@ -351,7 +351,7 @@ public class WorkflowResource {
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
         try {
-            Logger.debug(this, "Finding the workflow action " + actionId);
+            Logger.debug(this, ()->"Finding the workflow action " + actionId);
             final WorkflowAction action = this.workflowHelper.findAction(actionId, initDataObject.getUser());
             return Response.ok(new ResponseEntityView(action)).build(); // 200
         } catch (Exception e) {
@@ -383,7 +383,7 @@ public class WorkflowResource {
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
         try {
-            Logger.debug(this, "Finding the workflow action " + actionId);
+            Logger.debug(this, ()->"Finding the workflow action " + actionId);
 
             final String evaluated = workflowHelper.evaluateActionCondition(actionId, initDataObject.getUser(), request, response);
             return Response.ok(new ResponseEntityView(evaluated)).build(); // 200
