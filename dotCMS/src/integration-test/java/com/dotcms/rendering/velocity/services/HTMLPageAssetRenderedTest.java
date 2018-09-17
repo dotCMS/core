@@ -27,10 +27,12 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.AfterClass;
@@ -40,15 +42,18 @@ import org.junit.Test;
 
 public class HTMLPageAssetRenderedTest {
 
-    private static String contentGenericId = null;
-    private static String containerId = null;
-    private static Template template = null;
-    private static User systemUser = null;
-    private static final boolean contentFallbackDefaultValue = Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",false);
-    private static final boolean pageFallbackDefaultValue =Config.getBooleanProperty("DEFAULT_PAGE_TO_DEFAULT_LANGUAGE",true);
-    private static Folder folder = null;
+    private static String contentGenericId;
+    private static String containerId;
+    private static Template template;
+    private static User systemUser;
+    private static final String contentFallbackProperty = "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE";
+    private static final String pageFallbackProperty = "DEFAULT_PAGE_TO_DEFAULT_LANGUAGE";
+    private static final boolean contentFallbackDefaultValue = Config.getBooleanProperty(contentFallbackProperty,false);
+    private static final boolean pageFallbackDefaultValue =Config.getBooleanProperty(pageFallbackProperty,true);
+    private static Folder folder;
     private static final List<String> contentletsIds = new ArrayList<String>();
     private static ContentletAPI contentletAPI;
+    private static final String UUID = UUIDGenerator.generateUuid();
 
 
     @BeforeClass
@@ -76,13 +81,13 @@ public class HTMLPageAssetRenderedTest {
 
         //Create a Template
         template = new TemplateDataGen().title("PageContextBuilderTemplate"+System.currentTimeMillis())
-                .withContainer(container.get(0)).nextPersisted();
+                .withContainer(containerId,UUID).nextPersisted();
         PublishFactory.publishAsset(template, systemUser, false, false);
 
         //Create Contentlet in English
         final Contentlet contentlet1 = new ContentletDataGen(contentGenericId)
                 .languageId(1)
-                .setProperty("title", "content1TEST")
+                .setProperty("title", "content1")
                 .setProperty("body", "content1")
                 .nextPersisted();
         contentletAPI.publish(contentlet1, systemUser, false);
@@ -117,21 +122,21 @@ public class HTMLPageAssetRenderedTest {
 
     private void createMultiTree(final String pageId) throws DotSecurityException, DotDataException {
 
-        MultiTree multiTree = new MultiTree(pageId, containerId, contentletsIds.get(0));
+        MultiTree multiTree = new MultiTree(pageId, containerId, contentletsIds.get(0),UUID,0);
         APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
 
-        multiTree = new MultiTree(pageId, containerId, contentletsIds.get(1));
+        multiTree = new MultiTree(pageId, containerId, contentletsIds.get(1),UUID,0);
         APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
 
-        multiTree = new MultiTree(pageId, containerId, contentletsIds.get(2));
+        multiTree = new MultiTree(pageId, containerId, contentletsIds.get(2),UUID,0);
         APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
     }
 
     @AfterClass
     public static void restore() throws Exception{
 
-        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", contentFallbackDefaultValue);
-        Config.setProperty("DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", pageFallbackDefaultValue);
+        Config.setProperty(contentFallbackProperty, contentFallbackDefaultValue);
+        Config.setProperty(pageFallbackProperty, pageFallbackDefaultValue);
 
         //Deleting the folder will delete all the pages inside it
         if(folder != null){
@@ -164,8 +169,8 @@ public class HTMLPageAssetRenderedTest {
     @Test
     public void ContentFallbackFalse_PageFallbackTrue_PageEnglish_ViewEnglishContent1And2_ViewSpanishContent2And3() throws Exception{
 
-        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",false);
-        Config.setProperty("DEFAULT_PAGE_TO_DEFAULT_LANGUAGE",true);
+        Config.setProperty(contentFallbackProperty,false);
+        Config.setProperty(pageFallbackProperty,true);
 
         final String pageName = "test1Page-"+System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder,template).languageId(1).pageURL(pageName).title(pageName).nextPersisted();
@@ -180,8 +185,7 @@ public class HTMLPageAssetRenderedTest {
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
         String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
-        System.out.println("ENG = "+html);
-        Assert.assertTrue(html.contains("content2content1"));
+        Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
 
         mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
@@ -189,8 +193,7 @@ public class HTMLPageAssetRenderedTest {
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "2");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
-        System.out.println("ESP = "+html);
-        Assert.assertTrue(html.contains("content3content2Spa"));
+        Assert.assertTrue("ESP = "+html , html.contains("content3content2Spa"));
     }
 
     /**
@@ -206,8 +209,8 @@ public class HTMLPageAssetRenderedTest {
     @Test
     public void ContentFallbackFalse_PageFallbackTrue_PageEnglishAndSpanish_ViewEnglishContent1And2_ViewSpanishContent2And3() throws Exception{
 
-        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",false);
-        Config.setProperty("DEFAULT_PAGE_TO_DEFAULT_LANGUAGE",true);
+        Config.setProperty(contentFallbackProperty,false);
+        Config.setProperty(pageFallbackProperty,true);
 
         final String pageName = "test2Page-"+System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder,template).languageId(1).pageURL(pageName).title(pageName).nextPersisted();
@@ -227,8 +230,7 @@ public class HTMLPageAssetRenderedTest {
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
         String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
-        System.out.println("ENG = "+html);
-        Assert.assertTrue(html.contains("content2content1"));
+        Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
 
         mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
@@ -236,8 +238,7 @@ public class HTMLPageAssetRenderedTest {
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "2");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
-        System.out.println("ESP = "+html);
-        Assert.assertTrue(html.contains("content3content2Spa"));
+        Assert.assertTrue("ESP = "+html , html.contains("content3content2Spa"));
 
     }
 
@@ -255,8 +256,8 @@ public class HTMLPageAssetRenderedTest {
     @Test (expected = HTMLPageAssetNotFoundException.class)
     public void ContentFallbackFalse_PageFallbackTrue_PageSpanish_ViewEnglish404_ViewSpanishContent2And3() throws Exception{
 
-        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",false);
-        Config.setProperty("DEFAULT_PAGE_TO_DEFAULT_LANGUAGE",true);
+        Config.setProperty(contentFallbackProperty,false);
+        Config.setProperty(pageFallbackProperty,true);
 
         final String pageName = "test3Page-"+System.currentTimeMillis();
         final HTMLPageAsset pageSpanishVersion = new HTMLPageDataGen(folder,template).languageId(2).pageURL(pageName).title(pageName).nextPersisted();
@@ -271,8 +272,7 @@ public class HTMLPageAssetRenderedTest {
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
         String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageSpanishVersion.getURI(), PageMode.PREVIEW_MODE);
-        System.out.println("ESP = "+html);
-        Assert.assertTrue(html.contains("content3content2Spa"));
+        Assert.assertTrue("ESP = "+html , html.contains("content3content2Spa"));
 
         mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
@@ -295,8 +295,8 @@ public class HTMLPageAssetRenderedTest {
     @Test (expected = HTMLPageAssetNotFoundException.class)
     public void ContentFallbackFalse_PageFallbackFalse_PageEnglish_ViewEnglishContent1And2_ViewSpanish404() throws Exception{
 
-        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",false);
-        Config.setProperty("DEFAULT_PAGE_TO_DEFAULT_LANGUAGE",false);
+        Config.setProperty(contentFallbackProperty,false);
+        Config.setProperty(pageFallbackProperty,false);
 
         final String pageName = "test4Page-"+System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder,template).languageId(1).pageURL(pageName).title(pageName).nextPersisted();
@@ -311,8 +311,7 @@ public class HTMLPageAssetRenderedTest {
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
         String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
-        System.out.println("ENG = "+html);
-        Assert.assertTrue(html.contains("content2content1"));
+        Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
 
         mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
@@ -335,8 +334,8 @@ public class HTMLPageAssetRenderedTest {
     @Test
     public void ContentFallbackFalse_PageFallbackFalse_PageEnglishAndSpanish_ViewEnglishContent1And2_ViewSpanishContent2And3() throws Exception{
 
-        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",false);
-        Config.setProperty("DEFAULT_PAGE_TO_DEFAULT_LANGUAGE",false);
+        Config.setProperty(contentFallbackProperty,false);
+        Config.setProperty(pageFallbackProperty,false);
 
         final String pageName = "test5Page-"+System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder,template).languageId(1).pageURL(pageName).title(pageName).nextPersisted();
@@ -356,8 +355,7 @@ public class HTMLPageAssetRenderedTest {
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
         String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
-        System.out.println("ENG = "+html);
-        Assert.assertTrue(html.contains("content2content1"));
+        Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
 
         mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
@@ -365,8 +363,7 @@ public class HTMLPageAssetRenderedTest {
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "2");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
-        System.out.println("ESP = "+html);
-        Assert.assertTrue(html.contains("content3content2Spa"));
+        Assert.assertTrue("ESP = "+html , html.contains("content3content2Spa"));
     }
 
     /**
@@ -382,8 +379,8 @@ public class HTMLPageAssetRenderedTest {
     @Test
     public void ContentFallbackTrue_PageFallbackTrue_PageEnglishAndSpanish_ViewEnglishContent1And2_ViewSpanishContent1And2And3() throws Exception{
 
-        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",true);
-        Config.setProperty("DEFAULT_PAGE_TO_DEFAULT_LANGUAGE",true);
+        Config.setProperty(contentFallbackProperty,true);
+        Config.setProperty(pageFallbackProperty,true);
 
         final String pageName = "test6Page-"+System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder,template).languageId(1).pageURL(pageName).title(pageName).nextPersisted();
@@ -403,8 +400,7 @@ public class HTMLPageAssetRenderedTest {
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
         String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
-        System.out.println("ENG = "+html);
-        Assert.assertTrue(html.contains("content2content1"));
+        Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
 
         mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
@@ -412,8 +408,7 @@ public class HTMLPageAssetRenderedTest {
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "2");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
-        System.out.println("ESP = "+html);
-        Assert.assertTrue(html.contains("content3content2Spacontent1"));
+        Assert.assertTrue("ESP = "+html , html.contains("content3content2Spacontent1"));
     }
 
     /**
@@ -429,8 +424,8 @@ public class HTMLPageAssetRenderedTest {
     @Test (expected = HTMLPageAssetNotFoundException.class)
     public void ContentFallbackTrue_PageFallbackFalse_PageEnglish_ViewEnglishContent1And2_ViewSpanish404() throws Exception{
 
-        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",true);
-        Config.setProperty("DEFAULT_PAGE_TO_DEFAULT_LANGUAGE",false);
+        Config.setProperty(contentFallbackProperty,true);
+        Config.setProperty(pageFallbackProperty,false);
 
         final String pageName = "test7Page-"+System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder,template).languageId(1).pageURL(pageName).title(pageName).nextPersisted();
@@ -445,8 +440,7 @@ public class HTMLPageAssetRenderedTest {
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
         String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
-        System.out.println("ENG = "+html);
-        Assert.assertTrue(html.contains("content2content1"));
+        Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
 
         mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
