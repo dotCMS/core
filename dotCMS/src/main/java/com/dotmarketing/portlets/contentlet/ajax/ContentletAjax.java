@@ -1532,11 +1532,10 @@ public class ContentletAjax {
 
 		  Contentlet contentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
 		  if (null != contentlet) {
-
 			  callbackData.put("isHtmlPage", contentlet.isHTMLPage());
 			  callbackData.put("contentletType", contentlet.getContentType().variable());
 			  callbackData.put("contentletBaseType", contentlet.getContentType().baseType().name());
-
+			  callbackData.put("inode", newInode);
 			  //Cleaning up as we don't need more calculations as the Contenlet was deleted
 			  if (contentletFormData.containsKey(WebKeys.CONTENTLET_DELETED)
 					  && (Boolean) contentletFormData.get(WebKeys.CONTENTLET_DELETED)) {
@@ -1643,6 +1642,7 @@ public class ContentletAjax {
 
 			// everything Ok? then commit
 			HibernateUtil.closeAndCommitTransaction();
+		  	CacheLocator.getContentletCache().remove(contentlet);
 
 			// clean up tmp_binary
 			// https://github.com/dotCMS/dotCMS/issues/2921
