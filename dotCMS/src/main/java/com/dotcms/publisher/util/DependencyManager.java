@@ -877,6 +877,8 @@ public class DependencyManager {
 			Logger.debug(getClass(), "Could not get the Workflow Scheme Dependency for Structure ID: " + st.getInode());
 		}
 
+		// StructureCategoryUtils here...
+
 		// Related structures
 		List<Relationship> relations = FactoryLocator.getRelationshipFactory().byContentType(st);
 
