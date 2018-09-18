@@ -288,11 +288,21 @@
                     <%}else if(f.getFieldType().equals(Field.FieldType.PERMISSIONS_TAB.toString()) && !permissionsTabFieldExists){
                         permissionsTabFieldExists = true;%>
                         <%@ include file="/html/portlet/ext/common/edit_permissions_tab_inc.jsp" %>
-                    <%}else if(f.getFieldType().equals(Field.FieldType.RELATIONSHIPS_TAB.toString())){%>
+                    <%}else if(f.getFieldType().equals(Field.FieldType.RELATIONSHIP.toString()) || f.getFieldType().equals(Field.FieldType.RELATIONSHIPS_TAB.toString())){%>
                         <% if(fieldCounter==0){
                             relationshipsTabFieldExists =  true;
                             request.setAttribute("isRelationsihpAField",true); //DOTCMS-6893%>
-                            <jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_relationships.jsp" />
+                            <div class="fieldName">
+                                <% if(f.isRequired()) {%>
+                                    <span class="required2">
+                            		<%} else {%>
+                            			<span>
+                            		<% } %>
+                                <%=f.getFieldName()%>:</span>
+                            </div>
+                            <div class="fieldValue">
+                                <jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_relationships.jsp" />
+                            </div>
                         <% }
                         counter++;
                         %>

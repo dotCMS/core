@@ -134,6 +134,14 @@
 			helpText:'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "field.type.help.relationships_tab")) %>',
 			displayOrder: 17
 		},{
+            id: '<%= LegacyFieldTypes.RELATIONSHIP.legacyValue() %>',
+            displayName: '<%= LanguageUtil.get(pageContext, "Relationship-Field") %>',
+            label: '<%= LanguageUtil.get(pageContext, "Relationship-Field") %>',
+            show:['elementSelect','displayType','labelRow'],
+            dataType:'<%= DataTypes.SYSTEM %>',
+            helpText:'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "field.type.help.relationship")) %>',
+            displayOrder: 17
+        },{
 			id: '<%= LegacyFieldTypes.SELECT.legacyValue() %>',
 			displayName: '<%= LanguageUtil.get(pageContext, "Select") %>',
 			label: '<%= LanguageUtil.get(pageContext, "Select") %>',
