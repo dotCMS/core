@@ -149,9 +149,16 @@ public class InitServlet extends HttpServlet {
             CacheLocator.getCacheAdministrator().flushGroupLocalOnly("navCache", false);
         }
 
-        //Initialize the Cached Vanity URL cache
-        VanityUrlServices.getInstance().initializeVanityUrlCache();
-
+        
+        
+        try {
+            //Initialize the Cached Vanity URL cache
+            VanityUrlServices.getInstance().initializeVanityUrlCache();
+        }
+        catch(Exception e) {
+            Logger.error(InitServlet.class, e.getMessage(), e);
+        }
+        
         Language language = langAPI.getDefaultLanguage();
 
         if (language.getId() == 0) {
