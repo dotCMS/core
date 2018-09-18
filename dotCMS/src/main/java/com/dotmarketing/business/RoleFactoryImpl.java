@@ -633,27 +633,34 @@ public class RoleFactoryImpl extends RoleFactory {
 		}else{
 			Role parent = null;
 			String rFQN = "";
-			String[] rids = FQN.split(" --> ");
-			String parentId = null;
-			for (String rid : rids) {
-				if(parentId == null){
-					parent = findRoleByName(rid, null);
-					parentId = parent.getId();
-					rFQN = parent.getId();
-				}else{
-					parent = findRoleByName(rid, parent);
-					parentId = parent.getId();
-					rFQN = rFQN + " --> " + parentId;
+			try {
+				final String[] rids = FQN.split(" --> ");
+				String parentId = null;
+				for (final String rid : rids) {
+					if (parentId == null) {
+						parent = findRoleByName(rid, null);
+						parentId = parent.getId();
+						rFQN = parent.getId();
+					} else {
+						parent = findRoleByName(rid, parent);
+						parentId = parent.getId();
+						rFQN = rFQN + " --> " + parentId;
+					}
 				}
-			}
 
-			HibernateUtil hu = new HibernateUtil(Role.class);
-			hu.setQuery("from " + Role.class.getName() + " where db_fqn like ?");
-			hu.setParam(rFQN);
-			r = (Role)hu.load();
-			translateFQNFromDB(r);
-			rc.add(r);
-			HibernateUtil.evict(r);
+				final HibernateUtil hu = new HibernateUtil(Role.class);
+				hu.setQuery("from " + Role.class.getName() + " where db_fqn like ?");
+				hu.setParam(rFQN);
+				r = (Role) hu.load();
+				translateFQNFromDB(r);
+				rc.add(r);
+				HibernateUtil.evict(r);
+			} catch (Exception e) {
+				final String errorMessage = String
+						.format("Error finding Role for FQN '%s' and Resolved FQN '%s'.", FQN, rFQN);
+				Logger.error(this, errorMessage, e);
+				throw new DotDataException(errorMessage, e);
+			}
 		}
 		return r;
 	}

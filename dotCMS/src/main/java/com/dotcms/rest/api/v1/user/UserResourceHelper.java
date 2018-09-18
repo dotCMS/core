@@ -213,12 +213,16 @@ public class UserResourceHelper implements Serializable {
 			throw new DotDataException("User [" + loginAsUser.getUserId() + "] does not have any layouts.",
 					"loginas.error.nolayouts");
 		}
-		final Role administratorRole = roleAPI.findRoleByFQN(Role.SYSTEM + " --> " + Role.ADMINISTRATOR);
+		final Role administratorRole = roleAPI.findRoleByFQN(Role.SYSTEM + " --> " + Role.DEFAULT_CMS_ADMINISTRATOR_ROLE);
+		if(!UtilMethods.isSet(administratorRole)){
+			throw new DotDataException("Missing Default Required Admin role ", "loginas.error.missingadminrole");
+		}
+
 		if (this.roleAPI.doesUserHaveRole(loginAsUser, administratorRole) || this.roleAPI.doesUserHaveRole(loginAsUser,
 				com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole())) {
 			if (!UtilMethods.isSet(loginAsUserPwd)) {
 				throw new DotDataException("The 'Login As' user password is required.", "loginas.error.missingloginaspwd");
-			} else if (LoginFactory.passwordMatch(loginAsUserPwd, currentUser) == false) {
+			} else if (!LoginFactory.passwordMatch(loginAsUserPwd, currentUser)) {
 				throw new DotDataException("The 'Login As' user password is invalid.",
 						"loginas.error.invalidloginascredentials");
 			}
