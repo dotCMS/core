@@ -24,6 +24,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -58,7 +59,7 @@ public class VTLResource {
 
     @GET
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Path("/{folder}/{path: .*}")
     public Response get(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                         @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
@@ -91,6 +92,16 @@ public class VTLResource {
             try (final InputStream fileAssetIputStream = getFileAsset.getInputStream()) {
                 VelocityUtil.getEngine().evaluate(context, evalResult, "", fileAssetIputStream);
                 dotJSON = (Map<String, String>) context.get("dotJSON");
+
+                final String cacheMeStr = dotJSON.get("cacheMe");
+
+                if(!UtilMethods.isSet(dotJSON) || dotJSON.size()==1 && UtilMethods.isSet(cacheMeStr)) {
+                    return Response.ok(evalResult.toString()).build();
+                }
+
+
+                long cacheTTLinMillis = UtilMethods.isSet(cacheMeStr)?Long.parseLong(cacheMeStr):0;
+
             }
         } catch(DotContentletStateException e) {
             final String errorMessage = "Unable to find velocity file '" + HTTPMethod.GET.fileName + FILE_EXTENSION
@@ -102,7 +113,7 @@ public class VTLResource {
             return ResponseUtil.mapExceptionResponse(e);
         }
 
-        return Response.ok(new ResponseEntityView(dotJSON)).build(); //todo don't return like this
+        return Response.ok(dotJSON).build(); //todo don't return like this
     }
 
     private enum HTTPMethod {
