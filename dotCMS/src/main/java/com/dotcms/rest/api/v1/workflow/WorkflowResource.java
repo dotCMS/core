@@ -1,8 +1,20 @@
 package com.dotcms.rest.api.v1.workflow;
 
+import static com.dotcms.rest.ResponseEntityView.OK;
+import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotcms.util.DotLambdas.not;
+
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
-import com.dotcms.repackage.javax.ws.rs.*;
+import com.dotcms.repackage.javax.ws.rs.DELETE;
+import com.dotcms.repackage.javax.ws.rs.DefaultValue;
+import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.POST;
+import com.dotcms.repackage.javax.ws.rs.PUT;
+import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
+import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.QueryParam;
 import com.dotcms.repackage.javax.ws.rs.container.AsyncResponse;
 import com.dotcms.repackage.javax.ws.rs.container.Suspended;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
@@ -19,7 +31,19 @@ import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
-import com.dotcms.workflow.form.*;
+import com.dotcms.workflow.form.BulkActionForm;
+import com.dotcms.workflow.form.FireActionForm;
+import com.dotcms.workflow.form.FireBulkActionsForm;
+import com.dotcms.workflow.form.WorkflowActionForm;
+import com.dotcms.workflow.form.WorkflowActionStepBean;
+import com.dotcms.workflow.form.WorkflowActionStepForm;
+import com.dotcms.workflow.form.WorkflowCopyForm;
+import com.dotcms.workflow.form.WorkflowReorderBean;
+import com.dotcms.workflow.form.WorkflowReorderWorkflowActionStepForm;
+import com.dotcms.workflow.form.WorkflowSchemeForm;
+import com.dotcms.workflow.form.WorkflowSchemeImportObjectForm;
+import com.dotcms.workflow.form.WorkflowStepAddForm;
+import com.dotcms.workflow.form.WorkflowStepUpdateForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -43,17 +67,13 @@ import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-
-import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
-
-import static com.dotcms.rest.ResponseEntityView.OK;
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotcms.util.DotLambdas.not;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 @SuppressWarnings("serial")
 @Path("/v1/workflow")
@@ -331,12 +351,45 @@ public class WorkflowResource {
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
         try {
-            Logger.debug(this, "Finding the workflow action " + actionId);
+            Logger.debug(this, ()->"Finding the workflow action " + actionId);
             final WorkflowAction action = this.workflowHelper.findAction(actionId, initDataObject.getUser());
             return Response.ok(new ResponseEntityView(action)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
                     "Exception on findAction, actionId: " + actionId +
+                            ", exception message: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+
+    } // findAction.
+
+    /**
+     * Returns a single action condition evaluated, 404 if does not exists. 401 if the user does not have permission.
+     * @param request  HttpServletRequest
+     * @param actionId String
+     * @return Response
+     */
+    @GET
+    @Path("/actions/{actionId}/condition")
+    @JSONP
+    @NoCache
+    @IncludePermissions
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response evaluateActionCondition(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("actionId") final String actionId) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, true, request, true, null);
+        try {
+            Logger.debug(this, ()->"Finding the workflow action " + actionId);
+
+            final String evaluated = workflowHelper.evaluateActionCondition(actionId, initDataObject.getUser(), request, response);
+            return Response.ok(new ResponseEntityView(evaluated)).build(); // 200
+        } catch (Exception e) {
+            Logger.error(this.getClass(),
+                    "Exception on evaluateActionCondition, actionId: " + actionId +
                             ", exception message: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
         }
