@@ -36,14 +36,6 @@ public class ESSearchProxyTest extends IntegrationTestBase {
         });
     }
 
-    @Test (expected = DotStateException.class)
-    public void test_esSearch_WithoutLicense_ThrowsException() throws Exception {
-        runNoLicense(()-> {
-            final String query = "{\"query\":{\"query_string\":{\"query\":\"+basetype:3\"}}}";
-            final List<ESSearchResults> resultsList = getEsSearchResults(query);
-        });
-    }
-
     @Test
     public void test_esSearch_WithLicense_Success() throws Exception {
         final String query = "{\"query\":{\"query_string\":{\"query\":\"+basetype:5 +parentpath:*\\\\\\/abou*\"}}}";
