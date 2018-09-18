@@ -627,35 +627,42 @@ public class RoleFactoryImpl extends RoleFactory {
 		if(FQN == null){
 			throw new DotDataException("FQN is null");
 		}
-		Role r = null;
+		Role role = null;
 		if(!FQN.contains("-->")){
-			r = findRoleByName(FQN, null);
+			role = findRoleByName(FQN, null);
 		}else{
 			Role parent = null;
 			String rFQN = "";
-			String[] rids = FQN.split(" --> ");
-			String parentId = null;
-			for (String rid : rids) {
-				if(parentId == null){
-					parent = findRoleByName(rid, null);
-					parentId = parent.getId();
-					rFQN = parent.getId();
-				}else{
-					parent = findRoleByName(rid, parent);
-					parentId = parent.getId();
-					rFQN = rFQN + " --> " + parentId;
+			try {
+				final String[] rids = FQN.split(" --> ");
+				String parentId = null;
+				for (final String rid : rids) {
+					if (parentId == null) {
+						parent = findRoleByName(rid, null);
+						parentId = parent.getId();
+						rFQN = parent.getId();
+					} else {
+						parent = findRoleByName(rid, parent);
+						parentId = parent.getId();
+						rFQN = rFQN + " --> " + parentId;
+					}
 				}
-			}
 
-			HibernateUtil hu = new HibernateUtil(Role.class);
-			hu.setQuery("from " + Role.class.getName() + " where db_fqn like ?");
-			hu.setParam(rFQN);
-			r = (Role)hu.load();
-			translateFQNFromDB(r);
-			rc.add(r);
-			HibernateUtil.evict(r);
+				final HibernateUtil hu = new HibernateUtil(Role.class);
+				hu.setQuery("from " + Role.class.getName() + " where db_fqn like ?");
+				hu.setParam(rFQN);
+				role = (Role) hu.load();
+				translateFQNFromDB(role);
+				rc.add(role);
+				HibernateUtil.evict(role);
+			} catch (Exception e) {
+				final String errorMessage = String
+						.format("Unable to resolve Role for the FQN '%s' which Resolves to the FQN '%s'.", FQN, rFQN);
+				Logger.error(this, errorMessage, e);
+				return null;
+			}
 		}
-		return r;
+		return role;
 	}
 
 	@Override
