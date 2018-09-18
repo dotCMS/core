@@ -313,14 +313,7 @@ public class Template extends WebAsset implements Serializable, Comparable {
 			throw new DotRuntimeException(e.getMessage(), e);
 		}
 	}
-    @Override
-    public String toString() {
-       try {
-           return new ObjectMapper().writeValueAsString(this);
-        } catch (JsonProcessingException e) {
-            return super.toString();
-        }
-    }
+
 
 	public Map<String, Object> getMap () throws DotStateException, DotDataException, DotSecurityException {
 		final Map<String, Object> map = super.getMap();
