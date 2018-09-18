@@ -627,9 +627,9 @@ public class RoleFactoryImpl extends RoleFactory {
 		if(FQN == null){
 			throw new DotDataException("FQN is null");
 		}
-		Role r = null;
+		Role role = null;
 		if(!FQN.contains("-->")){
-			r = findRoleByName(FQN, null);
+			role = findRoleByName(FQN, null);
 		}else{
 			Role parent = null;
 			String rFQN = "";
@@ -651,18 +651,18 @@ public class RoleFactoryImpl extends RoleFactory {
 				final HibernateUtil hu = new HibernateUtil(Role.class);
 				hu.setQuery("from " + Role.class.getName() + " where db_fqn like ?");
 				hu.setParam(rFQN);
-				r = (Role) hu.load();
-				translateFQNFromDB(r);
-				rc.add(r);
-				HibernateUtil.evict(r);
+				role = (Role) hu.load();
+				translateFQNFromDB(role);
+				rc.add(role);
+				HibernateUtil.evict(role);
 			} catch (Exception e) {
 				final String errorMessage = String
-						.format("Error finding Role for FQN '%s' and Resolved FQN '%s'.", FQN, rFQN);
+						.format("Unable to resolve Role for the FQN '%s' which Resolves to the FQN '%s'.", FQN, rFQN);
 				Logger.error(this, errorMessage, e);
-				throw new DotDataException(errorMessage, e);
+				return null;
 			}
 		}
-		return r;
+		return role;
 	}
 
 	@Override

@@ -213,11 +213,7 @@ public class UserResourceHelper implements Serializable {
 			throw new DotDataException("User [" + loginAsUser.getUserId() + "] does not have any layouts.",
 					"loginas.error.nolayouts");
 		}
-		final Role administratorRole = roleAPI.findRoleByFQN(Role.SYSTEM + " --> " + Role.DEFAULT_CMS_ADMINISTRATOR_ROLE);
-		if(!UtilMethods.isSet(administratorRole)){
-			throw new DotDataException("Missing Default Required Admin role ", "loginas.error.missingadminrole");
-		}
-
+		final Role administratorRole = roleAPI.findRoleByFQN(Role.SYSTEM + " --> " + Role.ADMINISTRATOR);
 		if (this.roleAPI.doesUserHaveRole(loginAsUser, administratorRole) || this.roleAPI.doesUserHaveRole(loginAsUser,
 				com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole())) {
 			if (!UtilMethods.isSet(loginAsUserPwd)) {
