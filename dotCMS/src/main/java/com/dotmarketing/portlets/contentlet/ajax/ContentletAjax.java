@@ -1777,7 +1777,7 @@ public class ContentletAjax {
 		    }
 
 		}
-		if(!isAutoSave){
+		if(!isAutoSave){ // todo: I think this is safe to remove, however will wait for the team discussion
 			if(InodeUtils.isSet(newInode) && !conAPI.isInodeIndexed(newInode)){
 				Logger.error(this, "Timed Out waiting for index to return");
 			}

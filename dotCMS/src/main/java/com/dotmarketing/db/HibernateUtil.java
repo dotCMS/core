@@ -1,6 +1,7 @@
 package com.dotmarketing.db;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.repackage.net.sf.hibernate.*;
 import com.dotcms.repackage.net.sf.hibernate.cfg.Configuration;
 import com.dotcms.repackage.net.sf.hibernate.cfg.Mappings;
@@ -21,6 +22,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Savepoint;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -33,6 +35,10 @@ import java.util.jar.JarFile;
  * @author will & david (2005)
  */
 public class HibernateUtil {
+
+    private final static String LISTENER_SUBMITTER = "dotListenerSubmitter";
+    public static final  String NETWORK_CACHE_FLUSH_DELAY = "NETWORK_CACHE_FLUSH_DELAY";
+
 	private static String dialect;
 	private static SessionFactory sessionFactory;
 
@@ -1023,13 +1029,16 @@ public class HibernateUtil {
 		syncCommitListeners.get().clear();
 
 		if (!asyncListeners.isEmpty()) {
-			DotConcurrentFactory.getInstance()
-					.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL)
-					.submit(new DotRunnableThread(asyncListeners, true));
+
+            final DotSubmitter submitter = DotConcurrentFactory.getInstance().getSubmitter(LISTENER_SUBMITTER);
+			submitter.submit(new DotRunnableThread(asyncListeners, true));
+            submitter.submit(new DotRunnableFlusherThread(asyncListeners, true),
+                    Config.getLongProperty(NETWORK_CACHE_FLUSH_DELAY, 3000), TimeUnit.MILLISECONDS);
 		}
 
 		if (!syncListeners.isEmpty()) {
 			new DotRunnableThread(syncListeners).run();
+            new DotRunnableFlusherThread(asyncListeners, false).run(); // todo: double check this if we still want a thread for the flushers
 		}
 	}
 

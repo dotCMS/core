@@ -776,7 +776,7 @@ public class HostAPIImpl implements HostAPI {
         host.setModDate(new Date ());
         hostCache.clearAliasCache();
 
-        HibernateUtil.addCommitListener(() -> this.sendArchiveSiteSystemEvent(contentlet));
+        HibernateUtil.addCommitListener(() -> this.sendArchiveSiteSystemEvent(contentlet), 1000);
     }
 
     private void sendArchiveSiteSystemEvent (final Contentlet contentlet) {
@@ -806,7 +806,7 @@ public class HostAPIImpl implements HostAPI {
         APILocator.getContentletAPI().unarchive(contentlet, user, respectFrontendRoles);
         host.setModDate(new Date ());
         hostCache.clearAliasCache();
-        HibernateUtil.addCommitListener(() -> this.sendUnArchiveSiteSystemEvent(contentlet));
+        HibernateUtil.addCommitListener(() -> this.sendUnArchiveSiteSystemEvent(contentlet), 1000);
     }
 
     private void sendUnArchiveSiteSystemEvent (final Contentlet contentlet) {

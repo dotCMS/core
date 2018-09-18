@@ -28,6 +28,23 @@ public class CollectionsUtilsTest extends UnitTestBase {
         assertEquals(Arrays.asList("yeah"), listOfList.get(2));
     }
 
+    @Test
+    public void partitions_not_matchTest()  {
+
+        final List<List<String>> listOfList = partition (Arrays.asList("hello","hello","hi","yeah","hi","hello"),
+                (s) -> s.equals("blabla"), (s) -> s.equals("blablabla"), (s) -> s.equals("blablablabla"));
+
+        assertNotNull(listOfList);
+        assertEquals(3, listOfList.size());
+        assertNotNull(listOfList.get(0));
+        assertTrue(listOfList.get(0).isEmpty());
+        assertNotNull(listOfList.get(1));
+        assertTrue(listOfList.get(1).isEmpty());
+        assertNotNull(listOfList.get(2));
+        assertTrue(listOfList.get(2).isEmpty());
+
+    }
+
     /**
      * Testing the new Instance
      *

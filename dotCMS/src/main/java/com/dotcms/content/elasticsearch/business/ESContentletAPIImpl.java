@@ -474,7 +474,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             //Generate a System Event for this publish operation
             HibernateUtil.addCommitListener(
-                    () -> this.contentletSystemEventUtil.pushPublishEvent(contentlet));
+                    () -> this.contentletSystemEventUtil.pushPublishEvent(contentlet), 1000);
 
             if ( localTransaction ) {
                 HibernateUtil.commitTransaction();
@@ -1774,7 +1774,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     private void sendDeleteEvent (final Contentlet contentlet) throws DotHibernateException {
-        HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushDeleteEvent(contentlet));
+        HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushDeleteEvent(contentlet), 1000);
     }
 
     /**
@@ -2036,7 +2036,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 new ContentletLoader().invalidate(contentlet);
 
                 publishRelatedHtmlPages(contentlet);
-                HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushArchiveEvent(workingContentlet));
+                HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushArchiveEvent(workingContentlet), 1000);
             } else {
                 throw new DotContentletStateException("Contentlet with Identifier '" + contentlet.getIdentifier() +
                         "' must be unlocked before being archived");
@@ -2316,7 +2316,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             new ContentletLoader().invalidate(contentlet, PageMode.LIVE);
             publishRelatedHtmlPages(contentlet);
 
-            HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushUnpublishEvent(contentlet));
+            HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushUnpublishEvent(contentlet), 1000);
 
             /*
             Triggers a local system event when this contentlet commit listener is executed,
@@ -2404,7 +2404,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             new ContentletLoader().invalidate(contentlet);
             publishRelatedHtmlPages(contentlet);
 
-            HibernateUtil.addCommitListener(() -> this.sendUnArchiveContentSystemEvent(contentlet));
+            HibernateUtil.addCommitListener(() -> this.sendUnArchiveContentSystemEvent(contentlet), 1000);
         } catch(DotDataException | DotStateException| DotSecurityException e) {
             ActivityLogger.logInfo(getClass(), "Error Unarchiving Content", "StartDate: " +contentPushPublishDate+ "; "
                     + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
@@ -3524,7 +3524,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private void pushSaveEvent (final Contentlet eventContentlet, final boolean eventCreateNewVersion) throws DotHibernateException {
 
-        HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushSaveEvent(eventContentlet, eventCreateNewVersion));
+        HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushSaveEvent(eventContentlet, eventCreateNewVersion), 100);
     }
 
     private List<Category> getExistingContentCategories(Contentlet contentlet)
@@ -5320,7 +5320,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private void sendCopyEvent (final Contentlet contentlet) throws DotHibernateException {
 
-        HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushCopyEvent(contentlet));
+        HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushCopyEvent(contentlet), 1000);
     }
 
     @WrapInTransaction
@@ -5569,6 +5569,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         if (this.contentFactory.indexCount(luceneQuery, indexTimeOut) > 0) {
 
+            //Logger.info(this, ()-> "Index count found in the fist hit for the query: " + luceneQuery);
             found = true;
         } else {
 

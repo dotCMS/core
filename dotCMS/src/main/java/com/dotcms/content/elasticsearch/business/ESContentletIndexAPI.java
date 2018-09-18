@@ -365,9 +365,8 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 		if (addRollBackListener) {
 			// in case the transaction failed we reindex the latest committed version
 			HibernateUtil.addRollbackListener(()-> {
-				// todo: add the highest priority
 				try {
-					journalAPI.addIdentifierReindex(content.getIdentifier());
+					journalAPI.addReindexHighPriority(content.getIdentifier());
 				} catch (DotDataException e) {
 					throw new RuntimeException(e);
 				}
@@ -460,7 +459,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 
 		final BulkRequestBuilder bulkRequestBuilder = (bulk==null)?
 				new ESClient().getClient().prepareBulk() : bulk;
-		final long timeOutMillis                    = Config // todo: check if this make sense
+		final long timeOutMillis                    = Config
 				.getLongProperty("TIMEOUT_INDEX_WAIT_FOR", 30000);
 
 		// we want to wait until the content is already indexed
@@ -475,8 +474,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 		HibernateUtil.addCommitListener(()-> {
 			try {
 
-			    // todo: set the highest priority here
-				this.journalAPI.addIdentifierReindex
+				this.journalAPI.addReindexHighPriority
 						(contentToIndex.stream().map(Contentlet::getIdentifier).collect(Collectors.toSet()));
 			} catch (DotDataException e) {
 

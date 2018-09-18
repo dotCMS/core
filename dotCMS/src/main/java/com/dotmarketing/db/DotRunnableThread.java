@@ -1,7 +1,5 @@
 package com.dotmarketing.db;
 
-import com.dotcms.concurrent.DotConcurrentFactory;
-import com.dotcms.concurrent.DotSubmitter;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -12,28 +10,21 @@ import com.dotmarketing.util.UtilMethods;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.bulk.BulkResponse;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
  * This thread is charge of running the commit listener in async or sync mode.
  */
-public class DotRunnableThread extends Thread {
+public class DotRunnableThread implements Runnable {
 
     private static final int INDEX_ONLY = 0;
     private static final int RUN_ONLY_LISTENERS = 1;
     private static final int INDEX_AND_RUN_LISTENERS = 2;
 
-    private final static String LISTENER_SUBMITTER = DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL;
-    public static final  String NETWORK_CACHE_FLUSH_DELAY = "NETWORK_CACHE_FLUSH_DELAY";
     public static final  String INDEX_COMMIT_LISTENER_BATCH_SIZE = "INDEX_COMMIT_LISTENER_BATCH_SIZE";
 
     private final List<Runnable> listeners;
-    private final List<Runnable> flushers;
     private final boolean        isSync;
 
 
@@ -42,14 +33,8 @@ public class DotRunnableThread extends Thread {
     }
 
     public DotRunnableThread(final List<Runnable> allListeners, final boolean isSync) {
-        this.isSync = isSync;
-        this.listeners = getListeners(allListeners);
-        this.flushers = getFlushers(allListeners);
-    }
-
-    private void runNetworkflowCacheFlushThread() {
-
-        flushers.forEach(runner -> runner.run());
+        this.isSync         = isSync;
+        this.listeners      = getListeners(allListeners);
     }
 
     @Override
@@ -60,13 +45,6 @@ public class DotRunnableThread extends Thread {
             Logger.debug(this, ()-> "Running the thread: "
                     + Thread.currentThread().getName() + (this.isSync?" in Sync":"in Async")
                     + " Mode");
-
-            if (UtilMethods.isSet(this.flushers)) {
-
-                final DotSubmitter submitter = DotConcurrentFactory.getInstance().getSubmitter(LISTENER_SUBMITTER);
-                submitter.submit(this::runNetworkflowCacheFlushThread,
-                        Config.getLongProperty(NETWORK_CACHE_FLUSH_DELAY, 3000), TimeUnit.MILLISECONDS);
-            }
 
             if (UtilMethods.isSet(this.listeners)) {
 
@@ -196,10 +174,6 @@ public class DotRunnableThread extends Thread {
     private boolean isOrdered(final Runnable runner) {
 
         return this.getOrder(runner) > 0;
-    }
-
-    private List<Runnable> getFlushers(final List<Runnable> allListeners) {
-        return allListeners.stream().filter(this::isFlushCacheRunnable).collect(Collectors.toList());
     }
 
     private List<Runnable> getListeners(final List<Runnable> allListeners) {

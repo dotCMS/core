@@ -202,6 +202,12 @@ public interface DistributedJournalAPI<T> {
 	 */
 	void addIdentifierReindex(String id) throws DotDataException;
 
+	/**
+	 * Adds an identifier to be reindexed with the highest priority
+	 * @param id {@link String} identifier
+	 * @throws DotDataException
+	 */
+	void addReindexHighPriority(final String identifier) throws DotDataException;
 
 	/**
 	 * Adds a list of identifiers to be reindexed
@@ -209,6 +215,13 @@ public interface DistributedJournalAPI<T> {
 	 * @throws DotDataException
 	 */
 	int addIdentifierReindex(final Set<String> ids) throws DotDataException;
+
+	/**
+	 * Adds a list of identifiers to be reindexed with the highest priority
+	 * @param ids {@link Set} of identifier
+	 * @throws DotDataException
+	 */
+	int addReindexHighPriority(final Set<String> ids) throws DotDataException;
 
 	/**
 	 * Adds a contentlet to be reindexed
