@@ -825,9 +825,10 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         try {
             HibernateUtil.startTransaction();
+            final String UUID = UUIDGenerator.generateUuid();
             Structure structure = new StructureDataGen().nextPersisted();
             Container container = new ContainerDataGen().withStructure(structure, "").nextPersisted();
-            Template template = new TemplateDataGen().withContainer(container).nextPersisted();
+            Template template = new TemplateDataGen().withContainer(container.getIdentifier(),UUID).nextPersisted();
             Folder folder = new FolderDataGen().nextPersisted();
 
             HTMLPageDataGen htmlPageDataGen = new HTMLPageDataGen(folder, template);
@@ -841,12 +842,12 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             // let's add the content to the page in english (create the page-container-content relationship)
             MultiTree multiTreeEN = new MultiTree(englishPage.getIdentifier(), container.getIdentifier(),
-                contentInEnglish.getIdentifier());
+                contentInEnglish.getIdentifier(),UUID,0);
             MultiTreeFactory.saveMultiTree(multiTreeEN, english);
 
             // let's add the content to the page in spanish (create the page-container-content relationship)
             MultiTree multiTreeSP = new MultiTree(spanishPage.getIdentifier(), container.getIdentifier(),
-                contentInSpanish.getIdentifier());
+                contentInSpanish.getIdentifier(),UUID,0);
             MultiTreeFactory.saveMultiTree(multiTreeSP, spanish);
 
             // let's get the references for english content
@@ -4292,14 +4293,16 @@ public class ContentletAPITest extends ContentletBaseTest {
         Template englishTemplate  = null;
         Template spanishTemplate  = null;
 
+        final String UUID = UUIDGenerator.generateUuid();
+
         try{
             structure = new StructureDataGen().nextPersisted();
             container = new ContainerDataGen().withStructure(structure, "")
                     .nextPersisted();
             englishTemplate = new TemplateDataGen().title("English Template")
-                    .withContainer(container).nextPersisted();
+                    .withContainer(container.getIdentifier(),UUID).nextPersisted();
             spanishTemplate = new TemplateDataGen().title("Spanish Template")
-                    .withContainer(container).nextPersisted();
+                    .withContainer(container.getIdentifier(),UUID).nextPersisted();
             folder = new FolderDataGen().nextPersisted();
 
             //Create a page in English
@@ -4372,15 +4375,16 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         Template englishTemplate  = null;
         Template spanishTemplate  = null;
+        final String UUID = UUIDGenerator.generateUuid();
 
         try{
             structure = new StructureDataGen().nextPersisted();
             container = new ContainerDataGen().withStructure(structure, "")
                     .nextPersisted();
             englishTemplate = new TemplateDataGen().title("English Template")
-                    .withContainer(container).nextPersisted();
+                    .withContainer(container.getIdentifier(),UUID).nextPersisted();
             spanishTemplate = new TemplateDataGen().title("Spanish Template")
-                    .withContainer(container).nextPersisted();
+                    .withContainer(container.getIdentifier(),UUID).nextPersisted();
             folder = new FolderDataGen().nextPersisted();
 
             //Create a page in English

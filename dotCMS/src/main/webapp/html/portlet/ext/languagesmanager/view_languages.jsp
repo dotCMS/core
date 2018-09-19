@@ -122,21 +122,6 @@ var pushHandler = new dotcms.dojo.push.PushHandler('Push Publish');
     <div id="popups"></div>
 </liferay:box>
 
-<form id="remotePublishForm">
-	<input name="assetIdentifier" id="assetIdentifier" type="hidden"
-		value=""> <input name="remotePublishDate"
-		id="remotePublishDate" type="hidden" value=""> <input
-		name="remotePublishTime" id="remotePublishTime" type="hidden" value="">
-	<input name="remotePublishExpireDate" id="remotePublishExpireDate"
-		type="hidden" value=""> <input name="remotePublishExpireTime"
-		id="remotePublishExpireTime" type="hidden" value=""> <input
-		name="iWantTo" id=iWantTo type="hidden" value=""> <input
-		name="whoToSend" id=whoToSend type="hidden" value=""> <input
-		name="bundleName" id=bundleName type="hidden" value=""> <input
-		name="bundleSelect" id=bundleSelect type="hidden" value=""> <input
-		name="forcePush" id=forcePush type="hidden" value="">
-</form>
-
 <script src="/html/js/scriptaculous/prototype.js" type="text/javascript"></script>
 <script src="/html/js/scriptaculous/scriptaculous.js" type="text/javascript"></script>
 <%@ include file="/html/portlet/ext/languagesmanager/view_languages_js_inc.jsp"%>

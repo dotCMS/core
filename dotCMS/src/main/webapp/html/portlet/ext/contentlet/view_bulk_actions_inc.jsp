@@ -252,65 +252,53 @@
         var pushPublish = dojo.attr(buttonElement, 'data-action-pushPublish');
         var condition = dojo.attr(buttonElement, 'data-action-condition');
 
-        var popupRequired = (commentable == 'true' || assignable == 'true' || pushPublish == 'true' || condition == 'true' );
+        var popupRequired = (commentable || assignable || pushPublish || condition);
         if(!popupRequired){
            return false;
         }
 
         var actionId = dojo.attr(buttonElement, 'data-acction-id');
 
-        //Required clean up as these modals has duplicated widgets and collide without a clean up
-        var remoteDia = dijit.byId("remotePublisherDia");
-        if(remoteDia){
-            remoteDia.destroyRecursive();
-        }
-
-        var dia = dijit.byId("contentletWfDialog");
-        if(dia){
-            dia.destroyRecursive();
-        }
-        dia = new dijit.Dialog({
-            id			:	"contentletWfDialog",
-            title		: 	"<%=LanguageUtil.get(pageContext, "Workflow-Actions")%>",
-            style		:	"width:520px;height:513px"
-        });
-
-        var closeHandle = dojo.connect(dijit.byId('contentletWfDialog'), "hide",
-            function(){
-
-                var dia = dijit.byId('contentletWfDialog');
-                if(dia){
-                    dia.destroyRecursive();
-                }
-
-                if(closeHandle){
-                    dojo.disconnect(closeHandle);
-                }
-
-            }
-        );
-
-        var myCp = dijit.byId("contentletWfCP");
-        if(myCp){
-            myCp.destroyRecursive();
-
-        }
-        myCp = new dojox.layout.ContentPane({
-            id 			: "contentletWfCP",
-            style		: "width:500px;height:433px;margin:auto;"
-        }).placeAt("contentletWfDialog");
-
-        dia.show();
-
+        var inode = null;
         var selectedInodes = getSelectedInodes();
         if (Array.isArray(selectedInodes) && selectedInodes.length > 0) {
-            myCp.attr("href", "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfTaskAjax?cmd=renderAction&actionId=" + actionId + '&inode=' +selectedInodes[0]+ '&bulkActions=true');
-        } else {
-            myCp.attr("href", "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfTaskAjax?cmd=renderAction&actionId=" + actionId + '&bulkActions=true');
+            inode = selectedInodes[0];
         }
+
+        let workflow = {
+            actionId:actionId,
+            inode:inode
+        };
+
+        var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
+        pushHandler.showWorkflowEnabledDialog(workflow, fireActionCallback);
         return true;
     }
 
+
+    function fireActionCallback(actionId, formData){
+
+        var pushPusblishFormData = formData.pushPublish;
+        var assignComment = formData.assignComment;
+
+        //Just a sub set of the fields can be sent
+        //Any unexpected additional field on this structure will upset the rest endpoint.
+        var pushPublish = {
+            whereToSend:pushPusblishFormData.whereToSend,
+            publishDate:pushPusblishFormData.publishDate,
+            publishTime:pushPusblishFormData.publishTime,
+            expireDate:pushPusblishFormData.expireDate,
+            expireTime:pushPusblishFormData.expireTime,
+            forcePush:pushPusblishFormData.forcePush
+        };
+
+        var data = {
+            assignComment:assignComment,
+            pushPublish:pushPublish
+        };
+
+        return fireAction(actionId, data);
+    }
 
     function fireAction(actionId, popupData) {
 
