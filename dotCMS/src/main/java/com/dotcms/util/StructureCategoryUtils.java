@@ -12,11 +12,10 @@ import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
- * Check StructureAjax and DependecyManager 
+ * Utility to load categories associated with a Structure type.
+ * Only the first level is loaded
  */
 public class StructureCategoryUtils {
 
@@ -33,17 +32,35 @@ public class StructureCategoryUtils {
         this.permissionAPI = permissionAPI;
     }
 
+    /**
+     * Default constructor
+     */
     public StructureCategoryUtils() {
         this(APILocator.getCategoryAPI(), APILocator.getPermissionAPI());
     }
 
-    public ImmutableList<Category> getCategories(final Structure structure, final User user) {
-        return getCategoryFields(structure).stream().map(field -> getCategory(field, user))
+    /**
+     * This method will look for all the fields of type 'Category' within a Structure and will get you all the associated Category types available for a given a user.
+     * @param structure
+     * @param user
+     * @return
+     */
+    public ImmutableList<Category> findCategories(final Structure structure, final User user) {
+        return findCategoryFields(structure).stream().map(field -> findCategory(field, user))
                 .filter(category -> hasPermission(category, user))
                 .collect(CollectionsUtils.toImmutableList());
     }
 
-    private Category getCategory(final Field categoryField, final User user) {
+    /**
+     * given a field previously determined to be of type Category this method will look up the respective Category type.
+     * @param categoryField
+     * @param user
+     * @return
+     */
+    private Category findCategory(final Field categoryField, final User user) {
+        if(!categoryField.getFieldType().equals(CATEGORY)){
+            throw new IllegalArgumentException(String.format("Field %s can isn't of the expected type 'Category'.",categoryField.getFieldName()));
+        }
         Category category = null;
         try {
             category = categoryAPI.find(categoryField.getValues(), user, false);
@@ -54,6 +71,12 @@ public class StructureCategoryUtils {
         return category;
     }
 
+    /**
+     * Permission check helper method
+     * @param category
+     * @param user
+     * @return
+     */
     private boolean hasPermission(final Category category, final User user) {
         boolean hasPermission = false;
         try {
@@ -68,10 +91,27 @@ public class StructureCategoryUtils {
 
     }
 
-    public static List<Field> getCategoryFields(final Structure structure) {
+    /**
+     * Given a structure this method will look into the fields and get you all the ones of type Category
+     * @param structure
+     * @return
+     */
+    private ImmutableList<Field> findCategoryFields(final Structure structure) {
         return structure.getFields()
                 .stream().filter(field -> field.getFieldType().equals(CATEGORY))
-                .collect(Collectors.toList());
+                .collect(CollectionsUtils.toImmutableList());
+    }
+
+
+    /**
+     * Given a structure this method will look into the fields and tells you if there are at least one of type Category
+     * @param structure
+     * @return
+     */
+    public boolean hasCategoryFields(final Structure structure) {
+        return structure.getFields()
+                .stream().anyMatch(field -> field.getFieldType().equals(CATEGORY));
+
     }
 
 }
