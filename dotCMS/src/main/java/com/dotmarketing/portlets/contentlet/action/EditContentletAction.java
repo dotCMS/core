@@ -832,16 +832,15 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 					req.setAttribute(com.dotmarketing.util.WebKeys.CONTENTLET_EDIT, contentlet);
 					req.setAttribute("inode", sibblingInode);
 				} else {
-					Logger.debug(UtilHTML.class, "getLanguagesIcons :: Sibbling Contentlet = "
-							+ sibblingContentlet.getInode());
+					Logger.debug(UtilHTML.class, ()->"getLanguagesIcons :: Sibbling Contentlet = " + sibblingContentlet.getInode());
 					Identifier identifier = APILocator.getIdentifierAPI().find(sibblingContentlet);
 					contentlet.setIdentifier(identifier.getInode());
 					contentlet.setStructureInode(sibblingContentlet.getStructureInode());
 
 					// take host field values with it
-					for (Field ff : FieldsCache.getFieldsByStructureInode(sibblingContentlet.getStructureInode())) {
-						if (ff.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
-							contentlet.setStringProperty(ff.getVelocityVarName(), sibblingContentlet.getStringProperty(ff.getVelocityVarName()));
+					for (final Field field : FieldsCache.getFieldsByStructureInode(sibblingContentlet.getStructureInode())) {
+						if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
+							contentlet.setStringProperty(field.getVelocityVarName(), sibblingContentlet.getStringProperty(field.getVelocityVarName()));
 							contentlet.setHost(sibblingContentlet.getHost());
 							contentlet.setFolder(sibblingContentlet.getFolder());
 						}
