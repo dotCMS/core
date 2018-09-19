@@ -4,7 +4,11 @@ import static org.mockito.Mockito.mock;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.ImmutableConstantField;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
@@ -13,6 +17,7 @@ import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -448,6 +453,81 @@ public class HTMLPageAssetRenderedTest {
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "2");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
+    }
+
+    /**
+     * This test creates a widget content type, sets a value for the widget code,
+     * creates a contentlet of this new widget and add it to a page.
+     * If you update the value widget code, and hit again the page the new value should show up.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void constantField_notUpdatedCache_whenChanged() throws Exception{
+
+        ContentType contentType = ContentTypeBuilder
+                .builder(BaseContentType.WIDGET.immutableClass())
+                .folder(Folder.SYSTEM_FOLDER)
+                .host(Host.SYSTEM_HOST).name("WidgetContentType " + System.currentTimeMillis())
+                .owner(APILocator.systemUser().toString())
+                .variable("WCTVariable" + System.currentTimeMillis()).build();
+        contentType = APILocator.getContentTypeAPI(systemUser).save(contentType);
+
+        try {
+            List<Field> fields = contentType.fields();
+            ImmutableConstantField codeField = (ImmutableConstantField) fields.stream()
+                    .filter(field -> field.name().equalsIgnoreCase("widget code")).findFirst()
+                    .get();
+            codeField = codeField.withValues("original code");
+            APILocator.getContentTypeFieldAPI().save(codeField, systemUser);
+            contentType = APILocator.getContentTypeAPI(systemUser).save(contentType);
+
+            final Contentlet contentlet = new ContentletDataGen(contentType.id()).languageId(1)
+                    .setProperty("widgetTitle", "testing").nextPersisted();
+            contentletAPI.publish(contentlet, systemUser, false);
+
+            final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder, template)
+                    .languageId(1).pageURL("testPageWidget").title("testPageWidget")
+                    .nextPersisted();
+            contentletAPI.publish(pageEnglishVersion, systemUser, false);
+
+            MultiTree multiTree = new MultiTree(pageEnglishVersion.getIdentifier(), containerId,
+                    contentlet.getIdentifier(), UUID, 0);
+            APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
+
+            HttpServletRequest mockRequest = new MockSessionRequest(
+                    new MockAttributeRequest(new MockHttpRequest("localhost", "/").request())
+                            .request())
+                    .request();
+            mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
+            final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+            String html = APILocator.getHTMLPageAssetRenderedAPI()
+                    .getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(),
+                            PageMode.PREVIEW_MODE);
+            Assert.assertTrue(html, html.contains("original code"));
+
+            fields = contentType.fields();
+            codeField = (ImmutableConstantField) fields.stream()
+                    .filter(field -> field.name().equalsIgnoreCase("widget code")).findFirst()
+                    .get();
+            codeField = codeField.withValues("this has been changed");
+            APILocator.getContentTypeFieldAPI().save(codeField, systemUser);
+            contentType = APILocator.getContentTypeAPI(systemUser).save(contentType);
+
+            mockRequest = new MockSessionRequest(
+                    new MockAttributeRequest(new MockHttpRequest("localhost", "/").request())
+                            .request())
+                    .request();
+            mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
+            html = APILocator.getHTMLPageAssetRenderedAPI()
+                    .getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(),
+                            PageMode.PREVIEW_MODE);
+            Assert.assertTrue(html, html.contains("this has been changed"));
+        }finally {
+            APILocator.getContentTypeAPI(systemUser).delete(contentType);
+        }
     }
 
 }
