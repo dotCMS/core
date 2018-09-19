@@ -777,11 +777,11 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         // if the existing task belongs to another workflow schema, then remove it
 		if (steps.size() == 1 && !existSchemeIdOnSchemesList(steps.get(0).getSchemeId(),schemes)) {
 
-			if (null != workflowTaskId) {
+			if (null != workflowTaskId && !(LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) ) {
 				this.deleteWorkflowTask(this.findWorkFlowTaskById(workflowTaskId));
 			}
 
-            steps = new ArrayList<>();
+            steps = Collections.emptyList();
 		}
 
         cache.addSteps(contentlet, steps);
