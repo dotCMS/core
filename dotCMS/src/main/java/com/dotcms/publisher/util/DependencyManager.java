@@ -7,7 +7,6 @@ import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.pusher.PushPublisherConfig.AssetTypes;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.PublisherConfig.Operation;
-import com.dotcms.util.StructureCategoryUtils;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -107,7 +106,6 @@ public class DependencyManager {
 
 	private PushPublisherConfig config;
 
-    private final StructureCategoryUtils structureCategoryUtils = new StructureCategoryUtils();
 
 	/**
 	 * Initializes the list of dependencies that this manager needs to satisfy,
@@ -876,14 +874,12 @@ public class DependencyManager {
 				workflows.addOrClean(scheme.getId(), scheme.getModDate());
 			}
 		} catch (DotDataException e) {
-			Logger.debug(getClass(), "Could not get the Workflow Scheme Dependency for Structure ID: " + structure.getInode());
+			Logger.debug(getClass(), ()->"Could not get the Workflow Scheme Dependency for Structure ID: " + structure.getInode());
 		}
 
-		if(structureCategoryUtils.hasCategoryFields(structure)){
-			structureCategoryUtils.findCategories(structure, user).forEach(category -> {
-				this.categories.addOrClean(category.getCategoryId(), category.getModDate());
-			});
-		}
+        APILocator.getCategoryAPI().findCategories(structure, user).forEach(category -> {
+            this.categories.addOrClean(category.getCategoryId(), category.getModDate());
+        });
 
 		// Related structures
 		final List<Relationship> relations = FactoryLocator.getRelationshipFactory().byContentType(structure);

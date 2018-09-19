@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.categories.business;
 
+import com.dotmarketing.portlets.structure.model.Structure;
 import java.util.List;
 
 import com.dotmarketing.exception.DotDataException;
@@ -496,4 +497,13 @@ public interface CategoryAPI {
 	 */
 	String suggestVelocityVarName (String categoryVelVarName) throws DotDataException;
 
+
+	/**
+	 * This method will look for all the fields of type 'Category' within a Structure and will get you all the associated Category types available for a given a user.
+	 * @param structure
+	 * @param user
+	 * @return
+	 */
+	List<Category> findCategories(final Structure structure, final User user)
+			throws DotSecurityException, DotDataException;
 }
