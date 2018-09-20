@@ -73,6 +73,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 @SuppressWarnings("serial")
 @Path("/v1/workflow")
@@ -350,12 +351,45 @@ public class WorkflowResource {
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
         try {
-            Logger.debug(this, "Finding the workflow action " + actionId);
+            Logger.debug(this, ()->"Finding the workflow action " + actionId);
             final WorkflowAction action = this.workflowHelper.findAction(actionId, initDataObject.getUser());
             return Response.ok(new ResponseEntityView(action)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
                     "Exception on findAction, actionId: " + actionId +
+                            ", exception message: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+
+    } // findAction.
+
+    /**
+     * Returns a single action condition evaluated, 404 if does not exists. 401 if the user does not have permission.
+     * @param request  HttpServletRequest
+     * @param actionId String
+     * @return Response
+     */
+    @GET
+    @Path("/actions/{actionId}/condition")
+    @JSONP
+    @NoCache
+    @IncludePermissions
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response evaluateActionCondition(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("actionId") final String actionId) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, true, request, true, null);
+        try {
+            Logger.debug(this, ()->"Finding the workflow action " + actionId);
+
+            final String evaluated = workflowHelper.evaluateActionCondition(actionId, initDataObject.getUser(), request, response);
+            return Response.ok(new ResponseEntityView(evaluated)).build(); // 200
+        } catch (Exception e) {
+            Logger.error(this.getClass(),
+                    "Exception on evaluateActionCondition, actionId: " + actionId +
                             ", exception message: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
         }
@@ -782,21 +816,19 @@ public class WorkflowResource {
 
         try {
 
-            final Contentlet contentlet;
+            Contentlet contentlet = null;
             //if inode is set we use it to look up a contentlet
             if(UtilMethods.isSet(inode)) {
-               contentlet = this.contentletAPI.find(inode, initDataObject.getUser(), false);
+
+                contentlet = this.contentletAPI.find(inode, initDataObject.getUser(), false);
+                if (null != fireActionForm && null != contentlet) {
+
+                    contentlet = this.populateContentlet(fireActionForm, contentlet, initDataObject.getUser());
+                }
             } else {
                 //otherwise the information must be grabbed from the request body.
                 DotPreconditions.notNull(fireActionForm,"When no inode is sent the info on the Request body becomes mandatory.");
                 contentlet = this.populateContentlet(fireActionForm, initDataObject.getUser());
-                contentlet.setStringProperty("wfPublishDate", fireActionForm.getPublishDate());
-                contentlet.setStringProperty("wfPublishTime", fireActionForm.getPublishTime());
-                contentlet.setStringProperty("wfExpireDate", fireActionForm.getExpireDate());
-                contentlet.setStringProperty("wfExpireTime", fireActionForm.getExpireTime());
-                contentlet.setStringProperty("wfNeverExpire", fireActionForm.getNeverExpire());
-                contentlet.setStringProperty("whereToSend", fireActionForm.getWhereToSend());
-                contentlet.setStringProperty("forcePush", fireActionForm.getForcePush());
             }
             Logger.debug(this, "Firing workflow action: " + actionId + ", inode: " + inode);
 
@@ -838,8 +870,22 @@ public class WorkflowResource {
     private Contentlet populateContentlet(final FireActionForm fireActionForm, final User user)
             throws DotSecurityException {
 
+        return this.populateContentlet(fireActionForm, new Contentlet(), user);
+    } // populateContentlet.
+
+    /**
+     * Internal utility to populate a contentlet from a given form object
+     * @param fireActionForm {@link FireActionForm}
+     * @param contentletInput {@link Contentlet}
+     * @param user {@link User}
+     * @return Contentlet
+     * @throws DotSecurityException
+     */
+    private Contentlet populateContentlet(final FireActionForm fireActionForm, final Contentlet contentletInput, final User user)
+            throws DotSecurityException {
+
         final Contentlet contentlet = this.contentHelper.populateContentletFromMap
-                (new Contentlet(), fireActionForm.getContentletFormData());
+                (contentletInput, fireActionForm.getContentletFormData());
 
         final Supplier<String> errorMessageSupplier = () -> {
 
@@ -864,8 +910,16 @@ public class WorkflowResource {
             throw new DotSecurityException(errorMessageSupplier.get(), e);
         }
 
+        contentlet.setStringProperty("wfPublishDate", fireActionForm.getPublishDate());
+        contentlet.setStringProperty("wfPublishTime", fireActionForm.getPublishTime());
+        contentlet.setStringProperty("wfExpireDate", fireActionForm.getExpireDate());
+        contentlet.setStringProperty("wfExpireTime", fireActionForm.getExpireTime());
+        contentlet.setStringProperty("wfNeverExpire", fireActionForm.getNeverExpire());
+        contentlet.setStringProperty("whereToSend", fireActionForm.getWhereToSend());
+        contentlet.setStringProperty("forcePush", fireActionForm.getForcePush());
+
         return contentlet;
-    }
+    } // populateContentlet.
 
     /**
      * Change the order of an action associated to the step

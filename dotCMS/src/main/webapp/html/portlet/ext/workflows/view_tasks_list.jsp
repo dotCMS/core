@@ -180,7 +180,10 @@
 				continue;
 			}
 		%>
-		<%WorkflowStep step = APILocator.getWorkflowAPI().findStep(task.getStatus()); %>
+
+		<%
+			if (APILocator.getWorkflowAPI().hasValidLicense() || APILocator.getWorkflowAPI().isSystemStep(task.getStatus())) {
+				WorkflowStep step = APILocator.getWorkflowAPI().findStep(task.getStatus()); %>
 		<tr class="alternate_1">
 			<td>
 
@@ -231,7 +234,8 @@
 
 		</tr>
 		<%
-			}
+				} // if
+			} // for
 		%>
 	</table>
 

@@ -954,50 +954,24 @@
     		this.contentletIdentifier = contentletIdentifier;
     		this.contentletInode =contentletInode;
     		this.languageId=languageId;
-
-
     	},
 
-
     	executeWfAction: function(wfId, assignable, commentable, hasPushPublishActionlet, inode ){
-    		this.wfActionId=wfId;
+
+    		this.wfActionId = wfId;
 
     		if(assignable || commentable || hasPushPublishActionlet){
 
-                //Required clean up as these modals has duplicated widgets and collide without a clean up
-                var remoteDia = dijit.byId("remotePublisherDia");
-                if(remoteDia){
-                    remoteDia.destroyRecursive();
-                }
+                let workflow = {
+                    actionId:wfId,
+                    inode:inode
+                };
 
-    			var dia = dijit.byId("contentletWfDialog");
-    			if(dia){
-    				dia.destroyRecursive();
+                var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
+                pushHandler.showWorkflowEnabledDialog(workflow, saveAssignCallBack);
+                return;
 
-    			}
-    			dia = new dijit.Dialog({
-    				id			:	"contentletWfDialog",
-    				title		: 	"<%=LanguageUtil.get(pageContext, "Workflow-Actions")%>",
-					style		:	"min-width:500px;min-height:250px;"
-    				});
-
-
-
-    			var myCp = dijit.byId("contentletWfCP");
-    			if (myCp) {
-    				myCp.destroyRecursive(true);
-    			}
-
-    			myCp = new dojox.layout.ContentPane({
-    				id 			: "contentletWfCP",
-    				style		:	"minwidth:500px;min-height:250px;margin:auto;"
-    			}).placeAt("contentletWfDialog");
-
-    			dia.show();
-    			myCp.attr("href", "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfTaskAjax?cmd=renderAction&actionId=" + wfId + "&inode=" + inode);
-    			return;
-    		}
-    		else{
+    		} else {
      		  		var wfActionAssign 		= "";
 		    		var selectedItem 		= "";
 		    		var wfConId 			= inode;
@@ -1009,87 +983,36 @@
 		    		var expireTime 			="";
 		    		var neverExpire 		="";
 					BrowserAjax.saveFileAction(selectedItem,wfActionAssign,wfActionId,wfActionComments,wfConId, publishDate,
-		    				publishTime, expireDate, expireTime, neverExpire, fileActionCallback);
+		    				publishTime, expireDate, expireTime, neverExpire, fileActionCallback
+                    );
  			}
-
-    	},
-
-    	saveAssign : function(){
-
-
-    		var assignRole = (dijit.byId("taskAssignmentAux"))
-			? dijit.byId("taskAssignmentAux").getValue()
-				: (dojo.byId("taskAssignmentAux"))
-					? dojo.byId("taskAssignmentAux").value
-							: "";
-
-			if(!assignRole || assignRole.length ==0 ){
-				showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Assign-To-Required")%>");
-				return;
-			}
-
-			var comments = (dijit.byId("taskCommentsAux"))
-				? dijit.byId("taskCommentsAux").getValue()
-					: (dojo.byId("taskCommentsAux"))
-						? dojo.byId("taskCommentsAux").value
-								: "";
-
-    		var wfActionAssign 		= assignRole;
-    		var selectedItem 		= "";
-    		var wfConId 			= dojo.byId("wfConId").value;
-    		var wfActionId 			= this.wfActionId;
-    		var wfActionComments 	= comments;
-
-    		var dia = dijit.byId("contentletWfDialog").hide();
-
-    		// BEGIN: PUSH PUBLISHING ACTIONLET
-			var publishDate = (dijit.byId("wfPublishDateAux"))
-				? dojo.date.locale.format(dijit.byId("wfPublishDateAux").getValue(),{datePattern: "yyyy-MM-dd", selector: "date"})
-					: (dojo.byId("wfPublishDateAux"))
-						? dojo.date.locale.format(dojo.byId("wfPublishDateAux").value,{datePattern: "yyyy-MM-dd", selector: "date"})
-								: "";
-
-			var publishTime = (dijit.byId("wfPublishTimeAux"))
-				? dojo.date.locale.format(dijit.byId("wfPublishTimeAux").getValue(),{timePattern: "H-m", selector: "time"})
-					: (dojo.byId("wfPublishTimeAux"))
-						? dojo.date.locale.format(dojo.byId("wfPublishTimeAux").value,{timePattern: "H-m", selector: "time"})
-								: "";
-
-
-			var expireDate = (dijit.byId("wfExpireDateAux"))
-				? dijit.byId("wfExpireDateAux").getValue()!=null ? dojo.date.locale.format(dijit.byId("wfExpireDateAux").getValue(),{datePattern: "yyyy-MM-dd", selector: "date"}) : ""
-					: (dojo.byId("wfExpireDateAux"))
-						? dojo.byId("wfExpireDateAux").value!=null ? dojo.date.locale.format(dojo.byId("wfExpireDateAux").value,{datePattern: "yyyy-MM-dd", selector: "date"}) : ""
-								: "";
-
-			var expireTime = (dijit.byId("wfExpireTimeAux"))
-				? dijit.byId("wfExpireTimeAux").getValue()!=null ? dojo.date.locale.format(dijit.byId("wfExpireTimeAux").getValue(),{timePattern: "H-m", selector: "time"}) : ""
-					: (dojo.byId("wfExpireTimeAux"))
-						? dojo.byId("wfExpireTimeAux").value!=null ? dojo.date.locale.format(dojo.byId("wfExpireTimeAux").value,{timePattern: "H-m", selector: "time"}) : ""
-								: "";
-			var neverExpire = (dijit.byId("wfNeverExpire"))
-				? dijit.byId("wfNeverExpire").getValue()
-					: (dojo.byId("wfNeverExpire"))
-						? dojo.byId("wfNeverExpire").value
-								: "";
-
-            var whereToSend = (dijit.byId("whereToSend"))
-                ? dijit.byId("whereToSend").getValue()
-                    : (dojo.byId("whereToSend"))
-                        ? dojo.byId("whereToSend").value
-                            : "";
-
-            var forcePush = (dijit.byId("forcePush")) ? dijit.byId("forcePush").checked : false;
-
-			// END: PUSH PUBLISHING ACTIONLET
-
-
-    		BrowserAjax.saveFileAction(selectedItem,wfActionAssign,wfActionId,wfActionComments,wfConId, publishDate,
-    				publishTime, expireDate, expireTime, neverExpire, whereToSend, forcePush, fileActionCallback);
 
     	}
 
     });
+
+	function saveAssignCallBack(actionId, formData) {
+
+	    var pushPublish = formData.pushPublish;
+        var assignComment = formData.assignComment;
+
+        var selectedItem = "";
+        var wfConId =  pushPublish.inode;
+        var comments = assignComment.comment;
+        var assignRole = assignComment.assign;
+
+        var whereToSend = pushPublish.whereToSend;
+        var publishDate = pushPublish.publishDate;
+        var publishTime = pushPublish.publishTime;
+        var expireDate  = pushPublish.expireDate;
+        var expireTime  = pushPublish.expireTime;
+        var forcePush   = pushPublish.forcePush;
+        var neverExpire = "";
+
+        BrowserAjax.saveFileAction(selectedItem, assignRole, actionId, comments, wfConId, publishDate,
+            publishTime, expireDate, expireTime, neverExpire, whereToSend, forcePush, fileActionCallback
+        );
+    }
 
     function fileActionCallback (response) {
         if (response.status == "success") {

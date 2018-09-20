@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 
+import com.liferay.portal.util.Constants;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 
@@ -109,8 +110,6 @@ public class OrderMenuAction extends DotPortletAction {
 					_sendToReferral(req,res,req.getParameter("referer"));
 					return;
 				}
-				_sendToReferral(req,res,"/html/portlet/ext/folders/redirect_after_order.jsp");
-
 
 				// we have to clear navs after db commit
 				for(Treeable treeable : navs){
@@ -127,23 +126,21 @@ public class OrderMenuAction extends DotPortletAction {
 				}
 
 				DateUtil.sleep(1500L);
+			} else {
 
-				return;
+				if (((cmd != null) && cmd.equals(com.dotmarketing.util.Constants.REORDER))) {
+					//prepublish
+					_orderMenuItems(req, res, config, form);
+				}
+
+				//This part is executed while listing
+
+
+				req.setAttribute("startLevel", new Integer(startLevel));
+				req.setAttribute("depth", new Integer(depth));
+
+				setForward(req, "portlet.ext.folders.order_menu");
 			}
-
-			if (((cmd != null) && cmd.equals(com.dotmarketing.util.Constants.REORDER))) {
-				//prepublish
-				_orderMenuItems(req,res,config,form);
-			}
-
-			//This part is executed while listing
-
-
-			req.setAttribute("startLevel", new Integer(startLevel));
-			req.setAttribute("depth", new Integer(depth));
-
-			setForward(req,"portlet.ext.folders.order_menu");
-
 		} catch (ActionException ae) {
 			_handleException(ae,req);
 		}

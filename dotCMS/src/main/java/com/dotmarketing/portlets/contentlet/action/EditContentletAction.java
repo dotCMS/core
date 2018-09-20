@@ -37,6 +37,7 @@ import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.EmailFactory;
 import com.dotmarketing.factories.InodeFactory;
@@ -47,11 +48,13 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.ajax.ContentletAjax;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.struts.ContentletForm;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -1206,8 +1209,9 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 		if(UtilMethods.isSet(sib))
 		{
-			Contentlet sibbling=conAPI.find(sib, user,false);
-			conAPI.unlock(sibbling, user, false);
+			final Contentlet sibbling = conAPI.find(sib, user,false);
+			unLockIfNecessary(sibbling, user);
+
 			if(populateaccept){
 				contentlet = sibbling;
 				contentlet.setInode("");
@@ -1303,6 +1307,22 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		}
 		if(UtilMethods.isSet(req.getParameter("is_rel_tab"))) {
 			req.setAttribute("is_rel_tab", req.getParameter("is_rel_tab"));
+		}
+	}
+
+	private void unLockIfNecessary(final Contentlet content, final User user) {
+		try {
+			if (content.isLocked()) {
+				ContentletVersionInfo contentletVersionInfo =
+						APILocator.getVersionableAPI().getContentletVersionInfo(content.getIdentifier(), content.getLanguageId());
+
+				if (user.getUserId().equals(contentletVersionInfo.getLockedBy())) {
+						conAPI.unlock(content, user, false);
+				}
+			}
+		} catch (DotDataException|DotSecurityException e) {
+			Logger.error(EditContentletAction.class, e.getMessage(), e);
+			new DotRuntimeException(e);
 		}
 	}
 
@@ -2891,14 +2911,17 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 			public void reindex() throws DotContentletStateException, DotStateException, DotSecurityException, DotDataException {
 				//DistributedJournalAPI jAPI = APILocator.getDistributedJournalAPI();
-				int count = 0;
-				for(String inode  : inodes){
 
-					Contentlet contentlet = new Contentlet();
+				final ContentletCache contentletCache = CacheLocator.getContentletCache();
+
+				int count = 0;
+				for(final String inode  : inodes){
+
 					try{
-						contentlet = conAPI.find(inode, APILocator.getUserAPI().getSystemUser(), false);
+						final Contentlet contentlet = conAPI.find(inode, APILocator.getUserAPI().getSystemUser(), false);
 						if(contentlet != null && UtilMethods.isSet(contentlet.getInode())){
 							contentlet.setLowIndexPriority(true);
+							contentletCache.remove(contentlet.getInode());
 							conAPI.reindex(contentlet);
 							count++;
 						}else{

@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+
 import com.dotcms.repackage.net.sf.hibernate.CallbackException;
 import com.dotcms.repackage.net.sf.hibernate.FlushMode;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
@@ -37,7 +38,7 @@ import com.dotcms.repackage.net.sf.hibernate.SessionFactory;
 import com.dotcms.repackage.net.sf.hibernate.cfg.Configuration;
 import com.dotcms.repackage.net.sf.hibernate.cfg.Mappings;
 import com.dotcms.repackage.net.sf.hibernate.type.Type;
-import org.jetbrains.annotations.NotNull;
+import com.google.common.annotations.VisibleForTesting;
 
 /**
  * This class provides a great number of utility methods that allow developers to interact with
@@ -89,17 +90,16 @@ public class HibernateUtil {
 
 	private static final ThreadLocal<Boolean> asyncCommitListenersFinalization = ThreadLocal.withInitial(()->true);
 
-	private static final ThreadLocal<Map<String, DotRunnable>> asyncCommitListeners = ThreadLocal
-			.withInitial(() -> new LinkedHashMap<String, DotRunnable>());
+	@VisibleForTesting
+	static final ThreadLocal<Map<String, Runnable>> asyncCommitListeners = ThreadLocal
+			.withInitial(LinkedHashMap::new);
 
-	private static final ThreadLocal<Map<String, DotRunnable>> syncCommitListeners = ThreadLocal
-			.withInitial(() -> new LinkedHashMap<String, DotRunnable>());
+	@VisibleForTesting
+	static final ThreadLocal<Map<String, Runnable>> syncCommitListeners = ThreadLocal
+			.withInitial(LinkedHashMap::new);
 
-	private static final ThreadLocal< List<DotRunnable> > rollbackListeners=new ThreadLocal<List<DotRunnable>>() {
-        protected java.util.List<DotRunnable> initialValue() {
-            return new ArrayList<DotRunnable>();
-        }
-    };
+	private static final ThreadLocal< List<Runnable> > rollbackListeners= ThreadLocal
+			.withInitial(ArrayList::new);
 
 	public HibernateUtil(Class c) {
 		setClass(c);
@@ -813,43 +813,8 @@ public class HibernateUtil {
 	 *
 	 * @throws DotHibernateException An error occurred when registering the commit listener.
 	 */
-	public static void addCommitListener(final DotRunnable listener) throws DotHibernateException {
+	public static void addCommitListener(final Runnable listener) throws DotHibernateException {
 	    addCommitListener(UUIDGenerator.generateUuid(),listener);
-	}
-
-	/**
-	 * Allows you to add an asynchronous commit listener to the current database
-	 * session/transaction. This means that the current flow of the application will continue its
-	 * way and the specified commit listener will be spawned subsequently after the transaction has
-	 * been committed or the session has been closed. <p>By default, asynchronous commit listeners
-	 * will be spawned by a new thread. This means that they will not share the same database
-	 * connection information with the main thread of the dotCMS application.</p>
-	 *
-	 * @param runnable The commit listener wrapped as a {@link Runnable} object.
-	 *
-	 * @throws DotHibernateException An error occurred when registering the commit listener.
-	 */
-	public static void addAsyncCommitListener(final Runnable runnable) throws
-			DotHibernateException {
-		addCommitListener(new DotAsyncRunnable(runnable));
-	}
-
-	/**
-	 * Allows you to add an asynchronous commit listener to the current database
-	 * session/transaction. This means that the current flow of the application will continue its
-	 * way and the specified commit listener will be spawned subsequently after the transaction has
-	 * been committed or the session has been closed. <p>By default, asynchronous commit listeners
-	 * will be spawned by a new thread. This means that they will not share the same database
-	 * connection information with the main thread of the dotCMS application.</p>
-	 *
-	 * @param runnable The commit listener wrapped as a {@link Runnable} object.
-	 * @param order    in case you want to add an order
-	 *
-	 * @throws DotHibernateException An error occurred when registering the commit listener.
-	 */
-	public static void addAsyncCommitListener(final Runnable runnable, final int order) throws
-			DotHibernateException {
-		addCommitListener(new DotAsyncRunnable(runnable, order));
 	}
 
 	/**
@@ -879,7 +844,7 @@ public class HibernateUtil {
 	 * This type of listener will be spawned in a new thread. This way, the main dotCMS main thread
 	 * can move on.
 	 */
-	public static class DotAsyncRunnable extends DotRunnable {
+	public static class DotAsyncRunnable implements Runnable {
 
 		private final Runnable runnable;
 		private final int      order;
@@ -912,7 +877,7 @@ public class HibernateUtil {
 	 * called after a database transaction has been committed or the session has been closed.
 	 * Synchronous listeners will NOT RUN ON A NEW THREAD, they will use the main dotCMS thread.
 	 */
-	public static class DotSyncRunnable extends DotRunnable {
+	public static class DotSyncRunnable implements Runnable {
 
 		private final Runnable runnable;
 		private final int      order;
@@ -963,20 +928,22 @@ public class HibernateUtil {
 	 *
 	 * @throws DotHibernateException An error occurred when registering the commit listener.
 	 */
-	public static void addCommitListener(final String tag, final DotRunnable listener) throws
+	public static void addCommitListener(final String tag, final Runnable listener) throws
 			DotHibernateException {
 		if (getTransactionListenersStatus() != TransactionListenerStatus.DISABLED) {
 			try {
 				if(getSession().connection().getAutoCommit()) {
 					listener.run();
 				} else {
-					if (listener instanceof DotSyncRunnable) {
-						syncCommitListeners.get().put(tag, listener);
-					} else if (listener instanceof DotAsyncRunnable) {
+
+					if(listener instanceof ReindexRunnable && asyncReindexCommitListeners()) {
 						asyncCommitListeners.get().put(tag, listener);
+					} else if(listener instanceof ReindexRunnable) {
+						syncCommitListeners.get().put(tag, listener);
+					} else if (listener instanceof DotSyncRunnable) {
+						syncCommitListeners.get().put(tag, listener);
 					} else {
-						if (getAsyncCommitListenersFinalization() && Config.getBooleanProperty
-								("REINDEX_ON_SAVE_IN_SEPARATE_THREAD", true)) {
+						if (getAsyncCommitListenersFinalization() && asyncCommitListeners()) {
 							asyncCommitListeners.get().put(tag, listener);
 						} else {
 							syncCommitListeners.get().put(tag, listener);
@@ -989,12 +956,7 @@ public class HibernateUtil {
 		}
 	}
 
-	public static void addRollbackListener(final Runnable listener) throws DotHibernateException{
-
-		addRollbackListener(new DotSyncRunnable(listener));
-	}
-
-	public static void addRollbackListener(DotRunnable listener) throws DotHibernateException{
+	public static void addRollbackListener(Runnable listener) throws DotHibernateException{
 		if (getTransactionListenersStatus() != TransactionListenerStatus.DISABLED) {
 	        try {
 	            if(getSession().connection().getAutoCommit())
@@ -1056,10 +1018,11 @@ public class HibernateUtil {
 	 * listeners use the main dotCMS thread to run.
 	 */
 	private static void finalizeCommitListeners() {
-		final List<DotRunnable> asyncListeners = new ArrayList<>(asyncCommitListeners.get().values());
-		final List<DotRunnable> syncListeners = new ArrayList<>(syncCommitListeners.get().values());
+		final List<Runnable> asyncListeners = new ArrayList<>(asyncCommitListeners.get().values());
+		final List<Runnable> syncListeners = new ArrayList<>(syncCommitListeners.get().values());
 		asyncCommitListeners.get().clear();
 		syncCommitListeners.get().clear();
+
 		if (!asyncListeners.isEmpty()) {
 			final DotRunnableThread thread = new DotRunnableThread(asyncListeners);
 			thread.start();
@@ -1190,9 +1153,9 @@ public class HibernateUtil {
 		}
 
 		if(rollbackListeners.get().size()>0) {
-            List<DotRunnable> r = new ArrayList<DotRunnable>(rollbackListeners.get());
+            List<Runnable> r = new ArrayList<>(rollbackListeners.get());
             rollbackListeners.get().clear();
-            for(DotRunnable runnable :r){
+            for(Runnable runnable :r){
             	runnable.run();
             }
         }
@@ -1251,5 +1214,13 @@ public class HibernateUtil {
         	throw new DotHibernateException("Unable to evict from Hibernate Session ", e);
         }
     }
+
+    private static boolean asyncReindexCommitListeners() {
+		return Config.getBooleanProperty("ASYNC_REINDEX_COMMIT_LISTENERS", true);
+	}
+
+	private static boolean asyncCommitListeners() {
+		return Config.getBooleanProperty("ASYNC_COMMIT_LISTENERS", true);
+	}
 
 }

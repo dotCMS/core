@@ -1,13 +1,5 @@
 package com.dotcms.vanityurl.business;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotcms.util.CollectionsUtils.toImmutableList;
-import static com.dotcms.util.VanityUrlUtil.isValidRegex;
-import static com.dotcms.util.VanityUrlUtil.processExpressions;
-import static java.util.stream.IntStream.rangeClosed;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -31,19 +23,22 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-
+import org.apache.commons.collections.keyvalue.MultiKey;
 import org.elasticsearch.index.IndexNotFoundException;
 
 import java.text.MessageFormat;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
-import org.apache.commons.collections.keyvalue.MultiKey;
+
+import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotcms.util.CollectionsUtils.toImmutableList;
+import static com.dotcms.util.VanityUrlUtil.isValidRegex;
+import static com.dotcms.util.VanityUrlUtil.processExpressions;
+import static java.util.stream.IntStream.rangeClosed;
 
 /**
  * Implementation class for the {@link VanityUrlAPI}.
@@ -161,8 +156,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     @Override
     public boolean isVanityUrl(final String url, final Host host, final long languageId) {
 
-        final String uri = (url.length() > 1 && url.endsWith(URL_SUFFIX))?
-                url.substring(0, url.length() - 1):url;
+        final String uri    = url; // not process now for it.
         final String siteId = this.getSiteId(host);
 
         // tries first cache.

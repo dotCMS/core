@@ -37,15 +37,29 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Future;
 
+/**
+ * Interface to interact with Workflows; can manage, find and import/export workflows, in addition handles the association to content type, fire workflow over the content type, etc.
+ * This API needs license, however it is open to use and fire system workflow operations.
+ */
 public interface WorkflowAPI {
 
 	public static final String SYSTEM_WORKFLOW_ID           = WorkFlowFactory.SYSTEM_WORKFLOW_ID;
 	public static final Set<WorkflowState> DEFAULT_SHOW_ON = EnumSet.of(WorkflowState.LOCKED, WorkflowState.UNLOCKED);
 
+	/**
+	 * Return true if the license is valid for the workflows
+	 * @return
+	 */
 	public boolean hasValidLicense();
 
     public void registerBundleService ();
 
+	/**
+	 * Creates a new actionlet based on the class name
+	 * @param className {@link String}
+	 * @return
+	 * @throws DotDataException
+	 */
 	public WorkFlowActionlet newActionlet(String className) throws DotDataException;
 
 	/**
@@ -54,8 +68,15 @@ public interface WorkflowAPI {
 	 */
 	void isUserAllowToModifiedWorkflow (final User user);
 
+
 	public java.util.List<WorkflowTask> searchTasks(WorkflowSearcher searcher) throws DotDataException;
 
+	/**
+	 * Find task by contentlet based on the content identifier and language
+	 * @param contentlet {@link Contentlet}
+	 * @return WorkflowTask
+	 * @throws DotDataException
+	 */
 	public WorkflowTask findTaskByContentlet(Contentlet contentlet) throws DotDataException;
 
 	/**
@@ -275,6 +296,13 @@ public interface WorkflowAPI {
 	 */
 	public List<WorkflowStep> findSteps(WorkflowScheme scheme) throws DotDataException;
 
+	/**
+	 * If the user is allowed to modified workflow (valid license and permissions) will save the step.
+	 * @param step
+	 * @param user
+	 * @throws DotDataException
+	 * @throws AlreadyExistException
+	 */
 	public void saveStep(WorkflowStep step, User user) throws DotDataException, AlreadyExistException;
 
 	/**
@@ -517,7 +545,20 @@ public interface WorkflowAPI {
 	 */
 	void saveAction(String actionId, String stepId, User user, int order);
 
+	/**
+	 * Find a step by id, if the step is not part of a system workflow a license will be need, otherwise will throw {@link com.dotmarketing.exception.InvalidLicenseException}
+	 * @param id String
+	 * @return WorkflowStep
+	 * @throws DotDataException
+	 */
 	public WorkflowStep findStep(String id) throws DotDataException;
+
+	/**
+	 * If the step is part of the system workflow will returns true otherwise false.
+	 * @param stepId String
+	 * @return boolean
+	 */
+	public boolean isSystemStep (String stepId);
 
 	/**
 	 * Deletes the action associated to the scheme

@@ -47,7 +47,7 @@ String inode=request.getParameter( "inode" );// DOTCMS-7085
             <div dojoType="dijit.ProgressBar" style="width:200px;text-align:center;" indeterminate="true" jsId="saveAddBundleProgress" id="saveAddBundleProgress"></div>
         </div>
 		<div class="buttonRow">
-			<button dojoType="dijit.form.Button" onClick="pushHandler.addToBundle()" type="button" id="addToBundleSaveButton">
+			<button dojoType="dijit.form.Button" type="button" id="addToBundleSaveButton">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add")) %>
 			</button>
 			<button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="dijit.byId('addToBundleDia').hide()" type="button">
@@ -59,3 +59,5 @@ String inode=request.getParameter( "inode" );// DOTCMS-7085
 		<input id="bundleRequired" type="hidden" value="<%=LanguageUtil.get(pageContext, "add_to_bundle_dialog_bundle_required")%>" />
 
 </div>
+
+<%@ include file="/html/portlet/ext/remotepublish/remote_publish_form_inc.jsp" %>

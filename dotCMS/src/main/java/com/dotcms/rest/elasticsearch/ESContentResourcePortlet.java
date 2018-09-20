@@ -17,6 +17,7 @@ import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.rest.*;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -46,14 +47,7 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 		User user = initData.getUser();
 		ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
 
-		if(LicenseUtil.getLevel() < LicenseLevel.STANDARD.level){
-			final String noLicenseMessage = "Unable to execute ES API Requests. Please apply an Enterprise License";
-			Logger.warn(this.getClass(), noLicenseMessage);
-			return Response.status(Status.FORBIDDEN)
-					.entity(map("message", noLicenseMessage))
-					.header("error-message", noLicenseMessage)
-					.build();
-		}
+
 
 		PageMode mode = PageMode.get(request);
 
@@ -98,8 +92,20 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 				return responseResource.response(json.toString());
 			}
 
+		}catch(DotStateException dse) {
+	        if(LicenseUtil.getLevel() < LicenseLevel.STANDARD.level){
+	            final String noLicenseMessage = "Unable to execute ES API Requests. Please apply an Enterprise License";
+	            Logger.warn(this.getClass(), noLicenseMessage);
+	            return Response.status(Status.FORBIDDEN)
+	                    .entity(map("message", noLicenseMessage))
+	                    .header("error-message", noLicenseMessage)
+	                    .build();
+	        }
+            Logger.warn(this.getClass(), "Error processing :" + dse.getMessage(), dse);
+            return responseResource.responseError(dse.getMessage());
+	        
 		} catch (Exception e) {
-			Logger.error(this.getClass(), "Error processing :" + e.getMessage(), e);
+			Logger.warn(this.getClass(), "Error processing :" + e.getMessage(), e);
 			return responseResource.responseError(e.getMessage());
 		}
 	}

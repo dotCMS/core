@@ -3202,4 +3202,56 @@ public class WorkflowAPITest extends IntegrationTestBase {
         final int rows = impl.pushIndexUpdate(scheme, user);
     }
 
+    @Test
+    public void find_Task_By_Contentlet_Then_Find_Version_Info() throws DotDataException, DotSecurityException {
+
+        Contentlet c1 = new Contentlet();
+        try {
+            List<WorkflowScheme> worflowSchemes = new ArrayList<>();
+            worflowSchemes.add(workflowScheme1);
+            worflowSchemes.add(workflowScheme2);
+            worflowSchemes.add(workflowScheme3);
+
+            /* Associate the schemas to the content type */
+            workflowAPI.saveSchemesForStruct(contentTypeStructure, worflowSchemes);
+
+            long time = System.currentTimeMillis();
+
+            //create contentlets
+            c1.setLanguageId(1);
+            c1.setStringProperty(FIELD_VAR_NAME, "WorkflowContentTest3__" + time);
+            c1.setContentTypeId(contentType.id());
+            c1 = contentletAPI.checkin(c1, user, false);
+
+            contentletAPI.isInodeIndexed(c1.getInode());
+
+            Contentlet c = contentletAPI.checkout(c1.getInode(), user, false);
+
+            //set step action for content2
+            c.setStringProperty("wfActionId", workflowScheme3Step1Action1.getId());
+            c.setStringProperty("wfActionComments", "Test" + time);
+
+            c1 = contentletAPI.checkin(c, user, false);
+
+            //check steps available for content without step
+            WorkflowTask task = workflowAPI.findTaskByContentlet(c1);
+            assertNotNull(task);
+            //task should be on the second step of the scheme 3
+            assertTrue(workflowScheme3Step2.getId().equals(task.getStatus()));
+
+            String inode = null;
+            try {
+                inode = APILocator.getVersionableAPI().getVersionInfo(task.getWebasset())
+                        .getWorkingInode();
+            } finally {
+                assertNotNull(inode);
+            }
+
+        } finally {
+            contentletAPI.archive(c1, user, false);
+            contentletAPI.delete(c1, user, false);
+        }
+
+    }
+
 }

@@ -201,7 +201,7 @@ public interface HTMLPageAssetAPI {
 			throws DotStateException, DotDataException, DotSecurityException;
 
     public String getHTML(IHTMLPage htmlPage, boolean liveMode,
-                          String contentId, User user, Long langId, String userAgent)
+                          String contentId, User user, long langId, String userAgent)
             throws DotStateException, DotDataException, DotSecurityException;
 
 	public String getHTML(String uri, Host host, boolean liveMode,
@@ -209,7 +209,7 @@ public interface HTMLPageAssetAPI {
 			throws DotStateException, DotDataException, DotSecurityException;
 
 	public String getHTML(String uri, Host host, boolean liveMode,
-			String contentId, User user, Long langId, String userAgent)
+			String contentId, User user, long langId, String userAgent)
 			throws DotStateException, DotDataException, DotSecurityException;
 	
 	/**

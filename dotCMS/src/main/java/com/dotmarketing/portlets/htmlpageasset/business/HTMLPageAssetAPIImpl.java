@@ -38,6 +38,7 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -75,6 +76,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     private final ContentletAPI contentletAPI;
     private final SystemEventsAPI systemEventsAPI;
 
+    private final LanguageAPI languageAPI;
     public HTMLPageAssetAPIImpl() {
         permissionAPI = APILocator.getPermissionAPI();
         identifierAPI = APILocator.getIdentifierAPI();
@@ -82,6 +84,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         versionableAPI = APILocator.getVersionableAPI();
         contentletAPI = APILocator.getContentletAPI();
         systemEventsAPI = APILocator.getSystemEventsAPI();
+        languageAPI=APILocator.getLanguageAPI();
     }
 
     @WrapInTransaction
@@ -683,7 +686,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
     @Override
     public String getHTML(IHTMLPage htmlPage, boolean liveMode,
-                          String contentId, User user, Long langId, String userAgent)
+                          String contentId, User user, long langId, String userAgent)
             throws DotStateException, DotDataException, DotSecurityException {
         String uri = htmlPage.getURI();
         Host host = getParentHost(htmlPage);
@@ -694,13 +697,13 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 	public String getHTML(String uri, Host host, boolean liveMode,
 			String contentId, User user, String userAgent)
 			throws DotStateException, DotDataException, DotSecurityException {
-		return getHTML(uri, host, liveMode, contentId, user, null, userAgent);
+		return getHTML(uri, host, liveMode, contentId, user, languageAPI.getDefaultLanguage().getId(), userAgent);
 	}
 
 
 
 	@Override
-    public String getHTML(String uri, Host host, boolean liveMode, String contentId, User user, Long langId,
+    public String getHTML(final String uri, final Host host, final boolean liveMode, final String contentId, final User user, final long viewingLang,
             String userAgent) throws DotStateException, DotDataException, DotSecurityException {
 
         HttpServletRequest requestProxy =
@@ -719,19 +722,19 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
         
 
-        ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( ident.getId(), langId );
-        if(cinfo==null && langId!=APILocator.getLanguageAPI().getDefaultLanguage().getId()){
-          cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( ident.getId(), APILocator.getLanguageAPI().getDefaultLanguage().getId() );
+        ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( ident.getId(), viewingLang );
+        if(cinfo==null && viewingLang!=languageAPI.getDefaultLanguage().getId() && languageAPI.canDefaultPageToDefaultLanguage()){
+          cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( ident.getId(), languageAPI.getDefaultLanguage().getId() );
         }
         // if we still have nothing.
-        if (!InodeUtils.isSet(ident.getId()) || cinfo==null || cinfo.getLiveInode() == null) {
+        if (!InodeUtils.isSet(ident.getId()) || cinfo==null || cinfo.getLiveInode() == null && liveMode) {
             throw new ResourceNotFoundException(String.format("Resource %s not found in Live mode!", uri));
         }
 
         responseProxy.setContentType("text/html");
         requestProxy.setAttribute("User-Agent", userAgent);
         requestProxy.setAttribute("idInode", ident.getId());
-
+        requestProxy.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, Long.toString(viewingLang));
         /* Set long lived cookie regardless of who this is */
         String _dotCMSID = UtilMethods.getCookieValue(requestProxy.getCookies(),
                 com.dotmarketing.util.WebKeys.LONG_LIVED_DOTCMS_ID_COOKIE);
@@ -801,9 +804,9 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                 requestProxy.setAttribute(WebKeys.WIKI_CONTENTLET, contentId);
             }
 
-            if (langId != null && langId > 0) {
-                requestProxy.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, Long.toString(langId));
-            }
+
+ 
+
             LanguageWebAPI langWebAPI = WebAPILocator.getLanguageWebAPI();
             langWebAPI.checkSessionLocale(requestProxy);
 
@@ -865,16 +868,16 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         Contentlet contentlet;
         IHTMLPage htmlPage;
 
-        if (APILocator.getLanguageAPI().canDefaultPageToDefaultLanguage()
-                && providedLang != APILocator.getLanguageAPI().getDefaultLanguage().getId()) {
+        if (languageAPI.canDefaultPageToDefaultLanguage()
+                && providedLang != languageAPI.getDefaultLanguage().getId()) {
             try {
                 contentlet = APILocator.getContentletAPI().findContentletByIdentifier(identifier, live,
-                        APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, respectFrontEndPermissions);
+                    languageAPI.getDefaultLanguage().getId(), user, respectFrontEndPermissions);
                 htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
             } catch(DotContentletStateException e) {
                 throw new ResourceNotFoundException(
                         "Can't find content. Identifier: " + identifier + ", Live: " + live + ", Lang: "
-                                + APILocator.getLanguageAPI().getDefaultLanguage().getId(), e);
+                                + languageAPI.getDefaultLanguage().getId(), e);
             }
         } else {
             throw new ResourceNotFoundException(

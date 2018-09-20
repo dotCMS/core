@@ -22,6 +22,8 @@ import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 
 import java.io.File;
+import javax.servlet.http.HttpServletRequest;
+import org.apache.velocity.tools.view.context.ViewContext;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -30,13 +32,11 @@ import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-
-import static com.dotcms.util.CollectionsUtils.map;
+import org.mockito.Mockito;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
 
 /**
  * NavToolTest
@@ -238,6 +238,46 @@ public class NavToolTest extends IntegrationTestBase{
             }
         }
 
+    }
+
+    @Test
+    public void test_getNavLevelAsParameter() throws Exception {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final ViewContext viewContext = mock(ViewContext.class);
+
+        Mockito.when(request.getRequestURI()).thenReturn("/about-us");
+        Mockito.when(request.getServerName()).thenReturn("demo.dotcms.com");
+        Mockito.when(viewContext.getRequest()).thenReturn(request);
+
+
+        final NavTool navTool = new NavTool();
+        navTool.init(viewContext);
+        final NavResult navResult = navTool.getNav(1);
+        assertNotNull(navResult);
+
+        //We are expecting 3 children result
+        final int resultChildren = navResult.getChildren().size();
+        assertEquals(resultChildren, 3);
+    }
+
+    @Test
+    public void test_getNavWithoutParameters() throws Exception {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final ViewContext viewContext = mock(ViewContext.class);
+
+        Mockito.when(request.getRequestURI()).thenReturn("/about-us");
+        Mockito.when(request.getServerName()).thenReturn("demo.dotcms.com");
+        Mockito.when(viewContext.getRequest()).thenReturn(request);
+
+
+        final NavTool navTool = new NavTool();
+        navTool.init(viewContext);
+        final NavResult navResult = navTool.getNav();
+        assertNotNull(navResult);
+
+        //We are expecting 3 children result
+        final int resultChildren = navResult.getChildren().size();
+        assertEquals(resultChildren, 3);
     }
 
     @DataProvider
