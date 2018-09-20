@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.htmlpages.business;
 
+import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
@@ -68,6 +69,7 @@ public class HTMLPageCacheImpl extends HTMLPageCache {
     	IHTMLPage page = new HTMLPageAsset();
     	page.setIdentifier(pageIdentifier);
     	remove(page);
+		new PageLoader().invalidate(page);
     }
     
     /* (non-Javadoc)

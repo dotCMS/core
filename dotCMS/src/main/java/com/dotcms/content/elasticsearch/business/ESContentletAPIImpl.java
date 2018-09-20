@@ -527,8 +527,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
 
             //Generate a System Event for this publish operation
-            HibernateUtil.addAsyncCommitListener(
-                    () -> this.contentletSystemEventUtil.pushPublishEvent(contentlet), 1000);
+            HibernateUtil.addCommitListener(
+                    () -> this.contentletSystemEventUtil.pushPublishEvent(contentlet));
 
             if ( localTransaction ) {
                 HibernateUtil.commitTransaction();
@@ -562,15 +562,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotContentletStateException("Only the working version can be published");
 
         // writes the contentlet object to a file
-        HibernateUtil.addCommitListener( new DotRunnable() {
-            public void run () {
+        HibernateUtil.addCommitListener( () -> {
                 try {
                     indexAPI.addContentToIndex(contentlet, true, true);
                 } catch (DotHibernateException e) {
                     Logger.error( this, e.getMessage(), e );
                 }
-            }
-        } );
+        });
 
         // Publishes the files associated with the Contentlet
         List<Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
@@ -940,12 +938,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if(Field.FieldType.BINARY.toString().equals(field.getFieldType())){
                 List<Contentlet> contentlets = contentFactory.findByStructure(structure.getInode(),0,0);
 
-                HibernateUtil.addCommitListener(new DotRunnable() {
-                    @Override
-                    public void run() {
-                        moveBinaryFilesToTrash(contentlets,field);
-                    }
-                });
+                HibernateUtil.addCommitListener(() -> moveBinaryFilesToTrash(contentlets,field));
 
                 // Binary fields have nothing to do with database.
             } else if(Field.FieldType.TAG.toString().equals(field.getFieldType())){
@@ -1835,12 +1828,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     private void sendDeleteEvent (final Contentlet contentlet) throws DotHibernateException {
-
-        HibernateUtil.addAsyncCommitListener(
-                () -> {
-
-                    this.contentletSystemEventUtil.pushDeleteEvent(contentlet);
-                }, 1000);
+        HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushDeleteEvent(contentlet));
     }
 
     /**
@@ -2102,7 +2090,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 new ContentletLoader().invalidate(contentlet);
 
                 publishRelatedHtmlPages(contentlet);
-                HibernateUtil.addAsyncCommitListener(() -> this.contentletSystemEventUtil.pushArchiveEvent(workingContentlet), 1000);
+
+
+                if (contentlet.isHTMLPage()) {
+                    CacheLocator.getHTMLPageCache().remove(contentlet.getInode());
+                }
+                
+                HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushArchiveEvent(workingContentlet));
+
             } else {
                 throw new DotContentletStateException("Contentlet with Identifier '" + contentlet.getIdentifier() +
                         "' must be unlocked before being archived");
@@ -2382,7 +2377,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             new ContentletLoader().invalidate(contentlet, PageMode.LIVE);
             publishRelatedHtmlPages(contentlet);
 
-            HibernateUtil.addAsyncCommitListener(() -> this.contentletSystemEventUtil.pushUnpublishEvent(contentlet), 1000);
+            HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushUnpublishEvent(contentlet));
 
             /*
             Triggers a local system event when this contentlet commit listener is executed,
@@ -2470,7 +2465,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             new ContentletLoader().invalidate(contentlet);
             publishRelatedHtmlPages(contentlet);
 
-            HibernateUtil.addAsyncCommitListener(() -> this.sendUnArchiveContentSystemEvent(contentlet), 1000);
+            HibernateUtil.addCommitListener(() -> this.sendUnArchiveContentSystemEvent(contentlet));
         } catch(DotDataException | DotStateException| DotSecurityException e) {
             ActivityLogger.logInfo(getClass(), "Error Unarchiving Content", "StartDate: " +contentPushPublishDate+ "; "
                     + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
@@ -3586,7 +3581,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private void pushSaveEvent (final Contentlet eventContentlet, final boolean eventCreateNewVersion) throws DotHibernateException {
 
-        HibernateUtil.addAsyncCommitListener(() -> this.contentletSystemEventUtil.pushSaveEvent(eventContentlet, eventCreateNewVersion), 100);
+        HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushSaveEvent(eventContentlet, eventCreateNewVersion));
     }
 
     private List<Category> getExistingContentCategories(Contentlet contentlet)
@@ -5382,7 +5377,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private void sendCopyEvent (final Contentlet contentlet) throws DotHibernateException {
 
-        HibernateUtil.addAsyncCommitListener(() -> this.contentletSystemEventUtil.pushCopyEvent(contentlet), 1000);
+        HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushCopyEvent(contentlet));
     }
 
     @WrapInTransaction

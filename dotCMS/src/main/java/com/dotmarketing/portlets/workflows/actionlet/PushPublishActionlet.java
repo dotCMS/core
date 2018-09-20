@@ -143,16 +143,7 @@ public class PushPublishActionlet extends WorkFlowActionlet implements BatchActi
 			final String whoToSendTmp = pushPublishData.get(WHERE_TO_SEND);
 			final String forcePushStr = pushPublishData.get(FORCE_PUSH);
 			final boolean forcePush = "true".equals(forcePushStr);
-			final String[] whereToSend = whoToSendTmp.split(",");
-			final List<Environment> envsToSendTo = Stream.of(whereToSend).map(id -> {
-				try {
-					return APILocator.getEnvironmentAPI().findEnvironmentById(id);
-				} catch (DotDataException e) {
-					Logger.error(PushPublishActionlet.class,
-							"Error retrieving environment from id: " + id, e);
-				}
-				return null;
-			}).filter(Objects::nonNull).collect(Collectors.toList());
+			final List<Environment> envsToSendTo = getEnvironmentsToSendTo(whoToSendTmp);
 
 			final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-H-m");
 			final Date publishDate = dateFormat
@@ -184,6 +175,19 @@ public class PushPublishActionlet extends WorkFlowActionlet implements BatchActi
 		map.put(WHERE_TO_SEND,contentlet.getStringProperty(WHERE_TO_SEND));
 		map.put(FORCE_PUSH,contentlet.getStringProperty(FORCE_PUSH));
 		return map;
+	}
+
+	public static List<Environment> getEnvironmentsToSendTo(final String whoToSendTo){
+		final String[] whereToSend = whoToSendTo.split(",");
+		return Stream.of(whereToSend).map(id -> {
+			try {
+				return APILocator.getEnvironmentAPI().findEnvironmentById(id);
+			} catch (DotDataException e) {
+				Logger.error(PushPublishActionlet.class,
+						"Error retrieving environment from id: " + id, e);
+			}
+			return null;
+		}).filter(Objects::nonNull).collect(Collectors.toList());
 	}
 
 	static class PushPublishBatchData {

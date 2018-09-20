@@ -9,9 +9,11 @@ dojo.declare("dotcms.dijit.AddToBundleDialog", null, {
     myId: "addToBundleDia",
     title: "",
     admin: "",
+    container: null,
 
     show: function () {
 
+        var container = this.container;
         var dia = dijit.byId(this.myId);
         if (dia) {
             dia.destroyRecursive();
@@ -25,6 +27,7 @@ dojo.declare("dotcms.dijit.AddToBundleDialog", null, {
         //Verify if we need to display the date filtering box
         var dateFilter = this.dateFilter;
         var connection = dojo.connect(dia, "onLoad", function () {
+
             dojo.disconnect(connection);
 
             var filterDiv = dojo.byId("filterTimeDiv_atb");
@@ -33,12 +36,17 @@ dojo.declare("dotcms.dijit.AddToBundleDialog", null, {
             } else {
                 filterDiv.style.display = "none";
             }
+
+            dojo.connect(dijit.byId("addToBundleSaveButton"), "onClick", function(){
+                container.addToBundle();
+            });
         });
 
         dojo.connect(dia, "onDownloadEnd", function () {
-            if (window.lastSelectedBundle && window.lastSelectedBundle.name) {
-                dojo.byId("bundleName").value = window.lastSelectedBundle.name;
-                dijit.byId('bundleSelect').set('value', window.lastSelectedBundle.name);
+            var lastSelectedBundle = JSON.parse(sessionStorage.getItem("lastSelectedBundle"));
+            if (lastSelectedBundle && lastSelectedBundle.name) {
+                dojo.byId("bundleName").value = lastSelectedBundle.name;
+                dijit.byId('bundleSelect').set('value', lastSelectedBundle.name);
             }
         });
 

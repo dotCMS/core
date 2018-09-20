@@ -19,6 +19,7 @@
 <script type='text/javascript' src='/dwr/interface/TagAjax.js'></script>
 <script type='text/javascript' src='/html/js/uuidUtils.js'></script>
 <script type='text/javascript' src='/html/js/tag.js'></script>
+
 <style type="text/css">
 	.formRow{clear:right;clear:left;clear:both;}
 </style>
@@ -877,64 +878,31 @@
     	forcePush:"",
     	constructor : function() {
 
-
-
-
-
     	},
 
 
     	executeWfAction: function(wfId, popupable, showpush){
-    		contentAdmin.wfAction=wfId;
 
-    		
-    		
+    		contentAdmin.wfAction = wfId;
+
     		if(popupable){
 
-    			var myCp = dijit.byId("contentletWfCP");
-    			if (myCp) {
-    				myCp.destroyRecursive(true);
-    			}
+                var inode = '$dotPageContent.inode';
+                var publishDate='$!dotPageContent.structure.publishDateVar';
+                var expireDate='$!dotPageContent.structure.expireDateVar';
+                var structureInode='$!dotPageContent.structure.inode';
 
-                //Required clean up as these modals has duplicated widgets and collide without a clean up
-                var remoteDia = dijit.byId("remotePublisherDia");
-                if(remoteDia){
-                    remoteDia.destroyRecursive();
-                }
+                let workflow = {
+                    actionId:wfId,
+                    inode:inode,
+                    publishDate:publishDate,
+                    expireDate:expireDate,
+                    structInode:structInode
+                };
 
-    			var dia = dijit.byId("contentletWfDialog");
-    			if(dia){
-    				dia.destroyRecursive();
-
-    			}
-    			dia = new dijit.Dialog({
-    				id			:	"contentletWfDialog",
-    				title		: 	"$UtilMethods.escapeSingleQuotes($languagewebapi.getFromUserLanguage('Workflow-Actions'))",
-					style		:	"min-width:500px;min-height:250px;"
-    				});
-
-
-
-
-    			myCp = new dojox.layout.ContentPane({
-    				id 			: "contentletWfCP",
-    				style		:	"minwidth:500px;min-height:250px;margin:auto;"
-    			}).placeAt("contentletWfDialog");
-
-    			dia.show();
-
-
-
-    			var r = Math.floor(Math.random() * 1000000000);
-				var url = "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfTaskAjax?cmd=renderAction&actionId=" + wfId
-						+ "&inode=$dotPageContent.inode" 
-						+ "&showpush=" + showpush
-						+ "&publishDate=$!dotPageContent.structure.publishDateVar"
-						+ "&expireDate=$!dotPageContent.structure.expireDateVar"
-						+ "&structureInode=$!dotPageContent.structure.inode"
-						+ "&r=" + r;
-    			myCp.attr("href", url);
-    			return;
+                var pushHandler = new dotcms.dojo.push.PushHandler("$UtilMethods.escapeSingleQuotes($languagewebapi.getFromUserLanguage('Remote-Publish'))");
+                pushHandler.showWorkflowEnabledDialog(workflow, saveAssignCallBack);
+                return;
     		}
 
 
@@ -942,70 +910,6 @@
 
 
     	},
-
-    	saveAssign : function(){
-    		contentAdmin.wfAssign = (dijit.byId("taskAssignmentAux"))
-			? dijit.byId("taskAssignmentAux").getValue()
-				: (dojo.byId("taskAssignmentAux"))
-					? dojo.byId("taskAssignmentAux").value
-							: "";
-
-			if(!contentAdmin.wfAssign || contentAdmin.wfAssign.length ==0 ){
-				showDotCMSSystemMessage("$UtilMethods.escapeSingleQuotes($languagewebapi.getFromUserLanguage('Assign-To-Required'))");
-				return;
-			}
-
-			contentAdmin.wfComments = (dijit.byId("taskCommentsAux"))
-				? dijit.byId("taskCommentsAux").getValue()
-					: (dojo.byId("taskCommentsAux"))
-						? dojo.byId("taskCommentsAux").value
-								: "";
-
-			// BEGIN: PUSH PUBLISHING ACTIONLET
-			contentAdmin.wfPublishDate = (dijit.byId("wfPublishDateAux"))
-				? dojo.date.locale.format(dijit.byId("wfPublishDateAux").getValue(),{datePattern: "yyyy-MM-dd", selector: "date"})
-					: (dojo.byId("wfPublishDateAux"))
-						? dojo.date.locale.format(dojo.byId("wfPublishDateAux").value,{datePattern: "yyyy-MM-dd", selector: "date"})
-								: "";
-
-			contentAdmin.wfPublishTime = (dijit.byId("wfPublishTimeAux"))
-				? dojo.date.locale.format(dijit.byId("wfPublishTimeAux").getValue(),{timePattern: "H-m", selector: "time"})
-					: (dojo.byId("wfPublishTimeAux"))
-						? dojo.date.locale.format(dojo.byId("wfPublishTimeAux").value,{timePattern: "H-m", selector: "time"})
-								: "";
-
-			contentAdmin.wfExpireDate = (dijit.byId("wfExpireDateAux"))
-				? dijit.byId("wfExpireDateAux").getValue()!=null ? dojo.date.locale.format(dijit.byId("wfExpireDateAux").getValue(),{datePattern: "yyyy-MM-dd", selector: "date"}) : ""
-					: (dojo.byId("wfExpireDateAux"))
-						? dojo.byId("wfExpireDateAux").value!=null ? dojo.date.locale.format(dojo.byId("wfExpireDateAux").value,{datePattern: "yyyy-MM-dd", selector: "date"}) : ""
-								: "";
-			
-			contentAdmin.wfExpireTime = (dijit.byId("wfExpireTimeAux"))
-				? dijit.byId("wfExpireTimeAux").getValue()!=null ? dojo.date.locale.format(dijit.byId("wfExpireTimeAux").getValue(),{timePattern: "H-m", selector: "time"}) : ""
-					: (dojo.byId("wfExpireTimeAux"))
-						? dojo.byId("wfExpireTimeAux").value!=null ? dojo.date.locale.format(dojo.byId("wfExpireTimeAux").value,{timePattern: "H-m", selector: "time"}) : ""
-								: "";
-								
-			contentAdmin.wfNeverExpire = (dijit.byId("wfNeverExpire"))
-				? dijit.byId("wfNeverExpire").getValue()
-					: (dojo.byId("wfNeverExpire"))
-						? dojo.byId("wfNeverExpire").value
-								: "";
-								
-			contentAdmin.whereToSend = (dijit.byId("whereToSend"))
-				? dijit.byId("whereToSend").getValue()
-					: (dojo.byId("whereToSend"))
-						? dojo.byId("whereToSend").value
-								: "";
-
-            contentAdmin.forcePush = (dijit.byId("forcePush")) ? dijit.byId("forcePush").checked : false;
-
-    		var dia = dijit.byId("contentletWfDialog").hide();
-
-			contentAdmin.executeRESTCall();
-
-    	},
-    	
     	
     	refreshIfrome : function(){
         	var x = document.getElementById('frameMenu').src;
@@ -1053,6 +957,29 @@
 
     });
 
+    function saveAssignCallBack(actionId, formData) {
+
+        var pushPublish = formData.pushPublish;
+        var assignComment = formData.assignComment;
+
+        contentAdmin.wfAssign = assignComment.assign;
+
+        if(!contentAdmin.wfAssign || contentAdmin.wfAssign.length ==0 ){
+            showDotCMSSystemMessage("$UtilMethods.escapeSingleQuotes($languagewebapi.getFromUserLanguage('Assign-To-Required'))");
+            return;
+        }
+
+        contentAdmin.wfComments = assignComment.comment;
+        contentAdmin.wfPublishDate = pushPublish.publishDate;
+        contentAdmin.wfPublishTime = pushPublish.publishTime;
+        contentAdmin.wfExpireDate = pushPublish.expireDate;
+        contentAdmin.wfExpireTime = pushPublish.expireTime;
+        contentAdmin.whereToSend = pushPublish.whereToSend;
+        contentAdmin.forcePush = pushPublish.forcePush;
+        contentAdmin.executeRESTCall();
+
+    }
+
     var contentAdmin = new dotcms.dijit.contentlet.ContentAdmin();
     contentAdmin.inode="$dotPageContent.inode";
     
@@ -1091,18 +1018,6 @@
         <input type="hidden" name="selectedStructure" id="selectedStructure" value="">
         <input type="hidden" name="selectedStructureFake" id="selectedStructureFake" value="">
     </form>
-    <form id="remotePublishForm">
-		<input name="assetIdentifier" id="assetIdentifier" type="hidden" value="">
-		<input name="remotePublishDate" id="remotePublishDate" type="hidden" value="">
-		<input name="remotePublishTime" id="remotePublishTime" type="hidden" value="">
-		<input name="remotePublishExpireDate" id="remotePublishExpireDate" type="hidden" value="">
-		<input name="remotePublishExpireTime" id="remotePublishExpireTime" type="hidden" value="">
-		<input name="iWantTo" id=iWantTo type="hidden" value="">
-		<input name="whoToSend" id=whoToSend type="hidden" value="">
-		<input name="bundleName" id=bundleName type="hidden" value="">
-		<input name="bundleSelect" id=bundleSelect type="hidden" value="">
-		<input name="forcePush" id=forcePush type="hidden" value="">
-	</form>
 </div>
 
 <div id="savingContentDialog" dojoType="dijit.Dialog" title="$langbackendwebapi.get("saving-content")" style="display: none;color:#555555; font:13px/138.5% Verdana,Geneva,Arial,sans-serif;">

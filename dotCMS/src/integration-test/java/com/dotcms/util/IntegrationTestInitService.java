@@ -41,7 +41,8 @@ public class IntegrationTestInitService {
     		APILocator.init();
 
     		//For these tests fire the reindex immediately
-            Config.setProperty("REINDEX_ON_SAVE_IN_SEPARATE_THREAD", false);
+            Config.setProperty("ASYNC_REINDEX_COMMIT_LISTENERS", false);
+            Config.setProperty("ASYNC_COMMIT_LISTENERS", false);
 
             Config.setProperty("NETWORK_CACHE_FLUSH_DELAY", (long) 0);
             // Init other dotCMS services.

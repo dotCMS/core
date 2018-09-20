@@ -61,7 +61,6 @@ dojo.declare("dotcms.dojo.data.TemplateReadStore", null, {
 	},
 	
 	fetch: function (keywordArgs) {
-		
 		var fetchCallback = dojo.hitch(this, this.fetchCallback, keywordArgs);
 		
 		if(dojo.isString(keywordArgs.query)) {
@@ -89,6 +88,7 @@ dojo.declare("dotcms.dojo.data.TemplateReadStore", null, {
 				keywordArgs.query.fullTitle.indexOf('*')===-1) 
 				&& (keywordArgs.count == 'undefined' || keywordArgs.count ==null ) 
 				&& (keywordArgs.start == 'undefined' || keywordArgs.start ==null) ){
+            this.currentRequest = keywordArgs;
 			this.currentRequest.abort = function () { };
 			return this.currentRequest;
 			

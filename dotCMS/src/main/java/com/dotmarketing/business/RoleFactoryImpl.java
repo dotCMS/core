@@ -622,43 +622,52 @@ public class RoleFactoryImpl extends RoleFactory {
 		rc.removeLayoutsOnRole(role.getId());
 	}
 
-	@Override
-	protected Role findRoleByFQN(String FQN) throws DotDataException {
-		if(FQN == null){
-			throw new DotDataException("FQN is null");
-		}
-		Role r = null;
-		if(!FQN.contains("-->")){
-			r = findRoleByName(FQN, null);
-		}else{
-			Role parent = null;
-			String rFQN = "";
-			String[] rids = FQN.split(" --> ");
-			String parentId = null;
-			for (String rid : rids) {
-				if(parentId == null){
-					parent = findRoleByName(rid, null);
-					parentId = parent.getId();
-					rFQN = parent.getId();
-				}else{
-					parent = findRoleByName(rid, parent);
-					parentId = parent.getId();
-					rFQN = rFQN + " --> " + parentId;
-				}
-			}
+    protected Role findRoleByFQN(String FQN) throws DotDataException {
+        if(FQN == null){
+            throw new DotDataException("FQN is null");
+        }
+        Role role = null;
+        if(!FQN.contains("-->")){
+            role = findRoleByName(FQN, null);
+        }else{
+            final String errorMessage = "Unable to lookup role from given roleId %s";
+            Role parent = null;
+            String rFQN = "";
+            final String[] rids = FQN.split(" --> ");
+            String parentId = null;
+            for (final String rid : rids) {
+                if (parentId == null) {
+                    parent = findRoleByName(rid, null);
+                    if(null == parent) {
+                        Logger.debug(this,()-> String.format(errorMessage, rid));
+                        return null;
+                    }
+                    parentId = parent.getId();
+                    rFQN = parent.getId();
 
-			HibernateUtil hu = new HibernateUtil(Role.class);
-			hu.setQuery("from " + Role.class.getName() + " where db_fqn like ?");
-			hu.setParam(rFQN);
-			r = (Role)hu.load();
-			translateFQNFromDB(r);
-			rc.add(r);
-			HibernateUtil.evict(r);
-		}
-		return r;
-	}
+                } else {
+                    parent = findRoleByName(rid, parent);
+                    if(null == parent){
+                        Logger.debug(this,()-> String.format(errorMessage, rid));
+                        return null;
+                    }
+                    parentId = parent.getId();
+                    rFQN = rFQN + " --> " + parentId;
+                }
+            }
 
-	@Override
+            final HibernateUtil hu = new HibernateUtil(Role.class);
+            hu.setQuery("from " + Role.class.getName() + " where db_fqn like ?");
+            hu.setParam(rFQN);
+            role = (Role) hu.load();
+            translateFQNFromDB(role);
+            rc.add(role);
+            HibernateUtil.evict(role);
+        }
+        return role;
+    }
+
+    @Override
 	protected Role loadRoleByKey(String key) throws DotDataException {
 		Role r = null;
 		r = rc.get(key);

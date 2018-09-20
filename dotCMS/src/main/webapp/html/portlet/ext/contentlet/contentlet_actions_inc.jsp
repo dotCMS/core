@@ -163,7 +163,7 @@ function setMyWorkflowScheme(){
 			</a>
 		<%} %>
 
-	<%} %>
+	<%}  %>
 
 </div>
 

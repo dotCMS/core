@@ -19,26 +19,31 @@
 %>
 <script type="text/javascript">
 
-    window.lastSelectedEnvironments = new Array();
+    var lastSelectedEnvironments = [];
     <%if (lastSelectedEnvironments != null) {
 
         int i = 0;
         for (Environment environment: lastSelectedEnvironments) {
             String id = environment.getId();
-            String name = environment.getName();%>
+            String name = environment.getName();
+    %>
 
             var entry = {name:'<%=name%>',id:'<%=id%>'};
-            window.lastSelectedEnvironments[<%=i++%>] = entry;
+            lastSelectedEnvironments[<%=i++%>] = entry;
     <%}%>
 
     <%}%>
 
-    window.lastSelectedBundle = {};
+    var lastSelectedBundle = {};
     <%if (lastSelectedBundle != null) {
 
         String id = lastSelectedBundle.getId();
         String name = lastSelectedBundle.getName();%>
 
-        window.lastSelectedBundle = {name: '<%=UtilMethods.escapeSingleQuotes(name)%>', id: '<%=id%>'};
+        lastSelectedBundle = {name: '<%=UtilMethods.escapeSingleQuotes(name)%>', id: '<%=id%>'};
     <%}%>
+
+    sessionStorage.setItem("lastSelectedEnvironments",JSON.stringify(lastSelectedEnvironments));
+    sessionStorage.setItem("lastSelectedBundle",JSON.stringify(lastSelectedBundle));
+
 </script>

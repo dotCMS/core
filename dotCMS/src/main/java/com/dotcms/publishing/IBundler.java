@@ -58,9 +58,9 @@ public interface IBundler {
     }
 
 	default List<Long> getSortedConfigLanguages( PublisherConfig config, final long defaultLanguageId ) {
-		List<Long> languages = new ArrayList<Long>();
+		List<Long> languages = new ArrayList<>();
 		if (config.isStatic()){
-			languages.addAll(config.getLanguages().stream().map(x -> Long.valueOf(x)).collect(Collectors.toList()));
+			languages.addAll(config.getLanguages().stream().map(Long::valueOf).collect(Collectors.toList()));
 		} else {
 			languages.add(config.getLanguage());
 		}
@@ -68,7 +68,7 @@ public interface IBundler {
 		// To sort assets so the default-language ones come first
 		Collections.sort(languages, new Comparator<Long>() {
 
-			final Long defaultLangId = new Long(defaultLanguageId);
+			final Long defaultLangId = defaultLanguageId;
 
 			public int compare(Long o1, Long o2) {
 				if (o1.equals(defaultLangId) && o2.equals(defaultLangId)) {
@@ -80,8 +80,9 @@ public interface IBundler {
 				} else {
 					return 0;
 				}
-			};
+			}
 		});
 		return languages;
 	}
+
 }

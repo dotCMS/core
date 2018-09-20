@@ -41,7 +41,15 @@ function savechanges() {
 	form.cmd.value = "generatemenu";
 	form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/folders/order_menu" /></portlet:actionURL>';
 	document.getElementById('reorder_result').value = serialize();
-	submitForm(form);
+    submitAjaxForm({
+        form: form,
+        success: function() {
+            triggerCustomEvent("save-menu-order");
+        },
+        error: function() {
+            triggerCustomEvent("error-saving-menu-order");
+        }
+    });
 }
 function moveMenuItemDown(menuItem,parentFolder){
  	document.getElementById('item').value=menuItem;
@@ -64,7 +72,6 @@ function goBack()
 		window.location.href = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/folders/order_menu" /></portlet:actionURL>';
 	<% } %>
 }
-
 </script>
 
 <%
@@ -105,7 +112,7 @@ pagePath=<%=pagePath%>
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
 	<liferay:param name="box_title" value="Order Menu Items" />
 
-	<form id="fm" method="post">
+	<form id="fm" method="post" onSubmit="emitOkEvent()">
 		<input type="hidden" name="referer" value="<%=referer%>">
 		<input type="hidden" name="cmd" value="reorder">
 		<input type="hidden" name="item" id="item" value="">
@@ -163,7 +170,7 @@ td li li{
 			   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save-changes")) %>
 	                    </button>       
 		<%} %>
-        <button dojoType="dijit.form.Button" onClick="parent.window.location.href='/html/portlet/ext/folders/redirect_after_order.jsp'" iconClass="cancelIcon">
+        <button dojoType="dijit.form.Button" onClick="triggerCustomEvent('cancel-save-menu-order')" iconClass="cancelIcon">
 
          <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
        </button>

@@ -1471,7 +1471,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             dc.addParam(userToReplace.getUserId());
             dc.loadResult();
 
-            HibernateUtil.addAsyncCommitListener(() -> {
+            HibernateUtil.addCommitListener(() -> {
 
                 reindexReplacedUserContent(userToReplace, user);
 

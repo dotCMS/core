@@ -1,6 +1,7 @@
 package com.dotcms.datagen;
 
 import com.dotcms.repackage.com.google.common.base.Strings;
+import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -8,9 +9,12 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
 
+import com.dotmarketing.util.UUIDGenerator;
+import com.liferay.util.StringPool;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Class used to create {@link Template} objects for test purposes
@@ -25,7 +29,7 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
 	private String friendlyName = "test-template-friendly-name-" + currentTime;
 	private String image;
 	private String title = "test-template-title-" + currentTime;
-    private List<Container> containers = new ArrayList<>();
+    private List<Map<String,String>> containers = new ArrayList<Map<String,String>>();
 
 	private static final TemplateAPI templateAPI = APILocator.getTemplateAPI();
 	private static final String type = "template";
@@ -35,7 +39,7 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
 	 * when a new {@link Template} instance is created.
      *
      * <p><b>Important</b>: this will override the auto-generated body with the added containers.
-     * See {@link #withContainer(Container)}
+     * See {@link #withContainer(String,String)}
 	 * 
 	 * @param body the body of the template
 	 * @return TemplateDataGen with body property set
@@ -111,11 +115,12 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
      * <p>The {@link #next()} method will include a '#parseContainer('containerId')' string to the body of the template
      * for each of the containers added to this {@link TemplateDataGen}.
      *
-     * @param container the container to include
+     * @param containerId the container identifier to include
      * @return the data-gen with the added container
      */
-    public TemplateDataGen withContainer(Container container) {
-        containers.add(container);
+    public TemplateDataGen withContainer(final String containerId, final String UUID) {
+    	Map<String,String> containerMap = new ImmutableMap.Builder<String,String>().put("containerId",containerId).put("uuid",UUID).build();
+    	containers.add(containerMap);
         return this;
     }
 
@@ -141,7 +146,7 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
     /**
      * {@inheritDoc}
      * <p>It will also include a '#parseContainer('containerId')' string to the body of the template
-     * for each of the containers added to this {@link TemplateDataGen} by calling {@link #withContainer(Container)}
+     * for each of the containers added to this {@link TemplateDataGen} by calling {@link #withContainer(String,String)}
      */
     @Override
     public Template next() {
@@ -165,11 +170,20 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
 
     @Override
     public Template persist(Template template) {
+    	final String uuid = UUIDGenerator.generateUuid();
         if(Strings.isNullOrEmpty(body)) {
             // include the parseContainer for every container added
             StringBuilder sb = new StringBuilder();
-            for (Container container : containers) {
-                sb.append("#parseContainer('").append(container.getIdentifier()).append(")')")
+            for (Map<String, String> containerMap : containers) {
+                sb.append("#parseContainer(")
+						.append(StringPool.APOSTROPHE)
+						.append(containerMap.get("containerId"))
+						.append(StringPool.APOSTROPHE)
+						.append(StringPool.COMMA)
+						.append(StringPool.APOSTROPHE)
+						.append(containerMap.get("uuid"))
+						.append(StringPool.APOSTROPHE)
+						.append(")")
                     .append(System.getProperty("line.separator"));
             }
 

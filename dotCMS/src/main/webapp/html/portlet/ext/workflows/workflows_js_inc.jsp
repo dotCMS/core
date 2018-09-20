@@ -1,6 +1,7 @@
 <%@page import="com.dotmarketing.business.RoleAPI"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
+
 <script language="Javascript">
 	function publish (objId,assetId) {
 		if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-publish-this-Associated-Type")) %>')){	
@@ -90,9 +91,6 @@
 
 		dojo.connect(window, "onresize", this, "resizeBrowser");
 
-
-
-
 	    dojo.declare("dotcms.dijit.contentlet.ContentAdmin", null, {
 	    	contentletIdentifier : "",
 	    	contentletInode : "",
@@ -102,154 +100,40 @@
 	    		this.contentletIdentifier = contentletIdentifier;
 	    		this.contentletInode =contentletInode;
 	    		this.languageId=languageId;
-
-
 	    	},
-	    	
-	    	
+
 	    	executeWfAction: function(wfId, assignable, commentable, inode, showpush){
 	    		
-	    		this.wfActionId=wfId;
+	    		this.wfActionId = wfId;
 	    		
 	    		if(assignable || commentable || showpush){
-	    			
-	    			var myCp = dijit.byId("contentletWfCP");
-	    			if (myCp) {
-	    				myCp.destroyRecursive(true);
-	    			}
 
-                    //Required clean up as these modals has duplicated widgets and collide without a clean up
-                    var remoteDia = dijit.byId("remotePublisherDia");
-                    if(remoteDia){
-                        remoteDia.destroyRecursive();
-                    }
-	    			
-	    			var dia = dijit.byId("contentletWfDialog");
-	    			if(dia){
-	    				dia.destroyRecursive();
+                    var publishDate = '<%=structure != null ? structure.getPublishDateVar() : "" %>';
+                    var expireDate =  '<%=structure != null ? structure.getExpireDateVar() : "" %>';
+                    var structInode = '<%=structure != null ? structure.getInode() : "" %>';
 
-	    			}
-	    			dia = new dijit.Dialog({
-	    				id			:	"contentletWfDialog",
-	    				title		: 	"<%=LanguageUtil.get(pageContext, "Workflow-Actions")%>",
-						style		:	"min-width:500px;min-height:250px;"
-	    				});
+                    let workflow = {
+                        actionId:wfId,
+                        inode:inode,
+                        publishDate:publishDate,
+                        expireDate:expireDate,
+                        structInode:structInode
+                    };
 
-
-	  			
-
-	    			myCp = new dojox.layout.ContentPane({
-	    				id 			: "contentletWfCP",
-	    				style		:	"minwidth:500px;min-height:250px;margin:auto;"
-	    			}).placeAt("contentletWfDialog");
-
-	    			dia.show();
-
-
-	    			var r = Math.floor(Math.random() * 1000000000);
-					var url = "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfTaskAjax?cmd=renderAction&actionId=" + wfId 
-							+ "&inode=" + inode 
-							+ "&showpush=" + showpush 
-							+ "&publishDate=<%=structure!=null?structure.getPublishDateVar():""%>"
-							+ "&expireDate=<%=structure!=null?structure.getExpireDateVar():""%>"
-							+ "&structureInode=<%=structure!=null?structure.getInode():""%>"
-							+ "&r=" + r;
-							
-	    			myCp.attr("href", url);
-	    			return;
+                    var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
+                    pushHandler.showWorkflowEnabledDialog(workflow, saveAssignCallBack);
+                    return;
 	    		}
 	    		else{
 	    			dojo.byId("wfActionId").value=this.wfActionId;
 
 	    			this.executeWorkflow();
 	    		}
-	    		
-	    	},
-	    	
-	    	saveAssign : function(){  		
-	    		var assignRole = (dijit.byId("taskAssignmentAux"))
-				? dijit.byId("taskAssignmentAux").getValue()
-					: (dojo.byId("taskAssignmentAux"))
-						? dojo.byId("taskAssignmentAux").value
-								: "";
-
-				if(!assignRole || assignRole.length ==0 ){
-					showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Assign-To-Required")%>");
-					return;
-				}
-
-				var comments = (dijit.byId("taskCommentsAux"))
-					? dijit.byId("taskCommentsAux").getValue()
-						: (dojo.byId("taskCommentsAux"))
-							? dojo.byId("taskCommentsAux").value
-									: "";
-
-	    		var wfActionAssign 		= assignRole;
-	    		var selectedItem 		= "";
-	    		var wfConId 			= dojo.byId("wfConId").value;
-	    		var wfActionId 			= this.wfActionId;
-	    		var wfActionComments 	= comments;
-
-	    		var dia = dijit.byId("contentletWfDialog").hide();
-
-	    		// BEGIN: PUSH PUBLISHING ACTIONLET
-				var publishDate = (dijit.byId("wfPublishDateAux"))
-					? dojo.date.locale.format(dijit.byId("wfPublishDateAux").getValue(),{datePattern: "yyyy-MM-dd", selector: "date"})
-						: (dojo.byId("wfPublishDateAux"))
-							? dojo.date.locale.format(dojo.byId("wfPublishDateAux").value,{datePattern: "yyyy-MM-dd", selector: "date"})
-									: "";
-
-				var publishTime = (dijit.byId("wfPublishTimeAux"))
-					? dojo.date.locale.format(dijit.byId("wfPublishTimeAux").getValue(),{timePattern: "H-m", selector: "time"})
-						: (dojo.byId("wfPublishTimeAux"))
-							? dojo.date.locale.format(dojo.byId("wfPublishTimeAux").value,{timePattern: "H-m", selector: "time"})
-									: "";
-
-
-				var expireDate = (dijit.byId("wfExpireDateAux"))
-					? dijit.byId("wfExpireDateAux").getValue()!=null ? dojo.date.locale.format(dijit.byId("wfExpireDateAux").getValue(),{datePattern: "yyyy-MM-dd", selector: "date"}) : ""
-						: (dojo.byId("wfExpireDateAux"))
-							? dojo.byId("wfExpireDateAux").value!=null ? dojo.date.locale.format(dojo.byId("wfExpireDateAux").value,{datePattern: "yyyy-MM-dd", selector: "date"}) : ""
-									: "";
-
-				var expireTime = (dijit.byId("wfExpireTimeAux"))
-					? dijit.byId("wfExpireTimeAux").getValue()!=null ? dojo.date.locale.format(dijit.byId("wfExpireTimeAux").getValue(),{timePattern: "H-m", selector: "time"}) : ""
-						: (dojo.byId("wfExpireTimeAux"))
-							? dojo.byId("wfExpireTimeAux").value!=null ? dojo.date.locale.format(dojo.byId("wfExpireTimeAux").value,{timePattern: "H-m", selector: "time"}) : ""
-									: "";
-				var neverExpire = (dijit.byId("wfNeverExpire"))
-					? dijit.byId("wfNeverExpire").getValue()
-						: (dojo.byId("wfNeverExpire"))
-							? dojo.byId("wfNeverExpire").value
-									: "";
-
-				var whereToSend = (dijit.byId("whereToSend"))
-					? dijit.byId("whereToSend").getValue()
-						: (dojo.byId("whereToSend"))
-							? dojo.byId("whereToSend").value
-									: "";
-				// END: PUSH PUBLISHING ACTIONLET
-				
-					dojo.byId("wfActionAssign").value=assignRole;
-     				dojo.byId("wfActionComments").value=comments;
-					dojo.byId("wfActionId").value=this.wfActionId;
-
-					// BEGIN: PUSH PUBLISHING ACTIONLET
-					dojo.byId("wfPublishDate").value=publishDate;
-					dojo.byId("wfPublishTime").value=publishTime;
-					dojo.byId("wfExpireDate").value=expireDate;
-					dojo.byId("wfExpireTime").value=expireTime;
-					dojo.byId("wfNeverExpire").value=neverExpire;
-					dojo.byId("whereToSend").value=whereToSend;
-					// END: PUSH PUBLISHING ACTIONLET
-
-					this.executeWorkflow();
 	    	},
 	    	
 	    	executeWorkflow : function (){
 	    		
 	    		dijit.byId('savingContentDialog').show();
-	    		
 
 				var xhrArgs = {
 					form: dojo.byId("submitWorkflowTaskFrm"),
@@ -272,9 +156,58 @@
 				}
 				dojo.xhrPost(xhrArgs);
 
-	    		
 	    	}
 
 	    });
-	    var contentAdmin = new dotcms.dijit.contentlet.ContentAdmin();
+
+    function saveAssignCallBack(actionId, formData) {
+
+        var assignComment = formData.assignComment;
+        var selectedItem = "";
+        var wfConId =  pushPublish.inode;
+        var comments = assignComment.comment;
+        var assignRole = assignComment.assign;
+
+        var whereToSend = pushPublish.whereToSend;
+        var publishDate = pushPublish.publishDate;
+        var publishTime = pushPublish.publishTime;
+        var expireDate  = pushPublish.expireDate;
+        var expireTime  = pushPublish.expireTime;
+        var forcePush   = pushPublish.forcePush;
+        var neverExpire = "";
+
+        dojo.byId("wfActionAssign").value = assignRole;
+        dojo.byId("wfActionComments").value = comments;
+        dojo.byId("wfActionId").value = actionId;
+
+        // BEGIN: PUSH PUBLISHING ACTIONLET
+        dojo.byId("wfPublishDate").value = publishDate;
+        dojo.byId("wfPublishTime").value = publishTime;
+        dojo.byId("wfExpireDate").value = expireDate;
+        dojo.byId("wfExpireTime").value = expireTime;
+        dojo.byId("wfNeverExpire").value = neverExpire;
+        dojo.byId("whereToSend").value = whereToSend;
+
+        var xhrArgs = {
+            form: dojo.byId("submitWorkflowTaskFrm"),
+            handleAs: "text",
+            load: function(data) {
+                showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Workflow-executed")%>");
+
+                var customEvent = document.createEvent("CustomEvent");
+                customEvent.initCustomEvent("ng-event", false, false,  {
+                    name: "edit-task-executed-workflow"
+                });
+                document.dispatchEvent(customEvent);
+
+            },
+            error: function(error) {
+                showDotCMSSystemMessage(error);
+            }
+        }
+        dojo.xhrPost(xhrArgs);
+    }
+	    
+	var contentAdmin = new dotcms.dijit.contentlet.ContentAdmin();
+
 </script>

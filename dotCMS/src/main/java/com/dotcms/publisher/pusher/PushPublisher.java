@@ -2,42 +2,14 @@ package com.dotcms.publisher.pusher;
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotcms.enterprise.publishing.remote.bundler.BundleXMLAsc;
-import com.dotcms.enterprise.publishing.remote.bundler.CategoryBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.CategoryFullBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.ContainerBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.ContentBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.ContentTypeBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.DependencyBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.FolderBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.HostBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.LanguageBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.LanguageVariablesBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.LinkBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.OSGIBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.RelationshipBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.RuleBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.TemplateBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.UserBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.WorkflowBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.*;
 import com.dotcms.publisher.bundle.bean.Bundle;
-import com.dotcms.publisher.business.DotPublisherException;
-import com.dotcms.publisher.business.EndpointDetail;
-import com.dotcms.publisher.business.PublishAuditAPI;
-import com.dotcms.publisher.business.PublishAuditHistory;
-import com.dotcms.publisher.business.PublishAuditStatus;
-import com.dotcms.publisher.business.PublishQueueElement;
-import com.dotcms.publisher.business.PublisherQueueJob;
+import com.dotcms.publisher.business.*;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.util.PusheableAsset;
-import com.dotcms.publishing.BundlerUtil;
-import com.dotcms.publishing.DotPublishingException;
-import com.dotcms.publishing.IBundler;
-import com.dotcms.publishing.PublishStatus;
-import com.dotcms.publishing.Publisher;
-import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.*;
 import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
 import com.dotcms.repackage.javax.ws.rs.client.Client;
 import com.dotcms.repackage.javax.ws.rs.client.Entity;
@@ -46,7 +18,6 @@ import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import org.apache.logging.log4j.ThreadContext;
 import com.dotcms.repackage.org.glassfish.jersey.client.ClientProperties;
 import com.dotcms.rest.RestClientBuilder;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
@@ -61,21 +32,17 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
+import org.apache.logging.log4j.ThreadContext;
+import org.quartz.JobDetail;
+import org.quartz.ObjectAlreadyExistsException;
+import org.quartz.Scheduler;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import org.quartz.JobDetail;
-import org.quartz.ObjectAlreadyExistsException;
-import org.quartz.Scheduler;
+import java.util.*;
 
 /**
  * This is the main content publishing class in the Push Publishing process.
@@ -247,7 +214,7 @@ public class PushPublisher extends Publisher {
 	        			} else {
 
 							PushPublishLogger.log(this.getClass(), "Status Update: Failed to send bundle.");
-	        				if(currentStatusHistory.getNumTries()==PublisherQueueJob.MAX_NUM_TRIES) {
+	        				if(currentStatusHistory.getNumTries() >= PublisherQueueJob.MAX_NUM_TRIES) {
 		        				APILocator.getPushedAssetsAPI().deletePushedAssets(this.config.getId(), environment.getId());
 		        			}
 	        				detail.setStatus(PublishAuditStatus.Status.FAILED_TO_SENT.getCode());
@@ -259,7 +226,7 @@ public class PushPublisher extends Publisher {
 	        			}
 	        		} catch(Exception e) {
 	        			// if the bundle can't be sent after the total num of tries, delete the pushed assets for this bundle
-	        			if(currentStatusHistory.getNumTries()==PublisherQueueJob.MAX_NUM_TRIES) {
+	        			if(currentStatusHistory.getNumTries() >= PublisherQueueJob.MAX_NUM_TRIES) {
 	        				APILocator.getPushedAssetsAPI().deletePushedAssets(this.config.getId(), environment.getId());
 	        			}
 	        			detail.setStatus(PublishAuditStatus.Status.FAILED_TO_SENT.getCode());

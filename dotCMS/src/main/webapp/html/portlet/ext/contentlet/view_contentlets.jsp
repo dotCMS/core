@@ -68,7 +68,7 @@
         String ssstruc = (String)session.getAttribute("selectedStructure");
         if(session.getAttribute("selectedStructure") != null && CacheLocator.getContentTypeCache().getStructureByInode((String)session.getAttribute("selectedStructure")) !=null){
             structure = CacheLocator.getContentTypeCache().getStructureByInode((String)session.getAttribute("selectedStructure"));
-            if(structures.contains(structure)){
+            if( !structure.isHost() && structures.contains(structure)){
                 structureSelected = structure.getInode();
             }else{
                 session.removeAttribute("selectedStructure");
@@ -460,13 +460,10 @@
 
 
 
+<%@ include file="/html/portlet/ext/contentlet/view_contentlets_js_inc.jsp" %>
 
 
 <script language="Javascript">
-
-    <%@ include file="/html/portlet/ext/contentlet/view_contentlets_js_inc.jsp" %>
-
-
 
     function <portlet:namespace />setCalendarDate_0 (year, month, day) {
         var textbox = document.getElementById('lastModDateFrom');
@@ -779,16 +776,3 @@
     </table>
 
 </div>
-
-<form id="remotePublishForm">
-    <input name="assetIdentifier" id="assetIdentifier" type="hidden" value="">
-    <input name="remotePublishDate" id="remotePublishDate" type="hidden" value="">
-    <input name="remotePublishTime" id="remotePublishTime" type="hidden" value="">
-    <input name="remotePublishExpireDate" id="remotePublishExpireDate" type="hidden" value="">
-    <input name="remotePublishExpireTime" id="remotePublishExpireTime" type="hidden" value="">
-    <input name="iWantTo" id=iWantTo type="hidden" value="">
-    <input name="whoToSend" id=whoToSend type="hidden" value="">
-    <input name="bundleName" id=bundleName type="hidden" value="">
-    <input name="bundleSelect" id=bundleSelect type="hidden" value="">
-    <input name="forcePush" id=forcePush type="hidden" value="">
-</form>

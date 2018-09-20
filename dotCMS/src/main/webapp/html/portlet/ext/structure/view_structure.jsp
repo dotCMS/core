@@ -499,18 +499,6 @@
 	</script>
 
 	</form>
-	<form id="remotePublishForm">
-		<input name="assetIdentifier" id="assetIdentifier" type="hidden" value="">
-		<input name="remotePublishDate" id="remotePublishDate" type="hidden" value="">
-		<input name="remotePublishTime" id="remotePublishTime" type="hidden" value="">
-		<input name="remotePublishExpireDate" id="remotePublishExpireDate" type="hidden" value="">
-		<input name="remotePublishExpireTime" id="remotePublishExpireTime" type="hidden" value="">
-		<input name="iWantTo" id=iWantTo type="hidden" value="">
-		<input name="whoToSend" id=whoToSend type="hidden" value="">
-		<input name="bundleName" id=bundleName type="hidden" value="">
-		<input name="bundleSelect" id=bundleSelect type="hidden" value="">
-		<input name="forcePush" id=forcePush type="hidden" value="">
-	</form>
 	<div id="dependenciesDialog" dojoType="dijit.Dialog" style="display:none;width:1000px;vertical-align: middle; " draggable="true"
 		 title="<%= LanguageUtil.get(pageContext, "message.structure.cantdelete") %>" >
 
