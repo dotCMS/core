@@ -2,6 +2,9 @@ package com.dotmarketing.portlets.categories.business;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -11,15 +14,18 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
-import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -767,54 +773,47 @@ public class CategoryAPIImpl implements CategoryAPI {
         }
     }
 
-
-	public static final String CATEGORY = Field.FieldType.CATEGORY.toString();
-
 	/**
 	 * This method will look for all the fields of type 'Category' within a Structure and will get you all the associated Category types available for a given a user.
-	 * @param structure
+	 * @param contentType
 	 * @param user
 	 * @return
 	 */
-	public List<Category> findCategories(final Structure structure, final User user)
+	public List<Category> findCategories(final ContentType contentType, final User user)
 			throws DotSecurityException, DotDataException {
 
-		if(!hasCategoryFields(structure)){
+		if(!hasCategoryFields(contentType)){
 			return ImmutableList.of();
 		}
 
 		final List<Category> filteredTopCategories = permissionAPI
-				.filterCollection(findCategoryFields(structure).stream()
-						.map(field -> findCategory(field, user))
+				.filterCollection(findCategoryFields(contentType).stream()
+						.map(field -> findCategory(CategoryField.class.cast(field), user))
+						.filter(Objects::nonNull)
 						.collect(Collectors.toList()), PermissionAPI.PERMISSION_READ, false, user
 				);
 
-		final List<Category> collectedCategories = new ArrayList<>();
+		final ImmutableList.Builder<Category> builder = new ImmutableList.Builder<>();
 
 	    for(final Category category: filteredTopCategories){
-	    	collectedCategories.add(category);
-		 	collectedCategories.addAll(
+			builder.add(category).addAll(
 		 			getAllChildren(category, user, false)
 			);
 		}
-
-		return new ImmutableList.Builder<Category>().addAll(collectedCategories).build();
+		return builder.build();
 
 	}
 
 	/**
-	 * given a field previously determined to be of type Category this method will look up the respective Category type.
+	 * given a field previously determined to be of type Category this method will look up the respective CategoryField type.
 	 * @param categoryField
 	 * @param user
 	 * @return
 	 */
-	private Category findCategory(final Field categoryField, final User user) {
-		if(!categoryField.getFieldType().equals(CATEGORY)){
-			throw new IllegalArgumentException(String.format("Field %s can isn't of the expected type 'Category'.",categoryField.getFieldName()));
-		}
+	private Category findCategory(final CategoryField categoryField, final User user) {
 		Category category = null;
 		try {
-			category = find(categoryField.getValues(), user, false);
+			category = find(categoryField.values(), user, false);
 		} catch (DotSecurityException | DotDataException e) {
 			Logger.error(getClass(),
 					String.format("Unable to get category for field '%s' ", categoryField), e);
@@ -823,21 +822,25 @@ public class CategoryAPIImpl implements CategoryAPI {
 	}
 
 	/**
-	 * Given a structure this method will look into the fields and get you all the ones of type Category
-	 * @param structure
+	 * Given a contentType this method will look into the fields and get you all the ones of type CategoryField
+	 * @param contentType
 	 * @return
 	 */
-	private ImmutableList<Field> findCategoryFields(final Structure structure) {
-		return structure.getFields()
-				.stream().filter(field -> field.getFieldType().equals(CATEGORY))
+	private List<Field> findCategoryFields(final ContentType contentType) {
+		return contentType.fields()
+				.stream().filter(field -> field instanceof CategoryField)
 				.collect(CollectionsUtils.toImmutableList());
 	}
 
-	public boolean hasCategoryFields(final Structure structure) {
-		return structure.getFields()
-				.stream().anyMatch(field -> field.getFieldType().equals(CATEGORY));
+	/**
+	 *
+	 * @param contentType
+	 * @return
+	 */
+	private boolean hasCategoryFields(final ContentType contentType) {
+		return contentType.fields()
+				.stream().anyMatch(field -> field instanceof CategoryField);
 
 	}
-
 
 }

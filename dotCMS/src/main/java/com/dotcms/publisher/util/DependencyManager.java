@@ -1,5 +1,6 @@
 package com.dotcms.publisher.util;
 
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.publisher.business.PublishQueueElement;
@@ -877,7 +878,7 @@ public class DependencyManager {
 			Logger.debug(getClass(), ()->"Could not get the Workflow Scheme Dependency for Structure ID: " + structure.getInode());
 		}
 
-        APILocator.getCategoryAPI().findCategories(structure, user).forEach(category -> {
+        APILocator.getCategoryAPI().findCategories(new StructureTransformer(structure).from(), user).forEach(category -> {
             this.categories.addOrClean(category.getCategoryId(), category.getModDate());
         });
 
