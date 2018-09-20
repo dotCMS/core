@@ -767,17 +767,27 @@ public class WorkflowResource {
             //if inode is set we use it to look up a contentlet
             if(UtilMethods.isSet(inode)) {
 
-                contentlet = this.contentletAPI.find(inode, initDataObject.getUser(), false);
+                final Contentlet currentContentlet = this.contentletAPI.find
+                        (inode, initDataObject.getUser(), false);
+
+                DotPreconditions.notNull(currentContentlet,
+                        ()-> "contentlet-was-not-found",
+                        DoesNotExistException.class);
+
+                contentlet = new Contentlet();
+                contentlet.getMap().putAll(currentContentlet.getMap());
+
                 if (null != fireActionForm && null != contentlet) {
 
                     contentlet = this.populateContentlet(fireActionForm, contentlet, initDataObject.getUser());
                 }
             } else {
                 //otherwise the information must be grabbed from the request body.
-                DotPreconditions.notNull(fireActionForm,"When no inode is sent the info on the Request body becomes mandatory.");
+                DotPreconditions.notNull(fireActionForm, ()-> "When no inode is sent the info on the Request body becomes mandatory.");
                 contentlet = this.populateContentlet(fireActionForm, initDataObject.getUser());
             }
-            Logger.debug(this, "Firing workflow action: " + actionId + ", inode: " + inode);
+
+            Logger.debug(this, ()-> "Firing workflow action: " + actionId + ", inode: " + inode);
 
             if(null == contentlet || contentlet.getMap().isEmpty()){
                 throw new DoesNotExistException("contentlet-was-not-found");
