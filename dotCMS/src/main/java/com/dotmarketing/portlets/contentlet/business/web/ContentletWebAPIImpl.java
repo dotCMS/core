@@ -1,23 +1,38 @@
 package com.dotmarketing.portlets.contentlet.business.web;
 
+import static com.dotmarketing.portlets.contentlet.util.ActionletUtil.hasPushPublishActionlet;
+import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WHERE_TO_SEND;
+import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.getEnvironmentsToSendTo;
+
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.*;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotLanguageException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.EmailFactory;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.MultiTreeFactory;
@@ -42,7 +57,15 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships.Content
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Constants;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.PortletURLUtil;
+import com.dotmarketing.util.UtilHTML;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
@@ -50,14 +73,19 @@ import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.liferay.util.servlet.SessionMessages;
-import org.apache.commons.collections.CollectionUtils;
-
-import javax.servlet.http.HttpServletRequest;
 import java.text.DateFormat;
 import java.text.MessageFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.collections.CollectionUtils;
 /*
  *     //http://jira.dotmarketing.net/browse/DOTCMS-2273
  *     To save content via ajax.
@@ -482,6 +510,13 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 								.workflowAssignKey((String) contentletFormData.get("wfActionAssign"))
 								.categories(categories)
 								.generateSystemEvent(generateSystemEvent).build());
+
+				if (hasPushPublishActionlet(APILocator.getWorkflowAPI().findAction((String) contentletFormData.get("wfActionId"), user))) {
+					final String whoToSendTmp = (String)currentContentlet.get(WHERE_TO_SEND);
+					final List<Environment> envsToSendTo = getEnvironmentsToSendTo(whoToSendTmp);
+					request.getSession().setAttribute( WebKeys.SELECTED_ENVIRONMENTS + user.getUserId(), envsToSendTo );
+				}
+
 			} else {
 
 				Logger.warn(this, "Calling Save Web Asset: " + currentContentlet.getIdentifier() +

@@ -2036,7 +2036,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 new ContentletLoader().invalidate(contentlet);
 
                 publishRelatedHtmlPages(contentlet);
+
+
+                if (contentlet.isHTMLPage()) {
+                    CacheLocator.getHTMLPageCache().remove(contentlet.getInode());
+                }
+                
                 HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushArchiveEvent(workingContentlet));
+
             } else {
                 throw new DotContentletStateException("Contentlet with Identifier '" + contentlet.getIdentifier() +
                         "' must be unlocked before being archived");

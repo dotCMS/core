@@ -1,28 +1,21 @@
 package com.dotmarketing.portlets.workflows.ajax;
 
-import java.io.IOException;
-import java.io.Writer;
-import java.util.List;
-import java.util.StringTokenizer;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
-import com.dotmarketing.util.PageMode;
-import org.apache.velocity.context.Context;
-
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
-import com.dotmarketing.util.web.VelocityWebUtil;
+import java.io.IOException;
+import java.util.List;
+import java.util.StringTokenizer;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 @Deprecated
 public class WfTaskAjax extends WfBaseAction {
@@ -163,51 +156,7 @@ public class WfTaskAjax extends WfBaseAction {
 			}
 		}
 	} // executeActions.
-	
-	
 
-	
-	
-	
-	public void renderAction(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-
-		String actionId=request.getParameter("actionId");
-
-		try {
-			WorkflowAction action = APILocator.getWorkflowAPI().findAction(actionId, getUser());
-			if(UtilMethods.isSet( action.getCondition())){
-				
-				Context ctx= VelocityWebUtil.getVelocityContext(request, response);
-				Writer out = response.getWriter();
-				
-				VelocityUtil.getEngine().evaluate(ctx, out,"WorkflowVelocity:" + action.getName(), action.getCondition());
-				return;
-				
-			}
-			else{
-				
-				request.getRequestDispatcher("/html/portlet/ext/contentlet/contentlet_assign_comment.jsp").forward(request, response);
-				
-			}
-		
-		
-		
-		
-		
-		
-		} catch (Exception e) {
-			Logger.error(WfTaskAjax.class,e.getMessage(),e);
-		} 
-		
-		
-	}
-	
-	
-	
-	
-	
-	
-	
 	
 	
 }

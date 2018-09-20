@@ -45,6 +45,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -331,12 +332,45 @@ public class WorkflowResource {
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
         try {
-            Logger.debug(this, "Finding the workflow action " + actionId);
+            Logger.debug(this, ()->"Finding the workflow action " + actionId);
             final WorkflowAction action = this.workflowHelper.findAction(actionId, initDataObject.getUser());
             return Response.ok(new ResponseEntityView(action)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
                     "Exception on findAction, actionId: " + actionId +
+                            ", exception message: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+
+    } // findAction.
+
+    /**
+     * Returns a single action condition evaluated, 404 if does not exists. 401 if the user does not have permission.
+     * @param request  HttpServletRequest
+     * @param actionId String
+     * @return Response
+     */
+    @GET
+    @Path("/actions/{actionId}/condition")
+    @JSONP
+    @NoCache
+    @IncludePermissions
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response evaluateActionCondition(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("actionId") final String actionId) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, true, request, true, null);
+        try {
+            Logger.debug(this, ()->"Finding the workflow action " + actionId);
+
+            final String evaluated = workflowHelper.evaluateActionCondition(actionId, initDataObject.getUser(), request, response);
+            return Response.ok(new ResponseEntityView(evaluated)).build(); // 200
+        } catch (Exception e) {
+            Logger.error(this.getClass(),
+                    "Exception on evaluateActionCondition, actionId: " + actionId +
                             ", exception message: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
         }
@@ -767,17 +801,27 @@ public class WorkflowResource {
             //if inode is set we use it to look up a contentlet
             if(UtilMethods.isSet(inode)) {
 
-                contentlet = this.contentletAPI.find(inode, initDataObject.getUser(), false);
+                final Contentlet currentContentlet = this.contentletAPI.find
+                        (inode, initDataObject.getUser(), false);
+
+                DotPreconditions.notNull(currentContentlet,
+                        ()-> "contentlet-was-not-found",
+                        DoesNotExistException.class);
+
+                contentlet = new Contentlet();
+                contentlet.getMap().putAll(currentContentlet.getMap());
+
                 if (null != fireActionForm && null != contentlet) {
 
                     contentlet = this.populateContentlet(fireActionForm, contentlet, initDataObject.getUser());
                 }
             } else {
                 //otherwise the information must be grabbed from the request body.
-                DotPreconditions.notNull(fireActionForm,"When no inode is sent the info on the Request body becomes mandatory.");
+                DotPreconditions.notNull(fireActionForm, ()-> "When no inode is sent the info on the Request body becomes mandatory.");
                 contentlet = this.populateContentlet(fireActionForm, initDataObject.getUser());
             }
-            Logger.debug(this, "Firing workflow action: " + actionId + ", inode: " + inode);
+
+            Logger.debug(this, ()-> "Firing workflow action: " + actionId + ", inode: " + inode);
 
             if(null == contentlet || contentlet.getMap().isEmpty()){
                 throw new DoesNotExistException("contentlet-was-not-found");

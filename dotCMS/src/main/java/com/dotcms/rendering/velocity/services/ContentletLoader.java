@@ -45,6 +45,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import org.apache.velocity.exception.ResourceNotFoundException;
@@ -136,17 +137,21 @@ public class ContentletLoader implements DotLoader {
 
             for (Field field : fields) {
 
+              
+
+              
+              
                 String contField = field.dbColumn();
                 String contFieldValue = null;
                 Object contFieldValueObject = null;
-                String velPath = mode.name() + "/";
+
                 if (field instanceof HiddenField || field instanceof ConstantField) {
+                  String velPath = new VelocityResourceKey(field, Optional.empty(), mode).path ;
                     if (field.variable().equals("widgetPreexecute")) {
                         continue;
                     }
                     if (field.variable().equals("widgetCode")) {
-                        widgetCode = "#set($" + field.variable() + "=$velutil.mergeTemplate(\"" + velPath + content.getInode()
-                                + File.separator + field.inode() + "." + VelocityType.FIELD.fileExtension + "\"))";
+                        widgetCode = "#set($" + field.variable() + "=$velutil.mergeTemplate(\"" +   velPath + "\"))";
                         continue;
                     } else {
                         String fieldValues = field.values() == null ? "" : field.values();
@@ -155,11 +160,7 @@ public class ContentletLoader implements DotLoader {
                                     .append(field.variable())
                                     .append("= $velutil.mergeTemplate(\"")
                                     .append(velPath)
-                                    .append(content.getInode())
-                                    .append(File.separator)
-                                    .append(field.inode())
-                                    .append(".")
-                                    .append(VelocityType.FIELD.fileExtension)
+      
                                     .append("\"))");
                         } else {
                             sb.append("#set($")
@@ -185,12 +186,7 @@ public class ContentletLoader implements DotLoader {
                             sb.append("#set($")
                                     .append(field.variable())
                                     .append("=$velutil.mergeTemplate(\"")
-                                    .append(velPath)
-                                    .append(content.getInode())
-                                    .append(File.separator)
-                                    .append(field.inode())
-                                    .append(".")
-                                    .append(VelocityType.FIELD.fileExtension)
+                                    .append(new VelocityResourceKey(field, Optional.ofNullable(content), mode).path)
                                     .append("\"))");
                         } else {
                             sb.append("#set($")
@@ -615,7 +611,7 @@ public class ContentletLoader implements DotLoader {
 
         fields = asset.getContentType().fields();
         for (Field field : fields) {
-            new FieldLoader().invalidate(field, asset);
+            new FieldLoader().invalidate(field, Optional.<Contentlet>ofNullable(asset));
         }
 
 
