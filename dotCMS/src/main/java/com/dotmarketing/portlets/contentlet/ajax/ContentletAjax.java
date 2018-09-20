@@ -824,7 +824,11 @@ public class ContentletAjax {
 
         if (!UtilMethods.isSet(orderBy)){
             orderBy = "modDate desc";
-        }else{
+        }else if (orderBy.endsWith("__wfstep__")){
+			orderBy = "wfCurrentStepName";
+		}else if (orderBy.endsWith("__wfstep__ desc")){
+			orderBy = "wfCurrentStepName desc";
+		}else{
             if(orderBy.charAt(0)=='.'){
                 orderBy = st.getVelocityVarName() + orderBy;
             }
