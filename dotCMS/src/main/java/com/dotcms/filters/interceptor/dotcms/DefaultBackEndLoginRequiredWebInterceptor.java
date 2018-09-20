@@ -34,7 +34,7 @@ public class DefaultBackEndLoginRequiredWebInterceptor implements WebInterceptor
 
     @Override
     public String[] getFilters() {
-        return new String[]{"/html"};
+        return new String[]{"/html/"};
     }
 
     @Override
