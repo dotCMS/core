@@ -2,6 +2,10 @@ package com.dotmarketing.portlets.categories.business;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
@@ -13,9 +17,16 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  *	This class is an specific implementation of the CategoryAPI API to manage
@@ -761,5 +772,75 @@ public class CategoryAPIImpl implements CategoryAPI {
                     .getCategoryVelocityVarName() : "key";
         }
     }
+
+	/**
+	 * This method will look for all the fields of type 'Category' within a Structure and will get you all the associated Category types available for a given a user.
+	 * @param contentType
+	 * @param user
+	 * @return
+	 */
+	public List<Category> findCategories(final ContentType contentType, final User user)
+			throws DotSecurityException, DotDataException {
+
+		if(!hasCategoryFields(contentType)){
+			return ImmutableList.of();
+		}
+
+		final List<Category> filteredTopCategories = permissionAPI
+				.filterCollection(findCategoryFields(contentType).stream()
+						.map(field -> findCategory(CategoryField.class.cast(field), user))
+						.filter(Objects::nonNull)
+						.collect(Collectors.toList()), PermissionAPI.PERMISSION_READ, false, user
+				);
+
+		final ImmutableList.Builder<Category> builder = new ImmutableList.Builder<>();
+
+	    for(final Category category: filteredTopCategories){
+			builder.add(category).addAll(
+		 			getAllChildren(category, user, false)
+			);
+		}
+		return builder.build();
+
+	}
+
+	/**
+	 * given a field previously determined to be of type Category this method will look up the respective CategoryField type.
+	 * @param categoryField
+	 * @param user
+	 * @return
+	 */
+	private Category findCategory(final CategoryField categoryField, final User user) {
+		Category category = null;
+		try {
+			category = find(categoryField.values(), user, false);
+		} catch (DotSecurityException | DotDataException e) {
+			Logger.error(getClass(),
+					String.format("Unable to get category for field '%s' ", categoryField), e);
+		}
+		return category;
+	}
+
+	/**
+	 * Given a contentType this method will look into the fields and get you all the ones of type CategoryField
+	 * @param contentType
+	 * @return
+	 */
+	private List<Field> findCategoryFields(final ContentType contentType) {
+		return contentType.fields()
+				.stream().filter(CategoryField.class::isInstance)
+				.collect(CollectionsUtils.toImmutableList());
+	}
+
+	/**
+	 *
+	 * @param contentType
+	 * @return
+	 */
+	private boolean hasCategoryFields(final ContentType contentType) {
+		return contentType.fields()
+				.stream().anyMatch(CategoryField.class::isInstance);
+
+	}
 
 }
