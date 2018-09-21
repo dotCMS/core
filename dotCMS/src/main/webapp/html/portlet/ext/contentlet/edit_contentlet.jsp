@@ -104,7 +104,6 @@
 	//Contentlet relationships
 	ContentletRelationships contentletRelationships = (ContentletRelationships)
 		request.getAttribute(com.dotmarketing.util.WebKeys.CONTENTLET_RELATIONSHIPS_EDIT);
-	List<ContentletRelationships.ContentletRelationshipRecords> relationshipRecords = (contentletRelationships==null) ? new ArrayList<ContentletRelationships.ContentletRelationshipRecords>() : contentletRelationships.getRelationshipsRecords();
 
 	//Contentlet references
 	List<Map<String, Object>> references = null;
@@ -140,7 +139,12 @@
 	//request.setAttribute("contentletForm", contentletForm);
 	request.setAttribute("structure", structure);
 	request.setAttribute("selectedCategories", selectedCategories);
+
+
+	//TODO: Remove this attribute when the relationships tab is no longer used
+	List<ContentletRelationships.ContentletRelationshipRecords> relationshipRecords = (contentletRelationships==null) ? new ArrayList<ContentletRelationships.ContentletRelationshipRecords>() : contentletRelationships.getRelationshipsRecords();
 	request.setAttribute("relationshipRecords", relationshipRecords);
+
 	request.setAttribute("references", references);
 	request.setAttribute("referer", referer);
 	request.setAttribute("fields", fields);
@@ -307,7 +311,8 @@
                                 <%=f.getFieldName()%>:</span>
                             </div>
                             <div class="fieldValue">
-                                <jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_relationships.jsp" />
+                                <% request.setAttribute("fieldRelationType", f.getFieldRelationType());%>
+                                <jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_relationships.jsp"/>
                             </div>
                         <% }
                         counter++;

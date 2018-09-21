@@ -164,7 +164,8 @@ public class EditRelationshipAction extends DotPortletAction {
 
 				if(!relationship.isFixed()){
 
-					String relationshipTypeValue = relationshipForm.getParentRelationName().replaceAll("\\s", "_").replaceAll("[^a-zA-Z0-9\\_]", "") +
+					//TODO: Add field.velocityVarName. Remove hardcoded
+					String relationshipTypeValue = "newRel-" + relationshipForm.getParentRelationName().replaceAll("\\s", "_").replaceAll("[^a-zA-Z0-9\\_]", "") +
 					"-" + relationshipForm.getChildRelationName().replaceAll("\\s", "_").replaceAll("[^a-zA-Z0-9\\_]", "");
 
 					String lastRelationshipTypeValue = relationship.getRelationTypeValue();
@@ -182,11 +183,11 @@ public class EditRelationshipAction extends DotPortletAction {
 
 					if (!relationshipTypeValue.equals(relationship.getRelationTypeValue())) {
 						Relationship oRel = APILocator.getRelationshipAPI().byTypeValue(relationshipTypeValue);
-						if (InodeUtils.isSet(oRel.getInode()) && !oRel.getInode().equalsIgnoreCase(relationship.getInode())) {
+						/*if (InodeUtils.isSet(oRel.getInode()) && !oRel.getInode().equalsIgnoreCase(relationship.getInode())) {
 							String message = "error.relationship.same.relation.exist";
 							SessionMessages.add(req, "error",message);
 							return false;
-						}
+						}*/
 
 						List<Tree> treesToUpdate = TreeFactory.getTreesByRelationType(relationshipForm.getRelationTypeValue());
 						for (Tree theTree : treesToUpdate) {

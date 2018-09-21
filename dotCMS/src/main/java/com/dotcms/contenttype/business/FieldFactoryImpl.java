@@ -224,7 +224,7 @@ public class FieldFactoryImpl implements FieldFactory {
 
       //TODO: Modify when UI changes on Relationships get ready
       if (throwAwayField.type().getCanonicalName().equals(RelationshipField.class.getCanonicalName())){
-        builder.relationType(tryVar + "-News-Youtube");
+        builder.relationType(tryVar + "-Testcontenttype-Vimeo");
       }
 
 

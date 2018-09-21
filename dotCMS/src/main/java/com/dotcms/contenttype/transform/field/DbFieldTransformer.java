@@ -56,7 +56,7 @@ public class DbFieldTransformer implements FieldTransformer {
 
 				//TODO: Modify when UI changes on Relationships get ready
 				if (type().getCanonicalName().equals(RelationshipField.class.getCanonicalName())){
-					return variable() + "-News-Youtube";
+					return variable() + "-Testcontenttype-Vimeo";
 				}
 				return null;
 			}
