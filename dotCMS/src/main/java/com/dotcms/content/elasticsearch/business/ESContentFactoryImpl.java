@@ -1306,7 +1306,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
         return searchRequestBuilder.execute().actionGet().getHits().getTotalHits();
     }
 
-    // todo: do an unit test for me
     @Override
     protected void indexCount(final String query,
                               final long timeoutMillis,
