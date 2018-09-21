@@ -828,7 +828,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 	 */
 	private List<Field> findCategoryFields(final ContentType contentType) {
 		return contentType.fields()
-				.stream().filter(field -> field instanceof CategoryField)
+				.stream().filter(CategoryField.class::isInstance)
 				.collect(CollectionsUtils.toImmutableList());
 	}
 
@@ -839,7 +839,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 	 */
 	private boolean hasCategoryFields(final ContentType contentType) {
 		return contentType.fields()
-				.stream().anyMatch(field -> field instanceof CategoryField);
+				.stream().anyMatch(CategoryField.class::isInstance);
 
 	}
 
