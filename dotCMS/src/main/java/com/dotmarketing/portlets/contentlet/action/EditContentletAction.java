@@ -832,7 +832,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 					req.setAttribute(com.dotmarketing.util.WebKeys.CONTENTLET_EDIT, contentlet);
 					req.setAttribute("inode", sibblingInode);
 				} else {
-					Logger.debug(EditContentletAction.class, ()->"getLanguagesIcons :: Sibbling Contentlet = " + sibblingContentlet.getInode());
+					Logger.debug(EditContentletAction.class, ()->"_retrieveWebAsset :: Sibbling Contentlet = " + sibblingContentlet.getInode());
 					Identifier identifier = APILocator.getIdentifierAPI().find(sibblingContentlet);
 					contentlet.setIdentifier(identifier.getInode());
 					contentlet.setStructureInode(sibblingContentlet.getStructureInode());
