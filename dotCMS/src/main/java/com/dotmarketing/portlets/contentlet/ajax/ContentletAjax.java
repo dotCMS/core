@@ -1536,7 +1536,6 @@ public class ContentletAjax {
 
 		  Contentlet contentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
 		  if (null != contentlet) {
-
 			  callbackData.put("isHtmlPage", contentlet.isHTMLPage());
 			  callbackData.put("contentletType", contentlet.getContentType().variable());
 			  callbackData.put("contentletBaseType", contentlet.getContentType().baseType().name());

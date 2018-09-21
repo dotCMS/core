@@ -215,9 +215,12 @@
 				<script>
 					function changeLanguage(url){
 						url=url+"";
-						if(url.indexOf("_content_sibbling=&")>-1){
-							url=url.replace("_content_sibbling=&","_content_sibbling=" + currentContentletInode +"&");
-						}
+						if(url.indexOf("_content_sibbling=")>-1 && currentContentletInode){
+                            var startSibblingParam = url.indexOf("_content_sibbling=");
+                            var paramEnd = url.indexOf("&", startSibblingParam);
+                            var param = url.substring(startSibblingParam, paramEnd);
+
+                            url=url.replace(param,"_content_sibbling=" + currentContentletInode);						}
 						else if(url.indexOf("_content_sibbling=")<0){
 							url+="&_content_sibbling=" + currentContentletInode ;
 						}
