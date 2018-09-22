@@ -176,13 +176,7 @@ public class PageContextBuilder {
                             : (Container) APILocator.getVersionableAPI()
                             .findWorkingVersion(containerId, systemUser, false);
 
-                    // if there is no (live==live || working==working) container        
-                    if(container==null || container.isArchived()) {
-                        continue;
-                    }
-                    
-                    
-                    
+
                     boolean hasWritePermissionOnContainer =
                             permissionAPI.doesUserHavePermission(container, PERMISSION_WRITE, user, false) && APILocator.getPortletAPI()
                                 .hasContainerManagerRights(user);

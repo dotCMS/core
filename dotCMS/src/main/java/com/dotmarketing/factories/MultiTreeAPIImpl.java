@@ -59,7 +59,8 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             final Container container = (liveMode) ? (Container) versionableAPI.findLiveVersion(multiTree.getContainer(),
                     systemUser, false)
                     : (Container) versionableAPI.findWorkingVersion(multiTree.getContainer(), systemUser, false);
-            if(container==null && ! liveMode) {
+
+            if(container==null || container.isArchived()) {
                 continue;
             }
 
