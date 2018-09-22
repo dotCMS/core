@@ -177,7 +177,7 @@ public class PageContextBuilder {
                             .findWorkingVersion(containerId, systemUser, false);
 
                     // if there is no (live==live || working==working) container        
-                    if(container==null) {
+                    if(container==null || container.isArchived()) {
                         continue;
                     }
                     
