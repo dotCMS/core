@@ -798,20 +798,6 @@
 
 </script>
 
-<form id="remotePublishForm">
-	<input name="assetIdentifier" id="assetIdentifier" type="hidden" value="">
-	<input name="remotePublishDate" id="remotePublishDate" type="hidden" value="">
-	<input name="remotePublishTime" id="remotePublishTime" type="hidden" value="">
-	<input name="remotePublishExpireDate" id="remotePublishExpireDate" type="hidden" value="">
-	<input name="remotePublishExpireTime" id="remotePublishExpireTime" type="hidden" value="">
-	<input name="iWantTo" id=iWantTo type="hidden" value="">
-	<input name="whoToSend" id=whoToSend type="hidden" value="">
-	<input name="bundleName" id=bundleName type="hidden" value="">
-	<input name="bundleSelect" id=bundleSelect type="hidden" value="">
-	<input name="forcePush" id=forcePush type="hidden" value="">
-</form>
-
-
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp" >
 	<liferay:param name="box_title" value="<%= LanguageUtil.get(pageContext,\"view-categories\") %>" />
 

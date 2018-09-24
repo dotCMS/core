@@ -824,7 +824,11 @@ public class ContentletAjax {
 
         if (!UtilMethods.isSet(orderBy)){
             orderBy = "modDate desc";
-        }else{
+        }else if (orderBy.endsWith("__wfstep__")){
+			orderBy = "wfCurrentStepName";
+		}else if (orderBy.endsWith("__wfstep__ desc")){
+			orderBy = "wfCurrentStepName desc";
+		}else{
             if(orderBy.charAt(0)=='.'){
                 orderBy = st.getVelocityVarName() + orderBy;
             }
@@ -1532,7 +1536,6 @@ public class ContentletAjax {
 
 		  Contentlet contentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
 		  if (null != contentlet) {
-
 			  callbackData.put("isHtmlPage", contentlet.isHTMLPage());
 			  callbackData.put("contentletType", contentlet.getContentType().variable());
 			  callbackData.put("contentletBaseType", contentlet.getContentType().baseType().name());

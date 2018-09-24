@@ -6,6 +6,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import org.elasticsearch.search.SearchHit;
@@ -58,7 +59,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         if (optionalContentlet.isPresent()) {
 
             final Contentlet contentlet = optionalContentlet.get();
-            contentlet.immediateContentRefresh();
+            contentlet.setIndexPolicy(IndexPolicy.FORCE);
             APILocator.getContentletIndexAPI().addContentToIndex(optionalContentlet.get());
 
             instance.indexCount("+inode:"+optionalContentlet.get().getInode(), 1000,

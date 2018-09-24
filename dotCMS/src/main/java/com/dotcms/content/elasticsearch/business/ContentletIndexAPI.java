@@ -137,7 +137,7 @@ public interface ContentletIndexAPI {
 	 * @param contentToIndex {@link List}
 	 * @throws DotHibernateException
 	 */
-	public void indexContentListAfter(final List<Contentlet> contentToIndex) throws DotHibernateException;
+	public void indexContentListDeferred(final List<Contentlet> contentToIndex) throws DotHibernateException;
 
 	/**
 	 * Same of indexContentList, just including a listener that will be call when the indexing is done.

@@ -1248,14 +1248,14 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
 	@Override
-	protected long indexCount(String query) {
-	    String qq=findAndReplaceQueryDates(translateQuery(query, null).getQuery());
+	protected long indexCount(final String query) {
+	    final String qq = findAndReplaceQueryDates(translateQuery(query, null).getQuery());
 
 	    // we check the query to figure out wich indexes to hit
         String indexToHit;
         IndiciesInfo info;
         try {
-            info=APILocator.getIndiciesAPI().loadIndicies();
+            info = APILocator.getIndiciesAPI().loadIndicies();
         }
         catch(DotDataException ee) {
             Logger.fatal(this, "Can't get indicies information",ee);
@@ -1266,9 +1266,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
         else
             indexToHit=info.working;
 
-        Client client=new ESClient().getClient();
-        QueryStringQueryBuilder qb = QueryBuilders.queryStringQuery(qq);
-        SearchRequestBuilder searchRequestBuilder = client.prepareSearch().setSize(0);
+        final Client client              = this.client.getClient();
+        final QueryStringQueryBuilder qb = QueryBuilders.queryStringQuery(qq);
+        final SearchRequestBuilder searchRequestBuilder = client.prepareSearch().setSize(0);
         searchRequestBuilder.setQuery(qb);
         searchRequestBuilder.setIndices(indexToHit);
         return searchRequestBuilder.execute().actionGet().getHits().getTotalHits();
@@ -1292,7 +1292,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             return 0;
         }
 
-        final Client client = new ESClient().getClient();
+        final Client client = this.client.getClient();
         final QueryStringQueryBuilder queryStringQueryBuilder =
                 QueryBuilders.queryStringQuery(queryStringQuery);
         final SearchRequestBuilder searchRequestBuilder =
@@ -1330,7 +1330,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             return;
         }
 
-        final Client client = new ESClient().getClient();
+        final Client client = this.client.getClient();
         final QueryStringQueryBuilder queryStringQueryBuilder =
                 QueryBuilders.queryStringQuery(queryStringQuery);
         final SearchRequestBuilder searchRequestBuilder =

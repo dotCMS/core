@@ -822,24 +822,32 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		}else {
 			/*In case of multi-language first ocurrence new contentlet*/
 			String sibblingInode = req.getParameter("sibbling");
+			String langId = req.getParameter("lang");
+
 			if(InodeUtils.isSet(sibblingInode) && !sibblingInode.equals("0")){
 				Contentlet sibblingContentlet = conAPI.find(sibblingInode,APILocator.getUserAPI().getSystemUser(), false);
-				Logger.debug(UtilHTML.class, "getLanguagesIcons :: Sibbling Contentlet = "
-						+ sibblingContentlet.getInode());
-				Identifier identifier = APILocator.getIdentifierAPI().find(sibblingContentlet);
-				contentlet.setIdentifier(identifier.getInode());
-				contentlet.setStructureInode(sibblingContentlet.getStructureInode());
-				
-				// take host field values with it 
-				for(Field ff : FieldsCache.getFieldsByStructureInode(sibblingContentlet.getStructureInode())) {
-				    if(ff.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
-				        contentlet.setStringProperty(ff.getVelocityVarName(), sibblingContentlet.getStringProperty(ff.getVelocityVarName()));
-				        contentlet.setHost(sibblingContentlet.getHost());
-				        contentlet.setFolder(sibblingContentlet.getFolder());
-				    }
+
+				if (UtilMethods.isSet(langId) && sibblingContentlet.getLanguageId() == Long.parseLong(langId)) {
+					contentlet = sibblingContentlet;
+					req.setAttribute(com.dotmarketing.util.WebKeys.CONTENTLET_EDIT, contentlet);
+					req.setAttribute("inode", sibblingInode);
+				} else {
+					Logger.debug(EditContentletAction.class, ()->"_retrieveWebAsset :: Sibbling Contentlet = " + sibblingContentlet.getInode());
+					Identifier identifier = APILocator.getIdentifierAPI().find(sibblingContentlet);
+					contentlet.setIdentifier(identifier.getInode());
+					contentlet.setStructureInode(sibblingContentlet.getStructureInode());
+
+					// take host field values with it
+					for (final Field field : FieldsCache.getFieldsByStructureInode(sibblingContentlet.getStructureInode())) {
+						if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
+							contentlet.setStringProperty(field.getVelocityVarName(), sibblingContentlet.getStringProperty(field.getVelocityVarName()));
+							contentlet.setHost(sibblingContentlet.getHost());
+							contentlet.setFolder(sibblingContentlet.getFolder());
+						}
+					}
 				}
 			}
-			String langId = req.getParameter("lang");
+
 			if(UtilMethods.isSet(langId)){
 				contentlet.setLanguageId(Long.parseLong(langId));
 			}

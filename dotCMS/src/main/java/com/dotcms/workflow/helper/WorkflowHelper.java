@@ -51,6 +51,8 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.LuceneQueryUtils;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.VelocityUtil;
+import com.dotmarketing.util.web.VelocityWebUtil;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.language.LanguageException;
@@ -58,6 +60,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -69,8 +72,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang.time.StopWatch;
+import org.apache.velocity.context.Context;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.Aggregations;
@@ -628,6 +634,38 @@ public class WorkflowHelper {
            throw new DoesNotExistException(exceptionMessage);
         }
         return action;
+    }
+
+    /**
+     * Evaluates the action condition using the Velocity Template Engine
+     * @param actionId
+     * @param user
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    public String evaluateActionCondition(final String actionId, final User user, final HttpServletRequest request, final HttpServletResponse response) throws DotDataException, DotSecurityException{
+
+        if (!UtilMethods.isSet(actionId)) {
+            final String exceptionMessage = getFormattedMessage(user.getLocale(),"Workflow-required-param-actionId",actionId);
+            throw new IllegalArgumentException(exceptionMessage);
+        }
+
+        final WorkflowAction action = this.workflowAPI.findAction(actionId, user);
+        if(action == null){
+            final String exceptionMessage = getFormattedMessage(user.getLocale(),"Workflow-does-not-exists-action-by-actionId",actionId);
+            throw new DoesNotExistException(exceptionMessage);
+        }
+
+        try {
+            final Context ctx = VelocityWebUtil.getVelocityContext(request, response);
+            final StringWriter out = new StringWriter();
+            VelocityUtil.getEngine().evaluate(ctx, out, "WorkflowVelocity:" + action.getName(), action.getCondition());
+            return out.toString();
+        }catch (Exception e){
+            throw new DotDataException(e);
+        }
+
     }
 
     /**

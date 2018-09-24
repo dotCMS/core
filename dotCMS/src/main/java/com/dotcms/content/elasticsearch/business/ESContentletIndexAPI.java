@@ -20,6 +20,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -306,7 +307,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
         // http://jira.dotmarketing.net/browse/DOTCMS-6886
         // check for related content to reindex
 		List<Contentlet> contentDependencies  = null;
-		final boolean    indexNow   		  = !content.isDefaultContentRefresh();
+		final boolean    indexIsNotDefer   		  = IndexPolicy.DEFER != content.getIndexPolicy();
         final List<Contentlet> contentToIndex = new ArrayList<>();
 
         contentToIndex.add(content);
@@ -315,7 +316,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 
 			if(includeDependencies){
 
-					if (indexNow) {
+					if (indexIsNotDefer) {
 						contentDependencies = new ArrayList<>(loadDeps(content));
 					} else {
 						contentToIndex.addAll(loadDeps(content));
@@ -324,18 +325,18 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 
 	   		if(bulk!=null || indexBeforeCommit) {
 
-				if (indexNow) {
+				if (indexIsNotDefer) {
 
-					this.handleIndexNow(content, reindexOnly, bulk, contentDependencies, contentToIndex, false);
+					this.handleIndexNotDefer(content, reindexOnly, bulk, contentDependencies, contentToIndex, false);
 				} else {
 
 					this.indexContentList(contentToIndex, bulk, reindexOnly);
 				}
 			} else {
 
-				if (indexNow) {
+				if (indexIsNotDefer) {
 
-					this.handleIndexNow(content, reindexOnly, bulk, contentDependencies, contentToIndex, true);
+					this.handleIndexNotDefer(content, reindexOnly, bulk, contentDependencies, contentToIndex, true);
 				} else {
 					// add a commit listener to index the contentlet if the entire
 					// transaction finish clean
@@ -348,15 +349,15 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 		}
 	}
 
-	private void handleIndexNow(final Contentlet content,
-								final boolean reindexOnly,
-								final BulkRequestBuilder bulk,
-								final List<Contentlet> contentDependencies,
-								final List<Contentlet> contentToIndex,
-								final boolean addRollBackListener) throws DotDataException {
+	private void handleIndexNotDefer(final Contentlet content,
+									 final boolean reindexOnly,
+									 final BulkRequestBuilder bulk,
+									 final List<Contentlet> contentDependencies,
+									 final List<Contentlet> contentToIndex,
+									 final boolean addRollBackListener) throws DotDataException {
 
 		// we do right now the reindex of the simple contentlet without dependencies
-		if (content.isWaitUntilContentRefresh()) {
+		if (content.getIndexPolicy() == IndexPolicy.WAIT_FOR) {
 			this.indexContentListWaitFor(contentToIndex, bulk, reindexOnly);
 		} else {
 			this.indexContentListNow(contentToIndex, bulk, reindexOnly);
@@ -402,7 +403,9 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 
 		    // split the list on three possible subset, one with the default refresh strategy, second one is the wait for and finally the immediate
 		    final List<List<Contentlet>> partitions = CollectionsUtils.partition(contentToIndex,
-                    Contentlet::isDefaultContentRefresh, Contentlet::isWaitUntilContentRefresh, Contentlet::isImmediateContentRefresh);
+					(contentlet -> contentlet.getIndexPolicy() == IndexPolicy.DEFER),
+					(contentlet -> contentlet.getIndexPolicy() == IndexPolicy.WAIT_FOR),
+					(contentlet -> contentlet.getIndexPolicy() == IndexPolicy.FORCE));
 
 			if (UtilMethods.isSet(partitions.get(0))) {
 
@@ -469,7 +472,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	} // indexContentListWaitFor.
 
 	@Override
-	public void indexContentListAfter(final List<Contentlet> contentToIndex) throws DotHibernateException {
+	public void indexContentListDeferred(final List<Contentlet> contentToIndex) throws DotHibernateException {
 
 		HibernateUtil.addCommitListener(()-> {
 			try {
@@ -481,7 +484,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 				Logger.error(ESContentletIndexAPI.class, e.getMessage(), e);
 			}
 		});
-	} // indexContentListAfter.
+	} // indexContentListDeferred.
 
 
 	@Override

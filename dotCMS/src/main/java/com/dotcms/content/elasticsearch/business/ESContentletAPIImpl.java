@@ -49,6 +49,7 @@ import com.dotmarketing.portlets.contentlet.business.*;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -2036,7 +2037,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 new ContentletLoader().invalidate(contentlet);
 
                 publishRelatedHtmlPages(contentlet);
+
+                if (contentlet.isHTMLPage()) {
+                    CacheLocator.getHTMLPageCache().remove(contentlet.getInode());
+                }
+
                 HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushArchiveEvent(workingContentlet), 1000);
+
             } else {
                 throw new DotContentletStateException("Contentlet with Identifier '" + contentlet.getIdentifier() +
                         "' must be unlocked before being archived");
@@ -2973,13 +2980,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                 }
 
-                final Object refreshPolicy = contentlet.getRefreshPolicy();
+                final IndexPolicy indexPolicy = contentlet.getIndexPolicy();
                 if(saveWithExistingID) {
                     contentlet = contentFactory.save(contentlet, existingInode);
                 } else {
                     contentlet = contentFactory.save(contentlet);
                 }
-                contentlet.setRefreshPolicy(refreshPolicy);
+                contentlet.setIndexPolicy(indexPolicy);
 
 
                 //Relate the tags with the saved contentlet
@@ -3015,7 +3022,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                     contentlet.setIdentifier(ident.getId() );
                     contentlet = contentFactory.save(contentlet);
-                    contentlet.setRefreshPolicy(refreshPolicy);
+                    contentlet.setIndexPolicy(indexPolicy);
                 } else {
 
                     Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
@@ -6053,9 +6060,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public Contentlet checkin(final Contentlet contentlet, final ContentletDependencies contentletDependencies) throws DotSecurityException, DotDataException {
 
-        if (null != contentletDependencies.getRefreshPolicy()) {
+        if (null != contentletDependencies.getIndexPolicy()) {
 
-            contentlet.setRefreshPolicy(contentletDependencies.getRefreshPolicy());
+            contentlet.setIndexPolicy(contentletDependencies.getIndexPolicy());
         }
 
         return checkin(contentlet, contentletDependencies.getRelationships(), contentletDependencies.getCategories(), null, contentletDependencies.getModUser(),

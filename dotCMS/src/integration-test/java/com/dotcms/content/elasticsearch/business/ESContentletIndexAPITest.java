@@ -21,6 +21,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
@@ -125,8 +126,8 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
         assertNotNull(contentletsWaitForRefresh);
         assertTrue(contentletsWaitForRefresh.size() > 0);
 
-        contentletsImmediateRefresh.stream().forEach(Contentlet::immediateContentRefresh);
-        contentletsWaitForRefresh.stream().forEach(Contentlet::waitUntilContentRefresh);
+        contentletsImmediateRefresh.stream().forEach(contentlet -> contentlet.setIndexPolicy(IndexPolicy.FORCE));
+        contentletsWaitForRefresh.stream().forEach(contentlet -> contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR));
 
 
         APILocator.getContentletIndexAPI().indexContentList(contentlets, null, false);

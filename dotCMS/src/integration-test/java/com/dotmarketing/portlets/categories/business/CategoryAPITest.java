@@ -10,6 +10,12 @@ import static org.junit.Assert.fail;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
+import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -939,4 +945,124 @@ public class CategoryAPITest extends IntegrationTestBase {
         }
     }
 
+
+    @Test
+    public void test_Find_Categories_Within_ContentType() throws Exception {
+        ContentType contentType = null;
+        List<Category> categoriesToDelete = Lists.newArrayList();
+        final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
+        try {
+            //Create Parent Category.
+            Category parentCategory = new Category();
+            parentCategory.setCategoryName("CT-Category-Parent");
+            parentCategory.setKey("parent");
+            parentCategory.setCategoryVelocityVarName("parent");
+            parentCategory.setSortOrder((String) null);
+            parentCategory.setKeywords(null);
+
+            categoryAPI.save(null, parentCategory, user, false);
+            categoriesToDelete.add(parentCategory);
+
+            //Create First Child Category.
+            Category childCategoryA = new Category();
+            childCategoryA.setCategoryName("CT-Category-A");
+            childCategoryA.setKey("categoryA");
+            childCategoryA.setCategoryVelocityVarName("categoryA");
+            childCategoryA.setSortOrder(1);
+            childCategoryA.setKeywords(null);
+
+            categoryAPI.save(parentCategory, childCategoryA, user, false);
+            categoriesToDelete.add(childCategoryA);
+
+            //Second Level Category.
+            Category childCategoryA_1 = new Category();
+            childCategoryA_1.setCategoryName("CT-Category-A-1");
+            childCategoryA_1.setKey("categoryA-1");
+            childCategoryA_1.setCategoryVelocityVarName("categoryA-1");
+            childCategoryA_1.setSortOrder(1);
+            childCategoryA_1.setKeywords(null);
+
+            categoryAPI.save(childCategoryA, childCategoryA_1, user, false);
+            categoriesToDelete.add(childCategoryA_1);
+
+            //Create Second Child Category.
+            Category childCategoryB = new Category();
+            childCategoryB.setCategoryName("CT-Category-B");
+            childCategoryB.setKey("categoryB");
+            childCategoryB.setCategoryVelocityVarName("categoryB");
+            childCategoryB.setSortOrder(2);
+            childCategoryB.setKeywords(null);
+
+            categoryAPI.save(parentCategory, childCategoryB, user, false);
+            categoriesToDelete.add(childCategoryB);
+
+            //Second Level Category.
+            Category childCategoryB_1 = new Category();
+            childCategoryB_1.setCategoryName("CT-Category-B-1");
+            childCategoryB_1.setKey("categoryB-1");
+            childCategoryB_1.setCategoryVelocityVarName("categoryB-1");
+            childCategoryB_1.setSortOrder(1);
+            childCategoryB_1.setKeywords(null);
+
+            categoryAPI.save(childCategoryB, childCategoryB_1, user, false);
+            categoriesToDelete.add(childCategoryB_1);
+
+            contentType = createContentTypeWithCatAndTextField(parentCategory);
+
+            final List<Category> categories = categoryAPI.findCategories(contentType, user);
+            assertEquals(5, categories.size());
+
+            categories.forEach( category -> {
+                assertTrue(category.getCategoryName().startsWith("CT-Category"));
+            });
+
+        } finally {
+
+             for(final Category category:categoriesToDelete){
+                categoryAPI.delete(category, user, false);
+             }
+
+             if(contentType != null){
+                 contentTypeApi.delete(contentType);
+             }
+        }
+
+    }
+
+    private ContentType createContentTypeWithCatAndTextField(final Category parentCategory)
+            throws DotSecurityException, DotDataException {
+
+        final long time = System.currentTimeMillis();
+        final String textFieldVar = "title"+time;
+        final String catFieldVar = "eventType"+time;
+
+        final Host demoHost =APILocator.getHostAPI().findByName("demo.dotcms.com", user, false);
+
+        ContentType type = ContentTypeBuilder.builder(SimpleContentType.class)
+                .name("TestCat" + time)
+                .variable("TestCat" + time)
+                .host(demoHost.getIdentifier())
+                .build();
+
+        type = APILocator.getContentTypeAPI(user).save(type);
+
+        com.dotcms.contenttype.model.field.Field titleField = FieldBuilder.builder(TextField.class)
+                .name(textFieldVar)
+                .variable(textFieldVar)
+                .contentTypeId(type.id())
+                .build();
+
+        APILocator.getContentTypeFieldAPI().save(titleField, user);
+
+        com.dotcms.contenttype.model.field.Field catField = FieldBuilder.builder(CategoryField.class)
+                .name(catFieldVar)
+                .variable(catFieldVar)
+                .values(parentCategory.getInode())
+                .contentTypeId(type.id())
+                .build();
+
+        APILocator.getContentTypeFieldAPI().save(catField, user);
+
+        return APILocator.getContentTypeAPI(user).find(type.inode());
+    }
 }
