@@ -1,4 +1,4 @@
-import { DotContainer } from '../../../../shared/models/container/dot-container.model';
+import { DotContainer } from '@models/container/dot-container.model';
 
 /**
  * It is a Container linked into a DotLayoutGridBox

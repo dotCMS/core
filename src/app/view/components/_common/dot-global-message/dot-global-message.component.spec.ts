@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { DotGlobalMessageComponent } from './dot-global-message.component';
-import { DotEventsService } from '../../../../api/services/dot-events/dot-events.service';
+import { DotEventsService } from '@services/dot-events/dot-events.service';
 
 describe('DotGlobalMessageComponent', () => {
     let component: DotGlobalMessageComponent;

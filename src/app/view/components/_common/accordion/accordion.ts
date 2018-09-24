@@ -74,10 +74,14 @@ export class AccordionComponent {
 })
 export class AccordionGroupComponent implements AfterViewInit, OnDestroy {
     // tslint:disable-next-line:no-input-rename
-    @Input('open') _isOpen = false; // TODO: need to refactor this
-    @Input() heading: string;
-    @Input() icon: string;
-    @ViewChild('accordionGroupContentInner') accordionGroupContentInner: ElementRef;
+    @Input('open')
+    _isOpen = false; // TODO: need to refactor this
+    @Input()
+    heading: string;
+    @Input()
+    icon: string;
+    @ViewChild('accordionGroupContentInner')
+    accordionGroupContentInner: ElementRef;
     public accordionGroupHeight: number;
 
     constructor(private accordion: AccordionComponent) {

@@ -1,42 +1,48 @@
 import { DotRouterService } from './dot-router.service';
 import { DOTTestBed } from '../../../test/dot-test-bed';
-import { async } from 'q';
 import { RouterTestingModule } from '@angular/router/testing';
 import { LoginService } from 'dotcms-js/core/login.service';
 import { Router } from '@angular/router';
+import { async } from '@angular/core/testing';
+
+class RouterMock {
+    url = '/c/test';
+
+    routerState = {
+        snapshot: {
+            url: '/c/hello-world'
+        }
+    };
+
+    navigate = jasmine.createSpy('navigate').and.callFake(() => {
+        return new Promise((resolve) => {
+            resolve(true);
+        });
+    });
+}
 
 describe('DotRouterService', () => {
     let service: DotRouterService;
     let router: Router;
 
-    beforeEach(
-        async(() => {
-            const testbed = DOTTestBed.configureTestingModule({
-                providers: [
-                    {
-                        provide: LoginService,
-                        useValue: {}
-                    }
-                ],
-                imports: [RouterTestingModule]
-            });
-
-            service = testbed.get(DotRouterService);
-            router = testbed.get(Router);
-            spyOn(router, 'navigate').and.callFake(() => {
-                return new Promise((resolve) => {
-                    resolve(true);
-                });
-            });
-
-            spyOnProperty(router, 'routerState', 'get').and.returnValue({
-                snapshot: {
-                    url: '/c/hello-world'
+    beforeEach(async(() => {
+        const testbed = DOTTestBed.configureTestingModule({
+            providers: [
+                {
+                    provide: LoginService,
+                    useValue: {}
+                },
+                {
+                    provide: Router,
+                    useClass: RouterMock
                 }
-            });
-        })
+            ],
+            imports: [RouterTestingModule]
+        });
 
-    );
+        service = testbed.get(DotRouterService);
+        router = testbed.get(Router);
+    }));
 
     it('should go to main', () => {
         service.goToMain();
@@ -78,7 +84,6 @@ describe('DotRouterService', () => {
     });
 
     it('should return true if a portlet is jsp', () => {
-        spyOnProperty(router, 'url', 'get').and.returnValue('/c/test');
         expect(service.isJSPPortlet()).toBeTruthy();
     });
 

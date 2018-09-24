@@ -1,4 +1,4 @@
-@import 'variables';
+@import "variables";
 
 :host {
     display: flex;
@@ -33,7 +33,7 @@
             }
         }
 
-        .listing-datatable__column-icon{
+        .listing-datatable__column-icon {
             display: flex;
             align-items: center;
 

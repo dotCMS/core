@@ -1,7 +1,7 @@
 import { Component, OnDestroy, Input, Output, EventEmitter, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { HotkeysService, Hotkey } from 'angular2-hotkeys';
-import { DotMessageService } from '../../../../api/services/dot-messages-service';
-import { DotEventsService } from '../../../../api/services/dot-events/dot-events.service';
+import { DotMessageService } from '@services/dot-messages-service';
+import { DotEventsService } from '@services/dot-events/dot-events.service';
 
 /**
  * Display select columns row
@@ -20,21 +20,25 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
     selectedColumnIndex = 0;
     i18nMessages = {};
 
-    @Input() columns: number[] = [1, 2, 3, 4];
-    @Input() disabled = false;
+    @Input()
+    columns: number[] = [1, 2, 3, 4];
+    @Input()
+    disabled = false;
     @Input()
     toolTips: string[] = [
         'contenttypes.content.single_column',
         'contenttypes.content.many_columns',
         'contenttypes.content.add_column_title'
     ];
-    @Output() selectColums: EventEmitter<number> = new EventEmitter<number>();
-    @ViewChild('colContainer') colContainerElem: ElementRef;
+    @Output()
+    selectColums: EventEmitter<number> = new EventEmitter<number>();
+    @ViewChild('colContainer')
+    colContainerElem: ElementRef;
 
     constructor(
+        private dotEventsService: DotEventsService,
         private hotkeysService: HotkeysService,
-        public dotMessageService: DotMessageService,
-        private dotEventsService: DotEventsService
+        public dotMessageService: DotMessageService
     ) {}
 
     ngOnInit(): void {
@@ -123,10 +127,13 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
      */
     setKeyboardEvent(key: string | string[], keyEvent): any {
         this.hotkeysService.add(
-            new Hotkey(key, (_event: KeyboardEvent): boolean => {
-                keyEvent();
-                return false;
-            })
+            new Hotkey(
+                key,
+                (_event: KeyboardEvent): boolean => {
+                    keyEvent();
+                    return false;
+                }
+            )
         );
     }
 

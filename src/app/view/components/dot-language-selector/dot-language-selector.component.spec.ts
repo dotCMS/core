@@ -1,6 +1,6 @@
 import { ComponentFixture } from '@angular/core/testing';
 import { DotLanguageSelectorComponent } from './dot-language-selector.component';
-import { DotLanguagesService } from '../../../api/services/dot-languages/dot-languages.service';
+import { DotLanguagesService } from '@services/dot-languages/dot-languages.service';
 import { DotLanguagesServiceMock } from '../../../test/dot-languages-service.mock';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DOTTestBed } from '../../../test/dot-test-bed';
@@ -51,6 +51,6 @@ describe('DotLanguageSelectorComponent', () => {
     it('shoudl set fixed width to dropdown', () => {
         fixture.detectChanges();
         const pDropDown: Dropdown = de.query(By.css('p-dropdown')).componentInstance;
-        expect(pDropDown.style).toEqual({width: '100px'});
+        expect(pDropDown.style).toEqual({ width: '100px' });
     });
 });

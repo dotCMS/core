@@ -1,4 +1,4 @@
-import { DotMessageService } from '../../../../../../api/services/dot-messages-service';
+import { DotMessageService } from '@services/dot-messages-service';
 import { DotLayoutPropertiesItemComponent } from '../dot-layout-properties-item/dot-layout-properties-item.component';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { Component, forwardRef, ViewChild, OnInit } from '@angular/core';
@@ -16,8 +16,10 @@ import { DotLayoutSideBar } from '../../../../shared/models/dot-layout-sidebar.m
     ]
 })
 export class DotLayoutSidebarComponent implements ControlValueAccessor, OnInit {
-    @ViewChild('propertyItemLeft') propertyItemLeft: DotLayoutPropertiesItemComponent;
-    @ViewChild('propertyItemRight') propertyItemRight: DotLayoutPropertiesItemComponent;
+    @ViewChild('propertyItemLeft')
+    propertyItemLeft: DotLayoutPropertiesItemComponent;
+    @ViewChild('propertyItemRight')
+    propertyItemRight: DotLayoutPropertiesItemComponent;
     value: DotLayoutSideBar;
 
     constructor(public dotMessageService: DotMessageService) {}

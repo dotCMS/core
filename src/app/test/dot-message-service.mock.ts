@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs/Observable';
+import { of as observableOf, Observable } from 'rxjs';
 
 /**
  * Mock of DotMessageService.
@@ -24,11 +24,11 @@ export class MockDotMessageService {
     constructor(private messages: MessageConfig) {}
 
     public getMessages(_keys: string[]): Observable<any> {
-        return Observable.of(this.messages);
+        return observableOf(this.messages);
     }
 
     get messageMap$(): Observable<any> {
-        return Observable.of(this.messages);
+        return observableOf(this.messages);
     }
 
     get(key: string, ...args: string[]): string {

@@ -1,25 +1,25 @@
-import { DotAlertConfirmService } from '../../../api/services/dot-alert-confirm/dot-alert-confirm.service';
+import { of as observableOf, Observable } from 'rxjs';
+import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
 import { IconButtonTooltipModule } from '../_common/icon-button-tooltip/icon-button-tooltip.module';
 import { ActionMenuButtonComponent } from '../_common/action-menu-button/action-menu-button.component';
 import { DotActionButtonComponent } from '../_common/dot-action-button/dot-action-button.component';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture } from '@angular/core/testing';
-import { CrudService } from '../../../api/services/crud/crud.service';
+import { CrudService } from '@services/crud/crud.service';
 import { DOTTestBed } from '../../../test/dot-test-bed';
-import { DataTableModule, SharedModule, MenuModule} from 'primeng/primeng';
+import { DataTableModule, SharedModule, MenuModule } from 'primeng/primeng';
 import { DebugElement, SimpleChange } from '@angular/core';
-import { FormatDateService } from '../../../api/services/format-date-service';
+import { FormatDateService } from '@services/format-date-service';
 import { ListingDataTableComponent } from './listing-data-table.component';
-import { DotMessageService } from '../../../api/services/dot-messages-service';
+import { DotMessageService } from '@services/dot-messages-service';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
-import { Observable } from 'rxjs/Observable';
-import { PaginatorService } from '../../../api/services/paginator';
+import { PaginatorService } from '@services/paginator';
 import { ActionHeaderComponent } from './action-header/action-header';
-import { DotDataTableAction } from '../../../shared/models/data-table/dot-data-table-action';
+import { DotDataTableAction } from '@models/data-table/dot-data-table-action';
 import { DotMenuModule } from '../_common/dot-menu/dot-menu.module';
 import { DotIconModule } from '../_common/dot-icon/dot-icon.module';
-import {DotIconButtonModule} from '../_common/dot-icon-button/dot-icon-button.module';
+import { DotIconButtonModule } from '../_common/dot-icon-button/dot-icon-button.module';
 
 describe('ListingDataTableComponent', () => {
     let comp: ListingDataTableComponent;
@@ -33,12 +33,7 @@ describe('ListingDataTableComponent', () => {
         });
 
         DOTTestBed.configureTestingModule({
-            declarations: [
-                ActionHeaderComponent,
-                DotActionButtonComponent,
-                ListingDataTableComponent,
-                ActionMenuButtonComponent
-            ],
+            declarations: [ActionHeaderComponent, DotActionButtonComponent, ListingDataTableComponent, ActionMenuButtonComponent],
             imports: [
                 DataTableModule,
                 SharedModule,
@@ -122,9 +117,7 @@ describe('ListingDataTableComponent', () => {
         expect(5).toEqual(headers.length);
 
         comp.columns.forEach((_col, index) =>
-            expect(!index ? '' : comp.columns[index - 1].header).toEqual(
-                headers[index].querySelector('span').textContent
-            )
+            expect(!index ? '' : comp.columns[index - 1].header).toEqual(headers[index].querySelector('span').textContent)
         );
 
         rows.forEach((row, rowIndex) => {
@@ -134,9 +127,7 @@ describe('ListingDataTableComponent', () => {
 
                 cells.forEach((_cell, cellIndex) => {
                     if (cellIndex && cellIndex < 5) {
-                        expect(cells[cellIndex].querySelector('span').textContent).toContain(
-                            item[comp.columns[cellIndex - 1].fieldName]
-                        );
+                        expect(cells[cellIndex].querySelector('span').textContent).toContain(item[comp.columns[cellIndex - 1].fieldName]);
                     }
                 });
             }
@@ -178,9 +169,7 @@ describe('ListingDataTableComponent', () => {
         expect(5).toEqual(headers.length, 'th');
 
         comp.columns.forEach((_col, index) =>
-            expect(!index ? '' : comp.columns[index - 1].header).toEqual(
-                headers[index].querySelector('span').textContent
-            )
+            expect(!index ? '' : comp.columns[index - 1].header).toEqual(headers[index].querySelector('span').textContent)
         );
 
         rows.forEach((row, rowIndex) => {
@@ -303,7 +292,7 @@ describe('ListingDataTableComponent', () => {
 
     it('should show the loading indicator while the data is received', () => {
         expect(comp.loading).toEqual(true);
-        spyOn(this.paginatorService, 'getCurrentPage').and.returnValue(Observable.of(this.items));
+        spyOn(this.paginatorService, 'getCurrentPage').and.returnValue(observableOf(this.items));
         comp.columns = this.columns;
         comp.loadCurrentPage();
         expect(comp.loading).toEqual(false);
@@ -311,7 +300,7 @@ describe('ListingDataTableComponent', () => {
 
     it('should load first page of resutls and set pagination to 1', () => {
         comp.dataTable.first = 3;
-        spyOn(this.paginatorService, 'get').and.returnValue(Observable.of(this.items));
+        spyOn(this.paginatorService, 'get').and.returnValue(observableOf(this.items));
 
         comp.loadFirstPage();
 

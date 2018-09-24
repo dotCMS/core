@@ -16,7 +16,7 @@ import { LoginServiceMock } from '../../../../../../test/login-service.mock';
 import { LoginService } from 'dotcms-js/dotcms-js';
 import { DotEditLayoutSidebarModule } from '../../../components/dot-edit-layout-sidebar/dot-edit-layout-sidebar.module';
 import { MockDotMessageService } from '../../../../../../test/dot-message-service.mock';
-import { DotMessageService } from '../../../../../../api/services/dot-messages-service';
+import { DotMessageService } from '@services/dot-messages-service';
 
 describe('DotLayoutDesignerComponent', () => {
     let component: DotLayoutDesignerComponent;

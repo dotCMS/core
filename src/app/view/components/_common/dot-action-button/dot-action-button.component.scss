@@ -1,4 +1,4 @@
-@import 'primeng-theme/utils/theme-variables';
+@import "primeng-theme/utils/theme-variables";
 
 $action-button-height: 48px;
 
@@ -21,11 +21,12 @@ $action-button-height: 48px;
                 box-shadow: $md-shadow-3;
             }
 
-            &:active, &:focus {
+            &:active,
+            &:focus {
                 background: $brand-primary_mod;
             }
 
-            [class^='ui-button-icon'],
+            [class^="ui-button-icon"],
             .ui-button-text,
             .ui-c,
             i {

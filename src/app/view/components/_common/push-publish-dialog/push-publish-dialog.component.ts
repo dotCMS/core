@@ -1,9 +1,9 @@
 import { Component, Input, Output, EventEmitter, ViewEncapsulation, ViewChild } from '@angular/core';
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { OnInit } from '@angular/core/src/metadata/lifecycle_hooks';
-import { PushPublishService } from '../../../../api/services/push-publish/push-publish.service';
+import { PushPublishService } from '@services/push-publish/push-publish.service';
 import { SelectItem } from 'primeng/primeng';
-import { DotMessageService } from '../../../../api/services/dot-messages-service';
+import { DotMessageService } from '@services/dot-messages-service';
 import { LoggerService } from 'dotcms-js/dotcms-js';
 @Component({
     encapsulation: ViewEncapsulation.None,
@@ -16,9 +16,12 @@ export class PushPublishContentTypesDialogComponent implements OnInit {
     pushActions: SelectItem[];
     dateFieldMinDate = new Date();
 
-    @Input() assetIdentifier: string;
-    @Output() cancel = new EventEmitter<boolean>();
-    @ViewChild('formEl') formEl: HTMLFormElement;
+    @Input()
+    assetIdentifier: string;
+    @Output()
+    cancel = new EventEmitter<boolean>();
+    @ViewChild('formEl')
+    formEl: HTMLFormElement;
 
     constructor(
         private pushPublishService: PushPublishService,
@@ -28,7 +31,6 @@ export class PushPublishContentTypesDialogComponent implements OnInit {
     ) {}
 
     ngOnInit() {
-
         this.dotMessageService
             .getMessages([
                 'contenttypes.content.push_publish',
@@ -83,15 +85,13 @@ export class PushPublishContentTypesDialogComponent implements OnInit {
      */
     submitPushAction(_event): void {
         if (this.form.valid) {
-            this.pushPublishService
-                .pushPublishContent(this.assetIdentifier, this.form.value)
-                .subscribe((result: any) => {
-                    if (!result.errors) {
-                        this.close();
-                    } else {
-                        this.loggerService.debug(result.errorMessages);
-                    }
-                });
+            this.pushPublishService.pushPublishContent(this.assetIdentifier, this.form.value).subscribe((result: any) => {
+                if (!result.errors) {
+                    this.close();
+                } else {
+                    this.loggerService.debug(result.errorMessages);
+                }
+            });
             this.form.reset();
         }
     }

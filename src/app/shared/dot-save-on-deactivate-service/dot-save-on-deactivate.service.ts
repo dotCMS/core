@@ -1,9 +1,8 @@
+import { of as observableOf, Observable, Observer } from 'rxjs';
 import { Injectable } from '@angular/core';
 import { OnSaveDeactivate } from './save-on-deactivate';
 import { ActivatedRouteSnapshot, CanDeactivate, RouterStateSnapshot } from '@angular/router';
-import { Observable } from 'rxjs/Observable';
-import { Observer } from 'rxjs/Observer';
-import { DotAlertConfirmService } from '../../api/services/dot-alert-confirm/dot-alert-confirm.service';
+import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
 
 @Injectable()
 export class DotSaveOnDeactivateService implements CanDeactivate<OnSaveDeactivate> {
@@ -14,7 +13,7 @@ export class DotSaveOnDeactivateService implements CanDeactivate<OnSaveDeactivat
             return Observable.create((observer: Observer<boolean>) => {
                 this.dotDialogService.confirm({
                     accept: () => {
-                        component.onDeactivateSave().subscribe( res => {
+                        component.onDeactivateSave().subscribe((res) => {
                             observer.next(res);
                             observer.complete();
                         });
@@ -28,7 +27,7 @@ export class DotSaveOnDeactivateService implements CanDeactivate<OnSaveDeactivat
                 });
             });
         } else {
-            return Observable.of(true);
+            return observableOf(true);
         }
     }
 }

@@ -1,12 +1,12 @@
 import { BaseComponent } from '../_common/_base/base-component';
 import { Component, Output, EventEmitter, Input, ViewEncapsulation, OnInit, ElementRef, ViewChild } from '@angular/core';
 import { LoginService, User } from 'dotcms-js/dotcms-js';
-import { DotMessageService } from '../../../api/services/dot-messages-service';
-import { PaginatorService } from '../../../api/services/paginator';
+import { DotMessageService } from '@services/dot-messages-service';
+import { PaginatorService } from '@services/paginator';
 import { FormGroup, FormBuilder, FormControl, Validators } from '@angular/forms';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
-import { DotEventsService } from '../../../api/services/dot-events/dot-events.service';
+import { DotEventsService } from '@services/dot-events/dot-events.service';
 
 @Component({
     encapsulation: ViewEncapsulation.None,
@@ -16,9 +16,12 @@ import { DotEventsService } from '../../../api/services/dot-events/dot-events.se
     templateUrl: 'login-as.html'
 })
 export class LoginAsComponent extends BaseComponent implements OnInit {
-    @Output() cancel = new EventEmitter<boolean>();
-    @Input() visible: boolean;
-    @ViewChild('password') passwordElem: ElementRef;
+    @Output()
+    cancel = new EventEmitter<boolean>();
+    @Input()
+    visible: boolean;
+    @ViewChild('password')
+    passwordElem: ElementRef;
 
     form: FormGroup;
     needPassword = false;

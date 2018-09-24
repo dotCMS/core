@@ -6,21 +6,16 @@ import { DotRenderedPageState } from '../../models/dot-rendered-page-state.model
 import { mockUser } from '../../../../../test/login-service.mock';
 
 describe('DotEditPageDataService', () => {
-
     let dotEditPageDataService: DotEditPageDataService;
 
-    beforeEach(
-        async(() => {
-            const testbed = DOTTestBed.configureTestingModule({
-                providers: [
-                    DotEditPageDataService
-                ],
-                imports: []
-            });
+    beforeEach(async(() => {
+        const testbed = DOTTestBed.configureTestingModule({
+            providers: [DotEditPageDataService],
+            imports: []
+        });
 
-            dotEditPageDataService = testbed.get(DotEditPageDataService);
-        })
-    );
+        dotEditPageDataService = testbed.get(DotEditPageDataService);
+    }));
 
     it('should return a DotRenderedPageState valid object', () => {
         const dotRenderedPageState = new DotRenderedPageState(mockUser, mockDotRenderedPage);

@@ -10,10 +10,12 @@ import { ChangePasswordData } from './reset-password-container.component';
     templateUrl: 'reset-password.component.html'
 })
 export class ResetPasswordComponent implements OnInit {
-    @Input() token = '';
-    @Input() message = '';
-    @Output() changePassword = new EventEmitter<ChangePasswordData>();
-
+    @Input()
+    token = '';
+    @Input()
+    message = '';
+    @Output()
+    changePassword = new EventEmitter<ChangePasswordData>();
 
     // labels
     changePasswordButton = '';
@@ -25,10 +27,8 @@ export class ResetPasswordComponent implements OnInit {
     passwordMandatoryFieldError = '';
     resetPasswordLabel = '';
 
-
     private language = '';
     // Message
-    private resetPasswordSuccessMessage = '';
     private resetPasswordConfirmationDoNotMessage = '';
     private mandatoryFieldError = '';
     private i18nMessages: Array<string> = [
@@ -54,12 +54,8 @@ export class ResetPasswordComponent implements OnInit {
                 this.changePasswordButton = dataI18n['change-password'];
                 this.mandatoryFieldError = dataI18n['error.form.mandatory'];
                 this.passwordMandatoryFieldError = this.mandatoryFieldError.replace('{0}', this.enterPasswordLabel);
-                this.confirmPasswordMandatoryFieldError = this.mandatoryFieldError.replace(
-                    '{0}',
-                    this.confirmPasswordLabel
-                );
+                this.confirmPasswordMandatoryFieldError = this.mandatoryFieldError.replace('{0}', this.confirmPasswordLabel);
                 this.resetPasswordConfirmationDoNotMessage = dataI18n['reset-password-confirmation-do-not-match'];
-                this.resetPasswordSuccessMessage = dataI18n['reset-password-success'];
             },
             (error) => {
                 this.loggerService.error(error);

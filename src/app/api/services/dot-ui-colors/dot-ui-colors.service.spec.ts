@@ -25,7 +25,7 @@ describe('DotUiColorsService', () => {
                 const map = {
                     '--color-main': '#C336E5',
                     '--color-sec': '#54428E',
-                    '--color-background': '#3A3847',
+                    '--color-background': '#3A3847'
                 };
                 return map[cssVar];
             }
@@ -101,4 +101,3 @@ describe('DotUiColorsService', () => {
         expect(html.style.setProperty).toHaveBeenCalledTimes(1);
     });
 });
-

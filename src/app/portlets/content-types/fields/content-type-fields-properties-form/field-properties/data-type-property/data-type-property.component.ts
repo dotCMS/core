@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormGroup } from '@angular/forms';
-import { BaseComponent } from '../../../../../../view/components/_common/_base/base-component';
-import { DotMessageService } from '../../../../../../api/services/dot-messages-service';
+import { BaseComponent } from '@components/_common/_base/base-component';
+import { DotMessageService } from '@services/dot-messages-service';
 import { FieldProperty } from '../field-properties.model';
 import { DATA_TYPE_PROPERTY_INFO } from '../../../service/data-type-property-info';
 

@@ -1,30 +1,27 @@
-import { Observable } from 'rxjs/Observable';
-import { CrudService } from '../../../api/services/crud/crud.service';
-import { ContentType } from '../shared/content-type.model';
+import { throwError as observableThrowError, of as observableOf, Observable } from 'rxjs';
+import { CrudService } from '@services/crud/crud.service';
+import { ContentType } from '@shared/content-type.model';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { ListingDataTableModule } from '../../../view/components/listing-data-table/listing-data-table.module';
-import { DotAlertConfirmService } from '../../../api/services/dot-alert-confirm/dot-alert-confirm.service';
+import { ListingDataTableModule } from '@components/listing-data-table/listing-data-table.module';
+import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture } from '@angular/core/testing';
-import { ContentTypesInfoService } from '../../../api/services/content-types-info';
+import { ContentTypesInfoService } from '@services/content-types-info';
 import { ContentTypesPortletComponent } from './content-types.component';
 import { DOTTestBed } from '../../../test/dot-test-bed';
-import { FormatDateService } from '../../../api/services/format-date-service';
-import { DotMessageService } from '../../../api/services/dot-messages-service';
+import { FormatDateService } from '@services/format-date-service';
+import { DotMessageService } from '@services/dot-messages-service';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { Injectable } from '@angular/core';
-import { DotContentletService } from '../../../api/services/dot-contentlet/dot-contentlet.service';
-import { PushPublishContentTypesDialogModule } from '../../../view/components/_common/push-publish-dialog/push-publish-dialog.module';
-import { PushPublishService } from '../../../api/services/push-publish/push-publish.service';
-import { DotLicenseService } from '../../../api/services/dot-license/dot-license.service';
+import { DotContentletService } from '@services/dot-contentlet/dot-contentlet.service';
+import { PushPublishContentTypesDialogModule } from '@components/_common/push-publish-dialog/push-publish-dialog.module';
+import { PushPublishService } from '@services/push-publish/push-publish.service';
+import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { SelectItem } from 'primeng/primeng';
 import { ResponseView } from 'dotcms-js/dotcms-js';
-import {
-    DotHttpErrorHandled,
-    DotHttpErrorManagerService
-} from '../../../api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotHttpErrorHandled, DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 @Injectable()
 class MockDotContentletService {
@@ -36,21 +33,23 @@ class MockDotContentletService {
     template: ''
 })
 class MockDotBaseTypeSelectorComponent {
-    @Input() value: SelectItem;
-    @Output() selected = new EventEmitter<string>();
+    @Input()
+    value: SelectItem;
+    @Output()
+    selected = new EventEmitter<string>();
 }
 
 @Injectable()
 class MockDotLicenseService {
     isEnterprise(): Observable<boolean> {
-        return Observable.of(true);
+        return observableOf(true);
     }
 }
 
 @Injectable()
 class MockPushPublishService {
     getEnvironments() {
-        return Observable.of([
+        return observableOf([
             {
                 id: '123',
                 name: 'Environment 1'
@@ -66,7 +65,7 @@ class MockPushPublishService {
 @Injectable()
 class MockDotHttpErrorManagerService {
     handle(err: ResponseView): Observable<DotHttpErrorHandled> {
-        return Observable.of({
+        return observableOf({
             redirected: false
         });
     }
@@ -77,8 +76,10 @@ class MockDotHttpErrorManagerService {
     template: ``
 })
 class MockDotAddToBundleComponent {
-    @Input() assetIdentifier: string;
-    @Output() cancel = new EventEmitter<boolean>();
+    @Input()
+    assetIdentifier: string;
+    @Output()
+    cancel = new EventEmitter<boolean>();
 }
 
 describe('ContentTypesPortletComponent', () => {
@@ -99,7 +100,7 @@ describe('ContentTypesPortletComponent', () => {
             'contenttypes.fieldname.entries': 'Entries',
             'contenttypes.fieldname.structure.name': 'Content Type Name',
             'contenttypes.content.variable': 'Variable Name',
-            'mod_date': 'Last Edit Date',
+            mod_date: 'Last Edit Date',
             'contenttypes.action.delete': 'Delete',
             'contenttypes.content.push_publish': 'Push Publish',
             'contenttypes.content.add_to_bundle': 'Add to bundle'
@@ -137,7 +138,7 @@ describe('ContentTypesPortletComponent', () => {
         dotHttpErrorManagerService = fixture.debugElement.injector.get(DotHttpErrorManagerService);
 
         spyOn(dotContentletService, 'getAllContentTypes').and.returnValue(
-            Observable.of([
+            observableOf([
                 { name: 'CONTENT', label: 'Content', types: [] },
                 { name: 'WIDGET', label: 'Widget', types: [] },
                 { name: 'FORM', label: 'Form', types: [] }
@@ -192,11 +193,11 @@ describe('ContentTypesPortletComponent', () => {
         };
 
         const dotDialogService = fixture.debugElement.injector.get(DotAlertConfirmService);
-        spyOn(dotDialogService, 'confirm').and.callFake(conf => {
+        spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
             conf.accept();
         });
 
-        spyOn(crudService, 'delete').and.returnValue(Observable.of(mockContentType));
+        spyOn(crudService, 'delete').and.returnValue(observableOf(mockContentType));
 
         comp.rowActions[0].menuItem.command(mockContentType);
 
@@ -207,15 +208,15 @@ describe('ContentTypesPortletComponent', () => {
 
     it('should have remove, push publish and Add to bundle actions to the list item', () => {
         fixture.detectChanges();
-        expect(comp.rowActions.map(action => action.menuItem.label)).toEqual(['Delete', 'Push Publish', 'Add to bundle']);
+        expect(comp.rowActions.map((action) => action.menuItem.label)).toEqual(['Delete', 'Push Publish', 'Add to bundle']);
     });
 
     it('should have ONLY remove action because is community license', () => {
-        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(Observable.of(false));
+        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(false));
 
         fixture.detectChanges();
         expect(
-            comp.rowActions.map(action => {
+            comp.rowActions.map((action) => {
                 return {
                     label: action.menuItem.label,
                     icon: action.menuItem.icon
@@ -230,10 +231,10 @@ describe('ContentTypesPortletComponent', () => {
     });
 
     it('should have remove and add to bundle actions if is not community license and no publish environments are created', () => {
-        spyOn(pushPublishService, 'getEnvironments').and.returnValue(Observable.of([]));
+        spyOn(pushPublishService, 'getEnvironments').and.returnValue(observableOf([]));
         fixture.detectChanges();
 
-        expect(comp.rowActions.map(action => action.menuItem.label)).toEqual(['Delete', 'Add to bundle']);
+        expect(comp.rowActions.map((action) => action.menuItem.label)).toEqual(['Delete', 'Add to bundle']);
     });
 
     it('should open push publish dialog', () => {
@@ -309,7 +310,7 @@ describe('ContentTypesPortletComponent', () => {
                 error: ''
             },
             response: {
-                status: 403,
+                status: 403
             }
         };
 
@@ -329,12 +330,12 @@ describe('ContentTypesPortletComponent', () => {
         };
 
         const dotDialogService = fixture.debugElement.injector.get(DotAlertConfirmService);
-        spyOn(dotDialogService, 'confirm').and.callFake(conf => {
+        spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
             conf.accept();
         });
 
         spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
-        spyOn(crudService, 'delete').and.returnValue(Observable.throw(forbiddenError));
+        spyOn(crudService, 'delete').and.returnValue(observableThrowError(forbiddenError));
 
         comp.rowActions[0].menuItem.command(mockContentType);
 

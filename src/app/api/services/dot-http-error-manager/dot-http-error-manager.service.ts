@@ -1,14 +1,13 @@
+import { Observable } from 'rxjs';
 import { DotRouterService } from '../dot-router/dot-router.service';
 import { DotMessageService } from '../dot-messages-service';
 import { Injectable } from '@angular/core';
-
-import { Observable } from 'rxjs/Observable';
 
 import { ResponseView, LoginService, HttpCode } from 'dotcms-js/dotcms-js';
 
 import { DotAlertConfirmService } from '../dot-alert-confirm';
 import { Response } from '@angular/http';
-import { take, switchMap } from 'rxjs/operators';
+import { take, map } from 'rxjs/operators';
 
 export interface DotHttpErrorHandled {
     redirected: boolean;
@@ -23,7 +22,6 @@ export interface DotHttpErrorHandled {
  */
 @Injectable()
 export class DotHttpErrorManagerService {
-
     private readonly errorHandlers;
 
     constructor(
@@ -32,7 +30,6 @@ export class DotHttpErrorManagerService {
         private loginService: LoginService,
         private dotRouterService: DotRouterService
     ) {
-
         if (!this.errorHandlers) {
             this.errorHandlers = {};
             this.errorHandlers[HttpCode.NOT_FOUND] = this.handleNotFound.bind(this);
@@ -51,7 +48,7 @@ export class DotHttpErrorManagerService {
      */
     handle(err: ResponseView): Observable<DotHttpErrorHandled> {
         return this.getMessages().pipe(
-            switchMap(() => {
+            map(() => {
                 const result: DotHttpErrorHandled = {
                     redirected: this.callErrorHandler(err.response)
                 };
@@ -60,38 +57,37 @@ export class DotHttpErrorManagerService {
                     result.forbidden = this.contentletIsForbidden(err['bodyJsonObject'].error);
                 }
 
-                return Observable.of(result);
+                return result;
             })
         );
     }
 
     private getMessages(): Observable<any> {
-        return this.dotMessageService.getMessages([
-            'dot.common.http.error.403.header',
-            'dot.common.http.error.403.message',
-            'dot.common.http.error.404.header',
-            'dot.common.http.error.404.message',
-            'dot.common.http.error.500.header',
-            'dot.common.http.error.500.message',
-            'dot.common.http.error.403.license.message',
-            'dot.common.http.error.403.license.header'
-        ]).pipe(
-            take(1)
-        );
+        return this.dotMessageService
+            .getMessages([
+                'dot.common.http.error.403.header',
+                'dot.common.http.error.403.message',
+                'dot.common.http.error.404.header',
+                'dot.common.http.error.404.message',
+                'dot.common.http.error.500.header',
+                'dot.common.http.error.500.message',
+                'dot.common.http.error.403.license.message',
+                'dot.common.http.error.403.license.header'
+            ])
+            .pipe(take(1));
     }
 
     private callErrorHandler(response: Response): boolean {
         const code = response.status;
-        return code === HttpCode.FORBIDDEN ?
-            this.isLicenseError(response) ? this.handleLicense() : this.handleForbidden() :
-            this.errorHandlers[code]();
+        return code === HttpCode.FORBIDDEN
+            ? this.isLicenseError(response)
+                ? this.handleLicense()
+                : this.handleForbidden()
+            : this.errorHandlers[code]();
     }
 
     private contentletIsForbidden(error: string): boolean {
-        return (
-            error.indexOf('does not have permissions READ') > -1 ||
-            error.indexOf('User cannot edit') > -1
-        );
+        return error.indexOf('does not have permissions READ') > -1 || error.indexOf('User cannot edit') > -1;
     }
 
     private isLicenseError(response: Response): boolean {

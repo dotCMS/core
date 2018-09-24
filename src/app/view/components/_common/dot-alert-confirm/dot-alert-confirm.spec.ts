@@ -1,5 +1,5 @@
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotAlertConfirmService } from '../../../../api/services/dot-alert-confirm/dot-alert-confirm.service';
+import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
 import { DebugElement } from '@angular/core/src/debug/debug_node';
 import { LoginServiceMock } from '../../../../test/login-service.mock';
 import { LoginService } from 'dotcms-js/dotcms-js';
@@ -15,27 +15,25 @@ describe('DotAlertConfirmComponent', () => {
     let fixture: ComponentFixture<DotAlertConfirmComponent>;
     let de: DebugElement;
 
-    beforeEach(
-        async(() => {
-            DOTTestBed.configureTestingModule({
-                declarations: [DotAlertConfirmComponent],
-                providers: [
-                    {
-                        provide: LoginService,
-                        useClass: LoginServiceMock
-                    },
-                    DotAlertConfirmService
-                ],
-                imports: [BrowserAnimationsModule]
-            });
+    beforeEach(async(() => {
+        DOTTestBed.configureTestingModule({
+            declarations: [DotAlertConfirmComponent],
+            providers: [
+                {
+                    provide: LoginService,
+                    useClass: LoginServiceMock
+                },
+                DotAlertConfirmService
+            ],
+            imports: [BrowserAnimationsModule]
+        });
 
-            fixture = DOTTestBed.createComponent(DotAlertConfirmComponent);
-            component = fixture.componentInstance;
-            de = fixture.debugElement;
-            dialogService = de.injector.get(DotAlertConfirmService);
-            fixture.detectChanges();
-        })
-    );
+        fixture = DOTTestBed.createComponent(DotAlertConfirmComponent);
+        component = fixture.componentInstance;
+        de = fixture.debugElement;
+        dialogService = de.injector.get(DotAlertConfirmService);
+        fixture.detectChanges();
+    }));
 
     it('should have confirm and dialog null by default', () => {
         const confirm = de.query(By.css('p-confirmDialog'));
@@ -209,7 +207,6 @@ describe('DotAlertConfirmComponent', () => {
             const buttons = de.queryAll(By.css('p-dialog button'));
             expect(buttons.length).toBe(2);
         });
-
 
         it('should bind accept and reject button events', () => {
             spyOn(dialogService, 'alertAccept');

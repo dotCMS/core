@@ -1,19 +1,19 @@
 :root {
-    --color-background: #3A3847;
-    --color-main: #C336E5;
-    --color-main_mod: #D369EC;
+    --color-background: #3a3847;
+    --color-main: #c336e5;
+    --color-main_mod: #d369ec;
     --color-main_rgb: 195, 54, 229;
-    --color-sec: #54428E;
+    --color-sec: #54428e;
     --color-sec_rgb: 84, 66, 142;
     --empty-message: "";
 }
 
 // COLORS
-$black: #0A0725;
-$gray-dark: #524E5C;
-$gray: #7E7A86;
-$gray-light: #B3B1B8;
-$gray-bg: #F1F3F4;
+$black: #0a0725;
+$gray-dark: #524e5c;
+$gray: #7e7a86;
+$gray-light: #b3b1b8;
+$gray-bg: #f1f3f4;
 
 $orange: #f3762a;
 $white: #fff;
@@ -42,7 +42,7 @@ $font-size-large: 16px;
 $font-size-medium: 14px;
 $font-size-small: 12px;
 
-$body-text: Roboto, 'Helvetica Neue', Helvetica, Arial, 'Lucida Grande', sans-serif;
+$body-text: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
 $body-font-size-base: $font-size-medium;
 $body-font-color: $black;
 
@@ -88,9 +88,9 @@ $container-xl: (1381px + $gutter-width);
 $md-icon-size: 18px;
 $md-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
 $md-shadow-2: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
-$md-shadow-3: 0 10px 24px 0 rgba(0,0,0,0.2);
-$md-shadow-4: 0 2px 4px 0 rgba(0,0,0,0.1);
-$md-shadow-5: 0 10px 20px 0 rgba(0,0,0,0.15);
+$md-shadow-3: 0 10px 24px 0 rgba(0, 0, 0, 0.2);
+$md-shadow-4: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
+$md-shadow-5: 0 10px 20px 0 rgba(0, 0, 0, 0.15);
 
 // FORMS
 $label-color: rgba($gray-dark, 0.6);

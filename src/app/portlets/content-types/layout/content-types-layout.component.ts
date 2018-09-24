@@ -1,7 +1,7 @@
 import { Component, Input, OnChanges, OnInit } from '@angular/core';
-import { BaseComponent } from '../../../view/components/_common/_base/base-component';
-import { DotMessageService } from '../../../api/services/dot-messages-service';
-import { DotMenuService } from '../../../api/services/dot-menu.service';
+import { BaseComponent } from '@components/_common/_base/base-component';
+import { DotMessageService } from '@services/dot-messages-service';
+import { DotMenuService } from '@services/dot-menu.service';
 import { FieldDragDropService } from '../fields/service';
 
 @Component({
@@ -10,7 +10,8 @@ import { FieldDragDropService } from '../fields/service';
     templateUrl: 'content-types-layout.component.html'
 })
 export class ContentTypesLayoutComponent extends BaseComponent implements OnChanges, OnInit {
-    @Input() contentTypeId: string;
+    @Input()
+    contentTypeId: string;
 
     permissionURL: string;
     pushHistoryURL: string;
@@ -47,12 +48,8 @@ export class ContentTypesLayoutComponent extends BaseComponent implements OnChan
                 }`;
             });
 
-            this.permissionURL = `/html/content_types/permissions.jsp?contentTypeId=${
-                changes.contentTypeId.currentValue
-            }&popup=true`;
-            this.pushHistoryURL = `/html/content_types/push_history.jsp?contentTypeId=${
-                changes.contentTypeId.currentValue
-            }&popup=true`;
+            this.permissionURL = `/html/content_types/permissions.jsp?contentTypeId=${changes.contentTypeId.currentValue}&popup=true`;
+            this.pushHistoryURL = `/html/content_types/push_history.jsp?contentTypeId=${changes.contentTypeId.currentValue}&popup=true`;
         }
     }
 }

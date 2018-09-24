@@ -1,28 +1,25 @@
-import { Injectable, ElementRef } from '@angular/core';
+import { fromEvent as observableFromEvent, of as observableOf, Observable, Subject, Subscription } from 'rxjs';
 
-import { Observable } from 'rxjs/Observable';
-import { Subject } from 'rxjs/Subject';
-import { Subscription } from 'rxjs/Subscription';
-import { take } from 'rxjs/operators/take';
+import { map, take } from 'rxjs/operators';
+import { Injectable, ElementRef } from '@angular/core';
 
 import * as _ from 'lodash';
 
 import { DotContainerContentletService } from '../dot-container-contentlet.service';
 import { DotDOMHtmlUtilService } from '../html/dot-dom-html-util.service';
-import { DotAlertConfirmService } from '../../../../../api/services/dot-alert-confirm/dot-alert-confirm.service';
+import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
 import { DotDragDropAPIHtmlService } from '../html/dot-drag-drop-api-html.service';
 import { DotEditContentToolbarHtmlService } from '../html/dot-edit-content-toolbar-html.service';
 import { DotLayout } from '../../../shared/models/dot-layout.model';
 import { DotLayoutColumn } from '../../../shared/models/dot-layout-column.model';
 import { DotLayoutRow } from '../../../shared/models/dot-layout-row.model';
-import { DotMessageService } from '../../../../../api/services/dot-messages-service';
+import { DotMessageService } from '@services/dot-messages-service';
 import { DotPageContainer } from '../../../shared/models/dot-page-container.model';
 import { DotPageContent } from '../../../shared/models/dot-page-content.model';
 import { getEditPageCss } from '../../shared/iframe-edit-mode.css';
 import { GOOGLE_FONTS } from '../html/iframe-edit-mode.js';
 import { MODEL_VAR_NAME } from '../html/iframe-edit-mode.js';
 import { ContentType } from '../../../../content-types/shared/content-type.model';
-import { DotEditPageService } from '../../../../../api/services/dot-edit-page/dot-edit-page.service';
 import { DotRenderedPageState } from '../../../shared/models/dot-rendered-page-state.model';
 
 export enum DotContentletAction {
@@ -195,24 +192,28 @@ export class DotEditContentHtmlService {
 
         if (this.isFormExistInContainer(form, containerEl)) {
             this.showContentAlreadyAddedError();
-            return Observable.of(null);
+            return observableOf(null);
         } else {
-            return this.dotContainerContentletService.getFormToContainer(this.currentContainer, form).map(response => {
+            return this.dotContainerContentletService.getFormToContainer(this.currentContainer, form).pipe(
+                map((response) => {
+                    const containers: DotPageContainer[] = this.getContentModel();
 
-                const containers: DotPageContainer[]  = this.getContentModel();
+                    containers
+                        .filter(
+                            (container) =>
+                                container.identifier === this.currentContainer.identifier && container.uuid === this.currentContainer.uuid
+                        )
+                        .forEach((container) => {
+                            if (!container.contentletsId) {
+                                container.contentletsId = [];
+                            }
 
-                containers.filter(container =>
-                    container.identifier === this.currentContainer.identifier && container.uuid === this.currentContainer.uuid)
-                    .forEach(container => {
-                        if (!container.contentletsId) {
-                            container.contentletsId = [];
-                        }
+                            container.contentletsId.push(response.content.identifier);
+                        });
 
-                        container.contentletsId.push(response.content.identifier);
-                    });
-
-                return containers;
-            });
+                    return containers;
+                })
+            );
         }
     }
 
@@ -309,7 +310,7 @@ export class DotEditContentHtmlService {
             this.docClickSubscription.unsubscribe();
         }
 
-        this.docClickSubscription = Observable.fromEvent(doc, 'click').subscribe(($event: MouseEvent) => {
+        this.docClickSubscription = observableFromEvent(doc, 'click').subscribe(($event: MouseEvent) => {
             const target = <HTMLElement>$event.target;
             const method = this.docClickHandlers[target.dataset.dotObject];
             if (method) {
@@ -442,7 +443,6 @@ export class DotEditContentHtmlService {
     }
 
     private appendNewContentlets(contentletEl: any, html: string): void {
-
         const contentletContentEl = contentletEl.querySelector('.dotedit-contentlet__content');
         contentletContentEl.innerHTML = ''; // Removing the loading indicator
         let scriptTags: HTMLScriptElement[] = [];
@@ -536,7 +536,7 @@ export class DotEditContentHtmlService {
     private handlerContentletEvents(event: string): (contentletEvent: any) => void {
         const contentletEventsMap = {
             // When an user create or edit a contentlet from the jsp
-            'save': (contentletEvent: any) => {
+            save: (contentletEvent: any) => {
                 if (this.currentAction === DotContentletAction.ADD) {
                     this.renderAddedContentlet(contentletEvent.data);
                 } else {
@@ -547,17 +547,17 @@ export class DotEditContentHtmlService {
                 }
             },
             // When a user select a content from the search jsp
-            'select': (contentletEvent: any) => {
+            select: (contentletEvent: any) => {
                 this.renderAddedContentlet(contentletEvent.data);
                 this.iframeActions$.next({
                     name: 'select'
                 });
             },
             // When a user drag and drop a contentlet in the iframe
-            'relocate': (contentletEvent: any) => {
+            relocate: (contentletEvent: any) => {
                 this.renderRelocatedContentlet(contentletEvent.data);
             },
-            'deleted-contenlet': (contentletEvent: any) => {
+            'deleted-contenlet': () => {
                 this.removeCurrentContentlet();
             }
         };
@@ -636,7 +636,7 @@ export class DotEditContentHtmlService {
         const doc = this.getEditPageDocument();
         const contentlets = doc.querySelectorAll(`div[data-dot-object="contentlet"][data-dot-inode="${this.currentContentlet.inode}"]`);
 
-        contentlets.forEach(contentlet => {
+        contentlets.forEach((contentlet) => {
             contentlet.remove();
         });
     }

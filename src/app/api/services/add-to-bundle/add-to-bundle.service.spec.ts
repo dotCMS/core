@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs/Observable';
+import { of as observableOf, Observable } from 'rxjs';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { ConnectionBackend, ResponseOptions, Response } from '@angular/http';
 import { MockBackend } from '@angular/http/testing';
@@ -20,7 +20,7 @@ describe('AddToBundleService', () => {
         'should get bundle list',
         fakeAsync(() => {
             spyOn(this.dotCurrentUserService, 'getCurrentUser').and.returnValue(
-                Observable.of({
+                observableOf({
                     userId: '1234'
                 })
             );

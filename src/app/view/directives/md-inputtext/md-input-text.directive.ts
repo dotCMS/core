@@ -13,7 +13,8 @@ import { Directive, ElementRef, Input, OnChanges, Renderer2 } from '@angular/cor
     selector: '[dotMdInputtext]'
 })
 export class MaterialDesignTextfieldDirective implements OnChanges {
-    @Input() private label: string;
+    @Input()
+    private label: string;
     private hostNativeElement: HTMLElement;
     private floatingLabel: HTMLElement;
 

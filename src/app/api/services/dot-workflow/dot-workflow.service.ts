@@ -1,10 +1,10 @@
+import { pluck, switchMap, take } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
 import { CoreWebService } from 'dotcms-js/dotcms-js';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { RequestMethod } from '@angular/http';
-import { DotWorkflow } from '../../../shared/models/dot-workflow/dot-workflow.model';
-import { DotWorkflowAction } from '../../../shared/models/dot-workflow-action/dot-workflow-action.model';
-import { switchMap, take } from 'rxjs/operators';
+import { DotWorkflow } from '@models/dot-workflow/dot-workflow.model';
+import { DotWorkflowAction } from '@models/dot-workflow-action/dot-workflow-action.model';
 
 /**
  * Provide util methods to get Workflows.
@@ -27,7 +27,7 @@ export class DotWorkflowService {
                 method: RequestMethod.Get,
                 url: 'v1/workflow/schemes'
             })
-            .pluck('entity');
+            .pipe(pluck('entity'));
     }
 
     /**
@@ -56,7 +56,7 @@ export class DotWorkflowService {
                 method: RequestMethod.Get,
                 url: `v1/workflow/contentlet/${inode}/actions`
             })
-            .pluck('entity');
+            .pipe(pluck('entity'));
     }
 
     /**
@@ -72,6 +72,6 @@ export class DotWorkflowService {
                 method: RequestMethod.Put,
                 url: `v1/workflow/actions/${actionId}/fire?inode=${inode}`
             })
-            .pluck('entity');
+            .pipe(pluck('entity'));
     }
 }

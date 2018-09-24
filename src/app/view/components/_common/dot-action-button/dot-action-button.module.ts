@@ -7,6 +7,6 @@ import { DotIconButtonModule } from '../dot-icon-button/dot-icon-button.module';
 @NgModule({
     declarations: [DotActionButtonComponent],
     exports: [DotActionButtonComponent],
-    imports: [CommonModule, ButtonModule, MenuModule, DotIconButtonModule ]
+    imports: [CommonModule, ButtonModule, MenuModule, DotIconButtonModule]
 })
 export class DotActionButtonModule {}

@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { DotLanguagesService } from '../../../api/services/dot-languages/dot-languages.service';
-import { DotLanguage } from '../../../shared/models/dot-language/dot-language.model';
+import { DotLanguagesService } from '@services/dot-languages/dot-languages.service';
+import { DotLanguage } from '@models/dot-language/dot-language.model';
 import { take } from 'rxjs/operators';
 
 @Component({
@@ -9,9 +9,12 @@ import { take } from 'rxjs/operators';
     styleUrls: ['./dot-language-selector.component.scss']
 })
 export class DotLanguageSelectorComponent implements OnInit {
-    @Input() value: DotLanguage;
-    @Input() contentInode: string;
-    @Output() selected = new EventEmitter<DotLanguage>();
+    @Input()
+    value: DotLanguage;
+    @Input()
+    contentInode: string;
+    @Output()
+    selected = new EventEmitter<DotLanguage>();
 
     languagesOptions: DotLanguage[];
 

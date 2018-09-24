@@ -6,7 +6,8 @@ import { Component, Input } from '@angular/core';
     styleUrls: ['./dot-nav-icon.component.scss']
 })
 export class DotNavIconComponent {
-    @Input() icon: string;
+    @Input()
+    icon: string;
 
     constructor() {}
 

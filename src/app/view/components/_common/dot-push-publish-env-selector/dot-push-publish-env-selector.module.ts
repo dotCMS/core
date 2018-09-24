@@ -4,8 +4,8 @@ import { ButtonModule } from 'primeng/primeng';
 import { NgModule } from '@angular/core';
 import { PushPublishEnvSelectorComponent } from './dot-push-publish-env-selector.component';
 import { DataListModule, MultiSelectModule } from 'primeng/primeng';
-import { PushPublishService } from '../../../../api/services/push-publish/push-publish.service';
-import { DotCurrentUserService } from '../../../../api/services/dot-current-user/dot-current-user.service';
+import { PushPublishService } from '@services/push-publish/push-publish.service';
+import { DotCurrentUserService } from '@services/dot-current-user/dot-current-user.service';
 
 @NgModule({
     declarations: [PushPublishEnvSelectorComponent],

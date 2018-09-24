@@ -23,9 +23,8 @@ export class DotDragDropAPIHtmlService {
         const dragulaCSSElement = this.dotDOMHtmlUtilService.createLinkElement(`${API_ROOT_PATH}/dragula.min.css`);
 
         doc.head.appendChild(dragulaCSSElement);
-        const dragulaJSElement = this.dotDOMHtmlUtilService.creatExternalScriptElement(
-            `${API_ROOT_PATH}/dragula.min.js`,
-            () => this.initDragula(doc)
+        const dragulaJSElement = this.dotDOMHtmlUtilService.creatExternalScriptElement(`${API_ROOT_PATH}/dragula.min.js`, () =>
+            this.initDragula(doc)
         );
         // If the page has DOJO, we need to inject the Dragula dependency with require.
         if (iframe.contentWindow.hasOwnProperty('dojo')) {

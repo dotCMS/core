@@ -1,12 +1,13 @@
+import { pluck } from 'rxjs/operators';
 import { RequestMethod } from '@angular/http';
 import { Injectable } from '@angular/core';
 
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 
 import { CoreWebService } from 'dotcms-js/dotcms-js';
 
-import { DotLayout } from '../../../portlets/dot-edit-page/shared/models/dot-layout.model';
-import { DotRenderedPage } from '../../../portlets/dot-edit-page/shared/models/dot-rendered-page.model';
+import { DotLayout } from '@portlets/dot-edit-page/shared/models/dot-layout.model';
+import { DotRenderedPage } from '@portlets/dot-edit-page/shared/models/dot-rendered-page.model';
 
 /**
  * Provide util methods to get and save a PageView object
@@ -30,6 +31,6 @@ export class PageViewService {
                 method: RequestMethod.Post,
                 url: `v1/page/${pageIdentifier}/layout`
             })
-            .pluck('entity');
+            .pipe(pluck('entity'));
     }
 }

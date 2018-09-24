@@ -1,34 +1,30 @@
+import { empty as observableEmpty, Observable, Subject, fromEvent } from 'rxjs';
+
+import { concatMap, catchError, filter, takeUntil, pluck, take } from 'rxjs/operators';
 import { ActivatedRoute } from '@angular/router';
 import { Component, OnInit, ViewChild, ElementRef, NgZone, OnDestroy } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
-import { Observable } from 'rxjs/Observable';
-import { filter, takeUntil, pluck, take } from 'rxjs/operators';
-import { Subject } from 'rxjs/Subject';
-
 import { SiteService, ResponseView } from 'dotcms-js/dotcms-js';
 
-import { DotAlertConfirmService } from '../../../api/services/dot-alert-confirm';
+import { DotAlertConfirmService } from '@services/dot-alert-confirm';
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
-import { DotEditPageService } from '../../../api/services/dot-edit-page/dot-edit-page.service';
-import { DotEditPageViewAs } from '../../../shared/models/dot-edit-page-view-as/dot-edit-page-view-as.model';
-import { DotGlobalMessageService } from '../../../view/components/_common/dot-global-message/dot-global-message.service';
-import {
-    DotHttpErrorManagerService,
-    DotHttpErrorHandled
-} from '../../../api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotLoadingIndicatorService } from '../../../view/components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
-import { DotMessageService } from '../../../api/services/dot-messages-service';
+import { DotEditPageService } from '@services/dot-edit-page/dot-edit-page.service';
+import { DotEditPageViewAs } from '@models/dot-edit-page-view-as/dot-edit-page-view-as.model';
+import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
+import { DotHttpErrorManagerService, DotHttpErrorHandled } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
+import { DotMessageService } from '@services/dot-messages-service';
 import { DotPageContainer } from '../shared/models/dot-page-container.model';
 import { DotPageContent } from '../shared/models/dot-page-content.model';
 import { DotPageState, DotRenderedPageState } from '../shared/models/dot-rendered-page-state.model';
 import { DotPageStateService } from './services/dot-page-state/dot-page-state.service';
-import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { PageMode } from '../shared/models/page-mode.enum';
 import { DotRenderedPage } from '../shared/models/dot-rendered-page.model';
 import { DotEditPageDataService } from '../shared/services/dot-edit-page-resolver/dot-edit-page-data.service';
-import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotUiColorsService } from '../../../api/services/dot-ui-colors/dot-ui-colors.service';
+import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import { ContentType } from '../../content-types/shared/content-type.model';
 
 /**
@@ -45,7 +41,8 @@ import { ContentType } from '../../content-types/shared/content-type.model';
     styleUrls: ['./dot-edit-content.component.scss']
 })
 export class DotEditContentComponent implements OnInit, OnDestroy {
-    @ViewChild('iframe') iframe: ElementRef;
+    @ViewChild('iframe')
+    iframe: ElementRef;
 
     contentletActionsUrl: SafeResourceUrl;
     pageState: DotRenderedPageState;
@@ -161,7 +158,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
 
         this.dotPageStateService
             .set(this.pageState.page, newState)
-            .takeUntil(this.destroy$)
+            .pipe(takeUntil(this.destroy$))
             .subscribe(
                 (pageState: DotRenderedPageState) => {
                     this.setPageState(pageState);
@@ -202,7 +199,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     reload(): void {
         this.dotPageStateService
             .get(this.route.snapshot.queryParams.url)
-            .catch((err: ResponseView) => this.errorHandler(err))
+            .pipe(catchError((err: ResponseView) => this.errorHandler(err)))
             .pipe(takeUntil(this.destroy$))
             .subscribe((pageState: DotRenderedPageState) => {
                 this.setPageState(pageState);
@@ -307,7 +304,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                     this.dotRouterService.goToSiteBrowser();
                 }
             });
-        return Observable.empty();
+        return observableEmpty();
     }
 
     private getMessages(): void {
@@ -351,9 +348,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                     this.dotRouterService.goToSiteBrowser();
                 } else {
                     this.route.queryParams
-                        .pluck('url')
-                        .concatMap((url: string) => this.dotPageStateService.get(url))
-                        .takeUntil(this.destroy$)
+                        .pipe(pluck('url'), concatMap((url: string) => this.dotPageStateService.get(url)), takeUntil(this.destroy$))
                         .subscribe((pageState: DotRenderedPageState) => {
                             this.setPageState(pageState);
                         });
@@ -362,7 +357,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     }
 
     private subscribeIframeCustomEvents(): void {
-        Observable.fromEvent(window.document, 'ng-event')
+        fromEvent(window.document, 'ng-event')
             .pipe(
                 pluck('detail'),
                 takeUntil(this.destroy$)
@@ -411,14 +406,9 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     }
 
     private setInitalData(): void {
-        this.route.parent.parent.data
-            .pipe(
-                pluck('content'),
-                takeUntil(this.destroy$)
-            )
-            .subscribe((pageState: DotRenderedPageState) => {
-                this.setPageState(pageState);
-            });
+        this.route.parent.parent.data.pipe(pluck('content'), takeUntil(this.destroy$)).subscribe((pageState: DotRenderedPageState) => {
+            this.setPageState(pageState);
+        });
 
         this.dotPageStateService.reload$.pipe(takeUntil(this.destroy$)).subscribe((pageState: DotRenderedPageState) => {
             if (this.pageState.page.inode !== pageState.page.inode) {
@@ -450,10 +440,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
 
     private subscribePageModelChange(): void {
         this.dotEditContentHtmlService.pageModel$
-            .pipe(
-                filter((model: any) => model.length),
-                takeUntil(this.destroy$)
-            )
+            .pipe(filter((model: any) => model.length), takeUntil(this.destroy$))
             .subscribe((model: DotPageContainer[]) => {
                 this.ngZone.run(() => {
                     this.saveContent(model);

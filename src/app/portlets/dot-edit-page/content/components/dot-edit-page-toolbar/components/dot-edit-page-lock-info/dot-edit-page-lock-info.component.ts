@@ -1,6 +1,6 @@
 import { Component, OnInit, Input, ElementRef, ViewChild } from '@angular/core';
 import { DotRenderedPageState } from '../../../../../shared/models/dot-rendered-page-state.model';
-import { DotMessageService } from '../../../../../../../api/services/dot-messages-service';
+import { DotMessageService } from '@services/dot-messages-service';
 
 /**
  * Basic page information for edit mode
@@ -15,18 +15,15 @@ import { DotMessageService } from '../../../../../../../api/services/dot-message
     styleUrls: ['./dot-edit-page-lock-info.component.scss']
 })
 export class DotEditPageLockInfoComponent implements OnInit {
-    @Input() pageState: DotRenderedPageState;
-    @ViewChild('lockedPageMessage') lockedPageMessage: ElementRef;
+    @Input()
+    pageState: DotRenderedPageState;
+    @ViewChild('lockedPageMessage')
+    lockedPageMessage: ElementRef;
 
     constructor(public dotMessageService: DotMessageService) {}
 
     ngOnInit() {
-        this.dotMessageService
-            .getMessages([
-                'editpage.toolbar.page.cant.edit',
-                'editpage.toolbar.page.locked.by.user'
-            ])
-            .subscribe();
+        this.dotMessageService.getMessages(['editpage.toolbar.page.cant.edit', 'editpage.toolbar.page.locked.by.user']).subscribe();
     }
 
     /**

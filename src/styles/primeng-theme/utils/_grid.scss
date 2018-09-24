@@ -20,7 +20,7 @@
 }
 
 .ui-g {
-    margin: 0 -#{$gutter-border}
+    margin: 0 -#{$gutter-border};
 }
 
 #clear-form-groups-items {
@@ -126,17 +126,17 @@
 
 // Responsive utilities
 @media (max-width: $screen-sm-max) {
-    @include responsive-hide('.hidden-xs');
+    @include responsive-hide(".hidden-xs");
 }
 
 @media (min-width: $screen-sm-min) and (max-width: $screen-sm-max) {
-    @include responsive-hide('.hidden-sm');
+    @include responsive-hide(".hidden-sm");
 }
 
 @media (min-width: $screen-md-min) and (max-width: $screen-md-max) {
-    @include responsive-hide('.hidden-md');
+    @include responsive-hide(".hidden-md");
 }
 
 @media (min-width: $screen-lg-min) {
-    @include responsive-hide('.hidden-lg');
+    @include responsive-hide(".hidden-lg");
 }

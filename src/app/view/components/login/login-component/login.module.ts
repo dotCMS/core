@@ -8,8 +8,8 @@ import { ButtonModule, CheckboxModule, DropdownModule, InputTextModule } from 'p
 import { LoginContainerComponent } from './login-container.component';
 import { LoginComponent } from './login.component';
 
-import { SharedModule } from '../../../../shared/shared.module';
-import { DotDirectivesModule } from '../../../../shared/dot-directives.module';
+import { SharedModule } from '@shared/shared.module';
+import { DotDirectivesModule } from '@shared/dot-directives.module';
 
 const routes: Routes = [
     {

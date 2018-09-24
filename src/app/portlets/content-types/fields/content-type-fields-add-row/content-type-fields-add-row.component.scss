@@ -1,5 +1,5 @@
-@import 'mixins';
-@import 'variables';
+@import "mixins";
+@import "variables";
 
 $row-height: 70px;
 
@@ -85,11 +85,10 @@ $row-height: 70px;
     .dot-add-rows-columns-list__item-container {
         display: flex;
 
-
         .dot-add-rows-columns-list__item-col {
             background-color: $gray-dark;
             flex-grow: 1;
-            height: 60px;;
+            height: 60px;
             margin: 0 $basic-padding / 2;
 
             &:first-child {
@@ -100,7 +99,5 @@ $row-height: 70px;
                 margin-right: 0;
             }
         }
-
-        
     }
 }

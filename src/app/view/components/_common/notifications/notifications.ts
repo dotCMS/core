@@ -1,8 +1,8 @@
 import { Component, ViewEncapsulation, Input, Output, EventEmitter, OnInit } from '@angular/core';
 
 import { BaseComponent } from '../_base/base-component';
-import { INotification } from '../../../../shared/models/notifications';
-import { DotMessageService } from '../../../../api/services/dot-messages-service';
+import { INotification } from '@models/notifications';
+import { DotMessageService } from '@services/dot-messages-service';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
@@ -12,8 +12,10 @@ import { DotMessageService } from '../../../../api/services/dot-messages-service
     templateUrl: 'notifications-item.html'
 })
 export class NotificationsItemComponent extends BaseComponent implements OnInit {
-    @Input() data;
-    @Output() clear = new EventEmitter<Object>();
+    @Input()
+    data;
+    @Output()
+    clear = new EventEmitter<Object>();
 
     showLinkAction = false;
     showTitleLinked = false;
@@ -32,18 +34,10 @@ export class NotificationsItemComponent extends BaseComponent implements OnInit 
         // TODO: hand more than one action
         const actions = this.data.actions ? this.data.actions[0] : null;
         this.showLinkAction =
-            actions &&
-            actions.actionType === 'LINK' &&
-            (actions.text || actions.text !== '') &&
-            actions.action &&
-            actions.action !== '';
+            actions && actions.actionType === 'LINK' && (actions.text || actions.text !== '') && actions.action && actions.action !== '';
 
         this.showTitleLinked =
-            actions &&
-            actions.actionType === 'LINK' &&
-            (!actions.text || actions.text === '') &&
-            actions.action &&
-            actions.action !== '';
+            actions && actions.actionType === 'LINK' && (!actions.text || actions.text === '') && actions.action && actions.action !== '';
     }
 
     getIconName(val: string): string {
@@ -65,8 +59,10 @@ export class NotificationsItemComponent extends BaseComponent implements OnInit 
     templateUrl: 'notifications-list.html'
 })
 export class NotificationsListComponent {
-    @Input() notifications: INotification;
-    @Output() dismissNotification = new EventEmitter<Object>();
+    @Input()
+    notifications: INotification;
+    @Output()
+    dismissNotification = new EventEmitter<Object>();
 
     constructor() {}
 

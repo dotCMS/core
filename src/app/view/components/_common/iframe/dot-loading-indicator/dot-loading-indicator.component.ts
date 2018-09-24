@@ -8,7 +8,8 @@ import { DotLoadingIndicatorService } from './dot-loading-indicator.service';
     templateUrl: 'dot-loading-indicator.component.html'
 })
 export class DotLoadingIndicatorComponent {
-    @Input() fullscreen: boolean;
+    @Input()
+    fullscreen: boolean;
 
     constructor(public dotLoadingIndicatorService: DotLoadingIndicatorService) {}
 }

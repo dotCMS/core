@@ -81,13 +81,12 @@
         position: absolute;
         right: 0;
         top: 32px;
-        z-index: 1;;
+        z-index: 1;
     }
 
     .form__group:first-child &:first-child {
         top: 25px;
     }
-
 }
 
 .form-group__two-cols {

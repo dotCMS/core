@@ -12,8 +12,10 @@ import { Component, Input } from '@angular/core';
     templateUrl: './dot-icon-button.component.html'
 })
 export class DotIconButtonComponent {
-    @Input() disabled?: boolean;
-    @Input() icon: string;
+    @Input()
+    disabled?: boolean;
+    @Input()
+    icon: string;
 
     /**
      * Emits the click of the button

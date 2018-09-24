@@ -1,17 +1,16 @@
 {
     "compileOnSave": false,
     "compilerOptions": {
-        "allowJs": true, // TODO NG: remove with rules
-        "allowUnreachableCode": true, // TODO NG: remove with rules
+        "baseUrl": "./",
         "outDir": "./dist/out-tsc",
         "sourceMap": true,
         "declaration": false,
+        "module": "es2015",
         "moduleResolution": "node",
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
-        // Can enable this because rules but we need to
-        // "noUnusedLocals": true,
-        // "noUnusedParameters": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
         "target": "es5",
         "typeRoots": [
             "node_modules/@types"
@@ -20,6 +19,35 @@
             "es2017",
             "dom",
             "dom.iterable"
-        ]
+        ],
+        "paths": {
+            "dot-layout-grid": [
+                "dist/dot-layout-grid"
+            ],
+            "dot-layout-grid/*": [
+                "dist/dot-layout-grid/*"
+            ],
+            "@services/*": [
+                "src/app/api/services/*"
+            ],
+            "@components/*": [
+                "src/app/view/components/*"
+            ],
+            "@directives/*": [
+                "src/app/view/directives/*"
+            ],
+            "@pipes/*": [
+                "src/app/view/pipes/*"
+            ],
+            "@shared/*": [
+                "src/app/shared/*"
+            ],
+            "@models/*": [
+                "src/app/shared/models/*"
+            ],
+            "@portlets/*": [
+                "src/app/portlets/*"
+            ],
+        }
     }
 }

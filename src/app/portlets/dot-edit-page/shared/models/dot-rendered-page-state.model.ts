@@ -4,7 +4,7 @@ import { User } from 'dotcms-js/dotcms-js';
 import { DotPage } from './dot-page.model';
 import { DotLayout } from './dot-layout.model';
 import { DotTemplate } from './dot-template.model';
-import { DotEditPageViewAs } from '../../../../shared/models/dot-edit-page-view-as/dot-edit-page-view-as.model';
+import { DotEditPageViewAs } from '@models/dot-edit-page-view-as/dot-edit-page-view-as.model';
 
 export interface DotPageState {
     locked?: boolean;

@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs/Observable';
+import { of as observableOf, Observable } from 'rxjs';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { PushPublishService } from './push-publish.service';
 import { ConnectionBackend, ResponseOptions, Response } from '@angular/http';
@@ -20,7 +20,7 @@ describe('PushPublishService', () => {
         'should get push publish environments',
         fakeAsync(() => {
             spyOn(this.dotCurrentUserService, 'getCurrentUser').and.returnValue(
-                Observable.of({
+                observableOf({
                     roleId: '1234'
                 })
             );

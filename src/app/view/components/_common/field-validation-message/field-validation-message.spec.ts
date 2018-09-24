@@ -9,13 +9,11 @@ describe('FieldValidationComponent', () => {
     let fixture: ComponentFixture<FieldValidationMessageComponent>;
     let component: FieldValidationMessageComponent;
 
-    beforeEach(
-        async(() => {
-            TestBed.configureTestingModule({
-                declarations: [FieldValidationMessageComponent]
-            }).compileComponents();
-        })
-    );
+    beforeEach(async(() => {
+        TestBed.configureTestingModule({
+            declarations: [FieldValidationMessageComponent]
+        }).compileComponents();
+    }));
 
     beforeEach(() => {
         fixture = TestBed.createComponent(FieldValidationMessageComponent);
@@ -30,7 +28,7 @@ describe('FieldValidationComponent', () => {
         expect(de).toBeNull();
     });
 
-    it('should hide the message when field it\'s valid', () => {
+    it("should hide the message when field it's valid", () => {
         const fakeInput: any = {};
         fakeInput.valid = true;
         component.field = fakeInput;
@@ -39,7 +37,7 @@ describe('FieldValidationComponent', () => {
         expect(de).toBeNull();
     });
 
-    it('should show the message when field it\'s touched and invalid', () => {
+    it("should show the message when field it's touched and invalid", () => {
         const fakeInput: any = {};
         fakeInput.touched = true;
         fakeInput.valid = false;

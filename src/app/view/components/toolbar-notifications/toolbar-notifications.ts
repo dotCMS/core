@@ -3,10 +3,10 @@ import { Component, ViewEncapsulation, ViewChild, OnInit } from '@angular/core';
 import { BaseComponent } from '../_common/_base/base-component';
 import { DotDropdownComponent } from '../_common/dropdown-component/dot-dropdown.component';
 import { DotcmsEventsService, LoginService } from 'dotcms-js/dotcms-js';
-import { INotification } from '../../../shared/models/notifications';
+import { INotification } from '@models/notifications';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
-import { DotMessageService } from '../../../api/services/dot-messages-service';
-import { NotificationsService } from '../../../api/services/notifications-service';
+import { DotMessageService } from '@services/dot-messages-service';
+import { NotificationsService } from '@services/notifications-service';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
@@ -15,7 +15,8 @@ import { NotificationsService } from '../../../api/services/notifications-servic
     templateUrl: 'toolbar-notifications.html'
 })
 export class ToolbarNotificationsComponent extends BaseComponent implements OnInit {
-    @ViewChild(DotDropdownComponent) dropdown: DotDropdownComponent;
+    @ViewChild(DotDropdownComponent)
+    dropdown: DotDropdownComponent;
     existsMoreToLoad = false;
     notifications: Array<INotification> = [];
     notificationsUnreadCount = 0;
@@ -119,5 +120,4 @@ export class ToolbarNotificationsComponent extends BaseComponent implements OnIn
             this.isNotificationsMarkedAsRead = false;
         });
     }
-
 }

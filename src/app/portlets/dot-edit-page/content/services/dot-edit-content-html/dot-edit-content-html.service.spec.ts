@@ -1,29 +1,28 @@
+import { of as observableOf, Observable } from 'rxjs';
 import { async } from '@angular/core/testing';
 import { DotEditContentHtmlService, DotContentletAction } from './dot-edit-content-html.service';
 import { DotEditContentToolbarHtmlService } from '../html/dot-edit-content-toolbar-html.service';
 import { DotContainerContentletService } from '../dot-container-contentlet.service';
 import { DotDragDropAPIHtmlService } from '../html/dot-drag-drop-api-html.service';
 import { DotDOMHtmlUtilService } from '../html/dot-dom-html-util.service';
-import { DotMessageService } from '../../../../../api/services/dot-messages-service';
+import { DotMessageService } from '@services/dot-messages-service';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
 import { LoggerService, StringUtils } from 'dotcms-js/dotcms-js';
 import { Config } from 'dotcms-js/core/config.service';
-import { Logger } from 'angular2-logger/core';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
-import { DotAlertConfirmService } from '../../../../../api/services/dot-alert-confirm/dot-alert-confirm.service';
+import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
 import { DotPageContent } from '../../../../dot-edit-page/shared/models/dot-page-content.model';
-import { Observable } from 'rxjs/Observable';
 import { mockDotLayout, mockDotRenderedPage, mockDotPage } from '../../../../../test/dot-rendered-page.mock';
 import { ContentType } from '../../../../content-types/shared/content-type.model';
-import { DotLicenseService } from '../../../../../api/services/dot-license/dot-license.service';
+import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { Injectable } from '@angular/core';
-import { DotRenderedPageState } from '../../../shared/models/dot-rendered-page-state.model';
+import { DotRenderedPageState } from '@models/dot-rendered-page-state.model';
 import { mockUser } from '../../../../../test/login-service.mock';
 
 @Injectable()
 class MockDotLicenseService {
     isEnterprise(): Observable<boolean> {
-        return Observable.of(false);
+        return observableOf(false);
     }
 }
 
@@ -134,7 +133,6 @@ describe('DotEditContentHtmlService', () => {
             DotDOMHtmlUtilService,
             LoggerService,
             Config,
-            Logger,
             StringUtils,
             DotAlertConfirmService,
             { provide: DotMessageService, useValue: messageServiceMock },
@@ -291,7 +289,7 @@ describe('DotEditContentHtmlService', () => {
         this.dotEditContentHtmlService.currentAction = DotContentletAction.ADD;
 
         const dotEditContentToolbarHtmlService = this.injector.get(DotContainerContentletService);
-        spyOn(dotEditContentToolbarHtmlService, 'getContentletToContainer').and.returnValue(Observable.of('<i>testing</i>'));
+        spyOn(dotEditContentToolbarHtmlService, 'getContentletToContainer').and.returnValue(observableOf('<i>testing</i>'));
 
         const contentlet: DotPageContent = {
             identifier: '67',
@@ -355,7 +353,7 @@ describe('DotEditContentHtmlService', () => {
         this.dotEditContentHtmlService.currentContainer = currentContainer;
 
         const dotEditContentToolbarHtmlService = this.injector.get(DotContainerContentletService);
-        spyOn(dotEditContentToolbarHtmlService, 'getContentletToContainer').and.returnValue(Observable.of('<i>testing</i>'));
+        spyOn(dotEditContentToolbarHtmlService, 'getContentletToContainer').and.returnValue(observableOf('<i>testing</i>'));
 
         const dotDialogService = this.injector.get(DotAlertConfirmService);
         spyOn(dotDialogService, 'alert');
@@ -400,7 +398,7 @@ describe('DotEditContentHtmlService', () => {
 
         const dotEditContentToolbarHtmlService = this.injector.get(DotContainerContentletService);
         spyOn(dotEditContentToolbarHtmlService, 'getContentletToContainer').and.returnValue(
-            Observable.of(`
+            observableOf(`
         <div>
             <script>
                 console.log('First');
@@ -435,7 +433,7 @@ describe('DotEditContentHtmlService', () => {
 
     describe('document click', () => {
         beforeEach(() => {
-            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(Observable.of(true));
+            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(true));
         });
 
         it('should open sub menu', () => {
@@ -465,7 +463,7 @@ describe('DotEditContentHtmlService', () => {
                     dataset: button.dataset
                 });
             });
-            const button: HTMLButtonElement = <HTMLButtonElement> fakeDocument.querySelector('.dotedit-contentlet__edit');
+            const button: HTMLButtonElement = <HTMLButtonElement>fakeDocument.querySelector('.dotedit-contentlet__edit');
             const container = <HTMLElement>button.closest('div[data-dot-object="container"]');
             button.click();
         });
@@ -664,12 +662,14 @@ describe('DotEditContentHtmlService', () => {
 
             const dotEditContentToolbarHtmlService = this.injector.get(DotContainerContentletService);
 
-            spyOn(dotEditContentToolbarHtmlService, 'getFormToContainer').and.returnValue(Observable.of({
-                render: '<i>testing</i>',
-                content: {
-                    identifier: '4'
-                }
-            }));
+            spyOn(dotEditContentToolbarHtmlService, 'getFormToContainer').and.returnValue(
+                observableOf({
+                    render: '<i>testing</i>',
+                    content: {
+                        identifier: '4'
+                    }
+                })
+            );
 
             this.dotEditContentHtmlService.renderAddedForm(form).subscribe((model) => {
                 currentModel = model;

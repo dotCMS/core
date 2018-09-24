@@ -1,11 +1,11 @@
-import { Observable } from 'rxjs/Observable';
+import { of as observableOf, Observable } from 'rxjs';
 import { Component, Input, Output, EventEmitter, ViewEncapsulation, ViewChild, AfterViewInit } from '@angular/core';
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { OnInit } from '@angular/core/src/metadata/lifecycle_hooks';
-import { DotMessageService } from '../../../../api/services/dot-messages-service';
+import { DotMessageService } from '@services/dot-messages-service';
 import { LoggerService } from 'dotcms-js/dotcms-js';
-import { AddToBundleService } from '../../../../api/services/add-to-bundle/add-to-bundle.service';
-import { DotBundle } from '../../../../shared/models/dot-bundle/dot-bundle';
+import { AddToBundleService } from '@services/add-to-bundle/add-to-bundle.service';
+import { DotBundle } from '@models/dot-bundle/dot-bundle';
 import { Dropdown } from 'primeng/primeng';
 import { mergeMap } from 'rxjs/operators';
 
@@ -21,10 +21,14 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit {
     bundle$: Observable<DotBundle[]>;
     placeholder: string;
 
-    @Input() assetIdentifier: string;
-    @Output() cancel = new EventEmitter<boolean>();
-    @ViewChild('formEl') formEl: HTMLFormElement;
-    @ViewChild('addBundleDropdown') addBundleDropdown: Dropdown;
+    @Input()
+    assetIdentifier: string;
+    @Output()
+    cancel = new EventEmitter<boolean>();
+    @ViewChild('formEl')
+    formEl: HTMLFormElement;
+    @ViewChild('addBundleDropdown')
+    addBundleDropdown: Dropdown;
 
     constructor(
         private addToBundleService: AddToBundleService,
@@ -46,7 +50,7 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit {
         this.initForm();
 
         this.bundle$ = this.dotMessageService.getMessages(keys).pipe(
-            mergeMap(messages => {
+            mergeMap((messages) => {
                 return this.addToBundleService.getBundles().pipe(
                     mergeMap((bundles: DotBundle[]) => {
                         setTimeout(() => {
@@ -55,7 +59,7 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit {
                                 : messages['contenttypes.content.add_to_bundle.type'];
                         });
                         this.form.get('addBundle').setValue(this.getDefaultBundle(bundles) ? this.getDefaultBundle(bundles).name : '');
-                        return Observable.of(bundles);
+                        return observableOf(bundles);
                     })
                 );
             })
@@ -124,6 +128,6 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit {
     private getDefaultBundle(bundles: DotBundle[]): DotBundle {
         const lastBundle: DotBundle = JSON.parse(sessionStorage.getItem(LAST_BUNDLE_USED));
         // return lastBundle ? this.bundle$.find(bundle => bundle.name === lastBundle.name) : null;
-        return lastBundle ? bundles.find(bundle => bundle.name === lastBundle.name) : null;
+        return lastBundle ? bundles.find((bundle) => bundle.name === lastBundle.name) : null;
     }
 }

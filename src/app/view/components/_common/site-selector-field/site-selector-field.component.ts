@@ -1,7 +1,7 @@
 import { Component, forwardRef, Input } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { Site, SiteService } from 'dotcms-js/dotcms-js';
-import { Subscription } from 'rxjs/Subscription';
+import { Subscription } from 'rxjs';
 /**
  * Form control to select DotCMS instance host identifier.
  *
@@ -22,9 +22,12 @@ import { Subscription } from 'rxjs/Subscription';
     ]
 })
 export class SiteSelectorFieldComponent implements ControlValueAccessor {
-    @Input() archive: boolean;
-    @Input() live: boolean;
-    @Input() system: boolean;
+    @Input()
+    archive: boolean;
+    @Input()
+    live: boolean;
+    @Input()
+    system: boolean;
 
     value: string;
 

@@ -1,8 +1,8 @@
+import { of as observableOf, Observable } from 'rxjs';
 import { ComponentFixture } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../../../test/dot-test-bed';
-import { DotMenuService } from '../../../../../../api/services/dot-menu.service';
+import { DotMenuService } from '@services/dot-menu.service';
 import { ActivatedRoute } from '@angular/router';
-import { Observable } from 'rxjs/Observable';
 import { Component, Input } from '@angular/core';
 import { DotLegacyTemplateAdditionalActionsComponent } from './dot-legacy-template-additional-actions-iframe.component';
 
@@ -11,7 +11,8 @@ import { DotLegacyTemplateAdditionalActionsComponent } from './dot-legacy-templa
     template: ''
 })
 class MockDotIframeComponent {
-    @Input() src: string;
+    @Input()
+    src: string;
 }
 
 describe('DotLegacyAdditionalActionsComponent', () => {
@@ -26,7 +27,7 @@ describe('DotLegacyAdditionalActionsComponent', () => {
                 {
                     provide: ActivatedRoute,
                     useValue: {
-                        params: Observable.of({ id: '1', tabName: 'properties' })
+                        params: observableOf({ id: '1', tabName: 'properties' })
                     }
                 }
             ]
@@ -39,7 +40,7 @@ describe('DotLegacyAdditionalActionsComponent', () => {
     it('should set additionalPropertiesURL right', () => {
         let urlResult;
         const dotMenuService: DotMenuService = fixture.debugElement.injector.get(DotMenuService);
-        spyOn(dotMenuService, 'getDotMenuId').and.returnValue(Observable.of('2'));
+        spyOn(dotMenuService, 'getDotMenuId').and.returnValue(observableOf('2'));
 
         fixture.detectChanges();
 

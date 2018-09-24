@@ -1,6 +1,5 @@
+import { of as observableOf, Observable, Subject } from 'rxjs';
 import { Site } from 'dotcms-js/dotcms-js';
-import { Observable } from 'rxjs/Observable';
-import { Subject } from 'rxjs/Subject';
 
 export const mockSites: Site[] = [
     {
@@ -28,7 +27,7 @@ export class SiteServiceMock {
     }
 
     paginateSites(): Observable<Site[]> {
-        return Observable.of(mockSites);
+        return observableOf(mockSites);
     }
 
     setFakeCurrentSite(site?: Site) {
@@ -43,15 +42,15 @@ export class SiteServiceMock {
     }
 
     get refreshSites$(): Observable<Site> {
-        return Observable.of(mockSites[0]);
+        return observableOf(mockSites[0]);
     }
 
     get sites$(): Observable<Site[]> {
-        return Observable.of(mockSites);
+        return observableOf(mockSites);
     }
 
     get sitesCounter$(): Observable<number> {
-        return Observable.of(mockSites.length * 3);
+        return observableOf(mockSites.length * 3);
     }
 
     get switchSite$(): Observable<Site> {

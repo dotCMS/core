@@ -13,28 +13,26 @@ describe('ActionButtonComponent', () => {
     let fixture: ComponentFixture<DotActionButtonComponent>;
     let de: DebugElement;
 
-    beforeEach(
-        async(() => {
-            DOTTestBed.configureTestingModule({
-                declarations: [DotActionButtonComponent],
-                imports: [
-                    BrowserAnimationsModule,
-                    MenuModule,
-                    DotIconButtonModule,
-                    RouterTestingModule.withRoutes([
-                        {
-                            component: DotActionButtonComponent,
-                            path: 'test'
-                        }
-                    ])
-                ]
-            });
+    beforeEach(async(() => {
+        DOTTestBed.configureTestingModule({
+            declarations: [DotActionButtonComponent],
+            imports: [
+                BrowserAnimationsModule,
+                MenuModule,
+                DotIconButtonModule,
+                RouterTestingModule.withRoutes([
+                    {
+                        component: DotActionButtonComponent,
+                        path: 'test'
+                    }
+                ])
+            ]
+        });
 
-            fixture = TestBed.createComponent(DotActionButtonComponent);
-            de = fixture.debugElement;
-            comp = fixture.componentInstance;
-        })
-    );
+        fixture = TestBed.createComponent(DotActionButtonComponent);
+        de = fixture.debugElement;
+        comp = fixture.componentInstance;
+    }));
 
     it('should have no-label class by default', () => {
         fixture.detectChanges();
@@ -50,10 +48,7 @@ describe('ActionButtonComponent', () => {
     it('should have only button in default state', () => {
         fixture.detectChanges();
         expect(fixture.debugElement.query(By.css('button'))).toBeDefined('button should exist');
-        expect(fixture.debugElement.query(By.css('.action-button__label')) === null).toBe(
-            true,
-            'label hidden by default'
-        );
+        expect(fixture.debugElement.query(By.css('.action-button__label')) === null).toBe(true, 'label hidden by default');
         expect(fixture.debugElement.query(By.css('p-menu')) === null).toBe(true, 'menu hidden by default');
     });
 

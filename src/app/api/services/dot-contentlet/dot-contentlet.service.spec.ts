@@ -3,7 +3,7 @@ import { DotContentletService } from './dot-contentlet.service';
 import { ConnectionBackend, ResponseOptions, Response } from '@angular/http';
 import { MockBackend } from '@angular/http/testing';
 import { mockDotContentlet } from '../../../test/dot-contentlet.mock';
-import { StructureTypeView } from '../../../shared/models/contentlet/structure-type-view.model';
+import { StructureTypeView } from '@models/contentlet/structure-type-view.model';
 
 let lastConnection: any;
 const MAIN_CONTENT_TYPES = ['CONTENT', 'WIDGET', 'FORM', 'FILEASSET', 'HTMLPAGE'];

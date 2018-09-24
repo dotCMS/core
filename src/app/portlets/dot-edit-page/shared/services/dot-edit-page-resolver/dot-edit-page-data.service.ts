@@ -19,12 +19,12 @@ export class DotEditPageDataService {
 
     /**
      * Return the object in cache and clean
-     * 
+     *
      * @returns {DotRenderedPageState}
      * @memberof DotEditPageDataService
      */
     getAndClean(): DotRenderedPageState {
-        const data =  this.dotRenderedPageState;
+        const data = this.dotRenderedPageState;
         this.dotRenderedPageState = null;
         return data;
     }

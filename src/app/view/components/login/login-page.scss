@@ -1,5 +1,5 @@
-@import 'variables';
-@import 'mixins';
+@import "variables";
+@import "mixins";
 
 .cms-info {
     display: flex;
@@ -74,7 +74,7 @@
             background-color: $white;
             border: solid $gray;
             border-width: 1px 1px 0 0;
-            content: '';
+            content: "";
             height: 14px;
             left: -7px;
             margin-top: -7px;

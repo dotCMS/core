@@ -1,8 +1,7 @@
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
-import { PaginatorService, OrderDirection } from '../../../../../api/services/paginator';
-import { Observable } from 'rxjs/Observable';
+import { PaginatorService } from '@services/paginator';
 import { ContentType } from '../../../../content-types/shared/content-type.model';
-import { DotMessageService } from '../../../../../api/services/dot-messages-service';
+import { DotMessageService } from '@services/dot-messages-service';
 import { LazyLoadEvent } from 'primeng/primeng';
 import { take } from 'rxjs/operators';
 
@@ -13,9 +12,12 @@ import { take } from 'rxjs/operators';
     styleUrls: ['./dot-form-selector.component.scss']
 })
 export class DotFormSelectorComponent implements OnInit {
-    @Input() show = false;
-    @Output() select = new EventEmitter<ContentType>();
-    @Output() close = new EventEmitter<any>();
+    @Input()
+    show = false;
+    @Output()
+    select = new EventEmitter<ContentType>();
+    @Output()
+    close = new EventEmitter<any>();
 
     items: ContentType[];
     messages: {

@@ -12,8 +12,10 @@ import { NgControl } from '@angular/forms';
     templateUrl: './field-validation-message.html'
 })
 export class FieldValidationMessageComponent {
-    @Input() field: NgControl;
-    @Input() message: string;
+    @Input()
+    field: NgControl;
+    @Input()
+    message: string;
 
     constructor() {}
 }

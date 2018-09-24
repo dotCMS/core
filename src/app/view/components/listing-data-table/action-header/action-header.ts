@@ -1,9 +1,9 @@
-import { DotAlertConfirmService } from '../../../../api/services/dot-alert-confirm/dot-alert-confirm.service';
+import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
 import { Component, Input, SimpleChanges, ViewEncapsulation, OnChanges } from '@angular/core';
 
 import { BaseComponent } from '../../_common/_base/base-component';
-import { DotMessageService } from '../../../../api/services/dot-messages-service';
-import { ActionHeaderOptions, ButtonAction } from '../../../../shared/models/action-header';
+import { DotMessageService } from '@services/dot-messages-service';
+import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
 
 @Component({
     encapsulation: ViewEncapsulation.None,
@@ -12,8 +12,10 @@ import { ActionHeaderOptions, ButtonAction } from '../../../../shared/models/act
     templateUrl: 'action-header.html'
 })
 export class ActionHeaderComponent extends BaseComponent implements OnChanges {
-    @Input() selectedItems = [];
-    @Input() options: ActionHeaderOptions;
+    @Input()
+    selectedItems = [];
+    @Input()
+    options: ActionHeaderOptions;
     public dynamicOverflow = 'visible';
 
     constructor(dotMessageService: DotMessageService, private dotDialogService: DotAlertConfirmService) {

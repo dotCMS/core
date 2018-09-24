@@ -111,9 +111,8 @@ describe('DotWorkflowService', () => {
 
     it('should get default workflow', () => {
         const defaultSystemWorkflow = mockWorkflows.filter((workflow) => workflow.system);
-        this.dotWorkflowService.getSystem().subscribe(workflow => {
+        this.dotWorkflowService.getSystem().subscribe((workflow) => {
             expect(workflow).toEqual(defaultSystemWorkflow[0]);
         });
     });
-
 });

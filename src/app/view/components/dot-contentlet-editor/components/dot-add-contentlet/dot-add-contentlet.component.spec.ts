@@ -7,7 +7,7 @@ import { DotContentletEditorService } from '../../services/dot-contentlet-editor
 import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-contentlet-wrapper.component';
 import { DotAddContentletComponent } from './dot-add-contentlet.component';
 import { DotIframeDialogModule } from '../../../dot-iframe-dialog/dot-iframe-dialog.module';
-import { DotMenuService } from '../../../../../api/services/dot-menu.service';
+import { DotMenuService } from '@services/dot-menu.service';
 import { LoginService } from 'dotcms-js/dotcms-js';
 import { LoginServiceMock } from '../../../../../test/login-service.mock';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -72,8 +72,8 @@ describe('DotAddContentletComponent', () => {
                     baseTypes: 'content,form'
                 },
                 events: {
-                    load: jasmine.createSpy(),
-                    keyDown: jasmine.createSpy()
+                    load: jasmine.createSpy('load'),
+                    keyDown: jasmine.createSpy('keyDown')
                 }
             });
 

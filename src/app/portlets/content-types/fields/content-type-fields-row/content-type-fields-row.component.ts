@@ -1,8 +1,8 @@
 import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 
 import { ContentTypeField, FieldRow } from '../shared';
-import { DotMessageService } from '../../../../api/services/dot-messages-service';
-import { DotAlertConfirmService } from '../../../../api/services/dot-alert-confirm';
+import { DotMessageService } from '@services/dot-messages-service';
+import { DotAlertConfirmService } from '@services/dot-alert-confirm';
 import { FieldColumn } from '..';
 
 /**
@@ -17,11 +17,15 @@ import { FieldColumn } from '..';
     templateUrl: './content-type-fields-row.component.html'
 })
 export class ContentTypeFieldsRowComponent implements OnInit {
-    @Input() fieldRow: FieldRow;
+    @Input()
+    fieldRow: FieldRow;
 
-    @Output() editField: EventEmitter<ContentTypeField> = new EventEmitter();
-    @Output() removeField: EventEmitter<ContentTypeField> = new EventEmitter();
-    @Output() removeRow: EventEmitter<FieldRow> = new EventEmitter();
+    @Output()
+    editField: EventEmitter<ContentTypeField> = new EventEmitter();
+    @Output()
+    removeField: EventEmitter<ContentTypeField> = new EventEmitter();
+    @Output()
+    removeRow: EventEmitter<FieldRow> = new EventEmitter();
 
     i18nMessages: any = {};
 

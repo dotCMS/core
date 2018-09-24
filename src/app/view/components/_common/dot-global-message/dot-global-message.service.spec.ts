@@ -1,11 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 
 import { DotGlobalMessageService } from './dot-global-message.service';
-import { DotMessageService } from '../../../../api/services/dot-messages-service';
-import { DotEventsService } from '../../../../api/services/dot-events/dot-events.service';
-import { DotEvent } from '../../../../shared/models/dot-event/dot-event';
+import { DotMessageService } from '@services/dot-messages-service';
+import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { DotEvent } from '@models/dot-event/dot-event';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 
 describe('DotGlobalMessageService', () => {
     let dotGlobalMessageService: DotGlobalMessageService;

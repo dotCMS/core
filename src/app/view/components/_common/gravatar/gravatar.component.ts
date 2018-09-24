@@ -1,5 +1,5 @@
 import { Component, Input, OnChanges } from '@angular/core';
-import { GravatarService } from '../../../../api/services/gravatar-service';
+import { GravatarService } from '@services/gravatar-service';
 import * as md5 from 'md5';
 
 @Component({
@@ -8,8 +8,10 @@ import * as md5 from 'md5';
     templateUrl: './gravatar.component.html'
 })
 export class GravatarComponent implements OnChanges {
-    @Input() email;
-    @Input() size;
+    @Input()
+    email;
+    @Input()
+    size;
     public gravatarProfileStyles;
     public gravatarProfile;
     public gravatarPlaceholder;
@@ -35,7 +37,7 @@ export class GravatarComponent implements OnChanges {
                 this.gravatarProfile = false;
                 this.gravatarPlaceholder = this.getDotAvatar(this.email);
                 this.gravatarPlaceholderStyles = {
-                    'font-size': this.size - this.size * 25 / 100 + 'px',
+                    'font-size': this.size - (this.size * 25) / 100 + 'px',
                     height: this.size + 'px',
                     'line-height': this.size + 'px',
                     width: this.size + 'px'

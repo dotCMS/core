@@ -20,20 +20,30 @@ import { trigger, transition, style, animate } from '@angular/animations';
     templateUrl: 'dot-dropdown.component.html'
 })
 export class DotDropdownComponent {
-    @Input() disabled = false;
-    @Input() icon = null;
-    @Input() gravatar = null;
-    @Input() title = null;
-    @Input() position: string;
-    @Input() inverted = false;
-    @Output() open = new EventEmitter<any>();
-    @Output() toggle = new EventEmitter<boolean>();
-    @Output() close = new EventEmitter<any>();
+    @Input()
+    disabled = false;
+    @Input()
+    icon = null;
+    @Input()
+    gravatar = null;
+    @Input()
+    title = null;
+    @Input()
+    position: string;
+    @Input()
+    inverted = false;
+    @Output()
+    open = new EventEmitter<any>();
+    @Output()
+    toggle = new EventEmitter<boolean>();
+    @Output()
+    close = new EventEmitter<any>();
     show = false;
 
     constructor(private elementRef: ElementRef) {}
 
-    @HostListener('document:click', ['$event']) handleClick($event) {
+    @HostListener('document:click', ['$event'])
+    handleClick($event) {
         let clickedComponent = $event.target;
         let inside = false;
         do {

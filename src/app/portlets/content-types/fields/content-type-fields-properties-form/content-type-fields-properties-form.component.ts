@@ -1,7 +1,7 @@
 import { Component, Output, EventEmitter, Input, SimpleChanges, ViewChild, OnChanges, OnInit, ViewEncapsulation } from '@angular/core';
 import { FormGroup, FormBuilder, AbstractControl } from '@angular/forms';
-import { DotMessageService } from '../../../../api/services/dot-messages-service';
-import { BaseComponent } from '../../../../view/components/_common/_base/base-component';
+import { DotMessageService } from '@services/dot-messages-service';
+import { BaseComponent } from '@components/_common/_base/base-component';
 import { ContentTypeField } from '../shared';
 import { FieldPropertyService } from '../service/';
 
@@ -12,10 +12,13 @@ import { FieldPropertyService } from '../service/';
     encapsulation: ViewEncapsulation.None
 })
 export class ContentTypeFieldsPropertiesFormComponent extends BaseComponent implements OnChanges, OnInit {
-    @Output() saveField: EventEmitter<any> = new EventEmitter();
-    @Input() formFieldData: ContentTypeField;
+    @Output()
+    saveField: EventEmitter<any> = new EventEmitter();
+    @Input()
+    formFieldData: ContentTypeField;
 
-    @ViewChild('properties') propertiesContainer;
+    @ViewChild('properties')
+    propertiesContainer;
 
     form: FormGroup;
     fieldProperties: string[] = [];
@@ -83,14 +86,14 @@ export class ContentTypeFieldsPropertiesFormComponent extends BaseComponent impl
         if (this.form.valid) {
             this.saveField.emit(this.form.value);
         } else {
-            this.fieldProperties.forEach(property => this.form.get(property).markAsTouched());
+            this.fieldProperties.forEach((property) => this.form.get(property).markAsTouched());
         }
     }
 
     public destroy(): void {
         this.fieldProperties = [];
         const propertiesContainer = this.propertiesContainer.nativeElement;
-        propertiesContainer.childNodes.forEach(child => {
+        propertiesContainer.childNodes.forEach((child) => {
             if (child.tagName) {
                 propertiesContainer.removeChild(child);
             }
@@ -101,7 +104,7 @@ export class ContentTypeFieldsPropertiesFormComponent extends BaseComponent impl
         const formFields = {};
 
         if (properties) {
-            properties.filter(property => this.fieldPropertyService.existsComponent(property)).forEach(property => {
+            properties.filter((property) => this.fieldPropertyService.existsComponent(property)).forEach((property) => {
                 formFields[property] = [
                     {
                         value:
@@ -128,14 +131,14 @@ export class ContentTypeFieldsPropertiesFormComponent extends BaseComponent impl
 
     private sortProperties(properties: string[]): void {
         this.fieldProperties = properties
-            .filter(property => this.fieldPropertyService.existsComponent(property))
+            .filter((property) => this.fieldPropertyService.existsComponent(property))
             .sort((property1, proeprty2) => this.fieldPropertyService.getOrder(property1) - this.fieldPropertyService.getOrder(proeprty2));
     }
 
     private setAutoCheckValues(): void {
         [this.form.get('searchable'), this.form.get('listed'), this.form.get('unique')]
-            .filter(checkbox => !!checkbox)
-            .forEach(checkbox => {
+            .filter((checkbox) => !!checkbox)
+            .forEach((checkbox) => {
                 this.handleCheckValues(checkbox);
             });
     }
@@ -148,7 +151,7 @@ export class ContentTypeFieldsPropertiesFormComponent extends BaseComponent impl
             this.handleDisabledIndexed(true);
         }
 
-        checkbox.valueChanges.subscribe(res => {
+        checkbox.valueChanges.subscribe((res) => {
             checkbox === this.form.get('unique') ? this.handleUniqueValuesChecked(res) : this.setIndexedValueChecked(res);
         });
     }

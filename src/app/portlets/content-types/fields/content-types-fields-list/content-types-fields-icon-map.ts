@@ -22,5 +22,5 @@ export const FIELD_ICONS = {
     'com.dotcms.contenttype.model.field.ImmutableTimeField': 'access_time',
     'com.dotcms.contenttype.model.field.ImmutableWysiwygField': 'visibility',
     'com.dotcms.contenttype.model.field.ImmutableTabDividerField': 'folder',
-    'com.dotcms.contenttype.model.field.ImmutableLineDividerField': 'more_horiz',
+    'com.dotcms.contenttype.model.field.ImmutableLineDividerField': 'more_horiz'
 };

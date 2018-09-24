@@ -5,11 +5,11 @@ import { DebugElement } from '@angular/core';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 
 import { DotEditPageInfoComponent } from './dot-edit-page-info.component';
-import { DotGlobalMessageService } from '../../../../view/components/_common/dot-global-message/dot-global-message.service';
-import { DotMessageService } from '../../../../api/services/dot-messages-service';
+import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
+import { DotMessageService } from '@services/dot-messages-service';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { mockUser } from '../../../../test/login-service.mock';
-import { DotRenderedPageState } from '../../shared/models/dot-rendered-page-state.model';
+import { DotRenderedPageState } from '@models/dot-rendered-page-state.model';
 import { mockDotRenderedPage } from '../../../../test/dot-rendered-page.mock';
 import { DotClipboardUtil } from '../../../../api/util/clipboard/ClipboardUtil';
 import { SiteServiceMock } from '../../../../test/site-service.mock';
@@ -40,7 +40,7 @@ describe('DotEditPageInfoComponent', () => {
                     provide: DotMessageService,
                     useValue: messageServiceMock
                 },
-                { provide: SiteService, useClass: SiteServiceMock },
+                { provide: SiteService, useClass: SiteServiceMock }
             ]
         }).compileComponents();
     }));

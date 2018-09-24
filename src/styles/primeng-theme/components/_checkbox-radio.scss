@@ -77,7 +77,7 @@ p-radiobutton {
 }
 
 .ui-chkbox-label {
-    p-checkbox[disabled='true'] & {
+    p-checkbox[disabled="true"] & {
         color: $check-disabled-label-color;
     }
 }
@@ -122,7 +122,7 @@ p-radiobutton {
 .ui-radiobutton-label {
     margin-left: 0;
 
-    p-radiobutton[disabled='true'] & {
+    p-radiobutton[disabled="true"] & {
         color: $radio-disabled-label-color;
     }
 }

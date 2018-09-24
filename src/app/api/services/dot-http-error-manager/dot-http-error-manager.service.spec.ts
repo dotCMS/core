@@ -59,12 +59,12 @@ describe('DotHttpErrorManagerService', () => {
     it('should handle 401 error when user is login we use 403', () => {
         spyOn(dotDialogService, 'alert');
 
-        service.handle(mockResponseView(401)).subscribe(res => {
+        service.handle(mockResponseView(401)).subscribe((res) => {
             result = res;
         });
 
         expect(result).toEqual({
-            redirected: false,
+            redirected: false
         });
         expect(dotDialogService.alert).toHaveBeenCalledWith({
             message: '403 Message',
@@ -73,17 +73,16 @@ describe('DotHttpErrorManagerService', () => {
     });
 
     it('should handle 401 error when user is logout and redirect to login', () => {
-
         loginService.auth.user = null;
         spyOn(dotRouterService, 'goToLogin');
         spyOn(dotDialogService, 'alert');
 
-        service.handle(mockResponseView(401)).subscribe(res => {
+        service.handle(mockResponseView(401)).subscribe((res) => {
             result = res;
         });
 
         expect(result).toEqual({
-            redirected: true,
+            redirected: true
         });
         expect(dotDialogService.alert).not.toHaveBeenCalled();
         expect(dotRouterService.goToLogin).toHaveBeenCalledTimes(1);
@@ -92,12 +91,12 @@ describe('DotHttpErrorManagerService', () => {
     it('should handle 403 error', () => {
         spyOn(dotDialogService, 'alert');
 
-        service.handle(mockResponseView(403)).subscribe(res => {
+        service.handle(mockResponseView(403)).subscribe((res) => {
             result = res;
         });
 
         expect(result).toEqual({
-            redirected: false,
+            redirected: false
         });
         expect(dotDialogService.alert).toHaveBeenCalledWith({
             message: '403 Message',
@@ -108,19 +107,18 @@ describe('DotHttpErrorManagerService', () => {
     it('should handle 500 error', () => {
         spyOn(dotDialogService, 'alert');
 
-        service.handle(mockResponseView(500)).subscribe(res => {
+        service.handle(mockResponseView(500)).subscribe((res) => {
             result = res;
         });
 
         expect(result).toEqual({
-            redirected: false,
+            redirected: false
         });
         expect(dotDialogService.alert).toHaveBeenCalledWith({
             message: '500 Message',
             header: '500 Header'
         });
     });
-
 
     it('should handle license error', () => {
         spyOn(dotDialogService, 'alert');
@@ -131,17 +129,16 @@ describe('DotHttpErrorManagerService', () => {
         const responseView: ResponseView = mockResponseView(403);
         responseView.response.headers = headers;
 
-        service.handle(responseView).subscribe(res => {
+        service.handle(responseView).subscribe((res) => {
             result = res;
         });
 
         expect(result).toEqual({
-            redirected: false,
+            redirected: false
         });
         expect(dotDialogService.alert).toHaveBeenCalledWith({
             message: 'license message',
-            header:  'license header'
+            header: 'license header'
         });
     });
-
 });

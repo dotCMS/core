@@ -1,5 +1,5 @@
-@import 'mixins';
-@import 'variables';
+@import "mixins";
+@import "variables";
 
 :host {
     background-color: $gray-bg;
@@ -19,7 +19,7 @@ dot-whats-changed,
 }
 
 .dot-edit__toolbar {
-    border-bottom: 1px solid rgba(0,0,0,0.1);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     flex-shrink: 0;
 }
 
@@ -53,14 +53,14 @@ dot-whats-changed,
         border-radius: 10px;
         border: 2px solid #ddd;
         box-shadow: 4px 4px 15px rgba(0, 0, 0, 0.1);
-        background: rgba(255,255,255,1);
-        background: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(240,240,240,1) 100%);
+        background: rgba(255, 255, 255, 1);
+        background: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(240, 240, 240, 1) 100%);
         filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#f0f0f0', GradientType=1);
         margin: 0 auto;
         padding: 0 10px;
 
         &:before {
-            content: '';
+            content: "";
             display: block;
             height: 5px;
             width: 70px;
@@ -71,7 +71,7 @@ dot-whats-changed,
         }
 
         &:after {
-            content: '';
+            content: "";
             display: block;
             height: 45px;
             width: 45px;
@@ -79,8 +79,14 @@ dot-whats-changed,
             background-color: #e6e6e6;
             border-radius: 45px;
             margin: 15px auto 20px auto;
-            background: rgba(242,239,242,1);
-            background: linear-gradient(135deg, rgba(242,239,242,1) 0%, rgba(242,239,242,1) 9%, rgba(255,255,255,1) 76%, rgba(255,255,255,1) 100%);
+            background: rgba(242, 239, 242, 1);
+            background: linear-gradient(
+                135deg,
+                rgba(242, 239, 242, 1) 0%,
+                rgba(242, 239, 242, 1) 9%,
+                rgba(255, 255, 255, 1) 76%,
+                rgba(255, 255, 255, 1) 100%
+            );
             filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#f2eff2', endColorstr='#ffffff', GradientType=1);
         }
     }

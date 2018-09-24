@@ -25,7 +25,7 @@ $field-active-color: $body-font-color;
 $field-active-border-size: 2px;
 $field-active-border-color: $brand-primary;
 
-$field-disabled-bgcolor: #DEDEE1;
+$field-disabled-bgcolor: #dedee1;
 $field-disabled-color: $gray-light;
 $field-disabled-border-size: $field-border-size;
 $field-disabled-border-color: $gray-bg;
@@ -46,27 +46,27 @@ $button-main: (
     normal: (
         background: $brand-primary,
         color: $white,
-        border: $button-border,
+        border: $button-border
     ),
     hover: (
         background: $brand-primary_mod,
         color: $white,
-        border: $button-border,
+        border: $button-border
     ),
     focus: (
         background: $brand-primary_mod,
         color: $white,
-        border: $button-border,
+        border: $button-border
     ),
     active: (
         background: $brand-primary_mod,
         color: $white,
-        border: $button-border,
+        border: $button-border
     ),
     disabled: (
         background: $field-disabled-bgcolor,
         color: $field-disabled-color,
-        border: $button-border,
+        border: $button-border
     )
 );
 
@@ -74,27 +74,27 @@ $button-sec: (
     normal: (
         background: $white,
         color: $brand-secondary,
-        border: solid 1px $brand-secondary,
+        border: solid 1px $brand-secondary
     ),
     hover: (
         background: $white,
         color: $brand-primary,
-        border: solid 1px $brand-primary,
+        border: solid 1px $brand-primary
     ),
     focus: (
         background: rgba($brand-primary_rgb, $button-hover-background-opacity),
         color: $brand-primary,
-        border: $button-border,
+        border: $button-border
     ),
     active: (
         background: rgba($brand-primary_rgb, 0.26),
         color: $brand-primary,
-        border: $button-border,
+        border: $button-border
     ),
     disabled: (
         background: $white,
         color: $field-disabled-bgcolor,
-        border: solid 1px $field-disabled-bgcolor,
+        border: solid 1px $field-disabled-bgcolor
     )
 );
 

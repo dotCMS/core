@@ -15,7 +15,7 @@ describe('DotLanguagesService', () => {
     it('should get Languages', () => {
         let result;
 
-        this.dotLanguagesService.get().subscribe(res => {
+        this.dotLanguagesService.get().subscribe((res) => {
             result = res;
         });
 
@@ -36,7 +36,7 @@ describe('DotLanguagesService', () => {
     it('should get Languages by content indode', () => {
         let result;
 
-        this.dotLanguagesService.get('2').subscribe(res => {
+        this.dotLanguagesService.get('2').subscribe((res) => {
             result = res;
         });
 

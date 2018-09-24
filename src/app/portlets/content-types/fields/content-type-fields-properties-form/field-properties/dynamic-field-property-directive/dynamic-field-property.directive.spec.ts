@@ -24,13 +24,7 @@ class TestComponentFactoryResolver {
 }
 
 class TestViewContainerRef {
-    createComponent(
-        _componentFactory: any,
-        _index?: number,
-        _injector?: any,
-        _projectableNodes?: any[][],
-        _ngModule?: any
-    ): any {}
+    createComponent(_componentFactory: any, _index?: number, _injector?: any, _projectableNodes?: any[][], _ngModule?: any): any {}
 }
 
 describe('Directive: DynamicFieldPropertyDirective', () => {
@@ -49,9 +43,7 @@ describe('Directive: DynamicFieldPropertyDirective', () => {
         this.componentFactory = {};
 
         this.getComponent = spyOn(fieldPropertyService, 'getComponent').and.returnValue(TestComponent);
-        this.resolveComponentFactory = spyOn(resolver, 'resolveComponentFactory').and.returnValue(
-            this.componentFactory
-        );
+        this.resolveComponentFactory = spyOn(resolver, 'resolveComponentFactory').and.returnValue(this.componentFactory);
         this.createComponent = spyOn(viewContainerRef, 'createComponent').and.returnValue({
             instance: this.component
         });

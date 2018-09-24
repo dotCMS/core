@@ -44,5 +44,4 @@ describe('PageViewService', () => {
             expect(result).toEqual(mockResponse.entity);
         })
     );
-
 });

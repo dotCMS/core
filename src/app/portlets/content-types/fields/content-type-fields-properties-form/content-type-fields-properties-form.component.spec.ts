@@ -5,7 +5,7 @@ import { MockDotMessageService } from '../../../../test/dot-message-service.mock
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { FormBuilder, FormGroup, ValidationErrors, Validators } from '@angular/forms';
 import { FieldPropertyService } from '../service';
-import { DotMessageService } from '../../../../api/services/dot-messages-service';
+import { DotMessageService } from '@services/dot-messages-service';
 import { ContentTypeField } from '../index';
 import { By } from '@angular/platform-browser';
 
@@ -28,9 +28,12 @@ class DotHostTesterComponent {
     selector: '[dotDynamicFieldProperty]'
 })
 class TestDynamicFieldPropertyDirective {
-    @Input() propertyName: string;
-    @Input() field: ContentTypeField;
-    @Input() group: FormGroup;
+    @Input()
+    propertyName: string;
+    @Input()
+    field: ContentTypeField;
+    @Input()
+    group: FormGroup;
 }
 
 @Injectable()
@@ -71,25 +74,25 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
     let mockFieldPropertyService: FieldPropertyService;
 
     const messageServiceMock = new MockDotMessageService({
-        'name': 'name',
-        'Label': 'Label',
+        name: 'name',
+        Label: 'Label',
         'message.field.fieldType': 'message.field.fieldType',
-        'categories': 'categories',
+        categories: 'categories',
         'Data-Type': 'Data-Type',
-        'required': 'required',
+        required: 'required',
         'User-Searchable': 'User-Searchable',
         'System-Indexed': 'System-Indexed',
-        'listed': 'listed',
-        'Unique': 'Unique',
+        listed: 'listed',
+        Unique: 'Unique',
         'Default-Value': 'Default-Value',
-        'Hint': 'Hint',
+        Hint: 'Hint',
         'Validation-RegEx': 'Validation-RegEx',
-        'Value': 'Value',
-        'Binary': 'Binary',
-        'Text': 'Text',
+        Value: 'Value',
+        Binary: 'Binary',
+        Text: 'Text',
         'True-False': 'True-False',
-        'Date': 'Date',
-        'Decimal': 'Decimal',
+        Date: 'Date',
+        Decimal: 'Decimal',
         'Whole-Number': 'Whole-Number',
         'Large-Block-of-Text': 'Large-Block-of-Text',
         'System-Field': 'System-Field'
@@ -113,34 +116,28 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
         hostFixture.detectChanges();
     };
 
-    beforeEach(
-        async(() => {
-            DOTTestBed.configureTestingModule({
-                declarations: [
-                    ContentTypeFieldsPropertiesFormComponent,
-                    DotHostTesterComponent,
-                    TestDynamicFieldPropertyDirective
-                ],
-                imports: [],
-                providers: [
-                    FormBuilder,
-                    ComponentFactoryResolver,
-                    FieldPropertyService,
-                    { provide: FieldPropertyService, useClass: TestFieldPropertiesService },
-                    { provide: DotMessageService, useValue: messageServiceMock }
-                ]
-            });
+    beforeEach(async(() => {
+        DOTTestBed.configureTestingModule({
+            declarations: [ContentTypeFieldsPropertiesFormComponent, DotHostTesterComponent, TestDynamicFieldPropertyDirective],
+            imports: [],
+            providers: [
+                FormBuilder,
+                ComponentFactoryResolver,
+                FieldPropertyService,
+                { provide: FieldPropertyService, useClass: TestFieldPropertiesService },
+                { provide: DotMessageService, useValue: messageServiceMock }
+            ]
+        });
 
-            hostFixture = DOTTestBed.createComponent(DotHostTesterComponent);
-            hostComp = hostFixture.componentInstance;
-            de = hostFixture.debugElement;
+        hostFixture = DOTTestBed.createComponent(DotHostTesterComponent);
+        hostComp = hostFixture.componentInstance;
+        de = hostFixture.debugElement;
 
-            fixture = de.query(By.css('dot-content-type-fields-properties-form'));
-            comp = fixture.componentInstance;
+        fixture = de.query(By.css('dot-content-type-fields-properties-form'));
+        comp = fixture.componentInstance;
 
-            mockFieldPropertyService = fixture.injector.get(FieldPropertyService);
-        })
-    );
+        mockFieldPropertyService = fixture.injector.get(FieldPropertyService);
+    }));
 
     describe('should init component', () => {
         beforeEach(() => {
@@ -207,7 +204,7 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
             startHostComponent();
         });
 
-        it('should set unique and no break when indexed and required doesn\'t exist', () => {
+        it("should set unique and no break when indexed and required doesn't exist", () => {
             comp.form.get('unique').setValue(true);
 
             expect(comp.form.get('indexed')).toBe(null);

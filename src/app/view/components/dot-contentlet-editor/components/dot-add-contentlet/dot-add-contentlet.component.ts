@@ -1,6 +1,6 @@
 import { Component, OnInit, EventEmitter, Output } from '@angular/core';
 
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 
@@ -17,7 +17,8 @@ import { DotContentletEditorService } from '../../services/dot-contentlet-editor
     styleUrls: ['./dot-add-contentlet.component.scss']
 })
 export class DotAddContentletComponent implements OnInit {
-    @Output() close: EventEmitter<any> = new EventEmitter();
+    @Output()
+    close: EventEmitter<any> = new EventEmitter();
     url$: Observable<string>;
     header$: Observable<string>;
 

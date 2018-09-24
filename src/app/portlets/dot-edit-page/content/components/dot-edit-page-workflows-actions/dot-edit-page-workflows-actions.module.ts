@@ -4,11 +4,7 @@ import { DotEditPageWorkflowsActionsComponent } from './dot-edit-page-workflows-
 import { ButtonModule, MenuModule } from 'primeng/primeng';
 
 @NgModule({
-    imports: [
-        CommonModule,
-        ButtonModule,
-        MenuModule
-    ],
+    imports: [CommonModule, ButtonModule, MenuModule],
     exports: [DotEditPageWorkflowsActionsComponent],
     declarations: [DotEditPageWorkflowsActionsComponent]
 })

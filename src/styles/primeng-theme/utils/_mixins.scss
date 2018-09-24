@@ -1,19 +1,19 @@
 @mixin placeholder($color) {
-  &::-webkit-input-placeholder {
-    color: $color
-  }
+    &::-webkit-input-placeholder {
+        color: $color;
+    }
 
-  &:-moz-placeholder {
-    color: $color
-  }
+    &:-moz-placeholder {
+        color: $color;
+    }
 
-  &::-moz-placeholder {
-    color: $color
-  }
+    &::-moz-placeholder {
+        color: $color;
+    }
 
-  &:-ms-input-placeholder {
-    color: $color
-  }
+    &:-ms-input-placeholder {
+        color: $color;
+    }
 }
 
 // BUTTONS & SPLIT BUTTONS
@@ -36,43 +36,42 @@
 
 @mixin button-properties($label, $props) {
     @if ($label == "normal") {
-        @include button-state($props)
+        @include button-state($props);
     } @else {
         &:#{$label} {
-            @include button-state($props)
+            @include button-state($props);
         }
     }
 }
-
 
 // GRID MIXINS
 
 @mixin small {
     @media (max-width: $screen-sm-max) {
-      @content;
+        @content;
     }
 }
 
 @mixin medium {
-  @media screen and (min-width: $screen-md-min) {
-    @content;
-  }
+    @media screen and (min-width: $screen-md-min) {
+        @content;
+    }
 }
 
 @mixin large {
-  @media screen and (min-width: $screen-lg-min) {
-    @content;
-  }
+    @media screen and (min-width: $screen-lg-min) {
+        @content;
+    }
 }
 
 @mixin x-large {
-  @media screen and (min-width: $screen-xl-min) {
-    @content;
-  }
+    @media screen and (min-width: $screen-xl-min) {
+        @content;
+    }
 }
 
 @mixin responsive-hide($clas) {
-  #{$clas} {
-    display: none !important;
-  }
+    #{$clas} {
+        display: none !important;
+    }
 }

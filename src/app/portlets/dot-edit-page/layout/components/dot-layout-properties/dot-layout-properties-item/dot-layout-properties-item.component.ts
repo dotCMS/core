@@ -14,8 +14,10 @@ import { Component, Input, Output, EventEmitter, forwardRef, HostListener } from
     ]
 })
 export class DotLayoutPropertiesItemComponent implements ControlValueAccessor {
-    @Input() label: string;
-    @Output() change: EventEmitter<boolean> = new EventEmitter();
+    @Input()
+    label: string;
+    @Output()
+    change: EventEmitter<boolean> = new EventEmitter();
 
     value: boolean;
 

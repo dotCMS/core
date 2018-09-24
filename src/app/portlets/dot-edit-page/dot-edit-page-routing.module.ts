@@ -20,11 +20,11 @@ const dotEditPage: Routes = [
                 redirectTo: './content'
             },
             {
-                loadChildren: 'app/portlets/dot-edit-page/content/dot-edit-content.module#DotEditContentModule',
+                loadChildren: 'src/app/portlets/dot-edit-page/content/dot-edit-content.module#DotEditContentModule',
                 path: 'content'
             },
             {
-                loadChildren: 'app/portlets/dot-edit-page/layout/dot-edit-layout.module#DotEditLayoutModule',
+                loadChildren: 'src/app/portlets/dot-edit-page/layout/dot-edit-layout.module#DotEditLayoutModule',
                 path: 'layout'
             }
         ]

@@ -1,11 +1,11 @@
-@import 'variables';
+@import "variables";
 
 :host {
     padding: $basic-padding * 3;
     display: flex;
     background: $gray-bg;
 
-    dot-listing-data-table{
+    dot-listing-data-table {
         box-shadow: $md-shadow-4;
     }
 

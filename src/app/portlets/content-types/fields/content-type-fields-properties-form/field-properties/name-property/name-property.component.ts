@@ -1,15 +1,16 @@
 import { Component, ViewChild, OnInit, ElementRef } from '@angular/core';
 import { FormGroup } from '@angular/forms/forms';
 import { FieldProperty } from '../field-properties.model';
-import { DotMessageService } from '../../../../../../api/services/dot-messages-service';
-import { BaseComponent } from '../../../../../../view/components/_common/_base/base-component';
+import { DotMessageService } from '@services/dot-messages-service';
+import { BaseComponent } from '@components/_common/_base/base-component';
 
 @Component({
     selector: 'dot-name-property',
     templateUrl: './name-property.component.html'
 })
 export class NamePropertyComponent extends BaseComponent implements OnInit {
-    @ViewChild('name') name: ElementRef;
+    @ViewChild('name')
+    name: ElementRef;
 
     property: FieldProperty;
     group: FormGroup;

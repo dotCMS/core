@@ -18,18 +18,16 @@ describe('DotTextareaContentComponent', () => {
     let fixture: ComponentFixture<DotTextareaContentComponent>;
     let de: DebugElement;
 
-    beforeEach(
-        async(() => {
-            DOTTestBed.configureTestingModule({
-                declarations: [DotTextareaContentComponent],
-                imports: [AceEditorModule, SelectButtonModule, InputTextareaModule, TinymceModule.withConfig({})]
-            });
+    beforeEach(async(() => {
+        DOTTestBed.configureTestingModule({
+            declarations: [DotTextareaContentComponent],
+            imports: [AceEditorModule, SelectButtonModule, InputTextareaModule, TinymceModule.withConfig({})]
+        });
 
-            fixture = TestBed.createComponent(DotTextareaContentComponent);
-            component = fixture.componentInstance;
-            de = fixture.debugElement;
-        })
-    );
+        fixture = TestBed.createComponent(DotTextareaContentComponent);
+        component = fixture.componentInstance;
+        de = fixture.debugElement;
+    }));
 
     it('should show a select mode buttons by default', () => {
         fixture.detectChanges();
@@ -54,23 +52,20 @@ describe('DotTextareaContentComponent', () => {
         expect(selectField == null).toBe(true, 'hide buttons');
     });
 
-    it(
-        'should have option \'Plain\' selected by default',
-        async(() => {
-            fixture.detectChanges();
-            /*
+    it("should have option 'Plain' selected by default", async(() => {
+        fixture.detectChanges();
+        /*
                 We need to to async and whenStable here because the ngModel in the PrimeNg component
             */
-            fixture.whenStable().then(() => {
-                fixture.detectChanges();
-                const selectedOption = de.query(By.css('.textarea-content__select-field .ui-state-active'));
-                const defaultOptionText = cleanOptionText(selectedOption.nativeElement.innerText);
-                expect(defaultOptionText).toBe('Plain');
-            });
-        })
-    );
+        fixture.whenStable().then(() => {
+            fixture.detectChanges();
+            const selectedOption = de.query(By.css('.textarea-content__select-field .ui-state-active'));
+            const defaultOptionText = cleanOptionText(selectedOption.nativeElement.innerText);
+            expect(defaultOptionText).toBe('Plain');
+        });
+    }));
 
-    it('should show \'Plain\' field by default', () => {
+    it("should show 'Plain' field by default", () => {
         fixture.detectChanges();
         const plainFieldTexarea = de.query(By.css('.textarea-content__plain-field'));
         expect(plainFieldTexarea).toBeTruthy('show plain field');
@@ -106,26 +101,23 @@ describe('DotTextareaContentComponent', () => {
         });
     });
 
-    it(
-        'should show by default the first mode we passed',
-        async(() => {
-            component.show = ['wysiwyg', 'plain'];
-            fixture.detectChanges();
-            fixture.whenStable().then(() => {
-                const wysiwygFieldTexarea = de.query(By.css('.textarea-content__wysiwyg-field'));
-                expect(wysiwygFieldTexarea).toBeTruthy('show wysiwyg field');
+    it('should show by default the first mode we passed', async(() => {
+        component.show = ['wysiwyg', 'plain'];
+        fixture.detectChanges();
+        fixture.whenStable().then(() => {
+            const wysiwygFieldTexarea = de.query(By.css('.textarea-content__wysiwyg-field'));
+            expect(wysiwygFieldTexarea).toBeTruthy('show wysiwyg field');
 
-                /*
+            /*
                 We should be using .toBeFalsey() but there is a bug with this method:
                 https://github.com/angular/angular/issues/14235
             */
-                const plainFieldTexarea = de.query(By.css('.textarea-content__plain-field'));
-                expect(plainFieldTexarea == null).toBe(true, 'hide plain field');
-                const codeFieldTexarea = de.query(By.css('.textarea-content__code-field'));
-                expect(codeFieldTexarea == null).toBe(true, 'hide code field');
-            });
-        })
-    );
+            const plainFieldTexarea = de.query(By.css('.textarea-content__plain-field'));
+            expect(plainFieldTexarea == null).toBe(true, 'hide plain field');
+            const codeFieldTexarea = de.query(By.css('.textarea-content__code-field'));
+            expect(codeFieldTexarea == null).toBe(true, 'hide code field');
+        });
+    }));
 
     it('should set width', () => {
         component.width = '50%';
@@ -194,7 +186,7 @@ describe('DotTextareaContentComponent', () => {
         component.propagateChange = (propagateChangeValue) => {
             expect('aaaa\r\nbbbbb\r\nccccc\r\nddddd').toEqual(propagateChangeValue);
         };
-        
+
         component.onModelChange(value);
 
         expect(component.value).toEqual(value);

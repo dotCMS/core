@@ -1,9 +1,9 @@
 import { Component, OnInit, Input, ViewEncapsulation, forwardRef } from '@angular/core';
-import { PushPublishService } from '../../../../api/services/push-publish/push-publish.service';
+import { PushPublishService } from '@services/push-publish/push-publish.service';
 import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
-import { DotMessageService } from '../../../../api/services/dot-messages-service';
-import { DotEnvironment } from '../../../../shared/models/dot-environment/dot-environment';
-import { Observable } from 'rxjs/Observable';
+import { DotMessageService } from '@services/dot-messages-service';
+import { DotEnvironment } from '@models/dot-environment/dot-environment';
+import { Observable } from 'rxjs';
 @Component({
     encapsulation: ViewEncapsulation.None,
     selector: 'dot-push-publish-env-selector',
@@ -18,7 +18,8 @@ import { Observable } from 'rxjs/Observable';
     ]
 })
 export class PushPublishEnvSelectorComponent implements OnInit, ControlValueAccessor {
-    @Input() assetIdentifier: string;
+    @Input()
+    assetIdentifier: string;
     pushEnvironments$: Observable<any>;
     selectedEnvironments: DotEnvironment[];
     selectedEnvironmentIds: string[] = [];
@@ -88,9 +89,7 @@ export class PushPublishEnvSelectorComponent implements OnInit, ControlValueAcce
      * @memberof PushPublishEnvSelectorComponent
      */
     removeEnvironmentItem(environmentItem: DotEnvironment): void {
-        this.selectedEnvironments = this.selectedEnvironments.filter(
-            (environment) => environment.id !== environmentItem.id
-        );
+        this.selectedEnvironments = this.selectedEnvironments.filter((environment) => environment.id !== environmentItem.id);
         this.propagateEnvironmentId(this.selectedEnvironments);
     }
 

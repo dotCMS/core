@@ -6,13 +6,13 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DotSubNavComponent } from './dot-sub-nav.component';
 import { dotMenuMock } from '../../services/dot-navigation.service.spec';
-import { DotMenu } from '../../../../../shared/models/navigation';
+import { DotMenu } from '@models/navigation';
 
 const data: DotMenu = {
     ...dotMenuMock(),
     menuItems: [
         {
-            ...dotMenuMock().menuItems[0],
+            ...dotMenuMock().menuItems[0]
         },
         {
             ...dotMenuMock().menuItems[1],
@@ -72,11 +72,11 @@ describe('DotSubNavComponent', () => {
 
         component.itemClick.subscribe((event) => {
             expect(event).toEqual({
-                originalEvent: {hello: 'world'},
+                originalEvent: { hello: 'world' },
                 data: data.menuItems[0]
             });
         });
 
-        link.triggerEventHandler('click',  {hello: 'world'});
+        link.triggerEventHandler('click', { hello: 'world' });
     });
 });

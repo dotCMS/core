@@ -1,5 +1,5 @@
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
-import { DotAlertConfirm } from '../../../shared/models/dot-alert-confirm/dot-alert-confirm.model';
+import { DotAlertConfirm } from '@models/dot-alert-confirm/dot-alert-confirm.model';
 import { ConfirmationService } from 'primeng/primeng';
 import { LoginService } from 'dotcms-js/dotcms-js';
 import { DotAlertConfirmService } from './dot-alert-confirm.service';
@@ -52,13 +52,16 @@ describe('DotDialogService', () => {
     });
 
     describe('confirmation', () => {
-        it('should set model and call confirm method in primeng service', fakeAsync(() => {
-            spyOn(confirmationService, 'confirm');
-            service.confirm(mockData);
-            tick();
-            expect(service.confirmModel).toEqual(mockData);
-            expect(confirmationService.confirm).toHaveBeenCalledWith(mockData);
-        }));
+        it(
+            'should set model and call confirm method in primeng service',
+            fakeAsync(() => {
+                spyOn(confirmationService, 'confirm');
+                service.confirm(mockData);
+                tick();
+                expect(service.confirmModel).toEqual(mockData);
+                expect(confirmationService.confirm).toHaveBeenCalledWith(mockData);
+            })
+        );
 
         it('should set model with default labels', () => {
             service.confirm({
@@ -116,5 +119,4 @@ describe('DotDialogService', () => {
             expect(service.alertModel).toEqual(null);
         });
     });
-
 });

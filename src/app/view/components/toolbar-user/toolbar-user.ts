@@ -3,9 +3,9 @@ import { Component, ViewChild, OnInit } from '@angular/core';
 import { DotDropdownComponent } from '../_common/dropdown-component/dot-dropdown.component';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { LoginService, Auth, LoggerService } from 'dotcms-js/dotcms-js';
-import { DotMessageService } from '../../../api/services/dot-messages-service';
+import { DotMessageService } from '@services/dot-messages-service';
 import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
-import { DotEventsService } from '../../../api/services/dot-events/dot-events.service';
+import { DotEventsService } from '@services/dot-events/dot-events.service';
 
 @Component({
     selector: 'dot-toolbar-user',
@@ -13,7 +13,8 @@ import { DotEventsService } from '../../../api/services/dot-events/dot-events.se
     templateUrl: 'toolbar-user.html'
 })
 export class ToolbarUserComponent extends BaseComponent implements OnInit {
-    @ViewChild(DotDropdownComponent) dropdown: DotDropdownComponent;
+    @ViewChild(DotDropdownComponent)
+    dropdown: DotDropdownComponent;
     auth: Auth;
 
     showLoginAs = false;

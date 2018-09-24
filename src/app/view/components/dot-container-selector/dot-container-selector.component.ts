@@ -1,8 +1,8 @@
-import { DotContainer } from '../../../shared/models/container/dot-container.model';
-import { DotMessageService } from '../../../api/services/dot-messages-service';
-import { PaginatorService } from '../../../api/services/paginator/paginator.service';
+import { DotContainer } from '@models/container/dot-container.model';
+import { DotMessageService } from '@services/dot-messages-service';
+import { PaginatorService } from '@services/paginator/paginator.service';
 import { Component, OnInit, Output, EventEmitter, Input } from '@angular/core';
-import { DotContainerColumnBox } from '../../../portlets/dot-edit-page/shared/models/dot-container-column-box.model';
+import { DotContainerColumnBox } from '@portlets/dot-edit-page/shared/models/dot-container-column-box.model';
 
 @Component({
     selector: 'dot-container-selector',
@@ -10,9 +10,12 @@ import { DotContainerColumnBox } from '../../../portlets/dot-edit-page/shared/mo
     styleUrls: ['./dot-container-selector.component.scss']
 })
 export class DotContainerSelectorComponent implements OnInit {
-    @Input() data: DotContainerColumnBox[] = [];
-    @Input() multiple: boolean;
-    @Output() change: EventEmitter<DotContainerColumnBox[]> = new EventEmitter();
+    @Input()
+    data: DotContainerColumnBox[] = [];
+    @Input()
+    multiple: boolean;
+    @Output()
+    change: EventEmitter<DotContainerColumnBox[]> = new EventEmitter();
 
     totalRecords: number;
     currentContainers: DotContainer[] = [];
@@ -76,9 +79,7 @@ export class DotContainerSelectorComponent implements OnInit {
      * @memberof DotContainerSelectorComponent
      */
     isContainerSelected(dotContainer: DotContainer): boolean {
-        return this.data.some(
-            (containerItem) => containerItem.container.identifier === dotContainer.identifier
-        );
+        return this.data.some((containerItem) => containerItem.container.identifier === dotContainer.identifier);
     }
 
     private getContainersList(filter = '', offset = 0): void {

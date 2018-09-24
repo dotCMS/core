@@ -139,12 +139,15 @@ describe('DotDialogComponent', () => {
         });
 
         describe('re-center', () => {
-            it('should have ok button', fakeAsync(() => {
-                spyOn(dialogComponent, 'center');
-                component.reRecenter();
-                tick();
-                expect(dialogComponent.center).toHaveBeenCalled();
-            }));
+            it(
+                'should have ok button',
+                fakeAsync(() => {
+                    spyOn(dialogComponent, 'center');
+                    component.reRecenter();
+                    tick();
+                    expect(dialogComponent.center).toHaveBeenCalled();
+                })
+            );
         });
 
         describe('ok button', () => {

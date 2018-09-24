@@ -4,7 +4,6 @@ import { DotIframeDialogModule } from '../dot-iframe-dialog/dot-iframe-dialog.mo
 import { DotWorkflowTaskDetailService } from './services/dot-workflow-task-detail.service';
 import { DotWorkflowTaskDetailComponent } from './dot-workflow-task-detail.component';
 
-
 @NgModule({
     imports: [CommonModule, DotIframeDialogModule],
     declarations: [DotWorkflowTaskDetailComponent],

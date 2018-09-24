@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs/Observable';
+import { of as observableOf, Observable } from 'rxjs';
 import { Hotkey } from 'angular2-hotkeys';
 
 /**
@@ -22,7 +22,7 @@ export class TestHotkeysMock {
      */
     add(hotkey: Hotkey | Hotkey[], _specificEvent?: string | string[]): Observable<Hotkey[]> {
         this.hotkeys.push(hotkey);
-        return Observable.of([]);
+        return observableOf([]);
     }
 
     /**

@@ -6,7 +6,7 @@ import { DebugElement } from '@angular/core';
 import { DotPortletDetailComponent } from './dot-portlet-detail.component';
 import { DOTTestBed } from '../../test/dot-test-bed';
 import { DotWorkflowTaskModule } from './dot-workflow-task/dot-workflow-task.module';
-import { DotMenuService } from '../../api/services/dot-menu.service';
+import { DotMenuService } from '@services/dot-menu.service';
 import { LoginService } from 'dotcms-js/dotcms-js';
 import { LoginServiceMock } from '../../test/login-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';

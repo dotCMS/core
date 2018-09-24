@@ -1,14 +1,15 @@
+import { pluck, map, withLatestFrom, mergeMap } from 'rxjs/operators';
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, UrlSegment } from '@angular/router';
 
-import { BehaviorSubject } from 'rxjs/BehaviorSubject';
+import { BehaviorSubject } from 'rxjs';
 
 import { SiteService, DotcmsEventsService, LoggerService } from 'dotcms-js/dotcms-js';
 
-import { DotContentletService } from '../../../../../api/services/dot-contentlet/dot-contentlet.service';
+import { DotContentletService } from '@services/dot-contentlet/dot-contentlet.service';
 import { DotLoadingIndicatorService } from '../dot-loading-indicator/dot-loading-indicator.service';
-import { DotMenuService } from '../../../../../api/services/dot-menu.service';
-import { DotRouterService } from '../../../../../api/services/dot-router/dot-router.service';
+import { DotMenuService } from '@services/dot-menu.service';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotIframeEventsHandler } from './services/iframe-events-handler.service';
 
 @Component({
@@ -30,8 +31,7 @@ export class IframePortletLegacyComponent implements OnInit {
         private dotIframeEventsHandler: DotIframeEventsHandler,
         public loggerService: LoggerService,
         public siteService: SiteService
-    ) {
-    }
+    ) {}
 
     ngOnInit(): void {
         this.dotRouterService.portletReload$.subscribe((portletId: string) => {
@@ -112,11 +112,7 @@ export class IframePortletLegacyComponent implements OnInit {
 
         this.dotcmsEventsService.subscribeToEvents(events).subscribe((eventTypeWrapper) => {
             if (this.dotRouterService.currentPortlet.id === 'site-browser') {
-                this.loggerService.debug(
-                    'Capturing Site Browser event',
-                    eventTypeWrapper.eventType,
-                    eventTypeWrapper.data
-                );
+                this.loggerService.debug('Capturing Site Browser event', eventTypeWrapper.eventType, eventTypeWrapper.data);
                 // TODO: When we finish the migration of the site browser this event will be handle.....
             }
         });
@@ -124,7 +120,7 @@ export class IframePortletLegacyComponent implements OnInit {
 
     private setIframeSrc(): void {
         // We use the query param to load a page in edit mode in the iframe
-        const queryUrl$ = this.route.queryParams.pluck('url').map((url: string) => url);
+        const queryUrl$ = this.route.queryParams.pipe(pluck('url'), map((url: string) => url));
 
         queryUrl$.subscribe((queryUrl: string) => {
             if (queryUrl) {
@@ -136,13 +132,12 @@ export class IframePortletLegacyComponent implements OnInit {
     }
 
     private setPortletUrl(): void {
-        const portletId$ = this.route.params.pluck('id').map((id: string) => id);
+        const portletId$ = this.route.params.pipe(pluck('id'), map((id: string) => id));
 
         portletId$
-            .withLatestFrom(this.route.parent.url.map((urlSegment: UrlSegment[]) => urlSegment[0].path))
-            .flatMap(
-                ([id, url]) =>
-                    url === 'add' ? this.contentletService.getUrlById(id) : this.dotMenuService.getUrlById(id)
+            .pipe(
+                withLatestFrom(this.route.parent.url.pipe(map((urlSegment: UrlSegment[]) => urlSegment[0].path))),
+                mergeMap(([id, url]) => (url === 'add' ? this.contentletService.getUrlById(id) : this.dotMenuService.getUrlById(id)))
             )
             .subscribe((url: string) => {
                 this.setUrl(url);

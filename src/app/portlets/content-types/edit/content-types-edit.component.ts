@@ -1,22 +1,20 @@
+import { take, mergeMap, pluck } from 'rxjs/operators';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Component, ViewChild, OnInit } from '@angular/core';
-import { Location } from '@angular/common';
 
 import { ContentType } from '../shared/content-type.model';
 import { ContentTypesFormComponent } from '../form';
-import { CrudService } from '../../../api/services/crud';
+import { CrudService } from '@services/crud';
 import { ContentTypeField } from '../fields/index';
 import { FieldService } from '../fields/service';
-import { DotMessageService } from '../../../api/services/dot-messages-service';
-import { ContentTypesInfoService } from '../../../api/services/content-types-info';
-import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
-import {
-    DotHttpErrorManagerService,
-    DotHttpErrorHandled
-} from '../../../api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotMessageService } from '@services/dot-messages-service';
+import { ContentTypesInfoService } from '@services/content-types-info';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { DotHttpErrorManagerService, DotHttpErrorHandled } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { ResponseView } from 'dotcms-js/dotcms-js';
+
 import { HotkeysService, Hotkey } from 'angular2-hotkeys';
-import { DotEventsService } from '../../../api/services/dot-events/dot-events.service';
+import { DotEventsService } from '@services/dot-events/dot-events.service';
 
 /**
  * Portlet component for edit content types
@@ -31,7 +29,8 @@ import { DotEventsService } from '../../../api/services/dot-events/dot-events.se
     styleUrls: ['./content-types-edit.component.scss']
 })
 export class ContentTypesEditComponent implements OnInit {
-    @ViewChild('form') form: ContentTypesFormComponent;
+    @ViewChild('form')
+    form: ContentTypesFormComponent;
 
     data: ContentType;
     fields: ContentTypeField[];
@@ -40,7 +39,7 @@ export class ContentTypesEditComponent implements OnInit {
         icon: '',
         header: ''
     };
-    messagesKey: {[key: string]: string} = {};
+    messagesKey: { [key: string]: string } = {};
     editButtonLbl: string;
 
     constructor(
@@ -57,7 +56,7 @@ export class ContentTypesEditComponent implements OnInit {
     ) {}
 
     ngOnInit(): void {
-        this.route.data.pluck('contentType').subscribe((contentType: ContentType) => {
+        this.route.data.pipe(pluck('contentType')).subscribe((contentType: ContentType) => {
             this.data = contentType;
 
             if (contentType.fields) {
@@ -84,7 +83,7 @@ export class ContentTypesEditComponent implements OnInit {
                 'contenttypes.form.identifier',
                 'contenttypes.dropzone.rows.add'
             ])
-            .subscribe((messages: {[key: string]: string}) => {
+            .subscribe((messages: { [key: string]: string }) => {
                 this.messagesKey = messages;
             });
 
@@ -157,12 +156,15 @@ export class ContentTypesEditComponent implements OnInit {
     removeFields(fieldsToDelete: ContentTypeField[]): void {
         this.fieldService
             .deleteFields(this.data.id, fieldsToDelete)
-            .pluck('fields')
-            .subscribe((fields: ContentTypeField[]) => {
-                this.fields = fields;
-            }, (err: ResponseView) => {
-                this.dotHttpErrorManagerService.handle(err).subscribe((() => {}));
-            });
+            .pipe(pluck('fields'))
+            .subscribe(
+                (fields: ContentTypeField[]) => {
+                    this.fields = fields;
+                },
+                (err: ResponseView) => {
+                    this.dotHttpErrorManagerService.handle(err).subscribe(() => {});
+                }
+            );
     }
 
     /**
@@ -171,13 +173,16 @@ export class ContentTypesEditComponent implements OnInit {
      * @memberof ContentTypesEditComponent
      */
     saveFields(fieldsToSave: ContentTypeField[]): void {
-        this.fieldService.saveFields(this.data.id, fieldsToSave).subscribe((fields: ContentTypeField[]) => {
-            if (this.updateOrNewField(fieldsToSave)) {
-                this.fields = fields;
+        this.fieldService.saveFields(this.data.id, fieldsToSave).subscribe(
+            (fields: ContentTypeField[]) => {
+                if (this.updateOrNewField(fieldsToSave)) {
+                    this.fields = fields;
+                }
+            },
+            (err: ResponseView) => {
+                this.dotHttpErrorManagerService.handle(err).subscribe(() => {});
             }
-        }, (err: ResponseView) => {
-            this.dotHttpErrorManagerService.handle(err).subscribe((() => {}));
-        });
+        );
     }
 
     /**
@@ -190,31 +195,39 @@ export class ContentTypesEditComponent implements OnInit {
     }
 
     private updateOrNewField(fieldsToSave: ContentTypeField[]): boolean {
-        return (!fieldsToSave[0].id || fieldsToSave.length === 1);
+        return !fieldsToSave[0].id || fieldsToSave.length === 1;
     }
 
     private bindEscKey(): void {
         this.hotkeysService.add(
-            new Hotkey('esc', (_event: KeyboardEvent): boolean => {
-                this.cancelForm();
-                return false;
-            })
+            new Hotkey(
+                'esc',
+                (_event: KeyboardEvent): boolean => {
+                    this.cancelForm();
+                    return false;
+                }
+            )
         );
     }
 
     private createContentType(value: ContentType): void {
         this.crudService
             .postData('v1/contenttype', value)
-            .flatMap((contentTypes: ContentType[]) => contentTypes)
-            .take(1)
-            .subscribe((contentType: ContentType) => {
-                this.data = contentType;
-                this.fields = this.data.fields;
-                this.dotRouterService.goToEditContentType(this.data.id);
-                this.show = false;
-            }, (err: ResponseView) => {
-                this.handleHttpError(err);
-            });
+            .pipe(
+                mergeMap((contentTypes: ContentType[]) => contentTypes),
+                take(1)
+            )
+            .subscribe(
+                (contentType: ContentType) => {
+                    this.data = contentType;
+                    this.fields = this.data.fields;
+                    this.dotRouterService.goToEditContentType(this.data.id);
+                    this.show = false;
+                },
+                (err: ResponseView) => {
+                    this.handleHttpError(err);
+                }
+            );
     }
 
     private handleHttpError(err: ResponseView) {
@@ -226,11 +239,14 @@ export class ContentTypesEditComponent implements OnInit {
     private updateContentType(value: any): void {
         const data = Object.assign({}, value, { id: this.data.id });
 
-        this.crudService.putData(`v1/contenttype/id/${this.data.id}`, data).subscribe((contentType: ContentType) => {
-            this.data = contentType;
-            this.show = false;
-        }, (err: ResponseView) => {
-            this.handleHttpError(err);
-        });
+        this.crudService.putData(`v1/contenttype/id/${this.data.id}`, data).subscribe(
+            (contentType: ContentType) => {
+                this.data = contentType;
+                this.show = false;
+            },
+            (err: ResponseView) => {
+                this.handleHttpError(err);
+            }
+        );
     }
 }

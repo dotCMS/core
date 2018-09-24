@@ -14,17 +14,25 @@ import { OnChanges } from '@angular/core/src/metadata/lifecycle_hooks';
     templateUrl: 'dot-action-button.component.html'
 })
 export class DotActionButtonComponent implements OnInit, OnChanges {
-    @ViewChild('menu') menu: Menu;
+    @ViewChild('menu')
+    menu: Menu;
 
-    @Input() disabled: boolean;
-    @Input() icon: string;
-    @Input() label: string;
-    @Input() model: MenuItem[];
-    @Input() selected: boolean;
+    @Input()
+    disabled: boolean;
+    @Input()
+    icon: string;
+    @Input()
+    label: string;
+    @Input()
+    model: MenuItem[];
+    @Input()
+    selected: boolean;
 
-    @Output() click: EventEmitter<any> = new EventEmitter();
+    @Output()
+    click: EventEmitter<any> = new EventEmitter();
 
-    @HostBinding('class.action-button--no-label') isNotLabeled = true;
+    @HostBinding('class.action-button--no-label')
+    isNotLabeled = true;
 
     @HostListener('click', ['$event'])
     public onClick(event: any): void {

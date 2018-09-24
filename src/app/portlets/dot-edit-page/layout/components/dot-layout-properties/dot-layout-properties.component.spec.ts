@@ -1,5 +1,5 @@
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
-import { DotMessageService } from '../../../../../api/services/dot-messages-service';
+import { DotMessageService } from '@services/dot-messages-service';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
 import { ReactiveFormsModule, FormGroup, FormControl } from '@angular/forms';
 import { OverlayPanelModule, ButtonModule } from 'primeng/primeng';
@@ -41,13 +41,7 @@ describe('DotLayoutPropertiesComponent', () => {
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
             declarations: [DotLayoutPropertiesComponent, TestHostComponent],
-            imports: [
-                DotLayoutPropertiesItemModule,
-                DotLayoutSidebarModule,
-                OverlayPanelModule,
-                ButtonModule,
-                ReactiveFormsModule
-            ],
+            imports: [DotLayoutPropertiesItemModule, DotLayoutSidebarModule, OverlayPanelModule, ButtonModule, ReactiveFormsModule],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         });
 

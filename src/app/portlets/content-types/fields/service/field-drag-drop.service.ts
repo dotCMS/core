@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs/Observable';
+import { Observable, Subject } from 'rxjs';
 import { DragulaService } from 'ng2-dragula';
-import { Subject } from 'rxjs/Subject';
+import { delay } from 'rxjs/operators';
 
 /**
  * Provide method to handle with the Field Types
@@ -17,16 +17,44 @@ export class FieldDragDropService {
     private _fieldRowDropFromTarget: Subject<any> = new Subject();
 
     constructor(private dragulaService: DragulaService) {
-        dragulaService.over.subscribe(this.toggleOverClass);
-        dragulaService.out.subscribe(this.toggleOverClass);
+        dragulaService.over().subscribe(this.toggleOverClass);
+        dragulaService.out().subscribe(this.toggleOverClass);
 
-        dragulaService.dropModel.subscribe((value) => {
-            this.handleDrop(value[0], value[3].dataset.dragType);
-        });
+        dragulaService
+            .dropModel()
+            .pipe(delay(0))
+            .subscribe((data: {
+                name: string;
+                el: Element;
+                target: Element;
+                source: Element;
+                sibling: Element;
+                item: any;
+                sourceModel: any[];
+                targetModel: any[];
+                sourceIndex: number;
+                targetIndex: number;
 
-        dragulaService.removeModel.subscribe((value) => {
-            this.handleDrop(value[0], value[3].dataset.dragType);
-        });
+            }) => {
+                const source: HTMLElement = <HTMLElement>data.source;
+                this.handleDrop(data.name, source.dataset.dragType);
+            });
+
+        dragulaService
+            .removeModel()
+            .pipe(delay(0))
+            .subscribe((data: {
+                name: string;
+                el: Element;
+                container: Element;
+                source: Element;
+                item: any;
+                sourceModel: any[];
+                sourceIndex: number;
+            }) => {
+                const source: HTMLElement = <HTMLElement>data.source;
+                this.handleDrop(data.name, source.dataset.dragType);
+            });
     }
 
     /**
@@ -46,10 +74,13 @@ export class FieldDragDropService {
     setFieldBagOptions(): void {
         const fieldBagOpts = this.dragulaService.find(FieldDragDropService.FIELD_BAG_NAME);
         if (!fieldBagOpts) {
-            this.dragulaService.setOptions(FieldDragDropService.FIELD_BAG_NAME, {
+            this.dragulaService.createGroup(FieldDragDropService.FIELD_BAG_NAME, {
                 copy: this.shouldCopy,
                 accepts: this.shouldAccepts,
-                moves: this.shouldMovesField
+                moves: this.shouldMovesField,
+                copyItem: (item: any) => {
+                    return item;
+                }
             });
         }
     }
@@ -61,7 +92,7 @@ export class FieldDragDropService {
     setFieldRowBagOptions(): void {
         const fieldRowBagOpts = this.dragulaService.find(FieldDragDropService.FIELD_ROW_BAG_NAME);
         if (!fieldRowBagOpts) {
-            this.dragulaService.setOptions(FieldDragDropService.FIELD_ROW_BAG_NAME, {
+            this.dragulaService.createGroup(FieldDragDropService.FIELD_ROW_BAG_NAME, {
                 copy: this.shouldCopy,
                 moves: this.shouldMoveRow
             });
@@ -84,9 +115,9 @@ export class FieldDragDropService {
         return this._fieldRowDropFromTarget.asObservable();
     }
 
-    private toggleOverClass([bag, el, target, source]: [string, HTMLElement, HTMLElement, HTMLElement]): void {
-        if (target.classList.contains('row-columns__item') && source !== target) {
-            target.classList.toggle('row-columns__item--over');
+    private toggleOverClass(group: { name: string; el: Element; container: Element; source: Element }): void {
+        if (group.container.classList.contains('row-columns__item')) {
+            group.container.classList.toggle('row-columns__item--over');
         }
     }
 
@@ -114,14 +145,12 @@ export class FieldDragDropService {
         }
     }
 
-    private shouldCopy(_el: HTMLElement, source: HTMLElement, _handle: HTMLElement, _sibling: HTMLElement): boolean {
+    private shouldCopy(_el: HTMLElement, source: HTMLElement): boolean {
         return source.dataset.dragType === 'source';
     }
 
     private shouldMoveRow(_el: HTMLElement, source: HTMLElement, handle: HTMLElement, _sibling: HTMLElement): boolean {
-        const isDragButton =
-            handle.parentElement.classList.contains('row-header__drag') ||
-            handle.classList.contains('row-header__drag');
+        const isDragButton = handle.parentElement.classList.contains('row-header__drag') || handle.classList.contains('row-header__drag');
         return source.dataset.dragType === 'source' || isDragButton;
     }
 

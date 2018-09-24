@@ -1,6 +1,6 @@
 import { Component, ViewEncapsulation, Input, OnInit, AfterViewChecked } from '@angular/core';
-import { FormatDateService } from '../../../../api/services/format-date-service';
-import { Subject } from 'rxjs/Subject';
+import { FormatDateService } from '@services/format-date-service';
+import { Subject } from 'rxjs';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
@@ -9,7 +9,8 @@ import { Subject } from 'rxjs/Subject';
     templateUrl: 'custom-time.html'
 })
 export class CustomTimeComponent implements OnInit, AfterViewChecked {
-    @Input() time;
+    @Input()
+    time;
 
     private formattedTime: Subject<string> = new Subject();
 

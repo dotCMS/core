@@ -1,11 +1,11 @@
-import { DotAlertConfirmService } from '../../../../api/services/dot-alert-confirm/dot-alert-confirm.service';
+import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
 import { DotActionButtonModule } from '../../_common/dot-action-button/dot-action-button.module';
 import { ActionHeaderComponent } from './action-header';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, async } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DebugElement } from '@angular/core';
-import { DotMessageService } from '../../../../api/services/dot-messages-service';
+import { DotMessageService } from '@services/dot-messages-service';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -15,32 +15,30 @@ describe('ActionHeaderComponent', () => {
     let fixture: ComponentFixture<ActionHeaderComponent>;
     let de: DebugElement;
 
-    beforeEach(
-        async(() => {
-            const messageServiceMock = new MockDotMessageService({
-                selected: 'selected'
-            });
+    beforeEach(async(() => {
+        const messageServiceMock = new MockDotMessageService({
+            selected: 'selected'
+        });
 
-            DOTTestBed.configureTestingModule({
-                declarations: [ActionHeaderComponent],
-                imports: [
-                    BrowserAnimationsModule,
-                    DotActionButtonModule,
-                    RouterTestingModule.withRoutes([
-                        {
-                            component: ActionHeaderComponent,
-                            path: 'test'
-                        }
-                    ])
-                ],
-                providers: [{ provide: DotMessageService, useValue: messageServiceMock }, DotAlertConfirmService]
-            });
+        DOTTestBed.configureTestingModule({
+            declarations: [ActionHeaderComponent],
+            imports: [
+                BrowserAnimationsModule,
+                DotActionButtonModule,
+                RouterTestingModule.withRoutes([
+                    {
+                        component: ActionHeaderComponent,
+                        path: 'test'
+                    }
+                ])
+            ],
+            providers: [{ provide: DotMessageService, useValue: messageServiceMock }, DotAlertConfirmService]
+        });
 
-            fixture = DOTTestBed.createComponent(ActionHeaderComponent);
-            comp = fixture.componentInstance;
-            de = fixture.debugElement.query(By.css('.action-header'));
-        })
-    );
+        fixture = DOTTestBed.createComponent(ActionHeaderComponent);
+        comp = fixture.componentInstance;
+        de = fixture.debugElement.query(By.css('.action-header'));
+    }));
 
     it('should render default state correctly', () => {
         const actionButton: DebugElement = de.query(By.css('.action-header__primary-button'));

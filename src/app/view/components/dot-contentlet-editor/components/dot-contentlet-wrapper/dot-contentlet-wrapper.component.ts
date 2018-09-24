@@ -1,7 +1,7 @@
 import { Component, OnInit, Input, EventEmitter, Output } from '@angular/core';
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
-import { DotMessageService } from '../../../../../api/services/dot-messages-service';
-import { DotAlertConfirmService } from '../../../../../api/services/dot-alert-confirm';
+import { DotMessageService } from '@services/dot-messages-service';
+import { DotAlertConfirmService } from '@services/dot-alert-confirm';
 
 @Component({
     selector: 'dot-contentlet-wrapper',
@@ -9,10 +9,14 @@ import { DotAlertConfirmService } from '../../../../../api/services/dot-alert-co
     styleUrls: ['./dot-contentlet-wrapper.component.scss']
 })
 export class DotContentletWrapperComponent implements OnInit {
-    @Input() header = '';
-    @Input() url: string;
-    @Output() close: EventEmitter<any> = new EventEmitter();
-    @Output() custom: EventEmitter<any> = new EventEmitter();
+    @Input()
+    header = '';
+    @Input()
+    url: string;
+    @Output()
+    close: EventEmitter<any> = new EventEmitter();
+    @Output()
+    custom: EventEmitter<any> = new EventEmitter();
 
     private isContentletModified = false;
     private readonly customEventsHandler;
@@ -24,7 +28,7 @@ export class DotContentletWrapperComponent implements OnInit {
     ) {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
-                'close': () => {
+                close: () => {
                     this.onClose();
                 },
                 'deleted-page': () => {
@@ -44,11 +48,9 @@ export class DotContentletWrapperComponent implements OnInit {
     }
 
     ngOnInit() {
-        this.dotMessageService.getMessages([
-            'editcontentlet.lose.dialog.header',
-            'editcontentlet.lose.dialog.message',
-            'editcontentlet.lose.dialog.accept'
-        ]).subscribe();
+        this.dotMessageService
+            .getMessages(['editcontentlet.lose.dialog.header', 'editcontentlet.lose.dialog.message', 'editcontentlet.lose.dialog.accept'])
+            .subscribe();
     }
 
     /**

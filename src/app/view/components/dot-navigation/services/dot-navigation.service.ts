@@ -1,25 +1,23 @@
 import { Injectable } from '@angular/core';
 import { Router, NavigationEnd, Event } from '@angular/router';
 
-import { Observable } from 'rxjs/Observable';
-
-import { BehaviorSubject } from 'rxjs/BehaviorSubject';
+import { Observable, BehaviorSubject } from 'rxjs';
 import { filter, switchMap, map, flatMap, toArray, tap } from 'rxjs/operators';
 
 import { Auth } from 'dotcms-js/core/login.service';
 import { DotcmsEventsService, LoginService } from 'dotcms-js/dotcms-js';
 
-import { DotMenu, DotMenuItem } from '../../../../shared/models/navigation';
-import { DotMenuService } from '../../../../api/services/dot-menu.service';
-import { DotRouterService } from '../../../../api/services/dot-router/dot-router.service';
+import { DotMenu, DotMenuItem } from '@models/navigation';
+import { DotMenuService } from '@services/dot-menu.service';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotIframeService } from '../../_common/iframe/service/dot-iframe/dot-iframe.service';
-import { DotEventsService } from '../../../../api/services/dot-events/dot-events.service';
+import { DotEventsService } from '@services/dot-events/dot-events.service';
 
 export const replaceSectionsMap = {
     'edit-page': 'site-browser'
 };
 
-const replaceIdForNonMenuSection = id => {
+const replaceIdForNonMenuSection = (id) => {
     return replaceSectionsMap[id];
 };
 
@@ -87,10 +85,7 @@ export class DotNavigationService {
         });
 
         this.loginService.auth$
-            .pipe(
-                filter((auth: Auth) => !!(auth.loginAsUser || auth.user)),
-                switchMap(() => this.dotMenuService.reloadMenu())
-            )
+            .pipe(filter((auth: Auth) => !!(auth.loginAsUser || auth.user)), switchMap(() => this.dotMenuService.reloadMenu()))
             .subscribe((menus: DotMenu[]) => {
                 this.setMenu(menus);
                 this.goToFirstPortlet();
@@ -157,9 +152,9 @@ export class DotNavigationService {
      *
      * @memberof DotNavigationService
      */
-    goToFirstPortlet(): Promise <boolean> {
+    goToFirstPortlet(): Promise<boolean> {
         return this.getFirstMenuLink()
-            .map((link: string) => this.dotRouterService.gotoPortlet(link))
+            .pipe(map((link: string) => this.dotRouterService.gotoPortlet(link)))
             .toPromise()
             .then((isRouted: Promise<boolean>) => {
                 if (!isRouted) {
@@ -226,8 +221,8 @@ export class DotNavigationService {
         return firstMenuItem.angular ? firstMenuItem.url : this.getLegacyPortletUrl(firstMenuItem.id);
     }
 
-    private getFirstMenuLink(): Observable <string> {
-        return this.dotMenuService.loadMenu().map((menus: DotMenu[]) => this.extractFirtsMenuLink(menus));
+    private getFirstMenuLink(): Observable<string> {
+        return this.dotMenuService.loadMenu().pipe(map((menus: DotMenu[]) => this.extractFirtsMenuLink(menus)));
     }
 
     private getLegacyPortletUrl(menuItemId: string): string {
@@ -245,7 +240,7 @@ export class DotNavigationService {
         }
     }
 
-    private reloadNavigation(): Observable <DotMenu[] > {
+    private reloadNavigation(): Observable<DotMenu[]> {
         return this.dotMenuService.reloadMenu().pipe(
             setActiveItems(this.dotRouterService.currentPortlet.id, this._collapsed),
             tap((menus: DotMenu[]) => {

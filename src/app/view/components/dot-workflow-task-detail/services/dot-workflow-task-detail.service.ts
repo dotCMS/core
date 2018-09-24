@@ -1,9 +1,7 @@
 import { Injectable } from '@angular/core';
-import { Subject } from 'rxjs/Subject';
-import { Observable } from 'rxjs/Observable';
+import { Subject, Observable, of } from 'rxjs';
 import { mergeMap, map } from 'rxjs/operators';
-import { DotMenuService } from '../../../../api/services/dot-menu.service';
-import { of } from 'rxjs/observable/of';
+import { DotMenuService } from '@services/dot-menu.service';
 
 export interface DotTaskAction {
     header?: string;
@@ -24,9 +22,7 @@ export class DotWorkflowTaskDetailService {
     constructor(private dotMenuService: DotMenuService) {}
 
     get viewUrl$(): Observable<string> {
-        return this.data.pipe(
-            mergeMap((action: DotTaskAction) => this.getViewUrl(action))
-        );
+        return this.data.pipe(mergeMap((action: DotTaskAction) => this.getViewUrl(action)));
     }
 
     get header$(): Observable<string> {

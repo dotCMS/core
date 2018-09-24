@@ -85,7 +85,7 @@ describe('DotIframeDialogComponent', () => {
             return {
                 target: {
                     contentWindow: {
-                        focus: jasmine.createSpy()
+                        focus: jasmine.createSpy('focus')
                     }
                 }
             };
@@ -131,9 +131,11 @@ describe('DotIframeDialogComponent', () => {
                 });
 
                 it('should close on escape key in the dialog', () => {
-                    document.dispatchEvent(new KeyboardEvent('keydown', {
-                        key: 'Escape'
-                    }));
+                    document.dispatchEvent(
+                        new KeyboardEvent('keydown', {
+                            key: 'Escape'
+                        })
+                    );
                     expect(component.url).toBe(null);
                     expect(component.show).toBe(false);
                     expect(component.header).toBe('');
@@ -141,7 +143,7 @@ describe('DotIframeDialogComponent', () => {
                     expect(component.beforeClose.emit).not.toHaveBeenCalled();
                 });
 
-                it('should close on click in the dialog mask', (done => {
+                it('should close on click in the dialog mask', (done) => {
                     setTimeout(() => {
                         component.dialog.mask.click();
 
@@ -152,7 +154,7 @@ describe('DotIframeDialogComponent', () => {
                         expect(component.beforeClose.emit).not.toHaveBeenCalled();
                         done();
                     }, 0);
-                }));
+                });
             });
 
             it('should emit keydown', () => {

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { CoreWebService } from 'dotcms-js/dotcms-js';
-import { Observable } from 'rxjs/Observable';
-import { DotCurrentUser } from '../../../shared/models/dot-current-user/dot-current-user';
+import { Observable } from 'rxjs';
+import { DotCurrentUser } from '@models/dot-current-user/dot-current-user';
 import { RequestMethod } from '@angular/http';
 
 @Injectable()

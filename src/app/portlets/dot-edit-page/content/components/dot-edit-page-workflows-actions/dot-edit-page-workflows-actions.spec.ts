@@ -1,3 +1,4 @@
+import { of as observableOf, Observable } from 'rxjs';
 import { async, ComponentFixture } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -10,21 +11,21 @@ import { mockDotPage } from '../../../../../test/dot-rendered-page.mock';
 import { LoginService } from 'dotcms-js/dotcms-js';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
 import { LoginServiceMock } from '../../../../../test/login-service.mock';
-import { DotWorkflowService } from '../../../../../api/services/dot-workflow/dot-workflow.service';
-import { DotMessageService } from '../../../../../api/services/dot-messages-service';
-import { DotRouterService } from '../../../../../api/services/dot-router/dot-router.service';
-import { DotHttpErrorManagerService } from '../../../../../api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
+import { DotMessageService } from '@services/dot-messages-service';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotEditPageWorkflowsActionsComponent } from './dot-edit-page-workflows-actions.component';
-import { DotPage } from '../../../shared/models/dot-page.model';
-import { DotGlobalMessageService } from '../../../../../view/components/_common/dot-global-message/dot-global-message.service';
-import { Observable } from 'rxjs/Observable';
+import { DotPage } from '@models/dot-page.model';
+import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 
 @Component({
     selector: 'dot-test-host-component',
     template: `<dot-edit-page-workflows-actions [page]="page"></dot-edit-page-workflows-actions>`
 })
 class TestHostComponent {
-    @Input() page: DotPage;
+    @Input()
+    page: DotPage;
 }
 
 describe('DotEditPageWorkflowsActionsComponent', () => {
@@ -41,29 +42,28 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
         'editpage.actions.fire.confirmation': 'The action "{0}" was executed correctly'
     });
 
-    beforeEach(
-        async(() => {
-            testbed = DOTTestBed.configureTestingModule({
-                imports: [RouterTestingModule, BrowserAnimationsModule, MenuModule],
-                declarations: [DotEditPageWorkflowsActionsComponent, TestHostComponent],
-                providers: [
-                    {
-                        provide: DotWorkflowService,
-                        useClass: DotWorkflowServiceMock
-                    },
-                    {
-                        provide: DotMessageService,
-                        useValue: messageServiceMock },
-                    {
-                        provide: LoginService,
-                        useClass: LoginServiceMock
-                    },
-                    DotHttpErrorManagerService,
-                    DotRouterService
-                ]
-            });
-        })
-    );
+    beforeEach(async(() => {
+        testbed = DOTTestBed.configureTestingModule({
+            imports: [RouterTestingModule, BrowserAnimationsModule, MenuModule],
+            declarations: [DotEditPageWorkflowsActionsComponent, TestHostComponent],
+            providers: [
+                {
+                    provide: DotWorkflowService,
+                    useClass: DotWorkflowServiceMock
+                },
+                {
+                    provide: DotMessageService,
+                    useValue: messageServiceMock
+                },
+                {
+                    provide: LoginService,
+                    useClass: LoginServiceMock
+                },
+                DotHttpErrorManagerService,
+                DotRouterService
+            ]
+        });
+    }));
 
     beforeEach(() => {
         fixture = testbed.createComponent(TestHostComponent);
@@ -170,7 +170,7 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
 
         describe('disabled', () => {
             beforeEach(() => {
-                spyOn(dotWorkflowService, 'getContentWorkflowActions').and.returnValue(Observable.of([]));
+                spyOn(dotWorkflowService, 'getContentWorkflowActions').and.returnValue(observableOf([]));
                 fixture.detectChanges();
             });
 

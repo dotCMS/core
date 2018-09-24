@@ -1,10 +1,9 @@
+import { of as observableOf, Observable } from 'rxjs';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { DebugElement } from '@angular/core';
 import { RouterTestingModule } from '@angular/router/testing';
 import { async, ComponentFixture } from '@angular/core/testing';
-
-import { Observable } from 'rxjs/Observable';
 
 import { LoginService } from 'dotcms-js/dotcms-js';
 
@@ -13,7 +12,7 @@ import { DotWorkflowTaskDetailService } from './services/dot-workflow-task-detai
 import { DotWorkflowTaskDetailComponent } from './dot-workflow-task-detail.component';
 import { DotIframeDialogComponent } from '../dot-iframe-dialog/dot-iframe-dialog.component';
 import { DotIframeDialogModule } from '../dot-iframe-dialog/dot-iframe-dialog.module';
-import { DotMenuService } from '../../../api/services/dot-menu.service';
+import { DotMenuService } from '@services/dot-menu.service';
 import { LoginServiceMock } from '../../../test/login-service.mock';
 
 describe('DotWorkflowTaskDetailComponent', () => {
@@ -39,7 +38,7 @@ describe('DotWorkflowTaskDetailComponent', () => {
                     provide: DotMenuService,
                     useValue: {
                         getDotMenuId() {
-                            return Observable.of('999');
+                            return observableOf('999');
                         }
                     }
                 }
@@ -100,8 +99,8 @@ describe('DotWorkflowTaskDetailComponent', () => {
             });
 
             it('should call clear and emit close', () => {
-                dotIframeDialog.triggerEventHandler('custom', {hello: 'world'});
-                expect(component.custom.emit).toHaveBeenCalledWith({hello: 'world'});
+                dotIframeDialog.triggerEventHandler('custom', { hello: 'world' });
+                expect(component.custom.emit).toHaveBeenCalledWith({ hello: 'world' });
             });
         });
     });

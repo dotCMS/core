@@ -1,7 +1,7 @@
-import { Component, Output, EventEmitter, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { SiteService, Site, DotcmsEventsService } from 'dotcms-js/dotcms-js';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
-import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
 
 @Component({
@@ -10,7 +10,8 @@ import { DotNavigationService } from '../dot-navigation/services/dot-navigation.
     templateUrl: './dot-toolbar.component.html'
 })
 export class ToolbarComponent implements OnInit {
-    @Input() collapsed: boolean;
+    @Input()
+    collapsed: boolean;
 
     constructor(
         private dotRouterService: DotRouterService,

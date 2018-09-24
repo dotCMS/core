@@ -40,18 +40,15 @@ describe('DotContainerContentletService', () => {
 
             let response;
 
-            dotContainerContentletService
-                .getContentletToContainer(pageContainer, pageContent)
-                .subscribe((resp) => (response = resp));
+            dotContainerContentletService.getContentletToContainer(pageContainer, pageContent).subscribe((resp) => (response = resp));
 
             tick();
-            expect(lastConnection.request.url).toContain(
-                `v1/containers/${pageContainer.identifier}/content/${contentletId}`
-            );
+            expect(lastConnection.request.url).toContain(`v1/containers/${pageContainer.identifier}/content/${contentletId}`);
         })
     );
 
-    it('should do a request for get the form html code',
+    it(
+        'should do a request for get the form html code',
         fakeAsync(() => {
             const formId = '2';
             const pageContainer: DotPageContainer = {
@@ -74,14 +71,10 @@ describe('DotContainerContentletService', () => {
 
             let response;
 
-            dotContainerContentletService
-                .getFormToContainer(pageContainer, form)
-                .subscribe((resp) => (response = resp));
+            dotContainerContentletService.getFormToContainer(pageContainer, form).subscribe((resp) => (response = resp));
 
             tick();
-            expect(lastConnection.request.url).toContain(
-                `v1/containers/${pageContainer.identifier}/form/${formId}`
-            );
+            expect(lastConnection.request.url).toContain(`v1/containers/${pageContainer.identifier}/form/${formId}`);
         })
     );
 });

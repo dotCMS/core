@@ -1,4 +1,4 @@
-import { DotDevice } from '../shared/models/dot-device/dot-device.model';
+import { DotDevice } from '@models/dot-device/dot-device.model';
 
 export const mockDotDevices: DotDevice[] = [
     {

@@ -1,9 +1,11 @@
+import { of as observableOf, Observable } from 'rxjs';
+
+import { map } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs/Observable';
 import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { DotMenuService } from '../dot-menu.service';
 import { DotRouterService } from '../dot-router/dot-router.service';
-import { DotNavigationService } from '../../../view/components/dot-navigation/services/dot-navigation.service';
+import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 import { environment } from '../../../../environments/environment';
 
 /**
@@ -19,13 +21,13 @@ export class MenuGuardService implements CanActivate {
 
     canActivate(_route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> {
         return !environment.production && state.url === '/pl'
-            ? Observable.of(true)
+            ? observableOf(true)
             : this.canAccessPortlet(this.dotRouterService.getPortletId(state.url));
     }
 
     canActivateChild(_route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> {
         return !environment.production && state.url === '/pl'
-            ? Observable.of(true)
+            ? observableOf(true)
             : this.canAccessPortlet(this.dotRouterService.getPortletId(state.url));
     }
 
@@ -36,11 +38,13 @@ export class MenuGuardService implements CanActivate {
      * @returns {boolean}
      */
     private canAccessPortlet(url: string): Observable<boolean> {
-        return this.dotMenuService.isPortletInMenu(url).map((isValidPortlet) => {
-            if (!isValidPortlet) {
-                this.dotNavigationService.goToFirstPortlet();
-            }
-            return isValidPortlet;
-        });
+        return this.dotMenuService.isPortletInMenu(url).pipe(
+            map((isValidPortlet) => {
+                if (!isValidPortlet) {
+                    this.dotNavigationService.goToFirstPortlet();
+                }
+                return isValidPortlet;
+            })
+        );
     }
 }

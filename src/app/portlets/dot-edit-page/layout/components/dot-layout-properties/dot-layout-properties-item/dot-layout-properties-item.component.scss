@@ -1,4 +1,4 @@
-@import 'variables';
+@import "variables";
 
 :host {
     display: flex;
@@ -25,7 +25,6 @@
     &.property-item__header {
         svg {
             transform: rotate(270deg);
-
         }
     }
 }

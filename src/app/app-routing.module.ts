@@ -1,28 +1,28 @@
 import { Routes, RouterModule } from '@angular/router';
 import { NgModule } from '@angular/core';
-import { MainCoreLegacyComponent } from './view/components/main-core-legacy/main-core-legacy-component';
-import { MainComponentLegacyComponent } from './view/components/main-legacy/main-legacy.component';
-import { LoginPageComponent } from './view/components/login/login-page-component';
-import { LogOutContainerComponent } from './view/components/login/login-component/log-out-container';
-import { IframePortletLegacyComponent } from './view/components/_common/iframe/iframe-porlet-legacy/index';
-import { AuthGuardService } from './api/services/guards/auth-guard.service';
-import { ContentletGuardService } from './api/services/guards/contentlet-guard.service';
-import { MenuGuardService } from './api/services/guards/menu-guard.service';
-import { PublicAuthGuardService } from './api/services/guards/public-auth-guard.service';
-import { DefaultGuardService } from './api/services/guards/default-guard.service';
+import { MainCoreLegacyComponent } from '@components/main-core-legacy/main-core-legacy-component';
+import { MainComponentLegacyComponent } from '@components/main-legacy/main-legacy.component';
+import { LoginPageComponent } from '@components/login/login-page-component';
+import { LogOutContainerComponent } from '@components/login/login-component/log-out-container';
+import { IframePortletLegacyComponent } from '@components/_common/iframe/iframe-porlet-legacy/index';
+import { AuthGuardService } from '@services/guards/auth-guard.service';
+import { ContentletGuardService } from '@services/guards/contentlet-guard.service';
+import { DefaultGuardService } from '@services/guards/default-guard.service';
+import { MenuGuardService } from '@services/guards/menu-guard.service';
+import { PublicAuthGuardService } from '@services/guards/public-auth-guard.service';
 
 const AUTH_MODULES: Routes = [
     {
         path: 'forgotPassword',
-        loadChildren: 'app/view/components/login/forgot-password-component/forgot-password.module#ForgotPasswordModule'
+        loadChildren: '@components/login/forgot-password-component/forgot-password.module#ForgotPasswordModule'
     },
     {
         path: 'login',
-        loadChildren: 'app/view/components/login/login-component/login.module#LoginModule'
+        loadChildren: '@components/login/login-component/login.module#LoginModule'
     },
     {
         path: 'resetPassword/:token',
-        loadChildren: 'app/view/components/login/reset-password-component/reset-password.module#ResetPasswordModule'
+        loadChildren: '@components/login/reset-password-component/reset-password.module#ResetPasswordModule'
     },
     {
         path: '',
@@ -35,31 +35,31 @@ const PORTLETS_ANGULAR = [
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
         path: 'content-types-angular',
-        loadChildren: 'app/portlets/content-types/content-types.module#ContentTypesModule'
+        loadChildren: '@portlets/content-types/content-types.module#ContentTypesModule'
     },
     {
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
         path: 'rules',
-        loadChildren: 'app/portlets/rule-engine/rule-engine.module#RuleEngineModule'
+        loadChildren: '@portlets/rule-engine/rule-engine.module#RuleEngineModule'
     },
     {
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
         path: 'dot-browser',
-        loadChildren: 'app/portlets/dot-browser/dot-browser.module#DotBrowserModule'
+        loadChildren: '@portlets/dot-browser/dot-browser.module#DotBrowserModule'
     },
     {
         path: 'pl',
-        loadChildren: 'app/view/components/_common/pattern-library/pattern-library.module#PatternLibraryModule'
+        loadChildren: '@components/_common/pattern-library/pattern-library.module#PatternLibraryModule'
     },
     {
         path: 'notLicensed',
-        loadChildren: 'app/view/components/not-licensed/not-licensed.module#NotLicensedModule'
+        loadChildren: '@components/not-licensed/not-licensed.module#NotLicensedModule'
     },
     {
         path: 'edit-page',
-        loadChildren: 'app/portlets/dot-edit-page/dot-edit-page.module#DotEditPageModule'
+        loadChildren: '@portlets/dot-edit-page/dot-edit-page.module#DotEditPageModule'
     },
     {
         canActivate: [MenuGuardService],
@@ -77,9 +77,9 @@ const PORTLETS_IFRAME = [
                 path: ':id',
                 children: [
                     {
-                        loadChildren: 'app/portlets/dot-porlet-detail/dot-portlet-detail.module#DotPortletDetailModule',
+                        loadChildren: '@portlets/dot-porlet-detail/dot-portlet-detail.module#DotPortletDetailModule',
                         path: ':asset'
-                    },
+                    }
                 ]
             },
             {
@@ -116,7 +116,7 @@ const appRoutes: Routes = [
         children: [
             {
                 path: 'rules',
-                loadChildren: 'app/portlets/rule-engine/rule-engine.module#RuleEngineModule',
+                loadChildren: '@portlets/rule-engine/rule-engine.module#RuleEngineModule',
                 canActivate: [AuthGuardService]
             }
         ],

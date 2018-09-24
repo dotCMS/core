@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { DotLoadingIndicatorService } from '../../dot-loading-indicator/dot-loading-indicator.service';
-import { DotRouterService } from '../../../../../../api/services/dot-router/dot-router.service';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotContentletEditorService } from '../../../../dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotUiColors, DotUiColorsService } from '../../../../../../api/services/dot-ui-colors/dot-ui-colors.service';
+import { DotUiColors, DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import { DotIframeService } from '../../service/dot-iframe/dot-iframe.service';
 
 /**

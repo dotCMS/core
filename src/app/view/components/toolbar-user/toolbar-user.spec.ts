@@ -20,7 +20,7 @@ import { DOTTestBed } from '../../../test/dot-test-bed';
 import { LoginServiceMock, mockAuth } from '../../../test/login-service.mock';
 import { ToolbarUserComponent } from './toolbar-user';
 import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
-import { DotEventsService } from '../../../api/services/dot-events/dot-events.service';
+import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { DotIconModule } from '../_common/dot-icon/dot-icon.module';
 
 @Injectable()

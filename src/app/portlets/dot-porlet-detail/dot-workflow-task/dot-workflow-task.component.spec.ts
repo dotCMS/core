@@ -2,16 +2,16 @@ import { DOTTestBed } from '../../../test/dot-test-bed';
 import { Injectable, DebugElement } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { DotWorkflowTaskComponent } from './dot-workflow-task.component';
-import { DotWorkflowTaskDetailService } from '../../../view/components/dot-workflow-task-detail/services/dot-workflow-task-detail.service';
+import { DotWorkflowTaskDetailService } from '@components/dot-workflow-task-detail/services/dot-workflow-task-detail.service';
 import { ComponentFixture, async } from '@angular/core/testing';
-import { DotWorkflowTaskDetailModule } from '../../../view/components/dot-workflow-task-detail/dot-workflow-task-detail.module';
+import { DotWorkflowTaskDetailModule } from '@components/dot-workflow-task-detail/dot-workflow-task-detail.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
-import { DotMessageService } from '../../../api/services/dot-messages-service';
+import { DotMessageService } from '@services/dot-messages-service';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
-import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
-import { DotIframeService } from '../../../view/components/_common/iframe/service/dot-iframe/dot-iframe.service';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 
 @Injectable()
 class MockDotWorkflowTaskDetailService {

@@ -1,6 +1,6 @@
 import { DOTTestBed } from '../../../../../../test/dot-test-bed';
 import { DotIframeService } from './dot-iframe.service';
-import { DotUiColorsService } from '../../../../../../api/services/dot-ui-colors/dot-ui-colors.service';
+import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import { async } from '@angular/core/testing';
 
 describe('DotIframeService', () => {
@@ -12,7 +12,7 @@ describe('DotIframeService', () => {
     });
 
     it('should trigger reload action', async(() => {
-        service.reloaded().subscribe(res => {
+        service.reloaded().subscribe((res) => {
             expect(res).toBe('reload');
         });
 
@@ -20,7 +20,7 @@ describe('DotIframeService', () => {
     }));
 
     it('should trigger reload colors action', async(() => {
-        service.reloadedColors().subscribe(res => {
+        service.reloadedColors().subscribe((res) => {
             expect(res).toBe('colors');
         });
 
@@ -28,7 +28,7 @@ describe('DotIframeService', () => {
     }));
 
     it('should trigger ran action', () => {
-        service.ran().subscribe(res => {
+        service.ran().subscribe((res) => {
             expect(res).toBe('functionName');
         });
 

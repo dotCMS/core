@@ -29,8 +29,7 @@
         box-shadow: $md-shadow-1;
         height: 20px !important;
         top: -5px;
-        transition: background-color $field-animation-speed ease-in,
-                    left $field-animation-speed ease-in;
+        transition: background-color $field-animation-speed ease-in, left $field-animation-speed ease-in;
         width: 20px !important;
     }
 

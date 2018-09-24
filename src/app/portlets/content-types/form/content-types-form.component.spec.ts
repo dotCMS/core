@@ -1,11 +1,10 @@
+import { of as observableOf, Observable } from 'rxjs';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, async } from '@angular/core/testing';
 import { DebugElement, Injectable } from '@angular/core';
 import { ReactiveFormsModule, AbstractControl } from '@angular/forms';
 import { RouterTestingModule } from '@angular/router/testing';
-
-import { Observable } from 'rxjs/Observable';
 
 import { DropdownModule, OverlayPanelModule, ButtonModule, InputTextModule, TabViewModule } from 'primeng/primeng';
 
@@ -14,27 +13,27 @@ import { SiteService } from 'dotcms-js/dotcms-js';
 
 import { ContentTypesFormComponent } from './content-types-form.component';
 import { DOTTestBed } from '../../../test/dot-test-bed';
-import { FieldValidationMessageModule } from '../../../view/components/_common/field-validation-message/file-validation-message.module';
+import { FieldValidationMessageModule } from '@components/_common/field-validation-message/file-validation-message.module';
 import { LoginServiceMock } from '../../../test/login-service.mock';
-import { DotMessageService } from '../../../api/services/dot-messages-service';
+import { DotMessageService } from '@services/dot-messages-service';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
-import { ContentTypesInfoService } from '../../../api/services/content-types-info';
-import { SiteSelectorFieldModule } from '../../../view/components/_common/site-selector-field/site-selector-field.module';
+import { ContentTypesInfoService } from '@services/content-types-info';
+import { SiteSelectorFieldModule } from '@components/_common/site-selector-field/site-selector-field.module';
 import { SiteServiceMock } from '../../../test/site-service.mock';
-import { DotWorkflowService } from '../../../api/services/dot-workflow/dot-workflow.service';
+import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
 // tslint:disable-next-line:max-line-length
-import { DotWorkflowsSelectorFieldModule } from '../../../view/components/_common/dot-workflows-selector-field/dot-workflows-selector-field.module';
+import { DotWorkflowsSelectorFieldModule } from '@components/_common/dot-workflows-selector-field/dot-workflows-selector-field.module';
 import { DotWorkflowServiceMock } from '../../../test/dot-workflow-service.mock';
-import { DotLicenseService } from '../../../api/services/dot-license/dot-license.service';
-import { DotPageSelectorModule } from '../../../view/components/_common/dot-page-selector/dot-page-selector.module';
-import { DotDirectivesModule } from '../../../shared/dot-directives.module';
-import { DotIconModule } from '../../../view/components/_common/dot-icon/dot-icon.module';
-import { DotIconButtonModule } from '../../../view/components/_common/dot-icon-button/dot-icon-button.module';
+import { DotLicenseService } from '@services/dot-license/dot-license.service';
+import { DotPageSelectorModule } from '@components/_common/dot-page-selector/dot-page-selector.module';
+import { DotDirectivesModule } from '@shared/dot-directives.module';
+import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
+import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 
 @Injectable()
 class MockDotLicenseService {
     isEnterprise(): Observable<boolean> {
-        return Observable.of(false);
+        return observableOf(false);
     }
 }
 
@@ -217,7 +216,7 @@ describe('ContentTypesFormComponent', () => {
 
     // tslint:disable-next-line:max-line-length
     it('should set canSave property false when the form value is updated and then gets back to the original content (no community license)', () => {
-        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(Observable.of(false));
+        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(false));
 
         comp.data = {
             baseType: 'CONTENT',
@@ -238,7 +237,7 @@ describe('ContentTypesFormComponent', () => {
 
     // tslint:disable-next-line:max-line-length
     it('should set canSave property false when the form value is updated and then gets back to the original content (community license)', () => {
-        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(Observable.of(true));
+        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(true));
 
         comp.data = {
             baseType: 'CONTENT',
@@ -357,7 +356,7 @@ describe('ContentTypesFormComponent', () => {
     });
 
     it('should set value to the form', () => {
-        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(Observable.of(true));
+        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(true));
 
         const fakeData = {
             baseType: 'CONTENT',
@@ -547,7 +546,7 @@ describe('ContentTypesFormComponent', () => {
         let data;
 
         beforeEach(() => {
-            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(Observable.of(true));
+            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(true));
             comp.data = {
                 baseType: 'CONTENT'
             };
@@ -607,7 +606,7 @@ describe('ContentTypesFormComponent', () => {
 
             describe('community license true', () => {
                 beforeEach(() => {
-                    spyOn(dotLicenseService, 'isEnterprise').and.returnValue(Observable.of(false));
+                    spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(false));
                     fixture.detectChanges();
                 });
 
@@ -620,7 +619,7 @@ describe('ContentTypesFormComponent', () => {
 
             describe('community license true', () => {
                 beforeEach(() => {
-                    spyOn(dotLicenseService, 'isEnterprise').and.returnValue(Observable.of(true));
+                    spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(true));
                     fixture.detectChanges();
                 });
 
@@ -648,7 +647,7 @@ describe('ContentTypesFormComponent', () => {
                         }
                     ]
                 };
-                spyOn(dotLicenseService, 'isEnterprise').and.returnValue(Observable.of(false));
+                spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(false));
                 fixture.detectChanges();
                 expect(comp.form.get('workflow').value).toEqual(['123', '456']);
             });
@@ -658,7 +657,7 @@ describe('ContentTypesFormComponent', () => {
                     baseType: 'CONTENT',
                     id: '123'
                 };
-                spyOn(dotLicenseService, 'isEnterprise').and.returnValue(Observable.of(false));
+                spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(false));
                 fixture.detectChanges();
                 expect(comp.form.get('workflow').value).toEqual([]);
             });

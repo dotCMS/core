@@ -61,12 +61,7 @@ describe('PaginatorService getting', () => {
             </baseURL?filter=filter&page=2>;rel="prev"`;
 
         fakeEntity = {
-            items: [
-                { id: 0, name: 'Name 0' },
-                { id: 1, name: 'Name 1' },
-                { id: 2, name: 'Name 2' },
-                { id: 3, name: 'Name 3' }
-            ],
+            items: [{ id: 0, name: 'Name 0' }, { id: 1, name: 'Name 1' }, { id: 2, name: 'Name 2' }, { id: 3, name: 'Name 3' }],
             totalRecords: 5
         };
 

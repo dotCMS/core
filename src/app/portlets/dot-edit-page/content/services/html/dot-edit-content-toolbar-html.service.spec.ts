@@ -1,16 +1,16 @@
+import { of as observableOf, Observable } from 'rxjs';
 import { TestBed } from '@angular/core/testing';
 import { DotEditContentToolbarHtmlService } from './dot-edit-content-toolbar-html.service';
-import { DotMessageService } from '../../../../../api/services/dot-messages-service';
+import { DotMessageService } from '@services/dot-messages-service';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
 import { DotDOMHtmlUtilService } from './dot-dom-html-util.service';
-import { DotLicenseService } from '../../../../../api/services/dot-license/dot-license.service';
+import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs/Observable';
 
 @Injectable()
 class DotLicenseServiceMock {
     isEnterprise(): Observable<boolean> {
-        return Observable.of(true);
+        return observableOf(true);
     }
 }
 
@@ -120,7 +120,7 @@ describe('DotEditContentToolbarHtmlService', () => {
                 describe('without license', () => {
                     beforeEach(() => {
                         const dotLicenseService = TestBed.get(DotLicenseService);
-                        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(Observable.of(false));
+                        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(false));
                     });
 
                     it('should have content, widget and form', () => {

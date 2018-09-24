@@ -1,8 +1,8 @@
 import { Component, OnInit, ViewChild, forwardRef, Output, EventEmitter } from '@angular/core';
-import { DotMessageService } from '../../../../../api/services/dot-messages-service';
+import { DotMessageService } from '@services/dot-messages-service';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { DotLayoutSideBar } from '../../../shared/models/dot-layout-sidebar.model';
-import { DotEventsService } from '../../../../../api/services/dot-events/dot-events.service';
+import { DotEventsService } from '@services/dot-events/dot-events.service';
 
 // TODO: Implement ControlValueAccessor instead of passing the formGroup
 @Component({
@@ -19,8 +19,10 @@ import { DotEventsService } from '../../../../../api/services/dot-events/dot-eve
 })
 export class DotSidebarPropertiesComponent implements OnInit, ControlValueAccessor {
     value: DotLayoutSideBar;
-    @ViewChild('overlay') overlay: any;
-    @Output() change: EventEmitter<String> = new EventEmitter();
+    @ViewChild('overlay')
+    overlay: any;
+    @Output()
+    change: EventEmitter<String> = new EventEmitter();
 
     constructor(private dotMessageService: DotMessageService, private dotEventsService: DotEventsService) {}
 
@@ -39,7 +41,8 @@ export class DotSidebarPropertiesComponent implements OnInit, ControlValueAccess
             containers: [],
             location: '',
             width: ''
-        };    }
+        };
+    }
 
     /**
      * Hides overlay panel and emits a notification to repainted the Grid

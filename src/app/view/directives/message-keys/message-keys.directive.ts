@@ -1,5 +1,5 @@
 import { Directive, ElementRef, OnDestroy, OnInit } from '@angular/core';
-import { DotMessageService } from '../../../api/services/dot-messages-service';
+import { DotMessageService } from '@services/dot-messages-service';
 
 @Directive({
     selector: '[dotMessagekey]'

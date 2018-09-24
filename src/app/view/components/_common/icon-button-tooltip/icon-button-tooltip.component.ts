@@ -5,8 +5,10 @@ import { Component, Input } from '@angular/core';
     template: `<dot-icon-button [icon]="icon" pTooltip="{{ tooltipText }}" tooltipPosition="bottom"></dot-icon-button>`
 })
 export class IconButtonTooltipComponent {
-    @Input() icon: string;
-    @Input() tooltipText: string;
+    @Input()
+    icon: string;
+    @Input()
+    tooltipText: string;
 
     constructor() {}
 }

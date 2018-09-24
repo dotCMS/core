@@ -1,23 +1,24 @@
-import { ListingDataTableComponent } from '../../../view/components/listing-data-table/listing-data-table.component';
-import { DotAlertConfirmService } from '../../../api/services/dot-alert-confirm/dot-alert-confirm.service';
-import { CrudService } from '../../../api/services/crud';
+import { forkJoin as observableForkJoin } from 'rxjs';
+
+import { map } from 'rxjs/operators';
+import { ListingDataTableComponent } from '@components/listing-data-table/listing-data-table.component';
+import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
+import { CrudService } from '@services/crud';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Component, OnInit, ViewChild } from '@angular/core';
 
-import { ActionHeaderOptions } from '../../../shared/models/action-header';
-import { ContentTypesInfoService } from '../../../api/services/content-types-info';
-import { DataTableColumn } from '../../../shared/models/data-table';
-import { DotMessageService } from '../../../api/services/dot-messages-service';
-import { Observable } from 'rxjs/Observable';
-import { DotContentletService } from '../../../api/services/dot-contentlet/dot-contentlet.service';
-import { StructureTypeView } from '../../../shared/models/contentlet/structure-type-view.model';
-import { ButtonModel } from '../../../shared/models/action-header/button.model';
-import { DotDataTableAction } from '../../../shared/models/data-table/dot-data-table-action';
-import { PushPublishService } from '../../../api/services/push-publish/push-publish.service';
-import { DotEnvironment } from '../../../shared/models/dot-environment/dot-environment';
-import { DotLicenseService } from '../../../api/services/dot-license/dot-license.service';
-import { catchError } from 'rxjs/operators';
-import { DotHttpErrorManagerService } from '../../../api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { ActionHeaderOptions } from '@models/action-header';
+import { ContentTypesInfoService } from '@services/content-types-info';
+import { DataTableColumn } from '@models/data-table';
+import { DotMessageService } from '@services/dot-messages-service';
+import { DotContentletService } from '@services/dot-contentlet/dot-contentlet.service';
+import { StructureTypeView } from '@models/contentlet/structure-type-view.model';
+import { ButtonModel } from '@models/action-header/button.model';
+import { DotDataTableAction } from '@models/data-table/dot-data-table-action';
+import { PushPublishService } from '@services/push-publish/push-publish.service';
+import { DotEnvironment } from '@models/dot-environment/dot-environment';
+import { DotLicenseService } from '@services/dot-license/dot-license.service';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 /**
  * List of Content Types
@@ -32,7 +33,8 @@ import { DotHttpErrorManagerService } from '../../../api/services/dot-http-error
     templateUrl: 'content-types.component.html'
 })
 export class ContentTypesPortletComponent implements OnInit {
-    @ViewChild('listing') listing: ListingDataTableComponent;
+    @ViewChild('listing')
+    listing: ListingDataTableComponent;
     public contentTypeColumns: DataTableColumn[];
     public item: any;
     public actionHeaderOptions: ActionHeaderOptions;
@@ -66,23 +68,23 @@ export class ContentTypesPortletComponent implements OnInit {
     constructor(
         private contentTypesInfoService: ContentTypesInfoService,
         private crudService: CrudService,
-        private dotDialogService: DotAlertConfirmService,
         private dotContentletService: DotContentletService,
-        private route: ActivatedRoute,
-        private router: Router,
-        public dotMessageService: DotMessageService,
-        private pushPublishService: PushPublishService,
+        private dotDialogService: DotAlertConfirmService,
         private dotLicenseService: DotLicenseService,
         private httpErrorManagerService: DotHttpErrorManagerService,
+        private pushPublishService: PushPublishService,
+        private route: ActivatedRoute,
+        private router: Router,
+        public dotMessageService: DotMessageService
     ) {}
 
     ngOnInit() {
-        Observable.forkJoin(
+        observableForkJoin(
             this.dotMessageService.getMessages(this.i18nKeys),
             this.dotContentletService.getAllContentTypes(),
             this.dotLicenseService.isEnterprise(),
-            this.pushPublishService.getEnvironments().map((environments: DotEnvironment[]) => !!environments.length)
-        ).subscribe(res => {
+            this.pushPublishService.getEnvironments().pipe(map((environments: DotEnvironment[]) => !!environments.length))
+        ).subscribe((res) => {
             const baseTypes: StructureTypeView[] = res[1];
             const rowActionsMap = {
                 delete: true,
@@ -121,10 +123,10 @@ export class ContentTypesPortletComponent implements OnInit {
             listingActions.push({
                 menuItem: {
                     label: this.dotMessageService.get('contenttypes.action.delete'),
-                    command: item => this.removeConfirmation(item),
+                    command: (item) => this.removeConfirmation(item),
                     icon: 'delete'
                 },
-                shouldShow: item => !item.fixed
+                shouldShow: (item) => !item.fixed
             });
         }
 
@@ -136,7 +138,7 @@ export class ContentTypesPortletComponent implements OnInit {
             listingActions.push({
                 menuItem: {
                     label: this.dotMessageService.get('contenttypes.content.push_publish'),
-                    command: item => this.pushPublishContentType(item)
+                    command: (item) => this.pushPublishContentType(item)
                 }
             });
         }
@@ -145,7 +147,7 @@ export class ContentTypesPortletComponent implements OnInit {
             listingActions.push({
                 menuItem: {
                     label: this.dotMessageService.get('contenttypes.content.add_to_bundle'),
-                    command: item => this.addToBundleContentType(item)
+                    command: (item) => this.addToBundleContentType(item)
                 }
             });
         }
@@ -167,7 +169,7 @@ export class ContentTypesPortletComponent implements OnInit {
     private setContentTypes(s: StructureTypeView[]): ButtonModel[] {
         return s.map((structureTypeView: StructureTypeView) => {
             return {
-                command: $event => {
+                command: ($event) => {
                     this.createContentType(structureTypeView.name.toLocaleLowerCase(), $event);
                 },
                 icon: this.contentTypesInfoService.getIcon(`${structureTypeView.name}_old`),
@@ -228,8 +230,8 @@ export class ContentTypesPortletComponent implements OnInit {
     }
 
     private removeContentType(item): void {
-        this.crudService.delete(`v1/contenttype/id`, item.id)
-            .subscribe(() => {
+        this.crudService.delete(`v1/contenttype/id`, item.id).subscribe(
+            () => {
                 this.listing.loadCurrentPage();
             },
             (error) => this.httpErrorManagerService.handle(error).subscribe()

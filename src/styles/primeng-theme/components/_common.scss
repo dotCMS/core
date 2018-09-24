@@ -1,11 +1,14 @@
-input, textarea, button {
+input,
+textarea,
+button {
     font-family: $body-text;
 }
 
-input, textarea, .ui-inputtext {
+input,
+textarea,
+.ui-inputtext {
     font-size: $font-size-large;
 }
-
 
 /* Component containers
 ----------------------------------*/
@@ -49,8 +52,7 @@ input, textarea, .ui-inputtext {
 }
 
 .ui-state-active,
-.ui-widget-content .ui-state-active
-.ui-widget-header .ui-state-active {
+.ui-widget-content .ui-state-active .ui-widget-header .ui-state-active {
     border-color: $field-active-border-color;
     border-width: $field-active-border-size;
     background: $field-active-bgcolor;
@@ -61,7 +63,8 @@ input, textarea, .ui-inputtext {
     color: $field-active-color;
     text-decoration: none;
 
-    &:link, &:visited {
+    &:link,
+    &:visited {
         color: $field-active-color;
         text-decoration: none;
     }
@@ -86,22 +89,33 @@ input, textarea, .ui-inputtext {
     }
 }
 
-.ui-state-error, .ui-widget-content .ui-state-error, .ui-widget-header .ui-state-error {
+.ui-state-error,
+.ui-widget-content .ui-state-error,
+.ui-widget-header .ui-state-error {
     border: 1px solid #f44336;
     background: #f5554a;
     color: #cd0a0a;
 }
 
-.ui-state-error a, .ui-widget-content .ui-state-error a, .ui-widget-header .ui-state-error a, .ui-state-error-text, .ui-widget-content .ui-state-error-text, .ui-widget-header .ui-state-error-text {
+.ui-state-error a,
+.ui-widget-content .ui-state-error a,
+.ui-widget-header .ui-state-error a,
+.ui-state-error-text,
+.ui-widget-content .ui-state-error-text,
+.ui-widget-header .ui-state-error-text {
     color: #cd0a0a;
 }
 
-.ui-priority-primary, .ui-widget-content .ui-priority-primary, .ui-widget-header .ui-priority-primary {
+.ui-priority-primary,
+.ui-widget-content .ui-priority-primary,
+.ui-widget-header .ui-priority-primary {
     font-weight: bold;
 }
 
-.ui-priority-secondary, .ui-widget-content .ui-priority-secondary, .ui-widget-header .ui-priority-secondary {
-    opacity: .7;
+.ui-priority-secondary,
+.ui-widget-content .ui-priority-secondary,
+.ui-widget-header .ui-priority-secondary {
+    opacity: 0.7;
     filter: Alpha(Opacity = 70);
     font-weight: normal;
 }
@@ -116,7 +130,7 @@ input, textarea, .ui-inputtext {
 
 .ui-widget-overlay {
     background: #1f2226;
-    opacity: .60;
+    opacity: 0.6;
     filter: Alpha(Opacity = 60);
 }
 
@@ -124,7 +138,7 @@ input, textarea, .ui-inputtext {
     margin: -8px 0 0 -8px;
     padding: 8px;
     background: #1f2226;
-    opacity: .60;
+    opacity: 0.6;
     filter: Alpha(Opacity = 60);
     -moz-border-radius: 8px;
     -khtml-border-radius: 8px;
@@ -153,7 +167,8 @@ input, textarea, .ui-inputtext {
     display: block;
 }
 
-.ui-resizable-disabled .ui-resizable-handle, .ui-resizable-autohide .ui-resizable-handle {
+.ui-resizable-disabled .ui-resizable-handle,
+.ui-resizable-autohide .ui-resizable-handle {
     display: none;
 }
 
@@ -252,7 +267,7 @@ input, textarea, .ui-inputtext {
         a {
             display: block;
             font-size: 1em;
-            padding: .5em .5em .5em .7em;
+            padding: 0.5em 0.5em 0.5em 0.7em;
             font-weight: bold;
         }
         background: #f6f7f9;
@@ -311,7 +326,7 @@ input, textarea, .ui-inputtext {
         position: absolute;
         z-index: 2;
         width: 17px !important;
-        height: 21px  !important;
+        height: 21px !important;
         cursor: default;
         //background: url("images/slider_handles.png") 0 0 no-repeat;
         outline: none;
@@ -323,7 +338,7 @@ input, textarea, .ui-inputtext {
     .ui-slider-range {
         position: absolute;
         z-index: 1;
-        font-size: .7em;
+        font-size: 0.7em;
         display: block;
         border: 0;
         background: #14a4ff;
@@ -343,7 +358,7 @@ input, textarea, .ui-inputtext {
     height: 6px;
     .ui-slider-handle {
         top: -3px !important;
-        margin-left: -.6em;
+        margin-left: -0.6em;
     }
     .ui-slider-range {
         top: 0;
@@ -358,12 +373,12 @@ input, textarea, .ui-inputtext {
 }
 
 .ui-slider-vertical {
-    width: .8em;
+    width: 0.8em;
     height: 100px;
     .ui-slider-handle {
-        left: -.2em !important;
+        left: -0.2em !important;
         margin-left: 0;
-        margin-bottom: -.6em;
+        margin-bottom: -0.6em;
     }
     .ui-slider-range {
         left: 0;
@@ -386,7 +401,6 @@ input, textarea, .ui-inputtext {
         color: #222222;
     }
 }
-
 
 .ui-paginator .ui-paginator-page.ui-state-active {
     background: #186ba0;
@@ -450,7 +464,8 @@ input, textarea, .ui-inputtext {
 }
 
 .ui-togglebutton.ui-button {
-    &.ui-state-hover, &.ui-state-focus {
+    &.ui-state-hover,
+    &.ui-state-focus {
         border: 1px solid #c0c0c0;
         background: #eeeeee;
         font-weight: normal;
@@ -461,7 +476,7 @@ input, textarea, .ui-inputtext {
 .ui-togglebutton.ui-button.ui-state-active {
     border: 1px solid #156090;
     background: #186ba0;
-    color: #FFFFFF;
+    color: #ffffff;
 }
 
 /* Growl */
@@ -476,12 +491,12 @@ input, textarea, .ui-inputtext {
         border-color: #f44336;
     }
     &.ui-growl-message-warn {
-        background-color: #FFB300;
-        border-color: #FFB300;
+        background-color: #ffb300;
+        border-color: #ffb300;
     }
     &.ui-growl-message-success {
-        background-color: #4CAF50;
-        border-color: #4CAF50;
+        background-color: #4caf50;
+        border-color: #4caf50;
     }
 }
 
@@ -510,11 +525,11 @@ input, textarea, .ui-inputtext {
 .ui-panelmenu .ui-panelmenu-header.ui-state-active {
     border-color: #156090;
     background: #186ba0;
-    color: #FFFFFF;
+    color: #ffffff;
     a {
         border-color: #156090;
         background: #186ba0;
-        color: #FFFFFF;
+        color: #ffffff;
     }
 }
 

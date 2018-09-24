@@ -1,20 +1,11 @@
-import {
-    Component,
-    ElementRef,
-    OnInit,
-    Input,
-    ViewChild,
-    Output,
-    EventEmitter,
-    NgZone,
-    OnDestroy
-} from '@angular/core';
+import { takeUntil } from 'rxjs/operators';
+import { Component, ElementRef, OnInit, Input, ViewChild, Output, EventEmitter, NgZone, OnDestroy } from '@angular/core';
 import { LoginService, LoggerService } from 'dotcms-js/dotcms-js';
 import { DotLoadingIndicatorService } from '../dot-loading-indicator/dot-loading-indicator.service';
 import { IframeOverlayService } from '../service/iframe-overlay.service';
 import { DotIframeService } from '../service/dot-iframe/dot-iframe.service';
-import { Subject } from 'rxjs/Subject';
-import { DotUiColorsService } from '../../../../../api/services/dot-ui-colors/dot-ui-colors.service';
+import { Subject } from 'rxjs';
+import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 
 @Component({
     selector: 'dot-iframe',
@@ -22,12 +13,18 @@ import { DotUiColorsService } from '../../../../../api/services/dot-ui-colors/do
     templateUrl: 'iframe.component.html'
 })
 export class IframeComponent implements OnInit, OnDestroy {
-    @ViewChild('iframeElement') iframeElement: ElementRef;
-    @Input() src: string;
-    @Input() isLoading = false;
-    @Output() load: EventEmitter<any> = new EventEmitter();
-    @Output() keydown: EventEmitter<KeyboardEvent> = new EventEmitter();
-    @Output() custom: EventEmitter<CustomEvent> = new EventEmitter();
+    @ViewChild('iframeElement')
+    iframeElement: ElementRef;
+    @Input()
+    src: string;
+    @Input()
+    isLoading = false;
+    @Output()
+    load: EventEmitter<any> = new EventEmitter();
+    @Output()
+    keydown: EventEmitter<KeyboardEvent> = new EventEmitter();
+    @Output()
+    custom: EventEmitter<CustomEvent> = new EventEmitter();
 
     showOverlay = false;
 
@@ -40,31 +37,40 @@ export class IframeComponent implements OnInit, OnDestroy {
         private ngZone: NgZone,
         private dotUiColorsService: DotUiColorsService,
         public dotLoadingIndicatorService: DotLoadingIndicatorService,
-        public iframeOverlayService: IframeOverlayService,
+        public iframeOverlayService: IframeOverlayService
     ) {}
 
     ngOnInit(): void {
         this.iframeOverlayService.overlay.subscribe((val) => (this.showOverlay = val));
 
-        this.dotIframeService.reloaded().takeUntil(this.destroy$).subscribe(() => {
-            if (this.getIframeWindow()) {
-                this.getIframeLocation().reload();
-            }
-        });
+        this.dotIframeService
+            .reloaded()
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(() => {
+                if (this.getIframeWindow()) {
+                    this.getIframeLocation().reload();
+                }
+            });
 
-        this.dotIframeService.ran().takeUntil(this.destroy$).subscribe((func: string) => {
-            if (this.getIframeWindow() && typeof this.getIframeWindow()[func] === 'function') {
-                this.getIframeWindow()[func]();
-            }
-        });
+        this.dotIframeService
+            .ran()
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((func: string) => {
+                if (this.getIframeWindow() && typeof this.getIframeWindow()[func] === 'function') {
+                    this.getIframeWindow()[func]();
+                }
+            });
 
-        this.dotIframeService.reloadedColors().takeUntil(this.destroy$).subscribe(() => {
-            const doc = this.getIframeDocument();
+        this.dotIframeService
+            .reloadedColors()
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(() => {
+                const doc = this.getIframeDocument();
 
-            if (doc) {
-                this.dotUiColorsService.setColors(doc.querySelector('html'));
-            }
-        });
+                if (doc) {
+                    this.dotUiColorsService.setColors(doc.querySelector('html'));
+                }
+            });
     }
 
     ngOnDestroy(): void {

@@ -1,3 +1,4 @@
+import { throwError as observableThrowError, of as observableOf, from as observableFrom, Observable } from 'rxjs';
 import { mockUser, LoginServiceMock } from './../../../test/login-service.mock';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, async } from '@angular/core/testing';
@@ -6,17 +7,16 @@ import { LoginAsComponent } from './login-as';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { SEARCHABLE_NGFACES_MODULES, SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
-import { DotMessageService } from '../../../api/services/dot-messages-service';
+import { DotMessageService } from '@services/dot-messages-service';
 import { LoginService, User } from 'dotcms-js/dotcms-js';
-import { PaginatorService } from '../../../api/services/paginator';
+import { PaginatorService } from '@services/paginator';
 import { ActivatedRoute } from '@angular/router';
-import { Observable } from 'rxjs/Observable';
 import { InputTextModule } from 'primeng/primeng';
 import { ReactiveFormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
-import { DotEventsService } from '../../../api/services/dot-events/dot-events.service';
+import { DotEventsService } from '@services/dot-events/dot-events.service';
 
 @Injectable()
 class MockDotNavigationService {
@@ -71,7 +71,7 @@ describe('LoginAsComponent', () => {
                 },
                 {
                     provide: ActivatedRoute,
-                    useValue: { params: Observable.from([{ id: '1234' }]) }
+                    useValue: { params: observableFrom([{ id: '1234' }]) }
                 },
                 PaginatorService,
                 IframeOverlayService
@@ -85,7 +85,7 @@ describe('LoginAsComponent', () => {
 
         paginatorService = de.injector.get(PaginatorService);
         loginService = de.injector.get(LoginService);
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of(users));
+        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf(users));
         dotNavigationService = de.injector.get(DotNavigationService);
         dotEventsService = de.injector.get(DotEventsService);
     }));
@@ -134,7 +134,7 @@ describe('LoginAsComponent', () => {
     });
 
     it('should focus on Password input after an Error haapens in "loginAs" in "LoginService"', () => {
-        spyOn(loginService, 'loginAs').and.returnValue(Observable.throw({ message: 'Error' }));
+        spyOn(loginService, 'loginAs').and.returnValue(observableThrowError({ message: 'Error' }));
         comp.visible = true;
         comp.needPassword = true;
         comp.ngOnInit();

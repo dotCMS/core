@@ -5,7 +5,7 @@ import { ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { DebugElement } from '@angular/core';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
-import { DotDataTableAction } from '../../../../shared/models/data-table/dot-data-table-action';
+import { DotDataTableAction } from '@models/data-table/dot-data-table-action';
 import { DotMenuModule } from '../dot-menu/dot-menu.module';
 
 describe('ActionMenuButtonComponent', () => {
@@ -202,7 +202,7 @@ describe('ActionMenuButtonComponent', () => {
                 menuItem: {
                     icon: 'fa-check',
                     label: 'Test',
-                    command: item => {
+                    command: (item) => {
                         fakeCommand(item);
                     }
                 }

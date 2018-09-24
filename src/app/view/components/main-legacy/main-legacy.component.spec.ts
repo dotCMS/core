@@ -7,9 +7,9 @@ import { LoginService } from 'dotcms-js/dotcms-js';
 import { LoginServiceMock } from '../../../test/login-service.mock';
 import { By } from '@angular/platform-browser';
 import { DotIframeService } from '../_common/iframe/service/dot-iframe/dot-iframe.service';
-import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotContentletEditorModule } from '../dot-contentlet-editor/dot-contentlet-editor.module';
-import { DotMenuService } from '../../../api/services/dot-menu.service';
+import { DotMenuService } from '@services/dot-menu.service';
 
 @Component({
     selector: 'dot-alert-confirm',
@@ -22,7 +22,8 @@ class MockDotDialogComponent {}
     template: ''
 })
 class MockDotToolbarComponent {
-    @Input() collapsed: boolean;
+    @Input()
+    collapsed: boolean;
 }
 
 @Component({
@@ -30,7 +31,8 @@ class MockDotToolbarComponent {
     template: ''
 })
 class MockDotMainNavComponent {
-    @Input() collapsed: boolean;
+    @Input()
+    collapsed: boolean;
 }
 
 describe('MainComponentLegacyComponent', () => {
@@ -50,12 +52,7 @@ describe('MainComponentLegacyComponent', () => {
                 },
                 DotMenuService
             ],
-            declarations: [
-                MainComponentLegacyComponent,
-                MockDotDialogComponent,
-                MockDotMainNavComponent,
-                MockDotToolbarComponent
-            ]
+            declarations: [MainComponentLegacyComponent, MockDotDialogComponent, MockDotMainNavComponent, MockDotToolbarComponent]
         }).compileComponents();
     }));
 

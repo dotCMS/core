@@ -1,8 +1,8 @@
 import { Component, Input, Output, EventEmitter, HostListener, OnInit } from '@angular/core';
 
-import { BaseComponent } from '../../../../view/components/_common/_base/base-component';
+import { BaseComponent } from '@components/_common/_base/base-component';
 import { ContentTypeField } from '../shared';
-import { DotMessageService } from '../../../../api/services/dot-messages-service';
+import { DotMessageService } from '@services/dot-messages-service';
 import { FieldService } from '../service';
 
 /**
@@ -16,9 +16,12 @@ import { FieldService } from '../service';
     templateUrl: './content-type-field-dragabble-item.component.html'
 })
 export class ContentTypesFieldDragabbleItemComponent extends BaseComponent implements OnInit {
-    @Input() field: ContentTypeField;
-    @Output() remove: EventEmitter<ContentTypeField> = new EventEmitter();
-    @Output() edit: EventEmitter<ContentTypeField> = new EventEmitter();
+    @Input()
+    field: ContentTypeField;
+    @Output()
+    remove: EventEmitter<ContentTypeField> = new EventEmitter();
+    @Output()
+    edit: EventEmitter<ContentTypeField> = new EventEmitter();
     fieldAttributes: string;
 
     constructor(dotMessageService: DotMessageService, public fieldService: FieldService) {

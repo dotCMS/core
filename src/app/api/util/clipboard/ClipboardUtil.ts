@@ -44,5 +44,4 @@ export class DotClipboardUtil {
             document.body.removeChild(txtArea);
         });
     }
-
 }

@@ -51,27 +51,22 @@ describe('DotDragDropAPIHtmlService', () => {
         }
     };
 
-    beforeEach(
-        async(() => {
-            TestBed.configureTestingModule({
-                providers: [
-                    DotDragDropAPIHtmlService,
-                    { provide: DotDOMHtmlUtilService, useClass: MockDotDOMHtmlUtilService }
-                ],
-                imports: []
-            });
+    beforeEach(async(() => {
+        TestBed.configureTestingModule({
+            providers: [DotDragDropAPIHtmlService, { provide: DotDOMHtmlUtilService, useClass: MockDotDOMHtmlUtilService }],
+            imports: []
+        });
 
-            dotDragDropAPIHtmlService = TestBed.get(DotDragDropAPIHtmlService);
-            dotDOMHtmlUtilService = TestBed.get(DotDOMHtmlUtilService);
+        dotDragDropAPIHtmlService = TestBed.get(DotDragDropAPIHtmlService);
+        dotDOMHtmlUtilService = TestBed.get(DotDOMHtmlUtilService);
 
-            spyOn(dotDOMHtmlUtilService, 'createLinkElement').and.returnValue(cssElement);
-            spyOn(iframe.contentWindow.document.head, 'appendChild');
+        spyOn(dotDOMHtmlUtilService, 'createLinkElement').and.returnValue(cssElement);
+        spyOn(iframe.contentWindow.document.head, 'appendChild');
 
-            spyOn(dotDOMHtmlUtilService, 'creatExternalScriptElement').and.callFake((_src, callback) => {
-                callbackFunc = callback;
-            });
-        })
-    );
+        spyOn(dotDOMHtmlUtilService, 'creatExternalScriptElement').and.callFake((_src, callback) => {
+            callbackFunc = callback;
+        });
+    }));
 
     it('should crate and set js and css draguls element', () => {
         dotDragDropAPIHtmlService.initDragAndDropContext(iframe);

@@ -9,13 +9,13 @@ import { NavigationEnd } from '@angular/router';
 import { DotNavigationComponent } from './dot-navigation.component';
 import { DotNavIconModule } from './components/dot-nav-icon/dot-nav-icon.module';
 import { DotNavigationService } from './services/dot-navigation.service';
-import { DotMenuService } from '../../../api/services/dot-menu.service';
+import { DotMenuService } from '@services/dot-menu.service';
 import { DotSubNavComponent } from './components/dot-sub-nav/dot-sub-nav.component';
 import { DotNavItemComponent } from './components/dot-nav-item/dot-nav-item.component';
 import { DotIconModule } from '../_common/dot-icon/dot-icon.module';
 import { LoginService } from 'dotcms-js/dotcms-js';
 import { LoginServiceMock } from '../../../test/login-service.mock';
-import { DotMenu } from '../../../shared/models/navigation';
+import { DotMenu } from '@models/navigation';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { skip } from 'rxjs/operators';
 import { dotMenuMock, dotMenuMock1 } from './services/dot-navigation.service.spec';
@@ -134,7 +134,7 @@ describe('DotNavigationComponent', () => {
         let stopProp;
 
         beforeEach(() => {
-            stopProp = jasmine.createSpy();
+            stopProp = jasmine.createSpy('stopProp');
         });
 
         it('should reload portlet', () => {

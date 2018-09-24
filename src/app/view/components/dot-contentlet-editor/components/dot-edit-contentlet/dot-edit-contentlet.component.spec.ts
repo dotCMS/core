@@ -1,3 +1,4 @@
+import { of as observableOf, Observable } from 'rxjs';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, async } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
@@ -7,12 +8,11 @@ import { DotContentletEditorService } from '../../services/dot-contentlet-editor
 import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-contentlet-wrapper.component';
 import { DotEditContentletComponent } from './dot-edit-contentlet.component';
 import { DotIframeDialogModule } from '../../../dot-iframe-dialog/dot-iframe-dialog.module';
-import { DotMenuService } from '../../../../../api/services/dot-menu.service';
+import { DotMenuService } from '@services/dot-menu.service';
 import { LoginService } from 'dotcms-js/dotcms-js';
 import { LoginServiceMock } from '../../../../../test/login-service.mock';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
-import { Observable } from 'rxjs/Observable';
 
 describe('DotEditContentletComponent', () => {
     let component: DotEditContentletComponent;
@@ -31,7 +31,7 @@ describe('DotEditContentletComponent', () => {
                     provide: DotMenuService,
                     useValue: {
                         getDotMenuId() {
-                            return Observable.of('999');
+                            return observableOf('999');
                         }
                     }
                 },
@@ -82,17 +82,19 @@ describe('DotEditContentletComponent', () => {
 
             fixture.detectChanges();
 
-            expect(dotEditContentletWrapperComponent.url).toEqual([
-                '/c/portal/layout',
-                '?p_l_id=999',
-                '&p_p_id=content',
-                '&p_p_action=1',
-                '&p_p_state=maximized',
-                '&p_p_mode=view',
-                '&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet',
-                '&_content_cmd=edit',
-                '&inode=999',
-            ].join(''));
+            expect(dotEditContentletWrapperComponent.url).toEqual(
+                [
+                    '/c/portal/layout',
+                    '?p_l_id=999',
+                    '&p_p_id=content',
+                    '&p_p_action=1',
+                    '&p_p_state=maximized',
+                    '&p_p_mode=view',
+                    '&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet',
+                    '&_content_cmd=edit',
+                    '&inode=999'
+                ].join('')
+            );
         });
     });
 });

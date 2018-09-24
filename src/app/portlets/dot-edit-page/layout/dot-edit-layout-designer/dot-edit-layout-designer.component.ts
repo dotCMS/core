@@ -2,24 +2,24 @@ import { DotRenderedPageState } from './../../shared/models/dot-rendered-page-st
 import { DotAlertConfirmService } from './../../../../api/services/dot-alert-confirm/dot-alert-confirm.service';
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { Component, OnInit, ViewChild, ElementRef, Input } from '@angular/core';
-import { PageViewService } from '../../../../api/services/page-view/page-view.service';
-import { DotMessageService } from '../../../../api/services/dot-messages-service';
+import { PageViewService } from '@services/page-view/page-view.service';
+import { DotMessageService } from '@services/dot-messages-service';
 import { TemplateContainersCacheService } from '../../template-containers-cache.service';
-import { DotLayout } from '../../shared/models/dot-layout.model';
-import { DotEventsService } from '../../../../api/services/dot-events/dot-events.service';
+import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { ResponseView } from 'dotcms-js/dotcms-js';
 import * as _ from 'lodash';
 import { DotEditLayoutService } from '../../shared/services/dot-edit-layout.service';
-import { DotGlobalMessageService } from '../../../../view/components/_common/dot-global-message/dot-global-message.service';
+import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotRenderedPage } from '../../shared/models/dot-rendered-page.model';
 import { LoginService } from 'dotcms-js/core/login.service';
 import { DotLayoutSideBar } from '../../shared/models/dot-layout-sidebar.model';
-import { DotRouterService } from '../../../../api/services/dot-router/dot-router.service';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotTheme } from '../../shared/models/dot-theme.model';
-import { DotThemesService } from '../../../../api/services/dot-themes/dot-themes.service';
-import { Observable } from '../../../../../../node_modules/rxjs/Observable';
-import { DotHttpErrorManagerService, DotHttpErrorHandled } from '../../../../api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { tap } from '../../../../../../node_modules/rxjs/operators/tap';
+import { DotThemesService } from '@services/dot-themes/dot-themes.service';
+import { Observable } from 'rxjs/Observable';
+import { DotHttpErrorManagerService, DotHttpErrorHandled } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { tap } from 'rxjs/operators/tap';
+import { DotLayout } from '../../shared/models/dot-layout.model';
 
 @Component({
     selector: 'dot-edit-layout-designer',
@@ -27,9 +27,12 @@ import { tap } from '../../../../../../node_modules/rxjs/operators/tap';
     styleUrls: ['./dot-edit-layout-designer.component.scss']
 })
 export class DotEditLayoutDesignerComponent implements OnInit {
-    @ViewChild('templateName') templateName: ElementRef;
-    @Input() editTemplate = false;
-    @Input() pageState: DotRenderedPageState;
+    @ViewChild('templateName')
+    templateName: ElementRef;
+    @Input()
+    editTemplate = false;
+    @Input()
+    pageState: DotRenderedPageState;
 
     form: FormGroup;
     initialFormValue: any;
@@ -263,12 +266,12 @@ export class DotEditLayoutDesignerComponent implements OnInit {
 
     private errorHandler(err: ResponseView): Observable<any> {
         return this.dotHttpErrorManagerService.handle(err).pipe(
-                tap((res: DotHttpErrorHandled) => {
+            tap((res: DotHttpErrorHandled) => {
                 if (!res.redirected) {
                     this.dotRouterService.goToSiteBrowser();
                 }
                 this.currentTheme = err.response.status === 403 ? null : this.currentTheme;
-            }
-        ));
+            })
+        );
     }
 }

@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs/Observable';
-import { Subject } from 'rxjs/Subject';
+import { Observable, Subject } from 'rxjs';
 import { filter, map } from 'rxjs/operators';
 
 @Injectable()
@@ -37,7 +36,6 @@ export class DotIframeService {
     reloadedColors(): Observable<any> {
         return this._actions.asObservable().pipe(filter((action: string) => action === 'colors'));
     }
-
 
     /**
      * Get functions to run in the iframe window
@@ -89,12 +87,12 @@ export class DotIframeService {
 
     private getFunctionToRefreshIframe(portlet: string): string {
         const mapOfFunctions = {
-            'content': 'doSearch',
+            content: 'doSearch',
             'site-browser': 'reloadContent',
             'vanity-urls': 'doSearch',
-            'sites': 'refreshHostTable',
-            'calendar': 'initializeCalendar',
-            'workflow': 'doFilter'
+            sites: 'refreshHostTable',
+            calendar: 'initializeCalendar',
+            workflow: 'doFilter'
         };
 
         return mapOfFunctions[portlet];

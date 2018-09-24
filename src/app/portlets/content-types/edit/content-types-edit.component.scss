@@ -1,5 +1,5 @@
-@import 'mixins';
-@import 'variables';
+@import "mixins";
+@import "variables";
 
 ::ng-deep .basetype-content.ui-dialog .ui-dialog-content .ui-autocomplete-panel {
     bottom: 36px !important;
@@ -55,7 +55,7 @@
 
     button {
         margin-right: $basic-padding;
-        
+
         &:last-child {
             margin-right: 0;
         }

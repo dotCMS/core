@@ -2,7 +2,7 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DotFormSelectorComponent } from './dot-form-selector.component';
 import { DataTableModule, ButtonModule } from 'primeng/primeng';
-import { DotDialogModule } from '../../../../../view/components/dot-dialog/dot-dialog.module';
+import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 
 @NgModule({
     imports: [CommonModule, DataTableModule, DotDialogModule, ButtonModule],

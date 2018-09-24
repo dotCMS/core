@@ -1,7 +1,7 @@
+import { of as observableOf, Observable } from 'rxjs';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DotContentletEditorService } from './dot-contentlet-editor.service';
-import { DotMenuService } from '../../../../api/services/dot-menu.service';
-import { Observable } from 'rxjs/Observable';
+import { DotMenuService } from '@services/dot-menu.service';
 
 describe('DotContentletEditorService', () => {
     const load = () => {};
@@ -17,7 +17,7 @@ describe('DotContentletEditorService', () => {
 
         service = injector.get(DotContentletEditorService);
         dotMenuService = injector.get(DotMenuService);
-        spyOn(dotMenuService, 'getDotMenuId').and.returnValue(Observable.of('456'));
+        spyOn(dotMenuService, 'getDotMenuId').and.returnValue(observableOf('456'));
     });
 
     it('should set data to add', () => {

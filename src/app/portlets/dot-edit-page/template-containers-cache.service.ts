@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { DotContainer } from '../../shared/models/container/dot-container.model';
+import { DotContainer } from '@models/container/dot-container.model';
 
 /**
  * Save into cache the containers used by the current template

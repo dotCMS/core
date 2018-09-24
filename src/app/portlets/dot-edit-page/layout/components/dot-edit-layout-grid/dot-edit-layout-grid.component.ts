@@ -1,8 +1,7 @@
 import { Component, OnInit, forwardRef, ViewChild } from '@angular/core';
-import { NgGrid, NgGridConfig, NgGridItemConfig } from 'angular2-grid';
 import * as _ from 'lodash';
-import { DotAlertConfirmService } from '../../../../../api/services/dot-alert-confirm/dot-alert-confirm.service';
-import { DotMessageService } from '../../../../../api/services/dot-messages-service';
+import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
+import { DotMessageService } from '@services/dot-messages-service';
 import { DotLayoutGridBox } from '../../../shared/models/dot-layout-grid-box.model';
 import {
     DOT_LAYOUT_GRID_MAX_COLUMNS,
@@ -12,7 +11,8 @@ import {
 import { DotLayoutBody } from '../../../shared/models/dot-layout-body.model';
 import { DotEditLayoutService } from '../../../shared/services/dot-edit-layout.service';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { DotEventsService } from '../../../../../api/services/dot-events/dot-events.service';
+import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { NgGrid, NgGridConfig, NgGridItemConfig } from 'dot-layout-grid';
 
 /**
  * Component in charge of update the model that will be used be the NgGrid to display containers
@@ -32,7 +32,8 @@ import { DotEventsService } from '../../../../../api/services/dot-events/dot-eve
     ]
 })
 export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor {
-    @ViewChild(NgGrid) ngGrid: NgGrid;
+    @ViewChild(NgGrid)
+    ngGrid: NgGrid;
 
     value: DotLayoutBody;
     grid: DotLayoutGridBox[];
@@ -80,14 +81,13 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
             .subscribe();
 
         this.dotEventsService.listen('dot-side-nav-toggle').subscribe(() => {
-            // setTimeout is need it because the side nav animation time.
             this.resizeGrid(200);
         });
 
         this.dotEventsService.listen('layout-sidebar-change').subscribe(() => {
-            // We need to "wait" until the template remove the sidebar div.
             this.resizeGrid();
         });
+
         // needed it because the transition between content & layout.
         this.resizeGrid();
     }
@@ -198,8 +198,8 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
         }
     }
 
-    private setConfigOfNewContainer(): NgGridItemConfig {
-        const newRow: NgGridItemConfig = Object.assign({}, DOT_LAYOUT_GRID_NEW_ROW_TEMPLATE);
+    private setConfigOfNewContainer(): any {
+        const newRow: any = Object.assign({}, DOT_LAYOUT_GRID_NEW_ROW_TEMPLATE);
 
         if (this.grid.length) {
             const lastContainer = _.chain(this.grid)

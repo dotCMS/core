@@ -1,8 +1,9 @@
+import { throwError as observableThrowError, of as observableOf, Observable } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture } from '@angular/core/testing';
 import { ContentTypesEditComponent } from './content-types-edit.component';
-import { CrudService } from '../../../api/services/crud/crud.service';
+import { CrudService } from '@services/crud/crud.service';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DebugElement, Component, Input, Output, EventEmitter } from '@angular/core';
 import { ContentTypeField } from '../fields';
@@ -10,33 +11,35 @@ import { FieldService } from '../fields/service';
 import { Location } from '@angular/common';
 import { LoginService } from 'dotcms-js/dotcms-js';
 import { LoginServiceMock } from '../../../test/login-service.mock';
-import { Observable } from 'rxjs/Observable';
 import { RouterTestingModule } from '@angular/router/testing';
 import { async } from '@angular/core/testing';
-import { ContentType } from '../shared/content-type.model';
+import { ContentType } from '@shared/content-type.model';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
-import { DotMessageService } from '../../../api/services/dot-messages-service';
-import { ContentTypesInfoService } from '../../../api/services/content-types-info';
-import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
-import { DotMenuService } from '../../../api/services/dot-menu.service';
+import { DotMessageService } from '@services/dot-messages-service';
+import { ContentTypesInfoService } from '@services/content-types-info';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { DotMenuService } from '@services/dot-menu.service';
 import { ContentTypesFormComponent } from '../form';
 import { mockResponseView } from '../../../test/response-view.mock';
-import { DotHttpErrorManagerService } from '../../../api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { HotkeysService } from 'angular2-hotkeys';
 import { TestHotkeysMock } from '../../../test/hotkeys-service.mock';
-import { DotIconModule } from '../../../view/components/_common/dot-icon/dot-icon.module';
-import { DotIconButtonModule } from '../../../view/components/_common/dot-icon-button/dot-icon-button.module';
-import { DotEventsService } from '../../../api/services/dot-events/dot-events.service';
+import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
+import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { DotEventsService } from '@services/dot-events/dot-events.service';
 
 @Component({
     selector: 'dot-content-type-fields-drop-zone',
     template: ''
 })
 class TestContentTypeFieldsDropZoneComponent {
-    @Input() fields: ContentTypeField[];
-    @Output() saveFields = new EventEmitter<ContentTypeField[]>();
-    @Output() removeFields = new EventEmitter<ContentTypeField[]>();
+    @Input()
+    fields: ContentTypeField[];
+    @Output()
+    saveFields = new EventEmitter<ContentTypeField[]>();
+    @Output()
+    removeFields = new EventEmitter<ContentTypeField[]>();
 }
 
 @Component({
@@ -44,7 +47,8 @@ class TestContentTypeFieldsDropZoneComponent {
     template: '<ng-content></ng-content>'
 })
 class TestContentTypeLayoutComponent {
-    @Input() contentTypeId: string;
+    @Input()
+    contentTypeId: string;
 }
 
 @Component({
@@ -52,10 +56,13 @@ class TestContentTypeLayoutComponent {
     template: ''
 })
 class TestContentTypesFormComponent {
-    @Input() data: any;
-    @Input() fields: ContentTypeField[];
+    @Input()
+    data: any;
+    @Input()
+    fields: ContentTypeField[];
     // tslint:disable-next-line:no-output-on-prefix
-    @Output() submit: EventEmitter<any> = new EventEmitter();
+    @Output()
+    submit: EventEmitter<any> = new EventEmitter();
 
     resetForm = jasmine.createSpy('resetForm');
 
@@ -72,7 +79,7 @@ const messageServiceMock = new MockDotMessageService({
     'contenttypes.content.create.contenttype': 'Create {0}',
     'contenttypes.form.identifier': 'Idenfifier',
     'contenttypes.content.content': 'Content',
-    'contenttypes.dropzone.rows.add' : 'Add rows'
+    'contenttypes.dropzone.rows.add': 'Add rows'
 });
 
 const getConfig = (route) => {
@@ -105,7 +112,7 @@ const getConfig = (route) => {
             },
             {
                 provide: ActivatedRoute,
-                useValue: { data: Observable.of(route) }
+                useValue: { data: observableOf(route) }
             },
             {
                 provide: HotkeysService,
@@ -243,8 +250,8 @@ describe('ContentTypesEditComponent create mode', () => {
                 fields: [{ hello: 'world' }]
             });
 
-            spyOn(crudService, 'postData').and.returnValue(Observable.of([responseContentType]));
-            spyOn(location, 'replaceState').and.returnValue(Observable.of([responseContentType]));
+            spyOn(crudService, 'postData').and.returnValue(observableOf([responseContentType]));
+            spyOn(location, 'replaceState').and.returnValue(observableOf([responseContentType]));
 
             contentTypeForm.triggerEventHandler('submit', mockContentType);
 
@@ -255,7 +262,7 @@ describe('ContentTypesEditComponent create mode', () => {
         });
 
         it('should handle error', () => {
-            spyOn(crudService, 'postData').and.returnValue(Observable.throw(mockResponseView(403)));
+            spyOn(crudService, 'postData').and.returnValue(observableThrowError(mockResponseView(403)));
             spyOn(dotRouterService, 'gotoPortlet');
             spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
 
@@ -421,7 +428,7 @@ describe('ContentTypesEditComponent edit mode', () => {
 
         const fieldsReturnByServer: ContentTypeField[] = newFieldsAdded.concat(currentFieldsInServer);
         const fieldService = fixture.debugElement.injector.get(FieldService);
-        spyOn(fieldService, 'saveFields').and.returnValue(Observable.of(fieldsReturnByServer));
+        spyOn(fieldService, 'saveFields').and.returnValue(observableOf(fieldsReturnByServer));
 
         const contentTypeFieldsDropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
 
@@ -443,7 +450,7 @@ describe('ContentTypesEditComponent edit mode', () => {
 
         const fieldsReturnByServer: ContentTypeField[] = newFieldsAdded.concat(currentFieldsInServer);
         const fieldService = fixture.debugElement.injector.get(FieldService);
-        spyOn(fieldService, 'saveFields').and.returnValue(Observable.of(fieldsReturnByServer));
+        spyOn(fieldService, 'saveFields').and.returnValue(observableOf(fieldsReturnByServer));
 
         const contentTypeFieldsDropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
 
@@ -453,7 +460,7 @@ describe('ContentTypesEditComponent edit mode', () => {
         expect(comp.fields).toEqual(fieldsReturnByServer);
     });
 
-    it('should handle 403 when user doesn\'t have permission to save feld', () => {
+    it("should handle 403 when user doesn't have permission to save feld", () => {
         const newFieldsAdded: ContentTypeField[] = [
             {
                 name: 'field 1',
@@ -470,7 +477,7 @@ describe('ContentTypesEditComponent edit mode', () => {
         ];
         const fieldService = fixture.debugElement.injector.get(FieldService);
         spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
-        spyOn(fieldService, 'saveFields').and.returnValue(Observable.throw(mockResponseView(403)));
+        spyOn(fieldService, 'saveFields').and.returnValue(observableThrowError(mockResponseView(403)));
 
         const contentTypeFieldsDropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
 
@@ -483,7 +490,7 @@ describe('ContentTypesEditComponent edit mode', () => {
     it('should remove fields on dropzone event', () => {
         const fieldsReturnByServer: ContentTypeField[] = currentFieldsInServer.slice(-1);
         const fieldService = fixture.debugElement.injector.get(FieldService);
-        spyOn(fieldService, 'deleteFields').and.returnValue(Observable.of({ fields: fieldsReturnByServer }));
+        spyOn(fieldService, 'deleteFields').and.returnValue(observableOf({ fields: fieldsReturnByServer }));
 
         const contentTypeFieldsDropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
 
@@ -506,7 +513,7 @@ describe('ContentTypesEditComponent edit mode', () => {
     it('should handle remove field error', () => {
         spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
         const fieldService = fixture.debugElement.injector.get(FieldService);
-        spyOn(fieldService, 'deleteFields').and.returnValue(Observable.throw(mockResponseView(403)));
+        spyOn(fieldService, 'deleteFields').and.returnValue(observableThrowError(mockResponseView(403)));
 
         const contentTypeFieldsDropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
 
@@ -536,7 +543,7 @@ describe('ContentTypesEditComponent edit mode', () => {
                 fields: [{ hello: 'world' }]
             });
 
-            spyOn(crudService, 'putData').and.returnValue(Observable.of(responseContentType));
+            spyOn(crudService, 'putData').and.returnValue(observableOf(responseContentType));
 
             contentTypeForm.triggerEventHandler('submit', fakeContentType);
 
@@ -547,7 +554,7 @@ describe('ContentTypesEditComponent edit mode', () => {
         it('should handle error', () => {
             spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
             spyOn(dotRouterService, 'gotoPortlet');
-            spyOn(crudService, 'putData').and.returnValue(Observable.throw(mockResponseView(403)));
+            spyOn(crudService, 'putData').and.returnValue(observableThrowError(mockResponseView(403)));
 
             contentTypeForm.triggerEventHandler('submit', fakeContentType);
 

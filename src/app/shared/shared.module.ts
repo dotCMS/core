@@ -16,11 +16,11 @@ import {
 } from 'dotcms-js/dotcms-js';
 
 // Common Modules
-import { DotDropdownModule } from '../view/components/_common/dropdown-component/dot-dropdown.module';
-import { GravatarModule } from '../view/components/_common/gravatar/gravatar.module';
-import { MainNavigationModule } from '../view/components/dot-navigation/dot-navigation.module';
+import { DotDropdownModule } from '@components/_common/dropdown-component/dot-dropdown.module';
+import { GravatarModule } from '@components/_common/gravatar/gravatar.module';
+import { MainNavigationModule } from '@components/dot-navigation/dot-navigation.module';
 import { DotEventsService } from '../api/services/dot-events/dot-events.service';
-import { DotNavigationService } from '../view/components/dot-navigation/services/dot-navigation.service';
+import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 
 @NgModule({
     declarations: [],

@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { DotContainerSelectorComponent } from './dot-container-selector.component';
 import { NgModule } from '@angular/core';
-import { PaginatorService } from '../../../api/services/paginator';
+import { PaginatorService } from '@services/paginator';
 
 @NgModule({
     declarations: [DotContainerSelectorComponent],

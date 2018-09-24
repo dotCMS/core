@@ -2,15 +2,15 @@ import { DOTTestBed } from '../../../test/dot-test-bed';
 import { Injectable, DebugElement } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { DotContentletsComponent } from './dot-contentlets.component';
-import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotContentletEditorModule } from '../../../view/components/dot-contentlet-editor/dot-contentlet-editor.module';
+import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotContentletEditorModule } from '@components/dot-contentlet-editor/dot-contentlet-editor.module';
 import { ComponentFixture, async } from '@angular/core/testing';
 import { LoginService } from 'dotcms-js/dotcms-js';
 import { LoginServiceMock } from '../../../test/login-service.mock';
 import { By } from '@angular/platform-browser';
-import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { RouterTestingModule } from '@angular/router/testing';
-import { DotIframeService } from '../../../view/components/_common/iframe/service/dot-iframe/dot-iframe.service';
+import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 
 @Injectable()
 class MockDotContentletEditorService {

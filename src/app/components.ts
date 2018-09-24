@@ -1,6 +1,5 @@
 import { CustomTimeComponent } from './view/components/_common/custom-time/custom-time';
 import { DotAlertConfirmComponent } from './view/components/_common/dot-alert-confirm/dot-alert-confirm';
-import { DotCrumbtrailComponent } from './view/components/dot-crumbtrail/dot-crumbtrail.component';
 import { GlobalSearchComponent } from './view/components/global-search/global-search';
 import { LogOutContainerComponent } from './view/components/login/login-component/log-out-container';
 import { LoginAsComponent } from './view/components/login-as/login-as';

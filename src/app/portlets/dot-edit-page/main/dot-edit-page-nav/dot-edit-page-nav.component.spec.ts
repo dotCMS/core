@@ -1,10 +1,11 @@
+import { of as observableOf, Observable } from 'rxjs';
 import { DebugElement } from '@angular/core/src/debug/debug_node';
 import { By } from '@angular/platform-browser';
 import { DotEditPageNavComponent } from './dot-edit-page-nav.component';
-import { DotMessageService } from '../../../../api/services/dot-messages-service';
-import { DotLicenseService } from '../../../../api/services/dot-license/dot-license.service';
-import { DotContentletEditorService } from '../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotRenderedPageState } from '../../shared/models/dot-rendered-page-state.model';
+import { DotMessageService } from '@services/dot-messages-service';
+import { DotLicenseService } from '@services/dot-license/dot-license.service';
+import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotRenderedPageState } from '@models/dot-rendered-page-state.model';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { TooltipModule } from 'primeng/primeng';
@@ -13,9 +14,8 @@ import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { mockDotRenderedPage } from './../../../../test/dot-rendered-page.mock';
 import { mockUser } from './../../../../test/login-service.mock';
 import { Injectable, Component, Input } from '@angular/core';
-import { Observable } from 'rxjs/Observable';
 import { ActivatedRoute } from '@angular/router';
-import { DotIconModule } from '../../../../view/components/_common/dot-icon/dot-icon.module';
+import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 
 @Injectable()
 class MockDotContentletEditorService {
@@ -25,7 +25,7 @@ class MockDotContentletEditorService {
 @Injectable()
 class MockDotLicenseService {
     isEnterprise(): Observable<boolean> {
-        return Observable.of(false);
+        return observableOf(false);
     }
 }
 
@@ -34,7 +34,8 @@ class MockDotLicenseService {
     template: `<dot-edit-page-nav [pageState]="pageState"></dot-edit-page-nav>`
 })
 class TestHostComponent {
-    @Input() pageState: DotRenderedPageState;
+    @Input()
+    pageState: DotRenderedPageState;
 }
 
 describe('DotEditPageNavComponent', () => {
@@ -128,7 +129,7 @@ describe('DotEditPageNavComponent', () => {
             const { layout, ...noLayoutPage } = mockDotRenderedPage;
             fixture.componentInstance.pageState = new DotRenderedPageState(mockUser, noLayoutPage);
             component.model = undefined;
-            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(Observable.of(true));
+            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(true));
             fixture.detectChanges();
             const menuListItemsUpdated = fixture.debugElement.queryAll(By.css('.edit-page-nav__item'));
             expect(menuListItems[1].nativeElement.classList).toContain('edit-page-nav__item--disabled');
@@ -164,7 +165,7 @@ describe('DotEditPageNavComponent', () => {
         });
 
         it('should have layout option disabled and cant edit message when template is advance and license is enterprise', () => {
-            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(Observable.of(true));
+            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(true));
 
             component.model = undefined;
             fixture.componentInstance.pageState = new DotRenderedPageState(mockUser, mockDotRenderedPageAdvanceTemplate);
@@ -186,16 +187,13 @@ describe('DotEditPageNavComponent', () => {
         });
 
         it('should have code option disabled because user can not edit the page thus the layout or template', () => {
-            fixture.componentInstance.pageState = new DotRenderedPageState(
-                mockUser,
-                {
-                    ...mockDotRenderedPageAdvanceTemplate,
-                    page: {
-                        ...mockDotRenderedPageAdvanceTemplate.page,
-                        canEdit: false
-                    }
+            fixture.componentInstance.pageState = new DotRenderedPageState(mockUser, {
+                ...mockDotRenderedPageAdvanceTemplate,
+                page: {
+                    ...mockDotRenderedPageAdvanceTemplate.page,
+                    canEdit: false
                 }
-            );
+            });
             fixture.detectChanges();
 
             const menuListItems = fixture.debugElement.queryAll(By.css('.edit-page-nav__item'));
@@ -226,7 +224,7 @@ describe('DotEditPageNavComponent', () => {
         describe('license enterprise', () => {
             beforeEach(() => {
                 dotLicenseService = de.injector.get(DotLicenseService);
-                spyOn(dotLicenseService, 'isEnterprise').and.returnValue(Observable.of(true));
+                spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(true));
                 fixture.detectChanges();
             });
 

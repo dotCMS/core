@@ -3,9 +3,9 @@ import { ComponentFixture, async } from '@angular/core/testing';
 import { DebugElement, Injectable, Input, Output, EventEmitter, Component } from '@angular/core';
 import { MockDotMessageService } from '../../../../../../test/dot-message-service.mock';
 import { DOTTestBed } from '../../../../../../test/dot-test-bed';
-import { PaginatorService } from '../../../../../../api/services/paginator';
-import { DotMessageService } from '../../../../../../api/services/dot-messages-service';
-import { PaginationEvent } from '../../../../../../view/components/_common/searchable-dropdown/component';
+import { PaginatorService } from '@services/paginator';
+import { DotMessageService } from '@services/dot-messages-service';
+import { PaginationEvent } from '@components/_common/searchable-dropdown/component';
 
 import { NgControl, FormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
@@ -15,16 +15,25 @@ import { By } from '@angular/platform-browser';
     template: ''
 })
 class TestSearchableDropdownComponent {
-    @Input() data: string[];
-    @Input() labelPropertyName;
-    @Input() valuePropertyName;
-    @Input() pageLinkSize = 3;
-    @Input() rows: number;
-    @Input() totalRecords: number;
-    @Input() placeholder = '';
+    @Input()
+    data: string[];
+    @Input()
+    labelPropertyName;
+    @Input()
+    valuePropertyName;
+    @Input()
+    pageLinkSize = 3;
+    @Input()
+    rows: number;
+    @Input()
+    totalRecords: number;
+    @Input()
+    placeholder = '';
 
-    @Output() filterChange: EventEmitter<string> = new EventEmitter();
-    @Output() pageChange: EventEmitter<PaginationEvent> = new EventEmitter();
+    @Output()
+    filterChange: EventEmitter<string> = new EventEmitter();
+    @Output()
+    pageChange: EventEmitter<PaginationEvent> = new EventEmitter();
 }
 
 @Component({
@@ -32,8 +41,10 @@ class TestSearchableDropdownComponent {
     template: ''
 })
 class TestFieldValidationMessageComponent {
-    @Input() field: NgControl;
-    @Input() message: string;
+    @Input()
+    field: NgControl;
+    @Input()
+    message: string;
 }
 
 @Injectable()
@@ -49,27 +60,21 @@ describe('CategoriesPropertyComponent', () => {
         search: 'search'
     });
 
-    beforeEach(
-        async(() => {
-            DOTTestBed.configureTestingModule({
-                declarations: [
-                    CategoriesPropertyComponent,
-                    TestFieldValidationMessageComponent,
-                    TestSearchableDropdownComponent
-                ],
-                imports: [],
-                providers: [
-                    { provide: PaginatorService, useClass: TestPaginatorService },
-                    { provide: DotMessageService, useValue: messageServiceMock }
-                ]
-            });
+    beforeEach(async(() => {
+        DOTTestBed.configureTestingModule({
+            declarations: [CategoriesPropertyComponent, TestFieldValidationMessageComponent, TestSearchableDropdownComponent],
+            imports: [],
+            providers: [
+                { provide: PaginatorService, useClass: TestPaginatorService },
+                { provide: DotMessageService, useValue: messageServiceMock }
+            ]
+        });
 
-            fixture = DOTTestBed.createComponent(CategoriesPropertyComponent);
-            comp = fixture.componentInstance;
-            de = fixture.debugElement;
-            el = de.nativeElement;
-        })
-    );
+        fixture = DOTTestBed.createComponent(CategoriesPropertyComponent);
+        comp = fixture.componentInstance;
+        de = fixture.debugElement;
+        el = de.nativeElement;
+    }));
 
     it('should have a form', () => {
         const group = new FormGroup({});
@@ -84,7 +89,8 @@ describe('CategoriesPropertyComponent', () => {
         comp.property = {
             field: {},
             name: 'categories',
-            value: ''};
+            value: ''
+        };
         comp.ngOnInit();
         const mockFieldPaginatorService = fixture.debugElement.injector.get(PaginatorService);
         expect('v1/categories').toBe(mockFieldPaginatorService.url);
@@ -101,18 +107,17 @@ describe('CategoriesPropertyComponent', () => {
                 key: 'azindex',
                 sortOrder: 0,
                 inode: '3297fcca-d88a-45a7-aef4-7960bc6964aa'
-            }};
+            }
+        };
         comp.ngOnInit();
         expect(comp.placeholder).toBe(comp.property.value);
     });
 
     describe('Pagination events', () => {
-        beforeEach(
-            async(() => {
-                const divForm: DebugElement = fixture.debugElement.query(By.css('div'));
-                this.searchableDropdown = divForm.query(By.css('dot-searchable-dropdown'));
-            })
-        );
+        beforeEach(async(() => {
+            const divForm: DebugElement = fixture.debugElement.query(By.css('div'));
+            this.searchableDropdown = divForm.query(By.css('dot-searchable-dropdown'));
+        }));
 
         it('should change Page', () => {
             const mockFieldPaginatorService = fixture.debugElement.injector.get(PaginatorService);

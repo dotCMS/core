@@ -1,7 +1,7 @@
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotLoadingIndicatorService } from '../../_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
 import { RouterTestingModule } from '@angular/router/testing';
-import { DotRouterService } from '../../../../api/services/dot-router/dot-router.service';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotLoadingIndicatorComponent } from '../../_common/iframe/dot-loading-indicator/dot-loading-indicator.component';
 import { MdInputTextModule } from '../../../directives/md-inputtext/md-input-text.module';
 import { LoginContainerComponent } from './login-container.component';
@@ -19,15 +19,13 @@ describe('LoginContainerComponent', () => {
     let dotRouterService: DotRouterService;
     let fixture: ComponentFixture<LoginContainerComponent>;
 
-    beforeEach(
-        async(() => {
-            DOTTestBed.configureTestingModule({
-                imports: [MdInputTextModule, RouterTestingModule, BrowserAnimationsModule],
-                declarations: [LoginContainerComponent, LoginComponent, DotLoadingIndicatorComponent],
-                providers: [DotLoadingIndicatorService, { provide: LoginService, useClass: LoginServiceMock }]
-            }).compileComponents();
-        })
-    );
+    beforeEach(async(() => {
+        DOTTestBed.configureTestingModule({
+            imports: [MdInputTextModule, RouterTestingModule, BrowserAnimationsModule],
+            declarations: [LoginContainerComponent, LoginComponent, DotLoadingIndicatorComponent],
+            providers: [DotLoadingIndicatorService, { provide: LoginService, useClass: LoginServiceMock }]
+        }).compileComponents();
+    }));
 
     beforeEach(() => {
         fixture = TestBed.createComponent(LoginContainerComponent);
@@ -72,6 +70,5 @@ describe('LoginContainerComponent', () => {
         it('should redirect correctly after login', () => {
             expect(dotRouterService.goToMain).toHaveBeenCalledWith('redirect/to');
         });
-
     });
 });

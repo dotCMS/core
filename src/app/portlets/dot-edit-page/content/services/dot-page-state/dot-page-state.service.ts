@@ -1,16 +1,14 @@
+import { of as observableOf, Observable, Subject } from 'rxjs';
+
+import { mergeMap, pluck, take, map } from 'rxjs/operators';
 import { DotPage } from './../../../shared/models/dot-page.model';
 import { LoginService } from 'dotcms-js/dotcms-js';
-import { DotRenderedPageState, DotPageState } from '../../../shared/models/dot-rendered-page-state.model';
-import { DotRenderHTMLService, DotRenderPageOptions } from '../../../../../api/services/dot-render-html/dot-render-html.service';
+import { DotPageState, DotRenderedPageState } from '../../../shared/models/dot-rendered-page-state.model';
+import { DotRenderHTMLService, DotRenderPageOptions } from '@services/dot-render-html/dot-render-html.service';
 import { DotRenderedPage } from '../../../shared/models/dot-rendered-page.model';
-import { Observable } from 'rxjs/Observable';
 import { Injectable } from '@angular/core';
-import { DotContentletLockerService } from '../../../../../api/services/dot-contentlet-locker/dot-contentlet-locker.service';
-import { DotEditPageViewAs } from '../../../../../shared/models/dot-edit-page-view-as/dot-edit-page-view-as.model';
-import { Subject } from 'rxjs/Subject';
-import { take } from 'rxjs/operators';
-import { PageMode } from '../../../shared/models/page-mode.enum';
-import { map } from 'rxjs/operators';
+import { DotContentletLockerService } from '@services/dot-contentlet-locker/dot-contentlet-locker.service';
+import { DotEditPageViewAs } from '@models/dot-edit-page-view-as/dot-edit-page-view-as.model';
 
 @Injectable()
 export class DotPageStateService {
@@ -38,12 +36,16 @@ export class DotPageStateService {
             viewAs: this.dotRenderHTMLService.getDotEditPageViewAsParams(viewAs)
         };
         const pageMode$: Observable<DotRenderedPage> =
-            state.mode !== undefined ? this.dotRenderHTMLService.get(pageOpts) : Observable.of(null);
+            state.mode !== undefined ? this.dotRenderHTMLService.get(pageOpts) : observableOf(null);
 
-        return lockUnlock$.mergeMap(() =>
-            pageMode$.map(
-                (updatedPage: DotRenderedPage) =>
-                    new DotRenderedPageState(this.loginService.auth.loginAsUser || this.loginService.auth.user, updatedPage)
+        return lockUnlock$.pipe(
+            mergeMap(() =>
+                pageMode$.pipe(
+                    map(
+                        (updatedPage: DotRenderedPage) =>
+                            new DotRenderedPageState(this.loginService.auth.loginAsUser || this.loginService.auth.user, updatedPage)
+                    )
+                )
             )
         );
     }
@@ -72,32 +74,33 @@ export class DotPageStateService {
      * @memberof DotPageStateService
      */
     get(url: string, languageId?: number): Observable<DotRenderedPageState> {
-       const options: DotRenderPageOptions = {
+        const options: DotRenderPageOptions = {
             url: url
-       };
+        };
 
-       if (languageId) {
+        if (languageId) {
             options.viewAs = {
                 language_id: languageId
             };
         }
 
-       return this.dotRenderHTMLService.get(options)
-           .pipe(
+        return this.dotRenderHTMLService
+            .get(options)
+            .pipe(
                 map(
                     (page: DotRenderedPage) =>
                         new DotRenderedPageState(this.loginService.auth.loginAsUser || this.loginService.auth.user, page)
                 )
-           );
+            );
     }
 
     private getLockMode(workingInode: string, lock: boolean): Observable<string> {
         if (lock === true) {
-            return this.dotContentletLockerService.lock(workingInode).pluck('message');
+            return this.dotContentletLockerService.lock(workingInode).pipe(pluck('message'));
         } else if (lock === false) {
-            return this.dotContentletLockerService.unlock(workingInode).pluck('message');
+            return this.dotContentletLockerService.unlock(workingInode).pipe(pluck('message'));
         }
 
-        return Observable.of(null);
+        return observableOf(null);
     }
 }

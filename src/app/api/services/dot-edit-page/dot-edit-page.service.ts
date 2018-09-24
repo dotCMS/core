@@ -1,12 +1,12 @@
+import { pluck } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
 import { CoreWebService } from 'dotcms-js/dotcms-js';
 import { RequestMethod } from '@angular/http';
-import { DotPageContainer } from '../../../portlets/dot-edit-page/shared/models/dot-page-container.model';
-import { Observable } from 'rxjs/Observable';
+import { DotPageContainer } from '@portlets/dot-edit-page/shared/models/dot-page-container.model';
+import { Observable } from 'rxjs';
 
 @Injectable()
 export class DotEditPageService {
-
     constructor(private coreWebService: CoreWebService) {}
 
     /**
@@ -24,6 +24,6 @@ export class DotEditPageService {
                 body: content,
                 url: `v1/page/${pageId}/content`
             })
-            .pluck('entity');
+            .pipe(pluck('entity'));
     }
 }

@@ -1,8 +1,8 @@
 import { Component, AfterViewInit } from '@angular/core';
-import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { ActivatedRoute } from '@angular/router';
-import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
-import { DotIframeService } from '../../../view/components/_common/iframe/service/dot-iframe/dot-iframe.service';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 
 @Component({
     providers: [],

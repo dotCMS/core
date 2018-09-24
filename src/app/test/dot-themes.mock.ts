@@ -1,4 +1,4 @@
-import { DotTheme } from '../portlets/dot-edit-page/shared/models/dot-theme.model';
+import { DotTheme } from '@portlets/dot-edit-page/shared/models/dot-theme.model';
 
 export const mockDotThemes: DotTheme[] = [
     {
@@ -35,5 +35,3 @@ export const mockDotThemes: DotTheme[] = [
         }
     }
 ];
-
-

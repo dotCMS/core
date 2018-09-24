@@ -1,10 +1,10 @@
 import { Component, AfterViewInit } from '@angular/core';
-import { DotWorkflowTaskDetailService } from '../../../view/components/dot-workflow-task-detail/services/dot-workflow-task-detail.service';
+import { DotWorkflowTaskDetailService } from '@components/dot-workflow-task-detail/services/dot-workflow-task-detail.service';
 import { ActivatedRoute } from '@angular/router';
-import { DotMessageService } from '../../../api/services/dot-messages-service';
+import { DotMessageService } from '@services/dot-messages-service';
 import { take } from 'rxjs/operators';
-import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
-import { DotIframeService } from '../../../view/components/_common/iframe/service/dot-iframe/dot-iframe.service';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 
 @Component({
     providers: [],

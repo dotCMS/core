@@ -11,17 +11,15 @@ import { FileUpload } from 'primeng/primeng';
     templateUrl: 'dot-browser.html'
 })
 export class DotBrowserComponent implements OnInit {
-    @ViewChild('siteDatagridWidget') siteDatagrid: SiteDatagridComponent;
-    @ViewChild('fileUploadWidget') fieldUpload: FileUpload;
+    @ViewChild('siteDatagridWidget')
+    siteDatagrid: SiteDatagridComponent;
+    @ViewChild('fileUploadWidget')
+    fieldUpload: FileUpload;
     uploadedFiles: any[] = [];
     uploadDialog: boolean;
     siteView = 'tree';
 
-    constructor(
-        private fileService: FileService,
-        private folderService: FolderService,
-        private updateService: SiteBrowserState
-    ) {}
+    constructor(private fileService: FileService, private folderService: FolderService, private updateService: SiteBrowserState) {}
     ngOnInit(): void {}
     changeViewToTree(): void {
         this.siteView = 'tree';

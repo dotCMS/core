@@ -1,15 +1,15 @@
+import { of as observableOf, Observable } from 'rxjs';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { ContentTypesLayoutComponent } from './content-types-layout.component';
 import { ComponentFixture } from '@angular/core/testing';
 import { DebugElement, Component, Input, Injectable } from '@angular/core';
 import { TabViewModule } from 'primeng/primeng';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
-import { DotMessageService } from '../../../api/services/dot-messages-service';
+import { DotMessageService } from '@services/dot-messages-service';
 import { By } from '@angular/platform-browser';
-import { DotMenuService } from '../../../api/services/dot-menu.service';
-import { Observable } from 'rxjs/Observable';
+import { DotMenuService } from '@services/dot-menu.service';
 import { FieldDragDropService } from '../fields/service';
-import {DotIconModule} from '../../../view/components/_common/dot-icon/dot-icon.module';
+import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 
 @Component({
     selector: 'dot-content-types-fields-list',
@@ -28,7 +28,8 @@ class TestContentTypeFieldsRowListComponent {}
     template: ''
 })
 class TestDotIframeComponent {
-    @Input() src: string;
+    @Input()
+    src: string;
 }
 
 @Component({
@@ -36,7 +37,8 @@ class TestDotIframeComponent {
     template: '<dot-content-type-layout [contentTypeId]="contentTypeId"></dot-content-type-layout>'
 })
 class TestHostComponent {
-    @Input() contentTypeId: string;
+    @Input()
+    contentTypeId: string;
 }
 
 @Component({
@@ -48,7 +50,7 @@ class TestContentTypesRelationshipListingComponent {}
 @Injectable()
 export class MockDotMenuService {
     getDotMenuId(): Observable<string> {
-        return Observable.of('1234');
+        return observableOf('1234');
     }
 }
 

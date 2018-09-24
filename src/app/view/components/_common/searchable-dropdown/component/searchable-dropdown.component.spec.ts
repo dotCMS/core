@@ -2,7 +2,7 @@ import { By } from '@angular/platform-browser';
 import { ComponentFixture, async } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { DebugElement, SimpleChange } from '@angular/core';
-import { DotMessageService } from '../../../../../api/services/dot-messages-service';
+import { DotMessageService } from '@services/dot-messages-service';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
 import { SEARCHABLE_NGFACES_MODULES } from '../searchable-dropdown.module';
 import { SearchableDropdownComponent } from './searchable-dropdown.component';
@@ -21,41 +21,39 @@ describe('SearchableDropdownComponent', () => {
     let rows: number;
     let pageLinkSize: number;
 
-    beforeEach(
-        async(() => {
-            const messageServiceMock = new MockDotMessageService({
-                search: 'Search'
-            });
+    beforeEach(async(() => {
+        const messageServiceMock = new MockDotMessageService({
+            search: 'Search'
+        });
 
-            DOTTestBed.configureTestingModule({
-                declarations: [SearchableDropdownComponent],
-                imports: [...SEARCHABLE_NGFACES_MODULES, BrowserAnimationsModule, DotIconModule],
-                providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
-            });
+        DOTTestBed.configureTestingModule({
+            declarations: [SearchableDropdownComponent],
+            imports: [...SEARCHABLE_NGFACES_MODULES, BrowserAnimationsModule, DotIconModule],
+            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+        });
 
-            fixture = DOTTestBed.createComponent(SearchableDropdownComponent);
-            comp = fixture.componentInstance;
-            de = fixture.debugElement;
-            el = de.nativeElement;
+        fixture = DOTTestBed.createComponent(SearchableDropdownComponent);
+        comp = fixture.componentInstance;
+        de = fixture.debugElement;
+        el = de.nativeElement;
 
-            for (let i = 0; i < NROWS; i++) {
-                data[i] = {
-                    id: i,
-                    name: `site-${i}`,
-                    parentPermissionable: {
-                        hostname: 'demo.dotcms.com'
-                    }
-                };
-            }
+        for (let i = 0; i < NROWS; i++) {
+            data[i] = {
+                id: i,
+                name: `site-${i}`,
+                parentPermissionable: {
+                    hostname: 'demo.dotcms.com'
+                }
+            };
+        }
 
-            rows = NROWS / 3;
-            pageLinkSize = 1;
+        rows = NROWS / 3;
+        pageLinkSize = 1;
 
-            comp.totalRecords = NROWS;
-            comp.rows = rows;
-            comp.pageLinkSize = pageLinkSize;
-        })
-    );
+        comp.totalRecords = NROWS;
+        comp.rows = rows;
+        comp.pageLinkSize = pageLinkSize;
+    }));
 
     it('should renderer the pagination links', () => {
         fixture.detectChanges();
@@ -115,7 +113,7 @@ describe('SearchableDropdownComponent', () => {
             const input = fixture.debugElement.query(By.css('input[type="text"]'));
             input.nativeElement.value = filter;
 
-            comp.pageChange.subscribe(e => {
+            comp.pageChange.subscribe((e) => {
                 event = e;
             });
 

@@ -12,7 +12,7 @@ import { IframeComponent } from './iframe.component';
 import { LoginService } from 'dotcms-js/core/login.service';
 import { LoginServiceMock } from '../../../../../test/login-service.mock';
 import { DotIframeService } from '../service/dot-iframe/dot-iframe.service';
-import { DotUiColorsService } from '../../../../../api/services/dot-ui-colors/dot-ui-colors.service';
+import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 
 describe('IframeComponent', () => {
     let comp: IframeComponent;
@@ -152,10 +152,7 @@ describe('IframeComponent', () => {
                 jasmine.any(Function)
             );
 
-            expect(comp.iframeElement.nativeElement.contentWindow.addEventListener).toHaveBeenCalledWith(
-                'keydown',
-                jasmine.any(Function)
-            );
+            expect(comp.iframeElement.nativeElement.contentWindow.addEventListener).toHaveBeenCalledWith('keydown', jasmine.any(Function));
             expect(comp.iframeElement.nativeElement.contentWindow.document.addEventListener).toHaveBeenCalledWith(
                 'ng-event',
                 jasmine.any(Function)
@@ -163,7 +160,6 @@ describe('IframeComponent', () => {
         });
 
         it('should set the colors to the jsp on load', () => {
-
             iframeEl.triggerEventHandler('load', {});
 
             expect(dotUiColorsService.setColors).toHaveBeenCalledWith(fakeHtmlEl);

@@ -15,7 +15,6 @@ export class FieldRow {
                 this.columns[i] = new FieldColumn();
             }
         }
-
     }
 
     /**
@@ -70,6 +69,6 @@ export class FieldRow {
      */
     addFirstColumn(): void {
         this.columns[0] = new FieldColumn();
-        this.columns[0].tabDivider = { 'clazz': 'com.dotcms.contenttype.model.field.ImmutableColumnField' };
+        this.columns[0].tabDivider = { clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField' };
     }
 }

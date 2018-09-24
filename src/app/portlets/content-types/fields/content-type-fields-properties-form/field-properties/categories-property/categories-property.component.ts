@@ -1,8 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import { BaseComponent } from '../../../../../../view/components/_common/_base/base-component';
-import { DotMessageService } from '../../../../../../api/services/dot-messages-service';
+import { BaseComponent } from '@components/_common/_base/base-component';
+import { DotMessageService } from '@services/dot-messages-service';
 import { FieldProperty } from '../field-properties.model';
-import { PaginatorService } from '../../../../../../api/services/paginator';
+import { PaginatorService } from '@services/paginator';
 import { FormGroup } from '@angular/forms';
 import { Category } from '../../../shared';
 
@@ -33,7 +33,7 @@ export class CategoriesPropertyComponent extends BaseComponent implements OnInit
         this.placeholder = !this.property.value
             ? this.dotMessageService.get('contenttypes.field.properties.category.label')
             : this.property.value;
-            this.paginationService.url = 'v1/categories';
+        this.paginationService.url = 'v1/categories';
     }
 
     /**

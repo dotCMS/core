@@ -1,10 +1,11 @@
+import { toArray, filter, pluck, mergeMap } from 'rxjs/operators';
 import { CoreWebService, ApiRoot } from 'dotcms-js/dotcms-js';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { RequestMethod } from '@angular/http';
-import { DotEnvironment } from '../../../shared/models/dot-environment/dot-environment';
-import { AjaxActionResponseView } from '../../../shared/models/ajax-action-response/ajax-action-response';
-import { PushPublishData } from '../../../shared/models/push-publish-data/push-publish-data';
+import { DotEnvironment } from '@models/dot-environment/dot-environment';
+import { AjaxActionResponseView } from '@models/ajax-action-response/ajax-action-response';
+import { PushPublishData } from '@models/push-publish-data/push-publish-data';
 import * as moment from 'moment';
 import { DotCurrentUserService } from '../dot-current-user/dot-current-user.service';
 
@@ -21,15 +22,9 @@ export class PushPublishService {
         TODO: I had to do this because this line concat'api/' into the URL
         https://github.com/dotCMS/dotcms-js/blob/master/src/core/core-web.service.ts#L169
     */
-    private publishUrl = `${
-        this._apiRoot.baseUrl
-    }DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish`;
+    private publishUrl = `${this._apiRoot.baseUrl}DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish`;
 
-    constructor(
-        public _apiRoot: ApiRoot,
-        private coreWebService: CoreWebService,
-        private currentUser: DotCurrentUserService
-    ) {}
+    constructor(public _apiRoot: ApiRoot, private coreWebService: CoreWebService, private currentUser: DotCurrentUserService) {}
 
     /**
      * Get push publish environments.
@@ -37,18 +32,18 @@ export class PushPublishService {
      * @memberof PushPublishService
      */
     getEnvironments(): Observable<DotEnvironment[]> {
-        return this.currentUser
-            .getCurrentUser()
-            .mergeMap((user) => {
+        return this.currentUser.getCurrentUser().pipe(
+            mergeMap((user) => {
                 return this.coreWebService.requestView({
                     method: RequestMethod.Get,
                     url: `${this.pushEnvironementsUrl}/${user.roleId}/name=0`
                 });
-            })
-            .pluck('bodyJsonObject')
-            .flatMap((environments: DotEnvironment[]) => environments)
-            .filter((environment) => environment.name !== '')
-            .toArray();
+            }),
+            pluck('bodyJsonObject'),
+            mergeMap((environments: DotEnvironment[]) => environments),
+            filter((environment) => environment.name !== ''),
+            toArray()
+        );
     }
 
     /**

@@ -1,13 +1,13 @@
+import { of as observableOf, Observable, Subject } from 'rxjs';
+
+import { take, pluck, takeUntil } from 'rxjs/operators';
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { DotRenderedPageState } from '../../shared/models/dot-rendered-page-state.model';
-import { Observable } from 'rxjs/Observable';
-import { Subject } from 'rxjs/Subject';
-import { takeUntil } from 'rxjs/operators';
 import { DotPageStateService } from '../../content/services/dot-page-state/dot-page-state.service';
-import { DotMessageService } from '../../../../api/services/dot-messages-service';
-import { DotContentletEditorService } from '../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotRouterService } from '../../../../api/services/dot-router/dot-router.service';
+import { DotMessageService } from '@services/dot-messages-service';
+import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 @Component({
     selector: 'dot-edit-page-main',
@@ -42,7 +42,7 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit() {
-        this.pageState = this.route.data.pluck('content');
+        this.pageState = this.route.data.pipe(pluck('content'));
         this.pageUrl = this.route.snapshot.queryParams.url;
         this.subscribeIframeCloseAction();
         this.dotMessageService.getMessages(['editpage.toolbar.nav.properties']);
@@ -67,7 +67,7 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
 
     private subscribeIframeCloseAction(): void {
         this.dotContentletEditorService.close$.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            this.pageState.take(1).subscribe((pageState: DotRenderedPageState) => {
+            this.pageState.pipe(take(1)).subscribe((pageState: DotRenderedPageState) => {
                 if (this.pageUrl !== this.route.snapshot.queryParams.url) {
                     this.dotRouterService.goToEditPage(this.pageUrl, pageState.page.languageId.toString());
                 } else {
@@ -77,7 +77,7 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
         });
 
         this.dotPageStateService.reload$.pipe(takeUntil(this.destroy$)).subscribe((page: DotRenderedPageState) => {
-            this.pageState = Observable.of(page);
+            this.pageState = observableOf(page);
         });
     }
 }

@@ -1,22 +1,22 @@
+import { of as observableOf, Observable } from 'rxjs';
 import { ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
 import { DebugElement, Component } from '@angular/core';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { Observable } from 'rxjs/Observable';
-import { DotMessageService } from '../../../../api/services/dot-messages-service';
+import { DotMessageService } from '@services/dot-messages-service';
 import { FieldValidationMessageModule } from '../field-validation-message/file-validation-message.module';
 import { DotAddToBundleComponent } from './dot-add-to-bundle.component';
-import { AddToBundleService } from '../../../../api/services/add-to-bundle/add-to-bundle.service';
+import { AddToBundleService } from '@services/add-to-bundle/add-to-bundle.service';
 
 class AddToBundleServiceMock {
     getBundles(): Observable<any> {
-        return Observable.of([]);
+        return observableOf([]);
     }
 
     addToBundle(): Observable<any> {
-        return Observable.of([]);
+        return observableOf([]);
     }
 }
 
@@ -89,7 +89,7 @@ describe('DotAddToBundleComponent', () => {
 
         fixture.detectChanges();
 
-        comp.cancel.subscribe(res => {
+        comp.cancel.subscribe((res) => {
             expect(res).toEqual(true);
         });
     });
@@ -145,19 +145,21 @@ describe('DotAddToBundleComponent', () => {
         });
     });
 
-    it('should set placeholder "Type bundle name" if NO bundles exist',
+    it(
+        'should set placeholder "Type bundle name" if NO bundles exist',
         fakeAsync(() => {
-            spyOn(addToBundleServiceMock, 'getBundles').and.returnValue(Observable.of([]));
+            spyOn(addToBundleServiceMock, 'getBundles').and.returnValue(observableOf([]));
             fixture.detectChanges();
             tick();
             expect(comp.placeholder).toEqual('Type bundle name');
         })
     );
 
-    it('should set placeholder "Select or type bundle" if bundles exist',
+    it(
+        'should set placeholder "Select or type bundle" if bundles exist',
         fakeAsync(() => {
             spyOn(addToBundleServiceMock, 'getBundles').and.returnValue(
-                Observable.of([
+                observableOf([
                     {
                         id: '1234',
                         name: 'my bundle'
@@ -172,7 +174,7 @@ describe('DotAddToBundleComponent', () => {
 
     it('should set as default Bundle previously selected', () => {
         spyOn(addToBundleServiceMock, 'getBundles').and.returnValue(
-            Observable.of([
+            observableOf([
                 {
                     id: '1234',
                     name: 'my bundle'

@@ -1,5 +1,5 @@
-@import 'primeng-theme/utils/theme-variables';
-@import 'mixins';
+@import "primeng-theme/utils/theme-variables";
+@import "mixins";
 
 [tiny] :host {
     button {
@@ -13,20 +13,18 @@
     }
 
     &[inverted] button {
-
         background-color: transparent;
 
         &:hover {
-            background-color:rgba(255,255,255,0.3);
+            background-color: rgba(255, 255, 255, 0.3);
         }
 
         ::ng-deep i {
             @include dot_icon_inverted;
         }
-
     }
 
-    &[disabled]{
+    &[disabled] {
         button {
             background-color: transparent;
 
@@ -62,4 +60,3 @@
         }
     }
 }
-

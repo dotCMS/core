@@ -1,5 +1,5 @@
-@import 'mixins';
-@import 'variables';
+@import "mixins";
+@import "variables";
 
 $notification-padding: $basic-padding * 2;
 
@@ -24,7 +24,7 @@ $notification-padding: $basic-padding * 2;
 
         &:before {
             background: $white;
-            content: '';
+            content: "";
             height: 10px;
             position: absolute;
             right: 15px;

@@ -1,8 +1,8 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { DotContentletService } from '../../../api/services/dot-contentlet/dot-contentlet.service';
-import { StructureTypeView } from '../../../shared/models/contentlet/structure-type-view.model';
-import { Observable } from 'rxjs/Observable';
-import { DotMessageService } from '../../../api/services/dot-messages-service';
+import { DotContentletService } from '@services/dot-contentlet/dot-contentlet.service';
+import { StructureTypeView } from '@models/contentlet/structure-type-view.model';
+import { Observable } from 'rxjs';
+import { DotMessageService } from '@services/dot-messages-service';
 import { SelectItem } from 'primeng/primeng';
 import { map, take } from 'rxjs/operators';
 
@@ -12,8 +12,10 @@ import { map, take } from 'rxjs/operators';
     styleUrls: ['./dot-base-type-selector.component.scss']
 })
 export class DotBaseTypeSelectorComponent implements OnInit {
-    @Input() value: SelectItem;
-    @Output() selected = new EventEmitter<string>();
+    @Input()
+    value: SelectItem;
+    @Output()
+    selected = new EventEmitter<string>();
 
     options: Observable<SelectItem[]>;
 
@@ -24,14 +26,12 @@ export class DotBaseTypeSelectorComponent implements OnInit {
             .getMessages(['contenttypes.selector.any.content.type'])
             .pipe(take(1))
             .subscribe(() => {
-                this.options = this.dotContentletService
-                    .getAllContentTypes()
-                    .pipe(
-                        take(1),
-                        map((structures: StructureTypeView[]) =>
-                            this.setOptions(this.dotMessageService.get('contenttypes.selector.any.content.type'), structures)
-                        )
-                    );
+                this.options = this.dotContentletService.getAllContentTypes().pipe(
+                    take(1),
+                    map((structures: StructureTypeView[]) =>
+                        this.setOptions(this.dotMessageService.get('contenttypes.selector.any.content.type'), structures)
+                    )
+                );
             });
     }
 

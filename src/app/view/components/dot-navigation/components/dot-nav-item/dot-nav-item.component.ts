@@ -1,5 +1,5 @@
 import { Component, Output, EventEmitter, Input } from '@angular/core';
-import { DotMenu, DotMenuItem } from '../../../../../shared/models/navigation';
+import { DotMenu, DotMenuItem } from '@models/navigation';
 
 @Component({
     selector: 'dot-nav-item',
@@ -7,9 +7,12 @@ import { DotMenu, DotMenuItem } from '../../../../../shared/models/navigation';
     styleUrls: ['./dot-nav-item.component.scss']
 })
 export class DotNavItemComponent {
-    @Input() data: DotMenu;
-    @Output() menuClick: EventEmitter<{ originalEvent: MouseEvent; data: DotMenu }> = new EventEmitter();
-    @Output() itemClick: EventEmitter<{ originalEvent: MouseEvent, data: DotMenuItem }> = new EventEmitter();
+    @Input()
+    data: DotMenu;
+    @Output()
+    menuClick: EventEmitter<{ originalEvent: MouseEvent; data: DotMenu }> = new EventEmitter();
+    @Output()
+    itemClick: EventEmitter<{ originalEvent: MouseEvent; data: DotMenuItem }> = new EventEmitter();
 
     constructor() {}
 

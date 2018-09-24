@@ -45,7 +45,7 @@ describe('DotIconButtonComponent', () => {
         comp.icon = 'test';
         const event = {
             stopPropagation: jasmine.createSpy('stopPropagation')
-        }
+        };
 
         comp.buttonOnClick(event);
         expect(event.stopPropagation).toHaveBeenCalled();

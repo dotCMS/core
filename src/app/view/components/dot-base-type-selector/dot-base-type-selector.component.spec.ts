@@ -1,20 +1,20 @@
+import { of as observableOf, Observable } from 'rxjs';
 import { ComponentFixture } from '@angular/core/testing';
 import { DotBaseTypeSelectorComponent } from './dot-base-type-selector.component';
 import { DebugElement, Injectable } from '@angular/core';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotMessageService } from '../../../api/services/dot-messages-service';
+import { DotMessageService } from '@services/dot-messages-service';
 import { Dropdown, SelectItem } from 'primeng/primeng';
 import { By } from '@angular/platform-browser';
-import { DotContentletService } from '../../../api/services/dot-contentlet/dot-contentlet.service';
-import { Observable } from 'rxjs/Observable';
+import { DotContentletService } from '@services/dot-contentlet/dot-contentlet.service';
 
 @Injectable()
 class MockDotContentletService {
     getAllContentTypes = jasmine
         .createSpy('getContentTypes')
-        .and.returnValue(Observable.of([{ name: 'FORM', label: 'Form' }, { name: 'WIDGET', label: 'Widget' }]));
+        .and.returnValue(observableOf([{ name: 'FORM', label: 'Form' }, { name: 'WIDGET', label: 'Widget' }]));
 }
 
 describe('DotBaseTypeSelectorComponent', () => {
@@ -60,7 +60,7 @@ describe('DotBaseTypeSelectorComponent', () => {
     it('should add All Content Types option as first position', () => {
         fixture.detectChanges();
 
-        component.options.subscribe(options => {
+        component.options.subscribe((options) => {
             expect(options[0]).toEqual(allContentTypesItem);
         });
     });

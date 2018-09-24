@@ -38,17 +38,15 @@ describe('SiteSelectorFieldComponent', () => {
     let de: DebugElement;
     const siteServiceMock = new SiteServiceMock();
 
-    beforeEach(
-        async(() => {
-            siteServiceMock.setFakeCurrentSite();
+    beforeEach(async(() => {
+        siteServiceMock.setFakeCurrentSite();
 
-            DOTTestBed.configureTestingModule({
-                declarations: [FakeFormComponent],
-                imports: [SiteSelectorFieldModule, SiteSelectorModule],
-                providers: [{ provide: SiteService, useValue: siteServiceMock }]
-            });
-        })
-    );
+        DOTTestBed.configureTestingModule({
+            declarations: [FakeFormComponent],
+            imports: [SiteSelectorFieldModule, SiteSelectorModule],
+            providers: [{ provide: SiteService, useValue: siteServiceMock }]
+        });
+    }));
 
     beforeEach(() => {
         fixture = TestBed.createComponent(FakeFormComponent);
@@ -109,8 +107,7 @@ describe('SiteSelectorFieldComponent', () => {
     });
 
     it('should bind params correctly', () => {
-        const siteSelectorField: SiteSelectorFieldComponent = de.query(By.css('dot-site-selector-field'))
-            .componentInstance;
+        const siteSelectorField: SiteSelectorFieldComponent = de.query(By.css('dot-site-selector-field')).componentInstance;
 
         siteSelectorField.archive = true;
         siteSelectorField.system = false;

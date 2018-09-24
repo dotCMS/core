@@ -1,4 +1,4 @@
-import { DotLanguage } from '../shared/models/dot-language/dot-language.model';
+import { DotLanguage } from '@models/dot-language/dot-language.model';
 
 export const mockDotLanguage: DotLanguage = {
     id: 1,

@@ -1,8 +1,9 @@
+import { filter, refCount, defaultIfEmpty, map, pluck, find, mergeMap, first, publishLast } from 'rxjs/operators';
 import { CoreWebService } from 'dotcms-js/dotcms-js';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { RequestMethod } from '@angular/http';
-import { DotMenu, DotMenuItem } from '../../shared/models/navigation';
+import { DotMenu, DotMenuItem } from '@models/navigation';
 
 @Injectable()
 export class DotMenuService {
@@ -20,10 +21,11 @@ export class DotMenuService {
      * @memberof DotMenuService
      */
     getUrlById(id: string): Observable<string> {
-        return this.getMenuItems()
-            .filter((res: any) => !res.angular && res.id === id)
-            .first()
-            .pluck('url');
+        return this.getMenuItems().pipe(
+            filter((res: any) => !res.angular && res.id === id),
+            first(),
+            pluck('url')
+        );
     }
 
     /**
@@ -34,11 +36,12 @@ export class DotMenuService {
      * @memberof DotMenuService
      */
     isPortletInMenu(menuId: string): Observable<boolean> {
-        return this.getMenuItems()
-            .pluck('id')
-            .map((id: string) => menuId === id)
-            .filter((val) => !!val)
-            .defaultIfEmpty(false);
+        return this.getMenuItems().pipe(
+            pluck('id'),
+            map((id: string) => menuId === id),
+            filter((val) => !!val),
+            defaultIfEmpty(false)
+        );
     }
 
     /**
@@ -54,9 +57,11 @@ export class DotMenuService {
                     method: RequestMethod.Get,
                     url: this.urlMenus
                 })
-                .publishLast()
-                .refCount()
-                .pluck('entity');
+                .pipe(
+                    publishLast(),
+                    refCount(),
+                    pluck('entity')
+                );
         }
 
         return this.menu$;
@@ -78,15 +83,17 @@ export class DotMenuService {
      * @param portletId MenuItems id
      */
     getDotMenuId(portletId: string): Observable<string> {
-        return this.loadMenu()
-            .flatMap((menus: DotMenu[]) => menus)
-            .find((menu: DotMenu) => menu.menuItems.some((menuItem) => menuItem.id === portletId))
-            .map((menu: DotMenu) => menu.id);
+        return this.loadMenu().pipe(
+            mergeMap((menus: DotMenu[]) => menus),
+            find((menu: DotMenu) => menu.menuItems.some((menuItem) => menuItem.id === portletId)),
+            map((menu: DotMenu) => menu.id)
+        );
     }
 
     private getMenuItems(): Observable<DotMenuItem> {
-        return this.loadMenu()
-            .flatMap((menus: DotMenu[]) => menus)
-            .flatMap((menu: DotMenu) => menu.menuItems);
+        return this.loadMenu().pipe(
+            mergeMap((menus: DotMenu[]) => menus),
+            mergeMap((menu: DotMenu) => menu.menuItems)
+        );
     }
 }

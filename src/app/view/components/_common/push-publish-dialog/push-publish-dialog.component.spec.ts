@@ -1,3 +1,4 @@
+import { of as observableOf, Observable } from 'rxjs';
 import { ComponentFixture } from '@angular/core/testing';
 import { DebugElement, Component } from '@angular/core';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
@@ -6,18 +7,17 @@ import { PushPublishEnvSelectorModule } from '../dot-push-publish-env-selector/d
 import { PushPublishContentTypesDialogComponent } from './push-publish-dialog.component';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { Observable } from 'rxjs/Observable';
-import { DotMessageService } from '../../../../api/services/dot-messages-service';
-import { PushPublishService } from '../../../../api/services/push-publish/push-publish.service';
+import { DotMessageService } from '@services/dot-messages-service';
+import { PushPublishService } from '@services/push-publish/push-publish.service';
 import { FieldValidationMessageModule } from '../field-validation-message/file-validation-message.module';
 
 class PushPublishServiceMock {
     pushPublishContent(): Observable<any> {
-        return Observable.of([]);
+        return observableOf([]);
     }
 
     getEnvironments(): Observable<any> {
-        return Observable.of([]);
+        return observableOf([]);
     }
 }
 
@@ -119,7 +119,7 @@ describe('PushPublishContentTypesDialogComponent', () => {
 
         fixture.detectChanges();
 
-        comp.cancel.subscribe(res => {
+        comp.cancel.subscribe((res) => {
             expect(res).toEqual(true);
         });
     });

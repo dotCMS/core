@@ -1,5 +1,5 @@
-import { StructureTypeView } from '../shared/models/contentlet';
-import { StructureType } from '../shared/models/contentlet/structure-type.model';
+import { StructureTypeView } from '@models/contentlet';
+import { StructureType } from '@models/contentlet/structure-type.model';
 
 export const mockDotContentlet: StructureTypeView[] = [
     {

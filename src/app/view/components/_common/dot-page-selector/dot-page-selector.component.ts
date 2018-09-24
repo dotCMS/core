@@ -23,11 +23,16 @@ import { take } from 'rxjs/operators';
     ]
 })
 export class DotPageSelectorComponent implements ControlValueAccessor {
-    @Output() selected = new EventEmitter<DotPageAsset>();
-    @Input() style: any;
-    @Input() label: string;
-    @Input() hostIdentifier: string;
-    @Input() floatingLabel = false;
+    @Output()
+    selected = new EventEmitter<DotPageAsset>();
+    @Input()
+    style: any;
+    @Input()
+    label: string;
+    @Input()
+    hostIdentifier: string;
+    @Input()
+    floatingLabel = false;
 
     results: any[];
     val: DotPageAsset;
@@ -77,9 +82,12 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
      */
     writeValue(idenfier: string): void {
         if (idenfier) {
-            this.dotPageSelectorService.getPage(idenfier).pipe(take(1)).subscribe((page: DotPageAsset) => {
-                this.val = page;
-            });
+            this.dotPageSelectorService
+                .getPage(idenfier)
+                .pipe(take(1))
+                .subscribe((page: DotPageAsset) => {
+                    this.val = page;
+                });
         }
     }
 

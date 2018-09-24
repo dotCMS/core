@@ -7,7 +7,7 @@ import { DotIframeDialogModule } from '../../../dot-iframe-dialog/dot-iframe-dia
 import { LoginService } from 'dotcms-js/dotcms-js';
 import { LoginServiceMock } from '../../../../../test/login-service.mock';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotMessageService } from '../../../../../api/services/dot-messages-service';
+import { DotMessageService } from '@services/dot-messages-service';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 
@@ -27,7 +27,8 @@ describe('DotReorderMenuComponent', () => {
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
-                }, {
+                },
+                {
                     provide: DotMessageService,
                     useValue: messageServiceMock
                 }

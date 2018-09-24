@@ -1,12 +1,4 @@
-import {
-    Directive,
-    ViewContainerRef,
-    Input,
-    ComponentFactoryResolver,
-    ComponentRef,
-    SimpleChanges,
-    OnChanges
-} from '@angular/core';
+import { Directive, ViewContainerRef, Input, ComponentFactoryResolver, ComponentRef, SimpleChanges, OnChanges } from '@angular/core';
 import { ContentTypeField } from '../../../index';
 import { FormGroup } from '@angular/forms';
 import { FieldPropertyService } from '../../../service';
@@ -15,9 +7,12 @@ import { FieldPropertyService } from '../../../service';
     selector: '[dotDynamicFieldProperty]'
 })
 export class DynamicFieldPropertyDirective implements OnChanges {
-    @Input() propertyName: string;
-    @Input() field: ContentTypeField;
-    @Input() group: FormGroup;
+    @Input()
+    propertyName: string;
+    @Input()
+    field: ContentTypeField;
+    @Input()
+    group: FormGroup;
 
     constructor(
         private viewContainerRef: ViewContainerRef,

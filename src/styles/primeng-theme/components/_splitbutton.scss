@@ -1,5 +1,4 @@
 p-splitbutton {
-
     .ui-splitbutton {
         @extend #button-basic;
         @extend #button-main;
@@ -12,7 +11,6 @@ p-splitbutton {
 
         // SplitButton component have 2 regular buttons inside, we don't want to style those.
         .ui-button {
-
             &[disabled] {
                 background-color: transparent;
 
@@ -36,12 +34,10 @@ p-splitbutton {
             &.ui-button-icon-only {
                 border-radius: $border-radius;
             }
-
         }
 
         .ui-button-text-only,
         .ui-button-text-icon-left {
-
             .ui-button-text {
                 padding-right: 0;
             }

@@ -4,11 +4,11 @@ import { FormGroup, FormBuilder, Validators, FormControl } from '@angular/forms'
 import * as _ from 'lodash';
 import { SelectItem } from 'primeng/primeng';
 
-import { DotMessageService } from '../../../api/services/dot-messages-service';
-import { SiteSelectorComponent } from '../../../view/components/_common/site-selector/site-selector.component';
-import { DotWorkflow } from '../../../shared/models/dot-workflow/dot-workflow.model';
-import { DotWorkflowService } from '../../../api/services/dot-workflow/dot-workflow.service';
-import { DotLicenseService } from '../../../api/services/dot-license/dot-license.service';
+import { DotMessageService } from '@services/dot-messages-service';
+import { SiteSelectorComponent } from '@components/_common/site-selector/site-selector.component';
+import { DotWorkflow } from '@models/dot-workflow/dot-workflow.model';
+import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
+import { DotLicenseService } from '@services/dot-license/dot-license.service';
 
 // TODO: move this to models
 import { ContentTypeField } from '../fields';
@@ -27,12 +27,16 @@ import { ContentTypeField } from '../fields';
     templateUrl: 'content-types-form.component.html'
 })
 export class ContentTypesFormComponent implements OnInit {
-    @ViewChild('name') name: ElementRef;
+    @ViewChild('name')
+    name: ElementRef;
 
-    @Input() data: any;
-    @Input() fields: ContentTypeField[];
+    @Input()
+    data: any;
+    @Input()
+    fields: ContentTypeField[];
 
-    @Output() submit: EventEmitter<any> = new EventEmitter();
+    @Output()
+    submit: EventEmitter<any> = new EventEmitter();
 
     canSave = false;
     dateVarOptions: SelectItem[] = [];
@@ -200,11 +204,9 @@ export class ContentTypesFormComponent implements OnInit {
     }
 
     private initWorkflowField(): void {
-        this.dotLicenseService.isEnterprise()
-            .subscribe((isEnterpriseLicense: boolean) => {
-                this.updateWorkflowFormControl(isEnterpriseLicense);
-            });
-
+        this.dotLicenseService.isEnterprise().subscribe((isEnterpriseLicense: boolean) => {
+            this.updateWorkflowFormControl(isEnterpriseLicense);
+        });
     }
 
     private isBaseTypeContent(): boolean {

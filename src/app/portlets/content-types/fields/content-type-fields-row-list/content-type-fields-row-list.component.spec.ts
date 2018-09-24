@@ -4,26 +4,24 @@ import { DebugElement } from '@angular/core';
 import { ContentTypeFieldsRowListComponent } from './';
 import { By } from '@angular/platform-browser';
 import { FieldDragDropService } from '../service';
-import { DragulaModule } from 'ng2-dragula';
+import { DragulaModule, DragulaService } from 'ng2-dragula';
 
-describe('ContentTypesFieldDragabbleItemComponent', () => {
+describe('ContentTypeFieldsRowListComponent', () => {
     let comp: ContentTypeFieldsRowListComponent;
     let fixture: ComponentFixture<ContentTypeFieldsRowListComponent>;
     let de: DebugElement;
 
-    beforeEach(
-        async(() => {
-            DOTTestBed.configureTestingModule({
-                declarations: [ContentTypeFieldsRowListComponent],
-                imports: [DragulaModule],
-                providers: [FieldDragDropService]
-            });
+    beforeEach(async(() => {
+        DOTTestBed.configureTestingModule({
+            declarations: [ContentTypeFieldsRowListComponent],
+            imports: [DragulaModule],
+            providers: [FieldDragDropService, DragulaService]
+        });
 
-            fixture = DOTTestBed.createComponent(ContentTypeFieldsRowListComponent);
-            comp = fixture.componentInstance;
-            de = fixture.debugElement;
-        })
-    );
+        fixture = DOTTestBed.createComponent(ContentTypeFieldsRowListComponent);
+        comp = fixture.componentInstance;
+        de = fixture.debugElement;
+    }));
 
     it('should has a ul', () => {
         const ul = de.query(By.css('ul'));

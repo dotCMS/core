@@ -16,16 +16,21 @@ import { AceEditorComponent } from 'ng2-ace-editor';
     ]
 })
 export class DotTextareaContentComponent implements OnInit, ControlValueAccessor {
-    @ViewChild('ace') ace: AceEditorComponent;
+    @ViewChild('ace')
+    ace: AceEditorComponent;
     @Input()
     code: any = {
         mode: 'text',
         options: {}
     };
-    @Input() height: string;
-    @Input() show;
-    @Input() value = '';
-    @Input() width: string;
+    @Input()
+    height: string;
+    @Input()
+    show;
+    @Input()
+    value = '';
+    @Input()
+    width: string;
 
     selectOptions: SelectItem[] = [];
     selected: string;
@@ -68,7 +73,14 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
      */
     onModelChange(value) {
         this.value = value;
-        this.propagateChange(value ? value.replace(/\r/g, '').split('\n').join('\r\n') : value);
+        this.propagateChange(
+            value
+                ? value
+                      .replace(/\r/g, '')
+                      .split('\n')
+                      .join('\r\n')
+                : value
+        );
     }
 
     /**

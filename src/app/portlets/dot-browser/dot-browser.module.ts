@@ -21,7 +21,7 @@ import {
     DotTreeableDetailModule
 } from 'dotcms-js/dotcms-js';
 import { Routes, RouterModule } from '@angular/router';
-import { DotDirectivesModule } from '../../shared/dot-directives.module';
+import { DotDirectivesModule } from '@shared/dot-directives.module';
 
 const routes: Routes = [
     {

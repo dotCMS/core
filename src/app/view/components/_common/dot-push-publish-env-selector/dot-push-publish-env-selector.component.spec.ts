@@ -1,24 +1,24 @@
+import { of as observableOf, Observable } from 'rxjs';
 import { ComponentFixture } from '@angular/core/testing';
 import { DebugElement, Component } from '@angular/core';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { PushPublishEnvSelectorComponent } from './dot-push-publish-env-selector.component';
-import { PushPublishService } from '../../../../api/services/push-publish/push-publish.service';
+import { PushPublishService } from '@services/push-publish/push-publish.service';
 import { FormGroup, FormControl } from '@angular/forms';
 import { By } from '@angular/platform-browser';
-import { Observable } from 'rxjs/Observable';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotMessageService } from '../../../../api/services/dot-messages-service';
+import { DotMessageService } from '@services/dot-messages-service';
 
 class PushPublishServiceMock {
     _lastEnvironmentPushed: string[];
 
     pushPublishContent(): Observable<any> {
-        return Observable.of([]);
+        return observableOf([]);
     }
 
     getEnvironments(): Observable<any> {
-        return Observable.of([
+        return observableOf([
             {
                 id: '22e332',
                 name: 'my environment'
@@ -152,7 +152,7 @@ describe('PushPublishEnvSelectorComponent', () => {
                 name: 'my environment'
             }
         ];
-        spyOn(pushPublishServiceMock, 'getEnvironments').and.returnValue(Observable.of(environment));
+        spyOn(pushPublishServiceMock, 'getEnvironments').and.returnValue(observableOf(environment));
         spyOn(comp, 'propagateChange');
         comp.ngOnInit();
         expect(comp.selectedEnvironments).toEqual(environment);

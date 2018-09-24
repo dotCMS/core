@@ -6,15 +6,21 @@ import { Dialog } from 'primeng/primeng';
     templateUrl: './dot-dialog.component.html',
     styleUrls: ['./dot-dialog.component.scss']
 })
-    export class DotDialogComponent {
-    @ViewChild('dialog') dialog: Dialog;
+export class DotDialogComponent {
+    @ViewChild('dialog')
+    dialog: Dialog;
 
-    @Input() header = '';
-    @Input() show: boolean;
-    @Input() ok: DotDialogAction;
-    @Input() cancel: DotDialogAction;
+    @Input()
+    header = '';
+    @Input()
+    show: boolean;
+    @Input()
+    ok: DotDialogAction;
+    @Input()
+    cancel: DotDialogAction;
 
-    @Output() close: EventEmitter<any> = new EventEmitter();
+    @Output()
+    close: EventEmitter<any> = new EventEmitter();
 
     constructor() {}
 

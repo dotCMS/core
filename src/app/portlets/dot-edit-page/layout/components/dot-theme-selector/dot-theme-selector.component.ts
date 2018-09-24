@@ -1,11 +1,13 @@
+import { fromEvent as observableFromEvent, Observable } from 'rxjs';
+
+import { debounceTime } from 'rxjs/operators';
 import { Component, OnInit, Output, EventEmitter, Input, ViewChild, ElementRef } from '@angular/core';
+import { DotMessageService } from '@services/dot-messages-service';
 import { DotTheme } from '../../../shared/models/dot-theme.model';
-import { DotMessageService } from '../../../../../api/services/dot-messages-service';
-import { PaginatorService } from '../../../../../api/services/paginator/paginator.service';
+import { PaginatorService } from '@services/paginator/paginator.service';
 import { DataGrid, LazyLoadEvent } from 'primeng/primeng';
-import { Observable } from 'rxjs/Observable';
 import { Site, SiteService } from 'dotcms-js/dotcms-js';
-import { DotDialogAction, DotDialogComponent } from '../../../../../view/components/dot-dialog/dot-dialog.component';
+import { DotDialogAction, DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
 
 /**
  * The DotThemeSelectorComponent is modal that
@@ -21,12 +23,18 @@ import { DotDialogAction, DotDialogComponent } from '../../../../../view/compone
 })
 export class DotThemeSelectorComponent implements OnInit {
     themes: Observable<DotTheme[]>;
-    @ViewChild('dotDialog') dotDialog: DotDialogComponent;
-    @Input() value: DotTheme;
-    @Output() selected = new EventEmitter<DotTheme>();
-    @Output() close = new EventEmitter<boolean>();
-    @ViewChild('searchInput') searchInput: ElementRef;
-    @ViewChild('dataGrid') datagrid: DataGrid;
+    @ViewChild('dotDialog')
+    dotDialog: DotDialogComponent;
+    @Input()
+    value: DotTheme;
+    @Output()
+    selected = new EventEmitter<DotTheme>();
+    @Output()
+    close = new EventEmitter<boolean>();
+    @ViewChild('searchInput')
+    searchInput: ElementRef;
+    @ViewChild('dataGrid')
+    datagrid: DataGrid;
 
     closeDialogAction: DotDialogAction = { label: '', action: () => {} };
     applyDialogAction: DotDialogAction = { label: '', action: () => {} };
@@ -48,7 +56,7 @@ export class DotThemeSelectorComponent implements OnInit {
                     label: this.dotMessageService.get('dot.common.cancel'),
                     action: () => {}
                 };
-                this.applyDialogAction  = {
+                this.applyDialogAction = {
                     label: this.dotMessageService.get('dot.common.apply'),
                     disabled: true,
                     action: () => {
@@ -62,8 +70,8 @@ export class DotThemeSelectorComponent implements OnInit {
 
         this.current = this.value;
 
-        Observable.fromEvent(this.searchInput.nativeElement, 'keyup')
-            .debounceTime(500)
+        observableFromEvent(this.searchInput.nativeElement, 'keyup')
+            .pipe(debounceTime(500))
             .subscribe((keyboardEvent: Event) => {
                 this.filterThemes(keyboardEvent.target['value']);
             });
@@ -102,7 +110,7 @@ export class DotThemeSelectorComponent implements OnInit {
     selectTheme(theme: DotTheme): void {
         this.current = theme;
         this.applyDialogAction = Object.assign({}, this.applyDialogAction, {
-            disabled : this.value.inode === this.current.inode
+            disabled: this.value.inode === this.current.inode
         });
     }
 
