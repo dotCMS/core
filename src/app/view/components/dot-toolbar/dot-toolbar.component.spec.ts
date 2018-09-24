@@ -69,6 +69,14 @@ class MockToolbarUsersComponent {}
 })
 class MockToolbarAddContentletComponent {}
 
+
+@Component({
+    selector: 'dot-crumbtrail',
+    template: ''
+})
+
+class MockDotCrumbtrailComponent {}
+
 describe('ToolbarComponent', () => {
     let dotRouterService: DotRouterService;
     let dotNavigationService: DotNavigationService;
@@ -87,7 +95,8 @@ describe('ToolbarComponent', () => {
                 MockGlobalMessageComponent,
                 MockToolbarNotificationsComponent,
                 MockToolbarUsersComponent,
-                MockToolbarAddContentletComponent
+                MockToolbarAddContentletComponent,
+                MockDotCrumbtrailComponent
             ],
             imports: [BrowserAnimationsModule, RouterTestingModule, DotIconModule, DotIconButtonModule],
             providers: [
@@ -107,6 +116,13 @@ describe('ToolbarComponent', () => {
         spyOn(dotRouterService, 'goToSiteBrowser');
 
     }));
+
+    it(`should has a crumbtrail`, () => {
+        fixture.detectChanges();
+
+        const crumbtrail: DebugElement = fixture.debugElement.query(By.css('dot-crumbtrail'));
+        expect(crumbtrail).not.toBeNull();  
+    });
 
     it(`should NOT go to site browser when site change in any portlet but edit page`, () => {
         const siteSelector: DebugElement = fixture.debugElement.query(By.css('dot-site-selector'));

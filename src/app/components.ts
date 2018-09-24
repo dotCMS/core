@@ -1,5 +1,6 @@
 import { CustomTimeComponent } from './view/components/_common/custom-time/custom-time';
 import { DotAlertConfirmComponent } from './view/components/_common/dot-alert-confirm/dot-alert-confirm';
+import { DotCrumbtrailComponent } from './view/components/dot-crumbtrail/dot-crumbtrail.component';
 import { GlobalSearchComponent } from './view/components/global-search/global-search';
 import { LogOutContainerComponent } from './view/components/login/login-component/log-out-container';
 import { LoginAsComponent } from './view/components/login-as/login-as';
@@ -16,20 +17,20 @@ import { ToolbarUserComponent } from './view/components/toolbar-user/toolbar-use
 import { CapitalizePipe, SafePipe } from './view/pipes/index';
 
 export const COMPONENTS = [
-    CustomTimeComponent,
-    DotAlertConfirmComponent,
-    GlobalSearchComponent,
-    LogOutContainerComponent,
-    LoginAsComponent,
-    LoginPageComponent,
-    MainComponentLegacyComponent,
-    MainCoreLegacyComponent,
-    MyAccountComponent,
-    NotificationsItemComponent,
-    NotificationsListComponent,
-    ToolbarComponent,
+    ToolbarUserComponent,
     ToolbarNotificationsComponent,
-    ToolbarUserComponent
+    ToolbarComponent,
+    NotificationsListComponent,
+    NotificationsItemComponent,
+    MyAccountComponent,
+    MainCoreLegacyComponent,
+    MainComponentLegacyComponent,
+    LoginPageComponent,
+    LoginAsComponent,
+    LogOutContainerComponent,
+    GlobalSearchComponent,
+    DotAlertConfirmComponent,
+    CustomTimeComponent
 ];
 
 export const PIPES = [CapitalizePipe, SafePipe];

@@ -10,7 +10,10 @@ import { FieldService } from '../fields/service';
 import { DotMessageService } from '../../../api/services/dot-messages-service';
 import { ContentTypesInfoService } from '../../../api/services/content-types-info';
 import { DotRouterService } from '../../../api/services/dot-router/dot-router.service';
-import { DotHttpErrorManagerService, DotHttpErrorHandled } from '../../../api/services/dot-http-error-manager/dot-http-error-manager.service';
+import {
+    DotHttpErrorManagerService,
+    DotHttpErrorHandled
+} from '../../../api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { ResponseView } from 'dotcms-js/dotcms-js';
 import { HotkeysService, Hotkey } from 'angular2-hotkeys';
 import { DotEventsService } from '../../../api/services/dot-events/dot-events.service';
@@ -48,7 +51,6 @@ export class ContentTypesEditComponent implements OnInit {
         private dotRouterService: DotRouterService,
         private fieldService: FieldService,
         private hotkeysService: HotkeysService,
-        private location: Location,
         private route: ActivatedRoute,
         public dotMessageService: DotMessageService,
         public router: Router
@@ -208,7 +210,7 @@ export class ContentTypesEditComponent implements OnInit {
             .subscribe((contentType: ContentType) => {
                 this.data = contentType;
                 this.fields = this.data.fields;
-                this.location.replaceState(`/content-types-angular/edit/${this.data.id}`);
+                this.dotRouterService.goToEditContentType(this.data.id);
                 this.show = false;
             }, (err: ResponseView) => {
                 this.handleHttpError(err);

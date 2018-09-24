@@ -237,6 +237,8 @@ describe('ContentTypesEditComponent create mode', () => {
         });
 
         it('should create content type', () => {
+            spyOn(dotRouterService, 'goToEditContentType');
+
             const responseContentType = Object.assign({}, { id: '123' }, mockContentType, {
                 fields: [{ hello: 'world' }]
             });
@@ -249,7 +251,7 @@ describe('ContentTypesEditComponent create mode', () => {
             expect(crudService.postData).toHaveBeenCalledWith('v1/contenttype', mockContentType);
             expect(comp.data).toEqual(responseContentType, 'set data with response');
             expect(comp.fields).toEqual(responseContentType.fields, 'ser fields with response');
-            expect(location.replaceState).toHaveBeenCalledWith('/content-types-angular/edit/123');
+            expect(dotRouterService.goToEditContentType).toHaveBeenCalledWith('123');
         });
 
         it('should handle error', () => {
