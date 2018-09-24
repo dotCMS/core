@@ -449,8 +449,12 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 		final BulkRequestBuilder bulkRequestBuilder = (bulk==null)?
 				new ESClient().getClient().prepareBulk() : bulk;
 
+		final long timeOutMillis                    = Config
+				.getLongProperty("TIMEOUT_INDEX_FORCE", 30000);
+
 		// we want to wait until the content is already indexed
 		bulkRequestBuilder.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
+		bulkRequestBuilder.setTimeout(TimeValue.timeValueMillis(timeOutMillis));
 		this.runIndexBulk(contentToIndex, bulkRequestBuilder, reindexOnly);
 	} // indexContentListNow.
 

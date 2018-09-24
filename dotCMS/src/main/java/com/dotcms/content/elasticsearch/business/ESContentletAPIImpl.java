@@ -2426,7 +2426,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private void sendUnArchiveContentSystemEvent (final Contentlet contentlet) {
 
-            APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode());
             this.contentletSystemEventUtil.pushUnArchiveEvent(contentlet);
     }
 

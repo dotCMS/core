@@ -32,6 +32,7 @@ import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
@@ -994,6 +995,7 @@ public class ContentResource {
             // if one of the actions does not have save, so call the checkin
             if (!contentWorkflowResult.save) {
 
+                contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
                 contentlet = APILocator.getContentletAPI()
                         .checkin(contentlet, relationships, cats, init.getUser(), ALLOW_FRONT_END_SAVING);
                 if (live) {
@@ -1007,6 +1009,7 @@ public class ContentResource {
                         .respectAnonymousPermissions(ALLOW_FRONT_END_SAVING)
                         .modUser(init.getUser()).categories(cats)
                         .relationships(this.getContentletRelationshipsFromMap(contentlet, relationships))
+                        .indexPolicy(IndexPolicy.WAIT_FOR)
                         .build());
             }
 

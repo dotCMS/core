@@ -109,11 +109,12 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
     private transient ContentletAPI contentletAPI;
     private transient UserAPI userAPI;
-	private transient IndexPolicy indexPolicy;
+	private transient IndexPolicy indexPolicy = IndexPolicy.DEFER;
 
 	public IndexPolicy getIndexPolicy() {
 
-		return indexPolicy;
+		return (null == this.indexPolicy)?
+				IndexPolicy.DEFER:indexPolicy;
 	}
 
 	/**
