@@ -11,6 +11,7 @@ import java.util.List;
 import org.immutables.value.Value;
 
 /**
+ * Content type's field to use relationships
  * @author nollymar
  */
 @JsonSerialize(as = ImmutableRelationshipField.class)

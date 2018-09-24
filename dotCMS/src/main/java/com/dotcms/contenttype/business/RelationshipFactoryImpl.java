@@ -5,6 +5,7 @@ import com.dotcms.contenttype.business.sql.RelationshipSQL;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotcms.contenttype.transform.relationship.DbRelationshipTransformer;
+import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
@@ -556,13 +557,11 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
     }
 
     @Override
-    public List<Relationship> getOneSidedRelationships(final ContentType contentType, int limit, final int offset) throws DotDataException {
+    public List<Relationship> getOneSidedRelationships(final ContentType contentType, final int limit, final int offset) throws DotDataException {
         DotConnect dc = new DotConnect();
         StringBuilder sql = new StringBuilder();
 
-        if (limit == 0)
-            throw new DotDataException("limit param must be more than 0");
-        limit = (limit < 0) ? 10000 : limit;
+        DotPreconditions.checkArgument(limit != 0, "limit param must be more than 0");
 
         sql.append("select * from relationship where ((child_structure_inode = ?").
                 append(" and child_relation_name is null) or (parent_structure_inode = ?").
@@ -570,7 +569,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         dc.setSQL(sql.toString());
         dc.addParam(contentType.id());
         dc.addParam(contentType.id());
-        dc.setMaxRows(limit);
+        dc.setMaxRows((limit < 0) ? 10000 : limit);
         dc.setStartRow(offset);
 
         return new DbRelationshipTransformer(dc.loadObjectResults()).asList();

@@ -78,7 +78,15 @@ public interface RelationshipFactory {
 
     List<Relationship> dbAll(String orderBy, String contentTypeInode) throws DotHibernateException;
 
-    List<Relationship> getOneSidedRelationships(final ContentType contentType, int limit,
+    /**
+     * Given a content type, this method returns the relationships where it is involved as parent or child
+     * @param contentType
+     * @param limit
+     * @param offset
+     * @return
+     * @throws DotDataException
+     */
+    List<Relationship> getOneSidedRelationships(final ContentType contentType, final int limit,
             final int offset) throws DotDataException;
 
 }
