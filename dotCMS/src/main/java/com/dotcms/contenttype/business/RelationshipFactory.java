@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.business;
 
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.exception.DotDataException;
@@ -77,6 +78,7 @@ public interface RelationshipFactory {
 
     List<Relationship> dbAll(String orderBy, String contentTypeInode) throws DotHibernateException;
 
-
+    List<Relationship> getOneSidedRelationships(final ContentType contentType, int limit,
+            final int offset) throws DotDataException;
 
 }

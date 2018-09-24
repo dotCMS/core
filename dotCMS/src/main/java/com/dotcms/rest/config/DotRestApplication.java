@@ -1,5 +1,6 @@
 package com.dotcms.rest.config;
 
+import com.dotcms.rest.api.v1.relationships.RelationshipsResource;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -139,6 +140,7 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 
 					REST_CLASSES.add(ThemeResource.class);
 					REST_CLASSES.add(NavResource.class);
+					REST_CLASSES.add(RelationshipsResource.class);
 
 					REST_CLASSES.add(VTLResource.class);
 				}

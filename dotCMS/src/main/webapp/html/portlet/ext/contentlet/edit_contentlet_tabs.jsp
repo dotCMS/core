@@ -29,7 +29,8 @@
 	        	
 	      	  if(field.getFieldType().equals(Field.FieldType.CATEGORIES_TAB.toString()) 
                       || field.getFieldType().equals(Field.FieldType.PERMISSIONS_TAB.toString())
-                      || field.getFieldType().equals(Field.FieldType.RELATIONSHIPS_TAB.toString())){
+                      || field.getFieldType().equals(Field.FieldType.RELATIONSHIPS_TAB.toString())
+                      || field.getFieldType().equals(Field.FieldType.RELATIONSHIP.toString())){
 	      		  
 	      		 if(field.getFieldType().equals(Field.FieldType.CATEGORIES_TAB.toString())){	
 	     	    	categoriesTabFieldExists = true;

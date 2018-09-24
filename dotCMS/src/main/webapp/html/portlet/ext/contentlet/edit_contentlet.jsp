@@ -104,7 +104,6 @@
 	//Contentlet relationships
 	ContentletRelationships contentletRelationships = (ContentletRelationships)
 		request.getAttribute(com.dotmarketing.util.WebKeys.CONTENTLET_RELATIONSHIPS_EDIT);
-	List<ContentletRelationships.ContentletRelationshipRecords> relationshipRecords = (contentletRelationships==null) ? new ArrayList<ContentletRelationships.ContentletRelationshipRecords>() : contentletRelationships.getRelationshipsRecords();
 
 	//Contentlet references
 	List<Map<String, Object>> references = null;
@@ -140,7 +139,12 @@
 	//request.setAttribute("contentletForm", contentletForm);
 	request.setAttribute("structure", structure);
 	request.setAttribute("selectedCategories", selectedCategories);
+
+
+	//TODO: Remove this attribute when the relationships tab is no longer used
+	List<ContentletRelationships.ContentletRelationshipRecords> relationshipRecords = (contentletRelationships==null) ? new ArrayList<ContentletRelationships.ContentletRelationshipRecords>() : contentletRelationships.getRelationshipsRecords();
 	request.setAttribute("relationshipRecords", relationshipRecords);
+
 	request.setAttribute("references", references);
 	request.setAttribute("referer", referer);
 	request.setAttribute("fields", fields);
@@ -298,11 +302,22 @@
                     <%}else if(f.getFieldType().equals(Field.FieldType.PERMISSIONS_TAB.toString()) && !permissionsTabFieldExists){
                         permissionsTabFieldExists = true;%>
                         <%@ include file="/html/portlet/ext/common/edit_permissions_tab_inc.jsp" %>
-                    <%}else if(f.getFieldType().equals(Field.FieldType.RELATIONSHIPS_TAB.toString())){%>
+                    <%}else if(f.getFieldType().equals(Field.FieldType.RELATIONSHIP.toString()) || f.getFieldType().equals(Field.FieldType.RELATIONSHIPS_TAB.toString())){%>
                         <% if(fieldCounter==0){
                             relationshipsTabFieldExists =  true;
                             request.setAttribute("isRelationsihpAField",true); //DOTCMS-6893%>
-                            <jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_relationships.jsp" />
+                            <div class="fieldName">
+                                <% if(f.isRequired()) {%>
+                                    <span class="required2">
+                            		<%} else {%>
+                            			<span>
+                            		<% } %>
+                                <%=f.getFieldName()%>:</span>
+                            </div>
+                            <div class="fieldValue">
+                                <% request.setAttribute("fieldRelationType", f.getFieldRelationType());%>
+                                <jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_relationships.jsp"/>
+                            </div>
                         <% }
                         counter++;
                         %>

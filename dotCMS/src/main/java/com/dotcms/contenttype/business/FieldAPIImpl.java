@@ -23,6 +23,7 @@ import com.dotcms.contenttype.model.field.LineDividerField;
 import com.dotcms.contenttype.model.field.MultiSelectField;
 import com.dotcms.contenttype.model.field.PermissionTabField;
 import com.dotcms.contenttype.model.field.RadioField;
+import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.RelationshipsTabField;
 import com.dotcms.contenttype.model.field.SelectField;
 import com.dotcms.contenttype.model.field.TabDividerField;
@@ -61,7 +62,7 @@ public class FieldAPIImpl implements FieldAPI {
       ConstantField.class, CheckboxField.class, CustomField.class, DateField.class,
       DateTimeField.class, FileField.class, HiddenField.class, HostFolderField.class,
       ImageField.class, KeyValueField.class, LineDividerField.class, MultiSelectField.class,
-      PermissionTabField.class, RadioField.class, RelationshipsTabField.class, SelectField.class,
+      PermissionTabField.class, RadioField.class, RelationshipField.class, RelationshipsTabField.class, SelectField.class,
       TabDividerField.class, TagField.class, TextAreaField.class, TimeField.class,
       WysiwygField.class);
 

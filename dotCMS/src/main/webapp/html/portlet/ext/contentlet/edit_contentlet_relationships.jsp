@@ -71,9 +71,20 @@
 
 <%
 	}
+    ContentletRelationships contentletRelationships = (ContentletRelationships)
+		request.getAttribute(com.dotmarketing.util.WebKeys.CONTENTLET_RELATIONSHIPS_EDIT);
 
-	List<ContentletRelationships.ContentletRelationshipRecords> relationshipRecords =
-		(List<ContentletRelationships.ContentletRelationshipRecords>) request.getAttribute("relationshipRecords");
+
+	List<ContentletRelationships.ContentletRelationshipRecords> relationshipRecords = new ArrayList<>();
+
+	if (UtilMethods.isSet(contentletRelationships)){
+	    if (UtilMethods.isSet(request.getAttribute("fieldRelationType"))){
+	        relationshipRecords = contentletRelationships.getRelationshipsRecordsByField((String) request.getAttribute("fieldRelationType"));
+	    }else{
+	        relationshipRecords = contentletRelationships.getRelationshipsRecords();
+	    }
+	}
+
 	if (relationshipRecords.size() > 0) {
 
 		List<ContentletRelationships.ContentletRelationshipRecords> sortList = new ArrayList<ContentletRelationships.ContentletRelationshipRecords>();

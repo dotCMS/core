@@ -32,6 +32,7 @@ public class Relationship extends Inode
     	super.setType("relationship");	
     }
 
+
     public Relationship(Structure parentStructure, Structure childStructure, String parentRelationName, String childRelationName, int cardinality, boolean parentRequired, boolean childRequired){
     	super.setType("relationship");	
     	this.parentStructureInode = parentStructure.getInode();
@@ -41,6 +42,7 @@ public class Relationship extends Inode
     	this.cardinality = cardinality;
     	this.parentRequired = parentRequired;
     	this.childRequired = childRequired;
+    	//TODO: Add field.velocityVarName
     	this.relationTypeValue = parentRelationName.replaceAll(" ", "_") + "-" + childRelationName.replaceAll(" ", "_");
     }
     

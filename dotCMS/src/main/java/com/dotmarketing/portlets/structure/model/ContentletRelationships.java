@@ -6,6 +6,7 @@ import java.util.List;
 
 import com.dotmarketing.comparators.ContentComparator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import java.util.stream.Collectors;
 
 
 /**
@@ -47,6 +48,15 @@ public class ContentletRelationships
 	 */
 	public List<ContentletRelationshipRecords> getRelationshipsRecords() {
 		return relationshipsRecords;
+	}
+
+	/**
+	 * @return Returns the relationshipsRecords.
+	 */
+	public List<ContentletRelationshipRecords> getRelationshipsRecordsByField(String relationTypeValue) {
+		return relationshipsRecords.stream()
+				.filter(record -> record.relationship.getRelationTypeValue()
+						.equals(relationTypeValue)).collect(Collectors.toList());
 	}
 	/**
 	 * @param relationshipsRecords The relationshipsRecords to set.

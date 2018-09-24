@@ -155,8 +155,9 @@ public class FieldFactory {
 		final Set<String> systemFieldsSet = set(Field.FieldType.HOST_OR_FOLDER.toString(),
 				Field.FieldType.LINE_DIVIDER.toString(), Field.FieldType.TAB_DIVIDER.toString(),
 				Field.FieldType.CATEGORIES_TAB.toString(), Field.FieldType.PERMISSIONS_TAB.toString(),
-				Field.FieldType.RELATIONSHIPS_TAB.toString(), Field.FieldType.CATEGORY.toString(),
-				Field.FieldType.TAG.toString(), Field.FieldType.HIDDEN.toString());
+				Field.FieldType.RELATIONSHIP.toString(), Field.FieldType.RELATIONSHIPS_TAB.toString(),
+				Field.FieldType.CATEGORY.toString(), Field.FieldType.TAG.toString(),
+				Field.FieldType.HIDDEN.toString());
 		if (systemFieldsSet.contains(oldField.getFieldType())) {
 			oldField.setFieldContentlet(DataTypes.SYSTEM.toString());
 		}

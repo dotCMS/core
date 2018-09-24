@@ -867,6 +867,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(Field.FieldType.LINE_DIVIDER.toString().equals(type) ||
                 Field.FieldType.TAB_DIVIDER.toString().equals(type) ||
                 Field.FieldType.RELATIONSHIPS_TAB.toString().equals(type) ||
+                Field.FieldType.RELATIONSHIP.toString().equals(type) ||
                 Field.FieldType.CATEGORIES_TAB.toString().equals(type) ||
                 Field.FieldType.PERMISSIONS_TAB.toString().equals(type))
         {
