@@ -4498,7 +4498,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
 
     @Test
-    public void test_touch_contentlet_expect_updated_modDate() throws Exception {
+    public void test_update_mod_date_contentlet_expect_success() throws Exception {
         final int min = 1;
         final int max = 600;
         final int n = ThreadLocalRandom.current().nextInt(min, max + 1);
@@ -4507,51 +4507,12 @@ public class ContentletAPITest extends ContentletBaseTest {
         final Contentlet beforeTouch = list.get(0);
 
         final Set<String> inodes = Stream.of(beforeTouch).map(Contentlet::getInode).collect(Collectors.toSet());
-        contentletAPI.touch(inodes, user);
+        contentletAPI.updateModDate(inodes, user);
         final Contentlet afterTouch = contentletFactory.find(beforeTouch.getInode());
         assertEquals(beforeTouch.getInode(),afterTouch.getInode());
         assertNotEquals(afterTouch.getModDate(), beforeTouch.getModDate());
         assertEquals(user.getUserId(),afterTouch.getModUser());
     }
-
-
-    @Test
-    public void test_touch_contentlet_by_content_type_expect_updated_modDate() throws Exception {
-        ContentType contentType = null;
-        try {
-            contentType = createContentType("MyTestCT", BaseContentType.CONTENT);
-
-            com.dotcms.contenttype.model.field.Field field = ImmutableTextField.builder()
-                    .name("Text Unique")
-                    .contentTypeId(contentType.id())
-                    .dataType(DataTypes.TEXT)
-                    .unique(true)
-                    .build();
-            field = fieldAPI.save(field, user);
-
-
-            for(int i=1; i <=3; i++) {
-                //Contentlet in English
-                Contentlet contentlet1 = new Contentlet();
-                contentlet1.setContentTypeId(contentType.inode());
-                contentlet1.setLanguageId(languageAPI.getDefaultLanguage().getId());
-                contentlet1.setStringProperty(field.variable(), "test-"+i);
-                contentlet1 = contentletAPI.checkin(contentlet1, user, false);
-                contentletAPI.isInodeIndexed(contentlet1.getInode());
-                contentletAPI.find(contentlet1.getInode(), user, false);
-            }
-
-            final Set<String> inodes = contentletAPI.touch(contentType, user);
-            assertEquals(inodes.size(),3);
-
-        } finally {
-            if (contentType != null) {
-                contentTypeAPI.delete(contentType);
-            }
-        }
-
-    }
-
 
         private File getBinaryAsset(String inode, String varName, String binaryName) {
 

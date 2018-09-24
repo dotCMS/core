@@ -392,17 +392,6 @@ public abstract class ContentletFactory {
 	 * @return number of rows affected
 	 * @throws DotDataException
 	 */
-	public abstract int touch(final Set<String> inodes, User user) throws DotDataException;
-
-	/**
-	 *
-	 * Updates all the content associated with the specified ct
-	 * @param contentType
-	 * @param user
-	 * @return set of inodes affected
-	 * @throws DotDataException
-	 */
-	public abstract Set<String> touch(final ContentType contentType,
-			final User user) throws DotDataException;
+	public abstract int updateModDate(final Set<String> inodes, User user) throws DotDataException;
 
 }

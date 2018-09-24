@@ -2,7 +2,6 @@ package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
-import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -2447,30 +2446,16 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	}
 
 	@Override
-	public int touch(final Set<String> inodes, final User user) throws DotDataException {
+	public int updateModDate(final Set<String> inodes, final User user) throws DotDataException {
 		for(ContentletAPIPreHook pre : preHooks){
-			pre.touch(inodes);
+			pre.updateModDate(inodes);
 		}
-		final int num = conAPI.touch(inodes, user);
+		final int num = conAPI.updateModDate(inodes, user);
 		for(ContentletAPIPostHook post : postHooks){
-			post.touch(inodes, user);
+			post.updateModDate(inodes, user);
 		}
 		return num;
 	}
-
-	@Override
-	public Set<String> touch(final ContentType contentType, final User user) throws DotDataException {
-
-		for(ContentletAPIPreHook pre : preHooks){
-			pre.touch(contentType);
-		}
-		final Set<String> inodes = conAPI.touch(contentType, user);
-		for(ContentletAPIPostHook post : postHooks){
-			post.touch(contentType, user);
-		}
-		return inodes;
-	}
-
 
 
 }

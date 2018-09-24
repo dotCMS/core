@@ -1773,14 +1773,7 @@ public interface ContentletAPIPreHook {
 	 * @param inodes
 	 * @throws DotDataException
 	 */
-	public default void touch(final Set<String> inodes) throws DotDataException {}
-
-	/**
-	 *
-	 * @param contentType
-	 * @throws DotDataException
-	 */
-	public default  void touch(final ContentType contentType) throws DotDataException {}
+	public default void updateModDate(final Set<String> inodes) throws DotDataException {}
 
 
 }

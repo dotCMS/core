@@ -2,7 +2,6 @@ package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
-import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -1726,15 +1725,6 @@ public interface ContentletAPI {
 	 * @return
 	 * @throws DotDataException
 	 */
-	int touch(final Set<String> inodes, final User user) throws DotDataException;
-
-	/**
-	 *
-	 * @param contentType
-	 * @param user
-	 * @return
-	 * @throws DotDataException
-	 */
-	Set<String> touch(final ContentType contentType, final User user) throws DotDataException;
+	int updateModDate(final Set<String> inodes, final User user) throws DotDataException;
 
 }

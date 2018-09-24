@@ -55,8 +55,8 @@ public class ResetTaskActionlet extends WorkFlowActionlet {
 			if(null != contentlet && null != processor.getUser()){
 				// this will mark  the contentlet that is being reset as recently updated. Product of this Reset Action
 				final Set<String> inodes = Stream.of(contentlet).map(Contentlet::getInode).collect(Collectors.toSet());
-				int rows = APILocator.getContentletAPI().touch(inodes, processor.getUser());
-				Logger.debug(getClass(),()->String.format("%s rows updated by touch. ", rows));
+				int rows = APILocator.getContentletAPI().updateModDate(inodes, processor.getUser());
+				Logger.debug(getClass(),()->String.format("%s rows updated by updateModDate. ", rows));
 			} else {
 				Logger.error(getClass(), "Unable to set modification date on the reset workflow.");
 			}

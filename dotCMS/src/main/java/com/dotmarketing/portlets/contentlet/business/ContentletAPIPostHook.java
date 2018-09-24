@@ -1491,13 +1491,7 @@ public interface ContentletAPIPostHook {
 	 * @param inodes
 	 * @throws DotDataException
 	 */
-	public default void touch(final Set<String> inodes, final User user) throws DotDataException {}
+	public default void updateModDate(final Set<String> inodes, final User user) throws DotDataException {}
 
-	/**
-	 *
-	 * @param contentType
-	 * @throws DotDataException
-	 */
-	public default  void touch(final ContentType contentType, final User user) throws DotDataException {}
 
 }

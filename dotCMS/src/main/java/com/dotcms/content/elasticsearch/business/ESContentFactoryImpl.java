@@ -6,7 +6,6 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.ESClient;
-import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
@@ -76,7 +75,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.stream.Collectors;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
@@ -2382,8 +2380,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 
     /**
-     * This method is named after the linux command touch.
-     * Basically this updates the mod_date on a piece of content
+     * Basically this method updates the mod_date on a piece of content, given the respective inodes
      * @param inodes
      * @param user
      * @return
@@ -2391,7 +2388,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
      */
     @WrapInTransaction
     @Override
-    public int touch(final Set<String> inodes, final User user) throws DotDataException {
+    public int updateModDate(final Set<String> inodes, final User user) throws DotDataException {
         if (inodes.isEmpty()) {
             return 0;
         }
@@ -2435,35 +2432,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 
         return count;
-    }
-
-
-    /**
-     * This method is named after the linux command touch.
-     * Given a CT this will update the mod_date on all the most recent instances of content for a given Content type
-     * @param contentType
-     * @param user
-     * @return
-     * @throws DotDataException
-     */
-    @WrapInTransaction
-    @Override
-    public Set<String> touch(final ContentType contentType, final User user) throws DotDataException {
-        final String SELECT_CONTENT = "SELECT c.inode FROM contentlet c INNER JOIN contentlet_version_info cvi \n"
-                + " ON (c.inode = cvi.working_inode OR c.inode = cvi.live_inode) \n"
-                + " WHERE c.structure_inode = ?\n" ;
-
-        final DotConnect dotConnect = new DotConnect();
-        dotConnect.setSQL(SELECT_CONTENT).addParam(contentType.inode());
-        final List<Map<String,Object>> results = dotConnect.loadObjectResults();
-
-        final Set<String> inodes = results.stream().map(map -> map.get("inode").toString())
-                .collect(Collectors.toSet());
-
-        int count = touch(inodes, user);
-        Logger.debug(getClass(),()->String.format("%d records were touched.",count));
-
-        return inodes;
     }
 
 }

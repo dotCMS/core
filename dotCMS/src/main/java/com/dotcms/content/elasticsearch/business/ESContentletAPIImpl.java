@@ -50,7 +50,6 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.DotRunnable;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;
@@ -6127,8 +6126,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
-     * This method is named after the linux command touch.
-     * Basically this updates the mod_date on a piece of content
+     * Basically this method updates the mod_date on a piece of content
      * @param inodes
      * @param user
      * @return
@@ -6136,22 +6134,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
      */
     @WrapInTransaction
     @Override
-    public int touch(final Set<String> inodes, final User user) throws DotDataException {
-       return contentFactory.touch(inodes, user);
+    public int updateModDate(final Set<String> inodes, final User user) throws DotDataException {
+       return contentFactory.updateModDate(inodes, user);
     }
 
-
-    /**
-     * This method is named after the linux command touch.
-     * Given a CT this will update the mod_date on all the most recent instances of content for a given Content type
-     * @param contentType
-     * @param user
-     * @return
-     * @throws DotDataException
-     */
-    @WrapInTransaction
-    @Override
-    public Set<String> touch(final ContentType contentType, final User user) throws DotDataException {
-        return contentFactory.touch(contentType, user);
-    }
 }
