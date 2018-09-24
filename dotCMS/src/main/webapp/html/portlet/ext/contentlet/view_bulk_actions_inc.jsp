@@ -252,7 +252,7 @@
         var pushPublish = dojo.attr(buttonElement, 'data-action-pushPublish');
         var condition = dojo.attr(buttonElement, 'data-action-condition');
 
-        var popupRequired = (commentable || assignable || pushPublish || condition);
+        var popupRequired = (commentable == 'true' || assignable == 'true' || pushPublish == 'true' || condition == 'true' );
         if(!popupRequired){
            return false;
         }
