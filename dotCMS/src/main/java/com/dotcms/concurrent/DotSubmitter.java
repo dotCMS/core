@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Encapsulate a Submitter for {@link Runnable} and {@link Callable}, in addition to the usual {@link Executor} functionality.
@@ -21,12 +22,34 @@ public interface DotSubmitter extends Executor, Serializable {
     Future<?> submit(Runnable command);
 
     /**
+     * Submit a {@link Runnable}, returning the {@link Future}
+     * It does a delay before starts the task
+     * @param command {@link Runnable}
+     * @param delay   {@link Long} unit for the {@link TimeUnit}
+     * @param unit    {@link TimeUnit}
+     * @return Future
+     */
+    Future<?> submit(Runnable command, long delay, TimeUnit unit);
+
+
+    /**
      * Submit a {@link Callable}, returning the {@link Future}
      * @param callable {@link Callable}
      * @param <T>
      * @return Future
      */
     <T> Future<T> submit(Callable<T> callable);
+
+    /**
+     * Submit a {@link Runnable}, returning the {@link Future}
+     * It does a delay before starts the task
+     * @param callable {@link Runnable}
+     * @param delay   {@link Long} unit for the {@link TimeUnit}
+     * @param unit    {@link TimeUnit}
+     * @return Future
+     */
+    <T> Future<T> submit(Callable<T> callable, long delay, TimeUnit unit);
+
 
     /**
      * Return the active count threads

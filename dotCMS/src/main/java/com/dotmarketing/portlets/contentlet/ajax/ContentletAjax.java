@@ -1780,11 +1780,7 @@ public class ContentletAjax {
 		    }
 
 		}
-		if(!isAutoSave){
-			if(InodeUtils.isSet(newInode) && !conAPI.isInodeIndexed(newInode)){
-				Logger.error(this, "Timed Out waiting for index to return");
-			}
-		}
+
 		callbackData.put("referer", referer);
 
 		return callbackData;

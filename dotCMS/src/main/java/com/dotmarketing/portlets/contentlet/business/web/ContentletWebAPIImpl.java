@@ -47,6 +47,7 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletValidationExce
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -188,7 +189,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			// before DOTCMS-6383
 			//conAPI.unlock(cont, user, false);
 			if (null != contentlet) {
-				contentletSystemEventUtil.pushSaveEvent(contentlet, isNew);
+				this.pushSaveEvent(contentlet, isNew);
 			}
 		} catch (Exception ae) {
 			_handleException(ae);
@@ -198,6 +199,14 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		contentletFormData.put("cache_control", "0");
 		return ((contentlet!=null) ? contentlet.getInode() : null);
 	}
+
+	private void pushSaveEvent (final Contentlet eventContentlet, final boolean eventCreateNewVersion) throws DotHibernateException {
+
+		HibernateUtil.addCommitListener(() -> {
+				this.contentletSystemEventUtil.pushSaveEvent(eventContentlet, eventCreateNewVersion);
+		}, 1000);
+	}
+
 
 	private boolean isNew(Map<String, Object> contentletFormData) {
 		Contentlet currentContentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
@@ -509,6 +518,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 								.workflowActionComments((String) contentletFormData.get("wfActionComments"))
 								.workflowAssignKey((String) contentletFormData.get("wfActionAssign"))
 								.categories(categories)
+                                .indexPolicy(IndexPolicy.WAIT_FOR)
 								.generateSystemEvent(generateSystemEvent).build());
 
 				if (hasPushPublishActionlet(APILocator.getWorkflowAPI().findAction((String) contentletFormData.get("wfActionId"), user))) {
@@ -525,6 +535,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 					Logger.info(this, "Saving the Host");
 					currentContentlet.setInode(null);
+                    currentContentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
 					currentContentlet = this.conAPI.checkin
 							(currentContentlet, contentletRelationships, categories, null, user, false, generateSystemEvent);
 				}

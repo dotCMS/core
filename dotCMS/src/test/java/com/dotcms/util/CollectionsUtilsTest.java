@@ -1,20 +1,12 @@
 package com.dotcms.util;
 
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotcms.util.CollectionsUtils.set;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
+import com.dotcms.UnitTestBase;
 import org.junit.Test;
 
-import com.dotcms.UnitTestBase;
+import java.util.*;
+
+import static com.dotcms.util.CollectionsUtils.*;
+import static org.junit.Assert.*;
 
 /**
  * CollectionsUtils unit test.
@@ -22,6 +14,36 @@ import com.dotcms.UnitTestBase;
  */
 public class CollectionsUtilsTest extends UnitTestBase {
 
+
+    @Test
+    public void partitionsTest()  {
+
+        final List<List<String>> listOfList = partition (Arrays.asList("hello","hello","hi","yeah","hi","hello"),
+                (s) -> s.equals("hi"), (s) -> s.equals("hello"), (s) -> s.equals("yeah"));
+
+        assertNotNull(listOfList);
+        assertEquals(3, listOfList.size());
+        assertEquals(Arrays.asList("hi", "hi"), listOfList.get(0));
+        assertEquals(Arrays.asList("hello", "hello","hello"), listOfList.get(1));
+        assertEquals(Arrays.asList("yeah"), listOfList.get(2));
+    }
+
+    @Test
+    public void partitions_not_matchTest()  {
+
+        final List<List<String>> listOfList = partition (Arrays.asList("hello","hello","hi","yeah","hi","hello"),
+                (s) -> s.equals("blabla"), (s) -> s.equals("blablabla"), (s) -> s.equals("blablablabla"));
+
+        assertNotNull(listOfList);
+        assertEquals(3, listOfList.size());
+        assertNotNull(listOfList.get(0));
+        assertTrue(listOfList.get(0).isEmpty());
+        assertNotNull(listOfList.get(1));
+        assertTrue(listOfList.get(1).isEmpty());
+        assertNotNull(listOfList.get(2));
+        assertTrue(listOfList.get(2).isEmpty());
+
+    }
 
     /**
      * Testing the new Instance

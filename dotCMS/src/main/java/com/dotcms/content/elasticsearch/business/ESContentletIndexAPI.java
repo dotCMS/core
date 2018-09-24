@@ -6,10 +6,12 @@ import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.tika.TikaUtils;
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -18,24 +20,12 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.gson.Gson;
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.sql.Connection;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
@@ -44,15 +34,27 @@ import org.elasticsearch.action.admin.indices.stats.IndexStats;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.IndicesAdminClient;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
 import org.elasticsearch.index.reindex.DeleteByQueryAction;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.sql.Connection;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.stream.Collectors;
+
 public class ESContentletIndexAPI implements ContentletIndexAPI{
-	private static final ESIndexAPI iapi  = new ESIndexAPI();
+
+	private static final DistributedJournalAPI<String> journalAPI = APILocator.getDistributedJournalAPI();
+	private static final ESIndexAPI esIndexApi       = new ESIndexAPI();
     private static final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
 
     public static final SimpleDateFormat timestampFormatter=new SimpleDateFormat("yyyyMMddHHmmss");
@@ -119,7 +121,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 		url = classLoader.getResource("es-content-mapping.json");
 		String mapping = new String(com.liferay.util.FileUtil.getBytes(new File(url.getPath())));
 
-		CreateIndexResponse cir = iapi.createIndex(indexName, settings, shards);
+		CreateIndexResponse cir = esIndexApi.createIndex(indexName, settings, shards);
 
 
 		int i = 0;
@@ -254,8 +256,8 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
             newinfo.live=info.reindex_live;
             APILocator.getIndiciesAPI().point(conn,newinfo);
 
-            iapi.moveIndexBackToCluster(newinfo.working);
-            iapi.moveIndexBackToCluster(newinfo.live);
+            esIndexApi.moveIndexBackToCluster(newinfo.working);
+            esIndexApi.moveIndexBackToCluster(newinfo.live);
 
             ArrayList<String> list=new ArrayList<String>();
             list.add(newinfo.working);
@@ -268,11 +270,11 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	}
 
 	public boolean delete(String indexName) {
-		return iapi.delete(indexName);
+		return esIndexApi.delete(indexName);
 	}
 
 	public boolean optimize(List<String> indexNames) {
-		return iapi.optimize(indexNames);
+		return esIndexApi.optimize(indexNames);
 	}
 
 	public void addContentToIndex(final Contentlet content) throws DotHibernateException {
@@ -292,52 +294,201 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	}
 
 	@WrapInTransaction
-	public void addContentToIndex(final Contentlet content, final boolean deps, boolean indexBeforeCommit, final boolean reindexOnly, final BulkRequestBuilder bulk) throws DotHibernateException {
+	public void addContentToIndex(final Contentlet content,
+								  final boolean includeDependencies,
+								  final boolean indexBeforeCommit,
+								  final boolean reindexOnly,
+								  final BulkRequestBuilder bulk) throws DotHibernateException {
 
-	    if(content==null || !UtilMethods.isSet(content.getIdentifier())) return;
+	    if (null == content || !UtilMethods.isSet(content.getIdentifier())) {
+	    	return;
+		}
 
         // http://jira.dotmarketing.net/browse/DOTCMS-6886
         // check for related content to reindex
-        List<Contentlet> contentToIndex=new ArrayList<Contentlet>();
+		List<Contentlet> contentDependencies  = null;
+		final boolean    indexIsNotDefer   		  = IndexPolicy.DEFER != content.getIndexPolicy();
+        final List<Contentlet> contentToIndex = new ArrayList<>();
+
         contentToIndex.add(content);
-        if(deps){
-			try {
-				contentToIndex.addAll(loadDeps(content));
-			} catch (DotDataException | DotSecurityException e1) {
-				throw new DotHibernateException(e1.getMessage(), e1);
+
+		try {
+
+			if(includeDependencies){
+
+					if (indexIsNotDefer) {
+						contentDependencies = new ArrayList<>(loadDeps(content));
+					} else {
+						contentToIndex.addAll(loadDeps(content));
+					}
 			}
-        }
 
-	    ReindexRunnable indexAction=new ReindexRunnable(contentToIndex, ReindexRunnable.Action.ADDING, bulk, reindexOnly) {
+	   		if(bulk!=null || indexBeforeCommit) {
 
-        };
+				if (indexIsNotDefer) {
 
-	    if(bulk!=null || indexBeforeCommit) {
-	        indexAction.run();
-	    }
-	    else {
-            // add a commit listener to index the contentlet if the entire
-            // transaction finish clean
-            HibernateUtil.addCommitListener(content.getInode()+ ReindexRunnable.Action.ADDING,indexAction);
-	    }	    
+					this.handleIndexNotDefer(content, reindexOnly, bulk, contentDependencies, contentToIndex, false);
+				} else {
+
+					this.indexContentList(contentToIndex, bulk, reindexOnly);
+				}
+			} else {
+
+				if (indexIsNotDefer) {
+
+					this.handleIndexNotDefer(content, reindexOnly, bulk, contentDependencies, contentToIndex, true);
+				} else {
+					// add a commit listener to index the contentlet if the entire
+					// transaction finish clean
+					HibernateUtil.addCommitListener(content.getInode() + ReindexRunnable.Action.ADDING,
+							new AddReindexRunnable(contentToIndex, ReindexRunnable.Action.ADDING, bulk, reindexOnly));
+				}
+			}
+		} catch (DotDataException | DotSecurityException e1) {
+			throw new DotHibernateException(e1.getMessage(), e1);
+		}
+	}
+
+	private void handleIndexNotDefer(final Contentlet content,
+									 final boolean reindexOnly,
+									 final BulkRequestBuilder bulk,
+									 final List<Contentlet> contentDependencies,
+									 final List<Contentlet> contentToIndex,
+									 final boolean addRollBackListener) throws DotDataException {
+
+		// we do right now the reindex of the simple contentlet without dependencies
+		if (content.getIndexPolicy() == IndexPolicy.WAIT_FOR) {
+			this.indexContentListWaitFor(contentToIndex, bulk, reindexOnly);
+		} else {
+			this.indexContentListNow(contentToIndex, bulk, reindexOnly);
+		}
+
+		if (addRollBackListener) {
+			// in case the transaction failed we reindex the latest committed version
+			HibernateUtil.addRollbackListener(()-> {
+				try {
+					journalAPI.addReindexHighPriority(content.getIdentifier());
+				} catch (DotDataException e) {
+					throw new RuntimeException(e);
+				}
+			});
+		}
+
+		// if dependencies, we add them at the end with the highest priority
+		if (UtilMethods.isSet(contentDependencies)) {
+
+			HibernateUtil.addCommitListener(content.getInode() + ReindexRunnable.Action.ADDING,
+					new AddReindexRunnable(contentDependencies, ReindexRunnable.Action.ADDING, bulk, reindexOnly));
+		}
+	}
+
+
+	private class AddReindexRunnable extends ReindexRunnable {
+
+		public AddReindexRunnable(final List<Contentlet> reindexIds, final Action action, final BulkRequestBuilder bulk, final boolean reindexOnly) {
+			super(reindexIds, action, bulk, reindexOnly);
+		}
 	}
 
 	@Override
-	public void indexContentList(List<Contentlet> contentToIndex, BulkRequestBuilder bulk, boolean reindexOnly) throws  DotDataException{
-    	if(contentToIndex==null || contentToIndex.size()==0){
+	public void indexContentList(final List<Contentlet> contentToIndex,
+                                 final BulkRequestBuilder bulk,
+                                 final boolean reindexOnly) throws  DotDataException {
+
+    	if (contentToIndex==null || contentToIndex.size()==0) {
     		return;
     	}
-        Client client=new ESClient().getClient();
-        BulkRequestBuilder req = (bulk==null) ? client.prepareBulk() : bulk;
-        try {
-			indexContentletList(req, contentToIndex, reindexOnly);
-			if(bulk==null && req.numberOfActions()>0){
-				req.execute().actionGet();
+
+		if (null == bulk) {
+
+		    // split the list on three possible subset, one with the default refresh strategy, second one is the wait for and finally the immediate
+		    final List<List<Contentlet>> partitions = CollectionsUtils.partition(contentToIndex,
+					(contentlet -> contentlet.getIndexPolicy() == IndexPolicy.DEFER),
+					(contentlet -> contentlet.getIndexPolicy() == IndexPolicy.WAIT_FOR),
+					(contentlet -> contentlet.getIndexPolicy() == IndexPolicy.FORCE));
+
+			if (UtilMethods.isSet(partitions.get(0))) {
+
+				this.runIndexBulk(partitions.get(0), new ESClient().getClient().prepareBulk(), reindexOnly);
 			}
-		} catch (DotStateException | DotSecurityException | DotMappingException e) {
-			throw new DotDataException (e.getMessage(), e);
+
+			if (UtilMethods.isSet(partitions.get(1))) {
+
+				this.indexContentListWaitFor(partitions.get(1), null, reindexOnly);
+			}
+
+			if (UtilMethods.isSet(partitions.get(2))) {
+
+				this.indexContentListNow(partitions.get(2), null, reindexOnly);
+			}
+		} else {
+
+			this.runIndexBulk(contentToIndex, bulk, reindexOnly);
 		}
 	}
+
+	private void runIndexBulk(final List<Contentlet> contentToIndex,
+							  final BulkRequestBuilder bulk,
+							  final boolean reindexOnly) throws DotDataException {
+		try {
+
+			indexContentletList(bulk, contentToIndex, reindexOnly);
+			if (bulk.numberOfActions() > 0) {
+				bulk.execute().actionGet();
+			}
+		} catch (DotStateException | DotSecurityException | DotMappingException e) {
+			throw new DotDataException(e.getMessage(), e);
+		}
+	}
+
+	@Override
+	public void indexContentListNow(final List<Contentlet> contentToIndex,
+									final BulkRequestBuilder bulk,
+									final boolean reindexOnly) throws DotDataException {
+
+		final BulkRequestBuilder bulkRequestBuilder = (bulk==null)?
+				new ESClient().getClient().prepareBulk() : bulk;
+
+		final long timeOutMillis                    = Config
+				.getLongProperty("TIMEOUT_INDEX_FORCE", 30000);
+
+		// we want to wait until the content is already indexed
+		bulkRequestBuilder.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
+		bulkRequestBuilder.setTimeout(TimeValue.timeValueMillis(timeOutMillis));
+		this.runIndexBulk(contentToIndex, bulkRequestBuilder, reindexOnly);
+	} // indexContentListNow.
+
+
+	@Override
+	public void indexContentListWaitFor(final List<Contentlet> contentToIndex,
+										final BulkRequestBuilder bulk,
+										final boolean reindexOnly) throws DotDataException {
+
+		final BulkRequestBuilder bulkRequestBuilder = (bulk==null)?
+				new ESClient().getClient().prepareBulk() : bulk;
+		final long timeOutMillis                    = Config
+				.getLongProperty("TIMEOUT_INDEX_WAIT_FOR", 30000);
+
+		// we want to wait until the content is already indexed
+		bulkRequestBuilder.setRefreshPolicy(WriteRequest.RefreshPolicy.WAIT_UNTIL);
+		bulkRequestBuilder.setTimeout(TimeValue.timeValueMillis(timeOutMillis));
+		this.runIndexBulk(contentToIndex, bulkRequestBuilder, reindexOnly);
+	} // indexContentListWaitFor.
+
+	@Override
+	public void indexContentListDeferred(final List<Contentlet> contentToIndex) throws DotHibernateException {
+
+		HibernateUtil.addCommitListener(()-> {
+			try {
+
+				this.journalAPI.addReindexHighPriority
+						(contentToIndex.stream().map(Contentlet::getIdentifier).collect(Collectors.toSet()));
+			} catch (DotDataException e) {
+
+				Logger.error(ESContentletIndexAPI.class, e.getMessage(), e);
+			}
+		});
+	} // indexContentListDeferred.
 
 
 	@Override
@@ -349,8 +500,8 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 		if(contentToIndex==null || contentToIndex.size()==0){
 			return;
 		}
-		Client client=new ESClient().getClient();
-		BulkRequestBuilder req = (bulk==null) ? client.prepareBulk() : bulk;
+
+		final BulkRequestBuilder req = (bulk==null) ? new ESClient().getClient().prepareBulk() : bulk;
 		try {
 			indexContentletList(req, contentToIndex, reindexOnly);
 			if(bulk==null && req.numberOfActions()>0) {
@@ -384,7 +535,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 		for(Contentlet con : contentToIndexSet) {
             String id=con.getIdentifier()+"_"+con.getLanguageId();
             IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
-            Gson gson=new Gson();
+            Gson gson=new Gson(); // todo why do we create a new Gson everytime
             String mapping=null;
             try {
 
@@ -427,6 +578,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 		
 	}
 
+	@CloseDBIfOpened
 	@SuppressWarnings("unchecked")
 	public List<Contentlet> loadDeps(Contentlet content) throws DotDataException, DotSecurityException {
 	    List<Contentlet> contentToIndex=new ArrayList<Contentlet>();
@@ -570,8 +722,8 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
             newinfo.live=info.live;
             APILocator.getIndiciesAPI().point(newinfo);
 
-            iapi.moveIndexBackToCluster(rew);
-            iapi.moveIndexBackToCluster(rel);
+            esIndexApi.moveIndexBackToCluster(rew);
+            esIndexApi.moveIndexBackToCluster(rel);
 
         } catch (Exception e) {
             throw new ElasticsearchException(e.getMessage(), e);
@@ -649,11 +801,11 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
             newinfo.live=null;
         }
         else if(indexName.equals(info.reindex_working)) {
-            iapi.moveIndexBackToCluster(info.reindex_working);
+            esIndexApi.moveIndexBackToCluster(info.reindex_working);
             newinfo.reindex_working=null;
         }
         else if(indexName.equals(info.reindex_live)) {
-            iapi.moveIndexBackToCluster(info.reindex_live);
+            esIndexApi.moveIndexBackToCluster(info.reindex_live);
             newinfo.reindex_live=null;
         }
         APILocator.getIndiciesAPI().point(newinfo);

@@ -16,6 +16,7 @@ public class ContentletDependencies {
     private final List<Category>          categories;
     private final boolean                 respectAnonymousPermissions;
     private final boolean                 generateSystemEvent;
+    private final IndexPolicy             indexPolicy;
 
     private ContentletDependencies(final ContentletDependencies.Builder builder) {
 
@@ -27,6 +28,7 @@ public class ContentletDependencies {
         this.categories                  = builder.categories;
         this.respectAnonymousPermissions = builder.respectAnonymousPermissions;
         this.generateSystemEvent         = builder.generateSystemEvent;
+        this.indexPolicy                 = builder.indexPolicy;
 
     }
 
@@ -62,6 +64,10 @@ public class ContentletDependencies {
         return generateSystemEvent;
     }
 
+    public IndexPolicy getIndexPolicy() {
+        return indexPolicy;
+    }
+
     public static final class Builder {
 
         private User modUser;
@@ -72,6 +78,7 @@ public class ContentletDependencies {
         private List<Category> categories;
         private boolean respectAnonymousPermissions;
         private boolean generateSystemEvent;
+        private IndexPolicy  indexPolicy = null;
 
         public ContentletDependencies build() {
             return new ContentletDependencies(this);
@@ -116,5 +123,13 @@ public class ContentletDependencies {
             this.generateSystemEvent = generateSystemEvent;
             return this;
         }
+
+        public ContentletDependencies.Builder indexPolicy (final IndexPolicy indexPolicy) {
+
+            this.indexPolicy = indexPolicy;
+            return this;
+        }
+
+
     }
 }

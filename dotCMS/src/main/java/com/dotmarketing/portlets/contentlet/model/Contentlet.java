@@ -46,7 +46,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+
 import org.apache.commons.lang.builder.ToStringBuilder;
+import org.elasticsearch.action.support.WriteRequest;
 
 /**
  * Represents a content unit in the system. Ideally, every single domain object
@@ -107,7 +109,38 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
     private transient ContentletAPI contentletAPI;
     private transient UserAPI userAPI;
+	private transient IndexPolicy indexPolicy = IndexPolicy.DEFER;
 
+	public IndexPolicy getIndexPolicy() {
+
+		return (null == this.indexPolicy)?
+				IndexPolicy.DEFER:indexPolicy;
+	}
+
+	/**
+	 * This method sets IndexPolicy, it could be:
+	 *
+	 * <ul>
+	 * <li>DEFER, you do not care about when is gonna be reindex your content, usually usefull on batch processing.</li>
+	 * <li>WAIT_FOR, you want to wait until the content is ready to be searchable.</li>
+	 * <li>FORCE, you want to force the content searchable immediate, however this policy is not highly scalable.</li>
+	 * </ul>
+	 * @param indexPolicy
+	 */
+	public void setIndexPolicy(final IndexPolicy indexPolicy) {
+
+		if (null != indexPolicy) {
+			this.indexPolicy = indexPolicy;
+		}
+	}
+
+
+
+
+
+	public void setContentType(ContentType contentType) {
+		this.contentType = contentType;
+	}
 
 	@Override
     public String getCategoryId() {
@@ -115,12 +148,25 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     }
 
     /**
-     * 
+     * Create a contentlet based on a map (makes a copy of it)
      * @param map
      */
-    public Contentlet(Map<String, Object> map) {
-    	this.map = map;
+    public Contentlet(final Map<String, Object> map) {
+		this.map = new ContentletHashMap();
+    	this.map.putAll(map);
+		this.indexPolicy = IndexPolicy.DEFER;
     }
+
+	/**
+	 * Create a contentlet based on a map (makes a copy of it)
+	 * @param map
+	 */
+	public Contentlet(final Contentlet contentlet) {
+		this(contentlet.getMap());
+		if (null != contentlet.getIndexPolicy()) {
+			this.indexPolicy = contentlet.getIndexPolicy();
+		}
+	}
 
     /**
      * Default class constructor.
@@ -132,6 +178,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		setContentTypeId("");
 		setSortOrder(0);
 		setDisabledWysiwyg(new ArrayList<String>());
+		this.indexPolicy = IndexPolicy.DEFER;
     }
 
     @Override

@@ -1,5 +1,11 @@
 package com.dotmarketing.db;
 
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotSubmitter;
+import com.dotcms.repackage.net.sf.hibernate.*;
+import com.dotcms.repackage.net.sf.hibernate.cfg.Configuration;
+import com.dotcms.repackage.net.sf.hibernate.cfg.Mappings;
+import com.dotcms.repackage.net.sf.hibernate.type.Type;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -9,36 +15,16 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.WebKeys;
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Serializable;
+import com.google.common.annotations.VisibleForTesting;
+
+import java.io.*;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Savepoint;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-
-import com.dotcms.repackage.net.sf.hibernate.CallbackException;
-import com.dotcms.repackage.net.sf.hibernate.FlushMode;
-import com.dotcms.repackage.net.sf.hibernate.HibernateException;
-import com.dotcms.repackage.net.sf.hibernate.Interceptor;
-import com.dotcms.repackage.net.sf.hibernate.MappingException;
-import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
-import com.dotcms.repackage.net.sf.hibernate.Query;
-import com.dotcms.repackage.net.sf.hibernate.Session;
-import com.dotcms.repackage.net.sf.hibernate.SessionFactory;
-import com.dotcms.repackage.net.sf.hibernate.cfg.Configuration;
-import com.dotcms.repackage.net.sf.hibernate.cfg.Mappings;
-import com.dotcms.repackage.net.sf.hibernate.type.Type;
-import com.google.common.annotations.VisibleForTesting;
 
 /**
  * This class provides a great number of utility methods that allow developers to interact with
@@ -49,6 +35,10 @@ import com.google.common.annotations.VisibleForTesting;
  * @author will & david (2005)
  */
 public class HibernateUtil {
+
+    private final static String LISTENER_SUBMITTER = "dotListenerSubmitter";
+    public static final  String NETWORK_CACHE_FLUSH_DELAY = "NETWORK_CACHE_FLUSH_DELAY";
+
 	private static String dialect;
 	private static SessionFactory sessionFactory;
 
@@ -797,11 +787,29 @@ public class HibernateUtil {
 	}
 
 	/**
+	 * Allows you to add an asynchronous commit listener to the current database
+	 * session/transaction. This means that the current flow of the application will continue its
+	 * way and the specified commit listener will be spawned subsequently after the transaction has
+	 * been committed or the session has been closed. <p>By default, asynchronous commit listeners
+	 * will be spawned by a new thread. This means that they will not share the same database
+	 * connection information with the main thread of the dotCMS application.</p>
+	 *
+	 * @param runnable The commit listener wrapped as a {@link Runnable} object.
+	 * @param order    in case you want to add an order
+	 *
+	 * @throws DotHibernateException An error occurred when registering the commit listener.
+	 */
+	public static void addCommitListener(final Runnable runnable, final int order) throws
+			DotHibernateException {
+		addCommitListener(new DotOrderedRunnable(runnable, order));
+	}
+
+	/**
 	 * Adds a commit listener to the current database transaction/session. There are several
 	 * types of commit listeners, namely:
 	 * <ul>
 	 * <li>{@link DotSyncRunnable}</li>
-	 * <li>{@link DotAsyncRunnable}</li>
+	 * <li>{@link DotOrderedRunnable}</li>
 	 * <li>{@link FlushCacheRunnable}</li>
 	 * <li>{@link ReindexRunnable}</li>
 	 * <li>Among others.</li>
@@ -839,21 +847,18 @@ public class HibernateUtil {
 	}
 
 	/**
-	 * Allows you to create an asynchronous commit listener, which represents code that will be
-	 * called after a database transaction has been committed or the session has been closed.
-	 * This type of listener will be spawned in a new thread. This way, the main dotCMS main thread
-	 * can move on.
+	 * In case you need to execute the Runnable in an specific order, you can use this class.
 	 */
-	public static class DotAsyncRunnable implements Runnable {
+	public static class DotOrderedRunnable implements Runnable {
 
 		private final Runnable runnable;
 		private final int      order;
 
-		public DotAsyncRunnable(final Runnable runnable) {
+		public DotOrderedRunnable(final Runnable runnable) {
 			this(runnable, 0);
 		}
 
-		public DotAsyncRunnable(final Runnable runnable, final int order) {
+		public DotOrderedRunnable(final Runnable runnable, final int order) {
 			this.runnable = runnable;
 			this.order    = order;
 		}
@@ -912,14 +917,14 @@ public class HibernateUtil {
 	 * types of commit listeners, namely:
 	 * <ul>
 	 * <li>{@link DotSyncRunnable}</li>
-	 * <li>{@link DotAsyncRunnable}</li>
+	 * <li>{@link DotOrderedRunnable}</li>
 	 * <li>{@link FlushCacheRunnable}</li>
 	 * <li>{@link ReindexRunnable}</li>
 	 * <li>Among others.</li>
 	 * </ul>
 	 * Commit listeners allow developers to execute code after a transaction has been committed
 	 * or the session has ended. For listeners that are not instances of {@link DotSyncRunnable}
-	 * or {@link DotAsyncRunnable} a configuration property called {@code
+	 * or {@link DotOrderedRunnable} a configuration property called {@code
 	 * REINDEX_ON_SAVE_IN_SEPARATE_THREAD} determines whether listeners are executed in a
 	 * separate thread, or in the same dotCMS thread. By default, they run in a brand new thread.
 	 *
@@ -936,11 +941,11 @@ public class HibernateUtil {
 					listener.run();
 				} else {
 
-					if(listener instanceof ReindexRunnable && asyncReindexCommitListeners()) {
+					if (listener instanceof DotSyncRunnable) {
+						syncCommitListeners.get().put(tag, listener);
+					} else if(listener instanceof ReindexRunnable && asyncReindexCommitListeners()) {
 						asyncCommitListeners.get().put(tag, listener);
 					} else if(listener instanceof ReindexRunnable) {
-						syncCommitListeners.get().put(tag, listener);
-					} else if (listener instanceof DotSyncRunnable) {
 						syncCommitListeners.get().put(tag, listener);
 					} else {
 						if (getAsyncCommitListenersFinalization() && asyncCommitListeners()) {
@@ -1024,12 +1029,16 @@ public class HibernateUtil {
 		syncCommitListeners.get().clear();
 
 		if (!asyncListeners.isEmpty()) {
-			final DotRunnableThread thread = new DotRunnableThread(asyncListeners);
-			thread.start();
+
+            final DotSubmitter submitter = DotConcurrentFactory.getInstance().getSubmitter(LISTENER_SUBMITTER);
+			submitter.submit(new DotRunnableThread(asyncListeners, true));
+            submitter.submit(new DotRunnableFlusherThread(asyncListeners, true),
+                    Config.getLongProperty(NETWORK_CACHE_FLUSH_DELAY, 3000), TimeUnit.MILLISECONDS);
 		}
+
 		if (!syncListeners.isEmpty()) {
-			final DotRunnableThread thread = new DotRunnableThread(syncListeners);
-			thread.run();
+			new DotRunnableThread(syncListeners).run();
+            new DotRunnableFlusherThread(asyncListeners, false).run(); // todo: double check this if we still want a thread for the flushers
 		}
 	}
 

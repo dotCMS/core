@@ -49,6 +49,7 @@ import com.dotmarketing.portlets.contentlet.business.*;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -474,7 +475,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             //Generate a System Event for this publish operation
             HibernateUtil.addCommitListener(
-                    () -> this.contentletSystemEventUtil.pushPublishEvent(contentlet));
+                    () -> this.contentletSystemEventUtil.pushPublishEvent(contentlet), 1000);
 
             if ( localTransaction ) {
                 HibernateUtil.commitTransaction();
@@ -1774,7 +1775,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     private void sendDeleteEvent (final Contentlet contentlet) throws DotHibernateException {
-        HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushDeleteEvent(contentlet));
+        HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushDeleteEvent(contentlet), 1000);
     }
 
     /**
@@ -2037,12 +2038,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 publishRelatedHtmlPages(contentlet);
 
-
                 if (contentlet.isHTMLPage()) {
                     CacheLocator.getHTMLPageCache().remove(contentlet.getInode());
                 }
-                
-                HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushArchiveEvent(workingContentlet));
+
+                HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushArchiveEvent(workingContentlet), 1000);
 
             } else {
                 throw new DotContentletStateException("Contentlet with Identifier '" + contentlet.getIdentifier() +
@@ -2323,7 +2323,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             new ContentletLoader().invalidate(contentlet, PageMode.LIVE);
             publishRelatedHtmlPages(contentlet);
 
-            HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushUnpublishEvent(contentlet));
+            HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushUnpublishEvent(contentlet), 1000);
 
             /*
             Triggers a local system event when this contentlet commit listener is executed,
@@ -2411,7 +2411,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             new ContentletLoader().invalidate(contentlet);
             publishRelatedHtmlPages(contentlet);
 
-            HibernateUtil.addCommitListener(() -> this.sendUnArchiveContentSystemEvent(contentlet));
+            HibernateUtil.addCommitListener(() -> this.sendUnArchiveContentSystemEvent(contentlet), 1000);
         } catch(DotDataException | DotStateException| DotSecurityException e) {
             ActivityLogger.logInfo(getClass(), "Error Unarchiving Content", "StartDate: " +contentPushPublishDate+ "; "
                     + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
@@ -2426,7 +2426,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private void sendUnArchiveContentSystemEvent (final Contentlet contentlet) {
 
-            APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode());
             this.contentletSystemEventUtil.pushUnArchiveEvent(contentlet);
     }
 
@@ -2980,10 +2979,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                 }
 
-                if(saveWithExistingID)
+                final IndexPolicy indexPolicy = contentlet.getIndexPolicy();
+                if(saveWithExistingID) {
                     contentlet = contentFactory.save(contentlet, existingInode);
-                else
+                } else {
                     contentlet = contentFactory.save(contentlet);
+                }
+                contentlet.setIndexPolicy(indexPolicy);
 
 
                 //Relate the tags with the saved contentlet
@@ -3019,6 +3021,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                     contentlet.setIdentifier(ident.getId() );
                     contentlet = contentFactory.save(contentlet);
+                    contentlet.setIndexPolicy(indexPolicy);
                 } else {
 
                     Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
@@ -3404,7 +3407,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     VanityUrlServices.getInstance().invalidateVanityUrl(contentlet);
                 }
 
-                if(contentlet != null && contentlet.isKeyValue()){
+                    if(contentlet != null && contentlet.isKeyValue()){
                     //remove from cache
                     CacheLocator.getKeyValueCache().remove(contentlet);
                 }
@@ -3527,7 +3530,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private void pushSaveEvent (final Contentlet eventContentlet, final boolean eventCreateNewVersion) throws DotHibernateException {
 
-        HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushSaveEvent(eventContentlet, eventCreateNewVersion));
+        HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushSaveEvent(eventContentlet, eventCreateNewVersion), 100);
     }
 
     private List<Category> getExistingContentCategories(Contentlet contentlet)
@@ -5323,7 +5326,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private void sendCopyEvent (final Contentlet contentlet) throws DotHibernateException {
 
-        HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushCopyEvent(contentlet));
+        HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushCopyEvent(contentlet), 1000);
     }
 
     @WrapInTransaction
@@ -5558,33 +5561,43 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return isInodeIndexedWithQuery(luceneQuery, -1);
     }
 
-    private boolean isInodeIndexedWithQuery(String luceneQuery, int secondsToWait) {
+    private final List<Integer> fibonacciMapping = Arrays.asList(1, 2, 3, 5, 8, 13, 21, 34, 55); // it is around 14 + 9 (by the timeout delay) seconds, enough to wait
 
-        int limit = 300;
-        if (-1 != secondsToWait) {
-            limit = (secondsToWait / 10);
+    private boolean isInodeIndexedWithQuery(final String luceneQuery,
+                                            final int milliSecondsToWait) {
+
+        final long indexTimeOut    = Config.getLongProperty("TIMEOUT_INDEX_COUNT", 1000);
+        final long millistoWait    = Config.getLongProperty("IS_NODE_INDEXED_INDEX_MILLIS_WAIT", 100);
+        final int limit            = - 1 != milliSecondsToWait?milliSecondsToWait: 300;
+        boolean   found            = false;
+        int       counter          = 0;
+        int       fibonacciIndex   = 0;
+
+        if (this.contentFactory.indexCount(luceneQuery, indexTimeOut) > 0) {
+
+            //Logger.info(this, ()-> "Index count found in the fist hit for the query: " + luceneQuery);
+            found = true;
+        } else {
+
+            while (counter < limit && fibonacciIndex < this.fibonacciMapping.size()) {
+
+                counter += millistoWait * this.fibonacciMapping.get(fibonacciIndex++); // 100, 200, 300, 500, 800, 1300, 2100, 3400 ...
+                DateUtil.sleep(counter);
+
+                try {
+
+                    found = this.contentFactory.indexCount(luceneQuery, indexTimeOut) > 0;
+                } catch (Exception e) {
+                    Logger.error(this.getClass(), e.getMessage(), e);
+                    return false;
+                }
+
+                if (found) {
+                    break;
+                }
+            }
         }
-        long lc=0;
-        boolean found = false;
-        int counter = 0;
-        while (counter < limit) {
-            try {
-                lc = contentFactory.indexCount(luceneQuery);
-            } catch (Exception e) {
-                Logger.error(this.getClass(), e.getMessage(), e);
-                return false;
-            }
-            if (lc > 0) {
-                found = true;
-                break;
-            }
-            try {
-                Thread.sleep(100);
-            } catch (Exception e) {
-                Logger.debug(this, "Cannot sleep : ", e);
-            }
-            counter++;
-        }
+
         return found;
     }
 
@@ -6045,6 +6058,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @Override
     public Contentlet checkin(final Contentlet contentlet, final ContentletDependencies contentletDependencies) throws DotSecurityException, DotDataException {
+
+        if (null != contentletDependencies.getIndexPolicy()) {
+
+            contentlet.setIndexPolicy(contentletDependencies.getIndexPolicy());
+        }
 
         return checkin(contentlet, contentletDependencies.getRelationships(), contentletDependencies.getCategories(), null, contentletDependencies.getModUser(),
                 contentletDependencies.isRespectAnonymousPermissions(), contentletDependencies.isGenerateSystemEvent());
