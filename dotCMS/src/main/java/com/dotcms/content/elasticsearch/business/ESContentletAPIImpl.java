@@ -65,6 +65,7 @@ import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformer;
@@ -4304,8 +4305,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             continue;
                         }
                     }
-                }
-                else if( field.getFieldType().equals(Field.FieldType.CATEGORY.toString()) ) {
+                } else if(field.getFieldType().equals(FieldType.RELATIONSHIP.toString()) ) {
+                    continue;
+                } else if( field.getFieldType().equals(Field.FieldType.CATEGORY.toString()) ) {
                     if( cats == null || cats.size() == 0 ) {
                         cve.addRequiredField(field);
                         hasError = true;
@@ -4525,9 +4527,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) != null) {
             return;
         }
-        DotContentletValidationException cve = new DotContentletValidationException(
-                "Contentlet's fields are not valid");
-        boolean hasError = false;
+
+
         String stInode = contentlet.getStructureInode();
         if (!InodeUtils.isSet(stInode)) {
             throw new DotContentletValidationException(
@@ -4542,20 +4543,34 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 APILocator.getVanityUrlAPI().validateVanityUrl(contentlet);
             }
         } catch (DotContentletValidationException ve) {
-            cve = ve;
-            hasError = true;
+            throw ve;
         } catch (DotSecurityException | DotDataException e) {
             Logger.error(this,"Error validating contentlet: "+e.getMessage(),e);
         }
 
+        //Validating relationships fields
+        FieldsCache.getFieldsByStructureInode(stInode).stream()
+                .filter(field -> field.getFieldType().equals(FieldType.RELATIONSHIP.toString()))
+                .forEach(field -> validateRelationships(contentlet, contentRelationships, field));
+    }
+
+    private void validateRelationships(final Contentlet contentlet,
+            final ContentletRelationships contentRelationships, Field field) throws DotContentletValidationException {
+
+        boolean hasError = false;
+
+        String stInode = contentlet.getContentTypeId();
+        DotContentletValidationException cve = new DotContentletValidationException(
+                "Contentlet's fields are not valid");
+
         if (contentRelationships != null) {
             List<ContentletRelationshipRecords> records = contentRelationships
-                    .getRelationshipsRecords();
+                    .getRelationshipsRecordsByField(field.getFieldRelationType());
             for (ContentletRelationshipRecords cr : records) {
                 Relationship rel = cr.getRelationship();
                 List<Contentlet> cons = cr.getRecords();
                 if (cons == null) {
-                    cons = new ArrayList<Contentlet>();
+                    cons = new ArrayList<>();
                 }
 
                 //There is a case when the Relationship is between same structures
@@ -4642,7 +4657,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
             }
         }
-        if (hasError) {
+        if (hasError){
             throw cve;
         }
     }
