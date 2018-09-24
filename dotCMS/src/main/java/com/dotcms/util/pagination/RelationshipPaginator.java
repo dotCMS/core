@@ -8,6 +8,7 @@ import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
 import java.util.List;
@@ -15,6 +16,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
+ * Paginator for relationships results
  * @author nollymar
  */
 public class RelationshipPaginator implements Paginator<Map<String, Object>> {
@@ -50,6 +52,7 @@ public class RelationshipPaginator implements Paginator<Map<String, Object>> {
 
             return result;
         } catch (DotDataException e) {
+            Logger.error(this, "Error getting relationships", e);
             throw new DotRuntimeException(e);
         }
     }

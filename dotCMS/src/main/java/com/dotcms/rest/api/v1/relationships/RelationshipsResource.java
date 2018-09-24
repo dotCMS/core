@@ -17,6 +17,7 @@ import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.JsonProcessingRuntimeException;
 import com.dotcms.util.PaginationUtil;
@@ -63,7 +64,7 @@ public class RelationshipsResource {
             @QueryParam(PaginationUtil.PER_PAGE) @DefaultValue("-1") final int perPage,
             @Context final HttpServletRequest request) throws Throwable {
         Logger.debug(this,
-                "Getting the possible relationships and content types");
+                "Getting the possible relationships for content type " + contentTypeId);
 
         final InitDataObject initData = this.webResource.init(null, true, request, true, null);
         final User user = initData.getUser();
@@ -76,6 +77,7 @@ public class RelationshipsResource {
                 contentType = contentTypeAPI.find(contentTypeId);
 
             } catch (DotSecurityException | DotDataException e) {
+                Logger.error(this, e.getMessage(), e);
                 return ExceptionMapperUtil
                         .createResponse(map("message", "Invalid Content Type"),
                                 "Invalid Content Type",
@@ -95,11 +97,9 @@ public class RelationshipsResource {
             final Map<String, Object> params = map(RelationshipPaginator.CONTENT_TYPE_PARAM,
                     contentType);
             return paginationUtil.getPage(request, user, null, page, perPage, params);
-        } catch (PaginationException e) {
-            throw e.getCause();
         } catch (JsonProcessingRuntimeException e) {
             Logger.error(this, e.getMessage(), e);
-            return ExceptionMapperUtil.createResponse(e, Status.INTERNAL_SERVER_ERROR);
+            return ResponseUtil.mapExceptionResponse(e);
         }
     }
 
