@@ -75,7 +75,10 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.dotcms.util.CollectionsUtils.map;
 import static java.io.File.separator;
@@ -4577,7 +4580,25 @@ public class ContentletAPITest extends ContentletBaseTest {
 
     }
 
-    private File getBinaryAsset(String inode, String varName, String binaryName) {
+
+    @Test
+    public void test_update_mod_date_contentlet_expect_success() throws Exception {
+        final int min = 1;
+        final int max = 600;
+        final int n = ThreadLocalRandom.current().nextInt(min, max + 1);
+        final List<Contentlet> list = contentletAPI.findAllContent(n, 1);
+        assertFalse(list.isEmpty());
+        final Contentlet beforeTouch = list.get(0);
+
+        final Set<String> inodes = Stream.of(beforeTouch).map(Contentlet::getInode).collect(Collectors.toSet());
+        contentletAPI.updateModDate(inodes, user);
+        final Contentlet afterTouch = contentletFactory.find(beforeTouch.getInode());
+        assertEquals(beforeTouch.getInode(),afterTouch.getInode());
+        assertNotEquals(afterTouch.getModDate(), beforeTouch.getModDate());
+        assertEquals(user.getUserId(),afterTouch.getModUser());
+    }
+
+        private File getBinaryAsset(String inode, String varName, String binaryName) {
 
         FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
 

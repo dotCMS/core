@@ -12,7 +12,6 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.liferay.portal.model.User;
-
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.search.SearchHits;
 
@@ -20,6 +19,7 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 
 /**
@@ -406,5 +406,14 @@ public abstract class ContentletFactory {
         // TODO Auto-generated method stub
         return null;
     }
+
+	/**
+	 * Updates all the content associated with the specified inodes
+	 * @param inodes
+	 * @param user
+	 * @return number of rows affected
+	 * @throws DotDataException
+	 */
+	public abstract int updateModDate(final Set<String> inodes, User user) throws DotDataException;
 
 }

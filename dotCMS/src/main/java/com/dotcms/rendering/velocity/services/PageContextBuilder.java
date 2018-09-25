@@ -171,12 +171,11 @@ public class PageContextBuilder {
                     final Set<String> cons = pageContents.get(containerId, uniqueId);
 
                     final User systemUser = APILocator.getUserAPI().getSystemUser();
-                    final Container container = live ? (Container) APILocator.getVersionableAPI()
-                            .findLiveVersion(containerId, systemUser, false)
-                            : (Container) APILocator.getVersionableAPI()
-                            .findWorkingVersion(containerId, systemUser, false);
+                    final Container container = (live && APILocator.getVersionableAPI().findLiveVersion(containerId, systemUser, false) !=null) 
+                            ? (Container) APILocator.getVersionableAPI().findLiveVersion(containerId, systemUser, false) 
+                            : (Container) APILocator.getVersionableAPI().findWorkingVersion(containerId, systemUser, false);
 
-
+                    if(container==null)continue;
                     boolean hasWritePermissionOnContainer =
                             permissionAPI.doesUserHavePermission(container, PERMISSION_WRITE, user, false) && APILocator.getPortletAPI()
                                 .hasContainerManagerRights(user);

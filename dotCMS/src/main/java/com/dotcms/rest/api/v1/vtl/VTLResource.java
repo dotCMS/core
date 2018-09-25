@@ -1,5 +1,7 @@
-package com.dotcms.rest.api.v1.diy;
+package com.dotcms.rest.api.v1.vtl;
 
+import com.dotcms.api.vtl.model.DotJSON;
+import com.dotcms.cache.DotJSONCache.DotJSONCacheKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.Path;
@@ -7,13 +9,14 @@ import com.dotcms.repackage.javax.ws.rs.PathParam;
 import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.*;
 import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
+import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -23,7 +26,9 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.personas.model.IPersona;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -32,8 +37,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.InputStream;
 import java.io.StringWriter;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Optional;
 
 @Path("/vtl")
 public class VTLResource {
@@ -58,7 +62,7 @@ public class VTLResource {
 
     @GET
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Path("/{folder}/{path: .*}")
     public Response get(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                         @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
@@ -70,7 +74,16 @@ public class VTLResource {
         final Language currentLanguage = WebAPILocator.getLanguageWebAPI().getLanguage(request);
         final MultivaluedMap<String, String> queryParameters = uriInfo.getQueryParameters();
 
-        Map<String, String> dotJSON;
+        final DotJSONCacheKey dotJSONCacheKey = getDotJSONCacheKey(request, initDataObject);
+
+        final Optional<DotJSON> dotJSONOptional = CacheLocator.getDotJSONCache()
+                .get(dotJSONCacheKey);
+
+        if(dotJSONOptional.isPresent()) {
+            return Response.ok(dotJSONOptional.get()).build();
+        }
+
+        DotJSON<String, String> dotJSON;
 
         try {
             final Host site = this.hostAPI.resolveHostName(request.getServerName(), APILocator.systemUser(), false);
@@ -84,13 +97,21 @@ public class VTLResource {
             final org.apache.velocity.context.Context context = VelocityUtil.getInstance().getContext(request, response);
             context.put("urlParams", initDataObject.getParamsMap());
             context.put("queryParams", queryParameters);
-            context.put("dotJSON", new HashMap());
+            context.put("dotJSON", new DotJSON());
 
             final StringWriter evalResult = new StringWriter();
 
             try (final InputStream fileAssetIputStream = getFileAsset.getInputStream()) {
                 VelocityUtil.getEngine().evaluate(context, evalResult, "", fileAssetIputStream);
-                dotJSON = (Map<String, String>) context.get("dotJSON");
+                dotJSON = (DotJSON<String, String>) context.get("dotJSON");
+
+                if(!UtilMethods.isSet(dotJSON)) { // If no dotJSON let's return the raw evaluation of the velocity file
+                    return Response.ok(evalResult.toString()).build();
+                }
+
+                // let's add it to cache
+                CacheLocator.getDotJSONCache().add(dotJSONCacheKey, dotJSON);
+
             }
         } catch(DotContentletStateException e) {
             final String errorMessage = "Unable to find velocity file '" + HTTPMethod.GET.fileName + FILE_EXTENSION
@@ -102,7 +123,21 @@ public class VTLResource {
             return ResponseUtil.mapExceptionResponse(e);
         }
 
-        return Response.ok(new ResponseEntityView(dotJSON)).build(); //todo don't return like this
+        return Response.ok(dotJSON).build();
+    }
+
+    private DotJSONCacheKey getDotJSONCacheKey(final HttpServletRequest request, final InitDataObject initDataObject) {
+        final Language language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
+        IPersona persona = null;
+        final Optional<Visitor> visitor = APILocator.getVisitorAPI().getVisitor(request, false);
+
+        if (visitor.isPresent() && visitor.get().getPersona() != null) {
+            persona = visitor.get().getPersona();
+        }
+
+        final String requestURI = request.getRequestURI() + StringPool.QUESTION + request.getQueryString();
+
+        return new DotJSONCacheKey(initDataObject.getUser(), language, requestURI, persona);
     }
 
     private enum HTTPMethod {

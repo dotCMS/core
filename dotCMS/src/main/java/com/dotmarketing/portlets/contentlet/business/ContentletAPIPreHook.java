@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import com.dotcms.contenttype.model.type.ContentType;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
+import java.util.Set;
 
 /**
  * @author Jason Tesser
@@ -1766,6 +1768,12 @@ public interface ContentletAPIPreHook {
       return true;
     }
 
+	/**
+	 *
+	 * @param inodes
+	 * @throws DotDataException
+	 */
+	public default void updateModDate(final Set<String> inodes) throws DotDataException {}
 
 
 }

@@ -2407,7 +2407,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
          }
          return ret;
     }
-    
+
     @Override
     public SearchResponse esSearchRaw(String esQuery, boolean live, User user,
     		boolean respectFrontendRoles) throws DotSecurityException,
@@ -2444,5 +2444,18 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 			post.updateUserReferences(userToReplace,replacementUserId, user);
 		}
 	}
-    
+
+	@Override
+	public int updateModDate(final Set<String> inodes, final User user) throws DotDataException {
+		for(ContentletAPIPreHook pre : preHooks){
+			pre.updateModDate(inodes);
+		}
+		final int num = conAPI.updateModDate(inodes, user);
+		for(ContentletAPIPostHook post : postHooks){
+			post.updateModDate(inodes, user);
+		}
+		return num;
+	}
+
+
 }

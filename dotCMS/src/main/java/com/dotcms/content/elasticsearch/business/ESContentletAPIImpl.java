@@ -35,7 +35,10 @@ import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.common.reindex.ReindexThread;
-import com.dotmarketing.db.*;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.FlushCacheRunnable;
+import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.*;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.MultiTreeFactory;
@@ -6092,6 +6095,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
         } catch (DotHibernateException e) {
             throw new DotRuntimeException(e);
         }
+    }
+
+    /**
+     * Basically this method updates the mod_date on a piece of content
+     * @param inodes
+     * @param user
+     * @return
+     * @throws DotDataException
+     */
+    @WrapInTransaction
+    @Override
+    public int updateModDate(final Set<String> inodes, final User user) throws DotDataException {
+       return contentFactory.updateModDate(inodes, user);
     }
 
 }

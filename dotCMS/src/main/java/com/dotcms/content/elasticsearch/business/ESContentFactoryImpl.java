@@ -1,5 +1,6 @@
 package com.dotcms.content.elasticsearch.business;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.ESClient;
@@ -19,6 +20,7 @@ import com.dotmarketing.business.query.SimpleCriteria;
 import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.db.Params;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -41,6 +43,7 @@ import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.*;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.primitives.Ints;
 import com.liferay.portal.model.User;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.ElasticsearchException;
@@ -2444,6 +2447,62 @@ public class ESContentFactoryImpl extends ContentletFactory {
         public String getUpdate() {
             return update;
         }
+    }
+
+
+    /**
+     * Basically this method updates the mod_date on a piece of content, given the respective inodes
+     * @param inodes
+     * @param user
+     * @return
+     * @throws DotDataException
+     */
+    @WrapInTransaction
+    @Override
+    public int updateModDate(final Set<String> inodes, final User user) throws DotDataException {
+        if (inodes.isEmpty()) {
+            return 0;
+        }
+        final String SQL_STATEMENT = "UPDATE contentlet SET mod_date = ?, mod_user = ? WHERE inode = ?";
+        final Date now = DbConnectionFactory.now();
+        final List<Params> updateParams = new ArrayList<>(inodes.size());
+        for (final String inode : inodes) {
+            updateParams.add(new Params(now, user.getUserId() ,inode));
+        }
+        final List<Integer> batchResult =
+                Ints.asList(
+                        new DotConnect().executeBatch(SQL_STATEMENT,
+                                updateParams,
+                                (preparedStatement, params) -> {
+                                    final Date date = Date.class.cast(params.get(0));
+                                    if (date instanceof java.sql.Date) {
+                                        preparedStatement
+                                                .setDate(1,
+                                                        java.sql.Date.class.cast(date));
+                                    } else if (date instanceof java.sql.Timestamp) {
+                                        preparedStatement.setTimestamp(1,
+                                                java.sql.Timestamp.class.cast(date));
+                                    } else {
+                                        Logger.error(getClass(),"Un-recognized SQL Date instance. "+date);
+                                    }
+
+                                    preparedStatement.setString(2,
+                                            String.class.cast(params.get(1))
+                                    );
+
+                                    preparedStatement.setString(3,
+                                            String.class.cast(params.get(2))
+                                    );
+                                })
+                );
+
+        final int count = batchResult.stream().reduce(0, Integer::sum);
+
+        for(final String inode :inodes){
+            contentletCache.remove(inode);
+        }
+
+        return count;
     }
 
 }
