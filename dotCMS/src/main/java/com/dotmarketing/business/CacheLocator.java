@@ -1,10 +1,7 @@
 package com.dotmarketing.business;
 
 import com.dotcms.business.SystemCache;
-import com.dotcms.cache.KeyValueCache;
-import com.dotcms.cache.KeyValueCacheImpl;
-import com.dotcms.cache.VanityUrlCache;
-import com.dotcms.cache.VanityUrlCacheImpl;
+import com.dotcms.cache.*;
 import com.dotcms.content.elasticsearch.business.IndiciesCache;
 import com.dotcms.content.elasticsearch.business.IndiciesCacheImpl;
 import com.dotcms.contenttype.business.ContentTypeCache2;
@@ -259,6 +256,10 @@ public class CacheLocator extends Locator<CacheIndex>{
 		return (BlockPageCache) getInstance(CacheIndex.Block_Page);
 	}
 
+	public static DotJSONCache getDotJSONCache() {
+		return (DotJSONCache) getInstance(CacheIndex.DotJSON);
+	}
+
 	public static VersionableCache getVersionableCache() {
 		return (VersionableCache)getInstance(CacheIndex.Versionable);
 	}
@@ -412,6 +413,7 @@ enum CacheIndex
 	HostVariables("Host Variables"),
 	Block_Directive("Block Directive"),
 	Block_Page("Block Page"),
+	DotJSON("DotJSON"),
 	Indicies("Indicies"),
 	NavTool("Navigation Tool"),
 	PublishingEndPoint("PublishingEndPoint Cache"),
@@ -454,6 +456,7 @@ enum CacheIndex
 	      	case HostVariables : return new HostVariablesCacheImpl();
 	      	case Block_Directive : return new BlockDirectiveCacheImpl();
 	      	case Block_Page : return new BlockPageCacheImpl();
+			case DotJSON : return new DotJSONCacheImpl();
 	      	case Versionable : return new VersionableCacheImpl();
 	      	case FolderCache : return new FolderCacheImpl();
 	      	case WorkflowCache : return new WorkflowCacheImpl();
