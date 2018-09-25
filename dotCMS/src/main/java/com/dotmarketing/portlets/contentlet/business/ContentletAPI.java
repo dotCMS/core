@@ -24,11 +24,11 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
-
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Provides access to a wide range of routines aimed to interact with
@@ -1717,5 +1717,14 @@ public interface ContentletAPI {
 	 * @throws DotDataException
 	 */
 	public ESSearchResults esSearch ( String esQuery, boolean live, User user, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException;
+
+	/**
+	 *
+	 * @param inodes
+	 * @param user
+	 * @return
+	 * @throws DotDataException
+	 */
+	int updateModDate(final Set<String> inodes, final User user) throws DotDataException;
 
 }
