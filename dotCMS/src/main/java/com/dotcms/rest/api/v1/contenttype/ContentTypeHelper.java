@@ -1,14 +1,11 @@
 package com.dotcms.rest.api.v1.contenttype;
 
-import static com.dotcms.util.CollectionsUtils.imap;
 import static com.dotcms.util.CollectionsUtils.list;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
 import com.dotcms.util.ContentTypeUtil;
 import com.dotmarketing.business.APILocator;
@@ -16,10 +13,8 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.structure.business.StructureAPI;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
-import com.liferay.portal.model.User;
 import com.liferay.util.LocaleUtil;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -69,54 +64,16 @@ public class ContentTypeHelper implements Serializable {
      * @throws LanguageException
      */
     public List<BaseContentTypesView> getTypes(HttpServletRequest request ) throws DotDataException, LanguageException {
-        final InitDataObject initData = this.webResource.init(null, true, request, true, null); // should logged in
-        final User user = initData.getUser();
-
-        List<ContentType> types = APILocator.getContentTypeAPI(user, false).findAll();
         List<BaseContentTypesView> result = list();
-
 
         Locale locale = LocaleUtil.getLocale(request);
         Map<String, String> baseContentTypeNames = this.getBaseContentTypeNames(locale);
-        BaseContentTypesViewCollection baseContentTypesViewCollection = new BaseContentTypesViewCollection();
 
-        types.stream()
-                .forEach(type -> {
-
-                    baseContentTypesViewCollection.add(new ContentTypeView(
-                            type,
-                            contentTypeUtil.getActionUrl(request, type, user)
-                    ));
-
-
-                });
-
-        result = baseContentTypesViewCollection.getStructureTypeView(baseContentTypeNames);
-
-        addRecents(request, user, BaseContentType.CONTENT, result);
-        addRecents(request, user, BaseContentType.WIDGET, result);
-
+        for(Map.Entry<String,String> baseType : baseContentTypeNames.entrySet()){
+            result.add(new BaseContentTypesView(baseType.getKey(),baseType.getValue(),null));
+        }
 
         return result;
-    }
-
-    private void addRecents(final HttpServletRequest request, final User user, BaseContentType baseType,
-                            List<BaseContentTypesView>  baseContentTypesView)
-            throws DotDataException, LanguageException {
-
-        Locale locale = LocaleUtil.getLocale(request);
-
-        List<ContentTypeView> recentsContent = new ArrayList<>();
-        List<ContentType> types = APILocator.getContentTypeAPI(user, true).recentlyUsed(baseType, -1);
-        for(ContentType type : types){
-            recentsContent.add(  new ContentTypeView(type,contentTypeUtil.getActionUrl(request, type.id(), user)));
-        }
-
-        if (!recentsContent.isEmpty()){
-            String name = String.format("RECENT_%s" ,baseType.toString());
-            String label = LanguageUtil.get(locale, name.toLowerCase());
-            baseContentTypesView.add(new BaseContentTypesView(name, label, recentsContent));
-        }
     }
 
     /**
