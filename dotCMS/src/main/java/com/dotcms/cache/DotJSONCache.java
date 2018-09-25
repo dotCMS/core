@@ -27,7 +27,7 @@ public abstract class DotJSONCache implements Cachable {
     public static class DotJSONCacheKey {
         private final User user;
         private final Language language;
-        private String queryString;
+        private final String queryString;
         private final IPersona persona;
         /**
          * Creates an object with a series of DotJSON-specific parameters to try

@@ -3,8 +3,8 @@ package com.dotcms.cache;
 import com.dotcms.api.vtl.model.DotJSON;
 
 public class DotJSONCacheGetTestCase {
-    private DotJSON dotJSONToAdd;
-    private String cacheKeyToAdd;
+    private final DotJSON dotJSONToAdd;
+    private final String cacheKeyToAdd;
     private final String cacheKeyToGet;
     private final long waitTime;
     private final DotJSON dotJSONToExpect;

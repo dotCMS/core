@@ -129,7 +129,7 @@ public class VTLResource {
     private DotJSONCacheKey getDotJSONCacheKey(final HttpServletRequest request, final InitDataObject initDataObject) {
         final Language language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
         IPersona persona = null;
-        Optional<Visitor> visitor = APILocator.getVisitorAPI().getVisitor(request, false);
+        final Optional<Visitor> visitor = APILocator.getVisitorAPI().getVisitor(request, false);
 
         if (visitor.isPresent() && visitor.get().getPersona() != null) {
             persona = visitor.get().getPersona();
