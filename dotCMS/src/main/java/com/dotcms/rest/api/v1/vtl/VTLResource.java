@@ -1,7 +1,6 @@
 package com.dotcms.rest.api.v1.vtl;
 
 import com.dotcms.api.vtl.model.DotJSON;
-import com.dotcms.cache.DotJSONCache;
 import com.dotcms.cache.DotJSONCache.DotJSONCacheKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.javax.ws.rs.GET;
@@ -38,9 +37,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.InputStream;
 import java.io.StringWriter;
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 
 @Path("/vtl")
@@ -80,7 +76,7 @@ public class VTLResource {
 
         final DotJSONCacheKey dotJSONCacheKey = getDotJSONCacheKey(request, initDataObject);
 
-        Optional<DotJSON> dotJSONOptional = CacheLocator.getDotJSONCache()
+        final Optional<DotJSON> dotJSONOptional = CacheLocator.getDotJSONCache()
                 .get(dotJSONCacheKey);
 
         if(dotJSONOptional.isPresent()) {
@@ -133,10 +129,10 @@ public class VTLResource {
     private DotJSONCacheKey getDotJSONCacheKey(final HttpServletRequest request, final InitDataObject initDataObject) {
         final Language language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
         IPersona persona = null;
-        Optional<Visitor> v = APILocator.getVisitorAPI().getVisitor(request, false);
+        Optional<Visitor> visitor = APILocator.getVisitorAPI().getVisitor(request, false);
 
-        if (v.isPresent() && v.get().getPersona() != null) {
-            persona = v.get().getPersona();
+        if (visitor.isPresent() && visitor.get().getPersona() != null) {
+            persona = visitor.get().getPersona();
         }
 
         final String requestURI = request.getRequestURI() + StringPool.QUESTION + request.getQueryString();

@@ -18,7 +18,7 @@ public class DotJSON<K, V> implements Serializable {
     @JsonIgnore
     private LocalDateTime cachedSince;
 
-    private Map<K, V> map = new HashMap<>();
+    private final Map<K, V> map = new HashMap<>();
 
     public void put(final K key, final V value) {
         this.map.put(key, value);

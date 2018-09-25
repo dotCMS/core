@@ -6,6 +6,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.IPersona;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.Optional;
@@ -24,10 +25,10 @@ public abstract class DotJSONCache implements Cachable {
      *
      */
     public static class DotJSONCacheKey {
-        private User user;
-        private Language language;
+        private final User user;
+        private final Language language;
         private String queryString;
-        private IPersona persona;
+        private final IPersona persona;
         /**
          * Creates an object with a series of DotJSON-specific parameters to try
          * to uniquely identify a DotJSON request.
@@ -53,14 +54,14 @@ public abstract class DotJSONCache implements Cachable {
          * @return The subkey which is specific for a DotJSON object.
          */
         public String getKey() {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             sb.append(this.user.getUserId());
-            sb.append("_").append(this.language.getId());
+            sb.append(StringPool.UNDERLINE).append(this.language.getId());
             if (StringUtils.isNotBlank(this.queryString)) {
-                sb.append("_").append(this.queryString);
+                sb.append(StringPool.UNDERLINE).append(this.queryString);
             }
             if (UtilMethods.isSet(persona) && StringUtils.isNotBlank(this.persona.getKeyTag())) {
-                sb.append("_").append(this.persona);
+                sb.append(StringPool.UNDERLINE).append(this.persona);
             }
             return sb.toString();
         }

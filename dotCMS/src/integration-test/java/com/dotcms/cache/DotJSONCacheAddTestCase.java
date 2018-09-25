@@ -5,7 +5,7 @@ import com.dotcms.api.vtl.model.DotJSON;
 public class DotJSONCacheAddTestCase {
     private DotJSON dotJSON;
     private String cacheKey;
-    private boolean shouldCache;
+    private final boolean shouldCache;
 
     private DotJSONCacheAddTestCase(final DotJSON dotJSON, final String cacheKey,
                                     final boolean shouldCache) {

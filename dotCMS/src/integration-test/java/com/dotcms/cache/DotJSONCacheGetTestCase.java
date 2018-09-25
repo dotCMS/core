@@ -5,9 +5,9 @@ import com.dotcms.api.vtl.model.DotJSON;
 public class DotJSONCacheGetTestCase {
     private DotJSON dotJSONToAdd;
     private String cacheKeyToAdd;
-    private String cacheKeyToGet;
-    private long waitTime;
-    private DotJSON dotJSONToExpect;
+    private final String cacheKeyToGet;
+    private final long waitTime;
+    private final DotJSON dotJSONToExpect;
 
     public DotJSONCacheGetTestCase(final DotJSON dotJSONToAdd, final String cacheKeyToAdd, final String cacheKeyToGet,
                                    final long waitTime,
