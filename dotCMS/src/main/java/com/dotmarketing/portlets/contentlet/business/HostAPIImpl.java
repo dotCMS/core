@@ -26,6 +26,7 @@ import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.business.MenuLinkAPI;
@@ -772,6 +773,7 @@ public class HostAPIImpl implements HostAPI {
             }
         }
 
+        contentlet.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
         APILocator.getContentletAPI().archive(contentlet, user, respectFrontendRoles);
         host.setModDate(new Date ());
         hostCache.clearAliasCache();
@@ -782,7 +784,6 @@ public class HostAPIImpl implements HostAPI {
     private void sendArchiveSiteSystemEvent (final Contentlet contentlet) {
 
         try {
-            APILocator.getContentletAPI().isInodeIndexedArchived(contentlet.getInode());
             this.systemEventsAPI.pushAsync(SystemEventType.ARCHIVE_SITE, new Payload(contentlet, Visibility.PERMISSION,
                     String.valueOf(PermissionAPI.PERMISSION_READ)));
         } catch (DotDataException e) {

@@ -30,7 +30,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
-import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
@@ -831,7 +831,7 @@ public class WorkflowResource {
             final ContentletDependencies.Builder formBuilder = new ContentletDependencies.Builder();
             formBuilder.respectAnonymousPermissions(PageMode.get(request).respectAnonPerms).
                     workflowActionId(actionId).modUser(initDataObject.getUser())
-                    .indexPolicy(IndexPolicy.WAIT_FOR);
+                    .indexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
 
             if(fireActionForm != null) {
                 formBuilder.workflowActionComments(fireActionForm.getComments())

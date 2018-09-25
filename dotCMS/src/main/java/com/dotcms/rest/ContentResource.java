@@ -29,10 +29,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.DotLockException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
-import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.contentlet.model.*;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
@@ -995,7 +992,7 @@ public class ContentResource {
             // if one of the actions does not have save, so call the checkin
             if (!contentWorkflowResult.save) {
 
-                contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
+                contentlet.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
                 contentlet = APILocator.getContentletAPI()
                         .checkin(contentlet, relationships, cats, init.getUser(), ALLOW_FRONT_END_SAVING);
                 if (live) {
@@ -1009,7 +1006,7 @@ public class ContentResource {
                         .respectAnonymousPermissions(ALLOW_FRONT_END_SAVING)
                         .modUser(init.getUser()).categories(cats)
                         .relationships(this.getContentletRelationshipsFromMap(contentlet, relationships))
-                        .indexPolicy(IndexPolicy.WAIT_FOR)
+                        .indexPolicy(IndexPolicyProvider.getInstance().forSingleContent())
                         .build());
             }
 
@@ -1050,7 +1047,7 @@ public class ContentResource {
         // waiting for the index
         try {
             APILocator.getContentletAPI()
-                    .isInodeIndexed(contentlet.getInode(), contentlet.isLive());
+                    .isInodeIndexed(contentlet.getInode(), contentlet.isLive()); // not sure about this one.
         } catch (Exception ex) {
             return Response.serverError().build();
         }

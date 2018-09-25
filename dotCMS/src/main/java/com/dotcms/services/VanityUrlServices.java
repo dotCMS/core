@@ -209,7 +209,7 @@ public class VanityUrlServices {
                     + contentlet);
 
             if (null != contentlet && contentlet.isVanityUrl()) {
-                ifOrElse(this.contentletAPI.isInodeIndexed
+                ifOrElse(this.contentletAPI.isInodeIndexed // this seems to be necessary
                                 (contentlet.getInode(), contentlet.isLive(), contentlet.isWorking()),
                         () -> this.invalidateVanityUrl(contentlet),
                         () -> this.invalidateVanityCache(contentlet));

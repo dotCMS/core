@@ -19,7 +19,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
-import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.Logger;
@@ -177,7 +177,7 @@ public class WorkflowResource {
 			contentlet.setStringProperty("wfNeverExpire", wfNeverExpire);
 			contentlet.setStringProperty("whereToSend", whereToSend);
 			contentlet.setStringProperty("forcePush", forcePush);
-			contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
+			contentlet.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
 			contentlet = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet,
 					new ContentletDependencies.Builder()
 							.respectAnonymousPermissions(PageMode.get(request).respectAnonPerms)

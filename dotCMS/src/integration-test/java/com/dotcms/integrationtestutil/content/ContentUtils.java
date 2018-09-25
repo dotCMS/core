@@ -11,6 +11,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import java.util.Map;
@@ -85,16 +86,12 @@ public class ContentUtils {
         contentletAPI.setContentletProperty(contentlet, asOldField(fields.get(KeyValueContentType.KEY_VALUE_KEY_FIELD_VAR)), key);
         contentletAPI.setContentletProperty(contentlet, asOldField(fields.get(KeyValueContentType.KEY_VALUE_VALUE_FIELD_VAR)),
                 value);
+        contentlet.setIndexPolicy(IndexPolicy.FORCE);
         contentlet = contentletAPI.checkin(contentlet, user, Boolean.FALSE);
+        contentlet.setIndexPolicy(IndexPolicy.FORCE);
         contentletAPI.publish(contentlet, user, Boolean.FALSE);
         contentletAPI.isInodeIndexed(contentlet.getInode());
         contentletAPI.isInodeIndexed(contentlet.getInode(), true);
-
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            //Do nothing...
-        }
 
         return contentlet;
     }

@@ -3,9 +3,7 @@ package com.dotmarketing.portlets.form.business;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.enterprise.FormAJAXProxy;
 import com.dotcms.rendering.velocity.services.ContentTypeLoader;
-
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.*;
@@ -17,6 +15,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.ajax.ContentletAjax;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
@@ -25,12 +24,11 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.model.User;
 
 /**
  * 
@@ -221,6 +219,7 @@ public class FormAPIImpl implements FormAPI {
 			formInstance.setOwner(systemUser.getUserId());
 			formInstance.setModUser(systemUser.getUserId());
 			formInstance.setModDate(new java.util.Date());
+			formInstance.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
 
 			HibernateUtil.startTransaction();
 			formInstance = conAPI.checkin(formInstance, systemUser, true);
@@ -248,9 +247,6 @@ public class FormAPIImpl implements FormAPI {
 
 			APILocator.getVersionableAPI().setLive(formInstance);
 			APILocator.getVersionableAPI().setWorking(formInstance);
-			if(!conAPI.isInodeIndexed(formInstance.getInode())){
-				Logger.error(FormAJAXProxy.class, "Timed out waiting for index to return");
-			}
 
 			return formInstance;
 		} catch (DotSecurityException e) {

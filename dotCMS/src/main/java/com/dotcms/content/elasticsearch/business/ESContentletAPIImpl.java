@@ -1984,6 +1984,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown") + " does not " +
                         "have permission to edit the contentlet with Identifier [" + contentlet.getIdentifier() + "]");
             }
+            final IndexPolicy  indexPolicy     = contentlet.getIndexPolicy();
             final Contentlet workingContentlet = findContentletByIdentifier(contentlet.getIdentifier(), false, contentlet.getLanguageId(), user, respectFrontendRoles);
             Contentlet liveContentlet = null;
             try{
@@ -2020,6 +2021,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 APILocator.getVersionableAPI().setDeleted(workingContentlet, true);
 
                 // Updating lucene index
+                workingContentlet.setIndexPolicy(indexPolicy);
                 indexAPI.addContentToIndex(workingContentlet);
 
                 if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
@@ -5575,7 +5577,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         if (this.contentFactory.indexCount(luceneQuery, indexTimeOut) > 0) {
 
-            //Logger.info(this, ()-> "Index count found in the fist hit for the query: " + luceneQuery);
+            if (ConfigUtils.isDevMode()) {
+                Logger.info(this, ()-> "******>>>>>> Index count found in the fist hit for the query: " + luceneQuery);
+            }
             found = true;
         } else {
 
