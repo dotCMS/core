@@ -971,7 +971,6 @@
         function pushPublishSelectedContentlets() {
 
             var selectedInodes = getSelectedInodes ();
-            debugger;
 			pushHandler.showDialog(selectedInodes);
         }
 
