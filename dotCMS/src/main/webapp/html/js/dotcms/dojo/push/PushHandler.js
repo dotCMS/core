@@ -1,5 +1,6 @@
 dojo.provide("dotcms.dojo.push.PushHandler");
-
+dojo.require("dojo.html");
+dojo.require("dojox.html._base");
 dojo.require("dijit._Widget");
 dojo.require("dijit.Dialog");
 dojo.require("dotcms.dijit.RemotePublisherDialog");
@@ -648,7 +649,13 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
                 'Content-Type' : 'application/json;charset=utf-8',
             },
             load: function(data) {
-                dojo.byId("pushPublish-container").innerHTML = data.entity;
+                var html = data.entity;
+                dojox.html.set(dojo.byId("pushPublish-container"), html, {
+                    executeScripts: true,
+                    renderStyles: true,
+                    scriptHasHooks: true,
+                    parseContent: true
+                });
             },
             error: function(error){
                 console.error(error);
