@@ -386,23 +386,26 @@ public class HostAPIImpl implements HostAPI {
         if(host != null){
             hostCache.remove(host);
         }
-        Contentlet c;
+
+        Contentlet contentletHost;
         try {
-            c = APILocator.getContentletAPI().checkout(host.getInode(), user, respectFrontendRoles);
+            contentletHost = APILocator.getContentletAPI().checkout(host.getInode(), user, respectFrontendRoles);
         } catch (DotContentletStateException e) {
 
-            c = new Contentlet();
-            c.setStructureInode(hostType().inode() );
+            contentletHost = new Contentlet();
+            contentletHost.setStructureInode(hostType().inode() );
         }
-        c.getMap().put(Contentlet.DONT_VALIDATE_ME, host.getMap().get(Contentlet.DONT_VALIDATE_ME));
-        APILocator.getContentletAPI().copyProperties(c, host.getMap());
-        c.setInode("");
-        c = APILocator.getContentletAPI().checkin(c, user, respectFrontendRoles);
+
+        contentletHost.getMap().put(Contentlet.DONT_VALIDATE_ME, host.getMap().get(Contentlet.DONT_VALIDATE_ME));
+        APILocator.getContentletAPI().copyProperties(contentletHost, host.getMap());
+        contentletHost.setInode("");
+        contentletHost.setIndexPolicy(host.getIndexPolicy());
+        contentletHost = APILocator.getContentletAPI().checkin(contentletHost, user, respectFrontendRoles);
 
         if(host.isWorking() || host.isLive()){
-            APILocator.getVersionableAPI().setLive(c);
+            APILocator.getVersionableAPI().setLive(contentletHost);
         }
-        Host savedHost =  new Host(c);
+        Host savedHost =  new Host(contentletHost);
 
         updateDefaultHost(host, user, respectFrontendRoles);
         hostCache.clearAliasCache();

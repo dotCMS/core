@@ -6,9 +6,9 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPIImpl;
@@ -18,6 +18,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
+
 import java.util.Map;
 
 /**
@@ -206,6 +207,7 @@ public class HTMLPageDataGen extends ContentletDataGen {
             throw new DotRuntimeException(msg);
         }
 
+        pageAsset.setIndexPolicy(IndexPolicy.FORCE);
         Contentlet contentlet = persist(pageAsset);
         return pageAssetAPI.fromContentlet(contentlet);
     }

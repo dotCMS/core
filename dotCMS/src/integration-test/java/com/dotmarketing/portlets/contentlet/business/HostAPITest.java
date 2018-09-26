@@ -1,8 +1,5 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.enterprise.HostAssetsJobProxy;
 import com.dotcms.util.IntegrationTestInitService;
@@ -10,6 +7,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.init.DotInitScheduler;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.quartz.job.HostCopyOptions;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
@@ -23,6 +21,9 @@ import org.quartz.JobExecutionContext;
 
 import java.util.Optional;
 import java.util.concurrent.Future;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * This class will test operations related with interacting with hosts: Deleting
@@ -54,13 +55,14 @@ public class HostAPITest {
         host.setDefault(false);
         try{
         	HibernateUtil.startTransaction();
+        	host.setIndexPolicy(IndexPolicy.FORCE);
         	host=APILocator.getHostAPI().save(host, user, false);
         	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(HostAPITest.class, e.getMessage());
         }
-        APILocator.getContentletAPI().isInodeIndexed(host.getInode());
+        //APILocator.getContentletAPI().isInodeIndexed(host.getInode());
         Thread.sleep(5000);
         String hostIdent=host.getIdentifier();
         String hostName=host.getHostname();
@@ -128,6 +130,7 @@ public class HostAPITest {
     	 * Get the current Default host
     	 */
         Host hdef = APILocator.getHostAPI().findDefaultHost(user, false);
+        hdef.setIndexPolicy(IndexPolicy.FORCE);
     	
     	/*
     	 * Create a new Host and make it default
@@ -137,6 +140,7 @@ public class HostAPITest {
         host.setDefault(false);
         try {
             HibernateUtil.startTransaction();
+            host.setIndexPolicy(IndexPolicy.FORCE);
             host = APILocator.getHostAPI().save(host, user, false);
             HibernateUtil.closeAndCommitTransaction();
         } catch (Exception e) {
@@ -147,11 +151,11 @@ public class HostAPITest {
         APILocator.getHostAPI().makeDefault(host, user, false);
 
         host = APILocator.getHostAPI().find(host.getIdentifier(), user, false);
-        APILocator.getContentletAPI().isInodeIndexed(host.getInode());
-        APILocator.getContentletAPI().isInodeIndexed(host.getInode(), true);
+        //APILocator.getContentletAPI().isInodeIndexed(host.getInode());
+        //APILocator.getContentletAPI().isInodeIndexed(host.getInode(), true);
         hdef = APILocator.getHostAPI().find(hdef.getIdentifier(), user, false);
-        APILocator.getContentletAPI().isInodeIndexed(hdef.getInode());
-        APILocator.getContentletAPI().isInodeIndexed(hdef.getInode(), true);
+        //APILocator.getContentletAPI().isInodeIndexed(hdef.getInode());
+        //APILocator.getContentletAPI().isInodeIndexed(hdef.getInode(), true);
         
         /*
          * Validate if the previous default host. Is live and not default
@@ -165,11 +169,11 @@ public class HostAPITest {
         APILocator.getHostAPI().makeDefault(hdef, user, false);
 
         host = APILocator.getHostAPI().find(host.getIdentifier(), user, false);
-        APILocator.getContentletAPI().isInodeIndexed(host.getInode());
-        APILocator.getContentletAPI().isInodeIndexed(host.getInode(), true);
+        //APILocator.getContentletAPI().isInodeIndexed(host.getInode());
+        //APILocator.getContentletAPI().isInodeIndexed(host.getInode(), true);
         hdef = APILocator.getHostAPI().find(hdef.getIdentifier(), user, false);
-        APILocator.getContentletAPI().isInodeIndexed(hdef.getInode());
-        APILocator.getContentletAPI().isInodeIndexed(hdef.getInode(), true);
+        //APILocator.getContentletAPI().isInodeIndexed(hdef.getInode());
+        //APILocator.getContentletAPI().isInodeIndexed(hdef.getInode(), true);
         
         /*
          * Validate if the new host is not default anymore and if its live
@@ -226,6 +230,7 @@ public class HostAPITest {
     	Host host=new Host();
         host.setHostname(hostname);
         host.setDefault(false);
+        host.setIndexPolicy(IndexPolicy.FORCE);
         try{
         	HibernateUtil.startTransaction();
         	host=APILocator.getHostAPI().save(host, user, false);
@@ -235,7 +240,7 @@ public class HostAPITest {
         	Logger.error(HostAPITest.class, e.getMessage());
         }
         APILocator.getHostAPI().publish(host, user, false);
-        APILocator.getContentletAPI().isInodeIndexed(host.getInode());
+        //APILocator.getContentletAPI().isInodeIndexed(host.getInode());
         PaginatedArrayList<Host> hosts = APILocator.getHostAPI().search("demo", Boolean.FALSE, Boolean.FALSE, 0, 0, user, Boolean.TRUE);
                 
         /*

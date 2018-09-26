@@ -38,7 +38,7 @@ public class DotRunnableFlusherThread implements Runnable {
                     + Thread.currentThread().getName() + (this.isSync?" in Sync":"in Async")
                     + " Mode");
 
-            if (UtilMethods.isSet(this.flushers)) { 
+            if (UtilMethods.isSet(this.flushers)) {
 
                 this.runNetworkflowCacheFlushThread();
             }

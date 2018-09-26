@@ -1,14 +1,5 @@
 package com.dotmarketing.portlets.workflows.business;
 
-import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
@@ -21,11 +12,7 @@ import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -34,41 +21,26 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.DeleteContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.ResetTaskActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
-import com.dotmarketing.portlets.workflows.model.WorkflowComment;
-import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowState;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
-import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.workflows.actionlet.*;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+
+import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
+import static org.junit.Assert.*;
 
 /**
  * Test the workflowAPI
@@ -731,15 +703,15 @@ public class WorkflowAPITest extends IntegrationTestBase {
             c1.setLanguageId(1);
             c1.setStringProperty(FIELD_VAR_NAME, "WorkflowContentTest1_" + time);
             c1.setContentTypeId(contentType.id());
+            c1.setIndexPolicy(IndexPolicy.FORCE);
             c1 = contentletAPI.checkin(c1, user, false);
 
             c2.setLanguageId(1);
             c2.setStringProperty(FIELD_VAR_NAME, "WorkflowContentTest2_" + time);
             c2.setContentTypeId(contentType.id());
+            c2.setIndexPolicy(IndexPolicy.FORCE);
             c2 = contentletAPI.checkin(c2, user, false);
 
-            contentletAPI.isInodeIndexed(c1.getInode());
-            contentletAPI.isInodeIndexed(c2.getInode());
 
             Contentlet c = APILocator.getContentletAPI().checkout(c2.getInode(), user, false);
 
@@ -862,9 +834,8 @@ public class WorkflowAPITest extends IntegrationTestBase {
             c1.setLanguageId(1);
             c1.setStringProperty(FIELD_VAR_NAME, "WorkflowContentTest3_" + time);
             c1.setContentTypeId(contentType.id());
+            c1.setIndexPolicy(IndexPolicy.FORCE);
             c1 = contentletAPI.checkin(c1, user, false);
-
-            contentletAPI.isInodeIndexed(c1.getInode());
 
             Contentlet c = contentletAPI.checkout(c1.getInode(), user, false);
 
@@ -917,9 +888,8 @@ public class WorkflowAPITest extends IntegrationTestBase {
             testContentlet.setStringProperty(FIELD_VAR_NAME, "WorkflowContentTest_" + time);
             testContentlet.setContentTypeId(contentType.id());
             testContentlet.setHost(defaultHost.getIdentifier());
+            testContentlet.setIndexPolicy(IndexPolicy.FORCE);
             testContentlet = contentletAPI.checkin(testContentlet, user, false);
-
-            contentletAPI.isInodeIndexed(testContentlet.getInode());
 
             //Adding permissions to the just created contentlet
             List<Permission> permissions = new ArrayList<>();
@@ -1034,10 +1004,8 @@ public class WorkflowAPITest extends IntegrationTestBase {
             testContentlet1.setStringProperty(FIELD_VAR_NAME, "WorkflowContentTest_" + time);
             testContentlet1.setContentTypeId(contentType.id());
             testContentlet1.setHost(defaultHost.getIdentifier());
+            testContentlet1.setIndexPolicy(IndexPolicy.FORCE);
             testContentlet1 = contentletAPI.checkin(testContentlet1, user, false);
-
-            contentletAPI.isInodeIndexed(testContentlet1.getInode());
-
 
             //Adding permissions to the just created contentlet
             List<Permission> permissions = new ArrayList<>();
@@ -1054,16 +1022,14 @@ public class WorkflowAPITest extends IntegrationTestBase {
             // making more versions
             testContentlet1Checkout = contentletAPI.checkout(testContentlet1.getInode(), user, false);
             testContentlet1Checkout.setStringProperty(FIELD_VAR_NAME, "WorkflowContentTest_" + System.currentTimeMillis());
+            testContentlet1Checkout.setIndexPolicy(IndexPolicy.FORCE);
             testContentlet2 = contentletAPI.checkin(testContentlet1Checkout, user, false);
-
-            contentletAPI.isInodeIndexed(testContentlet2.getInode());
 
             // top version
             testContentlet2Checkout = contentletAPI.checkout(testContentlet2.getInode(), user, false);
             testContentlet2Checkout.setStringProperty(FIELD_VAR_NAME, "WorkflowContentTest_" + System.currentTimeMillis());
+            testContentlet2Checkout.setIndexPolicy(IndexPolicy.FORCE);
             testContentletTop = contentletAPI.checkin(testContentlet2Checkout, user, false);
-
-            contentletAPI.isInodeIndexed(testContentletTop.getInode());
 
             // expected behavior
             List<WorkflowAction> foundActions = APILocator.getWorkflowAPI()
@@ -1110,11 +1076,10 @@ public class WorkflowAPITest extends IntegrationTestBase {
             testContentlet.setStringProperty(FIELD_VAR_NAME, "Workflow5ContentTest_" + time);
             testContentlet.setContentTypeId(contentType3.id());
             testContentlet.setHost(defaultHost.getIdentifier());
+            testContentlet.setIndexPolicy(IndexPolicy.FORCE);
             testContentlet = contentletAPI.checkin(testContentlet,
                     APILocator.getPermissionAPI().getPermissions(testContentlet, false, true), user,
                     false);
-
-            contentletAPI.isInodeIndexed(testContentlet.getInode());
 
             //Adding permissions to limited user on the contentType3
             List<Permission> permissions = new ArrayList<>();
@@ -1198,11 +1163,10 @@ public class WorkflowAPITest extends IntegrationTestBase {
             testContentlet.setStringProperty(FIELD_VAR_NAME, "Workflow5ContentTest_" + time);
             testContentlet.setContentTypeId(contentType3.id());
             testContentlet.setHost(defaultHost.getIdentifier());
+            testContentlet.setIndexPolicy(IndexPolicy.FORCE);
             testContentlet = contentletAPI.checkin(testContentlet,
                     APILocator.getPermissionAPI().getPermissions(testContentlet, false, true), user,
                     false);
-
-            contentletAPI.isInodeIndexed(testContentlet.getInode());
 
             //Adding permissions to limited user on the contentType3
             List<Permission> permissions = new ArrayList<>();
@@ -1566,10 +1530,10 @@ public class WorkflowAPITest extends IntegrationTestBase {
             }
 
             //Send For Review
+            contentlet1.setIndexPolicy(IndexPolicy.FORCE);
             contentlet1 = fireWorkflowAction(contentlet1, contentletRelationships, sendForReview,
                     StringPool.BLANK, StringPool.BLANK, joeContributor);
 
-            contentletAPI.isInodeIndexed(contentlet1.getInode());
             assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, REVIEW_STEP_NAME
                     .equals(workflowAPI.findStepByContentlet(contentlet1).getName()));
 
@@ -3137,6 +3101,8 @@ public class WorkflowAPITest extends IntegrationTestBase {
     public static Contentlet fireWorkflowAction(Contentlet contentlet,
             ContentletRelationships contentletRelationships, WorkflowAction action, String comment,
             String workflowAssignKey, User user) throws DotDataException, DotSecurityException {
+
+        contentlet.setIndexPolicy(IndexPolicy.FORCE);
         contentlet = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet,
                 new ContentletDependencies.Builder().respectAnonymousPermissions(Boolean.FALSE)
                         .modUser(user)
@@ -3146,8 +3112,6 @@ public class WorkflowAPITest extends IntegrationTestBase {
                         .workflowAssignKey(workflowAssignKey)
                         .categories(Collections.emptyList())
                         .generateSystemEvent(Boolean.FALSE).build());
-
-        contentletAPI.isInodeIndexed(contentlet.getInode());
 
         return contentlet;
     }
@@ -3221,9 +3185,8 @@ public class WorkflowAPITest extends IntegrationTestBase {
             c1.setLanguageId(1);
             c1.setStringProperty(FIELD_VAR_NAME, "WorkflowContentTest3__" + time);
             c1.setContentTypeId(contentType.id());
+            c1.setIndexPolicy(IndexPolicy.FORCE);
             c1 = contentletAPI.checkin(c1, user, false);
-
-            contentletAPI.isInodeIndexed(c1.getInode());
 
             Contentlet c = contentletAPI.checkout(c1.getInode(), user, false);
 

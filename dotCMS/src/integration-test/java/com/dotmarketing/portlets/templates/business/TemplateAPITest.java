@@ -25,7 +25,6 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -33,10 +32,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class TemplateAPITest extends IntegrationTestBase {
 
@@ -178,8 +174,9 @@ public class TemplateAPITest extends IntegrationTestBase {
             //Create a Page inside the Folder assigned to the newly created Template
             page = new HTMLPageDataGen(folder, template).nextPersisted();
 
+
             //wait a second before attempting to search the pages with elastic search
-            APILocator.getContentletAPI().isInodeIndexed(page.getInode());
+            //APILocator.getContentletAPI().isInodeIndexed(page.getInode());
 
             //Find pages by template
             List<Contentlet> pages = APILocator.getHTMLPageAssetAPI()

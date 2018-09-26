@@ -12,7 +12,6 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.*;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -25,6 +24,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletFactory;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
@@ -406,9 +406,9 @@ public class ContentletBaseTest extends IntegrationTestBase {
         contentletAPI.validateContentlet( contentlet, categories );
 
         //Save the contentlet
+        contentlet.setIndexPolicy(IndexPolicy.FORCE);
         contentlet = contentletAPI.checkin( contentlet, categories, structurePermissions, user, true );
-        contentletAPI.isInodeIndexed(contentlet.getInode());
-        
+
         if ( createWithContainer ) {
             //Create a container
             addContainer( contentlet );

@@ -12,6 +12,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.List;
@@ -75,8 +76,8 @@ public class FiltersUtil {
         contentletAPI.validateContentlet(contentlet, new ArrayList());
 
         //Save the contentlet
+        contentlet.setIndexPolicy(IndexPolicy.FORCE);
         contentlet = contentletAPI.checkin(contentlet, contentTypePermissions, user, true);
-        contentletAPI.isInodeIndexed(contentlet.getInode());
 
         return contentlet;
     }

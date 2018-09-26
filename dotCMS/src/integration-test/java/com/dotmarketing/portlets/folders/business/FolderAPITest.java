@@ -9,11 +9,7 @@ import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.IdentifierAPI;
-import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.business.VersionableAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.cache.FolderCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -25,6 +21,7 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -39,11 +36,9 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -713,13 +708,12 @@ public class FolderAPITest {//24 contentlets
 
 		contentAsset1.setLanguageId(langIdES);
 		contentAsset1.setInode(null);
+		contentAsset1.setIndexPolicy(IndexPolicy.FORCE);
 		contentAsset1 = contentletAPI.checkin(contentAsset1, user, false);
 		contentletAPI.publish(contentAsset1, user, false);
 		
 		folderAPI.delete(ftest, user, false);
 
-		contentletAPI.isInodeIndexed(contentAsset1.getInode());
-		
 		/*validate that the folder and pages were deleted*/
 		final Folder  folder = folderAPI.findFolderByPath(folderPath, host, user, false);
 		Assert.assertTrue(folder.getInode() == null);

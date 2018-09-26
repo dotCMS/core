@@ -90,8 +90,6 @@ public class ContentUtils {
         contentlet = contentletAPI.checkin(contentlet, user, Boolean.FALSE);
         contentlet.setIndexPolicy(IndexPolicy.FORCE);
         contentletAPI.publish(contentlet, user, Boolean.FALSE);
-        contentletAPI.isInodeIndexed(contentlet.getInode());
-        contentletAPI.isInodeIndexed(contentlet.getInode(), true);
 
         return contentlet;
     }

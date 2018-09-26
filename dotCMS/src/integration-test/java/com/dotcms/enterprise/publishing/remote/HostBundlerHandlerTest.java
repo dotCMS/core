@@ -12,15 +12,17 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
-import java.io.File;
-import java.util.HashSet;
-import java.util.Set;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
+
+import java.io.File;
+import java.util.HashSet;
+import java.util.Set;
 
 public class HostBundlerHandlerTest extends IntegrationTestBase {
 
@@ -65,10 +67,9 @@ public class HostBundlerHandlerTest extends IntegrationTestBase {
             host.setDefault(false);
 
             HibernateUtil.startTransaction();
+            host.setIndexPolicy(IndexPolicy.FORCE);
             host = APILocator.getHostAPI().save(host, user, false);
             HibernateUtil.closeAndCommitTransaction();
-
-            APILocator.getContentletAPI().isInodeIndexed(host.getInode());
 
             Assert.assertEquals(originalHostSize + 1, APILocator.getHostAPI().findAll(user, false).size());
 
@@ -124,10 +125,9 @@ public class HostBundlerHandlerTest extends IntegrationTestBase {
             host.setDefault(false);
 
             HibernateUtil.startTransaction();
+            host.setIndexPolicy(IndexPolicy.FORCE);
             host = APILocator.getHostAPI().save(host, user, false);
             HibernateUtil.closeAndCommitTransaction();
-
-            APILocator.getContentletAPI().isInodeIndexed(host.getInode());
 
             Assert.assertEquals(originalHostSize + 1, APILocator.getHostAPI().findAll(user, false).size());
 

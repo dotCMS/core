@@ -1,13 +1,5 @@
 package com.dotmarketing.portlets.categories.business;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.model.field.CategoryField;
@@ -28,6 +20,7 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
@@ -36,11 +29,14 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import org.junit.BeforeClass;
-import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 /**
  * Created by Jonathan Gamba
@@ -308,9 +304,9 @@ public class CategoryAPITest extends IntegrationTestBase {
             contentletAPI.validateContentlet(contentlet, categories);
 
             //Saving the contentlet
+            contentlet.setIndexPolicy(IndexPolicy.FORCE);
             contentlet = APILocator.getContentletAPI().checkin(contentlet, categories,
                     permissionAPI.getPermissions(contentlet, false, true), user, false);
-            APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode());
             APILocator.getVersionableAPI().setLive(contentlet);
 
             //***************************************************************
