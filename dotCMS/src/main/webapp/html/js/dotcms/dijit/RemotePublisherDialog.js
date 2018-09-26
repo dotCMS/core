@@ -53,13 +53,24 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
         var container = this.container;
 
         var connection = dojo.connect(dia, "onLoad", function () {
+
             dojo.disconnect(connection);
 
+            var hasCondition = (dojo.byId("hasCondition") ? dojo.byId("hasCondition").value : "");
+            if(hasCondition === 'true'){
+               var actionId = self.workflow.actionId;
+               container.evaluateCondition(actionId);
+               return;
+            }
+
             var filterDiv = dojo.byId("filterTimeDiv");
-            if (dateFilter) {
-                filterDiv.style.display = "";
-            } else {
-                filterDiv.style.display = "none";
+
+            if (filterDiv) {
+                if (dateFilter) {
+                    filterDiv.style.display = "";
+                } else {
+                    filterDiv.style.display = "none";
+                }
             }
 
             if(cats || restricted) {
@@ -102,15 +113,17 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
             });
 
             var environmentSelect = dijit.byId("environmentSelect");
-            environmentSelect.set('store',container.environmentStore);
-            environmentSelect.searchAttr = 'name';
-            environmentSelect.displayedValue = '0';
-            environmentSelect.startup();
+            if(environmentSelect){
+               environmentSelect.set('store',container.environmentStore);
+               environmentSelect.searchAttr = 'name';
+               environmentSelect.displayedValue = '0';
+               environmentSelect.startup();
+            }
 
             var assignSelect = dijit.byId("taskAssignmentAux");
             if(assignSelect){
                assignSelect.set('store',container.roleReadStore);
-                assignSelect.startup();
+               assignSelect.startup();
             }
 
         });

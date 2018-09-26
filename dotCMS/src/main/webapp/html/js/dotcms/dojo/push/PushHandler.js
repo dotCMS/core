@@ -1,5 +1,6 @@
 dojo.provide("dotcms.dojo.push.PushHandler");
-
+dojo.require("dojo.html");
+dojo.require("dojox.html._base");
 dojo.require("dijit._Widget");
 dojo.require("dijit.Dialog");
 dojo.require("dotcms.dijit.RemotePublisherDialog");
@@ -315,9 +316,9 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 				? dijit.byId("publishForm").attr('value').wfIWantTo
 						: "";
 
-		var whereToSend = dojo.byId("whereToSend").value;
+		var whereToSend =  (dojo.byId("whereToSend") ? dojo.byId("whereToSend").value : "");
 
-		var forcePush = dijit.byId("forcePush").checked;
+		var forcePush =  (dijit.byId("forcePush") ? dijit.byId("forcePush").checked : "");
 
 		// END: PUSH PUBLISHING ACTIONLET
 
@@ -326,14 +327,10 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 
             let actionId = this.workflow.actionId;
 
-            var hasCondition = (dijit.byId("hasCondition")
-                ? dijit.byId("hasCondition").getValue()
-                : dojo.byId("hasCondition")
-                    ? dojo.byId("hasCondition").value
-                    : "");
+            var hasCondition = (dojo.byId("hasCondition") ? dojo.byId("hasCondition").value : "");
 
-            if(hasCondition == 'true'){
-                this._evaluateCondition(actionId);
+            if(hasCondition === 'true'){
+                this.evaluateCondition(actionId);
                 return;
             }
 
@@ -638,7 +635,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         return (this.workflow !== null);
     },
 
-    _evaluateCondition: function (actionId) {
+    evaluateCondition: function (actionId) {
 
         let urlTemplate = "/api/v1/workflow/actions/{actionId}/condition";
         const url = urlTemplate.replace('{actionId}',actionId);
@@ -652,12 +649,16 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
                 'Content-Type' : 'application/json;charset=utf-8',
             },
             load: function(data) {
-                if(data && data.entity){
-                     console.log(data.entity);
-                     showDotCMSSystemMessage(data.entity);
-                }
+                var html = data.entity;
+                dojox.html.set(dojo.byId("pushPublish-container"), html, {
+                    executeScripts: true,
+                    renderStyles: true,
+                    scriptHasHooks: true,
+                    parseContent: true
+                });
             },
             error: function(error){
+                console.error(error);
                 showDotCMSSystemMessage(error, true);
             }
         };
