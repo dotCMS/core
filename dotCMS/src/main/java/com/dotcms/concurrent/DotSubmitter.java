@@ -22,8 +22,16 @@ public interface DotSubmitter extends Executor, Serializable {
     Future<?> submit(Runnable command);
 
     /**
+     * Put the runnable on a delay queue, eventually when the delay is done
+     * @param task
+     * @param delay
+     * @param unit
+     */
+    void delay(final Runnable task, final long delay, final TimeUnit unit);
+
+    /**
      * Submit a {@link Runnable}, returning the {@link Future}
-     * It does a delay before starts the task
+     * It does a delay inside the runnable before starts the task
      * @param command {@link Runnable}
      * @param delay   {@link Long} unit for the {@link TimeUnit}
      * @param unit    {@link TimeUnit}
@@ -42,7 +50,7 @@ public interface DotSubmitter extends Executor, Serializable {
 
     /**
      * Submit a {@link Runnable}, returning the {@link Future}
-     * It does a delay before starts the task
+     * It does a delay inside the task before starts the task
      * @param callable {@link Runnable}
      * @param delay   {@link Long} unit for the {@link TimeUnit}
      * @param unit    {@link TimeUnit}
