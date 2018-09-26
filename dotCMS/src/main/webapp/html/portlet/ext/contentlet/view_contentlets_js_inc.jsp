@@ -971,6 +971,7 @@
         function pushPublishSelectedContentlets() {
 
             var selectedInodes = getSelectedInodes ();
+            debugger;
 			pushHandler.showDialog(selectedInodes);
         }
 
@@ -2348,7 +2349,7 @@
 
     	executeWfAction: function(wfId, assignable, commentable, hasPushPublishActionlet, inode ){
             this.wfActionId = wfId;
-    		if(assignable  || commentable  || hasPushPublishActionlet){
+    		if(assignable == "true" || commentable == "true" || hasPushPublishActionlet == "true" ){
 
                 let workflow = {
                   actionId:wfId,

@@ -967,7 +967,7 @@
                     inode:inode
                 };
 
-                var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
+                var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Workflow-Action")%>');
                 pushHandler.showWorkflowEnabledDialog(workflow, saveAssignCallBack);
                 return;
 
