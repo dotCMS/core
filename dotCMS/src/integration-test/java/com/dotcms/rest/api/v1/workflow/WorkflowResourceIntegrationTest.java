@@ -58,7 +58,6 @@ import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.workflow.form.BulkActionForm;
 import com.dotcms.workflow.form.FireActionForm;
-import com.dotcms.workflow.form.FireActionForm.Builder;
 import com.dotcms.workflow.form.FireBulkActionsForm;
 import com.dotcms.workflow.form.WorkflowActionForm;
 import com.dotcms.workflow.form.WorkflowActionStepForm;
@@ -1375,38 +1374,63 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
 
     @Test
-    public void test_fire_action() throws Exception {
-        final String saveAndPublishId = "b9d89c80-3d88-4311-8365-187323c96436";
+    public void Test_Fire_Save_Instance_Then_Fire_Update_Instance() throws Exception {
+        final String saveAndPublishActionId = "b9d89c80-3d88-4311-8365-187323c96436";
         ContentType contentType = null;
         try {
             // We create a contentType that is associated with the two workflows that come out of the box.
             contentType = createSampleContentType();
-            //Then we create an instance
-            final Contentlet contentlet = createSampleContent(contentType);
-            final String inode = contentlet.getInode();
+            Contentlet brandNewContentlet = null;
+             try {
+                 //Save Action
+                 final FireActionForm.Builder builder1 = new FireActionForm.Builder();
+                 final Map <String,Object>contentletFormData = new HashMap<>();
+                 contentletFormData.put("stInode", contentType.inode());
+                 contentletFormData.put("requiredField", "value-1");
+                 builder1.contentletFormData(contentletFormData);
 
-            /*
-            // Prep Workflows, they must have at least one action visible on the first step.
-            final WorkflowScheme sysWorkflow = workflowAPI.findSchemeByName(SYSTEM_WORKFLOW);
-            final List<WorkflowStep> sysSteps = workflowAPI.findSteps(sysWorkflow);
-            final Optional<WorkflowStep> newStep = sysSteps.stream()
-                    .filter(workflowStep -> "New".equals(workflowStep.getName())).findFirst();
-            assertTrue(newStep.isPresent());
+                final FireActionForm fireActionForm1 = new FireActionForm(builder1);
+                final HttpServletRequest request1 = mock(HttpServletRequest.class);
+                final Response response1 = workflowResource
+                        .fireAction(request1, null, saveAndPublishActionId, fireActionForm1);
 
-            final List<WorkflowAction> sysWorkflowActions = workflowAPI
-                    .findActions(newStep.get(), systemUser);
+                final int statusCode1 = response1.getStatus();
+                assertEquals(Status.OK.getStatusCode(), statusCode1);
+                final ResponseEntityView fireEntityView1 = ResponseEntityView.class
+                        .cast(response1.getEntity());
+                brandNewContentlet = Contentlet.class.cast(fireEntityView1.getEntity());
+                assertNotNull(brandNewContentlet);
+                assertEquals("value-1", brandNewContentlet.getMap().get("requiredField"));
 
-            final Optional<WorkflowAction> saveAndPublishAction = sysWorkflowActions.stream().filter(action -> "b9d89c80-3d88-4311-8365-187323c96436".equals(action.getId())).findFirst();
-*/
+                 //Update Action
+                final FireActionForm.Builder builder2 = new FireActionForm.Builder();
+                final Map <String,Object>contentletFormData2 = new HashMap<>();
+                contentletFormData2.put("stInode", contentType.inode());
+                contentletFormData2.put("requiredField", "value-2");
+                builder2.contentletFormData(contentletFormData2);
 
-            
+                final FireActionForm fireActionForm2 = new FireActionForm(builder2);
+                final HttpServletRequest request2 = mock(HttpServletRequest.class);
+                final Response response2 = workflowResource
+                     .fireAction(request2, brandNewContentlet.getInode(), saveAndPublishActionId, fireActionForm2);
 
-            final FireActionForm.Builder builder = new FireActionForm.Builder();
-            builder.contentletFormData();
+                final int statusCode2 = response2.getStatus();
+                assertEquals(Status.OK.getStatusCode(), statusCode2);
+                final ResponseEntityView fireEntityView2 = ResponseEntityView.class
+                         .cast(response2.getEntity());
+                final Contentlet updatedContentlet = Contentlet.class.cast(fireEntityView2.getEntity());
+                assertNotNull(updatedContentlet);
 
-            final FireActionForm fireActionForm = new FireActionForm(builder);
-            final HttpServletRequest request = mock(HttpServletRequest.class);
-            final Response response = workflowResource.fireAction(request, inode, saveAndPublishId, fireActionForm);
+                assertEquals(brandNewContentlet.getIdentifier(),updatedContentlet.getIdentifier());
+                assertEquals("value-2", updatedContentlet.getMap().get("requiredField"));
+
+             }finally {
+                if(null != brandNewContentlet){
+                     contentletAPI.archive(brandNewContentlet, APILocator.systemUser(), false);
+                     contentletAPI.delete(brandNewContentlet, APILocator.systemUser(), false);
+                }
+            }
+
         }finally {
             if(null != contentType){
               contentTypeAPI.delete(contentType);
