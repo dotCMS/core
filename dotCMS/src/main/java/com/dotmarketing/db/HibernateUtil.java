@@ -11,10 +11,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.plugin.business.PluginAPI;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.google.common.annotations.VisibleForTesting;
 
 import java.io.*;
@@ -25,6 +22,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.stream.Collectors;
 
 /**
  * This class provides a great number of utility methods that allow developers to interact with
@@ -1030,16 +1028,70 @@ public class HibernateUtil {
 
 		if (!asyncListeners.isEmpty()) {
 
-            final DotSubmitter submitter = DotConcurrentFactory.getInstance().getSubmitter(LISTENER_SUBMITTER);
-			submitter.submit(new DotRunnableThread(asyncListeners, true));
-            submitter.submit(new DotRunnableFlusherThread(asyncListeners, true),
-                    Config.getLongProperty(NETWORK_CACHE_FLUSH_DELAY, 3000), TimeUnit.MILLISECONDS);
+			final List<Runnable> listeners = getListeners(asyncListeners);
+			final List<Runnable> flushers  = getFlushers(asyncListeners);
+            final DotSubmitter submitter   = DotConcurrentFactory.getInstance().getSubmitter(LISTENER_SUBMITTER);
+
+            if (!listeners.isEmpty()) {
+				submitter.submit(new DotRunnableThread(listeners, true));
+			}
+
+			if (!flushers.isEmpty()) {
+				submitter.submit(new DotRunnableFlusherThread(flushers, true),
+						Config.getLongProperty(NETWORK_CACHE_FLUSH_DELAY, 3000), TimeUnit.MILLISECONDS);
+			}
 		}
 
 		if (!syncListeners.isEmpty()) {
-			new DotRunnableThread(syncListeners).run();
-            new DotRunnableFlusherThread(asyncListeners, false).run(); // todo: double check this if we still want a thread for the flushers
+
+			final List<Runnable> listeners = getListeners(syncListeners);
+			final List<Runnable> flushers  = getFlushers(syncListeners);
+			if (!listeners.isEmpty()) {
+				new DotRunnableThread(listeners).run();
+			}
+
+			if (!flushers.isEmpty()) {
+				DateUtil.sleep(Config.getLongProperty(NETWORK_CACHE_FLUSH_DELAY, 3000));
+				new DotRunnableFlusherThread(flushers, false).run(); // todo: double check this if we still want a thread for the flushers
+			}
 		}
+	}
+
+	private static List<Runnable> getListeners(final List<Runnable> allListeners) {
+		return allListeners.stream().filter(HibernateUtil::isNotFlushCacheRunnable).sorted(HibernateUtil::compare).collect(Collectors.toList());
+	}
+
+	private static int compare(final Runnable runnable, final Runnable runnable1) {
+		return getOrder(runnable).compareTo(getOrder(runnable1));
+	}
+
+	private static Integer getOrder(final Runnable runnable) {
+
+		final int order = (runnable instanceof HibernateUtil.DotSyncRunnable) ?
+				HibernateUtil.DotSyncRunnable.class.cast(runnable).getOrder() : 0;
+
+		return (runnable instanceof HibernateUtil.DotOrderedRunnable) ?
+				HibernateUtil.DotOrderedRunnable.class.cast(runnable).getOrder() : order;
+	}
+
+	private static boolean isNotFlushCacheRunnable(final Runnable listener) {
+
+		return !isFlushCacheRunnable(listener);
+	}
+
+	private static List<Runnable> getFlushers(final List<Runnable> allListeners) {
+		return allListeners.stream().filter(HibernateUtil::isFlushCacheRunnable).collect(Collectors.toList());
+	}
+
+	private static boolean isFlushCacheRunnable(final Runnable listener) {
+
+		return (
+				listener instanceof FlushCacheRunnable ||
+						(listener instanceof HibernateUtil.DotOrderedRunnable
+								&& HibernateUtil.DotOrderedRunnable.class.cast(listener).getRunnable() instanceof FlushCacheRunnable) ||
+						(listener instanceof HibernateUtil.DotSyncRunnable
+								&& HibernateUtil.DotSyncRunnable.class.cast(listener).getRunnable() instanceof FlushCacheRunnable)
+		);
 	}
 
 	public static void startTransaction()  throws DotHibernateException{

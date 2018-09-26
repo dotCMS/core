@@ -5,7 +5,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * This thread is charge of running the cache flusher commit listener in async or sync mode.
@@ -16,13 +15,13 @@ public class DotRunnableFlusherThread implements Runnable {
     private final boolean        isSync;
 
 
-    public DotRunnableFlusherThread(final List<Runnable> allListeners) {
-        this(allListeners, false);
+    public DotRunnableFlusherThread(final List<Runnable> flushers) {
+        this(flushers, false);
     }
 
-    public DotRunnableFlusherThread(final List<Runnable> allListeners, final boolean isSync) {
+    public DotRunnableFlusherThread(final List<Runnable> flushers, final boolean isSync) {
         this.isSync         = isSync;
-        this.flushers       = getFlushers(allListeners);
+        this.flushers       = flushers;
     }
 
     private void runNetworkflowCacheFlushThread() {
@@ -46,22 +45,5 @@ public class DotRunnableFlusherThread implements Runnable {
         } catch (Exception dde) {
             throw new DotStateException(dde);
         }
-    }
-
-
-
-    private List<Runnable> getFlushers(final List<Runnable> allListeners) {
-        return allListeners.stream().filter(this::isFlushCacheRunnable).collect(Collectors.toList());
-    }
-
-    private boolean isFlushCacheRunnable(final Runnable listener) {
-
-        return (
-                listener instanceof FlushCacheRunnable ||
-                        (listener instanceof HibernateUtil.DotOrderedRunnable
-                                && HibernateUtil.DotOrderedRunnable.class.cast(listener).getRunnable() instanceof FlushCacheRunnable) ||
-                        (listener instanceof HibernateUtil.DotSyncRunnable
-                                && HibernateUtil.DotSyncRunnable.class.cast(listener).getRunnable() instanceof FlushCacheRunnable)
-        );
     }
 }

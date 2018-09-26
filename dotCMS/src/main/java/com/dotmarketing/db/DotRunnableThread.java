@@ -10,8 +10,10 @@ import com.dotmarketing.util.UtilMethods;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.bulk.BulkResponse;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * This thread is charge of running the commit listener in async or sync mode.
@@ -34,7 +36,7 @@ public class DotRunnableThread implements Runnable {
 
     public DotRunnableThread(final List<Runnable> allListeners, final boolean isSync) {
         this.isSync         = isSync;
-        this.listeners      = getListeners(allListeners);
+        this.listeners      = allListeners;
     }
 
     @Override
@@ -176,14 +178,6 @@ public class DotRunnableThread implements Runnable {
         return this.getOrder(runner) > 0;
     }
 
-    private List<Runnable> getListeners(final List<Runnable> allListeners) {
-        return allListeners.stream().filter(this::isNotFlushCacheRunnable).sorted(this::compare).collect(Collectors.toList());
-    }
-
-    private int compare(final Runnable runnable, final Runnable runnable1) {
-        return this.getOrder(runnable).compareTo(this.getOrder(runnable1));
-    }
-
     private Integer getOrder(final Runnable runnable) {
 
         final int order = (runnable instanceof HibernateUtil.DotSyncRunnable) ?
@@ -193,19 +187,4 @@ public class DotRunnableThread implements Runnable {
                 HibernateUtil.DotOrderedRunnable.class.cast(runnable).getOrder() : order;
     }
 
-    private boolean isNotFlushCacheRunnable(final Runnable listener) {
-
-        return !this.isFlushCacheRunnable(listener);
-    }
-
-    private boolean isFlushCacheRunnable(final Runnable listener) {
-
-        return (
-                listener instanceof FlushCacheRunnable ||
-                        (listener instanceof HibernateUtil.DotOrderedRunnable
-                                && HibernateUtil.DotOrderedRunnable.class.cast(listener).getRunnable() instanceof FlushCacheRunnable) ||
-                        (listener instanceof HibernateUtil.DotSyncRunnable
-                                && HibernateUtil.DotSyncRunnable.class.cast(listener).getRunnable() instanceof FlushCacheRunnable)
-        );
-    }
 }

@@ -53,11 +53,27 @@ import java.util.stream.Collectors;
 
 public class ESContentletIndexAPI implements ContentletIndexAPI{
 
-	private static final DistributedJournalAPI<String> journalAPI = APILocator.getDistributedJournalAPI();
+	private static DistributedJournalAPI<String> journalAPI = null;
 	private static final ESIndexAPI esIndexApi       = new ESIndexAPI();
     private static final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
 
     public static final SimpleDateFormat timestampFormatter=new SimpleDateFormat("yyyyMMddHHmmss");
+
+    public DistributedJournalAPI<String> getJournalAPI () {
+
+    	if (null == journalAPI) {
+
+    		synchronized (this) {
+
+				if (null == journalAPI) {
+
+					journalAPI = APILocator.getDistributedJournalAPI();
+				}
+			}
+		}
+
+    	return this.journalAPI;
+	}
 
 	public synchronized void getRidOfOldIndex() throws DotDataException {
 	    IndiciesInfo idxs=APILocator.getIndiciesAPI().loadIndicies();
@@ -367,7 +383,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 			// in case the transaction failed we reindex the latest committed version
 			HibernateUtil.addRollbackListener(()-> {
 				try {
-					journalAPI.addReindexHighPriority(content.getIdentifier());
+					this.getJournalAPI().addReindexHighPriority(content.getIdentifier());
 				} catch (DotDataException e) {
 					throw new RuntimeException(e);
 				}
@@ -481,7 +497,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 		HibernateUtil.addCommitListener(()-> {
 			try {
 
-				this.journalAPI.addReindexHighPriority
+				this.getJournalAPI().addReindexHighPriority
 						(contentToIndex.stream().map(Contentlet::getIdentifier).collect(Collectors.toSet()));
 			} catch (DotDataException e) {
 
