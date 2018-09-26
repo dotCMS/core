@@ -324,7 +324,6 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 
         if(this._isWorkflowEnabled()){
 
-            debugger;
             let actionId = this.workflow.actionId;
 
             var hasCondition = (dojo.byId("hasCondition") ? dojo.byId("hasCondition").value : "");
