@@ -9,6 +9,7 @@ public enum ContentTypeFieldProperties {
     NAME("name"),
     VALUES("values"),
     CATEGORIES("categories"),
+    RELATIONSHIPS("relationships"),
     REGEX_CHECK("regexCheck"),
     HINT("hint"),
     REQUIRED("required"),

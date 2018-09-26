@@ -4,10 +4,10 @@ package com.dotmarketing.business;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.RelationshipFactory;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Relationship;
 
@@ -191,5 +191,12 @@ public class RelationshipAPIImpl implements RelationshipAPI {
     @Override
     public void addRelationship(String parent, String child, String relationType) throws DotDataException {
         this.relationshipFactory.addRelationship(parent, child, relationType);
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public List<Relationship> getOneSidedRelationships(final ContentType contentType,
+            final int limit, final int offset) throws DotDataException {
+        return this.relationshipFactory.getOneSidedRelationships(contentType, limit, offset);
     }
 }

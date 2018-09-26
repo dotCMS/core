@@ -36,6 +36,7 @@ public enum LegacyFieldTypes {
 	TAG("tag",com.dotcms.contenttype.model.field.TagField.class),
 	CONSTANT("constant",com.dotcms.contenttype.model.field.ConstantField.class),
 	CATEGORY("category",com.dotcms.contenttype.model.field.CategoryField.class),
+	RELATIONSHIP("relationship",com.dotcms.contenttype.model.field.RelationshipField.class),
 	LINE_DIVIDER("line_divider",com.dotcms.contenttype.model.field.LineDividerField.class),
 	TAB_DIVIDER("tab_divider",com.dotcms.contenttype.model.field.TabDividerField.class),
 	PERMISSIONS_TAB("permissions_tab",com.dotcms.contenttype.model.field.PermissionTabField.class),
