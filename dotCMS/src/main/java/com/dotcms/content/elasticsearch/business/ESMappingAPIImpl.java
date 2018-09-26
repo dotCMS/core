@@ -679,6 +679,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	}
 
 	protected void loadRelationshipFields(Contentlet con, Map<String,Object> m) throws DotStateException, DotDataException {
+		String propName;
+		String orderKey;
+		Optional<com.dotcms.contenttype.model.field.Field> field;
+
 		DotConnect db = new DotConnect();
 		db.setSQL("select * from tree where parent = ? or child = ? order by tree_order asc");
 		db.addParam(con.getIdentifier());
@@ -698,13 +702,27 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			Relationship rel = FactoryLocator.getRelationshipFactory().byTypeValue(relType);
 
 			if(rel!=null && InodeUtils.isSet(rel.getInode())) {
+				field = APILocator.getContentTypeFieldAPI()
+						.byContentTypeAndFieldRelationType(con.getContentTypeId(),
+								rel.getRelationTypeValue());
 				boolean isSameStructRelationship = rel.getParentStructureInode().equals(rel.getChildStructureInode());
 
-				String propName = isSameStructRelationship ?
-						(con.getIdentifier().equals(parentId)?rel.getRelationTypeValue() + ESMappingConstants.SUFFIX_CHILD:rel.getRelationTypeValue() + ESMappingConstants.SUFFIX_PARENT)
-						: rel.getRelationTypeValue();
 
-				String orderKey = rel.getRelationTypeValue()+ESMappingConstants.SUFFIX_ORDER;
+				if (field.isPresent()){
+					propName = new StringBuilder(con.getContentType().variable()).append(".")
+							.append(field.get().variable()).toString();
+					orderKey = propName + ESMappingConstants.SUFFIX_ORDER;
+				} else{
+					//Support for legacy relationships
+					propName = isSameStructRelationship ?
+							(con.getIdentifier().equals(parentId) ? rel.getRelationTypeValue()
+									+ ESMappingConstants.SUFFIX_CHILD
+									: rel.getRelationTypeValue() + ESMappingConstants.SUFFIX_PARENT)
+							: rel.getRelationTypeValue();
+
+					orderKey = rel.getRelationTypeValue() + ESMappingConstants.SUFFIX_ORDER;
+				}
+
 
 
                 if(relType.equals(rel.getRelationTypeValue())) {

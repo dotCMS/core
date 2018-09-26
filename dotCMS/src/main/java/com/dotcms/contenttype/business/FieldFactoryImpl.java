@@ -33,6 +33,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
@@ -67,6 +68,11 @@ public class FieldFactoryImpl implements FieldFactory {
   @Override
   public Field byContentTypeIdFieldVar(String id, String var) throws DotDataException {
     return selectByContentTypeFieldVarInDb(id, var);
+  }
+
+  @Override
+  public Optional<Field> byContentTypeIdFieldRelationTypeInDb(String id, String var) throws DotDataException {
+    return selectByContentTypeFieldRelationTypeInDb(id, var);
   }
 
   @Override
@@ -332,6 +338,21 @@ public class FieldFactoryImpl implements FieldFactory {
     List<Map<String, Object>> results;
     results = dc.loadObjectResults();
     return new DbFieldTransformer(results).asList();
+
+  }
+
+  private Optional<Field> selectByContentTypeFieldRelationTypeInDb(String id, String fieldRelationType) throws DotDataException {
+    DotConnect dc = new DotConnect();
+    dc.setSQL(sql.findByContentTypeAndRelationType).addParam(id).addParam(fieldRelationType);
+
+
+    List<Map<String, Object>> results;
+
+    results = dc.loadObjectResults();
+    if (results.size() == 0) {
+      return Optional.empty();
+    }
+    return Optional.of(new DbFieldTransformer(results.get(0)).from());
 
   }
 

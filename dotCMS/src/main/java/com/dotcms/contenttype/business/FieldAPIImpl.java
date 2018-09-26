@@ -53,6 +53,7 @@ import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.util.List;
+import java.util.Optional;
 import org.apache.commons.lang.StringUtils;
 
 
@@ -258,6 +259,13 @@ public class FieldAPIImpl implements FieldAPI {
   public Field byContentTypeAndVar(final ContentType type, final String fieldVar) throws DotDataException {
     return fieldFactory.byContentTypeFieldVar(type, fieldVar);
   }
+
+    @CloseDBIfOpened
+    @Override
+    public Optional<Field> byContentTypeAndFieldRelationType(final String id,
+            final String fieldRelationType) throws DotDataException {
+        return fieldFactory.byContentTypeIdFieldRelationTypeInDb(id, fieldRelationType);
+    }
 
   @CloseDBIfOpened
   @Override
