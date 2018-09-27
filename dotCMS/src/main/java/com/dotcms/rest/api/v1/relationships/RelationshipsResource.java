@@ -21,7 +21,6 @@ import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.JsonProcessingRuntimeException;
 import com.dotcms.util.PaginationUtil;
-import com.dotcms.util.pagination.PaginationException;
 import com.dotcms.util.pagination.RelationshipPaginator;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -90,7 +89,7 @@ public class RelationshipsResource {
                             Status.BAD_REQUEST);
         }
 
-        final PaginationUtil paginationUtil = new PaginationUtil(new RelationshipPaginator(user));
+        final PaginationUtil paginationUtil = new PaginationUtil(new RelationshipPaginator());
 
         try {
 

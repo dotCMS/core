@@ -2,6 +2,7 @@ package com.dotcms.contenttype.transform.relationship;
 
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.UtilMethods;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -10,12 +11,11 @@ public class DbRelationshipTransformer implements RelationshipTransformer{
 	final List<Relationship> list;
 
 
-	public DbRelationshipTransformer(List<Map<String, Object>> initList){
-		List<Relationship> newList = new ArrayList<>();
-		if (initList != null){
-			for(Map<String, Object> map : initList){
-				newList.add(fromMap(map));
-			}
+	public DbRelationshipTransformer(final List<Map<String, Object>> initList){
+		final List<Relationship> newList = new ArrayList<>();
+
+		if (UtilMethods.isSet(initList)){
+			initList.forEach(map -> newList.add(fromMap(map)));
 		}
 
 		this.list = newList;
@@ -26,9 +26,9 @@ public class DbRelationshipTransformer implements RelationshipTransformer{
 		return ImmutableList.copyOf(list);
 	}
 
-	private static Relationship fromMap(Map<String, Object> map) {
+	private static Relationship fromMap(final Map<String, Object> map) {
 
-		Relationship var = new Relationship();
+		final Relationship var = new Relationship();
 		var.setInode((String) map.get("inode"));
 		var.setParentStructureInode((String) map.get("parent_structure_inode"));
 		var.setChildStructureInode((String) map.get("child_structure_inode"));

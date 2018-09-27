@@ -1,6 +1,5 @@
 package com.dotcms.util.pagination;
 
-import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.business.APILocator;
@@ -22,18 +21,15 @@ import java.util.stream.Collectors;
 public class RelationshipPaginator implements Paginator<Map<String, Object>> {
 
     private final RelationshipAPI relationshipAPI;
-    private final ContentTypeAPI contentTypeAPI;
     public static final String CONTENT_TYPE_PARAM = "content_type";
 
     @VisibleForTesting
-    public RelationshipPaginator(final RelationshipAPI relationshipAPI,
-            final ContentTypeAPI contentTypeAPI) {
+    public RelationshipPaginator(final RelationshipAPI relationshipAPI) {
         this.relationshipAPI = relationshipAPI;
-        this.contentTypeAPI = contentTypeAPI;
     }
 
-    public RelationshipPaginator(User user) {
-        this(APILocator.getRelationshipAPI(), APILocator.getContentTypeAPI(user));
+    public RelationshipPaginator() {
+        this(APILocator.getRelationshipAPI());
     }
 
     @Override
