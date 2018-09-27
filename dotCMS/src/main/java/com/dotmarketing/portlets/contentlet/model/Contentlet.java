@@ -91,6 +91,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     public static final String DONT_VALIDATE_ME = "_dont_validate_me";
     public static final String DISABLE_WORKFLOW = "__disable_workflow__";
 
+    // means the contentlet is being used on unit test mode.
+	public static final String IS_TEST_MODE = "_is_test_mode";
+
 	/**
 	 * Flag to avoid to trigger the workflow again on the checkin when it is already in progress.
 	 */

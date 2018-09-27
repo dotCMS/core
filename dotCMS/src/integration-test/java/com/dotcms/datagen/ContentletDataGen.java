@@ -1,9 +1,5 @@
 package com.dotcms.datagen;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
@@ -12,8 +8,12 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.structure.model.Structure;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * Class used to create {@link Contentlet} objects for test purposes
@@ -112,6 +112,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
         contentlet.setFolder(folder.getInode());
         contentlet.setHost(host.getIdentifier());
         contentlet.setLanguageId(languageId);
+        contentlet.setIndexPolicy(IndexPolicy.FORCE);
         for(Entry<String, Object> element:properties.entrySet()){
             contentlet.setProperty(element.getKey(), element.getValue());
         }

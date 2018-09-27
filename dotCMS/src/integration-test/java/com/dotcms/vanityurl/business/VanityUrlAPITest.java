@@ -1,9 +1,6 @@
 package com.dotcms.vanityurl.business;
 
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.cache.VanityUrlCache;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
@@ -21,11 +18,15 @@ import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * This class test the {@link VanityUrlAPI} methods
@@ -364,6 +365,7 @@ public class VanityUrlAPITest {
 
             Contentlet vanityURLContentletUpdated = contentletAPI.checkout(vanityURLContentlet.getInode(), user, false);
             vanityURLContentletUpdated.setLongProperty("action", 301);
+            vanityURLContentletUpdated.setIndexPolicy(IndexPolicy.FORCE);
             vanityURLContentletUpdated = contentletAPI.checkin(vanityURLContentletUpdated, user, false);
             filtersUtil.publishVanityUrl(vanityURLContentletUpdated);
 
@@ -398,6 +400,8 @@ public class VanityUrlAPITest {
                     .createVanityUrl("test Vanity Url " + currentTime, defaultHost.getIdentifier(),
                             "/testing" + currentTime, "https://www.google.com", 200, 1,
                             defaultLanguageId);
+
+            vanityURLContentlet.setIndexPolicy(IndexPolicy.FORCE);
             filtersUtil.publishVanityUrl(vanityURLContentlet);
 
             CachedVanityUrl vanityURLCached = vanityUrlCache.get(
@@ -429,6 +433,7 @@ public class VanityUrlAPITest {
             Contentlet vanityURLContentletUpdated = contentletAPI
                     .checkout(vanityURLContentlet.getInode(), user, false);
             vanityURLContentletUpdated.setLongProperty("action", 600);
+            vanityURLContentletUpdated.setIndexPolicy(IndexPolicy.FORCE);
             try {
                 contentletAPI.checkin(vanityURLContentletUpdated, user, false);
                 fail("Using an invalid 600 action code, the checking method should fail...");
@@ -596,6 +601,7 @@ public class VanityUrlAPITest {
                     .createVanityUrl("test Vanity Url " + System.currentTimeMillis(),
                             defaultHost.getIdentifier(),
                             uri, "https://www.google.com", 200, 1, defaultLanguageId);
+            vanityURL.setIndexPolicy(IndexPolicy.FORCE);
             filtersUtil.publishVanityUrl(vanityURL);
 
             //Should not exist in cache
@@ -652,6 +658,7 @@ public class VanityUrlAPITest {
                     .createVanityUrl("test Vanity Url " + System.currentTimeMillis(),
                             Host.SYSTEM_HOST,
                             uri, "https://www.google.com", 200, 1, defaultLanguageId);
+            vanityURL1.setIndexPolicy(IndexPolicy.FORCE);
             filtersUtil.publishVanityUrl(vanityURL1);
 
             //Should not exist in cache
@@ -697,6 +704,7 @@ public class VanityUrlAPITest {
                     .createVanityUrl("test Vanity Url " + System.currentTimeMillis(),
                             Host.SYSTEM_HOST,
                             uri, "https://www.google.com", 200, 1, defaultLanguageId);
+            vanityURL2.setIndexPolicy(IndexPolicy.FORCE);
             filtersUtil.publishVanityUrl(vanityURL2);
 
             //Should not exist in cache
@@ -737,6 +745,7 @@ public class VanityUrlAPITest {
             //------------------------------------
             //Unpublish the VanityURL
             //------------------------------------
+            vanityURL2.setIndexPolicy(IndexPolicy.FORCE);
             filtersUtil.unpublishVanityURL(vanityURL2);
 
             //Should NOT be in cache
@@ -758,6 +767,7 @@ public class VanityUrlAPITest {
             //------------------------------------
             //Unpublish the VanityURL
             //------------------------------------
+            vanityURL1.setIndexPolicy(IndexPolicy.FORCE);
             filtersUtil.unpublishVanityURL(vanityURL1);
 
             //Should NOT be in cache
@@ -779,6 +789,7 @@ public class VanityUrlAPITest {
             //------------------------------------
             //Unpublish the VanityURL
             //------------------------------------
+            vanityURL2.setIndexPolicy(IndexPolicy.FORCE);
             filtersUtil.publishVanityUrl(vanityURL2);
 
             //Should NOT be in cache
@@ -844,6 +855,7 @@ public class VanityUrlAPITest {
                     .createVanityUrl("test Vanity Url " + System.currentTimeMillis(),
                             Host.SYSTEM_HOST,
                             uri, "https://www.google.com", 200, 1, defaultLanguageId);
+            vanityURL.setIndexPolicy(IndexPolicy.FORCE);
             filtersUtil.publishVanityUrl(vanityURL);
 
             //Should not exist in cache
@@ -893,6 +905,7 @@ public class VanityUrlAPITest {
                     .createVanityUrl("test Vanity Url " + System.currentTimeMillis(),
                             defaultHost.getIdentifier(),
                             uri, "https://www.google.com", 200, 1, defaultLanguageId);
+            vanityURL1.setIndexPolicy(IndexPolicy.FORCE);
             filtersUtil.publishVanityUrl(vanityURL1);
 
             //Should not exist in cache
@@ -1117,6 +1130,7 @@ public class VanityUrlAPITest {
             vanityURL = filtersUtil
                     .createVanityUrl("test Vanity Url " + currentTime, vanityHostId,
                             vanityURI, "https://www.google.com", 200, 1, defaultLanguageId);
+            vanityURL.setIndexPolicy(IndexPolicy.FORCE);
             filtersUtil.publishVanityUrl(vanityURL);
 
             //Should not exist yet in cache
@@ -1141,6 +1155,8 @@ public class VanityUrlAPITest {
             //------------------------------------
             //Now we need to unpublish out vanity
             //------------------------------------
+            vanityURL.setIndexPolicy(IndexPolicy.FORCE);
+            vanityURL.setBoolProperty(Contentlet.IS_TEST_MODE, Boolean.TRUE);
             filtersUtil.unpublishVanityURL(vanityURL);
             //And should NOT be in cache
             vanityURLCached = vanityUrlCache.get(
@@ -1203,6 +1219,7 @@ public class VanityUrlAPITest {
             //------------------------------------
             //Now publish the Vanity
             //------------------------------------
+            vanityURL.setIndexPolicy(IndexPolicy.FORCE);
             filtersUtil.publishVanityUrl(vanityURL);
 
             //Should NOT exist yet in cache

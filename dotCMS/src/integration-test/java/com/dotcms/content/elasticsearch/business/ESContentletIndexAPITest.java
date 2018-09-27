@@ -445,10 +445,8 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
 
         try {
             //And add it to the index
+            testContentlet.setIndexPolicy(IndexPolicy.FORCE);
             indexAPI.addContentToIndex( testContentlet );
-
-            //We are just making time in order to let it apply the index
-            contentletAPI.isInodeIndexed( testContentlet.getInode(), true );
 
             //Verify if it was added to the index
             String query = "+structureName:" + testStructure.getVelocityVarName() + " +deleted:false +live:true";

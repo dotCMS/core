@@ -6082,16 +6082,27 @@ public class ESContentletAPIImpl implements ContentletAPI {
      *
      * @param contentlet Contentlet to be processed by the Commit listener event
      */
-    private void triggerCommitListenerEvent(Contentlet contentlet) {
+    private void triggerCommitListenerEvent(final Contentlet contentlet) {
 
         try {
-            HibernateUtil.addCommitListener(new FlushCacheRunnable() {
-                public void run() {
+            if (!contentlet.getBoolProperty(Contentlet.IS_TEST_MODE)) {
+
+                HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+                    public void run() {
+                        //Triggering event listener when this commit listener is executed
+                        APILocator.getLocalSystemEventsAPI()
+                                .asyncNotify(new CommitListenerEvent(contentlet));
+                    }
+                });
+            } else {
+
+                HibernateUtil.addCommitListener(()-> {
                     //Triggering event listener when this commit listener is executed
                     APILocator.getLocalSystemEventsAPI()
-                            .asyncNotify(new CommitListenerEvent(contentlet));
-                }
-            });
+                            .notify(new CommitListenerEvent(contentlet));
+                }, 1001);
+            }
+
         } catch (DotHibernateException e) {
             throw new DotRuntimeException(e);
         }

@@ -1,8 +1,5 @@
 package com.dotmarketing.portlets.rules;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.csspreproc.SassCompilerTest;
 import com.dotcms.datagen.HTMLPageDataGen;
@@ -14,6 +11,7 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.rules.actionlet.CountRulesActionlet;
@@ -25,16 +23,19 @@ import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import javax.servlet.http.HttpServletRequest;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
-import javax.servlet.http.HttpServletRequest;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Created by Oscar Arrieta on 2/24/16.
@@ -115,6 +116,7 @@ public class RulesUnderPageAssetsFTest{
         assertEquals(null, request.getServletContext().getAttribute("count-" + Rule.FireOn.EVERY_PAGE.getCamelCaseName()));
 
         //Publish Page.
+        dummyPage.setIndexPolicy(IndexPolicy.FORCE);
         APILocator.getContentletAPI().publish(dummyPage, sysUser, false);
 
         //Hit live page and test rule did fire.
@@ -123,10 +125,13 @@ public class RulesUnderPageAssetsFTest{
         assertTrue(count > 0);
 
         //Remove Page with rules.
+        dummyPage.setIndexPolicy(IndexPolicy.FORCE);
         APILocator.getContentletAPI().unpublish(dummyPage, sysUser, false);
+        dummyPage.setIndexPolicy(IndexPolicy.FORCE);
         APILocator.getContentletAPI().archive(dummyPage, sysUser, false);
         APILocator.getContentletAPI().isInodeIndexedArchived(dummyPage.getInode());
         assertTrue(dummyPage.isArchived());
+        dummyPage.setIndexPolicy(IndexPolicy.FORCE);
         APILocator.getContentletAPI().delete(dummyPage, sysUser, false);
 
         //Remove Template.
@@ -162,6 +167,7 @@ public class RulesUnderPageAssetsFTest{
         createRuleUnderPage(dummyPage);
 
         //Publish Page.
+        dummyPage.setIndexPolicy(IndexPolicy.FORCE);
         APILocator.getContentletAPI().publish(dummyPage, sysUser, false);
 
         //Hit live page and test rule did fire.
@@ -174,6 +180,7 @@ public class RulesUnderPageAssetsFTest{
         Folder targetfolder = APILocator.getFolderAPI().findFolderByPath(targetFolderPath, host, sysUser, false);
 
         //Copy page to target folder.
+        dummyPage.setIndexPolicy(IndexPolicy.FORCE);
         Contentlet targetHTMLPageAsset = APILocator.getContentletAPI().copyContentlet(dummyPage, targetfolder, sysUser, false);
 
         //Hit page under target folder and test it fired.
@@ -182,17 +189,23 @@ public class RulesUnderPageAssetsFTest{
         assertTrue(targetcount > count);
 
         //Remove Page with rules.
+        dummyPage.setIndexPolicy(IndexPolicy.FORCE);
         APILocator.getContentletAPI().unpublish(dummyPage, sysUser, false);
+        dummyPage.setIndexPolicy(IndexPolicy.FORCE);
         APILocator.getContentletAPI().archive(dummyPage, sysUser, false);
 
         APILocator.getContentletAPI().isInodeIndexedArchived(dummyPage.getInode());
         assertTrue(dummyPage.isArchived());
+        dummyPage.setIndexPolicy(IndexPolicy.FORCE);
         APILocator.getContentletAPI().delete(dummyPage, sysUser, false);
 
+        targetHTMLPageAsset.setIndexPolicy(IndexPolicy.FORCE);
         APILocator.getContentletAPI().unpublish(targetHTMLPageAsset, sysUser, false);
+        targetHTMLPageAsset.setIndexPolicy(IndexPolicy.FORCE);
         APILocator.getContentletAPI().archive(targetHTMLPageAsset, sysUser, false);
         APILocator.getContentletAPI().isInodeIndexedArchived(targetHTMLPageAsset.getInode());
         assertTrue(targetHTMLPageAsset.isArchived());
+        targetHTMLPageAsset.setIndexPolicy(IndexPolicy.FORCE);
         APILocator.getContentletAPI().delete(targetHTMLPageAsset, sysUser, false);
         //Remove Template.
         APILocator.getTemplateAPI().delete(template, sysUser, false);
@@ -233,10 +246,13 @@ public class RulesUnderPageAssetsFTest{
         assertEquals(1, rulesByParent.size());
 
         //Remove Page with rules.
+        dummyPage.setIndexPolicy(IndexPolicy.FORCE);
         APILocator.getContentletAPI().unpublish(dummyPage, sysUser, false);
+        dummyPage.setIndexPolicy(IndexPolicy.FORCE);
         APILocator.getContentletAPI().archive(dummyPage, sysUser, false);
         APILocator.getContentletAPI().isInodeIndexedArchived(dummyPage.getInode());
         assertTrue(dummyPage.isArchived());
+        dummyPage.setIndexPolicy(IndexPolicy.FORCE);
         APILocator.getContentletAPI().delete(dummyPage, sysUser, false);
 
         //Get all rules from the deleted page, shouldn't be any.
@@ -282,7 +298,9 @@ public class RulesUnderPageAssetsFTest{
         createRuleUnderPage(dummyPage);
 
         //Publish Page.
+        dummyPage.setIndexPolicy(IndexPolicy.FORCE);
         APILocator.getContentletAPI().publish(dummyPage, sysUser, false);
+        secondDummyPage.setIndexPolicy(IndexPolicy.FORCE);
         APILocator.getContentletAPI().publish(secondDummyPage, sysUser, false);
 
         //Hit live page and test rule did fire.
@@ -296,16 +314,22 @@ public class RulesUnderPageAssetsFTest{
         assertEquals(count, secondCount);
 
         //Remove Page with rules.
+        dummyPage.setIndexPolicy(IndexPolicy.FORCE);
         APILocator.getContentletAPI().unpublish(dummyPage, sysUser, false);
+        dummyPage.setIndexPolicy(IndexPolicy.FORCE);
         APILocator.getContentletAPI().archive(dummyPage, sysUser, false);
         APILocator.getContentletAPI().isInodeIndexedArchived(dummyPage.getInode());
         assertTrue(dummyPage.isArchived());
+        dummyPage.setIndexPolicy(IndexPolicy.FORCE);
         APILocator.getContentletAPI().delete(dummyPage, sysUser, false);
 
+        secondDummyPage.setIndexPolicy(IndexPolicy.FORCE);
         APILocator.getContentletAPI().unpublish(secondDummyPage, sysUser, false);
+        secondDummyPage.setIndexPolicy(IndexPolicy.FORCE);
         APILocator.getContentletAPI().archive(secondDummyPage, sysUser, false);
         APILocator.getContentletAPI().isInodeIndexedArchived(secondDummyPage.getInode());
         assertTrue(secondDummyPage.isArchived());
+        secondDummyPage.setIndexPolicy(IndexPolicy.FORCE);
         APILocator.getContentletAPI().delete(secondDummyPage, sysUser, false);
 
         //Remove Template.

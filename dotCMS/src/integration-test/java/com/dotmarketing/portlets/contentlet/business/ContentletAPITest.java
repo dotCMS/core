@@ -18,6 +18,7 @@ import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.*;
 import com.dotmarketing.business.*;
 import com.dotmarketing.common.model.ContentletSearch;
@@ -3818,6 +3819,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
 
+            checkedoutBlogContent.setIndexPolicy(IndexPolicy.FORCE);
             Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent, (ContentletRelationships) null,
                 null, null, user, false);
 
@@ -3998,6 +4000,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
 
+            checkedoutBlogContent.setIndexPolicy(IndexPolicy.FORCE);
             Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent,
                 (Map<Relationship, List<Contentlet>>) null, null, user, false);
 
@@ -4269,6 +4272,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         comment1.setStringProperty("title", "comment1");
         comment1.setStringProperty("email", "email");
         comment1.setStringProperty("comment", "comment");
+        comment1.setIndexPolicy(IndexPolicy.FORCE);
 
         comment1 = contentletAPI.checkin(comment1, new HashMap<>(), user, false);
 
@@ -4277,11 +4281,12 @@ public class ContentletAPITest extends ContentletBaseTest {
         comment2.setStringProperty("title", "comment2");
         comment2.setStringProperty("email", "email");
         comment2.setStringProperty("comment", "comment");
+        comment2.setIndexPolicy(IndexPolicy.FORCE);
 
         comment2 = contentletAPI.checkin(comment2, new HashMap<>(), user, false);
 
         records.setRecords(Arrays.asList(comment1, comment2));
-        relationships.setRelationshipsRecords(Collections.singletonList(records));
+        relationships.setRelationshipsRecords(CollectionsUtils.list(records));
 
         return relationships;
     }

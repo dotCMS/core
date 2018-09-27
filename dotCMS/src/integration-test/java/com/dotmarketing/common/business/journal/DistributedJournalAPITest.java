@@ -51,7 +51,7 @@ public class DistributedJournalAPITest extends IntegrationTestBase {
     public void test_highestpriority_reindex_vrs_normal_reindex() throws DotDataException {
 
         final DistributedJournalAPI<String> distributedJournalAPI = APILocator.getDistributedJournalAPI();
-        final List<Contentlet>   contentlets = APILocator.getContentletAPI().findAllContent(0, 100);
+        final List<Contentlet>   contentlets = APILocator.getContentletAPI().findAllContent(0, 200);
 
         assertNotNull(contentlets);
         assertTrue(contentlets.size() >= 100);

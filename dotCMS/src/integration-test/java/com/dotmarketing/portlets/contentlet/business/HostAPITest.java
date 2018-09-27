@@ -263,6 +263,7 @@ public class HostAPITest {
 
         try{
         	HibernateUtil.startTransaction();
+        	host.setIndexPolicy(IndexPolicy.FORCE);
         	APILocator.getHostAPI().unpublish(host, user, false);
         	APILocator.getHostAPI().archive(host, user, false);
             hostDeleteResult = APILocator.getHostAPI().delete(host, user, false, true);

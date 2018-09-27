@@ -414,6 +414,7 @@ public class ContentletBaseTest extends IntegrationTestBase {
             addContainer( contentlet );
         }
 
+        contentlet.setIndexPolicy(IndexPolicy.FORCE);
         return contentlet;
     }
 
