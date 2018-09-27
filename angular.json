@@ -11,11 +11,12 @@
         "build": {
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
-            "outputPath": "dist",
+            "baseHref": "./",
             "index": "src/index.html",
             "main": "src/main.ts",
-            "tsConfig": "src/tsconfig.app.json",
+            "outputPath": "dist",
             "polyfills": "src/polyfills.ts",
+            "tsConfig": "src/tsconfig.app.json",
             "stylePreprocessorOptions": {
               "includePaths": [
                 "src/styles"
@@ -31,27 +32,29 @@
             "scripts": []
           },
           "configurations": {
-            "dotcms": {
+            "development": {
               "baseHref": "./",
-              "watch": true,
-              "poll": 1000
+              "poll": 1000,
+              "sourceMap": true,
+              "watch": true
             },
             "production": {
-              "optimization": true,
-              "outputHashing": "all",
-              "sourceMap": false,
-              "extractCss": true,
-              "namedChunks": false,
               "aot": true,
-              "extractLicenses": true,
-              "vendorChunk": false,
               "buildOptimizer": true,
+              "deleteOutputPath": true,
+              "extractCss": true,
+              "extractLicenses": true,
               "fileReplacements": [
                 {
                   "replace": "src/environments/environment.ts",
                   "with": "src/environments/environment.prod.ts"
                 }
-              ]
+              ],
+              "namedChunks": true,
+              "optimization": true,
+              "outputHashing": "all",
+              "sourceMap": false,
+              "vendorChunk": true
             }
           }
         },

@@ -1,7 +1,13 @@
 import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
-import { Component, Input, SimpleChanges, ViewEncapsulation, OnChanges } from '@angular/core';
+import {
+    Component,
+    Input,
+    SimpleChanges,
+    ViewEncapsulation,
+    OnChanges,
+    OnInit
+} from '@angular/core';
 
-import { BaseComponent } from '../../_common/_base/base-component';
 import { DotMessageService } from '@services/dot-messages-service';
 import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
 
@@ -11,15 +17,30 @@ import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
     styleUrls: ['./action-header.scss'],
     templateUrl: 'action-header.html'
 })
-export class ActionHeaderComponent extends BaseComponent implements OnChanges {
+export class ActionHeaderComponent implements OnChanges, OnInit {
     @Input()
     selectedItems = [];
+
     @Input()
     options: ActionHeaderOptions;
+
     public dynamicOverflow = 'visible';
 
-    constructor(dotMessageService: DotMessageService, private dotDialogService: DotAlertConfirmService) {
-        super(['selected', 'contenttypes.action.delete', 'contenttypes.action.cancel'], dotMessageService);
+    i18nMessages: {
+        [key: string]: string;
+    } = {};
+
+    constructor(
+        private dotMessageService: DotMessageService,
+        private dotDialogService: DotAlertConfirmService
+    ) {}
+
+    ngOnInit() {
+        this.dotMessageService
+            .getMessages(['selected', 'contenttypes.action.delete', 'contenttypes.action.cancel'])
+            .subscribe((res) => {
+                this.i18nMessages = res;
+            });
     }
 
     ngOnChanges(changes: SimpleChanges): any {
@@ -27,7 +48,11 @@ export class ActionHeaderComponent extends BaseComponent implements OnChanges {
             this.hideDinamycOverflow();
         }
 
-        if (changes.options && changes.options.currentValue && changes.options.currentValue.secondary) {
+        if (
+            changes.options &&
+            changes.options.currentValue &&
+            changes.options.currentValue.secondary
+        ) {
             this.setCommandWrapper(changes.options.currentValue.secondary);
         }
     }

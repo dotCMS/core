@@ -1,4 +1,12 @@
-import { Component, EventEmitter, Input, Output, ViewEncapsulation, ElementRef, HostListener } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    Input,
+    Output,
+    ViewEncapsulation,
+    ElementRef,
+    HostListener
+} from '@angular/core';
 import { trigger, transition, style, animate } from '@angular/animations';
 
 @Component({

@@ -1,4 +1,13 @@
-import { Component, Input, SimpleChanges, OnChanges, EventEmitter, Output, HostListener, ViewChild } from '@angular/core';
+import {
+    Component,
+    Input,
+    SimpleChanges,
+    OnChanges,
+    EventEmitter,
+    Output,
+    HostListener,
+    ViewChild
+} from '@angular/core';
 import { Dialog } from 'primeng/primeng';
 import { fromEvent } from 'rxjs';
 
@@ -13,6 +22,7 @@ export class DotIframeDialogComponent implements OnChanges {
 
     @Input()
     url: string;
+
     @Input()
     header = '';
 
@@ -21,12 +31,16 @@ export class DotIframeDialogComponent implements OnChanges {
         originalEvent: MouseEvent | KeyboardEvent;
         close: () => void;
     }> = new EventEmitter();
+
     @Output()
     close: EventEmitter<any> = new EventEmitter();
+
     @Output()
     custom: EventEmitter<CustomEvent> = new EventEmitter();
+
     @Output()
     load: EventEmitter<any> = new EventEmitter();
+
     @Output()
     keydown: EventEmitter<KeyboardEvent> = new EventEmitter();
 

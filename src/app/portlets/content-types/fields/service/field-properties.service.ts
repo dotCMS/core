@@ -48,7 +48,9 @@ export class FieldPropertyService {
      * @memberof FieldPropertyService
      */
     getDefaultValue(propertyName: string, fieldTypeClass?: string): any {
-        return propertyName === 'dataType' ? this.getDataType(fieldTypeClass) : this.getPropInfo(propertyName);
+        return propertyName === 'dataType'
+            ? this.getDataType(fieldTypeClass)
+            : this.getPropInfo(propertyName);
     }
 
     /**
@@ -124,7 +126,9 @@ export class FieldPropertyService {
     }
 
     private getDataType(fieldTypeClass: string): any {
-        return DATA_TYPE_PROPERTY_INFO[fieldTypeClass] ? DATA_TYPE_PROPERTY_INFO[fieldTypeClass][0].value : null;
+        return DATA_TYPE_PROPERTY_INFO[fieldTypeClass]
+            ? DATA_TYPE_PROPERTY_INFO[fieldTypeClass][0].value
+            : null;
     }
 
     private getPropInfo(propertyName: string): any {

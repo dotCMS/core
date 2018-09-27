@@ -126,6 +126,10 @@ textarea,
     @extend #field-disabled-state;
 }
 
+.ui-label-disabled {
+    color: $field-disabled-color;
+}
+
 /* Overlays */
 
 .ui-widget-overlay {

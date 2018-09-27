@@ -11,7 +11,8 @@ export class StringPixels {
      */
     public static getDropdownWidth(textValues: Array<string>): string {
         const maxText = _.maxBy(textValues, (text: string) => text.length).length;
-        const maxWidth = StringPixels.characterSize * maxText > 108 ? 108 : StringPixels.characterSize * maxText;
+        const maxWidth =
+            StringPixels.characterSize * maxText > 108 ? 108 : StringPixels.characterSize * maxText;
         return `${maxWidth + StringPixels.arrowDropdownComponentSize}px`;
     }
 }

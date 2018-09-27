@@ -107,7 +107,9 @@ describe('SiteSelectorFieldComponent', () => {
     });
 
     it('should bind params correctly', () => {
-        const siteSelectorField: SiteSelectorFieldComponent = de.query(By.css('dot-site-selector-field')).componentInstance;
+        const siteSelectorField: SiteSelectorFieldComponent = de.query(
+            By.css('dot-site-selector-field')
+        ).componentInstance;
 
         siteSelectorField.archive = true;
         siteSelectorField.system = false;

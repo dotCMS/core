@@ -13,7 +13,9 @@ export class DotcmsEventsServiceMock {
     subscribeToEvents(clientEventTypes: string[]): Observable<any> {
         const subject: Subject<any> = new Subject<any>();
 
-        clientEventTypes.forEach((eventType) => this.subscribeTo(eventType).subscribe((data) => subject.next(data)));
+        clientEventTypes.forEach((eventType) =>
+            this.subscribeTo(eventType).subscribe((data) => subject.next(data))
+        );
 
         return subject.asObservable();
     }

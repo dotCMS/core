@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs';
+import { Observable } from 'rxjs/Observable';
 import { DotRouterService } from '../dot-router/dot-router.service';
 import { DotMessageService } from '../dot-messages-service';
 import { Injectable } from '@angular/core';
@@ -87,11 +87,17 @@ export class DotHttpErrorManagerService {
     }
 
     private contentletIsForbidden(error: string): boolean {
-        return error.indexOf('does not have permissions READ') > -1 || error.indexOf('User cannot edit') > -1;
+        return (
+            error.indexOf('does not have permissions READ') > -1 ||
+            error.indexOf('User cannot edit') > -1
+        );
     }
 
     private isLicenseError(response: Response): boolean {
-        return response.headers && response.headers.get('error-key') === 'dotcms.api.error.license.required';
+        return (
+            response.headers &&
+            response.headers.get('error-key') === 'dotcms.api.error.license.required'
+        );
     }
 
     private handleForbidden(): boolean {

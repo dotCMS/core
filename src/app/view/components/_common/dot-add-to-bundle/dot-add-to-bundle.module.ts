@@ -10,7 +10,15 @@ import { DotCurrentUserService } from '@services/dot-current-user/dot-current-us
 @NgModule({
     declarations: [DotAddToBundleComponent],
     exports: [DotAddToBundleComponent],
-    imports: [CommonModule, ButtonModule, FormsModule, DialogModule, ReactiveFormsModule, DropdownModule, FieldValidationMessageModule],
+    imports: [
+        CommonModule,
+        ButtonModule,
+        FormsModule,
+        DialogModule,
+        ReactiveFormsModule,
+        DropdownModule,
+        FieldValidationMessageModule
+    ],
     providers: [AddToBundleService, DotCurrentUserService]
 })
 export class DotAddToBundleModule {}

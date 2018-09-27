@@ -54,7 +54,9 @@ export class DotEditContentToolbarHtmlService {
                 take(1)
             )
             .subscribe((isEnterpriseLicense: boolean) => {
-                const containers = Array.from(doc.querySelectorAll('div[data-dot-object="container"]'));
+                const containers = Array.from(
+                    doc.querySelectorAll('div[data-dot-object="container"]')
+                );
                 containers.forEach((container: HTMLElement) => {
                     const containerToolbar = document.createElement('div');
                     containerToolbar.classList.add('dotedit-container__toolbar');
@@ -63,7 +65,10 @@ export class DotEditContentToolbarHtmlService {
                         container.classList.add('disabled');
                     }
 
-                    containerToolbar.innerHTML = this.getContainerToolbarHtml(container, isEnterpriseLicense);
+                    containerToolbar.innerHTML = this.getContainerToolbarHtml(
+                        container,
+                        isEnterpriseLicense
+                    );
                     container.parentNode.insertBefore(containerToolbar, container);
                 });
             });
@@ -91,7 +96,9 @@ export class DotEditContentToolbarHtmlService {
                     const contentletToolbar = document.createElement('div');
                     contentletToolbar.classList.add('dotedit-contentlet__toolbar');
 
-                    const vtls = Array.from(contentlet.querySelectorAll('div[data-dot-object="vtl-file"]'));
+                    const vtls = Array.from(
+                        contentlet.querySelectorAll('div[data-dot-object="vtl-file"]')
+                    );
 
                     if (vtls.length) {
                         contentletToolbar.innerHTML += this.getEditVtlButtons(vtls);
@@ -185,7 +192,9 @@ export class DotEditContentToolbarHtmlService {
                     const isDisabledFormAdd = item === 'form' && !isEnterpriseLicense;
 
                     return {
-                        label: this.dotMessageService.get(`editpage.content.container.menu.${item}`),
+                        label: this.dotMessageService.get(
+                            `editpage.content.container.menu.${item}`
+                        ),
                         dataset: {
                             action: 'add',
                             add: item,
@@ -193,7 +202,9 @@ export class DotEditContentToolbarHtmlService {
                             uuid: container.dataset.dotUuid
                         },
                         disabled: isDisabledFormAdd,
-                        tooltip: isDisabledFormAdd ? this.dotMessageService.get('dot.common.license.enterprise.only.error') : ''
+                        tooltip: isDisabledFormAdd
+                            ? this.dotMessageService.get('dot.common.license.enterprise.only.error')
+                            : ''
                     };
                 })
         });
@@ -233,11 +244,15 @@ export class DotEditContentToolbarHtmlService {
                 ${items
                     .map((item: DotEditPopupMenuItem) => {
                         return `
-                            <li class="dotedit-menu__item ${item.disabled ? 'dotedit-menu__item--disabled' : ''}"
+                            <li class="dotedit-menu__item ${
+                                item.disabled ? 'dotedit-menu__item--disabled' : ''
+                            }"
                                 ${item.tooltip ? 'title="' + item.tooltip + '"' : ''}">
                                     <a
                                         data-dot-object="popup-menu-item"
-                                        ${this.getDotEditPopupMenuItemDataSet(item.dataset)} role="button">
+                                        ${this.getDotEditPopupMenuItemDataSet(
+                                            item.dataset
+                                        )} role="button">
                                         ${item.label}
                                     </a>
                             </li>

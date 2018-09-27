@@ -1,4 +1,10 @@
-import { Component, Type, SimpleChange, ViewContainerRef, ComponentFactoryResolver } from '@angular/core';
+import {
+    Component,
+    Type,
+    SimpleChange,
+    ViewContainerRef,
+    ComponentFactoryResolver
+} from '@angular/core';
 import { DynamicFieldPropertyDirective } from './dynamic-field-property.directive';
 import { FieldPropertyService } from '../../../service';
 import { FieldProperty } from '../field-properties.model';
@@ -24,7 +30,13 @@ class TestComponentFactoryResolver {
 }
 
 class TestViewContainerRef {
-    createComponent(_componentFactory: any, _index?: number, _injector?: any, _projectableNodes?: any[][], _ngModule?: any): any {}
+    createComponent(
+        _componentFactory: any,
+        _index?: number,
+        _injector?: any,
+        _projectableNodes?: any[][],
+        _ngModule?: any
+    ): any {}
 }
 
 describe('Directive: DynamicFieldPropertyDirective', () => {
@@ -42,8 +54,12 @@ describe('Directive: DynamicFieldPropertyDirective', () => {
         const fieldPropertyService = new TestFieldPropertyService();
         this.componentFactory = {};
 
-        this.getComponent = spyOn(fieldPropertyService, 'getComponent').and.returnValue(TestComponent);
-        this.resolveComponentFactory = spyOn(resolver, 'resolveComponentFactory').and.returnValue(this.componentFactory);
+        this.getComponent = spyOn(fieldPropertyService, 'getComponent').and.returnValue(
+            TestComponent
+        );
+        this.resolveComponentFactory = spyOn(resolver, 'resolveComponentFactory').and.returnValue(
+            this.componentFactory
+        );
         this.createComponent = spyOn(viewContainerRef, 'createComponent').and.returnValue({
             instance: this.component
         });

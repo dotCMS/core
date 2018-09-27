@@ -1,4 +1,4 @@
-import { of as observableOf, Observable } from 'rxjs';
+import { of as observableOf } from 'rxjs';
 import { ComponentFixture, async, fakeAsync, tick } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
 import { SiteSelectorComponent } from './site-selector.component';
@@ -136,7 +136,9 @@ describe('SiteSelectorComponent', () => {
 
         fixture.detectChanges();
 
-        const searchableDropdownComponent: SearchableDropdownComponent = de.query(By.css('dot-searchable-dropdown')).componentInstance;
+        const searchableDropdownComponent: SearchableDropdownComponent = de.query(
+            By.css('dot-searchable-dropdown')
+        ).componentInstance;
 
         searchableDropdownComponent.pageChange.emit({
             filter: filter,
@@ -161,7 +163,9 @@ describe('SiteSelectorComponent', () => {
 
         fixture.detectChanges();
 
-        const searchableDropdownComponent: SearchableDropdownComponent = de.query(By.css('dot-searchable-dropdown')).componentInstance;
+        const searchableDropdownComponent: SearchableDropdownComponent = de.query(
+            By.css('dot-searchable-dropdown')
+        ).componentInstance;
 
         searchableDropdownComponent.filterChange.emit(filter);
         comp.handleFilterChange(filter);
@@ -177,7 +181,9 @@ describe('SiteSelectorComponent', () => {
 
         fixture.detectChanges();
 
-        const searchableDropdownComponent: SearchableDropdownComponent = de.query(By.css('dot-searchable-dropdown')).componentInstance;
+        const searchableDropdownComponent: SearchableDropdownComponent = de.query(
+            By.css('dot-searchable-dropdown')
+        ).componentInstance;
 
         searchableDropdownComponent.filterChange.emit('');
 
@@ -190,7 +196,9 @@ describe('SiteSelectorComponent', () => {
         spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([]));
 
         fixture.detectChanges();
-        const searchableDropdownComponent: DebugElement = de.query(By.css('dot-searchable-dropdown'));
+        const searchableDropdownComponent: DebugElement = de.query(
+            By.css('dot-searchable-dropdown')
+        );
         let result: any;
         comp.change.subscribe((res) => (result = res));
         searchableDropdownComponent.triggerEventHandler('change', { fake: 'site' });

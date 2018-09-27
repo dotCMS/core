@@ -1,4 +1,13 @@
-import { Component, OnDestroy, Input, Output, EventEmitter, OnInit, ViewChild, ElementRef } from '@angular/core';
+import {
+    Component,
+    OnDestroy,
+    Input,
+    Output,
+    EventEmitter,
+    OnInit,
+    ViewChild,
+    ElementRef
+} from '@angular/core';
 import { HotkeysService, Hotkey } from 'angular2-hotkeys';
 import { DotMessageService } from '@services/dot-messages-service';
 import { DotEventsService } from '@services/dot-events/dot-events.service';

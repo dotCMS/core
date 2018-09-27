@@ -1,4 +1,4 @@
-import { of as observableOf, Observable } from 'rxjs';
+import { of as observableOf } from 'rxjs';
 import { DotContainer } from '@models/container/dot-container.model';
 import { By } from '@angular/platform-browser';
 import { PaginatorService } from '@services/paginator/paginator.service';
@@ -16,7 +16,6 @@ describe('ContainerSelectorComponent', () => {
     let comp: DotContainerSelectorComponent;
     let fixture: ComponentFixture<DotContainerSelectorComponent>;
     let de: DebugElement;
-    let el: HTMLElement;
     let searchableDropdownComponent;
     let containers: DotContainer[];
 
@@ -28,13 +27,16 @@ describe('ContainerSelectorComponent', () => {
         DOTTestBed.configureTestingModule({
             declarations: [DotContainerSelectorComponent],
             imports: [SearchableDropDownModule, BrowserAnimationsModule],
-            providers: [{ provide: DotMessageService, useValue: messageServiceMock }, IframeOverlayService, PaginatorService]
+            providers: [
+                { provide: DotMessageService, useValue: messageServiceMock },
+                IframeOverlayService,
+                PaginatorService
+            ]
         });
 
         fixture = DOTTestBed.createComponent(DotContainerSelectorComponent);
         comp = fixture.componentInstance;
         de = fixture.debugElement;
-        el = de.nativeElement;
 
         searchableDropdownComponent = de.query(By.css('dot-searchable-dropdown')).componentInstance;
 

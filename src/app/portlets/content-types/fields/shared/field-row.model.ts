@@ -56,7 +56,9 @@ export class FieldRow {
             offset = 1;
         }
 
-        const fieldsSplitByTabDivider: ContentTypeField[][] = FieldUtil.splitFieldsByTabDivider(fields.splice(offset));
+        const fieldsSplitByTabDivider: ContentTypeField[][] = FieldUtil.splitFieldsByTabDivider(
+            fields.splice(offset)
+        );
         fieldsSplitByTabDivider.forEach((tabDividerFields) => {
             this.columns.push(new FieldColumn(tabDividerFields));
         });
@@ -69,6 +71,8 @@ export class FieldRow {
      */
     addFirstColumn(): void {
         this.columns[0] = new FieldColumn();
-        this.columns[0].tabDivider = { clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField' };
+        this.columns[0].tabDivider = {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField'
+        };
     }
 }

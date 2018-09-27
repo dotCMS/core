@@ -68,17 +68,23 @@ describe('DotLayoutDesignerComponent', () => {
         });
 
         it('should NOT show header in the template', () => {
-            const headerElem: DebugElement = fixture.debugElement.query(By.css('.dot-layout-designer__header'));
+            const headerElem: DebugElement = fixture.debugElement.query(
+                By.css('.dot-layout-designer__header')
+            );
             expect(headerElem).toBe(null);
         });
 
         it('should NOT show footer in the template', () => {
-            const footerElem: DebugElement = fixture.debugElement.query(By.css('.dot-layout-designer__footer'));
+            const footerElem: DebugElement = fixture.debugElement.query(
+                By.css('.dot-layout-designer__footer')
+            );
             expect(footerElem).toBe(null);
         });
 
         it('should NOT show a sidebar', () => {
-            const sidebar: DebugElement = fixture.debugElement.query(By.css('[class^="dot-layout-designer__sidebar"]'));
+            const sidebar: DebugElement = fixture.debugElement.query(
+                By.css('[class^="dot-layout-designer__sidebar"]')
+            );
             expect(sidebar).toBe(null);
         });
 
@@ -86,7 +92,9 @@ describe('DotLayoutDesignerComponent', () => {
             let addBoxButton: DebugElement;
 
             beforeEach(() => {
-                addBoxButton = fixture.debugElement.query(By.css('.dot-layout-designer__toolbar-add'));
+                addBoxButton = fixture.debugElement.query(
+                    By.css('.dot-layout-designer__toolbar-add')
+                );
             });
 
             it('should show', () => {
@@ -134,22 +142,30 @@ describe('DotLayoutDesignerComponent', () => {
             });
 
             it('should show header in the template', () => {
-                const headerElem: DebugElement = fixture.debugElement.query(By.css('.dot-layout-designer__header'));
+                const headerElem: DebugElement = fixture.debugElement.query(
+                    By.css('.dot-layout-designer__header')
+                );
                 expect(headerElem).toBeTruthy();
             });
 
             it('should show footer in the template', () => {
-                const footerElem: DebugElement = fixture.debugElement.query(By.css('.dot-layout-designer__footer'));
+                const footerElem: DebugElement = fixture.debugElement.query(
+                    By.css('.dot-layout-designer__footer')
+                );
                 expect(footerElem).toBeTruthy();
             });
 
             it('should have the right label for the Header', () => {
-                const headerSelector = fixture.debugElement.query(By.css('.dot-layout-designer__header'));
+                const headerSelector = fixture.debugElement.query(
+                    By.css('.dot-layout-designer__header')
+                );
                 expect(headerSelector.nativeElement.outerText).toBe('HEADER');
             });
 
             it('should have the right label for the Footer', () => {
-                const headerSelector = fixture.debugElement.query(By.css('.dot-layout-designer__footer'));
+                const headerSelector = fixture.debugElement.query(
+                    By.css('.dot-layout-designer__footer')
+                );
                 expect(headerSelector.nativeElement.outerText).toBe('FOOTER');
             });
 
@@ -167,7 +183,9 @@ describe('DotLayoutDesignerComponent', () => {
                 });
 
                 it('should show', () => {
-                    const sidebar: DebugElement = fixture.debugElement.query(By.css('.dot-layout-designer__sidebar--left'));
+                    const sidebar: DebugElement = fixture.debugElement.query(
+                        By.css('.dot-layout-designer__sidebar--left')
+                    );
                     expect(sidebar).toBeTruthy();
                 });
 
@@ -176,7 +194,9 @@ describe('DotLayoutDesignerComponent', () => {
                     positions.forEach((position) => {
                         component.group.get('sidebar').value.location = position;
                         fixture.detectChanges();
-                        const sidebar: DebugElement = fixture.debugElement.query(By.css(`.dot-layout-designer__sidebar--${position}`));
+                        const sidebar: DebugElement = fixture.debugElement.query(
+                            By.css(`.dot-layout-designer__sidebar--${position}`)
+                        );
                         expect(sidebar).toBeTruthy(position);
                     });
                 });
@@ -187,7 +207,9 @@ describe('DotLayoutDesignerComponent', () => {
                     sizes.forEach((size) => {
                         component.group.get('sidebar').value.width = size;
                         fixture.detectChanges();
-                        const sidebar: DebugElement = fixture.debugElement.query(By.css(`.dot-layout-designer__sidebar--${size}`));
+                        const sidebar: DebugElement = fixture.debugElement.query(
+                            By.css(`.dot-layout-designer__sidebar--${size}`)
+                        );
                         expect(sidebar).toBeTruthy(size);
                     });
                 });

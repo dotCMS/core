@@ -66,14 +66,24 @@ export class DotEditPageInfoComponent implements OnInit {
         this.dotClipboardUtil
             .copy(this.getFullUrl(this.pageState.page.pageURI))
             .then(() => {
-                this.dotGlobalMessageService.display(this.dotMessageService.get('dot.common.message.pageurl.copied.clipboard'));
+                this.dotGlobalMessageService.display(
+                    this.dotMessageService.get('dot.common.message.pageurl.copied.clipboard')
+                );
             })
             .catch(() => {
-                this.dotGlobalMessageService.error(this.dotMessageService.get('dot.common.message.pageurl.copied.clipboard.error'));
+                this.dotGlobalMessageService.error(
+                    this.dotMessageService.get('dot.common.message.pageurl.copied.clipboard.error')
+                );
             });
     }
 
     private getFullUrl(url: string): string {
-        return [location.protocol, '//', this.siteService.currentSite['name'], location.port ? `:${location.port}` : '', url].join('');
+        return [
+            location.protocol,
+            '//',
+            this.siteService.currentSite['name'],
+            location.port ? `:${location.port}` : '',
+            url
+        ].join('');
     }
 }

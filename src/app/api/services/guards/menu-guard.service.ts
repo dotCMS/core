@@ -25,7 +25,10 @@ export class MenuGuardService implements CanActivate {
             : this.canAccessPortlet(this.dotRouterService.getPortletId(state.url));
     }
 
-    canActivateChild(_route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> {
+    canActivateChild(
+        _route: ActivatedRouteSnapshot,
+        state: RouterStateSnapshot
+    ): Observable<boolean> {
         return !environment.production && state.url === '/pl'
             ? observableOf(true)
             : this.canAccessPortlet(this.dotRouterService.getPortletId(state.url));

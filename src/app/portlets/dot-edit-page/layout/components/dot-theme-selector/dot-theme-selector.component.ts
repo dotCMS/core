@@ -1,7 +1,15 @@
 import { fromEvent as observableFromEvent, Observable } from 'rxjs';
 
 import { debounceTime } from 'rxjs/operators';
-import { Component, OnInit, Output, EventEmitter, Input, ViewChild, ElementRef } from '@angular/core';
+import {
+    Component,
+    OnInit,
+    Output,
+    EventEmitter,
+    Input,
+    ViewChild,
+    ElementRef
+} from '@angular/core';
 import { DotMessageService } from '@services/dot-messages-service';
 import { DotTheme } from '../../../shared/models/dot-theme.model';
 import { PaginatorService } from '@services/paginator/paginator.service';
@@ -40,7 +48,11 @@ export class DotThemeSelectorComponent implements OnInit {
     applyDialogAction: DotDialogAction = { label: '', action: () => {} };
     current: DotTheme;
 
-    constructor(public dotMessageService: DotMessageService, public paginatorService: PaginatorService, private siteService: SiteService) {}
+    constructor(
+        public dotMessageService: DotMessageService,
+        public paginatorService: PaginatorService,
+        private siteService: SiteService
+    ) {}
 
     ngOnInit() {
         this.dotMessageService

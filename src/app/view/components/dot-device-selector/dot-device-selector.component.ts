@@ -17,7 +17,10 @@ export class DotDeviceSelectorComponent implements OnInit {
 
     options: DotDevice[];
 
-    constructor(private dotDevicesService: DotDevicesService, private dotMessageService: DotMessageService) {}
+    constructor(
+        private dotDevicesService: DotDevicesService,
+        private dotMessageService: DotMessageService
+    ) {}
 
     ngOnInit() {
         this.dotMessageService
@@ -29,10 +32,15 @@ export class DotDeviceSelectorComponent implements OnInit {
                     .pipe(
                         take(1),
                         flatMap((devices: DotDevice[]) => devices),
-                        filter((device: DotDevice) => +device.cssHeight > 0 && +device.cssWidth > 0),
+                        filter(
+                            (device: DotDevice) => +device.cssHeight > 0 && +device.cssWidth > 0
+                        ),
                         toArray(),
                         map((devices: DotDevice[]) =>
-                            this.setOptions(this.dotMessageService.get('editpage.viewas.default.device'), devices)
+                            this.setOptions(
+                                this.dotMessageService.get('editpage.viewas.default.device'),
+                                devices
+                            )
                         )
                     )
                     .subscribe((devices: DotDevice[]) => {

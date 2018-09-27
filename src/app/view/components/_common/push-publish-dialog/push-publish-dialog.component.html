@@ -6,7 +6,7 @@
     [responsive]="true"
     [resizable]="false"
     [draggable]="false"
-    (onHide)="close($event)">
+    (onHide)="close()">
 
     <p-header>
         {{ dotMessageService.get('contenttypes.content.push_publish') }}
@@ -45,7 +45,7 @@
         </div>
     </form>
     <p-footer>
-        <button pButton type="button" (click)="close($event)" label="{{ dotMessageService.get('contenttypes.content.push_publish.form.cancel') }}" class="push-publish-dialog__form-cancel"></button>
+        <button pButton type="button" (click)="close()" label="{{ dotMessageService.get('contenttypes.content.push_publish.form.cancel') }}" class="push-publish-dialog__form-cancel"></button>
         <button pButton type="submit" (click)="submitForm()" label="{{ dotMessageService.get('contenttypes.content.push_publish.form.push') }}" [disabled]="form && !form.valid"></button>
     </p-footer>
 </p-dialog>

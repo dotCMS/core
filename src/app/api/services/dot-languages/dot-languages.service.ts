@@ -1,6 +1,6 @@
 import { pluck } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable } from 'rxjs/Observable';
 import { DotLanguage } from '@models/dot-language/dot-language.model';
 import { RequestMethod } from '@angular/http';
 import { CoreWebService } from 'dotcms-js/dotcms-js';

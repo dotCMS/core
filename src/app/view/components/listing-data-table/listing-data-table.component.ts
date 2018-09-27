@@ -1,7 +1,15 @@
-import { Component, Input, Output, EventEmitter, OnChanges, ViewChild, ElementRef, OnInit } from '@angular/core';
+import {
+    Component,
+    Input,
+    Output,
+    EventEmitter,
+    OnChanges,
+    ViewChild,
+    ElementRef,
+    OnInit
+} from '@angular/core';
 import { DataTable, LazyLoadEvent } from 'primeng/primeng';
 import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
-import { BaseComponent } from '../_common/_base/base-component';
 import { DataTableColumn } from '@models/data-table/data-table-column';
 import { LoggerService } from 'dotcms-js/dotcms-js';
 import { FormatDateService } from '@services/format-date-service';
@@ -15,7 +23,7 @@ import { DotDataTableAction } from '@models/data-table/dot-data-table-action';
     styleUrls: ['./listing-data-table.component.scss'],
     templateUrl: 'listing-data-table.component.html'
 })
-export class ListingDataTableComponent extends BaseComponent implements OnChanges, OnInit {
+export class ListingDataTableComponent implements OnChanges, OnInit {
     @Input()
     columns: DataTableColumn[];
     @Input()
@@ -25,7 +33,7 @@ export class ListingDataTableComponent extends BaseComponent implements OnChange
     @Input()
     buttonActions: ButtonAction[] = [];
     @Input()
-    sortOrder: number;
+    sortOrder: string;
     @Input()
     sortField: string;
     @Input()
@@ -50,13 +58,16 @@ export class ListingDataTableComponent extends BaseComponent implements OnChange
     dateColumns: DataTableColumn[];
     loading = true;
 
+    i18nMessages: {
+        [key: string]: string;
+    } = {};
+
     constructor(
         public dotMessageService: DotMessageService,
         public loggerService: LoggerService,
         public paginatorService: PaginatorService,
         private formatDateService: FormatDateService
     ) {
-        super(['global-search'], dotMessageService);
         this.paginatorService.url = this.url;
     }
 
@@ -66,7 +77,9 @@ export class ListingDataTableComponent extends BaseComponent implements OnChange
         }
 
         if (changes.columns && changes.columns.currentValue) {
-            this.dateColumns = changes.columns.currentValue.filter((column) => column.format === this.DATE_FORMAT);
+            this.dateColumns = changes.columns.currentValue.filter(
+                (column) => column.format === this.DATE_FORMAT
+            );
             this.loadData(0);
         }
         if (changes.paginationPerPage && changes.paginationPerPage.currentValue) {
@@ -76,6 +89,10 @@ export class ListingDataTableComponent extends BaseComponent implements OnChange
 
     ngOnInit(): void {
         this.globalSearch.nativeElement.focus();
+
+        this.dotMessageService.getMessages(['global-search']).subscribe((res) => {
+            this.i18nMessages = res;
+        });
     }
 
     handleRowClick($event): void {
@@ -98,7 +115,8 @@ export class ListingDataTableComponent extends BaseComponent implements OnChange
 
             this.paginatorService.filter = this.filter;
             this.paginatorService.sortField = sortField;
-            this.paginatorService.sortOrder = sortOrder === 1 ? OrderDirection.ASC : OrderDirection.DESC;
+            this.paginatorService.sortOrder =
+                sortOrder === 1 ? OrderDirection.ASC : OrderDirection.DESC;
 
             this.paginatorService.getWithOffset(offset).subscribe((items) => this.setItems(items));
         }
@@ -145,7 +163,10 @@ export class ListingDataTableComponent extends BaseComponent implements OnChange
 
     private formatData(items: any[]): any[] {
         return items.map((item) => {
-            this.dateColumns.forEach((col) => (item[col.fieldName] = this.formatDateService.getRelative(item[col.fieldName])));
+            this.dateColumns.forEach(
+                (col) =>
+                    (item[col.fieldName] = this.formatDateService.getRelative(item[col.fieldName]))
+            );
             return item;
         });
     }

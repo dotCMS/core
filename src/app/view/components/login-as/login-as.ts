@@ -1,5 +1,13 @@
-import { BaseComponent } from '../_common/_base/base-component';
-import { Component, Output, EventEmitter, Input, ViewEncapsulation, OnInit, ElementRef, ViewChild } from '@angular/core';
+import {
+    Component,
+    Output,
+    EventEmitter,
+    Input,
+    ViewEncapsulation,
+    OnInit,
+    ElementRef,
+    ViewChild
+} from '@angular/core';
 import { LoginService, User } from 'dotcms-js/dotcms-js';
 import { DotMessageService } from '@services/dot-messages-service';
 import { PaginatorService } from '@services/paginator';
@@ -15,11 +23,13 @@ import { DotEventsService } from '@services/dot-events/dot-events.service';
     styleUrls: ['./login-as.scss'],
     templateUrl: 'login-as.html'
 })
-export class LoginAsComponent extends BaseComponent implements OnInit {
+export class LoginAsComponent implements OnInit {
     @Output()
     cancel = new EventEmitter<boolean>();
+
     @Input()
     visible: boolean;
+
     @ViewChild('password')
     passwordElem: ElementRef;
 
@@ -28,27 +38,19 @@ export class LoginAsComponent extends BaseComponent implements OnInit {
     userCurrentPage: User[];
     errorMessage: string;
 
+    i18nMessages: {
+        [key: string]: string;
+    } = {};
+
     constructor(
-        dotMessageService: DotMessageService,
+        private dotMessageService: DotMessageService,
         private dotEventsService: DotEventsService,
         private fb: FormBuilder,
         private loginService: LoginService,
         public paginationService: PaginatorService,
         private iframeOverlayService: IframeOverlayService,
         private dotNavigationService: DotNavigationService
-    ) {
-        super(
-            [
-                'Change',
-                'cancel',
-                'loginas.select.loginas.user',
-                'loginas.input.loginas.password',
-                'loginas.error.wrong-credentials',
-                'login-as'
-            ],
-            dotMessageService
-        );
-    }
+    ) {}
 
     ngOnInit(): void {
         this.paginationService.url = 'v2/users/loginAsData';
@@ -58,6 +60,19 @@ export class LoginAsComponent extends BaseComponent implements OnInit {
             loginAsUser: new FormControl('', Validators.required),
             password: ''
         });
+
+        this.dotMessageService
+            .getMessages([
+                'Change',
+                'cancel',
+                'loginas.select.loginas.user',
+                'loginas.input.loginas.password',
+                'loginas.error.wrong-credentials',
+                'login-as'
+            ])
+            .subscribe((res) => {
+                this.i18nMessages = res;
+            });
     }
 
     close(): boolean {

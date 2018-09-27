@@ -1,7 +1,7 @@
 import { pluck, switchMap, take } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
 import { CoreWebService } from 'dotcms-js/dotcms-js';
-import { Observable } from 'rxjs';
+import { Observable } from 'rxjs/Observable';
 import { RequestMethod } from '@angular/http';
 import { DotWorkflow } from '@models/dot-workflow/dot-workflow.model';
 import { DotWorkflowAction } from '@models/dot-workflow-action/dot-workflow-action.model';
@@ -38,7 +38,9 @@ export class DotWorkflowService {
      */
     getSystem(): Observable<DotWorkflow> {
         return this.get().pipe(
-            switchMap((workflows: DotWorkflow[]) => workflows.filter((workflow: DotWorkflow) => workflow.system)),
+            switchMap((workflows: DotWorkflow[]) =>
+                workflows.filter((workflow: DotWorkflow) => workflow.system)
+            ),
             take(1)
         );
     }

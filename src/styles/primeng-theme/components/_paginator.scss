@@ -20,11 +20,11 @@
         border-radius: $paginator-page-border-radius;
     }
 
-    .ui-paginator-next .fa-forward:before {
+    .ui-paginator-next .pi-forward:before {
         content: "\f054";
     }
 
-    .ui-paginator-prev .fa-backward:before {
+    .ui-paginator-prev .pi-backward:before {
         content: "\f053";
     }
 }

@@ -20,14 +20,20 @@ export class WebSocketProtocol extends Protocol {
     private internalConnectionState: number;
     private reconnectIfNotNormalClose: boolean;
 
-    constructor(config: WebSocketConfig, loggerService: LoggerService, private protocols: Array<string>, private url: Url) {
+    constructor(
+        config: WebSocketConfig,
+        loggerService: LoggerService,
+        private protocols: Array<string>,
+        private url: Url
+    ) {
         super(loggerService, config);
 
         const match = new RegExp('wss?://').test(url.url);
         if (!match) {
             throw new Error('Invalid url provided [' + url.url + ']');
         }
-        this.reconnectIfNotNormalClose = config && config.reconnectIfNotNormalClose ? config.reconnectIfNotNormalClose : false;
+        this.reconnectIfNotNormalClose =
+            config && config.reconnectIfNotNormalClose ? config.reconnectIfNotNormalClose : false;
     }
 
     connect(force = false): void {
@@ -35,7 +41,9 @@ export class WebSocketProtocol extends Protocol {
         if (force || !this.socket || this.socket.readyState !== this.readyStateConstants.OPEN) {
             this.loggerService.debug('Connecting with Web socket', this.url.url);
             try {
-                self.socket = this.protocols ? new WebSocket(this.url.url, this.protocols) : new WebSocket(this.url.url);
+                self.socket = this.protocols
+                    ? new WebSocket(this.url.url, this.protocols)
+                    : new WebSocket(this.url.url);
 
                 self.socket.onopen = (ev: Event) => {
                     this.loggerService.debug('Web socket connected', this.url.url);
@@ -70,7 +78,10 @@ export class WebSocketProtocol extends Protocol {
     }
 
     send(data): Promise<any> {
-        if (this.getReadyState() !== this.readyStateConstants.OPEN && this.getReadyState() !== this.readyStateConstants.CONNECTING) {
+        if (
+            this.getReadyState() !== this.readyStateConstants.OPEN &&
+            this.getReadyState() !== this.readyStateConstants.CONNECTING
+        ) {
             this.connect();
         }
         // TODO: change this for an observer
@@ -89,7 +100,9 @@ export class WebSocketProtocol extends Protocol {
         while (this.sendQueue.length && this.socket.readyState === this.readyStateConstants.OPEN) {
             const data = this.sendQueue.shift();
 
-            this.socket.send(_.isString(data.message) ? data.message : JSON.stringify(data.message));
+            this.socket.send(
+                _.isString(data.message) ? data.message : JSON.stringify(data.message)
+            );
             data.deferred.resolve();
         }
     }

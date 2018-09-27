@@ -12,7 +12,6 @@ describe('ActionMenuButtonComponent', () => {
     let comp: ActionMenuButtonComponent;
     let fixture: ComponentFixture<ActionMenuButtonComponent>;
     let de: DebugElement;
-    let el: HTMLElement;
 
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
@@ -23,7 +22,6 @@ describe('ActionMenuButtonComponent', () => {
         fixture = DOTTestBed.createComponent(ActionMenuButtonComponent);
         comp = fixture.componentInstance;
         de = fixture.debugElement;
-        el = de.nativeElement;
     });
 
     it('should display a menu button with multiple actions if actions are more than 1', () => {
@@ -31,7 +29,7 @@ describe('ActionMenuButtonComponent', () => {
             {
                 menuItem: {
                     command: () => {},
-                    icon: 'fa-trash',
+                    icon: 'fa fa-trash',
                     label: 'Remove'
                 },
                 shouldShow: () => true
@@ -39,7 +37,7 @@ describe('ActionMenuButtonComponent', () => {
             {
                 menuItem: {
                     command: () => {},
-                    icon: 'fa-edit',
+                    icon: 'fa fa-pencil',
                     label: 'Edit'
                 }
             }
@@ -62,7 +60,7 @@ describe('ActionMenuButtonComponent', () => {
             {
                 menuItem: {
                     command: () => {},
-                    icon: 'fa-trash',
+                    icon: 'fa fa-trash',
                     label: 'Remove'
                 }
             }
@@ -82,7 +80,7 @@ describe('ActionMenuButtonComponent', () => {
         const fakeActions: DotDataTableAction[] = [
             {
                 menuItem: {
-                    icon: 'fa-trash',
+                    icon: 'fa fa-trash',
                     label: 'Remove',
                     command: () => {}
                 }
@@ -118,7 +116,7 @@ describe('ActionMenuButtonComponent', () => {
         const fakeActions: DotDataTableAction[] = [
             {
                 menuItem: {
-                    icon: 'fa-trash',
+                    icon: 'fa fa-trash',
                     label: 'Remove',
                     command: () => {}
                 },
@@ -127,7 +125,7 @@ describe('ActionMenuButtonComponent', () => {
             {
                 menuItem: {
                     command: () => {},
-                    icon: 'fa-edit',
+                    icon: 'fa fa-pencil',
                     label: 'Edit'
                 },
                 shouldShow: () => false
@@ -135,7 +133,7 @@ describe('ActionMenuButtonComponent', () => {
             {
                 menuItem: {
                     command: () => {},
-                    icon: 'fa-add',
+                    icon: 'fa fa-plus',
                     label: 'Add'
                 },
                 shouldShow: () => true
@@ -152,14 +150,14 @@ describe('ActionMenuButtonComponent', () => {
         const fakeActions: DotDataTableAction[] = [
             {
                 menuItem: {
-                    icon: 'fa-trash',
+                    icon: 'fa fa-trash',
                     label: 'Remove',
                     command: () => {}
                 }
             },
             {
                 menuItem: {
-                    icon: 'fa-check',
+                    icon: 'fa fa-check',
                     label: 'Test',
                     command: () => {}
                 }
@@ -182,7 +180,10 @@ describe('ActionMenuButtonComponent', () => {
         comp.item = mockContentType;
         fixture.detectChanges();
 
-        expect(de.query(By.css('dot-icon-button-tooltip')) === null).toEqual(true, 'tooltip button hide');
+        expect(de.query(By.css('dot-icon-button-tooltip')) === null).toEqual(
+            true,
+            'tooltip button hide'
+        );
         expect(de.query(By.css('dot-menu')) === null).toEqual(false, 'menu options show');
         expect(de.query(By.css('button')) === null).toEqual(false, 'button to show/hide menu show');
     });
@@ -193,14 +194,14 @@ describe('ActionMenuButtonComponent', () => {
         const fakeActions: DotDataTableAction[] = [
             {
                 menuItem: {
-                    icon: 'fa-trash',
+                    icon: 'fa fa-trash',
                     label: 'Remove',
                     command: () => {}
                 }
             },
             {
                 menuItem: {
-                    icon: 'fa-check',
+                    icon: 'fa fa-check',
                     label: 'Test',
                     command: (item) => {
                         fakeCommand(item);

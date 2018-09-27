@@ -3,7 +3,7 @@ import { PushPublishService } from '@services/push-publish/push-publish.service'
 import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
 import { DotMessageService } from '@services/dot-messages-service';
 import { DotEnvironment } from '@models/dot-environment/dot-environment';
-import { Observable } from 'rxjs';
+import { Observable } from 'rxjs/Observable';
 @Component({
     encapsulation: ViewEncapsulation.None,
     selector: 'dot-push-publish-env-selector',
@@ -26,7 +26,10 @@ export class PushPublishEnvSelectorComponent implements OnInit, ControlValueAcce
 
     value: string[];
 
-    constructor(private pushPublishService: PushPublishService, public dotMessageService: DotMessageService) {}
+    constructor(
+        private pushPublishService: PushPublishService,
+        public dotMessageService: DotMessageService
+    ) {}
 
     ngOnInit() {
         this.pushEnvironments$ = this.pushPublishService.getEnvironments();
@@ -41,7 +44,9 @@ export class PushPublishEnvSelectorComponent implements OnInit, ControlValueAcce
                 this.valueChange('', this.selectedEnvironments);
             }
         });
-        this.dotMessageService.getMessages(['contenttypes.content.push_publish.select_environment']).subscribe();
+        this.dotMessageService
+            .getMessages(['contenttypes.content.push_publish.select_environment'])
+            .subscribe();
     }
 
     propagateChange = (_: any) => {};
@@ -89,7 +94,9 @@ export class PushPublishEnvSelectorComponent implements OnInit, ControlValueAcce
      * @memberof PushPublishEnvSelectorComponent
      */
     removeEnvironmentItem(environmentItem: DotEnvironment): void {
-        this.selectedEnvironments = this.selectedEnvironments.filter((environment) => environment.id !== environmentItem.id);
+        this.selectedEnvironments = this.selectedEnvironments.filter(
+            (environment) => environment.id !== environmentItem.id
+        );
         this.propagateEnvironmentId(this.selectedEnvironments);
     }
 

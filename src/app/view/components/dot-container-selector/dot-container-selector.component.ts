@@ -20,7 +20,10 @@ export class DotContainerSelectorComponent implements OnInit {
     totalRecords: number;
     currentContainers: DotContainer[] = [];
 
-    constructor(public paginationService: PaginatorService, public dotMessageService: DotMessageService) {}
+    constructor(
+        public paginationService: PaginatorService,
+        public dotMessageService: DotMessageService
+    ) {}
 
     ngOnInit(): void {
         this.paginationService.url = 'v1/containers';
@@ -79,7 +82,9 @@ export class DotContainerSelectorComponent implements OnInit {
      * @memberof DotContainerSelectorComponent
      */
     isContainerSelected(dotContainer: DotContainer): boolean {
-        return this.data.some((containerItem) => containerItem.container.identifier === dotContainer.identifier);
+        return this.data.some(
+            (containerItem) => containerItem.container.identifier === dotContainer.identifier
+        );
     }
 
     private getContainersList(filter = '', offset = 0): void {

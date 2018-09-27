@@ -1,4 +1,4 @@
-import { of as observableOf, Observable } from 'rxjs';
+import { of as observableOf } from 'rxjs';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DotWorkflowTaskDetailService } from './dot-workflow-task-detail.service';
 import { DotMenuService } from '@services/dot-menu.service';

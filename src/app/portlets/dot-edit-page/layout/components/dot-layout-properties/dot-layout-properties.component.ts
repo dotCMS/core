@@ -15,6 +15,8 @@ export class DotLayoutPropertiesComponent implements OnInit {
     constructor(public dotMessageService: DotMessageService) {}
 
     ngOnInit() {
-        this.dotMessageService.getMessages(['editpage.layout.properties.header', 'editpage.layout.properties.footer']).subscribe();
+        this.dotMessageService
+            .getMessages(['editpage.layout.properties.header', 'editpage.layout.properties.footer'])
+            .subscribe();
     }
 }

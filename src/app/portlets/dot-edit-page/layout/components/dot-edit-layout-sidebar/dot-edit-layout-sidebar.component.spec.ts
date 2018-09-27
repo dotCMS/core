@@ -5,14 +5,14 @@ import { ComponentFixture } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { DotContainerSelectorModule } from '@components/dot-container-selector/dot-container-selector.module';
 import { DotEditLayoutSidebarComponent } from './dot-edit-layout-sidebar.component';
-import { DotEditLayoutService } from '@shared/services/dot-edit-layout.service';
-import { DotLayoutSideBar } from '@models/dot-layout-sidebar.model';
 import { FormControl, FormGroup } from '@angular/forms';
 import { DotMessageService } from '@services/dot-messages-service';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
 import { TemplateContainersCacheService } from '../../../template-containers-cache.service';
 import { DotSidebarPropertiesModule } from '../dot-sidebar-properties/dot-sidebar-properties.module';
 import { mockDotContainers } from '../../../../../test/dot-rendered-page.mock';
+import { DotLayoutSideBar } from '@portlets/dot-edit-page/shared/models/dot-layout-sidebar.model';
+import { DotEditLayoutService } from '@portlets/dot-edit-page/shared/services/dot-edit-layout.service';
 
 let fakeValue: DotLayoutSideBar;
 
@@ -50,13 +50,22 @@ describe('DotEditLayoutSidebarComponent', () => {
 
         DOTTestBed.configureTestingModule({
             declarations: [DotEditLayoutSidebarComponent, TestHostComponent],
-            imports: [DotContainerSelectorModule, BrowserAnimationsModule, DotSidebarPropertiesModule],
-            providers: [DotEditLayoutService, TemplateContainersCacheService, { provide: DotMessageService, useValue: messageServiceMock }]
+            imports: [
+                DotContainerSelectorModule,
+                BrowserAnimationsModule,
+                DotSidebarPropertiesModule
+            ],
+            providers: [
+                DotEditLayoutService,
+                TemplateContainersCacheService,
+                { provide: DotMessageService, useValue: messageServiceMock }
+            ]
         });
 
         hostComponentfixture = DOTTestBed.createComponent(TestHostComponent);
         de = hostComponentfixture.debugElement.query(By.css('dot-edit-layout-sidebar'));
-        component = hostComponentfixture.debugElement.query(By.css('dot-edit-layout-sidebar')).componentInstance;
+        component = hostComponentfixture.debugElement.query(By.css('dot-edit-layout-sidebar'))
+            .componentInstance;
         hostComponentfixture.detectChanges();
     });
 
@@ -91,7 +100,9 @@ describe('DotEditLayoutSidebarComponent', () => {
     });
 
     it('should transform containers raw data from component "dot-container-selector" into proper data to be saved in the BE', () => {
-        const containerSelector: DebugElement = hostComponentfixture.debugElement.query(By.css('dot-container-selector'));
+        const containerSelector: DebugElement = hostComponentfixture.debugElement.query(
+            By.css('dot-container-selector')
+        );
         const transformedValue = {
             containers: [
                 {
@@ -115,7 +126,9 @@ describe('DotEditLayoutSidebarComponent', () => {
     });
 
     it('should propagate call from component "dot-sidebar-properties" into parent container', () => {
-        const sidebarProperties: DebugElement = hostComponentfixture.debugElement.query(By.css('dot-sidebar-properties'));
+        const sidebarProperties: DebugElement = hostComponentfixture.debugElement.query(
+            By.css('dot-sidebar-properties')
+        );
         spyOn(component, 'updateAndPropagate').and.callThrough();
         spyOn(component, 'propagateChange');
         sidebarProperties.triggerEventHandler('change', '');

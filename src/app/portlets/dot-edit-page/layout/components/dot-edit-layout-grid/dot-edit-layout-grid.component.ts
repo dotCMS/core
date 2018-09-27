@@ -136,7 +136,9 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
                     this.removeContainer(index);
                 },
                 header: this.dotMessageService.get('editpage.confirm.header'),
-                message: `${this.dotMessageService.get('editpage.confirm.message.delete')} <span>${this.dotMessageService.get(
+                message: `${this.dotMessageService.get(
+                    'editpage.confirm.message.delete'
+                )} <span>${this.dotMessageService.get(
                     'editpage.confirm.message.delete.warning'
                 )}</span>`,
                 footerLabel: {
@@ -187,7 +189,9 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
     }
 
     private setGridValue(): void {
-        this.grid = this.isHaveRows() ? this.dotEditLayoutService.getDotLayoutGridBox(this.value) : [...DOT_LAYOUT_DEFAULT_GRID];
+        this.grid = this.isHaveRows()
+            ? this.dotEditLayoutService.getDotLayoutGridBox(this.value)
+            : [...DOT_LAYOUT_DEFAULT_GRID];
     }
 
     private removeContainer(index: number): void {

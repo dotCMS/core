@@ -160,7 +160,10 @@ describe('PushPublishEnvSelectorComponent', () => {
     });
 
     it('should populate the environments previously selected by the user', () => {
-        spyOnProperty(pushPublishServiceMock, 'lastEnvironmentPushed', 'get').and.returnValue(['22e332', 'joa08']);
+        spyOnProperty(pushPublishServiceMock, 'lastEnvironmentPushed', 'get').and.returnValue([
+            '22e332',
+            'joa08'
+        ]);
         spyOn(comp, 'propagateChange');
         comp.ngOnInit();
         expect(comp.selectedEnvironments).toEqual([

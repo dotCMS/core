@@ -105,7 +105,9 @@ describe('ContentTypesLayoutComponent', () => {
     });
 
     it('should set the field and row bag options', () => {
-        const fieldDragDropService: FieldDragDropService = fixture.debugElement.injector.get(FieldDragDropService);
+        const fieldDragDropService: FieldDragDropService = fixture.debugElement.injector.get(
+            FieldDragDropService
+        );
         spyOn(fieldDragDropService, 'setBagOptions');
         fixture.detectChanges();
 
@@ -132,26 +134,38 @@ describe('ContentTypesLayoutComponent', () => {
             });
 
             it('should have a content-type__fields-main', () => {
-                const contentTypeFieldsMain = this.pTabPanel.query(By.css('.content-type__fields-main'));
+                const contentTypeFieldsMain = this.pTabPanel.query(
+                    By.css('.content-type__fields-main')
+                );
                 expect(contentTypeFieldsMain).not.toBeNull();
             });
 
             it('should have a content-type__fields-sidebar', () => {
-                const contentTypeFieldsSideBar = this.pTabPanel.query(By.css('.content-type__fields-sidebar'));
+                const contentTypeFieldsSideBar = this.pTabPanel.query(
+                    By.css('.content-type__fields-sidebar')
+                );
                 expect(contentTypeFieldsSideBar).not.toBeNull();
             });
 
             it('should have a field types list', () => {
-                const fieldTitle = this.pTabPanel.query(By.css('.content-type__fields-sidebar-title span'));
-                const contentTypesFieldsList = this.pTabPanel.query(By.css('dot-content-types-fields-list'));
+                const fieldTitle = this.pTabPanel.query(
+                    By.css('.content-type__fields-sidebar-title span')
+                );
+                const contentTypesFieldsList = this.pTabPanel.query(
+                    By.css('dot-content-types-fields-list')
+                );
                 expect(fieldTitle.nativeElement.textContent).toBe('Field Title');
                 expect(contentTypesFieldsList).not.toBeNull();
             });
 
             // Hiding the rows list for 5.0
             xit('should have a field row list', () => {
-                const layoutTitle = this.pTabPanel.queryAll(By.css('.content-type__fields-sidebar-title'))[1];
-                const fieldRowList = this.pTabPanel.query(By.css('dot-content-type-fields-row-list'));
+                const layoutTitle = this.pTabPanel.queryAll(
+                    By.css('.content-type__fields-sidebar-title')
+                )[1];
+                const fieldRowList = this.pTabPanel.query(
+                    By.css('dot-content-type-fields-row-list')
+                );
 
                 expect(layoutTitle.nativeElement.textContent).toBe('Layout Title');
                 expect(fieldRowList).not.toBeNull();
@@ -177,7 +191,9 @@ describe('ContentTypesLayoutComponent', () => {
             });
 
             it('should set the src attribute', () => {
-                expect(iframe.componentInstance.src).toBe('/html/content_types/permissions.jsp?contentTypeId=2&popup=true');
+                expect(iframe.componentInstance.src).toBe(
+                    '/html/content_types/permissions.jsp?contentTypeId=2&popup=true'
+                );
             });
         });
 
@@ -200,7 +216,9 @@ describe('ContentTypesLayoutComponent', () => {
             });
 
             it('should set the src attribute', () => {
-                expect(iframe.componentInstance.src).toBe('/html/content_types/push_history.jsp?contentTypeId=2&popup=true');
+                expect(iframe.componentInstance.src).toBe(
+                    '/html/content_types/push_history.jsp?contentTypeId=2&popup=true'
+                );
             });
         });
 

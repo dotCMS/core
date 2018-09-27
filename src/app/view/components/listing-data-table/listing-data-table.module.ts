@@ -14,7 +14,15 @@ import { DotIconModule } from '../_common/dot-icon/dot-icon.module';
 @NgModule({
     declarations: [ListingDataTableComponent],
     exports: [ListingDataTableComponent],
-    imports: [ActionHeaderModule, CommonModule, DataTableModule, FormsModule, InputTextModule, ActionMenuButtonModule, DotIconModule],
+    imports: [
+        ActionHeaderModule,
+        CommonModule,
+        DataTableModule,
+        FormsModule,
+        InputTextModule,
+        ActionMenuButtonModule,
+        DotIconModule
+    ],
     providers: [CrudService, FormatDateService, DotcmsConfig, LoggerService, DotMessageService]
 })
 export class ListingDataTableModule {}

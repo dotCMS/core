@@ -1,5 +1,13 @@
-import { BaseComponent } from '@components/_common/_base/base-component';
-import { Component, SimpleChanges, Input, Output, EventEmitter, OnInit, OnChanges, ViewChild } from '@angular/core';
+import {
+    Component,
+    SimpleChanges,
+    Input,
+    Output,
+    EventEmitter,
+    OnInit,
+    OnChanges,
+    ViewChild
+} from '@angular/core';
 import { FieldDragDropService } from '../service';
 import { FieldRow, ContentTypeField, FieldType } from '../shared';
 import { ContentTypeFieldsPropertiesFormComponent } from '../content-type-fields-properties-form';
@@ -19,7 +27,7 @@ import { DotEventsService } from '@services/dot-events/dot-events.service';
     styleUrls: ['./content-type-fields-drop-zone.component.scss'],
     templateUrl: './content-type-fields-drop-zone.component.html'
 })
-export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements OnInit, OnChanges {
+export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges {
     displayDialog = false;
     fieldRows: FieldRow[] = [];
     formData: ContentTypeField;
@@ -37,25 +45,29 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
     @Output()
     removeFields = new EventEmitter<ContentTypeField[]>();
 
+    i18nMessages: {
+        [key: string]: string;
+    } = {};
+
     constructor(
-        dotMessageService: DotMessageService,
+        private dotMessageService: DotMessageService,
         private fieldDragDropService: FieldDragDropService,
         private fieldPropertyService: FieldPropertyService,
         private dotEventsService: DotEventsService
-    ) {
-        super(
-            [
+    ) {}
+
+    ngOnInit(): void {
+        this.dotMessageService
+            .getMessages([
                 'contenttypes.dropzone.action.save',
                 'contenttypes.dropzone.action.cancel',
                 'contenttypes.dropzone.action.edit',
                 'contenttypes.dropzone.action.create.field',
                 'contenttypes.dropzone.empty.message'
-            ],
-            dotMessageService
-        );
-    }
-
-    ngOnInit(): void {
+            ])
+            .subscribe((res) => {
+                this.i18nMessages = res;
+            });
         this.fieldDragDropService.fieldDropFromSource$.subscribe(() => {
             this.setDroppedField();
             this.toggleDialog();
@@ -190,6 +202,10 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
         }
     }
 
+    toggleDialog(): void {
+        this.displayDialog = !this.displayDialog;
+    }
+
     private moveFields(): void {
         const fields = this.getFields().filter((field, index) => {
             const currentSortOrder = index + 1;
@@ -206,7 +222,9 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
     }
 
     private getFieldsToSave(fieldToSave: ContentTypeField): ContentTypeField[] {
-        return this.formData.id ? [this.getUpdatedField(fieldToSave)] : this.getNewFields(fieldToSave);
+        return this.formData.id
+            ? [this.getUpdatedField(fieldToSave)]
+            : this.getNewFields(fieldToSave);
     }
 
     private getUpdatedField(fieldToSave: ContentTypeField): ContentTypeField {
@@ -232,16 +250,14 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
         fields.forEach((field, index) => {
             if (FieldUtil.isNewField(field)) {
                 field.sortOrder = index + 1;
-                const fieldToPush = FieldUtil.isRowOrColumn(field) ? field : Object.assign(field, fieldToSave);
+                const fieldToPush = FieldUtil.isRowOrColumn(field)
+                    ? field
+                    : Object.assign(field, fieldToSave);
                 result.push(fieldToPush);
             }
         });
 
         return result;
-    }
-
-    private toggleDialog(): void {
-        this.displayDialog = !this.displayDialog;
     }
 
     private getRowFields(fields: ContentTypeField[]): FieldRow[] {

@@ -13,7 +13,6 @@ import {
     OnChanges,
     OnInit
 } from '@angular/core';
-import { BaseComponent } from '../../_base/base-component';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { DotMessageService } from '@services/dot-messages-service';
 import { fromEvent } from 'rxjs';
@@ -22,7 +21,6 @@ import { OverlayPanel } from 'primeng/primeng';
 /**
  * Dropdown with pagination and global search
  * @export
- * @extends {BaseComponent}
  * @class SearchableDropdownComponent
  * @implements {ControlValueAccessor}
  */
@@ -39,7 +37,7 @@ import { OverlayPanel } from 'primeng/primeng';
     styleUrls: ['./searchable-dropdown.component.scss'],
     templateUrl: './searchable-dropdown.component.html'
 })
-export class SearchableDropdownComponent extends BaseComponent implements ControlValueAccessor, OnChanges, OnInit {
+export class SearchableDropdownComponent implements ControlValueAccessor, OnChanges, OnInit {
     @Input()
     data: string[];
     @Input()
@@ -79,9 +77,11 @@ export class SearchableDropdownComponent extends BaseComponent implements Contro
     value: any = {};
     valueString = '';
 
-    constructor(dotMessageService: DotMessageService) {
-        super(['search'], dotMessageService);
-    }
+    i18nMessages: {
+        [key: string]: string;
+    } = {};
+
+    constructor(private dotMessageService: DotMessageService) {}
 
     propagateChange = (_: any) => {};
 
@@ -92,6 +92,10 @@ export class SearchableDropdownComponent extends BaseComponent implements Contro
     }
 
     ngOnInit(): void {
+        this.dotMessageService.getMessages(['search']).subscribe((res) => {
+            this.i18nMessages = res;
+        });
+
         fromEvent(this.searchInput.nativeElement, 'keyup')
             .pipe(debounceTime(500))
             .subscribe((keyboardEvent: Event) => {

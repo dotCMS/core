@@ -1,5 +1,4 @@
 import { Component, Input, OnChanges, OnInit } from '@angular/core';
-import { BaseComponent } from '@components/_common/_base/base-component';
 import { DotMessageService } from '@services/dot-messages-service';
 import { DotMenuService } from '@services/dot-menu.service';
 import { FieldDragDropService } from '../fields/service';
@@ -9,7 +8,7 @@ import { FieldDragDropService } from '../fields/service';
     styleUrls: ['./content-types-layout.component.scss'],
     templateUrl: 'content-types-layout.component.html'
 })
-export class ContentTypesLayoutComponent extends BaseComponent implements OnChanges, OnInit {
+export class ContentTypesLayoutComponent implements OnChanges, OnInit {
     @Input()
     contentTypeId: string;
 
@@ -17,26 +16,30 @@ export class ContentTypesLayoutComponent extends BaseComponent implements OnChan
     pushHistoryURL: string;
     relationshipURL: string;
 
+    i18nMessages: {
+        [key: string]: string;
+    } = {};
+
     constructor(
-        dotMessageService: DotMessageService,
+        private dotMessageService: DotMessageService,
         private dotMenuService: DotMenuService,
         private fieldDragDropService: FieldDragDropService
-    ) {
-        super(
-            [
+    ) {}
+
+    ngOnInit(): void {
+        this.fieldDragDropService.setBagOptions();
+        this.dotMessageService
+            .getMessages([
                 'contenttypes.sidebar.components.title',
                 'contenttypes.tab.fields.header',
                 'contenttypes.sidebar.layouts.title',
                 'contenttypes.tab.permissions.header',
                 'contenttypes.tab.publisher.push.history.header',
                 'contenttypes.tab.relationship.header'
-            ],
-            dotMessageService
-        );
-    }
-
-    ngOnInit(): void {
-        this.fieldDragDropService.setBagOptions();
+            ])
+            .subscribe((res) => {
+                this.i18nMessages = res;
+            });
     }
 
     ngOnChanges(changes): void {
@@ -48,8 +51,12 @@ export class ContentTypesLayoutComponent extends BaseComponent implements OnChan
                 }`;
             });
 
-            this.permissionURL = `/html/content_types/permissions.jsp?contentTypeId=${changes.contentTypeId.currentValue}&popup=true`;
-            this.pushHistoryURL = `/html/content_types/push_history.jsp?contentTypeId=${changes.contentTypeId.currentValue}&popup=true`;
+            this.permissionURL = `/html/content_types/permissions.jsp?contentTypeId=${
+                changes.contentTypeId.currentValue
+            }&popup=true`;
+            this.pushHistoryURL = `/html/content_types/push_history.jsp?contentTypeId=${
+                changes.contentTypeId.currentValue
+            }&popup=true`;
         }
     }
 }

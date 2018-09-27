@@ -29,6 +29,10 @@
         font-size: $font-size-small;
         border-bottom: $datatable-cell-border;
         padding: $datatable-header-cell-padding;
+
+        &:focus {
+            outline: 0;
+        }
     }
 
     .ui-datatable-data > tr > td {
@@ -55,15 +59,15 @@
     }
 
     .ui-sortable-column {
-        .fa-sort:before {
+        .pi-sort:before {
             content: "";
         }
 
-        .fa-sort-asc:before {
+        .pi-sort-asc:before {
             content: "\f063";
         }
 
-        .fa-sort-desc:before {
+        .pi-sort-desc:before {
             content: "\f062";
         }
     }

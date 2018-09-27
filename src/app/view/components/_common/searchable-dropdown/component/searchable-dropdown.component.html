@@ -6,7 +6,6 @@
     <header class="searchable-dropdown__search">
         <dot-icon class="searchable-dropdown__search-icon" name="search"></dot-icon>
         <input #searchInput pInputText placeholder="{{ i18nMessages['search'] }}" type="text" class="searchable-dropdown__search-field"/>
-
     </header>
     <p-dataList
         (onLazyLoad)="paginate($event)"
@@ -26,7 +25,7 @@
 <button dotMdRipple pButton
     (click)="searchPanel.toggle($event)"
     [label]="persistentPlaceholder ? placeholder : valueString"
-    icon="fa-caret-down"
+    icon="fa fa-caret-down"
     iconPos="right"
     type="button"
     [ngStyle]="{ 'width': width }">

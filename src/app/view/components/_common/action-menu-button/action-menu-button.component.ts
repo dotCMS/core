@@ -18,13 +18,16 @@ export class ActionMenuButtonComponent implements OnInit {
     @Input()
     item: any;
     @Input()
-    icon? = 'fa-ellipsis-v';
+    icon? = 'fa fa-ellipsis-v';
     @Input()
     actions?: DotDataTableAction[];
 
     ngOnInit() {
         this.filteredActions = this.actions
-            .filter((action: DotDataTableAction) => (action.shouldShow ? action.shouldShow(this.item) : true))
+            .filter(
+                (action: DotDataTableAction) =>
+                    action.shouldShow ? action.shouldShow(this.item) : true
+            )
             .map((action: DotDataTableAction) => {
                 return {
                     ...action.menuItem,

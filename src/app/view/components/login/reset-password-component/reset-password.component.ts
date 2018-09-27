@@ -53,9 +53,16 @@ export class ResetPasswordComponent implements OnInit {
                 this.confirmPasswordLabel = dataI18n['re-enter-password'];
                 this.changePasswordButton = dataI18n['change-password'];
                 this.mandatoryFieldError = dataI18n['error.form.mandatory'];
-                this.passwordMandatoryFieldError = this.mandatoryFieldError.replace('{0}', this.enterPasswordLabel);
-                this.confirmPasswordMandatoryFieldError = this.mandatoryFieldError.replace('{0}', this.confirmPasswordLabel);
-                this.resetPasswordConfirmationDoNotMessage = dataI18n['reset-password-confirmation-do-not-match'];
+                this.passwordMandatoryFieldError = this.mandatoryFieldError.replace(
+                    '{0}',
+                    this.enterPasswordLabel
+                );
+                this.confirmPasswordMandatoryFieldError = this.mandatoryFieldError.replace(
+                    '{0}',
+                    this.confirmPasswordLabel
+                );
+                this.resetPasswordConfirmationDoNotMessage =
+                    dataI18n['reset-password-confirmation-do-not-match'];
             },
             (error) => {
                 this.loggerService.error(error);
@@ -79,7 +86,7 @@ export class ResetPasswordComponent implements OnInit {
         }
     }
 
-    private clean(): void {
+    clean(): void {
         this.message = '';
     }
 }

@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Output, OnInit } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable } from 'rxjs/Observable';
 import { DotWorkflowTaskDetailService } from './services/dot-workflow-task-detail.service';
 
 /**

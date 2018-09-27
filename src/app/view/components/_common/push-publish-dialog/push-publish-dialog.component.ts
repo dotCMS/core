@@ -1,4 +1,11 @@
-import { Component, Input, Output, EventEmitter, ViewEncapsulation, ViewChild } from '@angular/core';
+import {
+    Component,
+    Input,
+    Output,
+    EventEmitter,
+    ViewEncapsulation,
+    ViewChild
+} from '@angular/core';
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { OnInit } from '@angular/core/src/metadata/lifecycle_hooks';
 import { PushPublishService } from '@services/push-publish/push-publish.service';
@@ -51,15 +58,21 @@ export class PushPublishContentTypesDialogComponent implements OnInit {
             .subscribe(() => {
                 this.pushActions = [
                     {
-                        label: this.dotMessageService.get('contenttypes.content.push_publish.action.push'),
+                        label: this.dotMessageService.get(
+                            'contenttypes.content.push_publish.action.push'
+                        ),
                         value: 'publish'
                     },
                     {
-                        label: this.dotMessageService.get('contenttypes.content.push_publish.action.remove'),
+                        label: this.dotMessageService.get(
+                            'contenttypes.content.push_publish.action.remove'
+                        ),
                         value: 'expire'
                     },
                     {
-                        label: this.dotMessageService.get('contenttypes.content.push_publish.action.pushremove'),
+                        label: this.dotMessageService.get(
+                            'contenttypes.content.push_publish.action.pushremove'
+                        ),
                         value: 'publishexpire'
                     }
                 ];
@@ -85,13 +98,15 @@ export class PushPublishContentTypesDialogComponent implements OnInit {
      */
     submitPushAction(_event): void {
         if (this.form.valid) {
-            this.pushPublishService.pushPublishContent(this.assetIdentifier, this.form.value).subscribe((result: any) => {
-                if (!result.errors) {
-                    this.close();
-                } else {
-                    this.loggerService.debug(result.errorMessages);
-                }
-            });
+            this.pushPublishService
+                .pushPublishContent(this.assetIdentifier, this.form.value)
+                .subscribe((result: any) => {
+                    if (!result.errors) {
+                        this.close();
+                    } else {
+                        this.loggerService.debug(result.errorMessages);
+                    }
+                });
             this.form.reset();
         }
     }

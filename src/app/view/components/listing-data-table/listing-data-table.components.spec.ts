@@ -33,11 +33,18 @@ describe('ListingDataTableComponent', () => {
         });
 
         DOTTestBed.configureTestingModule({
-            declarations: [ActionHeaderComponent, DotActionButtonComponent, ListingDataTableComponent, ActionMenuButtonComponent],
+            declarations: [
+                ActionHeaderComponent,
+                DotActionButtonComponent,
+                ListingDataTableComponent,
+                ActionMenuButtonComponent
+            ],
             imports: [
                 DataTableModule,
                 SharedModule,
-                RouterTestingModule.withRoutes([{ path: 'test', component: ListingDataTableComponent }]),
+                RouterTestingModule.withRoutes([
+                    { path: 'test', component: ListingDataTableComponent }
+                ]),
                 IconButtonTooltipModule,
                 MenuModule,
                 DotMenuModule,
@@ -59,13 +66,48 @@ describe('ListingDataTableComponent', () => {
         el = de.nativeElement;
 
         this.items = [
-            { field1: 'item1-value1', field2: 'item1-value2', field3: 'item1-value3', field4: 'item1-value4' },
-            { field1: 'item2-value1', field2: 'item2-value2', field3: 'item2-value3', field4: 'item1-value4' },
-            { field1: 'item3-value1', field2: 'item3-value2', field3: 'item3-value3', field4: 'item1-value4' },
-            { field1: 'item4-value1', field2: 'item4-value2', field3: 'item4-value3', field4: 'item1-value4' },
-            { field1: 'item5-value1', field2: 'item5-value2', field3: 'item5-value3', field4: 'item1-value4' },
-            { field1: 'item6-value1', field2: 'item6-value2', field3: 'item6-value3', field4: 'item1-value4' },
-            { field1: 'item7-value1', field2: 'item7-value2', field3: 'item7-value3', field4: 'item1-value4' }
+            {
+                field1: 'item1-value1',
+                field2: 'item1-value2',
+                field3: 'item1-value3',
+                field4: 'item1-value4'
+            },
+            {
+                field1: 'item2-value1',
+                field2: 'item2-value2',
+                field3: 'item2-value3',
+                field4: 'item1-value4'
+            },
+            {
+                field1: 'item3-value1',
+                field2: 'item3-value2',
+                field3: 'item3-value3',
+                field4: 'item1-value4'
+            },
+            {
+                field1: 'item4-value1',
+                field2: 'item4-value2',
+                field3: 'item4-value3',
+                field4: 'item1-value4'
+            },
+            {
+                field1: 'item5-value1',
+                field2: 'item5-value2',
+                field3: 'item5-value3',
+                field4: 'item1-value4'
+            },
+            {
+                field1: 'item6-value1',
+                field2: 'item6-value2',
+                field3: 'item6-value3',
+                field4: 'item1-value4'
+            },
+            {
+                field1: 'item7-value1',
+                field2: 'item7-value2',
+                field3: 'item7-value3',
+                field4: 'item1-value4'
+            }
         ];
 
         this.paginatorService = fixture.debugElement.injector.get(PaginatorService);
@@ -117,7 +159,9 @@ describe('ListingDataTableComponent', () => {
         expect(5).toEqual(headers.length);
 
         comp.columns.forEach((_col, index) =>
-            expect(!index ? '' : comp.columns[index - 1].header).toEqual(headers[index].querySelector('span').textContent)
+            expect(!index ? '' : comp.columns[index - 1].header).toEqual(
+                headers[index].querySelector('span').textContent
+            )
         );
 
         rows.forEach((row, rowIndex) => {
@@ -127,7 +171,9 @@ describe('ListingDataTableComponent', () => {
 
                 cells.forEach((_cell, cellIndex) => {
                     if (cellIndex && cellIndex < 5) {
-                        expect(cells[cellIndex].querySelector('span').textContent).toContain(item[comp.columns[cellIndex - 1].fieldName]);
+                        expect(cells[cellIndex].querySelector('span').textContent).toContain(
+                            item[comp.columns[cellIndex - 1].fieldName]
+                        );
                     }
                 });
             }
@@ -169,7 +215,9 @@ describe('ListingDataTableComponent', () => {
         expect(5).toEqual(headers.length, 'th');
 
         comp.columns.forEach((_col, index) =>
-            expect(!index ? '' : comp.columns[index - 1].header).toEqual(headers[index].querySelector('span').textContent)
+            expect(!index ? '' : comp.columns[index - 1].header).toEqual(
+                headers[index].querySelector('span').textContent
+            )
         );
 
         rows.forEach((row, rowIndex) => {
@@ -228,7 +276,7 @@ describe('ListingDataTableComponent', () => {
         const fakeActions: DotDataTableAction[] = [
             {
                 menuItem: {
-                    icon: 'fa-trash',
+                    icon: 'fa fa-trash',
                     label: 'Remove',
                     command: () => {}
                 }
@@ -261,7 +309,7 @@ describe('ListingDataTableComponent', () => {
         const fakeActions: DotDataTableAction[] = [
             {
                 menuItem: {
-                    icon: 'fa-trash',
+                    icon: 'fa fa-trash',
                     label: 'Remove',
                     command: () => {}
                 }

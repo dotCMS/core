@@ -9,7 +9,8 @@ import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/
 @Component({
     providers: [],
     selector: 'dot-workflow-task',
-    template: '<dot-workflow-task-detail (close)="onCloseWorkflowTaskEditor()" (custom)="onCustomEvent($event)"></dot-workflow-task-detail>'
+    template:
+        '<dot-workflow-task-detail (close)="onCloseWorkflowTaskEditor()" (custom)="onCustomEvent($event)"></dot-workflow-task-detail>'
 })
 export class DotWorkflowTaskComponent implements AfterViewInit {
     constructor(

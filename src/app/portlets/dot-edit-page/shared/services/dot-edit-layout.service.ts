@@ -32,7 +32,9 @@ export class DotEditLayoutService {
                 grid.push({
                     containers: column.containers.map((dotPageContainer: DotPageContainer) => {
                         return {
-                            container: this.templateContainersCacheService.get(dotPageContainer.identifier),
+                            container: this.templateContainersCacheService.get(
+                                dotPageContainer.identifier
+                            ),
                             uuid: dotPageContainer.uuid
                         };
                     }),

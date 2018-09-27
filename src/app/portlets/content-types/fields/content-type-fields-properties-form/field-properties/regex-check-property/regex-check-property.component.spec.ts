@@ -12,7 +12,6 @@ import { DotMessageService } from '@services/dot-messages-service';
 describe('RegexCheckPropertyComponent', () => {
     let comp: RegexCheckPropertyComponent;
     let fixture: ComponentFixture<RegexCheckPropertyComponent>;
-    let de: DebugElement;
     const messageServiceMock = new MockDotMessageService({
         'contenttypes.field.properties.validation_regex.label': 'Validation-RegEx',
         'contenttypes.field.properties.validation_regex.values.select': 'Select',
@@ -35,7 +34,6 @@ describe('RegexCheckPropertyComponent', () => {
 
         fixture = DOTTestBed.createComponent(RegexCheckPropertyComponent);
         comp = fixture.componentInstance;
-        de = fixture.debugElement;
 
         comp.group = new FormGroup({
             regexCheck: new FormControl('')
@@ -78,6 +76,8 @@ describe('RegexCheckPropertyComponent', () => {
             value: '^([a-zA-Z0-9]+[a-zA-Z0-9._%+-]*@(?:[a-zA-Z0-9-]+.)+[a-zA-Z]{2,4})$'
         });
 
-        expect('^([a-zA-Z0-9]+[a-zA-Z0-9._%+-]*@(?:[a-zA-Z0-9-]+.)+[a-zA-Z]{2,4})$').toBe(comp.group.get('regexCheck').value);
+        expect('^([a-zA-Z0-9]+[a-zA-Z0-9._%+-]*@(?:[a-zA-Z0-9-]+.)+[a-zA-Z]{2,4})$').toBe(
+            comp.group.get('regexCheck').value
+        );
     });
 });

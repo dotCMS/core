@@ -83,7 +83,9 @@ export class ContentTypesPortletComponent implements OnInit {
             this.dotMessageService.getMessages(this.i18nKeys),
             this.dotContentletService.getAllContentTypes(),
             this.dotLicenseService.isEnterprise(),
-            this.pushPublishService.getEnvironments().pipe(map((environments: DotEnvironment[]) => !!environments.length))
+            this.pushPublishService
+                .getEnvironments()
+                .pipe(map((environments: DotEnvironment[]) => !!environments.length))
         ).subscribe((res) => {
             const baseTypes: StructureTypeView[] = res[1];
             const rowActionsMap = {
@@ -155,7 +157,9 @@ export class ContentTypesPortletComponent implements OnInit {
         /*
             If we have more than one action it means that we'll show the contextual menu and we don't want icons there
         */
-        return listingActions.length > 1 ? listingActions.map(this.removeIconsFromMenuItem) : listingActions;
+        return listingActions.length > 1
+            ? listingActions.map(this.removeIconsFromMenuItem)
+            : listingActions;
     }
 
     private removeIconsFromMenuItem(action: DotDataTableAction): DotDataTableAction {
@@ -173,7 +177,9 @@ export class ContentTypesPortletComponent implements OnInit {
                     this.createContentType(structureTypeView.name.toLocaleLowerCase(), $event);
                 },
                 icon: this.contentTypesInfoService.getIcon(`${structureTypeView.name}_old`),
-                label: this.dotMessageService.get('contenttypes.content.' + structureTypeView.name.toLocaleLowerCase())
+                label: this.dotMessageService.get(
+                    'contenttypes.content.' + structureTypeView.name.toLocaleLowerCase()
+                )
             };
         });
     }
@@ -221,7 +227,10 @@ export class ContentTypesPortletComponent implements OnInit {
                 this.removeContentType(item);
             },
             header: this.dotMessageService.get('message.structure.cantdelete'),
-            message: this.dotMessageService.get('contenttypes.confirm.message.delete.type', item.name),
+            message: this.dotMessageService.get(
+                'contenttypes.confirm.message.delete.type',
+                item.name
+            ),
             footerLabel: {
                 accept: this.dotMessageService.get('contenttypes.action.delete'),
                 reject: this.dotMessageService.get('contenttypes.action.cancel')

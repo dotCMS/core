@@ -9,9 +9,7 @@ import { DotCrumbtrailService, DotCrumb } from './service/dot-crumbtrail.service
 export class DotCrumbtrailComponent implements OnInit {
     crumb: Observable<DotCrumb[]>;
 
-    constructor(private crumbTrailService: DotCrumbtrailService) {
-
-    }
+    constructor(private crumbTrailService: DotCrumbtrailService) {}
 
     ngOnInit() {
         this.crumb = this.crumbTrailService.crumbTrail$;

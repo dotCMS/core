@@ -16,7 +16,13 @@ const routes: Routes = [
 ];
 
 @NgModule({
-    imports: [CommonModule, FormsModule, InputTextModule, ButtonModule, RouterModule.forChild(routes)],
+    imports: [
+        CommonModule,
+        FormsModule,
+        InputTextModule,
+        ButtonModule,
+        RouterModule.forChild(routes)
+    ],
     declarations: [ResetPasswordContainerComponent, ResetPasswordComponent]
 })
 export class ResetPasswordModule {}

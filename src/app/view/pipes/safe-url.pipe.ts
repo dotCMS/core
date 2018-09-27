@@ -20,7 +20,9 @@ export class SafePipe implements PipeTransform {
         urlWithParameters += url.indexOf('?') === -1 ? '?' : '&';
         urlWithParameters +=
             urlWithParameters.indexOf('in_frame') === -1
-                ? `in_frame=true&frame=detailFrame&container=true&angularCurrentPortlet=${this.dotRouterService.currentPortlet.id}`
+                ? `in_frame=true&frame=detailFrame&container=true&angularCurrentPortlet=${
+                      this.dotRouterService.currentPortlet.id
+                  }`
                 : '';
 
         return urlWithParameters;

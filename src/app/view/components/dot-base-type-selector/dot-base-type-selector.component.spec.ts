@@ -1,4 +1,4 @@
-import { of as observableOf, Observable } from 'rxjs';
+import { of as observableOf } from 'rxjs';
 import { ComponentFixture } from '@angular/core/testing';
 import { DotBaseTypeSelectorComponent } from './dot-base-type-selector.component';
 import { DebugElement, Injectable } from '@angular/core';
@@ -14,7 +14,9 @@ import { DotContentletService } from '@services/dot-contentlet/dot-contentlet.se
 class MockDotContentletService {
     getAllContentTypes = jasmine
         .createSpy('getContentTypes')
-        .and.returnValue(observableOf([{ name: 'FORM', label: 'Form' }, { name: 'WIDGET', label: 'Widget' }]));
+        .and.returnValue(
+            observableOf([{ name: 'FORM', label: 'Form' }, { name: 'WIDGET', label: 'Widget' }])
+        );
 }
 
 describe('DotBaseTypeSelectorComponent', () => {

@@ -15,6 +15,8 @@ export class DotWhatsChangedComponent implements OnChanges {
     constructor() {}
 
     ngOnChanges(): void {
-        this.url = `/html/portlet/ext/htmlpages/view_live_working_diff.jsp?id=${this.pageId}&pageLang=${this.languageId}`;
+        this.url = `/html/portlet/ext/htmlpages/view_live_working_diff.jsp?id=${
+            this.pageId
+        }&pageLang=${this.languageId}`;
     }
 }

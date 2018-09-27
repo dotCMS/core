@@ -23,7 +23,9 @@ import { dotMenuMock, dotMenuMock1 } from './services/dot-navigation.service.spe
 class FakeNavigationService {
     _collapsed = false;
 
-    _routeEvents: BehaviorSubject<NavigationEnd> = new BehaviorSubject(new NavigationEnd(0, '', ''));
+    _routeEvents: BehaviorSubject<NavigationEnd> = new BehaviorSubject(
+        new NavigationEnd(0, '', '')
+    );
     _items$: BehaviorSubject<DotMenu[]> = new BehaviorSubject([dotMenuMock(), dotMenuMock1()]);
 
     get items$(): Observable<DotMenu[]> {
@@ -78,7 +80,6 @@ class FakeNavigationService {
 
 describe('DotNavigationComponent', () => {
     let fixture: ComponentFixture<DotNavigationComponent>;
-    let comp: DotNavigationComponent;
     let de: DebugElement;
     let navItem: DebugElement;
 
@@ -87,7 +88,12 @@ describe('DotNavigationComponent', () => {
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
             declarations: [DotNavigationComponent, DotSubNavComponent, DotNavItemComponent],
-            imports: [DotNavIconModule, DotIconModule, RouterTestingModule, BrowserAnimationsModule],
+            imports: [
+                DotNavIconModule,
+                DotIconModule,
+                RouterTestingModule,
+                BrowserAnimationsModule
+            ],
             providers: [
                 DotMenuService,
                 {
@@ -103,7 +109,6 @@ describe('DotNavigationComponent', () => {
 
         fixture = DOTTestBed.createComponent(DotNavigationComponent);
         de = fixture.debugElement;
-        comp = fixture.componentInstance;
 
         dotNavigationService = de.injector.get(DotNavigationService);
 
@@ -170,21 +175,30 @@ describe('DotNavigationComponent', () => {
         describe('collapsed', () => {
             beforeEach(() => {
                 spyOnProperty(dotNavigationService, 'collapsed', 'get').and.returnValue(true);
-                navItem.triggerEventHandler('menuClick', { originalEvent: {}, data: dotMenuMock() });
+                navItem.triggerEventHandler('menuClick', {
+                    originalEvent: {},
+                    data: dotMenuMock()
+                });
                 fixture.detectChanges();
             });
 
             it('should open menu', () => {
                 expect(dotNavigationService.setOpen).toHaveBeenCalledWith('123');
                 const firstItem: DebugElement = de.query(By.css('.dot-nav__list-item'));
-                expect(firstItem.nativeElement.classList.contains('dot-nav__list-item--active')).toBe(true);
+                expect(
+                    firstItem.nativeElement.classList.contains('dot-nav__list-item--active')
+                ).toBe(true);
             });
 
             it('should expand menu', () => {
                 const firstItem: DebugElement = de.query(By.css('.dot-nav__list-item'));
-                expect(firstItem.nativeElement.classList.contains('dot-nav__list-item--active')).toBe(true);
+                expect(
+                    firstItem.nativeElement.classList.contains('dot-nav__list-item--active')
+                ).toBe(true);
                 const firstMenuLink: DebugElement = firstItem.query(By.css('.dot-nav-sub__link'));
-                expect(firstMenuLink.nativeElement.classList.contains('dot-nav-sub__link--actuve')).toBe(false);
+                expect(
+                    firstMenuLink.nativeElement.classList.contains('dot-nav-sub__link--actuve')
+                ).toBe(false);
             });
 
             it('should navigate to portlet when menu is collapsed', () => {
@@ -195,7 +209,10 @@ describe('DotNavigationComponent', () => {
         describe('expanded', () => {
             beforeEach(() => {
                 spyOnProperty(dotNavigationService, 'collapsed', 'get').and.returnValue(false);
-                navItem.triggerEventHandler('menuClick', { originalEvent: {}, data: dotMenuMock() });
+                navItem.triggerEventHandler('menuClick', {
+                    originalEvent: {},
+                    data: dotMenuMock()
+                });
                 fixture.detectChanges();
             });
 

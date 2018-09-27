@@ -1,6 +1,6 @@
 import { async, ComponentFixture } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
-import { DebugElement, Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { DebugElement, Component, Input, Output, EventEmitter } from '@angular/core';
 import { ContentTypeFieldsRowComponent } from './';
 import { By } from '@angular/platform-browser';
 import { FieldDragDropService } from '../service';
@@ -80,7 +80,11 @@ describe('ContentTypeFieldsRowComponent', () => {
 
     beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
-            declarations: [ContentTypeFieldsRowComponent, TestContentTypeFieldDraggableItemComponent, DotTestHostComponent],
+            declarations: [
+                ContentTypeFieldsRowComponent,
+                TestContentTypeFieldDraggableItemComponent,
+                DotTestHostComponent
+            ],
             imports: [DragulaModule, IconButtonTooltipModule],
             providers: [
                 FieldDragDropService,
@@ -115,7 +119,9 @@ describe('ContentTypeFieldsRowComponent', () => {
                 expect('fields-bag').toEqual(col.attributes['dragula']);
                 expect('target').toEqual(col.attributes['data-drag-type']);
 
-                const draggableItems = col.queryAll(By.css('dot-content-type-field-dragabble-item'));
+                const draggableItems = col.queryAll(
+                    By.css('dot-content-type-field-dragabble-item')
+                );
                 expect(mockFieldRow.columns[index].fields.length).toEqual(draggableItems.length);
             });
         });

@@ -16,11 +16,15 @@ describe('DotContainerContentletService', () => {
     let lastConnection: any;
 
     beforeEach(() => {
-        const injector: ReflectiveInjector = DOTTestBed.resolveAndCreate([DotContainerContentletService]);
+        const injector: ReflectiveInjector = DOTTestBed.resolveAndCreate([
+            DotContainerContentletService
+        ]);
 
         dotContainerContentletService = injector.get(DotContainerContentletService);
         backend = injector.get(ConnectionBackend);
-        backend.connections.subscribe((connection: MockConnection) => (lastConnection = connection));
+        backend.connections.subscribe(
+            (connection: MockConnection) => (lastConnection = connection)
+        );
     });
 
     it(
@@ -40,10 +44,14 @@ describe('DotContainerContentletService', () => {
 
             let response;
 
-            dotContainerContentletService.getContentletToContainer(pageContainer, pageContent).subscribe((resp) => (response = resp));
+            dotContainerContentletService
+                .getContentletToContainer(pageContainer, pageContent)
+                .subscribe((resp) => (response = resp));
 
             tick();
-            expect(lastConnection.request.url).toContain(`v1/containers/${pageContainer.identifier}/content/${contentletId}`);
+            expect(lastConnection.request.url).toContain(
+                `v1/containers/${pageContainer.identifier}/content/${contentletId}`
+            );
         })
     );
 
@@ -71,10 +79,14 @@ describe('DotContainerContentletService', () => {
 
             let response;
 
-            dotContainerContentletService.getFormToContainer(pageContainer, form).subscribe((resp) => (response = resp));
+            dotContainerContentletService
+                .getFormToContainer(pageContainer, form)
+                .subscribe((resp) => (response = resp));
 
             tick();
-            expect(lastConnection.request.url).toContain(`v1/containers/${pageContainer.identifier}/form/${formId}`);
+            expect(lastConnection.request.url).toContain(
+                `v1/containers/${pageContainer.identifier}/form/${formId}`
+            );
         })
     );
 });

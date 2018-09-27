@@ -144,7 +144,9 @@ export class DotContentletEditorService {
     private geAddtUrl(action: DotEditorAction): string {
         return action === null
             ? ''
-            : `/html/ng-contentlet-selector.jsp?ng=true&container_id=${action.data.container}&add=${action.data.baseTypes}`;
+            : `/html/ng-contentlet-selector.jsp?ng=true&container_id=${action.data.container}&add=${
+                  action.data.baseTypes
+              }`;
     }
 
     private getCreateUrl(action: DotEditorAction): string {

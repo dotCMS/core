@@ -1,4 +1,4 @@
-import { of as observableOf, Observable } from 'rxjs';
+import { of as observableOf } from 'rxjs';
 import { ConnectionBackend, ResponseOptions, Response } from '@angular/http';
 import { MockBackend } from '@angular/http/testing';
 
@@ -8,13 +8,13 @@ import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { DotContentletLockerService } from '@services/dot-contentlet-locker/dot-contentlet-locker.service';
 import { DotPageStateService } from './dot-page-state.service';
 import { DotRenderHTMLService } from '@services/dot-render-html/dot-render-html.service';
-import { DotRenderedPageState } from '@models/dot-rendered-page-state.model';
+import { PageMode } from '@portlets/dot-edit-page/shared/models/page-mode.enum';
+import { DotRenderedPageState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
+import { DotRenderedPage } from '@portlets/dot-edit-page/shared/models/dot-rendered-page.model';
 import { LoginServiceMock } from '../../../../../test/login-service.mock';
-import { PageMode } from '@models/page-mode.enum';
 import { mockDotRenderedPage, mockDotPage } from '../../../../../test/dot-rendered-page.mock';
 import { mockUser } from '../../../../../test/login-service.mock';
 import * as _ from 'lodash';
-import { DotRenderedPage } from '@models/dot-rendered-page.model';
 
 describe('DotPageStateService', () => {
     let service: DotPageStateService;
@@ -86,7 +86,9 @@ describe('DotPageStateService', () => {
             );
 
             expect(lastConnection[0].request.url).toContain('/api/content/lock/inode/999');
-            expect(lastConnection[1].request.url).toContain('/api/v1/page/render/an/url/test?mode=ADMIN_MODE');
+            expect(lastConnection[1].request.url).toContain(
+                '/api/v1/page/render/an/url/test?mode=ADMIN_MODE'
+            );
         });
 
         it('should set a page unlocked and preview mode', () => {
@@ -128,7 +130,9 @@ describe('DotPageStateService', () => {
             );
 
             expect(lastConnection[0].request.url).toContain('/api/content/unlock/inode/999');
-            expect(lastConnection[1].request.url).toContain('/api/v1/page/render/an/url/test?mode=PREVIEW');
+            expect(lastConnection[1].request.url).toContain(
+                '/api/v1/page/render/an/url/test?mode=PREVIEW'
+            );
         });
 
         it('should set a page preview mode and keep the lock', () => {
@@ -155,7 +159,9 @@ describe('DotPageStateService', () => {
                 )
             );
 
-            expect(lastConnection[0].request.url).toContain('/api/v1/page/render/an/url/test?mode=PREVIEW');
+            expect(lastConnection[0].request.url).toContain(
+                '/api/v1/page/render/an/url/test?mode=PREVIEW'
+            );
             expect(lastConnection[1]).toBeUndefined();
         });
     });
@@ -175,7 +181,13 @@ describe('DotPageStateService', () => {
 
     describe('get a page state', () => {
         it('should get a unlocked page and set default state', () => {
-            const { lockedBy, lockMessage, lockedByName, lockedOn, ...noLockedByPage } = mockDotPage;
+            const {
+                lockedBy,
+                lockMessage,
+                lockedByName,
+                lockedOn,
+                ...noLockedByPage
+            } = mockDotPage;
 
             service.get('/hello/world').subscribe((updatedPageState: DotRenderedPageState) => {
                 expect(updatedPageState.page).toEqual(noLockedByPage);
@@ -204,7 +216,13 @@ describe('DotPageStateService', () => {
         });
 
         it('should get a page in a specific language', () => {
-            const { lockedBy, lockMessage, lockedByName, lockedOn, ...noLockedByPage } = mockDotPage;
+            const {
+                lockedBy,
+                lockMessage,
+                lockedByName,
+                lockedOn,
+                ...noLockedByPage
+            } = mockDotPage;
 
             service.get('/hello/world', 2).subscribe((updatedPageState: DotRenderedPageState) => {
                 expect(updatedPageState.page).toEqual(noLockedByPage);
@@ -229,7 +247,9 @@ describe('DotPageStateService', () => {
                 )
             );
 
-            expect(lastConnection[0].request.url).toContain('/api/v1/page/render/hello/world?language_id=2');
+            expect(lastConnection[0].request.url).toContain(
+                '/api/v1/page/render/hello/world?language_id=2'
+            );
         });
 
         describe('locked by another user', () => {

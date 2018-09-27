@@ -1,4 +1,4 @@
-import { of as observableOf, Observable } from 'rxjs';
+import { of as observableOf } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, async } from '@angular/core/testing';
@@ -16,7 +16,6 @@ describe('IframePortletLegacyComponent', () => {
     let comp: IframePortletLegacyComponent;
     let fixture: ComponentFixture<IframePortletLegacyComponent>;
     let de: DebugElement;
-    let el: HTMLElement;
     let dotIframe: DebugElement;
     let dotMenuService: DotMenuService;
     let dotIframeEventsHandler: DotIframeEventsHandler;
@@ -51,7 +50,6 @@ describe('IframePortletLegacyComponent', () => {
         fixture = DOTTestBed.createComponent(IframePortletLegacyComponent);
         comp = fixture.componentInstance;
         de = fixture.debugElement;
-        el = de.nativeElement;
         dotIframe = de.query(By.css('dot-iframe'));
         dotMenuService = de.injector.get(DotMenuService);
         dotIframeEventsHandler = de.injector.get(DotIframeEventsHandler);

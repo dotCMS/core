@@ -1,6 +1,5 @@
 import { Component, OnInit } from '@angular/core';
 import { FormGroup } from '@angular/forms';
-import { BaseComponent } from '@components/_common/_base/base-component';
 import { DotMessageService } from '@services/dot-messages-service';
 import { FieldProperty } from '../field-properties.model';
 import { DATA_TYPE_PROPERTY_INFO } from '../../../service/data-type-property-info';
@@ -9,14 +8,22 @@ import { DATA_TYPE_PROPERTY_INFO } from '../../../service/data-type-property-inf
     selector: 'dot-data-type-property',
     templateUrl: './data-type-property.component.html'
 })
-export class DataTypePropertyComponent extends BaseComponent implements OnInit {
+export class DataTypePropertyComponent implements OnInit {
     property: FieldProperty;
     group: FormGroup;
     radioInputs: object;
 
-    constructor(public dotMessageService: DotMessageService) {
-        super(
-            [
+    i18nMessages: {
+        [key: string]: string;
+    } = {};
+
+    constructor(public dotMessageService: DotMessageService) {}
+
+    ngOnInit(): void {
+        this.radioInputs = DATA_TYPE_PROPERTY_INFO[this.property.field.clazz];
+
+        this.dotMessageService
+            .getMessages([
                 'contenttypes.field.properties.data_type.label',
                 'contenttypes.field.properties.data_type.values.binary',
                 'contenttypes.field.properties.data_type.values.text',
@@ -26,13 +33,10 @@ export class DataTypePropertyComponent extends BaseComponent implements OnInit {
                 'contenttypes.field.properties.data_type.values.number',
                 'contenttypes.field.properties.data_type.values.large_text',
                 'contenttypes.field.properties.data_type.values.system'
-            ],
-            dotMessageService
-        );
-    }
-
-    ngOnInit(): void {
-        this.radioInputs = DATA_TYPE_PROPERTY_INFO[this.property.field.clazz];
+            ])
+            .subscribe((res) => {
+                this.i18nMessages = res;
+            });
     }
 
     isEmpty(obj) {

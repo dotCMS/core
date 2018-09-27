@@ -14,7 +14,10 @@ describe('ValidDefaultGuardService', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            providers: [DefaultGuardService, { provide: DotRouterService, useClass: MockDotRouterService }]
+            providers: [
+                DefaultGuardService,
+                { provide: DotRouterService, useClass: MockDotRouterService }
+            ]
         });
 
         defaultGuardService = TestBed.get(DefaultGuardService);

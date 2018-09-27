@@ -18,7 +18,9 @@ export class DotLayoutDesignerComponent implements OnInit {
     constructor(public dotMessageService: DotMessageService) {}
 
     ngOnInit() {
-        this.dotMessageService.getMessages(['editpage.layout.designer.header', 'editpage.layout.designer.footer']).subscribe();
+        this.dotMessageService
+            .getMessages(['editpage.layout.designer.header', 'editpage.layout.designer.footer'])
+            .subscribe();
     }
 
     /**

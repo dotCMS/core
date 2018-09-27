@@ -10,6 +10,7 @@ import { LoginComponent } from './login.component';
 
 import { SharedModule } from '@shared/shared.module';
 import { DotDirectivesModule } from '@shared/dot-directives.module';
+import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module';
 
 const routes: Routes = [
     {
@@ -29,6 +30,7 @@ const routes: Routes = [
         InputTextModule,
         SharedModule,
         DotLoadingIndicatorModule,
+        MdInputTextModule,
         DotDirectivesModule
     ],
     declarations: [LoginContainerComponent, LoginComponent]

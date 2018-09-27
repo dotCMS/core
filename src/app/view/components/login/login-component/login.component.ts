@@ -1,4 +1,12 @@
-import { Component, EventEmitter, Input, NgZone, Output, ViewEncapsulation, AfterViewInit } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    Input,
+    NgZone,
+    Output,
+    ViewEncapsulation,
+    AfterViewInit
+} from '@angular/core';
 import { LoginData } from './login-container.component';
 import { LoginService, LoggerService } from 'dotcms-js/dotcms-js';
 
@@ -71,13 +79,19 @@ export class LoginComponent implements AfterViewInit {
         'a-new-password-has-been-sent-to-x'
     ];
 
-    constructor(private loginService: LoginService, private ngZone: NgZone, private loggerService: LoggerService) {
+    constructor(
+        private loginService: LoginService,
+        private ngZone: NgZone,
+        private loggerService: LoggerService
+    ) {
         this.language = '';
         this.renderPageData();
     }
 
     ngAfterViewInit(): void {
-        this.ngZone.runOutsideAngular(() => setTimeout(() => document.getElementById('login-component-login-input').focus()));
+        this.ngZone.runOutsideAngular(() =>
+            setTimeout(() => document.getElementById('login-component-login-input').focus())
+        );
     }
 
     /**
@@ -149,7 +163,8 @@ export class LoginComponent implements AfterViewInit {
                 this.forgotPasswordButton = dataI18n['get-new-password'];
                 this.serverLabel = dataI18n.Server;
                 this.mandatoryFieldError = dataI18n['error.form.mandatory'];
-                this.communityLicenseInfoMessage = dataI18n['angular.login.component.community.licence.message'];
+                this.communityLicenseInfoMessage =
+                    dataI18n['angular.login.component.community.licence.message'];
                 this.resetPasswordSuccess = dataI18n['reset-password-success'];
                 this.resetEmailMessage = dataI18n['a-new-password-has-been-sent-to-x'];
 

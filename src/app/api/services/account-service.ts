@@ -1,5 +1,5 @@
 import { CoreWebService, ResponseView } from 'dotcms-js/dotcms-js';
-import { Observable } from 'rxjs';
+import { Observable } from 'rxjs/Observable';
 import { RequestMethod } from '@angular/http';
 import { Injectable } from '@angular/core';
 

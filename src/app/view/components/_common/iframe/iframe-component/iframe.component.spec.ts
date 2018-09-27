@@ -76,7 +76,9 @@ describe('IframeComponent', () => {
         };
 
         dotIframeService.reload();
-        expect(comp.iframeElement.nativeElement.contentWindow.location.reload).toHaveBeenCalledTimes(1);
+        expect(
+            comp.iframeElement.nativeElement.contentWindow.location.reload
+        ).toHaveBeenCalledTimes(1);
     });
 
     it('should call function in the iframe window', () => {
@@ -93,7 +95,9 @@ describe('IframeComponent', () => {
 
         dotIframeService.run('fakeFunction');
 
-        expect(comp.iframeElement.nativeElement.contentWindow.fakeFunction).toHaveBeenCalledTimes(1);
+        expect(comp.iframeElement.nativeElement.contentWindow.fakeFunction).toHaveBeenCalledTimes(
+            1
+        );
     });
 
     it('should reload colors', () => {
@@ -143,20 +147,19 @@ describe('IframeComponent', () => {
         it('should remove and add listener on load', () => {
             iframeEl.triggerEventHandler('load', {});
 
-            expect(comp.iframeElement.nativeElement.contentWindow.removeEventListener).toHaveBeenCalledWith(
-                'keydown',
-                jasmine.any(Function)
-            );
-            expect(comp.iframeElement.nativeElement.contentWindow.document.removeEventListener).toHaveBeenCalledWith(
-                'ng-event',
-                jasmine.any(Function)
-            );
+            expect(
+                comp.iframeElement.nativeElement.contentWindow.removeEventListener
+            ).toHaveBeenCalledWith('keydown', jasmine.any(Function));
+            expect(
+                comp.iframeElement.nativeElement.contentWindow.document.removeEventListener
+            ).toHaveBeenCalledWith('ng-event', jasmine.any(Function));
 
-            expect(comp.iframeElement.nativeElement.contentWindow.addEventListener).toHaveBeenCalledWith('keydown', jasmine.any(Function));
-            expect(comp.iframeElement.nativeElement.contentWindow.document.addEventListener).toHaveBeenCalledWith(
-                'ng-event',
-                jasmine.any(Function)
-            );
+            expect(
+                comp.iframeElement.nativeElement.contentWindow.addEventListener
+            ).toHaveBeenCalledWith('keydown', jasmine.any(Function));
+            expect(
+                comp.iframeElement.nativeElement.contentWindow.document.addEventListener
+            ).toHaveBeenCalledWith('ng-event', jasmine.any(Function));
         });
 
         it('should set the colors to the jsp on load', () => {

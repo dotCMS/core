@@ -14,7 +14,8 @@ import { PublicAuthGuardService } from '@services/guards/public-auth-guard.servi
 const AUTH_MODULES: Routes = [
     {
         path: 'forgotPassword',
-        loadChildren: '@components/login/forgot-password-component/forgot-password.module#ForgotPasswordModule'
+        loadChildren:
+            '@components/login/forgot-password-component/forgot-password.module#ForgotPasswordModule'
     },
     {
         path: 'login',
@@ -22,7 +23,8 @@ const AUTH_MODULES: Routes = [
     },
     {
         path: 'resetPassword/:token',
-        loadChildren: '@components/login/reset-password-component/reset-password.module#ResetPasswordModule'
+        loadChildren:
+            '@components/login/reset-password-component/reset-password.module#ResetPasswordModule'
     },
     {
         path: '',
@@ -37,12 +39,12 @@ const PORTLETS_ANGULAR = [
         path: 'content-types-angular',
         loadChildren: '@portlets/content-types/content-types.module#ContentTypesModule'
     },
-    {
-        canActivate: [MenuGuardService],
-        canActivateChild: [MenuGuardService],
-        path: 'rules',
-        loadChildren: '@portlets/rule-engine/rule-engine.module#RuleEngineModule'
-    },
+    // {
+    //     canActivate: [MenuGuardService],
+    //     canActivateChild: [MenuGuardService],
+    //     path: 'rules',
+    //     loadChildren: '@portlets/rule-engine/rule-engine.module#RuleEngineModule'
+    // },
     {
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
@@ -51,7 +53,8 @@ const PORTLETS_ANGULAR = [
     },
     {
         path: 'pl',
-        loadChildren: '@components/_common/pattern-library/pattern-library.module#PatternLibraryModule'
+        loadChildren:
+            '@components/_common/pattern-library/pattern-library.module#PatternLibraryModule'
     },
     {
         path: 'notLicensed',
@@ -77,7 +80,8 @@ const PORTLETS_IFRAME = [
                 path: ':id',
                 children: [
                     {
-                        loadChildren: '@portlets/dot-porlet-detail/dot-portlet-detail.module#DotPortletDetailModule',
+                        loadChildren:
+                            '@portlets/dot-porlet-detail/dot-portlet-detail.module#DotPortletDetailModule',
                         path: ':asset'
                     }
                 ]
@@ -113,13 +117,13 @@ const appRoutes: Routes = [
     },
     {
         canActivate: [AuthGuardService],
-        children: [
-            {
-                path: 'rules',
-                loadChildren: '@portlets/rule-engine/rule-engine.module#RuleEngineModule',
-                canActivate: [AuthGuardService]
-            }
-        ],
+        // children: [
+        //     {
+        //         path: 'rules',
+        //         loadChildren: '@portlets/rule-engine/rule-engine.module#RuleEngineModule',
+        //         canActivate: [AuthGuardService]
+        //     }
+        // ],
         component: MainCoreLegacyComponent,
         path: 'fromCore'
     },

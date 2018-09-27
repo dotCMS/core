@@ -1,6 +1,6 @@
 import { mergeMap, flatMap, map, tap, toArray } from 'rxjs/operators';
 import { DotWorkflowService } from './../../../../api/services/dot-workflow/dot-workflow.service';
-import { Observable } from 'rxjs';
+import { Observable } from 'rxjs/Observable';
 import { DotWorkflow } from './../../../../shared/models/dot-workflow/dot-workflow.model';
 import { Component, OnInit, forwardRef } from '@angular/core';
 import { SelectItem } from 'primeng/components/common/selectitem';
@@ -26,7 +26,10 @@ export class DotWorkflowsSelectorFieldComponent implements ControlValueAccessor,
 
     private workflowsModel: DotWorkflow[];
 
-    constructor(private dotWorkflowService: DotWorkflowService, public dotMessageService: DotMessageService) {}
+    constructor(
+        private dotWorkflowService: DotWorkflowService,
+        public dotMessageService: DotMessageService
+    ) {}
 
     propagateChange = (_: any) => {};
 
@@ -42,18 +45,20 @@ export class DotWorkflowsSelectorFieldComponent implements ControlValueAccessor,
     registerOnTouched(): void {}
 
     ngOnInit() {
-        this.options = this.dotMessageService.getMessages(['dot.common.select.workflows', 'dot.common.archived']).pipe(
-            mergeMap(() => {
-                return this.dotWorkflowService.get().pipe(
-                    tap((workflows: DotWorkflow[]) => {
-                        this.workflowsModel = workflows;
-                    }),
-                    flatMap((workflows: DotWorkflow[]) => workflows),
-                    map((workflow: DotWorkflow) => this.getWorkflowFieldOption(workflow)),
-                    toArray()
-                );
-            })
-        );
+        this.options = this.dotMessageService
+            .getMessages(['dot.common.select.workflows', 'dot.common.archived'])
+            .pipe(
+                mergeMap(() => {
+                    return this.dotWorkflowService.get().pipe(
+                        tap((workflows: DotWorkflow[]) => {
+                            this.workflowsModel = workflows;
+                        }),
+                        flatMap((workflows: DotWorkflow[]) => workflows),
+                        map((workflow: DotWorkflow) => this.getWorkflowFieldOption(workflow)),
+                        toArray()
+                    );
+                })
+            );
     }
 
     /**
@@ -74,7 +79,8 @@ export class DotWorkflowsSelectorFieldComponent implements ControlValueAccessor,
      * @memberof DotWorkflowsSelectorFieldComponent
      */
     isWorkflowArchive(id: string): boolean {
-        return this.workflowsModel.filter((workflow: DotWorkflow) => workflow.id === id)[0].archived;
+        return this.workflowsModel.filter((workflow: DotWorkflow) => workflow.id === id)[0]
+            .archived;
     }
 
     /**

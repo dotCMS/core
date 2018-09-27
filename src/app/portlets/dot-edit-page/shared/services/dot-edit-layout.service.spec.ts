@@ -1,10 +1,11 @@
 import { DotEditLayoutService } from './dot-edit-layout.service';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
-import { DotLayoutGridBox } from '@models/dot-layout-grid-box.model';
-import { DotLayoutBody } from '@models/dot-layout-body.model';
+
 import { TemplateContainersCacheService } from '../../template-containers-cache.service';
 import { mockDotContainers } from '../../../../test/dot-rendered-page.mock';
 import { DotContainerColumnBox } from '../models/dot-container-column-box.model';
+import { DotLayoutBody } from '@portlets/dot-edit-page/shared/models/dot-layout-body.model';
+import { DotLayoutGridBox } from '@portlets/dot-edit-page/shared/models/dot-layout-grid-box.model';
 
 describe('DotEditLayoutService', () => {
     const containers = {
@@ -54,7 +55,10 @@ describe('DotEditLayoutService', () => {
     let templateContainersCacheService: TemplateContainersCacheService;
 
     beforeEach(() => {
-        this.injector = DOTTestBed.resolveAndCreate([DotEditLayoutService, TemplateContainersCacheService]);
+        this.injector = DOTTestBed.resolveAndCreate([
+            DotEditLayoutService,
+            TemplateContainersCacheService
+        ]);
         dotEditLayoutService = this.injector.get(DotEditLayoutService);
         templateContainersCacheService = this.injector.get(TemplateContainersCacheService);
 
@@ -205,7 +209,10 @@ describe('DotEditLayoutService', () => {
         expect(layoutBody.rows[0].columns.length).toEqual(2, 'create two columns');
         expect(layoutBody.rows[0].columns[1].containers.length).toEqual(2, 'create two containers');
         expect(layoutBody.rows[0].columns[1].leftOffset).toEqual(9, 'set leftOffset to 9');
-        expect(layoutBody.rows[0].columns[1].width).toEqual(4, 'create 4 containers for the first row');
+        expect(layoutBody.rows[0].columns[1].width).toEqual(
+            4,
+            'create 4 containers for the first row'
+        );
     });
 
     it('should transform the Sidebar data to ContainerColumnBox to export the data', () => {
@@ -220,7 +227,9 @@ describe('DotEditLayoutService', () => {
             }
         ];
 
-        const containerColumnBox: DotContainerColumnBox[] = dotEditLayoutService.getDotLayoutSidebar(rawContainers);
+        const containerColumnBox: DotContainerColumnBox[] = dotEditLayoutService.getDotLayoutSidebar(
+            rawContainers
+        );
         delete containerColumnBox[0].uuid;
         delete containerColumnBox[1].uuid;
 

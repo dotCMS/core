@@ -13,7 +13,13 @@ import { RouterModule } from '@angular/router';
 @NgModule({
     declarations: [IframeComponent, IframePortletLegacyComponent, ...PIPES],
     exports: [DotLoadingIndicatorModule, IframeComponent, IframePortletLegacyComponent],
-    imports: [CommonModule, FormsModule, SearchableDropDownModule, DotLoadingIndicatorModule, RouterModule],
+    imports: [
+        CommonModule,
+        FormsModule,
+        SearchableDropDownModule,
+        DotLoadingIndicatorModule,
+        RouterModule
+    ],
     providers: [IframeOverlayService, DotIframeEventsHandler]
 })
 export class IFrameModule {}

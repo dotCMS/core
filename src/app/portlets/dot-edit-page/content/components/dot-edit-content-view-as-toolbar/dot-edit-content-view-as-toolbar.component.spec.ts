@@ -17,18 +17,17 @@ import { DotDevice } from '@models/dot-device/dot-device.model';
 import { DotLanguage } from '@models/dot-language/dot-language.model';
 import { mockDotEditPageViewAs } from '../../../../../test/dot-edit-page-view-as.mock';
 import { mockDotPersona } from '../../../../../test/dot-persona.mock';
-import { DotRenderedPageState } from '@models/dot-rendered-page-state.model';
 import { mockUser, LoginServiceMock } from '../../../../../test/login-service.mock';
 import { mockDotRenderedPage } from '../../../../../test/dot-rendered-page.mock';
 import { DotDeviceSelectorComponent } from '@components/dot-device-selector/dot-device-selector.component';
 import { DotPersonaSelectorComponent } from '@components/dot-persona-selector/dot-persona-selector.component';
 import { DotLanguageSelectorComponent } from '@components/dot-language-selector/dot-language-selector.component';
-import { PageMode } from '@models/page-mode.enum';
 import { LoginService } from 'dotcms-js/dotcms-js';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { of } from 'rxjs';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-messages-service';
+import { DotRenderedPageState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
 
 @Component({
     selector: 'dot-test-host',
@@ -142,7 +141,10 @@ describe('DotEditContentViewAsToolbarComponent', () => {
             spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
             spyOn(component.changeViewAs, 'emit');
 
-            componentHost.pageState = new DotRenderedPageState(mockUser, JSON.parse(JSON.stringify(mockDotRenderedPage)));
+            componentHost.pageState = new DotRenderedPageState(
+                mockUser,
+                JSON.parse(JSON.stringify(mockDotRenderedPage))
+            );
 
             fixtureHost.detectChanges();
         });
@@ -163,7 +165,10 @@ describe('DotEditContentViewAsToolbarComponent', () => {
             spyOn(component, 'changeLanguageHandler').and.callThrough();
             spyOn(component.changeViewAs, 'emit');
 
-            componentHost.pageState = new DotRenderedPageState(mockUser, JSON.parse(JSON.stringify(mockDotRenderedPage)));
+            componentHost.pageState = new DotRenderedPageState(
+                mockUser,
+                JSON.parse(JSON.stringify(mockDotRenderedPage))
+            );
 
             fixtureHost.detectChanges();
 
@@ -266,7 +271,10 @@ describe('DotEditContentViewAsToolbarComponent', () => {
         describe('events', () => {
             beforeEach(() => {
                 spyOn(component.whatschange, 'emit');
-                componentHost.pageState = new DotRenderedPageState(mockUser, JSON.parse(JSON.stringify(mockDotRenderedPage)));
+                componentHost.pageState = new DotRenderedPageState(
+                    mockUser,
+                    JSON.parse(JSON.stringify(mockDotRenderedPage))
+                );
                 spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
                 fixtureHost.detectChanges();
 

@@ -45,7 +45,11 @@ export class DotDOMHtmlUtilService {
         return script;
     }
 
-    public getButtomHTML(label: string, className: string, dataset: { [key: string]: string }): string {
+    public getButtomHTML(
+        label: string,
+        className: string,
+        dataset: { [key: string]: string }
+    ): string {
         // TODO look for a better way to do this
         let datasetString = '';
 

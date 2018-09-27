@@ -1,4 +1,12 @@
-import { Component, EventEmitter, Input, Output, SimpleChanges, OnChanges, OnInit } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    Input,
+    Output,
+    SimpleChanges,
+    OnChanges,
+    OnInit
+} from '@angular/core';
 import { DotEditPageViewAs } from '@models/dot-edit-page-view-as/dot-edit-page-view-as.model';
 import { DotPersona } from '@models/dot-persona/dot-persona.model';
 import { DotLanguage } from '@models/dot-language/dot-language.model';
@@ -6,7 +14,7 @@ import { DotDevice } from '@models/dot-device/dot-device.model';
 import { DotRenderedPageState } from '../../../shared/models/dot-rendered-page-state.model';
 import { PageMode } from '../../../shared/models/page-mode.enum';
 import { DotMessageService } from '@services/dot-messages-service';
-import { Observable } from 'rxjs';
+import { Observable } from 'rxjs/Observable';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 
 @Component({
@@ -27,7 +35,10 @@ export class DotEditContentViewAsToolbarComponent implements OnInit, OnChanges {
     private value: DotEditPageViewAs;
     private _pageState: DotRenderedPageState;
 
-    constructor(private dotMessageService: DotMessageService, private dotLicenseService: DotLicenseService) {}
+    constructor(
+        private dotMessageService: DotMessageService,
+        private dotLicenseService: DotLicenseService
+    ) {}
 
     ngOnInit(): void {
         this.isEnterpriseLicense$ = this.dotLicenseService.isEnterprise();

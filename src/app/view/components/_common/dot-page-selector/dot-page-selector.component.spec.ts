@@ -9,6 +9,7 @@ import { DotPageSelectorService, DotPageAsset } from './service/dot-page-selecto
 import { FormGroup, FormBuilder } from '@angular/forms';
 import { AutoComplete } from 'primeng/primeng';
 import { DotDirectivesModule } from '@shared/dot-directives.module';
+import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module';
 
 export const mockPageSelector = [
     {
@@ -101,7 +102,7 @@ class FakeFormComponent {
 const config = (host) => {
     return {
         declarations: [host, DotPageSelectorComponent],
-        imports: [DotDirectivesModule],
+        imports: [DotDirectivesModule, MdInputTextModule],
         providers: [{ provide: DotPageSelectorService, useClass: MockDotPageSelectorService }]
     };
 };
@@ -169,7 +170,9 @@ describe('DotPageSelectorComponent', () => {
         });
 
         it('should write value', () => {
-            expect(component.writeValue).toHaveBeenCalledWith('c12fe7e6-d338-49d5-973b-2d974d57015b');
+            expect(component.writeValue).toHaveBeenCalledWith(
+                'c12fe7e6-d338-49d5-973b-2d974d57015b'
+            );
             expect(component.val.identifier).toEqual('c12fe7e6-d338-49d5-973b-2d974d57015b');
         });
 

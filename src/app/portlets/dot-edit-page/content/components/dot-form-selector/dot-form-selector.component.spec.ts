@@ -1,7 +1,7 @@
-import { of as observableOf, Observable } from 'rxjs';
+import { of as observableOf } from 'rxjs';
 import { DebugElement, Injectable } from '@angular/core';
 import { DotFormSelectorComponent } from './dot-form-selector.component';
-import { ComponentFixture, TestBed, async, tick, fakeAsync } from '@angular/core/testing';
+import { ComponentFixture, TestBed, async } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { By } from '@angular/platform-browser';
 import { PaginatorService } from '@services/paginator';
@@ -77,7 +77,7 @@ xdescribe('DotFormSelectorComponent', () => {
 
     describe('show dialog', () => {
         beforeEach(() => {
-            spyOn(paginatorService, 'getWithOffset').and.callFake((offset) => {
+            spyOn(paginatorService, 'getWithOffset').and.callFake(() => {
                 return observableOf([mockContentType]);
             });
 
@@ -99,11 +99,8 @@ xdescribe('DotFormSelectorComponent', () => {
         });
 
         describe('data', () => {
-            let pTableComponent;
-
             beforeEach(() => {
                 fixture.detectChanges();
-                pTableComponent = de.query(By.css('p-dataTable'));
             });
 
             describe('pagination', () => {
@@ -133,15 +130,20 @@ xdescribe('DotFormSelectorComponent', () => {
                 });
 
                 it('first column should have the right header and content', () => {
-                    const label = de.query(By.css('table thead tr:first-child th:first-child span')).nativeElement.innerHTML;
+                    const label = de.query(By.css('table thead tr:first-child th:first-child span'))
+                        .nativeElement.innerHTML;
                     expect(label).toBe('Name');
 
-                    const content = de.query(By.css('table tbody tr:first-child td:first-child span')).nativeElement.innerHTML;
+                    const content = de.query(
+                        By.css('table tbody tr:first-child td:first-child span')
+                    ).nativeElement.innerHTML;
                     expect(content).toBe('Hello World');
                 });
 
                 it('second column should have the right header and select button', () => {
-                    const label = de.query(By.css('table thead tr:first-child th:nth-child(2n) span')).nativeElement.innerHTML;
+                    const label = de.query(
+                        By.css('table thead tr:first-child th:nth-child(2n) span')
+                    ).nativeElement.innerHTML;
                     expect(label).toBe('');
 
                     const link = de.query(By.css('.form-selector__button'));

@@ -1,6 +1,6 @@
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
-import { DebugElement, Component } from '@angular/core';
+import { DebugElement, Component, OnInit } from '@angular/core';
 import { async, ComponentFixture } from '@angular/core/testing';
 
 import { DOTTestBed } from '../../../test/dot-test-bed';
@@ -24,7 +24,13 @@ let closeButton: DebugElement;
 
 const getTestConfig = (hostComponent) => {
     return {
-        imports: [DialogModule, BrowserAnimationsModule, IFrameModule, RouterTestingModule, DotIconModule],
+        imports: [
+            DialogModule,
+            BrowserAnimationsModule,
+            IFrameModule,
+            RouterTestingModule,
+            DotIconModule
+        ],
         providers: [
             {
                 provide: LoginService,
@@ -98,7 +104,9 @@ describe('DotIframeDialogComponent', () => {
             dialog = de.query(By.css('p-dialog'));
             dialogComponent = dialog.componentInstance;
             dotIframe = de.query(By.css('dot-iframe'));
-            closeButton = de.query(By.css('.ui-dialog-titlebar-icon.ui-dialog-titlebar-close.dialog__close'));
+            closeButton = de.query(
+                By.css('.ui-dialog-titlebar-icon.ui-dialog-titlebar-close.dialog__close')
+            );
         });
 
         describe('events', () => {
@@ -254,13 +262,18 @@ describe('DotIframeDialogComponent', () => {
 
 @Component({
     selector: 'dot-test-host-2-component',
-    template: '<dot-iframe-dialog [url]="url" [header]="header" (beforeClose)="onBeforeClose($event)"></dot-iframe-dialog>'
+    template:
+        '<dot-iframe-dialog [url]="url" [header]="header" (beforeClose)="onBeforeClose($event)"></dot-iframe-dialog>'
 })
-class TestHost2Component {
+class TestHost2Component implements OnInit {
     url: string;
     header: string;
 
     onBeforeClose(_$event: { originalEvent: MouseEvent | KeyboardEvent; close: () => {} }) {}
+
+    ngOnInit() {
+        this.url = 'http://';
+    }
 }
 
 describe('DotIframeDialogComponent with onBeforeClose event', () => {
@@ -275,7 +288,12 @@ describe('DotIframeDialogComponent with onBeforeClose event', () => {
         hostDe = hostFixture.debugElement;
         de = hostDe.query(By.css('dot-iframe-dialog'));
         component = de.componentInstance;
-        closeButton = de.query(By.css('.ui-dialog-titlebar-icon.ui-dialog-titlebar-close.dialog__close'));
+
+        hostFixture.detectChanges();
+
+        closeButton = de.query(
+            By.css('.ui-dialog-titlebar-icon.ui-dialog-titlebar-close.dialog__close')
+        );
     });
 
     it('should emit beforeClose', () => {
@@ -293,14 +311,16 @@ describe('DotIframeDialogComponent with onBeforeClose event', () => {
     it('should close when callback is called', () => {
         spyOn(component.close, 'emit');
 
-        component.beforeClose.subscribe(($event: { originalEvent: MouseEvent | KeyboardEvent; close: () => {} }) => {
-            $event.close();
+        component.beforeClose.subscribe(
+            ($event: { originalEvent: MouseEvent | KeyboardEvent; close: () => {} }) => {
+                $event.close();
 
-            expect(component.url).toBe(null);
-            expect(component.show).toBe(false);
-            expect(component.header).toBe('');
-            expect(component.close.emit).toHaveBeenCalledTimes(1);
-        });
+                expect(component.url).toBe(null);
+                expect(component.show).toBe(false);
+                expect(component.header).toBe('');
+                expect(component.close.emit).toHaveBeenCalledTimes(1);
+            }
+        );
 
         closeButton.triggerEventHandler('click', { preventDefault: () => {} });
     });

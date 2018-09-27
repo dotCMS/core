@@ -17,8 +17,8 @@ import { MockDotMessageService } from '../../../../test/dot-message-service.mock
 import { DotMessageService } from '@services/dot-messages-service';
 import { DotPageStateService } from '../../content/services/dot-page-state/dot-page-state.service';
 import { DotPageStateServiceMock } from '../../../../test/dot-page-state.service.mock';
-import { DotRenderedPageState } from '@models/dot-rendered-page-state.model';
 import { mockDotRenderedPage } from '../../../../test/dot-rendered-page.mock';
+import { DotRenderedPageState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
 
 class DotMenuServiceMock {
     getDotMenuId(): Observable<string> {

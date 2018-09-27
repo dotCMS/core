@@ -38,7 +38,10 @@ class MockDragulaService {
 
 describe('FieldDragDropService', () => {
     beforeEach(() => {
-        this.injector = DOTTestBed.resolveAndCreate([FieldDragDropService, { provide: DragulaService, useClass: MockDragulaService }]);
+        this.injector = DOTTestBed.resolveAndCreate([
+            FieldDragDropService,
+            { provide: DragulaService, useClass: MockDragulaService }
+        ]);
 
         this.fieldDragDropService = this.injector.get(FieldDragDropService);
         this.dragulaService = this.injector.get(DragulaService);
@@ -127,7 +130,7 @@ describe('FieldDragDropService', () => {
     it(
         'should emit fieldDropFromSource',
         fakeAsync(() => {
-            this.fieldDragDropService.fieldDropFromSource$.subscribe((data) => {
+            this.fieldDragDropService.fieldDropFromSource$.subscribe(() => {
                 this.fieldDropFromSource = true;
             });
 

@@ -56,7 +56,9 @@ describe('FieldService', () => {
                 }
             ];
 
-            this.fieldService.saveFields('1', this.mockData).subscribe((res) => (this.response = JSON.parse(res)));
+            this.fieldService
+                .saveFields('1', this.mockData)
+                .subscribe((res) => (this.response = JSON.parse(res)));
 
             this.lastConnection.mockRespond(
                 new Response(
@@ -98,7 +100,9 @@ describe('FieldService', () => {
                 }
             ];
 
-            this.fieldService.deleteFields('1', this.mockData).subscribe((res) => (this.response = res));
+            this.fieldService
+                .deleteFields('1', this.mockData)
+                .subscribe((res) => (this.response = res));
 
             this.lastConnection.mockRespond(
                 new Response(

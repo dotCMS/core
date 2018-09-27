@@ -23,7 +23,10 @@ describe('LoginContainerComponent', () => {
         DOTTestBed.configureTestingModule({
             imports: [MdInputTextModule, RouterTestingModule, BrowserAnimationsModule],
             declarations: [LoginContainerComponent, LoginComponent, DotLoadingIndicatorComponent],
-            providers: [DotLoadingIndicatorService, { provide: LoginService, useClass: LoginServiceMock }]
+            providers: [
+                DotLoadingIndicatorService,
+                { provide: LoginService, useClass: LoginServiceMock }
+            ]
         }).compileComponents();
     }));
 
@@ -44,7 +47,9 @@ describe('LoginContainerComponent', () => {
             spyOn(loginService, 'loginUser').and.callThrough();
             spyOn(component, 'logInUser').and.callThrough();
             spyOn(dotRouterService, 'goToMain');
-            const loginComponent: LoginComponent = fixture.debugElement.query(By.css('dot-login-component')).componentInstance;
+            const loginComponent: LoginComponent = fixture.debugElement.query(
+                By.css('dot-login-component')
+            ).componentInstance;
 
             loginComponent.login.emit({
                 login: 'admin@dotcms.com',
@@ -64,7 +69,12 @@ describe('LoginContainerComponent', () => {
         });
 
         it('should call login service correctly', () => {
-            expect(loginService.loginUser).toHaveBeenCalledWith('admin@dotcms.com', 'admin', false, 'en');
+            expect(loginService.loginUser).toHaveBeenCalledWith(
+                'admin@dotcms.com',
+                'admin',
+                false,
+                'en'
+            );
         });
 
         it('should redirect correctly after login', () => {

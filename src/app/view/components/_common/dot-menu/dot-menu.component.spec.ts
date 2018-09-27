@@ -77,7 +77,9 @@ describe('DotMenuComponent', () => {
         const button: DebugElement = fixture.debugElement.query(By.css('.dot-menu__button'));
         button.triggerEventHandler('click', {});
         fixture.detectChanges();
-        const menuItems: DebugElement[] = fixture.debugElement.queryAll(By.css('.dot-menu-item__link'));
+        const menuItems: DebugElement[] = fixture.debugElement.queryAll(
+            By.css('.dot-menu-item__link')
+        );
         menuItems[1].triggerEventHandler('click', {});
 
         expect(component.model[1].command).not.toHaveBeenCalled();

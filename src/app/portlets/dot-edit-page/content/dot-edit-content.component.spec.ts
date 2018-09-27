@@ -1,4 +1,4 @@
-import { throwError as observableThrowError, of as observableOf, Observable } from 'rxjs';
+import { throwError as observableThrowError, of as observableOf } from 'rxjs';
 import { SiteServiceMock, mockSites } from './../../../test/site-service.mock';
 import { ActivatedRoute } from '@angular/router';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -23,24 +23,28 @@ import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot
 import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
 import { DotMenuService } from '@services/dot-menu.service';
 import { DotMessageService } from '@services/dot-messages-service';
-import { DotPageState, DotRenderedPageState } from '@models/dot-rendered-page-state.model';
+import {
+    DotPageState,
+    DotRenderedPageState
+} from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
 import { DotPageStateService } from './services/dot-page-state/dot-page-state.service';
 import { DotRenderHTMLService } from '@services/dot-render-html/dot-render-html.service';
 import { LoginServiceMock, mockUser } from '../../../test/login-service.mock';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
-import { PageMode } from '@models/page-mode.enum';
+import { PageMode } from '@portlets/dot-edit-page/shared/models/page-mode.enum';
 import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
 import { DotWorkflowServiceMock } from '../../../test/dot-workflow-service.mock';
 import { mockDotRenderedPage, mockDotPage } from '../../../test/dot-rendered-page.mock';
-import { DotEditPageViewAs } from '@models/dot-edit-page-view-as/dot-edit-page-view-as.model';
+import { DotEditPageViewAs } from '@shared/models/dot-edit-page-view-as/dot-edit-page-view-as.model';
 import { mockDotDevices } from '../../../test/dot-device.mock';
 import { mockDotEditPageViewAs } from '../../../test/dot-edit-page-view-as.mock';
 import { mockResponseView } from '../../../test/response-view.mock';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { DotEditPageDataService } from '@shared/services/dot-edit-page-resolver/dot-edit-page-data.service';
+import { DotEditPageDataService } from '@portlets/dot-edit-page/shared/services/dot-edit-page-resolver/dot-edit-page-data.service';
+import { DotRenderedPage } from '@portlets/dot-edit-page/shared/models/dot-rendered-page.model';
 import { DotEditPageToolbarComponent } from './components/dot-edit-page-toolbar/dot-edit-page-toolbar.component';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotPageContainer } from '@models/dot-page-container.model';
+import { DotPageContainer } from '@portlets/dot-edit-page/shared/models/dot-page-container.model';
 import { DotEditContentComponent } from './dot-edit-content.component';
 import { ContentType } from '../../content-types/shared/content-type.model';
 import { DotContentletEditorModule } from '@components/dot-contentlet-editor/dot-contentlet-editor.module';
@@ -48,7 +52,6 @@ import { DotEditPageInfoModule } from '../components/dot-edit-page-info/dot-edit
 import { DotEditPageInfoComponent } from '../components/dot-edit-page-info/dot-edit-page-info.component';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import * as _ from 'lodash';
-import { DotRenderedPage } from '@models/dot-rendered-page.model';
 
 export const mockDotPageState: DotPageState = {
     mode: PageMode.PREVIEW,
@@ -126,7 +129,8 @@ describe('DotEditContentComponent', () => {
             'dot.common.message.saving': 'Saving...',
             'dot.common.message.saved': 'Saved',
             'editpage.content.steal.lock.confirmation_message.header': 'Are you sure?',
-            'editpage.content.steal.lock.confirmation_message.message': 'This page is locked by bla bla',
+            'editpage.content.steal.lock.confirmation_message.message':
+                'This page is locked by bla bla',
             'editpage.content.steal.lock.confirmation_message.reject': 'Lock',
             'editpage.content.steal.lock.confirmation_message.accept': 'Cancel',
             'editpage.content.save.changes.confirmation.header': 'Save header',
@@ -247,7 +251,8 @@ describe('DotEditContentComponent', () => {
         'should have page information',
         fakeAsync(() => {
             waitForDetectChanges(fixture);
-            const pageInfo: DotEditPageInfoComponent = de.query(By.css('dot-edit-page-info')).componentInstance;
+            const pageInfo: DotEditPageInfoComponent = de.query(By.css('dot-edit-page-info'))
+                .componentInstance;
             expect(pageInfo !== null).toBe(true);
             expect(pageInfo.pageState.page).toEqual(mockDotPage);
             expect(pageInfo.pageState.state).toEqual(mockDotPageState);
@@ -383,7 +388,9 @@ describe('DotEditContentComponent', () => {
 
         it('should handle error on reload', () => {
             const fake500Response = mockResponseView(500);
-            spyOn(dotPageStateService, 'get').and.returnValue(observableThrowError(fake500Response));
+            spyOn(dotPageStateService, 'get').and.returnValue(
+                observableThrowError(fake500Response)
+            );
             spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
             spyOn(dotRouterService, 'goToSiteBrowser');
 
@@ -441,7 +448,9 @@ describe('DotEditContentComponent', () => {
                     visibility: '',
                     position: ''
                 });
-                expect(pageWrapper.nativeElement.classList.contains('dot-edit__page-wrapper--deviced')).toBe(true);
+                expect(
+                    pageWrapper.nativeElement.classList.contains('dot-edit__page-wrapper--deviced')
+                ).toBe(true);
             })
         );
 
@@ -461,14 +470,19 @@ describe('DotEditContentComponent', () => {
                 mockDotEditPageViewAs
             );
 
-            expect(dotPageStateService.reload).toHaveBeenCalledWith(route.snapshot.queryParams.url, mockRenderedPageState.page.languageId);
+            expect(dotPageStateService.reload).toHaveBeenCalledWith(
+                route.snapshot.queryParams.url,
+                mockRenderedPageState.page.languageId
+            );
         });
 
         it(
             'should send the View As initial configuration to the toolbar',
             fakeAsync(() => {
                 waitForDetectChanges(fixture);
-                expect(viewAsToolbar.componentInstance.pageState.viewAs).toEqual(mockDotRenderedPage.viewAs);
+                expect(viewAsToolbar.componentInstance.pageState.viewAs).toEqual(
+                    mockDotRenderedPage.viewAs
+                );
             })
         );
     });
@@ -585,7 +599,10 @@ describe('DotEditContentComponent', () => {
                     lockedByAnotherUser: false
                 });
                 expect(component.pageState.page).toEqual(customMockDotRenderedPage.page);
-                expect(dotEditContentHtmlService.initEditMode).toHaveBeenCalledWith(component.pageState, component.iframe);
+                expect(dotEditContentHtmlService.initEditMode).toHaveBeenCalledWith(
+                    component.pageState,
+                    component.iframe
+                );
             })
         );
 
@@ -615,7 +632,10 @@ describe('DotEditContentComponent', () => {
                     lockedByAnotherUser: true
                 });
                 expect(dotEditContentHtmlService.initEditMode).not.toHaveBeenCalled();
-                expect(dotEditContentHtmlService.renderPage).toHaveBeenCalledWith(component.pageState, component.iframe);
+                expect(dotEditContentHtmlService.renderPage).toHaveBeenCalledWith(
+                    component.pageState,
+                    component.iframe
+                );
             })
         );
 
@@ -646,7 +666,10 @@ describe('DotEditContentComponent', () => {
                 });
                 expect(dotGlobalMessageService.display).not.toHaveBeenCalled();
                 expect(dotEditContentHtmlService.initEditMode).not.toHaveBeenCalled();
-                expect(dotEditContentHtmlService.renderPage).toHaveBeenCalledWith(component.pageState, component.iframe);
+                expect(dotEditContentHtmlService.renderPage).toHaveBeenCalledWith(
+                    component.pageState,
+                    component.iframe
+                );
             })
         );
     });
@@ -670,7 +693,9 @@ describe('DotEditContentComponent', () => {
                     name: 'remove'
                 };
 
-                spyOn(dotEditContentHtmlService, 'contentletEvents$').and.returnValue(observableOf(mockResEvent));
+                spyOn(dotEditContentHtmlService, 'contentletEvents$').and.returnValue(
+                    observableOf(mockResEvent)
+                );
                 spyOn(dotEditContentHtmlService, 'removeContentlet').and.callFake(() => {});
 
                 spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
@@ -762,7 +787,9 @@ describe('DotEditContentComponent', () => {
                 });
 
                 it('should set container to add', () => {
-                    expect(dotEditContentHtmlService.setContainterToAppendContentlet).toHaveBeenCalledWith({
+                    expect(
+                        dotEditContentHtmlService.setContainterToAppendContentlet
+                    ).toHaveBeenCalledWith({
                         identifier: '123',
                         uuid: '456'
                     });
@@ -811,7 +838,9 @@ describe('DotEditContentComponent', () => {
                 });
 
                 it('should show form-selector and set container to add', () => {
-                    expect(dotEditContentHtmlService.setContainterToAppendContentlet).toHaveBeenCalledWith({
+                    expect(
+                        dotEditContentHtmlService.setContainterToAppendContentlet
+                    ).toHaveBeenCalledWith({
                         identifier: '123',
                         uuid: '456'
                     });
@@ -826,7 +855,9 @@ describe('DotEditContentComponent', () => {
                     fakeAsync(() => {
                         const mockContentType = {};
 
-                        spyOn(dotEditContentHtmlService, 'renderAddedForm').and.callFake(() => observableOf(null));
+                        spyOn(dotEditContentHtmlService, 'renderAddedForm').and.callFake(() =>
+                            observableOf(null)
+                        );
 
                         dotFormSelector.componentInstance.select.emit(mockContentType);
 
@@ -835,7 +866,9 @@ describe('DotEditContentComponent', () => {
 
                         expect(component.editForm).toBe(false);
                         expect(dotFormSelector.componentInstance.show).toBe(false);
-                        expect(dotEditContentHtmlService.renderAddedForm).toHaveBeenCalledWith(mockContentType);
+                        expect(dotEditContentHtmlService.renderAddedForm).toHaveBeenCalledWith(
+                            mockContentType
+                        );
                     })
                 );
             });
@@ -902,7 +935,6 @@ describe('DotEditContentComponent', () => {
 
     describe('dialog configuration', () => {
         describe('page iframe', () => {
-            let keypressFunction = null;
             let event;
 
             beforeEach(() => {
@@ -915,9 +947,7 @@ describe('DotEditContentComponent', () => {
                         },
                         contentWindow: {
                             focus: jasmine.createSpy('focus'),
-                            addEventListener: (_type, listener) => {
-                                keypressFunction = listener;
-                            }
+                            addEventListener: (_type, _listener) => {}
                         }
                     }
                 };
@@ -969,7 +999,9 @@ describe('DotEditContentComponent', () => {
             it(
                 'should go to edit-page and set data for the resolver',
                 fakeAsync(() => {
-                    const copyMockDotRenderedPage: DotRenderedPage = _.cloneDeep(mockDotRenderedPage);
+                    const copyMockDotRenderedPage: DotRenderedPage = _.cloneDeep(
+                        mockDotRenderedPage
+                    );
                     copyMockDotRenderedPage.page.lockedBy = '123';
 
                     waitForDetectChanges(fixture);
@@ -981,9 +1013,13 @@ describe('DotEditContentComponent', () => {
                     });
                     document.dispatchEvent(customEvent);
 
-                    expect(dotEditPageDataService.set).toHaveBeenCalledWith(new DotRenderedPageState(mockUser, copyMockDotRenderedPage));
+                    expect(dotEditPageDataService.set).toHaveBeenCalledWith(
+                        new DotRenderedPageState(mockUser, copyMockDotRenderedPage)
+                    );
 
-                    expect(dotRouterService.goToEditPage).toHaveBeenCalledWith(copyMockDotRenderedPage.page.pageURI);
+                    expect(dotRouterService.goToEditPage).toHaveBeenCalledWith(
+                        copyMockDotRenderedPage.page.pageURI
+                    );
                 })
             );
 
@@ -1158,7 +1194,9 @@ describe('DotEditContentComponent', () => {
         'should set listener to change containers height',
         fakeAsync(() => {
             spyOn(dotEditContentHtmlService, 'setContaintersChangeHeightListener');
-            expect(dotEditContentHtmlService.setContaintersChangeHeightListener).not.toHaveBeenCalled();
+            expect(
+                dotEditContentHtmlService.setContaintersChangeHeightListener
+            ).not.toHaveBeenCalled();
 
             waitForDetectChanges(fixture);
             component.pageState.state.mode = PageMode.EDIT;
@@ -1175,7 +1213,9 @@ describe('DotEditContentComponent', () => {
                 }
             });
 
-            expect(dotEditContentHtmlService.setContaintersChangeHeightListener).toHaveBeenCalledWith(component.pageState.layout);
+            expect(
+                dotEditContentHtmlService.setContaintersChangeHeightListener
+            ).toHaveBeenCalledWith(component.pageState.layout);
         })
     );
 

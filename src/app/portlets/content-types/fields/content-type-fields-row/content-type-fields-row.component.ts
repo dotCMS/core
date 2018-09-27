@@ -29,7 +29,10 @@ export class ContentTypeFieldsRowComponent implements OnInit {
 
     i18nMessages: any = {};
 
-    constructor(private dotMessageService: DotMessageService, private dotDialogService: DotAlertConfirmService) {}
+    constructor(
+        private dotMessageService: DotMessageService,
+        private dotDialogService: DotAlertConfirmService
+    ) {}
 
     ngOnInit() {
         this.dotMessageService
@@ -46,7 +49,10 @@ export class ContentTypeFieldsRowComponent implements OnInit {
                 this.i18nMessages = res;
                 document
                     .querySelector('html')
-                    .style.setProperty('--empty-message', `"${this.i18nMessages['contenttypes.dropzone.rows.empty.message']}"`);
+                    .style.setProperty(
+                        '--empty-message',
+                        `"${this.i18nMessages['contenttypes.dropzone.rows.empty.message']}"`
+                    );
             });
     }
 
@@ -61,8 +67,13 @@ export class ContentTypeFieldsRowComponent implements OnInit {
             accept: () => {
                 this.removeField.emit(field);
             },
-            header: `${this.i18nMessages['contenttypes.action.delete']} ${this.i18nMessages['contenttypes.content.field']}`,
-            message: this.dotMessageService.get('contenttypes.confirm.message.delete.field', field.name),
+            header: `${this.i18nMessages['contenttypes.action.delete']} ${
+                this.i18nMessages['contenttypes.content.field']
+            }`,
+            message: this.dotMessageService.get(
+                'contenttypes.confirm.message.delete.field',
+                field.name
+            ),
             footerLabel: {
                 accept: this.i18nMessages['contenttypes.action.delete'],
                 reject: this.i18nMessages['contenttypes.action.cancel']
@@ -98,6 +109,8 @@ export class ContentTypeFieldsRowComponent implements OnInit {
      * @memberof ContentTypeFieldsRowComponent
      */
     rowHaveFields(row: FieldRow): boolean {
-        return row.columns.map((column: FieldColumn) => column.fields.length).every((fieldsNumber: number) => fieldsNumber === 0);
+        return row.columns
+            .map((column: FieldColumn) => column.fields.length)
+            .every((fieldsNumber: number) => fieldsNumber === 0);
     }
 }

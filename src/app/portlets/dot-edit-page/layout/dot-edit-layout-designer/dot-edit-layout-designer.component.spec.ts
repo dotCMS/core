@@ -1,4 +1,4 @@
-import { of as observableOf, Observable } from 'rxjs';
+import { of as observableOf } from 'rxjs';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
@@ -12,25 +12,24 @@ import { MockDotMessageService } from '../../../../test/dot-message-service.mock
 import { PageViewService } from '@services/page-view/page-view.service';
 import { PaginatorService } from '@services/paginator';
 import { RouterTestingModule } from '@angular/router/testing';
-import { DotEditLayoutService } from '@shared/services/dot-edit-layout.service';
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { FormsModule, FormGroup } from '@angular/forms';
 import { Component, Input, EventEmitter, Output } from '@angular/core';
 import { TemplateContainersCacheService } from '../../template-containers-cache.service';
 import { FieldValidationMessageModule } from '@components/_common/field-validation-message/file-validation-message.module';
-import { DotRenderedPageState } from '@models/dot-rendered-page-state.model';
 import { mockDotRenderedPage, mockDotTemplate } from '../../../../test/dot-rendered-page.mock';
 import { mockUser } from '../../../../test/login-service.mock';
-import { async } from '@angular/core/testing';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotEditPageInfoModule } from '../../components/dot-edit-page-info/dot-edit-page-info.module';
-import { DotTheme } from '@models/dot-theme.model';
 import { mockDotThemes } from '../../../../test/dot-themes.mock';
 import { DotThemesService } from '@services/dot-themes/dot-themes.service';
 import { DotThemesServiceMock } from '../../../../test/dot-themes-service.mock';
 import { TooltipModule } from 'primeng/primeng';
 import * as _ from 'lodash';
 import { SiteServiceMock } from '../../../../test/site-service.mock';
+import { DotTheme } from '@portlets/dot-edit-page/shared/models/dot-theme.model';
+import { DotEditLayoutService } from '@portlets/dot-edit-page/shared/services/dot-edit-layout.service';
+import { DotRenderedPageState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
 
 @Component({
     selector: 'dot-template-addtional-actions-menu',
@@ -143,23 +142,31 @@ describe('DotEditLayoutDesignerComponent', () => {
         });
 
         it('should show dot-edit-page-info', () => {
-            const dotEditPageInfo: DebugElement = fixture.debugElement.query(By.css('dot-edit-page-info'));
+            const dotEditPageInfo: DebugElement = fixture.debugElement.query(
+                By.css('dot-edit-page-info')
+            );
             expect(dotEditPageInfo.componentInstance.pageState).toBe(component.pageState);
             expect(dotEditPageInfo).toBeTruthy();
         });
 
         it('should not show template name input', () => {
-            const templateNameInput: DebugElement = fixture.debugElement.query(By.css('.dot-edit-layout__toolbar-template-name'));
+            const templateNameInput: DebugElement = fixture.debugElement.query(
+                By.css('.dot-edit-layout__toolbar-template-name')
+            );
             expect(templateNameInput).toBe(null);
         });
 
         it('should not show checkbox to save as template', () => {
-            const checkboxSave: DebugElement = fixture.debugElement.query(By.css('.dot-edit-layout__toolbar-save-template'));
+            const checkboxSave: DebugElement = fixture.debugElement.query(
+                By.css('.dot-edit-layout__toolbar-save-template')
+            );
             expect(checkboxSave).toBe(null);
         });
 
         it('should show cancel button', () => {
-            const cancelButton: DebugElement = fixture.debugElement.query(By.css('.dot-edit-layout__toolbar-action-cancel'));
+            const cancelButton: DebugElement = fixture.debugElement.query(
+                By.css('.dot-edit-layout__toolbar-action-cancel')
+            );
 
             expect(cancelButton).toBeTruthy();
             expect(cancelButton.nativeElement.textContent).toEqual('Cancel');
@@ -167,14 +174,18 @@ describe('DotEditLayoutDesignerComponent', () => {
 
         it('should redirect to edit page on cancel button click', () => {
             spyOn(dotRouterService, 'goToEditPage');
-            const cancelButton: DebugElement = fixture.debugElement.query(By.css('.dot-edit-layout__toolbar-action-cancel'));
+            const cancelButton: DebugElement = fixture.debugElement.query(
+                By.css('.dot-edit-layout__toolbar-action-cancel')
+            );
             cancelButton.triggerEventHandler('click', {});
             expect(dotRouterService.goToEditPage).toHaveBeenCalledWith('/an/url/test');
         });
 
         it('should show save button', () => {
             fixture.detectChanges();
-            const saveButton: DebugElement = fixture.debugElement.query(By.css('.dot-edit-layout__toolbar-save'));
+            const saveButton: DebugElement = fixture.debugElement.query(
+                By.css('.dot-edit-layout__toolbar-save')
+            );
 
             expect(saveButton).toBeTruthy();
             expect(saveButton.nativeElement.textContent).toEqual('Save');
@@ -182,7 +193,9 @@ describe('DotEditLayoutDesignerComponent', () => {
 
         it('should show dot-layout-properties and bind attr correctly', () => {
             fixture.detectChanges();
-            const layoutProperties: DebugElement = fixture.debugElement.query(By.css('dot-layout-properties'));
+            const layoutProperties: DebugElement = fixture.debugElement.query(
+                By.css('dot-layout-properties')
+            );
 
             expect(layoutProperties).toBeTruthy();
             expect(layoutProperties.componentInstance.group).toEqual(component.form.get('layout'));
@@ -190,20 +203,26 @@ describe('DotEditLayoutDesignerComponent', () => {
 
         it('should have dot-layout-designer', () => {
             fixture.detectChanges();
-            const layoutDesigner: DebugElement = fixture.debugElement.query(By.css('dot-layout-designer'));
+            const layoutDesigner: DebugElement = fixture.debugElement.query(
+                By.css('dot-layout-designer')
+            );
 
             expect(layoutDesigner).toBeTruthy();
             expect(layoutDesigner.componentInstance.group).toEqual(component.form.get('layout'));
         });
 
         it('should not show dot-template-addtional-actions-menu', () => {
-            const aditionalOptions: DebugElement = fixture.debugElement.query(By.css('dot-template-addtional-actions-menu'));
+            const aditionalOptions: DebugElement = fixture.debugElement.query(
+                By.css('dot-template-addtional-actions-menu')
+            );
 
             expect(aditionalOptions).toBe(null);
         });
 
         it('should not show save as template checkbox', () => {
-            const saveAsTemplate: DebugElement = fixture.debugElement.query(By.css('.dot-edit-layout__toolbar-save-template'));
+            const saveAsTemplate: DebugElement = fixture.debugElement.query(
+                By.css('.dot-edit-layout__toolbar-save-template')
+            );
 
             expect(saveAsTemplate).toBe(null);
         });
@@ -237,7 +256,9 @@ describe('DotEditLayoutDesignerComponent', () => {
             });
 
             it('should show save as template checkbox', () => {
-                const saveAsTemplate: DebugElement = fixture.debugElement.query(By.css('.dot-edit-layout__toolbar-save-template'));
+                const saveAsTemplate: DebugElement = fixture.debugElement.query(
+                    By.css('.dot-edit-layout__toolbar-save-template')
+                );
                 expect(saveAsTemplate).not.toBe(null);
             });
 
@@ -249,7 +270,9 @@ describe('DotEditLayoutDesignerComponent', () => {
                     );
                     saveAsTemplate.nativeElement.click();
                     fixture.detectChanges();
-                    templateNameField = fixture.debugElement.query(By.css('.dot-edit-layout__toolbar-template-name'));
+                    templateNameField = fixture.debugElement.query(
+                        By.css('.dot-edit-layout__toolbar-template-name')
+                    );
                 });
 
                 it('should set save as template mode', () => {
@@ -283,10 +306,15 @@ describe('DotEditLayoutDesignerComponent', () => {
 
         it('should expose theme selector component & Theme button be enabled', () => {
             fixture.detectChanges();
-            themeButton = fixture.debugElement.query(By.css('.dot-edit-layout__toolbar-action-themes')).nativeElement;
+            themeButton = fixture.debugElement.query(
+                By.css('.dot-edit-layout__toolbar-action-themes')
+            ).nativeElement;
             themeButton.click();
-            themeSelector = fixture.debugElement.query(By.css('dot-theme-selector')).componentInstance;
-            const themeSelectorBtn = fixture.debugElement.query(By.css('.dot-edit-layout__toolbar-action-themes')).nativeElement;
+            themeSelector = fixture.debugElement.query(By.css('dot-theme-selector'))
+                .componentInstance;
+            const themeSelectorBtn = fixture.debugElement.query(
+                By.css('.dot-edit-layout__toolbar-action-themes')
+            ).nativeElement;
             expect(themeSelector).not.toBe(null);
             expect(themeSelectorBtn.disabled).toBe(false);
         });
@@ -294,8 +322,12 @@ describe('DotEditLayoutDesignerComponent', () => {
         it('should Theme button be disabled', () => {
             spyOn(dotThemesService, 'get').and.returnValue(observableOf(null));
             fixture.detectChanges();
-            const themeSelectorBtn = fixture.debugElement.query(By.css('.dot-edit-layout__toolbar-action-themes')).nativeElement;
-            const themeSelectorBtnContainer = fixture.debugElement.query(By.css('.dot-edit__layout-actions-themes')).nativeElement;
+            const themeSelectorBtn = fixture.debugElement.query(
+                By.css('.dot-edit-layout__toolbar-action-themes')
+            ).nativeElement;
+            const themeSelectorBtnContainer = fixture.debugElement.query(
+                By.css('.dot-edit__layout-actions-themes')
+            ).nativeElement;
             expect(themeSelectorBtn.disabled).toBe(true);
             expect(themeSelectorBtnContainer.outerHTML).toContain('No Read Permission');
         });
@@ -303,9 +335,12 @@ describe('DotEditLayoutDesignerComponent', () => {
         it('should get the emitted value from themes and trigger a save', () => {
             spyOn(component, 'changeThemeHandler').and.callThrough();
             fixture.detectChanges();
-            themeButton = fixture.debugElement.query(By.css('.dot-edit-layout__toolbar-action-themes')).nativeElement;
+            themeButton = fixture.debugElement.query(
+                By.css('.dot-edit-layout__toolbar-action-themes')
+            ).nativeElement;
             themeButton.click();
-            themeSelector = fixture.debugElement.query(By.css('dot-theme-selector')).componentInstance;
+            themeSelector = fixture.debugElement.query(By.css('dot-theme-selector'))
+                .componentInstance;
             const mockTheme = _.cloneDeep(mockDotThemes[0]);
             themeSelector.selected.emit(mockTheme);
             expect(component.changeThemeHandler).toHaveBeenCalledWith(mockTheme);
@@ -320,10 +355,14 @@ describe('DotEditLayoutDesignerComponent', () => {
         });
 
         it('should show dot-template-addtional-actions-menu and bind attr correctly', () => {
-            const aditionalOptions: DebugElement = fixture.debugElement.query(By.css('dot-template-addtional-actions-menu'));
+            const aditionalOptions: DebugElement = fixture.debugElement.query(
+                By.css('dot-template-addtional-actions-menu')
+            );
 
             expect(aditionalOptions).toBeTruthy();
-            expect(aditionalOptions.componentInstance.inode).toEqual(mockDotRenderedPage.template.inode);
+            expect(aditionalOptions.componentInstance.inode).toEqual(
+                mockDotRenderedPage.template.inode
+            );
         });
 
         it('should set form model correctly', () => {

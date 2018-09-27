@@ -49,7 +49,11 @@ export class DotContentletWrapperComponent implements OnInit {
 
     ngOnInit() {
         this.dotMessageService
-            .getMessages(['editcontentlet.lose.dialog.header', 'editcontentlet.lose.dialog.message', 'editcontentlet.lose.dialog.accept'])
+            .getMessages([
+                'editcontentlet.lose.dialog.header',
+                'editcontentlet.lose.dialog.message',
+                'editcontentlet.lose.dialog.accept'
+            ])
             .subscribe();
     }
 

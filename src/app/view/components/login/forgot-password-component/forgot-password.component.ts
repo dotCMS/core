@@ -67,8 +67,12 @@ export class ForgotPasswordComponent implements OnInit {
                 this.forgotPasswordLabel = dataI18n['forgot-password'];
                 this.forgotPasswordButton = dataI18n['get-new-password'];
                 this.cancelButton = dataI18n.cancel;
-                this.forgotPasswordConfirmationMessage = dataI18n['an-email-with-instructions-will-be-sent'];
-                this.emailMandatoryFieldError = dataI18n['error.form.mandatory'].replace('{0}', this.userIdOrEmailLabel);
+                this.forgotPasswordConfirmationMessage =
+                    dataI18n['an-email-with-instructions-will-be-sent'];
+                this.emailMandatoryFieldError = dataI18n['error.form.mandatory'].replace(
+                    '{0}',
+                    this.userIdOrEmailLabel
+                );
             },
             (error) => {
                 this.loggerService.error(error);

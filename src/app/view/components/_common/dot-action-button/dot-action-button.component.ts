@@ -1,4 +1,14 @@
-import { Component, Input, ViewChild, OnInit, HostBinding, SimpleChanges, EventEmitter, Output, HostListener } from '@angular/core';
+import {
+    Component,
+    Input,
+    ViewChild,
+    OnInit,
+    HostBinding,
+    SimpleChanges,
+    EventEmitter,
+    Output,
+    HostListener
+} from '@angular/core';
 import { MenuItem, Menu } from 'primeng/primeng';
 import { OnChanges } from '@angular/core/src/metadata/lifecycle_hooks';
 
@@ -19,12 +29,16 @@ export class DotActionButtonComponent implements OnInit, OnChanges {
 
     @Input()
     disabled: boolean;
+
     @Input()
     icon: string;
+
     @Input()
     label: string;
+
     @Input()
     model: MenuItem[];
+
     @Input()
     selected: boolean;
 

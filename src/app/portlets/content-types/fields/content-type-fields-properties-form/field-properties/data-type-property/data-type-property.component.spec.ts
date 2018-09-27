@@ -11,7 +11,6 @@ import { By } from '@angular/platform-browser';
 describe('DataTypePropertyComponent', () => {
     let comp: DataTypePropertyComponent;
     let fixture: ComponentFixture<DataTypePropertyComponent>;
-    let de: DebugElement;
     const messageServiceMock = new MockDotMessageService({
         'contenttypes.field.properties.data_type.label': 'Data-Type',
         'contenttypes.field.properties.data_type.values.binary': 'Binary',
@@ -33,7 +32,6 @@ describe('DataTypePropertyComponent', () => {
 
         fixture = DOTTestBed.createComponent(DataTypePropertyComponent);
         comp = fixture.componentInstance;
-        de = fixture.debugElement;
 
         this.group = new FormGroup({
             name: new FormControl('')

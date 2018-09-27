@@ -48,45 +48,49 @@ export class ContentTypesInfoService {
             icon: 'public',
             label: 'key_value'
         },
-        // TODO: Remove this when set Material Design icons on NgPrime native components - BEGIN
+        /*
+            PrimeNG used to use Font Awesome icons, now they are releasing with their own
+            icon package "PrimeIcons" but they don't have many icons yet, so we keep
+            using FA icons until we have a better icon offer from them.
+        */
         {
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
-            icon: 'fa-newspaper-o',
+            icon: 'fa fa-newspaper-o',
             label: 'content_old'
         },
         {
             clazz: 'com.dotcms.contenttype.model.type.ImmutableWidgetContentType',
-            icon: 'fa-cog',
+            icon: 'fa fa-cog',
             label: 'widget_old'
         },
         {
             clazz: 'com.dotcms.contenttype.model.type.ImmutableFileAssetContentType',
-            icon: 'fa-file-o',
+            icon: 'fa fa-file-o',
             label: 'fileasset_old'
         },
         {
             clazz: 'com.dotcms.contenttype.model.type.ImmutablePageContentType',
-            icon: 'fa-file-text-o',
+            icon: 'fa fa-file-text-o',
             label: 'htmlpage_old'
         },
         {
             clazz: 'com.dotcms.contenttype.model.type.ImmutablePersonaContentType',
-            icon: 'fa-user',
+            icon: 'fa fa-user',
             label: 'persona_old'
         },
         {
             clazz: 'com.dotcms.contenttype.model.type.ImmutableFormContentType',
-            icon: 'fa-list',
+            icon: 'fa fa-list',
             label: 'form_old'
         },
         {
             clazz: 'com.dotcms.contenttype.model.type.ImmutableVanityUrlContentType',
-            icon: 'fa-map-signs',
+            icon: 'fa fa-map-signs',
             label: 'vanity_url_old'
         },
         {
             clazz: 'com.dotcms.contenttype.model.type.ImmutableKeyValueContentType',
-            icon: 'fa-globe',
+            icon: 'fa fa-globe',
             label: 'key_value_old'
         }
         // TODO: Remove this when set Material Design icons on NgPrime native components - END
@@ -145,7 +149,8 @@ export class ContentTypesInfoService {
                 const item = this.contentTypeInfoCollection[i];
                 if (
                     item.clazz.toLocaleLowerCase() === type.toLocaleLowerCase() ||
-                    item.label.toLocaleLowerCase() === (oldValue ? `${type}_old` : type).toLocaleLowerCase()
+                    item.label.toLocaleLowerCase() ===
+                        (oldValue ? `${type}_old` : type).toLocaleLowerCase()
                 ) {
                     result = item[prop];
                     break;

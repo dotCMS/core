@@ -96,7 +96,9 @@ describe('DotWorkflowService', () => {
                 stepId: null
             }
         ]);
-        expect(this.lastConnection.request.url).toContain(`v1/workflow/contentlet/${inode}/actions`);
+        expect(this.lastConnection.request.url).toContain(
+            `v1/workflow/contentlet/${inode}/actions`
+        );
     });
 
     it('should fire workflows page action', () => {
@@ -105,7 +107,9 @@ describe('DotWorkflowService', () => {
         spyOn(this.dotWorkflowService, 'fireWorkflowAction').and.callThrough();
         this.dotWorkflowService.fireWorkflowAction(inode, actionId).subscribe();
         expect(this.dotWorkflowService.fireWorkflowAction).toHaveBeenCalledTimes(1);
-        expect(this.lastConnection.request.url).toContain(`v1/workflow/actions/${actionId}/fire?inode=${inode}`);
+        expect(this.lastConnection.request.url).toContain(
+            `v1/workflow/actions/${actionId}/fire?inode=${inode}`
+        );
         expect(2).toBe(this.lastConnection.request.method); // 2 is PUT method
     });
 

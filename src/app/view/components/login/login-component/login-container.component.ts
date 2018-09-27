@@ -1,5 +1,12 @@
 import { Component, ViewEncapsulation } from '@angular/core';
-import { HttpRequestUtils, LoginService, LoggerService, HttpCode, ResponseView, User } from 'dotcms-js/dotcms-js';
+import {
+    HttpRequestUtils,
+    LoginService,
+    LoggerService,
+    HttpCode,
+    ResponseView,
+    User
+} from 'dotcms-js/dotcms-js';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotLoadingIndicatorService } from '../../_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
 
@@ -50,22 +57,31 @@ export class LoginContainerComponent {
         this.dotLoadingIndicatorService.show();
         this.message = '';
 
-        this.loginService.loginUser(loginData.login, loginData.password, loginData.rememberMe, loginData.language).subscribe(
-            (user: User) => {
-                this.message = '';
-                this.dotLoadingIndicatorService.hide();
-                this.dotRouterService.goToMain(user['editModeUrl']);
-            },
-            (error: ResponseView) => {
-                if (this.isBadRequestOrUnathorized(error.status)) {
-                    this.message = error.errorsMessages || this.getErrorMessage(error.response.json().error);
-                } else {
-                    this.loggerService.debug(error);
+        this.loginService
+            .loginUser(
+                loginData.login,
+                loginData.password,
+                loginData.rememberMe,
+                loginData.language
+            )
+            .subscribe(
+                (user: User) => {
+                    this.message = '';
+                    this.dotLoadingIndicatorService.hide();
+                    this.dotRouterService.goToMain(user['editModeUrl']);
+                },
+                (error: ResponseView) => {
+                    if (this.isBadRequestOrUnathorized(error.status)) {
+                        this.message =
+                            error.errorsMessages ||
+                            this.getErrorMessage(error.response.json().error);
+                    } else {
+                        this.loggerService.debug(error);
+                    }
+                    this.isLoginInProgress = false;
+                    this.dotLoadingIndicatorService.hide();
                 }
-                this.isLoginInProgress = false;
-                this.dotLoadingIndicatorService.hide();
-            }
-        );
+            );
     }
 
     /**

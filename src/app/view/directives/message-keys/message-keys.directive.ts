@@ -13,9 +13,11 @@ export class MessageKeyDirective implements OnInit, OnDestroy {
     ngOnInit(): void {
         this.key = this.el.nativeElement.innerText;
 
-        this.messageMapSubscription = this.dotMessageService.getMessages([this.key]).subscribe((res) => {
-            this.el.nativeElement.innerText = res[this.key];
-        });
+        this.messageMapSubscription = this.dotMessageService
+            .getMessages([this.key])
+            .subscribe((res) => {
+                this.el.nativeElement.innerText = res[this.key];
+            });
     }
 
     ngOnDestroy(): void {

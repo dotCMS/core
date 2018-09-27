@@ -11,8 +11,6 @@ import { FormGroup, FormControl } from '@angular/forms';
 describe('CheckboxPropertyComponent', () => {
     let comp: CheckboxPropertyComponent;
     let fixture: ComponentFixture<CheckboxPropertyComponent>;
-    let de: DebugElement;
-    let el: HTMLElement;
     const messageServiceMock = new MockDotMessageService({
         'contenttypes.field.properties.required.label': 'required',
         'contenttypes.field.properties.user_searchable.label': 'user searchable.',
@@ -30,8 +28,6 @@ describe('CheckboxPropertyComponent', () => {
 
         fixture = DOTTestBed.createComponent(CheckboxPropertyComponent);
         comp = fixture.componentInstance;
-        de = fixture.debugElement;
-        el = de.nativeElement;
     }));
 
     it('should have a form', () => {

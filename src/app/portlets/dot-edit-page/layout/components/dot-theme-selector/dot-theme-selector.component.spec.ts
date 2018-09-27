@@ -1,4 +1,4 @@
-import { of as observableOf, Observable } from 'rxjs';
+import { of as observableOf } from 'rxjs';
 import { ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
 import { DotThemeSelectorComponent } from './dot-theme-selector.component';
 import { DebugElement } from '@angular/core';
@@ -17,7 +17,6 @@ import { PaginatorService } from '@services/paginator/paginator.service';
 import { DotThemesServiceMock } from '../../../../../test/dot-themes-service.mock';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
 
 describe('DotThemeSelectorComponent', () => {
     let component: DotThemeSelectorComponent;
@@ -31,14 +30,18 @@ describe('DotThemeSelectorComponent', () => {
     });
     const siteServiceMock = new SiteServiceMock();
     let dialog;
-    let dotDialog: DotDialogComponent;
     let paginatorService: PaginatorService;
-    let dotThemesService: DotThemesService;
 
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
             declarations: [DotThemeSelectorComponent],
-            imports: [DataGridModule, SiteSelectorModule, BrowserAnimationsModule, DotDialogModule, DotIconModule],
+            imports: [
+                DataGridModule,
+                SiteSelectorModule,
+                BrowserAnimationsModule,
+                DotDialogModule,
+                DotIconModule
+            ],
             providers: [
                 {
                     provide: DotThemesService,
@@ -57,10 +60,8 @@ describe('DotThemeSelectorComponent', () => {
         component = fixture.componentInstance;
         de = fixture.debugElement;
         dialog = de.query(By.css('p-dialog')).componentInstance;
-        dotDialog = de.query(By.css('dot-dialog')).componentInstance;
         component.value = Object.assign({}, mockDotThemes[0]);
         paginatorService = de.injector.get(PaginatorService);
-        dotThemesService = de.injector.get(DotThemesService);
     });
 
     describe('Dialog', () => {
@@ -92,8 +93,12 @@ describe('DotThemeSelectorComponent', () => {
                     dialogElem.closeDialog();
                 }
             };
-            expect(JSON.stringify(component.applyDialogAction)).toBe(JSON.stringify(applyDialogActionTpl));
-            expect(JSON.stringify(component.closeDialogAction)).toBe(JSON.stringify(closeDialogActionTpl));
+            expect(JSON.stringify(component.applyDialogAction)).toBe(
+                JSON.stringify(applyDialogActionTpl)
+            );
+            expect(JSON.stringify(component.closeDialogAction)).toBe(
+                JSON.stringify(closeDialogActionTpl)
+            );
         });
     });
 
@@ -105,7 +110,10 @@ describe('DotThemeSelectorComponent', () => {
             fixture.detectChanges();
             expect(paginatorService.paginationPerPage).toBe(8);
             expect(paginatorService.url).toBe('v1/themes');
-            expect(paginatorService.setExtraParams).toHaveBeenCalledWith('hostId', '123-xyz-567-xxl');
+            expect(paginatorService.setExtraParams).toHaveBeenCalledWith(
+                'hostId',
+                '123-xyz-567-xxl'
+            );
         });
 
         it('should set the current theme variable based on the Input value', () => {
@@ -133,7 +141,9 @@ describe('DotThemeSelectorComponent', () => {
             spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf(mockDotThemes));
             component.siteChange(mockSites[0]);
             fixture.detectChanges();
-            const themeImage: DebugElement = fixture.debugElement.query(By.css('.dot-theme-iteme__image'));
+            const themeImage: DebugElement = fixture.debugElement.query(
+                By.css('.dot-theme-iteme__image')
+            );
 
             expect(themeImage).not.toBeNull();
         });
@@ -170,7 +180,6 @@ describe('DotThemeSelectorComponent', () => {
             component.paginate({ first: 0 });
             fixture.detectChanges();
             const themes: DebugElement[] = fixture.debugElement.queryAll(By.css('.dot-theme-item'));
-            const applyButton: DebugElement = fixture.debugElement.query(By.css('.apply'));
             themes[1].nativeElement.click();
             fixture.detectChanges();
 

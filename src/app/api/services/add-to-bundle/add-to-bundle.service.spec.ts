@@ -1,4 +1,4 @@
-import { of as observableOf, Observable } from 'rxjs';
+import { of as observableOf } from 'rxjs';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { ConnectionBackend, ResponseOptions, Response } from '@angular/http';
 import { MockBackend } from '@angular/http/testing';
@@ -54,7 +54,9 @@ describe('AddToBundleService', () => {
             );
 
             tick();
-            expect(this.lastConnection.request.url).toContain('api/bundle/getunsendbundles/userid/1234');
+            expect(this.lastConnection.request.url).toContain(
+                'api/bundle/getunsendbundles/userid/1234'
+            );
             expect(result).toEqual(mockBundleItems);
         })
     );

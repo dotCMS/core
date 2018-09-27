@@ -14,7 +14,6 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
     let comp: ContentTypesFieldDragabbleItemComponent;
     let fixture: ComponentFixture<ContentTypesFieldDragabbleItemComponent>;
     let de: DebugElement;
-    let el: HTMLElement;
 
     const messageServiceMock = new MockDotMessageService({
         'contenttypes.action.edit': 'Edit',
@@ -34,7 +33,6 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         fixture = DOTTestBed.createComponent(ContentTypesFieldDragabbleItemComponent);
         comp = fixture.componentInstance;
         de = fixture.debugElement;
-        el = de.nativeElement;
     }));
 
     it('should have a name & variable', () => {
@@ -54,7 +52,9 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
 
         const container = de.query(By.css('.field__name'));
         expect(container).not.toBeNull();
-        expect(container.nativeElement.textContent.trim()).toEqual(`${field.name} (${field.variable})`);
+        expect(container.nativeElement.textContent.trim()).toEqual(
+            `${field.name} (${field.variable})`
+        );
     });
 
     it('should have field attributes label', () => {

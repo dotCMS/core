@@ -58,7 +58,11 @@ export class SiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
 
     private refreshSitesSub: Subscription;
 
-    constructor(private siteService: SiteService, public paginationService: PaginatorService, private dotEventsService: DotEventsService) {}
+    constructor(
+        private siteService: SiteService,
+        public paginationService: PaginatorService,
+        private dotEventsService: DotEventsService
+    ) {}
 
     propagateChange = (_: any) => {};
 
@@ -69,7 +73,9 @@ export class SiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
         this.paginationService.setExtraParams('live', this.live);
         this.paginationService.setExtraParams('system', this.system);
 
-        this.refreshSitesSub = this.siteService.refreshSites$.subscribe((_site: Site) => this.handleSitesRefresh());
+        this.refreshSitesSub = this.siteService.refreshSites$.subscribe((_site: Site) =>
+            this.handleSitesRefresh()
+        );
 
         this.getSitesList();
         ['login-as', 'logout-as'].forEach((event: string) => {
@@ -148,12 +154,17 @@ export class SiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     private getSiteByIdFromCurrentPage(siteId: string): Site {
-        return this.sitesCurrentPage && this.sitesCurrentPage.filter((site) => site.identifier === siteId)[0];
+        return (
+            this.sitesCurrentPage &&
+            this.sitesCurrentPage.filter((site) => site.identifier === siteId)[0]
+        );
     }
 
     private selectCurrentSite(siteId: string): void {
         const selectedInCurrentPage = this.getSiteByIdFromCurrentPage(siteId);
-        this.currentSite = selectedInCurrentPage ? of(selectedInCurrentPage) : this.siteService.getSiteById(siteId);
+        this.currentSite = selectedInCurrentPage
+            ? of(selectedInCurrentPage)
+            : this.siteService.getSiteById(siteId);
     }
 
     private setCurrentSiteAsDefault() {

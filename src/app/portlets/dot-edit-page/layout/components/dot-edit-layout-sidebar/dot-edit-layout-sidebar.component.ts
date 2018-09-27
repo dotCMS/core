@@ -26,7 +26,10 @@ export class DotEditLayoutSidebarComponent implements OnInit, ControlValueAccess
     containers: DotContainerColumnBox[];
     value: DotLayoutSideBar;
 
-    constructor(private dotEditLayoutService: DotEditLayoutService, public dotMessageService: DotMessageService) {}
+    constructor(
+        private dotEditLayoutService: DotEditLayoutService,
+        public dotMessageService: DotMessageService
+    ) {}
 
     ngOnInit() {
         this.dotMessageService.getMessages(['editpage.layout.designer.sidebar']).subscribe();

@@ -17,7 +17,12 @@ import { DotReorderMenuComponent } from './components/dot-reorder-menu/dot-reord
         DotEditContentletComponent,
         DotReorderMenuComponent
     ],
-    exports: [DotEditContentletComponent, DotAddContentletComponent, DotCreateContentletComponent, DotReorderMenuComponent],
+    exports: [
+        DotEditContentletComponent,
+        DotAddContentletComponent,
+        DotCreateContentletComponent,
+        DotReorderMenuComponent
+    ],
     providers: [DotContentletEditorService]
 })
 export class DotContentletEditorModule {}

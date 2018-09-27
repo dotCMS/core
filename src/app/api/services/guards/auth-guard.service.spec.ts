@@ -38,21 +38,30 @@ describe('ValidAuthGuardService', () => {
         authGuardService = TestBed.get(AuthGuardService);
         dotRouterService = TestBed.get(DotRouterService);
         loginService = TestBed.get(LoginService);
-        mockRouterStateSnapshot = jasmine.createSpyObj<RouterStateSnapshot>('RouterStateSnapshot', ['toString']);
-        mockActivatedRouteSnapshot = jasmine.createSpyObj<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', ['toString']);
+        mockRouterStateSnapshot = jasmine.createSpyObj<RouterStateSnapshot>('RouterStateSnapshot', [
+            'toString'
+        ]);
+        mockActivatedRouteSnapshot = jasmine.createSpyObj<ActivatedRouteSnapshot>(
+            'ActivatedRouteSnapshot',
+            ['toString']
+        );
     });
 
     it('should allow access to the requested route, User is logged in', () => {
         let result: boolean;
         spyOnProperty(loginService, 'isLogin$', 'get').and.returnValue(observableOf(true));
-        authGuardService.canActivate(mockActivatedRouteSnapshot, mockRouterStateSnapshot).subscribe((res) => (result = res));
+        authGuardService
+            .canActivate(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
+            .subscribe((res) => (result = res));
         expect(result).toBe(true);
     });
 
     it('should denied access to the requested route, User is NOT logged in', () => {
         let result: boolean;
         spyOnProperty(loginService, 'isLogin$', 'get').and.returnValue(observableOf(false));
-        authGuardService.canActivate(mockActivatedRouteSnapshot, mockRouterStateSnapshot).subscribe((res) => (result = res));
+        authGuardService
+            .canActivate(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
+            .subscribe((res) => (result = res));
         expect(dotRouterService.goToLogin).toHaveBeenCalled();
         expect(result).toBe(false);
     });

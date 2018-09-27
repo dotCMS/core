@@ -10,7 +10,10 @@ import { FieldService } from '../fields/service';
 import { DotMessageService } from '@services/dot-messages-service';
 import { ContentTypesInfoService } from '@services/content-types-info';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { DotHttpErrorManagerService, DotHttpErrorHandled } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import {
+    DotHttpErrorManagerService,
+    DotHttpErrorHandled
+} from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { ResponseView } from 'dotcms-js/dotcms-js';
 
 import { HotkeysService, Hotkey } from 'angular2-hotkeys';
@@ -121,8 +124,14 @@ export class ContentTypesEditComponent implements OnInit {
             this.templateInfo = {
                 icon: this.contentTypesInfoService.getIcon(type),
                 header: this.isEditMode()
-                    ? this.dotMessageService.get('contenttypes.content.edit.contenttype', contentTypeName)
-                    : this.dotMessageService.get('contenttypes.content.create.contenttype', contentTypeName)
+                    ? this.dotMessageService.get(
+                          'contenttypes.content.edit.contenttype',
+                          contentTypeName
+                      )
+                    : this.dotMessageService.get(
+                          'contenttypes.content.create.contenttype',
+                          contentTypeName
+                      )
             };
         });
     }

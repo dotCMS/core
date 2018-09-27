@@ -6,7 +6,13 @@ import { DebugElement, Injectable } from '@angular/core';
 import { ReactiveFormsModule, AbstractControl } from '@angular/forms';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { DropdownModule, OverlayPanelModule, ButtonModule, InputTextModule, TabViewModule } from 'primeng/primeng';
+import {
+    DropdownModule,
+    OverlayPanelModule,
+    ButtonModule,
+    InputTextModule,
+    TabViewModule
+} from 'primeng/primeng';
 
 import { DotcmsConfig, LoginService } from 'dotcms-js/dotcms-js';
 import { SiteService } from 'dotcms-js/dotcms-js';
@@ -29,6 +35,7 @@ import { DotPageSelectorModule } from '@components/_common/dot-page-selector/dot
 import { DotDirectivesModule } from '@shared/dot-directives.module';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module';
 
 @Injectable()
 class MockDotLicenseService {
@@ -41,9 +48,6 @@ describe('ContentTypesFormComponent', () => {
     let comp: ContentTypesFormComponent;
     let fixture: ComponentFixture<ContentTypesFormComponent>;
     let de: DebugElement;
-    let el: HTMLElement;
-    let dotcmsConfig: DotcmsConfig;
-    let dotWorkflowService: DotWorkflowService;
     let dotLicenseService: DotLicenseService;
 
     beforeEach(async(() => {
@@ -83,7 +87,9 @@ describe('ContentTypesFormComponent', () => {
         DOTTestBed.configureTestingModule({
             declarations: [ContentTypesFormComponent],
             imports: [
-                RouterTestingModule.withRoutes([{ component: ContentTypesFormComponent, path: 'test' }]),
+                RouterTestingModule.withRoutes([
+                    { component: ContentTypesFormComponent, path: 'test' }
+                ]),
                 BrowserAnimationsModule,
                 ButtonModule,
                 DropdownModule,
@@ -98,7 +104,8 @@ describe('ContentTypesFormComponent', () => {
                 DotPageSelectorModule,
                 DotWorkflowsSelectorFieldModule,
                 DotIconModule,
-                DotIconButtonModule
+                DotIconButtonModule,
+                MdInputTextModule
             ],
             providers: [
                 { provide: LoginService, useClass: LoginServiceMock },
@@ -115,11 +122,6 @@ describe('ContentTypesFormComponent', () => {
         comp = fixture.componentInstance;
         de = fixture.debugElement;
         dotLicenseService = de.injector.get(DotLicenseService);
-        el = de.nativeElement;
-
-        dotcmsConfig = fixture.debugElement.injector.get(DotcmsConfig);
-
-        dotWorkflowService = fixture.debugElement.injector.get(DotWorkflowService);
     }));
 
     it('should be invalid by default', () => {

@@ -1,5 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-import { BaseComponent } from '@components/_common/_base/base-component';
 import { DotMessageService } from '@services/dot-messages-service';
 import { FieldProperty } from '../field-properties.model';
 import { PaginatorService } from '@services/paginator';
@@ -11,7 +10,7 @@ import { Category } from '../../../shared';
  *
  * @export
  * @class CategoriesPropertyComponent
- * @extends {BaseComponent}
+
  * @implements {OnInit}
  */
 @Component({
@@ -19,17 +18,31 @@ import { Category } from '../../../shared';
     selector: 'dot-categories-property',
     templateUrl: './categories-property.component.html'
 })
-export class CategoriesPropertyComponent extends BaseComponent implements OnInit {
+export class CategoriesPropertyComponent implements OnInit {
     categoriesCurrentPage: Category[];
     property: FieldProperty;
     group: FormGroup;
     placeholder: string;
 
-    constructor(public dotMessageService: DotMessageService, private paginationService: PaginatorService) {
-        super(['contenttypes.field.properties.category.label', 'contenttypes.field.properties.category.error.required'], dotMessageService);
-    }
+    i18nMessages: {
+        [key: string]: string;
+    } = {};
+
+    constructor(
+        public dotMessageService: DotMessageService,
+        public paginationService: PaginatorService
+    ) {}
 
     ngOnInit(): void {
+        this.dotMessageService
+            .getMessages([
+                'contenttypes.field.properties.category.label',
+                'contenttypes.field.properties.category.error.required'
+            ])
+            .subscribe((res) => {
+                this.i18nMessages = res;
+            });
+
         this.placeholder = !this.property.value
             ? this.dotMessageService.get('contenttypes.field.properties.category.label')
             : this.property.value;

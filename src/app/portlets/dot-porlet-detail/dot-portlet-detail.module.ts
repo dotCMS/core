@@ -13,7 +13,12 @@ const routes: Routes = [
 ];
 
 @NgModule({
-    imports: [CommonModule, DotWorkflowTaskModule, DotContentletsModule, RouterModule.forChild(routes)],
+    imports: [
+        CommonModule,
+        DotWorkflowTaskModule,
+        DotContentletsModule,
+        RouterModule.forChild(routes)
+    ],
     declarations: [DotPortletDetailComponent]
 })
 export class DotPortletDetailModule {}

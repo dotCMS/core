@@ -101,6 +101,12 @@ p-multiselect {
         .ui-inputtext {
             padding: 0 $basic-padding * 2 0 0;
         }
+
+        .ui-multiselect-filter-icon {
+            left: inherit;
+            right: 0;
+            top: 0.5em;
+        }
     }
 
     .ui-multiselect-filter-container {

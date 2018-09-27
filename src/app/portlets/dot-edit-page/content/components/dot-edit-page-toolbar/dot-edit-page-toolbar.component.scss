@@ -50,50 +50,48 @@ $toolbar-height: 48px;
 }
 
 .edit-page-toolbar__locker {
+    &.warn ::ng-deep {
+        .ui-inputswitch-slider:after {
+            color: $orange;
+        }
+    }
+
     ::ng-deep {
         align-self: center;
         margin-right: $basic-padding * 2;
 
-        .ui-inputswitch-handle {
-            position: relative;
-
-            &:after {
-                content: "\F023";
-                color: $brand-primary;
-                display: inline-block;
-                font-size: inherit;
-                font: normal normal normal 14px / 1 FontAwesome;
-                left: 5px;
-                position: absolute;
-                text-rendering: auto;
-                top: 3px;
-            }
+        .ui-inputswitch-slider:after {
+            -webkit-font-feature-settings: "liga";
+            -webkit-font-smoothing: antialiased;
+            color: $brand-primary;
+            content: "lock_open";
+            direction: ltr;
+            display: inline-block;
+            display: inline-block;
+            font-family: "Material Icons";
+            font-size: 13px;
+            font-style: normal;
+            font-weight: normal;
+            left: 4px;
+            letter-spacing: normal;
+            line-height: 1;
+            position: absolute;
+            transition: transform 100ms ease-in;
+            text-rendering: auto;
+            text-transform: none;
+            top: 5px;
+            white-space: nowrap;
+            word-wrap: normal;
         }
 
-        &.ui-inputswitch-checked .ui-inputswitch-handle:after {
+        .ui-inputswitch-checked .ui-inputswitch-slider:after {
+            content: "lock";
             color: $white;
+            transform: translateX(1.65em);
         }
 
-        .ui-state-disabled {
-            .ui-inputswitch-handle {
-                &:after {
-                    color: rgba($black, 0.2);
-                }
-            }
-        }
-    }
-
-    &.warn ::ng-deep {
-        .ui-inputswitch-handle {
-            &:after {
-                color: $orange;
-            }
-        }
-
-        &.ui-inputswitch-checked .ui-inputswitch-handle {
-            &:after {
-                color: $white;
-            }
+        .ui-state-disabled .ui-inputswitch-slider:after {
+            color: rgba($black, 0.2);
         }
     }
 }

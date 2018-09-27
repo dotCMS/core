@@ -1,5 +1,13 @@
 import { of as observableOf, Observable } from 'rxjs';
-import { Component, Input, OnChanges, SimpleChanges, OnInit, Output, EventEmitter } from '@angular/core';
+import {
+    Component,
+    Input,
+    OnChanges,
+    SimpleChanges,
+    OnInit,
+    Output,
+    EventEmitter
+} from '@angular/core';
 import { MenuItem } from 'primeng/primeng';
 import { DotWorkflowAction } from '@models/dot-workflow-action/dot-workflow-action.model';
 import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
@@ -59,25 +67,30 @@ export class DotEditPageWorkflowsActionsComponent implements OnInit, OnChanges {
                 label: workflow.name,
                 command: () => {
                     const currentMenuActions = this.actions;
-                    this.actions = this.workflowsService.fireWorkflowAction(this.page.workingInode, workflow.id).pipe(
-                        pluck('inode'),
-                        tap(() => {
-                            this.dotGlobalMessageService.display(
-                                this.dotMessageService.get('editpage.actions.fire.confirmation', workflow.name)
-                            );
-                        }),
-                        // TODO: A better implementation needs to be done to handle workflow actions errors, which are edge cases
-                        catchError(() => observableOf(null)),
-                        mergeMap((inode: string) => {
-                            const newInode = inode || this.page.workingInode;
-                            this.fired.emit();
-                            return this.getWorkflowActions(newInode);
-                        }),
-                        catchError((error) => {
-                            this.httpErrorManagerService.handle(error);
-                            return currentMenuActions;
-                        })
-                    );
+                    this.actions = this.workflowsService
+                        .fireWorkflowAction(this.page.workingInode, workflow.id)
+                        .pipe(
+                            pluck('inode'),
+                            tap(() => {
+                                this.dotGlobalMessageService.display(
+                                    this.dotMessageService.get(
+                                        'editpage.actions.fire.confirmation',
+                                        workflow.name
+                                    )
+                                );
+                            }),
+                            // TODO: A better implementation needs to be done to handle workflow actions errors, which are edge cases
+                            catchError(() => observableOf(null)),
+                            mergeMap((inode: string) => {
+                                const newInode = inode || this.page.workingInode;
+                                this.fired.emit();
+                                return this.getWorkflowActions(newInode);
+                            }),
+                            catchError((error) => {
+                                this.httpErrorManagerService.handle(error);
+                                return currentMenuActions;
+                            })
+                        );
                 }
             };
         });

@@ -112,7 +112,11 @@ export class IframePortletLegacyComponent implements OnInit {
 
         this.dotcmsEventsService.subscribeToEvents(events).subscribe((eventTypeWrapper) => {
             if (this.dotRouterService.currentPortlet.id === 'site-browser') {
-                this.loggerService.debug('Capturing Site Browser event', eventTypeWrapper.eventType, eventTypeWrapper.data);
+                this.loggerService.debug(
+                    'Capturing Site Browser event',
+                    eventTypeWrapper.eventType,
+                    eventTypeWrapper.data
+                );
                 // TODO: When we finish the migration of the site browser this event will be handle.....
             }
         });
@@ -136,8 +140,17 @@ export class IframePortletLegacyComponent implements OnInit {
 
         portletId$
             .pipe(
-                withLatestFrom(this.route.parent.url.pipe(map((urlSegment: UrlSegment[]) => urlSegment[0].path))),
-                mergeMap(([id, url]) => (url === 'add' ? this.contentletService.getUrlById(id) : this.dotMenuService.getUrlById(id)))
+                withLatestFrom(
+                    this.route.parent.url.pipe(
+                        map((urlSegment: UrlSegment[]) => urlSegment[0].path)
+                    )
+                ),
+                mergeMap(
+                    ([id, url]) =>
+                        url === 'add'
+                            ? this.contentletService.getUrlById(id)
+                            : this.dotMenuService.getUrlById(id)
+                )
             )
             .subscribe((url: string) => {
                 this.setUrl(url);

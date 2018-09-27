@@ -1,7 +1,7 @@
 import { take, map } from 'rxjs/operators';
 import { CoreWebService } from 'dotcms-js/dotcms-js';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable } from 'rxjs/Observable';
 import { RequestMethod, URLSearchParams } from '@angular/http';
 
 export enum OrderDirection {
@@ -148,10 +148,22 @@ export class PaginatorService {
             .pipe(
                 map((response) => {
                     this.setLinks(response.header(PaginatorService.LINK_HEADER_NAME));
-                    this.paginationPerPage = parseInt(response.header(PaginatorService.PAGINATION_PER_PAGE_HEADER_NAME), 10);
-                    this.currentPage = parseInt(response.header(PaginatorService.PAGINATION_CURRENT_PAGE_HEADER_NAME), 10);
-                    this.maxLinksPage = parseInt(response.header(PaginatorService.PAGINATION_MAX_LINK_PAGES_HEADER_NAME), 10);
-                    this.totalRecords = parseInt(response.header(PaginatorService.PAGINATION_TOTAL_ENTRIES_HEADER_NAME), 10);
+                    this.paginationPerPage = parseInt(
+                        response.header(PaginatorService.PAGINATION_PER_PAGE_HEADER_NAME),
+                        10
+                    );
+                    this.currentPage = parseInt(
+                        response.header(PaginatorService.PAGINATION_CURRENT_PAGE_HEADER_NAME),
+                        10
+                    );
+                    this.maxLinksPage = parseInt(
+                        response.header(PaginatorService.PAGINATION_MAX_LINK_PAGES_HEADER_NAME),
+                        10
+                    );
+                    this.totalRecords = parseInt(
+                        response.header(PaginatorService.PAGINATION_TOTAL_ENTRIES_HEADER_NAME),
+                        10
+                    );
                     return response.entity;
                 }),
                 take(1)
@@ -183,7 +195,9 @@ export class PaginatorService {
      * @memberof PaginatorServic
      */
     public getPage(pageParam = 1): Observable<any[]> {
-        const urlPage = this.links['x-page'] ? this.links['x-page'].replace('pageValue', String(pageParam)) : undefined;
+        const urlPage = this.links['x-page']
+            ? this.links['x-page'].replace('pageValue', String(pageParam))
+            : undefined;
         return this.get(urlPage);
     }
 

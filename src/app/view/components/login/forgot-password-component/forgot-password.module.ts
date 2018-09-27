@@ -7,6 +7,7 @@ import { ButtonModule, InputTextModule } from 'primeng/primeng';
 
 import { ForgotPasswordComponent } from './forgot-password.component';
 import { ForgotPasswordContainerComponent } from './forgot-password-container.component';
+import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module';
 
 const routes: Routes = [
     {
@@ -16,7 +17,14 @@ const routes: Routes = [
 ];
 
 @NgModule({
-    imports: [CommonModule, FormsModule, ButtonModule, InputTextModule, RouterModule.forChild(routes)],
+    imports: [
+        CommonModule,
+        FormsModule,
+        ButtonModule,
+        InputTextModule,
+        MdInputTextModule,
+        RouterModule.forChild(routes)
+    ],
     declarations: [ForgotPasswordComponent, ForgotPasswordContainerComponent]
 })
 export class ForgotPasswordModule {}

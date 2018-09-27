@@ -1,15 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { DebugElement } from '@angular/core';
 import { DotIconModule } from '../dot-icon/dot-icon.module';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DotIconButtonComponent } from './dot-icon-button.component';
 import { By } from '@angular/platform-browser';
-import createSpy = jasmine.createSpy;
 
 describe('DotIconButtonComponent', () => {
     let comp: DotIconButtonComponent;
     let fixture: ComponentFixture<DotIconButtonComponent>;
-    let de: DebugElement;
 
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
@@ -18,7 +15,6 @@ describe('DotIconButtonComponent', () => {
         });
 
         fixture = TestBed.createComponent(DotIconButtonComponent);
-        de = fixture.debugElement;
         comp = fixture.componentInstance;
     });
 

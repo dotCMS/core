@@ -30,7 +30,9 @@ describe('PageViewService', () => {
                 ]
             };
 
-            service.save('test38923-82393842-23823', mockDotLayout).subscribe((res) => (result = res));
+            service
+                .save('test38923-82393842-23823', mockDotLayout)
+                .subscribe((res) => (result = res));
             this.lastConnection.mockRespond(
                 new Response(
                     new ResponseOptions({
@@ -40,7 +42,9 @@ describe('PageViewService', () => {
             );
 
             tick();
-            expect(this.lastConnection.request.url).toContain('v1/page/test38923-82393842-23823/layout');
+            expect(this.lastConnection.request.url).toContain(
+                'v1/page/test38923-82393842-23823/layout'
+            );
             expect(result).toEqual(mockResponse.entity);
         })
     );

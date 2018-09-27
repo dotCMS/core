@@ -68,7 +68,9 @@ describe('DotDeviceSelectorComponent', () => {
 
     it('should set devices that have Width & Height bigger than 0', () => {
         fixture.detectChanges();
-        const devicesMock = mockDotDevices.filter((device: DotDevice) => +device.cssHeight > 0 && +device.cssWidth > 0);
+        const devicesMock = mockDotDevices.filter(
+            (device: DotDevice) => +device.cssHeight > 0 && +device.cssWidth > 0
+        );
         expect(component.options.length).toEqual(devicesMock.length + 1);
     });
 

@@ -24,7 +24,10 @@ export class DotFormSelectorComponent implements OnInit {
         [key: string]: string;
     } = {};
 
-    constructor(public paginatorService: PaginatorService, private dotMessageService: DotMessageService) {}
+    constructor(
+        public paginatorService: PaginatorService,
+        private dotMessageService: DotMessageService
+    ) {}
 
     ngOnInit() {
         this.dotMessageService

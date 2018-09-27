@@ -10,7 +10,6 @@ import { By } from '@angular/platform-browser';
 describe('HintPropertyComponent', () => {
     let comp: HintPropertyComponent;
     let fixture: ComponentFixture<HintPropertyComponent>;
-    let de: DebugElement;
     const messageServiceMock = new MockDotMessageService({
         Hint: 'Hint'
     });
@@ -24,7 +23,6 @@ describe('HintPropertyComponent', () => {
 
         fixture = DOTTestBed.createComponent(HintPropertyComponent);
         comp = fixture.componentInstance;
-        de = fixture.debugElement;
     }));
 
     it('should have a form', () => {

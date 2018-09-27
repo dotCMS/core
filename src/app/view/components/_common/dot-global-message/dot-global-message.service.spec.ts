@@ -5,7 +5,7 @@ import { DotMessageService } from '@services/dot-messages-service';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { DotEvent } from '@models/dot-event/dot-event';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
-import { Observable } from 'rxjs';
+import { Observable } from 'rxjs/Observable';
 
 describe('DotGlobalMessageService', () => {
     let dotGlobalMessageService: DotGlobalMessageService;

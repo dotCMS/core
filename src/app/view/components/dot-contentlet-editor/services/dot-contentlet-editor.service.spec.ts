@@ -1,4 +1,4 @@
-import { of as observableOf, Observable } from 'rxjs';
+import { of as observableOf } from 'rxjs';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DotContentletEditorService } from './dot-contentlet-editor.service';
 import { DotMenuService } from '@services/dot-menu.service';

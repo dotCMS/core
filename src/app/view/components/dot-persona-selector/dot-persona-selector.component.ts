@@ -17,7 +17,10 @@ export class DotPersonaSelectorComponent implements OnInit {
 
     options: DotPersona[];
 
-    constructor(private dotPersonasService: DotPersonasService, private dotMessageService: DotMessageService) {}
+    constructor(
+        private dotPersonasService: DotPersonasService,
+        private dotMessageService: DotMessageService
+    ) {}
 
     ngOnInit() {
         this.dotMessageService
@@ -27,7 +30,12 @@ export class DotPersonaSelectorComponent implements OnInit {
                 this.dotPersonasService
                     .get()
                     .pipe(
-                        map((personas: DotPersona[]) => this.setOptions(this.dotMessageService.get('modes.persona.no.persona'), personas))
+                        map((personas: DotPersona[]) =>
+                            this.setOptions(
+                                this.dotMessageService.get('modes.persona.no.persona'),
+                                personas
+                            )
+                        )
                     )
                     .subscribe((personas: DotPersona[]) => {
                         this.options = personas;

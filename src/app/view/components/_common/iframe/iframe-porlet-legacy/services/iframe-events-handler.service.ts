@@ -53,7 +53,10 @@ export class DotIframeEventsHandler {
 
     private goToEditPage($event: CustomEvent): void {
         this.dotLoadingIndicatorService.show();
-        this.dotRouterService.goToEditPage($event.detail.data.url, $event.detail.data.content.languageId);
+        this.dotRouterService.goToEditPage(
+            $event.detail.data.url,
+            $event.detail.data.content.languageId
+        );
     }
 
     private editContentlet($event: CustomEvent): void {
@@ -65,7 +68,9 @@ export class DotIframeEventsHandler {
     }
 
     private setDotcmsUiColors($event: CustomEvent): void {
-        this.dotUiColorsService.setColors(document.querySelector('html'), <DotUiColors>$event.detail.payload.colors);
+        this.dotUiColorsService.setColors(document.querySelector('html'), <DotUiColors>(
+            $event.detail.payload.colors
+        ));
         this.dotIframeService.reloadColors();
     }
 }

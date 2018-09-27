@@ -172,7 +172,9 @@ describe('DotNavigationService', () => {
         dotEventService = testbed.get(DotEventsService);
         router = testbed.get(Router);
 
-        spyOn(dotRouterService, 'gotoPortlet').and.callFake(() => new Promise((resolve) => resolve(true)));
+        spyOn(dotRouterService, 'gotoPortlet').and.callFake(
+            () => new Promise((resolve) => resolve(true))
+        );
         spyOn(dotRouterService, 'reloadCurrentPortlet');
         spyOn(dotEventService, 'notify');
         spyOn(dotMenuService, 'reloadMenu').and.callThrough();

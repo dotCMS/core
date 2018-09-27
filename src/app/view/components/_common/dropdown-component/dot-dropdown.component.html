@@ -1,14 +1,12 @@
-<button *ngIf="icon"
-        pButton
+<dot-icon-button *ngIf="icon"
         [icon]="icon"
         (click)="onToggle()"
-        [disabled]="disabled"
-        [class.inverted]="inverted">
+        [disabled]="disabled">
     <ng-content select=".badge"></ng-content>
-</button>
+</dot-icon-button>
 
 <button pButton *ngIf="title"
-        icon="fa-chevron-down"
+        icon="fa fa-chevron-down"
         iconPos="right"
         [label]="title"
         (click)="onToggle()"

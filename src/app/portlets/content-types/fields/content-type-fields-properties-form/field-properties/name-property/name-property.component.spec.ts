@@ -21,7 +21,6 @@ class TestFieldValidationMessageComponent {
 describe('NamePropertyComponent', () => {
     let comp: NamePropertyComponent;
     let fixture: ComponentFixture<NamePropertyComponent>;
-    let de: DebugElement;
 
     const messageServiceMock = new MockDotMessageService({
         'Default-Value': 'Default-Value'
@@ -36,7 +35,6 @@ describe('NamePropertyComponent', () => {
 
         fixture = DOTTestBed.createComponent(NamePropertyComponent);
         comp = fixture.componentInstance;
-        de = fixture.debugElement;
 
         comp.property = {
             name: 'name',
@@ -73,7 +71,9 @@ describe('NamePropertyComponent', () => {
 
         fixture.detectChanges();
 
-        const fieldValidationmessage: DebugElement = fixture.debugElement.query(By.css('dot-field-validation-message'));
+        const fieldValidationmessage: DebugElement = fixture.debugElement.query(
+            By.css('dot-field-validation-message')
+        );
 
         expect(fieldValidationmessage).not.toBeNull();
         expect(comp.group.controls['name']).toBe(fieldValidationmessage.componentInstance.field);

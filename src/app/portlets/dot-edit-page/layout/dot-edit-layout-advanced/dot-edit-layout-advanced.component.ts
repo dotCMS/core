@@ -26,7 +26,9 @@ export class DotEditLayoutAdvancedComponent implements OnInit {
         private dotMessageService: DotMessageService,
         private dotPageStateService: DotPageStateService
     ) {
-        dotMessageService.getMessages(['dot.common.message.saved', 'dot.common.message.saving']).subscribe();
+        dotMessageService
+            .getMessages(['dot.common.message.saved', 'dot.common.message.saving'])
+            .subscribe();
     }
 
     ngOnInit() {
@@ -47,18 +49,27 @@ export class DotEditLayoutAdvancedComponent implements OnInit {
      * @memberof DotEditLayoutAdvancedComponent
      */
     onLoad($event): void {
-        observableFromEvent($event.target.contentWindow.document, 'ng-event').subscribe((event: CustomEvent) => {
-            this.ngZone.run(() => {
-                if (event.detail.name === 'advanced-template-saved') {
-                    this.dotGlobalMessageService.display(this.dotMessageService.get('dot.common.message.saved'));
+        observableFromEvent($event.target.contentWindow.document, 'ng-event').subscribe(
+            (event: CustomEvent) => {
+                this.ngZone.run(() => {
+                    if (event.detail.name === 'advanced-template-saved') {
+                        this.dotGlobalMessageService.display(
+                            this.dotMessageService.get('dot.common.message.saved')
+                        );
 
-                    this.dotPageStateService
-                        .get(this.pageState.page.pageURI)
-                        .subscribe((pageState: DotRenderedPageState) => (this.pageState.dotRenderedPageState = pageState));
-                } else {
-                    this.dotGlobalMessageService.loading(this.dotMessageService.get('dot.common.message.saving'));
-                }
-            });
-        });
+                        this.dotPageStateService
+                            .get(this.pageState.page.pageURI)
+                            .subscribe(
+                                (pageState: DotRenderedPageState) =>
+                                    (this.pageState.dotRenderedPageState = pageState)
+                            );
+                    } else {
+                        this.dotGlobalMessageService.loading(
+                            this.dotMessageService.get('dot.common.message.saving')
+                        );
+                    }
+                });
+            }
+        );
     }
 }

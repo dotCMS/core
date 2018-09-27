@@ -1,6 +1,5 @@
 import { Component, ViewEncapsulation, ViewChild, OnInit } from '@angular/core';
 
-import { BaseComponent } from '../_common/_base/base-component';
 import { DotDropdownComponent } from '../_common/dropdown-component/dot-dropdown.component';
 import { DotcmsEventsService, LoginService } from 'dotcms-js/dotcms-js';
 import { INotification } from '@models/notifications';
@@ -14,27 +13,39 @@ import { NotificationsService } from '@services/notifications-service';
     styleUrls: ['./toolbar-notifications.scss'],
     templateUrl: 'toolbar-notifications.html'
 })
-export class ToolbarNotificationsComponent extends BaseComponent implements OnInit {
+export class ToolbarNotificationsComponent implements OnInit {
     @ViewChild(DotDropdownComponent)
     dropdown: DotDropdownComponent;
     existsMoreToLoad = false;
     notifications: Array<INotification> = [];
     notificationsUnreadCount = 0;
 
+    i18nMessages: {
+        [key: string]: string;
+    } = {};
+
     private isNotificationsMarkedAsRead = false;
     private showNotifications = false;
 
     constructor(
-        dotMessageService: DotMessageService,
+        private dotMessageService: DotMessageService,
         public iframeOverlayService: IframeOverlayService,
         private dotcmsEventsService: DotcmsEventsService,
         private loginService: LoginService,
         private notificationService: NotificationsService
-    ) {
-        super(['notifications_dismissall', 'notifications_title', 'notifications_load_more'], dotMessageService);
-    }
+    ) {}
 
     ngOnInit(): void {
+        this.dotMessageService
+            .getMessages([
+                'notifications_dismissall',
+                'notifications_title',
+                'notifications_load_more'
+            ])
+            .subscribe((res) => {
+                this.i18nMessages = res;
+            });
+
         this.getNotifications();
         this.subscribeToNotifications();
 
@@ -56,23 +67,25 @@ export class ToolbarNotificationsComponent extends BaseComponent implements OnIn
     onDismissNotification($event): void {
         const notificationId = $event.id;
 
-        this.notificationService.dismissNotifications({ items: [notificationId] }).subscribe((res) => {
-            if (res.errors.length) {
-                return;
-            }
+        this.notificationService
+            .dismissNotifications({ items: [notificationId] })
+            .subscribe((res) => {
+                if (res.errors.length) {
+                    return;
+                }
 
-            this.notifications = this.notifications.filter((item) => {
-                return item.id !== notificationId;
+                this.notifications = this.notifications.filter((item) => {
+                    return item.id !== notificationId;
+                });
+
+                if (this.notificationsUnreadCount) {
+                    this.notificationsUnreadCount--;
+                }
+
+                if (!this.notifications.length && !this.notificationsUnreadCount) {
+                    this.clearNotitications();
+                }
             });
-
-            if (this.notificationsUnreadCount) {
-                this.notificationsUnreadCount--;
-            }
-
-            if (!this.notifications.length && !this.notificationsUnreadCount) {
-                this.clearNotitications();
-            }
-        });
     }
 
     loadMore(): void {

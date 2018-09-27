@@ -34,7 +34,10 @@ describe('DotDOMHtmlUtilService', () => {
         const src = 'https://testing/test.js';
         const onloadCallbackFunc = () => {};
 
-        const scriptElementCreated = dotDOMHtmlUtilService.creatExternalScriptElement(src, onloadCallbackFunc);
+        const scriptElementCreated = dotDOMHtmlUtilService.creatExternalScriptElement(
+            src,
+            onloadCallbackFunc
+        );
 
         expect(scriptElementCreated.src).toEqual(src);
         expect(scriptElementCreated.onload).toEqual(onloadCallbackFunc);
@@ -64,7 +67,10 @@ describe('DotDOMHtmlUtilService', () => {
         expect(button.getAttribute('class')).toEqual('ButtonClass', 'button class is wrong');
         expect(button.getAttribute('type')).toEqual('button', 'button type is wrong');
         expect(button.getAttribute('role')).toEqual('button', 'button role is wrong');
-        expect(button.getAttribute('aria-label')).toEqual('ButtonLabel', 'button aria-label is wrong');
+        expect(button.getAttribute('aria-label')).toEqual(
+            'ButtonLabel',
+            'button aria-label is wrong'
+        );
         expect(button.dataset['a']).toEqual('a value', 'button datset[a] is wrong');
         expect(button.dataset['b']).toEqual('b value', 'button datset[a] is wrong');
 

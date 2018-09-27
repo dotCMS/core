@@ -12,7 +12,7 @@ export class CustomTimeComponent implements OnInit, AfterViewChecked {
     @Input()
     time;
 
-    private formattedTime: Subject<string> = new Subject();
+    formattedTime: Subject<string> = new Subject();
 
     constructor(private formatDateService: FormatDateService) {}
 

@@ -16,7 +16,6 @@ describe('ContentTypeFieldsAddRowComponent', () => {
     let comp: ContentTypeFieldsAddRowComponent;
     let fixture: ComponentFixture<ContentTypeFieldsAddRowComponent>;
     let de: DebugElement;
-    let el: HTMLElement;
     let testHotKeysMock: TestHotkeysMock;
 
     const messageServiceMock = new MockDotMessageService({
@@ -42,7 +41,6 @@ describe('ContentTypeFieldsAddRowComponent', () => {
         fixture = DOTTestBed.createComponent(ContentTypeFieldsAddRowComponent);
         de = fixture.debugElement;
         comp = fixture.componentInstance;
-        el = de.nativeElement;
     });
 
     it('should render disabled input', () => {

@@ -3,10 +3,14 @@
 @import "styles/forms";
 @import "styles/typography";
 
-// FONT AWESOME
+/*
+    FONT AWESOME
+    Legacy code, this is to support font awesome icons in the main navigation
+*/
 @import "../node_modules/font-awesome/css/font-awesome.css";
 
 // PRIME NG
+@import "../node_modules/primeicons/primeicons.css";
 @import "../node_modules/primeng/resources/primeng.css";
 @import "styles/primeng-theme/base";
 

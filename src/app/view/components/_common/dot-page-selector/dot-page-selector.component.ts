@@ -69,9 +69,11 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
      * @memberof DotPageSelectorComponent
      */
     search(param: string): void {
-        this.dotPageSelectorService.getPagesInFolder(param, this.hostIdentifier).subscribe((pages: DotPageAsset[]) => {
-            this.results = pages;
-        });
+        this.dotPageSelectorService
+            .getPagesInFolder(param, this.hostIdentifier)
+            .subscribe((pages: DotPageAsset[]) => {
+                this.results = pages;
+            });
     }
 
     /**

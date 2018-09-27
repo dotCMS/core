@@ -48,8 +48,14 @@ describe('ActionButtonComponent', () => {
     it('should have only button in default state', () => {
         fixture.detectChanges();
         expect(fixture.debugElement.query(By.css('button'))).toBeDefined('button should exist');
-        expect(fixture.debugElement.query(By.css('.action-button__label')) === null).toBe(true, 'label hidden by default');
-        expect(fixture.debugElement.query(By.css('p-menu')) === null).toBe(true, 'menu hidden by default');
+        expect(fixture.debugElement.query(By.css('.action-button__label')) === null).toBe(
+            true,
+            'label hidden by default'
+        );
+        expect(fixture.debugElement.query(By.css('p-menu')) === null).toBe(
+            true,
+            'menu hidden by default'
+        );
     });
 
     it('should have label', () => {
@@ -73,7 +79,10 @@ describe('ActionButtonComponent', () => {
         const menu = fixture.debugElement.query(By.css('p-menu'));
         expect(menu).toBeDefined();
 
-        expect(menu.componentInstance.model).toEqual(model, 'model its being pass to primeng component');
+        expect(menu.componentInstance.model).toEqual(
+            model,
+            'model its being pass to primeng component'
+        );
     });
 
     it('should emit event on button click', () => {
@@ -113,7 +122,12 @@ describe('ActionButtonComponent', () => {
         fixture.detectChanges();
         const button = fixture.debugElement.query(By.css('dot-icon-button'));
         const label = fixture.debugElement.query(By.css('.action-button__label'));
-        expect(button.nativeElement.getAttribute('ng-reflect-disabled')).toBeDefined('Button disabled attr');
-        expect(label.nativeElement.classList).toContain('action-button__label--disabled', 'Label disabled class');
+        expect(button.nativeElement.getAttribute('ng-reflect-disabled')).toBeDefined(
+            'Button disabled attr'
+        );
+        expect(label.nativeElement.classList).toContain(
+            'action-button__label--disabled',
+            'Label disabled class'
+        );
     });
 });

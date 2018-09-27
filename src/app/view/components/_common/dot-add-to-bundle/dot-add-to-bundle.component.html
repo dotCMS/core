@@ -6,7 +6,7 @@
     [responsive]="true"
     [resizable]="false"
     [draggable]="false"
-    (onHide)="close($event)">
+    (onHide)="close()">
 
     <p-header>
         {{ dotMessageService.get('contenttypes.content.add_to_bundle') }}
@@ -20,7 +20,7 @@
     </form>
 
     <p-footer>
-        <button pButton type="button" (click)="close($event)" label="{{ dotMessageService.get('contenttypes.content.add_to_bundle.form.cancel') }}" class="add-to-bundle__form-cancel"></button>
+        <button pButton type="button" (click)="close()" label="{{ dotMessageService.get('contenttypes.content.add_to_bundle.form.cancel') }}" class="add-to-bundle__form-cancel"></button>
         <button pButton type="submit" (click)="submitForm()" label="{{ dotMessageService.get('contenttypes.content.add_to_bundle.form.add') }}" [disabled]="!form.valid"></button>
     </p-footer>
 </p-dialog>

@@ -1,4 +1,4 @@
-import { of as observableOf, Observable } from 'rxjs';
+import { of as observableOf } from 'rxjs';
 import { TestBed } from '@angular/core/testing';
 import { Injectable } from '@angular/core';
 import { DotMenuService } from '../dot-menu.service';
@@ -26,7 +26,6 @@ class MockDotNavigationService {
 describe('ValidMenuGuardService', () => {
     let menuGuardService: MenuGuardService;
     let dotMenuService: DotMenuService;
-    let dotRouterService: DotRouterService;
     let dotNavigationService: DotNavigationService;
     let mockRouterStateSnapshot: RouterStateSnapshot;
     let mockActivatedRouteSnapshot: ActivatedRouteSnapshot;
@@ -46,17 +45,23 @@ describe('ValidMenuGuardService', () => {
 
         menuGuardService = TestBed.get(MenuGuardService);
         dotMenuService = TestBed.get(DotMenuService);
-        dotRouterService = TestBed.get(DotRouterService);
         dotNavigationService = TestBed.get(DotNavigationService);
-        mockRouterStateSnapshot = jasmine.createSpyObj<RouterStateSnapshot>('RouterStateSnapshot', ['toString']);
-        mockActivatedRouteSnapshot = jasmine.createSpyObj<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', ['toString']);
+        mockRouterStateSnapshot = jasmine.createSpyObj<RouterStateSnapshot>('RouterStateSnapshot', [
+            'toString'
+        ]);
+        mockActivatedRouteSnapshot = jasmine.createSpyObj<ActivatedRouteSnapshot>(
+            'ActivatedRouteSnapshot',
+            ['toString']
+        );
     });
 
     it('should allow access to Menu Portlets', () => {
         let result: boolean;
         mockRouterStateSnapshot.url = '/test';
         spyOn(dotMenuService, 'isPortletInMenu').and.returnValue(observableOf(true));
-        menuGuardService.canActivate(mockActivatedRouteSnapshot, mockRouterStateSnapshot).subscribe((res) => (result = res));
+        menuGuardService
+            .canActivate(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
+            .subscribe((res) => (result = res));
         expect(dotMenuService.isPortletInMenu).toHaveBeenCalledWith('test');
         expect(result).toBe(true);
     });
@@ -65,7 +70,9 @@ describe('ValidMenuGuardService', () => {
         let result: boolean;
         mockRouterStateSnapshot.url = '/test';
         spyOn(dotMenuService, 'isPortletInMenu').and.returnValue(observableOf(false));
-        menuGuardService.canActivate(mockActivatedRouteSnapshot, mockRouterStateSnapshot).subscribe((res) => (result = res));
+        menuGuardService
+            .canActivate(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
+            .subscribe((res) => (result = res));
         expect(dotMenuService.isPortletInMenu).toHaveBeenCalledWith('test');
         expect(dotNavigationService.goToFirstPortlet).toHaveBeenCalled();
         expect(result).toBe(false);
@@ -75,7 +82,9 @@ describe('ValidMenuGuardService', () => {
         let result: boolean;
         mockRouterStateSnapshot.url = '/test';
         spyOn(dotMenuService, 'isPortletInMenu').and.returnValue(observableOf(true));
-        menuGuardService.canActivateChild(mockActivatedRouteSnapshot, mockRouterStateSnapshot).subscribe((res) => (result = res));
+        menuGuardService
+            .canActivateChild(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
+            .subscribe((res) => (result = res));
         expect(dotMenuService.isPortletInMenu).toHaveBeenCalledWith('test');
         expect(result).toBe(true);
     });
@@ -84,7 +93,9 @@ describe('ValidMenuGuardService', () => {
         let result: boolean;
         mockRouterStateSnapshot.url = '/test';
         spyOn(dotMenuService, 'isPortletInMenu').and.returnValue(observableOf(false));
-        menuGuardService.canActivateChild(mockActivatedRouteSnapshot, mockRouterStateSnapshot).subscribe((res) => (result = res));
+        menuGuardService
+            .canActivateChild(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
+            .subscribe((res) => (result = res));
         expect(dotMenuService.isPortletInMenu).toHaveBeenCalledWith('test');
         expect(dotNavigationService.goToFirstPortlet).toHaveBeenCalled();
         expect(result).toBe(false);

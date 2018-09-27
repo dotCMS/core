@@ -23,7 +23,10 @@ export class ToolbarComponent implements OnInit {
 
     ngOnInit(): void {
         this.dotcmsEventsService.subscribeTo('ARCHIVE_SITE').subscribe((site) => {
-            if (site.data.hostname === this.siteService.currentSite.hostname && site.data.archived) {
+            if (
+                site.data.hostname === this.siteService.currentSite.hostname &&
+                site.data.archived
+            ) {
                 this.siteService.switchToDefaultSite().subscribe((defaultSite: Site) => {
                     this.siteChange(defaultSite);
                 });

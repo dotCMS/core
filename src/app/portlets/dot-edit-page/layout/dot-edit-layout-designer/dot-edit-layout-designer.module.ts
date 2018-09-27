@@ -2,7 +2,14 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NgModule } from '@angular/core';
 
-import { ButtonModule, CheckboxModule, InputTextModule, DialogModule, ToolbarModule, TooltipModule } from 'primeng/primeng';
+import {
+    ButtonModule,
+    CheckboxModule,
+    InputTextModule,
+    DialogModule,
+    ToolbarModule,
+    TooltipModule
+} from 'primeng/primeng';
 
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { DotEditLayoutDesignerComponent } from '../dot-edit-layout-designer/dot-edit-layout-designer.component';
@@ -42,6 +49,11 @@ import { DotThemeSelectorModule } from '../components/dot-theme-selector/dot-the
         TooltipModule
     ],
     exports: [DotEditLayoutDesignerComponent],
-    providers: [DotEditLayoutService, DotEditLayoutService, PageViewService, TemplateContainersCacheService]
+    providers: [
+        DotEditLayoutService,
+        DotEditLayoutService,
+        PageViewService,
+        TemplateContainersCacheService
+    ]
 })
 export class DotEditLayoutDesignerModule {}

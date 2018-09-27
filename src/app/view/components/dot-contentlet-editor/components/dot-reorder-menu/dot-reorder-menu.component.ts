@@ -14,7 +14,9 @@ export class DotReorderMenuComponent implements OnInit {
     constructor(private dotMessageService: DotMessageService) {}
 
     ngOnInit() {
-        this.dotMessageService.getMessages(['editpage.content.contentlet.menu.reorder.title']).subscribe();
+        this.dotMessageService
+            .getMessages(['editpage.content.contentlet.menu.reorder.title'])
+            .subscribe();
     }
 
     /**

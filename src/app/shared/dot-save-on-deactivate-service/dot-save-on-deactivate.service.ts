@@ -8,7 +8,11 @@ import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-co
 export class DotSaveOnDeactivateService implements CanDeactivate<OnSaveDeactivate> {
     constructor(private dotDialogService: DotAlertConfirmService) {}
 
-    canDeactivate(component: OnSaveDeactivate, _route: ActivatedRouteSnapshot, _state: RouterStateSnapshot): Observable<boolean> {
+    canDeactivate(
+        component: OnSaveDeactivate,
+        _route: ActivatedRouteSnapshot,
+        _state: RouterStateSnapshot
+    ): Observable<boolean> {
         if (component.shouldSaveBefore()) {
             return Observable.create((observer: Observer<boolean>) => {
                 this.dotDialogService.confirm({

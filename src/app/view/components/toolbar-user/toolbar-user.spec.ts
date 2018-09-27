@@ -21,7 +21,8 @@ import { LoginServiceMock, mockAuth } from '../../../test/login-service.mock';
 import { ToolbarUserComponent } from './toolbar-user';
 import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
-import { DotIconModule } from '../_common/dot-icon/dot-icon.module';
+import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 
 @Injectable()
 class MockDotNavigationService {
@@ -31,10 +32,8 @@ describe('ToolbarUserComponent', () => {
     let comp: ToolbarUserComponent;
     let fixture: ComponentFixture<ToolbarUserComponent>;
     let de: DebugElement;
-    let el: HTMLElement;
     let dotDropdownComponent: DotDropdownComponent;
     let loginService: LoginService;
-    let dotNavigationService: DotNavigationService;
     let dotEventsService: DotEventsService;
 
     beforeEach(async(() => {
@@ -50,23 +49,24 @@ describe('ToolbarUserComponent', () => {
             ],
             providers: [
                 { provide: LoginService, useClass: LoginServiceMock },
-                {
-                    provide: DotNavigationService,
-                    useClass: MockDotNavigationService
-                },
+                { provide: DotNavigationService, useClass: MockDotNavigationService },
                 IframeOverlayService,
                 GravatarService,
                 Jsonp
             ],
-            imports: [DataListModule, OverlayPanelModule, BrowserAnimationsModule, DotIconModule]
+            imports: [
+                DataListModule,
+                OverlayPanelModule,
+                BrowserAnimationsModule,
+                DotIconModule,
+                DotIconButtonModule
+            ]
         });
 
         fixture = DOTTestBed.createComponent(ToolbarUserComponent);
         comp = fixture.componentInstance;
         de = fixture.debugElement;
-        el = de.nativeElement;
 
-        dotNavigationService = de.injector.get(DotNavigationService);
         loginService = de.injector.get(LoginService);
         dotEventsService = de.injector.get(DotEventsService);
     }));

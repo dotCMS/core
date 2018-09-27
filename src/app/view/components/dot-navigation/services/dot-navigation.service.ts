@@ -72,7 +72,9 @@ export class DotNavigationService {
         this.onNavigationEnd()
             .pipe(
                 map((event: NavigationEnd) => this.getTheUrlId(event.url)),
-                switchMap((id: string) => this.dotMenuService.loadMenu().pipe(setActiveItems(id, this._collapsed)))
+                switchMap((id: string) =>
+                    this.dotMenuService.loadMenu().pipe(setActiveItems(id, this._collapsed))
+                )
             )
             .subscribe((menus: DotMenu[]) => {
                 this.setMenu(menus);
@@ -85,7 +87,10 @@ export class DotNavigationService {
         });
 
         this.loginService.auth$
-            .pipe(filter((auth: Auth) => !!(auth.loginAsUser || auth.user)), switchMap(() => this.dotMenuService.reloadMenu()))
+            .pipe(
+                filter((auth: Auth) => !!(auth.loginAsUser || auth.user)),
+                switchMap(() => this.dotMenuService.reloadMenu())
+            )
             .subscribe((menus: DotMenu[]) => {
                 this.setMenu(menus);
                 this.goToFirstPortlet();
@@ -203,14 +208,16 @@ export class DotNavigationService {
         this.setMenu(updatedMenu);
     }
 
-    onNavigationEnd(): Observable <Event> {
+    onNavigationEnd(): Observable<Event> {
         return this.router.events.filter((event: Event) => event instanceof NavigationEnd);
     }
 
     private addMenuLinks(menu: DotMenu[]): DotMenu[] {
         return menu.map((menuGroup: DotMenu) => {
             menuGroup.menuItems.forEach((menuItem: DotMenuItem) => {
-                menuItem.menuLink = menuItem.angular ? menuItem.url : this.getLegacyPortletUrl(menuItem.id);
+                menuItem.menuLink = menuItem.angular
+                    ? menuItem.url
+                    : this.getLegacyPortletUrl(menuItem.id);
             });
             return menuGroup;
         });
@@ -218,11 +225,15 @@ export class DotNavigationService {
 
     private extractFirtsMenuLink(menus: DotMenu[]): string {
         const firstMenuItem: DotMenuItem = menus[0].menuItems[0];
-        return firstMenuItem.angular ? firstMenuItem.url : this.getLegacyPortletUrl(firstMenuItem.id);
+        return firstMenuItem.angular
+            ? firstMenuItem.url
+            : this.getLegacyPortletUrl(firstMenuItem.id);
     }
 
     private getFirstMenuLink(): Observable<string> {
-        return this.dotMenuService.loadMenu().pipe(map((menus: DotMenu[]) => this.extractFirtsMenuLink(menus)));
+        return this.dotMenuService
+            .loadMenu()
+            .pipe(map((menus: DotMenu[]) => this.extractFirtsMenuLink(menus)));
     }
 
     private getLegacyPortletUrl(menuItemId: string): string {

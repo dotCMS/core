@@ -8,27 +8,27 @@
                 *ngIf="saveAsTemplate" formControlName="title">
             <p-checkbox class="dot-edit-layout__toolbar-save-template" label="{{ dotMessageService.get('editpage.layout.toolbar.save.template') }}"
                 *ngIf="editTemplate && isLayout() && pageState.canCreateTemplate" binary="true" (onChange)="saveAsTemplateHandleChange($event);"></p-checkbox>
-            <button pButton secondary tiny type="button" (click)="onCancel($event)" label="{{ dotMessageService.get('dot.common.cancel') }}"
+            <button pButton secondary tiny type="button" (click)="onCancel()" label="{{ dotMessageService.get('dot.common.cancel') }}"
                 class="dot-edit-layout__toolbar-action-cancel"></button>
             <button pButton tiny type="submit" [disabled]="!isModelUpdated || !form.valid" label="{{ dotMessageService.get('editpage.layout.toolbar.action.save') }}"
                 class="dot-edit-layout__toolbar-save"></button>
             <dot-template-addtional-actions-menu *ngIf="!isLayout()" [inode]="pageState.template.inode"></dot-template-addtional-actions-menu>
         </div>
     </p-toolbar>
-    
+
     <div class="dot-edit-layout__actions">
         <dot-edit-page-info [pageState]="pageState"></dot-edit-page-info>
         <div class="dot-edit__layout-actions-right">
             <div *ngIf="!currentTheme;then permission else noPermission "></div>
             <ng-template #permission>
                 <div class="dot-edit__layout-actions-themes" pTooltip="{{ dotMessageService.get('org.dotcms.frontend.content.submission.not.proper.permissions') }}" tooltipPosition="left">
-                    <button pButton tiny link type="button" class="dot-edit-layout__toolbar-action-themes" icon="fa-paint-brush" label="{{ dotMessageService.get('editpage.layout.theme.button.label') }}"
+                    <button pButton tiny link type="button" class="dot-edit-layout__toolbar-action-themes" icon="fa fa-paint-brush" label="{{ dotMessageService.get('editpage.layout.theme.button.label') }}"
                         (click)="themeDialogVisibility = !themeDialogVisibility" disabled=false>
                     </button>
                 </div>
             </ng-template>
             <ng-template #noPermission>
-                <button pButton tiny link type="button" class="dot-edit-layout__toolbar-action-themes" icon="fa-paint-brush" label="{{ currentTheme?.name || 'Themes' }}"
+                <button pButton tiny link type="button" class="dot-edit-layout__toolbar-action-themes" icon="fa fa-paint-brush" label="{{ currentTheme?.name || 'Themes' }}"
                     (click)="themeDialogVisibility = !themeDialogVisibility">
                 </button>
             </ng-template>

@@ -65,12 +65,16 @@ describe('DotRouterService', () => {
 
     it('should go to edit page', () => {
         service.goToEditPage('abc/def');
-        expect(router.navigate).toHaveBeenCalledWith(['/edit-page/content'], { queryParams: { url: 'abc/def' } });
+        expect(router.navigate).toHaveBeenCalledWith(['/edit-page/content'], {
+            queryParams: { url: 'abc/def' }
+        });
     });
 
     it('should go to edit page with language_id', () => {
         service.goToEditPage('abc/def', '1');
-        expect(router.navigate).toHaveBeenCalledWith(['/edit-page/content'], { queryParams: { url: 'abc/def', language_id: '1' } });
+        expect(router.navigate).toHaveBeenCalledWith(['/edit-page/content'], {
+            queryParams: { url: 'abc/def', language_id: '1' }
+        });
     });
 
     it('should go to edit contentlet', () => {

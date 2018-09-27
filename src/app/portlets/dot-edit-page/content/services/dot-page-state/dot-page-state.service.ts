@@ -3,8 +3,14 @@ import { of as observableOf, Observable, Subject } from 'rxjs';
 import { mergeMap, pluck, take, map } from 'rxjs/operators';
 import { DotPage } from './../../../shared/models/dot-page.model';
 import { LoginService } from 'dotcms-js/dotcms-js';
-import { DotPageState, DotRenderedPageState } from '../../../shared/models/dot-rendered-page-state.model';
-import { DotRenderHTMLService, DotRenderPageOptions } from '@services/dot-render-html/dot-render-html.service';
+import {
+    DotPageState,
+    DotRenderedPageState
+} from '../../../shared/models/dot-rendered-page-state.model';
+import {
+    DotRenderHTMLService,
+    DotRenderPageOptions
+} from '@services/dot-render-html/dot-render-html.service';
 import { DotRenderedPage } from '../../../shared/models/dot-rendered-page.model';
 import { Injectable } from '@angular/core';
 import { DotContentletLockerService } from '@services/dot-contentlet-locker/dot-contentlet-locker.service';
@@ -28,7 +34,11 @@ export class DotPageStateService {
      * @returns {Observable<any>}
      * @memberof DotRenderHTMLService
      */
-    set(page: DotPage, state: DotPageState, viewAs?: DotEditPageViewAs): Observable<DotRenderedPageState> {
+    set(
+        page: DotPage,
+        state: DotPageState,
+        viewAs?: DotEditPageViewAs
+    ): Observable<DotRenderedPageState> {
         const lockUnlock$: Observable<string> = this.getLockMode(page.workingInode, state.locked);
         const pageOpts: DotRenderPageOptions = {
             url: page.pageURI,
@@ -43,7 +53,10 @@ export class DotPageStateService {
                 pageMode$.pipe(
                     map(
                         (updatedPage: DotRenderedPage) =>
-                            new DotRenderedPageState(this.loginService.auth.loginAsUser || this.loginService.auth.user, updatedPage)
+                            new DotRenderedPageState(
+                                this.loginService.auth.loginAsUser || this.loginService.auth.user,
+                                updatedPage
+                            )
                     )
                 )
             )
@@ -89,7 +102,10 @@ export class DotPageStateService {
             .pipe(
                 map(
                     (page: DotRenderedPage) =>
-                        new DotRenderedPageState(this.loginService.auth.loginAsUser || this.loginService.auth.user, page)
+                        new DotRenderedPageState(
+                            this.loginService.auth.loginAsUser || this.loginService.auth.user,
+                            page
+                        )
                 )
             );
     }

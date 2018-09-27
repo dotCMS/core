@@ -14,7 +14,12 @@ const routes: Routes = [
 
 @NgModule({
     declarations: [DotEditLayoutComponent],
-    imports: [CommonModule, RouterModule.forChild(routes), DotEditLayoutDesignerModule, DotEditLayoutAdvancedModule],
+    imports: [
+        CommonModule,
+        RouterModule.forChild(routes),
+        DotEditLayoutDesignerModule,
+        DotEditLayoutAdvancedModule
+    ],
     exports: [DotEditLayoutComponent]
 })
 export class DotEditLayoutModule {}

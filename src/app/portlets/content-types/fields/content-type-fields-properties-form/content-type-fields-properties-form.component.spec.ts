@@ -1,4 +1,11 @@
-import { DebugElement, ComponentFactoryResolver, Directive, Input, Injectable, Component } from '@angular/core';
+import {
+    DebugElement,
+    ComponentFactoryResolver,
+    Directive,
+    Input,
+    Injectable,
+    Component
+} from '@angular/core';
 import { ContentTypeFieldsPropertiesFormComponent } from './content-type-fields-properties-form.component';
 import { ComponentFixture, async } from '@angular/core/testing';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
@@ -16,7 +23,8 @@ const mockDFormFieldData = {
 
 @Component({
     selector: 'dot-host-tester',
-    template: '<dot-content-type-fields-properties-form [formFieldData]="mockDFormFieldData"></dot-content-type-fields-properties-form>'
+    template:
+        '<dot-content-type-fields-properties-form [formFieldData]="mockDFormFieldData"></dot-content-type-fields-properties-form>'
 })
 class DotHostTesterComponent {
     mockDFormFieldData: ContentTypeField = {};
@@ -118,7 +126,11 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
 
     beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
-            declarations: [ContentTypeFieldsPropertiesFormComponent, DotHostTesterComponent, TestDynamicFieldPropertyDirective],
+            declarations: [
+                ContentTypeFieldsPropertiesFormComponent,
+                DotHostTesterComponent,
+                TestDynamicFieldPropertyDirective
+            ],
             imports: [],
             providers: [
                 FormBuilder,
@@ -141,7 +153,11 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
 
     describe('should init component', () => {
         beforeEach(() => {
-            spyOn(mockFieldPropertyService, 'getProperties').and.returnValue(['property1', 'property2', 'property3']);
+            spyOn(mockFieldPropertyService, 'getProperties').and.returnValue([
+                'property1',
+                'property2',
+                'property3'
+            ]);
             startHostComponent();
         });
 
@@ -162,7 +178,13 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
 
     describe('checkboxes interactions', () => {
         beforeEach(() => {
-            spyOn(mockFieldPropertyService, 'getProperties').and.returnValue(['searchable', 'required', 'unique', 'indexed', 'listed']);
+            spyOn(mockFieldPropertyService, 'getProperties').and.returnValue([
+                'searchable',
+                'required',
+                'unique',
+                'indexed',
+                'listed'
+            ]);
             spyOn(mockFieldPropertyService, 'existsComponent').and.returnValue(true);
             startHostComponent();
         });
@@ -199,7 +221,11 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
 
     describe('checkboxes interactions with undefined fields', () => {
         beforeEach(() => {
-            spyOn(mockFieldPropertyService, 'getProperties').and.returnValue(['searchable', 'unique', 'listed']);
+            spyOn(mockFieldPropertyService, 'getProperties').and.returnValue([
+                'searchable',
+                'unique',
+                'listed'
+            ]);
             spyOn(mockFieldPropertyService, 'existsComponent').and.returnValue(true);
             startHostComponent();
         });

@@ -1,5 +1,14 @@
 import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
-import { Component, OnInit, Input, EventEmitter, Output, ViewChild, SimpleChanges, OnChanges } from '@angular/core';
+import {
+    Component,
+    OnInit,
+    Input,
+    EventEmitter,
+    Output,
+    ViewChild,
+    SimpleChanges,
+    OnChanges
+} from '@angular/core';
 import { SelectItem, InputSwitch } from 'primeng/primeng';
 import * as _ from 'lodash';
 import { DotEditPageState } from '@models/dot-edit-page-state/dot-edit-page-state.model';
@@ -33,9 +42,16 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
     lockerModel: boolean;
     mode: PageMode;
 
-    private debounceStateSelector = _.debounce((pageState: PageMode) => this.setSelectorState(pageState), 500, { leading: true });
+    private debounceStateSelector = _.debounce(
+        (pageState: PageMode) => this.setSelectorState(pageState),
+        500,
+        { leading: true }
+    );
 
-    constructor(public dotMessageService: DotMessageService, private dotDialogService: DotAlertConfirmService) {}
+    constructor(
+        public dotMessageService: DotMessageService,
+        private dotDialogService: DotAlertConfirmService
+    ) {}
 
     ngOnInit() {
         this.dotMessageService
@@ -116,7 +132,9 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
     }
 
     private getStateModeOptions(pageState: DotRenderedPageState): SelectItem[] {
-        return ['edit', 'preview', 'live'].map((mode: string) => this.getModeOption(mode, pageState));
+        return ['edit', 'preview', 'live'].map((mode: string) =>
+            this.getModeOption(mode, pageState)
+        );
     }
 
     private getModeOption(mode: string, pageState: DotRenderedPageState): SelectItem {
@@ -133,7 +151,10 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
         return {
             label: this.dotMessageService.get('editpage.toolbar.edit.page'),
             value: PageMode.EDIT,
-            styleClass: !pageState.page.canEdit || !pageState.page.canLock ? 'edit-page-toolbar__state-selector-item--disabled' : ''
+            styleClass:
+                !pageState.page.canEdit || !pageState.page.canLock
+                    ? 'edit-page-toolbar__state-selector-item--disabled'
+                    : ''
         };
     }
 
@@ -141,7 +162,9 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
         return {
             label: this.dotMessageService.get('editpage.toolbar.live.page'),
             value: PageMode.LIVE,
-            styleClass: !pageState.page.liveInode ? 'edit-page-toolbar__state-selector-item--disabled' : ''
+            styleClass: !pageState.page.liveInode
+                ? 'edit-page-toolbar__state-selector-item--disabled'
+                : ''
         };
     }
 
@@ -193,7 +216,9 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
                 this.lockerModel = false;
                 this.mode = this.pageState.state.mode;
             },
-            header: this.dotMessageService.get('editpage.content.steal.lock.confirmation.message.header'),
+            header: this.dotMessageService.get(
+                'editpage.content.steal.lock.confirmation.message.header'
+            ),
             message: this.dotMessageService.get('editpage.content.steal.lock.confirmation.message')
         });
     }

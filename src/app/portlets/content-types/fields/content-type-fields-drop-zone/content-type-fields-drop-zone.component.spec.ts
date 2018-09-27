@@ -1,6 +1,6 @@
 import { async, ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
-import { DebugElement, Component, Input, SimpleChange, Output, EventEmitter, Injectable } from '@angular/core';
+import { DebugElement, Component, Input, Output, EventEmitter, Injectable } from '@angular/core';
 import { ContentTypeFieldsDropZoneComponent } from './';
 import { By } from '@angular/platform-browser';
 import { ContentTypeField, FieldRow, ContentTypeFieldsAddRowModule } from '../';
@@ -77,11 +77,10 @@ function becomeNewField(field) {
     delete field.id;
 }
 
-xdescribe('ContentTypeFieldsDropZoneComponent', () => {
+describe('ContentTypeFieldsDropZoneComponent', () => {
     let comp: ContentTypeFieldsDropZoneComponent;
     let fixture: ComponentFixture<ContentTypeFieldsDropZoneComponent>;
     let de: DebugElement;
-    let el: HTMLElement;
     let testHotKeysMock: TestHotkeysMock;
     const mockRouter = {
         navigate: jasmine.createSpy('navigate')
@@ -135,7 +134,6 @@ xdescribe('ContentTypeFieldsDropZoneComponent', () => {
         fixture = DOTTestBed.createComponent(ContentTypeFieldsDropZoneComponent);
         comp = fixture.componentInstance;
         de = fixture.debugElement;
-        el = de.nativeElement;
         testHotKeysMock = new TestHotkeysMock();
     }));
 
@@ -193,7 +191,9 @@ xdescribe('ContentTypeFieldsDropZoneComponent', () => {
 
             comp.removeFieldRow(fieldRow);
 
-            expect([fieldRow.lineDivider, fieldRow.columns[0].tabDivider, field]).toEqual(fieldsToRemove);
+            expect([fieldRow.lineDivider, fieldRow.columns[0].tabDivider, field]).toEqual(
+                fieldsToRemove
+            );
         })
     );
 
@@ -214,7 +214,8 @@ let fakeFields: ContentTypeField[];
 
 @Component({
     selector: 'dot-test-host-component',
-    template: '<dot-content-type-fields-drop-zone [fields]="fields"></dot-content-type-fields-drop-zone>'
+    template:
+        '<dot-content-type-fields-drop-zone [fields]="fields"></dot-content-type-fields-drop-zone>'
 })
 class TestHostComponent {
     fields: ContentTypeField[];
@@ -228,7 +229,6 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
     let comp: ContentTypeFieldsDropZoneComponent;
     let fixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
-    let el: HTMLElement;
     const mockRouter = {
         navigate: jasmine.createSpy('navigate')
     };
@@ -284,7 +284,6 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         hostDe = fixture.debugElement;
         de = hostDe.query(By.css('dot-content-type-fields-drop-zone'));
         comp = de.componentInstance;
-        el = de.nativeElement;
 
         fakeFields = [
             {
@@ -544,7 +543,11 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         fixture.detectChanges();
 
         expect(comp.fieldRows[0].columns[0].fields.length).toEqual(0);
-        expect(comp.fieldRows[0].columns[0].tabDivider.clazz).toEqual('com.dotcms.contenttype.model.field.ImmutableColumnField');
-        expect(comp.fieldRows[0].lineDivider.clazz).toEqual('com.dotcms.contenttype.model.field.ImmutableRowField');
+        expect(comp.fieldRows[0].columns[0].tabDivider.clazz).toEqual(
+            'com.dotcms.contenttype.model.field.ImmutableColumnField'
+        );
+        expect(comp.fieldRows[0].lineDivider.clazz).toEqual(
+            'com.dotcms.contenttype.model.field.ImmutableRowField'
+        );
     });
 });

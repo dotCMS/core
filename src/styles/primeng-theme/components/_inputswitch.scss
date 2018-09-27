@@ -1,62 +1,65 @@
 @import "variables";
 
-/*
-    PrimeNG inputswitch component does it own math to set width of the component base on the OnLabel and offLabel
-    we pass, but in Material Design switch component doesn't have an internal label that's why we're setting a fit
-    width and height and also hidden ui-inputswitch-off and ui-inputswitch-on elements.
-*/
-
 .ui-inputswitch {
+    display: flex;
+    align-items: center;
+
+    &.ui-state-disabled {
+        background-color: transparent;
+    }
+}
+
+
+
+.ui-inputswitch-slider {
     background-color: $inputswitch-normal-track-color;
     border-radius: 7px;
     height: 10px;
     overflow: visible;
+    position: static;
     transition: background-color $field-animation-speed ease-in;
-    top: 2px;
-    width: 36px !important;
+    width: 100%;
 
-    &.ui-inputswitch-checked {
+    &:before {
+        background-color: $inputswitch-normal-thumb-color;
+        border-radius: 50%;
+        bottom: 2px;
+        box-shadow: $md-shadow-1;
+        height: 22px;
+        left: 0;
+        transition: background-color $field-animation-speed ease-in,
+                    transform $field-animation-speed ease-in;
+        width: 22px;
+    }
+
+    .ui-inputswitch-checked & {
         background-color: $inputswitch-checked-track-color;
 
-        .ui-inputswitch-handle {
+        &:before {
             background-color: $inputswitch-checked-thumb-color;
+            transform: translateX(1.5em);
         }
     }
 
-    .ui-inputswitch-handle {
-        background-color: $inputswitch-normal-thumb-color;
-        border-radius: 50%;
-        box-shadow: $md-shadow-1;
-        height: 20px !important;
-        top: -5px;
-        transition: background-color $field-animation-speed ease-in, left $field-animation-speed ease-in;
-        width: 20px !important;
-    }
+    .ui-state-disabled & {
+        background-color: $inputswitch-normal-track-color;
 
-    .ui-inputswitch-off,
-    .ui-inputswitch-on {
-        display: none;
-    }
-
-    &.ui-state-disabled {
-        background-color: rgba($black, 0.12);
-
-        .ui-inputswitch-handle {
-            background-color: $gray;
+        &:before {
+            background-color: $inputswitch-normal-track-color;
         }
     }
 }
 
-p-inputswitch.warn {
-    .ui-inputswitch {
+.warn {
+    .ui-inputswitch-slider {
         background-color: $inputswitch-warn-normal-track-color;
+    }
 
-        &.ui-inputswitch-checked {
-            background-color: $inputswitch-warn-checked-track-color;
+    .ui-inputswitch-checked .ui-inputswitch-slider {
+        background-color: $inputswitch-warn-checked-track-color;
 
-            .ui-inputswitch-handle {
-                background-color: $inputswitch-warn-hecked-thumb-color;
-            }
+        &:before {
+            background-color: $inputswitch-warn-hecked-thumb-color;
         }
     }
 }

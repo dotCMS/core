@@ -1,4 +1,4 @@
-import { throwError as observableThrowError, of as observableOf, Observable } from 'rxjs';
+import { throwError as observableThrowError, of as observableOf } from 'rxjs';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { ContentTypeEditResolver } from './content-types-edit-resolver.service';
 import { async } from '@angular/core/testing';
@@ -15,12 +15,14 @@ class CrudServiceMock {
     getDataById() {}
 }
 
-const activatedRouteSnapshotMock: any = jasmine.createSpyObj<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', ['toString']);
+const activatedRouteSnapshotMock: any = jasmine.createSpyObj<ActivatedRouteSnapshot>(
+    'ActivatedRouteSnapshot',
+    ['toString']
+);
 activatedRouteSnapshotMock.paramMap = {};
 
 describe('ContentTypeEditResolver', () => {
     let crudService: CrudService;
-    let router: ActivatedRouteSnapshot;
     let contentTypeEditResolver: ContentTypeEditResolver;
     let dotRouterService: DotRouterService;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
@@ -41,7 +43,6 @@ describe('ContentTypeEditResolver', () => {
             imports: [RouterTestingModule]
         });
         crudService = testbed.get(CrudService);
-        router = testbed.get(ActivatedRouteSnapshot);
         contentTypeEditResolver = testbed.get(ContentTypeEditResolver);
         dotRouterService = testbed.get(DotRouterService);
         dotHttpErrorManagerService = testbed.get(DotHttpErrorManagerService);
@@ -56,12 +57,14 @@ describe('ContentTypeEditResolver', () => {
             })
         );
 
-        contentTypeEditResolver.resolve(activatedRouteSnapshotMock).subscribe((fakeContentType: any) => {
-            expect(fakeContentType).toEqual({
-                fake: 'content-type',
-                object: 'right?'
+        contentTypeEditResolver
+            .resolve(activatedRouteSnapshotMock)
+            .subscribe((fakeContentType: any) => {
+                expect(fakeContentType).toEqual({
+                    fake: 'content-type',
+                    object: 'right?'
+                });
             });
-        });
         expect(crudService.getDataById).toHaveBeenCalledWith('v1/contenttype', '123');
     });
 

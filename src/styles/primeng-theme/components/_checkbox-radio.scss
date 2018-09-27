@@ -86,7 +86,8 @@ p-radiobutton {
     .ui-radiobutton-icon {
         @extend #check-icon;
         color: $radio-checked-color;
-        font-size: 8px;
+        left: inherit;
+        top: inherit;
     }
 
     .ui-radiobutton-box {
@@ -110,11 +111,6 @@ p-radiobutton {
             .ui-radiobutton-icon {
                 color: $radio-disabled-color;
             }
-        }
-
-        &:not(.ui-state-active, .ui-state-disabled):hover {
-            background: $radio-hover-bgcolor;
-            border: $radio-hover-border;
         }
     }
 }

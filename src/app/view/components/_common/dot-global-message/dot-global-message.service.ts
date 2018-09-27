@@ -9,9 +9,16 @@ import { DotEventsService } from '@services/dot-events/dot-events.service';
  */
 @Injectable()
 export class DotGlobalMessageService {
-    constructor(public dotMessageService: DotMessageService, private dotEventsService: DotEventsService) {
+    constructor(
+        public dotMessageService: DotMessageService,
+        private dotEventsService: DotEventsService
+    ) {
         this.dotMessageService
-            .getMessages(['dot.common.message.loading', 'dot.common.message.loaded', 'dot.common.message.error'])
+            .getMessages([
+                'dot.common.message.loading',
+                'dot.common.message.loaded',
+                'dot.common.message.error'
+            ])
             .subscribe();
     }
 

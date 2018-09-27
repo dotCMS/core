@@ -15,8 +15,8 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
-import { PageMode } from '@models/page-mode.enum';
-import { DotRenderedPageState } from '@models/dot-rendered-page-state.model';
+import { DotRenderedPageState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
+import { PageMode } from '@portlets/dot-edit-page/shared/models/page-mode.enum';
 import { mockUser } from '../../../../../test/login-service.mock';
 import { DotWorkflowServiceMock } from '../../../../../test/dot-workflow-service.mock';
 import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
@@ -46,7 +46,6 @@ describe('DotEditPageToolbarComponent', () => {
     let component: DotEditPageToolbarComponent;
     let fixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
-    let dotGlobalMessageService: DotGlobalMessageService;
     let dotDialogService: DotAlertConfirmService;
     let actions: DebugElement;
     let cancel: DebugElement;
@@ -58,13 +57,17 @@ describe('DotEditPageToolbarComponent', () => {
     };
 
     function clickStateButton(state) {
-        const stateSelectorButtons: DebugElement[] = de.queryAll(By.css('.edit-page-toolbar__state-selector .ui-button'));
+        const stateSelectorButtons: DebugElement[] = de.queryAll(
+            By.css('.edit-page-toolbar__state-selector .ui-button')
+        );
         const button = stateSelectorButtons[states[state]].nativeElement;
         button.click();
     }
 
     function clickLocker() {
-        const lockerSwitch: DebugElement = de.query(By.css('.edit-page-toolbar__locker .ui-inputswitch'));
+        const lockerSwitch: DebugElement = de.query(
+            By.css('.edit-page-toolbar__locker .ui-inputswitch')
+        );
         lockerSwitch.nativeElement.click();
     }
 
@@ -132,7 +135,6 @@ describe('DotEditPageToolbarComponent', () => {
             }
         });
 
-        dotGlobalMessageService = de.injector.get(DotGlobalMessageService);
         dotDialogService = de.injector.get(DotAlertConfirmService);
         actions = de.query(By.css('dot-edit-page-workflows-actions'));
         cancel = de.query(By.css('.edit-page-toolbar__cancel'));
@@ -206,7 +208,9 @@ describe('DotEditPageToolbarComponent', () => {
         fixture.detectChanges();
 
         const editStateModel = component.states.find((state) => state.label === 'Edit');
-        expect(editStateModel.styleClass).toEqual('edit-page-toolbar__state-selector-item--disabled');
+        expect(editStateModel.styleClass).toEqual(
+            'edit-page-toolbar__state-selector-item--disabled'
+        );
         expect(component.lockerModel).toBeFalsy();
     });
 
@@ -215,7 +219,9 @@ describe('DotEditPageToolbarComponent', () => {
         fixture.detectChanges();
 
         const editStateModel = component.states.find((state) => state.label === 'Edit');
-        expect(editStateModel.styleClass).toEqual('edit-page-toolbar__state-selector-item--disabled');
+        expect(editStateModel.styleClass).toEqual(
+            'edit-page-toolbar__state-selector-item--disabled'
+        );
     });
 
     it('should blink page is locked message', () => {
@@ -243,10 +249,13 @@ describe('DotEditPageToolbarComponent', () => {
     });
 
     it('should have right inputs in WorkflowActions component', () => {
-        fixture.componentInstance.pageState.page.workingInode = 'cc2cdf9c-a20d-4862-9454-2a76c1132123';
+        fixture.componentInstance.pageState.page.workingInode =
+            'cc2cdf9c-a20d-4862-9454-2a76c1132123';
         fixture.detectChanges();
 
-        expect(actions.componentInstance.page.workingInode).toEqual(component.pageState.page.workingInode);
+        expect(actions.componentInstance.page.workingInode).toEqual(
+            component.pageState.page.workingInode
+        );
     });
 
     it('should have live button enabled', () => {
@@ -270,7 +279,9 @@ describe('DotEditPageToolbarComponent', () => {
         fixture.detectChanges();
 
         const liveStateModel = component.states.find((state) => state.label === 'Live');
-        expect(liveStateModel.styleClass).toEqual('edit-page-toolbar__state-selector-item--disabled');
+        expect(liveStateModel.styleClass).toEqual(
+            'edit-page-toolbar__state-selector-item--disabled'
+        );
     });
 
     it('should turn on the locker and emit page state and lock state when user click on edit mode', () => {
@@ -284,7 +295,10 @@ describe('DotEditPageToolbarComponent', () => {
         clickStateButton('edit');
 
         expect(component.lockerModel).toBe(true, 'lock page');
-        expect(pageStateResult).toEqual({ mode: PageMode.EDIT, locked: true }, 'page state output emitted');
+        expect(pageStateResult).toEqual(
+            { mode: PageMode.EDIT, locked: true },
+            'page state output emitted'
+        );
     });
 
     it('should go to preview if user unlock the page while is in edit', () => {

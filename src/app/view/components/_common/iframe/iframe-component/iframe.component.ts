@@ -1,5 +1,15 @@
 import { takeUntil } from 'rxjs/operators';
-import { Component, ElementRef, OnInit, Input, ViewChild, Output, EventEmitter, NgZone, OnDestroy } from '@angular/core';
+import {
+    Component,
+    ElementRef,
+    OnInit,
+    Input,
+    ViewChild,
+    Output,
+    EventEmitter,
+    NgZone,
+    OnDestroy
+} from '@angular/core';
 import { LoginService, LoggerService } from 'dotcms-js/dotcms-js';
 import { DotLoadingIndicatorService } from '../dot-loading-indicator/dot-loading-indicator.service';
 import { IframeOverlayService } from '../service/iframe-overlay.service';
@@ -85,7 +95,10 @@ export class IframeComponent implements OnInit, OnDestroy {
      * @memberof IframeComponent
      */
     checkSessionExpired(): void {
-        if (!!this.getIframeWindow() && this.getIframeLocation().pathname.indexOf('/c/portal_public/login') !== -1) {
+        if (
+            !!this.getIframeWindow() &&
+            this.getIframeLocation().pathname.indexOf('/c/portal_public/login') !== -1
+        ) {
             this.loginService.logOutUser().subscribe(
                 (_data) => {},
                 (error) => {
@@ -106,10 +119,16 @@ export class IframeComponent implements OnInit, OnDestroy {
 
         if (this.isIframeHaveContent()) {
             this.getIframeWindow().removeEventListener('keydown', this.emitKeyDown.bind(this));
-            this.getIframeWindow().document.removeEventListener('ng-event', this.emitCustonEvent.bind(this));
+            this.getIframeWindow().document.removeEventListener(
+                'ng-event',
+                this.emitCustonEvent.bind(this)
+            );
 
             this.getIframeWindow().addEventListener('keydown', this.emitKeyDown.bind(this));
-            this.getIframeWindow().document.addEventListener('ng-event', this.emitCustonEvent.bind(this));
+            this.getIframeWindow().document.addEventListener(
+                'ng-event',
+                this.emitCustonEvent.bind(this)
+            );
             this.load.emit($event);
 
             const doc = this.getIframeDocument();
@@ -145,6 +164,9 @@ export class IframeComponent implements OnInit, OnDestroy {
     }
 
     private isIframeHaveContent(): boolean {
-        return this.iframeElement && this.iframeElement.nativeElement.contentWindow.document.body.innerHTML.length;
+        return (
+            this.iframeElement &&
+            this.iframeElement.nativeElement.contentWindow.document.body.innerHTML.length
+        );
     }
 }

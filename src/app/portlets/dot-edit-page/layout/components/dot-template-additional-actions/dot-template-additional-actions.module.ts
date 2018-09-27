@@ -7,7 +7,10 @@ import { DotTemplateAdditionalActionsMenuComponent } from './dot-template-additi
 @NgModule({
     declarations: [],
     imports: [DotTemplateAdditionalActionsMenuModule, DotTemplateAdditionalActionsIframeModule],
-    exports: [DotLegacyTemplateAdditionalActionsComponent, DotTemplateAdditionalActionsMenuComponent],
+    exports: [
+        DotLegacyTemplateAdditionalActionsComponent,
+        DotTemplateAdditionalActionsMenuComponent
+    ],
     providers: []
 })
 export class DotTemplateAdditionalActionsModule {}

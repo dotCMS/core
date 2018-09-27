@@ -22,10 +22,10 @@
         ],
         "paths": {
             "dot-layout-grid": [
-                "dist/dot-layout-grid"
+                "dist-lib/dot-layout-grid"
             ],
             "dot-layout-grid/*": [
-                "dist/dot-layout-grid/*"
+                "dist-lib/dot-layout-grid/*"
             ],
             "@services/*": [
                 "src/app/api/services/*"

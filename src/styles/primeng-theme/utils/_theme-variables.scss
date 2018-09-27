@@ -132,10 +132,10 @@ $check-radius: 2px;
 $check-size: 14px;
 
 $check-checked-bgcolor: $brand-primary;
-$check-checked-border: solid $check-border-width $black;
+$check-checked-border: solid $check-border-width $brand-primary;
 $check-checked-color: $white;
 
-$check-disabled-border: solid $check-border-width $gray;
+$check-disabled-border: solid $check-border-width $gray-light;
 $check-disabled-bgcolor: $gray-bg;
 $check-disabled-color: $field-disabled-color;
 $check-disabled-label-color: $field-disabled-color;
@@ -143,25 +143,19 @@ $check-disabled-label-color: $field-disabled-color;
 $check-normal-bgcolor: $white;
 $check-normal-border: solid $field-border-size $black;
 
-$check-hover-bgcolor: $white;
-$check-hover-border: $check-checked-border;
-
 $radio-size: $check-size;
 
 $radio-checked-bgcolor: $white;
 $radio-checked-border: solid $check-border-width $brand-primary;
 $radio-checked-color: $brand-primary;
 
-$radio-disabled-border: solid $check-border-width $gray;
+$radio-disabled-border: solid $check-border-width $gray-light;
 $radio-disabled-bgcolor: $field-disabled-bgcolor;
 $radio-disabled-color: $field-disabled-color;
 $radio-disabled-label-color: $field-disabled-color;
 
 $radio-normal-bgcolor: $white;
 $radio-normal-border: solid $field-border-size $black;
-
-$radio-hover-bgcolor: $white;
-$radio-hover-border: $check-checked-border;
 
 // DATATABLE
 $datatable-cell-padding: 18px $basic-padding * 2; // We need to have 40px min height in the cell

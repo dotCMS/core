@@ -14,11 +14,11 @@ import { ActivatedRoute } from '@angular/router';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DotEditPageNavComponent } from '../dot-edit-page-nav/dot-edit-page-nav.component';
 import { PageViewServiceMock } from '../../../../test/page-view.mock';
-import { DotRenderedPageState } from '@models/dot-rendered-page-state.model';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { Injectable, Component, Output, EventEmitter } from '@angular/core';
 import { DotPageStateService } from '../../content/services/dot-page-state/dot-page-state.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { DotRenderedPageState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
 
 @Injectable()
 class MockDotContentletEditorService {
@@ -56,7 +56,10 @@ describe('DotEditPageMainComponent', () => {
         'editpage.toolbar.nav.properties': 'Properties'
     });
 
-    const mockDotRenderedPageState: DotRenderedPageState = new DotRenderedPageState(mockUser, mockDotRenderedPage);
+    const mockDotRenderedPageState: DotRenderedPageState = new DotRenderedPageState(
+        mockUser,
+        mockDotRenderedPage
+    );
 
     beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
@@ -117,7 +120,8 @@ describe('DotEditPageMainComponent', () => {
     });
 
     it('should bind correctly pageState param', () => {
-        const nav: DotEditPageNavComponent = fixture.debugElement.query(By.css('dot-edit-page-nav')).componentInstance;
+        const nav: DotEditPageNavComponent = fixture.debugElement.query(By.css('dot-edit-page-nav'))
+            .componentInstance;
         expect(nav.pageState).toEqual(mockDotRenderedPageState);
     });
 
@@ -130,7 +134,10 @@ describe('DotEditPageMainComponent', () => {
         });
 
         dotContentletEditorService.close$.next(true);
-        expect(dotPageStateService.reload).toHaveBeenCalledWith('/about-us/index', mockDotRenderedPage.page.languageId);
+        expect(dotPageStateService.reload).toHaveBeenCalledWith(
+            '/about-us/index',
+            mockDotRenderedPage.page.languageId
+        );
     });
 
     describe('handle custom events from contentlet editor', () => {
@@ -139,7 +146,8 @@ describe('DotEditPageMainComponent', () => {
         beforeEach(() => {
             spyOn(dotRouterService, 'goToEditPage');
             spyOn(dotRouterService, 'goToSiteBrowser');
-            editContentlet = fixture.debugElement.query(By.css('dot-edit-contentlet')).componentInstance;
+            editContentlet = fixture.debugElement.query(By.css('dot-edit-contentlet'))
+                .componentInstance;
         });
 
         it('should reload page when url attribute in dialog has been changed', () => {
@@ -153,7 +161,10 @@ describe('DotEditPageMainComponent', () => {
                 }
             });
             dotContentletEditorService.close$.next(true);
-            expect(dotRouterService.goToEditPage).toHaveBeenCalledWith('/about-us/index2', mockDotRenderedPage.page.languageId.toString());
+            expect(dotRouterService.goToEditPage).toHaveBeenCalledWith(
+                '/about-us/index2',
+                mockDotRenderedPage.page.languageId.toString()
+            );
         });
 
         it('should go to site-browser when page is deleted', () => {

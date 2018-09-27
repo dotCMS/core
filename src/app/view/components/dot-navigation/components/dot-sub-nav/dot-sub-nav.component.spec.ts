@@ -62,7 +62,9 @@ describe('DotSubNavComponent', () => {
             expect(link.properties.href).toBe(`/url/link${index + 1}`);
 
             if (index === 1) {
-                expect(link.nativeElement.classList.contains('dot-nav-sub__link--active')).toBe(true);
+                expect(link.nativeElement.classList.contains('dot-nav-sub__link--active')).toBe(
+                    true
+                );
             }
         });
     });

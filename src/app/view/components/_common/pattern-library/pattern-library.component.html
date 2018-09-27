@@ -10,24 +10,24 @@
         <div class="pl__buttons-row">
             <button pButton label="Value"></button>
             <button pButton label="Disabled" disabled="true"></button>
-            <button pButton label="Value" icon="fa-heart"></button>
-            <button pButton label="Disabled" disabled="true" icon="fa-heart"></button>
+            <button pButton label="Value" icon="fa fa-star"></button>
+            <button pButton label="Disabled" disabled="true" icon="fa fa-star"></button>
             <button pButton tiny label="Value"></button>
             <button pButton tiny label="Disabled" disabled="true"></button>
 
             <button pButton link label="Value"></button>
             <button pButton link label="Disabled" disabled="true"></button>
-            <button pButton link label="Value" icon="fa-heart"></button>
-            <button pButton link label="Disabled" disabled="true" icon="fa-heart"></button>
+            <button pButton link label="Value" icon="fa fa-star"></button>
+            <button pButton link label="Disabled" disabled="true" icon="fa fa-star"></button>
             <button pButton link tiny label="Value"></button>
             <button pButton link tiny label="Disabled" disabled="true"></button>
 
             <button pButton secondary label="Value"></button>
             <button pButton secondary label="Disabled" disabled="true"></button>
-            <button pButton secondary label="Value" icon="fa-heart"></button>
-            <button pButton secondary label="Disabled" disabled="true" icon="fa-heart"></button>
-            <button pButton secondary tiny label="Value" icon="fa-heart"></button>
-            <button pButton secondary tiny label="Disabled" disabled="true" icon="fa-heart"></button>
+            <button pButton secondary label="Value" icon="fa fa-star"></button>
+            <button pButton secondary label="Disabled" disabled="true" icon="fa fa-star"></button>
+            <button pButton secondary tiny label="Value" icon="fa fa-star"></button>
+            <button pButton secondary tiny label="Disabled" disabled="true" icon="fa fa-star"></button>
 
             <dot-icon-button icon="notifications"></dot-icon-button>
             <dot-icon-button icon="notifications" disabled></dot-icon-button>
@@ -52,4 +52,22 @@
             Content 3
         </p-tabPanel>
     </p-tabView>
+
+    <p-inputSwitch [(ngModel)]="lockerModel"></p-inputSwitch>
+    <p-inputSwitch [(ngModel)]="lockerModel" [disabled]="true"></p-inputSwitch>
+
+    <div class="pl__radio">
+        <p-radioButton name="group1" value="Option 1" label="Option 1" [(ngModel)]="radioVal1" inputId="opt1"></p-radioButton>
+        <p-radioButton name="group1" value="Option 2" label="Option 2" [(ngModel)]="radioVal1" inputId="opt2" [disabled]="true"></p-radioButton>
+        <p-radioButton name="group1" value="Option 3" label="Option 3" [(ngModel)]="radioVal1" inputId="opt3"></p-radioButton>
+        <p-radioButton name="group1" value="Option 4" label="Option 4" [(ngModel)]="radioVal1" inputId="opt4" [disabled]="true"></p-radioButton>
+    </div>
+
+
+    <div class="pl__checkbox">
+        <p-checkbox name="group1" value="Option 1" label="Option 1" [(ngModel)]="checkboxVal1" inputId="ny"></p-checkbox>
+        <p-checkbox name="group1" value="Option 2" label="Option 2" [(ngModel)]="checkboxVal1" inputId="sf" [disabled]="true"></p-checkbox>
+        <p-checkbox name="group1" value="Option 3" label="Option 3" [(ngModel)]="checkboxVal1" inputId="la"></p-checkbox>
+        <p-checkbox name="group1" value="Option 4" label="Option 4" [(ngModel)]="checkboxVal1" inputId="la" [disabled]="true"></p-checkbox>
+    </div>
 </div>

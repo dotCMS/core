@@ -14,7 +14,12 @@ describe('DotPersonasService', () => {
 
     it('should get Personas', () => {
         let result;
-        const url = [`content/render/false/query/+contentType:persona `, `+live:true `, `+deleted:false `, `+working:true`].join('');
+        const url = [
+            `content/render/false/query/+contentType:persona `,
+            `+live:true `,
+            `+deleted:false `,
+            `+working:true`
+        ].join('');
 
         this.dotPersonasService.get().subscribe((res) => {
             result = res;

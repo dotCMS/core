@@ -73,12 +73,10 @@ class MockToolbarUsersComponent {}
 })
 class MockToolbarAddContentletComponent {}
 
-
 @Component({
     selector: 'dot-crumbtrail',
     template: ''
 })
-
 class MockDotCrumbtrailComponent {}
 
 describe('ToolbarComponent', () => {
@@ -102,7 +100,12 @@ describe('ToolbarComponent', () => {
                 MockToolbarAddContentletComponent,
                 MockDotCrumbtrailComponent
             ],
-            imports: [BrowserAnimationsModule, RouterTestingModule, DotIconModule, DotIconButtonModule],
+            imports: [
+                BrowserAnimationsModule,
+                RouterTestingModule,
+                DotIconModule,
+                DotIconButtonModule
+            ],
             providers: [
                 { provide: DotNavigationService, useClass: MockDotNavigationService },
                 { provide: SiteService, useValue: siteServiceMock },
@@ -124,7 +127,7 @@ describe('ToolbarComponent', () => {
         fixture.detectChanges();
 
         const crumbtrail: DebugElement = fixture.debugElement.query(By.css('dot-crumbtrail'));
-        expect(crumbtrail).not.toBeNull();  
+        expect(crumbtrail).not.toBeNull();
     });
 
     it(`should NOT go to site browser when site change in any portlet but edit page`, () => {

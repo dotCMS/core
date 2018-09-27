@@ -63,7 +63,9 @@ describe('DotWhatsChangedComponent', () => {
 
     it('should set url based on the page id', () => {
         expect(dotIframe.src).toEqual(
-            `/html/portlet/ext/htmlpages/view_live_working_diff.jsp?id=${component.pageId}&pageLang=${component.languageId}`
+            `/html/portlet/ext/htmlpages/view_live_working_diff.jsp?id=${
+                component.pageId
+            }&pageLang=${component.languageId}`
         );
     });
 
@@ -71,13 +73,17 @@ describe('DotWhatsChangedComponent', () => {
         fixture.componentInstance.languageId = '123';
         fixture.detectChanges();
 
-        expect(dotIframe.src).toEqual(`/html/portlet/ext/htmlpages/view_live_working_diff.jsp?id=123&pageLang=123`);
+        expect(dotIframe.src).toEqual(
+            `/html/portlet/ext/htmlpages/view_live_working_diff.jsp?id=123&pageLang=123`
+        );
     });
 
     it('should reset url when pageId is change', () => {
         fixture.componentInstance.pageId = '321';
         fixture.detectChanges();
 
-        expect(dotIframe.src).toEqual(`/html/portlet/ext/htmlpages/view_live_working_diff.jsp?id=321&pageLang=321`);
+        expect(dotIframe.src).toEqual(
+            `/html/portlet/ext/htmlpages/view_live_working_diff.jsp?id=321&pageLang=321`
+        );
     });
 });

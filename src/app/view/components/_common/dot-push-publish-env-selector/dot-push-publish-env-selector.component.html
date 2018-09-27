@@ -13,7 +13,7 @@
 
 <ul class="environment-selector__list">
     <li *ngFor="let environment of selectedEnvironments" class="environment-selector__list-item">
-        <button pButton icon="fa-trash" (click)="removeEnvironmentItem(environment)"></button>
+        <button pButton icon="fa fa-trash" (click)="removeEnvironmentItem(environment)"></button>
         {{ environment.name }}
     </li>
 </ul>

@@ -1,7 +1,16 @@
-import { Component, Output, EventEmitter, Input, SimpleChanges, ViewChild, OnChanges, OnInit, ViewEncapsulation } from '@angular/core';
+import {
+    Component,
+    Output,
+    EventEmitter,
+    Input,
+    SimpleChanges,
+    ViewChild,
+    OnChanges,
+    OnInit,
+    ViewEncapsulation
+} from '@angular/core';
 import { FormGroup, FormBuilder, AbstractControl } from '@angular/forms';
 import { DotMessageService } from '@services/dot-messages-service';
-import { BaseComponent } from '@components/_common/_base/base-component';
 import { ContentTypeField } from '../shared';
 import { FieldPropertyService } from '../service/';
 
@@ -11,7 +20,7 @@ import { FieldPropertyService } from '../service/';
     templateUrl: './content-type-fields-properties-form.component.html',
     encapsulation: ViewEncapsulation.None
 })
-export class ContentTypeFieldsPropertiesFormComponent extends BaseComponent implements OnChanges, OnInit {
+export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnInit {
     @Output()
     saveField: EventEmitter<any> = new EventEmitter();
     @Input()
@@ -24,9 +33,32 @@ export class ContentTypeFieldsPropertiesFormComponent extends BaseComponent impl
     fieldProperties: string[] = [];
     checkboxFields: string[] = ['indexed', 'listed', 'required', 'searchable', 'unique'];
 
-    constructor(private fb: FormBuilder, public dotMessageService: DotMessageService, private fieldPropertyService: FieldPropertyService) {
-        super(
-            [
+    i18nMessages: {
+        [key: string]: string;
+    } = {};
+
+    constructor(
+        private fb: FormBuilder,
+        public dotMessageService: DotMessageService,
+        private fieldPropertyService: FieldPropertyService
+    ) {}
+
+    ngOnChanges(changes: SimpleChanges): void {
+        if (changes.formFieldData.currentValue && this.formFieldData) {
+            this.updateFormFieldData();
+            const properties: string[] = this.fieldPropertyService.getProperties(
+                this.formFieldData.clazz
+            );
+            this.initFormGroup(properties);
+            this.sortProperties(properties);
+        }
+    }
+
+    ngOnInit(): void {
+        this.initFormGroup();
+
+        this.dotMessageService
+            .getMessages([
                 'contenttypes.field.properties.name.label',
                 'contenttypes.field.properties.category.label',
                 'contenttypes.field.properties.required.label',
@@ -59,22 +91,10 @@ export class ContentTypeFieldsPropertiesFormComponent extends BaseComponent impl
                 'contenttypes.field.properties.validation_regex.values.email',
                 'contenttypes.field.properties.validation_regex.values.alphanumeric',
                 'contenttypes.field.properties.validation_regex.values.url_pattern'
-            ],
-            dotMessageService
-        );
-    }
-
-    ngOnChanges(changes: SimpleChanges): void {
-        if (changes.formFieldData.currentValue && this.formFieldData) {
-            this.updateFormFieldData();
-            const properties: string[] = this.fieldPropertyService.getProperties(this.formFieldData.clazz);
-            this.initFormGroup(properties);
-            this.sortProperties(properties);
-        }
-    }
-
-    ngOnInit(): void {
-        this.initFormGroup();
+            ])
+            .subscribe((res) => {
+                this.i18nMessages = res;
+            });
     }
 
     /**
@@ -104,16 +124,22 @@ export class ContentTypeFieldsPropertiesFormComponent extends BaseComponent impl
         const formFields = {};
 
         if (properties) {
-            properties.filter((property) => this.fieldPropertyService.existsComponent(property)).forEach((property) => {
-                formFields[property] = [
-                    {
-                        value:
-                            this.formFieldData[property] || this.fieldPropertyService.getDefaultValue(property, this.formFieldData.clazz),
-                        disabled: this.formFieldData.id && this.isPropertyDisabled(property)
-                    },
-                    this.fieldPropertyService.getValidations(property)
-                ];
-            });
+            properties
+                .filter((property) => this.fieldPropertyService.existsComponent(property))
+                .forEach((property) => {
+                    formFields[property] = [
+                        {
+                            value:
+                                this.formFieldData[property] ||
+                                this.fieldPropertyService.getDefaultValue(
+                                    property,
+                                    this.formFieldData.clazz
+                                ),
+                            disabled: this.formFieldData.id && this.isPropertyDisabled(property)
+                        },
+                        this.fieldPropertyService.getValidations(property)
+                    ];
+                });
 
             formFields['clazz'] = this.formFieldData.clazz;
         }
@@ -132,7 +158,11 @@ export class ContentTypeFieldsPropertiesFormComponent extends BaseComponent impl
     private sortProperties(properties: string[]): void {
         this.fieldProperties = properties
             .filter((property) => this.fieldPropertyService.existsComponent(property))
-            .sort((property1, proeprty2) => this.fieldPropertyService.getOrder(property1) - this.fieldPropertyService.getOrder(proeprty2));
+            .sort(
+                (property1, proeprty2) =>
+                    this.fieldPropertyService.getOrder(property1) -
+                    this.fieldPropertyService.getOrder(proeprty2)
+            );
     }
 
     private setAutoCheckValues(): void {
@@ -152,7 +182,9 @@ export class ContentTypeFieldsPropertiesFormComponent extends BaseComponent impl
         }
 
         checkbox.valueChanges.subscribe((res) => {
-            checkbox === this.form.get('unique') ? this.handleUniqueValuesChecked(res) : this.setIndexedValueChecked(res);
+            checkbox === this.form.get('unique')
+                ? this.handleUniqueValuesChecked(res)
+                : this.setIndexedValueChecked(res);
         });
     }
 

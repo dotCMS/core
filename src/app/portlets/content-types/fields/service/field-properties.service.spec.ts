@@ -27,7 +27,10 @@ class TestFieldService {
 
 describe('FieldPropertyService', () => {
     beforeEach(() => {
-        this.injector = DOTTestBed.resolveAndCreate([FieldPropertyService, { provide: FieldService, useClass: TestFieldService }]);
+        this.injector = DOTTestBed.resolveAndCreate([
+            FieldPropertyService,
+            { provide: FieldService, useClass: TestFieldService }
+        ]);
 
         this.fieldPropertiesService = this.injector.get(FieldPropertyService);
     });
@@ -41,22 +44,37 @@ describe('FieldPropertyService', () => {
     });
 
     it('should return the right component', () => {
-        expect(CategoriesPropertyComponent).toEqual(this.fieldPropertiesService.getComponent('categories'));
-        expect(DataTypePropertyComponent).toEqual(this.fieldPropertiesService.getComponent('dataType'));
-        expect(DefaultValuePropertyComponent).toEqual(this.fieldPropertiesService.getComponent('defaultValue'));
+        expect(CategoriesPropertyComponent).toEqual(
+            this.fieldPropertiesService.getComponent('categories')
+        );
+        expect(DataTypePropertyComponent).toEqual(
+            this.fieldPropertiesService.getComponent('dataType')
+        );
+        expect(DefaultValuePropertyComponent).toEqual(
+            this.fieldPropertiesService.getComponent('defaultValue')
+        );
 
         expect(this.fieldPropertiesService.getComponent('property')).toBeNull();
     });
 
     it('should return the right default value', () => {
         expect('').toEqual(
-            this.fieldPropertiesService.getDefaultValue('categories', 'com.dotcms.contenttype.model.field.ImmutableRadioField')
+            this.fieldPropertiesService.getDefaultValue(
+                'categories',
+                'com.dotcms.contenttype.model.field.ImmutableRadioField'
+            )
         );
         expect('TEXT').toEqual(
-            this.fieldPropertiesService.getDefaultValue('dataType', 'com.dotcms.contenttype.model.field.ImmutableRadioField')
+            this.fieldPropertiesService.getDefaultValue(
+                'dataType',
+                'com.dotcms.contenttype.model.field.ImmutableRadioField'
+            )
         );
         expect('').toEqual(
-            this.fieldPropertiesService.getDefaultValue('defaultValue', 'com.dotcms.contenttype.model.field.ImmutableRadioField')
+            this.fieldPropertiesService.getDefaultValue(
+                'defaultValue',
+                'com.dotcms.contenttype.model.field.ImmutableRadioField'
+            )
         );
 
         expect(this.fieldPropertiesService.getDefaultValue('property')).toBeNull();
@@ -98,7 +116,9 @@ describe('FieldPropertyService', () => {
     });
 
     it('should return the right proeprties for a Field Class', () => {
-        expect(['property1', 'property2', 'property3']).toEqual(this.fieldPropertiesService.getProperties('fieldClass'));
+        expect(['property1', 'property2', 'property3']).toEqual(
+            this.fieldPropertiesService.getProperties('fieldClass')
+        );
         expect(this.fieldPropertiesService.getProperties('fieldClass2')).toBeUndefined();
     });
 

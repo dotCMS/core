@@ -1,7 +1,7 @@
 import { toArray, defaultIfEmpty, map, pluck, flatMap, filter } from 'rxjs/operators';
 import { CoreWebService } from 'dotcms-js/dotcms-js';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable } from 'rxjs/Observable';
 import { RequestMethod } from '@angular/http';
 import { StructureTypeView, ContentTypeView } from '@models/contentlet';
 
@@ -50,7 +50,10 @@ export class DotContentletService {
             flatMap((structures: StructureTypeView[]) => structures),
             pluck('types'),
             flatMap((contentTypeViews: ContentTypeView[]) => contentTypeViews),
-            filter((contentTypeView: ContentTypeView) => contentTypeView.variable.toLocaleLowerCase() === id),
+            filter(
+                (contentTypeView: ContentTypeView) =>
+                    contentTypeView.variable.toLocaleLowerCase() === id
+            ),
             pluck('action')
         );
     }

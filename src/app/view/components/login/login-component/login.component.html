@@ -21,7 +21,7 @@
                         <span dotMdInputtext label="{{ userIdOrEmailLabel }}">
                             <input pInputText type="text" id="login-component-login-input"
                                 (keyup)="message=''"
-                                (keyup.enter)="logInUser()"
+                                (keyup.enter)="logInUser($event)"
                                 [(ngModel)]="myAccountLogin"
                                 [disabled]="isLoginInProgress" />
                         </span>
@@ -30,7 +30,7 @@
                         <span dotMdInputtext label="{{ passwordLabel }}">
                             <input pInputText type="password" id="login-component-password-input"
                                 (keyup)="message=''"
-                                (keyup.enter)="logInUser()"
+                                (keyup.enter)="logInUser($event)"
                                 [(ngModel)]="password"
                                 [disabled]="isLoginInProgress" />
                         </span>

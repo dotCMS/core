@@ -7,7 +7,6 @@ import { LoginService } from 'dotcms-js/dotcms-js';
 import { LoginServiceMock } from '../../../test/login-service.mock';
 import { By } from '@angular/platform-browser';
 import { DotIframeService } from '../_common/iframe/service/dot-iframe/dot-iframe.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotContentletEditorModule } from '../dot-contentlet-editor/dot-contentlet-editor.module';
 import { DotMenuService } from '@services/dot-menu.service';
 
@@ -36,10 +35,8 @@ class MockDotMainNavComponent {
 }
 
 describe('MainComponentLegacyComponent', () => {
-    let component: MainComponentLegacyComponent;
     let fixture: ComponentFixture<MainComponentLegacyComponent>;
     let de: DebugElement;
-    let dotRouterService: DotRouterService;
     let dotIframeService: DotIframeService;
 
     beforeEach(async(() => {
@@ -52,15 +49,18 @@ describe('MainComponentLegacyComponent', () => {
                 },
                 DotMenuService
             ],
-            declarations: [MainComponentLegacyComponent, MockDotDialogComponent, MockDotMainNavComponent, MockDotToolbarComponent]
+            declarations: [
+                MainComponentLegacyComponent,
+                MockDotDialogComponent,
+                MockDotMainNavComponent,
+                MockDotToolbarComponent
+            ]
         }).compileComponents();
     }));
 
     beforeEach(() => {
         fixture = DOTTestBed.createComponent(MainComponentLegacyComponent);
-        component = fixture.componentInstance;
         de = fixture.debugElement;
-        dotRouterService = de.injector.get(DotRouterService);
         dotIframeService = de.injector.get(DotIframeService);
         spyOn(dotIframeService, 'reloadData');
         fixture.detectChanges();
@@ -71,17 +71,5 @@ describe('MainComponentLegacyComponent', () => {
         expect(de.query(By.css('dot-toolbar')) !== null).toBe(true);
         expect(de.query(By.css('dot-main-nav')) !== null).toBe(true);
         expect(de.query(By.css('router-outlet')) !== null).toBe(true);
-    });
-
-    describe('Create Contentlet', () => {
-        it('should refresh the current portlet data', () => {
-            spyOnProperty(dotRouterService, 'currentPortlet', 'get').and.returnValue({
-                id: 'site-browser'
-            });
-            const createContentlet: DebugElement = de.query(By.css('dot-create-contentlet'));
-            createContentlet.triggerEventHandler('close', {});
-
-            expect(dotIframeService.reloadData).toHaveBeenCalledWith('site-browser');
-        });
     });
 });

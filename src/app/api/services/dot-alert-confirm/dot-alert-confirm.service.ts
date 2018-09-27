@@ -14,8 +14,13 @@ export class DotAlertConfirmService {
     alertModel: DotAlertConfirm = null;
     confirmModel: DotAlertConfirm = null;
 
-    constructor(public confirmationService: ConfirmationService, private dotMessageService: DotMessageService) {
-        this.dotMessageService.getMessages(['dot.common.dialog.accept', 'dot.common.dialog.reject']).subscribe();
+    constructor(
+        public confirmationService: ConfirmationService,
+        private dotMessageService: DotMessageService
+    ) {
+        this.dotMessageService
+            .getMessages(['dot.common.dialog.accept', 'dot.common.dialog.reject'])
+            .subscribe();
     }
 
     /**

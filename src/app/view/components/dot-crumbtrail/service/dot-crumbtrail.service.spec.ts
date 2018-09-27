@@ -11,7 +11,7 @@ import { DotMenu } from '../../../../shared/models/navigation';
 class MockDotNavigationService {
     readonly navigationEnd: Subject<Event> = new Subject();
 
-    onNavigationEnd(): Observable <Event> {
+    onNavigationEnd(): Observable<Event> {
         return this.navigationEnd.asObservable();
     }
 
@@ -45,7 +45,7 @@ class MockDotNavigationService {
                 tabDescription: '',
                 tabIcon: '',
                 tabName: 'Menu Label',
-                url: '/url/menu',
+                url: '/url/menu'
             }
         ]);
     }
@@ -57,12 +57,9 @@ class MockRouter {
 }
 
 @Injectable()
-class MockActivatedRoute {
-
-}
+class MockActivatedRoute {}
 
 describe('DotCrumbtrailService', () => {
-
     const dotNavigationServiceMock: MockDotNavigationService = new MockDotNavigationService();
     const mockRouter = new MockRouter();
     const mockActivatedRoute = new MockActivatedRoute();
@@ -70,31 +67,29 @@ describe('DotCrumbtrailService', () => {
     let service: DotCrumbtrailService;
 
     beforeEach(() => {
-            const testbed = DOTTestBed.configureTestingModule({
-                providers: [
-                    DotCrumbtrailService,
-                    {
-                        provide: DotNavigationService,
-                        useValue: dotNavigationServiceMock
-                    },
-                    {
-                        provide: Router,
-                        useValue: mockRouter
-                    },
-                    {
-                        provide: ActivatedRoute,
-                        useValue: mockActivatedRoute
-                    },
-                ]
-            });
+        const testbed = DOTTestBed.configureTestingModule({
+            providers: [
+                DotCrumbtrailService,
+                {
+                    provide: DotNavigationService,
+                    useValue: dotNavigationServiceMock
+                },
+                {
+                    provide: Router,
+                    useValue: mockRouter
+                },
+                {
+                    provide: ActivatedRoute,
+                    useValue: mockActivatedRoute
+                }
+            ]
+        });
 
-            service = testbed.get(DotCrumbtrailService);
+        service = testbed.get(DotCrumbtrailService);
+    });
 
-        }
-    );
-
-    fit('should take the current url', () => {
-        service.crumbTrail$.subscribe(crumbs => {
+    it('should take the current url', () => {
+        service.crumbTrail$.subscribe((crumbs) => {
             console.log('CRUMBS', crumbs);
         });
     });

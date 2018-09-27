@@ -2,7 +2,7 @@
     <app-breadcrumb-hostselector></app-breadcrumb-hostselector>
     <a (click)="changeViewToTree()">Tree View</a>
     <a (click)="changeViewToIcon()">Icon View</a>
-    <div class="uploadButton" style=""><button pButton type="button" label="Upload" (click)="displayUpload()"></button></div>
+    <div class="uploadButton" style=""><button pButton type="button" label="Upload" (click)="displayUpload($event)"></button></div>
     <p-dialog header="Upload Files" [closable]="true" [(visible)]="uploadDialog" [responsive]="true" showEffect="fade" [modal]="true" (onAfterHide)="onUploadHide()" width="500">
         <p-fileUpload #fileUploadWidget name="myfile[]" customUpload="true" (uploadHandler)="onUpload($event)" (onSelect)="addFileToUpload($event)" (onClear)="clearUploads($event)"
                       multiple="true" maxFileSize="1000000">

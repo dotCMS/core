@@ -23,7 +23,12 @@ export class DotEditPageLockInfoComponent implements OnInit {
     constructor(public dotMessageService: DotMessageService) {}
 
     ngOnInit() {
-        this.dotMessageService.getMessages(['editpage.toolbar.page.cant.edit', 'editpage.toolbar.page.locked.by.user']).subscribe();
+        this.dotMessageService
+            .getMessages([
+                'editpage.toolbar.page.cant.edit',
+                'editpage.toolbar.page.locked.by.user'
+            ])
+            .subscribe();
     }
 
     /**

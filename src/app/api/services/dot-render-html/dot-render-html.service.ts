@@ -1,7 +1,7 @@
 import { pluck } from 'rxjs/operators';
 import { CoreWebService } from 'dotcms-js/dotcms-js';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable } from 'rxjs/Observable';
 import { RequestMethod } from '@angular/http';
 import { DotRenderedPage } from '@portlets/dot-edit-page/shared/models/dot-rendered-page.model';
 import { PageMode } from '@portlets/dot-edit-page/shared/models/page-mode.enum';
@@ -94,14 +94,19 @@ export class DotRenderHTMLService {
             : null;
     }
 
-    private getPropertyValue(object: DotPersona | DotLanguage | DotDevice, propertyName: string): any {
+    private getPropertyValue(
+        object: DotPersona | DotLanguage | DotDevice,
+        propertyName: string
+    ): any {
         return object ? object[propertyName] : null;
     }
 
     private getOptionalViewAsParams(viewAsConfig: DotEditPageViewAsParams) {
         return {
             language_id: viewAsConfig.language_id,
-            ...(viewAsConfig.persona_id ? { 'com.dotmarketing.persona.id': viewAsConfig.persona_id } : {}),
+            ...(viewAsConfig.persona_id
+                ? { 'com.dotmarketing.persona.id': viewAsConfig.persona_id }
+                : {}),
             ...(viewAsConfig.device_inode ? { device_inode: viewAsConfig.device_inode } : {})
         };
     }

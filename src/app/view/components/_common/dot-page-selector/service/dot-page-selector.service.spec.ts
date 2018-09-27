@@ -85,9 +85,11 @@ describe('Service: DotPageSelector', () => {
             }
         };
 
-        this.dotPageSelectorService.getPage('fdeb07ff-6fc3-4237-91d9-728109bc621d').subscribe((res) => {
-            result = res;
-        });
+        this.dotPageSelectorService
+            .getPage('fdeb07ff-6fc3-4237-91d9-728109bc621d')
+            .subscribe((res) => {
+                result = res;
+            });
 
         this.lastConnection.mockRespond(
             new Response(

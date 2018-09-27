@@ -1,5 +1,8 @@
 import { Injectable } from '@angular/core';
-import { DotNavigationService, replaceSectionsMap } from '../../dot-navigation/services/dot-navigation.service';
+import {
+    DotNavigationService,
+    replaceSectionsMap
+} from '../../dot-navigation/services/dot-navigation.service';
 import { map, switchMap, filter, take } from 'rxjs/operators';
 import { NavigationEnd, Router, ActivatedRoute, Data } from '@angular/router';
 import { DotMenu, DotMenuItem } from '../../../../shared/models/navigation';
@@ -22,13 +25,18 @@ export class DotCrumbtrailService {
         router: Router,
         private activeRoute: ActivatedRoute
     ) {
-        this.dotNavigationService.onNavigationEnd().pipe(
-            map((event: NavigationEnd) => event.url),
-            filter((url: string) => !this.URL_EXCLUDES.includes(url)),
-            switchMap(this.getCrumbtrail.bind(this))
-        ).subscribe((crumbTrail: DotCrumb[]) => this.crumbTrail.next(crumbTrail));
+        this.dotNavigationService
+            .onNavigationEnd()
+            .pipe(
+                map((event: NavigationEnd) => event.url),
+                filter((url: string) => !this.URL_EXCLUDES.includes(url)),
+                switchMap(this.getCrumbtrail.bind(this))
+            )
+            .subscribe((crumbTrail: DotCrumb[]) => this.crumbTrail.next(crumbTrail));
 
-        this.getCrumbtrail(router.url).subscribe((crumbTrail: DotCrumb[]) => this.crumbTrail.next(crumbTrail));
+        this.getCrumbtrail(router.url).subscribe((crumbTrail: DotCrumb[]) =>
+            this.crumbTrail.next(crumbTrail)
+        );
     }
 
     get crumbTrail$(): Observable<DotCrumb[]> {
@@ -40,11 +48,9 @@ export class DotCrumbtrailService {
     }
 
     private getMenuLabel(portletId: string): Observable<DotCrumb[]> {
-
         return this.dotNavigationService.items$.pipe(
             filter((dotMenus: DotMenu[]) => !!dotMenus.length),
             map((dotMenus: DotMenu[]) => {
-
                 let res: DotCrumb[] = [];
 
                 dotMenus.forEach((menu: DotMenu) => {
@@ -57,7 +63,7 @@ export class DotCrumbtrailService {
                                 },
                                 {
                                     label: menuItem.label,
-                                    url:  `#/${menuItem.menuLink}`
+                                    url: `#/${menuItem.menuLink}`
                                 }
                             ];
                         }
@@ -74,8 +80,7 @@ export class DotCrumbtrailService {
         const data: Data = this.getData();
 
         let currentData: any = data;
-        this.dataMatch[sectionKey].split('.')
-            .forEach(key => currentData = currentData[key]);
+        this.dataMatch[sectionKey].split('.').forEach((key) => (currentData = currentData[key]));
 
         return currentData;
     }
@@ -98,7 +103,7 @@ export class DotCrumbtrailService {
 
         return this.getMenuLabel(portletId).pipe(
             map((crumbTrail: DotCrumb[]) => {
-                if (sections.length > 1 ) {
+                if (sections.length > 1) {
                     crumbTrail.push({
                         label: this.getCrumbtrailSection(sections[0]),
                         url: ''
