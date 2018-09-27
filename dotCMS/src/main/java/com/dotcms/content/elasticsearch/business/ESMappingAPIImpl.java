@@ -678,10 +678,11 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		return dependenciesToReindex;
 	}
 
-	protected void loadRelationshipFields(Contentlet con, Map<String,Object> m) throws DotStateException, DotDataException {
+	protected void loadRelationshipFields(final Contentlet con, final Map<String,Object> m) throws DotStateException, DotDataException {
 		String propName;
+		final Map<String, List> relationshipsRecords = new HashMap<>();
 		String orderKey;
-		Optional<com.dotcms.contenttype.model.field.Field> field;
+
 
 		DotConnect db = new DotConnect();
 		db.setSQL("select * from tree where parent = ? or child = ? order by tree_order asc");
@@ -701,29 +702,19 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 			Relationship rel = FactoryLocator.getRelationshipFactory().byTypeValue(relType);
 
+
 			if(rel!=null && InodeUtils.isSet(rel.getInode())) {
-				field = APILocator.getContentTypeFieldAPI()
-						.byContentTypeAndFieldRelationType(con.getContentTypeId(),
-								rel.getRelationTypeValue());
+
 				boolean isSameStructRelationship = rel.getParentStructureInode().equals(rel.getChildStructureInode());
 
+				//Support for legacy relationships
+				propName = isSameStructRelationship ?
+						(con.getIdentifier().equals(parentId) ? rel.getRelationTypeValue()
+								+ ESMappingConstants.SUFFIX_CHILD
+								: rel.getRelationTypeValue() + ESMappingConstants.SUFFIX_PARENT)
+						: rel.getRelationTypeValue();
 
-				if (field.isPresent()){
-					propName = new StringBuilder(con.getContentType().variable()).append(".")
-							.append(field.get().variable()).toString();
-					orderKey = propName + ESMappingConstants.SUFFIX_ORDER;
-				} else{
-					//Support for legacy relationships
-					propName = isSameStructRelationship ?
-							(con.getIdentifier().equals(parentId) ? rel.getRelationTypeValue()
-									+ ESMappingConstants.SUFFIX_CHILD
-									: rel.getRelationTypeValue() + ESMappingConstants.SUFFIX_PARENT)
-							: rel.getRelationTypeValue();
-
-					orderKey = rel.getRelationTypeValue() + ESMappingConstants.SUFFIX_ORDER;
-				}
-
-
+				orderKey = rel.getRelationTypeValue() + ESMappingConstants.SUFFIX_ORDER;
 
                 if(relType.equals(rel.getRelationTypeValue())) {
                     String me = con.getIdentifier();
@@ -747,11 +738,58 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					// make a way to sort
 					m.put(orderKey, orderKeyValue.append(previousOrderKeyValue!=null ? previousOrderKeyValue : "")
 							.append(related).append("_").append(order).append(" ").toString());
+
+					addRelationshipRecords(rel, related, relationshipsRecords);
 				}
 			}
 		}
 
+		//Adding new relationships fields to the index map
+		relationshipsRecords.entrySet().forEach(
+				relationshipsRecord -> m.putAll(getRelationshipFieldMap(con, relationshipsRecord)));
+
 	}
 
+	/**
+	 * Groups all relationships records by relationship
+	 */
+	private void addRelationshipRecords(final Relationship rel, final String related,
+			final Map<String, List> relationshipsRecords) {
 
+		if (!relationshipsRecords.containsKey(rel.getRelationTypeValue())) {
+			relationshipsRecords.put(rel.getRelationTypeValue(), new ArrayList());
+		}
+		relationshipsRecords.get(rel.getRelationTypeValue()).add(related);
+
+	}
+
+	/**
+	 * Creates a map with the relationship field and its records
+	 * @param con
+	 * @param records
+	 * @return Map(relation_type, records)
+	 */
+	private Map<String, List> getRelationshipFieldMap(final Contentlet con,
+			final Entry<String, List> records) {
+		Optional<com.dotcms.contenttype.model.field.Field> field = null;
+		try {
+			field = APILocator.getContentTypeFieldAPI()
+					.byContentTypeAndFieldRelationType(con.getContentTypeId(), records.getKey());
+		} catch (DotDataException e) {
+			Logger.warn(this, "Error getting field for relation type " + records.getKey(), e);
+		}
+
+		if (field.isPresent()) {
+
+			Map<String, List> results = new HashMap<>();
+
+			results.put(new StringBuilder(con.getContentType().variable()).append(".")
+					.append(field.get().variable()).toString(), records.getValue());
+
+			return results;
+		}
+
+		return Collections.emptyMap();
+
+	}
 }
