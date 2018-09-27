@@ -4,8 +4,8 @@ import {Response} from '@angular/http';
 import {Inject, Injectable, NgModule} from '@angular/core';
 import {Folder} from '../treeable/shared/folder.model';
 import {Observable} from 'rxjs/Observable';
-import {ErrorObservable} from 'rxjs/observable/ErrorObservable';
 import { map, catchError } from 'rxjs/operators';
+import { ErrorObservable } from 'rxjs/observable/ErrorObservable';
 
 /**
  * Service allows opertions against dotCMS Folder Endpoints and Operations
@@ -16,8 +16,8 @@ import { map, catchError } from 'rxjs/operators';
 export class FolderService {
     constructor
     (
-        private httpClient: HttpClient,
-        private notificationService: NotificationService
+        private notificationService: NotificationService,
+        private httpClient: HttpClient
     ) {}
 
     /**
@@ -25,16 +25,15 @@ export class FolderService {
      * @param {String} siteName The site name for the uri/folder
      * @param {String} uri The folder path
      */
-    loadFolderByURI(siteName: String, uri: String): Observable<Folder> {
+    loadFolderByURI(siteName: String, uri: String): Observable<Folder | string> {
         return this.httpClient.get('/api/v1/folder/sitename/' + siteName + '/uri/' + uri)
         .pipe(
           map((res: Response) => this.extractDataFilter(res)),
-          // catchError(error => this.handleError(error))
+          catchError(error => this.handleError(error))
         );
     }
 
     private extractDataFilter(res: Response): Folder {
-        let folder: Folder;
         const obj = JSON.parse(res.text());
         const result: Folder = Object.assign(new Folder(), obj.entity);
         return result;

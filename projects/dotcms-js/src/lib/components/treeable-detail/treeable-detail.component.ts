@@ -83,8 +83,8 @@ export class TreeableDetailComponent {
     subscription: Subscription;
 
     constructor(
-        private updateService: SiteBrowserState,
-        private settingsStorageService: SettingsStorageService
+        updateService: SiteBrowserState,
+        settingsStorageService: SettingsStorageService
     ) {
         if (settingsStorageService.getSettings() !== null) {this.dotCMSURL = settingsStorageService.getSettings().site; }
         if (updateService.getSelectedTreeable()) {this.treeable = updateService.getSelectedTreeable(); }

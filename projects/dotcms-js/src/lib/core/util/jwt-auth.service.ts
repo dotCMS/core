@@ -69,7 +69,6 @@ export class JWTAuthService {
     }
 
     private extractJWT(res: Response): string {
-        let token: string;
         let obj = JSON.parse(res.text());
         let results: string = obj.entity.token;
         return results;

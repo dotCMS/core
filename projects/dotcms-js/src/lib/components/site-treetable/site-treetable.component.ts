@@ -54,7 +54,7 @@ export class SiteTreeTableComponent {
      * Deals with the style for the drag and drop of files
      * @param e
      */
-    handleDragOver(e: any): void {
+    handleDragOver(_e: any): void {
         this.dropzoneStylesVisible = true;
     }
 
@@ -65,7 +65,6 @@ export class SiteTreeTableComponent {
     handleDrop(e: any): void {
         e.preventDefault();
         let pathToUploadTo: string;
-        const files: any[] = e.dataTransfer.files;
         const folderTitle: string = e.path[0].innerText;
 
         for (let i = 0; i < this.lazyFiles.length; i++) {

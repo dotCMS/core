@@ -1,19 +1,17 @@
-import {Response} from '@angular/http';
-import {Observable} from 'rxjs';
-import {Inject, Injectable} from '@angular/core';
-import {HttpClient} from '../../core/util/http.service';
-import {NotificationService} from '../../core/util/notification.service';
-import {Site} from '../../core/treeable/shared/site.model';
-import {ErrorObservable} from 'rxjs/observable/ErrorObservable';
+import { Response } from '@angular/http';
+import { Observable } from 'rxjs';
+import { Inject, Injectable } from '@angular/core';
+import { HttpClient } from '../../core/util/http.service';
+import { NotificationService } from '../../core/util/notification.service';
+import { Site } from '../../core/treeable/shared/site.model';
+import { ErrorObservable } from 'rxjs/observable/ErrorObservable';
 import { map, catchError } from 'rxjs/operators';
 
 @Injectable()
 @Inject('dotHttpClient')
 @Inject('notificationService')
 export class SiteSelectorService {
-
-    constructor
-    (
+    constructor(
         private dotHttpClient: HttpClient,
         private notificationService: NotificationService
     ) {}
@@ -24,11 +22,12 @@ export class SiteSelectorService {
      * @returns {Observable<R|T>}
      */
     filterForSites(searchQuery: string): Observable<Site[]> {
-    return this.dotHttpClient.get('/api/v1/site?filter=' + searchQuery + '&archived=false')
-      .pipe(
-        map((res: Response) => this.extractDataFilter(res)),
-        // catchError(err => this.handleError(err))
-      );
+        return <Observable<Site[]>>(
+            this.dotHttpClient.get('/api/v1/site?filter=' + searchQuery + '&archived=false').pipe(
+                map((res: Response) => this.extractDataFilter(res)),
+                catchError((err) => this.handleError(err))
+            )
+        );
     }
 
     /**
@@ -36,10 +35,9 @@ export class SiteSelectorService {
      * @returns {Observable<R|T>}
      */
     getSites(): Observable<Site[]> {
-        return this.dotHttpClient.get('/api/v1/site/')
-        .pipe(
-          map((res: Response) => this.extractDataDropdown(res)),
-          // catchError(err => this.handleError(err))
+        return <Observable<Site[]>>this.dotHttpClient.get('/api/v1/site/').pipe(
+            map((res: Response) => this.extractDataDropdown(res)),
+            catchError((err) => this.handleError(err))
         );
     }
 
@@ -58,13 +56,17 @@ export class SiteSelectorService {
 
     private handleError(error: any): ErrorObservable<string> {
         // we need use a remote logging infrastructure at some point
-        const errMsg = (error.message) ? error.message :
-            error.status ? `${error.status} - ${error.statusText}` : 'Server error';
+        const errMsg = error.message
+            ? error.message
+            : error.status
+                ? `${error.status} - ${error.statusText}`
+                : 'Server error';
         if (errMsg) {
             console.log(errMsg);
-            this.notificationService.displayErrorMessage('There was an error; please try again : ' + errMsg);
+            this.notificationService.displayErrorMessage(
+                'There was an error; please try again : ' + errMsg
+            );
             return Observable.throw(errMsg);
         }
     }
-
 }

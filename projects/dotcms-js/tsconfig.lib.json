@@ -9,13 +9,14 @@
     "sourceMap": true,
     "inlineSources": true,
     "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
+    "noUnusedLocals": false,
     "importHelpers": true,
     "types": [],
     "lib": [
       "dom",
       "es2015"
-    ]
+    ],
+    "experimentalDecorators": true,
   },
   "angularCompilerOptions": {
     "annotateForClosureCompiler": true,

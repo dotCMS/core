@@ -14,7 +14,6 @@ import { LoggerService } from './logger.service';
  */
 @Injectable()
 export class SiteService {
-    private sitesCounter: number;
     private selectedSite: Site;
     private urls: any;
     private events: string[] = [
@@ -180,17 +179,6 @@ export class SiteService {
             .pluck('entity')
             .subscribe(currentSite => {
                 this.setCurrentSite(<Site>currentSite);
-            });
-    }
-
-    private getOneSite(): Observable<Site> {
-        return this.coreWebService
-            .requestView({
-                method: RequestMethod.Get,
-                url: this.urls.sitesUrl
-            })
-            .map(response => {
-                return response.entity[0];
             });
     }
 }

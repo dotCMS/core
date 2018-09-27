@@ -1,6 +1,6 @@
 import {Component, NgModule, OnInit, ViewChild} from '@angular/core';
 import {
-  DataGridModule, DialogModule, FileUpload, FileUploadModule, InputSwitchModule,
+  DataGridModule, DialogModule, FileUpload, FileUploadModule,
   PanelModule
 } from 'primeng/primeng';
 import {Site} from '../../core/treeable/shared/site.model';
@@ -83,7 +83,7 @@ export class SiteDatagridComponent implements OnInit {
     private updateService: SiteBrowserState,
     private fileService: FileService,
     private siteBrowserService: SiteBrowserService,
-    private settingsStorageService: SettingsStorageService,
+    settingsStorageService: SettingsStorageService,
     private folderService: FolderService,
     private fileSearchService: FileSearchService
   ) {
@@ -163,7 +163,7 @@ export class SiteDatagridComponent implements OnInit {
     this.selectedFile = file;
   }
 
-  displayUpload(file: File): void {
+  displayUpload(_file: File): void {
     this.uploadDialog = true;
   }
 
@@ -179,7 +179,7 @@ export class SiteDatagridComponent implements OnInit {
     }
   }
 
-  clearUploads(e: any) {
+  clearUploads(_e: any) {
     this.uploadedFiles = [];
   }
 
@@ -198,7 +198,6 @@ export class SiteDatagridComponent implements OnInit {
       this.fileService.uploadFile(file, folder.path, fileContentTypeID);
     }
 
-    console.log('Uploaded all files');
     this.uploadedFiles = [];
     this.fieldUpload.clear();
     this.uploadDialog = false;

@@ -23,7 +23,6 @@ export class SiteTreetableService {
      * @returns {Observable<R>}
      */
     getAssetsUnderSite(siteName: String): Observable<TreeNode[]> {
-        let lazyFiles: TreeNode[];
         return this.siteBrowserService.getTreeableAssetsUnderSite(siteName)
             .map((treeables: Treeable[]) => this.extractDataFilter(treeables));
     }
@@ -35,7 +34,6 @@ export class SiteTreetableService {
      * @returns {Observable<R>}
      */
     getAssetsUnderFolder(siteName: String, uri: string): Observable<TreeNode[]> {
-        let lazyFiles: TreeNode[];
         return this.siteBrowserService.getTreeableAssetsUnderFolder(siteName, uri)
             .map((treeables: Treeable[]) => this.extractDataFilter(treeables));
     }
@@ -54,7 +52,6 @@ export class SiteTreetableService {
                 data: treeable,
                 leaf: leaf
             };
-            // console.log(treeable);
             assets[i] = treeNode;
         }
         return assets;

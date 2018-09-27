@@ -23,7 +23,7 @@ import {DotSiteSelectorModule} from '../site-selector/site-selector.component';
 @Inject('updateService')
 export class BreadcrumbHostselectorComponent {
 
-  homeItem: MenuItem = {label: 'Host Select', command: (event) => {this.openHostSelectDialog(); }};
+  homeItem: MenuItem = {label: 'Host Select', command: (_event) => {this.openHostSelectDialog(); }};
   pathItems: MenuItem[];
   hostDialog: boolean;
 
@@ -72,7 +72,7 @@ export class BreadcrumbHostselectorComponent {
     if (!folderName) {
       return;
     }
-    const uri: string = this.getCurrentURI() + '/' + folderName;
+    // const uri: string = this.getCurrentURI() + '/' + folderName;
     this.addFolderItem(folderName);
   }
 
@@ -87,7 +87,7 @@ export class BreadcrumbHostselectorComponent {
 
   private addSiteItem(site: Site): void {
     this.pathItems.push({
-      command: (event: Event) => {
+      command: (_event: Event) => {
         this.updateService.changeSite(site);
         this.updateService.changeURI(null);
         this.updateService.changeFolder(null);
@@ -101,7 +101,7 @@ export class BreadcrumbHostselectorComponent {
   private addFolderItem(folderName: string): void {
     const currentURI: string = this.getCurrentURI();
     this.pathItems.push({
-      command: (event: Event) => {
+      command: (_event: Event) => {
         this.updateService.changeURI(currentURI + '/' + folderName);
         setTimeout(() => {
         }, 100);

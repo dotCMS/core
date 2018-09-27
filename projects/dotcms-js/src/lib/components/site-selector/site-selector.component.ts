@@ -43,7 +43,7 @@ export class SiteSelectorComponent {
      * Is called when a site is selected in the dropdown
      * @param event
      */
-    siteSelected(event: any): void {
+    siteSelected(_event: any): void {
         this.updateService.changeSite(this.host);
     }
 
@@ -60,7 +60,7 @@ export class SiteSelectorComponent {
     /**
      * Is called when the user clicks to view all sites in the dropdown
      */
-    handleDropdownClick($event): void {
+    handleDropdownClick(_event): void {
         this.filteredHosts = [];
         this.siteSelectorService.getSites()
             .subscribe((sites: Site[]) => this.handleSiteResults(sites));

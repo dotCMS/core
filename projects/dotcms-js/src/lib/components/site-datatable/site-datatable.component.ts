@@ -1,5 +1,4 @@
 import {Component, NgModule} from '@angular/core';
-import {Subscription} from 'rxjs';
 import {Treeable} from '../../core/treeable/shared/treeable.model';
 import {SiteBrowserState} from '../../core/util/site-browser.state';
 import {SiteBrowserService} from '../../core/util/site-browser.service';
@@ -66,7 +65,7 @@ export class SiteDatatableComponent {
     constructor(private updateService: SiteBrowserState,
                 private fileService: FileService,
                 private siteBrowserService: SiteBrowserService,
-                private settingsStorageService: SettingsStorageService,
+                settingsStorageService: SettingsStorageService,
                 private messageService: NotificationService) {
 
         if (settingsStorageService.getSettings()) {this.dotCMSURL = settingsStorageService.getSettings().site; }
@@ -140,7 +139,7 @@ export class SiteDatatableComponent {
         setTimeout(() => {}, 100);
     }
 
-    handleDragOver(e: any): void {}
+    handleDragOver(_e: any): void {}
 
     /**
      * Deals with the drop of 1 to many files and folders from the filesystem
@@ -151,8 +150,6 @@ export class SiteDatatableComponent {
         e.preventDefault();
         let pathToUploadTo: string;
         let fileContentTypeID: string;
-        const dataTrans: any =  e.dataTransfer;
-        const fileName: string =  e.dataTransfer.files[0].name;
         const files: File[] = e.dataTransfer.files;
         const folderTitle: string = e.path[0].innerText.trim();
         for (let i = 0; i < this.treeables.length; i++) {

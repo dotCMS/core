@@ -24,7 +24,6 @@ export class LoginService {
     private country = '';
     private lang = '';
     private urls: any;
-    private nUsers = -1;
 
     constructor(
         private router: Router,
@@ -237,7 +236,7 @@ export class LoginService {
                 method: RequestMethod.Get,
                 url: this.urls.logout
             })
-            .map(response => {
+            .map(_response => {
                 const nullAuth = {
                     loginAsUser: null,
                     user: null,
@@ -329,15 +328,15 @@ export class LoginService {
     /**
      * Request and store the login as _auth list.
      */
-    private loadLoginAsUsersList(includeNUsers: boolean, filter: string): Observable<any> {
-        return this.coreWebService
-            .requestView({
-                method: RequestMethod.Get,
-                url: `${this.urls
-                    .loginAsUserList}?includeUsersCount=${includeNUsers}&filter=${filter}`
-            })
-            .pluck('entity');
-    }
+    // private loadLoginAsUsersList(includeNUsers: boolean, filter: string): Observable<any> {
+    //     return this.coreWebService
+    //         .requestView({
+    //             method: RequestMethod.Get,
+    //             url: `${this.urls
+    //                 .loginAsUserList}?includeUsersCount=${includeNUsers}&filter=${filter}`
+    //         })
+    //         .pluck('entity');
+    // }
 }
 
 export interface User {

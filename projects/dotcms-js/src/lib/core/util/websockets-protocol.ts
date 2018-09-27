@@ -1,9 +1,12 @@
+// tslint:disable:cyclomatic-complexity
 import _ from 'lodash';
 import { Subject } from 'rxjs/Subject';
 import { LoggerService } from '../logger.service';
 import { Protocol, Url } from './protocol';
 
 export class WebSocketProtocol extends Protocol {
+    dataStream: Subject<{}> = new Subject();
+
     private static readonly AVAILABLE_FOR_USER_WS_CLOSE_STATUS = 4000;
     private socket: WebSocket;
 
@@ -12,7 +15,6 @@ export class WebSocketProtocol extends Protocol {
     private readyStateConstants = {
         CONNECTING: 0,
         OPEN: 1,
-        // tslint:disable-next-line:object-literal-sort-keys
         CLOSING: 2,
         CLOSED: 3,
         RECONNECT_ABORTED: 4
@@ -20,7 +22,6 @@ export class WebSocketProtocol extends Protocol {
 
     private normalCloseCode = 1000;
     private reconnectableStatusCodes = [WebSocketProtocol.AVAILABLE_FOR_USER_WS_CLOSE_STATUS];
-    private dataStream: Subject<any>;
     private internalConnectionState: number;
     private reconnectIfNotNormalClose: boolean;
 
@@ -38,7 +39,6 @@ export class WebSocketProtocol extends Protocol {
         }
         this.reconnectIfNotNormalClose =
             config && config.reconnectIfNotNormalClose ? config.reconnectIfNotNormalClose : false;
-        this.dataStream = new Subject();
     }
 
     connect(force = false): void {
@@ -90,7 +90,7 @@ export class WebSocketProtocol extends Protocol {
             this.connect();
         }
         // TODO: change this for an observer
-        return new Promise((resolve, reject) => {
+        return new Promise((_resolve, reject) => {
             if (this.socket.readyState === this.readyStateConstants.RECONNECT_ABORTED) {
                 reject('EventsSocket connection has been closed');
             } else {

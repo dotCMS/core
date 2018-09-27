@@ -6,8 +6,8 @@ import {Treeable} from '../treeable/shared/treeable.model';
 import {Folder} from '../treeable/shared/folder.model';
 import {File} from '../file/file.model';
 import {NotificationService} from './notification.service';
-import {ErrorObservable} from 'rxjs/observable/ErrorObservable';
 import { map, catchError } from 'rxjs/operators';
+import { ErrorObservable } from 'rxjs/observable/ErrorObservable';
 
 /**
  * SiteBrowserService will allows operations against the set dotCMS Site/Host for Tree operations. Treeable assets
@@ -20,8 +20,8 @@ export class SiteBrowserService {
 
     constructor
     (
-        private httpClient: HttpClient,
-        private notificationService: NotificationService
+        private notificationService: NotificationService,
+        private httpClient: HttpClient
     ) {}
 
     /**
@@ -29,11 +29,11 @@ export class SiteBrowserService {
      * @param siteName dotCMS Site to load assets for
      * @returns {Observable<R>} Gets the Treeable objects. If a file the Treeable will be file as file extends Treeable
      */
-    getTreeableAssetsUnderSite(siteName: String): Observable<Treeable[] > {
+    getTreeableAssetsUnderSite(siteName: String): Observable<Treeable[] | string> {
         return this.httpClient.get('/api/v1/browsertree/sitename/' + siteName + '/uri//')
           .pipe(
             map((res: Response) => this.extractDataFilter(res)),
-            // catchError(error => this.handleError(error))
+            catchError(error => this.handleError(error))
           );
     }
 
@@ -43,11 +43,11 @@ export class SiteBrowserService {
      * @param uri Path to load assets from
      * @returns {Observable<R>} Gets the Treeable objects. If a file the Treeable will be file as file extends Treeable
      */
-    getTreeableAssetsUnderFolder(siteName: String, uri: String): Observable<Treeable[]> {
+    getTreeableAssetsUnderFolder(siteName: String, uri: String): Observable<Treeable[] | string> {
         return this.httpClient.get('/api/v1/browsertree/sitename/' + siteName + '/uri/' + uri)
             .pipe(
               map((res: Response) => this.extractDataFilter(res)),
-              // catchError(error => this.handleError(error))
+              catchError(error => this.handleError(error))
             );
     }
 

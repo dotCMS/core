@@ -8,7 +8,7 @@ import {
 } from '@angular/http';
 import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs/Subject';
-import { Observable } from 'rxjs/Rx';
+import { Observable } from 'rxjs/Observable';
 
 import {
     hasContent,
@@ -24,7 +24,7 @@ import { LoggerService } from './logger.service';
 import { BrowserUtil } from './browser-util.service';
 import { HttpCode } from './util/http-code';
 
-import { map, catchError } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 export const RULE_CREATE = 'RULE_CREATE';
 export const RULE_DELETE = 'RULE_DELETE';
@@ -70,7 +70,7 @@ export class CoreWebService {
             .map((resp: Response) => {
                 return hasContent(resp) ? resp.json() : resp;
             })
-            .catch((response: Response, original: Observable<any>): Observable<any> => {
+            .catch((response: Response, _original: Observable<any>): Observable<any> => {
                 if (response) {
                     this.handleHttpError(response);
                     if (response.status === HttpCode.SERVER_ERROR || response.status === HttpCode.FORBIDDEN) {

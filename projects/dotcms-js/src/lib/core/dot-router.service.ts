@@ -1,10 +1,9 @@
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
-import { LoginService } from './login.service';
 
 @Injectable()
 export class DotRouterService {
-    constructor(private router: Router, private loginService: LoginService) {}
+    constructor(private router: Router) {}
 
     public goToMain(): void {
         this.router.navigate(['/c']);

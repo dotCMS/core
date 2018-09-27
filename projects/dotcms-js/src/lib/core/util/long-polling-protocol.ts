@@ -17,7 +17,7 @@ export class LongPollingProtocol extends Protocol {
         super(loggerService);
 
         if (!queryBuilder) {
-            this.queryBuilder = data => null;
+            this.queryBuilder = _data => null;
         }
     }
 

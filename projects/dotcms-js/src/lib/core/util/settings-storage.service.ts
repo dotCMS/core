@@ -14,11 +14,7 @@ import { SiteBrowserState } from './site-browser.state';
 export class SettingsStorageService {
     configKey: string;
 
-    constructor(
-        private config: AppConfig,
-        private localStoreService: LocalStoreService,
-        private siteBrowserState: SiteBrowserState
-    ) {
+    constructor(config: AppConfig, private localStoreService: LocalStoreService) {
         this.configKey = config.dotCMSURLKey;
     }
 

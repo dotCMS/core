@@ -18,7 +18,7 @@ declare class Notification {
 export class NotificationService {
     iconPath: string;
 
-    constructor(private config: AppConfig) {
+    constructor(config: AppConfig) {
         this.iconPath = config.iconPath;
     }
 
@@ -52,7 +52,7 @@ export class NotificationService {
      * @param body
      * @param type
      */
-    displayMessage(title: string, body: string, type: string): void {
+    displayMessage(_title: string, body: string, type: string): void {
         let myNotification: Notification;
         myNotification = new Notification(type, {
             body: body,

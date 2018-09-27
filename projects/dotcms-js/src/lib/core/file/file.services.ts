@@ -1,7 +1,6 @@
 import {Injectable, NgModule} from '@angular/core';
 import {NotificationService} from '../util/notification.service';
 import {HttpClient} from '../util/http.service';
-import {Observable} from 'rxjs';
 import {SiteBrowserState} from '../util/site-browser.state';
 import {FileSearchService} from './file-search.service';
 
@@ -13,8 +12,7 @@ export class FileService {
 
     constructor
     (private httpClient: HttpClient,
-     private siteBrowserState: SiteBrowserState,
-     private notificationService: NotificationService) {
+     private siteBrowserState: SiteBrowserState) {
     }
 
     /**
@@ -26,7 +24,7 @@ export class FileService {
      * @param fileList array of file objects to be POSTED to dotCMS
      */
     // TODO : NOT IMPLEMENTED YET
-    saveFiles(fileList: File[]): void {
+    saveFiles(_fileList: File[]): void {
 
     }
 
@@ -58,19 +56,19 @@ export class FileService {
      * @param directories list of local file System directories to create on dotCMS
      */
     // TODO : SHOULD MOVE TO FolderServices
-    uploadDirectories(directories: File[]): void {
+    uploadDirectories(_directories: File[]): void {
 
     }
 
-    private handleError(error: any): Observable<string> {
-        let errMsg = (error.message) ? error.message :
-            error.status ? `${error.status} - ${error.statusText}` : 'Server error';
-        if (errMsg) {
-            console.log(errMsg);
-            this.notificationService.displayErrorMessage('There was an error uploading file; please try again : ' + errMsg);
-            return Observable.throw(errMsg);
-        }
-    }
+    // private handleError(error: any): Observable<string> {
+    //     let errMsg = (error.message) ? error.message :
+    //         error.status ? `${error.status} - ${error.statusText}` : 'Server error';
+    //     if (errMsg) {
+    //         console.log(errMsg);
+    //         this.notificationService.displayErrorMessage('There was an error uploading file; please try again : ' + errMsg);
+    //         return Observable.throw(errMsg);
+    //     }
+    // }
 
 }
 

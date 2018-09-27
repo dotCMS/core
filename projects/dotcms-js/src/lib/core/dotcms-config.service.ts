@@ -1,7 +1,7 @@
 import { CoreWebService } from './core-web.service';
 import { RequestMethod } from '@angular/http';
 import { Injectable } from '@angular/core';
-import { Observable, Observer } from 'rxjs/Rx';
+import { Observable, Observer } from 'rxjs';
 import { LoggerService } from './logger.service';
 import { Menu } from './routing.service';
 
@@ -12,7 +12,6 @@ import { Menu } from './routing.service';
  * easier way to access the information.
  *
  */
-const DEFAULT_REST_PAGE_COUNT = 'DEFAULT_REST_PAGE_COUNT';
 const DOTCMS_WEBSOCKET_RECONNECT_TIME = 'dotcms.websocket.reconnect.time';
 const DOTCMS_WEBSOCKET_ENDPOINTS = 'dotcms.websocket.endpoints';
 const WEBSOCKET_SYSTEMEVENTS_ENDPOINT = 'websocket.systemevents.endpoint';

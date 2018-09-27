@@ -79,7 +79,7 @@ export class EventsSocket extends Protocol {
                 }
             });
 
-            this.protocolImpl.close$().subscribe(event => {
+            this.protocolImpl.close$().subscribe(_event => {
                 if (this.closedOnLogout) {
                     // We explicitly closed the socket
 
