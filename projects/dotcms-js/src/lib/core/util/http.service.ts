@@ -46,7 +46,7 @@ export class HttpClient {
      * Currently uses a debouce time of 400 and distinctUntilChanged flags on a GET request.  This is intended to
      * limit unecessary requests to the dotCMS Endpoints. Will append needed dotCMS Host/Site and JWT AUth Token
      * @param path Endpoint path
-     * @returns {Observable<Response>}
+     * @returns Observable<Response>
      */
     get(path: string): Observable<Response> {
         let headers = new Headers();

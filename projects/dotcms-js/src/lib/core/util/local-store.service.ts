@@ -19,7 +19,7 @@ export class LocalStoreService {
     /**
      * Gets a value from localstorage
      * @param key
-     * @returns {any}
+     * @returns any
      */
     getValue(key: string): any {
         return localStorage.getItem(key);

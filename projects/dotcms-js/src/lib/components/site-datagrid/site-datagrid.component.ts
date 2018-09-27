@@ -1,7 +1,8 @@
 import {Component, NgModule, OnInit, ViewChild} from '@angular/core';
 import {
   DataGridModule, DialogModule, FileUpload, FileUploadModule,
-  PanelModule
+  PanelModule,
+  TreeTable
 } from 'primeng/primeng';
 import {Site} from '../../core/treeable/shared/site.model';
 import {Treeable} from '../../core/treeable/shared/treeable.model';
@@ -14,6 +15,7 @@ import {FileSearchService} from '../../core/file/file-search.service';
 import {Folder} from '../../core/treeable/shared/folder.model';
 import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
+import {File} from '../../core/file/file.model';
 
 @Component({
   selector: 'site-datagrid',

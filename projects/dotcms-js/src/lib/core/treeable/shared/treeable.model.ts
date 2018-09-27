@@ -13,4 +13,13 @@ export class Treeable {
     title: string;
     displayType: string;
     modUser: string;
+    isImage: () => boolean;
+    extension: string;
+    disabled: boolean;
+    modUserName: string;
+    fileName: string;
+    path: string;
+    mimeType: string;
+    showOnMenu: boolean;
+    defaultFileType: string;
 }

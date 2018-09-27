@@ -81,6 +81,7 @@ export class TreeableDetailComponent {
     dotCMSURL = '';
     treeable: Treeable = new Treeable();
     subscription: Subscription;
+    disabled: boolean;
 
     constructor(
         updateService: SiteBrowserState,
