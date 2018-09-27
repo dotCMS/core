@@ -59,7 +59,7 @@ export class DotEditPageInfoComponent implements OnInit {
     /**
      * Copy url to clipboard
      *
-     * @returns {boolean}
+     * @returns boolean
      * @memberof DotEditPageToolbarComponent
      */
     copyUrlToClipboard(): void {

@@ -29,9 +29,9 @@ export class DotPageStateService {
     /**
      * Set the page state
      *
-     * @param {DotRenderedPage} page
-     * @param {DotEditPageState} state
-     * @returns {Observable<any>}
+     * @param DotRenderedPage page
+     * @param DotEditPageState state
+     * @returns Observable<any>
      * @memberof DotRenderHTMLService
      */
     set(
@@ -66,8 +66,8 @@ export class DotPageStateService {
     /**
      * Get page state
      *
-     * @param {string} url
-     * @param {number} [languageId]
+     * @param string url
+     * @param number [languageId]
      * @memberof DotPageStateService
      */
     reload(url: string, languageId?: number): void {
@@ -81,9 +81,9 @@ export class DotPageStateService {
     /**
      * Get page state
      *
-     * @param {string} url
-     * @param {number} [languageId]
-     * @returns {Observable<DotRenderedPageState>}
+     * @param string url
+     * @param number [languageId]
+     * @returns Observable<DotRenderedPageState>
      * @memberof DotPageStateService
      */
     get(url: string, languageId?: number): Observable<DotRenderedPageState> {

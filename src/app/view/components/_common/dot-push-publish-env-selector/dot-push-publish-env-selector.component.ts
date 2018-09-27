@@ -54,7 +54,7 @@ export class PushPublishEnvSelectorComponent implements OnInit, ControlValueAcce
 
     /**
      * Set the function to be called when the control receives a change event.
-     * @param {*} fn
+     * @param * fn
      * @memberof PushPublishEnvSelectorComponent
      */
     registerOnChange(fn: any): void {
@@ -68,7 +68,7 @@ export class PushPublishEnvSelectorComponent implements OnInit, ControlValueAcce
     /**
      * Write a new value to the element
      * Reset value
-     * @param {string[]} value
+     * @param string[] value
      * @memberof PushPublishEnvSelectorComponent
      */
     writeValue(value: string[]): void {
@@ -80,8 +80,8 @@ export class PushPublishEnvSelectorComponent implements OnInit, ControlValueAcce
 
     /**
      * Propagate environment id when multiselect changes
-     * @param {any} $event
-     * @param {any} selectedEnvironments
+     * @param any $event
+     * @param any selectedEnvironments
      * @memberof PushPublishEnvSelectorComponent
      */
     valueChange(_event, selectedEnvironments): void {
@@ -90,7 +90,7 @@ export class PushPublishEnvSelectorComponent implements OnInit, ControlValueAcce
 
     /**
      * Remove selected environments and progagate new environments
-     * @param {DotEnvironment} i
+     * @param DotEnvironment i
      * @memberof PushPublishEnvSelectorComponent
      */
     removeEnvironmentItem(environmentItem: DotEnvironment): void {

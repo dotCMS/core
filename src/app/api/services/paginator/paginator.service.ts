@@ -61,7 +61,7 @@ export class PaginatorService {
 
     /**
      * Set value of extra parameters of the eventual request.
-     * @param {string} name
+     * @param string name
      * @param value
      *
      * @memberof DotThemeSelectorComponent
@@ -75,7 +75,7 @@ export class PaginatorService {
 
     /**
      * Delete extra parameters of the eventual request.
-     * @param {string} name
+     * @param string name
      *
      * @memberof DotThemeSelectorComponent
      */
@@ -172,7 +172,7 @@ export class PaginatorService {
 
     /**
      * Request the last page
-     * @returns {Observable<any[]>}
+     * @returns Observable<any[]>
      * @memberof PaginatorService
      */
     public getLastPage(): Observable<any[]> {
@@ -181,7 +181,7 @@ export class PaginatorService {
 
     /**
      * Request the first page
-     * @returns {Observable<any[]>}
+     * @returns Observable<any[]>
      * @memberof PaginatorService
      */
     public getFirstPage(): Observable<any[]> {
@@ -190,8 +190,8 @@ export class PaginatorService {
 
     /**
      * request the  pageParam page
-     * @param {number} [pageParam=1] Page to request
-     * @returns {Observable<any[]>}
+     * @param number [pageParam=1] Page to request
+     * @returns Observable<any[]>
      * @memberof PaginatorServic
      */
     public getPage(pageParam = 1): Observable<any[]> {
@@ -203,7 +203,7 @@ export class PaginatorService {
 
     /**
      * Request the current page
-     * @returns {Observable<any[]>}
+     * @returns Observable<any[]>
      * @memberof PaginatorService
      */
     public getCurrentPage(): Observable<any[]> {
@@ -212,7 +212,7 @@ export class PaginatorService {
 
     /**
      * Request the next page
-     * @returns {Observable<any[]>}
+     * @returns Observable<any[]>
      * @memberof PaginatorService
      */
     public getNextPage(): Observable<any[]> {
@@ -221,7 +221,7 @@ export class PaginatorService {
 
     /**
      * Request the previous page
-     * @returns {Observable<any[]>}
+     * @returns Observable<any[]>
      * @memberof PaginatorService
      */
     public getPrevPage(): Observable<any[]> {
@@ -230,8 +230,8 @@ export class PaginatorService {
 
     /**
      * Use the offset to request a page.
-     * @param {number} offset Offset to be request
-     * @returns {Observable<any[]>}
+     * @param number offset Offset to be request
+     * @returns Observable<any[]>
      * @memberof PaginatorService
      */
     public getWithOffset(offset: number): Observable<any[]> {

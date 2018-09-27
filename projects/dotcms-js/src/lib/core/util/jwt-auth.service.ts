@@ -27,7 +27,7 @@ export class JWTAuthService {
      * @param siteURL Site/Host of dotCMS
      * @param username
      * @param password
-     * @returns {Observable<R>} String return for the token
+     * @returns Observable<R> String return for the token
      */
     getJWT(siteURL: string, username: string, password: string): Observable<string> {
         let data = {
@@ -51,7 +51,7 @@ export class JWTAuthService {
      * @param siteURL
      * @param username
      * @param password
-     * @returns {Observable<R>}
+     * @returns Observable<R>
      */
     login(siteURL: string, username: string, password: string): Observable<string> {
         return this.getJWT(siteURL, username, password)

@@ -13,7 +13,7 @@ export class DotCurrentUserService {
     // TODO: We need to update the LoginService to get the userId in the User object
     /**
      * Get logged user and userId.
-     * @returns {Observable<DotCurrentUser>}
+     * @returns Observable<DotCurrentUser>
      * @memberof DotCurrentUserService
      */
     getCurrentUser(): Observable<DotCurrentUser> {

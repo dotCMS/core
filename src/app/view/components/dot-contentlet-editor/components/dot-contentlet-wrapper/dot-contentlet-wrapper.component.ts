@@ -60,7 +60,7 @@ export class DotContentletWrapperComponent implements OnInit {
     /**
      * Habdle the before close dialog event
      *
-     * @param {*} $event
+     * @param * $event
      * @memberof DotEditContentletComponent
      */
     onBeforeClose($event?: { originalEvent: MouseEvent | KeyboardEvent; close: () => void }): void {
@@ -96,7 +96,7 @@ export class DotContentletWrapperComponent implements OnInit {
     /**
      * Handle the custome events from the DotDialogIframe component
      *
-     * @param {any} $event
+     * @param any $event
      * @memberof DotAddContentletComponent
      */
     onCustomEvent($event) {
@@ -110,7 +110,7 @@ export class DotContentletWrapperComponent implements OnInit {
     /**
      * Call the keyDown method from the service if exist
      *
-     * @param {any} $event
+     * @param any $event
      * @memberof DotAddContentletComponent
      */
     onKeyDown($event): void {
@@ -122,7 +122,7 @@ export class DotContentletWrapperComponent implements OnInit {
     /**
      * Call the load method from the service if exist
      *
-     * @param {any} $event
+     * @param any $event
      * @memberof DotAddContentletComponent
      */
     onLoad($event): void {

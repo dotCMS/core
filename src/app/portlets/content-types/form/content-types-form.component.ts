@@ -101,8 +101,8 @@ export class ContentTypesFormComponent implements OnInit {
     /**
      * Update expireDateVar and publishDateVar fields base on selection
      *
-     * @param {any} $event
-     * @param {any} field
+     * @param any $event
+     * @param any field
      * @memberof ContentTypesFormComponent
      */
     handleDateVarChange($event, field): void {
@@ -116,7 +116,7 @@ export class ContentTypesFormComponent implements OnInit {
     /**
      * Check if the form is in edit mode
      *
-     * @returns {boolean}
+     * @returns boolean
      * @memberof ContentTypesFormComponent
      */
     isEditMode(): boolean {

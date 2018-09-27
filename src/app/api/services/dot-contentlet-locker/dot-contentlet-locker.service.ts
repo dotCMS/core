@@ -11,8 +11,8 @@ export class DotContentletLockerService {
     /**
      * Lock a content asset
      *
-     * @param {string} inode
-     * @returns {Observable<any>}
+     * @param string inode
+     * @returns Observable<any>
      * @memberof PageViewService
      */
     lock(inode: string): Observable<any> {
@@ -27,8 +27,8 @@ export class DotContentletLockerService {
     /**
      * Unlock a content asset
      *
-     * @param {string} inode
-     * @returns {Observable<any>}
+     * @param string inode
+     * @returns Observable<any>
      * @memberof PageViewService
      */
     unlock(inode: string): Observable<any> {

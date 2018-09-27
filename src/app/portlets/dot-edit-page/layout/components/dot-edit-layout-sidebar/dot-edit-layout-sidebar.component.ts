@@ -38,8 +38,8 @@ export class DotEditLayoutSidebarComponent implements OnInit, ControlValueAccess
     /**
      * Returns DotContainerColumnBox model.
      *
-     * @param {DotContainerColumnBox[]} containers
-     * @returns {DotLayoutSideBar}
+     * @param DotContainerColumnBox[] containers
+     * @returns DotLayoutSideBar
      * @memberof DotEditLayoutSidebarComponent
      */
     getModel(containers: DotContainerColumnBox[]): DotLayoutSideBar {
@@ -60,7 +60,7 @@ export class DotEditLayoutSidebarComponent implements OnInit, ControlValueAccess
     /**
      * Set the function to be called when the control receives a change event.
      *
-     * @param {*} fn
+     * @param * fn
      * @memberof DotEditLayoutSidebarComponent
      */
     registerOnChange(fn: any): void {
@@ -72,7 +72,7 @@ export class DotEditLayoutSidebarComponent implements OnInit, ControlValueAccess
     /**
      * Update model and propagate changes
      *
-     * @param {DotContainerColumnBox[]} containers
+     * @param DotContainerColumnBox[] containers
      * @memberof DotEditLayoutSidebarComponent
      */
     updateAndPropagate(containers?: DotContainerColumnBox[]): void {
@@ -82,7 +82,7 @@ export class DotEditLayoutSidebarComponent implements OnInit, ControlValueAccess
     /**
      * Write a new value to the element
      *
-     * @param {DotLayoutSideBar} value
+     * @param DotLayoutSideBar value
      * @memberof DotEditLayoutSidebarComponent
      */
     writeValue(value: DotLayoutSideBar): void {

@@ -91,7 +91,7 @@ export class DotThemeSelectorComponent implements OnInit {
 
     /**
      * Load new page of themes.
-     * @param {LazyLoadEvent} event
+     * @param LazyLoadEvent event
      *
      * @memberof DotThemeSelectorComponent
      */
@@ -102,7 +102,7 @@ export class DotThemeSelectorComponent implements OnInit {
 
     /**
      * Handle change in the host to load the corresponding themes.
-     * @param {Site} site
+     * @param Site site
      *
      * @memberof DotThemeSelectorComponent
      */
@@ -115,7 +115,7 @@ export class DotThemeSelectorComponent implements OnInit {
 
     /**
      * Set the selected Theme by the user while the modal is open.
-     * @param {DotTheme} theme
+     * @param DotTheme theme
      *
      * @memberof DotThemeSelectorComponent
      */

@@ -60,7 +60,7 @@ export class DotSidebarPropertiesComponent implements OnInit, ControlValueAccess
 
     /**
      * Write a new value to the property item
-     * @param {DotLayoutSideBar} value
+     * @param DotLayoutSideBar value
      * @memberof DotSidebarPropertiesComponent
      */
     writeValue(value: DotLayoutSideBar): void {
@@ -71,7 +71,7 @@ export class DotSidebarPropertiesComponent implements OnInit, ControlValueAccess
 
     /**
      * Set the function to be called when the control receives a change event
-     * @param {any} fn
+     * @param any fn
      * @memberof DotSidebarPropertiesComponent
      */
     registerOnChange(fn: any): void {

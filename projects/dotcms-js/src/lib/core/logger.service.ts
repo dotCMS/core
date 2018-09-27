@@ -60,7 +60,7 @@ export class LoggerService {
 
     /**
      * Determine if angular should show lo
-     * @returns {boolean}
+     * @returns boolean
      */
     shouldShowLogs(): boolean {
         const devMode: string = this.httpRequestUtils.getQueryStringParam(DEV_MODE_PARAM);

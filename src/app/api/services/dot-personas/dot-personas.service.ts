@@ -16,7 +16,7 @@ export class DotPersonasService {
 
     /**
      * Return Personas.
-     * @returns {Observable<DotLanguage[]>}
+     * @returns Observable<DotLanguage[]>
      * @memberof DotPersonasService
      */
     get(): Observable<DotPersona[]> {

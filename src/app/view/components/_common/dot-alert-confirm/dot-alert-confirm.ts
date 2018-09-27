@@ -16,7 +16,7 @@ export class DotAlertConfirmComponent {
     /**
      * Handle confirmation dialog action button click
      *
-     * @param {string} action
+     * @param string action
      * @memberof DotAlertConfirmComponent
      */
     onClickConfirm(action: string): void {

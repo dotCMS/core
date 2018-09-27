@@ -16,7 +16,7 @@ export class File extends Treeable {
     constructor() {super(); this.displayType = 'File'; }
     // /**
     //  * Convenience method to check the mimetype and so if it starts with image
-    //  * @returns {boolean}
+    //  * @returns boolean
     //  */
     // isImage(): boolean {
     //     return this.mimeType.startsWith('image');

@@ -59,7 +59,7 @@ export class ContentTypeFieldsRowComponent implements OnInit {
     /**
      * Remove a field
      *
-     * @param {ContentTypeField} field
+     * @param ContentTypeField field
      * @memberof ContentTypeFieldsRowComponent
      */
     onRemoveField(field: ContentTypeField): void {
@@ -84,7 +84,7 @@ export class ContentTypeFieldsRowComponent implements OnInit {
     /**
      * Return the width for each column
      *
-     * @returns {string} Return the column's width width '%', for example, '30%'
+     * @returns string Return the column's width width '%', for example, '30%'
      * @memberof ContentTypeFieldsRowComponent
      */
     getColumnWidth(): string {
@@ -104,8 +104,8 @@ export class ContentTypeFieldsRowComponent implements OnInit {
     /**
      * Check if a given row have fields in any of the columns
      *
-     * @param {FieldRow} row
-     * @returns {boolean}
+     * @param FieldRow row
+     * @returns boolean
      * @memberof ContentTypeFieldsRowComponent
      */
     rowHaveFields(row: FieldRow): boolean {

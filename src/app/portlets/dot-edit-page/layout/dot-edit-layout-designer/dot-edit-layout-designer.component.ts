@@ -93,7 +93,7 @@ export class DotEditLayoutDesignerComponent implements OnInit {
      * Check if the template is a template or a layout by comparing the name of the template.
      * Templates with the name "anonymous_layout_TIMESTAMP" are layout assigned to an specific page.
      *
-     * @returns {boolean}
+     * @returns boolean
      * @memberof DotEditLayoutDesignerComponent
      */
     isLayout(): boolean {
@@ -179,7 +179,7 @@ export class DotEditLayoutDesignerComponent implements OnInit {
 
     /**
      * Handle the changes in the Theme Selector component.
-     * @param {DotTheme} theme
+     * @param DotTheme theme
      *
      * @memberof DotEditLayoutDesignerComponent
      */

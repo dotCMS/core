@@ -13,8 +13,8 @@ export class DotClipboardUtil {
     /**
      * Copy the passed string to the clipboard
      *
-     * @param {string} text
-     * @returns {Promise<boolean>}
+     * @param string text
+     * @returns Promise<boolean>
      * @memberof DotClipboardUtil
      */
     copy(text: string): Promise<boolean> {

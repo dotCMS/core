@@ -32,7 +32,7 @@ export class DotWorkflowTaskDetailService {
     /**
      * Set data to edit a workflow task
      *
-     * @param {DotTaskAction} action
+     * @param DotTaskAction action
      * @memberof DotContentletEditorService
      */
     view(action: DotTaskAction): void {

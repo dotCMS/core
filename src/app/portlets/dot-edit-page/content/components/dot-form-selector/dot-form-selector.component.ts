@@ -43,7 +43,7 @@ export class DotFormSelectorComponent implements OnInit {
     /**
      * Call when click on any pagination link
      *
-     * @param {LazyLoadEvent} event
+     * @param LazyLoadEvent event
      * @memberof DotFormSelectorComponent
      */
     loadData(event: LazyLoadEvent): void {

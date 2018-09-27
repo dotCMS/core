@@ -139,7 +139,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
 
     /**
      * Handle the iframe page load
-     * @param {any} $event
+     * @param any $event
      * @memberof DotEditContentComponent
      */
     onLoad($event): void {
@@ -161,7 +161,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     /**
      * Handle the changes of the state gf the page
      *
-     * @param {DotPageState} newState
+     * @param DotPageState newState
      * @memberof DotEditContentComponent
      */
     statePageHandler(newState: DotPageState): void {
@@ -185,7 +185,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     /**
      * Handle changes in the configuration of "View As" toolbar
      *
-     * @param {DotEditPageViewAs} viewAsConfig
+     * @param DotEditPageViewAs viewAsConfig
      * @memberof DotEditContentComponent
      */
     changeViewAsHandler(viewAsConfig: DotEditPageViewAs): void {
@@ -225,7 +225,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     /**
      * Handle form selected
      *
-     * @param {ContentType} item
+     * @param ContentType item
      * @memberof DotEditContentComponent
      */
     onFormSelected(item: ContentType): void {

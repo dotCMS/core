@@ -34,7 +34,7 @@ export class DotLayoutPropertiesItemComponent implements ControlValueAccessor {
 
     /**
      * Write a new value to the property item
-     * @param {boolean} value
+     * @param boolean value
      * @memberof DotLayoutPropertiesItemComponent
      */
     writeValue(value: boolean): void {
@@ -61,7 +61,7 @@ export class DotLayoutPropertiesItemComponent implements ControlValueAccessor {
 
     /**
      * Set the function to be called when the control receives a change event
-     * @param {any} fn
+     * @param any fn
      * @memberof DotLayoutPropertiesItemComponent
      */
     registerOnChange(fn: any): void {

@@ -36,8 +36,8 @@ export class DotPageSelectorService {
     /**
      * Get all the pages in the folder
      *
-     * @param {string} searchParam
-     * @returns {Observable<DotPageAsset[]>}
+     * @param string searchParam
+     * @returns Observable<DotPageAsset[]>
      * @memberof DotPageSelectorService
      */
     getPagesInFolder(searchParam: string, hostId?: string): Observable<DotPageAsset[]> {
@@ -63,7 +63,7 @@ export class DotPageSelectorService {
     /**
      * Get a page by id
      *
-     * @param {string} identifier
+     * @param string identifier
      * @memberof DotPageSelectorService
      */
     getPage(identifier: string): Observable<DotPageAsset> {

@@ -87,8 +87,8 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
 
     /**
      * Return columns inside each li element
-     * @param {number} n
-     * @returns {number[]}
+     * @param number n
+     * @returns number[]
      * @memberof ContentTypeFieldsAddRowComponent
      */
     numberOfCols(n: number): number[] {
@@ -119,8 +119,8 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
 
     /**
      * Remove focus on element sent as param
-     * @param {*} elem
-     * @returns {*}
+     * @param * elem
+     * @returns *
      * @memberof ContentTypeFieldsAddRowComponent
      */
     removeFocus(elem: any): void {
@@ -129,9 +129,9 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
 
     /**
      * Set keyboard event receiving key and function as param
-     * @param {(string | string[])} key
-     * @param {any} keyEvent
-     * @returns {*}
+     * @param (string | string[]) key
+     * @param any keyEvent
+     * @returns *
      * @memberof ContentTypeFieldsAddRowComponent
      */
     setKeyboardEvent(key: string | string[], keyEvent): any {
@@ -149,8 +149,8 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
     /**
      * Set tooltip value to pTooltip directive
      * Receives column index as param
-     * @param {number} col
-     * @returns {string}
+     * @param number col
+     * @returns string
      * @memberof ContentTypeFieldsAddRowComponent
      */
     setColumnValue(col: number): string {

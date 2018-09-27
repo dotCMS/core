@@ -5,7 +5,7 @@
 export class HttpRequestUtils {
     /**
      * Get a map with the url querystring parameters
-     * @returns {Map<string, string>}
+     * @returns Map<string, string>
      */
     // TODO: change the getQueryParams() with an NG2 method equivalent to QueryParams on NGRX.
     getQueryParams(): Map<string, string> {
@@ -23,7 +23,7 @@ export class HttpRequestUtils {
     /**
      * Get a single parameter form the query string, null if does not exits.
      * it is based on the window.location.href.
-     * @returns {string}
+     * @returns string
      */
     getQueryStringParam(name: string): string {
         let value = null;

@@ -144,7 +144,7 @@ export class SiteDatatableComponent {
     /**
      * Deals with the drop of 1 to many files and folders from the filesystem
      * @param e
-     * @returns {boolean}
+     * @returns boolean
      */
     handleDrop(e: any): void {
         e.preventDefault();

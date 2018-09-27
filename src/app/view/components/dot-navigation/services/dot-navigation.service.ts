@@ -145,7 +145,7 @@ export class DotNavigationService {
     /**
      * Navigate to portlet by id
      *
-     * @param {string} url
+     * @param string url
      * @memberof DotNavigationService
      */
     goTo(url: string): void {
@@ -172,7 +172,7 @@ export class DotNavigationService {
     /**
      * Reload current portlet
      *
-     * @param {string} id
+     * @param string id
      * @memberof DotNavigationService
      */
     reloadCurrentPortlet(id: string): void {
@@ -194,7 +194,7 @@ export class DotNavigationService {
     /**
      * Set menu open base on the id of the menulink
      *
-     * @param {string} id
+     * @param string id
      * @memberof DotNavigationService
      */
     setOpen(id: string): void {

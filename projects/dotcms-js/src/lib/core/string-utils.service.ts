@@ -9,7 +9,7 @@ export class StringUtils {
      * Get from text, the line number (indexLine), null if it does not exists.
      * @param text
      * @param indexLine
-     * @returns {string}
+     * @returns string
      */
     getLine(text: string, indexLine: number): string {
         let line: string = null;
@@ -25,7 +25,7 @@ export class StringUtils {
     /**
      * Get an string and return it camelcased, ex: "Hello World" > "helloWorld"
      * @param str
-     * @returns {string}
+     * @returns string
      */
     camelize(str): string {
         return str
@@ -38,8 +38,8 @@ export class StringUtils {
     /**
      * Return a string with the first char in uppercase
      *
-     * @param {string} str
-     * @returns {string}
+     * @param string str
+     * @returns string
      *
      * @memberof StringUtils
      */

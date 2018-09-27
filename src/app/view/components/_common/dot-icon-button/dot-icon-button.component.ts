@@ -26,7 +26,7 @@ export class DotIconButtonComponent {
     /**
      * Emits the click of the button
      *
-     * @param {any} $event
+     * @param any $event
      * @memberof DotIconButtonComponent
      */
     buttonOnClick($event): void {

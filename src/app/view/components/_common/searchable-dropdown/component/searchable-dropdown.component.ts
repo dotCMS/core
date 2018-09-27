@@ -113,7 +113,7 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
 
     /**
      * Call when the current page is changed
-     * @param {any} event
+     * @param any event
      * @memberof SearchableDropdownComponent
      */
     paginate(event): void {
@@ -124,7 +124,7 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
 
     /**
      * Write a new value to the element
-     * @param {*} value
+     * @param * value
      * @memberof SearchableDropdownComponent
      */
     writeValue(value: any): void {
@@ -138,7 +138,7 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
 
     /**
      * Set the function to be called when the control receives a change event.
-     * @param {any} fn
+     * @param any fn
      * @memberof SearchableDropdownComponent
      */
     registerOnChange(fn): void {
@@ -150,8 +150,8 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
     /**
      * Get labels from container, if labelPropertyName is an array then loop through it and returns
      * a string containing the labels joining by "-" if is not just returns a label
-     * @param {DotContainer} container
-     * @returns {string}
+     * @param DotContainer container
+     * @returns string
      * @memberof SearchableDropdownComponent
      */
     getLabel(container: DotContainer): string {
@@ -181,7 +181,7 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
      * Call when a option is clicked, if this option is not the same of the current value then
      * the change events is emitted. If multiple is true allow to emit the same value.
      * @private
-     * @param {*} item
+     * @param * item
      * @memberof SearchableDropdownComponent
      */
     handleClick(item: any): void {

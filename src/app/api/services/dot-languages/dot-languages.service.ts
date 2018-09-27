@@ -16,7 +16,7 @@ export class DotLanguagesService {
 
     /**
      * Return languages.
-     * @returns {Observable<DotLanguage[]>}
+     * @returns Observable<DotLanguage[]>
      * @memberof DotLanguagesService
      */
     get(contentInode?: string): Observable<DotLanguage[]> {

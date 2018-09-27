@@ -111,7 +111,7 @@ export class IframeComponent implements OnInit, OnDestroy {
     /**
      * Called when iframe load event happen.
      *
-     * @param {any} $event
+     * @param any $event
      * @memberof IframeComponent
      */
     onLoad($event): void {

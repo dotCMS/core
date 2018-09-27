@@ -122,7 +122,7 @@ export class CoreWebService {
    * </code>
    *
    * @param options
-   * @returns {DotCMSHttpResponse}
+   * @returns DotCMSHttpResponse
    */
     public requestView(options: RequestOptionsArgs): Observable<ResponseView> {
         const request = this.getRequestOpts(options);

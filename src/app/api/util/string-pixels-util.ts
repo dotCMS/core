@@ -6,7 +6,7 @@ export class StringPixels {
     /**
      * Returns an estimate of the width in pixels that may have the longer
      * text from a collection, based on a character constant
-     * @param {Array<string>} textValues The text to be measure.
+     * @param Array<string> textValues The text to be measure.
      *
      */
     public static getDropdownWidth(textValues: Array<string>): string {

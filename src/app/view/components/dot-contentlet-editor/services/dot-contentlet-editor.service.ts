@@ -69,7 +69,7 @@ export class DotContentletEditorService {
     /**
      * Set url to create a contentlet
      *
-     * @param {DotEditorAction} action
+     * @param DotEditorAction action
      * @memberof DotContentletEditorService
      */
     create(action: DotEditorAction): void {
@@ -79,7 +79,7 @@ export class DotContentletEditorService {
     /**
      * Set data to add a contentlet
      *
-     * @param {DotEditorAction} action
+     * @param DotEditorAction action
      * @memberof DotAddContentletServicex
      */
     add(action: DotEditorAction): void {
@@ -89,7 +89,7 @@ export class DotContentletEditorService {
     /**
      * Set data to edit a contentlet
      *
-     * @param {DotEditorAction} action
+     * @param DotEditorAction action
      * @memberof DotContentletEditorService
      */
     edit(action: DotEditorAction): void {
@@ -111,7 +111,7 @@ export class DotContentletEditorService {
     /**
      * Call keydown handler
      *
-     * @param {KeyboardEvent} $event
+     * @param KeyboardEvent $event
      * @memberof DotContentletEditorService
      */
     keyDown($event: KeyboardEvent): void {
@@ -123,7 +123,7 @@ export class DotContentletEditorService {
     /**
      * Call load handler
      *
-     * @param {*} $event
+     * @param * $event
      * @memberof DotContentletEditorService
      */
     load($event: any): void {

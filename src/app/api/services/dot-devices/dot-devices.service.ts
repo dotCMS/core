@@ -16,7 +16,7 @@ export class DotDevicesService {
 
     /**
      * Return available devices.
-     * @returns {Observable<DotDevice[]>}
+     * @returns Observable<DotDevice[]>
      * @memberof DotDevicesService
      */
     get(): Observable<DotDevice[]> {

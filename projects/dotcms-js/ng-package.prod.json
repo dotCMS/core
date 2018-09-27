@@ -1,6 +1,6 @@
 {
   "$schema": "../../node_modules/ng-packagr/ng-package.schema.json",
-  "dest": "../../dist/dotcms-js",
+  "dest": "../../dist-lib/dotcms-js",
   "lib": {
     "entryFile": "src/public_api.ts"
   }

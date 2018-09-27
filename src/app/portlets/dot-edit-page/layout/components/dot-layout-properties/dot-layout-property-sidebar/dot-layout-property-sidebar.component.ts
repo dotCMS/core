@@ -37,7 +37,7 @@ export class DotLayoutSidebarComponent implements ControlValueAccessor, OnInit {
 
     /**
      * Write a new value to the property item
-     * @param {any} DotLayoutSideBar
+     * @param any DotLayoutSideBar
      * @memberof DotLayoutSidebarComponent
      */
     writeValue(value): void {
@@ -48,8 +48,8 @@ export class DotLayoutSidebarComponent implements ControlValueAccessor, OnInit {
 
     /**
      * Handle sidebar left/right check and propagate a value
-     * @param {boolean} value
-     * @param {string} location
+     * @param boolean value
+     * @param string location
      * @memberof DotLayoutSidebarComponent
      */
     setValue(value: boolean, location: string): void {
@@ -69,7 +69,7 @@ export class DotLayoutSidebarComponent implements ControlValueAccessor, OnInit {
 
     /**
      * Set the function to be called when the control receives a change event
-     * @param {any} fn
+     * @param any fn
      * @memberof DotLayoutSidebarComponent
      */
     registerOnChange(fn: any): void {

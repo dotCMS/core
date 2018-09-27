@@ -62,7 +62,7 @@ export class HttpClient {
      * limit unecessary requests to the dotCMS Endpoints. Will append needed dotCMS Host/Site and JWT AUth Token
      * @param path path Endpoint path
      * @param data Object to be PUT.  Will be converted to JSON String(JSON.stringify)
-     * @returns {Observable<Response>}
+     * @returns Observable<Response>
      */
     put(path: String, data: Object): Observable<Response> {
         let opts: RequestOptions = new RequestOptions();
@@ -79,7 +79,7 @@ export class HttpClient {
      * limit unecessary requests to the dotCMS Endpoints. Will append needed dotCMS Host/Site and JWT AUth Token
      * @param path path Endpoint path
      * @param data Object to be POSTed.  Will be converted to JSON String(JSON.stringify)
-     * @returns {Observable<Response>}
+     * @returns Observable<Response>
      */
     post(path: String, data: Object): Observable<Response> {
         let opts: RequestOptions = new RequestOptions();
@@ -96,7 +96,7 @@ export class HttpClient {
      * @param path path Endpoint path
      * @param file Binary file to save
      * @param jsonData Object to be POSTed.  Will be converted to JSON String(JSON.stringify)
-     * @returns {any}
+     * @returns any
      */
     filePut(path: String, file: File, data: Object): Observable<any> {
         return Observable.create((observer: any) => {

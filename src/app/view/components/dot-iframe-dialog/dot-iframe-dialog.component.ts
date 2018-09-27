@@ -66,7 +66,7 @@ export class DotIframeDialogComponent implements OnChanges {
     /**
      * Handle attemp to close the dialog
      *
-     * @param {(MouseEvent | KeyboardEvent)} $event
+     * @param (MouseEvent | KeyboardEvent) $event
      * @memberof DotIframeDialogComponent
      */
     onClose($event: MouseEvent | KeyboardEvent): void {
@@ -89,7 +89,7 @@ export class DotIframeDialogComponent implements OnChanges {
     /**
      * Handle custom event from the iframe window
      *
-     * @param {CustomEvent} $event
+     * @param CustomEvent $event
      * @memberof DotIframeDialogComponent
      */
     onCustomEvents($event: CustomEvent): void {
@@ -99,7 +99,7 @@ export class DotIframeDialogComponent implements OnChanges {
     /**
      * Handle keydown event from the iframe window
      *
-     * @param {any} $event
+     * @param any $event
      * @memberof DotIframeDialogComponent
      */
     @HostListener('document:keydown', ['$event'])
@@ -114,7 +114,7 @@ export class DotIframeDialogComponent implements OnChanges {
     /**
      * Handle load event from the iframe window
      *
-     * @param {*} $event
+     * @param * $event
      * @memberof DotIframeDialogComponent
      */
     onLoad($event: any): void {

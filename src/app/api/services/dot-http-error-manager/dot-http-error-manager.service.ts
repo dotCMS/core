@@ -42,8 +42,8 @@ export class DotHttpErrorManagerService {
     /**
      * Handle the http error message and return a true if it did a redirect
      *
-     * @param {ResponseView} err
-     * @returns {Observable<boolean>}
+     * @param ResponseView err
+     * @returns Observable<boolean>
      * @memberof DotHttpErrorManagerService
      */
     handle(err: ResponseView): Observable<DotHttpErrorHandled> {

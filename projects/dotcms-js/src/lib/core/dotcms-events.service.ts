@@ -61,7 +61,7 @@ export class DotcmsEventsService {
      * @param clientEventType - The type of event clients will get. For example,
      *                          "notification" will allow a client to receive the
      *                          messages in the Notification section.
-     * @returns {any} The system events that a client will receive.
+     * @returns any The system events that a client will receive.
      */
     subscribeTo(clientEventType: string): Observable<any> {
         if (!this.subjects[clientEventType]) {

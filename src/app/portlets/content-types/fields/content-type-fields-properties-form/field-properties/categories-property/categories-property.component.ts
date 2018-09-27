@@ -51,7 +51,7 @@ export class CategoriesPropertyComponent implements OnInit {
 
     /**
      * Call when the categories global serach changed
-     * @param {any} filter
+     * @param any filter
      * @memberof CategoriesPropertyComponent
      */
     handleFilterChange(filter): void {
@@ -60,7 +60,7 @@ export class CategoriesPropertyComponent implements OnInit {
 
     /**
      * Call when the current page changed
-     * @param {any} event
+     * @param any event
      * @memberof CategoriesPropertyComponent
      */
     handlePageChange(event): void {

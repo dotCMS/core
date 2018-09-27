@@ -12,7 +12,7 @@ export class DotContentletService {
     /**
      * Get the content types from the endpoint
      *
-     * @returns {Observable<StructureTypeView[]>}
+     * @returns Observable<StructureTypeView[]>
      * @memberof ContentletService
      */
     getContentTypes(): Observable<StructureTypeView[]> {
@@ -27,7 +27,7 @@ export class DotContentletService {
     /**
      * Gets all content types excluding the RECENT ones
      *
-     * @returns {Observable<StructureTypeView[]>}
+     * @returns Observable<StructureTypeView[]>
      */
     getAllContentTypes(): Observable<StructureTypeView[]> {
         return this.getContentTypes()
@@ -41,8 +41,8 @@ export class DotContentletService {
     /**
      * Get url by id
      *
-     * @param {string} id
-     * @returns {Observable<string>}
+     * @param string id
+     * @returns Observable<string>
      * @memberof ContentletService
      */
     getUrlById(id: string): Observable<string> {
@@ -61,8 +61,8 @@ export class DotContentletService {
     /**
      * Check is the content types is present in the object
      *
-     * @param {string} id
-     * @returns {Observable<boolean>}
+     * @param string id
+     * @returns Observable<boolean>
      * @memberof ContentletService
      */
     isContentTypeInMenu(id: string): Observable<boolean> {

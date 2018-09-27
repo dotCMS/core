@@ -49,10 +49,10 @@
         "dist-lib/dot-layout-grid/*"
       ],
       "dotcms-js": [
-        "dist/dotcms-js"
+        "dist-lib/dotcms-js"
       ],
       "dotcms-js/*": [
-        "dist/dotcms-js/*"
+        "dist-lib/dotcms-js/*"
       ]
     }
   }

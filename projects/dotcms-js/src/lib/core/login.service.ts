@@ -80,7 +80,7 @@ export class LoginService {
 
     /**
      * Load _auth information.
-     * @returns {Observable<any>}
+     * @returns Observable<any>
      */
     public loadAuth(): Observable<Auth> {
         return this.coreWebService
@@ -103,7 +103,7 @@ export class LoginService {
      * Change password
      * @param password
      * @param token
-     * @returns {Observable<any>}
+     * @returns Observable<any>
      */
     public changePassword(password: string, token: string): Observable<any> {
         const body = JSON.stringify({ password: password, token: token });
@@ -119,7 +119,7 @@ export class LoginService {
      * Get the server information to configure the login component
      * @param language language and country to get the internationalized messages
      * @param i18nKeys array of message key to internationalize
-     * @returns {Observable<any>} Observable with an array of internationalized messages and server configuration info
+     * @returns Observable<any> Observable with an array of internationalized messages and server configuration info
      */
     public getLoginFormInfo(language: string, i18nKeys: Array<string>): Observable<any> {
         this.setLanguage(language);
@@ -135,7 +135,7 @@ export class LoginService {
      * Do the login as request and return an Observable.
      * @param user user to loginas
      * @param password loginin user's password
-     * @returns {Observable<R>}
+     * @returns Observable<R>
      */
     // TODO: password in the url is a no-no, fix asap. Sanchez and Jose have an idea.
     public loginAs(userData: { user: User; password: string }): Observable<any> {
@@ -208,7 +208,7 @@ export class LoginService {
 
     /**
      * Logout "login as" user
-     * @returns {Observable<R>}
+     * @returns Observable<R>
      */
     public logoutAs(): Observable<any> {
         return this.coreWebService
@@ -228,7 +228,7 @@ export class LoginService {
 
     /**
      * Call the logout rest api
-     * @returns {Observable<any>}
+     * @returns Observable<any>
      */
     public logOutUser(): Observable<any> {
         return this.coreWebService

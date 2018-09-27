@@ -20,7 +20,7 @@ export class SiteTreetableService {
     /**
      * Returns the assets under a site/host
      * @param siteName
-     * @returns {Observable<R>}
+     * @returns Observable<R>
      */
     getAssetsUnderSite(siteName: String): Observable<TreeNode[]> {
         return this.siteBrowserService.getTreeableAssetsUnderSite(siteName)
@@ -31,7 +31,7 @@ export class SiteTreetableService {
      * Returns the assets under a folder
      * @param siteName
      * @param uri
-     * @returns {Observable<R>}
+     * @returns Observable<R>
      */
     getAssetsUnderFolder(siteName: String, uri: string): Observable<TreeNode[]> {
         return this.siteBrowserService.getTreeableAssetsUnderFolder(siteName, uri)

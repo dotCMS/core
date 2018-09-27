@@ -128,7 +128,7 @@ export class WebSocketProtocol extends Protocol {
 
     /**
      * Could be -1 if not initzialized yet
-     * @returns {number}
+     * @returns number
      */
     getReadyState(): number {
         if (this.socket == null) {

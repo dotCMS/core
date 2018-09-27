@@ -17,8 +17,8 @@ export class DotWorkflowService {
 
     /**
      * Method to get Workflows
-     * @param {string} id
-     * @returns {Observable<SelectItem[]>}
+     * @param string id
+     * @returns Observable<SelectItem[]>
      * @memberof DotWorkflowService
      */
     get(): Observable<DotWorkflow[]> {
@@ -33,7 +33,7 @@ export class DotWorkflowService {
     /**
      * Get the System default workflow
      *
-     * @returns {Observable<DotWorkflow>}
+     * @returns Observable<DotWorkflow>
      * @memberof DotWorkflowService
      */
     getSystem(): Observable<DotWorkflow> {
@@ -48,8 +48,8 @@ export class DotWorkflowService {
     /**
      * Returns the wokflow or workflow actions for a page asset
      *
-     * @param {string} inode
-     * @returns {Observable<DotWorkflowAction[]>}
+     * @param string inode
+     * @returns Observable<DotWorkflowAction[]>
      * @memberof DotWorkflowService
      */
     getContentWorkflowActions(inode: string): Observable<DotWorkflowAction[]> {
@@ -64,8 +64,8 @@ export class DotWorkflowService {
     /**
      * Updates the workflow actions for a page asset
      *
-     * @param {string} inode
-     * @returns {Observable<any>} // contentlet
+     * @param string inode
+     * @returns Observable<any> // contentlet
      * @memberof DotWorkflowService
      */
     fireWorkflowAction(inode: string, actionId: string): Observable<any> {

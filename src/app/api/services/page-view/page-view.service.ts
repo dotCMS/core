@@ -20,8 +20,8 @@ export class PageViewService {
 
     /**
      * Will do a POST request and save the PageView layout object
-     * @param {PageView} pageView
-     * @returns {Observable<any>}
+     * @param PageView pageView
+     * @returns Observable<any>
      * @memberof PageViewService
      */
     save(pageIdentifier: string, dotLayout: DotLayout): Observable<DotRenderedPage> {

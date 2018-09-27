@@ -126,7 +126,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges {
 
     /**
      * Adds columns to the layout of content type
-     * @param {number} columns
+     * @param number columns
      * @memberof ContentTypeFieldsDropZoneComponent
      */
     addRow(columns: number): void {
@@ -135,7 +135,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges {
 
     /**
      * Emit the saveField event
-     * @param {ContentTypeField} fieldToSave
+     * @param ContentTypeField fieldToSave
      * @memberof ContentTypeFieldsDropZoneComponent
      */
     saveFieldsHandler(fieldToSave: ContentTypeField): void {
@@ -153,7 +153,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges {
 
     /**
      * Get the field to be edited
-     * @param {ContentTypeField} fieldToEdit
+     * @param ContentTypeField fieldToEdit
      * @memberof ContentTypeFieldsDropZoneComponent
      */
     editField(fieldToEdit: ContentTypeField): void {

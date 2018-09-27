@@ -47,7 +47,7 @@ export class FieldRow extends FieldDivider {
      * It will be create two FieldColumn the first one with two fields (id:2 and id:3) and the second one
      * with one field (id:5).
      * Algo the lineDivider attribute will be set to the first field(id:1)
-     * @param {ContentTypeField[]} fields fields to add
+     * @param ContentTypeField[] fields fields to add
      * @memberof FieldRow
      */
     addFields(fields: ContentTypeField[]): void {

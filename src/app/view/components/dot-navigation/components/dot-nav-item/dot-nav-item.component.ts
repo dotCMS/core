@@ -19,8 +19,8 @@ export class DotNavItemComponent {
     /**
      * Handle click on menu section title
      *
-     * @param {MouseEvent} $event
-     * @param {DotMenu} data
+     * @param MouseEvent $event
+     * @param DotMenu data
      * @memberof DotNavItemComponent
      */
     clickHandler($event: MouseEvent, data: DotMenu): void {

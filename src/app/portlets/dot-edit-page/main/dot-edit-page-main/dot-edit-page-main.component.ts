@@ -56,7 +56,7 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
     /**
      * Handle custom events from contentlet editor
      *
-     * @param {CustomEvent} $event
+     * @param CustomEvent $event
      * @memberof DotEditPageMainComponent
      */
     onCustomEvent($event: CustomEvent): void {

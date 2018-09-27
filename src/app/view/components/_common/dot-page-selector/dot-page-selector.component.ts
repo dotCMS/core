@@ -54,7 +54,7 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
     /**
      * Handle option selected
      *
-     * @param {DotPageAsset} item
+     * @param DotPageAsset item
      * @memberof DotPageSelectorComponent
      */
     onSelect(item: DotPageAsset): void {
@@ -65,7 +65,7 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
     /**
      * Get pages results and set it to the autotomplete
      *
-     * @param {string} param
+     * @param string param
      * @memberof DotPageSelectorComponent
      */
     search(param: string): void {
@@ -79,7 +79,7 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
     /**
      * Write a new value to the element
      *
-     * @param {string} idenfier
+     * @param string idenfier
      * @memberof DotPageSelectorComponent
      */
     writeValue(idenfier: string): void {
@@ -96,7 +96,7 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
     /**
      * Set the function to be called when the control receives a change event.
      *
-     * @param {*} fn
+     * @param * fn
      * @memberof DotPageSelectorComponent
      */
     registerOnChange(fn: any): void {

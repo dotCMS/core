@@ -22,8 +22,8 @@ export class FolderService {
 
     /**
      * Load a folder from the remote dotCMS server based on site and path
-     * @param {String} siteName The site name for the uri/folder
-     * @param {String} uri The folder path
+     * @param String siteName The site name for the uri/folder
+     * @param String uri The folder path
      */
     loadFolderByURI(siteName: String, uri: String): Observable<Folder | string> {
         return this.httpClient.get('/api/v1/folder/sitename/' + siteName + '/uri/' + uri)

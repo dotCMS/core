@@ -49,7 +49,7 @@ export class DotMenuComponent {
      * funtion or prevent the default behavior if the item is disable.
      *
      * @param $event
-     * @param {MenuItem} item
+     * @param MenuItem item
      *
      * @memberof DotMenuComponent
      */

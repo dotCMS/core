@@ -86,7 +86,7 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
     /**
      * Handle the click to the locker switch
      *
-     * @param {any} $event
+     * @param any $event
      * @memberof DotEditPageToolbarComponent
      */
     onLockerClick(_$event): void {
@@ -98,7 +98,7 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
     /**
      * Handler locker change event
      *
-     * @param {any} $event
+     * @param any $event
      * @memberof DotEditPageToolbarComponent
      */
     lockPageHandler(_event): void {
@@ -114,7 +114,7 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
     /**
      * Handle state selector change event
      *
-     * @param {any} $event
+     * @param any $event
      * @memberof DotEditPageToolbarComponent
      */
     stateSelectorHandler(pageState: PageMode): void {

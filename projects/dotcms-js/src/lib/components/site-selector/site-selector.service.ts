@@ -19,7 +19,7 @@ export class SiteSelectorService {
     /**
      * Returns a list of sites searcing the hostname
      * @param searchQuery
-     * @returns {Observable<R|T>}
+     * @returns Observable<R|T>
      */
     filterForSites(searchQuery: string): Observable<Site[]> {
         return <Observable<Site[]>>(
@@ -32,7 +32,7 @@ export class SiteSelectorService {
 
     /**
      * Returns all sites
-     * @returns {Observable<R|T>}
+     * @returns Observable<R|T>
      */
     getSites(): Observable<Site[]> {
         return <Observable<Site[]>>this.dotHttpClient.get('/api/v1/site/').pipe(

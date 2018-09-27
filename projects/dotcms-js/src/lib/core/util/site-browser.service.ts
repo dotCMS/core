@@ -27,7 +27,7 @@ export class SiteBrowserService {
     /**
      * Returns the Treeable assets (files, folders) under a host/folder
      * @param siteName dotCMS Site to load assets for
-     * @returns {Observable<R>} Gets the Treeable objects. If a file the Treeable will be file as file extends Treeable
+     * @returns Observable<R> Gets the Treeable objects. If a file the Treeable will be file as file extends Treeable
      */
     getTreeableAssetsUnderSite(siteName: String): Observable<Treeable[] | string> {
         return this.httpClient.get('/api/v1/browsertree/sitename/' + siteName + '/uri//')
@@ -41,7 +41,7 @@ export class SiteBrowserService {
      * Returns the Treeable assets (files, folders) under a host/folder
      * @param siteName dotCMS Site to load assets for
      * @param uri Path to load assets from
-     * @returns {Observable<R>} Gets the Treeable objects. If a file the Treeable will be file as file extends Treeable
+     * @returns Observable<R> Gets the Treeable objects. If a file the Treeable will be file as file extends Treeable
      */
     getTreeableAssetsUnderFolder(siteName: String, uri: String): Observable<Treeable[] | string> {
         return this.httpClient.get('/api/v1/browsertree/sitename/' + siteName + '/uri/' + uri)

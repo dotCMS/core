@@ -149,8 +149,8 @@ export class ListingDataTableComponent implements OnChanges, OnInit {
     /**
      * Column align, return the DataTableColumn's textAlign property if it exists,
      * otherwise return right if the content is number and left if the content's type is not number.
-     * @param {DataTableColumn} col
-     * @returns {string}
+     * @param DataTableColumn col
+     * @returns string
      * @memberof ListingDataTableComponent
      */
     getAlign(col: DataTableColumn): string {

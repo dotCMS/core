@@ -16,9 +16,9 @@ export class CrudService {
     /**
      * Will do a POST request and return the response to the url provide
      * and the data as body of the request.
-     * @param {string} baseUrl
-     * @param {*} data
-     * @returns {Observable<any>}
+     * @param string baseUrl
+     * @param * data
+     * @returns Observable<any>
      * @memberof CrudService
      */
     public postData(baseUrl: string, data: any): Observable<any> {
@@ -34,9 +34,9 @@ export class CrudService {
     /**
      * Will do a PUT request and return the response to the url provide
      * and the data as body of the request.
-     * @param {string} baseUrl
-     * @param {*} data
-     * @returns {Observable<any>}
+     * @param string baseUrl
+     * @param * data
+     * @returns Observable<any>
      * @memberof CrudService
      */
     public putData(baseUrl: string, data: any): Observable<any> {
@@ -52,8 +52,8 @@ export class CrudService {
     /**
      * Get item by id from the data loaded
      *
-     * @param {string} id
-     * @returns {Observable<any>}
+     * @param string id
+     * @returns Observable<any>
      *
      * @memberof CrudService
      */
@@ -69,9 +69,9 @@ export class CrudService {
     /**
      * Delete item by id from the data loaded
      *
-     * @param {string} baseUrl
-     * @param {string} id
-     * @returns {Observable<any>}
+     * @param string baseUrl
+     * @param string id
+     * @returns Observable<any>
      * @memberof CrudService
      */
     delete(baseUrl: string, id: string): Observable<any> {

@@ -34,7 +34,7 @@ export class PushPublishService {
 
     /**
      * Get push publish environments.
-     * @returns {Observable<DotEnvironment[]>}
+     * @returns Observable<DotEnvironment[]>
      * @memberof PushPublishService
      */
     getEnvironments(): Observable<DotEnvironment[]> {
@@ -54,9 +54,9 @@ export class PushPublishService {
 
     /**
      * Push publish asset to specified environment.
-     * @param {string} contentTypeId
-     * @param {*} formValue
-     * @returns {Observable<AjaxActionResponseView>}
+     * @param string contentTypeId
+     * @param * formValue
+     * @returns Observable<AjaxActionResponseView>
      * @memberof PushPublishService
      */
     pushPublishContent(

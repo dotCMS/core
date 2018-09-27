@@ -150,7 +150,7 @@ export class ContentTypesEditComponent implements OnInit {
     /**
      * Check if we need to update or create a content type
      *
-     * @param {*} value;
+     * @param * value;
      * @memberof ContentTypesEditComponent
      */
     handleFormSubmit(value: any): void {
@@ -161,7 +161,7 @@ export class ContentTypesEditComponent implements OnInit {
     /**
      * Check if the component is in edit mode
      *
-     * @returns {boolean}
+     * @returns boolean
      * @memberof ContentTypesEditComponent
      */
     isEditMode(): boolean {

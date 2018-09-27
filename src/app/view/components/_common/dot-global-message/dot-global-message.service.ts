@@ -24,7 +24,7 @@ export class DotGlobalMessageService {
 
     /**
      * Display text messages.
-     * @param {string} message
+     * @param string message
      */
     display(message?: string): void {
         this.dotEventsService.notify('dot-global-message', {
@@ -35,7 +35,7 @@ export class DotGlobalMessageService {
 
     /**
      * Display text messages with a loading indicator.
-     * @param {string} message
+     * @param string message
      */
     loading(message?: string): void {
         this.dotEventsService.notify('dot-global-message', {
@@ -46,7 +46,7 @@ export class DotGlobalMessageService {
 
     /**
      * Display text messages with error configuration.
-     * @param {string} message
+     * @param string message
      */
     error(message?: string): void {
         // TODO: Define the behaior of error messages.

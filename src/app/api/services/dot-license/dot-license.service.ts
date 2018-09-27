@@ -20,7 +20,7 @@ export class DotLicenseService {
     /**
      * Gets if current user has an enterprise license
      *
-     * @returns {Observable<boolean>}
+     * @returns Observable<boolean>
      * @memberof DotLicenseService
      */
     isEnterprise(): Observable<boolean> {

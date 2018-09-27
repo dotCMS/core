@@ -28,8 +28,8 @@ export class TestHotkeysMock {
     /**
      * Go through hotkeys items and push hotkey into hotKeyCombo if included in combo param
      * Return one hotkeyCombo or an array of hotkeyCombo
-     * @param {string[]} combo
-     * @returns {(Hotkey | Hotkey[])}
+     * @param string[] combo
+     * @returns (Hotkey | Hotkey[])
      * @memberof TestHotkeysMock
      */
     get(combo: string[]): Hotkey | Hotkey[] {
@@ -48,8 +48,8 @@ export class TestHotkeysMock {
     /**
      * Check to see if the method was called
      * Example: spyOn(testHotKeysMock, 'remove');
-     * @param {(Hotkey | Hotkey[])} [hotkey]
-     * @returns {(Hotkey | Hotkey[])}
+     * @param (Hotkey | Hotkey[]) [hotkey]
+     * @returns (Hotkey | Hotkey[])
      * @memberof TestHotkeysMock
      */
     remove(_hotkey?: Hotkey | Hotkey[]): Hotkey | Hotkey[] {
@@ -59,8 +59,8 @@ export class TestHotkeysMock {
     /**
      * Call this method with a hotkey combo to test the key event was called
      * Example: testHotKeysMock.callback(['enter']);
-     * @param {string[]} combo
-     * @returns {(any|void)}
+     * @param string[] combo
+     * @returns (any|void)
      * @memberof TestHotkeysMock
      */
     callback(combo: string[]): any | void {

@@ -12,9 +12,9 @@ export class DotEditPageService {
     /**
      * Save a page's content
      *
-     * @param {string} pageId
-     * @param {DotPageContainer[]} content
-     * @returns {Observable<string>}
+     * @param string pageId
+     * @param DotPageContainer[] content
+     * @returns Observable<string>
      * @memberof DotContainerContentletService
      */
     save(pageId: string, content: DotPageContainer[]): Observable<string> {

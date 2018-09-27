@@ -110,8 +110,8 @@ export class LoginAsComponent implements OnInit {
 
     /**
      * Call to load a new page of user.
-     * @param {string} [filter='']
-     * @param {number} [page=1]
+     * @param string [filter='']
+     * @param number [page=1]
      * @memberof SiteSelectorComponent
      */
     getUsersList(filter = '', offset = 0): void {
@@ -124,7 +124,7 @@ export class LoginAsComponent implements OnInit {
 
     /**
      * Call when the user global serach changed
-     * @param {any} filter
+     * @param any filter
      * @memberof SiteSelectorComponent
      */
     handleFilterChange(filter): void {
@@ -133,7 +133,7 @@ export class LoginAsComponent implements OnInit {
 
     /**
      * Call when the current page changed
-     * @param {any} event
+     * @param any event
      * @memberof SiteSelectorComponent
      */
     handlePageChange(event): void {

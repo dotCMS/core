@@ -17,8 +17,8 @@ export class FieldUtil {
     private static NG_ID__PREFIX = 'ng-';
     /**
      * Verify if the Field already exist
-     * @param {ContentTypeField} field
-     * @returns {Boolean}
+     * @param ContentTypeField field
+     * @returns Boolean
      * @memberof ContentTypeFieldsDropZoneComponent
      */
     static isNewField(field: ContentTypeField): Boolean {
@@ -31,8 +31,8 @@ export class FieldUtil {
 
     /**
      * Verify if the Field is a row
-     * @param {ContentTypeField} field
-     * @returns {Boolean}
+     * @param ContentTypeField field
+     * @returns Boolean
      * @memberof ContentTypeFieldsDropZoneComponent
      */
     static isRow(field: ContentTypeField): boolean {
@@ -41,8 +41,8 @@ export class FieldUtil {
 
     /**
      * Verify if the Field is a column
-     * @param {ContentTypeField} field
-     * @returns {Boolean}
+     * @param ContentTypeField field
+     * @returns Boolean
      * @memberof ContentTypeFieldsDropZoneComponent
      */
     static isColumn(field: ContentTypeField): boolean {

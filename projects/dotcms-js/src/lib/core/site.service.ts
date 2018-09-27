@@ -10,7 +10,6 @@ import { LoggerService } from './logger.service';
 /**
  * Provide methods and data to hable the sites.
  * @export
- * @class SiteService
  */
 @Injectable()
 export class SiteService {
@@ -56,8 +55,8 @@ export class SiteService {
 
     /**
      * Manage the response when an event happen
-     * @param {void} eventTypeWrapper
-     * @returns {*}
+     * @param void eventTypeWrapper
+     * @returns *
      * @memberof SiteService
      */
     eventResponse(eventTypeWrapper): void {
@@ -77,7 +76,7 @@ export class SiteService {
 
     /**
      * Refresh the sites list if a event happen
-     * @param {any} eventTypeWrapper
+     * @param any eventTypeWrapper
      * @memberof SiteService
      */
     siteEventsHandler(eventTypeWrapper): void {
@@ -87,7 +86,6 @@ export class SiteService {
     /**
      * Observable trigger when an site event happens
      * @readonly
-     * @type {Observable<Site>}
      * @memberof SiteService
      */
     get refreshSites$(): Observable<Site> {
@@ -97,7 +95,6 @@ export class SiteService {
     /**
      * Observable tigger when the current site is changed
      * @readonly
-     * @type {Observable<Site>}
      * @memberof SiteService
      */
     get switchSite$(): Observable<Site> {
@@ -107,7 +104,6 @@ export class SiteService {
     /**
      * Return the current site for the login user.
      * @readonly
-     * @type {Site}
      * @memberof SiteService
      */
     get currentSite(): Site {
@@ -117,7 +113,7 @@ export class SiteService {
     /**
      * Switch To Default Site in the BE and returns it.
      *
-     * @returns {Observable<Site>}
+     * @returns Observable<Site>
      * @memberof SiteService
      */
     switchToDefaultSite(): Observable<Site> {
@@ -132,8 +128,8 @@ export class SiteService {
     /**
      * Get a site by the id
      *
-     * @param {string} id
-     * @returns {Observable<Site>}
+     * @param string id
+     * @returns Observable<Site>
      * @memberof SiteService
      */
     getSiteById(id: string): Observable<Site> {
@@ -148,7 +144,7 @@ export class SiteService {
 
     /**
      * Change the current site
-     * @param {Site} site
+     * @param Site site
      * @memberof SiteService
      */
     switchSite(site: Site): void {

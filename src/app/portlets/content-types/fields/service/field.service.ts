@@ -25,9 +25,9 @@ export class FieldService {
 
     /**
      * Save fields.
-     * @param {string} contentTypeId Content Type'id
-     * @param {ContentTypeField[]} fields fields to add
-     * @returns {Observable<any>}
+     * @param string contentTypeId Content Type'id
+     * @param ContentTypeField[] fields fields to add
+     * @returns Observable<any>
      * @memberof FieldService
      */
     saveFields(contentTypeId: string, fields: ContentTypeField[]): Observable<any> {
