@@ -1,53 +1,59 @@
 {
-    "compileOnSave": false,
-    "compilerOptions": {
-        "baseUrl": "./",
-        "outDir": "./dist/out-tsc",
-        "sourceMap": true,
-        "declaration": false,
-        "module": "es2015",
-        "moduleResolution": "node",
-        "emitDecoratorMetadata": true,
-        "experimentalDecorators": true,
-        "noUnusedLocals": true,
-        "noUnusedParameters": true,
-        "target": "es5",
-        "typeRoots": [
-            "node_modules/@types"
-        ],
-        "lib": [
-            "es2017",
-            "dom",
-            "dom.iterable"
-        ],
-        "paths": {
-            "dot-layout-grid": [
-                "dist-lib/dot-layout-grid"
-            ],
-            "dot-layout-grid/*": [
-                "dist-lib/dot-layout-grid/*"
-            ],
-            "@services/*": [
-                "src/app/api/services/*"
-            ],
-            "@components/*": [
-                "src/app/view/components/*"
-            ],
-            "@directives/*": [
-                "src/app/view/directives/*"
-            ],
-            "@pipes/*": [
-                "src/app/view/pipes/*"
-            ],
-            "@shared/*": [
-                "src/app/shared/*"
-            ],
-            "@models/*": [
-                "src/app/shared/models/*"
-            ],
-            "@portlets/*": [
-                "src/app/portlets/*"
-            ],
-        }
+  "compileOnSave": false,
+  "compilerOptions": {
+    "baseUrl": "./",
+    "outDir": "./dist/out-tsc",
+    "sourceMap": true,
+    "declaration": false,
+    "module": "es2015",
+    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "target": "es5",
+    "typeRoots": [
+      "node_modules/@types"
+    ],
+    "lib": [
+      "es2017",
+      "dom",
+      "dom.iterable"
+    ],
+    "paths": {
+      "@services/*": [
+        "src/app/api/services/*"
+      ],
+      "@components/*": [
+        "src/app/view/components/*"
+      ],
+      "@directives/*": [
+        "src/app/view/directives/*"
+      ],
+      "@pipes/*": [
+        "src/app/view/pipes/*"
+      ],
+      "@shared/*": [
+        "src/app/shared/*"
+      ],
+      "@models/*": [
+        "src/app/shared/models/*"
+      ],
+      "@portlets/*": [
+        "src/app/portlets/*"
+      ],
+      "dot-layout-grid": [
+        "dist-lib/dot-layout-grid"
+      ],
+      "dot-layout-grid/*": [
+        "dist-lib/dot-layout-grid/*"
+      ],
+      "dotcms-js": [
+        "dist/dotcms-js"
+      ],
+      "dotcms-js/*": [
+        "dist/dotcms-js/*"
+      ]
     }
+  }
 }

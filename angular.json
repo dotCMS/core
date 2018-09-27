@@ -175,6 +175,46 @@
           }
         }
       }
+    },
+    "dotcms-js": {
+      "root": "projects/dotcms-js",
+      "sourceRoot": "projects/dotcms-js/src",
+      "projectType": "library",
+      "prefix": "dot",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-ng-packagr:build",
+          "options": {
+            "tsConfig": "projects/dotcms-js/tsconfig.lib.json",
+            "project": "projects/dotcms-js/ng-package.json"
+          },
+          "configurations": {
+            "production": {
+              "project": "projects/dotcms-js/ng-package.prod.json"
+            }
+          }
+        },
+        "test": {
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": {
+            "main": "projects/dotcms-js/src/test.ts",
+            "tsConfig": "projects/dotcms-js/tsconfig.spec.json",
+            "karmaConfig": "projects/dotcms-js/karma.conf.js"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "projects/dotcms-js/tsconfig.lib.json",
+              "projects/dotcms-js/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**"
+            ]
+          }
+        }
+      }
     }
   },
   "defaultProject": "dotcms-ui",
