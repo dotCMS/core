@@ -172,7 +172,7 @@ public class CMSFilter implements Filter {
 
         if (iAm == IAm.PAGE) {
 
-            final StringWriter forward = new StringWriter().append("/servlets/VelocityServlet");
+            final StringWriter forward = new StringWriter().append("/servlets/PageRenderModeServlet");
 
             if (UtilMethods.isSet(queryString)) {
                 if (!queryString.contains(WebKeys.HTMLPAGE_LANGUAGE)) {

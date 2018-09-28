@@ -1,6 +1,7 @@
-package com.dotcms.rendering.velocity.servlet;
+package com.dotcms.rendering.velocity.rendermode;
 
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.rendering.RenderModeHandler;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.visitor.domain.Visitor;
 
@@ -40,7 +41,7 @@ import org.apache.velocity.context.Context;
 
 import com.liferay.portal.model.User;
 
-public class VelocityLiveMode extends VelocityModeHandler {
+public class VelocityLiveMode extends RenderModeHandler {
 
 
 

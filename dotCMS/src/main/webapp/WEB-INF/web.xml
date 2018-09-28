@@ -204,8 +204,9 @@
 	</servlet>
 	
 	<servlet>
-		<servlet-name>VelocityServlet</servlet-name>
-		<servlet-class>com.dotcms.rendering.velocity.servlet.VelocityServlet</servlet-class>
+		<servlet-name>PageRenderModeServlet</servlet-name>
+		<servlet-class>com.dotcms.rendering.PageRenderModeServlet</servlet-class>
+		<load-on-startup>18</load-on-startup>
 	</servlet>
 	<servlet>
 		<servlet-name>SpeedyAssetServlet</servlet-name>
@@ -469,8 +470,8 @@
     	<url-pattern>/servlets/ajax_file_upload</url-pattern>
     </servlet-mapping>
 	<servlet-mapping>
-		<servlet-name>VelocityServlet</servlet-name>
-		<url-pattern>/servlets/VelocityServlet</url-pattern>
+		<servlet-name>PageRenderModeServlet</servlet-name>
+		<url-pattern>/servlets/PageRenderModeServlet</url-pattern>
 	</servlet-mapping>
 	<servlet-mapping>
 		<servlet-name>SpeedyAssetServlet</servlet-name>

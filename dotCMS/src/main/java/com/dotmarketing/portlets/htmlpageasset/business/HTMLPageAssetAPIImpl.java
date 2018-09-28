@@ -12,7 +12,7 @@ import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.BaseResponse;
-import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
+import com.dotcms.rendering.RenderModeHandler;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -812,7 +812,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
             requestProxy.getSession().setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
             requestProxy.setAttribute(com.liferay.portal.util.WebKeys.USER, user);
-            return VelocityModeHandler.modeHandler(mode, requestProxy, responseProxy).eval();
+            return RenderModeHandler.modeHandler(mode, requestProxy, responseProxy).eval();
 
         } catch (Exception e1) {
             Logger.error(this, e1.getMessage(), e1);

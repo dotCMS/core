@@ -1,4 +1,4 @@
-package com.dotcms.rendering.velocity.servlet;
+package com.dotcms.rendering.velocity.rendermode;
 
 import java.io.FilterWriter;
 import java.io.IOException;
