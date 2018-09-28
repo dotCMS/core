@@ -1,5 +1,43 @@
 package com.dotcms.rest.api.v1.workflow;
 
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.ADMIN_DEFAULT_ID;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.ADMIN_DEFAULT_MAIL;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.ADMIN_NAME;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.CURRENT_STEP;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.DM_WORKFLOW;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.PUBLISH;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SAVE;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SAVE_AS_DRAFT;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SAVE_PUBLISH;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SEND_FOR_REVIEW;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SEND_TO_LEGAL;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SYSTEM_WORKFLOW;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.actionName;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.addSteps;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.collectSampleContent;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.createScheme;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.createWorkflowActions;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.doCleanUp;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.findSchemes;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.findSteps;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.getAllWorkflowActions;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.schemeName;
+import static com.dotmarketing.business.Role.ADMINISTRATOR;
+import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.ACTION_ID;
+import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.ACTION_ORDER;
+import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.STEP_ID;
+import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.getInstance;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.DataTypes;
@@ -18,7 +56,14 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotcms.workflow.form.*;
+import com.dotcms.workflow.form.BulkActionForm;
+import com.dotcms.workflow.form.FireActionForm;
+import com.dotcms.workflow.form.FireBulkActionsForm;
+import com.dotcms.workflow.form.WorkflowActionForm;
+import com.dotcms.workflow.form.WorkflowActionStepForm;
+import com.dotcms.workflow.form.WorkflowSchemeForm;
+import com.dotcms.workflow.form.WorkflowSchemeImportObjectForm;
+import com.dotcms.workflow.form.WorkflowStepUpdateForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
@@ -46,24 +91,26 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import javax.servlet.http.HttpServletRequest;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.*;
-import static com.dotmarketing.business.Role.ADMINISTRATOR;
-import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.*;
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import javax.servlet.http.HttpServletRequest;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest {
 
@@ -1328,6 +1375,70 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
     }
 
 
+    @Test
+    public void Test_Fire_Save_Instance_Then_Fire_Update_Instance() throws Exception {
+        final String saveAndPublishActionId = "b9d89c80-3d88-4311-8365-187323c96436";
+        ContentType contentType = null;
+        try {
+            // We create a contentType that is associated with the two workflows that come out of the box.
+            contentType = createSampleContentType();
+            Contentlet brandNewContentlet = null;
+             try {
+                 //Save Action
+                 final FireActionForm.Builder builder1 = new FireActionForm.Builder();
+                 final Map <String,Object>contentletFormData = new HashMap<>();
+                 contentletFormData.put("stInode", contentType.inode());
+                 contentletFormData.put("requiredField", "value-1");
+                 builder1.contentletFormData(contentletFormData);
+
+                final FireActionForm fireActionForm1 = new FireActionForm(builder1);
+                final HttpServletRequest request1 = mock(HttpServletRequest.class);
+                final Response response1 = workflowResource
+                        .fireAction(request1, null, saveAndPublishActionId, fireActionForm1);
+
+                final int statusCode1 = response1.getStatus();
+                assertEquals(Status.OK.getStatusCode(), statusCode1);
+                final ResponseEntityView fireEntityView1 = ResponseEntityView.class
+                        .cast(response1.getEntity());
+                brandNewContentlet = Contentlet.class.cast(fireEntityView1.getEntity());
+                assertNotNull(brandNewContentlet);
+                assertEquals("value-1", brandNewContentlet.getMap().get("requiredField"));
+
+                 //Update Action
+                final FireActionForm.Builder builder2 = new FireActionForm.Builder();
+                final Map <String,Object>contentletFormData2 = new HashMap<>();
+                contentletFormData2.put("stInode", contentType.inode());
+                contentletFormData2.put("requiredField", "value-2");
+                builder2.contentletFormData(contentletFormData2);
+
+                final FireActionForm fireActionForm2 = new FireActionForm(builder2);
+                final HttpServletRequest request2 = mock(HttpServletRequest.class);
+                final Response response2 = workflowResource
+                     .fireAction(request2, brandNewContentlet.getInode(), saveAndPublishActionId, fireActionForm2);
+
+                final int statusCode2 = response2.getStatus();
+                assertEquals(Status.OK.getStatusCode(), statusCode2);
+                final ResponseEntityView fireEntityView2 = ResponseEntityView.class
+                         .cast(response2.getEntity());
+                final Contentlet updatedContentlet = Contentlet.class.cast(fireEntityView2.getEntity());
+                assertNotNull(updatedContentlet);
+
+                assertEquals(brandNewContentlet.getIdentifier(),updatedContentlet.getIdentifier());
+                assertEquals("value-2", updatedContentlet.getMap().get("requiredField"));
+
+             }finally {
+                if(null != brandNewContentlet){
+                     contentletAPI.archive(brandNewContentlet, APILocator.systemUser(), false);
+                     contentletAPI.delete(brandNewContentlet, APILocator.systemUser(), false);
+                }
+            }
+
+        }finally {
+            if(null != contentType){
+              contentTypeAPI.delete(contentType);
+            }
+        }
+    }
 
 
 }

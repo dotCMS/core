@@ -31,6 +31,7 @@ public interface FieldBuilder {
 	FieldBuilder indexed(boolean val);
     FieldBuilder listed(boolean listed);
     FieldBuilder values(String values);
+    FieldBuilder relationType(String relationType);
     
 	public static FieldBuilder builder(Field field) throws DotStateException{
 		return builder(field.type()).from(field);

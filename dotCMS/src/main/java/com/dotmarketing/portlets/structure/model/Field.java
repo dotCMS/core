@@ -47,6 +47,7 @@ public class Field extends Inode implements  FieldIf
 		TAB_DIVIDER("tab_divider"),
     	CATEGORIES_TAB("categories_tab"),
     	PERMISSIONS_TAB("permissions_tab"),
+	    RELATIONSHIP("relationship"),
     	RELATIONSHIPS_TAB("relationships_tab"),
     	HIDDEN("hidden"),
     	BINARY("binary"), // http://jira.dotmarketing.net/browse/DOTCMS-1073

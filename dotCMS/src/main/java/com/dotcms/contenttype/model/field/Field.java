@@ -51,6 +51,7 @@ import org.immutables.value.Value.Derived;
 	@Type(value = MultiSelectField.class),
 	@Type(value = PermissionTabField.class),
 	@Type(value = RadioField.class),
+    @Type(value = RelationshipField.class),
 	@Type(value = RelationshipsTabField.class),
 	@Type(value = SelectField.class),
 	@Type(value = TabDividerField.class),

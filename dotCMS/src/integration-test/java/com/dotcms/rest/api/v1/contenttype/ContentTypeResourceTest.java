@@ -403,7 +403,7 @@ public class ContentTypeResourceTest {
 	}
 
 	@Test
-	public void Get_Base_Types_For_Admin_Expect_A_Match() throws Exception {
+	public void getBaseTypes_asAdmin() throws Exception {
 
 		final ContentTypeFactory contentTypeFactory = FactoryLocator.getContentTypeFactory();
 		final Set <String> allContentTypeNames = contentTypeFactory.findAll().stream().map(ContentType::name).collect(Collectors.toSet());
@@ -437,94 +437,43 @@ public class ContentTypeResourceTest {
 				.cast(response.getEntity());
 		final List<BaseContentTypesView> types = List.class.cast(responseEntityView.getEntity());
 
-		final Set<String> returnedContentTypeNames = new HashSet<>();
-
-		types.forEach(typesView -> {
-			 for (ContentTypeView view : typesView.getTypes()){
-                returnedContentTypeNames.add(view.getName());
-			 }
-		});
-
-		assertEquals(allContentTypeNames,returnedContentTypeNames);
+        assertEquals(BaseContentType.values().length-1,types.size());
 	}
 
 
 	@Test
-	public void Get_Base_Types_Permissions_Based() throws Exception {
+	public void getBaseTypes_asLimitedUser() throws Exception {
 
-		final Role publisherRole = APILocator.getRoleAPI()
-				.findRoleByName("Publisher / Legal", null);
+		final HttpServletRequest request = mock(HttpServletRequest.class);
+		final HttpSession session = mock(HttpSession.class);
 
-		ContentType contentTypeVisibleByPublisher = null;
-		ContentType contentTypeVisibleByDefault = null;
+		when(session.getAttribute(WebKeys.CTX_PATH)).thenReturn("/"); //prevents a NPE
+		when(request.getSession()).thenReturn(session);
 
-		final String publisherPrefix = "ctVisibleByPublisher";
-		final String defaultPrefix = "ctVisibleByDefaultUser";
+		final User chrisPublisher = APILocator.getUserAPI().loadUserById("dotcms.org.2795");
+		final WebResource webResource = mock(WebResource.class);
+		final InitDataObject dataObject = mock(InitDataObject.class);
+		when(dataObject.getUser()).thenReturn(chrisPublisher);
 
-		final String newContentTypeVisibleByPublisherName = publisherPrefix + System.currentTimeMillis();
-		final String newContentTypeVisibleByDEfaultName = defaultPrefix + System.currentTimeMillis();
+		when(webResource
+				.init(anyString(), anyBoolean(), any(HttpServletRequest.class), anyBoolean(),
+						anyString())).thenReturn(dataObject);
 
-		try {
+		final PaginationUtil paginationUtil = mock(PaginationUtil.class);
+		final PermissionAPI permissionAPI = mock(PermissionAPI.class);
 
-			contentTypeVisibleByPublisher = createContentTypeAndAssignPermissions(newContentTypeVisibleByPublisherName,
-					BaseContentType.CONTENT, PermissionAPI.PERMISSION_READ, publisherRole.getId());
+		final ContentTypeResource resource = new ContentTypeResource
+				(new ContentTypeHelper(webResource, APILocator.getStructureAPI(),
+						ContentTypeUtil.getInstance()), webResource, paginationUtil,
+						WorkflowHelper.getInstance(), permissionAPI);
+		final Response response = resource.getRecentBaseTypes(request);
+		assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+		final ResponseEntityView responseEntityView = ResponseEntityView.class
+				.cast(response.getEntity());
+		final List<BaseContentTypesView> types = List.class
+				.cast(responseEntityView.getEntity());
+		assertEquals(BaseContentType.values().length-1,types.size());
 
-			final Role anyRole = APILocator.getRoleAPI().loadRoleByKey("dotcms.org.default");
-
-			contentTypeVisibleByDefault = createContentTypeAndAssignPermissions(newContentTypeVisibleByDEfaultName,
-					BaseContentType.CONTENT, PermissionAPI.PERMISSION_READ , anyRole.getId());
-
-			final HttpServletRequest request = mock(HttpServletRequest.class);
-			final HttpSession session = mock(HttpSession.class);
-
-			when(session.getAttribute(WebKeys.CTX_PATH)).thenReturn("/"); //prevents a NPE
-			when(request.getSession()).thenReturn(session);
-
-
-			final User chrisPublisher = APILocator.getUserAPI().loadUserById("dotcms.org.2795");
-			final WebResource webResource = mock(WebResource.class);
-			final InitDataObject dataObject = mock(InitDataObject.class);
-			when(dataObject.getUser()).thenReturn(chrisPublisher);
-
-			when(webResource
-					.init(anyString(), anyBoolean(), any(HttpServletRequest.class), anyBoolean(),
-							anyString())).thenReturn(dataObject);
-
-			final PaginationUtil paginationUtil = mock(PaginationUtil.class);
-			final PermissionAPI permissionAPI = mock(PermissionAPI.class);
-
-			final ContentTypeResource resource = new ContentTypeResource
-					(new ContentTypeHelper(webResource, APILocator.getStructureAPI(),
-							ContentTypeUtil.getInstance()), webResource, paginationUtil,
-							WorkflowHelper.getInstance(), permissionAPI);
-			final Response response = resource.getRecentBaseTypes(request);
-			assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-			final ResponseEntityView responseEntityView = ResponseEntityView.class
-					.cast(response.getEntity());
-			final List<BaseContentTypesView> types = List.class
-					.cast(responseEntityView.getEntity());
-
-			final Set<String> contentTypes = new HashSet<>();
-			types.forEach(typesView -> {
-				for (final ContentTypeView view : typesView.getTypes()){
-                   contentTypes.add(view.getName());
-				}
-			});
-
-			assertTrue("Must return the CT assigned to publisher", contentTypes.stream().anyMatch(s -> s.startsWith(publisherPrefix)));
-
-			assertFalse("Must NOT return the CT assigned to default-user", contentTypes.stream().anyMatch(s -> s.startsWith(defaultPrefix)));
-
-		} finally {
-
-			if (contentTypeVisibleByPublisher != null) {
-				APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentTypeVisibleByPublisher);
-			}
-
-			if (contentTypeVisibleByDefault != null) {
-				APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentTypeVisibleByDefault);
-			}
-		}
 	}
 
 	private static final String SELECTED_STRUCTURE_KEY = ContentTypeResource.SELECTED_STRUCTURE_KEY;

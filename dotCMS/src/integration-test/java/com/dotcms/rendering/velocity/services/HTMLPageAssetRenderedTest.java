@@ -20,9 +20,11 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.PublishFactory;
+import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -37,7 +39,6 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.AfterClass;
@@ -527,6 +528,76 @@ public class HTMLPageAssetRenderedTest {
             Assert.assertTrue(html, html.contains("this has been changed"));
         }finally {
             APILocator.getContentTypeAPI(systemUser).delete(contentType);
+        }
+    }
+
+    /**
+     * This test is for when you archived a container that is being used on page,
+     * the page needs to be resolved without issues. And when you unarchived and
+     * publish the container, the page needs to show the content related to the container.
+     *
+     */
+    @Test
+    public void containerArchived_PageShouldResolve() throws Exception {
+
+        final Container container = APILocator.getContainerAPI()
+                .getWorkingContainerById(containerId, systemUser, false);
+
+        try {
+            final String pageName = "testPageContainer-" + System.currentTimeMillis();
+            final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder, template)
+                    .languageId(1)
+                    .pageURL(pageName)
+                    .title(pageName)
+                    .nextPersisted();
+            contentletAPI.publish(pageEnglishVersion, systemUser, false);
+
+            createMultiTree(pageEnglishVersion.getIdentifier());
+
+            HttpServletRequest mockRequest = new MockSessionRequest(
+                    new MockAttributeRequest(new MockHttpRequest("localhost", "/").request())
+                            .request())
+                    .request();
+            mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
+            final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+            String html = APILocator.getHTMLPageAssetRenderedAPI()
+                    .getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(),
+                            PageMode.LIVE);
+            Assert.assertTrue(html, html.contains("content2content1"));
+
+            WebAssetFactory.unLockAsset(container);
+            WebAssetFactory.archiveAsset(container, systemUser);
+            CacheLocator.getVeloctyResourceCache().clearCache();
+
+            mockRequest = new MockSessionRequest(
+                    new MockAttributeRequest(new MockHttpRequest("localhost", "/").request())
+                            .request())
+                    .request();
+            mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
+            html = APILocator.getHTMLPageAssetRenderedAPI()
+                    .getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(),
+                            PageMode.LIVE);
+            Assert.assertTrue(html, html.isEmpty());
+
+            WebAssetFactory.unArchiveAsset(container);
+            WebAssetFactory.publishAsset(container, systemUser);
+            CacheLocator.getVeloctyResourceCache().clearCache();
+
+            mockRequest = new MockSessionRequest(
+                    new MockAttributeRequest(new MockHttpRequest("localhost", "/").request())
+                            .request())
+                    .request();
+            mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
+            html = APILocator.getHTMLPageAssetRenderedAPI()
+                    .getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(),
+                            PageMode.LIVE);
+            Assert.assertTrue(html, html.contains("content2content1"));
+        }finally {
+            WebAssetFactory.unArchiveAsset(container);
+            WebAssetFactory.publishAsset(container, systemUser);
         }
     }
 
