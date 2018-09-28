@@ -1,6 +1,5 @@
-package com.dotcms.rendering.velocity.rendermode;
+package com.dotcms.rendering.velocity.servlet;
 
-import com.dotcms.rendering.RenderModeHandler;
 import com.dotcms.rendering.velocity.services.PageContextBuilder;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
@@ -30,7 +29,7 @@ import org.apache.velocity.context.Context;
 
 import com.liferay.portal.model.User;
 
-public class VelocityEditMode extends RenderModeHandler {
+public class VelocityEditMode extends VelocityModeHandler {
 
     protected final HttpServletRequest request;
     protected final HttpServletResponse response;

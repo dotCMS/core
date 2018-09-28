@@ -5,7 +5,7 @@ import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.rendering.velocity.directive.RenderParams;
 import com.dotcms.rendering.velocity.services.PageContextBuilder;
 import com.dotcms.enterprise.license.LicenseManager;
-import com.dotcms.rendering.RenderModeHandler;
+import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
@@ -113,21 +113,14 @@ public class HTMLPageAssetRenderedBuilder {
             final Collection<ContainerRendered> containers = this.containerRenderedBuilder.getContainersRendered(template,
                     velocityContext, mode);
             final boolean canCreateTemplates = layoutAPI.doesUserHaveAccessToPortlet("templates", user);
-            try {
-                final String pageHTML = this.getPageHTML();
-    
-                final boolean canEditTemplate = this.permissionAPI.doesUserHavePermission(template,
-                        PermissionLevel.EDIT.getType(), user);
-    
-                return new HTMLPageAssetRendered(site, template, containers, htmlPageAssetInfo, layout, pageHTML,
-                        canCreateTemplates, canEditTemplate, this.getViewAsStatus(mode)
-                );
-            }
-            catch(Exception e) {
-                Logger.error(this.getClass(), e.getMessage(),e);
-            }
+            final String pageHTML = this.getPageHTML();
+            final boolean canEditTemplate = this.permissionAPI.doesUserHavePermission(template,
+                    PermissionLevel.EDIT.getType(), user);
+
+            return new HTMLPageAssetRendered(site, template, containers, htmlPageAssetInfo, layout, pageHTML,
+                    canCreateTemplates, canEditTemplate, this.getViewAsStatus(mode)
+            );
         }
-        return null;
     }
 
     @CloseDB
@@ -138,8 +131,8 @@ public class HTMLPageAssetRenderedBuilder {
         if(mode.isAdmin ) {
             APILocator.getPermissionAPI().checkPermission(htmlPageAsset, PermissionLevel.READ, user);
         }
-        String x = RenderModeHandler.modeHandler(mode, request, response, htmlPageAsset.getURI(), site).eval();
-        return x;
+
+        return VelocityModeHandler.modeHandler(mode, request, response, htmlPageAsset.getURI(), site).eval();
     }
 
     private Template getTemplate(final PageMode mode) throws DotDataException {

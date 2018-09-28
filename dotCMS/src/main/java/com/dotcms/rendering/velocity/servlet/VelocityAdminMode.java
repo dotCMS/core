@@ -1,4 +1,4 @@
-package com.dotcms.rendering.velocity.rendermode;
+package com.dotcms.rendering.velocity.servlet;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -9,7 +9,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 /**
- * {@link RenderModeHandler} to render a page into {@link com.dotmarketing.util.PageMode#ADMIN_MODE}
+ * {@link VelocityModeHandler} to render a page into {@link com.dotmarketing.util.PageMode#ADMIN_MODE}
  */
 public class VelocityAdminMode extends VelocityLiveMode {
 

@@ -192,8 +192,7 @@ public class PageResource {
             request.getSession().setAttribute(WebKeys.CURRENT_HOST, host);
 
             res = responseBuilder.build();
-            
-        } catch (Exception e) {
+        } catch (HTMLPageAssetNotFoundException e) {
             final String errorMsg = String.format("HTMLPageAssetNotFoundException on PageResource.render, parameters:  %s, %s %s: ",
                     request, uri, modeParam);
             Logger.error(this, errorMsg, e);

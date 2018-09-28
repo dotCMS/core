@@ -1,6 +1,5 @@
-package com.dotcms.rendering.velocity.rendermode;
+package com.dotcms.rendering.velocity.servlet;
 
-import com.dotcms.rendering.RenderModeHandler;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectWriter;
 import com.dotmarketing.beans.Host;
@@ -21,10 +20,10 @@ import java.io.OutputStream;
 import java.util.Map;
 
 /**
- * {@link RenderModeHandler} to render a page into {@link com.dotmarketing.util.PageMode#NAVIGATE_EDIT_MODE}, this
+ * {@link VelocityModeHandler} to render a page into {@link com.dotmarketing.util.PageMode#NAVIGATE_EDIT_MODE}, this
  * is the default mode when in HttpSession is set EDIT_MODE but not any mode is set into HttpRequest
  */
-public class VelocityNavigateEditMode  extends RenderModeHandler {
+public class VelocityNavigateEditMode  extends VelocityModeHandler {
 
     protected final HttpServletRequest request;
     protected final HttpServletResponse response;
@@ -61,7 +60,7 @@ public class VelocityNavigateEditMode  extends RenderModeHandler {
     }
 
     @Override
-    public void serve() throws DotDataException, IOException, DotSecurityException {
+    void serve() throws DotDataException, IOException, DotSecurityException {
         serve(response.getOutputStream());
     }
 
