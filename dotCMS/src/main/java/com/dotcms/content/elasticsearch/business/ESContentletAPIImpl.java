@@ -1988,7 +1988,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown") + " does not " +
                         "have permission to edit the contentlet with Identifier [" + contentlet.getIdentifier() + "]");
             }
-            final IndexPolicy  indexPolicy     = contentlet.getIndexPolicy();
+            final IndexPolicy  indexPolicy             = contentlet.getIndexPolicy();
+            final IndexPolicy  indexPolicyDependencies = contentlet.getIndexPolicyDependencies();
             final Contentlet workingContentlet = findContentletByIdentifier(contentlet.getIdentifier(), false, contentlet.getLanguageId(), user, respectFrontendRoles);
             Contentlet liveContentlet = null;
             try{
@@ -2026,6 +2027,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 // Updating lucene index
                 workingContentlet.setIndexPolicy(indexPolicy);
+                workingContentlet.setIndexPolicyDependencies(indexPolicyDependencies);
                 indexAPI.addContentToIndex(workingContentlet);
 
                 if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
@@ -2458,7 +2460,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @WrapInTransaction
     @Override
-    public void deleteRelatedContent(Contentlet contentlet,Relationship relationship, boolean hasParent, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException,DotContentletStateException {
+    public void deleteRelatedContent(final Contentlet contentlet, final Relationship relationship, final boolean hasParent, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException,DotContentletStateException {
         if(!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)){
             throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown") + " cannot edit Contentlet");
         }
@@ -2473,7 +2475,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
         // We need to refresh all related contentlets, because currently the system does not
         // update the contentlets that lost the relationship (when the user remove a relationship).
         if(cons != null) {
-            for (Contentlet relatedContentlet : cons) {
+            for (final Contentlet relatedContentlet : cons) {
+                relatedContentlet.setIndexPolicy(contentlet.getIndexPolicyDependencies());
+                relatedContentlet.setIndexPolicyDependencies(contentlet.getIndexPolicyDependencies());
                 refreshNoDeps(relatedContentlet);
             }
         }
@@ -2568,8 +2572,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
 
                 if(!child){// when we change the order we need to index all the sibling content
-                    for(Contentlet con : getSiblings(c.getIdentifier())){
-                        refreshNoDeps(con);
+                    for(final Contentlet contentletSibling : getSiblings(c.getIdentifier())){
+                        contentletSibling.setIndexPolicy(contentlet.getIndexPolicyDependencies());
+                        refreshNoDeps(contentletSibling);
                     }
                 }
             }
@@ -2985,13 +2990,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                 }
 
-                final IndexPolicy indexPolicy = contentlet.getIndexPolicy();
+                final IndexPolicy indexPolicy             = contentlet.getIndexPolicy();
+                final IndexPolicy indexPolicyDependencies = contentlet.getIndexPolicyDependencies();
+
                 if(saveWithExistingID) {
                     contentlet = contentFactory.save(contentlet, existingInode);
                 } else {
                     contentlet = contentFactory.save(contentlet);
                 }
+
                 contentlet.setIndexPolicy(indexPolicy);
+                contentlet.setIndexPolicyDependencies(indexPolicyDependencies);
 
 
                 //Relate the tags with the saved contentlet
@@ -3028,6 +3037,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     contentlet.setIdentifier(ident.getId() );
                     contentlet = contentFactory.save(contentlet);
                     contentlet.setIndexPolicy(indexPolicy);
+                    contentlet.setIndexPolicyDependencies(indexPolicyDependencies);
                 } else {
 
                     Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
@@ -3621,22 +3631,23 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    private void moveContentDependencies(Contentlet fromContentlet, Contentlet toContentlet, ContentletRelationships contentRelationships, List<Category> categories, User user,boolean respect) throws DotDataException, DotSecurityException{
+    private void moveContentDependencies(final Contentlet fromContentlet, final Contentlet toContentlet, ContentletRelationships contentRelationships, List<Category> categories, final User user, final boolean respect) throws DotDataException, DotSecurityException{
 
         //Handles Categories
-        List<Category> categoriesUserCannotRemove = new ArrayList<Category>();
+        final List<Category> categoriesUserCannotRemove = new ArrayList<>();
         if(categories == null){
-            categories = new ArrayList<Category>();
+            categories = new ArrayList<>();
         }
         //Find categories which the user can't use.  A user cannot remove a category they cannot use
-        List<Category> cats = categoryAPI.getParents(fromContentlet, APILocator.getUserAPI().getSystemUser(), true);
-        for (Category category : cats) {
+        final List<Category> cats = categoryAPI.getParents(fromContentlet, APILocator.getUserAPI().getSystemUser(), true);
+        for (final Category category : cats) {
             if(!categoryAPI.canUseCategory(category, user, false)){
                 if(!categories.contains(category)){
                     categoriesUserCannotRemove.add(category);
                 }
             }
         }
+
         categories = permissionAPI.filterCollection(categories, PermissionAPI.PERMISSION_USE, respect, user);
         categories.addAll(categoriesUserCannotRemove);
 
@@ -3647,46 +3658,48 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(contentRelationships == null){
             contentRelationships = new ContentletRelationships(toContentlet);
         }
-        List<Relationship> rels = FactoryLocator.getRelationshipFactory().byContentType(fromContentlet.getStructure());
-        for (Relationship r : rels) {
-            if(FactoryLocator.getRelationshipFactory().sameParentAndChild(r)) {
+
+        final List<Relationship> relationships = FactoryLocator.getRelationshipFactory().byContentType(fromContentlet.getStructure());
+        for (final Relationship relationship : relationships) {
+
+            if(FactoryLocator.getRelationshipFactory().sameParentAndChild(relationship)) {
                 ContentletRelationshipRecords selectedRecords = null;
 
                 //First all relationships as parent
-                for(ContentletRelationshipRecords records : contentRelationships.getRelationshipsRecords()) {
-                    if(records.getRelationship().getInode().equalsIgnoreCase(r.getInode()) && records.isHasParent()) {
+                for(final ContentletRelationshipRecords records : contentRelationships.getRelationshipsRecords()) {
+                    if(records.getRelationship().getInode().equalsIgnoreCase(relationship.getInode()) && records.isHasParent()) {
                         selectedRecords = records;
                         break;
                     }
                 }
                 if (selectedRecords == null) {
-                    selectedRecords = contentRelationships.new ContentletRelationshipRecords(r, true);
-                    contentRelationships.getRelationshipsRecords().add(contentRelationships.new ContentletRelationshipRecords(r, true));
+                    selectedRecords = contentRelationships.new ContentletRelationshipRecords(relationship, true);
+                    contentRelationships.getRelationshipsRecords().add(contentRelationships.new ContentletRelationshipRecords(relationship, true));
                 }
 
                 //Adding to the list all the records the user was not able to see becuase permissions forcing them into the relationship
-                List<Contentlet> cons = getRelatedContentFromIndex(fromContentlet, r, true, APILocator.getUserAPI().getSystemUser(), true);
-                for (Contentlet contentlet : cons) {
+                List<Contentlet> relatedContentlets = getRelatedContentFromIndex(fromContentlet, relationship, true, APILocator.getUserAPI().getSystemUser(), true);
+                for (final Contentlet contentlet : relatedContentlets) {
                     if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, false)) {
                         selectedRecords.getRecords().add(0, contentlet);
                     }
                 }
 
                 //Then all relationships as child
-                for(ContentletRelationshipRecords records : contentRelationships.getRelationshipsRecords()) {
-                    if(records.getRelationship().getInode().equalsIgnoreCase(r.getInode()) && !records.isHasParent()) {
+                for(final ContentletRelationshipRecords records : contentRelationships.getRelationshipsRecords()) {
+                    if(records.getRelationship().getInode().equalsIgnoreCase(relationship.getInode()) && !records.isHasParent()) {
                         selectedRecords = records;
                         break;
                     }
                 }
                 if (selectedRecords == null) {
-                    selectedRecords = contentRelationships.new ContentletRelationshipRecords(r, false);
-                    contentRelationships.getRelationshipsRecords().add(contentRelationships.new ContentletRelationshipRecords(r, false));
+                    selectedRecords = contentRelationships.new ContentletRelationshipRecords(relationship, false);
+                    contentRelationships.getRelationshipsRecords().add(contentRelationships.new ContentletRelationshipRecords(relationship, false));
                 }
 
                 //Adding to the list all the records the user was not able to see becuase permissions forcing them into the relationship
-                cons = getRelatedContentFromIndex(fromContentlet, r, false, APILocator.getUserAPI().getSystemUser(), true);
-                for (Contentlet contentlet : cons) {
+                relatedContentlets = getRelatedContentFromIndex(fromContentlet, relationship, false, APILocator.getUserAPI().getSystemUser(), true);
+                for (final Contentlet contentlet : relatedContentlets) {
                     if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, false)) {
                         selectedRecords.getRecords().add(0, contentlet);
                     }
@@ -3696,21 +3709,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 ContentletRelationshipRecords selectedRecords = null;
 
                 //First all relationships as parent
-                for(ContentletRelationshipRecords records : contentRelationships.getRelationshipsRecords()) {
-                    if(records.getRelationship().getInode().equalsIgnoreCase(r.getInode())) {
+                for(final ContentletRelationshipRecords records : contentRelationships.getRelationshipsRecords()) {
+                    if(records.getRelationship().getInode().equalsIgnoreCase(relationship.getInode())) {
                         selectedRecords = records;
                         break;
                     }
                 }
-                boolean hasParent = FactoryLocator.getRelationshipFactory().isParent(r, fromContentlet.getStructure());
+                final boolean hasParent = FactoryLocator.getRelationshipFactory().isParent(relationship, fromContentlet.getStructure());
                 if (selectedRecords == null) {
-                    selectedRecords = contentRelationships.new ContentletRelationshipRecords(r, hasParent);
-                    contentRelationships.getRelationshipsRecords().add(contentRelationships.new ContentletRelationshipRecords(r, hasParent));
+                    selectedRecords = contentRelationships.new ContentletRelationshipRecords(relationship, hasParent);
+                    contentRelationships.getRelationshipsRecords().add(contentRelationships.new ContentletRelationshipRecords(relationship, hasParent));
                 }
 
                 //Adding to the list all the records the user was not able to see because permissions forcing them into the relationship
-                List<Contentlet> cons = getRelatedContentFromIndex(fromContentlet, r, APILocator.getUserAPI().getSystemUser(), true);
-                for (Contentlet contentlet : cons) {
+                final List<Contentlet> relatedContentlets = getRelatedContentFromIndex(fromContentlet, relationship, APILocator.getUserAPI().getSystemUser(), true);
+                for (final Contentlet contentlet : relatedContentlets) {
                     if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, false)) {
                         selectedRecords.getRecords().add(0, contentlet);
                     }
@@ -3718,7 +3731,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         }
 
-        for (ContentletRelationshipRecords cr : contentRelationships.getRelationshipsRecords()) {
+        for (final ContentletRelationshipRecords cr : contentRelationships.getRelationshipsRecords()) {
             relateContent(toContentlet, cr, APILocator.getUserAPI().getSystemUser(), true);
         }
     }
@@ -6070,6 +6083,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (null != contentletDependencies.getIndexPolicy()) {
 
             contentlet.setIndexPolicy(contentletDependencies.getIndexPolicy());
+        }
+
+        if (null != contentletDependencies.getIndexPolicyDependencies()) {
+
+            contentlet.setIndexPolicyDependencies(contentletDependencies.getIndexPolicyDependencies());
         }
 
         return checkin(contentlet, contentletDependencies.getRelationships(), contentletDependencies.getCategories(), null, contentletDependencies.getModUser(),

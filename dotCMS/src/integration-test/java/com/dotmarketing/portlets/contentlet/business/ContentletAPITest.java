@@ -3214,6 +3214,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             contentletA.setLanguageId(languageAPI.getDefaultLanguage().getId());
             contentletA.setStringProperty(textField.variable(), "A");
             contentletA.setIndexPolicy(IndexPolicy.FORCE);
+            contentletA.setIndexPolicyDependencies(IndexPolicy.FORCE);
             contentletA = contentletAPI.checkin(contentletA, user, false);
 
             contentletB = new Contentlet();
@@ -3221,6 +3222,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             contentletB.setLanguageId(languageAPI.getDefaultLanguage().getId());
             contentletB.setStringProperty(textField.variable(), "B");
             contentletB.setIndexPolicy(IndexPolicy.FORCE);
+            contentletB.setIndexPolicyDependencies(IndexPolicy.FORCE);
             contentletB = contentletAPI.checkin(contentletB, user, false);
 
             contentletC = new Contentlet();
@@ -3228,6 +3230,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             contentletC.setLanguageId(languageAPI.getDefaultLanguage().getId());
             contentletC.setStringProperty(textField.variable(), "B");
             contentletC.setIndexPolicy(IndexPolicy.FORCE);
+            contentletC.setIndexPolicyDependencies(IndexPolicy.FORCE);
             contentletC = contentletAPI.checkin(contentletC, user, false);
 
             relationShip = createRelationShip(contentType.inode(),
@@ -3247,6 +3250,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             contentletA = contentletAPI.checkout(contentletA.getInode(), user, false);
             contentletA.setStringProperty(textField.variable(), "ABC");
             contentletA.setIndexPolicy(IndexPolicy.FORCE);
+            contentletA.setIndexPolicyDependencies(IndexPolicy.FORCE);
             contentletA = contentletAPI.checkin(contentletA, relationshipListMap, user, false);
         } catch (Exception e) {
             fail(e.getMessage());
@@ -3644,6 +3648,8 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             Contentlet checkedoutNewsContent = contentletAPI.checkout(newsContent.getInode(), user, false);
 
+            checkedoutNewsContent.setIndexPolicy(IndexPolicy.FORCE);
+            checkedoutNewsContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
             Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutNewsContent, (ContentletRelationships) null,
                 new ArrayList<>(), null, user, false);
 
@@ -3716,6 +3722,8 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             Contentlet checkedoutNewsContent = contentletAPI.checkout(newsContent.getInode(), user, false);
 
+            checkedoutNewsContent.setIndexPolicy(IndexPolicy.FORCE);
+            checkedoutNewsContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
             Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutNewsContent,
                 (Map<Relationship, List<Contentlet>>) null, new ArrayList<>(), null, user, false);
 
@@ -3795,7 +3803,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
     @Test
     public void testCheckin1_ExistingContentWithRels_NullRels_ShouldKeepExistingRels()
-        throws DotDataException, DotSecurityException {
+            throws DotDataException, DotSecurityException {
         Contentlet blogContent = null;
         List<Contentlet> relatedContent = null;
 
@@ -3803,15 +3811,18 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             blogContent = getBlogContent();
 
-
             final ContentletRelationships relationships = getACoupleOfChildRelationships(blogContent);
             final Relationship relationship = relationships.getRelationshipsRecords().get(0).getRelationship();
             relatedContent = relationships.getRelationshipsRecords().get(0).getRecords();
 
             final List<Category> categories = getACoupleOfCategories();
-            blogContent.setIndexPolicy(IndexPolicy.FORCE);
+
             blogContent = contentletAPI.checkin(blogContent, relationships, categories, null, user,
-                false);
+                    false);
+            blogContent.setIndexPolicy(IndexPolicy.FORCE);
+            blogContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
+
+            //contentletAPI.isInodeIndexed(blogContent.getInode());
 
             List<Contentlet> relatedContentFromDB = relationshipAPI.dbRelatedContent(relationship, blogContent);
 
@@ -3820,22 +3831,20 @@ public class ContentletAPITest extends ContentletBaseTest {
             Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
 
             checkedoutBlogContent.setIndexPolicy(IndexPolicy.FORCE);
+            checkedoutBlogContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
             Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent, (ContentletRelationships) null,
-                null, null, user, false);
+                    null, null, user, false);
 
             List<Contentlet> existingRelationships = relationshipAPI.dbRelatedContent(relationship, reCheckedinContent);
 
             assertTrue(existingRelationships.containsAll(relatedContent));
         } finally {
-
-                if(InodeUtils.isSet(blogContent.getInode())) {
-                    contentletAPI.archive(blogContent, user, false);
-                    contentletAPI.delete(blogContent, user, false);
-                }
-                for(Contentlet c : relatedContent){
-                    contentletAPI.archive(c, user, false);
-                    contentletAPI.delete(c, user, false);
-                }
+            contentletAPI.archive(blogContent, user, false);
+            contentletAPI.delete(blogContent, user, false);
+            for(Contentlet c : relatedContent){
+                contentletAPI.archive(c, user, false);
+                contentletAPI.delete(c, user, false);
+            }
         }
     }
 
@@ -3855,6 +3864,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             final List<Category> categories = getACoupleOfCategories();
             blogContent.setIndexPolicy(IndexPolicy.FORCE);
+            blogContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
             blogContent = contentletAPI.checkin(blogContent, relationships, categories, null, user,
                 false);
 
@@ -3865,6 +3875,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
 
             checkedoutBlogContent.setIndexPolicy(IndexPolicy.FORCE);
+            checkedoutBlogContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
             Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent, (ContentletRelationships) null,
                 null, null, user, false);
 
@@ -3904,11 +3915,14 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             final List<Category> categories = getACoupleOfCategories();
             blogContent.setIndexPolicy(IndexPolicy.FORCE);
+            blogContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
             blogContent = contentletAPI.checkin(blogContent, relationships,
                 categories, null, user, false, false);
 
             Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
 
+            checkedoutBlogContent.setIndexPolicy(IndexPolicy.FORCE);
+            checkedoutBlogContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
             Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent, (ContentletRelationships) null,
                 null, null, user, false, false);
 
@@ -3996,11 +4010,13 @@ public class ContentletAPITest extends ContentletBaseTest {
                 relationships.getRelationshipsRecords().get(0).getRecords());
 
             blogContent.setIndexPolicy(IndexPolicy.FORCE);
+            blogContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
             blogContent = contentletAPI.checkin(blogContent, relationshipsMap, categories, user,false);
 
             Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
 
             checkedoutBlogContent.setIndexPolicy(IndexPolicy.FORCE);
+            checkedoutBlogContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
             Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent,
                 (Map<Relationship, List<Contentlet>>) null, null, user, false);
 
@@ -4041,8 +4057,11 @@ public class ContentletAPITest extends ContentletBaseTest {
             relationshipsMap.put(relationships.getRelationshipsRecords().get(0).getRelationship(),
                 relationships.getRelationshipsRecords().get(0).getRecords());
             blogContent.setIndexPolicy(IndexPolicy.FORCE);
+            blogContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
             blogContent = contentletAPI.checkin(blogContent, relationshipsMap, categories, user,false);
 
+            blogContent.setIndexPolicy(IndexPolicy.FORCE);
+            blogContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
             Contentlet reCheckedinContent = contentletAPI.checkinWithoutVersioning(blogContent,
                 null, null, null, user, false);
 
@@ -4273,8 +4292,11 @@ public class ContentletAPITest extends ContentletBaseTest {
         comment1.setStringProperty("email", "email");
         comment1.setStringProperty("comment", "comment");
         comment1.setIndexPolicy(IndexPolicy.FORCE);
+        comment1.setIndexPolicyDependencies(IndexPolicy.FORCE);
 
         comment1 = contentletAPI.checkin(comment1, new HashMap<>(), user, false);
+        comment1.setIndexPolicy(IndexPolicy.FORCE);
+        comment1.setIndexPolicyDependencies(IndexPolicy.FORCE);
 
         Contentlet comment2 = new Contentlet();
         comment2.setContentTypeId(commentsType.id());
@@ -4282,8 +4304,11 @@ public class ContentletAPITest extends ContentletBaseTest {
         comment2.setStringProperty("email", "email");
         comment2.setStringProperty("comment", "comment");
         comment2.setIndexPolicy(IndexPolicy.FORCE);
+        comment2.setIndexPolicyDependencies(IndexPolicy.FORCE);
 
         comment2 = contentletAPI.checkin(comment2, new HashMap<>(), user, false);
+        comment2.setIndexPolicy(IndexPolicy.FORCE);
+        comment2.setIndexPolicyDependencies(IndexPolicy.FORCE);
 
         records.setRecords(Arrays.asList(comment1, comment2));
         relationships.setRelationshipsRecords(CollectionsUtils.list(records));
@@ -4327,6 +4352,8 @@ public class ContentletAPITest extends ContentletBaseTest {
         blogContent.setStringProperty("author", "systemUser");
         blogContent.setDateProperty("sysPublishDate", new Date());
         blogContent.setStringProperty("body", "blogBody");
+        blogContent.setIndexPolicy(IndexPolicy.FORCE);
+        blogContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
         return blogContent;
     }
 
@@ -4343,6 +4370,8 @@ public class ContentletAPITest extends ContentletBaseTest {
         newsContent.setDateProperty("sysPublishDate", new Date());
         newsContent.setStringProperty("story", "newsStory");
         newsContent.setStringProperty("tags", "test");
+        newsContent.setIndexPolicy(IndexPolicy.FORCE);
+        newsContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
         return newsContent;
     }
 

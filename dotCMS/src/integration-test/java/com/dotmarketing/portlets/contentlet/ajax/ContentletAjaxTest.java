@@ -1,17 +1,7 @@
 package com.dotmarketing.portlets.contentlet.ajax;
 
-import static com.dotcms.integrationtestutil.content.ContentUtils.createTestKeyValueContent;
-import static com.dotcms.integrationtestutil.content.ContentUtils.deleteContentlets;
-
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -25,6 +15,17 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+import static com.dotcms.integrationtestutil.content.ContentUtils.createTestKeyValueContent;
+import static com.dotcms.integrationtestutil.content.ContentUtils.deleteContentlets;
 
 /**
  *
@@ -147,7 +148,7 @@ public class ContentletAjaxTest {
 
 		results=new ContentletAjax().searchContentletsByUser(structure.getInode(), fieldsValues, categories, false, false, false, false,1, "modDate Desc", 10,systemUser, null, null, null);
 		result = (Map<String,Object>)results.get(0);
-		Assert.assertTrue((Long)result.get("total")==1);
+		Assert.assertEquals(new Long(1L), (Long)result.get("total"));
 		result = (Map<String,Object>)results.get(3);
 		Assert.assertTrue(Long.parseLong(String.valueOf(result.get("languageId")))==language.getId());
 		contentlet = APILocator.getContentletAPI().find(String.valueOf(result.get("inode")),systemUser,false);

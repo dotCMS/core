@@ -37,6 +37,7 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletValidationExce
 import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetValidationException;
@@ -2024,6 +2025,9 @@ public class ContentletAjax {
 			}
 
 			conAPI.validateContentlet(cont, contentRelationships, APILocator.getCategoryAPI().getParents(cont, user, false));
+
+			cont.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
+
 			if(isPublish){//DOTCMS-5514
 				conAPI.checkin(cont, contentRelationships,
 						APILocator.getCategoryAPI().getParents(cont, user, false),

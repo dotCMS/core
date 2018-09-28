@@ -407,6 +407,7 @@ public class ContentletBaseTest extends IntegrationTestBase {
 
         //Save the contentlet
         contentlet.setIndexPolicy(IndexPolicy.FORCE);
+        contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
         contentlet = contentletAPI.checkin( contentlet, categories, structurePermissions, user, true );
 
         if ( createWithContainer ) {
@@ -415,6 +416,7 @@ public class ContentletBaseTest extends IntegrationTestBase {
         }
 
         contentlet.setIndexPolicy(IndexPolicy.FORCE);
+        contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
         return contentlet;
     }
 

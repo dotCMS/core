@@ -20,6 +20,7 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.UtilMethods;
@@ -156,6 +157,7 @@ public class ThemeResourceIntegrationTest {
             thumbnail = fileAssetDataGen.nextPersisted();
 
             //Publishing theme.png
+            thumbnail.setIndexPolicy(IndexPolicy.FORCE);
             contentletAPI.publish(thumbnail, user, false);
 
             final ThemeResource resource = new ThemeResource();

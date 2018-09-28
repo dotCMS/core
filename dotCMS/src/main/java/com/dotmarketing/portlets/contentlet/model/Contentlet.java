@@ -113,6 +113,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     private transient ContentletAPI contentletAPI;
     private transient UserAPI userAPI;
 	private transient IndexPolicy indexPolicy = IndexPolicy.DEFER;
+	private transient IndexPolicy indexPolicyDependencies = IndexPolicy.DEFER;
 
 	public IndexPolicy getIndexPolicy() {
 
@@ -134,6 +135,29 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 		if (null != indexPolicy) {
 			this.indexPolicy = indexPolicy;
+		}
+	}
+
+	public IndexPolicy getIndexPolicyDependencies() {
+
+		return (null == this.indexPolicyDependencies)?
+				IndexPolicy.DEFER:indexPolicyDependencies;
+	}
+
+	/**
+	 * This method sets IndexPolicy for the dependencies (relationships and categories), it could be:
+	 *
+	 * <ul>
+	 * <li>DEFER, you do not care about when is gonna be reindex your content, usually usefull on batch processing.</li>
+	 * <li>WAIT_FOR, you want to wait until the content is ready to be searchable.</li>
+	 * <li>FORCE, you want to force the content searchable immediate, however this policy is not highly scalable.</li>
+	 * </ul>
+	 * @param indexPolicy
+	 */
+	public void setIndexPolicyDependencies(final IndexPolicy indexPolicy) {
+
+		if (null != indexPolicy) {
+			this.indexPolicyDependencies = indexPolicy;
 		}
 	}
 

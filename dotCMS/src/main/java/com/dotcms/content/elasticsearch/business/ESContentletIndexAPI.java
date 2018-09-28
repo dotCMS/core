@@ -323,7 +323,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
         // http://jira.dotmarketing.net/browse/DOTCMS-6886
         // check for related content to reindex
 		List<Contentlet> contentDependencies  = null;
-		final boolean    indexIsNotDefer   		  = IndexPolicy.DEFER != content.getIndexPolicy();
+		final boolean    indexIsNotDefer   	  = IndexPolicy.DEFER != content.getIndexPolicy();
         final List<Contentlet> contentToIndex = new ArrayList<>();
 
         contentToIndex.add(content);
@@ -332,11 +332,13 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 
 			if(includeDependencies){
 
-					if (indexIsNotDefer) {
-						contentDependencies = new ArrayList<>(loadDeps(content));
-					} else {
-						contentToIndex.addAll(loadDeps(content));
-					}
+				final List<Contentlet> dependencies  = loadDeps(content);
+				dependencies.forEach(contentlet -> contentlet.setIndexPolicy(content.getIndexPolicyDependencies()));
+				if (indexIsNotDefer) {
+					contentDependencies = new ArrayList<>(dependencies);
+				} else {
+					contentToIndex.addAll(dependencies);
+				}
 			}
 
 	   		if(bulk!=null || indexBeforeCommit) {
@@ -393,8 +395,19 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 		// if dependencies, we add them at the end with the highest priority
 		if (UtilMethods.isSet(contentDependencies)) {
 
-			HibernateUtil.addCommitListener(content.getInode() + ReindexRunnable.Action.ADDING,
-					new AddReindexRunnable(contentDependencies, ReindexRunnable.Action.ADDING, bulk, reindexOnly));
+			switch (content.getIndexPolicyDependencies()) {
+
+				case WAIT_FOR:
+					this.indexContentListWaitFor(contentDependencies, bulk, reindexOnly);
+					break;
+				case FORCE:
+					this.indexContentListNow(contentDependencies, bulk, reindexOnly);
+					break;
+				default: // DEFER
+					HibernateUtil.addCommitListener(content.getInode() + ReindexRunnable.Action.ADDING,
+							new AddReindexRunnable(contentDependencies, ReindexRunnable.Action.ADDING, bulk, reindexOnly));
+					break;
+			}
 		}
 	}
 
