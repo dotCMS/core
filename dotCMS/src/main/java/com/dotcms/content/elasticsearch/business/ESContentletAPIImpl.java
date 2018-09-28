@@ -4043,10 +4043,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotContentletValidationException("The contentlet's Content Type Inode must be set");
         }
 
+        /*
+         By allowing this codes setting a null value, we will cause the property to vanish from the internal map.
+         meaning that the property will never be updated. it'll continue to hold its old value.
         if(value==null || !UtilMethods.isSet(value.toString())) {
             contentlet.setProperty(field.getVelocityVarName(), null);
             return;
-        }
+        }*/
 
         if(field.getFieldType().equals(Field.FieldType.CATEGORY.toString()) || field.getFieldType().equals(Field.FieldType.CATEGORIES_TAB.toString())){
 
@@ -4116,6 +4119,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 try{
                     contentlet.setLongProperty(field.getVelocityVarName(),new Long((String)value));
                 }catch (Exception e) {
+                    //If we throw this exception here.. the contentlet will never get to the validateContentlet Method
                     throw new DotContentletStateException("Unable to set string value as a Long");
                 }
             }
