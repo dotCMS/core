@@ -50,9 +50,11 @@ public class ProxyEditMode extends RenderModeHandler {
 
 
         MockHttpResponse mockRes= new MockHttpResponse(new BaseResponse().response());
-        MockHttpRequest mockreq = new MockHttpRequest("localhost", request.getRequestURI());
+
         
+        String uri = ( request.getAttribute("javax.servlet.forward.request_uri")==null) ?  request.getRequestURI():  (String) request.getAttribute("javax.servlet.forward.request_uri");
         
+        MockHttpRequest mockreq = new MockHttpRequest("localhost", uri);
         ProxyRequest proxy = new ProxyRequest(request, mockRes.response(), mode);
        
         

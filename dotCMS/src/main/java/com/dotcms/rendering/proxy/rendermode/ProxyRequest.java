@@ -406,10 +406,10 @@ public class ProxyRequest {
         StringBuilder uri = new StringBuilder(500);
         uri.append(targetHost);
         // Handle the path given to the servlet
-        String pathInfo = this.request.getPathInfo();
+        String pathInfo =  ( request.getAttribute("javax.servlet.forward.request_uri")==null) ?  request.getRequestURI():  (String) request.getAttribute("javax.servlet.forward.request_uri");
         if (pathInfo != null) {// ex: /my/path.html
 
-            pathInfo = pathInfo.replace("/v1/page/render", "");
+            pathInfo = pathInfo.replace("/api/v1/page/render", "");
             pathInfo = pathInfo.replace("/index", "/");
 
             // getPathInfo() returns decoded string, so we need encodeUriQuery to encode "%" characters
