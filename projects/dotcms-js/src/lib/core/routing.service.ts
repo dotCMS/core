@@ -5,7 +5,7 @@ import { Observable } from 'rxjs/Rx';
 import { DotcmsEventsService } from './dotcms-events.service';
 import { RequestMethod } from '@angular/http';
 import { DotRouterService } from './dot-router.service';
-import { Subject } from 'rxjs/Subject';
+import { Subject } from 'rxjs';
 
 @Injectable()
 export class RoutingService {

@@ -1,5 +1,6 @@
+
+import {throwError as observableThrowError,  Observable } from 'rxjs';
 import { Response } from '@angular/http';
-import { Observable } from 'rxjs';
 import { Inject, Injectable } from '@angular/core';
 import { HttpClient } from '../../core/util/http.service';
 import { NotificationService } from '../../core/util/notification.service';
@@ -66,7 +67,7 @@ export class SiteSelectorService {
             this.notificationService.displayErrorMessage(
                 'There was an error; please try again : ' + errMsg
             );
-            return Observable.throw(errMsg);
+            return observableThrowError(errMsg);
         }
     }
 }

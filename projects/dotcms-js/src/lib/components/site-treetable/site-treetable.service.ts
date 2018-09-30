@@ -2,7 +2,7 @@ import {Inject, Injectable} from '@angular/core';
 import {TreeNode} from 'primeng/components/common/api';
 import {Observable} from 'rxjs';
 
-import 'rxjs/add/operator/map';
+
 import {Treeable} from '../../core/treeable/shared/treeable.model';
 import {SiteBrowserService} from '../../core/util/site-browser.service';
 

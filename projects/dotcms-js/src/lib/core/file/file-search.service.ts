@@ -1,8 +1,8 @@
+
+import {throwError as observableThrowError,  Observable ,  BehaviorSubject } from 'rxjs';
 import { Inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs/Observable';
 
 import { Response } from '@angular/http';
-import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 import { HttpClient } from '../util/http.service';
 import { Treeable } from '../treeable/shared/treeable.model';
 import { File } from './file.model';
@@ -54,7 +54,7 @@ export class FileSearchService {
         if (errMsg) {
             // this.log.error(errMsg);
             console.error('There was an error; please try again : ' + errMsg);
-            return Observable.throw(errMsg);
+            return observableThrowError(errMsg);
         }
     }
 

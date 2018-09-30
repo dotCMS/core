@@ -1,6 +1,6 @@
 import {Observable} from 'rxjs/Rx';
 import {LoggerService} from '../logger.service';
-import {Subject} from 'rxjs/Subject';
+import {Subject} from 'rxjs';
 
 export class Url {
     constructor(private protocol: string, private baseUrl: string, private endPoint: string)  {

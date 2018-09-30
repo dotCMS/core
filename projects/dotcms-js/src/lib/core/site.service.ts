@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { CoreWebService } from './core-web.service';
 import { Observable } from 'rxjs/Rx';
 import { RequestMethod } from '@angular/http';
-import { Subject } from 'rxjs/Subject';
+import { Subject } from 'rxjs';
 import { LoginService, Auth } from './login.service';
 import { DotcmsEventsService } from './dotcms-events.service';
 import { LoggerService } from './logger.service';

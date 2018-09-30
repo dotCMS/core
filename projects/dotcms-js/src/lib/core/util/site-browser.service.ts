@@ -1,7 +1,8 @@
+
+import {throwError as observableThrowError, Observable} from 'rxjs';
 import {Inject, Injectable, NgModule} from '@angular/core';
 import {Response} from '@angular/http';
 import {HttpClient} from './http.service';
-import {Observable} from 'rxjs';
 import {Treeable} from '../treeable/shared/treeable.model';
 import {Folder} from '../treeable/shared/folder.model';
 import {File} from '../file/file.model';
@@ -74,7 +75,7 @@ export class SiteBrowserService {
         if (errMsg) {
             console.error(errMsg);
             this.notificationService.displayErrorMessage('There was an error; please try again : ' + errMsg);
-            return Observable.throw(errMsg);
+            return observableThrowError(errMsg);
         }
     }
 }

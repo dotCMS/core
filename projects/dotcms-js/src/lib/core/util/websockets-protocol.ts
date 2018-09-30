@@ -1,6 +1,6 @@
 // tslint:disable:cyclomatic-complexity
 import _ from 'lodash';
-import { Subject } from 'rxjs/Subject';
+import { Subject } from 'rxjs';
 import { LoggerService } from '../logger.service';
 import { Protocol, Url } from './protocol';
 

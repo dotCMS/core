@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs/Rx';
 import { LoggerService } from './logger.service';
-import { Subject } from 'rxjs/Subject';
+import { Subject } from 'rxjs';
 import { Protocol } from './util/protocol';
 import { SocketFactory } from './socket-factory.service';
 

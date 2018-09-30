@@ -1,9 +1,10 @@
+
+import {throwError as observableThrowError, Observable} from 'rxjs';
 import {HttpClient} from './http.service';
 import {NotificationService} from './notification.service';
 import {Response} from '@angular/http';
 import {Inject, Injectable, NgModule} from '@angular/core';
 import {Folder} from '../treeable/shared/folder.model';
-import {Observable} from 'rxjs/Observable';
 import { map, catchError } from 'rxjs/operators';
 import { ErrorObservable } from 'rxjs/observable/ErrorObservable';
 
@@ -45,7 +46,7 @@ export class FolderService {
         if (errMsg) {
             console.log(errMsg);
             this.notificationService.displayErrorMessage('There was an error; please try again : ' + errMsg);
-            return Observable.throw(errMsg);
+            return observableThrowError(errMsg);
         }
     }
 }

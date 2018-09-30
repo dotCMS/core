@@ -1,10 +1,11 @@
+
+import {throwError as observableThrowError, Observable} from 'rxjs';
 import {Inject, Injectable, NgModule} from '@angular/core';
 import {NotificationService} from './notification.service';
 import {Http, Headers, Response, RequestMethod, RequestOptions} from '@angular/http';
-import {Observable} from 'rxjs';
 import {SettingsStorageService} from './settings-storage.service';
 
-import 'rxjs/add/operator/map';
+
 
 /**
  * Service for managing JWT Auth Token from dotCMS Site/Host
@@ -80,7 +81,7 @@ export class JWTAuthService {
         if (errMsg) {
             console.error(errMsg);
             this.notificationService.displayErrorMessage('There was an error; please try again : ' + errMsg);
-            return Observable.throw(errMsg);
+            return observableThrowError(errMsg);
         }
     }
 
