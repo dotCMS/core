@@ -4,7 +4,7 @@ import { Router, NavigationEnd, Event } from '@angular/router';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { filter, switchMap, map, flatMap, toArray, tap } from 'rxjs/operators';
 
-import { Auth } from 'dotcms-js/core/login.service';
+import { Auth } from 'dotcms-js/dotcms-js';
 import { DotcmsEventsService, LoginService } from 'dotcms-js/dotcms-js';
 
 import { DotMenu, DotMenuItem } from '@models/navigation';

@@ -1,10 +1,10 @@
 import { pluck } from 'rxjs/operators';
 import * as _ from 'lodash';
-import { CoreWebService, LoginService, User } from 'dotcms-js/dotcms-js';
 import { FormatDateService } from './format-date-service';
 import { Injectable } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
 import { RequestMethod } from '@angular/http';
+import { LoginService, CoreWebService, User } from 'dotcms-js/dotcms-js';
 
 @Injectable()
 export class DotMessageService {
