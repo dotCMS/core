@@ -27,17 +27,17 @@ export class DotcmsEventsService {
     start(): void {
         this.loggerService.debug('start DotcmsEventsService');
         if (!this.socket) {
-            this.socketFactory.createSocket().subscribe(socket => {
+            this.socketFactory.createSocket().subscribe((socket) => {
                 this.socket = socket;
 
                 socket.message$().subscribe(
-                    data => {
+                    (data) => {
                         if (!this.subjects[data.event]) {
                             this.subjects[data.event] = new Subject();
                         }
                         this.subjects[data.event].next(data.payload);
                     },
-                    e => {
+                    (e) => {
                         this.loggerService.debug(
                             'Error in the System Events service: ' + e.message
                         );
@@ -74,8 +74,8 @@ export class DotcmsEventsService {
     subscribeToEvents(clientEventTypes: string[]): Observable<EventTypeWrapper> {
         const subject: Subject<EventTypeWrapper> = new Subject<EventTypeWrapper>();
 
-        clientEventTypes.forEach(eventType =>
-            this.subscribeTo(eventType).subscribe(data =>
+        clientEventTypes.forEach((eventType) =>
+            this.subscribeTo(eventType).subscribe((data) =>
                 subject.next({
                     data: data,
                     eventType: eventType

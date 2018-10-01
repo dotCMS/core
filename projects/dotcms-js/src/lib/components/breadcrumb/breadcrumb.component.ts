@@ -1,9 +1,9 @@
-import {MenuItem} from 'primeng/components/common/api';
-import {Component, Inject, NgModule} from '@angular/core';
-import {SiteBrowserState} from '../../core/util/site-browser.state';
-import {BreadcrumbModule} from 'primeng/components/breadcrumb/breadcrumb';
-import {CommonModule} from '@angular/common';
-import {Site} from '../../core/treeable/shared/site.model';
+import { MenuItem } from 'primeng/components/common/api';
+import { Component, Inject, NgModule } from '@angular/core';
+import { SiteBrowserState } from '../../core/util/site-browser.state';
+import { BreadcrumbModule } from 'primeng/components/breadcrumb/breadcrumb';
+import { CommonModule } from '@angular/common';
+import { Site } from '../../core/treeable/shared/site.model';
 
 /**
  * The BreadcrumbComponent provides a PrimeNG Component for providing navigation with dotCMS Components
@@ -17,23 +17,19 @@ import {Site} from '../../core/treeable/shared/site.model';
 })
 @Inject('updateService')
 export class BreadcrumbComponent {
-
     pathItems: MenuItem[];
 
     constructor(private updateService: SiteBrowserState) {
         this.buildMenuItemsFromURI(this.updateService.getURI());
-        updateService.currentSite.subscribe(
-            site => {
-                this.onSiteChange(site);
-            });
-        updateService.currentFolder.subscribe(
-            folderName => {
-                this.onFolderClick(folderName);
-            });
-        updateService.currentURI.subscribe(
-            uri => {
-                this.buildMenuItemsFromURI(uri);
-            });
+        updateService.currentSite.subscribe((site) => {
+            this.onSiteChange(site);
+        });
+        updateService.currentFolder.subscribe((folderName) => {
+            this.onFolderClick(folderName);
+        });
+        updateService.currentURI.subscribe((uri) => {
+            this.buildMenuItemsFromURI(uri);
+        });
     }
 
     /**
@@ -71,9 +67,9 @@ export class BreadcrumbComponent {
                 this.updateService.changeSite(site);
                 this.updateService.changeURI(null);
                 this.updateService.changeFolder(null);
-                setTimeout(() => {
-                }, 100);
-            }, label: site ? site.hostname : ''
+                setTimeout(() => {}, 100);
+            },
+            label: site ? site.hostname : ''
         });
     }
 
@@ -82,9 +78,9 @@ export class BreadcrumbComponent {
         this.pathItems.push({
             command: (_event: Event) => {
                 this.updateService.changeURI(currentURI + '/' + folderName);
-                setTimeout(() => {
-                }, 100);
-            }, label: folderName
+                setTimeout(() => {}, 100);
+            },
+            label: folderName
         });
     }
 
@@ -110,4 +106,4 @@ export class BreadcrumbComponent {
     imports: [CommonModule, BreadcrumbModule],
     providers: []
 })
-export class DotBreadcrumbModule { }
+export class DotBreadcrumbModule {}

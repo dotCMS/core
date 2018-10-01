@@ -1,8 +1,8 @@
-import {Inject, Injectable, NgModule} from '@angular/core';
-import {Http, Headers, Response, RequestMethod, RequestOptions} from '@angular/http';
-import {Observable} from 'rxjs';
-import {debounceTime, distinctUntilChanged, share} from 'rxjs/operators';
-import {SettingsStorageService} from './settings-storage.service';
+import { Inject, Injectable, NgModule } from '@angular/core';
+import { Http, Headers, Response, RequestMethod, RequestOptions } from '@angular/http';
+import { Observable } from 'rxjs';
+import { debounceTime, distinctUntilChanged, share } from 'rxjs/operators';
+import { SettingsStorageService } from './settings-storage.service';
 
 /**
  * The HTTPClient will use the JWTToken and Host/Site set in the SettingsStorageService to connect dotCMS REST Endpoints
@@ -15,11 +15,7 @@ export class HttpClient {
     public progress$: any;
     private progressObserver: any;
     private progress: number;
-    constructor(
-        private http: Http,
-        private settingsStorageService: SettingsStorageService
-
-    ) {
+    constructor(private http: Http, private settingsStorageService: SettingsStorageService) {
         // this.http = http;
         // this.settingsService=settingsService;
         this.progress$ = Observable.create((observer: any) => {
@@ -32,9 +28,15 @@ export class HttpClient {
      * @param headers
      */
     createAuthorizationHeader(headers: Headers): void {
-        if (this.settingsStorageService.getSettings() != null && this.settingsStorageService.getSettings().jwt != null
-            && this.settingsStorageService.getSettings().jwt.trim().length > 0 ) {
-            headers.append('Authorization', 'Bearer ' + this.settingsStorageService.getSettings().jwt);
+        if (
+            this.settingsStorageService.getSettings() != null &&
+            this.settingsStorageService.getSettings().jwt != null &&
+            this.settingsStorageService.getSettings().jwt.trim().length > 0
+        ) {
+            headers.append(
+                'Authorization',
+                'Bearer ' + this.settingsStorageService.getSettings().jwt
+            );
         }
     }
 
@@ -48,11 +50,10 @@ export class HttpClient {
         const headers = new Headers();
         this.createAuthorizationHeader(headers);
         const site: String = this.settingsStorageService.getSettings().site;
-        return this.http.get( (site ? site : '') + path, {headers: headers})
-            .pipe(
-                debounceTime(400),
-                distinctUntilChanged()
-            );
+        return this.http.get((site ? site : '') + path, { headers: headers }).pipe(
+            debounceTime(400),
+            distinctUntilChanged()
+        );
     }
 
     /**
@@ -65,9 +66,14 @@ export class HttpClient {
     put(path: String, data: Object): Observable<Response> {
         const opts: RequestOptions = new RequestOptions();
         opts.method = RequestMethod.Put;
-        opts.headers = new Headers({'Content-Type': 'application/json'});
+        opts.headers = new Headers({ 'Content-Type': 'application/json' });
         this.createAuthorizationHeader(opts.headers);
-        return this.http.put(this.settingsStorageService.getSettings().site + path.toString(), JSON.stringify(data), opts)
+        return this.http
+            .put(
+                this.settingsStorageService.getSettings().site + path.toString(),
+                JSON.stringify(data),
+                opts
+            )
             .pipe(
                 debounceTime(400),
                 distinctUntilChanged()
@@ -84,9 +90,13 @@ export class HttpClient {
     post(path: String, data: Object): Observable<Response> {
         const opts: RequestOptions = new RequestOptions();
         opts.method = RequestMethod.Post;
-        opts.headers = new Headers({'Content-Type': 'application/json'});
+        opts.headers = new Headers({ 'Content-Type': 'application/json' });
         this.createAuthorizationHeader(opts.headers);
-        return this.http.post(this.settingsStorageService.getSettings().site + path, JSON.stringify(data), opts );
+        return this.http.post(
+            this.settingsStorageService.getSettings().site + path,
+            JSON.stringify(data),
+            opts
+        );
     }
 
     /**
@@ -100,7 +110,8 @@ export class HttpClient {
      */
     filePut(path: String, file: File, data: Object): Observable<any> {
         return Observable.create((observer: any) => {
-            const formData: FormData = new FormData(), xhr: XMLHttpRequest = new XMLHttpRequest();
+            const formData: FormData = new FormData(),
+                xhr: XMLHttpRequest = new XMLHttpRequest();
             formData.append('json', JSON.stringify(data));
 
             formData.append('fileAsset', file);
@@ -116,15 +127,21 @@ export class HttpClient {
             };
 
             xhr.upload.onprogress = (event) => {
-                this.progress = Math.round(event.loaded / event.total * 100);
+                this.progress = Math.round((event.loaded / event.total) * 100);
 
                 this.progressObserver.next(this.progress);
             };
             const site: String = this.settingsStorageService.getSettings().site;
             xhr.open('PUT', (site ? site : '') + path.toString(), true);
-            if (this.settingsStorageService.getSettings() != null && this.settingsStorageService.getSettings().jwt != null
-                && this.settingsStorageService.getSettings().jwt.trim().length > 0 ) {
-                xhr.setRequestHeader('Authorization', 'Bearer ' + this.settingsStorageService.getSettings().jwt);
+            if (
+                this.settingsStorageService.getSettings() != null &&
+                this.settingsStorageService.getSettings().jwt != null &&
+                this.settingsStorageService.getSettings().jwt.trim().length > 0
+            ) {
+                xhr.setRequestHeader(
+                    'Authorization',
+                    'Bearer ' + this.settingsStorageService.getSettings().jwt
+                );
             }
             console.log('FormData is ' + formData);
             xhr.send(formData);
@@ -133,6 +150,6 @@ export class HttpClient {
 }
 
 @NgModule({
-  providers: [HttpClient, SettingsStorageService]
+    providers: [HttpClient, SettingsStorageService]
 })
-export class DotHttpModule { }
+export class DotHttpModule {}

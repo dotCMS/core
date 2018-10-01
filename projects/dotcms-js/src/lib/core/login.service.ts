@@ -9,7 +9,7 @@ import { Router } from '@angular/router';
 import { DotcmsEventsService } from './dotcms-events.service';
 import { LoggerService } from './logger.service';
 import { HttpCode } from './util/http-code';
-import {pluck, tap, map} from 'rxjs/operators';
+import { pluck, tap, map } from 'rxjs/operators';
 
 /**
  * This Service get the server configuration to display in the login component
@@ -44,14 +44,17 @@ export class LoginService {
         };
 
         // when the session is expired/destroyed
-        dotcmsEventsService.subscribeTo('SESSION_DESTROYED').pipe(pluck('data')).subscribe(date => {
-            this.loggerService.debug('Processing session destroyed: ', date);
-            this.loggerService.debug('User Logged In Date: ', this.auth.user.loggedInDate);
-            // if the destroyed event happens after the logged in date, so proceed!
-            if (this.isLogoutAfterLastLogin(date)) {
-                this.logOutUser().subscribe(() => {});
-            }
-        });
+        dotcmsEventsService
+            .subscribeTo('SESSION_DESTROYED')
+            .pipe(pluck('data'))
+            .subscribe((date) => {
+                this.loggerService.debug('Processing session destroyed: ', date);
+                this.loggerService.debug('User Logged In Date: ', this.auth.user.loggedInDate);
+                // if the destroyed event happens after the logged in date, so proceed!
+                if (this.isLogoutAfterLastLogin(date)) {
+                    this.logOutUser().subscribe(() => {});
+                }
+            });
     }
 
     get loginAsUsersList$(): Observable<User[]> {
@@ -74,7 +77,7 @@ export class LoginService {
         return Observable.if(
             () => !!this.auth && !!this.auth.user,
             of(true),
-            this.loadAuth().pipe(map(auth => !!auth && !!auth.user))
+            this.loadAuth().pipe(map((auth) => !!auth && !!auth.user))
         );
     }
 
@@ -149,7 +152,7 @@ export class LoginService {
                 url: this.urls.loginAs
             })
             .pipe(
-                map(res => {
+                map((res) => {
                     if (!res.entity.loginAs) {
                         throw res.errorsMessages;
                     }
@@ -163,7 +166,6 @@ export class LoginService {
                 }),
                 pluck('entity', 'loginAs')
             );
-
     }
 
     /**
@@ -195,7 +197,7 @@ export class LoginService {
                 url: this.urls.userAuth
             })
             .pipe(
-                map(response => {
+                map((response) => {
                     const auth = {
                         loginAsUser: null,
                         user: response.entity,
@@ -222,7 +224,7 @@ export class LoginService {
                 url: `${this.urls.logoutAs}`
             })
             .pipe(
-                map(res => {
+                map((res) => {
                     this.setAuth({
                         loginAsUser: null,
                         user: this._auth.user,
@@ -244,7 +246,7 @@ export class LoginService {
                 url: this.urls.logout
             })
             .pipe(
-                map(_response => {
+                map((_response) => {
                     const nullAuth = {
                         loginAsUser: null,
                         user: null,
@@ -287,7 +289,7 @@ export class LoginService {
             func(this.auth);
         }
 
-        this.auth$.subscribe(auth => {
+        this.auth$.subscribe((auth) => {
             if (auth.user) {
                 func(auth);
             }

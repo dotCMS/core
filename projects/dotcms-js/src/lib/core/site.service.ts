@@ -40,11 +40,11 @@ export class SiteService {
 
         dotcmsEventsService
             .subscribeToEvents(['ARCHIVE_SITE', 'UPDATE_SITE'])
-            .subscribe(data => this.eventResponse(data));
+            .subscribe((data) => this.eventResponse(data));
 
         dotcmsEventsService
             .subscribeToEvents(this.events)
-            .subscribe(data => this.siteEventsHandler(data));
+            .subscribe((data) => this.siteEventsHandler(data));
 
         loginService.watchUser((auth: Auth) => {
             if (!auth.isLoginAs) {
@@ -140,9 +140,8 @@ export class SiteService {
             })
             .pipe(
                 pluck('contentlets'),
-                map(sites => sites[0])
+                map((sites) => sites[0])
             );
-
     }
 
     /**
@@ -176,7 +175,7 @@ export class SiteService {
                 url: this.urls.currentSiteUrl
             })
             .pipe(pluck('entity'))
-            .subscribe(currentSite => {
+            .subscribe((currentSite) => {
                 this.setCurrentSite(<Site>currentSite);
             });
     }

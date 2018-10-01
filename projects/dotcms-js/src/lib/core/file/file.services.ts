@@ -1,19 +1,15 @@
-import {Injectable, NgModule} from '@angular/core';
-import {NotificationService} from '../util/notification.service';
-import {HttpClient} from '../util/http.service';
-import {SiteBrowserState} from '../util/site-browser.state';
-import {FileSearchService} from './file-search.service';
+import { Injectable, NgModule } from '@angular/core';
+import { NotificationService } from '../util/notification.service';
+import { HttpClient } from '../util/http.service';
+import { SiteBrowserState } from '../util/site-browser.state';
+import { FileSearchService } from './file-search.service';
 
 /**
  * Can be used for CRUD operations on dotCMS FileAssets. Not all CRUD operations are currently implemented
  */
 @Injectable()
 export class FileService {
-
-    constructor
-    (private httpClient: HttpClient,
-     private siteBrowserState: SiteBrowserState) {
-    }
+    constructor(private httpClient: HttpClient, private siteBrowserState: SiteBrowserState) {}
 
     /**
      * ******  NOT IMPLEMENTED YET *******
@@ -24,9 +20,7 @@ export class FileService {
      * @param fileList array of file objects to be POSTED to dotCMS
      */
     // TODO : NOT IMPLEMENTED YET
-    saveFiles(_fileList: File[]): void {
-
-    }
+    saveFiles(_fileList: File[]): void {}
 
     /**
      * Will upload a local file to dotCMS
@@ -56,9 +50,7 @@ export class FileService {
      * @param directories list of local file System directories to create on dotCMS
      */
     // TODO : SHOULD MOVE TO FolderServices
-    uploadDirectories(_directories: File[]): void {
-
-    }
+    uploadDirectories(_directories: File[]): void {}
 
     // private handleError(error: any): Observable<string> {
     //     let errMsg = (error.message) ? error.message :
@@ -69,10 +61,9 @@ export class FileService {
     //         return Observable.throw(errMsg);
     //     }
     // }
-
 }
 
 @NgModule({
-  providers: [HttpClient, NotificationService, FileService, FileSearchService]
+    providers: [HttpClient, NotificationService, FileService, FileSearchService]
 })
-export class DotFileModule { }
+export class DotFileModule {}

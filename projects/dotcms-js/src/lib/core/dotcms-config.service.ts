@@ -55,7 +55,7 @@ export class DotcmsConfig {
     }
 
     getConfig(): Observable<ConfigParams> {
-        return Observable.create(obs => {
+        return Observable.create((obs) => {
             if (this.configParams) {
                 obs.next(this.configParams);
             } else {
@@ -88,12 +88,13 @@ export class DotcmsConfig {
                     websocketEndpoints: res.config[DOTCMS_WEBSOCKET_ENDPOINTS],
                     websocketProtocol: res.config[DOTCMS_WEBSOCKET_PROTOCOL],
                     websocketReconnectTime: res.config[DOTCMS_WEBSOCKET_RECONNECT_TIME],
-                    websocketsSystemEventsEndpoint: res.config[DOTCMS_WEBSOCKET_ENDPOINTS][WEBSOCKET_SYSTEMEVENTS_ENDPOINT]
+                    websocketsSystemEventsEndpoint:
+                        res.config[DOTCMS_WEBSOCKET_ENDPOINTS][WEBSOCKET_SYSTEMEVENTS_ENDPOINT]
                 };
 
                 this.loggerService.debug('this.configParams', this.configParams);
 
-                this.waiting.forEach(obs => obs.next(this.configParams));
+                this.waiting.forEach((obs) => obs.next(this.configParams));
                 this.waiting = null;
                 return res;
             });

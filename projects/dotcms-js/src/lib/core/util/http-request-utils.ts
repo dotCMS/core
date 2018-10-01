@@ -12,7 +12,7 @@ export class HttpRequestUtils {
         const split: string[] = window.location.search.substring(1).split('&');
         const map: Map<string, string> = new Map();
 
-        split.forEach(param => {
+        split.forEach((param) => {
             const paramSplit: string[] = param.split('=');
             map.set(paramSplit[0], paramSplit[1]);
         });

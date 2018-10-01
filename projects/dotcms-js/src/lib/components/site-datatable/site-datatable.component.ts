@@ -1,14 +1,14 @@
-import {Component, NgModule} from '@angular/core';
-import {Treeable} from '../../core/treeable/shared/treeable.model';
-import {SiteBrowserState} from '../../core/util/site-browser.state';
-import {SiteBrowserService} from '../../core/util/site-browser.service';
-import {SettingsStorageService} from '../../core/util/settings-storage.service';
-import {NotificationService} from '../../core/util/notification.service';
-import {Folder} from '../../core/treeable/shared/folder.model';
-import {CommonModule} from '@angular/common';
-import {DataTableModule} from 'primeng/components/datatable/datatable';
-import {FileService} from '../../core/file/file.services';
-import {Site} from '../../core/treeable/shared/site.model';
+import { Component, NgModule } from '@angular/core';
+import { Treeable } from '../../core/treeable/shared/treeable.model';
+import { SiteBrowserState } from '../../core/util/site-browser.state';
+import { SiteBrowserService } from '../../core/util/site-browser.service';
+import { SettingsStorageService } from '../../core/util/settings-storage.service';
+import { NotificationService } from '../../core/util/notification.service';
+import { Folder } from '../../core/treeable/shared/folder.model';
+import { CommonModule } from '@angular/common';
+import { DataTableModule } from 'primeng/components/datatable/datatable';
+import { FileService } from '../../core/file/file.services';
+import { Site } from '../../core/treeable/shared/site.model';
 
 /**
  * The SiteDataTableComponent is a PrimeNG Component which provides a DataTable to display dotCMS Host/Folder Navigation
@@ -57,36 +57,35 @@ import {Site} from '../../core/treeable/shared/site.model';
     </div>`
 })
 export class SiteDatatableComponent {
-
     dotCMSURL = '';
     site: Site;
     treeables: Treeable[];
 
-    constructor(private updateService: SiteBrowserState,
-                private fileService: FileService,
-                private siteBrowserService: SiteBrowserService,
-                settingsStorageService: SettingsStorageService,
-                private messageService: NotificationService) {
-
-        if (settingsStorageService.getSettings()) {this.dotCMSURL = settingsStorageService.getSettings().site; }
+    constructor(
+        private updateService: SiteBrowserState,
+        private fileService: FileService,
+        private siteBrowserService: SiteBrowserService,
+        settingsStorageService: SettingsStorageService,
+        private messageService: NotificationService
+    ) {
+        if (settingsStorageService.getSettings()) {
+            this.dotCMSURL = settingsStorageService.getSettings().site;
+        }
         this.site = updateService.getSelectedSite();
         if (updateService.getURI()) {
             this.loadFolder(updateService.getURI());
         }
-        updateService.currentSite
-            .subscribe(site => {
-                if (site && site.hostname) {
-                    this.loadSite(site);
-                }
-            });
-        updateService.currentURI
-            .subscribe(uri => {
-                if (uri) {
-                    this.loadFolder(uri);
-                }
-            });
-        setTimeout(() => {
-        }, 100);
+        updateService.currentSite.subscribe((site) => {
+            if (site && site.hostname) {
+                this.loadSite(site);
+            }
+        });
+        updateService.currentURI.subscribe((uri) => {
+            if (uri) {
+                this.loadFolder(uri);
+            }
+        });
+        setTimeout(() => {}, 100);
     }
 
     /**
@@ -96,18 +95,21 @@ export class SiteDatatableComponent {
      * @param event
      */
     doubleClick(event: any): void {
-        if (event.data.type !== 'folder') {return; }
-        let pathName: string = (<string> event.data.path);
+        if (event.data.type !== 'folder') {
+            return;
+        }
+        let pathName: string = <string>event.data.path;
         pathName = pathName.slice(0, pathName.length - 1);
         pathName = pathName.slice(pathName.lastIndexOf('/') + 1, pathName.length);
         this.updateService.changeFolder(pathName);
         this.updateService.changeURI(event.data.path);
         const folder: Folder = event.data;
         let uri = this.updateService.getURI();
-        if (!uri) {uri = ''; }
+        if (!uri) {
+            uri = '';
+        }
         this.loadFolder(folder.path);
-        setTimeout(() => {
-        }, 100);
+        setTimeout(() => {}, 100);
     }
 
     /**
@@ -123,8 +125,9 @@ export class SiteDatatableComponent {
      * @param uri
      */
     loadFolder(uri: string): void {
-        this.siteBrowserService.getTreeableAssetsUnderFolder(this.site.hostname, uri)
-            .subscribe((treeables: Treeable[]) => this.treeables = treeables);
+        this.siteBrowserService
+            .getTreeableAssetsUnderFolder(this.site.hostname, uri)
+            .subscribe((treeables: Treeable[]) => (this.treeables = treeables));
         setTimeout(() => {}, 100);
     }
 
@@ -134,8 +137,9 @@ export class SiteDatatableComponent {
      */
     loadSite(site: Site): void {
         this.site = site;
-        this.siteBrowserService.getTreeableAssetsUnderSite(site.hostname)
-            .subscribe((treeables: Treeable[]) => this.treeables = treeables);
+        this.siteBrowserService
+            .getTreeableAssetsUnderSite(site.hostname)
+            .subscribe((treeables: Treeable[]) => (this.treeables = treeables));
         setTimeout(() => {}, 100);
     }
 
@@ -155,8 +159,8 @@ export class SiteDatatableComponent {
         for (let i = 0; i < this.treeables.length; i++) {
             const node: Treeable = this.treeables[i];
             if (node.title === folderTitle && node.type === 'folder') {
-                pathToUploadTo = (<Folder> node).path;
-                fileContentTypeID = (<Folder> node).defaultFileType;
+                pathToUploadTo = (<Folder>node).path;
+                fileContentTypeID = (<Folder>node).defaultFileType;
                 break;
             }
         }
@@ -170,7 +174,6 @@ export class SiteDatatableComponent {
         this.messageService.displayInfoMessage('Path is ' + pathToUploadTo);
         return;
     }
-
 }
 
 @NgModule({
@@ -179,4 +182,4 @@ export class SiteDatatableComponent {
     imports: [CommonModule, DataTableModule],
     providers: [FileService, SiteBrowserService, SettingsStorageService, NotificationService]
 })
-export class DotSiteDatatableModule { }
+export class DotSiteDatatableModule {}

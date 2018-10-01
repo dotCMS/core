@@ -1,11 +1,10 @@
-import {Injectable, NgModule} from '@angular/core';
+import { Injectable, NgModule } from '@angular/core';
 
 /**
  * LocalStoreService. Basic wraper for localStorage
  */
 @Injectable()
 export class LocalStoreService {
-
     /**
      * Stores Value in localstorage
      * @param key
@@ -43,6 +42,6 @@ export class LocalStoreService {
 }
 
 @NgModule({
-  providers: [LocalStoreService]
+    providers: [LocalStoreService]
 })
 export class DotLocalStoreModule {}

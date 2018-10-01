@@ -1,4 +1,4 @@
-import {Treeable} from '../treeable/shared/treeable.model';
+import { Treeable } from '../treeable/shared/treeable.model';
 
 /**
  * Model object for the FileAsset Object in dotCMS.
@@ -13,7 +13,10 @@ export class File extends Treeable {
     modUserName: string;
     path: string;
     parent: string;
-    constructor() {super(); this.displayType = 'File'; }
+    constructor() {
+        super();
+        this.displayType = 'File';
+    }
     // /**
     //  * Convenience method to check the mimetype and so if it starts with image
     //  * @returns boolean

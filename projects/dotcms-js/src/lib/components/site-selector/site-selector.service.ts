@@ -1,5 +1,4 @@
-
-import {throwError as observableThrowError,  Observable } from 'rxjs';
+import { throwError as observableThrowError, Observable } from 'rxjs';
 import { Response } from '@angular/http';
 import { Inject, Injectable } from '@angular/core';
 import { HttpClient } from '../../core/util/http.service';

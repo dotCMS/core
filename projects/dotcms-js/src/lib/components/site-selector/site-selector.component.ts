@@ -1,12 +1,12 @@
-import {Component, Inject, NgModule} from '@angular/core';
+import { Component, Inject, NgModule } from '@angular/core';
 
-import {SiteSelectorService} from './site-selector.service';
-import {Site} from '../../core/treeable/shared/site.model';
-import {SiteBrowserState} from '../../core/util/site-browser.state';
-import {CommonModule} from '@angular/common';
-import {AutoCompleteModule} from 'primeng/components/autocomplete/autocomplete';
-import {InputTextModule} from 'primeng/components/inputtext/inputtext';
-import {FormsModule} from '@angular/forms';
+import { SiteSelectorService } from './site-selector.service';
+import { Site } from '../../core/treeable/shared/site.model';
+import { SiteBrowserState } from '../../core/util/site-browser.state';
+import { CommonModule } from '@angular/common';
+import { AutoCompleteModule } from 'primeng/components/autocomplete/autocomplete';
+import { InputTextModule } from 'primeng/components/inputtext/inputtext';
+import { FormsModule } from '@angular/forms';
 
 @Inject('updateService')
 @Component({
@@ -27,7 +27,6 @@ import {FormsModule} from '@angular/forms';
     </div>`
 })
 export class SiteSelectorComponent {
-
     sites: Site[];
     filteredHosts: Site[];
     host: Site;
@@ -52,7 +51,8 @@ export class SiteSelectorComponent {
      * @param event
      */
     filterHosts(event: any): void {
-        this.siteSelectorService.filterForSites(event.query)
+        this.siteSelectorService
+            .filterForSites(event.query)
             .subscribe((sites: Site[]) => this.handleSiteResults(sites, event));
         setTimeout(() => {}, 100);
     }
@@ -62,7 +62,8 @@ export class SiteSelectorComponent {
      */
     handleDropdownClick(_event): void {
         this.filteredHosts = [];
-        this.siteSelectorService.getSites()
+        this.siteSelectorService
+            .getSites()
             .subscribe((sites: Site[]) => this.handleSiteResults(sites));
         setTimeout(() => {}, 100);
     }
@@ -74,7 +75,7 @@ export class SiteSelectorComponent {
             const site = this.sites[i];
             if (event && site.hostname.toLowerCase().indexOf(event.query.toLowerCase()) === 0) {
                 this.filteredHosts.push(site);
-            }else {
+            } else {
                 this.filteredHosts[i] = this.sites[i];
             }
         }
@@ -87,4 +88,4 @@ export class SiteSelectorComponent {
     imports: [CommonModule, FormsModule, InputTextModule, AutoCompleteModule],
     providers: [SiteSelectorService]
 })
-export class DotSiteSelectorModule { }
+export class DotSiteSelectorModule {}

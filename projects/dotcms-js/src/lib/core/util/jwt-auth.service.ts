@@ -3,7 +3,7 @@ import { Inject, Injectable, NgModule } from '@angular/core';
 import { NotificationService } from './notification.service';
 import { Http, Headers, Response, RequestMethod, RequestOptions } from '@angular/http';
 import { SettingsStorageService } from './settings-storage.service';
-import {map, catchError} from 'rxjs/operators';
+import { map, catchError } from 'rxjs/operators';
 
 /**
  * Service for managing JWT Auth Token from dotCMS Site/Host

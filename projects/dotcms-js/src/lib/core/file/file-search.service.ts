@@ -1,5 +1,4 @@
-
-import {throwError as observableThrowError,  Observable ,  BehaviorSubject } from 'rxjs';
+import { throwError as observableThrowError, Observable, BehaviorSubject } from 'rxjs';
 import { Inject, Injectable } from '@angular/core';
 
 import { Response } from '@angular/http';
@@ -49,7 +48,9 @@ export class FileSearchService {
     }
 
     private handleError(error: any): Observable<string> {
-        const errMsg = this.getError(error) ? `${error.status} - ${error.statusText}` : 'Server error';
+        const errMsg = this.getError(error)
+            ? `${error.status} - ${error.statusText}`
+            : 'Server error';
         if (errMsg) {
             // this.log.error(errMsg);
             console.error('There was an error; please try again : ' + errMsg);

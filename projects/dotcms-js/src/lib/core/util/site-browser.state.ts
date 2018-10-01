@@ -1,14 +1,13 @@
-import {Injectable} from '@angular/core';
-import {BehaviorSubject, Observable} from 'rxjs';
-import {Treeable} from '../treeable/shared/treeable.model';
-import {Site} from '../treeable/shared/site.model';
+import { Injectable } from '@angular/core';
+import { BehaviorSubject, Observable } from 'rxjs';
+import { Treeable } from '../treeable/shared/treeable.model';
+import { Site } from '../treeable/shared/site.model';
 
 /**
  * Manages the state of objects in dotcms-js so compoents can Observe changes and reload as needed
  */
 @Injectable()
 export class SiteBrowserState {
-
     currentFolder: Observable<string>;
     currentSetingsUpdated: Observable<boolean>;
     currentSite: Observable<Site>;
@@ -18,7 +17,9 @@ export class SiteBrowserState {
     private currentFolderSubject: BehaviorSubject<string> = new BehaviorSubject<string>(null);
     private currentURISubject: BehaviorSubject<string> = new BehaviorSubject<string>(null);
     private currentTreeableSubject: BehaviorSubject<Treeable> = new BehaviorSubject<Treeable>(null);
-    private currentSettingsUpdatedSubject: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(null);
+    private currentSettingsUpdatedSubject: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(
+        null
+    );
     constructor() {
         this.currentFolder = this.currentFolderSubject.asObservable();
         this.currentSetingsUpdated = this.currentSettingsUpdatedSubject.asObservable();
@@ -32,7 +33,7 @@ export class SiteBrowserState {
     }
 
     getSelectedSite(): Site {
-        return <Site> this.currentSiteSubject.getValue();
+        return <Site>this.currentSiteSubject.getValue();
     }
 
     changeFolder(folderName: string): void {
@@ -40,14 +41,14 @@ export class SiteBrowserState {
     }
 
     getSelectedFolder(): string {
-        return <string> this.currentFolderSubject.getValue();
+        return <string>this.currentFolderSubject.getValue();
     }
 
     changeURI(uri: string): void {
         this.currentURISubject.next(uri);
     }
     getURI(): string {
-        return <string> this.currentURISubject.getValue();
+        return <string>this.currentURISubject.getValue();
     }
 
     changeTreeable(treeable: Treeable): void {
@@ -55,7 +56,7 @@ export class SiteBrowserState {
     }
 
     getSelectedTreeable(): Treeable {
-        return <Treeable> this.currentTreeableSubject.getValue();
+        return <Treeable>this.currentTreeableSubject.getValue();
     }
 
     changeSettingsUpdated(settingsUpdated: boolean): void {
@@ -63,7 +64,6 @@ export class SiteBrowserState {
     }
 
     getSettingsUpdated(): boolean {
-        return <boolean> this.currentSettingsUpdatedSubject.getValue();
+        return <boolean>this.currentSettingsUpdatedSubject.getValue();
     }
-
 }

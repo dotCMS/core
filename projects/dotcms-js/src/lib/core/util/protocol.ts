@@ -1,10 +1,8 @@
-import {Observable, Subject} from 'rxjs';
-import {LoggerService} from '../logger.service';
+import { Observable, Subject } from 'rxjs';
+import { LoggerService } from '../logger.service';
 
 export class Url {
-    constructor(private protocol: string, private baseUrl: string, private endPoint: string)  {
-
-    }
+    constructor(private protocol: string, private baseUrl: string, private endPoint: string) {}
 
     get url(): string {
         return `${this.protocol}://${this.baseUrl}${this.endPoint}`;
@@ -31,17 +29,16 @@ export class Url {
 }
 
 export abstract class Protocol {
-
     protected _open: Subject<any> = new Subject<any>();
     protected _close: Subject<any> = new Subject<any>();
     protected _message: Subject<any> = new Subject<any>();
     protected _error: Subject<any> = new Subject<any>();
 
-    constructor(protected loggerService: LoggerService, private protocolConfig?: ProtocolConfig ) {
+    constructor(protected loggerService: LoggerService, private protocolConfig?: ProtocolConfig) {
         if (!protocolConfig) {
             this.protocolConfig = {
                 initialTimeout: 500,
-                maxTimeout: 300000,
+                maxTimeout: 300000
             };
         }
     }
@@ -67,7 +64,7 @@ export abstract class Protocol {
 
     protected reconnect(): void {
         this.destroy();
-        setTimeout( this.start(), 0);
+        setTimeout(this.start(), 0);
     }
 
     // Exponential Backoff Formula by Prof. Douglas Thain
@@ -81,7 +78,7 @@ export abstract class Protocol {
             const M = this.protocolConfig.maxTimeout;
 
             return Math.floor(Math.min(R * T * Math.pow(F, N), M));
-        }else {
+        } else {
             return this.protocolConfig.timeWaitToReconnect;
         }
     }

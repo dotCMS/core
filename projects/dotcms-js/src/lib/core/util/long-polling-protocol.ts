@@ -18,7 +18,7 @@ export class LongPollingProtocol extends Protocol {
         super(loggerService);
 
         if (!queryBuilder) {
-            this.queryBuilder = _data => null;
+            this.queryBuilder = (_data) => null;
         }
     }
 
@@ -32,15 +32,13 @@ export class LongPollingProtocol extends Protocol {
                 method: RequestMethod.Get,
                 url: this.url.getUrlWith(queryParameters)
             })
-            .pipe(
-                pluck('entity')
-            )
+            .pipe(pluck('entity'))
             .subscribe(
-                data => {
+                (data) => {
                     this.loggerService.debug('new Events', data);
 
                     if (data instanceof Array) {
-                        data.forEach(message => {
+                        data.forEach((message) => {
                             this._message.next(message);
                         });
                     } else {

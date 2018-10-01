@@ -19,8 +19,8 @@ export class SocketFactory {
     public createSocket(): Observable<Protocol> {
         this.loggerService.debug('Creating socket object');
 
-        return Observable.create(observer => {
-            this.dotcmsConfig.getConfig().subscribe(configParams => {
+        return Observable.create((observer) => {
+            this.dotcmsConfig.getConfig().subscribe((configParams) => {
                 const url: Url = new Url(
                     configParams.websocketProtocol,
                     configParams.websocketBaseURL,

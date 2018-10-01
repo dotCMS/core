@@ -107,7 +107,7 @@ export class ApiRoot {
         } else if (url && url.startsWith('http://' || url.startsWith('https://'))) {
             this.baseUrl = url.endsWith('/') ? url : url + '/';
         } else {
-            throw new Error('Invalid proxy server base url: \'' + url + '\'');
+            throw new Error("Invalid proxy server base url: '" + url + "'");
         }
         this.defaultSiteUrl = this.baseUrl + 'api/v1/sites/' + this.siteId;
     }

@@ -1,8 +1,8 @@
 // tslint:disable:typedef
 
-import {Injector} from '@angular/core';
-import {UserModel} from './shared/user.model';
-import {ApiRoot} from './api-root.service';
+import { Injector } from '@angular/core';
+import { UserModel } from './shared/user.model';
+import { ApiRoot } from './api-root.service';
 
 let injector = {};
 /*let injector = Injector.resolveAndCreate([
@@ -11,28 +11,36 @@ let injector = {};
 ]);*/
 
 describe('Unit.api.persistence.ApiRoot', function() {
-  let apiRoot: ApiRoot;
-  beforeEach(function() {
-   // apiRoot = injector.get(ApiRoot);
-  });
+    let apiRoot: ApiRoot;
+    beforeEach(function() {
+        // apiRoot = injector.get(ApiRoot);
+    });
 
-  it('The ApiRoot is injected.', function () {
-    expect(apiRoot).not.toBeNull();
-  });
+    it('The ApiRoot is injected.', function() {
+        expect(apiRoot).not.toBeNull();
+    });
 
-  it('Parses a query param correctly when it\'s the last query parameter.', function() {
-    let siteId = '48190c8c-42c4-46af-8d1a-0cd5db894797';
-    expect(ApiRoot.parseQueryParam('foo=bar&baz=1&realmId=' + siteId, 'realmId')).toEqual(siteId);
-  });
+    it("Parses a query param correctly when it's the last query parameter.", function() {
+        let siteId = '48190c8c-42c4-46af-8d1a-0cd5db894797';
+        expect(ApiRoot.parseQueryParam('foo=bar&baz=1&realmId=' + siteId, 'realmId')).toEqual(
+            siteId
+        );
+    });
 
-  it('Parses a query param correctly when it\'s the first query parameter.', function() {
-    let siteId = '48190c8c-42c4-46af-8d1a-0cd5db894797';
-    expect(ApiRoot.parseQueryParam('realmId=' + siteId + '&foo=bar&baz=1', 'realmId')).toEqual(siteId);
-  });
+    it("Parses a query param correctly when it's the first query parameter.", function() {
+        let siteId = '48190c8c-42c4-46af-8d1a-0cd5db894797';
+        expect(ApiRoot.parseQueryParam('realmId=' + siteId + '&foo=bar&baz=1', 'realmId')).toEqual(
+            siteId
+        );
+    });
 
-  it('Parses a query param correctly when it\'s the in the middle of the query.', function() {
-    let siteId = '48190c8c-42c4-46af-8d1a-0cd5db894797';
-    expect(ApiRoot.parseQueryParam('blarg=99thousand&realmId=' + siteId + '&foo=bar&baz=1', 'realmId')).toEqual(siteId);
-  });
-
+    it("Parses a query param correctly when it's the in the middle of the query.", function() {
+        let siteId = '48190c8c-42c4-46af-8d1a-0cd5db894797';
+        expect(
+            ApiRoot.parseQueryParam(
+                'blarg=99thousand&realmId=' + siteId + '&foo=bar&baz=1',
+                'realmId'
+            )
+        ).toEqual(siteId);
+    });
 });

@@ -7,8 +7,8 @@ import {
     URLSearchParams
 } from '@angular/http';
 import { Injectable } from '@angular/core';
-import { Subject ,  Observable } from 'rxjs';
-import {map, catchError} from 'rxjs/operators';
+import { Subject, Observable } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 
 import {
     hasContent,
@@ -23,7 +23,6 @@ import { ResponseView } from './util/response-view';
 import { LoggerService } from './logger.service';
 import { BrowserUtil } from './browser-util.service';
 import { HttpCode } from './util/http-code';
-
 
 export const RULE_CREATE = 'RULE_CREATE';
 export const RULE_DELETE = 'RULE_DELETE';
@@ -64,72 +63,75 @@ export class CoreWebService {
         const request = this.getRequestOpts(options);
         const source = options.body;
 
-        return this._http
-            .request(request)
-            .pipe(
+        return this._http.request(request).pipe(
             map((resp: Response) => {
                 return hasContent(resp) ? resp.json() : resp;
             }),
-            catchError((response: Response, _original: Observable<any>): Observable<any> => {
-                if (response) {
-                    this.handleHttpError(response);
-                    if (response.status === HttpCode.SERVER_ERROR || response.status === HttpCode.FORBIDDEN) {
-                        if (response.text() && response.text().indexOf('ECONNREFUSED') >= 0) {
-                            throw new CwError(
-                                NETWORK_CONNECTION_ERROR,
-                                CLIENTS_ONLY_MESSAGES[NETWORK_CONNECTION_ERROR],
-                                request,
-                                response,
-                                source
+            catchError(
+                (response: Response, _original: Observable<any>): Observable<any> => {
+                    if (response) {
+                        this.handleHttpError(response);
+                        if (
+                            response.status === HttpCode.SERVER_ERROR ||
+                            response.status === HttpCode.FORBIDDEN
+                        ) {
+                            if (response.text() && response.text().indexOf('ECONNREFUSED') >= 0) {
+                                throw new CwError(
+                                    NETWORK_CONNECTION_ERROR,
+                                    CLIENTS_ONLY_MESSAGES[NETWORK_CONNECTION_ERROR],
+                                    request,
+                                    response,
+                                    source
+                                );
+                            } else {
+                                throw new CwError(
+                                    SERVER_RESPONSE_ERROR,
+                                    response.headers.get('error-message'),
+                                    request,
+                                    response,
+                                    source
+                                );
+                            }
+                        } else if (response.status === HttpCode.NOT_FOUND) {
+                            this.loggerService.error(
+                                'Could not execute request: 404 path not valid.',
+                                options.url
                             );
-                        } else {
                             throw new CwError(
-                                SERVER_RESPONSE_ERROR,
+                                UNKNOWN_RESPONSE_ERROR,
                                 response.headers.get('error-message'),
                                 request,
                                 response,
                                 source
                             );
                         }
-                    } else if (response.status === HttpCode.NOT_FOUND) {
-                        this.loggerService.error(
-                            'Could not execute request: 404 path not valid.',
-                            options.url
-                        );
-                        throw new CwError(
-                            UNKNOWN_RESPONSE_ERROR,
-                            response.headers.get('error-message'),
-                            request,
-                            response,
-                            source
-                        );
                     }
+                    return null;
                 }
-                return null;
-            }));
+            )
+        );
     }
 
     /**
-   * Return a response adapted to the follow json format:
-   *
-   * <code>
-   * {
-   *   "errors":[],
-   *   "entity":{},
-   *   "messages":[],
-   *   "i18nMessagesMap":{}
-   * }
-   * </code>
-   *
-   * @param options
-   * @returns DotCMSHttpResponse
-   */
+     * Return a response adapted to the follow json format:
+     *
+     * <code>
+     * {
+     *   "errors":[],
+     *   "entity":{},
+     *   "messages":[],
+     *   "i18nMessagesMap":{}
+     * }
+     * </code>
+     *
+     * @param options
+     * @returns DotCMSHttpResponse
+     */
     public requestView(options: RequestOptionsArgs): Observable<ResponseView> {
         const request = this.getRequestOpts(options);
 
-        return this._http.request(request)
-          .pipe(
-            map(resp => {
+        return this._http.request(request).pipe(
+            map((resp) => {
                 if (resp.json().errors && resp.json().errors.length > 0) {
                     return this.handleRequestViewErrors(resp);
                 } else {
@@ -137,7 +139,7 @@ export class CoreWebService {
                 }
             })
             // catchError(this.handleRequestViewErrors)
-          );
+        );
     }
 
     private handleRequestViewErrors(resp): ResponseView {
@@ -158,7 +160,7 @@ export class CoreWebService {
             ? options.headers
             : { 'Content-Type': 'application/json' };
 
-        Object.keys(tempHeaders).forEach(key => {
+        Object.keys(tempHeaders).forEach((key) => {
             headers.set(key, tempHeaders[key]);
         });
 
@@ -166,7 +168,9 @@ export class CoreWebService {
         options.body =
             options.body && typeof options.body !== 'string'
                 ? JSON.stringify(options.body)
-                : options.body ? options.body : '';
+                : options.body
+                    ? options.body
+                    : '';
 
         options.headers = headers;
 

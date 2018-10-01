@@ -1,4 +1,4 @@
-import {Treeable} from './treeable.model';
+import { Treeable } from './treeable.model';
 
 /**
  * Site/Host Object for the Site/Host Object in dotCMS

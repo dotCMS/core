@@ -1,12 +1,12 @@
-import {Component, Inject, NgModule} from '@angular/core';
-import {Message, TreeNode} from 'primeng/components/common/api';
-import {Subscription} from 'rxjs';
-import {SiteTreetableService} from './site-treetable.service';
-import {SiteBrowserState} from '../../core/util/site-browser.state';
-import {NotificationService} from '../../core/util/notification.service';
-import {CommonModule} from '@angular/common';
-import {TreeTableModule} from 'primeng/components/treetable/treetable';
-import {Site} from '../../core/treeable/shared/site.model';
+import { Component, Inject, NgModule } from '@angular/core';
+import { Message, TreeNode } from 'primeng/components/common/api';
+import { Subscription } from 'rxjs';
+import { SiteTreetableService } from './site-treetable.service';
+import { SiteBrowserState } from '../../core/util/site-browser.state';
+import { NotificationService } from '../../core/util/notification.service';
+import { CommonModule } from '@angular/common';
+import { TreeTableModule } from 'primeng/components/treetable/treetable';
+import { Site } from '../../core/treeable/shared/site.model';
 
 @Component({
     selector: 'site-treetable',
@@ -21,10 +21,8 @@ import {Site} from '../../core/treeable/shared/site.model';
         </p-treeTable>
     </div>`
 })
-
 @Inject('updateService')
 export class SiteTreeTableComponent {
-
     dropzoneStylesVisible = true;
     site: Site;
     msgs: Message[];
@@ -32,22 +30,26 @@ export class SiteTreeTableComponent {
     selectedNode: TreeNode;
     subscription: Subscription;
 
-    constructor(private updateService: SiteBrowserState,
-                private siteTreetableService: SiteTreetableService,
-                private messageService: NotificationService) {
-
+    constructor(
+        private updateService: SiteBrowserState,
+        private siteTreetableService: SiteTreetableService,
+        private messageService: NotificationService
+    ) {
         this.site = updateService.getSelectedSite();
-        if (updateService.getURI()) {this.loadFolder(updateService.getURI()); }
-        this.subscription = updateService.currentSite
-            .subscribe(site => {
-                if (site) {this.loadHost(site); }
-            });
-        this.subscription = updateService.currentURI
-            .subscribe(uri => {
-                if (uri) {this.loadFolder(uri); }
-            });
-        setTimeout(() => {
-        }, 100);
+        if (updateService.getURI()) {
+            this.loadFolder(updateService.getURI());
+        }
+        this.subscription = updateService.currentSite.subscribe((site) => {
+            if (site) {
+                this.loadHost(site);
+            }
+        });
+        this.subscription = updateService.currentURI.subscribe((uri) => {
+            if (uri) {
+                this.loadFolder(uri);
+            }
+        });
+        setTimeout(() => {}, 100);
     }
 
     /**
@@ -84,10 +86,10 @@ export class SiteTreeTableComponent {
      */
     loadHost(site: Site): void {
         this.site = site;
-        this.siteTreetableService.getAssetsUnderSite(site.hostname)
-            .subscribe(items => this.lazyFiles = items);
-        setTimeout(() => {
-        }, 100);
+        this.siteTreetableService
+            .getAssetsUnderSite(site.hostname)
+            .subscribe((items) => (this.lazyFiles = items));
+        setTimeout(() => {}, 100);
     }
 
     /**
@@ -95,10 +97,10 @@ export class SiteTreeTableComponent {
      * @param uri
      */
     loadFolder(uri: string): void {
-        this.siteTreetableService.getAssetsUnderFolder(this.site.hostname, uri)
-            .subscribe(items => this.lazyFiles = items);
-        setTimeout(() => {
-        }, 100);
+        this.siteTreetableService
+            .getAssetsUnderFolder(this.site.hostname, uri)
+            .subscribe((items) => (this.lazyFiles = items));
+        setTimeout(() => {}, 100);
     }
 
     /**
@@ -107,7 +109,11 @@ export class SiteTreeTableComponent {
      */
     nodeSelect(event: any): void {
         this.msgs = [];
-        this.msgs.push({severity: 'info', summary: 'Node Selected', detail: event.node.data.name});
+        this.msgs.push({
+            severity: 'info',
+            summary: 'Node Selected',
+            detail: event.node.data.name
+        });
     }
 
     /**
@@ -116,7 +122,11 @@ export class SiteTreeTableComponent {
      */
     nodeUnselect(event: any): void {
         this.msgs = [];
-        this.msgs.push({severity: 'info', summary: 'Node Unselected', detail: event.node.data.name});
+        this.msgs.push({
+            severity: 'info',
+            summary: 'Node Unselected',
+            detail: event.node.data.name
+        });
     }
 
     /**
@@ -124,17 +134,17 @@ export class SiteTreeTableComponent {
      * @param event
      */
     nodeExpand(event: any): void {
-        let pathName: string = (<string> event.node.data.path);
+        let pathName: string = <string>event.node.data.path;
         pathName = pathName.slice(0, pathName.length - 1);
         pathName = pathName.slice(pathName.lastIndexOf('/') + 1, pathName.length);
         this.updateService.changeFolder(pathName);
         this.updateService.changeURI(event.node.data.path);
         if (event.node) {
-            this.siteTreetableService.getAssetsUnderFolder(this.site.hostname, event.node.data.path)
-                .subscribe(items => this.lazyFiles = items);
+            this.siteTreetableService
+                .getAssetsUnderFolder(this.site.hostname, event.node.data.path)
+                .subscribe((items) => (this.lazyFiles = items));
         }
-        setTimeout(() => {
-        }, 100);
+        setTimeout(() => {}, 100);
     }
 }
 
@@ -144,4 +154,4 @@ export class SiteTreeTableComponent {
     imports: [CommonModule, TreeTableModule],
     providers: [SiteTreetableService, NotificationService]
 })
-export class DotSiteTreeTableModule { }
+export class DotSiteTreeTableModule {}

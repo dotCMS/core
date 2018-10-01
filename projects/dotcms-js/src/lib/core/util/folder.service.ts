@@ -1,10 +1,9 @@
-
-import {throwError as observableThrowError, Observable} from 'rxjs';
-import {HttpClient} from './http.service';
-import {NotificationService} from './notification.service';
-import {Response} from '@angular/http';
-import {Inject, Injectable, NgModule} from '@angular/core';
-import {Folder} from '../treeable/shared/folder.model';
+import { throwError as observableThrowError, Observable } from 'rxjs';
+import { HttpClient } from './http.service';
+import { NotificationService } from './notification.service';
+import { Response } from '@angular/http';
+import { Inject, Injectable, NgModule } from '@angular/core';
+import { Folder } from '../treeable/shared/folder.model';
 import { map, catchError } from 'rxjs/operators';
 
 /**
@@ -14,11 +13,7 @@ import { map, catchError } from 'rxjs/operators';
 @Inject('httpClient')
 @Inject('notificationService')
 export class FolderService {
-    constructor
-    (
-        private notificationService: NotificationService,
-        private httpClient: HttpClient
-    ) {}
+    constructor(private notificationService: NotificationService, private httpClient: HttpClient) {}
 
     /**
      * Load a folder from the remote dotCMS server based on site and path
@@ -26,10 +21,9 @@ export class FolderService {
      * @param String uri The folder path
      */
     loadFolderByURI(siteName: String, uri: String): Observable<Folder | string> {
-        return this.httpClient.get('/api/v1/folder/sitename/' + siteName + '/uri/' + uri)
-        .pipe(
-          map((res: Response) => this.extractDataFilter(res)),
-          catchError(error => this.handleError(error))
+        return this.httpClient.get('/api/v1/folder/sitename/' + siteName + '/uri/' + uri).pipe(
+            map((res: Response) => this.extractDataFilter(res)),
+            catchError((error) => this.handleError(error))
         );
     }
 
@@ -40,17 +34,22 @@ export class FolderService {
     }
 
     private handleError(error: any): Observable<string> {
-        const errMsg = (error.message) ? error.message :
-            error.status ? `${error.status} - ${error.statusText}` : 'Server error';
+        const errMsg = error.message
+            ? error.message
+            : error.status
+                ? `${error.status} - ${error.statusText}`
+                : 'Server error';
         if (errMsg) {
             console.log(errMsg);
-            this.notificationService.displayErrorMessage('There was an error; please try again : ' + errMsg);
+            this.notificationService.displayErrorMessage(
+                'There was an error; please try again : ' + errMsg
+            );
             return observableThrowError(errMsg);
         }
     }
 }
 
 @NgModule({
-  providers: [FolderService, HttpClient, NotificationService]
+    providers: [FolderService, HttpClient, NotificationService]
 })
-export class DotFolderModule { }
+export class DotFolderModule {}

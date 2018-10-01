@@ -1,7 +1,7 @@
-import {Component, ViewEncapsulation} from '@angular/core';
-import {MenuItem} from 'primeng/primeng';
-import {SiteBrowserState} from '../../core/util/site-browser.state';
-import {JWTAuthService} from '../../core/util/jwt-auth.service';
+import { Component, ViewEncapsulation } from '@angular/core';
+import { MenuItem } from 'primeng/primeng';
+import { SiteBrowserState } from '../../core/util/site-browser.state';
+import { JWTAuthService } from '../../core/util/jwt-auth.service';
 
 @Component({
     encapsulation: ViewEncapsulation.None,
@@ -18,9 +18,9 @@ export class AppComponent {
     private items: MenuItem[];
 
     constructor(private updateService: SiteBrowserState, authService: JWTAuthService) {
-        authService.login('http://demo37.dotcms.com', 'admin@dotcms.com', 'admin').subscribe(token => {
-        }, (err) => {
-        });
+        authService
+            .login('http://demo37.dotcms.com', 'admin@dotcms.com', 'admin')
+            .subscribe((token) => {}, (err) => {});
     }
 
     ngOnInit() {

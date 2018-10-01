@@ -1,4 +1,4 @@
-import {Treeable} from './treeable.model';
+import { Treeable } from './treeable.model';
 
 /**
  * Model Object for the Folder Object in dotCMS
@@ -10,5 +10,8 @@ export class Folder extends Treeable {
     filesMasks: string;
     defaultFileType: string;
     path: string;
-    constructor() {super(); this.displayType = 'Folder'; }
+    constructor() {
+        super();
+        this.displayType = 'Folder';
+    }
 }

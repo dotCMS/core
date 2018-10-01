@@ -1,13 +1,11 @@
-import {Component, ViewEncapsulation} from '@angular/core';
-import {SiteBrowserState} from '../../../core/util/site-browser.state';
+import { Component, ViewEncapsulation } from '@angular/core';
+import { SiteBrowserState } from '../../../core/util/site-browser.state';
 
 @Component({
     templateUrl: './breadcrumb.html',
-    encapsulation: ViewEncapsulation.None,
-
+    encapsulation: ViewEncapsulation.None
 })
 export class BreadcrumbDemoShowcase {
-
     constructor(private updateService: SiteBrowserState) {}
 
     ngOnInit() {

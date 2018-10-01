@@ -13,11 +13,10 @@ import { Response, Headers } from '@angular/http';
  * </code>
  */
 export class ResponseView {
-
     private bodyJsonObject: any;
     private headers: Headers;
 
-    public constructor(private resp: Response ) {
+    public constructor(private resp: Response) {
         try {
             this.bodyJsonObject = resp.json();
             this.headers = resp.headers;
@@ -30,7 +29,7 @@ export class ResponseView {
         return this.headers.get(headerName);
     }
 
-    get i18nMessagesMap(): any{
+    get i18nMessagesMap(): any {
         return this.bodyJsonObject.i18nMessagesMap;
     }
 
@@ -46,7 +45,7 @@ export class ResponseView {
         let errorMessages = '';
 
         if (this.bodyJsonObject.errors) {
-            this.bodyJsonObject.errors.forEach(e => {
+            this.bodyJsonObject.errors.forEach((e) => {
                 errorMessages += e.message;
             });
         } else {
@@ -56,7 +55,7 @@ export class ResponseView {
         return errorMessages;
     }
 
-    get status(): number{
+    get status(): number {
         return this.resp.status;
     }
 
@@ -65,7 +64,9 @@ export class ResponseView {
     }
 
     public existError(errorCode: string): boolean {
-        return this.bodyJsonObject.errors &&
-            this.bodyJsonObject.errors.filter( e => e.errorCode === errorCode).length > 0;
+        return (
+            this.bodyJsonObject.errors &&
+            this.bodyJsonObject.errors.filter((e) => e.errorCode === errorCode).length > 0
+        );
     }
 }

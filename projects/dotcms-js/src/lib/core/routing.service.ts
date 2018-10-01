@@ -131,10 +131,10 @@ export class RoutingService {
                 url: this.urlMenus
             })
             .subscribe(
-                response => {
+                (response) => {
                     this.setMenus(response.entity);
                 },
-                error => this._menusChange$.error(error)
+                (error) => this._menusChange$.error(error)
             );
     }
 

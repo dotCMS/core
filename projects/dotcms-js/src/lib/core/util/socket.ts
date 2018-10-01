@@ -22,7 +22,8 @@ export class EventsSocket extends Protocol {
     private protocolImpl: Protocol;
 
     private closedOnLogout = false;
-    private isWebSocketServerSupport: WEB_SOCKET_SERVER_SUPPORT = WEB_SOCKET_SERVER_SUPPORT.DONT_NOW;
+    private isWebSocketServerSupport: WEB_SOCKET_SERVER_SUPPORT =
+        WEB_SOCKET_SERVER_SUPPORT.DONT_NOW;
     private status: CONNECTION_STATUS = CONNECTION_STATUS.NONE;
 
     private lastcallback: number;
@@ -65,7 +66,7 @@ export class EventsSocket extends Protocol {
                 this._open.next();
             });
 
-            this.protocolImpl.error$().subscribe(error => {
+            this.protocolImpl.error$().subscribe((error) => {
                 if (this.status === CONNECTION_STATUS.CONNECTING && this.isWebSocketProtocol()) {
                     this.loggerService.info(
                         'Error connecting with Websockets, trying again with long polling'
@@ -79,7 +80,7 @@ export class EventsSocket extends Protocol {
                 }
             });
 
-            this.protocolImpl.close$().subscribe(_event => {
+            this.protocolImpl.close$().subscribe((_event) => {
                 if (this.closedOnLogout) {
                     // We explicitly closed the socket
 
@@ -97,8 +98,8 @@ export class EventsSocket extends Protocol {
             this.protocolImpl
                 .message$()
                 .subscribe(
-                    res => this._message.next(res),
-                    e =>
+                    (res) => this._message.next(res),
+                    (e) =>
                         this.loggerService.debug(
                             'Error in the System Events service: ' + e.message
                         ),
@@ -129,7 +130,7 @@ export class EventsSocket extends Protocol {
                 this.url.getHttpUrl(),
                 this.loggerService,
                 this.coreWebService,
-                data => {
+                (data) => {
                     const result: QueryParams = {};
 
                     if (data.length > 0) {
