@@ -9,7 +9,7 @@ import { By } from '@angular/platform-browser';
 import { SafePipe } from './../../../../pipes/safe-url.pipe';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { IframeComponent } from './iframe.component';
-import { LoginService } from 'dotcms-js/core/login.service';
+import { LoginService } from 'dotcms-js/dotcms-js';
 import { LoginServiceMock } from '../../../../../test/login-service.mock';
 import { DotIframeService } from '../service/dot-iframe/dot-iframe.service';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';

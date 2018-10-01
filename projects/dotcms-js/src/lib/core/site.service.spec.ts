@@ -1,18 +1,17 @@
-import { fakeAsync, tick, async } from '@angular/core/testing';
+import { fakeAsync, tick } from '@angular/core/testing';
 import { Response, ResponseOptions, ConnectionBackend } from '@angular/http';
 import { MockBackend } from '@angular/http/testing';
-import { CoreWebService } from './core-web-service';
-import { DOTTestBed } from '../../test/dot-test-bed';
-import { RequestMethod } from '@angular/http';
-import { LoginService } from './login-service';
-import { DotcmsEventsService } from './dotcms-events-service';
-import { DotcmsEventsServiceMock } from '../../test/dotcms-events-service.mock';
-import { LoginServiceMock } from '../../test/login-service.mock';
-import { SiteService, Site } from './site-service';
-import { Observable } from 'rxjs';
+import { Site } from './treeable/shared/site.model';
+import { DOTTestBed } from 'src/app/test/dot-test-bed';
+import { LoginService } from './login.service';
+import { LoginServiceMock } from 'src/app/test/login-service.mock';
+import { DotcmsEventsService } from 'dotcms-js/dotcms-js';
+import { DotcmsEventsServiceMock } from 'src/app/test/dotcms-events-service.mock';
+import { SiteService } from './site.service';
+
 
 describe('Site Service', () => {
-    let currentSite: Site = {
+    const currentSite: Site = {
         hostname: 'hostname',
         identifier: '5',
         type: 'type'
@@ -29,7 +28,7 @@ describe('Site Service', () => {
         this.backend = this.injector.get(ConnectionBackend) as MockBackend;
         this.backend.connections.subscribe((connection: any) => {
             this.lastConnection = connection;
-            let url = connection.request.url;
+            const url = connection.request.url;
 
             if (url.indexOf('v1/site/currentSite') !== -1) {
                 this.lastCurrentSiteConnection = connection;
@@ -46,13 +45,13 @@ describe('Site Service', () => {
     it(
         'should tigger switchSite',
         fakeAsync(() => {
-            let currentCounter = 5;
+            const currentCounter = 5;
             let newCurrentSite: Site;
-            let loginService: LoginServiceMock = this.injector.get(LoginService);
+            const loginService: LoginServiceMock = this.injector.get(LoginService);
 
             this.siteService.switchSite$.subscribe((site) => (newCurrentSite = site));
 
-            let mockResponse = {
+            const mockResponse = {
                 entity: {
                     currentSite: currentSite,
                     totalRecords: currentCounter
@@ -92,7 +91,7 @@ describe('Site Service', () => {
     it(
         'should refresh sites when an event happend',
         fakeAsync(() => {
-            let events: string[] = [
+            const events: string[] = [
                 'SAVE_SITE',
                 'PUBLISH_SITE',
                 'UPDATE_SITE_PERMISSIONS',
@@ -100,11 +99,11 @@ describe('Site Service', () => {
                 'UPDATE_SITE',
                 'ARCHIVE_SITE'
             ];
-            let dotcmsEventsService: DotcmsEventsServiceMock = this.injector.get(
+            const dotcmsEventsService: DotcmsEventsServiceMock = this.injector.get(
                 DotcmsEventsService
             );
-            let siteService = this.injector.get(SiteService);
-            let data = {
+            const siteService = this.injector.get(SiteService);
+            const data = {
                 data: {
                     data: {
                         identifier: '5'

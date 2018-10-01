@@ -14,7 +14,7 @@ import { ComponentFixture } from '@angular/core/testing';
 import { DebugElement, Injectable } from '@angular/core';
 import { async } from '@angular/core/testing';
 
-import { LoginService } from 'dotcms-js/core/login.service';
+import { LoginService } from 'dotcms-js/dotcms-js';
 
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { LoginServiceMock, mockAuth } from '../../../test/login-service.mock';

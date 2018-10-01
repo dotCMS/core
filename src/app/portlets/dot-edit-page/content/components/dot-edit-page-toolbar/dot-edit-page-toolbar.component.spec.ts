@@ -1,5 +1,5 @@
 import { LoginServiceMock } from './../../../../../test/login-service.mock';
-import { LoginService } from 'dotcms-js/core/login.service';
+import { LoginService } from 'dotcms-js/dotcms-js';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
 import { async, ComponentFixture } from '@angular/core/testing';
 import { DotEditPageToolbarComponent } from './dot-edit-page-toolbar.component';
@@ -214,7 +214,7 @@ describe('DotEditPageToolbarComponent', () => {
         expect(component.lockerModel).toBeFalsy();
     });
 
-    it("should have disabled edit button (user can't edit)", () => {
+    it('should have disabled edit button (user can\'t edit)', () => {
         fixture.componentInstance.pageState.page.canEdit = false;
         fixture.detectChanges();
 
@@ -401,7 +401,7 @@ describe('DotEditPageToolbarComponent', () => {
 
             expect(component.lockerModel).toBe(false);
             expect(component.mode).toBe(PageMode.LIVE, 'The mode should be the same');
-            expect(pageStateResult).toEqual(undefined, "doesn't emit state");
+            expect(pageStateResult).toEqual(undefined, 'doesn\'t emit state');
         });
 
         it('should call confirmation service on edit attemp when page is locked by another user', () => {
@@ -449,7 +449,7 @@ describe('DotEditPageToolbarComponent', () => {
 
             clickStateButton('edit');
 
-            expect(pageStateResult).toEqual(undefined, "doesn't emit state");
+            expect(pageStateResult).toEqual(undefined, 'doesn\'t emit state');
             expect(component.lockerModel).toBe(false);
         });
 
@@ -506,7 +506,7 @@ describe('DotEditPageToolbarComponent', () => {
             expect(pageStateResult.locked).toBeUndefined();
         });
 
-        it("should edit tab don't be called twice", () => {
+        it('should edit tab don\'t be called twice', () => {
             spyOn(_, 'debounce').and.callFake(function(cb) {
                 return function() {
                     cb();
