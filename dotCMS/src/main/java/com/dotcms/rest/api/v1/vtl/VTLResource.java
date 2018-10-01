@@ -66,7 +66,7 @@ public class VTLResource {
     @Path("/{folder}/{path: .*}")
     public Response get(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                         @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                             @PathParam("path") final String pathParams) {
+                        @PathParam("path") final String pathParams) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (pathParams, false, request, false, null);
@@ -105,13 +105,12 @@ public class VTLResource {
                 VelocityUtil.getEngine().evaluate(context, evalResult, "", fileAssetIputStream);
                 dotJSON = (DotJSON<String, String>) context.get("dotJSON");
 
-                if(!UtilMethods.isSet(dotJSON)) { // If no dotJSON let's return the raw evaluation of the velocity file
+                if(dotJSON.size()==0) { // If dotJSON is not used let's return the raw evaluation of the velocity file
                     return Response.ok(evalResult.toString()).build();
                 }
 
                 // let's add it to cache
                 CacheLocator.getDotJSONCache().add(dotJSONCacheKey, dotJSON);
-
             }
         } catch(DotContentletStateException e) {
             final String errorMessage = "Unable to find velocity file '" + HTTPMethod.GET.fileName + FILE_EXTENSION
