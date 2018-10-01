@@ -52,12 +52,14 @@ export class NotificationService {
      * @param body
      * @param type
      */
-    displayMessage(_title: string, body: string, type: string): void {
+    displayMessage(_title: string, body: string, type: string): Notification {
         let myNotification: Notification;
         myNotification = new Notification(type, {
             body: body,
             icon: this.iconPath + '/' + type + '.png'
         });
+
+        return myNotification;
     }
 }
 

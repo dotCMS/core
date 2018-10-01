@@ -74,11 +74,11 @@ export class LoginService {
     }
 
     get isLogin$(): Observable<boolean> {
-        return Observable.if(
-            () => !!this.auth && !!this.auth.user,
-            of(true),
-            this.loadAuth().pipe(map((auth) => !!auth && !!auth.user))
-        );
+        if (!!this.auth && !!this.auth.user) {
+            return of(true);
+        }
+
+        return this.loadAuth().pipe(map((auth) => !!auth && !!auth.user));
     }
 
     /**

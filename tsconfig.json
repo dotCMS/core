@@ -48,12 +48,15 @@
       "dot-layout-grid/*": [
         "dist-lib/dot-layout-grid/*"
       ],
-      "dotcms-js": [
-        "dist-lib/dotcms-js"
-      ],
-      "dotcms-js/*": [
-        "dist-lib/dotcms-js/*"
+      "dotcms-js/dotcms-js": [
+        "projects/dotcms-js/src/public_api"
       ]
+    //   "dotcms-js": [
+    //     "dist-lib/dotcms-js"
+    //   ],
+    //   "dotcms-js/*": [
+    //     "dist-lib/dotcms-js/*"
+    //   ]
     }
   }
 }

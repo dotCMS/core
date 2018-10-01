@@ -4,8 +4,7 @@ import {
     DialogModule,
     FileUpload,
     FileUploadModule,
-    PanelModule,
-    TreeTable
+    PanelModule
 } from 'primeng/primeng';
 import { Site } from '../../core/treeable/shared/site.model';
 import { Treeable } from '../../core/treeable/shared/treeable.model';

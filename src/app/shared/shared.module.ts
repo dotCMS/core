@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import {
     ApiRoot,
     BrowserUtil,
-    Config,
     CoreWebService,
     DotcmsConfig,
     DotcmsEventsService,
@@ -40,7 +39,6 @@ export class SharedModule {
             providers: [
                 ApiRoot,
                 BrowserUtil,
-                Config,
                 CoreWebService,
                 DotEventsService,
                 DotNavigationService,
