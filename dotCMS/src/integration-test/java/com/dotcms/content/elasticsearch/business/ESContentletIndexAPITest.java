@@ -669,10 +669,15 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
 	    	testContent.setStructureInode( testStructure.getInode() );
 	    	testContent.setHost( defaultHost.getIdentifier() );
 	    	testContent.setLanguageId(1);
+	    	testContent.setIndexPolicy(IndexPolicy.FORCE);
+	    	testContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
 
 	    	contentletAPI.setContentletProperty( testContent, field, "03/05/2014" );
 
 	    	testContent = contentletAPI.checkin( testContent, null, permissionAPI.getPermissions( testStructure ), user, false );
+
+            testContent.setIndexPolicy(IndexPolicy.FORCE);
+            testContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
 	    	APILocator.getVersionableAPI().setLive(testContent);
 
 			//And add it to the index

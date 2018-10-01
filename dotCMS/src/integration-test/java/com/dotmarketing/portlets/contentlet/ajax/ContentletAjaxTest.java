@@ -11,6 +11,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.UtilMethods;
@@ -94,8 +95,12 @@ public class ContentletAjaxTest {
 		contentlet.setStringProperty("title", title);
 		contentlet.setStringProperty("body", "testIssue5330");
 		contentlet.setHost(host.getIdentifier());
+		contentlet.setIndexPolicy(IndexPolicy.FORCE);
+        contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
 
 		contentlet = APILocator.getContentletAPI().checkin(contentlet, systemUser,false);
+        contentlet.setIndexPolicy(IndexPolicy.FORCE);
+        contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
 		APILocator.getVersionableAPI().setLive(contentlet);
 		APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode(),true);
 		
@@ -104,8 +109,12 @@ public class ContentletAjaxTest {
 		contentlet.setLanguageId(language.getId());
 		contentlet.setStringProperty("body", "italianTestIssue5330");
 		contentlet.setInode("");
+        contentlet.setIndexPolicy(IndexPolicy.FORCE);
+        contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
 
 		contentlet = APILocator.getContentletAPI().checkin(contentlet, systemUser,false);
+        contentlet.setIndexPolicy(IndexPolicy.FORCE);
+        contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
 		APILocator.getVersionableAPI().setLive(contentlet);
 		APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode(),true);
 		/*
@@ -128,7 +137,7 @@ public class ContentletAjaxTest {
 		
 		List<Object> results=new ContentletAjax().searchContentletsByUser(structure.getInode(), fieldsValues, categories, false, false, false, false,1, "modDate Desc", 10,systemUser, null, null, null);
 		Map<String,Object> result = (Map<String,Object>)results.get(0);
-		Assert.assertTrue((Long)result.get("total")==1);
+		Assert.assertEquals((Long)result.get("total"), new Long(1));
 		result = (Map<String,Object>)results.get(3);
 		Assert.assertTrue(Long.parseLong(String.valueOf(result.get("languageId")))==defaultLang.getId());
 		contentlet = APILocator.getContentletAPI().find(String.valueOf(result.get("inode")),systemUser,false);

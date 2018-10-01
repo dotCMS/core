@@ -252,6 +252,7 @@ public class WebDavTest {
         file.setIndexPolicy(IndexPolicy.FORCE);
 		file.setIndexPolicyDependencies(IndexPolicy.FORCE);
         file = APILocator.getContentletAPI().checkin(file, user, false);
+        APILocator.getContentletAPI().isInodeIndexed(file.getInode());
 
         
         final HttpServletRequest req=ServletTestRunner.localRequest.get();
