@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 
 import { DotMenu, DotMenuItem } from '@models/navigation';
 import { DotNavigationService } from './services/dot-navigation.service';

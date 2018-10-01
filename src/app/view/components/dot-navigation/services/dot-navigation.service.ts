@@ -209,7 +209,7 @@ export class DotNavigationService {
     }
 
     onNavigationEnd(): Observable<Event> {
-        return this.router.events.filter((event: Event) => event instanceof NavigationEnd);
+        return this.router.events.pipe(filter((event: Event) => event instanceof NavigationEnd));
     }
 
     private addMenuLinks(menu: DotMenu[]): DotMenu[] {

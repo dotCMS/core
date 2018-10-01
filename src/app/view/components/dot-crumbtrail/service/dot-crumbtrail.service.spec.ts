@@ -3,7 +3,7 @@ import { DotCrumbtrailService } from './dot-crumbtrail.service';
 import { Injectable } from '@angular/core';
 import { DotNavigationService } from '../../dot-navigation/services/dot-navigation.service';
 import { Router, ActivatedRoute } from '@angular/router';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { Subject } from 'rxjs/Subject';
 import { DotMenu } from '../../../../shared/models/navigation';
 

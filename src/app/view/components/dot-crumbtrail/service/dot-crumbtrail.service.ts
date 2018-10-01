@@ -6,9 +6,7 @@ import {
 import { map, switchMap, filter, take } from 'rxjs/operators';
 import { NavigationEnd, Router, ActivatedRoute, Data } from '@angular/router';
 import { DotMenu, DotMenuItem } from '../../../../shared/models/navigation';
-import { Observable } from 'rxjs/Observable';
-import { Subject } from 'rxjs/Subject';
-import { BehaviorSubject } from 'rxjs/BehaviorSubject';
+import { Observable, BehaviorSubject, Subject } from 'rxjs';
 
 @Injectable()
 export class DotCrumbtrailService {

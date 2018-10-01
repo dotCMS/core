@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { CoreWebService } from 'dotcms-js/dotcms-js';
 import { RequestMethod } from '@angular/http';
 import { DotPageContainer } from '@portlets/dot-edit-page/shared/models/dot-page-container.model';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 
 @Injectable()
 export class DotEditPageService {

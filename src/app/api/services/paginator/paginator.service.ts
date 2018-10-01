@@ -1,7 +1,7 @@
 import { take, map } from 'rxjs/operators';
 import { CoreWebService } from 'dotcms-js/dotcms-js';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { RequestMethod, URLSearchParams } from '@angular/http';
 
 export enum OrderDirection {

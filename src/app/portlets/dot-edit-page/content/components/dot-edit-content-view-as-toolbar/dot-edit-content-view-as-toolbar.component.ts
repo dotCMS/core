@@ -14,7 +14,7 @@ import { DotDevice } from '@models/dot-device/dot-device.model';
 import { DotRenderedPageState } from '../../../shared/models/dot-rendered-page-state.model';
 import { PageMode } from '../../../shared/models/page-mode.enum';
 import { DotMessageService } from '@services/dot-messages-service';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 
 @Component({

@@ -1,7 +1,7 @@
 import { pluck, mergeMap } from 'rxjs/operators';
 import { CoreWebService, ApiRoot } from 'dotcms-js/dotcms-js';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { RequestMethod } from '@angular/http';
 import { DotCurrentUser } from '@models/dot-current-user/dot-current-user';
 import { DotBundle } from '@models/dot-bundle/dot-bundle';

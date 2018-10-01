@@ -1,6 +1,6 @@
 import { mergeMap, flatMap, map, tap, toArray } from 'rxjs/operators';
 import { DotWorkflowService } from './../../../../api/services/dot-workflow/dot-workflow.service';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { DotWorkflow } from './../../../../shared/models/dot-workflow/dot-workflow.model';
 import { Component, OnInit, forwardRef } from '@angular/core';
 import { SelectItem } from 'primeng/components/common/selectitem';

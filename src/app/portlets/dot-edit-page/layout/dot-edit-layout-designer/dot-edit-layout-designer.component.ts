@@ -16,12 +16,12 @@ import { DotLayoutSideBar } from '../../shared/models/dot-layout-sidebar.model';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotTheme } from '../../shared/models/dot-theme.model';
 import { DotThemesService } from '@services/dot-themes/dot-themes.service';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import {
     DotHttpErrorManagerService,
     DotHttpErrorHandled
 } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { tap } from 'rxjs/operators/tap';
+import { tap } from 'rxjs/operators';
 import { DotLayout } from '../../shared/models/dot-layout.model';
 
 @Component({

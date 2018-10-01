@@ -1,7 +1,7 @@
 import { toArray, filter, pluck, mergeMap } from 'rxjs/operators';
 import { CoreWebService, ApiRoot } from 'dotcms-js/dotcms-js';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { RequestMethod } from '@angular/http';
 import { DotEnvironment } from '@models/dot-environment/dot-environment';
 import { AjaxActionResponseView } from '@models/ajax-action-response/ajax-action-response';

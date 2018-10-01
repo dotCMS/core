@@ -9,7 +9,7 @@ import { DotcmsEventsService } from './dotcms-events-service';
 import { DotcmsEventsServiceMock } from '../../test/dotcms-events-service.mock';
 import { LoginServiceMock } from '../../test/login-service.mock';
 import { SiteService, Site } from './site-service';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 
 describe('Site Service', () => {
     let currentSite: Site = {
