@@ -1,19 +1,15 @@
-import {Inject, Injectable} from '@angular/core';
-import {TreeNode} from 'primeng/components/common/api';
-import {Observable} from 'rxjs';
+import { Inject, Injectable } from '@angular/core';
+import { TreeNode } from 'primeng/components/common/api';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
-
-import {Treeable} from '../../core/treeable/shared/treeable.model';
-import {SiteBrowserService} from '../../core/util/site-browser.service';
+import { Treeable } from '../../core/treeable/shared/treeable.model';
+import { SiteBrowserService } from '../../core/util/site-browser.service';
 
 @Injectable()
 @Inject('siteBrowserService')
 export class SiteTreetableService {
-
-    constructor
-    (
-        private siteBrowserService: SiteBrowserService
-    ) {
+    constructor(private siteBrowserService: SiteBrowserService) {
         this.siteBrowserService = siteBrowserService;
     }
 
@@ -23,8 +19,9 @@ export class SiteTreetableService {
      * @returns Observable<R>
      */
     getAssetsUnderSite(siteName: String): Observable<TreeNode[]> {
-        return this.siteBrowserService.getTreeableAssetsUnderSite(siteName)
-            .map((treeables: Treeable[]) => this.extractDataFilter(treeables));
+        return this.siteBrowserService
+            .getTreeableAssetsUnderSite(siteName)
+            .pipe(map((treeables: Treeable[]) => this.extractDataFilter(treeables)));
     }
 
     /**
@@ -34,21 +31,22 @@ export class SiteTreetableService {
      * @returns Observable<R>
      */
     getAssetsUnderFolder(siteName: String, uri: string): Observable<TreeNode[]> {
-        return this.siteBrowserService.getTreeableAssetsUnderFolder(siteName, uri)
-            .map((treeables: Treeable[]) => this.extractDataFilter(treeables));
+        return this.siteBrowserService
+            .getTreeableAssetsUnderFolder(siteName, uri)
+            .pipe(map((treeables: Treeable[]) => this.extractDataFilter(treeables)));
     }
 
     private extractDataFilter(treeables: Treeable[]): TreeNode[] {
-        let assets: TreeNode[] = [];
+        const assets: TreeNode[] = [];
         for (let i = 0; i < treeables.length; i++) {
-            let treeable: any = treeables[i];
+            const treeable: any = treeables[i];
             let leaf = true;
             if (treeable.type === 'folder') {
                 leaf = false;
-            }else if (treeable.type === 'file_asset') {
+            } else if (treeable.type === 'file_asset') {
                 treeable.type = 'file';
             }
-            let treeNode: TreeNode = {
+            const treeNode: TreeNode = {
                 data: treeable,
                 leaf: leaf
             };

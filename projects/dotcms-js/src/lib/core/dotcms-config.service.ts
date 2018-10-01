@@ -2,6 +2,7 @@ import { CoreWebService } from './core-web.service';
 import { RequestMethod } from '@angular/http';
 import { Injectable } from '@angular/core';
 import { Observable, Observer } from 'rxjs';
+import { pluck } from 'rxjs/operators';
 import { LoggerService } from './logger.service';
 import { Menu } from './routing.service';
 
@@ -71,7 +72,7 @@ export class DotcmsConfig {
                 method: RequestMethod.Get,
                 url: this.configUrl
             })
-            .pluck('entity')
+            .pipe(pluck('entity'))
             .subscribe((res: any) => {
                 this.loggerService.debug('Configuration Loaded!', res);
 

@@ -1,11 +1,7 @@
 import {Inject, Injectable, NgModule} from '@angular/core';
 import {Http, Headers, Response, RequestMethod, RequestOptions} from '@angular/http';
 import {Observable} from 'rxjs';
-
-
-
-
-
+import {debounceTime, distinctUntilChanged, share} from 'rxjs/operators';
 import {SettingsStorageService} from './settings-storage.service';
 
 /**
@@ -28,7 +24,7 @@ export class HttpClient {
         // this.settingsService=settingsService;
         this.progress$ = Observable.create((observer: any) => {
             this.progressObserver = observer;
-        }).share();
+        }).pipe(share());
     }
 
     /**
@@ -49,12 +45,14 @@ export class HttpClient {
      * @returns Observable<Response>
      */
     get(path: string): Observable<Response> {
-        let headers = new Headers();
+        const headers = new Headers();
         this.createAuthorizationHeader(headers);
-        let site: String = this.settingsStorageService.getSettings().site;
+        const site: String = this.settingsStorageService.getSettings().site;
         return this.http.get( (site ? site : '') + path, {headers: headers})
-            .debounceTime(400)
-            .distinctUntilChanged();
+            .pipe(
+                debounceTime(400),
+                distinctUntilChanged()
+            );
     }
 
     /**
@@ -65,13 +63,15 @@ export class HttpClient {
      * @returns Observable<Response>
      */
     put(path: String, data: Object): Observable<Response> {
-        let opts: RequestOptions = new RequestOptions();
+        const opts: RequestOptions = new RequestOptions();
         opts.method = RequestMethod.Put;
         opts.headers = new Headers({'Content-Type': 'application/json'});
         this.createAuthorizationHeader(opts.headers);
         return this.http.put(this.settingsStorageService.getSettings().site + path.toString(), JSON.stringify(data), opts)
-            .debounceTime(400)
-            .distinctUntilChanged();
+            .pipe(
+                debounceTime(400),
+                distinctUntilChanged()
+            );
     }
 
     /**
@@ -82,7 +82,7 @@ export class HttpClient {
      * @returns Observable<Response>
      */
     post(path: String, data: Object): Observable<Response> {
-        let opts: RequestOptions = new RequestOptions();
+        const opts: RequestOptions = new RequestOptions();
         opts.method = RequestMethod.Post;
         opts.headers = new Headers({'Content-Type': 'application/json'});
         this.createAuthorizationHeader(opts.headers);
@@ -100,7 +100,7 @@ export class HttpClient {
      */
     filePut(path: String, file: File, data: Object): Observable<any> {
         return Observable.create((observer: any) => {
-            let formData: FormData = new FormData(), xhr: XMLHttpRequest = new XMLHttpRequest();
+            const formData: FormData = new FormData(), xhr: XMLHttpRequest = new XMLHttpRequest();
             formData.append('json', JSON.stringify(data));
 
             formData.append('fileAsset', file);
@@ -120,7 +120,7 @@ export class HttpClient {
 
                 this.progressObserver.next(this.progress);
             };
-            let site: String = this.settingsStorageService.getSettings().site;
+            const site: String = this.settingsStorageService.getSettings().site;
             xhr.open('PUT', (site ? site : '') + path.toString(), true);
             if (this.settingsStorageService.getSettings() != null && this.settingsStorageService.getSettings().jwt != null
                 && this.settingsStorageService.getSettings().jwt.trim().length > 0 ) {

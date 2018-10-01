@@ -5,7 +5,6 @@ import { Inject, Injectable } from '@angular/core';
 import { HttpClient } from '../../core/util/http.service';
 import { NotificationService } from '../../core/util/notification.service';
 import { Site } from '../../core/treeable/shared/site.model';
-import { ErrorObservable } from 'rxjs/observable/ErrorObservable';
 import { map, catchError } from 'rxjs/operators';
 
 @Injectable()
@@ -55,7 +54,7 @@ export class SiteSelectorService {
         return obj.entity;
     }
 
-    private handleError(error: any): ErrorObservable<string> {
+    private handleError(error: any): Observable<string> {
         // we need use a remote logging infrastructure at some point
         const errMsg = error.message
             ? error.message

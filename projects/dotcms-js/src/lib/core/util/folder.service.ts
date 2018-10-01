@@ -6,7 +6,6 @@ import {Response} from '@angular/http';
 import {Inject, Injectable, NgModule} from '@angular/core';
 import {Folder} from '../treeable/shared/folder.model';
 import { map, catchError } from 'rxjs/operators';
-import { ErrorObservable } from 'rxjs/observable/ErrorObservable';
 
 /**
  * Service allows opertions against dotCMS Folder Endpoints and Operations
@@ -40,7 +39,7 @@ export class FolderService {
         return result;
     }
 
-    private handleError(error: any): ErrorObservable<string> {
+    private handleError(error: any): Observable<string> {
         const errMsg = (error.message) ? error.message :
             error.status ? `${error.status} - ${error.statusText}` : 'Server error';
         if (errMsg) {

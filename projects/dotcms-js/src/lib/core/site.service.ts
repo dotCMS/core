@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { CoreWebService } from './core-web.service';
-import { Observable } from 'rxjs/Rx';
+import { Observable, Subject } from 'rxjs';
 import { RequestMethod } from '@angular/http';
-import { Subject } from 'rxjs';
+import { pluck, map } from 'rxjs/operators';
 import { LoginService, Auth } from './login.service';
 import { DotcmsEventsService } from './dotcms-events.service';
 import { LoggerService } from './logger.service';
@@ -122,7 +122,7 @@ export class SiteService {
                 method: RequestMethod.Put,
                 url: 'v1/site/switch'
             })
-            .pluck('entity');
+            .pipe(pluck('entity'));
     }
 
     /**
@@ -138,8 +138,11 @@ export class SiteService {
                 method: RequestMethod.Get,
                 url: `content/render/false/query/+contentType:host%20+identifier:${id}`
             })
-            .pluck('contentlets')
-            .map(sites => sites[0]);
+            .pipe(
+                pluck('contentlets'),
+                map(sites => sites[0])
+            );
+
     }
 
     /**
@@ -172,7 +175,7 @@ export class SiteService {
                 method: RequestMethod.Get,
                 url: this.urls.currentSiteUrl
             })
-            .pluck('entity')
+            .pipe(pluck('entity'))
             .subscribe(currentSite => {
                 this.setCurrentSite(<Site>currentSite);
             });

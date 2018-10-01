@@ -8,6 +8,7 @@ import { Component, OnInit, ViewEncapsulation } from '@angular/core';
     templateUrl: './main-legacy.component.html'
 })
 export class MainComponentLegacyComponent implements OnInit {
+
     constructor() {}
 
     ngOnInit(): void {

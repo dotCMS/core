@@ -1,11 +1,9 @@
-
-import {throwError as observableThrowError, Observable} from 'rxjs';
-import {Inject, Injectable, NgModule} from '@angular/core';
-import {NotificationService} from './notification.service';
-import {Http, Headers, Response, RequestMethod, RequestOptions} from '@angular/http';
-import {SettingsStorageService} from './settings-storage.service';
-
-
+import { throwError as observableThrowError, Observable } from 'rxjs';
+import { Inject, Injectable, NgModule } from '@angular/core';
+import { NotificationService } from './notification.service';
+import { Http, Headers, Response, RequestMethod, RequestOptions } from '@angular/http';
+import { SettingsStorageService } from './settings-storage.service';
+import {map, catchError} from 'rxjs/operators';
 
 /**
  * Service for managing JWT Auth Token from dotCMS Site/Host
@@ -15,9 +13,7 @@ import {SettingsStorageService} from './settings-storage.service';
 @Inject('notificationService')
 @Inject('settingsStorageService')
 export class JWTAuthService {
-
-    constructor
-    (
+    constructor(
         private http: Http,
         private notificationService: NotificationService,
         private settingsStorageService: SettingsStorageService
@@ -31,20 +27,21 @@ export class JWTAuthService {
      * @returns Observable<R> String return for the token
      */
     getJWT(siteURL: string, username: string, password: string): Observable<string> {
-        let data = {
+        const data = {
             expirationDays: 30,
             password: password,
-            user: username,
+            user: username
         };
-        return this.doPostAuth(siteURL, data)
-            .map((res: Response) => {
+        return this.doPostAuth(siteURL, data).pipe(
+            map((res: Response) => {
                 if (res.status < 200 || res.status >= 300) {
                     this.handleError(res);
                     throw new Error('This request has failed ' + res.status);
                 }
                 return this.extractJWT(res);
-            })
-            .catch(error => this.handleError(error));
+            }),
+            catchError((error) => this.handleError(error))
+        );
     }
 
     /**
@@ -55,39 +52,48 @@ export class JWTAuthService {
      * @returns Observable<R>
      */
     login(siteURL: string, username: string, password: string): Observable<string> {
-        return this.getJWT(siteURL, username, password)
-            .map(token => {
+        return this.getJWT(siteURL, username, password).pipe(
+            map((token) => {
                 this.settingsStorageService.storeSettings(siteURL, token);
                 return token;
-            });
+            })
+        );
     }
 
     private doPostAuth(siteUrl: string, data: any): Observable<Response> {
-        let opts: RequestOptions = new RequestOptions();
+        const opts: RequestOptions = new RequestOptions();
         opts.method = RequestMethod.Post;
-        opts.headers = new Headers({'Content-Type': 'application/json'});
-        return this.http.post(siteUrl + '/api/v1/authentication/api-token', JSON.stringify(data), opts);
+        opts.headers = new Headers({ 'Content-Type': 'application/json' });
+        return this.http.post(
+            siteUrl + '/api/v1/authentication/api-token',
+            JSON.stringify(data),
+            opts
+        );
     }
 
     private extractJWT(res: Response): string {
-        let obj = JSON.parse(res.text());
-        let results: string = obj.entity.token;
+        const obj = JSON.parse(res.text());
+        const results: string = obj.entity.token;
         return results;
     }
 
     private handleError(error: any): Observable<string> {
-        let errMsg = (error.message) ? error.message :
-            error.status ? `${error.status} - ${error.statusText}` : 'Server error';
+        const errMsg = error.message
+            ? error.message
+            : error.status
+                ? `${error.status} - ${error.statusText}`
+                : 'Server error';
         if (errMsg) {
             console.error(errMsg);
-            this.notificationService.displayErrorMessage('There was an error; please try again : ' + errMsg);
+            this.notificationService.displayErrorMessage(
+                'There was an error; please try again : ' + errMsg
+            );
             return observableThrowError(errMsg);
         }
     }
-
 }
 
 @NgModule({
-  providers: [JWTAuthService]
+    providers: [JWTAuthService]
 })
 export class DotJWTAuthModule {}

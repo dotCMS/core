@@ -4,12 +4,12 @@
 import { CoreWebService } from './core-web.service';
 import { RequestMethod } from '@angular/http';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs/Rx';
+import { Observable, Subject, of } from 'rxjs';
 import { Router } from '@angular/router';
-import { Subject } from 'rxjs';
 import { DotcmsEventsService } from './dotcms-events.service';
 import { LoggerService } from './logger.service';
 import { HttpCode } from './util/http-code';
+import {pluck, tap, map} from 'rxjs/operators';
 
 /**
  * This Service get the server configuration to display in the login component
@@ -44,7 +44,7 @@ export class LoginService {
         };
 
         // when the session is expired/destroyed
-        dotcmsEventsService.subscribeTo('SESSION_DESTROYED').pluck('data').subscribe(date => {
+        dotcmsEventsService.subscribeTo('SESSION_DESTROYED').pipe(pluck('data')).subscribe(date => {
             this.loggerService.debug('Processing session destroyed: ', date);
             this.loggerService.debug('User Logged In Date: ', this.auth.user.loggedInDate);
             // if the destroyed event happens after the logged in date, so proceed!
@@ -73,8 +73,8 @@ export class LoginService {
     get isLogin$(): Observable<boolean> {
         return Observable.if(
             () => !!this.auth && !!this.auth.user,
-            Observable.of(true),
-            this.loadAuth().map(auth => !!auth && !!auth.user)
+            of(true),
+            this.loadAuth().pipe(map(auth => !!auth && !!auth.user))
         );
     }
 
@@ -88,15 +88,15 @@ export class LoginService {
                 method: RequestMethod.Get,
                 url: this.urls.getAuth
             })
-            .pluck('entity')
-            .do((auth: Auth) => {
-                if (auth.user) {
-                    this.setAuth(auth);
-                }
-            })
-            .map((auth: Auth) => auth);
-
-
+            .pipe(
+                pluck('entity'),
+                tap((auth: Auth) => {
+                    if (auth.user) {
+                        this.setAuth(auth);
+                    }
+                }),
+                map((auth: Auth) => auth)
+            );
     }
 
     /**
@@ -148,19 +148,22 @@ export class LoginService {
                 method: RequestMethod.Post,
                 url: this.urls.loginAs
             })
-            .map(res => {
-                if (!res.entity.loginAs) {
-                    throw res.errorsMessages;
-                }
+            .pipe(
+                map(res => {
+                    if (!res.entity.loginAs) {
+                        throw res.errorsMessages;
+                    }
 
-                this.setAuth({
-                    loginAsUser: userData.user,
-                    user: this._auth.user,
-                    isLoginAs: true
-                });
-                return res;
-            })
-            .pluck('entity', 'loginAs');
+                    this.setAuth({
+                        loginAsUser: userData.user,
+                        user: this._auth.user,
+                        isLoginAs: true
+                    });
+                    return res;
+                }),
+                pluck('entity', 'loginAs')
+            );
+
     }
 
     /**
@@ -191,19 +194,21 @@ export class LoginService {
                 method: RequestMethod.Post,
                 url: this.urls.userAuth
             })
-            .map(response => {
-                const auth = {
-                    loginAsUser: null,
-                    user: response.entity,
-                    isLoginAs: false
-                };
+            .pipe(
+                map(response => {
+                    const auth = {
+                        loginAsUser: null,
+                        user: response.entity,
+                        isLoginAs: false
+                    };
 
-                this.setAuth(auth);
-                this.coreWebService
-                    .subscribeTo(HttpCode.UNAUTHORIZED)
-                    .subscribe(() => this.logOutUser().subscribe(() => {}));
-                return response.entity;
-            });
+                    this.setAuth(auth);
+                    this.coreWebService
+                        .subscribeTo(HttpCode.UNAUTHORIZED)
+                        .subscribe(() => this.logOutUser().subscribe(() => {}));
+                    return response.entity;
+                })
+            );
     }
 
     /**
@@ -216,14 +221,16 @@ export class LoginService {
                 method: RequestMethod.Put,
                 url: `${this.urls.logoutAs}`
             })
-            .map(res => {
-                this.setAuth({
-                    loginAsUser: null,
-                    user: this._auth.user,
-                    isLoginAs: true
-                });
-                return res;
-            });
+            .pipe(
+                map(res => {
+                    this.setAuth({
+                        loginAsUser: null,
+                        user: this._auth.user,
+                        isLoginAs: true
+                    });
+                    return res;
+                })
+            );
     }
 
     /**
@@ -236,23 +243,25 @@ export class LoginService {
                 method: RequestMethod.Get,
                 url: this.urls.logout
             })
-            .map(_response => {
-                const nullAuth = {
-                    loginAsUser: null,
-                    user: null,
-                    isLoginAs: false
-                };
+            .pipe(
+                map(_response => {
+                    const nullAuth = {
+                        loginAsUser: null,
+                        user: null,
+                        isLoginAs: false
+                    };
 
-                this.loggerService.debug('Processing the logOutUser');
-                this.setAuth(nullAuth);
+                    this.loggerService.debug('Processing the logOutUser');
+                    this.setAuth(nullAuth);
 
-                // on logout close the websocket
-                this.dotcmsEventsService.destroy();
+                    // on logout close the websocket
+                    this.dotcmsEventsService.destroy();
 
-                this.loggerService.debug('Navigating to Public Login');
+                    this.loggerService.debug('Navigating to Public Login');
 
-                this.router.navigate(['/public/login']);
-            });
+                    this.router.navigate(['/public/login']);
+                })
+            );
     }
 
     /**

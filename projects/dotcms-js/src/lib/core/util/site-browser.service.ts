@@ -8,7 +8,6 @@ import {Folder} from '../treeable/shared/folder.model';
 import {File} from '../file/file.model';
 import {NotificationService} from './notification.service';
 import { map, catchError } from 'rxjs/operators';
-import { ErrorObservable } from 'rxjs/observable/ErrorObservable';
 
 /**
  * SiteBrowserService will allows operations against the set dotCMS Site/Host for Tree operations. Treeable assets
@@ -69,7 +68,7 @@ export class SiteBrowserService {
         return treeables;
     }
 
-    private handleError(error: any): ErrorObservable<string> {
+    private handleError(error: any): Observable<string> {
         const errMsg = (error.message) ? error.message :
             error.status ? `${error.status} - ${error.statusText}` : 'Server error';
         if (errMsg) {

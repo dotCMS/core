@@ -1,6 +1,5 @@
-import {Observable} from 'rxjs/Rx';
+import {Observable, Subject} from 'rxjs';
 import {LoggerService} from '../logger.service';
-import {Subject} from 'rxjs';
 
 export class Url {
     constructor(private protocol: string, private baseUrl: string, private endPoint: string)  {
@@ -19,7 +18,7 @@ export class Url {
         let buffer = '';
 
         // tslint:disable-next-line:forin
-        for (let propt in queryParameters) {
+        for (const propt in queryParameters) {
             if (buffer.length > 0) {
                 buffer += '&';
             }
@@ -75,11 +74,11 @@ export abstract class Protocol {
     // http://dthain.blogspot.co.uk/2009/02/exponential-backoff-in-distributed.html
     protected getBackoffDelay(attempt): number {
         if (this.protocolConfig && !this.protocolConfig.timeWaitToReconnect) {
-            let R = Math.random() + 1;
-            let T = this.protocolConfig.initialTimeout;
-            let F = 2;
-            let N = attempt;
-            let M = this.protocolConfig.maxTimeout;
+            const R = Math.random() + 1;
+            const T = this.protocolConfig.initialTimeout;
+            const F = 2;
+            const N = attempt;
+            const M = this.protocolConfig.maxTimeout;
 
             return Math.floor(Math.min(R * T * Math.pow(F, N), M));
         }else {

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs/Rx';
+import { Observable } from 'rxjs';
 import { LoggerService } from './logger.service';
 import { Subject } from 'rxjs';
 import { Protocol } from './util/protocol';

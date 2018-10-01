@@ -2,6 +2,7 @@ import { Protocol, QueryParams, Url } from './protocol';
 import { LoggerService } from '../logger.service';
 import { CoreWebService } from '../core-web.service';
 import { RequestMethod } from '@angular/http';
+import { pluck } from 'rxjs/operators';
 
 export type QueryFuncBuilder = (data: any) => QueryParams;
 
@@ -31,7 +32,9 @@ export class LongPollingProtocol extends Protocol {
                 method: RequestMethod.Get,
                 url: this.url.getUrlWith(queryParameters)
             })
-            .pluck('entity')
+            .pipe(
+                pluck('entity')
+            )
             .subscribe(
                 data => {
                     this.loggerService.debug('new Events', data);

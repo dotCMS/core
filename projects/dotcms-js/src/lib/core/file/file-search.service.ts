@@ -7,7 +7,6 @@ import { HttpClient } from '../util/http.service';
 import { Treeable } from '../treeable/shared/treeable.model';
 import { File } from './file.model';
 import { map, catchError } from 'rxjs/operators';
-import { ErrorObservable } from 'rxjs/observable/ErrorObservable';
 
 @Injectable()
 @Inject('httpClient')
@@ -49,7 +48,7 @@ export class FileSearchService {
         return treeables;
     }
 
-    private handleError(error: any): ErrorObservable<string> {
+    private handleError(error: any): Observable<string> {
         const errMsg = this.getError(error) ? `${error.status} - ${error.statusText}` : 'Server error';
         if (errMsg) {
             // this.log.error(errMsg);
