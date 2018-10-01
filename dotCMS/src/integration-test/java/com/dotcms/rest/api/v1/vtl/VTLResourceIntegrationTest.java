@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 
+import static com.dotcms.rest.api.v1.vtl.VTLResource.VTL_PATH;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 
@@ -86,7 +87,7 @@ public class VTLResourceIntegrationTest {
         final Host demoSite = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
 
         final Folder vtlFolder = APILocator.getFolderAPI()
-                .createFolders("application/apivtl/" + testCase.getFolderName(),
+                .createFolders(VTL_PATH + testCase.getFolderName(),
                         demoSite,
                         APILocator.systemUser(), false);
 
