@@ -2,7 +2,6 @@ package com.dotmarketing.webdav;
 
 
 import com.dotcms.enterprise.PasswordFactoryProxy;
-import org.apache.commons.io.FileUtils;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -11,27 +10,22 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDGenerator;
-import com.ettrema.httpclient.File;
-import com.ettrema.httpclient.Folder;
-import com.ettrema.httpclient.Host;
-import com.ettrema.httpclient.InternalServerError;
-import com.ettrema.httpclient.Resource;
+import com.ettrema.httpclient.*;
 import com.liferay.portal.model.User;
-
 import junit.framework.Assert;
-
+import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Test;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayOutputStream;
 import java.io.FileWriter;
 import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
 
 import static org.junit.Assert.assertEquals;
 
@@ -255,9 +249,10 @@ public class WebDavTest {
         file.setLanguageId(1);
         file.setHost(hostid);
         file.setFolder("SYSTEM_FOLDER");
+        file.setIndexPolicy(IndexPolicy.FORCE);
+		file.setIndexPolicyDependencies(IndexPolicy.FORCE);
         file = APILocator.getContentletAPI().checkin(file, user, false);
-        APILocator.getContentletAPI().isInodeIndexed(file.getInode());
-        
+
         
         final HttpServletRequest req=ServletTestRunner.localRequest.get();
         Host hh=new Host(req.getServerName(),"/webdav/autopub",req.getServerPort(),"admin@dotcms.com","admin",null,null);

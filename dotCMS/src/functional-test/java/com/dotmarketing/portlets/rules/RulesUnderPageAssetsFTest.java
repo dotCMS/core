@@ -117,6 +117,7 @@ public class RulesUnderPageAssetsFTest{
 
         //Publish Page.
         dummyPage.setIndexPolicy(IndexPolicy.FORCE);
+        dummyPage.setIndexPolicyDependencies(IndexPolicy.FORCE);
         APILocator.getContentletAPI().publish(dummyPage, sysUser, false);
 
         //Hit live page and test rule did fire.
@@ -126,12 +127,15 @@ public class RulesUnderPageAssetsFTest{
 
         //Remove Page with rules.
         dummyPage.setIndexPolicy(IndexPolicy.FORCE);
+        dummyPage.setIndexPolicyDependencies(IndexPolicy.FORCE);
         APILocator.getContentletAPI().unpublish(dummyPage, sysUser, false);
         dummyPage.setIndexPolicy(IndexPolicy.FORCE);
+        dummyPage.setIndexPolicyDependencies(IndexPolicy.FORCE);
         APILocator.getContentletAPI().archive(dummyPage, sysUser, false);
         APILocator.getContentletAPI().isInodeIndexedArchived(dummyPage.getInode());
         assertTrue(dummyPage.isArchived());
         dummyPage.setIndexPolicy(IndexPolicy.FORCE);
+        dummyPage.setIndexPolicyDependencies(IndexPolicy.FORCE);
         APILocator.getContentletAPI().delete(dummyPage, sysUser, false);
 
         //Remove Template.
@@ -299,8 +303,10 @@ public class RulesUnderPageAssetsFTest{
 
         //Publish Page.
         dummyPage.setIndexPolicy(IndexPolicy.FORCE);
+        dummyPage.setIndexPolicyDependencies(IndexPolicy.FORCE);
         APILocator.getContentletAPI().publish(dummyPage, sysUser, false);
         secondDummyPage.setIndexPolicy(IndexPolicy.FORCE);
+        secondDummyPage.setIndexPolicyDependencies(IndexPolicy.FORCE);
         APILocator.getContentletAPI().publish(secondDummyPage, sysUser, false);
 
         //Hit live page and test rule did fire.
@@ -315,21 +321,27 @@ public class RulesUnderPageAssetsFTest{
 
         //Remove Page with rules.
         dummyPage.setIndexPolicy(IndexPolicy.FORCE);
+        dummyPage.setIndexPolicyDependencies(IndexPolicy.FORCE);
         APILocator.getContentletAPI().unpublish(dummyPage, sysUser, false);
         dummyPage.setIndexPolicy(IndexPolicy.FORCE);
+        dummyPage.setIndexPolicyDependencies(IndexPolicy.FORCE);
         APILocator.getContentletAPI().archive(dummyPage, sysUser, false);
         APILocator.getContentletAPI().isInodeIndexedArchived(dummyPage.getInode());
         assertTrue(dummyPage.isArchived());
         dummyPage.setIndexPolicy(IndexPolicy.FORCE);
+        dummyPage.setIndexPolicyDependencies(IndexPolicy.FORCE);
         APILocator.getContentletAPI().delete(dummyPage, sysUser, false);
 
         secondDummyPage.setIndexPolicy(IndexPolicy.FORCE);
+        secondDummyPage.setIndexPolicyDependencies(IndexPolicy.FORCE);
         APILocator.getContentletAPI().unpublish(secondDummyPage, sysUser, false);
         secondDummyPage.setIndexPolicy(IndexPolicy.FORCE);
+        secondDummyPage.setIndexPolicyDependencies(IndexPolicy.FORCE);
         APILocator.getContentletAPI().archive(secondDummyPage, sysUser, false);
         APILocator.getContentletAPI().isInodeIndexedArchived(secondDummyPage.getInode());
         assertTrue(secondDummyPage.isArchived());
         secondDummyPage.setIndexPolicy(IndexPolicy.FORCE);
+        secondDummyPage.setIndexPolicyDependencies(IndexPolicy.FORCE);
         APILocator.getContentletAPI().delete(secondDummyPage, sysUser, false);
 
         //Remove Template.

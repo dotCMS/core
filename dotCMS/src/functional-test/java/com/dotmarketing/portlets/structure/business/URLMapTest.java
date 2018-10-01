@@ -121,8 +121,10 @@ public class URLMapTest {
 			contentletAPI.setContentletProperty( widget, widgetCode, "$URLMapContent.story" );
 
 			widget.setIndexPolicy(IndexPolicy.FORCE);
+			widget.setIndexPolicyDependencies(IndexPolicy.FORCE);
 			widget = contentletAPI.checkin( widget, null, permissionAPI.getPermissions( simpleWidgetSt ), user, false );
 			widget.setIndexPolicy(IndexPolicy.FORCE);
+            widget.setIndexPolicyDependencies(IndexPolicy.FORCE);
 			APILocator.getVersionableAPI().setLive(widget);
 
 			// add the widget to the detail page
@@ -210,8 +212,10 @@ public class URLMapTest {
 			contentletAPI.setContentletProperty( englishContent, story, "the-gas-price" );
 			contentletAPI.setContentletProperty( englishContent, urlTitle, "the-gas-price" );
 			englishContent.setIndexPolicy(IndexPolicy.FORCE);
+            englishContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
 			englishContent = contentletAPI.checkin( englishContent, null, permissionAPI.getPermissions( testSt ), user, false );
 			englishContent.setIndexPolicy(IndexPolicy.FORCE);
+            englishContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
 			APILocator.getVersionableAPI().setLive(englishContent);
 
 			// SPANISH CONTENT
@@ -226,9 +230,11 @@ public class URLMapTest {
 			contentletAPI.setContentletProperty( spanishContent, story, "el-precio-del-gas" );
 			contentletAPI.setContentletProperty( spanishContent, urlTitle, "el-precio-del-gas" );
 			spanishContent.setIndexPolicy(IndexPolicy.FORCE);
+            spanishContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
 
 			spanishContent = contentletAPI.checkin( spanishContent, null, permissionAPI.getPermissions( testSt ), user, false );
 			spanishContent.setIndexPolicy(IndexPolicy.FORCE);
+            spanishContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
 			APILocator.getVersionableAPI().setLive(spanishContent);
 
 			HibernateUtil.closeAndCommitTransaction();
