@@ -1,0 +1,27 @@
+@import "variables";
+
+form {
+    align-items: center;
+    background-color: $gray-bg;
+    display: flex;
+    justify-content: space-between;
+    margin: $basic-padding * 4 $basic-padding * 3;
+    padding: $basic-padding * 2 $basic-padding * 3;
+
+    div {
+        &:first-child {
+            margin-right: $basic-padding * 2;
+            width: 30%
+        }
+
+        &:last-of-type {
+            margin-right: $basic-padding * 3;
+            width: 70%
+        }
+
+        input {
+            width: 100%
+        }
+
+    }
+}

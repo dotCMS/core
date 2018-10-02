@@ -1,4 +1,8 @@
+@import "variables";
+
 .content-type-fields__properties-form {
+    margin: $basic-padding * 3;
+
     .form__group {
         .md-inputtext,
         .ui-inputtext {

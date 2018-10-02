@@ -16,31 +16,28 @@
 
     <dot-add-rows (selectColums)="addRow($event)"></dot-add-rows>
 </div>
-<p-dialog
-    modal="modal"
-    width="500"
-    [dismissableMask]="true"
-    [(visible)]="displayDialog"
-    [responsive]="true"
-    [resizable]="false"
-    [draggable]="false"
-    (onHide)="removeFieldsWithoutId()">
 
-    <p-header>
-        {{ currentFieldType?.label }} <dot-icon-button icon="help_outline" (click)="fieldHelperOverlay.toggle($event)"></dot-icon-button>
-    </p-header>
+<dot-dialog
+    #dotDialog
+    [show]="displayDialog"
+    [ok]="saveDialogAction"
+    [cancel]="closeDialogAction"
+    (close)="removeFieldsWithoutId()"
+    [header]="currentFieldType?.label">
 
-    <dot-content-type-fields-properties-form
-        [formFieldData]="formData"
-        (saveField)="saveFieldsHandler($event)"
-        #fieldPropertiesForm>
-    </dot-content-type-fields-properties-form>
+    <p-tabView [activeIndex]="dialogActiveTab">
+        <p-tabPanel [header]="i18nMessages['contenttypes.dropzone.tab.overview']">
+            <dot-content-type-fields-properties-form
+                [formFieldData]="formData"
+                (saveField)="saveFieldsHandler($event)"
+                #fieldPropertiesForm>
+            </dot-content-type-fields-properties-form>
+        </p-tabPanel>
+        <p-tabPanel [header]="i18nMessages['contenttypes.dropzone.tab.variables']">
+            <ng-template pTemplate="content">
+                <dot-content-type-fields-variables [field]="currentField"></dot-content-type-fields-variables>
+            </ng-template>
+        </p-tabPanel>
+    </p-tabView>
 
-    <p-footer>
-        <button type="button" secondary pButton (click)="toggleDialog()" [label]="i18nMessages['contenttypes.dropzone.action.cancel']"></button>
-        <button type="button" pButton (click)="fieldPropertiesForm.saveFieldProperties(fieldPropertiesForm.form.value, fieldPropertiesForm.form.valid)" [label]="i18nMessages['contenttypes.dropzone.action.save']"></button>
-    </p-footer>
-</p-dialog>
-<p-overlayPanel appendTo="body" #fieldHelperOverlay [style]="{'width':'300px'}">
-    <div [innerHTML]="currentFieldType?.helpText" ></div>
-</p-overlayPanel>
+</dot-dialog>

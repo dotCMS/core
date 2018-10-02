@@ -1,0 +1,11 @@
+<form [formGroup]="form" (ngSubmit)="addVariableForm()" #formEl="ngForm" (keyup.enter)="formEl.ngSubmit" novalidate>
+    <div>
+        <label class="form__label">{{ messages['contenttypes.field.variables.key_header.label'] }}</label>
+        <input pInputText type="text" formControlName="key"/>
+    </div>
+    <div>
+        <label class="form__label">{{ messages['contenttypes.field.variables.value_header.label'] }}</label>
+        <input pInputText type="text" formControlName="value"/>
+    </div>
+    <button pButton secondary tiny [label]="messages['contenttypes.field.variables.add_button.label']" (click)="formEl.ngSubmit" [disabled]="!form.valid"></button>
+</form>

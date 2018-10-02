@@ -37,8 +37,8 @@ describe('DotIconButtonComponent', () => {
     });
 
     it('should stop propagation if disabled', () => {
-        comp.disabled = true;
         comp.icon = 'test';
+        comp.element.nativeElement.setAttribute('disabled', '');
         const event = {
             stopPropagation: jasmine.createSpy('stopPropagation')
         };
