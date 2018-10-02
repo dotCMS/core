@@ -835,7 +835,7 @@
                     structInode:structInode
                 };
 
-                var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
+                var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Workflow-Action")%>');
                 pushHandler.showWorkflowEnabledDialog(workflow, saveAssignCallBack);
                 return;
 
@@ -862,7 +862,7 @@
         var expireDate  = pushPublish.expireDate;
         var expireTime  = pushPublish.expireTime;
         var forcePush   = pushPublish.forcePush;
-        var neverExpire = "";
+        var neverExpire = pushPublish.neverExpire;
 
         // END: PUSH PUBLISHING ACTIONLET
         dojo.byId("wfActionAssign").value = assignRole;
@@ -874,6 +874,7 @@
         dojo.byId("wfPublishTime").value = publishTime;
         dojo.byId("wfExpireDate").value = expireDate;
         dojo.byId("wfExpireTime").value = expireTime;
+        dojo.byId("wfNeverExpire").value = neverExpire;
         dojo.byId("wfWhereToSend").value = whereToSend;
         // END: PUSH PUBLISHING ACTIONLET
 

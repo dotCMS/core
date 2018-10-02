@@ -2355,7 +2355,7 @@
                   inode:inode
                 };
 
-                var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
+                var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Workflow-Action")%>');
                 pushHandler.showWorkflowEnabledDialog(workflow, saveAssignCallBack);
                 return;
 
@@ -2396,7 +2396,7 @@
         var expireDate  = pushPublish.expireDate;
         var expireTime  = pushPublish.expireTime;
         var forcePush   = pushPublish.forcePush;
-        var neverExpire = "";
+        var neverExpire = pushPublish.neverExpire;
 
         BrowserAjax.saveFileAction(selectedItem, assignRole, actionId, comments, wfConId, publishDate,
            publishTime, expireDate, expireTime, neverExpire, whereToSend, forcePush, fileActionCallback
