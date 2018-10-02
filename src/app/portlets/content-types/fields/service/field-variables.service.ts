@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { CoreWebService } from 'dotcms-js/dotcms-js';
 import { RequestMethod } from '@angular/http';
 import { FieldVariable } from '../content-type-fields-variables/content-type-fields-variables.component';
+import { pluck } from 'rxjs/operators';
 
 export interface FieldVariableParams {
     contentTypeId: string;
@@ -29,7 +30,7 @@ export class FieldVariablesService {
                 method: RequestMethod.Get,
                 url: `v1/contenttype/${params.contentTypeId}/fields/id/${params.fieldId}/variables`
             })
-            .pluck('entity');
+            .pipe(pluck('entity'));
     }
 
     /**
@@ -50,7 +51,7 @@ export class FieldVariablesService {
                 method: RequestMethod.Post,
                 url: `v1/contenttype/${params.contentTypeId}/fields/id/${params.fieldId}/variables`
             })
-            .pluck('entity');
+            .pipe(pluck('entity'));
     }
 
     /**
@@ -65,7 +66,7 @@ export class FieldVariablesService {
                 method: RequestMethod.Delete,
                 url: `v1/contenttype/${params.contentTypeId}/fields/id/${params.fieldId}/variables/id/${params.variable.id}`
             })
-            .pluck('entity');
+            .pipe(pluck('entity'));
     }
 
 }

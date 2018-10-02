@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs/Observable';
+import { Observable, of } from 'rxjs';
 import * as _ from 'lodash';
 import { FieldVariable } from '../portlets/content-types/fields';
 
@@ -28,15 +28,15 @@ export const mockFieldVariables: FieldVariable[] = [
 
 export class FieldVariablesServiceMock {
     load(): Observable<FieldVariable[]> {
-        return Observable.of(_.cloneDeep(mockFieldVariables));
+        return of(_.cloneDeep(mockFieldVariables));
     }
 
     save(): Observable<FieldVariable> {
-        return Observable.of(_.cloneDeep(mockFieldVariables[0]));
+        return of(_.cloneDeep(mockFieldVariables[0]));
     }
 
     delete(): Observable<string> {
-        return Observable.of('');
+        return of('');
     }
 
 }
