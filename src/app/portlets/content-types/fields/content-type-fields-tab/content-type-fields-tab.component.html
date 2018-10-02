@@ -1,4 +1,4 @@
-<input type="text" [(ngModel)]="fieldTab.getFieldDivider().name" (ngModelChange)="changeLabel()"/>
+<input type="text" [(ngModel)]="fieldTab.getFieldDivider().name" (blur)="changeLabel()"/>
 <dot-icon-button-tooltip
     tiny
     class="field__actions-delete"

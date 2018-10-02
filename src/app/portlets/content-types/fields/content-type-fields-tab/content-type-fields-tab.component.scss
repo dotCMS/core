@@ -1,6 +1,7 @@
 @import "variables";
 
 :host {
+    cursor: move;
     display: flex;
     justify-content: center;
     margin-bottom: $basic-padding * 2;
