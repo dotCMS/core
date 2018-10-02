@@ -105,7 +105,7 @@ describe('FieldVariablesService', () => {
             }
         };
 
-        this.fieldVariableService.delete(params).subscribe((variables: FieldVariable) => {
+        this.fieldVariableService.delete(params).subscribe((_variables: FieldVariable) => {
             expect(3).toBe(this.lastConnection.request.method); // 3 is DELETE method
             expect(this.lastConnection.request.url)
                 .toContain(`v1/contenttype/${params.contentTypeId}/fields/id/${params.fieldId}/variables/id/${params.variable.id}`);

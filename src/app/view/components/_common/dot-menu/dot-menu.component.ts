@@ -18,9 +18,15 @@ import { MenuItem } from 'primeng/primeng';
 export class DotMenuComponent {
     @Input()
     icon: string;
+
     @Input()
     model: MenuItem[];
+
+    @Input()
+    float: boolean;
+
     visible = false;
+
     constructor() {}
 
     /**

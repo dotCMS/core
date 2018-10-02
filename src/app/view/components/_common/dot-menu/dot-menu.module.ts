@@ -1,11 +1,11 @@
 import { NgModule } from '@angular/core';
 import { DotMenuComponent } from './dot-menu.component';
 import { CommonModule } from '@angular/common';
-import { ButtonModule } from 'primeng/primeng';
+import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 
 @NgModule({
     declarations: [DotMenuComponent],
     exports: [DotMenuComponent],
-    imports: [CommonModule, ButtonModule]
+    imports: [CommonModule, DotIconButtonModule]
 })
 export class DotMenuModule {}

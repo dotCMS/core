@@ -14,6 +14,7 @@ import { Component, Input, ElementRef } from '@angular/core';
 export class DotIconButtonComponent {
     @Input()
     disabled?: boolean;
+
     @Input()
     icon: string;
 

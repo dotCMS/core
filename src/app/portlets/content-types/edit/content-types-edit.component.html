@@ -13,8 +13,8 @@
             </div>
         </div>
         <div class="content-type__edit-actions">
-            <button type="button" pButton secondary label="{{ messagesKey['contenttypes.action.edit'] }}" (click)="show = true" icon="fa-edit" id="form-edit-button"></button>
-            <dot-menu icon="fa-plus" [model]="contentTypeActions"></dot-menu>
+            <button type="button" pButton secondary label="{{ messagesKey['contenttypes.action.edit'] }}" (click)="show = true" icon="fa fa-edit" id="form-edit-button"></button>
+            <dot-menu [float]="true" icon="add" [model]="contentTypeActions"></dot-menu>
         </div>
     </div>
     <dot-content-type-fields-drop-zone
