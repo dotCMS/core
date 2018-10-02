@@ -1,5 +1,7 @@
 package com.dotcms.content.elasticsearch.util;
 
+import com.dotcms.cluster.bean.Server;
+
 import java.nio.file.Path;
 
 class ESClientTestCase {
@@ -33,81 +35,81 @@ class ESClientTestCase {
         private String expectedESNodeMaster;
         private String expectedTCPPort;
 
-        public Builder community(final boolean community) {
+        Builder community(final boolean community) {
             this.community = community;
             return this;
         }
 
-        public Builder overrideFilePath(final Path overrideFilePath) {
+        Builder overrideFilePath(final Path overrideFilePath) {
             this.overrideFilePath = overrideFilePath;
             return this;
         }
 
-        public Builder defaultFilePath(final Path defaultFilePath) {
+        Builder defaultFilePath(final Path defaultFilePath) {
             this.defaultFilePath = defaultFilePath;
             return this;
         }
 
-        public Builder expectedTransportHost(final String expectedTransportHost) {
+        Builder expectedTransportHost(final String expectedTransportHost) {
             this.expectedTransportHost = expectedTransportHost;
             return this;
         }
 
-        public Builder expectedZenUniCastHosts(final String expectedZenUniCastHosts) {
+        Builder expectedZenUniCastHosts(final String expectedZenUniCastHosts) {
             this.expectedZenUniCastHosts = expectedZenUniCastHosts;
             return this;
         }
 
-        public Builder expectedESNodeData(final String expectedESNodeData) {
+        Builder expectedESNodeData(final String expectedESNodeData) {
             this.expectedESNodeData = expectedESNodeData;
             return this;
         }
 
-        public Builder expectedESNodeMaster(final String expectedESNodeMaster) {
+        Builder expectedESNodeMaster(final String expectedESNodeMaster) {
             this.expectedESNodeMaster = expectedESNodeMaster;
             return this;
         }
 
-        public Builder expectedTCPPort(final String expectedTCPPort) {
+        Builder expectedTCPPort(final String expectedTCPPort) {
             this.expectedTCPPort = expectedTCPPort;
             return this;
         }
 
-        public ESClientTestCase build() {
+        ESClientTestCase build() {
             return new ESClientTestCase(this);
         }
     }
 
 
-    public boolean isCommunity() {
+    boolean isCommunity() {
         return community;
     }
 
-    public Path getOverrideFilePath() {
+    Path getOverrideFilePath() {
         return overrideFilePath;
     }
 
-    public Path getDefaultFilePath() {
+    Path getDefaultFilePath() {
         return defaultFilePath;
     }
 
-    public String getExpectedTransportHost() {
+    String getExpectedTransportHost() {
         return expectedTransportHost;
     }
 
-    public String getExpectedZenUniCastHosts() {
+    String getExpectedZenUniCastHosts() {
         return expectedZenUniCastHosts;
     }
 
-    public String getExpectedESNodeData() {
+    String getExpectedESNodeData() {
         return expectedESNodeData;
     }
 
-    public String getExpectedESNodeMaster() {
+    String getExpectedESNodeMaster() {
         return expectedESNodeMaster;
     }
 
-    public String getExpectedTCPPort() {
+    String getExpectedTCPPort() {
         return expectedTCPPort;
     }
 }

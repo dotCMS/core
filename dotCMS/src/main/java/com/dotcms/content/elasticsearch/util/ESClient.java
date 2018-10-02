@@ -359,29 +359,33 @@ public class ESClient {
     @VisibleForTesting
     protected void setTransportConfToSettings(final Server currentServer, final Builder externalSettings) {
         if(clusterAPI.isESAutoWire()) {
-            String bindAddressFromProperty;
-            String bindAddr;
-            String transportTCPPort;
-            bindAddressFromProperty = externalSettings.get(ES_TRANSPORT_HOST);
+            String bindAddressFromProperty = externalSettings.get(ES_TRANSPORT_HOST);
 
             if (UtilMethods.isSet(bindAddressFromProperty)) {
                 bindAddressFromProperty = validateAddress(bindAddressFromProperty);
             }
 
-            bindAddr = bindAddressFromProperty != null ? bindAddressFromProperty : currentServer.getIpAddress();
+            String bindAddr = bindAddressFromProperty != null ? bindAddressFromProperty : currentServer.getIpAddress();
 
             externalSettings.put(ES_TRANSPORT_HOST, bindAddr);
 
-            transportTCPPort = UtilMethods.isSet(currentServer.getEsTransportTcpPort())
-                ? Integer.toString(currentServer.getEsTransportTcpPort())
-                : getNextAvailableESPort(currentServer.getServerId(), bindAddr, externalSettings);
+            String transportTCPPort;
+
+            if(UtilMethods.isSet(externalSettings.get(ServerPort.ES_TRANSPORT_TCP_PORT.getPropertyName()))) {
+                transportTCPPort = externalSettings.get(ServerPort.ES_TRANSPORT_TCP_PORT.getPropertyName());
+            } else {
+                transportTCPPort = UtilMethods.isSet(currentServer.getEsTransportTcpPort())
+                        ? Integer.toString(currentServer.getEsTransportTcpPort())
+                        : getNextAvailableESPort(currentServer.getServerId(), bindAddr, externalSettings);
+            }
 
             externalSettings.put(ServerPort.ES_TRANSPORT_TCP_PORT.getPropertyName(), transportTCPPort);
         }
     }
 
     @Nullable
-    private String validateAddress(String bindAddressFromProperty) {
+    @VisibleForTesting
+    protected String validateAddress(String bindAddressFromProperty) {
         try {
             InetAddress addr = InetAddress.getByName(bindAddressFromProperty);
             if (ClusterFactory.isValidIP(bindAddressFromProperty)) {
