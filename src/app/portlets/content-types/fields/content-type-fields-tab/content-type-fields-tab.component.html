@@ -1,0 +1,9 @@
+<input type="text" [(ngModel)]="fieldTab.getFieldDivider().name" (ngModelChange)="changeLabel()"/>
+<dot-icon-button-tooltip
+    tiny
+    class="field__actions-delete"
+    icon="delete"
+    [tooltipText]="i18nMessages['contenttypes.action.delete']"
+    (click)="removeItem($event)">
+</dot-icon-button-tooltip>
+<hr />

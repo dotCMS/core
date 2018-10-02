@@ -1,14 +1,16 @@
 import { FieldUtil } from '../util/field-util';
 import { FieldColumn } from './field-column.model';
 import { ContentTypeField } from './field.model';
+import { FieldDivider } from './field-divider.interface';
 
-export class FieldRow {
+export class FieldRow extends FieldDivider {
+
     columns: FieldColumn[];
-    lineDivider: ContentTypeField;
 
     constructor(nColumns?: number) {
+        super();
         this.columns = [];
-        this.lineDivider = FieldUtil.createLineDivider();
+        this.setFieldDivider(FieldUtil.createFieldRow());
 
         if (nColumns) {
             for (let i = 0; i < nColumns; i++) {
@@ -18,11 +20,11 @@ export class FieldRow {
     }
 
     /**
-     * Add field to the row. This fields could cotains a LINE _DIVIDER and TAB_DIVIDER fields
+     * Add field to the row. This fields could cotains a LINE _DIVIDER and COLUMN_FIELD fields
      * For example if we have a array with the follow fields types:
      * fields: [
      *   {
-     *       type: 'LINE_DIVIDER',
+     *       type: 'ROW_FIELD',
      *       id: '1'
      *   },
      *   {
@@ -34,7 +36,7 @@ export class FieldRow {
      *       id: '3'
      *   },
      *   {
-     *       type: 'TAB_DIVIDER',
+     *       type: 'COLUMN_FIELD',
      *       id: '4'
      *   },
      *   {
@@ -52,7 +54,7 @@ export class FieldRow {
         let offset = 0;
 
         if (fields[0] && FieldUtil.isRow(fields[0])) {
-            this.lineDivider = fields[0];
+            this.setFieldDivider(fields[0]);
             offset = 1;
         }
 
@@ -71,8 +73,6 @@ export class FieldRow {
      */
     addFirstColumn(): void {
         this.columns[0] = new FieldColumn();
-        this.columns[0].tabDivider = {
-            clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField'
-        };
+        this.columns[0].columnDivider = { clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField' };
     }
 }

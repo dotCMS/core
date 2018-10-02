@@ -28,6 +28,7 @@ import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { ContentType } from '@portlets/content-types/shared/content-type.model';
+import { MenuItem } from 'primeng/primeng';
 
 @Component({
     selector: 'dot-content-type-fields-drop-zone',
@@ -69,6 +70,18 @@ class TestContentTypesFormComponent {
     submitForm(): void {}
 }
 
+
+@Component({
+    selector: 'dot-menu',
+    template: ''
+})
+export class TestDotMenuComponent {
+    @Input()
+    icon: string;
+    @Input()
+    model: MenuItem[];
+}
+
 const messageServiceMock = new MockDotMessageService({
     'contenttypes.action.form.cancel': 'Cancel',
     'contenttypes.action.edit': 'Edit',
@@ -79,7 +92,8 @@ const messageServiceMock = new MockDotMessageService({
     'contenttypes.content.create.contenttype': 'Create {0}',
     'contenttypes.form.identifier': 'Idenfifier',
     'contenttypes.content.content': 'Content',
-    'contenttypes.dropzone.rows.add': 'Add rows'
+    'contenttypes.dropzone.rows.add': 'Add rows',
+    'contenttypes.dropzone.rows.tab_divider': 'Add tab'
 });
 
 const getConfig = (route) => {
@@ -88,7 +102,8 @@ const getConfig = (route) => {
             ContentTypesEditComponent,
             TestContentTypeFieldsDropZoneComponent,
             TestContentTypesFormComponent,
-            TestContentTypeLayoutComponent
+            TestContentTypeLayoutComponent,
+            TestDotMenuComponent
         ],
         imports: [
             RouterTestingModule.withRoutes([
@@ -375,7 +390,7 @@ describe('ContentTypesEditComponent edit mode', () => {
         expect(dialogTitle.nativeElement.innerText).toEqual('Edit Content');
     });
 
-    it('should open dialog on edit button click', () => {
+   it('should open dialog on edit button click', () => {
         clickEditButton();
 
         const dialog = de.query(By.css('p-dialog'));

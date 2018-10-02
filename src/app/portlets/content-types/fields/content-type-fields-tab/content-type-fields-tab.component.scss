@@ -1,0 +1,42 @@
+@import "variables";
+
+:host {
+    display: flex;
+    justify-content: center;
+    margin-bottom: $basic-padding * 2;
+    position: relative;
+
+    input {
+        background-color: $gray-bg;
+        border-style: solid;
+        border-width: 1px 1px 1px 1px;
+        border-color: $gray $gray $gray-bg $gray;
+        border-radius: 5px 5px 0 0;
+        font-size: $font-size-small;
+        height: $basic-padding * 4;
+        text-align: center;
+        text-transform: uppercase;
+        width: 114px;
+        z-index: 1;
+
+        &:focus {
+            outline-width: 0;
+        }
+    }
+
+    dot-icon-button-tooltip {
+        position: absolute;
+        right: 0;
+        top: $basic-padding;
+    }
+
+    hr {
+        background: $gray;
+        border: 0;
+        bottom: 0;
+        height: 1px;
+        margin: 0;
+        position: absolute;
+        width: 100%;
+    }
+}

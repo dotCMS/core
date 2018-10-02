@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
-import { Observable, Subject } from 'rxjs';
+import { Observable } from 'rxjs';
 import { DragulaService } from 'ng2-dragula';
-import { delay } from 'rxjs/operators';
+import { filter, map } from 'rxjs/operators';
+import { FieldDivider, ContentTypeField } from '@portlets/content-types/fields/shared';
+import * as _ from 'lodash';
 
 /**
  * Provide method to handle with the Field Types
@@ -11,52 +13,57 @@ export class FieldDragDropService {
     private static readonly FIELD_BAG_NAME = 'fields-bag';
     private static readonly FIELD_ROW_BAG_NAME = 'fields-row-bag';
 
-    private _fieldDropFromSource: Subject<any> = new Subject();
-    private _fieldDropFromTarget: Subject<any> = new Subject();
-    private _fieldRowDropFromSource: Subject<any> = new Subject();
-    private _fieldRowDropFromTarget: Subject<any> = new Subject();
+    private _fieldDropFromSource: Observable<DropFieldData>;
+    private _fieldDropFromTarget: Observable<DropFieldData>;
+    private _fieldRowDropFromTarget: Observable<FieldDivider[]>;
 
     constructor(private dragulaService: DragulaService) {
         dragulaService.over().subscribe(this.toggleOverClass);
         dragulaService.out().subscribe(this.toggleOverClass);
 
-        dragulaService
+        this._fieldRowDropFromTarget = dragulaService
             .dropModel()
-            .pipe(delay(0))
-            .subscribe(
-                (data: {
-                    name: string;
-                    el: Element;
-                    target: Element;
-                    source: Element;
-                    sibling: Element;
-                    item: any;
-                    sourceModel: any[];
-                    targetModel: any[];
-                    sourceIndex: number;
-                    targetIndex: number;
-                }) => {
-                    const source: HTMLElement = <HTMLElement>data.source;
-                    this.handleDrop(data.name, source.dataset.dragType);
-                }
+            .pipe(
+                filter((data: DragulaDropModel) => data.name === FieldDragDropService.FIELD_ROW_BAG_NAME),
+                map((data: DragulaDropModel) => data.targetModel)
             );
 
-        dragulaService
-            .removeModel()
-            .pipe(delay(0))
-            .subscribe(
-                (data: {
-                    name: string;
-                    el: Element;
-                    container: Element;
-                    source: Element;
-                    item: any;
-                    sourceModel: any[];
-                    sourceIndex: number;
-                }) => {
-                    const source: HTMLElement = <HTMLElement>data.source;
-                    this.handleDrop(data.name, source.dataset.dragType);
-                }
+        this._fieldDropFromTarget = dragulaService
+            .dropModel()
+            .pipe(
+                filter((data: DragulaDropModel) => data.name === FieldDragDropService.FIELD_BAG_NAME &&
+                    (<HTMLElement> data.source).dataset.dragType === 'target'),
+                map((data: DragulaDropModel) => {
+                    return {
+                        item: data.item,
+                        source: {
+                            columnId: (<HTMLElement> data.source).dataset.columnid,
+                            model: data.sourceModel
+                        },
+                        target: {
+                            columnId: (<HTMLElement> data.target).dataset.columnid,
+                            model: data.targetModel
+                        }
+                    };
+                })
+            );
+
+
+        this._fieldDropFromSource = dragulaService
+            .dropModel()
+            .pipe(
+                filter((data: DragulaDropModel) => data.name === FieldDragDropService.FIELD_BAG_NAME &&
+                    (<HTMLElement> data.source).dataset.dragType === 'source'),
+                map((data: DragulaDropModel) => {
+                    return {
+                        item: data.item,
+                        target: {
+                            columnId: (<HTMLElement> data.target).dataset.columnid,
+                            model: data.targetModel
+                        }
+                    };
+                })
+
             );
     }
 
@@ -82,7 +89,7 @@ export class FieldDragDropService {
                 accepts: this.shouldAccepts,
                 moves: this.shouldMovesField,
                 copyItem: (item: any) => {
-                    return item;
+                    return _.cloneDeep(item);
                 }
             });
         }
@@ -103,19 +110,15 @@ export class FieldDragDropService {
     }
 
     get fieldDropFromSource$(): Observable<any> {
-        return this._fieldDropFromSource.asObservable();
+        return this._fieldDropFromSource;
     }
 
     get fieldDropFromTarget$(): Observable<any> {
-        return this._fieldDropFromTarget.asObservable();
-    }
-
-    get fieldRowDropFromSource$(): Observable<any> {
-        return this._fieldRowDropFromSource.asObservable();
+        return this._fieldDropFromTarget;
     }
 
     get fieldRowDropFromTarget$(): Observable<any> {
-        return this._fieldRowDropFromTarget.asObservable();
+        return this._fieldRowDropFromTarget;
     }
 
     private toggleOverClass(group: {
@@ -126,30 +129,6 @@ export class FieldDragDropService {
     }): void {
         if (group.container.classList.contains('row-columns__item')) {
             group.container.classList.toggle('row-columns__item--over');
-        }
-    }
-
-    private handleDrop(dragType: string, source: string) {
-        if (dragType === 'fields-bag') {
-            this.handleDropField(dragType, source);
-        } else if (dragType === 'fields-row-bag') {
-            this.handleDropFieldRow(dragType, source);
-        }
-    }
-
-    private handleDropField(_dragType: string, source: string) {
-        if (source === 'source') {
-            this._fieldDropFromSource.next();
-        } else if (source === 'target') {
-            this._fieldDropFromTarget.next();
-        }
-    }
-
-    private handleDropFieldRow(_dragType: string, source: string) {
-        if (source === 'source') {
-            this._fieldRowDropFromSource.next();
-        } else if (source === 'target') {
-            this._fieldRowDropFromTarget.next();
         }
     }
 
@@ -186,4 +165,30 @@ export class FieldDragDropService {
     ): boolean {
         return el.dataset.dragType !== 'not_field';
     }
+}
+
+interface DragulaDropModel {
+    name: string;
+    el: Element;
+    target: Element;
+    source: Element;
+    sibling: Element;
+    item: any;
+    sourceModel: any[];
+    targetModel: any[];
+    sourceIndex: number;
+    targetIndex: number;
+
+}
+
+export interface DropFieldData {
+    item: ContentTypeField;
+    source?: {
+        columnId: string;
+        model: ContentTypeField[]
+    };
+    target: {
+        columnId: string;
+        model: ContentTypeField[]
+    };
 }

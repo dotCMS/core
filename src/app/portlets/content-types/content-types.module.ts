@@ -28,7 +28,7 @@ import {
     ContentTypeFieldsPropertiesFormComponent,
     ContentTypeFieldsVariablesComponent,
     ContentTypeFieldsRowComponent,
-    ContentTypeFieldsRowListComponent,
+    ContentTypeFieldsTabComponent,
     ContentTypesFieldDragabbleItemComponent,
     ContentTypesFieldsListComponent
 } from './fields';
@@ -63,6 +63,7 @@ import { DotBaseTypeSelectorModule } from '@components/dot-base-type-selector/do
 import { DotDialogModule } from '../../view/components/dot-dialog/dot-dialog.module';
 import { DotDirectivesModule } from '@shared/dot-directives.module';
 import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { DotMenuModule } from '@components/_common/dot-menu/dot-menu.module';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 import { DotPageSelectorModule } from '@components/_common/dot-page-selector/dot-page-selector.module';
 import { DotTextareaContentModule } from '@components/_common/dot-textarea-content/dot-textarea-content.module';
@@ -83,7 +84,7 @@ import { SearchableDropDownModule } from '@components/_common/searchable-dropdow
         ContentTypeFieldsVariablesComponent,
         AddVariableFormComponent,
         ContentTypeFieldsRowComponent,
-        ContentTypeFieldsRowListComponent,
+        ContentTypeFieldsTabComponent,
         ContentTypesEditComponent,
         ContentTypesFieldDragabbleItemComponent,
         ContentTypesFieldsListComponent,
@@ -120,6 +121,7 @@ import { SearchableDropDownModule } from '@components/_common/searchable-dropdow
         DotDialogModule,
         DotIconModule,
         DotIconButtonModule,
+        DotMenuModule,
         DragulaModule,
         DropdownModule,
         FieldValidationMessageModule,

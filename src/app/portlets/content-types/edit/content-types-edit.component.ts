@@ -18,6 +18,7 @@ import { ResponseView } from 'dotcms-js/dotcms-js';
 
 import { HotkeysService, Hotkey } from 'angular2-hotkeys';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { MenuItem } from 'primeng/primeng';
 
 /**
  * Portlet component for edit content types
@@ -34,7 +35,7 @@ import { DotEventsService } from '@services/dot-events/dot-events.service';
 export class ContentTypesEditComponent implements OnInit {
     @ViewChild('form')
     form: ContentTypesFormComponent;
-
+    contentTypeActions: MenuItem[];
     data: ContentType;
     fields: ContentTypeField[];
     show: boolean;
@@ -84,10 +85,20 @@ export class ContentTypesEditComponent implements OnInit {
                 'contenttypes.content.variable',
                 'contenttypes.content.widget',
                 'contenttypes.form.identifier',
-                'contenttypes.dropzone.rows.add'
+                'contenttypes.dropzone.rows.add',
+                'contenttypes.dropzone.rows.tab_divider'
+
             ])
             .subscribe((messages: { [key: string]: string }) => {
                 this.messagesKey = messages;
+                this.contentTypeActions = [{
+                    label: this.messagesKey['contenttypes.dropzone.rows.add'],
+                    command: () => this.notifyAddEvt('add-row')
+                },
+                {
+                    label: this.messagesKey['contenttypes.dropzone.rows.tab_divider'],
+                    command: () => this.notifyAddEvt('add-tab-divider')
+                }];
             });
 
         this.setTemplateInfo();
@@ -182,6 +193,7 @@ export class ContentTypesEditComponent implements OnInit {
      * @memberof ContentTypesEditComponent
      */
     saveFields(fieldsToSave: ContentTypeField[]): void {
+
         this.fieldService.saveFields(this.data.id, fieldsToSave).subscribe(
             (fields: ContentTypeField[]) => {
                 if (this.updateOrNewField(fieldsToSave)) {
@@ -199,8 +211,8 @@ export class ContentTypesEditComponent implements OnInit {
      *
      * @memberof ContentTypesEditComponent
      */
-    notifyAddRowsEvt(): void {
-        this.dotEventsService.notify('add-row');
+    notifyAddEvt(typeEvt: string): void {
+        this.dotEventsService.notify(typeEvt);
     }
 
     private updateOrNewField(fieldsToSave: ContentTypeField[]): boolean {
