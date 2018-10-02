@@ -26,6 +26,7 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PublishStateException;
+import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
@@ -63,6 +64,7 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
@@ -111,6 +113,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -144,6 +147,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	private String currentHost;
 	private NotificationAPI notificationAPI;
 	private UserAPI userAPI;
+	private RelationshipAPI relationshipAPI;
 	private RoleAPI roleAPI;
 
 	/**
@@ -158,7 +162,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		APILocator.getTagAPI(),
 		APILocator.getNotificationAPI(),
 		APILocator.getUserAPI(),
-		APILocator.getRoleAPI());
+		APILocator.getRoleAPI(),
+		APILocator.getRelationshipAPI());
 	}
 	
 	@VisibleForTesting
@@ -170,7 +175,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 						 final TagAPI tagAPI,
 						 final NotificationAPI notificationAPI,
                          final UserAPI userAPI,
-						 final RoleAPI roleAPI) {
+						 final RoleAPI roleAPI,
+						 final RelationshipAPI relationshipAPI) {
 		this.catAPI = catAPI;
 		this.perAPI = perAPI;
 		this.conAPI = conAPI;
@@ -180,6 +186,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		this.notificationAPI = notificationAPI;
         this.userAPI = userAPI;
 		this.roleAPI = roleAPI;
+		this.relationshipAPI = relationshipAPI;
 	}
 
 	/**
@@ -1996,7 +2003,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 				writer.print("\r\n");
 				for(Contentlet content :  contentletsList2 ){
-					List<Category> catList = (List<Category>) catAPI.getParents(content, user, false);
+					List<Category> catList = catAPI.getParents(content, user, false);
+					ContentletRelationships relationships = this.conAPI.getAllRelationships(content);
 					writer.print(content.getIdentifier());
 					Language lang =APILocator.getLanguageAPI().getLanguage(content.getLanguageId());
 					writer.print("," +lang.getLanguageCode());
@@ -2005,46 +2013,55 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 					for (Field field : contentTypeFields) {
 						try {
 							//we cannot export fields of these types
-							if(!isFieldTypeAllowedOnImportExport(field)){
-                               continue;
+							if (!isFieldTypeAllowedOnImportExport(field)) {
+								continue;
 							}
 
 							Object value = "";
-							if(conAPI.getFieldValue(content,field) != null) {
-								value = conAPI.getFieldValue(content,field);
+							if (conAPI.getFieldValue(content, field) != null) {
+								value = conAPI.getFieldValue(content, field);
 							}
 							String text = "";
-							if(field.getFieldType().equals(Field.FieldType.CATEGORY.toString())){
+							if (field.getFieldType().equals(Field.FieldType.CATEGORY.toString())) {
 
 								Category category = catAPI.find(field.getValues(), user, false);
 								List<Category> children = catList;
-								List<Category> allChildren= catAPI.getAllChildren(category, user, false);
-								if (children.size() >= 1 && catAPI.canUseCategory(category, user, false)) {
-									for(Category cat : children){
-										if(allChildren.contains(cat)){
-											if(UtilMethods.isSet(cat.getKey())){
-												text = text+","+cat.getKey();
-											}else{
-												text = text+","+cat.getCategoryName();
+								List<Category> allChildren = catAPI
+										.getAllChildren(category, user, false);
+								if (children.size() >= 1 && catAPI
+										.canUseCategory(category, user, false)) {
+									for (Category cat : children) {
+										if (allChildren.contains(cat)) {
+											if (UtilMethods.isSet(cat.getKey())) {
+												text = text + "," + cat.getKey();
+											} else {
+												text = text + "," + cat.getCategoryName();
 											}
 										}
 									}
 								}
-								if(UtilMethods.isSet(text)){
-									text=text.substring(1);
+								if (UtilMethods.isSet(text)) {
+									text = text.substring(1);
 								}
-							} else if(field.getFieldType().equals(Field.FieldType.TAG.toString())){
-							    //Get Content Tags per field's Velocity Var Name
-							    List<Tag> tags = tagAPI.getTagsByInodeAndFieldVarName(content.getInode(), field.getVelocityVarName());
-							    if(tags!= null){
-							        for(Tag t:tags){
-							            if(text.equals(StringPool.BLANK)) {
-							                text = t.getTagName();
-							            } else {
-							                text = text + "," + t.getTagName();
-							            }
-							        }
-							    }
+							} else if (field.getFieldType()
+									.equals(Field.FieldType.TAG.toString())) {
+								//Get Content Tags per field's Velocity Var Name
+								List<Tag> tags = tagAPI
+										.getTagsByInodeAndFieldVarName(content.getInode(),
+												field.getVelocityVarName());
+								if (tags != null) {
+									for (Tag t : tags) {
+										if (text.equals(StringPool.BLANK)) {
+											text = t.getTagName();
+										} else {
+											text = text + "," + t.getTagName();
+										}
+									}
+								}
+							} else if (field.getFieldType().equals(FieldType.RELATIONSHIP.toString())){
+								text = loadRelationships(relationships
+										.getRelationshipsRecordsByField(
+												field.getFieldRelationType()));
 							} else{
 								if (value instanceof Date || value instanceof Timestamp) {
 									if(field.getFieldType().equals(Field.FieldType.DATE.toString())) {
@@ -2090,6 +2107,22 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		else {
 			try {writer.print("\r\n");} catch (Exception e) {	Logger.debug(this,"Error: download to excel "+e);	}
 		}
+	}
+
+	/**
+	 * Builds the list of related records separated by comma
+	 */
+	private String loadRelationships(List<ContentletRelationshipRecords> relationshipRecords)
+			throws DotDataException {
+
+		final StringBuilder result = new StringBuilder();
+
+		relationshipRecords.forEach(record -> result.append(String
+				.join(StringPool.COMMA,
+						record.getRecords().stream().map(Contentlet::getIdentifier).collect(
+								Collectors.toList()))));
+
+		return result.toString();
 	}
 
 	/**
