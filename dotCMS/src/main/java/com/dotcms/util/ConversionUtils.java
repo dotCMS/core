@@ -1,11 +1,11 @@
 package com.dotcms.util;
 
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.util.UtilMethods;
+
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
-
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.util.UtilMethods;
 
 /**
  * Utility class for conversion operations.
@@ -165,8 +165,8 @@ public class ConversionUtils implements Serializable {
 	 */
 	public static int toInt(final Object input, final int defaultInt) {
 		try {
-			if (input instanceof String) {
-				return Integer.parseInt(String.class.cast(input));
+			if (input instanceof CharSequence) {
+				return Integer.parseInt(CharSequence.class.cast(input).toString());
 			} else if (input instanceof Number) {
 				return Number.class.cast(input).intValue();
 			} else {
