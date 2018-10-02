@@ -281,7 +281,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
      * It didn't get renamed to avoid backwards compatibility issues
      */
 	remotePublish : function(){
-
+	    
         var dojoStyle = dojo.require("dojo.dom-style");
 
 		if((dojo.byId("whereToSend") && this.whereToSend.length === 0)) {
@@ -309,7 +309,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         var expireDate = '';
         var expireTime = '';
 
-        if(dojoStyle.get('expireTimeDiv','display') !== 'none') {
+        if(dojo.byId('expireTimeDiv') && dojoStyle.get('expireTimeDiv','display') !== 'none') {
 
             expireDate = (dijit.byId("wfExpireDateAux"))
                 ? dijit.byId("wfExpireDateAux").getValue() != null
