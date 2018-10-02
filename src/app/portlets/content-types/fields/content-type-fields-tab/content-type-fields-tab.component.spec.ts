@@ -1,4 +1,4 @@
-import { async, ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
+import { async, ComponentFixture } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DebugElement, Component} from '@angular/core';
 import { ContentTypeFieldsTabComponent } from './';
@@ -80,14 +80,13 @@ describe('ContentTypeFieldsTabComponent', () => {
         expect(labelInput.outerHTML).toContain(tabField.name);
     });
 
-    it('should emit change evt', fakeAsync(() => {
+    it('should emit change evt', () => {
         spyOn(comp.editTab, 'emit');
         const labelInput = de.query(By.css('input')).nativeElement;
         labelInput.value = 'label changed';
-        labelInput.dispatchEvent(new Event('input'));
-        tick();
+        labelInput.dispatchEvent(new Event('blur'));
         expect(comp.editTab.emit).toHaveBeenCalledWith(tabField);
-    }));
+    });
 
     it('should emit delete evt', () => {
         spyOn(dotDialogService, 'confirm').and.callFake((conf) => {

@@ -11,7 +11,6 @@ import { DragulaService } from 'ng2-dragula';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 
 describe('ContentTypesFieldsListComponent', () => {
-    let comp: ContentTypesFieldsListComponent;
     let fixture: ComponentFixture<ContentTypesFieldsListComponent>;
     let de: DebugElement;
 
@@ -23,7 +22,6 @@ describe('ContentTypesFieldsListComponent', () => {
         });
 
         fixture = DOTTestBed.createComponent(ContentTypesFieldsListComponent);
-        comp = fixture.componentInstance;
         de = fixture.debugElement;
     }));
 
