@@ -49,7 +49,7 @@ public class VTLResourceIntegrationTest {
 
     @DataProvider
     public static Object[] getTestCases() {
-        MultivaluedMap<String, String> queryParameters = new MultivaluedHashMap<>();
+        final MultivaluedMap<String, String> queryParameters = new MultivaluedHashMap<>();
         queryParameters.put("key1", Collections.singletonList("value1"));
         queryParameters.put("key2", Arrays.asList("value2", "value3"));
 
@@ -105,7 +105,7 @@ public class VTLResourceIntegrationTest {
             final UriInfo uriInfo = mock(UriInfo.class);
             Mockito.when(uriInfo.getQueryParameters()).thenReturn(testCase.getQueryParameters());
 
-            VTLResource resource = new VTLResource();
+            final VTLResource resource = new VTLResource();
             final Response response = resource.get(request, servletResponse, uriInfo, testCase.getFolderName(),
                     testCase.getPathParameters());
 
@@ -125,8 +125,6 @@ public class VTLResourceIntegrationTest {
             }
 
             assertEquals(expectedOutput, getOutput);
-
-            ;
         } finally {
             APILocator.getFolderAPI().delete(vtlFolder, APILocator.systemUser(), false);
         }

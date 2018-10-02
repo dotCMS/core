@@ -61,37 +61,37 @@ public class VTLResourceTestCase {
         private String expectedOutput;
         private int expectedException;
 
-        public Builder setVtlFile(String vtlFile) {
+        public Builder setVtlFile(final String vtlFile) {
             this.vtlFile = vtlFile;
             return this;
         }
 
-        public Builder setFolderName(String folderName) {
+        public Builder setFolderName(final String folderName) {
             this.folderName = folderName;
             return this;
         }
 
-        public Builder setQueryParameters(MultivaluedMap<String, String> queryParameters) {
+        public Builder setQueryParameters(final MultivaluedMap<String, String> queryParameters) {
             this.queryParameters = queryParameters;
             return this;
         }
 
-        public Builder setPathParameters(String pathParameters) {
+        public Builder setPathParameters(final String pathParameters) {
             this.pathParameters = pathParameters;
             return this;
         }
 
-        public Builder setExpectedJSON(String expectedJSON) {
+        public Builder setExpectedJSON(final String expectedJSON) {
             this.expectedJSON = expectedJSON;
             return this;
         }
 
-        public Builder setExpectedOutput(String expectedOutput) {
+        public Builder setExpectedOutput(final String expectedOutput) {
             this.expectedOutput = expectedOutput;
             return this;
         }
 
-        public Builder setExpectedException(int expectedException) {
+        public Builder setExpectedException(final int expectedException) {
             this.expectedException = expectedException;
             return this;
         }
