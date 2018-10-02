@@ -29,7 +29,7 @@ describe('DotGlobalMessageComponent', () => {
         });
         expect(component.message).toEqual({
             value: 'test',
-            type: 'fa fa-spinner pi-spin',
+            type: 'fa fa-spinner fa-spin',
             life: 3000
         });
     });
