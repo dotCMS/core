@@ -9,7 +9,6 @@ import { DotcmsEventsService } from 'dotcms-js/dotcms-js';
 import { DotcmsEventsServiceMock } from 'src/app/test/dotcms-events-service.mock';
 import { SiteService } from './site.service';
 
-
 describe('Site Service', () => {
     const currentSite: Site = {
         hostname: 'hostname',

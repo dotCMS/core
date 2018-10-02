@@ -16,21 +16,21 @@ describe('Unit.api.persistence.ApiRoot', function() {
         expect(apiRoot).not.toBeNull();
     });
 
-    it('Parses a query param correctly when it\'s the last query parameter.', function() {
+    it("Parses a query param correctly when it's the last query parameter.", function() {
         const siteId = '48190c8c-42c4-46af-8d1a-0cd5db894797';
         expect(ApiRoot.parseQueryParam('foo=bar&baz=1&realmId=' + siteId, 'realmId')).toEqual(
             siteId
         );
     });
 
-    it('Parses a query param correctly when it\'s the first query parameter.', function() {
+    it("Parses a query param correctly when it's the first query parameter.", function() {
         const siteId = '48190c8c-42c4-46af-8d1a-0cd5db894797';
         expect(ApiRoot.parseQueryParam('realmId=' + siteId + '&foo=bar&baz=1', 'realmId')).toEqual(
             siteId
         );
     });
 
-    it('Parses a query param correctly when it\'s the in the middle of the query.', function() {
+    it("Parses a query param correctly when it's the in the middle of the query.", function() {
         const siteId = '48190c8c-42c4-46af-8d1a-0cd5db894797';
         expect(
             ApiRoot.parseQueryParam(
