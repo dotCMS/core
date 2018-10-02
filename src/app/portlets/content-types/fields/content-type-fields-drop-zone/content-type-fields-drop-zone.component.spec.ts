@@ -110,7 +110,7 @@ function becomeNewField(field) {
     delete field.id;
 }
 
-fdescribe('ContentTypeFieldsDropZoneComponent', () => {
+describe('ContentTypeFieldsDropZoneComponent', () => {
     let comp: ContentTypeFieldsDropZoneComponent;
     let fixture: ComponentFixture<ContentTypeFieldsDropZoneComponent>;
     let de: DebugElement;
@@ -276,7 +276,7 @@ const removeSortOrder = (fieldRows: FieldRow[]) => {
     });
 };
 
-fdescribe('ContentTypeFieldsDropZoneComponent', () => {
+describe('ContentTypeFieldsDropZoneComponent', () => {
     let hostComp: TestHostComponent;
     let hostDe: DebugElement;
     let comp: ContentTypeFieldsDropZoneComponent;

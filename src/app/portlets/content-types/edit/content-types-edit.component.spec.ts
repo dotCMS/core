@@ -79,6 +79,8 @@ export class TestDotMenuComponent {
     @Input()
     icon: string;
     @Input()
+    float: boolean;
+    @Input()
     model: MenuItem[];
 }
 
@@ -399,14 +401,17 @@ describe('ContentTypesEditComponent edit mode', () => {
         expect(dialog.componentInstance.visible).toBeTruthy();
     });
 
-    it('should open dialog on edit button click', () => {
+    it('should send notifications to add rows & tab divider', () => {
         const dotEventsService = fixture.debugElement.injector.get(DotEventsService);
         spyOn(dotEventsService, 'notify');
-        const addRowButton: DebugElement = fixture.debugElement.query(By.css('#form-add-row'));
-        expect(addRowButton.nativeElement.outerText).toBe('Add rows');
-        addRowButton.nativeNode.click();
-        fixture.detectChanges();
+
+        comp.contentTypeActions[0].command();
+        expect(comp.contentTypeActions[0].label).toBe('Add rows');
         expect(dotEventsService.notify).toHaveBeenCalledWith('add-row');
+
+        comp.contentTypeActions[1].command();
+        expect(comp.contentTypeActions[1].label).toBe('Add tab');
+        expect(dotEventsService.notify).toHaveBeenCalledWith('add-tab-divider');
     });
 
     it('should close the dialog', () => {
@@ -478,7 +483,7 @@ describe('ContentTypesEditComponent edit mode', () => {
         expect(comp.fields).toEqual(fieldsReturnByServer);
     });
 
-    it("should handle 403 when user doesn't have permission to save feld", () => {
+    it('should handle 403 when user doesn\'t have permission to save feld', () => {
         const newFieldsAdded: ContentTypeField[] = [
             {
                 name: 'field 1',
