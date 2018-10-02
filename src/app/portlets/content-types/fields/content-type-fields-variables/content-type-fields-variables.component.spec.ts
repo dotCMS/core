@@ -62,7 +62,7 @@ describe('ContentTypeFieldsVariablesComponent', () => {
     });
 
     it('should load the component with no rows', () => {
-        spyOn(fieldVariableService, 'load').and.returnValue(Observable.of([]));
+        spyOn(fieldVariableService, 'load').and.returnValue([]);
 
         fixture.detectChanges();
 

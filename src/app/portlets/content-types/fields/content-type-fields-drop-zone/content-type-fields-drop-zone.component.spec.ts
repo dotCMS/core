@@ -3,7 +3,14 @@ import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DebugElement, Component, Input, Output, EventEmitter, Injectable } from '@angular/core';
 import { ContentTypeFieldsDropZoneComponent } from './';
 import { By } from '@angular/platform-browser';
-import { ContentTypeField, FieldRow, ContentTypeFieldsAddRowModule, FieldTab, FieldDivider } from '../';
+import {
+    ContentTypeField,
+    FieldRow,
+    ContentTypeFieldsAddRowModule,
+    FieldTab,
+    FieldDivider,
+    ContentTypeFieldsVariablesComponent
+} from '../';
 import { ReactiveFormsModule } from '@angular/forms';
 import { FieldValidationMessageModule } from '@components/_common/field-validation-message/file-validation-message.module';
 import { DotMessageService } from '@services/dot-messages-service';
@@ -54,11 +61,16 @@ class TestContentTypeFieldsPropertiesFormComponent {
     template: ''
 })
 class DotDialogComponent {
-    @Input() header = '';
-    @Input() show: boolean;
-    @Input() ok: DotDialogAction;
-    @Input() cancel: DotDialogAction;
-    @Output() close: EventEmitter<any> = new EventEmitter();
+    @Input()
+    header = '';
+    @Input()
+    show: boolean;
+    @Input()
+    ok: DotDialogAction;
+    @Input()
+    cancel: DotDialogAction;
+    @Output()
+    close: EventEmitter<any> = new EventEmitter();
 }
 
 @Component({
@@ -66,10 +78,13 @@ class DotDialogComponent {
     template: ''
 })
 class TestDotContentTypeFieldsTabComponent {
-    @Input() fieldTab: FieldTab;
+    @Input()
+    fieldTab: FieldTab;
 
-    @Output() editTab: EventEmitter<ContentTypeField> = new EventEmitter();
-    @Output() removeTab: EventEmitter<FieldDivider> = new EventEmitter();
+    @Output()
+    editTab: EventEmitter<ContentTypeField> = new EventEmitter();
+    @Output()
+    removeTab: EventEmitter<FieldDivider> = new EventEmitter();
 }
 
 @Injectable()
@@ -95,7 +110,7 @@ function becomeNewField(field) {
     delete field.id;
 }
 
-describe('ContentTypeFieldsDropZoneComponent', () => {
+fdescribe('ContentTypeFieldsDropZoneComponent', () => {
     let comp: ContentTypeFieldsDropZoneComponent;
     let fixture: ComponentFixture<ContentTypeFieldsDropZoneComponent>;
     let de: DebugElement;
@@ -120,8 +135,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 AddVariableFormComponent,
                 TestContentTypeFieldsRowComponent,
                 TestContentTypeFieldsPropertiesFormComponent,
-                TestPOverlayPanelComponent,
-                TestDotContentTypeFieldsTabComponent
+                TestDotContentTypeFieldsTabComponent,
                 DotDialogComponent
             ],
             imports: [
@@ -184,49 +198,43 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         expect(comp.dialogActiveTab).toBe(0);
     });
 
-    it(
-        'should emit removeFields event',
-        fakeAsync(() => {
-            let fieldsToRemove;
+    it('should emit removeFields event', fakeAsync(() => {
+        let fieldsToRemove;
 
-            const field = {
-                clazz: 'classField',
-                name: 'nameField'
-            };
+        const field = {
+            clazz: 'classField',
+            name: 'nameField'
+        };
 
-            comp.removeFields.subscribe((removeFields) => (fieldsToRemove = removeFields));
+        comp.removeFields.subscribe((removeFields) => (fieldsToRemove = removeFields));
 
-            tick();
+        tick();
 
-            comp.removeField(field);
-            expect([field]).toEqual(fieldsToRemove);
-        })
-    );
+        comp.removeField(field);
+        expect([field]).toEqual(fieldsToRemove);
+    }));
 
-    it(
-        'should emit removeFields event when a Row is removed',
-        fakeAsync(() => {
-            let fieldsToRemove: ContentTypeField[];
+    it('should emit removeFields event when a Row is removed', fakeAsync(() => {
+        let fieldsToRemove: ContentTypeField[];
 
-            const fieldRow: FieldRow = new FieldRow();
-            const field = {
-                clazz: 'classField',
-                name: 'nameField'
-            };
-            fieldRow.addFields([field]);
-            fieldRow.getFieldDivider().id = 'test';
+        const fieldRow: FieldRow = new FieldRow();
+        const field = {
+            clazz: 'classField',
+            name: 'nameField'
+        };
+        fieldRow.addFields([field]);
+        fieldRow.getFieldDivider().id = 'test';
 
-            comp.removeFields.subscribe((removeFields) => (fieldsToRemove = removeFields));
+        comp.removeFields.subscribe((removeFields) => (fieldsToRemove = removeFields));
 
-            comp.removeFieldRow(fieldRow);
+        comp.removeFieldRow(fieldRow);
 
-            tick();
+        tick();
 
-            expect([fieldRow.getFieldDivider(), fieldRow.columns[0].columnDivider, field]).toEqual(
-                fieldsToRemove
-            );
-        })
-    );
+        expect([fieldRow.getFieldDivider(), fieldRow.columns[0].columnDivider, field]).toEqual(
+            fieldsToRemove
+        );
+    }));
 
     it('should remove and empty row without lineDivider id, and not emit removeFields ', () => {
         const fieldRow1 = new FieldRow();
@@ -254,12 +262,12 @@ class TestHostComponent {
     constructor() {}
 }
 
-const removeSortOrder = (fieldRows: FieldRow[] ) => {
+const removeSortOrder = (fieldRows: FieldRow[]) => {
     return fieldRows.map((fieldRow: FieldRow) => {
         fieldRow.getFieldDivider().sortOrder = null;
-        fieldRow.columns = fieldRow.columns.map(column => {
+        fieldRow.columns = fieldRow.columns.map((column) => {
             column.columnDivider.sortOrder = null;
-            column.fields = column.fields.map(field => {
+            column.fields = column.fields.map((field) => {
                 field.sortOrder = null;
                 return field;
             });
@@ -285,7 +293,7 @@ fdescribe('ContentTypeFieldsDropZoneComponent', () => {
     });
 
     const moveFromSecondRowToFirstRowAndEmitEvent = () => {
-        const fieldsMoved =  _.cloneDeep(comp.fieldRows);
+        const fieldsMoved = _.cloneDeep(comp.fieldRows);
         const fieldToMove = fieldsMoved[1].columns[0].fields[0];
 
         fieldsMoved[1].columns[0].fields = [];
@@ -316,9 +324,7 @@ fdescribe('ContentTypeFieldsDropZoneComponent', () => {
                 AddVariableFormComponent,
                 TestContentTypeFieldsRowComponent,
                 TestContentTypeFieldsPropertiesFormComponent,
-                TestPOverlayPanelComponent,
-                TestHostComponent,
-                TestDotContentTypeFieldsTabComponent
+                TestDotContentTypeFieldsTabComponent,
                 DotDialogComponent,
                 TestHostComponent
             ],
@@ -476,7 +482,7 @@ fdescribe('ContentTypeFieldsDropZoneComponent', () => {
         const addRowsContainer = de.query(By.css('dot-add-rows')).componentInstance;
         addRowsContainer.selectColums.emit(2);
         expect(comp.addRow).toHaveBeenCalled();
-        expect((<FieldRow> comp.fieldRows[0]).columns.length).toBe(1);
+        expect((<FieldRow>comp.fieldRows[0]).columns.length).toBe(1);
     });
 
     it('should display dialog if a drop event happen from source', fakeAsync(() => {
@@ -507,22 +513,18 @@ fdescribe('ContentTypeFieldsDropZoneComponent', () => {
 
         this.testFieldDragDropService._fieldRowDropFromTarget.next(fieldMoved);
 
-        const expected = [
-            fakeFields[3],
-            fakeFields[0],
-            fakeFields[1],
-            fakeFields[2],
-        ].map((fakeField, index) => {
-            fakeField.sortOrder = index + 1;
-            return fakeField;
-        });
+        const expected = [fakeFields[3], fakeFields[0], fakeFields[1], fakeFields[2]].map(
+            (fakeField, index) => {
+                fakeField.sortOrder = index + 1;
+                return fakeField;
+            }
+        );
 
         expect(comp.saveFields.emit).toHaveBeenCalledWith(expected);
         // expect(removeSortOrder(<FieldRow[]> comp.fieldRows)).toEqual(removeSortOrder(fieldMoved));
     });
 
     it('should save all the fields (moving just the last field)', () => {
-
         spyOn(comp.saveFields, 'emit');
 
         fixture.detectChanges();
@@ -532,15 +534,12 @@ fdescribe('ContentTypeFieldsDropZoneComponent', () => {
 
         let expectedIndex = 6;
 
-        const expected = [
-            fakeFields[8],
-            fakeFields[5],
-            fakeFields[6],
-            fakeFields[7],
-        ].map(fakeField => {
-            fakeField.sortOrder = expectedIndex++;
-            return fakeField;
-        });
+        const expected = [fakeFields[8], fakeFields[5], fakeFields[6], fakeFields[7]].map(
+            (fakeField) => {
+                fakeField.sortOrder = expectedIndex++;
+                return fakeField;
+            }
+        );
 
         expect(comp.saveFields.emit).toHaveBeenCalledWith(expected);
         // expect(removeSortOrder(<FieldRow[]>  comp.fieldRows)).toEqual(removeSortOrder(fieldsMoved));
@@ -592,7 +591,10 @@ fdescribe('ContentTypeFieldsDropZoneComponent', () => {
         expect(original).toEqual(fakeFields[8]);
         expect(saveFields[0].fixed).toEqual(true);
         expect(saveFields[0].indexed).toEqual(true);
-        expect(comp.currentField).toEqual({fieldId: fakeFields[8].id, contentTypeId: fakeFields[8].contentTypeId});
+        expect(comp.currentField).toEqual({
+            fieldId: fakeFields[8].id,
+            contentTypeId: fakeFields[8].contentTypeId
+        });
     });
 
     it('should handler removeField event', () => {
@@ -616,8 +618,8 @@ fdescribe('ContentTypeFieldsDropZoneComponent', () => {
         hostComp.fields = [];
         fixture.detectChanges();
 
-        expect((<FieldRow> comp.fieldRows[0]).columns[0].fields.length).toEqual(0);
-        expect((<FieldRow> comp.fieldRows[0]).columns[0].columnDivider.clazz).toEqual(
+        expect((<FieldRow>comp.fieldRows[0]).columns[0].fields.length).toEqual(0);
+        expect((<FieldRow>comp.fieldRows[0]).columns[0].columnDivider.clazz).toEqual(
             'com.dotcms.contenttype.model.field.ImmutableColumnField'
         );
         expect(comp.fieldRows[0].getFieldDivider().clazz).toEqual(
