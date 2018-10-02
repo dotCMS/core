@@ -209,8 +209,15 @@ public class HTMLPageDataGen extends ContentletDataGen {
 
         pageAsset.setIndexPolicy(IndexPolicy.FORCE);
         pageAsset.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        pageAsset.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         Contentlet contentlet = persist(pageAsset);
-        return pageAssetAPI.fromContentlet(contentlet);
+        HTMLPageAsset htmlPageAsset = pageAssetAPI.fromContentlet(contentlet);
+
+        htmlPageAsset.setIndexPolicy(IndexPolicy.FORCE);
+        htmlPageAsset.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        htmlPageAsset.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+
+        return htmlPageAsset;
     }
     
     @SuppressWarnings("unused")
