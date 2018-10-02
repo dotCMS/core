@@ -28,7 +28,6 @@ import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.IPersona;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -43,7 +42,8 @@ import java.util.Optional;
 public class VTLResource {
 
     private final WebResource webResource = new WebResource();
-    private final String VTLPath = "/application/apivtl";
+    @VisibleForTesting
+    static final String VTL_PATH = "/application/apivtl";
     private final HostAPI hostAPI;
     private final IdentifierAPI identifierAPI;
     private final ContentletAPI contentletAPI;
@@ -66,7 +66,7 @@ public class VTLResource {
     @Path("/{folder}/{path: .*}")
     public Response get(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                         @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                             @PathParam("path") final String pathParams) {
+                        @PathParam("path") final String pathParams) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (pathParams, false, request, false, null);
@@ -87,7 +87,7 @@ public class VTLResource {
 
         try {
             final Host site = this.hostAPI.resolveHostName(request.getServerName(), APILocator.systemUser(), false);
-            final String getFilePath = VTLPath + StringPool.SLASH + folderName + StringPool.SLASH
+            final String getFilePath = VTL_PATH + StringPool.SLASH + folderName + StringPool.SLASH
                     + HTTPMethod.GET.fileName + FILE_EXTENSION;
             final Identifier identifier = identifierAPI.find(site, getFilePath);
             final Contentlet getFileContent = contentletAPI.findContentletByIdentifier(identifier.getId(), true,
@@ -105,17 +105,16 @@ public class VTLResource {
                 VelocityUtil.getEngine().evaluate(context, evalResult, "", fileAssetIputStream);
                 dotJSON = (DotJSON<String, String>) context.get("dotJSON");
 
-                if(!UtilMethods.isSet(dotJSON)) { // If no dotJSON let's return the raw evaluation of the velocity file
+                if(dotJSON.size()==0) { // If dotJSON is not used let's return the raw evaluation of the velocity file
                     return Response.ok(evalResult.toString()).build();
                 }
 
                 // let's add it to cache
                 CacheLocator.getDotJSONCache().add(dotJSONCacheKey, dotJSON);
-
             }
         } catch(DotContentletStateException e) {
             final String errorMessage = "Unable to find velocity file '" + HTTPMethod.GET.fileName + FILE_EXTENSION
-                    + "' under path '" + VTLPath + "'";
+                    + "' under path '" + VTL_PATH + "'";
             Logger.error(this, errorMessage, e);
             return ResponseUtil.mapExceptionResponse(new DotDataException(errorMessage));
         } catch(Exception e) {
