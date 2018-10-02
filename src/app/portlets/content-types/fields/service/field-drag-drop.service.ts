@@ -21,50 +21,50 @@ export class FieldDragDropService {
         dragulaService.over().subscribe(this.toggleOverClass);
         dragulaService.out().subscribe(this.toggleOverClass);
 
-        this._fieldRowDropFromTarget = dragulaService
-            .dropModel()
-            .pipe(
-                filter((data: DragulaDropModel) => data.name === FieldDragDropService.FIELD_ROW_BAG_NAME),
-                map((data: DragulaDropModel) => data.targetModel)
-            );
+        this._fieldRowDropFromTarget = dragulaService.dropModel().pipe(
+            filter(
+                (data: DragulaDropModel) => data.name === FieldDragDropService.FIELD_ROW_BAG_NAME
+            ),
+            map((data: DragulaDropModel) => data.targetModel)
+        );
 
-        this._fieldDropFromTarget = dragulaService
-            .dropModel()
-            .pipe(
-                filter((data: DragulaDropModel) => data.name === FieldDragDropService.FIELD_BAG_NAME &&
-                    (<HTMLElement> data.source).dataset.dragType === 'target'),
-                map((data: DragulaDropModel) => {
-                    return {
-                        item: data.item,
-                        source: {
-                            columnId: (<HTMLElement> data.source).dataset.columnid,
-                            model: data.sourceModel
-                        },
-                        target: {
-                            columnId: (<HTMLElement> data.target).dataset.columnid,
-                            model: data.targetModel
-                        }
-                    };
-                })
-            );
+        this._fieldDropFromTarget = dragulaService.dropModel().pipe(
+            filter(
+                (data: DragulaDropModel) =>
+                    data.name === FieldDragDropService.FIELD_BAG_NAME &&
+                    (<HTMLElement>data.source).dataset.dragType === 'target'
+            ),
+            map((data: DragulaDropModel) => {
+                return {
+                    item: data.item,
+                    source: {
+                        columnId: (<HTMLElement>data.source).dataset.columnid,
+                        model: data.sourceModel
+                    },
+                    target: {
+                        columnId: (<HTMLElement>data.target).dataset.columnid,
+                        model: data.targetModel
+                    }
+                };
+            })
+        );
 
-
-        this._fieldDropFromSource = dragulaService
-            .dropModel()
-            .pipe(
-                filter((data: DragulaDropModel) => data.name === FieldDragDropService.FIELD_BAG_NAME &&
-                    (<HTMLElement> data.source).dataset.dragType === 'source'),
-                map((data: DragulaDropModel) => {
-                    return {
-                        item: data.item,
-                        target: {
-                            columnId: (<HTMLElement> data.target).dataset.columnid,
-                            model: data.targetModel
-                        }
-                    };
-                })
-
-            );
+        this._fieldDropFromSource = dragulaService.dropModel().pipe(
+            filter(
+                (data: DragulaDropModel) =>
+                    data.name === FieldDragDropService.FIELD_BAG_NAME &&
+                    (<HTMLElement>data.source).dataset.dragType === 'source'
+            ),
+            map((data: DragulaDropModel) => {
+                return {
+                    item: data.item,
+                    target: {
+                        columnId: (<HTMLElement>data.target).dataset.columnid,
+                        model: data.targetModel
+                    }
+                };
+            })
+        );
     }
 
     /**
@@ -178,17 +178,16 @@ interface DragulaDropModel {
     targetModel: any[];
     sourceIndex: number;
     targetIndex: number;
-
 }
 
 export interface DropFieldData {
     item: ContentTypeField;
     source?: {
         columnId: string;
-        model: ContentTypeField[]
+        model: ContentTypeField[];
     };
     target: {
         columnId: string;
-        model: ContentTypeField[]
+        model: ContentTypeField[];
     };
 }

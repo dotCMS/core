@@ -319,6 +319,10 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges {
 
     private toggleDialog(): void {
         this.displayDialog = !this.displayDialog;
+
+        if (!this.displayDialog) {
+            this.propertiesForm.destroy();
+        }
     }
 
     private getFields(): ContentTypeField[] {
