@@ -104,7 +104,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
      */
     saveFieldProperties(): void {
         if (this.form.valid) {
-            this.saveField.emit(this.form.value);
+            this.saveField.emit(this.formatFormData());
         } else {
             this.fieldProperties.forEach((property) => this.form.get(property).markAsTouched());
         }
@@ -118,6 +118,21 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
                 propertiesContainer.removeChild(child);
             }
         });
+    }
+
+    private formatFormData(): any {
+        const formCopy = Object.assign({}, this.form.value);
+        const mapOfFieldsValues = {
+            'categories': 'inode'
+        };
+
+        for (const [key, value] of Object.entries(mapOfFieldsValues)) {
+            if (this.form.value[key] && this.form.value[key][value]) {
+                formCopy[key] = this.form.value[key][value];
+            }
+        }
+
+        return formCopy;
     }
 
     private initFormGroup(properties?: string[]): void {
