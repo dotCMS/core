@@ -223,6 +223,7 @@ public class RulesUnderPageAssetsFTest{
     public void deletePageWithRules() throws Exception {
         final String folderPath = "/DeletePageFolder/";
         final String pageName = "deletePageWithRulesPage" + System.currentTimeMillis();
+        HibernateUtil.setAsyncCommitListenersFinalization(false);
 
         //Create Folder.
         APILocator.getFolderAPI().createFolders(folderPath, host, sysUser, false);
@@ -243,6 +244,9 @@ public class RulesUnderPageAssetsFTest{
         createRuleUnderPage(dummyPage);
 
         //Publish Page.
+        dummyPage.setIndexPolicy(IndexPolicy.FORCE);
+        dummyPage.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        dummyPage.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         APILocator.getContentletAPI().publish(dummyPage, sysUser, false);
 
         //Get all the rules from page.
@@ -251,12 +255,20 @@ public class RulesUnderPageAssetsFTest{
 
         //Remove Page with rules.
         dummyPage.setIndexPolicy(IndexPolicy.FORCE);
+        dummyPage.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        dummyPage.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         APILocator.getContentletAPI().unpublish(dummyPage, sysUser, false);
+
         dummyPage.setIndexPolicy(IndexPolicy.FORCE);
+        dummyPage.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        dummyPage.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         APILocator.getContentletAPI().archive(dummyPage, sysUser, false);
         APILocator.getContentletAPI().isInodeIndexedArchived(dummyPage.getInode());
         assertTrue(dummyPage.isArchived());
+
         dummyPage.setIndexPolicy(IndexPolicy.FORCE);
+        dummyPage.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        dummyPage.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         APILocator.getContentletAPI().delete(dummyPage, sysUser, false);
 
         //Get all rules from the deleted page, shouldn't be any.
@@ -276,6 +288,8 @@ public class RulesUnderPageAssetsFTest{
         final String folderPath = "/RuleUnderPageFolder/";
         final String pageName = "DummyPage"  + System.currentTimeMillis();;
         final String secondPageName = "SecondDummyPage"  + System.currentTimeMillis();
+
+        HibernateUtil.setAsyncCommitListenersFinalization(false);
 
         //Create Folder.
         APILocator.getFolderAPI().createFolders(folderPath, host, sysUser, false);
@@ -322,26 +336,38 @@ public class RulesUnderPageAssetsFTest{
         //Remove Page with rules.
         dummyPage.setIndexPolicy(IndexPolicy.FORCE);
         dummyPage.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        dummyPage.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         APILocator.getContentletAPI().unpublish(dummyPage, sysUser, false);
+
         dummyPage.setIndexPolicy(IndexPolicy.FORCE);
         dummyPage.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        dummyPage.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+
         APILocator.getContentletAPI().archive(dummyPage, sysUser, false);
         APILocator.getContentletAPI().isInodeIndexedArchived(dummyPage.getInode());
         assertTrue(dummyPage.isArchived());
         dummyPage.setIndexPolicy(IndexPolicy.FORCE);
         dummyPage.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        dummyPage.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+
         APILocator.getContentletAPI().delete(dummyPage, sysUser, false);
 
         secondDummyPage.setIndexPolicy(IndexPolicy.FORCE);
         secondDummyPage.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        secondDummyPage.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         APILocator.getContentletAPI().unpublish(secondDummyPage, sysUser, false);
+
         secondDummyPage.setIndexPolicy(IndexPolicy.FORCE);
         secondDummyPage.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        secondDummyPage.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         APILocator.getContentletAPI().archive(secondDummyPage, sysUser, false);
         APILocator.getContentletAPI().isInodeIndexedArchived(secondDummyPage.getInode());
+
         assertTrue(secondDummyPage.isArchived());
         secondDummyPage.setIndexPolicy(IndexPolicy.FORCE);
         secondDummyPage.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        secondDummyPage.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+
         APILocator.getContentletAPI().delete(secondDummyPage, sysUser, false);
 
         //Remove Template.

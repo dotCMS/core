@@ -57,6 +57,8 @@ public class URLMapTest {
 	public void createAssets() throws Exception {
 		try {
 
+			HibernateUtil.setAsyncCommitListenersFinalization(false);
+
 			user = APILocator.getUserAPI().getSystemUser();
 			Host demoHost = APILocator.getHostAPI().findByName("demo.dotcms.com", user, false);
 
@@ -122,9 +124,12 @@ public class URLMapTest {
 
 			widget.setIndexPolicy(IndexPolicy.FORCE);
 			widget.setIndexPolicyDependencies(IndexPolicy.FORCE);
+			widget.setBoolProperty(Contentlet.IS_TEST_MODE, true);
 			widget = contentletAPI.checkin( widget, null, permissionAPI.getPermissions( simpleWidgetSt ), user, false );
 			widget.setIndexPolicy(IndexPolicy.FORCE);
             widget.setIndexPolicyDependencies(IndexPolicy.FORCE);
+			widget.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+            contentletAPI.publish(widget, user, false);
 			APILocator.getVersionableAPI().setLive(widget);
 
 			// add the widget to the detail page
@@ -213,9 +218,12 @@ public class URLMapTest {
 			contentletAPI.setContentletProperty( englishContent, urlTitle, "the-gas-price" );
 			englishContent.setIndexPolicy(IndexPolicy.FORCE);
             englishContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
+			englishContent.setBoolProperty(Contentlet.IS_TEST_MODE, true);
 			englishContent = contentletAPI.checkin( englishContent, null, permissionAPI.getPermissions( testSt ), user, false );
 			englishContent.setIndexPolicy(IndexPolicy.FORCE);
             englishContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
+			englishContent.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+            contentletAPI.publish(englishContent, user, false);
 			APILocator.getVersionableAPI().setLive(englishContent);
 
 			// SPANISH CONTENT
@@ -231,10 +239,13 @@ public class URLMapTest {
 			contentletAPI.setContentletProperty( spanishContent, urlTitle, "el-precio-del-gas" );
 			spanishContent.setIndexPolicy(IndexPolicy.FORCE);
             spanishContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
+			spanishContent.setBoolProperty(Contentlet.IS_TEST_MODE, true);
 
 			spanishContent = contentletAPI.checkin( spanishContent, null, permissionAPI.getPermissions( testSt ), user, false );
 			spanishContent.setIndexPolicy(IndexPolicy.FORCE);
             spanishContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
+			spanishContent.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+            contentletAPI.publish(spanishContent, user, false);
 			APILocator.getVersionableAPI().setLive(spanishContent);
 
 			HibernateUtil.closeAndCommitTransaction();
@@ -287,9 +298,20 @@ public class URLMapTest {
 	public void deleteAssets() throws Exception {
        try{
         	HibernateUtil.startTransaction();
-        	if(testFolder!=null) APILocator.getFolderAPI().delete(testFolder, user, false);
-        	if(testSt!=null) APILocator.getStructureAPI().delete(testSt, user);
+
+        	if(testFolder!=null) {
+
+        		APILocator.getFolderAPI().delete(testFolder, user, false);
+			}
+
+        	if(testSt!=null) {
+
+        		APILocator.getStructureAPI().delete(testSt, user);
+			}
+
         	if(widget!=null){
+
+				widget.getContentType(); // preloa the contenttype
 				APILocator.getContentletAPI().archive(widget, user, false);
         		APILocator.getContentletAPI().delete(widget, user, false);
 			}

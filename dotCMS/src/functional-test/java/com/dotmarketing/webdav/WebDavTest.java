@@ -135,6 +135,9 @@ public class WebDavTest {
 	 */
 	@Test
 	public void delete_under_host() throws Exception {
+
+		HibernateUtil.setAsyncCommitListenersFinalization(false);
+
 	    User user=APILocator.getUserAPI().getSystemUser();
         String hostid=APILocator.getHostAPI().findByName("demo.dotcms.com", user, false).getIdentifier();
         String filename="test_"+UUIDGenerator.generateUuid()+".txt";
@@ -153,6 +156,9 @@ public class WebDavTest {
         file.setLanguageId(1);
         file.setHost(hostid);
         file.setFolder("SYSTEM_FOLDER");
+		file.setIndexPolicy(IndexPolicy.FORCE);
+		file.setIndexPolicyDependencies(IndexPolicy.FORCE);
+		file.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         file = APILocator.getContentletAPI().checkin(file, user, false);
         APILocator.getContentletAPI().isInodeIndexed(file.getInode());
         
