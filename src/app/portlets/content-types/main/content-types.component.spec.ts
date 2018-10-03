@@ -357,4 +357,24 @@ describe('ContentTypesPortletComponent', () => {
 
         expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(forbiddenError);
     });
+
+    fit('should not show remove option if content type is defaultType', () => {
+        fixture.detectChanges();
+        const shouldShow = comp.rowActions[0].shouldShow({
+            fixed: false,
+            defaultType: true
+        });
+
+        expect(shouldShow).toBeFalsy();
+    });
+
+    fit('should show remove option', () => {
+        fixture.detectChanges();
+        const shouldShow = comp.rowActions[0].shouldShow({
+            fixed: false,
+            defaultType: false
+        });
+
+        expect(shouldShow).toBeTruthy();
+    });
 });
