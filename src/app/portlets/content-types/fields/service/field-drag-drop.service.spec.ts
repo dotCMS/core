@@ -142,6 +142,11 @@ describe('FieldDragDropService', () => {
                         dataset: {
                             dragType: 'source'
                         }
+                    },
+                    target: {
+                        dataset: {
+                            columnid: '123'
+                        }
                     }
                 }
             });
@@ -167,6 +172,11 @@ describe('FieldDragDropService', () => {
                         dataset: {
                             dragType: 'target'
                         }
+                    },
+                    target: {
+                        dataset: {
+                            columnid: '123'
+                        }
                     }
                 }
             });
@@ -178,10 +188,10 @@ describe('FieldDragDropService', () => {
     );
 
     it(
-        'should emit fieldRowDropFromSource',
+        'should emit fieldRowDropFromTarget',
         fakeAsync(() => {
-            this.fieldDragDropService.fieldRowDropFromSource$.subscribe(() => {
-                this.fieldRowDropFromSource = true;
+            this.fieldDragDropService.fieldRowDropFromTarget$.subscribe(() => {
+                this.fieldRowDropFromTarget = true;
             });
 
             this.dragulaService.emit({
@@ -198,7 +208,7 @@ describe('FieldDragDropService', () => {
 
             tick();
 
-            expect(this.fieldRowDropFromSource).toBe(true);
+            expect(this.fieldRowDropFromTarget).toBe(true);
         })
     );
 
