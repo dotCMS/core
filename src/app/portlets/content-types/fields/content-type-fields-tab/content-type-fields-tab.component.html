@@ -1,8 +1,8 @@
 <div
     class="tab__label"
     contenteditable="true"
-    [textContent]="fieldTab.getFieldDivider().name"
-    (input)="fieldTab.getFieldDivider().name=$event.target.textContent"
+    [textContent]="label"
+    (input)="label=$event.target.textContent"
     (blur)="changeLabel()"
     (keyup.enter)="changeLabel()"></div>
 <dot-icon-button-tooltip

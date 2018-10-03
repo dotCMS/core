@@ -27,7 +27,7 @@ class DotTestHostComponent {
     }
 }
 
-describe('ContentTypeFieldsTabComponent', () => {
+fdescribe('ContentTypeFieldsTabComponent', () => {
     let hostFixture: ComponentFixture<DotTestHostComponent>;
     let hostDe: DebugElement;
     let hostComp: DotTestHostComponent;
@@ -74,17 +74,20 @@ describe('ContentTypeFieldsTabComponent', () => {
 
     it('should render component', () => {
         const deleteBtn = de.query(By.css('dot-icon-button-tooltip')).componentInstance;
-        const labelInput = de.query(By.css('input')).nativeElement;
+        const labelInput = de.query(By.css('div')).nativeElement;
 
         expect(deleteBtn.tooltipText).toBe('delete text');
         expect(labelInput.outerHTML).toContain(tabField.name);
     });
 
-    it('should emit change evt', () => {
+    fit('should emit change evt', () => {
         spyOn(comp.editTab, 'emit');
-        const labelInput = de.query(By.css('input')).nativeElement;
-        labelInput.value = 'label changed';
-        labelInput.dispatchEvent(new Event('blur'));
+        const labelInput = de.query(By.css('div'));
+        labelInput.nativeElement.textContent = 'label changed';
+        this.label = 'label changed';
+        labelInput.triggerEventHandler('keyup.enter', {});
+        hostFixture.detectChanges();
+
         expect(comp.editTab.emit).toHaveBeenCalledWith(tabField);
     });
 

@@ -3,7 +3,6 @@ import { FieldTab, ContentTypeField } from '../shared';
 import { DotMessageService } from '@services/dot-messages-service';
 import { FieldDivider } from '@portlets/content-types/fields/shared/field-divider.interface';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
-import * as _ from 'lodash';
 
 /**
  * Display Tab Field
@@ -27,8 +26,6 @@ export class ContentTypeFieldsTabComponent implements OnInit {
     removeTab: EventEmitter<FieldDivider> = new EventEmitter();
 
     i18nMessages: any = {};
-    tabCopy: FieldTab;
-
     label: string;
 
     constructor(
@@ -46,8 +43,6 @@ export class ContentTypeFieldsTabComponent implements OnInit {
             ])
             .subscribe((res) => {
                 this.i18nMessages = res;
-                this.tabCopy = _.cloneDeep(this.fieldTab);
-
                 this.label = this.fieldTab.getFieldDivider().name;
             });
     }
@@ -57,10 +52,13 @@ export class ContentTypeFieldsTabComponent implements OnInit {
      * @memberof ContentTypeFieldsTabComponent
      */
     changeLabel(): void {
-        if (this.fieldTab.getFieldDivider().name) {
-            this.editTab.emit(this.fieldTab.getFieldDivider());
+        if (this.label && this.label !== this.fieldTab.getFieldDivider().name) {
+            this.editTab.emit({
+                ...this.fieldTab.getFieldDivider(),
+                name: this.label
+            });
         } else {
-            this.fieldTab = _.cloneDeep(this.tabCopy);
+            this.label = this.fieldTab.getFieldDivider().name;
         }
     }
 
