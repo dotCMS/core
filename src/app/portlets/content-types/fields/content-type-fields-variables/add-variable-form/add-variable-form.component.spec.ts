@@ -42,9 +42,10 @@ describe('AddVariableFormComponent', () => {
         expect(labels[1].nativeElement.innerText).toBe('Value');
     });
 
-    it('should submit form component', () => {
-        const emit = spyOn(comp.saveVariable, 'emit');
-        const form = spyOn(comp.form, 'reset');
+    it('should submit form, reset and focus on key field', () => {
+        spyOn(comp.keyField.nativeElement, 'focus');
+        spyOn(comp.saveVariable, 'emit');
+
         const param = {
             key: 'key1',
             value: 'value1'
@@ -58,7 +59,13 @@ describe('AddVariableFormComponent', () => {
         expect(submitButton.nativeElement.disabled).toBe(false);
 
         submitButton.nativeElement.click();
-        expect(emit).toHaveBeenCalledWith(param);
-        expect(form).toHaveBeenCalled();
+
+        expect(comp.saveVariable.emit).toHaveBeenCalledWith(param);
+        expect(comp.form.value).toEqual({
+            key: '',
+            value: ''
+        });
+        expect(comp.form.pristine).toBe(true);
+        expect(comp.keyField.nativeElement.focus).toHaveBeenCalledTimes(1);
     });
 });
