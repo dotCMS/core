@@ -1,8 +1,13 @@
 package com.dotcms.content.elasticsearch.util;
 
+import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
+import com.dotcms.cluster.business.ClusterAPI;
+import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.util.ConfigTestHelper;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UtilMethods;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
@@ -104,6 +109,27 @@ public class ESClientIntegrationTest {
         };
     }
 
+    @DataProvider
+    public static Object[] dataProviderTestSetTransportConfToSettings() throws URISyntaxException {
+        final String SOME_EXTERNAL_ADDRESS = "192.168.1.2";
+        final String SOME_EXTERNAL_PORT = "9310";
+
+        final Server serverWithAddressAndPort = Server.builder()
+                .withIpAddress("127.0.0.1")
+                .withEsTransportTcpPort(9300)
+                .build();
+
+        return new ESClientSetTransportConfTestCase[]{
+                new ESClientSetTransportConfTestCase.Builder()
+                        .withTransportHostFromExtSettings(SOME_EXTERNAL_ADDRESS)
+                        .withTransportTCPPortFromExtSettings(SOME_EXTERNAL_PORT)
+                        .withCurrentServer(serverWithAddressAndPort)
+                        .withExpectedTransportHost(SOME_EXTERNAL_ADDRESS)
+                        .withExpectedTransportTCPPort(SOME_EXTERNAL_PORT)
+                .build()
+        };
+    }
+
     @Test
     @UseDataProvider("testCases")
     public void testGetExtSettingsBuilder(final ESClientTestCase testCase) throws IOException {
@@ -116,6 +142,53 @@ public class ESClientIntegrationTest {
         assertEquals(testCase.getExpectedZenUniCastHosts(), builder.get(ES_ZEN_UNICAST_HOSTS));
         assertEquals(testCase.getExpectedESNodeData(), builder.get(ES_NODE_DATA));
         assertEquals(testCase.getExpectedESNodeMaster(), builder.get(ES_NODE_MASTER));
+    }
+
+    @Test
+    @UseDataProvider("dataProviderTestSetTransportConfToSettings")
+    public void testSetTransportConfToSettings(final ESClientSetTransportConfTestCase testCase) throws DotDataException {
+        final Settings.Builder settings = Settings.builder();
+        settings.put(ES_TRANSPORT_HOST, testCase.getTransportHostFromExtSettings());
+        settings.put(ServerPort.ES_TRANSPORT_TCP_PORT.getPropertyName(), testCase.getTransportTCPPortFromExtSettings());
+
+        final ClusterAPI clusterAPI = Mockito.mock(ClusterAPI.class);
+        Mockito.when(clusterAPI.isESAutoWire()).thenReturn(true);
+
+        final ServerAPI serverAPI = Mockito.spy(APILocator.getServerAPI());
+        Mockito.doReturn(testCase.getCurrentServer()).when(serverAPI).getCurrentServer();
+
+        final ESClient esClient = Mockito.spy(new ESClient(serverAPI, clusterAPI));
+        Mockito.doReturn(testCase.getTransportHostFromExtSettings()).when(esClient)
+                .validateAddress(testCase.getTransportHostFromExtSettings());
+
+        esClient.setTransportConfToSettings(settings);
+
+        assertEquals(testCase.getExpectedTransportHost(), settings.get(ES_TRANSPORT_HOST));
+        assertEquals(testCase.getExpectedTransportTCPPort(), settings.get(ServerPort.ES_TRANSPORT_TCP_PORT.getPropertyName()));
+    }
+
+    @Test
+    public void testSetHttpConfToSettings() throws DotDataException {
+        final String EXTERNAL_HTTP_PORT = "9210";
+        final Settings.Builder settings = Settings.builder();
+        settings.put("http.enabled", "true");
+        settings.put(ServerPort.ES_HTTP_PORT.getPropertyName(), EXTERNAL_HTTP_PORT);
+
+        final ClusterAPI clusterAPI = Mockito.mock(ClusterAPI.class);
+        Mockito.when(clusterAPI.isESAutoWire()).thenReturn(true);
+
+        final Server serverWithHttpPort = Server.builder()
+                .withEsHttpPort(9200)
+                .build();
+
+        final ServerAPI serverAPI = Mockito.spy(APILocator.getServerAPI());
+        Mockito.doReturn(serverWithHttpPort).when(serverAPI).getCurrentServer();
+
+        final ESClient esClient = new ESClient(serverAPI, clusterAPI);
+
+        esClient.setHttpConfToSettings(settings);
+
+        assertEquals(EXTERNAL_HTTP_PORT, settings.get(ServerPort.ES_HTTP_PORT.getPropertyName()));
     }
 
     @Test
