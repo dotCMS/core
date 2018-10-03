@@ -269,18 +269,20 @@ class TestHostComponent {
 const removeSortOrder = (fieldRows: FieldRow[]) => {
     return fieldRows.map((fieldRow: FieldRow) => {
         fieldRow.getFieldDivider().sortOrder = null;
-        fieldRow.columns = fieldRow.columns.map((column) => {
-            column.columnDivider.sortOrder = null;
-            column.fields = column.fields.map((field) => {
-                field.sortOrder = null;
-                return field;
+        if (fieldRow.columns) {
+            fieldRow.columns = fieldRow.columns.map((column) => {
+                column.columnDivider.sortOrder = null;
+                column.fields = column.fields.map((field) => {
+                    field.sortOrder = null;
+                    return field;
+                });
+                return column;
             });
-            return column;
-        });
+        }
     });
 };
 
-describe('ContentTypeFieldsDropZoneComponent', () => {
+fdescribe('ContentTypeFieldsDropZoneComponent', () => {
     let hostComp: TestHostComponent;
     let hostDe: DebugElement;
     let comp: ContentTypeFieldsDropZoneComponent;
@@ -298,16 +300,15 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
 
     const moveFromSecondRowToFirstRowAndEmitEvent = () => {
         const fieldsMoved = _.cloneDeep(comp.fieldRows);
-        const fieldToMove = fieldsMoved[1].columns[0].fields[0];
-
-        fieldsMoved[1].columns[0].fields = [];
+        const fieldToMove = fieldsMoved[2].columns[0].fields[0];
+        fieldsMoved[2].columns[0].fields = [];
         fieldsMoved[0].columns[1].fields.unshift(fieldToMove);
 
         this.testFieldDragDropService._fieldDropFromTarget.next({
             item: fieldToMove,
             source: {
-                columnId: fieldsMoved[1].columns[0].columnDivider.id,
-                model: fieldsMoved[1].columns[0].fields
+                columnId: fieldsMoved[2].columns[0].columnDivider.id,
+                model: fieldsMoved[2].columns[0].fields
             },
             target: {
                 columnId: fieldsMoved[0].columns[1].columnDivider.id,
@@ -390,21 +391,21 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 contentTypeId: '3b'
             },
             {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField',
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
                 id: '4',
                 name: 'field 4',
                 sortOrder: 4,
                 contentTypeId: '4b'
             },
             {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
+                clazz: 'text',
                 id: '5',
                 name: 'field 5',
                 sortOrder: 5,
                 contentTypeId: '5b'
             },
             {
-                clazz: 'text',
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField',
                 id: '6',
                 name: 'field 6',
                 sortOrder: 6,
@@ -451,6 +452,15 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         expect(spy).toHaveBeenCalledWith(field);
     });
 
+    it('should emit and create 2 columns', () => {
+        spyOn(comp, 'addRow');
+        fixture.detectChanges();
+        const addRowsContainer = de.query(By.css('dot-add-rows')).componentInstance;
+        addRowsContainer.selectColums.emit(2);
+        expect(comp.addRow).toHaveBeenCalled();
+        expect((<FieldRow>comp.fieldRows[0]).columns.length).toBe(2);
+    });
+
     it('should has FieldRow and FieldColumn', () => {
         fixture.detectChanges();
 
@@ -458,45 +468,38 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         const fieldRows = fieldsContainer.queryAll(By.css('dot-content-type-fields-row'));
         expect(2).toEqual(fieldRows.length);
 
-        expect(1).toEqual(fieldRows[0].componentInstance.fieldRow.columns.length);
+        expect(2).toEqual(fieldRows[0].componentInstance.fieldRow.columns.length);
         expect(1).toEqual(fieldRows[0].componentInstance.fieldRow.columns[0].fields.length);
 
         expect(1).toEqual(fieldRows[1].componentInstance.fieldRow.columns.length);
         expect(1).toEqual(fieldRows[1].componentInstance.fieldRow.columns[0].fields.length);
     });
 
-    it('should set dropped field if a drop event happen from source', () => {
+    it('should set dropped field if a drop event happen from source', fakeAsync(() => {
         becomeNewField(fakeFields[8]);
         fixture.detectChanges();
 
         this.testFieldDragDropService._fieldDropFromSource.next({
             item: fakeFields[8],
             target: {
-                columnId: '12',
-                model: []
+                columnId: '7',
+                model: [fakeFields[8]]
             }
         });
 
-        expect(fakeFields[8]).toBe(comp.formData);
-    });
+        tick();
 
-    it('should display dialog if a drop event happen from source', () => {
-        spyOn(comp, 'addRow');
-        fixture.detectChanges();
-        const addRowsContainer = de.query(By.css('dot-add-rows')).componentInstance;
-        addRowsContainer.selectColums.emit(2);
-        expect(comp.addRow).toHaveBeenCalled();
-        expect((<FieldRow>comp.fieldRows[0]).columns.length).toBe(1);
-    });
+        expect(fakeFields[8]).toBe(comp.formData);
+    }));
 
     it('should display dialog if a drop event happen from source', fakeAsync(() => {
         fixture.detectChanges();
 
         this.testFieldDragDropService._fieldDropFromSource.next({
-            item: fakeFields[8],
+            item: fakeFields[7],
             target: {
                 columnId: '8',
-                model: [fakeFields[8]]
+                model: [fakeFields[7]]
             }
         });
 
@@ -508,7 +511,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         expect(true).toBe(dialog.componentInstance.show);
     }));
 
-    it('should save all the fields (moving the last line to the top)', () => {
+    it('should save all the fields (moving the last line to the top)', fakeAsync(() => {
         spyOn(comp.saveFields, 'emit');
 
         fixture.detectChanges();
@@ -517,16 +520,16 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
 
         this.testFieldDragDropService._fieldRowDropFromTarget.next(fieldMoved);
 
-        const expected = [fakeFields[3], fakeFields[0], fakeFields[1], fakeFields[2]].map(
+        const expected = [fakeFields[5], fakeFields[0], fakeFields[1], fakeFields[2], fakeFields[3], fakeFields[4]].map(
             (fakeField, index) => {
                 fakeField.sortOrder = index + 1;
                 return fakeField;
             }
         );
-
+        tick();
         expect(comp.saveFields.emit).toHaveBeenCalledWith(expected);
-        // expect(removeSortOrder(<FieldRow[]> comp.fieldRows)).toEqual(removeSortOrder(fieldMoved));
-    });
+        expect(removeSortOrder(<FieldRow[]> comp.fieldRows)).toEqual(removeSortOrder(fieldMoved));
+    }));
 
     it('should save all the fields (moving just the last field)', () => {
         spyOn(comp.saveFields, 'emit');
@@ -536,9 +539,9 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
 
         fixture.detectChanges();
 
-        let expectedIndex = 6;
+        let expectedIndex = 5;
 
-        const expected = [fakeFields[8], fakeFields[5], fakeFields[6], fakeFields[7]].map(
+        const expected = [fakeFields[8], fakeFields[4], fakeFields[5], fakeFields[6], fakeFields[7]].map(
             (fakeField) => {
                 fakeField.sortOrder = expectedIndex++;
                 return fakeField;
@@ -546,10 +549,10 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         );
 
         expect(comp.saveFields.emit).toHaveBeenCalledWith(expected);
-        // expect(removeSortOrder(<FieldRow[]>  comp.fieldRows)).toEqual(removeSortOrder(fieldsMoved));
+        expect(removeSortOrder(<FieldRow[]>  comp.fieldRows)).toEqual(removeSortOrder(fieldsMoved));
     });
 
-    it('should save all the new fields', () => {
+    it('should save all the new fields', fakeAsync(() => {
         let saveFields;
 
         becomeNewField(fakeFields[6]);
@@ -558,20 +561,21 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
 
         fixture.detectChanges();
 
-        // sleect the fields[8] as the current field
+        // select the fields[8] as the current field
         this.testFieldDragDropService._fieldDropFromSource.next({
             item: fakeFields[8],
             target: {
-                columnId: '6',
+                columnId: '9',
                 model: [fakeFields[8]]
             }
         });
+        tick();
 
         comp.saveFields.subscribe((fields) => (saveFields = fields));
         comp.saveFieldsHandler(fakeFields[8]);
 
         expect([fakeFields[6], fakeFields[7], fakeFields[8]]).toEqual(saveFields);
-    });
+    }));
 
     it('should save all updated fields', () => {
         let saveFields;
@@ -588,6 +592,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
             indexed: true
         };
 
+        comp.displayDialog = false;
         comp.saveFieldsHandler(fieldUpdated);
 
         const { fixed, indexed, ...original } = saveFields[0];

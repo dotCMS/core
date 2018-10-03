@@ -27,7 +27,7 @@ class DotTestHostComponent {
     }
 }
 
-fdescribe('ContentTypeFieldsTabComponent', () => {
+describe('ContentTypeFieldsTabComponent', () => {
     let hostFixture: ComponentFixture<DotTestHostComponent>;
     let hostDe: DebugElement;
     let hostComp: DotTestHostComponent;

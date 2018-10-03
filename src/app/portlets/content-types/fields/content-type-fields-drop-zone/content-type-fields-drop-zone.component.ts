@@ -76,7 +76,8 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges {
                     }
                 };
             });
-            this.fieldDragDropService.fieldDropFromSource$.subscribe((data: DropFieldData) => {
+
+        this.fieldDragDropService.fieldDropFromSource$.subscribe((data: DropFieldData) => {
             this.setDroppedField(data.item);
             this.setModel(data.target);
             this.toggleDialog();
