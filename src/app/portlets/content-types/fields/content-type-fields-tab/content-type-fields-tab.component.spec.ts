@@ -80,15 +80,37 @@ fdescribe('ContentTypeFieldsTabComponent', () => {
         expect(labelInput.outerHTML).toContain(tabField.name);
     });
 
-    fit('should emit change evt', () => {
+    it('should emit change evt with onBlur & keyUp.enter', () => {
         spyOn(comp.editTab, 'emit');
-        const labelInput = de.query(By.css('div'));
-        labelInput.nativeElement.textContent = 'label changed';
-        this.label = 'label changed';
+        const labelInput = de.query(By.css('.tab__label'));
+
+        labelInput.triggerEventHandler('input', {
+            target: {
+                textContent: 'hello world'
+            }
+        });
+
+        labelInput.triggerEventHandler('blur', {});
+
+        labelInput.triggerEventHandler('input', {
+            target: {
+                textContent: 'hello world changed'
+            }
+        });
+
         labelInput.triggerEventHandler('keyup.enter', {});
+
         hostFixture.detectChanges();
 
-        expect(comp.editTab.emit).toHaveBeenCalledWith(tabField);
+        expect(comp.editTab.emit).toHaveBeenCalledWith({
+            ...tabField,
+            name: 'hello world'
+        });
+
+        expect(comp.editTab.emit).toHaveBeenCalledWith({
+            ...tabField,
+            name: 'hello world changed'
+        });
     });
 
     it('should emit delete evt', () => {
