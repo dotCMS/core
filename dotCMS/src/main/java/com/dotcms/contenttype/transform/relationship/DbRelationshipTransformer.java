@@ -7,23 +7,29 @@ import java.util.List;
 import java.util.Map;
 
 public class DbRelationshipTransformer implements RelationshipTransformer{
-	final List<Relationship> list;
 
+	final List<Map<String, Object>> results;
 
-	public DbRelationshipTransformer(List<Map<String, Object>> initList){
-		List<Relationship> newList = new ArrayList<>();
-		if (initList != null){
-			for(Map<String, Object> map : initList){
-				newList.add(fromMap(map));
-			}
-		}
+	public DbRelationshipTransformer(List<Map<String, Object>> list){
+		this.results = list;
+	}
 
-		this.list = newList;
+	public DbRelationshipTransformer(Map<String, Object> map){
+		this.results = ImmutableList.of(map);
 	}
 
 	@Override
 	public List<Relationship> asList() {
-		return ImmutableList.copyOf(list);
+		List<Relationship> newList = new ArrayList<>();
+		for(Map<String,Object> map : results){
+			newList.add(fromMap(map));
+		}
+		return ImmutableList.copyOf(newList);
+	}
+
+	@Override
+	public Relationship from(){
+		return fromMap(results.get(0));
 	}
 
 	private static Relationship fromMap(Map<String, Object> map) {
@@ -36,6 +42,9 @@ public class DbRelationshipTransformer implements RelationshipTransformer{
 		var.setChildRelationName((String) map.get("child_relation_name"));
 		var.setRelationTypeValue((String) map.get("relation_type_value"));
 		var.setCardinality((Integer) map.get("cardinality"));
+		var.setFixed((Boolean) map.get("fixed"));
+		var.setParentRequired((Boolean) map.get("parent_required"));
+		var.setChildRequired((Boolean) map.get("child_required"));
 
 		return var;
 

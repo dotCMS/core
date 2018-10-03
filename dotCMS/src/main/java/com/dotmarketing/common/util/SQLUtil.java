@@ -63,7 +63,7 @@ public class SQLUtil {
 			"category_key", "page_url","name","velocity_var_name",
 			"description","category_","sort_order","hostName", "keywords",
 			"mod_date,upper(name)", "relation_type_value", "child_relation_name",
-			"parent_relation_name");
+			"parent_relation_name","inode");
 	
 	public static List<String> tokenize(String schema) {
 		List<String> ret=new ArrayList<String>();
