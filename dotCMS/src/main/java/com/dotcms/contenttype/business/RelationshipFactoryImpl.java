@@ -55,7 +55,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
 			if(rel != null)
 				return rel;
 		} catch (DotCacheException e) {
-			Logger.debug(this.getClass(), "Unable to access the cache to obtaion the relationship", e);
+			Logger.debug(this.getClass(), "Unable to access the cache to obtain the relationship", e);
 		}
 
 		rel = (Relationship) InodeFactory.getInode(inode, Relationship.class);
@@ -135,7 +135,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
 			if(rel != null && rel.getRelationTypeValue().equals(typeValue))
 				return rel;
 		} catch (DotCacheException e) {
-			Logger.debug(this.getClass(), "Unable to access the cache to obtaion the relationship", e);
+			Logger.debug(this.getClass(), "Unable to access the cache to obtain the relationship", e);
 		}
 
 		rel = (Relationship) InodeFactory.getInodeOfClassByCondition(Relationship.class, "lower(relation_type_value) = '"
