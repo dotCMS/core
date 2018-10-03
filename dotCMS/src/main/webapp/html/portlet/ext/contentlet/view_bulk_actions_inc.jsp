@@ -252,7 +252,7 @@
         var pushPublish = dojo.attr(buttonElement, 'data-action-pushPublish');
         var condition = dojo.attr(buttonElement, 'data-action-condition');
 
-        var popupRequired = (commentable || assignable || pushPublish || condition);
+        var popupRequired = (commentable == 'true' || assignable == 'true' || pushPublish == 'true' || condition == 'true' );
         if(!popupRequired){
            return false;
         }
@@ -270,7 +270,7 @@
             inode:inode
         };
 
-        var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
+        var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Workflow-Action")%>');
         pushHandler.showWorkflowEnabledDialog(workflow, fireActionCallback);
         return true;
     }
@@ -289,6 +289,7 @@
             publishTime:pushPusblishFormData.publishTime,
             expireDate:pushPusblishFormData.expireDate,
             expireTime:pushPusblishFormData.expireTime,
+            neverExpire:pushPusblishFormData.neverExpire,
             forcePush:pushPusblishFormData.forcePush
         };
 

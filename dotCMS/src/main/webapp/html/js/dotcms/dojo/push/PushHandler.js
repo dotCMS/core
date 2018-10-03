@@ -1,5 +1,6 @@
 dojo.provide("dotcms.dojo.push.PushHandler");
-
+dojo.require("dojo.html");
+dojo.require("dojox.html._base");
 dojo.require("dijit._Widget");
 dojo.require("dijit.Dialog");
 dojo.require("dotcms.dijit.RemotePublisherDialog");
@@ -275,9 +276,15 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         }
     },
 
+    /**
+     * This method continues to be the entry point.
+     * It didn't get renamed to avoid backwards compatibility issues
+     */
 	remotePublish : function(){
+	    
+        var dojoStyle = dojo.require("dojo.dom-style");
 
-		if(this.whereToSend.length === 0) {
+		if((dojo.byId("whereToSend") && this.whereToSend.length === 0)) {
             showDotCMSSystemMessage(dojo.byId("whereToSendRequired").value);
 			return;
 		}
@@ -296,18 +303,39 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 					? dojo.date.locale.format(dojo.byId("wfPublishTimeAux").value,{timePattern: "H-m", selector: "time"})
 							: "";
 
+		//The following two components (wfExpireDateAux,wfExpireTimeAux) are hidden by default.
+        //They were part of the push publish dialog that was used on the PushPublish-Actionlet. But now they've been disabled.
+        //Though they remain invisible in case it is decided they 're needed back.
+        var expireDate = '';
+        var expireTime = '';
 
-		var expireDate = (dijit.byId("wfExpireDateAux"))
-			? dijit.byId("wfExpireDateAux").getValue()!=null ? dojo.date.locale.format(dijit.byId("wfExpireDateAux").getValue(),{datePattern: "yyyy-MM-dd", selector: "date"}) : ""
-				: (dojo.byId("wfExpireDateAux"))
-					? dojo.byId("wfExpireDateAux").value!=null ? dojo.date.locale.format(dojo.byId("wfExpireDateAux").value,{datePattern: "yyyy-MM-dd", selector: "date"}) : ""
-							: "";
+        if(dojo.byId('expireTimeDiv') && dojoStyle.get('expireTimeDiv','display') !== 'none') {
 
-		var expireTime = (dijit.byId("wfExpireTimeAux"))
-			? dijit.byId("wfExpireTimeAux").getValue()!=null ? dojo.date.locale.format(dijit.byId("wfExpireTimeAux").getValue(),{timePattern: "H-m", selector: "time"}) : ""
-				: (dojo.byId("wfExpireTimeAux"))
-					? dojo.byId("wfExpireTimeAux").value!=null ? dojo.date.locale.format(dojo.byId("wfExpireTimeAux").value,{timePattern: "H-m", selector: "time"}) : ""
-							: "";
+            expireDate = (dijit.byId("wfExpireDateAux"))
+                ? dijit.byId("wfExpireDateAux").getValue() != null
+                    ? dojo.date.locale.format(
+                        dijit.byId("wfExpireDateAux").getValue(),
+                        {datePattern: "yyyy-MM-dd", selector: "date"}) : ""
+                : (dojo.byId("wfExpireDateAux"))
+                    ? dojo.byId("wfExpireDateAux").value != null
+                        ? dojo.date.locale.format(
+                            dojo.byId("wfExpireDateAux").value,
+                            {datePattern: "yyyy-MM-dd", selector: "date"}) : ""
+                    : "";
+
+            expireTime = (dijit.byId("wfExpireTimeAux"))
+                ? dijit.byId("wfExpireTimeAux").getValue() != null
+                    ? dojo.date.locale.format(
+                        dijit.byId("wfExpireTimeAux").getValue(),
+                        {timePattern: "H-m", selector: "time"}) : ""
+                : (dojo.byId("wfExpireTimeAux"))
+                    ? dojo.byId("wfExpireTimeAux").value != null
+                        ? dojo.date.locale.format(
+                            dojo.byId("wfExpireTimeAux").value,
+                            {timePattern: "H-m", selector: "time"}) : ""
+                    : "";
+
+        }
 
 		var iWantTo = (dijit.byId("publishForm").attr('value').wfIWantTo)
 		? dijit.byId("publishForm").attr('value').wfIWantTo
@@ -315,9 +343,9 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 				? dijit.byId("publishForm").attr('value').wfIWantTo
 						: "";
 
-		var whereToSend = dojo.byId("whereToSend").value;
+		var whereToSend =  (dojo.byId("whereToSend") ? dojo.byId("whereToSend").value : "");
 
-		var forcePush = dijit.byId("forcePush").checked;
+		var forcePush =  (dijit.byId("forcePush") ? dijit.byId("forcePush").checked : "");
 
 		// END: PUSH PUBLISHING ACTIONLET
 
@@ -326,14 +354,10 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 
             let actionId = this.workflow.actionId;
 
-            var hasCondition = (dijit.byId("hasCondition")
-                ? dijit.byId("hasCondition").getValue()
-                : dojo.byId("hasCondition")
-                    ? dojo.byId("hasCondition").value
-                    : "");
+            var hasCondition = (dojo.byId("hasCondition") ? dojo.byId("hasCondition").value : "");
 
-            if(hasCondition == 'true'){
-                this._evaluateCondition(actionId);
+            if(hasCondition === 'true'){
+                this.evaluateCondition(actionId);
                 return;
             }
 
@@ -357,6 +381,9 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
             let inode = this.workflow.inode;
             let structureInode = this.workflow.structureInode;
 
+            //if these are set, then neverExpire should be false.
+            let neverExpire = !(expireDate || expireTime);
+
             let assignComment = {
                 comment: comment,
                 assign: assign,
@@ -372,7 +399,8 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
                 inode:inode,
                 actionId:actionId,
                 structureInode:structureInode,
-                hasCondition:hasCondition
+                hasCondition:hasCondition,
+                neverExpire:neverExpire
             };
 
             let formData = {
@@ -638,7 +666,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         return (this.workflow !== null);
     },
 
-    _evaluateCondition: function (actionId) {
+    evaluateCondition: function (actionId) {
 
         let urlTemplate = "/api/v1/workflow/actions/{actionId}/condition";
         const url = urlTemplate.replace('{actionId}',actionId);
@@ -652,12 +680,16 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
                 'Content-Type' : 'application/json;charset=utf-8',
             },
             load: function(data) {
-                if(data && data.entity){
-                     console.log(data.entity);
-                     showDotCMSSystemMessage(data.entity);
-                }
+                var html = data.entity;
+                dojox.html.set(dojo.byId("pushPublish-container"), html, {
+                    executeScripts: true,
+                    renderStyles: true,
+                    scriptHasHooks: true,
+                    parseContent: true
+                });
             },
             error: function(error){
+                console.error(error);
                 showDotCMSSystemMessage(error, true);
             }
         };

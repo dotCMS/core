@@ -1,11 +1,11 @@
 package com.dotmarketing.portlets.categories.business;
 
-import java.util.List;
-
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.liferay.portal.model.User;
+import java.util.List;
 /**
  * 
  * This class defines the API contract of methods usable to control cms categories
@@ -496,4 +496,13 @@ public interface CategoryAPI {
 	 */
 	String suggestVelocityVarName (String categoryVelVarName) throws DotDataException;
 
+
+	/**
+	 * This method will look for all the fields of type 'Category' within a ContentType and will get you all the associated Category types available for a given a user.
+	 * @param contentType
+	 * @param user
+	 * @return
+	 */
+	List<Category> findCategories(final ContentType contentType, final User user)
+			throws DotSecurityException, DotDataException;
 }

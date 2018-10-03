@@ -60,7 +60,7 @@
 	PermissionAPI conPerAPI = APILocator.getPermissionAPI();
 	ContentletAPI conAPI = APILocator.getContentletAPI();
 	Contentlet contentlet = (Contentlet) request.getAttribute(com.dotmarketing.util.WebKeys.CONTENTLET_EDIT);
-	String inode=request.getParameter("inode");
+	String inode=request.getParameter("inode") != null ? request.getParameter("inode") :  (String) request.getAttribute("inode");
 
 	contentlet = (contentlet != null) ? contentlet : (inode!=null) ? conAPI.find(inode,user,false) : new Contentlet();
 
@@ -187,8 +187,12 @@
     boolean canSeeRules = layoutAPI.doesUserHaveAccessToPortlet("rules", user)
             && conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_USE, user)
                && conPerAPI.doesUserHavePermissions(contentlet.getParentPermissionable(), "RULES: " + PermissionAPI.PERMISSION_USE, user);
-	boolean contentEditable = (UtilMethods.isSet(contentlet.getInode())?(Boolean)request.getAttribute(com.dotmarketing.util.WebKeys.CONTENT_EDITABLE):false);
-	Integer catCounter = 0;
+
+	Boolean isContentEditable = (Boolean) request.getAttribute(com.dotmarketing.util.WebKeys.CONTENT_EDITABLE);
+	isContentEditable = isContentEditable != null ? isContentEditable : false;
+	boolean contentEditable = (UtilMethods.isSet(contentlet.getInode()) ? isContentEditable : false);
+
+    Integer catCounter = 0;
 
 	String targetFrame="_top";
 	boolean isAngularFrame = UtilMethods.isSet(request.getSession().getAttribute(WebKeys.IN_FRAME));
@@ -261,7 +265,7 @@
 
             <%-- Begin Looping over fields --%>
             <%
-            	boolean legacyContenTType = !fields.get(0).getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString());
+            	boolean legacyContenTType = fields.size() == 0 ||   !fields.get(0).getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString());
             	boolean fieldSetOpen = false;
                 int fieldCounter =0;
                 int i = legacyContenTType ? 0 : 2;
@@ -567,8 +571,7 @@
 String sib = request.getParameter("sibbling");
 String populateaccept = request.getParameter("populateaccept");
 
-
-if(!InodeUtils.isSet(request.getParameter("inode")) && UtilMethods.isSet(sib) && !UtilMethods.isSet(populateaccept)){
+if(!InodeUtils.isSet(inode) && UtilMethods.isSet(sib) && !UtilMethods.isSet(populateaccept)){
 	// Sibbling content
 	Contentlet sibbling=conAPI.find(sib, user,false);
 	Language previousLanguage = APILocator.getLanguageAPI().getLanguage(sibbling.getLanguageId());   

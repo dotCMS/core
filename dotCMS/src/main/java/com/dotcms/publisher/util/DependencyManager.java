@@ -1,5 +1,6 @@
 package com.dotcms.publisher.util;
 
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.publisher.business.PublishQueueElement;
@@ -861,43 +862,47 @@ public class DependencyManager {
 	 * @throws DotSecurityException
 	 */
 	private void structureDependencyHelper(String stInode) throws DotDataException, DotSecurityException{
-		Structure st = CacheLocator.getContentTypeCache().getStructureByInode(stInode);
-		Host h = APILocator.getHostAPI().find(st.getHost(), user, false);
-		hosts.addOrClean(st.getHost(), h.getModDate()); // add the host dependency
+		final Structure structure = CacheLocator.getContentTypeCache().getStructureByInode(stInode);
+		final Host host = APILocator.getHostAPI().find(structure.getHost(), user, false);
+		hosts.addOrClean(structure.getHost(), host.getModDate()); // add the host dependency
 
-		Folder f = APILocator.getFolderAPI().find(st.getFolder(), user, false);
-		folders.addOrClean(st.getFolder(), f.getModDate()); // add the folder dependency
+		final Folder folder = APILocator.getFolderAPI().find(structure.getFolder(), user, false);
+		folders.addOrClean(structure.getFolder(), folder.getModDate()); // add the folder dependency
 
 		try {
-			List<WorkflowScheme> schemes = APILocator.getWorkflowAPI().findSchemesForStruct(st);
-			for (WorkflowScheme scheme : schemes) {
+			final List<WorkflowScheme> schemes = APILocator.getWorkflowAPI().findSchemesForStruct(structure);
+			for (final WorkflowScheme scheme : schemes) {
 				workflows.addOrClean(scheme.getId(), scheme.getModDate());
 			}
 		} catch (DotDataException e) {
-			Logger.debug(getClass(), "Could not get the Workflow Scheme Dependency for Structure ID: " + st.getInode());
+			Logger.debug(getClass(), ()->"Could not get the Workflow Scheme Dependency for Structure ID: " + structure.getInode());
 		}
 
+        APILocator.getCategoryAPI().findCategories(new StructureTransformer(structure).from(), user).forEach(category -> {
+            this.categories.addOrClean(category.getCategoryId(), category.getModDate());
+        });
+
 		// Related structures
-		List<Relationship> relations = FactoryLocator.getRelationshipFactory().byContentType(st);
+		final List<Relationship> relations = FactoryLocator.getRelationshipFactory().byContentType(structure);
 
-		for (Relationship r : relations) {
-			relationships.addOrClean( r.getInode(), r.getModDate());
+		for (final Relationship relationship : relations) {
+			relationships.addOrClean( relationship.getInode(), relationship.getModDate());
 
-			if(!structures.contains(r.getChildStructureInode()) && config.getOperation().equals( Operation.PUBLISH) ){
-				Structure struct = CacheLocator.getContentTypeCache().getStructureByInode(r.getChildStructureInode());
+			if(!structures.contains(relationship.getChildStructureInode()) && config.getOperation().equals( Operation.PUBLISH) ){
+				Structure struct = CacheLocator.getContentTypeCache().getStructureByInode(relationship.getChildStructureInode());
 				solvedStructures.add(stInode);
-				structures.addOrClean( r.getChildStructureInode(), struct.getModDate());
+				structures.addOrClean( relationship.getChildStructureInode(), struct.getModDate());
 
-				if(!solvedStructures.contains(r.getChildStructureInode()))
-					structureDependencyHelper( r.getChildStructureInode() );
+				if(!solvedStructures.contains(relationship.getChildStructureInode()))
+					structureDependencyHelper( relationship.getChildStructureInode() );
 			}
-			if(!structures.contains(r.getParentStructureInode()) && config.getOperation().equals( Operation.PUBLISH) ){
-				Structure struct = CacheLocator.getContentTypeCache().getStructureByInode(r.getParentStructureInode());
+			if(!structures.contains(relationship.getParentStructureInode()) && config.getOperation().equals( Operation.PUBLISH) ){
+				Structure struct = CacheLocator.getContentTypeCache().getStructureByInode(relationship.getParentStructureInode());
 				solvedStructures.add(stInode);
-				structures.addOrClean( r.getParentStructureInode(), struct.getModDate());
+				structures.addOrClean( relationship.getParentStructureInode(), struct.getModDate());
 
-				if(!solvedStructures.contains(r.getParentStructureInode()))
-					structureDependencyHelper( r.getParentStructureInode() );
+				if(!solvedStructures.contains(relationship.getParentStructureInode()))
+					structureDependencyHelper( relationship.getParentStructureInode() );
 			}
 		}
 	}

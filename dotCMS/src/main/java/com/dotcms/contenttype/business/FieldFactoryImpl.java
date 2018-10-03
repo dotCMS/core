@@ -243,7 +243,7 @@ public class FieldFactoryImpl implements FieldFactory {
     validateDbColumn(retField);
 
 
-    
+
     
     if (oldField == null) {
       insertInodeInDb(retField);

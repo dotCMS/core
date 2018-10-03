@@ -2,7 +2,9 @@ package com.dotcms.filters.interceptor.dotcms;
 
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.SecurityUtils;
+import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -32,9 +34,20 @@ public class DefaultBackEndLoginRequiredWebInterceptor implements WebInterceptor
             + "/html/images/backgrounds,/html/images/persona";
     private static String[] ALLOWED_URLS;
 
+    private UserWebAPI userWebAPI;
+
+    public DefaultBackEndLoginRequiredWebInterceptor() {
+        this(WebAPILocator.getUserWebAPI());
+    }
+
+    @VisibleForTesting
+    protected DefaultBackEndLoginRequiredWebInterceptor(final UserWebAPI userWebAPI) {
+        this.userWebAPI = userWebAPI;
+    }
+
     @Override
     public String[] getFilters() {
-        return new String[]{"/html"};
+        return new String[]{"\\A/html/"};
     }
 
     @Override
@@ -59,7 +72,7 @@ public class DefaultBackEndLoginRequiredWebInterceptor implements WebInterceptor
         if (null != requestedURI) {
             for (final String allowedURL : ALLOWED_URLS) {
 
-                if (requestedURI.startsWith(allowedURL)) {
+                if (requestedURI.startsWith(allowedURL.toLowerCase())) {
                     requiresAuthentication = false;
                     break;
                 }
@@ -70,7 +83,7 @@ public class DefaultBackEndLoginRequiredWebInterceptor implements WebInterceptor
 
             boolean isLoggedToBackend = false;
             try {
-                isLoggedToBackend = WebAPILocator.getUserWebAPI().isLoggedToBackend(request);
+                isLoggedToBackend = this.userWebAPI.isLoggedToBackend(request);
             } catch (Exception e) {
                 //Do nothing...
                 Logger.warn(this.getClass(), e.getMessage(), e);

@@ -14,6 +14,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -180,6 +181,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
+	private final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser(), RESPECT_FRONTEND_ROLES);
 
 	private static final String MAX_THREADS_ALLOWED_TO_HANDLE_BULK_ACTIONS = "workflow.action.bulk.maxthreads";
 
@@ -525,6 +527,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			workFlowFactory.saveSchemeIdsForContentType(contentType.inode(),
 					schemesIds.stream().map(this::getLongIdForScheme).collect(CollectionsUtils.toImmutableList()),
 					this::consumeWorkflowTask);
+			if(schemesIds.isEmpty()){
+				contentTypeAPI.updateModDate(contentType);
+			}
 		} catch(DotDataException e) {
 
 			Logger.error(WorkflowAPIImpl.class, String.format("Error saving Schemas: %s for Content type %s",

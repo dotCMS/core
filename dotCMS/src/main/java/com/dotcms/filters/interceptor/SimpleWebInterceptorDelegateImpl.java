@@ -1,5 +1,6 @@
 package com.dotcms.filters.interceptor;
 
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.util.RegEX;
 
 import javax.servlet.http.HttpServletRequest;
@@ -189,7 +190,8 @@ public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate 
         return shouldContinue;
     } // intercept.
 
-    private boolean anyMatchFilter(final WebInterceptor webInterceptor,
+    @VisibleForTesting
+    public boolean anyMatchFilter(final WebInterceptor webInterceptor,
                                    final String uri) {
 
         final String [] filters = webInterceptor.getFilters();
@@ -202,7 +204,7 @@ public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate 
 
             for (String filter : filters) {
 
-                if (match(uri, filter)) {  // if some of the filter match, is enough.
+                if (match(uri.toLowerCase(), filter)) {  // if some of the filter match, is enough.
 
                     isOk = true;
                     break;

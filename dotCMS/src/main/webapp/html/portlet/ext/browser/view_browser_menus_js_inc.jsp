@@ -967,7 +967,7 @@
                     inode:inode
                 };
 
-                var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
+                var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Workflow-Action")%>');
                 pushHandler.showWorkflowEnabledDialog(workflow, saveAssignCallBack);
                 return;
 
@@ -977,11 +977,11 @@
 		    		var wfConId 			= inode;
 		    		var wfActionId 			= this.wfActionId;
 		    		var wfActionComments 	= "";
-		    		var publishDate			="";
+		    		var publishDate			= "";
 		    		var publishTime 		= "";
 		    		var expireDate 			= "";
-		    		var expireTime 			="";
-		    		var neverExpire 		="";
+		    		var expireTime 			= "";
+		    		var neverExpire 		= "";
 					BrowserAjax.saveFileAction(selectedItem,wfActionAssign,wfActionId,wfActionComments,wfConId, publishDate,
 		    				publishTime, expireDate, expireTime, neverExpire, fileActionCallback
                     );
@@ -1007,7 +1007,7 @@
         var expireDate  = pushPublish.expireDate;
         var expireTime  = pushPublish.expireTime;
         var forcePush   = pushPublish.forcePush;
-        var neverExpire = "";
+        var neverExpire = pushPublish.neverExpire;
 
         BrowserAjax.saveFileAction(selectedItem, assignRole, actionId, comments, wfConId, publishDate,
             publishTime, expireDate, expireTime, neverExpire, whereToSend, forcePush, fileActionCallback
