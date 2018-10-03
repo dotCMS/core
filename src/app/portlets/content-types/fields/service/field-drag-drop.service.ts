@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { DragulaService } from 'ng2-dragula';
-import { filter, map } from 'rxjs/operators';
+import { filter, map, tap } from 'rxjs/operators';
 import { FieldDivider, ContentTypeField } from '@portlets/content-types/fields/shared';
 import * as _ from 'lodash';
 
@@ -12,14 +12,42 @@ import * as _ from 'lodash';
 export class FieldDragDropService {
     private static readonly FIELD_BAG_NAME = 'fields-bag';
     private static readonly FIELD_ROW_BAG_NAME = 'fields-row-bag';
+    private static readonly FIELD_ROW_BAG_CLASS_OVER = 'row-columns__item--over';
 
     private _fieldDropFromSource: Observable<DropFieldData>;
     private _fieldDropFromTarget: Observable<DropFieldData>;
     private _fieldRowDropFromTarget: Observable<FieldDivider[]>;
 
+    private currentColumnOvered: Element;
+
     constructor(private dragulaService: DragulaService) {
-        dragulaService.over().subscribe(this.toggleOverClass);
-        dragulaService.out().subscribe(this.toggleOverClass);
+        dragulaService
+            .over()
+            .pipe(
+                filter(
+                    (group: { name: string; el: Element; container: Element; source: Element }) =>
+                        this.isAColumnContainer(group.container)
+                )
+            )
+            .subscribe(
+                (group: { name: string; el: Element; container: Element; source: Element }) => {
+                    if (!this.currentColumnOvered) {
+                        this.currentColumnOvered = group.container;
+                    }
+
+                    if (this.isANewColumnContainer(group.container)) {
+                        this.currentColumnOvered.classList.remove(
+                            FieldDragDropService.FIELD_ROW_BAG_CLASS_OVER
+                        );
+
+                        this.currentColumnOvered = group.container;
+
+                        this.currentColumnOvered.classList.add(
+                            FieldDragDropService.FIELD_ROW_BAG_CLASS_OVER
+                        );
+                    }
+                }
+            );
 
         this._fieldRowDropFromTarget = dragulaService.dropModel().pipe(
             filter(
@@ -34,6 +62,11 @@ export class FieldDragDropService {
                     data.name === FieldDragDropService.FIELD_BAG_NAME &&
                     (<HTMLElement>data.source).dataset.dragType === 'target'
             ),
+            tap((_data: DragulaDropModel) => {
+                this.currentColumnOvered.classList.remove(
+                    FieldDragDropService.FIELD_ROW_BAG_CLASS_OVER
+                );
+            }),
             map((data: DragulaDropModel) => {
                 return {
                     item: data.item,
@@ -121,15 +154,12 @@ export class FieldDragDropService {
         return this._fieldRowDropFromTarget;
     }
 
-    private toggleOverClass(group: {
-        name: string;
-        el: Element;
-        container: Element;
-        source: Element;
-    }): void {
-        if (group.container.classList.contains('row-columns__item')) {
-            group.container.classList.toggle('row-columns__item--over');
-        }
+    private isAColumnContainer(container: Element): boolean {
+        return container.classList.contains('row-columns__item');
+    }
+
+    private isANewColumnContainer(container: Element): boolean {
+        return this.currentColumnOvered && this.currentColumnOvered !== container;
     }
 
     private shouldCopy(_el: HTMLElement, source: HTMLElement): boolean {

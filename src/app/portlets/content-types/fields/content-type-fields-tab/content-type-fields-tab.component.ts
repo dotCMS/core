@@ -29,6 +29,8 @@ export class ContentTypeFieldsTabComponent implements OnInit {
     i18nMessages: any = {};
     tabCopy: FieldTab;
 
+    label: string;
+
     constructor(
         private dotMessageService: DotMessageService,
         private dotDialogService: DotAlertConfirmService
@@ -45,6 +47,8 @@ export class ContentTypeFieldsTabComponent implements OnInit {
             .subscribe((res) => {
                 this.i18nMessages = res;
                 this.tabCopy = _.cloneDeep(this.fieldTab);
+
+                this.label = this.fieldTab.getFieldDivider().name;
             });
     }
 

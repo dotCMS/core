@@ -25,7 +25,7 @@ class TestFieldService {
     }
 }
 
-describe('FieldPropertyService', () => {
+fdescribe('FieldPropertyService', () => {
     beforeEach(() => {
         this.injector = DOTTestBed.resolveAndCreate([
             FieldPropertyService,
