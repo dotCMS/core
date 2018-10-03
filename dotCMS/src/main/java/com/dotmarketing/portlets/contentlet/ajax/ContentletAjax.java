@@ -73,6 +73,7 @@ import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
+import com.google.common.base.CharMatcher;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
@@ -524,7 +525,7 @@ public class ContentletAjax {
 	@SuppressWarnings("rawtypes")
 	@LogTime
 	public List searchContentletsByUser(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, boolean filterUnpublish, boolean filterLocked, int page, String orderBy,int perPage, final User currentUser, HttpSession sess,String  modDateFrom, String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
-		if(perPage < 1){
+    		if(perPage < 1){
 			perPage = Config.getIntProperty("PER_PAGE", 40);
 		}
 		if(!InodeUtils.isSet(structureInode)) {
@@ -748,7 +749,10 @@ public class ContentletAjax {
 									fieldValue = fieldValue.replaceFirst("\"", "");
 									fieldValue = fieldValue.substring(0, fieldValue.length()-1);
 								}
-								luceneQuery.append("+" + st.getVelocityVarName() + "." + fieldVelocityVarName + ":" + (hasQuotes ? "\"":wildCard) + ESUtils.escape(fieldValue.toString()) + (hasQuotes ? "\"":wildCard) + " ");
+
+								luceneQuery.append("+" + st.getVelocityVarName() + "." + fieldVelocityVarName + ":" + (hasQuotes ? "\"":wildCard) +
+                                        (hasQuotes && CharMatcher.WHITESPACE.matchesAnyOf(fieldValue.toString())? fieldValue: ESUtils.escape(fieldValue.toString())) +
+                                        (hasQuotes ? "\"":wildCard) + " ");
 							}
 							else{
 								String[] splitValues = fieldValue.split(",");
