@@ -17,15 +17,22 @@ import * as _ from 'lodash';
     templateUrl: './content-type-fields-tab.component.html'
 })
 export class ContentTypeFieldsTabComponent implements OnInit {
-    @Input() fieldTab: FieldTab;
+    @Input()
+    fieldTab: FieldTab;
 
-    @Output() editTab: EventEmitter<ContentTypeField> = new EventEmitter();
-    @Output() removeTab: EventEmitter<FieldDivider> = new EventEmitter();
+    @Output()
+    editTab: EventEmitter<ContentTypeField> = new EventEmitter();
+
+    @Output()
+    removeTab: EventEmitter<FieldDivider> = new EventEmitter();
 
     i18nMessages: any = {};
     tabCopy: FieldTab;
 
-    constructor(private dotMessageService: DotMessageService, private dotDialogService: DotAlertConfirmService) {}
+    constructor(
+        private dotMessageService: DotMessageService,
+        private dotDialogService: DotAlertConfirmService
+    ) {}
 
     ngOnInit() {
         this.dotMessageService
@@ -38,7 +45,6 @@ export class ContentTypeFieldsTabComponent implements OnInit {
             .subscribe((res) => {
                 this.i18nMessages = res;
                 this.tabCopy = _.cloneDeep(this.fieldTab);
-
             });
     }
 
@@ -66,14 +72,17 @@ export class ContentTypeFieldsTabComponent implements OnInit {
             accept: () => {
                 this.removeTab.emit(this.fieldTab);
             },
-            header: `${this.i18nMessages['contenttypes.action.delete']} ${this.i18nMessages['contenttypes.content.field']}`,
-            message: this.dotMessageService.get('contenttypes.confirm.message.delete.field', this.fieldTab.getFieldDivider().name),
+            header: `${this.i18nMessages['contenttypes.action.delete']} ${
+                this.i18nMessages['contenttypes.content.field']
+            }`,
+            message: this.dotMessageService.get(
+                'contenttypes.confirm.message.delete.field',
+                this.fieldTab.getFieldDivider().name
+            ),
             footerLabel: {
                 accept: this.i18nMessages['contenttypes.action.delete'],
                 reject: this.i18nMessages['contenttypes.action.cancel']
             }
         });
     }
-
-
 }

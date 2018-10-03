@@ -63,12 +63,16 @@ class TestContentTypeFieldsPropertiesFormComponent {
 class DotDialogComponent {
     @Input()
     header = '';
+
     @Input()
     show: boolean;
+
     @Input()
     ok: DotDialogAction;
+
     @Input()
     cancel: DotDialogAction;
+
     @Output()
     close: EventEmitter<any> = new EventEmitter();
 }
