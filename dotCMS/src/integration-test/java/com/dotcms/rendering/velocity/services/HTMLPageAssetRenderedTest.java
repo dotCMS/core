@@ -1,7 +1,5 @@
 package com.dotcms.rendering.velocity.services;
 
-import static org.mockito.Mockito.mock;
-
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.Field;
@@ -28,6 +26,7 @@ import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -37,14 +36,17 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
-import java.util.ArrayList;
-import java.util.List;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.mockito.Mockito.mock;
 
 public class HTMLPageAssetRenderedTest {
 
@@ -180,6 +182,8 @@ public class HTMLPageAssetRenderedTest {
 
         final String pageName = "test1Page-"+System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder,template).languageId(1).pageURL(pageName).title(pageName).nextPersisted();
+        pageEnglishVersion.setIndexPolicy(IndexPolicy.FORCE);
+        pageEnglishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
         contentletAPI.publish(pageEnglishVersion, systemUser, false);
 
         createMultiTree(pageEnglishVersion.getIdentifier());
@@ -220,11 +224,18 @@ public class HTMLPageAssetRenderedTest {
 
         final String pageName = "test2Page-"+System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder,template).languageId(1).pageURL(pageName).title(pageName).nextPersisted();
+        pageEnglishVersion.setIndexPolicy(IndexPolicy.FORCE);
+        pageEnglishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
         contentletAPI.publish(pageEnglishVersion, systemUser, false);
         Contentlet pageSpanishVersion = contentletAPI.find(pageEnglishVersion.getInode(),systemUser,false);
         pageSpanishVersion.setInode("");
         pageSpanishVersion.setLanguageId(2);
+        pageSpanishVersion.setIndexPolicy(IndexPolicy.FORCE);
+        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
         pageSpanishVersion = contentletAPI.checkin(pageSpanishVersion,systemUser,false);
+
+        pageSpanishVersion.setIndexPolicy(IndexPolicy.FORCE);
+        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
         contentletAPI.publish(pageSpanishVersion,systemUser,false);
 
         createMultiTree(pageEnglishVersion.getIdentifier());
@@ -267,6 +278,8 @@ public class HTMLPageAssetRenderedTest {
 
         final String pageName = "test3Page-"+System.currentTimeMillis();
         final HTMLPageAsset pageSpanishVersion = new HTMLPageDataGen(folder,template).languageId(2).pageURL(pageName).title(pageName).nextPersisted();
+        pageSpanishVersion.setIndexPolicy(IndexPolicy.FORCE);
+        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
         contentletAPI.publish(pageSpanishVersion, systemUser, false);
 
         createMultiTree(pageSpanishVersion.getIdentifier());
@@ -306,6 +319,8 @@ public class HTMLPageAssetRenderedTest {
 
         final String pageName = "test4Page-"+System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder,template).languageId(1).pageURL(pageName).title(pageName).nextPersisted();
+        pageEnglishVersion.setIndexPolicy(IndexPolicy.FORCE);
+        pageEnglishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
         contentletAPI.publish(pageEnglishVersion, systemUser, false);
 
         createMultiTree(pageEnglishVersion.getIdentifier());
@@ -345,11 +360,17 @@ public class HTMLPageAssetRenderedTest {
 
         final String pageName = "test5Page-"+System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder,template).languageId(1).pageURL(pageName).title(pageName).nextPersisted();
+        pageEnglishVersion.setIndexPolicy(IndexPolicy.FORCE);
+        pageEnglishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
         contentletAPI.publish(pageEnglishVersion, systemUser, false);
         Contentlet pageSpanishVersion = contentletAPI.find(pageEnglishVersion.getInode(),systemUser,false);
         pageSpanishVersion.setInode("");
         pageSpanishVersion.setLanguageId(2);
+        pageSpanishVersion.setIndexPolicy(IndexPolicy.FORCE);
+        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
         pageSpanishVersion = contentletAPI.checkin(pageSpanishVersion,systemUser,false);
+        pageSpanishVersion.setIndexPolicy(IndexPolicy.FORCE);
+        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
         contentletAPI.publish(pageSpanishVersion,systemUser,false);
 
         createMultiTree(pageEnglishVersion.getIdentifier());
@@ -390,11 +411,17 @@ public class HTMLPageAssetRenderedTest {
 
         final String pageName = "test6Page-"+System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder,template).languageId(1).pageURL(pageName).title(pageName).nextPersisted();
+        pageEnglishVersion.setIndexPolicy(IndexPolicy.FORCE);
+        pageEnglishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
         contentletAPI.publish(pageEnglishVersion, systemUser, false);
         Contentlet pageSpanishVersion = contentletAPI.find(pageEnglishVersion.getInode(),systemUser,false);
         pageSpanishVersion.setInode("");
         pageSpanishVersion.setLanguageId(2);
+        pageSpanishVersion.setIndexPolicy(IndexPolicy.FORCE);
+        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
         pageSpanishVersion = contentletAPI.checkin(pageSpanishVersion,systemUser,false);
+        pageSpanishVersion.setIndexPolicy(IndexPolicy.FORCE);
+        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
         contentletAPI.publish(pageSpanishVersion,systemUser,false);
 
         createMultiTree(pageEnglishVersion.getIdentifier());
@@ -435,6 +462,8 @@ public class HTMLPageAssetRenderedTest {
 
         final String pageName = "test7Page-"+System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder,template).languageId(1).pageURL(pageName).title(pageName).nextPersisted();
+        pageEnglishVersion.setIndexPolicy(IndexPolicy.FORCE);
+        pageEnglishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
         contentletAPI.publish(pageEnglishVersion, systemUser, false);
 
         createMultiTree(pageEnglishVersion.getIdentifier());
@@ -485,11 +514,16 @@ public class HTMLPageAssetRenderedTest {
 
             final Contentlet contentlet = new ContentletDataGen(contentType.id()).languageId(1)
                     .setProperty("widgetTitle", "testing").nextPersisted();
+
+            contentlet.setIndexPolicy(IndexPolicy.FORCE);
+            contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
             contentletAPI.publish(contentlet, systemUser, false);
 
             final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder, template)
                     .languageId(1).pageURL("testPageWidget").title("testPageWidget")
                     .nextPersisted();
+            pageEnglishVersion.setIndexPolicy(IndexPolicy.FORCE);
+            pageEnglishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
             contentletAPI.publish(pageEnglishVersion, systemUser, false);
 
             MultiTree multiTree = new MultiTree(pageEnglishVersion.getIdentifier(), containerId,
@@ -550,6 +584,9 @@ public class HTMLPageAssetRenderedTest {
                     .pageURL(pageName)
                     .title(pageName)
                     .nextPersisted();
+
+            pageEnglishVersion.setIndexPolicy(IndexPolicy.FORCE);
+            pageEnglishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
             contentletAPI.publish(pageEnglishVersion, systemUser, false);
 
             createMultiTree(pageEnglishVersion.getIdentifier());
